@@ -882,21 +882,3 @@
                 (sub-type SIMPLE)
                 (params robot ?robot)))
 )
-
-
-; ============================= Goal Fast-Forward ===============================
-(defrule fast-forward-pickup-wp
-  "Immediatley finish a pickup-wp goal if a robot is already holding the wp"
-  ?g <- (goal (id ?goal-id) (class PICKUP-WP) (params $?p1 wp ?wp $?p2) (mode SELECTED))
-  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
-  =>
-  (modify ?g (mode FINISHED) (outcome COMPLETED))
-)
-
-(defrule fast-forward-clear-output
-  "Immediatley complete a clear-output goal if there is no workpiece at the output"
-  ?g <- (goal (id ?goal-id) (class CLEAR-OUTPUT) (params $?p1 mps ?mps mps-side ?mps-side $?p2) (mode SELECTED))
-  (not (wm-fact (key domain fact wp-at args? wp ? m ?mps side ?mps-side)))
-  =>
-  (modify ?g (mode FINISHED) (outcome COMPLETED))
-)

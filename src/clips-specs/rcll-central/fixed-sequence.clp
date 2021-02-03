@@ -556,6 +556,15 @@
   (modify ?g (mode EXPANDED))
 )
 
+(defrule goal-expander-pickup-wp-fast-forward
+  "Immediatley finish a pickup-wp goal if a robot is already holding the wp"
+  ?g <- (goal (id ?goal-id) (class PICKUP-WP) (params $?p1 wp ?wp $?p2) (mode SELECTED))
+  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+  =>
+  (modify ?g (mode FINISHED) (outcome COMPLETED))
+)
+
+
 (defrule goal-expander-clear-output
   "Clear the output of some station"
   ?g <- (goal (id ?goal-id) (class CLEAR-OUTPUT) (params robot ?robot mps ?destination mps-side ?destination-side) (mode SELECTED))
@@ -587,4 +596,12 @@
     )
   )
   (modify ?g (mode EXPANDED))
+)
+
+(defrule goal-expander-clear-output-fast-forward
+  "Immediatley complete a clear-output goal if there is no workpiece at the output"
+  ?g <- (goal (id ?goal-id) (class CLEAR-OUTPUT) (params $?p1 mps ?mps mps-side ?mps-side $?p2) (mode SELECTED))
+  (not (wm-fact (key domain fact wp-at args? wp ? m ?mps side ?mps-side)))
+  =>
+  (modify ?g (mode FINISHED) (outcome COMPLETED))
 )
