@@ -426,7 +426,7 @@
   (not (goal (class MOUNT-RING) (parent ?produce-c2-id)))
   =>
   (printout t "Goal MOUNT-RING1 formulated" crlf)
-  (assert (goal (id (sym-cat MOUNT-RING2- (gensym*))) (class MOUNT-RING1) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params ring1-color ?ring1-color ring2-color ?ring2-color wp ?wp rs ?rs2 wait-pos ?cs wait-side INPUT)))
+  (assert (goal (id (sym-cat MOUNT-RING2- (gensym*))) (class MOUNT-RING2) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params ring1-color ?ring1-color ring2-color ?ring2-color wp ?wp rs ?rs2 wait-pos ?cs wait-side INPUT)))
 )
 
 (defrule goal-produce-c2-mount-cap-deliver

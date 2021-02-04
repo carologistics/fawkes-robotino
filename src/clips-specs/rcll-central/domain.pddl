@@ -229,8 +229,7 @@
 	)
 
 	(:action rs-mount-ring2
-		:parameters (?m - mps ?wp - workpiece ?col - ring-color ?col1 - ring-color
-					?rs-before - ring-num ?rs-after - ring-num ?r-req - ring-num)
+		:parameters (?m - mps ?wp - workpiece ?col - ring-color ?col1 - ring-color ?r-req - ring-num)
 		:precondition (and (mps-type ?m RS) (or (mps-state ?m PROCESSING) (mps-state ?m READY-AT-OUTPUT))
 										(wp-at ?wp ?m INPUT) (not (mps-side-free ?m INPUT)) (wp-usable ?wp)
 										(mps-side-free ?m OUTPUT)
@@ -238,19 +237,15 @@
 										(wp-ring2-color ?wp RING_NONE)
 										(wp-cap-color ?wp CAP_NONE)
 										(rs-prepared-color ?m ?col)
-										(rs-ring-spec ?m ?col ?r-req)
-										(rs-filled-with ?m ?rs-before)
-										(rs-sub ?rs-before ?r-req ?rs-after))
+										(rs-ring-spec ?m ?col ?r-req))
 		:effect (and
 								 (not (rs-prepared-color ?m ?col))
 								 (not (wp-at ?wp ?m INPUT)) (mps-side-free ?m INPUT) (wp-at ?wp ?m OUTPUT) (not (mps-side-free ?m OUTPUT))
-								 (not (wp-ring2-color ?wp RING_NONE)) (wp-ring2-color ?wp ?col)
-								 (not (rs-filled-with ?m ?rs-before)) (rs-filled-with ?m ?rs-after))
+								 (not (wp-ring2-color ?wp RING_NONE)) (wp-ring2-color ?wp ?col))
 	)
 
 	(:action rs-mount-ring3
-		:parameters (?m - mps ?wp - workpiece ?col - ring-color ?col1 - ring-color ?col2 - ring-color
-							?rs-before - ring-num ?rs-after - ring-num ?r-req - ring-num)
+		:parameters (?m - mps ?wp - workpiece ?col - ring-color ?col1 - ring-color ?col2 - ring-color ?r-req - ring-num)
 		:precondition (and (mps-type ?m RS) (or (mps-state ?m PROCESSING) (mps-state ?m READY-AT-OUTPUT))
 										(wp-at ?wp ?m INPUT) (not (mps-side-free ?m INPUT)) (wp-usable ?wp)
 										(mps-side-free ?m OUTPUT)
@@ -259,14 +254,11 @@
 										(wp-ring3-color ?wp RING_NONE)
 										(wp-cap-color ?wp CAP_NONE)
 										(rs-prepared-color ?m ?col)
-										(rs-ring-spec ?m ?col ?r-req)
-										(rs-filled-with ?m ?rs-before)
-										(rs-sub ?rs-before ?r-req ?rs-after))
+										(rs-ring-spec ?m ?col ?r-req))
 		:effect (and
 								 (not (rs-prepared-color ?m ?col))
 								 (not (wp-at ?wp ?m INPUT)) (mps-side-free ?m INPUT) (wp-at ?wp ?m OUTPUT) (not (mps-side-free ?m OUTPUT))
-								 (not (wp-ring3-color ?wp RING_NONE)) (wp-ring3-color ?wp ?col)
-								 (not (rs-filled-with ?m ?rs-before)) (rs-filled-with ?m ?rs-after))
+								 (not (wp-ring3-color ?wp RING_NONE)) (wp-ring3-color ?wp ?col))
 	)
 
 	(:action request-rs-mount-ring
