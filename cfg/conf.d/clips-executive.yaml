@@ -287,7 +287,7 @@ clips-executive:
           # FAST checks only first minute of a game
           # DELIVERY tests until the first delivery happens
           # FULL checks whole game
-          testbed: FAST
+          testbed: FULL
         coordination:
           mutex:
             renew-interval: 5
