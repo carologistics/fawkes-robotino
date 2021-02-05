@@ -15,7 +15,7 @@ navgraph:
   navigator_interface_id: Navigator
 
   # Graph file to use for path planning
-  graph_file: navgraph-basis.yaml
+  graph_file: navgraph-fhac_HIT.yaml
 
   # Interval in which the resend the goto command; sec
   resend_interval: 1
