@@ -94,9 +94,7 @@
 
 (deffunction production-root-goal (?goal-class)
   (return (or (eq ?goal-class PRODUCE-C0)
-              (eq ?goal-class PRODUCE-C1)
-              (eq ?goal-class PRODUCE-C2)
-              (eq ?goal-class PRODUCE-C3)))
+              (eq ?goal-class PRODUCE-CX)))
 )
 
 (deffunction goal-tree-assert-run-endless (?class ?frequency $?fact-addresses)
@@ -180,19 +178,6 @@
 
 ; ------------------------- PRE EVALUATION -----------------------------------
 
-(defrule goal-reasoner-remove-robot-from-finished
-" Remove a robot from the parameter list of a production goal to free it up
-  for another task
-"
-  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
-  ?g <- (goal (id ?goal-id) (mode RETRACTED) (params robot ?robot $?params))
-  (not (plan-action (skiller (remote-skiller ?robot))))
-  =>
-  (printout t "Removing " ?robot " from " ?goal-id crlf)
-  (modify ?g (params $?params))
-)
-
-
 (defrule goal-reasoner-reset-machine-of-failed-goal
 " If a failed goal reserved a machine, make sure that the machine is
   usable before releasing the resource. Resetting the mps should be done as a last
@@ -224,6 +209,71 @@
   (assert (wm-fact (key evaluated drop-wp args? r ?r wp ?wp)))
 )
 
+; remove locks of failed goals. Copied from rcll agent.
+; TODO: This could be done much simpler in the central agent
+; by not using mutexes for locks at all and instead just using
+; the wm-facts (similar to the resources).
+(defrule goal-reasoner-pre-evaluate-clean-locks
+" Unlock all remaining locks of a failed goal."
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
+  ?p <- (plan (id ?plan-id) (goal-id ?goal-id))
+  ?a <- (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id ?plan-id)
+                     (action-name lock) (param-values ?name))
+  (mutex (name ?name) (state LOCKED) (request ~UNLOCK)
+         (pending-requests $?pending&:(not (member$ UNLOCK ?pending))))
+=>
+  (printout warn "Removing lock " ?name " of failed plan " ?plan-id
+                 " of goal " ?goal-id crlf)
+  (assert (goal-reasoner-unlock-pending ?name))
+  (mutex-unlock-async ?name)
+)
+
+
+(defrule goal-reasoner-pre-evaluate-clean-location-locks
+" Unlock all remaining location-locks of a failed goal."
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
+  ?p <- (plan (id ?plan-id) (goal-id ?goal-id))
+  ?a <- (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id ?plan-id)
+                     (action-name location-lock) (param-values ?loc ?side))
+  (mutex (name ?name&:(eq ?name (sym-cat ?loc - ?side)))
+         (state LOCKED) (request ~UNLOCK)
+         (pending-requests $?pending&:(not (member$ UNLOCK ?pending))))
+=>
+  (printout warn "Removing location lock " ?name crlf)
+  (assert (goal-reasoner-unlock-pending ?name))
+  (mutex-unlock-async ?name)
+)
+
+
+(defrule goal-reasoner-pre-evaluate-location-unlock-done
+" React to a successful unlock of an location by removing the corresponding location-locked domain-fact"
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  ?p <- (goal-reasoner-unlock-pending ?lock)
+  ?m <- (mutex (name ?lock) (request UNLOCK) (state OPEN))
+  ?df <- (domain-fact (name location-locked) (param-values ?mps ?side))
+  (test (not (eq FALSE (str-index (str-cat ?mps) (str-cat ?lock)))))
+  (test (not (eq FALSE (str-index (str-cat ?side) (str-cat ?lock)))))
+  =>
+  (modify ?m (request NONE) (response NONE))
+  (retract ?df)
+  (retract ?p)
+)
+
+
+(defrule goal-reasoner-pre-evaluate-lock-unlock-done
+" React to a successful unlock of a lock by removing the corresponding locked domain-fact"
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  ?p <- (goal-reasoner-unlock-pending ?lock)
+  ?m <- (mutex (name ?lock) (request UNLOCK) (state OPEN))
+  ?df <- (domain-fact (name locked) (param-values ?lock))
+  =>
+  (modify ?m (request NONE) (response NONE))
+  (retract ?df)
+  (retract ?p)
+)
+
 ; ----------------------- EVALUATE COMMON ------------------------------------
 
 (defrule goal-reasoner-evaluate-common
@@ -236,6 +286,17 @@
   ;(printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
   ;  "') has been completed, Evaluating" crlf)
   (modify ?g (mode EVALUATED))
+)
+
+(defrule goal-reasoner-remove-robot-from-finished
+" Remove a robot from the parameter list of a production goal to free it up
+  for another task
+"
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  ?g <- (goal (id ?goal-id) (mode RETRACTED) (params robot ?robot $?params))
+  =>
+  (printout t "Removing " ?robot " from " ?goal-id crlf)
+  (modify ?g (params $?params))
 )
 
 ; ----------------------- EVALUATE SPECIFIC GOALS ---------------------------

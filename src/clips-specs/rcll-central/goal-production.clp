@@ -860,6 +860,7 @@
   (test (goal-needs-robot-holding-wp ?class))
   (not (test (member$ robot $?params)))
   (wm-fact (key domain fact holding args? r ?robot wp ?wp&:(member$ ?wp $?params)))
+  (not (goal (params robot ?robot $?some-params)))
   =>
   (printout t "Assigning " ?robot " to " ?goal-id crlf)
   (modify ?g (params robot ?robot $?params))
