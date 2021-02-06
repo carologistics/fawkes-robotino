@@ -54,6 +54,7 @@
 ; leading the root to be rejected and reformulated.
 
 (defglobal
+  ?*SALIENCE-HIGHEST* = 1000 ; used for cleanup of failed goals
   ?*SALIENCE-GOAL-FORMULATE* = 500
   ?*SALIENCE-GOAL-REJECT* = 400
   ?*SALIENCE-GOAL-EXPAND* = 300
@@ -89,7 +90,8 @@
   (return (or (eq ?goal-class MOUNT-CAP)
               (eq ?goal-class DELIVER)
               (eq ?goal-class MOUNT-RING)
-              (eq ?goal-class FILL-RS)))
+              (eq ?goal-class FILL-RS)
+              (eq ?goal-class DROP-WP)))
 )
 
 (deffunction production-root-goal (?goal-class)
@@ -163,6 +165,17 @@
   (modify ?p (mode EXPANDED))
 )
 
+(defrule goal-reasoner-create-retry-counter
+" Make sure that every goal has a retry counter in the meta slot
+"
+  ; TODO: Only for production goals?
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ?g <- (goal (meta $?meta&:(not (member$ retries $?meta))) (mode FORMULATED))
+  =>
+  (modify ?g (meta $?meta retries 0))
+)
+
+
 ; ========================= Goal Dispatching =================================
 ; Trigger execution of a plan. We may commit to multiple plans
 ; (for different goals), e.g., one per robot, or for multiple
@@ -178,20 +191,20 @@
 
 ; ------------------------- PRE EVALUATION -----------------------------------
 
-(defrule goal-reasoner-reset-machine-of-failed-goal
-" If a failed goal reserved a machine, make sure that the machine is
-  usable before releasing the resource. Resetting the mps should be done as a last
-  resort to avoid losing the machine for the rest of the game.
-"
-  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
-  (goal (id ?goal-id) (mode FINISHED) (outcome FAILED) (acquired-resources ?mps))
-  (domain-object (type mps) (name ?mps))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~IDLE))
-  (not (wm-fact (key evaluated reset-mps args? m ?mps)))
-  =>
-  (printout warn "Resetting " ?mps " because " ?goal-id " failed" crlf)
-  (assert (wm-fact (key evaluated reset-mps args? m ?mps)))
-)
+;(defrule goal-reasoner-reset-machine-of-failed-goal
+;" If a failed goal reserved a machine, make sure that the machine is
+;  usable before releasing the resource. Resetting the mps should be done as a last
+;  resort to avoid losing the machine for the rest of the game.
+;"
+;  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+;  (goal (id ?goal-id) (mode FINISHED) (outcome FAILED) (acquired-resources ?mps))
+;  (domain-object (type mps) (name ?mps))
+;  (wm-fact (key domain fact mps-state args? m ?mps s ~IDLE~BROKEN))
+;  (not (wm-fact (key evaluated reset-mps args? m ?mps)))
+;  =>
+;  (printout warn "Resetting " ?mps " because " ?goal-id " failed" crlf)
+;  (assert (wm-fact (key evaluated reset-mps args? m ?mps)))
+;)
 
 (defrule goal-reasoner-drop-wp-of-failed-goal
 " If a production root goal fails and some robot is still holding the wp
@@ -319,11 +332,11 @@
     delete the mps-handling fact if the preparation took place.
   "
   ?g <- (goal (id ?goal-id) (class HANDLE-MPS) (mode FINISHED) (outcome ?outcome)
-              (params m ?mps))
+              (params ?mps))
   (wm-fact (key domain fact mps-type args? m ?mps t DS))
   (wm-fact (key refbox team-color) (value ?team-color))
   ; get order from plan action
-  (plan-action (goal-id ?goal-id) (param-values $?p1 order ?order $?p2) (state FINAL))
+  (plan-action (goal-id ?goal-id) (action-name prepare-ds) (param-values ?mps ?order))
   ?od <- (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color) (value ?val))  
   =>
   (if (eq ?outcome COMPLETED)

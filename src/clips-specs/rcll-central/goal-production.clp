@@ -149,7 +149,7 @@
   (printout t "GOAL " DROP-WP " formulated" crlf)
   (assert (goal (id (sym-cat DROP-WP- (gensym*)))
           (class DROP-WP) (sub-type SIMPLE)
-          (params r ?r wp ?wp)
+          (params robot ?r wp ?wp)
   ))
 )
 
@@ -198,6 +198,42 @@
 
 ; ============================= Production goals ===============================
 
+(deffunction order-time-estimate-upper (?complexity)
+  (switch ?complexity
+    (case C0 then
+      (return 150)
+    )
+    (case C1 then
+      (return 210)
+    )
+    (case C2 then
+      (return 270)
+    )
+    (case C3 then
+      (return 330)
+    )
+    (default none)
+  )
+)
+
+(deffunction order-time-estimate-lower (?complexity)
+  (switch ?complexity
+    (case C0 then
+      (return 90)
+    )
+    (case C1 then
+      (return 150)
+    )
+    (case C2 then
+      (return 210)
+    )
+    (case C3 then
+      (return 270)
+    )
+    (default none)
+  )
+)
+
 
 (defrule goal-production-produce-c0
   "Create root goal of c0-production tree"
@@ -218,15 +254,6 @@
   ; get required base and cap color
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
-  
-  ; TODO: check for more products in single order
-  ; order is not already being handled
-  (not (goal (class PRODUCE-C0) (params order ?order $?other-params)))
-
-  ; more products ordered
-  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
-  (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
-	  (value ?qd&:(> ?qr ?qd)))
 
   ; get cap station
   (wm-fact (key refbox team-color) (value ?team-color))
@@ -243,6 +270,20 @@
   (wm-fact (key domain fact mps-type args? m ?ds t DS))
   (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
 
+  ; TODO: check for more products in single order
+  ; more products ordered
+  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+  (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
+	  (value ?qd&:(> ?qr ?qd)))
+  ; order is not already being handled
+  (not (goal (class PRODUCE-C0) (params order ?order $?other-params)))
+  (not (goal (class HANDLE-MPS) (params ?ds)))
+
+  (wm-fact (key refbox game-time) (values $?game-time))
+  (wm-fact (key refbox order ?order delivery-begin) (type UINT)
+	  (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) (order-time-estimate-upper ?complexity)))))
+  (wm-fact (key refbox order ?order delivery-end) (type UINT)
+	  (value ?end&:(> ?end (+ (nth$ 1 ?game-time) (order-time-estimate-lower ?complexity)))))
   =>
   (bind ?wp (create-wp ?order))
   (assert 
@@ -389,14 +430,6 @@
   (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring-color3))
 
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
-  
-  ; TODO: check for more products in single order
-  ; order is not already being handled
-  (not (goal (class PRODUCE-CX) (params order ?order $?other-params)))
-  ; more products ordered
-  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
-  (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
-	  (value ?qd&:(> ?qr ?qd)))  
 
   ; get cap station
   (wm-fact (key refbox team-color) (value ?team-color))
@@ -420,6 +453,21 @@
   ; get delivery station
   (wm-fact (key domain fact mps-type args? m ?ds t DS))
   (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
+
+  ; TODO: check for more products in single order
+  ; order is not already being handled
+  (not (goal (class PRODUCE-CX) (params order ?order $?other-params)))
+  ; more products ordered
+  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+  (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
+	  (value ?qd&:(> ?qr ?qd)))
+  (not (goal (class HANDLE-MPS) (params ?ds)))
+
+  (wm-fact (key refbox game-time) (values $?game-time))
+  (wm-fact (key refbox order ?order delivery-begin) (type UINT)
+	  (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) (order-time-estimate-upper ?complexity)))))
+  (wm-fact (key refbox order ?order delivery-end) (type UINT)
+	  (value ?end&:(> ?end (+ (nth$ 1 ?game-time) (order-time-estimate-lower ?complexity)))))
 
   =>
   (bind ?wp (create-wp ?order))
@@ -895,3 +943,76 @@
                 (sub-type SIMPLE)
                 (params robot ?robot)))
 )
+
+
+; ============================= Failed goals ===============================
+; In some cases when a goal fails we don't have to completely start over
+
+(defrule restart-fill-bases
+" Goals of type FILL-BASES-IN-RS can be restarted by setting to SELECTED, since the
+  number of bases will be recounted
+"
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  ?g <- (goal (id ?goal-id) (class FILL-BASES-IN-RS) (mode FINISHED) (outcome FAILED)
+              (meta $?pre retries ?retries&:(< ?retries ?*GOAL-MAX-TRIES*) $?post))
+  =>
+  (printout t "Restarting " ?goal-id " for the " (+ ?retries 1) " time " crlf)
+  (modify ?g (mode SELECTED) (meta $?pre retries (+ ?retries 1) $?post)
+             (outcome UNKNOWN) (error))
+)
+
+(defrule fill-base-in-rs-failed-drop-wp
+" If the filling of a rs failed we just drop the wp, because most likely a wp-put action
+  already failed 3 times
+"
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  ?g <- (goal (id ?goal-id) (class FILL-BASE-IN-RS) (mode FINISHED) (outcome FAILED))
+  (goal (parent ?goal-id) (params $? wp ?wp))
+  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+  (not (goal (class DROP-WP) (params robot ?robot wp ?wp)))
+  =>
+  (printout t ?robot " dropping wp because " ?goal-id " failed" crlf)
+  (assert (goal (id (sym-cat DROP-WP-(gensym*))) (class DROP-WP) (params robot ?robot wp ?wp)
+                (sub-type SIMPLE)))  
+)
+
+(defrule clean-bs-after-failed
+" If a robot fails at picking up a base from the base station, we want to discard the base
+"
+  (declare (salience ?*SALIENCE-HIGHEST*))
+  (wm-fact (key domain fact mps-type args? m ?base-station t BS))
+  (wm-fact (key domain fact mps-team args? m ?base-station col ?team-color))
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?base-station side ?side))
+  ; if the no robot is getting a base, there shouldn't be a base at the output
+  (not (goal (class GET-BASE) (mode EXPANDED|DISPATCHED)))
+  (not (goal (class CLEAN-BS)))
+  =>
+  (assert (goal (id (sym-cat CLEAN-BS-(gensym*))) (class CLEAN-BS) 
+                (sub-type RUN-ALL-OF-SUBGOALS) (params wp ?wp)))
+)
+
+(defrule clean-bs-after-failed-create-subgoals
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ?p <- (goal (id ?parent) (class CLEAN-BS) (params wp ?wp)
+              (mode SELECTED))
+  =>
+  (assert 
+    (goal (id (sym-cat PICKUP-WP-(gensym*))) 
+          (class PICKUP-WP)
+          (sub-type SIMPLE)
+          (priority 1.0)
+          (parent ?parent)
+          (params wp ?wp)
+    )
+    (goal (id (sym-cat DROP-WP-(gensym*)))
+          (class DROP-WP)
+          (sub-type SIMPLE)
+          (priority 0.0)
+          (parent ?parent)
+          (params wp ?wp)
+    )
+  )
+  (modify ?p (mode EXPANDED))
+)
+
+

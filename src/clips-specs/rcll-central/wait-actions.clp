@@ -87,3 +87,24 @@
                  crlf)
   (modify ?pa (state EXECUTION-FAILED))
 )
+
+(defrule action-start-execute-wait-until-delivery-action
+  ?pa <- (plan-action (id ?action-id) (plan-id ?plan-id) (goal-id ?goal-id)
+                      (action-name wait-until-delivery) (state PENDING) (executable TRUE))
+  (wm-fact (key refbox game-time) (values $?game-time))
+  =>
+  (printout t "Starting to wait at time " (nth$ 1 $?game-time) crlf)
+  (modify ?pa (state RUNNING))
+)
+
+(defrule action-finish-execute-wait-until-delivery-action
+  ?pa <- (plan-action (id ?action-id) (plan-id ?plan-id) (goal-id ?goal-id)
+                      (action-name wait-until-delivery) (state RUNNING) (executable TRUE)
+                      (param-values ?robot ?order))
+  (wm-fact (key refbox game-time) (values $?game-time))
+  (wm-fact (key refbox order ?order delivery-begin) (type UINT)
+	  (value ?begin&:(< ?begin (nth$ 1 ?game-time))))
+  =>
+  (printout info "Finished waiting" crlf)
+  (modify ?pa (state EXECUTION-SUCCEEDED))
+)

@@ -307,6 +307,12 @@
     :effect (at ?r ?loc ?side)
   )
 
+  (:action wait-until-delivery
+	:parameters (?r - robot ?order - order)
+	:precondition (entered-field ?r)
+	:effect (entered-field ?r)
+  )
+
 	(:action move
 		:parameters (?r - robot ?from - location ?from-side - mps-side ?to - mps ?to-side - mps-side)
 		:precondition (at ?r ?from ?from-side)
