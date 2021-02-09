@@ -21,10 +21,11 @@
 (defglobal
 
 
-?*PRIORITY-C0-GET-BASE-WAIT* = 2
-?*PRIORITY-C0-BUFFER-CS* = 1
-?*PRIORITY-C0-MOUNT-CAP-DELIVER* = 1
-
+?*PRIORITY-C0-GET-BASE-WAIT* = 5
+?*PRIORITY-C0-BUFFER-CS* = 5
+?*PRIORITY-C0-MOUNT-CAP-DELIVER* = 5
+?*PRIORITY-C0-REFILL-SHELF* = 3
+?*PRIORITY-C0-GO-WAIT* = 1
 )
 
 (defrule goal-production-create-beacon-maintain
@@ -125,22 +126,6 @@
 )
 
 
-(defrule goal-production-create-go-wait
-  "Drive to a waiting position and wait there."
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (wm-fact (key domain fact self args? r ?self))
-  (domain-object (type waitpoint) (name ?waitpoint&:
-               (eq (str-length (str-cat ?waitpoint)) 10)))
-  (not(goal(class GO-WAIT)))
-  =>
-  (printout t "Goal " GO-WAIT " formulated" ?waitpoint crlf)
-  (assert (goal (id (sym-cat GO-WAIT- (gensym*)))
-                (class GO-WAIT) (sub-type SIMPLE)
-                (params r ?self waitpoint ?waitpoint)
-  ))
-)
-
-
 (defrule goal-production-create-produce-c0
 " Produce a C0 product: Get the correct base and mount the right cap on it.
   The produced workpiece stays in the output of the used cap station after
@@ -162,9 +147,8 @@
 
  (wm-fact (key domain fact mps-type args? m ?ds t DS))
  (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
-
   (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
-  ;(not (goal (class PRODUCE-C0) (params order ?order bs-color ?any-base-color cs-color ?any-cap-color wp ?any-wp bs ?any-bs cs ?any-cs ds ?any-ds)))
+  (not (goal (class PRODUCE-C0)))
   =>
   (printout t "Goal for C0 order " ?order " formulated: " ?base-color " " ?cap-color   crlf)
   (bind ?wp (sym-cat WP- (random-id)))
@@ -182,9 +166,9 @@
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 
   =>
-  (bind ?*PRIORITY-C0-BUFFER-CS*-increase 1)
-  (printout t "Goal GET-BASE-WAIT formulated" ?robot crlf)
-  (assert (goal (id (sym-cat GET-BASE-WAIT- (gensym*))) (class GET-BASE-WAIT) (parent ?produce-c0-id) (sub-type SIMPLE)(priority ?*PRIORITY-C0-GET-BASE-WAIT*)(mode FORMULATED)))
+  
+  (printout t "Goal GET-BASE-WAIT formulated" ?*PRIORITY-C0-BUFFER-CS* crlf)
+  (assert(goal (id (sym-cat GET-BASE-WAIT- (gensym*))) (class GET-BASE-WAIT) (parent ?produce-c0-id) (sub-type SIMPLE)(priority ?*PRIORITY-C0-GET-BASE-WAIT*)(mode FORMULATED)))
 )
 
 (defrule goal-produce-c0-buffer-cs
@@ -193,6 +177,8 @@
   (goal (id ?produce-c0-id) (class PRODUCE-C0) (mode SELECTED))
   (not (goal (class BUFFER-CS) (parent ?produce-c0-id)))
   =>
+
+  ;(bind ?*PRIORITY-C0-MOUNT-CAP-DELIVER* 1)
   (printout t "Goal BUFFER-CS formulated" crlf)
   (assert (goal (id (sym-cat BUFFER-CS- (gensym*))) (class BUFFER-CS) (parent ?produce-c0-id) (sub-type SIMPLE) (priority ?*PRIORITY-C0-BUFFER-CS*)(mode FORMULATED)))
 )
@@ -211,13 +197,25 @@
   "Refill a shelf whenever it is empty."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (not (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot)))
   (goal (id ?produce-c0-id) (class PRODUCE-C0) (mode SELECTED))
   (not (goal (class REFILL-SHELF) (parent ?produce-c0-id)))
   =>
   (printout t "Goal REFILL-SHELF formulated" crlf)
-  (assert (goal (id (sym-cat REFILL-SHELF- (gensym*))) (class REFILL-SHELF) (parent ?produce-c0-id) (sub-type SIMPLE)(mode FORMULATED)(params m ?mps )))
+  (assert (goal (id (sym-cat REFILL-SHELF- (gensym*))) (class REFILL-SHELF) (parent ?produce-c0-id) (sub-type SIMPLE)(priority ?*PRIORITY-C0-REFILL-SHELF*)(mode FORMULATED)(params m ?mps )))
 )
 
 
+(defrule goal-production-create-go-wait
+  "Drive to a waiting position and wait there."
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (domain-object (type waitpoint) (name ?waitpoint&:
+               (eq (str-length (str-cat ?waitpoint)) 10)))
+  (not(goal(class GO-WAIT)))
+  =>
+  (printout t "Goal " GO-WAIT " formulated" ?waitpoint crlf)
+  (assert (goal (id (sym-cat GO-WAIT- (gensym*)))
+                (class GO-WAIT) (sub-type SIMPLE)(priority ?*PRIORITY-C0-GO-WAIT*)
+                (params waitpoint ?waitpoint)
+  ))
+)
