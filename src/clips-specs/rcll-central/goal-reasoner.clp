@@ -158,7 +158,7 @@
              (acquired-resources))
   (not (goal (parent ?goal-id) (mode ?mode&~RETRACTED)))
 =>
-  ;(printout t "Goal '" ?goal-id "' has been Evaluated, cleaning up" crlf)
+  (printout t "Goal '" ?goal-id "' has been Evaluated, cleaning up" crlf)
   (modify ?g (mode RETRACTED))
 )
 
