@@ -54,6 +54,11 @@
 ; leading the root to be rejected and reformulated.
 
 (defglobal
+
+  ?*MAX-RETRIES-PICK* = 2
+  ?*MAX-RETRIES-PUT-SLIDE* = 2
+  ?*GOAL-MAX-TRIES* = 3
+
   ?*SALIENCE-GOAL-FORMULATE* = 500
   ?*SALIENCE-GOAL-REJECT* = 400
   ?*SALIENCE-GOAL-EXPAND* = 300
@@ -134,8 +139,7 @@
   (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome))
 =>
-  ;(printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
-  ;  "') has been completed, Evaluating" crlf)
+  (printout debug "Goal '" ?goal-id "' has been completed, Evaluating" crlf)
   (modify ?g (mode EVALUATED))
 )
 
@@ -154,7 +158,7 @@
              (acquired-resources))
   (not (goal (parent ?goal-id) (mode ?mode&~RETRACTED)))
 =>
-  ;(printout t "Goal '" ?goal-id "' has been Evaluated, cleaning up" crlf)
+  (printout t "Goal '" ?goal-id "' has been Evaluated, cleaning up" crlf)
   (modify ?g (mode RETRACTED))
 )
 

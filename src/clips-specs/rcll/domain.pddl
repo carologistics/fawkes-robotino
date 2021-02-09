@@ -133,7 +133,7 @@
 
 	(:action prepare-ds
 		:parameters (?m - mps ?ord - order)
-		:precondition (and (mps-type ?m DS) (mps-state ?m IDLE) (locked ?m))
+		:precondition (and (mps-type ?m DS) (mps-state ?m IDLE))
 		:effect (and (not (mps-state ?m IDLE)) (mps-state ?m PREPARED)
                  (ds-prepared-order ?m ?ord))
 	)
@@ -403,7 +403,7 @@
 		             ?basecol - base-color ?capcol - cap-color)
 		:precondition (and (wp-at ?wp ?m INPUT) (not (mps-side-free ?m INPUT))
                       (wp-usable ?wp)
-                       (mps-type ?m DS) (locked ?m)
+                       (mps-type ?m DS)
 											 (ds-prepared-order ?m ?ord)
 											 (order-complexity ?ord C0)
 											 (order-base-color ?ord ?basecol) (wp-base-color ?wp ?basecol)
@@ -421,7 +421,7 @@
 		             ?ring1col - ring-color)
 
 		:precondition (and (wp-at ?wp ?m INPUT) (not (mps-side-free ?m INPUT)) (wp-usable ?wp)
-											 (mps-type ?m DS) (locked ?m)
+											 (mps-type ?m DS)
 											 (ds-prepared-order ?m ?ord)
 											 (order-complexity ?ord C1)
 											 (order-base-color ?ord ?basecol) (wp-base-color ?wp ?basecol)
@@ -439,7 +439,7 @@
 		             ?ring1col - ring-color ?ring2col - ring-color)
 
 		:precondition (and (wp-at ?wp ?m INPUT) (not (mps-side-free ?m INPUT)) (wp-usable ?wp)
-											 (mps-type ?m DS) (locked ?m)
+											 (mps-type ?m DS)
 											 (ds-prepared-order ?m ?ord)
 											 (order-complexity ?ord C2)
 											 (order-base-color ?ord ?basecol) (wp-base-color ?wp ?basecol)
@@ -459,7 +459,7 @@
 		             ?ring1col - ring-color ?ring2col - ring-color ?ring3col - ring-color)
 
 		:precondition (and (wp-at ?wp ?m INPUT) (not (mps-side-free ?m INPUT)) (wp-usable ?wp)
-											 (mps-type ?m DS) (locked ?m)
+											 (mps-type ?m DS)
 											 (ds-prepared-order ?m ?ord)
 											 (order-complexity ?ord C3)
 											 (order-base-color ?ord ?basecol) (wp-base-color ?wp ?basecol)
