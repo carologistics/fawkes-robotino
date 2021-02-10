@@ -125,8 +125,13 @@
 
 (defrule goal-reasoner-assign-resource
 " Assign resources to goals that require exactly one resource"
-  ?g <- (goal (id ?goal-id) (required-resources $?resources&:(eq (length$ $?resources) 1)) (mode COMMITTED))
+  ?g <- (goal (id ?goal-id) (required-resources $?resources&:(eq (length$ $?resources) 1)) (mode COMMITTED)
+              (meta $? global-priority ?gprio $?))
   (not (goal (acquired-resources $?not-available&:(member$ (nth$ 1 $?resources) $?not-available))))
+  
+  ; check that there isn't a goal with higher priority waiting
+  (not (goal (mode COMMITTED) (meta $? global-priority ?ogprio&:(> ?ogprio ?gprio) $?)
+            (required-resources $?oresources&:(member$ (nth$ 1 $?resources) ?oresources))))
   =>
   (modify ?g (acquired-resources $?resources))
   (printout t "Assigning resources " $?resources " to " ?goal-id crlf)
@@ -175,6 +180,25 @@
   (modify ?g (meta $?meta retries 0))
 )
 
+(defrule goal-reasoner-inherit-global-priority
+" Inherit global priority from parent
+"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?parent) (meta $? global-priority ?pprio $?))
+  ?g <- (goal (meta $?meta&:(not (member$ global-priority $?meta))) (mode FORMULATED)
+              (parent ?parent))
+  =>
+  (modify ?g (meta $?meta global-priority ?pprio))
+)
+
+(defrule goal-reasoner-create-global-priority
+" Create global priority if parent doesn't have one
+"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ?g <- (goal (parent nil) (meta $?meta&:(not (member$ global-priority $?meta))) (mode FORMULATED))
+  =>
+  (modify ?g (meta $?meta global-priority 0))
+)
 
 ; ========================= Goal Dispatching =================================
 ; Trigger execution of a plan. We may commit to multiple plans

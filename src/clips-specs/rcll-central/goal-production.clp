@@ -222,13 +222,49 @@
       (return 90)
     )
     (case C1 then
-      (return 150)
+      (return 200)
     )
     (case C2 then
-      (return 210)
+      (return 280)
     )
     (case C3 then
-      (return 270)
+      (return 350)
+    )
+    (default none)
+  )
+)
+
+(deffunction cs-prio (?complexity)
+  (switch ?complexity
+    (case C0 then
+      (return 500)
+    )
+    (case C1 then
+      (return 600)
+    )
+    (case C2 then
+      (return 700)
+    )
+    (case C3 then
+      (return 800)
+    )
+    (default none)
+  )
+)
+
+(deffunction deliver-prio (?complexity)
+  (switch ?complexity
+    (case C0 then
+      (return 1000)
+    )
+    (case C1 then
+      (return 1100)
+    )
+    (case C2 then
+      (return 1200)
+    )
+    (case C3 then
+      (return 1300)
     )
     (default none)
   )
@@ -325,6 +361,7 @@
                   bs ?base-station
                   cap-color ?cap-color
                   base-color ?base-color)
+          (meta global-priority (cs-prio C0))
     )
     (goal (id (sym-cat DELIVER-(gensym*)))
           (class DELIVER)
@@ -334,6 +371,7 @@
           (params order ?order
                   ds ?ds
                   wp ?wp)
+          (meta global-priority (deliver-prio C0))
     )
   )
   (modify ?p (mode EXPANDED))
@@ -532,6 +570,7 @@
                   ring-color ?ring-color1
                   ring-mount-index ONE
                   ring-base-req ?ring-base-req1)
+          (meta global-priority 300)
     )
   )
   (if ( or (eq ?complexity C2) (eq ?complexity C3)) then
@@ -550,6 +589,7 @@
                     ring-color ?ring-color2
                     ring-mount-index TWO
                     ring-base-req ?ring-base-req2)
+            (meta global-priority 400)
       )
     )
   )
@@ -569,6 +609,7 @@
                     ring-color ?ring-color3
                     ring-mount-index THREE
                     ring-base-req ?ring-base-req3)
+            (meta global-priority 900)
       )
     )
   )
@@ -584,6 +625,7 @@
                   cs ?cap-station
                   cap-color ?cap-color
                   ds ?ds)
+          (meta global-priority (cs-prio ?complexity))
     )
     (goal (id (sym-cat DELIVER-(gensym*)))
           (parent ?parent)
@@ -593,6 +635,7 @@
           (params order ?order
                   ds ?ds
                   wp ?wp)
+          (meta global-priority (deliver-prio ?complexity))
           
     )
   )
@@ -836,6 +879,7 @@
           (params robot ?robot mps ?cap-station cc ?cc)
           (required-resources ?cap-station)
           (priority 1.0)
+          (meta global-priority 0)
     )
   )
 )
@@ -868,10 +912,14 @@
 
   ; TODO: discuss max bases vs THREE
   ; ring station not at max bases
-  (wm-fact (key domain fact rs-ring-spec args? m ?ring-station r ?ring-color rn ?ring-base-req))
-  (not (wm-fact (key domain fact rs-ring-spec args? m ?ring-station r ?other-ring-color 
-        rn ?other-ring-base-req&:(> (sym-to-int ?other-ring-base-req) (sym-to-int ?ring-base-req)))))
-  (not (wm-fact (key domain fact rs-filled-with args? m ?ring-station n ?ring-base-req)))
+  ;(wm-fact (key domain fact rs-ring-spec args? m ?ring-station r ?ring-color rn ?ring-base-req&~NA))
+  ;(not (wm-fact (key domain fact rs-ring-spec args? m ?ring-station r ?other-ring-color 
+  ;      rn ?other-ring-base-req&~NA&:(> (sym-to-int ?other-ring-base-req) (sym-to-int ?ring-base-req)))))
+  ;(not (wm-fact (key domain fact rs-filled-with args? m ?ring-station n ?ring-base-req)))
+  (wm-fact (key domain fact rs-filled-with args? m ?ring-station n ?filled&~NA&:(< (sym-to-int ?filled) 3)))
+
+  ; check time
+  (wm-fact (key refbox game-time) (values ?game-time&:(< ?game-time 720) $?))
 
   ; don't formulate goal if it can't be executed immediatley
   (not (goal (acquired-resources ?ring-station)))
@@ -881,7 +929,8 @@
                   (class FILL-BASE-IN-RS)
                   (sub-type RUN-ALL-OF-SUBGOALS)
                   (required-resources ?ring-station)
-                  (params bs ?base-station rs ?ring-station))
+                  (params bs ?base-station rs ?ring-station)
+                  (meta global-priority 0))
   ) 
 )
 
@@ -890,9 +939,15 @@
 
 (defrule assign-robot-to-production-goal
   "Select a non-busy robot for executing a production leaf goal without assigned robot"
-  ?g <- (goal (id ?goal-id) (class ?class) (params $?params) (mode SELECTED))
+  ?g <- (goal (id ?goal-id) (class ?class) (params $?params) (mode SELECTED)
+              (meta $? global-priority ?gprio $?))
   (test (goal-needs-fresh-robot ?class))
   (not (test (member$ robot $?params)))
+
+  ; check that there isn't a goal with higher priority waiting
+  (not (goal (class ?oclass&:(goal-needs-fresh-robot ?oclass)) (mode SELECTED)
+            (params $?oparams&:(not (member$ robot $?oparams))) 
+            (meta $? global-priority ?ogprio&:(> ?ogprio ?gprio) $?)))
 
   ; Get robot
   (wm-fact (key domain fact entered-field args? r ?robot))
@@ -988,7 +1043,8 @@
   (not (goal (class CLEAN-BS)))
   =>
   (assert (goal (id (sym-cat CLEAN-BS-(gensym*))) (class CLEAN-BS) 
-                (sub-type RUN-ALL-OF-SUBGOALS) (params wp ?wp)))
+                (sub-type RUN-ALL-OF-SUBGOALS) (params wp ?wp)
+                (meta global-priority 2000)))
 )
 
 (defrule clean-bs-after-failed-create-subgoals
