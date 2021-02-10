@@ -1,23 +1,21 @@
 ## TODO
 * production
   * competitive order prio
-  * limit amount of productions to 2 at a time
 * stability
-  * look into retrying failed goals (partially done)
+  * look into retrying failed goals (partially done) -> restore consitent states X
+  * retry actions more often? X
   * handle down/broken machines
+* optimization
+  * retract and clean up a goal if we can no longer complete it in reasonable time X
+  * no unnecessary prefills after all orders have been posted/a certain time
+  * balance prefill of bases in rs (slight advantage to 2 base requiring station)
+  * if a piece is finished and delivery too far in the future, put on storage?
+  * remove some unnecessary actions, e.g., go wait at plan end
+  * dynamically prioritize goals with closer submission time
+  * increase prioritization of unfinished products still being held by a robot, e.g., next ring mount
 * clean submission
   * add more tests (e.g. C0)
   * visualize goal tree for documentation
-* optimization
-  * select robots smartly (e.g. distance)
-  * retract and clean up a goal if we can no longer complete it in reasonable time
-  * no unnecessary prefills after all orders have been posted/a certain time
-  * dynamically prioritize goals with closer submission time
-  * increase prioritization of unfinished products still being held by a robot, e.g., next ring mount
-  * if a piece is finished and delivery too far in the future, put on storage?
-  * remove some unnecessary actions, e.g., go wait at plan end
-  * lower priority/ no robot assignment if needed machine down?
-
 
 ## DONE
 * consider multiple products for single order
@@ -35,6 +33,10 @@ robot which is unproblematic because the robot needs to wait)
 * prioritize certain goals / focus on one construction
 * use capcarrier to prefill the ring station
 
+## Scratched
+* select robots smartly (e.g. distance)
+* lower priority/ no robot assignment if needed machine down?
+* limit amount of productions to 2 at a time (solved through later start)
 
 ## NOTES
 * verify: go-wait actions before move actions when machine is not reserved
