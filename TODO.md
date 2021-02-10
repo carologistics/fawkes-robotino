@@ -2,16 +2,29 @@
 * production
   * competitive order prio
   * limit amount of productions to 2 at a time
+* stability
+  * look into retrying failed goals (partially done)
   * handle down/broken machines
-  * consider delivery times
-  * consider multiple products for single order
-* look into retrying failed goals
-* select robots smartly (e.g. distance)
-* add more tests (e.g. C0)
-* documentation: visualize goal tree
+* clean submission
+  * add more tests (e.g. C0)
+  * visualize goal tree for documentation
+* optimization
+  * select robots smartly (e.g. distance)
+  * retract and clean up a goal if we can no longer complete it in reasonable time
+  * no unnecessary prefills after all orders have been posted/a certain time
+  * prioritize certain goals / focus on one construction
+  * dynamically prioritize goals with closer submission time
+  * increase prioritization of unfinished products still being held by a robot, e.g., next ring mount
+  * if a piece is finished and delivery too far in the future, put on storage?
+  * use capcarrier to prefill the ring station
+  * better split of robots at game start (increase preffil capstation prio)
+  * remove some unnecessary actions, e.g., go wait at plan end
+  * lower priority/ no robot assignment if needed machine down?
 
 
 ## DONE
+* consider multiple products for single order
+* consider delivery times
 * C0: split up delivery from reserve goals
 * remove self facts in domain.pddl
 * make all interactions with the machines asynchronous (only bs-dispense done by
