@@ -247,12 +247,58 @@
 
 (defrule goal-expander-fill-cs-fast-forward
   "Retrieve cap at cap station and discard the unneeded base."
-  ?g <- (goal (id ?goal-id) (class FILL-CS) (mode SELECTED)
+  ?g <- (goal (id ?goal-id) (class FILL-CS|BUFFER-CS) (mode SELECTED)
               (params robot ?robot mps ?cap-station))
               
   (wm-fact (key domain fact cs-buffered args? m ?cap-station col ?cap-color))
   =>
   (modify ?g (mode FINISHED) (outcome COMPLETED))
+)
+
+(defrule goal-expander-buffer-cs
+  "Retrieve cap at cap station."
+  ?g <- (goal (id ?goal-id) (class BUFFER-CS) (mode SELECTED)
+              (params robot ?robot mps ?cap-station))
+  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+
+  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cap-station spot ?shelf-spot))
+  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+
+  (not (wm-fact (key domain fact cs-buffered args? m ?cap-station col ?cap-color)))
+  =>
+  (bind ?plan-id (sym-cat BUFFER-CS-PLAN- ?robot - (gensym*)))
+  (assert
+    (plan (id ?plan-id) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name go-wait)
+      (skiller (remote-skiller ?robot))
+      (param-names r from from-side to)
+      (param-values ?robot ?curr-location ?curr-side (wait-pos ?cap-station INPUT))
+    )
+    (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name move)
+      (skiller (remote-skiller ?robot))
+      (param-names r from from-side to to-side)
+      (param-values ?robot (wait-pos ?cap-station INPUT) WAIT ?cap-station INPUT)
+    )
+    (plan-action (id 3) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name wp-get-shelf)
+      (skiller (remote-skiller ?robot))
+      (param-names r cc m spot)
+      (param-values ?robot ?cc ?cap-station ?shelf-spot)
+    )
+    (plan-action (id 4) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name wp-put)
+      (skiller (remote-skiller ?robot))
+      (param-names r wp m)
+      (param-values ?robot ?cc ?cap-station)
+    )
+    (plan-action (id 5) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name request-cs-retrieve-cap)
+      (param-values ?robot ?cap-station ?cc ?cap-color)
+    )
+  )
+  (modify ?g (mode EXPANDED))
 )
 
 
@@ -330,7 +376,8 @@
       (param-values ?robot ?base-station ?bs-side (wait-pos ?target-station INPUT))
     )
   )
-  (modify ?g (mode EXPANDED))        
+  (modify ?g (mode EXPANDED))
+  (printout t ?robot " getting base of color " ?base-color crlf)    
 )
 
 (defrule goal-expander-mount-cap
@@ -636,7 +683,10 @@
 (defrule goal-expander-clear-output-fast-forward
   "Immediatley complete a clear-output goal if there is no workpiece at the output"
   ?g <- (goal (id ?goal-id) (class CLEAR-OUTPUT) (params $?p1 mps ?mps mps-side ?mps-side $?p2) (mode SELECTED))
+  ; TODO: are there any cases where this should be forwarded with a cs?
+  (not (wm-fact (key domain fact mps-type args? m ?mps t CS)))
   (not (wm-fact (key domain fact wp-at args? wp ? m ?mps side ?mps-side)))
+  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~PROCESSING&~DOWN))
   =>
   (modify ?g (mode FINISHED) (outcome COMPLETED))
 )

@@ -410,13 +410,20 @@
                       base-color ?base-color))
   =>
   (assert
-    (goal (id (sym-cat PRODUCE-C0-GET-BASE-AND-CAP-(gensym*)))
-          (class PRODUCE-C0-GET-BASE-AND-CAP)
+    (goal (id (sym-cat BUFFER-CS-(gensym*)))
+          (class BUFFER-CS)
+          (parent ?parent)
+          (sub-type SIMPLE)
+          (priority 3.0)
+          (params mps ?cap-station)
+    )
+    (goal (id (sym-cat PRODUCE-C0-GET-BASE-AND-REMOVE-CC-(gensym*)))
+          (class PRODUCE-C0-GET-BASE-AND-REMOVE-CC)
           (parent ?parent)
           (sub-type RUN-SUBGOALS-IN-PARALLEL)
           (priority 2.0)
           (params cs ?cap-station wp ?wp bs ?base-station
-                  cap-color ?cap-color base-color ?base-color)
+                  base-color ?base-color)
     )
     (goal (id (sym-cat MOUNT-CAP-(gensym*)))
           (class MOUNT-CAP)
@@ -430,22 +437,19 @@
 )
 
 
-(defrule goal-production-get-base-and-cap
-  "Leaf goals to prepare a cap and remove the unused base and get a base running in parallel."
+(defrule goal-production-get-base-and-remove-cc
+  "Leaf goals to remove the unused base and get a base running in parallel."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  ?p <- (goal (id ?parent) (class PRODUCE-C0-GET-BASE-AND-CAP) (mode SELECTED)
+  ?p <- (goal (id ?parent) (class PRODUCE-C0-GET-BASE-AND-REMOVE-CC) (mode SELECTED)
               (params cs ?cap-station wp ?wp bs ?base-station
-              cap-color ?cap-color base-color ?base-color))
-  ; get a cap carrier
-  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cap-station spot ?spot))
-  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+              base-color ?base-color))
   =>
   (assert
-    (goal (id (sym-cat FILL-CS-(gensym*)))
-          (class FILL-CS)
+    (goal (id (sym-cat CLEAR-OUTPUT-(gensym*)))
+          (class CLEAR-OUTPUT)
           (parent ?parent)
           (sub-type SIMPLE)
-          (params mps ?cap-station)
+          (params mps ?cap-station mps-side OUTPUT)
           (priority 2.0)
     )
     (goal (id (sym-cat GET-BASE-(gensym*)))
@@ -462,6 +466,23 @@
   )
   (modify ?p (mode EXPANDED))
 )
+
+;TODO: Reuse cc to fill RS
+(defrule goal-production-discard-cc
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+  (not (wm-fact (key domain fact wp-base-color args? wp ?wp col ?)))
+  (not (goal (params robot ?robot $?)))
+  =>
+  (assert
+    (goal (id (sym-cat DROP-WP-(gensym*)))
+          (class DROP-WP)
+          (sub-type SIMPLE)
+          (params robot ?robot wp ?wp)
+    )
+  )
+)
+
 
 (defrule goal-production-produce-cx
   "Create root goal of cx-production tree"
@@ -750,12 +771,20 @@
   (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
   =>
   (assert
-    (goal (id (sym-cat FILL-CS-(gensym*)))
+    (goal (id (sym-cat BUFFER-CS-(gensym*)))
           (parent ?parent)
-          (class FILL-CS)
+          (class BUFFER-CS)
           (sub-type SIMPLE)
-          (priority 2.0)
+          (priority 3.0)
           (params mps ?cap-station)
+    )
+    ;TODO: parallelize this; ensure that CLEAR-OUTPUT is done first
+    (goal (id (sym-cat CLEAR-OUTPUT-(gensym*)))
+          (class CLEAR-OUTPUT)
+          (parent ?parent)
+          (sub-type SIMPLE)
+          (params mps ?cap-station mps-side OUTPUT)
+          (priority 2.0)
     )
     (goal (id (sym-cat PICKUP-WP-(gensym*)))
           (parent ?parent)
