@@ -930,7 +930,7 @@
                   (sub-type RUN-ALL-OF-SUBGOALS)
                   (required-resources ?ring-station)
                   (params bs ?base-station rs ?ring-station)
-                  (meta global-priority 0))
+                  (meta global-priority -10))
   ) 
 )
 

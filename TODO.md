@@ -17,7 +17,6 @@
   * increase prioritization of unfinished products still being held by a robot, e.g., next ring mount
   * if a piece is finished and delivery too far in the future, put on storage?
   * use capcarrier to prefill the ring station
-  * better split of robots at game start (increase preffil capstation prio)
   * remove some unnecessary actions, e.g., go wait at plan end
   * lower priority/ no robot assignment if needed machine down?
 
@@ -34,6 +33,7 @@ robot which is unproblematic because the robot needs to wait)
 * mount ring: read current ring colors locally, add param for ring index, (change names of certain params)
 * prefill cap/ring station
 * make creation of goals dependent on whether cap is buffered/how many bases are in the rs
+* better split of robots at game start (increase preffil capstation prio)
 
 ## NOTES
 * verify: go-wait actions before move actions when machine is not reserved
