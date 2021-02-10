@@ -497,9 +497,11 @@
     (goal (id (sym-cat FILL-RS-(gensym*)))
           (class FILL-RS)
           (sub-type SIMPLE)
-          (params rs ?ring-station 
+          (params robot ?robot
+                  rs ?ring-station 
                   wp ?wp)
           (required-resources ?ring-station)
+
     )
   )
 )
