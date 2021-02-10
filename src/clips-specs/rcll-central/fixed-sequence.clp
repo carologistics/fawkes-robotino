@@ -683,10 +683,13 @@
 (defrule goal-expander-clear-output-fast-forward
   "Immediatley complete a clear-output goal if there is no workpiece at the output"
   ?g <- (goal (id ?goal-id) (class CLEAR-OUTPUT) (params $?p1 mps ?mps mps-side ?mps-side $?p2) (mode SELECTED))
-  ; TODO: are there any cases where this should be forwarded with a cs?
-  (not (wm-fact (key domain fact mps-type args? m ?mps t CS)))
   (not (wm-fact (key domain fact wp-at args? wp ? m ?mps side ?mps-side)))
+
+  ; machine not still processing some action
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~PROCESSING&~DOWN))
+  (not (wm-fact (key mps-handling prepare prepare-cs ?mps args? m ?mps op ? )))
+  (not (wm-fact (key mps-handling prepare prepare-rs ?mps args? m ?mps rc ? rs-before ? rs-after ? r-req ? )))
+  (not (goal (class HANDLE-MPS) (params ?mps)))
   =>
   (modify ?g (mode FINISHED) (outcome COMPLETED))
 )
