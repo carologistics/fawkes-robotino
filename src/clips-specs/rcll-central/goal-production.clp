@@ -467,9 +467,46 @@
   (modify ?p (mode EXPANDED))
 )
 
-;TODO: Reuse cc to fill RS
-(defrule goal-production-discard-cc
+(defrule goal-production-reuse-cc
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+
+  ; robot has just picked up a cc
+  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+  (not (wm-fact (key domain fact wp-base-color args? wp ?wp col ?)))
+  (not (goal (params robot ?robot $?)))
+
+  ; there is nothing else to do:
+  (not (goal (class ?class&:(goal-needs-fresh-robot ?class))
+            (mode SELECTED)
+            (params $?params&:(not (member$ robot $?params)))))
+
+  ; get ring station
+  (wm-fact (key domain fact mps-team args? m ?ring-station col ?team-color))
+  (wm-fact (key domain fact mps-state args? m ?ring-station s ~BROKEN&~PROCESSING&~DOWN))
+
+  ; ring station not at max bases
+  (wm-fact (key domain fact rs-filled-with args? m ?ring-station n ?filled&~NA&:(< (sym-to-int ?filled) 3)))
+
+  ; check time
+  (wm-fact (key refbox game-time) (values ?game-time&:(< ?game-time 720) $?))
+
+  ; don't formulate goal if it can't be executed immediatley
+  (not (goal (acquired-resources ?ring-station)))
+  =>
+  (assert
+    (goal (id (sym-cat FILL-RS-(gensym*)))
+          (class FILL-RS)
+          (sub-type SIMPLE)
+          (params rs ?ring-station 
+                  wp ?wp)
+          (required-resources ?ring-station)
+    )
+  )
+)
+
+(defrule goal-production-discard-cc
+" TODO"
+  ; robot has just picked up a cc
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
   (not (wm-fact (key domain fact wp-base-color args? wp ?wp col ?)))
   (not (goal (params robot ?robot $?)))
@@ -878,8 +915,7 @@
           (class FILL-RS)
           (sub-type SIMPLE)
           (priority 0.0)
-          (params bs ?base-station 
-                  rs ?ring-station 
+          (params rs ?ring-station 
                   wp ?wp)
     )
   )

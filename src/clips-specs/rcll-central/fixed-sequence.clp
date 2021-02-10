@@ -235,12 +235,6 @@
       (param-names r wp m side)
       (param-values ?robot ?cc ?cap-station OUTPUT)
     )
-    (plan-action (id 8) (plan-id ?plan-id) (goal-id ?goal-id)
-      (action-name wp-discard)
-      (skiller (remote-skiller ?robot))
-      (param-names r cc)
-      (param-values ?robot ?cc)
-    )
   )
   (modify ?g (mode EXPANDED))
 )
@@ -427,7 +421,7 @@
 (defrule goal-expander-fill-rs
   "Fill a ring station with one additional base"
   ?g <- (goal (id ?goal-id) (class FILL-RS) (mode SELECTED)
-              (params robot ?robot bs ?base-station rs ?ring-station wp ?wp)
+              (params robot ?robot rs ?ring-station wp ?wp)
         )
   ;TODO: current workaround to fix parallel issue with rs-filled-with
   (not (goal (class FILL-RS) (mode EXPANDED|COMMITTED|DISPATCHED) 

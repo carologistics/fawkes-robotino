@@ -15,7 +15,6 @@
   * dynamically prioritize goals with closer submission time
   * increase prioritization of unfinished products still being held by a robot, e.g., next ring mount
   * if a piece is finished and delivery too far in the future, put on storage?
-  * use capcarrier to prefill the ring station
   * remove some unnecessary actions, e.g., go wait at plan end
   * lower priority/ no robot assignment if needed machine down?
 
@@ -34,7 +33,7 @@ robot which is unproblematic because the robot needs to wait)
 * make creation of goals dependent on whether cap is buffered/how many bases are in the rs
 * better split of robots at game start (increase preffil capstation prio)
 * prioritize certain goals / focus on one construction
-
+* use capcarrier to prefill the ring station
 
 
 ## NOTES
