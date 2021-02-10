@@ -184,7 +184,7 @@
 (defrule goal-expander-fill-cs
   "Retrieve cap at cap station and discard the unneeded base."
   ?g <- (goal (id ?goal-id) (class FILL-CS) (mode SELECTED)
-              (params robot ?robot mps ?cap-station cc ?cc))
+              (params robot ?robot mps ?cap-station))
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 
   (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cap-station spot ?shelf-spot))
@@ -248,7 +248,7 @@
 (defrule goal-expander-fill-cs-fast-forward
   "Retrieve cap at cap station and discard the unneeded base."
   ?g <- (goal (id ?goal-id) (class FILL-CS) (mode SELECTED)
-              (params robot ?robot mps ?cap-station cc ?cc))
+              (params robot ?robot mps ?cap-station))
               
   (wm-fact (key domain fact cs-buffered args? m ?cap-station col ?cap-color))
   =>

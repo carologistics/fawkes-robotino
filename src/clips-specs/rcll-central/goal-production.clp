@@ -234,37 +234,55 @@
   )
 )
 
-(deffunction cs-prio (?complexity)
-  (switch ?complexity
-    (case C0 then
-      (return 500)
-    )
-    (case C1 then
-      (return 600)
-    )
-    (case C2 then
-      (return 700)
-    )
-    (case C3 then
-      (return 800)
-    )
-    (default none)
-  )
-)
+;(deffunction cs-prio (?complexity)
+;  (switch ?complexity
+;    (case C0 then
+;      (return 500)
+;    )
+;    (case C1 then
+;      (return 600)
+;    )
+;    (case C2 then
+;      (return 700)
+;    )
+;    (case C3 then
+;      (return 800)
+;    )
+;    (default none)
+;  )
+;)
 
-(deffunction deliver-prio (?complexity)
+;(deffunction deliver-prio (?complexity)
+;  (switch ?complexity
+;    (case C0 then
+;      (return 1000)
+;    )
+;    (case C1 then
+;      (return 1100)
+;    )
+;    (case C2 then
+;      (return 1200)
+;    )
+;    (case C3 then
+;      (return 1300)
+;    )
+;    (default none)
+;  )
+;)
+
+(deffunction order-base-priority (?complexity)
   (switch ?complexity
     (case C0 then
-      (return 1000)
+      (return 0)
     )
     (case C1 then
-      (return 1100)
+      (return 100)
     )
     (case C2 then
-      (return 1200)
+      (return 200)
     )
     (case C3 then
-      (return 1300)
+      (return 300)
     )
     (default none)
   )
@@ -333,8 +351,11 @@
                   cap-color ?cap-color
                   base-color ?base-color
                   ds ?ds)
+          ; orders with late delivery get lower priority
+          (meta global-priority (- 700 (* (div ?end 5) 3)))
     )
   )
+  (printout t "Order " ?order " formulated with priority " (- 700 (* (div ?end 5) 3)) crlf)
 )
 
 (defrule goal-production-produce-c0-create-subgoals
@@ -347,7 +368,8 @@
                       bs ?base-station
                       cap-color ?cap-color
                       base-color ?base-color
-                      ds ?ds))
+                      ds ?ds)
+              (meta $? global-priority ?pprio $?))
   =>
   (assert
     (goal (id (sym-cat PRODUCE-C0-HANDLE-CS-(gensym*)))
@@ -361,7 +383,7 @@
                   bs ?base-station
                   cap-color ?cap-color
                   base-color ?base-color)
-          (meta global-priority (cs-prio C0))
+          (meta global-priority (+ ?pprio 500))
     )
     (goal (id (sym-cat DELIVER-(gensym*)))
           (class DELIVER)
@@ -371,7 +393,6 @@
           (params order ?order
                   ds ?ds
                   wp ?wp)
-          (meta global-priority (deliver-prio C0))
     )
   )
   (modify ?p (mode EXPANDED))
@@ -424,7 +445,7 @@
           (class FILL-CS)
           (parent ?parent)
           (sub-type SIMPLE)
-          (params mps ?cap-station cc ?cc)
+          (params mps ?cap-station)
           (priority 2.0)
     )
     (goal (id (sym-cat GET-BASE-(gensym*)))
@@ -530,8 +551,10 @@
                   ring-base-req2 ?ring-base-req2
                   ring-base-req3 ?ring-base-req3
                   ds ?ds)
+          (meta global-priority (+ (order-base-priority ?complexity) (- 700 (* (div ?end 5) 3))))
     )
   )
+  (printout t "Order " ?order " formulated with priority " (+ (order-base-priority ?complexity) (- 700 (* (div ?end 5) 3))) crlf)
 )
 
 (defrule goal-production-produce-cx-create-subgoals
@@ -553,7 +576,8 @@
                 ring-base-req1 ?ring-base-req1
                 ring-base-req2 ?ring-base-req2
                 ring-base-req3 ?ring-base-req3
-                ds ?ds))
+                ds ?ds)
+        (meta $? global-priority ?pprio $?))
   =>
   (assert
     (goal (id (sym-cat PRODUCE-CX-HANDLE-RS-(gensym*)))
@@ -570,7 +594,7 @@
                   ring-color ?ring-color1
                   ring-mount-index ONE
                   ring-base-req ?ring-base-req1)
-          (meta global-priority 300)
+          (meta global-priority (+ ?pprio 100))
     )
   )
   (if ( or (eq ?complexity C2) (eq ?complexity C3)) then
@@ -589,7 +613,7 @@
                     ring-color ?ring-color2
                     ring-mount-index TWO
                     ring-base-req ?ring-base-req2)
-            (meta global-priority 400)
+            (meta global-priority (+ ?pprio 700))
       )
     )
   )
@@ -609,7 +633,7 @@
                     ring-color ?ring-color3
                     ring-mount-index THREE
                     ring-base-req ?ring-base-req3)
-            (meta global-priority 900)
+            (meta global-priority (+ ?pprio 700))
       )
     )
   )
@@ -625,7 +649,7 @@
                   cs ?cap-station
                   cap-color ?cap-color
                   ds ?ds)
-          (meta global-priority (cs-prio ?complexity))
+          (meta global-priority (+ ?pprio 700))
     )
     (goal (id (sym-cat DELIVER-(gensym*)))
           (parent ?parent)
@@ -635,7 +659,6 @@
           (params order ?order
                   ds ?ds
                   wp ?wp)
-          (meta global-priority (deliver-prio ?complexity))
           
     )
   )
@@ -732,7 +755,7 @@
           (class FILL-CS)
           (sub-type SIMPLE)
           (priority 2.0)
-          (params mps ?cap-station cc ?cc)
+          (params mps ?cap-station)
     )
     (goal (id (sym-cat PICKUP-WP-(gensym*)))
           (parent ?parent)
@@ -876,7 +899,7 @@
     (goal (id (sym-cat FILL-CS-(gensym*)))
           (class FILL-CS)
           (sub-type SIMPLE)
-          (params robot ?robot mps ?cap-station cc ?cc)
+          (params robot ?robot mps ?cap-station)
           (required-resources ?cap-station)
           (priority 1.0)
           (meta global-priority 0)
@@ -887,7 +910,7 @@
 (defrule passive-prefill-ring-station
   "Prefill a ring station without an immediate need in preparation for future production"
   ; TODO: own salience?
-  (declare (salience -100))
+  (declare (salience -200))
 
   ; debugging conditions (not working)
   ;(test (neq ?*DEBUG-SKIP-PF-RS* 1))
