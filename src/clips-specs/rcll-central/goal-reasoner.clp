@@ -239,7 +239,8 @@
   (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
   (goal (id ?goal-id) (mode FINISHED) (outcome FAILED)
         (class ?class&:(production-root-goal ?class))
-        (params $? wp ?wp $?))
+        (params $? wp ?wp $?)
+        (meta $? retries ?retries&:(>= ?retries ?*GOAL-MAX-TRIES*) $?))
   (wm-fact (key domain fact holding args? r ?r wp ?wp))
   (not (wm-fact (key evaluated drop-wp args? r ?r wp ?wp)))
   =>
@@ -257,7 +258,9 @@
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
   ?p <- (plan (id ?plan-id) (goal-id ?goal-id))
   ?a <- (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id ?plan-id)
-                     (action-name lock) (param-values ?name))
+                     (action-name lock) (param-values ?name)
+                     ; only remove lock if the lock belongs to the plan
+                     (state EXECUTION-SUCCEEDED|FINAL))
   (mutex (name ?name) (state LOCKED) (request ~UNLOCK)
          (pending-requests $?pending&:(not (member$ UNLOCK ?pending))))
 =>
@@ -274,7 +277,9 @@
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
   ?p <- (plan (id ?plan-id) (goal-id ?goal-id))
   ?a <- (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id ?plan-id)
-                     (action-name location-lock) (param-values ?loc ?side))
+                     (action-name location-lock) (param-values ?loc ?side)
+                     ; only remove lock if the lock belongs to the plan
+                     (state EXECUTION-SUCCEEDED|FINAL))
   (mutex (name ?name&:(eq ?name (sym-cat ?loc - ?side)))
          (state LOCKED) (request ~UNLOCK)
          (pending-requests $?pending&:(not (member$ UNLOCK ?pending))))
