@@ -111,12 +111,12 @@
 (deffunction create-wp (?order)
   (bind ?wp (sym-cat "wp"-(gensym*)))
   (assert (wm-fact (key domain fact wp-unused args? wp ?wp)))
-  (assert (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE)))
+  (assert (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE) (value TRUE)))
   (assert (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order)))
-  (assert (wm-fact (key domain fact wp-base-color args? wp ?wp col BASE_NONE)))
-  (assert (wm-fact (key domain fact wp-ring1-color args? wp ?wp col RING_NONE)))
-  (assert (wm-fact (key domain fact wp-ring2-color args? wp ?wp col RING_NONE)))
-  (assert (wm-fact (key domain fact wp-ring3-color args? wp ?wp col RING_NONE)))
+  (assert (wm-fact (key domain fact wp-base-color args? wp ?wp col BASE_NONE) (value TRUE)))
+  (assert (wm-fact (key domain fact wp-ring1-color args? wp ?wp col RING_NONE) (value TRUE)))
+  (assert (wm-fact (key domain fact wp-ring2-color args? wp ?wp col RING_NONE) (value TRUE)))
+  (assert (wm-fact (key domain fact wp-ring3-color args? wp ?wp col RING_NONE) (value TRUE)))
   (return ?wp)
 )
 
@@ -370,21 +370,27 @@
                       base-color ?base-color
                       ds ?ds)
               (meta $? global-priority ?pprio $?))
+  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?wp-base-color) (value TRUE))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?wp-cap-color) (value TRUE))
   =>
-  (assert
-    (goal (id (sym-cat PRODUCE-C0-HANDLE-CS-(gensym*)))
-          (class PRODUCE-C0-HANDLE-CS)
-          (parent ?parent)
-          (sub-type RUN-ALL-OF-SUBGOALS)
-          (priority 2.0)
-          (required-resources ?cap-station)
-          (params cs ?cap-station
-                  wp ?wp
-                  bs ?base-station
-                  cap-color ?cap-color
-                  base-color ?base-color)
-          (meta global-priority (+ ?pprio 500))
+  (if (neq ?wp-cap-color ?cap-color) then
+    (assert
+      (goal (id (sym-cat PRODUCE-C0-HANDLE-CS-(gensym*)))
+            (class PRODUCE-C0-HANDLE-CS)
+            (parent ?parent)
+            (sub-type RUN-ALL-OF-SUBGOALS)
+            (priority 2.0)
+            (required-resources ?cap-station)
+            (params cs ?cap-station
+                    wp ?wp
+                    bs ?base-station
+                    cap-color ?cap-color
+                    base-color ?base-color)
+            (meta global-priority (+ ?pprio 500))
+      )
     )
+  )
+  (assert
     (goal (id (sym-cat DELIVER-(gensym*)))
           (class DELIVER)
           (parent ?parent)
@@ -443,6 +449,7 @@
   ?p <- (goal (id ?parent) (class PRODUCE-C0-GET-BASE-AND-REMOVE-CC) (mode SELECTED)
               (params cs ?cap-station wp ?wp bs ?base-station
               base-color ?base-color))
+  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?wp-base-color) (value TRUE))
   =>
   (assert
     (goal (id (sym-cat CLEAR-OUTPUT-(gensym*)))
@@ -452,16 +459,20 @@
           (params mps ?cap-station mps-side OUTPUT)
           (priority 2.0)
     )
-    (goal (id (sym-cat GET-BASE-(gensym*)))
-          (class GET-BASE)
-          (parent ?parent)
-          (sub-type SIMPLE)
-          (params bs ?base-station
-                  bs-side OUTPUT
-                  bs-color ?base-color
-                  target-station ?cap-station
-                  wp ?wp)
-          (priority 1.0)
+  )
+  (if (neq ?wp-base-color ?base-color) then
+    (assert
+      (goal (id (sym-cat GET-BASE-(gensym*)))
+            (class GET-BASE)
+            (parent ?parent)
+            (sub-type SIMPLE)
+            (params bs ?base-station
+                    bs-side OUTPUT
+                    bs-color ?base-color
+                    target-station ?cap-station
+                    wp ?wp)
+            (priority 1.0)
+      )
     )
   )
   (modify ?p (mode EXPANDED))
@@ -638,26 +649,32 @@
                 ring-base-req3 ?ring-base-req3
                 ds ?ds)
         (meta $? global-priority ?pprio $?))
+  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?wp-ring1-color) (value TRUE))
+  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?wp-ring2-color) (value TRUE))
+  (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?wp-ring3-color) (value TRUE))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?wp-cap-color) (value TRUE))
   =>
-  (assert
-    (goal (id (sym-cat PRODUCE-CX-HANDLE-RS-(gensym*)))
-          (parent ?parent)
-          (class PRODUCE-CX-HANDLE-RS)
-          (sub-type RUN-ALL-OF-SUBGOALS)
-          (priority 4.0)
-          (required-resources ?ring-station1)
-          (params order ?order
-                  wp ?wp
-                  bs ?base-station
-                  rs ?ring-station1
-                  base-color ?base-color
-                  ring-color ?ring-color1
-                  ring-mount-index ONE
-                  ring-base-req ?ring-base-req1)
-          (meta global-priority (+ ?pprio 100))
+  (if (neq ?wp-ring1-color ?ring-color1) then
+    (assert
+      (goal (id (sym-cat PRODUCE-CX-HANDLE-RS-(gensym*)))
+            (parent ?parent)
+            (class PRODUCE-CX-HANDLE-RS)
+            (sub-type RUN-ALL-OF-SUBGOALS)
+            (priority 4.0)
+            (required-resources ?ring-station1)
+            (params order ?order
+                    wp ?wp
+                    bs ?base-station
+                    rs ?ring-station1
+                    base-color ?base-color
+                    ring-color ?ring-color1
+                    ring-mount-index ONE
+                    ring-base-req ?ring-base-req1)
+            (meta global-priority (+ ?pprio 100))
+      )
     )
   )
-  (if ( or (eq ?complexity C2) (eq ?complexity C3)) then
+  (if (and (neq ?wp-ring2-color ?ring-color2) (or (eq ?complexity C2) (eq ?complexity C3))) then
     (assert
       (goal (id (sym-cat PRODUCE-CX-HANDLE-RS-(gensym*)))
             (parent ?parent)
@@ -677,7 +694,7 @@
       )
     )
   )
-  (if (eq ?complexity C3) then
+  (if (and (neq ?wp-ring3-color ?ring-color3) (eq ?complexity C3)) then
     (assert
       (goal (id (sym-cat PRODUCE-CX-HANDLE-RS-(gensym*)))
             (parent ?parent)
@@ -697,20 +714,24 @@
       )
     )
   )
-  (assert
-    (goal (id (sym-cat PRODUCE-CX-HANDLE-CS-(gensym*)))
-          (parent ?parent)
-          (class PRODUCE-CX-HANDLE-CS)
-          (sub-type RUN-ALL-OF-SUBGOALS)
-          (priority 1.0)
-          (required-resources ?cap-station)
-          (params order ?order
-                  wp ?wp
-                  cs ?cap-station
-                  cap-color ?cap-color
-                  ds ?ds)
-          (meta global-priority (+ ?pprio 700))
+  (if (neq ?wp-cap-color ?cap-color) then
+    (assert
+      (goal (id (sym-cat PRODUCE-CX-HANDLE-CS-(gensym*)))
+            (parent ?parent)
+            (class PRODUCE-CX-HANDLE-CS)
+            (sub-type RUN-ALL-OF-SUBGOALS)
+            (priority 1.0)
+            (required-resources ?cap-station)
+            (params order ?order
+                    wp ?wp
+                    cs ?cap-station
+                    cap-color ?cap-color
+                    ds ?ds)
+            (meta global-priority (+ ?pprio 700))
+      )
     )
+  )
+  (assert
     (goal (id (sym-cat DELIVER-(gensym*)))
           (parent ?parent)
           (class DELIVER)
@@ -737,6 +758,7 @@
                       ring-color ?ring-color
                       ring-mount-index ?ring-mount-index
                       ring-base-req ?ring-base-req))
+  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?wp-base-color))
   =>
   (assert
     (goal (id (sym-cat FILL-BASES-IN-RS-(gensym*)))
@@ -749,7 +771,7 @@
                   ring-base-req ?ring-base-req)
     )
   )
-  (if (eq ?ring-mount-index ONE)
+  (if (and (eq ?ring-mount-index ONE) (neq ?wp-base-color ?base-color))
   then
     (assert
       (goal (id (sym-cat GET-BASE-(gensym*)))
@@ -1128,9 +1150,11 @@
   (wm-fact (key domain fact mps-type args? m ?base-station t BS))
   (wm-fact (key domain fact mps-team args? m ?base-station col ?team-color))
   (wm-fact (key domain fact wp-at args? wp ?wp m ?base-station side ?side))
-  ; if the no robot is getting a base, there shouldn't be a base at the output
+  ; if no robot is getting a base, there shouldn't be a base at the output
   (not (goal (class GET-BASE) (mode EXPANDED|DISPATCHED)))
   (not (goal (class CLEAN-BS)))
+  ; bases that act as wp of a production goal are handed separately
+  (not (goal (class PRODUCE-C0|PRODUCE-CX) (params $? wp ?wp $?)))
   =>
   (assert (goal (id (sym-cat CLEAN-BS-(gensym*))) (class CLEAN-BS) 
                 (sub-type RUN-ALL-OF-SUBGOALS) (params wp ?wp)
@@ -1161,4 +1185,41 @@
   (modify ?p (mode EXPANDED))
 )
 
+
+(defrule recover-production-restart-root
+" If a production goal fails try restart it a number of times and try to reuse the wp.
+"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ?g <- (goal (class PRODUCE-C0|PRODUCE-CX) (mode FINISHED) (outcome FAILED)
+              (meta $?m1 retries ?retries&:(< ?retries ?*GOAL-MAX-TRIES*) $?m2)
+              (params $? wp ?wp $?))
+  =>
+  (modify ?g (mode SELECTED) (outcome UNKNOWN) (error) (meta $?m1 retries (+ ?retries 1) $?m2))
+)
+
+(defrule pickup-wp-of-failed-production
+" If a production goal fails, pick up the wp to either discard it or recover
+"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ?g <- (goal (class PRODUCE-C0|PRODUCE-CX) (mode FINISHED) (outcome FAILED)
+              (params $? wp ?wp $?))
+  (wm-fact (key domain fact wp-at args? wp ?wp m ? side ?))
+  (not (goal (class PICKUP-WP) (params wp ?wp)))
+  =>
+  (assert (goal (id (sym-cat PICKUP-WP-(gensym*))) (class PICKUP-WP)
+                (sub-type SIMPLE) (params wp ?wp)))
+)
+
+(defrule recover-production-delete-subgoals
+" Delete formulated subgoals of failed production goals
+  so that they can be reformulated.
+"
+  (declare (salience ?*SALIENCE-HIGHEST*))
+  (goal (id ?parent) (class PRODUCE-C0|PRODUCE-CX) (mode FINISHED) (outcome FAILED)
+        (meta $?m1 retries ?retries&:(< ?retries ?*GOAL-MAX-TRIES*) $?m2))
+  ?g <- (goal (id ?id) (parent ?parent) (mode FORMULATED))
+  =>
+  (printout t "Retracting goal " ?id crlf)
+  (retract ?g)
+)
 
