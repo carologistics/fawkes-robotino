@@ -51,7 +51,10 @@
   (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
       (id ?id)
       (state ?status&~FORMULATED&~RUNNING&~FAILED&~FINAL)
-      (action-name ?action-name&:(neq ?action-name wait-until-delivery))
+      (action-name ?action-name&:(and (neq ?action-name wait-until-delivery)
+                                      ; don't timeout on prepare because mps can be down
+                                      (neq ?action-name prepare-rs)
+                                      (neq ?action-name prepare-cs)))
       (param-values $?param-values))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
