@@ -231,6 +231,22 @@
 ;  (assert (wm-fact (key evaluated reset-mps args? m ?mps)))
 ;)
 
+(defrule reset-retry-counter
+" If a subgoal of a production finally succeeded, delete the failed subgoals
+  and reset retry counter
+"
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  ?p <- (goal (id ?parent) (class ?class&:(production-root-goal ?class))
+              (meta $?m1 retries ?retries $?m2))
+  ?g <- (goal (parent ?parent) (class ?subgoal-class) (mode RETRACTED) (outcome FAILED))
+  (goal (parent ?parent) (class ?subgoal-class) (mode FINISHED) (outcome COMPLETED))
+  =>
+  (retract ?g)
+  (modify ?p (meta $?m1 retries (- ?retries 1) $?m2))
+  (printout t "Retry of " ?parent " reset to " (- ?retries 1) crlf)  
+)
+
+
 (defrule goal-reasoner-drop-wp-of-failed-goal
 " If a production root goal fails and some robot is still holding the wp
   it needs to drop the wp to avoid deadlocks. Discarding the wp should
