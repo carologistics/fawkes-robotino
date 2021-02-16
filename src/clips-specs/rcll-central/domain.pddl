@@ -109,7 +109,6 @@
 		(wp-ring3-color ?wp - workpiece ?col - ring-color)
 		(wp-cap-color ?wp - workpiece ?col - cap-color)
 		(wp-on-shelf ?wp - workpiece ?m - mps ?spot - shelf-spot)
-		(wp-spawned-for ?wp - workpiece ?r - robot)
     (spot-free ?m - mps ?spot - shelf-spot)
     (ss-initialized ?m - mps)
     (ss-stored-wp ?m  - mps ?wp - workpiece)
@@ -146,19 +145,16 @@
 	)
 
 	(:action bs-dispense
-		:parameters (?r - robot ?m - mps ?side - mps-side ?wp - workpiece ?basecol - base-color)
+		:parameters (?m - mps ?side - mps-side ?wp - workpiece ?basecol - base-color)
 		:precondition (and (mps-type ?m BS) (or (mps-state ?m PROCESSING) (mps-state ?m READY-AT-OUTPUT))
                        (bs-prepared-color ?m ?basecol)
                        (bs-prepared-side ?m ?side)
 											 (wp-base-color ?wp BASE_NONE) (wp-unused ?wp)
-											 (wp-spawned-for ?wp ?r)
-											 (self ?r)
 											 (mps-side-free ?m ?side))
 											 ;(not (wp-usable ?wp))
 		:effect (and (wp-at ?wp ?m ?side) (not (mps-side-free ?m ?side))
 								 (not (wp-base-color ?wp BASE_NONE)) (wp-base-color ?wp ?basecol)
-								 (not (wp-unused ?wp)) (wp-usable ?wp)
-								 (not (wp-spawned-for ?wp ?r)))
+								 (not (wp-unused ?wp)) (wp-usable ?wp))
 	)
 
 	(:action cs-mount-cap
@@ -481,13 +477,11 @@
     :effect (self ?r)
   )
   (:action spawn-wp
-    :parameters (?wp - workpiece ?r - robot)
+    :parameters (?wp - workpiece)
     :precondition (and
       (not (wp-unused ?wp))
-      (not (wp-usable ?wp))
-      (not (wp-spawned-for ?wp ?r)))
+      (not (wp-usable ?wp)))
     :effect (and
-      (wp-spawned-for ?wp ?r)
       (wp-unused ?wp)
       (wp-cap-color ?wp CAP_NONE)
       (wp-ring1-color wp RING_NONE)
@@ -501,7 +495,6 @@
     :precondition (and
       (mps-type ?m SS)
       (wp-unused ?wp)
-      (wp-spawned-for ?wp ?r)
       (wp-cap-color ?wp CAP_NONE)
       (wp-ring1-color ?wp RING_NONE)
       (wp-ring2-color ?wp RING_NONE)
@@ -509,7 +502,6 @@
       (wp-base-color ?wp BASE_NONE)
       (not (ss-initialized ?m)))
     :effect (and
-      (not (wp-spawned-for ?wp ?r))
       (not (wp-cap-color ?wp CAP_NONE))
       (wp-cap-color ?wp ?cap)
       (not (wp-base-color wp BASE_NONE))
@@ -535,7 +527,6 @@
    :effect (and (wp-at ?wp ?m OUTPUT) (not (mps-side-free ?m OUTPUT))
                 (wp-at ?wp ?m OUTPUT)
                 (not (ss-prepared-for ?m RETRIEVE ?wp))
-                (not (wp-spawned-for ?wp ?r))
                 (not (ss-stored-wp ?m ?wp)))
   )
 )

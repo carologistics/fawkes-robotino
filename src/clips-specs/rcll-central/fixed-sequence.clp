@@ -219,9 +219,6 @@
 (defrule goal-expander-create-base
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   ?g <- (goal (id ?goal-id) (parent ?parent-id) (mode SELECTED) (class CREATE-BASE) (params base-color ?base-color))
-  ; Robot facts
-  (wm-fact (key domain fact entered-field args? r ?robot))
-  (not (plan (r ?robot)))
   ; BS facts
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
@@ -233,21 +230,18 @@
   (bind ?wp (sym-cat WP- (random-id)))
   (bind ?plan-id (sym-cat FETCH-BASE-PLAN- (gensym*)))
   (assert
-    (plan (id ?plan-id) (goal-id ?goal-id) (r ?robot) (mps ?bs))
+    (plan (id ?plan-id) (goal-id ?goal-id) (mps ?bs))
     (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
               (action-name prepare-bs)
-              (skiller (remote-skiller ?robot))
               (param-names m side bc)
               (param-values ?bs INPUT ?base-color))
     (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
               (action-name spawn-wp)
-              (skiller (remote-skiller ?robot))
-              (param-values ?wp ?robot))
+              (param-values ?wp))
     (plan-action (id 3) (plan-id ?plan-id) (goal-id ?goal-id)
               (action-name bs-dispense)
-              (skiller (remote-skiller ?robot))
-              (param-names r m side wp basecol)
-              (param-values ?robot ?bs INPUT ?wp ?base-color))
+              (param-names m side wp basecol)
+              (param-values ?bs INPUT ?wp ?base-color))
   )
   (modify ?g (mode EXPANDED))
 )
@@ -256,9 +250,6 @@
 (defrule goal-expander-mount-cap
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   ?g <- (goal (id ?goal-id) (parent ?parent-id) (mode SELECTED) (class MOUNT-CAP) (params base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cap-color ?cap-color))
-  ; Robot facts
-  (wm-fact (key domain fact entered-field args? r ?robot))
-  (not (plan (r ?robot)))
   ; wp facts
   (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side INPUT))
   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
@@ -278,15 +269,13 @@
 =>
   (bind ?plan-id (sym-cat MOUNT-CAP-PLAN- (gensym*)))
   (assert
-    (plan (id ?plan-id) (goal-id ?goal-id) (r ?robot) (mps ?cs) (wp ?wp))
+    (plan (id ?plan-id) (goal-id ?goal-id) (mps ?cs) (wp ?wp))
     (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
               (action-name prepare-cs)
-              (skiller (remote-skiller ?robot))
               (param-names m op)
               (param-values ?cs MOUNT_CAP))
     (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
               (action-name cs-mount-cap)
-              (skiller (remote-skiller ?robot))
               (param-values ?cs ?wp ?cap-color))
   )
   (modify ?g (mode EXPANDED))
@@ -296,9 +285,6 @@
 (defrule goal-expander-deliver
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   ?g <- (goal (id ?goal-id) (mode SELECTED) (class DELIVER) (params order ?order))
-  ; Robot facts
-  (wm-fact (key domain fact entered-field args? r ?robot))
-  (not (plan (r ?robot)))
   ; Order facts
   (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
@@ -324,17 +310,15 @@
 =>
   (bind ?plan-id (sym-cat DELIVER-PLAN- (gensym*)))
   (assert
-    (plan (id ?plan-id) (goal-id ?goal-id) (r ?robot) (mps ?ds) (wp ?wp))
+    (plan (id ?plan-id) (goal-id ?goal-id) (mps ?ds) (wp ?wp))
     (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
               (action-name prepare-ds)
-              (skiller (remote-skiller ?robot))
               (param-names m ord)
               (param-values ?ds ?order))
   )
   (if (eq ?complexity C0) then
     (assert (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
                   (action-name fulfill-order-c0)
-                  (skiller (remote-skiller ?robot))
                   (param-names ord wp m g basecol capcol)
                   (param-values ?order ?wp ?ds ?gate ?base-color ?cap-color))
     )
@@ -342,7 +326,6 @@
   (if (eq ?complexity C1) then
     (assert (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
                   (action-name fulfill-order-c1)
-                  (skiller (remote-skiller ?robot))
                   (param-names ord wp m g basecol capcol ring1col)
                   (param-values ?order ?wp ?ds ?gate ?base-color ?cap-color ?ring1-color))
     )
@@ -353,9 +336,6 @@
 (defrule goal-expander-mount-r1
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   ?g <- (goal (id ?goal-id) (mode SELECTED) (class MOUNT-RING1) (params base-color ?base-color ring1-color ?ring1-color))
-  ; Robot facts
-  (wm-fact (key domain fact entered-field args? r ?robot))
-  (not (plan (r ?robot)))
   ; RS facts
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact mps-type args? m ?rs t RS))
@@ -378,17 +358,15 @@
 =>
   (bind ?plan-id (sym-cat MOUNT-RING1-PLAN- (gensym*)))
   (assert
-    (plan (id ?plan-id) (goal-id ?goal-id) (r ?robot) (mps ?rs) (wp ?wp))
+    (plan (id ?plan-id) (goal-id ?goal-id) (mps ?rs) (wp ?wp))
     ; Prepare RS
     (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
               (action-name prepare-rs)
-              (skiller (remote-skiller ?robot))
               (param-names m rc rs-before rs-after r-req)
               (param-values ?rs ?ring1-color ?bases-filled ?bases-remain ?bases-needed))
     ; Mount ring
     (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
               (action-name rs-mount-ring1)
-              (skiller (remote-skiller ?robot))
               (param-names m wp col rs-before rs-after r-req)
               (param-values ?rs ?wp ?ring1-color ?bases-filled ?bases-remain ?bases-needed))
   )
@@ -398,9 +376,6 @@
 (defrule goal-expander-mount-r2
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   ?g <- (goal (id ?goal-id) (mode SELECTED) (class MOUNT-RING2) (params base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color))
-  ; Robot facts
-  (wm-fact (key domain fact entered-field args? r ?robot))
-  (not (plan (r ?robot)))
   ; RS facts
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact mps-type args? m ?rs t RS))
@@ -423,17 +398,15 @@
 =>
   (bind ?plan-id (sym-cat MOUNT-RING2-PLAN- (gensym*)))
   (assert
-    (plan (id ?plan-id) (goal-id ?goal-id) (r ?robot) (mps ?rs) (wp ?wp))
+    (plan (id ?plan-id) (goal-id ?goal-id) (mps ?rs) (wp ?wp))
     ; Prepare RS
     (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
               (action-name prepare-rs)
-              (skiller (remote-skiller ?robot))
               (param-names m rc rs-before rs-after r-req)
               (param-values ?rs ?ring2-color ?bases-filled ?bases-remain ?bases-needed))
     ; Mount ring
     (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
               (action-name rs-mount-ring2)
-              (skiller (remote-skiller ?robot))
               (param-names m wp col col1 rs-before rs-after r-req)
               (param-values ?rs ?wp ?ring2-color ?ring1-color ?bases-filled ?bases-remain ?bases-needed))
   )
@@ -443,9 +416,6 @@
 (defrule goal-expander-mount-r3
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   ?g <- (goal (id ?goal-id) (mode SELECTED) (class MOUNT-RING3) (params base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color))
-  ; Robot facts
-  (wm-fact (key domain fact entered-field args? r ?robot))
-  (not (plan (r ?robot)))
   ; RS facts
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact mps-type args? m ?rs t RS))
@@ -468,17 +438,15 @@
 =>
   (bind ?plan-id (sym-cat MOUNT-RING2-PLAN- (gensym*)))
   (assert
-    (plan (id ?plan-id) (goal-id ?goal-id) (r ?robot) (mps ?rs) (wp ?wp))
+    (plan (id ?plan-id) (goal-id ?goal-id) (mps ?rs) (wp ?wp))
     ; Prepare RS
     (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
               (action-name prepare-rs)
-              (skiller (remote-skiller ?robot))
               (param-names m rc rs-before rs-after r-req)
               (param-values ?rs ?ring3-color ?bases-filled ?bases-remain ?bases-needed))
     ; Mount ring
     (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
               (action-name rs-mount-ring3)
-              (skiller (remote-skiller ?robot))
               (param-names m wp col col1 col2 rs-before rs-after r-req)
               (param-values ?rs ?wp ?ring3-color ?ring1-color ?ring2-color ?bases-filled ?bases-remain ?bases-needed))
   )

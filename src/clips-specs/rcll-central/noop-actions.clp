@@ -53,9 +53,9 @@
 
 (defrule action-execute-wp-spawn
 	?pa <- (plan-action (plan-id ?plan-id) (state PENDING) (executable TRUE)
-	                    (action-name spawn-wp) (param-values ?wp ?robot))
+	                    (action-name spawn-wp) (param-values ?wp))
 	=>
-	(printout info "Spawning workpiece " ?wp " for robot " ?robot crlf)
+	(printout info "Spawning workpiece " ?wp crlf)
 	(assert (domain-object (name ?wp) (type workpiece)))
 	(modify ?pa (state EXECUTION-SUCCEEDED))
 )
