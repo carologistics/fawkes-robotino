@@ -207,10 +207,10 @@
       (return 210)
     )
     (case C2 then
-      (return 270)
+      (return 330)
     )
     (case C3 then
-      (return 330)
+      (return 390)
     )
     (default none)
   )
@@ -219,7 +219,7 @@
 (deffunction order-time-estimate-lower (?complexity)
   (switch ?complexity
     (case C0 then
-      (return 90)
+      (return 120)
     )
     (case C1 then
       (return 200)
@@ -391,14 +391,15 @@
     )
   )
   (assert
-    (goal (id (sym-cat DELIVER-(gensym*)))
-          (class DELIVER)
+    (goal (id (sym-cat PICKUP-AND-DELIVER-(gensym*)))
+          (class PICKUP-AND-DELIVER)
           (parent ?parent)
-          (sub-type SIMPLE)
+          (sub-type RUN-ALL-OF-SUBGOALS)
           (priority 1.0)
           (params order ?order
                   ds ?ds
                   wp ?wp)
+          (meta global-priority (+ ?pprio 900))
     )
   )
   (modify ?p (mode EXPANDED))
@@ -416,6 +417,13 @@
                       base-color ?base-color))
   =>
   (assert
+    (goal (id (sym-cat CLEAR-OUTPUT-(gensym*)))
+          (class CLEAR-OUTPUT)
+          (parent ?parent)
+          (sub-type SIMPLE)
+          (params mps ?cap-station mps-side OUTPUT)
+          (priority 4.0)
+    )
     (goal (id (sym-cat BUFFER-CS-(gensym*)))
           (class BUFFER-CS)
           (parent ?parent)
@@ -532,6 +540,41 @@
     )
   )
 )
+
+(defrule create-subgoals-pickup-and-deliver
+ "Create subgoals to pickup and deliver a workpiece"
+ (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+ ?g <- (goal (id ?parent) (class PICKUP-AND-DELIVER) (mode SELECTED) 
+            (params order ?order
+                    ds ?ds
+                    wp ?wp))
+
+  ; get delivery time for order
+  (wm-fact (key refbox order ?order delivery-begin) (type UINT) (value ?begin))
+  ; check time so that the delivery goals is not expanded too early
+  (wm-fact (key refbox game-time) (values ?game-time&:(> (+ ?game-time 30) ?begin) $?))
+ =>
+ (assert
+  (goal (id (sym-cat PICKUP-WP-(gensym*)))
+            (parent ?parent)
+            (class PICKUP-WP)
+            (sub-type SIMPLE)
+            (priority 1.0)
+            (params wp ?wp)
+      )
+  (goal (id (sym-cat DELIVER-(gensym*)))
+            (parent ?parent)
+            (class DELIVER)
+            (sub-type SIMPLE)
+            (priority 0.0)
+            (params order ?order
+                    ds ?ds
+                    wp ?wp)
+      )
+  )
+  (modify ?g (mode EXPANDED))
+)
+
 
 
 (defrule goal-production-produce-cx
@@ -732,15 +775,15 @@
     )
   )
   (assert
-    (goal (id (sym-cat DELIVER-(gensym*)))
+    (goal (id (sym-cat PICKUP-AND-DELIVER-(gensym*)))
           (parent ?parent)
-          (class DELIVER)
-          (sub-type SIMPLE)
+          (class PICKUP-AND-DELIVER)
+          (sub-type RUN-ALL-OF-SUBGOALS)
           (priority 0.0)
           (params order ?order
                   ds ?ds
                   wp ?wp)
-          
+          (meta global-priority (+ ?pprio 900))
     )
   )
   (modify ?p (mode EXPANDED))
@@ -832,6 +875,13 @@
   (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
   =>
   (assert
+    (goal (id (sym-cat CLEAR-OUTPUT-(gensym*)))
+          (class CLEAR-OUTPUT)
+          (parent ?parent)
+          (sub-type SIMPLE)
+          (params mps ?cap-station mps-side OUTPUT)
+          (priority 4.0)
+    )
     (goal (id (sym-cat BUFFER-CS-(gensym*)))
           (parent ?parent)
           (class BUFFER-CS)
@@ -946,6 +996,57 @@
   (modify ?p (mode EXPANDED))
 )
 
+; ============================= Passive Optimization ===============================
+
+(defrule passive-go-wait-at-next-station
+  "Even if a robot cannot reserve the next station he can still drive there already."
+  ; Get non-busy robot holding a workpiece
+  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+  (not (goal (params robot ?robot $?some-params)))
+
+  ; Check the next goal for the wp to find out to which station we need to go
+  (goal (id ?root-id) (class PRODUCE-C0|PRODUCE-CX) (params $? wp ?wp $?))
+  (goal (id ?id) (parent ?root-id) (mode COMMITTED) (required-resources ?mps))
+  (goal (id ?id-diff&:(neq ?id ?id-diff)) (acquired-resources ?mps))
+  =>
+  (printout t "Robot moves to next station to wait for future goal." crlf)
+  (assert (goal (id (sym-cat GO-WAIT-(gensym*))) 
+                (class GO-WAIT)
+                (sub-type SIMPLE)
+                (params robot ?robot mps ?mps mps-side INPUT))
+  )
+)
+
+(defrule passive-store-wp-before-deliver
+  "Get a robot holding a workpiece waiting for delivery in a furture time slot and
+  store it in the storage station if possible." 
+  ; Get a robot
+  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+  (not (goal (params robot ?robot $?some-params)))
+
+  ; wp is to be delivered
+  (goal (id ?id) (class PICKUP-AND-DELIVER) (mode SELECTED) (params order ?order ds ?ds wp ?wp))
+
+  ; get delivery time for order
+  (wm-fact (key refbox order ?order delivery-begin) (type UINT) (value ?begin))
+
+  ; check time
+  (wm-fact (key refbox game-time) (values ?game-time&:(< (+ ?game-time 120) ?begin) $?))
+
+  ; get storage station and available side
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact mps-type args? m ?mps t SS))
+  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+  (wm-fact (key domain fact mps-side-free args? m ?mps side ?mps-side&INPUT))
+  =>
+  (printout t "Robot stores wp at storage station for future delivery." crlf)
+  (assert (goal (id (sym-cat STORE-WP-(gensym*))) 
+                (class STORE-WP)
+                (sub-type SIMPLE)
+                (params robot ?robot wp ?wp mps ?mps mps-side ?mps-side))
+  )
+)
+
 ; ============================= Passive Prefills ===============================
 
 (defrule passive-prefill-cap-station
@@ -972,7 +1073,7 @@
   (wm-fact (key domain fact mps-team args? m ?cap-station col ?team-color))
   (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cap-station spot ?spot))
   (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-  (wm-fact (key domain fact mps-state args? m ?cap-station s ~BROKEN&~PROCESSING&~DOWN))
+  (wm-fact (key domain fact mps-state args? m ?cap-station s ~BROKEN&~PROCESSING&~DOWN&~READY-AT-OUTPUT))
 
   ; cap station not filled
   (not (wm-fact (key domain fact cs-buffered args? m ?cap-station col ?cap-color)))

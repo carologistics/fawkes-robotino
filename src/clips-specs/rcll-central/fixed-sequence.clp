@@ -408,18 +408,6 @@
       (param-names r mps wp capcol)
       (param-values ?robot ?cap-station ?wp ?cap-color)
     )
-    (plan-action (id 4) (plan-id ?plan-id) (goal-id ?goal-id)
-      (action-name move)
-      (skiller (remote-skiller ?robot))
-      (param-names r from from-side to to-side)
-      (param-values ?robot ?cap-station INPUT ?cap-station OUTPUT)
-    )
-    (plan-action (id 5) (plan-id ?plan-id) (goal-id ?goal-id)
-      (action-name wp-get)
-      (skiller (remote-skiller ?robot))
-      (param-names r wp m side)
-      (param-values ?robot ?wp ?cap-station OUTPUT)
-    )
   )
   (modify ?g (mode EXPANDED))
 )
@@ -692,4 +680,47 @@
   (not (goal (class HANDLE-MPS) (params ?mps)))
   =>
   (modify ?g (mode FINISHED) (outcome COMPLETED))
+)
+
+(defrule goal-expander-go-wait
+  "Expand goal to call a simple go-wait action."
+  ?g <- (goal (id ?goal-id) (class GO-WAIT) (mode SELECTED) (params robot ?robot mps ?mps mps-side ?mps-side))
+  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+  =>
+  (bind ?plan-id (sym-cat GO-WAIT-PLAN- ?robot - (gensym*)))
+  (assert
+    (plan (id ?plan-id) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name go-wait)
+      (skiller (remote-skiller ?robot))
+      (param-names r from from-side to)
+      (param-values ?robot ?curr-location ?curr-side (wait-pos ?mps ?mps-side))
+    )
+  )
+  (modify ?g (mode EXPANDED))
+)
+
+(defrule goal-expander-store-wp
+  "Expand goal to store a wp at some station"
+  ?g <- (goal (id ?goal-id) (class STORE-WP) (mode SELECTED) (params robot ?robot wp ?wp mps ?mps mps-side ?mps-side))
+  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+  =>
+  (bind ?plan-id (sym-cat STORE-WP-PLAN- ?robot - (gensym*)))
+  (assert
+    (plan (id ?plan-id) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name move)
+      (skiller (remote-skiller ?robot))
+      (param-names r from from-side to to-side)
+      (param-values ?robot ?curr-location ?curr-side ?mps ?mps-side)
+    )
+    (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name wp-put)
+      (skiller (remote-skiller ?robot))
+      (param-names r wp m)
+      (param-values ?robot ?wp ?mps)
+    )
+  )
+  (modify ?g (mode EXPANDED))
+)
 )
