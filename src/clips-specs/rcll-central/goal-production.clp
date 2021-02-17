@@ -1189,7 +1189,7 @@
 (defrule recover-production-restart-root
 " If a production goal fails try restart it a number of times and try to reuse the wp.
 "
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (declare (salience ?*SALIENCE-GOAL-SELECT*))
   ?g <- (goal (class PRODUCE-C0|PRODUCE-CX) (mode FINISHED) (outcome FAILED)
               (meta $?m1 retries ?retries&:(< ?retries ?*GOAL-MAX-TRIES*) $?m2)
               (params $? wp ?wp $?))

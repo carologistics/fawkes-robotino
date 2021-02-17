@@ -141,6 +141,7 @@
 (defrule goal-reasoner-remove-resource
 " Remove resource from a retracted goal
 "
+  (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
   ?g <- (goal (id ?goal-id) (acquired-resources $?acquired&:(> (length$ $?acquired) 0)) (mode RETRACTED))
   =>
   (modify ?g (acquired-resources))

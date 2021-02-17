@@ -388,7 +388,8 @@
 		:parameters (?r - robot ?wp - workpiece ?m - mps)
 		:precondition (and (at ?r ?m INPUT)
 										(wp-usable ?wp) (holding ?r ?wp)
-										(mps-side-free ?m INPUT))
+										(mps-side-free ?m INPUT)
+										(not (mps-state ?m DOWN)))
 		:effect (and (wp-at ?wp ?m INPUT) (not (holding ?r ?wp)) (can-hold ?r) (not (mps-side-free ?m INPUT)))
 	)
 
