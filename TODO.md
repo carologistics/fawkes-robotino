@@ -1,4 +1,6 @@
 ## TODO
+* issues
+  * robots waiting on location-lock for BS
 * production
   * competitive order prio
 * stability
@@ -6,6 +8,7 @@
   * retry actions more often? X
   * handle down/broken machines
 * optimization
+  * get base locked from other side of the map when other robot already waiting
   * retract and clean up a goal if we can no longer complete it in reasonable time X
   * no unnecessary prefills after all orders have been posted/a certain time
   * balance prefill of bases in rs (slight advantage to 2 base requiring station)
