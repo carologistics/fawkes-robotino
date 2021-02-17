@@ -52,6 +52,7 @@
 (defrule lock-actions-lock-acquired
 	?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id)
                       (action-name ?action-name&lock|location-lock|one-time-lock)
+                      (skiller ?skiller)
                       (param-values $?param-values)
                       (state RUNNING))
   ?mf <- (mutex (name ?name) (request LOCK) (response ACQUIRED))
@@ -63,6 +64,7 @@
 	(modify ?mf (request NONE) (response NONE))
   (if (eq ?action-name location-lock) then
     (assert (domain-fact (name location-locked) (param-values $?param-values)))
+    (assert (wm-fact (key location-locked-by args? skiller ?skiller lock-params $?param-values)))
   )
   (retract ?li)
 )
@@ -156,13 +158,16 @@
 )
 
 (defrule lock-actions-unlock-location-pending
-  ?pa <- (plan-action (action-name location-unlock) (state RUNNING)
+  ?pa <- (plan-action (action-name location-unlock) 
+                      (skiller ?skiller)
+                      (state RUNNING)
                       (param-names $?param-names)
                       (param-values $?param-values))
   =>
   (assert (location-unlock-pending
             (plan-action-arg location ?param-names ?param-values)
-            (plan-action-arg side ?param-names ?param-values)))
+            (plan-action-arg side ?param-names ?param-values)
+            ?skiller))
   (modify ?pa (state EXECUTION-SUCCEEDED))
 )
 
@@ -172,7 +177,8 @@
   (domain-object (name ?side))
   (domain-obj-is-of-type ?side mps-side)
   (wm-fact (key cx identity) (value ?self))
-  (location-unlock-pending ?loc ?side)
+  (location-unlock-pending ?loc ?side ?skiller)
+  (wm-fact (key location-locked-by args? skiller ?skiller lock-params ?loc ?side))
   ?mf <- (mutex (name ?lock-name&:(eq ?lock-name (sym-cat ?loc - ?side)))
                 (state LOCKED) (request ~UNLOCK) (locked-by ?self)
                 (pending-requests $?pending&:(not (member$ UNLOCK ?pending))))
@@ -194,7 +200,8 @@
   (domain-object (name ?side))
   (domain-obj-is-of-type ?side mps-side)
   (wm-fact (key cx identity) (value ?self))
-  (location-unlock-pending ?loc ?side)
+  (location-unlock-pending ?loc ?side ?skiller)
+  (wm-fact (key location-locked-by args? skiller ?skiller lock-params ?loc ?side))
   ?mf <- (mutex (name ?lock-name&:(eq ?lock-name (sym-cat ?loc - ?side)))
                 (state LOCKED) (request ~UNLOCK) (locked-by ?self)
                 (pending-requests $?pending&:(not (member$ UNLOCK ?pending))))
@@ -205,15 +212,17 @@
 )
 
 (defrule lock-actions-unlock-location-done
-  ?l <- (location-unlock-pending ?loc ?side)
+  ?l <- (location-unlock-pending ?loc ?side ?skiller)
   ?m <- (mutex (name ?lock-name&:(eq ?lock-name (sym-cat ?loc - ?side)))
          (state OPEN) (request UNLOCK))
+  ?locked-by-fact <- (wm-fact (key location-locked-by args? skiller ?skiller lock-params ?loc ?side))
   =>
   (do-for-fact ((?wm-fact wm-fact)) (eq ?wm-fact:key (create$ domain fact
                                         location-locked args? m ?loc s ?side))
      (retract ?wm-fact)
   )
   (retract ?l)
+  (retract ?locked-by-fact)
   (modify ?m (request NONE) (response NONE))
 )
 
