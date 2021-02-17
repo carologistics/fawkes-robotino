@@ -73,15 +73,36 @@
 )
 
 
-(defrule goal-expander-prepare-cap
-  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+(deftemplate idea
+  (slot class (type SYMBOL))
+  (slot goal-id (type SYMBOL))
+  (slot priority (type FLOAT) (default 0.0))
+  (multislot params)
+)
+
+(deffunction retract-ideas ()
+  ; Retract all ideas.
+  (do-for-all-facts ((?i idea)) TRUE
+    (printout t "Retracting " ?i:class " idea " ?i:params crlf)
+		(retract ?i)
+	)
+)
+
+(defglobal
+  ?*SALIENCE-MACHINE-GOAL-EXPAND* = (+ ?*SALIENCE-GOAL-EXPAND* 3)
+  ?*SALIENCE-IDEA-PRODUCTION* = (+ ?*SALIENCE-GOAL-EXPAND* 2)
+  ?*SALIENCE-IDEA-GOAL-EXPAND* = (+ ?*SALIENCE-GOAL-EXPAND* 1)
+)
+
+; Prepare cap
+(defrule idea-production-prepare-cap
+  (declare (salience ?*SALIENCE-IDEA-PRODUCTION*))
   ?g <- (goal (id ?goal-id) (mode SELECTED) (class PREPARE-CAP) (params cap-color ?cap-color))
   (not (goal (mode ~SELECTED) (class PREPARE-CAP) (params cap-color ?cap-color)))
   ; Robot facts
   (wm-fact (key domain fact entered-field args? r ?robot))
   (not (plan (r ?robot)))
   (wm-fact (key domain fact can-hold args? r ?robot))
-  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   ; CS facts
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact mps-type args? m ?cs t CS))
@@ -92,10 +113,31 @@
   (wm-fact (key domain fact mps-side-free args? m ?cs side OUTPUT))
   (wm-fact (key domain fact cs-can-perform args? m ?cs op RETRIEVE_CAP))
   (not (plan (mps ?cs)))
+  (not (idea (class PREPARE-CAP) (goal-id ?goal-id) (params cs ?cs robot ?robot)))
+=>
+  (bind ?prio (goal-distance-prio (node-distance (mps-node ?cs INPUT) ?robot)))
+  (printout t "Formulated PREPARE-CAP idea " ?cs " with " ?robot " (" ?prio ")" crlf)
+  (assert
+        (idea (class PREPARE-CAP)
+              (goal-id ?goal-id)
+              (priority ?prio)
+              (params cs ?cs robot ?robot))
+  )
+)
+
+(defrule goal-expander-prepare-cap
+  (declare (salience ?*SALIENCE-IDEA-GOAL-EXPAND*))
+  (idea (class PREPARE-CAP) (priority ?prio) (goal-id ?goal-id)
+        (params cs ?cs robot ?robot))
+  (not (idea (priority ?prio2&:(> ?prio2 ?prio))))
+  ?g <- (goal (id ?goal-id))
+  ; Robot facts
+  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   ; wp facts
   (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cs spot ?shelf-spot))  
+  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cs spot ?shelf-spot))
 =>
+  (printout t "Expanded PREPARE-CAP idea " ?cs " with " ?robot " (" ?prio ")" crlf)
   (bind ?plan-id (sym-cat PREPARE-CAP-PLAN- (gensym*)))
   (assert
     (plan (id ?plan-id) (goal-id ?goal-id) (r ?robot) (mps ?cs))
@@ -125,21 +167,44 @@
               (param-values ?cs ?cc ?cap-color))
   )
   (modify ?g (mode EXPANDED))
+  (retract-ideas)
 )
 
-(defrule goal-expander-discard-base
-  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+
+; Discard base
+(defrule idea-production-discard-base
+  (declare (salience ?*SALIENCE-IDEA-PRODUCTION*))
   ?g <- (goal (id ?goal-id) (mode SELECTED) (class DISCARD-BASE) (params cs ?cs))
   ; Robot facts
   (wm-fact (key domain fact entered-field args? r ?robot))
   (not (plan (r ?robot)))
   (wm-fact (key domain fact can-hold args? r ?robot))
-  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   ; WP facts
   (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side OUTPUT))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
   (not (plan (wp ?wp)))
+  (not (idea (class DISCARD-BASE) (goal-id ?goal-id) (params cs ?cs wp ?wp robot ?robot)))
 =>
+  (bind ?prio (goal-distance-prio (node-distance (mps-node ?cs OUTPUT) ?robot)))
+  (printout t "Formulated DISCARD-BASE idea " ?cs " with " ?robot " (" ?prio ")" crlf)
+  (assert
+        (idea (class DISCARD-BASE)
+              (goal-id ?goal-id)
+              (priority ?prio)
+              (params cs ?cs wp ?wp robot ?robot))
+  )
+)
+
+(defrule goal-expander-discard-base
+  (declare (salience ?*SALIENCE-IDEA-GOAL-EXPAND*))
+  (idea (class DISCARD-BASE) (priority ?prio) (goal-id ?goal-id)
+        (params cs ?cs wp ?wp robot ?robot))
+  (not (idea (priority ?prio2&:(> ?prio2 ?prio))))
+  ?g <- (goal (id ?goal-id))
+  ; Robot facts
+  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+=>
+  (printout t "Expanded DISCARD-BASE idea " ?cs " with " ?robot " (" ?prio ")" crlf)
   (bind ?plan-id (sym-cat DISCARD-BASE-PLAN- (gensym*)))
   (assert
     (plan (id ?plan-id) (goal-id ?goal-id) (r ?robot) (wp ?wp))
@@ -160,18 +225,19 @@
               (param-values ?robot ?wp))
   )
   (modify ?g (mode EXPANDED))
+  (retract-ideas)
 )
 
 
-(defrule goal-expander-transport
-  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
-  ?g <- (goal (id ?goal-id) (parent ?parent-id) (mode SELECTED) (class TRANSPORT)
+; Transport
+(defrule idea-production-transport
+  (declare (salience ?*SALIENCE-IDEA-PRODUCTION*))
+  ?g <- (goal (id ?goal-id) (mode SELECTED) (class TRANSPORT)
               (params mps-to ?mps-to base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cap-color ?cap-color))
   ; Robot facts
   (wm-fact (key domain fact entered-field args? r ?robot))
   (not (plan (r ?robot)))
   (wm-fact (key domain fact can-hold args? r ?robot))
-  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   ; wp facts
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps-from side ?mps-from-side))
   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
@@ -187,7 +253,30 @@
     (wm-fact (key domain fact cs-can-perform args? m ?mps-to op MOUNT_CAP))
   )
   (not (plan (mps ?mps-to)))
+  (not (idea (class TRANSPORT) (goal-id ?goal-id) (params mps-to ?mps-to wp ?wp robot ?robot)))
 =>
+  (bind ?prio (goal-distance-prio (node-distance (mps-node ?mps-from ?mps-from-side) ?robot)))
+  (printout t "Formulated TRANSPORT idea " ?wp " to " ?mps-to " with " ?robot " (" ?prio ")" crlf)
+  (assert
+        (idea (class TRANSPORT)
+              (goal-id ?goal-id)
+              (priority ?prio)
+              (params mps-to ?mps-to wp ?wp robot ?robot))
+  )
+)
+
+(defrule goal-expander-transport
+  (declare (salience ?*SALIENCE-IDEA-GOAL-EXPAND*))
+  (idea (class TRANSPORT) (priority ?prio) (goal-id ?goal-id)
+        (params mps-to ?mps-to wp ?wp robot ?robot))
+  (not (idea (priority ?prio2&:(> ?prio2 ?prio))))
+  ?g <- (goal (id ?goal-id))
+  ; Robot facts
+  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+  ; wp facts
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?mps-from side ?mps-from-side))
+=>
+  (printout t "Expanded TRANSPORT idea " ?wp " to " ?mps-to " with " ?robot " (" ?prio ")" crlf)
   (bind ?plan-id (sym-cat TRANSPORT-PLAN- (gensym*)))
   (assert
     (plan (id ?plan-id) (goal-id ?goal-id) (r ?robot) (mps ?mps-to) (wp ?wp))
@@ -213,12 +302,17 @@
               (param-values ?robot ?wp ?mps-to))
   )
   (modify ?g (mode EXPANDED))
+  (retract-ideas)
 )
 
 
-(defrule goal-expander-create-base
-  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+; Create base
+(defrule idea-production-create-base
+  (declare (salience ?*SALIENCE-IDEA-PRODUCTION*))
   ?g <- (goal (id ?goal-id) (parent ?parent-id) (mode SELECTED) (class CREATE-BASE) (params base-color ?base-color))
+  ; Robot facts
+  (wm-fact (key domain fact entered-field args? r ?robot))
+  (not (plan (r ?robot)))
   ; BS facts
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
@@ -226,7 +320,27 @@
   (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN))
   (wm-fact (key domain fact mps-side-free args? m ?bs side INPUT))
   (not (plan (mps ?bs)))
+  (not (idea (class CREATE-BASE) (goal-id ?goal-id) (params bs ?bs base-color ?base-color)))
 =>
+  (bind ?prio 0.0)
+  (printout t "Formulated CREATE-BASE idea " ?base-color " (" ?prio ")" crlf)
+  (assert
+        (idea (class CREATE-BASE)
+              (goal-id ?goal-id)
+              (priority ?prio)
+              (params bs ?bs base-color ?base-color))
+  )
+)
+
+(defrule goal-expander-create-base
+  (declare (salience ?*SALIENCE-IDEA-GOAL-EXPAND*))
+  (idea (class CREATE-BASE) (priority ?prio) (goal-id ?goal-id)
+        (params bs ?bs base-color ?base-color))
+  (not (idea (priority ?prio2&:(> ?prio2 ?prio))))
+  ?g <- (goal (id ?goal-id))
+=>
+  (printout t "Expanded CREATE-BASE idea " ?base-color " (" ?prio ")" crlf)
+  
   (bind ?wp (sym-cat WP- (random-id)))
   (bind ?plan-id (sym-cat FETCH-BASE-PLAN- (gensym*)))
   (assert
@@ -244,11 +358,13 @@
               (param-values ?bs INPUT ?wp ?base-color))
   )
   (modify ?g (mode EXPANDED))
+  (retract-ideas)
 )
 
 
+; Mount cap
 (defrule goal-expander-mount-cap
-  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+  (declare (salience ?*SALIENCE-MACHINE-GOAL-EXPAND*))
   ?g <- (goal (id ?goal-id) (parent ?parent-id) (mode SELECTED) (class MOUNT-CAP) (params base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cap-color ?cap-color))
   ; wp facts
   (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side INPUT))
@@ -282,8 +398,9 @@
 )
 
 
+; Deliver
 (defrule goal-expander-deliver
-  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+  (declare (salience ?*SALIENCE-MACHINE-GOAL-EXPAND*))
   ?g <- (goal (id ?goal-id) (mode SELECTED) (class DELIVER) (params order ?order))
   ; Order facts
   (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
@@ -333,8 +450,10 @@
   (modify ?g (mode EXPANDED))
 )
 
+
+; Mount ring 1
 (defrule goal-expander-mount-r1
-  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+  (declare (salience ?*SALIENCE-MACHINE-GOAL-EXPAND*))
   ?g <- (goal (id ?goal-id) (mode SELECTED) (class MOUNT-RING1) (params base-color ?base-color ring1-color ?ring1-color))
   ; RS facts
   (wm-fact (key refbox team-color) (value ?team-color))
@@ -373,8 +492,10 @@
   (modify ?g (mode EXPANDED))
 )
 
+
+; Mount ring 2
 (defrule goal-expander-mount-r2
-  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+  (declare (salience ?*SALIENCE-MACHINE-GOAL-EXPAND*))
   ?g <- (goal (id ?goal-id) (mode SELECTED) (class MOUNT-RING2) (params base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color))
   ; RS facts
   (wm-fact (key refbox team-color) (value ?team-color))
@@ -413,8 +534,10 @@
   (modify ?g (mode EXPANDED))
 )
 
+
+; Mount ring 3
 (defrule goal-expander-mount-r3
-  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+  (declare (salience ?*SALIENCE-MACHINE-GOAL-EXPAND*))
   ?g <- (goal (id ?goal-id) (mode SELECTED) (class MOUNT-RING3) (params base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color))
   ; RS facts
   (wm-fact (key refbox team-color) (value ?team-color))
@@ -453,8 +576,10 @@
   (modify ?g (mode EXPANDED))
 )
 
-(defrule goal-expander-feed-rs
-  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+
+; Feed RS
+(defrule idea-production-feed-rs
+  (declare (salience ?*SALIENCE-IDEA-PRODUCTION*))
   ?g <- (goal (id ?goal-id) (parent ?parent-id) (mode SELECTED) (class FEED-RS)
               (params ring-color ?ring-color))
   ; Robot facts
@@ -480,8 +605,33 @@
   (wm-fact (key domain fact rs-sub args? minuend ?bases-needed
                                          subtrahend ?bases-filled
                                          difference ?bases-remain&ONE|TWO|THREE))
+  (not (idea (class FEED-RS) (goal-id ?goal-id) (params rs ?rs wp ?wp robot ?robot)))
+=>
+  (bind ?prio (goal-distance-prio (node-distance (mps-node ?rs INPUT) ?robot)))
+  (printout t "Formulated FEED-RS idea " ?rs " with " ?robot " (" ?prio ")" crlf)
+  (assert
+        (idea (class FEED-RS)
+              (goal-id ?goal-id)
+              (priority ?prio)
+              (params rs ?rs wp ?wp robot ?robot))
+  )
+)
+
+(defrule goal-expander-feed-rs
+  (declare (salience ?*SALIENCE-IDEA-GOAL-EXPAND*))
+  (idea (class FEED-RS) (priority ?prio) (goal-id ?goal-id)
+        (params rs ?rs wp ?wp robot ?robot))
+  (not (idea (priority ?prio2&:(> ?prio2 ?prio))))
+  ?g <- (goal (id ?goal-id))
+  ; Robot facts
+  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+  ; WP facts
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?mps-from side ?mps-from-side))
+  ; RS facts
+  (wm-fact (key domain fact rs-filled-with args? m ?rs n ?bases-filled))
   (wm-fact (key domain fact rs-inc args? summand ?bases-filled sum ?bases-after))
 =>
+  (printout t "Expanded FEED-RS idea " ?rs " with " ?robot " (" ?prio ")" crlf)
   (bind ?plan-id (sym-cat FEED-RS-PLAN- (gensym*)))
   (assert
     (plan (id ?plan-id) (goal-id ?goal-id) (r ?robot) (mps ?rs) (wp ?wp))
@@ -511,6 +661,7 @@
               (param-values ?robot ?wp ?rs ?bases-filled ?bases-after))
   )
   (modify ?g (mode EXPANDED))
+  (retract-ideas)
 )
 
 
