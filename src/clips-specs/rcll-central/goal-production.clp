@@ -142,7 +142,7 @@
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
   => 
    (assert
-        (goal (id (sym-cat DELIVER- ?order)) (parent ?parent-id)
+        (goal (id (sym-cat DELIVER- (gensym*))) (parent ?parent-id)
                   (class DELIVER) (type ACHIEVE) (sub-type SIMPLE) (mode SELECTED)
                   (params order ?order))
     )
