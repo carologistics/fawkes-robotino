@@ -106,7 +106,7 @@ clips-executive:
               - skills-actions.clp
               - rcll-central/noop-actions.clp
               - rcll-central/refbox-actions.clp
-              - rcll-central/lock-actions.clp
+              # - rcll-central/lock-actions.clp
               - rcll-central/wait-actions.clp
           - name: execution-monitoring
             file: rcll-central/execution-monitoring.clp

@@ -160,3 +160,52 @@
 	(printout info "Init  " ?m " with " ?wp ": " ?base " " ?cap crlf)
 	(modify ?pa (state EXECUTION-SUCCEEDED))
 )
+
+
+(defrule lock-action-start
+  ?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id)
+                      (action-name ?action&lock|one-time-lock)
+                      (state PENDING) (executable TRUE)
+                      (param-values ?name))
+  =>
+  (modify ?pa (state EXECUTION-SUCCEEDED))
+)
+
+(defrule lock-action-end
+  ?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id)
+                      (action-name unlock)
+                      (state PENDING) (executable TRUE)
+                      (param-values ?name))
+  =>
+  (modify ?pa (state EXECUTION-SUCCEEDED))
+)
+
+(defrule location-lock-action-start
+  ?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id)
+                      (action-name location-lock)
+                      (state PENDING) (executable TRUE)
+                      (param-values ?mps ?side))
+  =>
+  (modify ?pa (state EXECUTION-SUCCEEDED))
+  (assert (domain-fact (name location-locked) (param-values ?mps ?side)))
+)
+
+(defrule location-lock-action-end
+  ?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id)
+                      (action-name location-unlock)
+                      (state PENDING) (executable TRUE)
+                      (param-values ?mps ?side))
+  (wm-fact (key refbox game-time) (values ?game-time $?))
+  =>
+  (modify ?pa (state EXECUTION-SUCCEEDED))  
+  (assert (location-unlock-pending ?mps ?side ?game-time))
+)
+
+(defrule handle-location-unlock-pending
+  (wm-fact (key refbox game-time) (values ?game-time $?))
+  ?lock-fact <- (location-unlock-pending ?mps ?side ?old-game-time&:(< (+ ?old-game-time 2) ?game-time))
+  ?df <- (domain-fact (name location-locked) (param-values ?mps ?side))
+  =>
+  (retract ?lock-fact)
+  (retract ?df)
+)
