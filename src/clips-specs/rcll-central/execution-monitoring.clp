@@ -132,6 +132,50 @@
   (retract ?pt)
 )
 
+; copied
+(defrule execution-monitoring-enhance-timer-on-mps-wait-for-side-to-clear
+" If an action is pending for a certain mps-side to be free and the mps is currently in a non final state (processing, down, ...),
+  enhance the timeout to give the mps enough time to process the workpiece that is still at the side
+"
+  (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+	   (id ?id) (state PENDING)
+	   (action-name wp-put)
+	   (param-values $? ?mps $? ?side $?))
+  (domain-atomic-precondition (operator ?an) (grounded-with ?id) (predicate mps-side-free) (param-values ?mps ?side))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  (wm-fact (key domain fact mps-state args? m ?mps s ?s&~IDLE&~READY-AT-OUTPUT))
+  ?pt <- (action-timer (plan-id ?plan-id)
+            (action-id ?id)
+            (start-time $?starttime)
+            (timeout-duration ?timeout&:(neq ?timeout ?*MPS-DOWN-TIMEOUT-DURATION*)))
+  =>
+  (printout t "Detected that " ?mps " is " ?s " while wp-put is waiting for the side to clear. Enhance timeout-timer" crlf)
+  (modify ?pt (timeout-duration ?*MPS-DOWN-TIMEOUT-DURATION*))
+)
+
+; inspired by above
+(defrule execution-monitoring-enhance-timer-on-station-down
+" If an action is pending for a certain mps and the mps is currently down, increase timeout duration
+"
+  (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+	   (id ?id) (state PENDING)
+	   (action-name ?an)
+	   (param-values $? ?mps $? ?side $?))
+  ;(domain-atomic-precondition (operator ?an) (grounded-with ?id) (predicate mps-side-free) (param-values ?mps ?side))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  (wm-fact (key domain fact mps-state args? m ?mps s DOWN))
+  ?pt <- (action-timer (plan-id ?plan-id)
+            (action-id ?id)
+            (start-time $?starttime)
+            (timeout-duration ?timeout&:(neq ?timeout ?*MPS-DOWN-TIMEOUT-DURATION*)))
+  =>
+  (printout t "Detected that " ?mps " is down while action " ?an " is pending. Enhance timeout-timer" crlf)
+  (modify ?pt (timeout-duration ?*MPS-DOWN-TIMEOUT-DURATION*))
+)
+
+
 ; =============================== Retry actions ===============================
 
 ; retry mechanism copied from rcll agent
