@@ -998,6 +998,7 @@
 
 ; ============================= Passive Optimization ===============================
 
+; TODO: check games for occurence
 (defrule passive-go-wait-at-next-station
   "Even if a robot cannot reserve the next station he can still drive there already."
   ; Get non-busy robot holding a workpiece
@@ -1017,35 +1018,36 @@
   )
 )
 
-(defrule passive-store-wp-before-deliver
-  "Get a robot holding a workpiece waiting for delivery in a furture time slot and
-  store it in the storage station if possible." 
-  ; Get a robot
-  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
-  (not (goal (params robot ?robot $?some-params)))
-
-  ; wp is to be delivered
-  (goal (id ?id) (class PICKUP-AND-DELIVER) (mode SELECTED) (params order ?order ds ?ds wp ?wp))
-
-  ; get delivery time for order
-  (wm-fact (key refbox order ?order delivery-begin) (type UINT) (value ?begin))
-
-  ; check time
-  (wm-fact (key refbox game-time) (values ?game-time&:(< (+ ?game-time 120) ?begin) $?))
-
-  ; get storage station and available side
-  (wm-fact (key refbox team-color) (value ?team-color))
-  (wm-fact (key domain fact mps-type args? m ?mps t SS))
-  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  (wm-fact (key domain fact mps-side-free args? m ?mps side ?mps-side&INPUT))
-  =>
-  (printout t "Robot stores wp at storage station for future delivery." crlf)
-  (assert (goal (id (sym-cat STORE-WP-(gensym*))) 
-                (class STORE-WP)
-                (sub-type SIMPLE)
-                (params robot ?robot wp ?wp mps ?mps mps-side ?mps-side))
-  )
-)
+; TODO: not working, wp-put fails at storage station
+;(defrule passive-store-wp-before-deliver
+;  "Get a robot holding a workpiece waiting for delivery in a furture time slot and
+;  store it in the storage station if possible." 
+;  ; Get a robot
+;  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+;  (not (goal (params robot ?robot $?some-params)))
+;
+;  ; wp is to be delivered
+;  (goal (id ?id) (class PICKUP-AND-DELIVER) (mode SELECTED) (params order ?order ds ?ds wp ?wp))
+;
+;  ; get delivery time for order
+;  (wm-fact (key refbox order ?order delivery-begin) (type UINT) (value ?begin))
+;
+;  ; check time
+;  (wm-fact (key refbox game-time) (values ?game-time&:(< (+ ?game-time 120) ?begin) $?))
+;
+;  ; get storage station and available side
+;  (wm-fact (key refbox team-color) (value ?team-color))
+;  (wm-fact (key domain fact mps-type args? m ?mps t SS))
+;  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+;  (wm-fact (key domain fact mps-side-free args? m ?mps side ?mps-side&INPUT))
+;  =>
+;  (printout t "Robot stores wp at storage station for future delivery." crlf)
+;  (assert (goal (id (sym-cat STORE-WP-(gensym*))) 
+;                (class STORE-WP)
+;                (sub-type SIMPLE)
+;                (params robot ?robot wp ?wp mps ?mps mps-side ?mps-side))
+;  )
+;)
 
 ; ============================= Passive Prefills ===============================
 
