@@ -1,18 +1,15 @@
 ## TODO
 * issues
-  * robots waiting on location-lock for BS
+  * rs-filled-with for parallel goals X
 * production
   * competitive order prio
 * stability
   * look into retrying failed goals (partially done) -> restore consitent states X
-  * retry actions more often? X
-  * handle down/broken machines
 * optimization
   * get base locked from other side of the map when other robot already waiting
   * retract and clean up a goal if we can no longer complete it in reasonable time X
   * no unnecessary prefills after all orders have been posted/a certain time
   * balance prefill of bases in rs (slight advantage to 2 base requiring station)
-  * if a piece is finished and delivery too far in the future, put on storage?
   * remove some unnecessary actions, e.g., go wait at plan end
   * dynamically prioritize goals with closer submission time
   * increase prioritization of unfinished products still being held by a robot, e.g., next ring mount
@@ -35,6 +32,10 @@ robot which is unproblematic because the robot needs to wait)
 * better split of robots at game start (increase preffil capstation prio)
 * prioritize certain goals / focus on one construction
 * use capcarrier to prefill the ring station
+* robots waiting on location-lock for BS
+* if a piece is finished and delivery too far in the future, put on storage? (not working)
+* retry actions more often?
+* handle down/broken machines
 
 ## Scratched
 * select robots smartly (e.g. distance)
