@@ -508,7 +508,7 @@
   (wm-fact (key domain fact self args? r ?robot))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   ;There is a cap-carrier on the input that needs the CS, 
-  ;There is a product that needs the CS 
+  ;there is a product that needs the CS,
   ;there is a product on the output blocking it
   (wm-fact (key domain fact wp-at args? wp ?cc m ?mps side INPUT))
   (wm-fact (key wp meta next-step args? wp ?next-wp) (value CAP))
