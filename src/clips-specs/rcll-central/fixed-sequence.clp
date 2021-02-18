@@ -685,3 +685,53 @@
   )
   (modify ?g (mode EXPANDED))
 )
+
+; Put away
+(defrule idea-production-put-away
+  (declare (salience ?*SALIENCE-IDEA-PRODUCTION*))
+  ?g <- (goal (id ?goal-id) (mode SELECTED) (class PUT-AWAY)
+              (params robot ?robot wp ?wp))
+  ; mps facts
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact mps-team args? m ?mps-to col ?team-color))
+  (wm-fact (key domain fact mps-side-free args? m ?mps-to side INPUT))
+  (not (plan (mps ?mps-to)))
+  (not (idea (class PUT-AWAY) (goal-id ?goal-id) (params mps-to ?mps-to wp ?wp robot ?robot)))
+=>
+  (bind ?prio (goal-distance-prio (node-distance (mps-node ?mps-to INPUT) ?robot)))
+  (printout t "Formulated PUT-AWAY idea " ?wp " to " ?mps-to " with " ?robot " (" ?prio ")" crlf)
+  (assert
+        (idea (class PUT-AWAY)
+              (goal-id ?goal-id)
+              (priority ?prio)
+              (params mps-to ?mps-to wp ?wp robot ?robot))
+  )
+)
+
+(defrule goal-expander-put-away
+  (declare (salience ?*SALIENCE-IDEA-GOAL-EXPAND*))
+  (idea (class PUT-AWAY) (priority ?prio) (goal-id ?goal-id)
+        (params mps-to ?mps-to wp ?wp robot ?robot))
+  (not (idea (priority ?prio2&:(> ?prio2 ?prio))))
+  ?g <- (goal (id ?goal-id))
+  ; Robot facts
+  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+=>
+  (printout t "Expanded PUT-AWAY idea " ?wp " to " ?mps-to " with " ?robot " (" ?prio ")" crlf)
+  (bind ?plan-id (sym-cat PUT-AWAY-PLAN- (gensym*)))
+  (assert
+    (plan (id ?plan-id) (goal-id ?goal-id) (r ?robot) (mps ?mps-to) (wp ?wp))
+    (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
+              (action-name move)
+              (skiller (remote-skiller ?robot))
+              (param-names r from from-side to to-side)
+              (param-values ?robot ?curr-location ?curr-side ?mps-to INPUT))
+    (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
+              (action-name wp-put)
+              (skiller (remote-skiller ?robot))
+              (param-names r wp m)
+              (param-values ?robot ?wp ?mps-to))
+  )
+  (modify ?g (mode EXPANDED))
+  (retract-ideas)
+)

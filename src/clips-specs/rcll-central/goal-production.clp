@@ -660,4 +660,21 @@
                 (class GO-WAIT) (sub-type SIMPLE)
                 (params r ?robot)))
 )
-  
+
+; Check of robot has a WP in hand, but is not executing any plan (i.e. failed a move action)
+(defrule goal-production-create-put-storage
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (wm-fact (key refbox phase) (value PRODUCTION))
+  (wm-fact (key game state) (value RUNNING))
+  ; Robot facts
+  (wm-fact (key domain fact entered-field args? r ?robot))
+  (not (plan (r ?robot)))
+  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+  (not (goal (class PUT-AWAY) (params robot ?robot wp ?wp)))
+  =>
+    (assert
+        (goal (id (sym-cat PUT-AWAY- ?robot - (gensym*)))
+                  (class PUT-AWAY) (type ACHIEVE) (sub-type SIMPLE) (mode SELECTED)
+                  (params robot ?robot wp ?wp))
+    )
+)
