@@ -125,7 +125,6 @@
      (state FORMULATED|PENDING)
      (param-values $? ?mps $?)
      (action-name ?an))
-  (domain-atomic-precondition (operator ?an) (predicate mps-state) (param-values ?mps ?state))
   (not (wm-fact (key monitoring fail-goal args? g ?goal-id)))
   =>
   (assert (wm-fact (key monitoring fail-goal args? g ?goal-id) ))
