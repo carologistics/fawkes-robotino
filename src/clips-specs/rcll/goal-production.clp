@@ -510,12 +510,12 @@
   ;There is a cap-carrier on the input that needs the CS, 
   ;There is a product that needs the CS 
   ;there is a product on the output blocking it
-  (wm-fact (key domain fact wp-at args? wp ?cc ?mps side INPUT))
+  (wm-fact (key domain fact wp-at args? wp ?cc m ?mps side INPUT))
   (wm-fact (key wp meta next-step args? wp ?next-wp) (value CAP))
   (wm-fact (key domain fact wp-for-order args? wp ?next-wp ord ?order))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
   (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-  (wm-fact (key domain fact wp-at args? wp ?wp-output ?mps side OUTPUT))
+  (wm-fact (key domain fact wp-at args? wp ?wp-output m ?mps side OUTPUT))
   ;MPS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
@@ -784,7 +784,7 @@
   ;question: or would be more correct to create it and later
   ;  reject it because its not useful
   ;only discard if there is no cap mounted (i.e. wp is not a finished product)
-  (or (and (and (wm-fact (key domain fact wp-cap-color args? wp ?wp cap-color CAP_NONE))
+  (or (and (and (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
                 (wm-fact (key domain fact wp-ring1-color args? wp ?wp col RING_NONE)))
            (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order)))
       (not (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))))
