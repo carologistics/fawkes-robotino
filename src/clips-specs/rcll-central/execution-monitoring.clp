@@ -138,9 +138,9 @@
   enhance the timeout to give the mps enough time to process the workpiece that is still at the side
 "
   (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
-	   (id ?id) (state PENDING)
+	   (id ?id) (state ?state&:(or (eq ?state PENDING) (eq ?state FORMULATED)))
 	   (action-name wp-put)
-	   (param-values $? ?mps $? ?side $?))
+	   (param-values $? ?mps $?))
   (domain-atomic-precondition (operator ?an) (grounded-with ?id) (predicate mps-side-free) (param-values ?mps ?side))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
@@ -159,9 +159,9 @@
 " If an action is pending for a certain mps and the mps is currently down, increase timeout duration
 "
   (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
-	   (id ?id) (state PENDING)
+	   (id ?id) (state ?state&:(or (eq ?state PENDING) (eq ?state FORMULATED)))
 	   (action-name ?an)
-	   (param-values $? ?mps $? ?side $?))
+	   (param-values $? ?mps $?))
   ;(domain-atomic-precondition (operator ?an) (grounded-with ?id) (predicate mps-side-free) (param-values ?mps ?side))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
@@ -171,7 +171,7 @@
             (start-time $?starttime)
             (timeout-duration ?timeout&:(neq ?timeout ?*MPS-DOWN-TIMEOUT-DURATION*)))
   =>
-  (printout t "Detected that " ?mps " is down while action " ?an " is pending. Enhance timeout-timer" crlf)
+  (printout t "Detected that " ?mps " is down while action " ?an " is " ?state ". Enhance timeout-timer" crlf)
   (modify ?pt (timeout-duration ?*MPS-DOWN-TIMEOUT-DURATION*))
 )
 
