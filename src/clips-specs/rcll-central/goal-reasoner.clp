@@ -265,73 +265,39 @@
   (assert (wm-fact (key evaluated drop-wp args? r ?r wp ?wp)))
 )
 
-; remove locks of failed goals. Copied from rcll agent.
-; TODO: This could be done much simpler in the central agent
-; by not using mutexes for locks at all and instead just using
-; the wm-facts (similar to the resources).
+; remove locks of failed goals
 (defrule goal-reasoner-pre-evaluate-clean-locks
 " Unlock all remaining locks of a failed goal."
   (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
-  ?p <- (plan (id ?plan-id) (goal-id ?goal-id))
-  ?a <- (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id ?plan-id)
+  (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id ?plan-id)
                      (action-name lock) (param-values ?name)
                      ; only remove lock if the lock belongs to the plan
                      (state EXECUTION-SUCCEEDED|FINAL))
-  (mutex (name ?name) (state LOCKED) (request ~UNLOCK)
-         (pending-requests $?pending&:(not (member$ UNLOCK ?pending))))
+  ?df <- (domain-fact (name locked) (param-values ?mps))
 =>
-  (printout warn "Removing lock " ?name " of failed plan " ?plan-id
+  (printout warn "Removing lock " ?mps " of failed plan " ?plan-id
                  " of goal " ?goal-id crlf)
-  (assert (goal-reasoner-unlock-pending ?name))
-  (mutex-unlock-async ?name)
+  (retract ?df)
 )
 
 
 (defrule goal-reasoner-pre-evaluate-clean-location-locks
 " Unlock all remaining location-locks of a failed goal."
   (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
-  ?p <- (plan (id ?plan-id) (goal-id ?goal-id))
-  ?a <- (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id ?plan-id)
-                     (action-name location-lock) (param-values ?loc ?side)
+  (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id ?plan-id)
+                     (action-name location-lock) (param-values ?mps ?side)
                      ; only remove lock if the lock belongs to the plan
                      (state EXECUTION-SUCCEEDED|FINAL))
-  (mutex (name ?name&:(eq ?name (sym-cat ?loc - ?side)))
-         (state LOCKED) (request ~UNLOCK)
-         (pending-requests $?pending&:(not (member$ UNLOCK ?pending))))
+  (wm-fact (key refbox game-time) (values ?game-time $?))
+  (domain-fact (name location-locked) (param-values ?mps ?side))
+  (not (location-unlock-pending ?mps ?side ?))
 =>
-  (printout warn "Removing location lock " ?name crlf)
-  (assert (goal-reasoner-unlock-pending ?name))
-  (mutex-unlock-async ?name)
-)
-
-
-(defrule goal-reasoner-pre-evaluate-location-unlock-done
-" React to a successful unlock of an location by removing the corresponding location-locked domain-fact"
-  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
-  ?p <- (goal-reasoner-unlock-pending ?lock)
-  ?m <- (mutex (name ?lock) (request UNLOCK) (state OPEN))
-  ?df <- (domain-fact (name location-locked) (param-values ?mps ?side))
-  (test (not (eq FALSE (str-index (str-cat ?mps) (str-cat ?lock)))))
-  (test (not (eq FALSE (str-index (str-cat ?side) (str-cat ?lock)))))
-  =>
-  (modify ?m (request NONE) (response NONE))
-  (retract ?df)
-  (retract ?p)
-)
-
-
-(defrule goal-reasoner-pre-evaluate-lock-unlock-done
-" React to a successful unlock of a lock by removing the corresponding locked domain-fact"
-  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
-  ?p <- (goal-reasoner-unlock-pending ?lock)
-  ?m <- (mutex (name ?lock) (request UNLOCK) (state OPEN))
-  ?df <- (domain-fact (name locked) (param-values ?lock))
-  =>
-  (modify ?m (request NONE) (response NONE))
-  (retract ?df)
-  (retract ?p)
+  (printout warn "Removing location lock " ?mps " on side " ?side crlf)
+  (assert (location-unlock-pending ?mps ?side ?game-time))
 )
 
 ; ----------------------- EVALUATE COMMON ------------------------------------
