@@ -32,29 +32,114 @@
 )
 
 (defrule goal-expander-refill-shelf
-  ?p <- (goal (mode DISPATCHED) (id ?parent-id))
+  ?p <- (goal (mode DISPATCHED) (id ?parent) (class PRODUCE-CPARENT))
   ?g <- (goal (id ?goal-id) (class REFILL-SHELF) (mode SELECTED)
-              (params mps ?mps) (parent ?parent-id))
-  (wm-fact (key domain fact cs-color args? m ?mps col ?col))
+              (params mps ?mps ) (parent ?parent-id))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?col))
+  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   =>
   (assert
     (plan (id REFILL-PLAN) (goal-id ?goal-id))
     (plan-action (id 1) (plan-id REFILL-PLAN) (goal-id ?goal-id)
                  (action-name lock) (param-values ?mps))
     (plan-action (id 2) (plan-id REFILL-PLAN) (goal-id ?goal-id)
-                 (action-name refill-shelf)
+                 (action-name refill-shelf) (skiller (remote-skiller ?robot))
                  (param-values ?mps LEFT (sym-cat CC- (random-id)) ?col))
     (plan-action (id 3) (plan-id REFILL-PLAN) (goal-id ?goal-id)
-                 (action-name refill-shelf)
+                 (action-name refill-shelf) (skiller (remote-skiller ?robot))
                  (param-values ?mps MIDDLE (sym-cat CC- (random-id)) ?col))
     (plan-action (id 4) (plan-id REFILL-PLAN) (goal-id ?goal-id)
-                 (action-name refill-shelf)
+                 (action-name refill-shelf) (skiller (remote-skiller ?robot))
                  (param-values ?mps RIGHT (sym-cat CC- (random-id)) ?col))
     (plan-action (id 5) (plan-id REFILL-PLAN) (goal-id ?goal-id)
-                 (action-name unlock) (param-values ?mps))
+                  (action-name unlock) (param-values ?mps)))
+  
+  (modify ?g (mode EXPANDED))
+)
+
+
+(defrule goal-expander-get-base-to-fill-rs
+ ?p <- (goal (mode DISPATCHED) (id ?parent) (class PRODUCE-CPARENT))
+ ?g <- (goal (mode SELECTED) (parent ?parent) (id ?goal-id)
+             (class GET-BASE-TO-FILL-RS)
+             (params robot ?robot
+                      bs ?bs
+                      bs-side ?bs-side
+                      base-color ?base-color
+                      wp ?spawned-wp
+       ))
+ (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+ =>
+ (assert
+  (plan (id GET-BASE-TO-FILL-RS-PLAN) (goal-id ?goal-id))
+  (plan-action (id 1) (plan-id GET-BASE-TO-FILL-RS-PLAN) (goal-id ?goal-id)
+        (action-name go-wait)
+        (skiller (remote-skiller ?robot))
+        (param-names r from from-side to)
+        (param-values ?robot ?curr-location ?curr-side (wait-pos ?bs ?bs-side)))
+  (plan-action (id 2) (plan-id GET-BASE-TO-FILL-RS-PLAN) (goal-id ?goal-id)
+        (action-name location-lock)
+        (param-values ?bs ?bs-side))
+  (plan-action (id 3) (plan-id GET-BASE-TO-FILL-RS-PLAN) (goal-id ?goal-id)
+        (action-name move)
+        (skiller (remote-skiller ?robot))
+        (param-names r from from-side to to-side )
+        (param-values ?robot (wait-pos ?bs ?bs-side) WAIT ?bs ?bs-side))
+  (plan-action (id 4) (plan-id GET-BASE-TO-FILL-RS-PLAN) (goal-id ?goal-id)
+        (action-name lock)
+        (param-values ?bs))
+  (plan-action (id 5) (plan-id GET-BASE-TO-FILL-RS-PLAN) (goal-id ?goal-id)
+        (action-name prepare-bs)
+        (skiller (remote-skiller ?robot))
+        (param-values ?bs ?bs-side ?base-color))
+  (plan-action (id 6) (plan-id GET-BASE-TO-FILL-RS-PLAN) (goal-id ?goal-id)
+        (action-name bs-dispense)
+        (skiller (remote-skiller ?robot))
+        (param-values ?robot ?bs ?bs-side ?spawned-wp ?base-color))
+  (plan-action (id 7) (plan-id  GET-BASE-TO-FILL-RS-PLAN) (goal-id ?goal-id)
+        (action-name wp-get)
+        (skiller (remote-skiller ?robot))
+        (param-names r wp m side)
+        (param-values ?robot ?spawned-wp ?bs ?bs-side))
+  (plan-action (id 8) (plan-id GET-BASE-TO-FILL-RS-PLAN) (goal-id ?goal-id)
+        (action-name unlock)
+        (param-values ?bs))
+  (plan-action (id 9) (plan-id GET-BASE-TO-FILL-RS-PLAN) (goal-id ?goal-id)
+        (action-name location-unlock)
+        (param-values ?bs ?bs-side))
+  (plan-action (id 10) (plan-id GET-BASE-TO-FILL-RS-PLAN) (goal-id ?goal-id)
+        (action-name go-wait)
+        (skiller (remote-skiller ?robot))
+        (param-names r from from-side to)
+        (param-values ?robot ?bs ?bs-side (wait-pos ?bs ?bs-side)))
+ )
+ (modify ?g (mode EXPANDED))
+)
+
+
+(defrule goal-expander-discard-wp
+ ?p <- (goal (mode DISPATCHED) (id ?parent))
+ ?g <- (goal (id ?goal-id) (class DISCARD-WP) (mode SELECTED)
+             (parent ?parent)
+             (params robot ?robot
+                    wp ?wp
+             ))
+  =>
+  (assert
+    (plan (id DISCARD-WP-PLAN) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id DISCARD-WP-PLAN) (goal-id ?goal-id)
+          (action-name wp-discard)
+          (skiller (remote-skiller ?robot))
+          (param-names r cc )
+          (param-values ?robot ?wp))
   )
   (modify ?g (mode EXPANDED))
 )
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 (defrule goal-expander-enter-field
   ?g <- (goal (id ?goal-id) (mode SELECTED) (class ENTER-FIELD)
@@ -1009,8 +1094,11 @@
 
 (defrule goal-expander-go-wait
   "Move to a waiting position."
-   ?p <- (goal (mode DISPATCHED) (id ?parent) (class PRODUCE-SUPPORTING-TASKS))
-   ?g <- (goal (id ?goal-id) (class GO-WAIT) (mode SELECTED) )
+   ?p <- (goal (mode DISPATCHED) (id ?parent))
+   ?g <- (goal (id ?goal-id) (class GO-WAIT) (mode SELECTED) (parent ?parent)
+               (params r ?robot
+                 point ?waitpoint
+         ))
    (wm-fact (key domain fact self args? r ?robot))
    (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
    =>
@@ -1018,40 +1106,10 @@
         (plan (id GO-WAIT-PLAN) (goal-id ?goal-id))
         (plan-action (id 1) (plan-id GO-WAIT-PLAN) (goal-id ?goal-id)
                      (action-name go-wait)
-                      (skiller (remote-skiller ?robot))
                      (param-names r from from-side to)
-                     (param-values ?robot ?curr-location ?curr-side WAIT START INPUT))
+                     (param-values ?robot ?curr-location ?curr-side ?waitpoint))
    )
-   (modify ?g (mode EXPANDED)))
-
-
-
-(defrule goal-expander-produce-refill-shelf
- ?p <- (goal (mode DISPATCHED) (id ?parent) (class PRODUCE-SUPPORTING-TASKS))
- ?g <- (goal (id ?goal-id) (params mps ?mps) (parent ?parent) (class REFILL_SHELF) (mode SELECTED))
- (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
- (wm-fact (key domain fact cs-color args? m ?mps col ?col))
- (not (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot)))
- =>
-      (bind ?planid (sym-cat PRODUCE-C0-REFILL-SHELF- (gensym*)))
-      (assert
-        (plan (id ?planid) (goal-id ?goal-id))
-        (plan-action (id 1) (plan-id ?planid) (goal-id ?goal-id)
-                 (action-name lock) (param-values ?mps))
-        (plan-action (id 2) (plan-id ?planid) (goal-id ?goal-id)
-                 (action-name refill-shelf)
-                 (skiller (remote-skiller ?robot))
-                 (param-values ?mps LEFT (sym-cat CC- (random-id)) ?col))
-        (plan-action (id 3) (plan-id ?planid) (goal-id ?goal-id)
-                 (action-name refill-shelf)
-                 (skiller (remote-skiller ?robot))
-                 (param-values ?mps MIDDLE (sym-cat CC- (random-id)) ?col))
-        (plan-action (id 4) (plan-id ?planid) (goal-id ?goal-id)
-                 (action-name refill-shelf)
-                 (skiller (remote-skiller ?robot))
-                 (param-values ?mps RIGHT (sym-cat CC- (random-id)) ?col))
-        (plan-action (id 5) (plan-id ?planid) (goal-id ?goal-id)
-                 (action-name unlock) (param-values ?mps))
-  )
-  (modify ?g (mode EXPANDED))
+   (modify ?g (mode EXPANDED))
 )
+
+
