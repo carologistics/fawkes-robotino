@@ -116,6 +116,25 @@
                 (goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
 )
 
+(deffunction uses-down-mps (?id)
+" Recursively check whether the goal uses a station that is down or broken
+  by looking at the stations reserved in the resource fields of all ancestor goals"
+  (do-for-fact ((?g goal)) (eq ?g:id ?id)
+    (if
+      (and (eq (length$ ?g:required-resources) 1)
+            (any-factp ((?wm wm-fact)) (and
+              (wm-key-prefix ?wm:key (create$ domain fact mps-state))
+              (eq (wm-key-arg ?wm:key m) (nth$ 1 ?g:required-resources))
+              (or (eq (wm-key-arg ?wm:key s) DOWN) (eq (wm-key-arg ?wm:key s) BROKEN))
+            ))
+      )
+      then (return TRUE)
+    )
+  (if (eq ?g:parent nil) then (return FALSE))
+  (return (uses-down-mps ?g:parent))
+  )
+)
+
 ; ============================= Resource handling ===============================
 ; Since we don't need to consider multiple agents requesting the same resource
 ; and only use goals which require at most one resource (a mps) we use

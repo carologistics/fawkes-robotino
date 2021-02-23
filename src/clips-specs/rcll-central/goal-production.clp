@@ -1065,7 +1065,8 @@
   (not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
 
   ; there is nothing else to do:
-  (not (goal (class ?class&:(goal-needs-fresh-robot ?class))
+  (not (goal (id ?id&:(not (uses-down-mps ?id)))
+            (class ?class&:(goal-needs-fresh-robot ?class))
             (mode SELECTED)
             (params $?params&:(not (member$ robot $?params)))))
 
@@ -1113,7 +1114,8 @@
   (not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
 
   ; there is nothing else to do:
-  (not (goal (class ?class&:(goal-needs-fresh-robot ?class))
+  (not (goal (id ?id&:(not (uses-down-mps ?id)))
+            (class ?class&:(goal-needs-fresh-robot ?class))
             (mode SELECTED)
             (params $?params&:(not (member$ robot $?params)))))
 
@@ -1160,7 +1162,8 @@
   (not (test (member$ robot $?params)))
 
   ; check that there isn't a goal with higher priority waiting
-  (not (goal (class ?oclass&:(goal-needs-fresh-robot ?oclass)) (mode SELECTED)
+  (not (goal (id ?oid&:(not (uses-down-mps ?oid)))
+            (class ?oclass&:(goal-needs-fresh-robot ?oclass)) (mode SELECTED)
             (params $?oparams&:(not (member$ robot $?oparams))) 
             (meta $? global-priority ?ogprio&:(> ?ogprio ?gprio) $?)))
 
@@ -1168,6 +1171,8 @@
   (wm-fact (key domain fact entered-field args? r ?robot))
   (not (goal (params robot ?robot $?some-params)))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
+
+  (not (test (uses-down-mps ?goal-id)))
   =>
   (printout t "Assigning " ?robot " to " ?goal-id crlf)
   (modify ?g (params robot ?robot $?params))
@@ -1198,7 +1203,8 @@
               side ?side&:(or (eq ?side INPUT) (eq ?side OUTPUT))))
 
   ; there is nothing else to do:
-  (not (goal (class ?class&:(goal-needs-fresh-robot ?class))
+  (not (goal (id ?id&:(not (uses-down-mps ?id))) 
+            (class ?class&:(goal-needs-fresh-robot ?class))
             (mode SELECTED)
             (params $?params&:(not (member$ robot $?params)))))
 
