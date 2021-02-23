@@ -102,6 +102,7 @@
   (wm-fact (key domain fact entered-field args? r ?robot))
   (not (plan (r ?robot)))
   (wm-fact (key domain fact can-hold args? r ?robot))
+  (Position3DInterface (id ?id&:(eq ?id (remote-if-id ?robot "Pose"))) (translation $?pose))
   ; CS facts
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact mps-type args? m ?cs t CS))
@@ -203,6 +204,7 @@
   (wm-fact (key domain fact entered-field args? r ?robot))
   (not (plan (r ?robot)))
   (wm-fact (key domain fact can-hold args? r ?robot))
+  (Position3DInterface (id ?id&:(eq ?id (remote-if-id ?robot "Pose"))) (translation $?pose))
   ; WP facts
   (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side OUTPUT))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
@@ -262,6 +264,7 @@
   (wm-fact (key domain fact entered-field args? r ?robot))
   (not (plan (r ?robot)))
   (wm-fact (key domain fact can-hold args? r ?robot))
+  (Position3DInterface (id ?id&:(eq ?id (remote-if-id ?robot "Pose"))) (translation $?pose))
   ; wp facts
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps-from side ?mps-from-side))
   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
@@ -337,6 +340,7 @@
   ; Robot facts
   (wm-fact (key domain fact entered-field args? r ?robot))
   (not (plan (r ?robot)))
+  (Position3DInterface (id ?id&:(eq ?id (remote-if-id ?robot "Pose"))) (translation $?pose))
   ; BS facts
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
@@ -611,6 +615,7 @@
   (wm-fact (key domain fact can-hold args? r ?robot))
   (not (plan (r ?robot)))
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+  (Position3DInterface (id ?id&:(eq ?id (remote-if-id ?robot "Pose"))) (translation $?pose))
   ; WP facts
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps-from side ?mps-from-side))
   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col RING_NONE))
