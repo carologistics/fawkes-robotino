@@ -438,6 +438,8 @@
   (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
   (wm-fact (key domain fact order-gate args? ord ?order gate ?gate))
+  (wm-fact (key refbox game-time) (values $?game-time))
+  (wm-fact (key refbox order ?order delivery-begin) (value ?begin&:(> (nth$ 1 ?game-time) ?begin)))
   ; DS facts
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact mps-type args? m ?ds t DS))
