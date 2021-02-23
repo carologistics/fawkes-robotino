@@ -718,6 +718,7 @@
   ; mps facts
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact mps-team args? m ?mps-to col ?team-color))
+  (wm-fact (key domain fact mps-type args? m ?mps-to t ~SS))
   (wm-fact (key domain fact mps-side-free args? m ?mps-to side INPUT))
   (not (plan (mps ?mps-to)))
   (not (idea (class PUT-AWAY) (goal-id ?goal-id) (params mps-to ?mps-to wp ?wp robot ?robot)))
