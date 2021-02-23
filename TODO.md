@@ -1,6 +1,4 @@
 ## TODO
-* issues
-  * rs-filled-with for parallel goals X
 * production
   * competitive order prio
 * stability
@@ -36,6 +34,7 @@ robot which is unproblematic because the robot needs to wait)
 * if a piece is finished and delivery too far in the future, put on storage? (not working)
 * retry actions more often?
 * handle down/broken machines
+* rs-filled-with for parallel goals X
 
 ## Scratched
 * select robots smartly (e.g. distance)

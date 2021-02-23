@@ -418,8 +418,8 @@
               (params robot ?robot rs ?ring-station wp ?wp)
         )
   ;TODO: current workaround to fix parallel issue with rs-filled-with
-  (not (goal (class FILL-RS) (mode EXPANDED|COMMITTED|DISPATCHED) 
-             (params robot ? bs ? rs ?ring-station wp ?)))
+  (not (goal (class FILL-RS) (mode EXPANDED|COMMITTED|DISPATCHED|FINISHED)
+             (params $? rs ?ring-station $?)))
 
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   (wm-fact (key domain fact rs-filled-with args? m ?ring-station n ?rs-before))
