@@ -82,8 +82,8 @@
 
 (deffunction retract-ideas ()
   ; Retract all ideas.
+  (printout t " ---------------------------- " crlf)
   (do-for-all-facts ((?i idea)) TRUE
-    (printout t "Retracting " ?i:class " idea " ?i:params crlf)
 		(retract ?i)
 	)
 )
@@ -94,11 +94,10 @@
   ?*SALIENCE-IDEA-GOAL-EXPAND* = (+ ?*SALIENCE-GOAL-EXPAND* 1)
 )
 
-; Prepare cap
-(defrule idea-production-prepare-cap
+; Fetch CC
+(defrule idea-production-fetch-cc
   (declare (salience ?*SALIENCE-IDEA-PRODUCTION*))
-  ?g <- (goal (id ?goal-id) (mode SELECTED) (class PREPARE-CAP) (params cap-color ?cap-color))
-  (not (goal (mode ~SELECTED) (class PREPARE-CAP) (params cap-color ?cap-color)))
+  ?g <- (goal (id ?goal-id) (mode SELECTED) (class FETCH-CC) (params cap-color ?cap-color))
   ; Robot facts
   (wm-fact (key domain fact entered-field args? r ?robot))
   (not (plan (r ?robot)))
@@ -113,21 +112,21 @@
   (wm-fact (key domain fact mps-side-free args? m ?cs side OUTPUT))
   (wm-fact (key domain fact cs-can-perform args? m ?cs op RETRIEVE_CAP))
   (not (plan (mps ?cs)))
-  (not (idea (class PREPARE-CAP) (goal-id ?goal-id) (params cs ?cs robot ?robot)))
+  (not (idea (class FETCH-CC) (goal-id ?goal-id) (params cs ?cs robot ?robot)))
 =>
   (bind ?prio (goal-distance-prio (node-distance (mps-node ?cs INPUT) ?robot)))
-  (printout t "Formulated PREPARE-CAP idea " ?cs " with " ?robot " (" ?prio ")" crlf)
+  (printout t "Formulated FETCH-CC idea " ?cs " with " ?robot " (" ?prio ")" crlf)
   (assert
-        (idea (class PREPARE-CAP)
+        (idea (class FETCH-CC)
               (goal-id ?goal-id)
               (priority ?prio)
               (params cs ?cs robot ?robot))
   )
 )
 
-(defrule goal-expander-prepare-cap
+(defrule goal-expander-fetch-cc
   (declare (salience ?*SALIENCE-IDEA-GOAL-EXPAND*))
-  (idea (class PREPARE-CAP) (priority ?prio) (goal-id ?goal-id)
+  (idea (class FETCH-CC) (priority ?prio) (goal-id ?goal-id)
         (params cs ?cs robot ?robot))
   (not (idea (priority ?prio2&:(> ?prio2 ?prio))))
   ?g <- (goal (id ?goal-id))
@@ -137,8 +136,8 @@
   (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
   (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cs spot ?shelf-spot))
 =>
-  (printout t "Expanded PREPARE-CAP idea " ?cs " with " ?robot " (" ?prio ")" crlf)
-  (bind ?plan-id (sym-cat PREPARE-CAP-PLAN- (gensym*)))
+  (printout t "Expanded FETCH-CC idea " ?cs " with " ?robot " (" ?prio ")" crlf)
+  (bind ?plan-id (sym-cat FETCH-CC-PLAN- (gensym*)))
   (assert
     (plan (id ?plan-id) (goal-id ?goal-id) (r ?robot) (mps ?cs))
     (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
@@ -156,18 +155,43 @@
               (skiller (remote-skiller ?robot))
               (param-names r wp m)
               (param-values ?robot ?cc ?cs))
-    (plan-action (id 4) (plan-id ?plan-id) (goal-id ?goal-id)
-              (action-name prepare-cs)
-              (skiller (remote-skiller ?robot))
-              (param-names m op)
-              (param-values ?cs RETRIEVE_CAP))
-    (plan-action (id 5) (plan-id ?plan-id) (goal-id ?goal-id)
-              (action-name cs-retrieve-cap)
-              (skiller (remote-skiller ?robot))
-              (param-values ?cs ?cc ?cap-color))
   )
   (modify ?g (mode EXPANDED))
   (retract-ideas)
+)
+
+
+; Retrieve cap
+(defrule goal-expander-retrieve-cap
+  (declare (salience ?*SALIENCE-MACHINE-GOAL-EXPAND*))
+  ?g <- (goal (id ?goal-id) (mode SELECTED) (class RETRIEVE-CAP) (params cap-color ?cap-color))
+  ; CS facts
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact mps-type args? m ?cs t CS))
+  (wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
+  (wm-fact (key domain fact mps-state args? m ?cs s ~BROKEN))
+  (wm-fact (key domain fact cs-color args? m ?cs col ?cap-color))
+  (wm-fact (key domain fact mps-side-free args? m ?cs side OUTPUT))
+  (wm-fact (key domain fact cs-can-perform args? m ?cs op RETRIEVE_CAP))
+  (not (plan (mps ?cs)))
+  ; WP facts
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side INPUT))
+  (wm-fact (key domain fact wp-base-color args? wp ?wp col BASE_NONE))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
+  (not (plan (wp ?wp)))
+=>
+  (bind ?plan-id (sym-cat RETRIEVE-CAP-PLAN- (gensym*)))
+  (assert
+    (plan (id ?plan-id) (goal-id ?goal-id) (mps ?cs) (wp ?wp) )
+    (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
+              (action-name prepare-cs)
+              (param-names m op)
+              (param-values ?cs RETRIEVE_CAP))
+    (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
+              (action-name cs-retrieve-cap)
+              (param-values ?cs ?wp ?cap-color))
+  )
+  (modify ?g (mode EXPANDED))
 )
 
 

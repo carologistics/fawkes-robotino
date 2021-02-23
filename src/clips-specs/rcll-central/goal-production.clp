@@ -262,7 +262,7 @@
 )
 
 
-(defrule goal-production-prepare-cap
+(defrule goal-production-retrieve-cap
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-CAP) (params base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cap-color ?cap-color))
   ; CS facts
@@ -272,20 +272,55 @@
   (wm-fact (key domain fact cs-color args? m ?cs col ?cap-color))
   (not (wm-fact (key domain fact cs-buffered args? m ?cs col ?cap-color)))
   ; Subgoal does not exist yet
-  (not (goal (class PREPARE-CAP) (parent ?parent-id) (params cap-color ?cap-color)))
+  (not (goal (class RETRIEVE-CAP) (parent ?parent-id) (params cap-color ?cap-color)))
   => 
    (assert
-        (goal (id (sym-cat PREPARE-CAP- (gensym*))) (parent ?parent-id)
-                  (class PREPARE-CAP) (type ACHIEVE) (sub-type SIMPLE) (mode SELECTED)
+        (goal (id (sym-cat RETRIEVE-CAP- (gensym*))) (parent ?parent-id)
+                  (class RETRIEVE-CAP) (type ACHIEVE) (sub-type SIMPLE) (mode SELECTED)
                   (params cap-color ?cap-color))
     )
 )
 
 
-(defrule goal-retraction-prepare-cap
+(defrule goal-retraction-retrieve-cap
   (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
-  ?g <- (goal (parent ?parent-id) (mode SELECTED) (class PREPARE-CAP))
+  ?g <- (goal (parent ?parent-id) (mode SELECTED) (class RETRIEVE-CAP))
   (not (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-CAP)))
+=> 
+  (modify ?g (mode RETRACTED))
+)
+
+
+(defrule goal-production-fetch-cc
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (parent ?parent-id) (mode SELECTED) (class RETRIEVE-CAP) (params cap-color ?cap-color))
+  ; CS facts
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact mps-type args? m ?cs t CS))
+  (wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
+  (wm-fact (key domain fact cs-color args? m ?cs col ?cap-color))
+  (not (wm-fact (key domain fact cs-buffered args? m ?cs col ?cap-color)))
+  ; WP facts
+  (not (exists
+    (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side INPUT))
+    (wm-fact (key domain fact wp-base-color args? wp ?wp col BASE_NONE))
+    (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
+  ))
+  ; Subgoal does not exist yet
+  (not (goal (class FETCH-CC) (parent ?parent-id) (params cap-color ?cap-color)))
+  => 
+   (assert
+        (goal (id (sym-cat FETCH-CC- (gensym*))) (parent ?parent-id)
+                  (class FETCH-CC) (type ACHIEVE) (sub-type SIMPLE) (mode SELECTED)
+                  (params cap-color ?cap-color))
+    )
+)
+
+
+(defrule goal-retraction-fetch-cc
+  (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
+  ?g <- (goal (parent ?parent-id) (mode SELECTED) (class FETCH-CC))
+  (not (goal (parent ?parent-id) (mode SELECTED) (class RETRIEVE-CAP)))
 => 
   (modify ?g (mode RETRACTED))
 )
