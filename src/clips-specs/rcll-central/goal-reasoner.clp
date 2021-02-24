@@ -266,7 +266,7 @@
   (printout t "Retry of " ?parent " reset to " (- ?retries 1) crlf)  
 )
 
-
+;TODO: potentially removable due to disposable logic
 (defrule goal-reasoner-drop-wp-of-failed-goal
 " If a production root goal fails and some robot is still holding the wp
   it needs to drop the wp to avoid deadlocks. Discarding the wp should

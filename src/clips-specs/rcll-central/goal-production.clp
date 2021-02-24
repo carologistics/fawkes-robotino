@@ -486,12 +486,25 @@
   (modify ?p (mode EXPANDED))
 )
 
+(defrule goal-production-wp-disposable
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+  (or (and (not (wm-fact (key domain fact wp-base-color args? wp ?wp col ?)))
+           (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE)))
+      (and (wm-fact (key domain fact wp-base-color args? wp ?wp col ?))
+           (not (goal (params $? ?wp $?))))
+  )
+  =>
+  (printout t "Setting the workpiece " ?wp " to disposable." crlf)
+  (assert (disposable ?wp))
+)
+
 (defrule goal-production-reuse-cc
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 
   ; robot has just picked up a cc
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
-  (not (wm-fact (key domain fact wp-base-color args? wp ?wp col ?)))
+  (disposable ?wp)
   (not (goal (params robot ?robot $?)))
 
   ; there is nothing else to do:
@@ -529,7 +542,7 @@
 " TODO"
   ; robot has just picked up a cc
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
-  (not (wm-fact (key domain fact wp-base-color args? wp ?wp col ?)))
+  (disposable ?wp)
   (not (goal (params robot ?robot $?)))
   =>
   (assert
