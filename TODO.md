@@ -4,10 +4,8 @@
 * stability
   * look into retrying failed goals (partially done) -> restore consitent states X
 * optimization
-  * get base locked from other side of the map when other robot already waiting
   * retract and clean up a goal if we can no longer complete it in reasonable time X
   * no unnecessary prefills after all orders have been posted/a certain time
-  * balance prefill of bases in rs (slight advantage to 2 base requiring station)
   * remove some unnecessary actions, e.g., go wait at plan end
   * dynamically prioritize goals with closer submission time
   * increase prioritization of unfinished products still being held by a robot, e.g., next ring mount
@@ -40,6 +38,8 @@ robot which is unproblematic because the robot needs to wait)
 * select robots smartly (e.g. distance)
 * lower priority/ no robot assignment if needed machine down?
 * limit amount of productions to 2 at a time (solved through later start)
+* balance prefill of bases in rs (slight advantage to 2 base requiring station)
+* get base locked from other side of the map when other robot already waiting -> benefit by early dispense
 
 ## NOTES
 * verify: go-wait actions before move actions when machine is not reserved
