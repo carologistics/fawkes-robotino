@@ -1020,10 +1020,12 @@
 
   ; Check the next goal for the wp to find out to which station we need to go
   (goal (id ?root-id) (class PRODUCE-C0|PRODUCE-CX) (params $? wp ?wp $?))
-  (goal (id ?id) (parent ?root-id) (mode COMMITTED) (required-resources ?mps))
-  (goal (id ?id-diff&:(neq ?id ?id-diff)) (acquired-resources ?mps))
+  (goal (id ?id) (parent ?root-id) (mode SELECTED|COMMITTED|DISPATCHED) (required-resources ?mps))
+
+  ; We are not already at the next station
+  (not (wm-fact (key domain fact at args? r ?robot m ?pos&:(eq ?pos (wait-pos ?mps INPUT)) side WAIT)))
   =>
-  (printout t "Robot moves to next station to wait for future goal." crlf)
+  (printout t "Robot " ?robot " moves to next station " ?mps " to wait for future goal " ?id " ." crlf)
   (assert (goal (id (sym-cat GO-WAIT-(gensym*))) 
                 (class GO-WAIT)
                 (sub-type SIMPLE)
