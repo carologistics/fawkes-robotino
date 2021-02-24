@@ -198,28 +198,30 @@
 
 ; ============================= Production goals ===============================
 
-(deffunction order-time-estimate-upper (?complexity)
+(deffunction order-time-estimate-upper (?complexity ?competitive)
+  (bind ?comp 0)
+  (if (eq ?competitive TRUE) then (bind ?comp 30))
   (switch ?complexity
     (case C0 then
-      (return 150)
+      (return (+ 150 ?comp))
     )
     (case C1 then
-      (return 210)
+      (return (+ 210 ?comp))
     )
     (case C2 then
-      (return 330)
+      (return (+ 330 ?comp))
     )
     (case C3 then
-      (return 390)
+      (return (+ 390 ?comp))
     )
     (default none)
   )
 )
 
-(deffunction order-time-estimate-lower (?complexity)
+(deffunction order-time-estimate-lower (?complexity ?competitive)
   (switch ?complexity
     (case C0 then
-      (return 120)
+      (return 150)
     )
     (case C1 then
       (return 200)
@@ -293,6 +295,9 @@
   "Create root goal of c0-production tree"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 
+
+  (not-defined)
+
   ; check current game state
   (wm-fact (key refbox state) (value RUNNING))
   (wm-fact (key refbox phase) (value PRODUCTION))
@@ -333,11 +338,12 @@
   (not (goal (class PRODUCE-C0) (params order ?order $?other-params)))
   (not (goal (class HANDLE-MPS) (params ?ds)))
 
+  (wm-fact (key order meta competitive args? ord ?order) (value ?competitive))
   (wm-fact (key refbox game-time) (values $?game-time))
   (wm-fact (key refbox order ?order delivery-begin) (type UINT)
-	  (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) (order-time-estimate-upper ?complexity)))))
+	  (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) (order-time-estimate-upper ?complexity ?competitive)))))
   (wm-fact (key refbox order ?order delivery-end) (type UINT)
-	  (value ?end&:(> ?end (+ (nth$ 1 ?game-time) (order-time-estimate-lower ?complexity)))))
+	  (value ?end&:(> ?end (+ (nth$ 1 ?game-time) (order-time-estimate-lower ?complexity ?competitive)))))
   =>
   (bind ?wp (create-wp ?order))
   (assert 
@@ -346,6 +352,7 @@
           (sub-type RUN-ALL-OF-SUBGOALS)
           (params order ?order
                   wp ?wp
+                  complexity ?complexity
                   cs ?cap-station
                   bs ?base-station
                   cap-color ?cap-color
@@ -364,6 +371,7 @@
   ?p <- (goal (id ?parent) (class PRODUCE-C0) (mode SELECTED)
               (params order ?order
                       wp ?wp
+                      complexity ?complexity
                       cs ?cap-station
                       bs ?base-station
                       cap-color ?cap-color
@@ -383,6 +391,7 @@
             (required-resources ?cap-station)
             (params cs ?cap-station
                     wp ?wp
+                    complexity ?complexity
                     bs ?base-station
                     cap-color ?cap-color
                     base-color ?base-color)
@@ -405,13 +414,14 @@
   (modify ?p (mode EXPANDED))
 )
 
-(defrule goal-production-produce-c0-handle-cs
+(defrule goal-production-produce-cx-handle-cs
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ?p <- (goal (id ?parent)
-              (class PRODUCE-C0-HANDLE-CS)
+              (class PRODUCE-CX-HANDLE-CS)
               (mode SELECTED)
               (params cs ?cap-station
                       wp ?wp
+                      complexity ?complexity
                       bs ?base-station
                       cap-color ?cap-color
                       base-color ?base-color))
@@ -436,7 +446,7 @@
           (parent ?parent)
           (sub-type RUN-SUBGOALS-IN-PARALLEL)
           (priority 2.0)
-          (params cs ?cap-station wp ?wp bs ?base-station
+          (params cs ?cap-station wp ?wp complexity ?complexity bs ?base-station
                   base-color ?base-color)
     )
     (goal (id (sym-cat MOUNT-CAP-(gensym*)))
@@ -455,7 +465,7 @@
   "Leaf goals to remove the unused base and get a base running in parallel."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ?p <- (goal (id ?parent) (class PRODUCE-C0-GET-BASE-AND-REMOVE-CC) (mode SELECTED)
-              (params cs ?cap-station wp ?wp bs ?base-station
+              (params cs ?cap-station wp ?wp complexity ?complexity bs ?base-station
               base-color ?base-color))
   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?wp-base-color) (value TRUE))
   =>
@@ -468,18 +478,31 @@
           (priority 2.0)
     )
   )
-  (if (neq ?wp-base-color ?base-color) then
+  (if (eq ?complexity C0)
+  then
+    (if (neq ?wp-base-color ?base-color) then
+      (assert
+        (goal (id (sym-cat GET-BASE-(gensym*)))
+              (class GET-BASE)
+              (parent ?parent)
+              (sub-type SIMPLE)
+              (params bs ?base-station
+                      bs-side OUTPUT
+                      bs-color ?base-color
+                      target-station ?cap-station
+                      wp ?wp)
+              (priority 1.0)
+        )
+      )
+    )
+  else
     (assert
-      (goal (id (sym-cat GET-BASE-(gensym*)))
-            (class GET-BASE)
+      (goal (id (sym-cat PICKUP-WP-(gensym*)))
             (parent ?parent)
+            (class PICKUP-WP)
             (sub-type SIMPLE)
-            (params bs ?base-station
-                    bs-side OUTPUT
-                    bs-color ?base-color
-                    target-station ?cap-station
-                    wp ?wp)
             (priority 1.0)
+            (params wp ?wp)
       )
     )
   )
@@ -600,9 +623,10 @@
   (domain-facts-loaded)
 
   ; get order of complexity CX
-  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&~C0))
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
 
   ; debugging conditions
+  (test (or (neq ?*DEBUG-SKIP-C0* = 1) (neq ?complexity C0)))
   (test (or (neq ?*DEBUG-SKIP-C1* = 1) (neq ?complexity C1)))
   (test (or (neq ?*DEBUG-SKIP-C2* = 1) (neq ?complexity C2)))
   (test (or (neq ?*DEBUG-SKIP-C3* = 1) (neq ?complexity C3)))
@@ -649,11 +673,13 @@
 	  (value ?qd&:(> ?qr ?qd)))
   (not (goal (class HANDLE-MPS) (params ?ds)))
 
+  (wm-fact (key order meta competitive args? ord ?order) (value ?competitive))
+
   (wm-fact (key refbox game-time) (values $?game-time))
   (wm-fact (key refbox order ?order delivery-begin) (type UINT)
-	  (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) (order-time-estimate-upper ?complexity)))))
+	  (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) (order-time-estimate-upper ?complexity ?competitive)))))
   (wm-fact (key refbox order ?order delivery-end) (type UINT)
-	  (value ?end&:(> ?end (+ (nth$ 1 ?game-time) (order-time-estimate-lower ?complexity)))))
+	  (value ?end&:(> ?end (+ (nth$ 1 ?game-time) (order-time-estimate-lower ?complexity ?competitive)))))
 
   =>
   (bind ?wp (create-wp ?order))
@@ -710,7 +736,7 @@
   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?wp-ring3-color) (value TRUE))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?wp-cap-color) (value TRUE))
   =>
-  (if (neq ?wp-ring1-color ?ring-color1) then
+  (if (and (neq ?wp-ring1-color ?ring-color1) (neq ?complexity C0) then
     (assert
       (goal (id (sym-cat PRODUCE-CX-HANDLE-RS-(gensym*)))
             (parent ?parent)
@@ -778,11 +804,12 @@
             (sub-type RUN-ALL-OF-SUBGOALS)
             (priority 1.0)
             (required-resources ?cap-station)
-            (params order ?order
+            (params cs ?cap-station
                     wp ?wp
-                    cs ?cap-station
+                    complexity ?complexity
+                    bs ?base-station
                     cap-color ?cap-color
-                    ds ?ds)
+                    base-color ?base-color)
             (meta global-priority (+ ?pprio 700))
       )
     )
@@ -876,17 +903,20 @@
   (modify ?p (mode EXPANDED))
 )
 
-(defrule goal-production-produce-cx-handle-cs
+(defrule goal-production-produce-cx-old-handle-cs
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  ?p <- (goal (id ?parent) (class PRODUCE-CX-HANDLE-CS) (mode SELECTED)
+  ?p <- (goal (id ?parent) (class PRODUCE-CX-old-HANDLE-CS) (mode SELECTED)
               (params order ?order
                       wp ?wp
+                      complexity ?complexity
                       cs ?cap-station
                       cap-color ?cap-color
                       ds ?ds))
   (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cap-station spot ?spot))
   (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
   =>
+  (bind ?base-station BS)
+  (bind ?base-color GREEN)
   (assert
     (goal (id (sym-cat CLEAR-OUTPUT-(gensym*)))
           (class CLEAR-OUTPUT)
@@ -903,20 +933,29 @@
           (params mps ?cap-station)
     )
     ;TODO: parallelize this; ensure that CLEAR-OUTPUT is done first
-    (goal (id (sym-cat CLEAR-OUTPUT-(gensym*)))
-          (class CLEAR-OUTPUT)
+    ;(goal (id (sym-cat CLEAR-OUTPUT-(gensym*)))
+    ;      (class CLEAR-OUTPUT)
+    ;      (parent ?parent)
+    ;      (sub-type SIMPLE)
+    ;      (params mps ?cap-station mps-side OUTPUT)
+    ;      (priority 2.0)
+    ;)
+    ;(goal (id (sym-cat PICKUP-WP-(gensym*)))
+    ;      (parent ?parent)
+    ;      (class PICKUP-WP)
+    ;      (sub-type SIMPLE)
+    ;      (priority 1.0)
+    ;      (params wp ?wp)
+    ;)
+    (goal (id (sym-cat PRODUCE-C0-GET-BASE-AND-REMOVE-CC-(gensym*)))
+          (class PRODUCE-C0-GET-BASE-AND-REMOVE-CC)
           (parent ?parent)
-          (sub-type SIMPLE)
-          (params mps ?cap-station mps-side OUTPUT)
+          (sub-type RUN-SUBGOALS-IN-PARALLEL)
           (priority 2.0)
+          (params cs ?cap-station wp ?wp complexity ?complexity bs ?base-station
+                  base-color ?base-color)
     )
-    (goal (id (sym-cat PICKUP-WP-(gensym*)))
-          (parent ?parent)
-          (class PICKUP-WP)
-          (sub-type SIMPLE)
-          (priority 1.0)
-          (params wp ?wp)
-    )
+
     (goal (id (sym-cat MOUNT-CAP-(gensym*)))
           (parent ?parent)
           (class MOUNT-CAP)
