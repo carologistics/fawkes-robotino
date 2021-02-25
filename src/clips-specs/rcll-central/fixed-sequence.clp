@@ -335,6 +335,8 @@
 
  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cs spot ?shelf-spot))
  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+ 
+ (not(goal (class BUFFER-CS) (params robot ?some-robot wp ?cc)))
  =>
       (bind ?planid (sym-cat BUFFER-CS-PLAN- (gensym*)))
       (assert
@@ -408,7 +410,7 @@
         (plan-action (id 16) (plan-id ?planid) (goal-id ?goal-id)
               (action-name location-unlock) (param-values ?cs OUTPUT))
 	  )
-        (modify ?g (mode EXPANDED)(params robot ?robot))
+        (modify ?g (mode EXPANDED)(params robot ?robot wp ?cc))
 )
 
 (defrule goal-expander-produce-c1-mount-cap-deliver
