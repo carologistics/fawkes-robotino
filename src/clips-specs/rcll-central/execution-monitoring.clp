@@ -7,7 +7,6 @@
 ;---------------------------------------------------------------------------
 
 
-
 ;A timeout for an action
 (deftemplate action-timer
   (slot plan-id (type SYMBOL))
@@ -121,7 +120,7 @@
   (if (or (eq ?error "Conveyor Align Failed") (eq ?error "Drive To Machine Point Failed")) then
     (return TRUE)
   )
-  (if (eq ?error "Unsatisfied precondition") then (return FALSE))
+  (if (eq ?error "Unsatisfied precondition") then (return TRUE))
   (if (and (or (eq ?an wp-put) (eq ?an wp-put-slide-cc))
            (any-factp ((?if RobotinoSensorInterface))
                       (and (not (nth$ 1 ?if:digital_in)) (nth$ 2 ?if:digital_in)))) then
@@ -216,3 +215,4 @@
   =>
   (retract ?wm)
 )
+

@@ -46,6 +46,7 @@
 		zone - object
 		token - object
 		master-token - token
+		running-tasks - object
 	)
 
 	(:constants

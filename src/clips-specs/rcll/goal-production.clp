@@ -302,7 +302,7 @@
   ; (NavGraphGeneratorInterface (final TRUE))
   ; (not (wm-fact (key domain fact entered-field args? r ?robot)))
   =>
-  (printout t "Goal " ENTER-FIELD " formulated" crlf)
+  (printout t "Goal " ENTER-FIELD " formulated" ?robot crlf)
   (assert (goal (id (sym-cat ENTER-FIELD- (gensym*)))
                 (class ENTER-FIELD) (sub-type SIMPLE)))
 )
