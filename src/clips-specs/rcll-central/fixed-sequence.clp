@@ -599,7 +599,7 @@
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   (wm-fact (key domain fact wp-at args? wp ?wp m ?destination side ?destination-side&:(eq ?destination-side OUTPUT)))
   ; only either pickup-wp or clear-output should be defined for the same station/wp
-  (not (goal (class CLEAR-OUTPUT) (params  mps ?destination mps-side ?destination-side) (mode EXPANDED|COMMITTED|DISPATCHED)))
+  (not (goal (class CLEAR-OUTPUT) (params $? mps ?destination mps-side ?destination-side $?) (mode EXPANDED|COMMITTED|DISPATCHED)))
   =>
   (bind ?plan-id (sym-cat PICKUP-WP-PLAN- ?robot - (gensym*)))
   (assert
@@ -641,7 +641,7 @@
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   (wm-fact (key domain fact wp-at args? wp ?wp m ?destination side ?destination-side))
   ; only either pickup-wp or clear-output should be defined for the same station/wp
-  (not (goal (class PICKUP-WP) (params  wp ?wp) (mode EXPANDED|COMMITTED|DISPATCHED)))
+  (not (goal (class PICKUP-WP) (params $? wp ?wp $?) (mode EXPANDED|COMMITTED|DISPATCHED)))
   =>
   (bind ?plan-id (sym-cat CLEAR-OUTPUT-PLAN- ?robot - (gensym*)))
   (assert
