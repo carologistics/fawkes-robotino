@@ -594,7 +594,7 @@
   ; get delivery time for order
   (wm-fact (key refbox order ?order delivery-begin) (type UINT) (value ?begin))
   ; check time so that the delivery goals is not expanded too early
-  (wm-fact (key refbox game-time) (values ?game-time&:(> (+ ?game-time 30) ?begin) $?))
+  (wm-fact (key refbox game-time) (values ?game-time&:(> (+ ?game-time 45) ?begin) $?))
  =>
  (assert
   (goal (id (sym-cat PICKUP-WP-(gensym*)))
@@ -829,7 +829,7 @@
           (params order ?order
                   ds ?ds
                   wp ?wp)
-          (meta global-priority (+ ?pprio 900))
+          (meta global-priority (+ ?pprio 1200))
     )
   )
   (modify ?p (mode EXPANDED))
