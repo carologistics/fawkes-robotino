@@ -419,8 +419,9 @@
 " Retract a goal if all sub-goals are retracted. Clean up any plans and plan
   actions attached to it.
 "
-  ; if goal has a parent, the parent will retract it
-  ?g <-(goal (id ?goal-id) (type ACHIEVE) (mode EVALUATED) (parent nil))
+  ; if goal has a parent that is not retracted, the parent will retract it
+  ?g <-(goal (id ?goal-id) (type ACHIEVE) (mode EVALUATED) (parent ?parent))
+  (not (goal (id ?parent) (mode ?parent-mode&~RETRACTED)))
   (not (goal (parent ?goal-id) (mode ?mode&~RETRACTED)))
 =>
   ;(printout t "Goal '" ?goal-id "' has been Evaluated, cleaning up" crlf)
