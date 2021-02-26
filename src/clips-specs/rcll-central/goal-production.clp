@@ -512,8 +512,14 @@
 (defrule goal-production-wp-disposable
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+  ; either the wp is a cc without cap (cap was buffered successfully) or..
   (or (and (not (wm-fact (key domain fact wp-base-color args? wp ?wp col ?)))
            (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE)))
+      ; .. the cc has a cap which will not be removed (buffering failed) or..
+      (and (not (wm-fact (key domain fact wp-base-color args? wp ?wp col ?)))
+           (not (goal (class BUFFER-CS|FILL-CS) (params robot ?robot $?))))
+      ; .. the wp is not a cc and doesn't belong to any goal (most likely belonged
+      ; to a failed goal)
       (and (wm-fact (key domain fact wp-base-color args? wp ?wp col ?))
            (not (goal (params $? ?wp $?))))
   )
