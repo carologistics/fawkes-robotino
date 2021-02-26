@@ -502,3 +502,112 @@
                                 (order-steps-index ?step)
                                 0)))
 )
+
+
+; ======================== Production Strategy ===============================
+
+(defrule production-strategy-reserve-cs-create
+" Reject C0 orders towards the end of the game if higher order productions
+  require the cap station soon (i.e. when mounting the last ring).
+"
+  (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
+  (wm-fact (key refbox team-color) (value ?team-color))
+
+  ; get an order of higher complexity where the last ring is being mounted
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&~C0&~C1))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+
+  ; get cap station for which to delay C0 order
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+  (wm-fact (key domain fact mps-type args? m ?cap-station t CS))
+  (wm-fact (key domain fact mps-team args? m ?cap-station col ?team-color))
+  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cap-station spot ?))
+  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+
+  ; get ring colors so we can check whether last ring is ready to mount
+  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring-color1))
+  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring-color2))
+  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring-color3))
+
+  ; get ring station and number of required bases
+  (wm-fact (key domain fact rs-ring-spec args? m ?ring-station1 r ?ring-color1 rn ?ring-base-req1&~NA))
+  (wm-fact (key domain fact mps-team args? m ?ring-station1 col ?team-color))
+  (wm-fact (key domain fact rs-filled-with args? m ?ring-station1 n ?rs-filled-with1))
+  (wm-fact (key domain fact rs-ring-spec args? m ?ring-station2 r ?ring-color2 rn ?ring-base-req2&~NA))
+  (wm-fact (key domain fact mps-team args? m ?ring-station2 col ?team-color))
+  (wm-fact (key domain fact rs-filled-with args? m ?ring-station2 n ?rs-filled-with2))
+  (wm-fact (key domain fact rs-ring-spec args? m ?ring-station3 r ?ring-color3 rn ?ring-base-req3&~NA))
+  (wm-fact (key domain fact mps-team args? m ?ring-station3 col ?team-color))
+  (wm-fact (key domain fact rs-filled-with args? m ?ring-station3 n ?rs-filled-with3))
+
+  ; get currently running step
+  (wm-fact (key wp meta next-step args? wp ?wp) (value ?curr-step))
+
+  ; check that last ring is ready to be mounted or the cap is ready to be mounted
+  (test (or
+    (eq ?curr-step CAP)
+    (and
+      (eq ?complexity C1)
+      (>= (sym-to-int ?rs-filled-with1) (sym-to-int ?ring-base-req1))
+      (eq ?curr-step RING1)
+      (any-factp ((?ring-goal goal))
+        (and (eq ?ring-goal:class PRODUCE-CX-HANDLE-RS)
+            (member$ ?wp ?ring-goal:params)
+            (member$ ?ring-station1 ?ring-goal:acquired-resources)))
+    )
+    (and
+      (eq ?complexity C2)
+      (>= (sym-to-int ?rs-filled-with2) (sym-to-int ?ring-base-req2))
+      (eq ?curr-step RING2)
+      (any-factp ((?ring-goal goal)) 
+        (and (eq ?ring-goal:class PRODUCE-CX-HANDLE-RS)
+            (member$ ?wp ?ring-goal:params)
+            (member$ ?ring-station2 ?ring-goal:acquired-resources)))
+    )
+    (and
+      (eq ?complexity C3)
+      (>= (sym-to-int ?rs-filled-with3) (sym-to-int ?ring-base-req3))
+      (eq ?curr-step RING3)
+      (any-factp ((?ring-goal goal))
+        (and (eq ?ring-goal:class PRODUCE-CX-HANDLE-RS)
+            (member$ ?wp ?ring-goal:params)
+            (member$ ?ring-station3 ?ring-goal:acquired-resources)))
+    )
+  ))
+  (not (wm-fact (key order meta reserve-cs args? order ?order cs ?cap-station)))
+  =>
+  (printout t "Order " ?order " of complexity " ?complexity " soon needs the cap station" crlf)
+  (assert (wm-fact (key order meta reserve-cs args? order ?order cs ?cap-station)))
+)
+
+(defrule production-strategy-reserve-cs-retract
+" If an order reserved the cs that is now done, retract the
+  corresponding fact so that C0s can be produced again.
+"
+  (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key wp meta next-step args? wp ?wp) (value ?curr-step&DELIVER))
+  ?wf <- (wm-fact (key order meta reserve-cs args? order ?order cs ?))
+  =>
+  (retract ?wf)
+)
+
+
+(defrule production-strategy-reject-c0
+" If a cs is reserved for a higher complexity order, reject C0s currently using the cs
+  unless the C0 is already mounting a cap. This is only done towards the end of the
+  game to not fail delivering C2s or C3s in favor of C0s
+"
+  (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
+  (wm-fact (key order meta reserve-cs args? order ?order cs ?cap-station))
+  (wm-fact (key refbox game-time) (values ?game-time&:(> ?game-time 840) $?))
+  ?g <- (goal (id ?id) (params $? complexity C0 $?) (acquired-resources $? ?cap-station $?)
+        (mode SELECTED|EXPANDED|DISPATCHED))
+  (not (goal (class HANDLE-MPS) (params ?cap-station)))
+  (not (wm-fact (key domain fact wp-at args? wp ? m ?cap-station side ?)))
+  (not (goal (class MOUNT-CAP) (params $? ?cap-station $?)
+             (mode EXPANDED|DISPATCHED|FINISHED|EVALUATED|RETRACTED)))
+  =>
+  (printout t "Rejecting " ?id " because order " ?order " soon needs " ?cap-station crlf)
+  (modify ?g (mode FINISHED) (outcome REJECTED))
+)
