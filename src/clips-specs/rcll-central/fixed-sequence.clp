@@ -105,8 +105,13 @@
 )
 
 (defrule goal-expander-drop-wp
-  ?g <- (goal (id ?goal-id) (class DROP-WP) (params robot ?robot wp ?wp) (mode SELECTED))
+  "Robot drops whatever workpiece he is currently holding."
+  ?g <- (goal (id ?goal-id) (class DROP-WP) (mode SELECTED)
+              (params robot ?robot wp ?wp)
+        )
   =>
+  (printout t "Expanding " ?goal-id " for robot " ?robot crlf)
+  (printout t "Expansion Details: dropped wp " ?wp crlf)
   (bind ?plan-id (sym-cat DROP-WP-PLAN-(gensym*)))
   (assert
     (plan (id ?plan-id) (goal-id ?goal-id))
@@ -122,9 +127,12 @@
 ; ========================= enter-field plan =============================
 
 (defrule goal-expander-enter-field
+"Robot moves from start position into field"
   ?g <- (goal (id ?goal-id) (mode SELECTED) (class ENTER-FIELD)
-              (params r ?robot team-color ?team-color))
+              (params r ?robot team-color ?team-color)
+        )
 =>
+  (printout t "Expanding " ?goal-id " for robot " ?robot crlf)
   ; robots 2 and 3 perform a short wait to let previous robot clear
   (if (eq ?robot robot1)
   then
@@ -158,25 +166,27 @@
 
 (defrule goal-expander-visit-station
   "Move robot to station"
-   ?g <- (goal (id ?goal-id) (class VISIT-STATION) (mode SELECTED)
-               (params r ?robot station ?station side ?side
-         ))
-   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-   =>
-   (printout t "Expanding " ?goal-id crlf)
-   ; give robot-dependent plan-ids to avoid multiple plans with the same name
-   ; at the same time. (causes problems with execution-monitoring)
-   (bind ?plan-id (sym-cat VISIT-STATION-PLAN- ?robot - (gensym*)))
-   (bind ?destination (str-cat ?station (if (eq ?side INPUT) then -I else -O)))
-   (assert
+  ?g <- (goal (id ?goal-id) (class VISIT-STATION) (mode SELECTED)
+              (params r ?robot station ?station side ?side)
+        )
+
+  ; get current robot location
+  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+  =>
+  (printout t "Expanding " ?goal-id crlf)
+  ; give robot-dependent plan-ids to avoid multiple plans with the same name
+  ; at the same time. (causes problems with execution-monitoring)
+  (bind ?plan-id (sym-cat VISIT-STATION-PLAN- ?robot - (gensym*)))
+  (bind ?destination (str-cat ?station (if (eq ?side INPUT) then -I else -O)))
+  (assert
         (plan (id ?plan-id ) (goal-id ?goal-id))
         (plan-action (id 1) (plan-id ?plan-id ) (goal-id ?goal-id)
-                     (action-name go-wait)
-                     (skiller (remote-skiller ?robot))
-                     (param-names r from from-side to)
-                     (param-values ?robot ?curr-location ?curr-side ?destination))
-   )
-   (modify ?g (mode EXPANDED))
+                    (action-name go-wait)
+                    (skiller (remote-skiller ?robot))
+                    (param-names r from from-side to)
+                    (param-values ?robot ?curr-location ?curr-side ?destination))
+  )
+  (modify ?g (mode EXPANDED))
 )
 
 ; ========================= production plans =============================
@@ -184,14 +194,19 @@
 (defrule goal-expander-fill-cs
   "Retrieve cap at cap station and discard the unneeded base."
   ?g <- (goal (id ?goal-id) (class FILL-CS) (mode SELECTED)
-              (params robot ?robot mps ?cap-station))
-  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+              (params robot ?robot mps ?cap-station)
+        )
 
+  ; get current robot location
+  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+  ; get cc location
   (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cap-station spot ?shelf-spot))
   (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-
+  ; station not already buffered
   (not (wm-fact (key domain fact cs-buffered args? m ?cap-station col ?cap-color)))
   =>
+  (printout t "Expanding " ?goal-id " for robot " ?robot crlf)
+  (printout t "Expansion Details: cap-station " ?cap-station crlf)
   (bind ?plan-id (sym-cat FILL-CS-PLAN- ?robot - (gensym*)))
   (assert
     (plan (id ?plan-id) (goal-id ?goal-id))
@@ -243,24 +258,32 @@
 (defrule goal-expander-fill-cs-fast-forward
   "Cap station already buffered, FILL-CS / BUFFER-CS can be fast forwarded"
   ?g <- (goal (id ?goal-id) (class FILL-CS|BUFFER-CS) (mode SELECTED)
-              (params robot ?robot mps ?cap-station))
-              
+              (params robot ?robot mps ?cap-station)
+        )
+
+  ; check if cap-station is buffered            
   (wm-fact (key domain fact cs-buffered args? m ?cap-station col ?cap-color))
   =>
+  (printout t "Fast-forwarding " ?goal-id " for robot " ?robot crlf)
   (modify ?g (mode FINISHED) (outcome COMPLETED))
 )
 
 (defrule goal-expander-buffer-cs
   "Retrieve cap at cap station."
   ?g <- (goal (id ?goal-id) (class BUFFER-CS) (mode SELECTED)
-              (params robot ?robot mps ?cap-station))
-  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+              (params robot ?robot mps ?cap-station)
+        )
 
+  ; get current robot location
+  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+  ; get cc location
   (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cap-station spot ?shelf-spot))
   (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-
+  ; station not already buffered
   (not (wm-fact (key domain fact cs-buffered args? m ?cap-station col ?cap-color)))
   =>
+  (printout t "Expanding " ?goal-id " for robot " ?robot crlf)
+  (printout t "Expansion Details: cap-station " ?cap-station crlf)
   (bind ?plan-id (sym-cat BUFFER-CS-PLAN- ?robot - (gensym*)))
   (assert
     (plan (id ?plan-id) (goal-id ?goal-id))
@@ -306,18 +329,25 @@
 
 (defrule goal-expander-get-base
   "Get base from base station and move to the target station. The robot will still
-  be holding the base after execution."
+  be holding the base after execution.
+  "
   ?g <- (goal (id ?goal-id) (class GET-BASE) (mode SELECTED)
               (params robot ?robot
                       bs ?base-station
                       bs-side ?bs-side
                       bs-color ?base-color
                       target-station ?target-station
-                      wp ?wp)
+                      wp ?wp
+              )
         )
+
+  ; get current robot location
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+  ; station is not recovering from a fail
   (not (goal (class CLEAN-BS)))
   =>
+  (printout t "Expanding " ?goal-id " for robot " ?robot crlf)
+  (printout t "Expansion Details: base-color " ?base-color crlf)
   (bind ?plan-id (sym-cat GET-BASE-PLAN- ?robot - (gensym*)))
   (assert
     (plan (id ?plan-id) (goal-id ?goal-id))
@@ -380,7 +410,6 @@
     )
   )
   (modify ?g (mode EXPANDED))
-  ;(printout t ?robot " getting base of color " ?base-color crlf)    
 )
 
 (defrule goal-expander-mount-cap
@@ -388,8 +417,12 @@
   ?g <- (goal (id ?goal-id) (class MOUNT-CAP) (mode SELECTED)
               (params robot ?robot cs ?cap-station cap-color ?cap-color wp ?wp)
         )
+
+  ; get current robot location
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   =>
+  (printout t "Expanding " ?goal-id " for robot " ?robot crlf)
+  (printout t "Expansion Details: cap-station " ?cap-station crlf)
   (bind ?plan-id (sym-cat MOUNT-CAP-PLAN- ?robot - (gensym*)))
   (assert
     (plan (id ?plan-id) (goal-id ?goal-id))
@@ -420,14 +453,18 @@
   ?g <- (goal (id ?goal-id) (class FILL-RS) (mode SELECTED)
               (params robot ?robot rs ?ring-station wp ?wp)
         )
-  ;TODO: current workaround to fix parallel issue with rs-filled-with
+
+  ; workaround to fix parallel issue with rs-filled-with
   (not (goal (class FILL-RS) (mode EXPANDED|COMMITTED|DISPATCHED|FINISHED)
              (params $? rs ?ring-station $?)))
-
+  ; get current robot location
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+  ; get rs status
   (wm-fact (key domain fact rs-filled-with args? m ?ring-station n ?rs-before))
   (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
   =>
+  (printout t "Expanding " ?goal-id " for robot " ?robot crlf)
+  (printout t "Expansion Details: ring-station " ?ring-station ", current fill " ?rs-before crlf)
   (bind ?plan-id (sym-cat FILL-RS-PLAN- ?robot - (gensym*)))
   (assert
     (plan (id ?plan-id) (goal-id ?goal-id))
@@ -472,15 +509,20 @@
                       ring-mount-index ?ring-mount-index
                       ring-color ?ring-color
                       ring-base-req ?ring-base-req
-                      wp ?wp)
+                      wp ?wp
+              )
         )
+
+  ; get current robot location
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-  ; read current ring colors
+  ; get current wp ring colors
   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?current-ring1-color))
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?current-ring2-color))
   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?current-ring3-color))
   =>
-  ;(printout t "Current ring colors: " ?current-ring1-color ?current-ring2-color ?current-ring3-color crlf)
+  (printout t "Expanding " ?goal-id " for robot " ?robot crlf)
+  (printout t "Expansion Details: ring-station " ?ring-station ", index " ?ring-mount-index 
+              ", color " ?ring-color crlf)
   (bind ?plan-id (sym-cat MOUNT-RING-PLAN- ?robot - (gensym*)))
   (assert
     (plan (id ?plan-id) (goal-id ?goal-id))
@@ -513,7 +555,11 @@
               (params robot ?robot
                       order ?order
                       ds ?ds
-                      wp ?wp))
+                      wp ?wp
+              )
+        )
+
+  ; get current robot location
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   ;wp facts
   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color-wp))
@@ -532,10 +578,8 @@
   (wm-fact (key domain fact order-gate args? ord ?order gate ?gate))
 
   =>
-  ;(printout t ?complexity ?order crlf)
-  ;(printout t ?base-color-wp ?ring1-color-wp ?ring2-color-wp ?ring3-color-wp ?cap-color-wp crlf)
-  ;(printout t ?base-color ?ring1-color ?ring2-color ?ring3-color ?cap-color crlf)
-
+  (printout t "Expanding " ?goal-id " for robot " ?robot crlf)
+  (printout t "Expansion Details: order " ?order crlf)
   (bind ?plan-id (sym-cat DELIVER-PLAN- ?robot - (gensym*)))
   (assert
     (plan (id ?plan-id) (goal-id ?goal-id))
@@ -582,9 +626,15 @@
 
 (defrule goal-expander-clear-station
   "Remove robot from station by moving to the waiting position"
-  ?g <- (goal (id ?goal-id) (class CLEAR-STATION) (params robot ?robot) (mode SELECTED))
+  ?g <- (goal (id ?goal-id) (class CLEAR-STATION) (mode SELECTED)
+              (params robot ?robot)
+        )
+
+  ; get current robot location
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   =>
+  (printout t "Expanding " ?goal-id " for robot " ?robot crlf)
+  (printout t "Expansion Details: location " ?curr-location " " ?curr-side crlf)
   (bind ?plan-id (sym-cat CLEAR-STATION-PLAN- ?robot - (gensym*)))
   (assert
     (plan (id ?plan-id) (goal-id ?goal-id))
@@ -600,12 +650,19 @@
 
 (defrule goal-expander-pickup-wp
   "Pickup a wp at some output"
-  ?g <- (goal (id ?goal-id) (class PICKUP-WP) (params robot ?robot wp ?wp) (mode SELECTED))
+  ?g <- (goal (id ?goal-id) (class PICKUP-WP) (mode SELECTED)
+              (params robot ?robot wp ?wp)
+        )
+
+  ; get current robot location
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+  ; get wp location
   (wm-fact (key domain fact wp-at args? wp ?wp m ?destination side ?destination-side&:(eq ?destination-side OUTPUT)))
   ; only either pickup-wp or clear-output should be defined for the same station/wp
   (not (goal (class CLEAR-OUTPUT) (params $? mps ?destination mps-side ?destination-side $?) (mode EXPANDED|COMMITTED|DISPATCHED)))
   =>
+  (printout t "Expanding " ?goal-id " for robot " ?robot crlf)
+  (printout t "Expansion Details: wp " ?wp " wp at " ?destination " " ?destination-side crlf)
   (bind ?plan-id (sym-cat PICKUP-WP-PLAN- ?robot - (gensym*)))
   (assert
     (plan (id ?plan-id) (goal-id ?goal-id))
@@ -634,21 +691,35 @@
 
 (defrule goal-expander-pickup-wp-fast-forward
   "Immediatley finish a pickup-wp goal if a robot is already holding the wp"
-  ?g <- (goal (id ?goal-id) (class PICKUP-WP) (params $?p1 wp ?wp $?p2) (mode SELECTED))
+  ?g <- (goal (id ?goal-id) (class PICKUP-WP) (mode SELECTED)
+              (params $?p1 wp ?wp $?p2)
+        )
+
+  ; some robot is holding the wp
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
   =>
+  (printout t "Fast-forwarding " ?goal-id crlf)
+  (printout t "Fast-forward Details: held by robot " ?robot crlf)
   (modify ?g (mode FINISHED) (outcome COMPLETED))
 )
 
 
 (defrule goal-expander-clear-output
   "Clear the output of some station"
-  ?g <- (goal (id ?goal-id) (class CLEAR-OUTPUT) (params robot ?robot mps ?destination mps-side ?destination-side) (mode SELECTED))
+  ?g <- (goal (id ?goal-id) (class CLEAR-OUTPUT) (mode SELECTED)
+              (params robot ?robot mps ?destination mps-side ?destination-side)
+        )
+
+  ; get current robot location
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+  ; get wp at target station
   (wm-fact (key domain fact wp-at args? wp ?wp m ?destination side ?destination-side))
   ; only either pickup-wp or clear-output should be defined for the same station/wp
   (not (goal (class PICKUP-WP) (params $? wp ?wp $?) (mode EXPANDED|COMMITTED|DISPATCHED)))
   =>
+  (printout t "Expanding " ?goal-id " for robot " ?robot crlf)
+  (printout t "Expansion Details: target station " ?destination " " ?destination-side 
+              ", wp " ?wp crlf)
   (bind ?plan-id (sym-cat CLEAR-OUTPUT-PLAN- ?robot - (gensym*)))
   (assert
     (plan (id ?plan-id) (goal-id ?goal-id))
@@ -677,23 +748,34 @@
 
 (defrule goal-expander-clear-output-fast-forward
   "Immediatley complete a clear-output goal if there is no workpiece at the output"
-  ?g <- (goal (id ?goal-id) (class CLEAR-OUTPUT) (params $?p1 mps ?mps mps-side ?mps-side $?p2) (mode SELECTED))
-  (not (wm-fact (key domain fact wp-at args? wp ? m ?mps side ?mps-side)))
+  ?g <- (goal (id ?goal-id) (class CLEAR-OUTPUT) (mode SELECTED)
+              (params $?p1 mps ?mps mps-side ?mps-side $?p2)
+        )
 
+  ; nothing to pickup at target station           
+  (not (wm-fact (key domain fact wp-at args? wp ? m ?mps side ?mps-side)))
   ; machine not still processing some action
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~PROCESSING&~DOWN))
   (not (wm-fact (key mps-handling prepare prepare-cs ?mps args? m ?mps op ? )))
   (not (wm-fact (key mps-handling prepare prepare-rs ?mps args? m ?mps rc ? rs-before ? rs-after ? r-req ? )))
   (not (goal (class HANDLE-MPS) (params ?mps)))
   =>
+  (printout t "Fast-forwarding " ?goal-id crlf)
+  (printout t "Fast-forward Details: nothing to clear at " ?mps " " ?mps-side crlf)
   (modify ?g (mode FINISHED) (outcome COMPLETED))
 )
 
 (defrule goal-expander-go-wait
   "Expand goal to call a simple go-wait action."
-  ?g <- (goal (id ?goal-id) (class GO-WAIT) (mode SELECTED) (params robot ?robot mps ?mps mps-side ?mps-side))
+  ?g <- (goal (id ?goal-id) (class GO-WAIT) (mode SELECTED) 
+              (params robot ?robot mps ?mps mps-side ?mps-side)
+        )
+
+  ; get current robot location
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   =>
+  (printout t "Expanding " ?goal-id " for robot " ?robot crlf)
+  (printout t "Expansion Details: destination " ?mps " " ?mps-side crlf)
   (bind ?plan-id (sym-cat GO-WAIT-PLAN- ?robot - (gensym*)))
   (assert
     (plan (id ?plan-id) (goal-id ?goal-id))
@@ -710,9 +792,15 @@
 ;TODO: currently not used due to SS being unusable
 (defrule goal-expander-store-wp
   "Expand goal to store a wp at some station"
-  ?g <- (goal (id ?goal-id) (class STORE-WP) (mode SELECTED) (params robot ?robot wp ?wp mps ?mps mps-side ?mps-side))
+  ?g <- (goal (id ?goal-id) (class STORE-WP) (mode SELECTED) 
+              (params robot ?robot wp ?wp mps ?mps mps-side ?mps-side)
+        )
+
+  ; get current robot location
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   =>
+  (printout t "Expanding " ?goal-id " for robot " ?robot crlf)
+  (printout t "Expansion Details: wp " ?wp ", destination " ?mps " "  ?mps-side crlf)
   (bind ?plan-id (sym-cat STORE-WP-PLAN- ?robot - (gensym*)))
   (assert
     (plan (id ?plan-id) (goal-id ?goal-id))
