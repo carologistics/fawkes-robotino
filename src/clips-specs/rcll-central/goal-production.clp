@@ -515,7 +515,13 @@
   production process (ccs, failed wps). They can be used to fill ringstations.
   "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+
+  ; robot holding some wp
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+
+  ; wp not already disposable
+  (not (disposable ?wp))
+
   ; either the wp is a cc without cap (cap was buffered successfully) or..
   (or (and (not (wm-fact (key domain fact wp-base-color args? wp ?wp col ?)))
            (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE)))
