@@ -239,8 +239,9 @@
   (modify ?g (mode EXPANDED))
 )
 
+; TODO: name change? handles fill-cs and buffer-cs
 (defrule goal-expander-fill-cs-fast-forward
-  "Retrieve cap at cap station and discard the unneeded base."
+  "Cap station already buffered, FILL-CS / BUFFER-CS can be fast forwarded"
   ?g <- (goal (id ?goal-id) (class FILL-CS|BUFFER-CS) (mode SELECTED)
               (params robot ?robot mps ?cap-station))
               
@@ -291,6 +292,7 @@
       (action-name request-cs-retrieve-cap)
       (param-values ?robot ?cap-station ?cc ?cap-color)
     )
+    ;TODO-Note: necessary? (might have been to avoid clear-output completing before async action started)
     (plan-action (id 6) (plan-id ?plan-id) (goal-id ?goal-id)
       (action-name go-wait)
       (skiller (remote-skiller ?robot))
@@ -303,7 +305,7 @@
 
 
 (defrule goal-expander-get-base
-  "Get base from base station and bring it to the target station. The robot will
+  "Get base from base station and move to the target station. The robot will still
   be holding the base after execution."
   ?g <- (goal (id ?goal-id) (class GET-BASE) (mode SELECTED)
               (params robot ?robot
@@ -330,6 +332,7 @@
       (skiller (remote-skiller ?robot))
       (param-values ?base-station)
     )
+    ; TODO: should we create an async version?
     (plan-action (id 3) (plan-id ?plan-id) (goal-id ?goal-id)
       (action-name prepare-bs)
       (skiller (remote-skiller ?robot))
@@ -377,7 +380,7 @@
     )
   )
   (modify ?g (mode EXPANDED))
-  (printout t ?robot " getting base of color " ?base-color crlf)    
+  ;(printout t ?robot " getting base of color " ?base-color crlf)    
 )
 
 (defrule goal-expander-mount-cap
@@ -450,6 +453,7 @@
       (skiller (remote-skiller ?robot))
       (param-values ?ring-station INPUT)
     )
+    ;TODO-Note: necessary?
     (plan-action (id 5) (plan-id ?plan-id) (goal-id ?goal-id)
       (action-name go-wait)
       (skiller (remote-skiller ?robot))
@@ -471,11 +475,12 @@
                       wp ?wp)
         )
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+  ; read current ring colors
   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?current-ring1-color))
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?current-ring2-color))
   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?current-ring3-color))
   =>
-  (printout t "Current ring colors: " ?current-ring1-color ?current-ring2-color ?current-ring3-color crlf)
+  ;(printout t "Current ring colors: " ?current-ring1-color ?current-ring2-color ?current-ring3-color crlf)
   (bind ?plan-id (sym-cat MOUNT-RING-PLAN- ?robot - (gensym*)))
   (assert
     (plan (id ?plan-id) (goal-id ?goal-id))
@@ -510,7 +515,7 @@
                       ds ?ds
                       wp ?wp))
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-
+  ;wp facts
   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color-wp))
   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color-wp))
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color-wp))
@@ -527,9 +532,9 @@
   (wm-fact (key domain fact order-gate args? ord ?order gate ?gate))
 
   =>
-  (printout t ?complexity ?order crlf)
-  (printout t ?base-color-wp ?ring1-color-wp ?ring2-color-wp ?ring3-color-wp ?cap-color-wp crlf)
-  (printout t ?base-color ?ring1-color ?ring2-color ?ring3-color ?cap-color crlf)
+  ;(printout t ?complexity ?order crlf)
+  ;(printout t ?base-color-wp ?ring1-color-wp ?ring2-color-wp ?ring3-color-wp ?cap-color-wp crlf)
+  ;(printout t ?base-color ?ring1-color ?ring2-color ?ring3-color ?cap-color crlf)
 
   (bind ?plan-id (sym-cat DELIVER-PLAN- ?robot - (gensym*)))
   (assert
@@ -616,6 +621,7 @@
       (param-names r wp m side)
       (param-values ?robot ?wp ?destination ?destination-side)
     )
+    ;TODO-Note: necessary?
     (plan-action (id 3) (plan-id ?plan-id) (goal-id ?goal-id)
       (action-name go-wait)
       (skiller (remote-skiller ?robot))
@@ -658,6 +664,7 @@
       (param-names r wp m side)
       (param-values ?robot ?wp ?destination ?destination-side)
     )
+    ;TODO-Note: necessary?
     (plan-action (id 3) (plan-id ?plan-id) (goal-id ?goal-id)
       (action-name go-wait)
       (skiller (remote-skiller ?robot))
@@ -700,6 +707,7 @@
   (modify ?g (mode EXPANDED))
 )
 
+;TODO: currently not used due to SS being unusable
 (defrule goal-expander-store-wp
   "Expand goal to store a wp at some station"
   ?g <- (goal (id ?goal-id) (class STORE-WP) (mode SELECTED) (params robot ?robot wp ?wp mps ?mps mps-side ?mps-side))

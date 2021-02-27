@@ -236,6 +236,7 @@
   )
 )
 
+; TODO: remove?
 ;(deffunction cs-prio (?complexity)
 ;  (switch ?complexity
 ;    (case C0 then
@@ -290,7 +291,7 @@
   )
 )
 
-
+; TODO: remove?
 ;(defrule goal-production-produce-c0
 ;  "Create root goal of c0-production tree"
 ;  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
@@ -462,7 +463,7 @@
 
 
 (defrule goal-production-get-base-and-remove-cc
-  "Leaf goals to remove the unused base and get a base running in parallel."
+  "Leaf goals to remove the unused cc and get the main base in parallel."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ?p <- (goal (id ?parent) (class GET-BASE-AND-REMOVE-CC) (mode SELECTED)
               (params cs ?cap-station wp ?wp complexity ?complexity bs ?base-station
@@ -510,6 +511,9 @@
 )
 
 (defrule goal-production-wp-disposable
+  "Some wps are marked as disposable if they are no longer part of an active
+  production process (ccs, failed wps). They can be used to fill ringstations.
+  "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
   ; either the wp is a cc without cap (cap was buffered successfully) or..
@@ -524,19 +528,22 @@
            (not (goal (params $? ?wp $?))))
   )
   =>
-  (printout t "Setting the workpiece " ?wp " to disposable." crlf)
+  (printout t "Setting workpiece " ?wp " to disposable at robot " ?robot "."   crlf)
   (assert (disposable ?wp))
 )
 
 (defrule goal-production-reuse-cc
+  "There exist disposable wps that can be used to fill ring station instead of using bases.
+  Use these if a robot is hoding one and he can do nothing else.
+  "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 
-  ; robot has just picked up a cc
+  ; non-busy robot is holding a disposable wp
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
   (disposable ?wp)
   (not (goal (params robot ?robot $?)))
 
-  ; there is nothing else to do:
+  ; there is nothing else to do for the robot
   (not (goal (class ?class&:(goal-needs-fresh-robot ?class))
             (mode SELECTED)
             (params $?params&:(not (member$ robot $?params)))))
@@ -548,7 +555,7 @@
   ; ring station not at max bases
   (wm-fact (key domain fact rs-filled-with args? m ?ring-station n ?filled&~NA&:(< (sym-to-int ?filled) 3)))
 
-  ; check time
+  ; check time (keep robot available late game)
   (wm-fact (key refbox game-time) (values ?game-time&:(< ?game-time 720) $?))
 
   ; don't formulate goal if it can't be executed immediatley
@@ -568,8 +575,10 @@
 )
 
 (defrule goal-production-discard-cc
-" TODO"
-  ; robot has just picked up a cc
+"The robot is holding a disposable wp and the reuse rule did not trigger,
+therefore, discard the disposable wp and free the robot.
+"
+  ; non-busy robot is holding disposable wp
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
   (disposable ?wp)
   (not (goal (params robot ?robot $?)))
@@ -909,6 +918,7 @@
   (modify ?p (mode EXPANDED))
 )
 
+; TODO: remove?
 ;(defrule goal-production-produce-cx-old-handle-cs
 ;  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 ;  ?p <- (goal (id ?parent) (class PRODUCE-CX-old-HANDLE-CS) (mode SELECTED)
@@ -1056,7 +1066,6 @@
 
 ; ============================= Passive Optimization ===============================
 
-; TODO: check games for occurence
 (defrule passive-go-wait-at-next-station
   "Even if a robot cannot reserve the next station he can still drive there already."
   ; Get non-busy robot holding a workpiece
@@ -1078,7 +1087,7 @@
   )
 )
 
-; TODO: not working, wp-put fails at storage station
+; TODO: not working, wp-put fails at storage station (not our fault)
 ;(defrule passive-store-wp-before-deliver
 ;  "Get a robot holding a workpiece waiting for delivery in a furture time slot and
 ;  store it in the storage station if possible." 
@@ -1185,7 +1194,8 @@
   (wm-fact (key domain fact mps-team args? m ?ring-station col ?team-color))
   (wm-fact (key domain fact mps-state args? m ?ring-station s ~BROKEN&~PROCESSING&~DOWN))
 
-  ; TODO: discuss max bases vs THREE
+  ; TODO: remove?
+  ; TODO: discuss max bases vs THREE (done)
   ; ring station not at max bases
   ;(wm-fact (key domain fact rs-ring-spec args? m ?ring-station r ?ring-color rn ?ring-base-req&~NA))
   ;(not (wm-fact (key domain fact rs-ring-spec args? m ?ring-station r ?other-ring-color 
@@ -1252,7 +1262,7 @@
   (wm-fact (key domain fact entered-field args? r ?robot))
   (not (goal (params robot ?robot $?some-params)))
 
-  ; check that robot is at input or output
+  ; check that robot is at input or output, not wait
   (domain-object (type mps) (name ?some-station))
   (wm-fact (key domain fact at args? r ?robot m ?some-station 
               side ?side&:(or (eq ?side INPUT) (eq ?side OUTPUT))))
