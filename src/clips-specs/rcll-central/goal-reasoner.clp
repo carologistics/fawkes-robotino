@@ -177,7 +177,8 @@
   ?g <- (goal (parent nil) (type ACHIEVE|MAINTAIN) (sub-type ~nil) (id ?goal-id) (mode FORMULATED))
   (not (goal (parent ?goal-id)))
 =>
-  (printout error " i select a root " ?goal-id crlf)
+  ; reduce spam
+  ;(printout error " i select a root " ?goal-id crlf)
   (modify ?g (mode SELECTED))
 )
 
