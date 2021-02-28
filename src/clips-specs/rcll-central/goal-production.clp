@@ -194,6 +194,8 @@
   ?*DEBUG-SKIP-C3* = 0
   ?*DEBUG-SKIP-PF-CS* = 0
   ?*DEBUG-SKIP-PF-RS* = 0
+  ; currently unusable due to SS implementation:
+  ?*USE-SS-INPUT* = 1
 )
 
 ; ============================= Production goals ===============================
@@ -236,42 +238,6 @@
   )
 )
 
-; TODO: remove?
-;(deffunction cs-prio (?complexity)
-;  (switch ?complexity
-;    (case C0 then
-;      (return 500)
-;    )
-;    (case C1 then
-;      (return 600)
-;    )
-;    (case C2 then
-;      (return 700)
-;    )
-;    (case C3 then
-;      (return 800)
-;    )
-;    (default none)
-;  )
-;)
-
-;(deffunction deliver-prio (?complexity)
-;  (switch ?complexity
-;    (case C0 then
-;      (return 1000)
-;    )
-;    (case C1 then
-;      (return 1100)
-;    )
-;    (case C2 then
-;      (return 1200)
-;    )
-;    (case C3 then
-;      (return 1300)
-;    )
-;    (default none)
-;  )
-;)
 
 (deffunction order-base-priority (?complexity)
   (switch ?complexity
@@ -290,130 +256,6 @@
     (default none)
   )
 )
-
-; TODO: remove?
-;(defrule goal-production-produce-c0
-;  "Create root goal of c0-production tree"
-;  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-;
-;
-;  (not-defined)
-;
-;  ; check current game state
-;  (wm-fact (key refbox state) (value RUNNING))
-;  (wm-fact (key refbox phase) (value PRODUCTION))
-;  (domain-facts-loaded)
-;
-;  ; get order of complexity C0
-;  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C0))
-;
-;  ; debugging conditions
-;  (test (neq ?*DEBUG-SKIP-C0* 1))
-;  ;(not (goal (class PRODUCE-C0)))
-;
-;  ; get required base and cap color
-;  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-;  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
-;
-;  ; get cap station
-;  (wm-fact (key refbox team-color) (value ?team-color))
-;  (wm-fact (key domain fact mps-type args? m ?cap-station t CS))
-;  (wm-fact (key domain fact mps-team args? m ?cap-station col ?team-color))
-;  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cap-station spot ?spot))
-;  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-;
-;  ; get base station
-;  (wm-fact (key domain fact mps-type args? m ?base-station t BS))
-;  (wm-fact (key domain fact mps-team args? m ?base-station col ?team-color))
-;
-;  ; get delivery station
-;  (wm-fact (key domain fact mps-type args? m ?ds t DS))
-;  (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
-;
-;  ; TODO: check for more products in single order
-;  ; more products ordered
-;  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
-;  (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
-;	  (value ?qd&:(> ?qr ?qd)))
-;  ; order is not already being handled
-;  (not (goal (class PRODUCE-C0) (params order ?order $?other-params)))
-;  (not (goal (class HANDLE-MPS) (params ?ds)))
-;
-;  (wm-fact (key order meta competitive args? ord ?order) (value ?competitive))
-;  (wm-fact (key refbox game-time) (values $?game-time))
-;  (wm-fact (key refbox order ?order delivery-begin) (type UINT)
-;	  (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) (order-time-estimate-upper ?complexity ?competitive)))))
-;  (wm-fact (key refbox order ?order delivery-end) (type UINT)
-;	  (value ?end&:(> ?end (+ (nth$ 1 ?game-time) (order-time-estimate-lower ?complexity ?competitive)))))
-;  =>
-;  (bind ?wp (create-wp ?order))
-;  (assert 
-;    (goal (id (sym-cat PRODUCE-C0- (gensym*)))
-;          (class PRODUCE-C0)
-;          (sub-type RUN-ALL-OF-SUBGOALS)
-;          (params order ?order
-;                  wp ?wp
-;                  complexity ?complexity
-;                  cs ?cap-station
-;                  bs ?base-station
-;                  cap-color ?cap-color
-;                  base-color ?base-color
-;                  ds ?ds)
-;          ; orders with late delivery get lower priority
-;          (meta global-priority (- 700 (* (div ?end 5) 3)))
-;    )
-;  )
-;  (printout t "Order " ?order " formulated with priority " (- 700 (* (div ?end 5) 3)) crlf)
-;)
-;
-;(defrule goal-production-produce-c0-create-subgoals
-;  "Create subgoals with parallelizable steps for c0 production"
-;  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-;  ?p <- (goal (id ?parent) (class PRODUCE-C0) (mode SELECTED)
-;              (params order ?order
-;                      wp ?wp
-;                      complexity ?complexity
-;                      cs ?cap-station
-;                      bs ?base-station
-;                      cap-color ?cap-color
-;                      base-color ?base-color
-;                      ds ?ds)
-;              (meta $? global-priority ?pprio $?))
-;  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?wp-base-color) (value TRUE))
-;  (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?wp-cap-color) (value TRUE))
-;  =>
-;  (if (neq ?wp-cap-color ?cap-color) then
-;    (assert
-;      (goal (id (sym-cat PRODUCE-C0-HANDLE-CS-(gensym*)))
-;            (class PRODUCE-C0-HANDLE-CS)
-;            (parent ?parent)
-;            (sub-type RUN-ALL-OF-SUBGOALS)
-;            (priority 2.0)
-;            (required-resources ?cap-station)
-;            (params cs ?cap-station
-;                    wp ?wp
-;                    complexity ?complexity
-;                    bs ?base-station
-;                    cap-color ?cap-color
-;                    base-color ?base-color)
-;            (meta global-priority (+ ?pprio 500))
-;      )
-;    )
-;  )
-;  (assert
-;    (goal (id (sym-cat PICKUP-AND-DELIVER-(gensym*)))
-;          (class PICKUP-AND-DELIVER)
-;          (parent ?parent)
-;          (sub-type RUN-ALL-OF-SUBGOALS)
-;          (priority 1.0)
-;          (params order ?order
-;                  ds ?ds
-;                  wp ?wp)
-;          (meta global-priority (+ ?pprio 900))
-;    )
-;  )
-;  (modify ?p (mode EXPANDED))
-;)
 
 (defrule goal-production-produce-cx-handle-cs
   "Root goal for all production steps requiring a cap station."
@@ -947,71 +789,6 @@ therefore, discard the disposable wp and free the robot.
   (modify ?p (mode EXPANDED))
 )
 
-; TODO: remove?
-;(defrule goal-production-produce-cx-old-handle-cs
-;  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-;  ?p <- (goal (id ?parent) (class PRODUCE-CX-old-HANDLE-CS) (mode SELECTED)
-;              (params order ?order
-;                      wp ?wp
-;                      complexity ?complexity
-;                      cs ?cap-station
-;                      cap-color ?cap-color
-;                      ds ?ds))
-;  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cap-station spot ?spot))
-;  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-;  =>
-;  (bind ?base-station BS)
-;  (bind ?base-color GREEN)
-;  (assert
-;    (goal (id (sym-cat CLEAR-OUTPUT-(gensym*)))
-;          (class CLEAR-OUTPUT)
-;          (parent ?parent)
-;          (sub-type SIMPLE)
-;          (params mps ?cap-station mps-side OUTPUT)
-;          (priority 4.0)
-;    )
-;    (goal (id (sym-cat BUFFER-CS-(gensym*)))
-;          (parent ?parent)
-;          (class BUFFER-CS)
-;          (sub-type SIMPLE)
-;          (priority 3.0)
-;          (params mps ?cap-station)
-;    )
-;    ;TODO: parallelize this; ensure that CLEAR-OUTPUT is done first
-;    ;(goal (id (sym-cat CLEAR-OUTPUT-(gensym*)))
-;    ;      (class CLEAR-OUTPUT)
-;    ;      (parent ?parent)
-;    ;      (sub-type SIMPLE)
-;    ;      (params mps ?cap-station mps-side OUTPUT)
-;    ;      (priority 2.0)
-;    ;)
-;    ;(goal (id (sym-cat PICKUP-WP-(gensym*)))
-;    ;      (parent ?parent)
-;    ;      (class PICKUP-WP)
-;    ;      (sub-type SIMPLE)
-;    ;      (priority 1.0)
-;    ;      (params wp ?wp)
-;    ;)
-;    (goal (id (sym-cat GET-BASE-AND-REMOVE-CC-(gensym*)))
-;          (class GET-BASE-AND-REMOVE-CC)
-;          (parent ?parent)
-;          (sub-type RUN-SUBGOALS-IN-PARALLEL)
-;          (priority 2.0)
-;          (params cs ?cap-station wp ?wp complexity ?complexity bs ?base-station
-;                  base-color ?base-color)
-;    )
-;
-;    (goal (id (sym-cat MOUNT-CAP-(gensym*)))
-;          (parent ?parent)
-;          (class MOUNT-CAP)
-;          (sub-type SIMPLE)
-;          (priority 0.0)
-;          (params cs ?cap-station cap-color ?cap-color wp ?wp)
-;    )
-;  )
-;  (modify ?p (mode EXPANDED))
-;)
-
 (defrule goal-production-fill-bases-in-rs
   "Fill as many bases as needed into a ring-station for a certain ring mount."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
@@ -1124,35 +901,38 @@ therefore, discard the disposable wp and free the robot.
 )
 
 ; TODO: not working, wp-put fails at storage station (not our fault)
-;(defrule passive-store-wp-before-deliver
-;  "Get a robot holding a workpiece waiting for delivery in a furture time slot and
-;  store it in the storage station if possible." 
-;  ; Get a robot
-;  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
-;  (not (goal (params robot ?robot $?some-params)))
-;
-;  ; wp is to be delivered
-;  (goal (id ?id) (class PICKUP-AND-DELIVER) (mode SELECTED) (params order ?order ds ?ds wp ?wp))
-;
-;  ; get delivery time for order
-;  (wm-fact (key refbox order ?order delivery-begin) (type UINT) (value ?begin))
-;
-;  ; check time
-;  (wm-fact (key refbox game-time) (values ?game-time&:(< (+ ?game-time 120) ?begin) $?))
-;
-;  ; get storage station and available side
-;  (wm-fact (key refbox team-color) (value ?team-color))
-;  (wm-fact (key domain fact mps-type args? m ?mps t SS))
-;  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-;  (wm-fact (key domain fact mps-side-free args? m ?mps side ?mps-side&INPUT))
-;  =>
-;  (printout t "Robot stores wp at storage station for future delivery." crlf)
-;  (assert (goal (id (sym-cat STORE-WP-(gensym*))) 
-;                (class STORE-WP)
-;                (sub-type SIMPLE)
-;                (params robot ?robot wp ?wp mps ?mps mps-side ?mps-side))
-;  )
-;)
+(defrule passive-store-wp-before-deliver
+  "Get a robot holding a workpiece waiting for delivery in a furture time slot and
+  store it in the storage station if possible." 
+  ; storage station activated? 
+  (test (neq ?*USE-SS-INPUT* 1))
+
+  ; Get a robot
+  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+  (not (goal (params robot ?robot $?some-params)))
+
+  ; wp is to be delivered
+  (goal (id ?id) (class PICKUP-AND-DELIVER) (mode SELECTED) (params order ?order ds ?ds wp ?wp))
+
+  ; get delivery time for order
+  (wm-fact (key refbox order ?order delivery-begin) (type UINT) (value ?begin))
+
+  ; check time
+  (wm-fact (key refbox game-time) (values ?game-time&:(< (+ ?game-time 120) ?begin) $?))
+
+  ; get storage station and available side
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact mps-type args? m ?mps t SS))
+  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+  (wm-fact (key domain fact mps-side-free args? m ?mps side ?mps-side&INPUT))
+  =>
+  (printout t "Robot stores wp at storage station for future delivery." crlf)
+  (assert (goal (id (sym-cat STORE-WP-(gensym*))) 
+                (class STORE-WP)
+                (sub-type SIMPLE)
+                (params robot ?robot wp ?wp mps ?mps mps-side ?mps-side))
+  )
+)
 
 ; ============================= Passive Prefills ===============================
 
@@ -1468,7 +1248,7 @@ therefore, discard the disposable wp and free the robot.
   (goal (id ?parent) (class PRODUCE-C0|PRODUCE-CX) (mode FINISHED) (outcome FAILED)
         (meta $?m1 retries ?retries&:(< ?retries ?*GOAL-MAX-TRIES*) $?m2)
   )
-  ; child of faiiled root
+  ; child of failed root
   ?g <- (goal (id ?id) (parent ?parent) (mode FORMULATED))
   =>
   (printout t "Retracting goal " ?id crlf)
