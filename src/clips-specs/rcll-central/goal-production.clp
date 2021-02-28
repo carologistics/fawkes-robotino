@@ -416,16 +416,17 @@
 ;)
 
 (defrule goal-production-produce-cx-handle-cs
+  "Root goal for all production steps requiring a cap station."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  ?p <- (goal (id ?parent)
-              (class PRODUCE-CX-HANDLE-CS)
-              (mode SELECTED)
+  ?p <- (goal (id ?parent) (class PRODUCE-CX-HANDLE-CS) (mode SELECTED)
               (params cs ?cap-station
                       wp ?wp
                       complexity ?complexity
                       bs ?base-station
                       cap-color ?cap-color
-                      base-color ?base-color))
+                      base-color ?base-color
+              )
+        )
   =>
   (assert
     (goal (id (sym-cat CLEAR-OUTPUT-(gensym*)))
@@ -463,13 +464,16 @@
 
 
 (defrule goal-production-get-base-and-remove-cc
-  "Leaf goals to remove the unused cc and get the main base in parallel."
+  "Remove the cc after retrieving its cap and get the main base in parallel."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ?p <- (goal (id ?parent) (class GET-BASE-AND-REMOVE-CC) (mode SELECTED)
               (params cs ?cap-station wp ?wp complexity ?complexity bs ?base-station
-              base-color ?base-color))
+                      base-color ?base-color
+              )
+        )
   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?wp-base-color) (value TRUE))
   =>
+  ; remove cc
   (assert
     (goal (id (sym-cat CLEAR-OUTPUT-(gensym*)))
           (class CLEAR-OUTPUT)
@@ -479,6 +483,7 @@
           (priority 2.0)
     )
   )
+  ; get new base for C0 or pickup wp for C1-C3
   (if (eq ?complexity C0)
   then
     (if (neq ?wp-base-color ?base-color) then
@@ -551,8 +556,10 @@
 
   ; there is nothing else to do for the robot
   (not (goal (class ?class&:(goal-needs-fresh-robot ?class))
-            (mode SELECTED)
-            (params $?params&:(not (member$ robot $?params)))))
+             (mode SELECTED)
+             (params $?params&:(not (member$ robot $?params)))
+       )
+  )
 
   ; get ring station
   (wm-fact (key domain fact mps-team args? m ?ring-station col ?team-color))
@@ -575,7 +582,6 @@
                   rs ?ring-station 
                   wp ?wp)
           (required-resources ?ring-station)
-
     )
   )
 )
@@ -601,10 +607,12 @@ therefore, discard the disposable wp and free the robot.
 (defrule create-subgoals-pickup-and-deliver
  "Create subgoals to pickup and deliver a workpiece"
  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
- ?g <- (goal (id ?parent) (class PICKUP-AND-DELIVER) (mode SELECTED) 
+ ?g <-  (goal (id ?parent) (class PICKUP-AND-DELIVER) (mode SELECTED) 
             (params order ?order
                     ds ?ds
-                    wp ?wp))
+                    wp ?wp
+            )
+        )
 
   ; get delivery time for order
   (wm-fact (key refbox order ?order delivery-begin) (type UINT) (value ?begin))
@@ -635,7 +643,7 @@ therefore, discard the disposable wp and free the robot.
 
 
 (defrule goal-production-produce-cx
-  "Create root goal of cx-production tree"
+  "Create root goal of a cx-production tree. Includes all production steps of a product."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 
   ; check current game state
@@ -685,23 +693,24 @@ therefore, discard the disposable wp and free the robot.
   (wm-fact (key domain fact mps-type args? m ?ds t DS))
   (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
 
-  ; TODO: check for more products in single order
   ; order is not already being handled
   (not (goal (class PRODUCE-CX) (params order ?order $?other-params)))
+
   ; more products ordered
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
 	  (value ?qd&:(> ?qr ?qd)))
   (not (goal (class HANDLE-MPS) (params ?ds)))
 
+  ; is order competitive?
   (wm-fact (key order meta competitive args? ord ?order) (value ?competitive))
 
+  ; start production for order only in a certain time frame around the deliver window
   (wm-fact (key refbox game-time) (values $?game-time))
   (wm-fact (key refbox order ?order delivery-begin) (type UINT)
 	  (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) (order-time-estimate-upper ?complexity ?competitive)))))
   (wm-fact (key refbox order ?order delivery-end) (type UINT)
 	  (value ?end&:(> ?end (+ (nth$ 1 ?game-time) (order-time-estimate-lower ?complexity ?competitive)))))
-
   =>
   (bind ?wp (create-wp ?order))
   (assert 
@@ -732,31 +741,36 @@ therefore, discard the disposable wp and free the robot.
 )
 
 (defrule goal-production-produce-cx-create-subgoals
+  "Expands CX root goal by formulationg all necessary subgoals."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ?p <- (goal (id ?parent) (class PRODUCE-CX) (mode SELECTED)
-        (params order ?order
-                wp ?wp
-                complexity ?complexity
-                cs ?cap-station
-                bs ?base-station
-                rs1 ?ring-station1
-                rs2 ?ring-station2
-                rs3 ?ring-station3
-                cap-color ?cap-color
-                base-color ?base-color
-                ring-color1 ?ring-color1
-                ring-color2 ?ring-color2
-                ring-color3 ?ring-color3
-                ring-base-req1 ?ring-base-req1
-                ring-base-req2 ?ring-base-req2
-                ring-base-req3 ?ring-base-req3
-                ds ?ds)
-        (meta $? global-priority ?pprio $?))
+              (params order ?order
+                      wp ?wp
+                      complexity ?complexity
+                      cs ?cap-station
+                      bs ?base-station
+                      rs1 ?ring-station1
+                      rs2 ?ring-station2
+                      rs3 ?ring-station3
+                      cap-color ?cap-color
+                      base-color ?base-color
+                      ring-color1 ?ring-color1
+                      ring-color2 ?ring-color2
+                      ring-color3 ?ring-color3
+                      ring-base-req1 ?ring-base-req1
+                      ring-base-req2 ?ring-base-req2
+                      ring-base-req3 ?ring-base-req3
+                      ds ?ds
+              )
+              (meta $? global-priority ?pprio $?)
+        )
+  ; check that all facts have been defined
   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?wp-ring1-color) (value TRUE))
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?wp-ring2-color) (value TRUE))
   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?wp-ring3-color) (value TRUE))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?wp-cap-color) (value TRUE))
   =>
+  ; C1, C2 and C3 and not recovering from failure where step already completed
   (if (and (neq ?wp-ring1-color ?ring-color1) (neq ?complexity C0)) then
     (assert
       (goal (id (sym-cat PRODUCE-CX-HANDLE-RS-(gensym*)))
@@ -777,6 +791,7 @@ therefore, discard the disposable wp and free the robot.
       )
     )
   )
+  ; C2 and C3 and not recovering from failure where step already completed
   (if (and (neq ?wp-ring2-color ?ring-color2) (or (eq ?complexity C2) (eq ?complexity C3))) then
     (assert
       (goal (id (sym-cat PRODUCE-CX-HANDLE-RS-(gensym*)))
@@ -797,6 +812,7 @@ therefore, discard the disposable wp and free the robot.
       )
     )
   )
+  ; C3 and not recovering from failure where step already completed
   (if (and (neq ?wp-ring3-color ?ring-color3) (eq ?complexity C3)) then
     (assert
       (goal (id (sym-cat PRODUCE-CX-HANDLE-RS-(gensym*)))
@@ -817,6 +833,7 @@ therefore, discard the disposable wp and free the robot.
       )
     )
   )
+  ; all and not recovering from failure where step already completed
   (if (neq ?wp-cap-color ?cap-color) then
     (assert
       (goal (id (sym-cat PRODUCE-CX-HANDLE-CS-(gensym*)))
@@ -835,6 +852,7 @@ therefore, discard the disposable wp and free the robot.
       )
     )
   )
+  ; all
   (assert
     (goal (id (sym-cat PICKUP-AND-DELIVER-(gensym*)))
           (parent ?parent)
@@ -852,6 +870,7 @@ therefore, discard the disposable wp and free the robot.
 
 
 (defrule goal-production-produce-cx-handle-rs
+  "Root goal for all production steps requiring a ring station."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ?p <- (goal (id ?parent) (class PRODUCE-CX-HANDLE-RS) (mode SELECTED)
               (params order ?order
@@ -861,7 +880,10 @@ therefore, discard the disposable wp and free the robot.
                       base-color ?base-color
                       ring-color ?ring-color
                       ring-mount-index ?ring-mount-index
-                      ring-base-req ?ring-base-req))
+                      ring-base-req ?ring-base-req
+              )
+        )
+  ; TODO: value true? 
   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?wp-base-color))
   =>
   (assert
@@ -875,6 +897,7 @@ therefore, discard the disposable wp and free the robot.
                   ring-base-req ?ring-base-req)
     )
   )
+  ; get base only needed if we are at ring index one and not recovering from a fail
   (if (and (eq ?ring-mount-index ONE) (neq ?wp-base-color ?base-color))
   then
     (assert
@@ -989,23 +1012,27 @@ therefore, discard the disposable wp and free the robot.
 ;  (modify ?p (mode EXPANDED))
 ;)
 
-; TODO: check case that no additional bases are needed -> fix with if (might not be working)
-; TODO: formulates before async mount ring completes -> wrong ring count (should be fixed with IDLE)
 (defrule goal-production-fill-bases-in-rs
+  "Fill as many bases as needed into a ring-station for a certain ring mount."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ?p <- (goal (id ?parent) (class FILL-BASES-IN-RS) (mode SELECTED)
               (params bs ?base-station
                       rs ?ring-station
-                      ring-base-req ?ring-base-req))
+                      ring-base-req ?ring-base-req
+              )
+        )
+  ; avoid wrong ring counts if the machine is still active
   (wm-fact (key domain fact mps-state args? m ?ring-station s ~BROKEN&~PROCESSING&~DOWN))
-  (wm-fact (key domain fact rs-filled-with args? m ?ring-station n ?rs-before))
 
+  ; get current fill status of ring station
+  (wm-fact (key domain fact rs-filled-with args? m ?ring-station n ?rs-before))
   =>
+  ; calculate necessary bases
   (bind ?ring-base-req-int (sym-to-int ?ring-base-req))
   (bind ?rs-before-int (sym-to-int ?rs-before))
   (bind ?rs-needed-int (- ?ring-base-req-int ?rs-before-int))
   
-  (printout t "Ring needs " ?ring-base-req-int " bases, " ?rs-before-int " in ring station, " ?rs-needed-int " needed" crlf)
+  ;(printout t "Ring needs " ?ring-base-req-int " bases, " ?rs-before-int " in ring station, " ?rs-needed-int " needed" crlf)
 
   ; create as many fill goals as necessary
   (if (> ?rs-needed-int 0) then
@@ -1040,9 +1067,11 @@ therefore, discard the disposable wp and free the robot.
 )
 
 (defrule goal-production-fill-base-in-rs
+  "Fill a single fresh base into a ring station."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ?p <- (goal (id ?parent) (class FILL-BASE-IN-RS) (mode SELECTED)
-              (params bs ?base-station rs ?ring-station))
+              (params bs ?base-station rs ?ring-station)
+        )
   =>
   (bind ?wp (create-wp (sym-cat FILL-BASE- (gensym*))))
   (bind ?base-color (sym-cat BASE_BLACK))
@@ -1089,7 +1118,8 @@ therefore, discard the disposable wp and free the robot.
   (assert (goal (id (sym-cat GO-WAIT-(gensym*))) 
                 (class GO-WAIT)
                 (sub-type SIMPLE)
-                (params robot ?robot mps ?mps mps-side INPUT))
+                (params robot ?robot mps ?mps mps-side INPUT)
+          )
   )
 )
 
@@ -1127,11 +1157,11 @@ therefore, discard the disposable wp and free the robot.
 ; ============================= Passive Prefills ===============================
 
 (defrule passive-prefill-cap-station
-  "Prefill a cap station without an immediate need in preparation for future production"
+  "Prefill a cap station without an immediate need in preparation for future production."
   ; TODO: own salience?
   (declare (salience -100))
 
-  ; debugging conditions (not working)
+  ; debugging conditions TODO:(not working)
   ;(test (neq ?*DEBUG-SKIP-PF-CS* 1))
 
   ; select non-busy robot
@@ -1142,7 +1172,9 @@ therefore, discard the disposable wp and free the robot.
   ; there is nothing else to do:
   (not (goal (class ?class&:(goal-needs-fresh-robot ?class))
             (mode SELECTED)
-            (params $?params&:(not (member$ robot $?params)))))
+            (params $?params&:(not (member$ robot $?params)))
+        )
+  )
 
   ; get a cap station
   (wm-fact (key refbox team-color) (value ?team-color))
@@ -1179,7 +1211,7 @@ therefore, discard the disposable wp and free the robot.
   ; TODO: own salience?
   (declare (salience -200))
 
-  ; debugging conditions (not working)
+  ; debugging conditions TODO:(not working)
   ;(test (neq ?*DEBUG-SKIP-PF-RS* 1))
 
   ; select non-busy robot
@@ -1190,7 +1222,9 @@ therefore, discard the disposable wp and free the robot.
   ; there is nothing else to do:
   (not (goal (class ?class&:(goal-needs-fresh-robot ?class))
             (mode SELECTED)
-            (params $?params&:(not (member$ robot $?params)))))
+            (params $?params&:(not (member$ robot $?params)))
+       )
+  )
 
   ; get base station
   (wm-fact (key domain fact mps-type args? m ?base-station t BS))
@@ -1221,7 +1255,8 @@ therefore, discard the disposable wp and free the robot.
                   (sub-type RUN-ALL-OF-SUBGOALS)
                   (required-resources ?ring-station)
                   (params bs ?base-station rs ?ring-station)
-                  (meta global-priority -10))
+                  (meta global-priority -10)
+          )
   ) 
 )
 
@@ -1229,18 +1264,25 @@ therefore, discard the disposable wp and free the robot.
 ; ============================= Robot selection ===============================
 
 (defrule assign-robot-to-production-goal
-  "Select a non-busy robot for executing a production leaf goal without assigned robot"
+  "Select a non-busy robot for executing a production leaf goal without assigned robot."
   ?g <- (goal (id ?goal-id) (class ?class) (params $?params) (mode SELECTED)
-              (meta $? global-priority ?gprio $?))
+              (meta $? global-priority ?gprio $?)
+        )
+  
+  ; goal class requires a fresh robot
   (test (goal-needs-fresh-robot ?class))
+
+  ; there is no robot already assigned
   (not (test (member$ robot $?params)))
 
   ; check that there isn't a goal with higher priority waiting
   (not (goal (class ?oclass&:(goal-needs-fresh-robot ?oclass)) (mode SELECTED)
             (params $?oparams&:(not (member$ robot $?oparams))) 
-            (meta $? global-priority ?ogprio&:(> ?ogprio ?gprio) $?)))
+            (meta $? global-priority ?ogprio&:(> ?ogprio ?gprio) $?)
+       )
+  )
 
-  ; Get robot
+  ; Get robot that is not assigned and not holding anything
   (wm-fact (key domain fact entered-field args? r ?robot))
   (not (goal (params robot ?robot $?some-params)))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
@@ -1250,10 +1292,20 @@ therefore, discard the disposable wp and free the robot.
 )
 
 (defrule assign-robot-holding-wp
-  ?g <- (goal (id ?goal-id) (class ?class) (params $?params) (mode SELECTED))
+  "Assign a robot that is holding a wp to the correct goal for that wp."
+  ?g <- (goal (id ?goal-id) (class ?class) (mode SELECTED)
+              (params $?params)
+        )
+  ; goal class requires some robot to be holding the wp
   (test (goal-needs-robot-holding-wp ?class))
+
+  ; there is currently no robot assigned to the goal
   (not (test (member$ robot $?params)))
+
+  ; get the robot holding the wp required for the goal
   (wm-fact (key domain fact holding args? r ?robot wp ?wp&:(member$ ?wp $?params)))
+
+  ; robot is not assigned to a goal already
   (not (goal (params robot ?robot $?some-params)))
   =>
   (printout t "Assigning " ?robot " to " ?goal-id crlf)
@@ -1263,7 +1315,8 @@ therefore, discard the disposable wp and free the robot.
 
 (defrule clear-station
   "Formulate goal to remove robots from stations. This is only done unless the robot
-  could execute another production goal"
+  could execute another production goal
+  "
   ; select non-busy robot
   (wm-fact (key domain fact entered-field args? r ?robot))
   (not (goal (params robot ?robot $?some-params)))
@@ -1276,13 +1329,15 @@ therefore, discard the disposable wp and free the robot.
   ; there is nothing else to do:
   (not (goal (class ?class&:(goal-needs-fresh-robot ?class))
             (mode SELECTED)
-            (params $?params&:(not (member$ robot $?params)))))
-
+            (params $?params&:(not (member$ robot $?params)))
+       )
+  )
   (not (and (goal (class ?class&:(goal-needs-robot-holding-wp ?class))
             (mode SELECTED)
             (params $?paramsprefix wp ?wp $?paramssuffix))
-            (wm-fact (key domain fact holding args? r ?robot wp ?wp))))
-
+            (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+       )
+  )
   =>
   (assert (goal (id (sym-cat CLEAR-STATION-(gensym*)))
                 (class CLEAR-STATION)
@@ -1300,7 +1355,8 @@ therefore, discard the disposable wp and free the robot.
 "
   (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
   ?g <- (goal (id ?goal-id) (class FILL-BASES-IN-RS) (mode FINISHED) (outcome FAILED)
-              (meta $?pre retries ?retries&:(< ?retries ?*GOAL-MAX-TRIES*) $?post))
+              (meta $?pre retries ?retries&:(< ?retries ?*GOAL-MAX-TRIES*) $?post)
+        )
   =>
   (printout t "Restarting " ?goal-id " for the " (+ ?retries 1) " time " crlf)
   (modify ?g (mode SELECTED) (meta $?pre retries (+ ?retries 1) $?post)
@@ -1309,7 +1365,7 @@ therefore, discard the disposable wp and free the robot.
 
 (defrule fill-base-in-rs-failed-drop-wp
 " If the filling of a rs failed we just drop the wp, because most likely a wp-put action
-  already failed 3 times
+  already failed 3 times.
 "
   (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
   ?g <- (goal (id ?goal-id) (class FILL-BASE-IN-RS) (mode FINISHED) (outcome FAILED))
@@ -1318,29 +1374,38 @@ therefore, discard the disposable wp and free the robot.
   (not (goal (class DROP-WP) (params robot ?robot wp ?wp)))
   =>
   (printout t ?robot " dropping wp because " ?goal-id " failed" crlf)
-  (assert (goal (id (sym-cat DROP-WP-(gensym*))) (class DROP-WP) (params robot ?robot wp ?wp)
-                (sub-type SIMPLE)))  
+  (assert (goal (id (sym-cat DROP-WP-(gensym*))) (class DROP-WP) (sub-type SIMPLE)
+                (params robot ?robot wp ?wp)
+          )
+  )  
 )
 
 (defrule clean-bs-after-failed
-" If a robot fails at picking up a base from the base station, we want to discard the base
+" If a robot fails at picking up a base from the base station, we want to discard the base.
 "
   (declare (salience ?*SALIENCE-HIGHEST*))
+  ; get base station
   (wm-fact (key domain fact mps-type args? m ?base-station t BS))
   (wm-fact (key domain fact mps-team args? m ?base-station col ?team-color))
   (wm-fact (key domain fact wp-at args? wp ?wp m ?base-station side ?side))
+
   ; if no robot is getting a base, there shouldn't be a base at the output
   (not (goal (class GET-BASE) (mode EXPANDED|DISPATCHED)))
   (not (goal (class CLEAN-BS)))
+
   ; bases that act as wp of a production goal are handed separately
   (not (goal (class PRODUCE-C0|PRODUCE-CX) (params $? wp ?wp $?)))
   =>
   (assert (goal (id (sym-cat CLEAN-BS-(gensym*))) (class CLEAN-BS) 
-                (sub-type RUN-ALL-OF-SUBGOALS) (params wp ?wp)
-                (meta global-priority 2000)))
+                (sub-type RUN-ALL-OF-SUBGOALS) 
+                (params wp ?wp)
+                (meta global-priority 2000)
+          )
+  )
 )
 
 (defrule clean-bs-after-failed-create-subgoals
+  "Create subgoals to remove a discarded base at the base station."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ?p <- (goal (id ?parent) (class CLEAN-BS) (params wp ?wp)
               (mode SELECTED))
@@ -1371,7 +1436,8 @@ therefore, discard the disposable wp and free the robot.
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
   ?g <- (goal (class PRODUCE-C0|PRODUCE-CX) (mode FINISHED) (outcome FAILED)
               (meta $?m1 retries ?retries&:(< ?retries ?*GOAL-MAX-TRIES*) $?m2)
-              (params $? wp ?wp $?))
+              (params $? wp ?wp $?)
+        )
   =>
   (modify ?g (mode SELECTED) (outcome UNKNOWN) (error) (meta $?m1 retries (+ ?retries 1) $?m2))
 )
@@ -1381,8 +1447,13 @@ therefore, discard the disposable wp and free the robot.
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ?g <- (goal (class PRODUCE-C0|PRODUCE-CX) (mode FINISHED) (outcome FAILED)
-              (params $? wp ?wp $?))
+              (params $? wp ?wp $?)
+        )
+
+  ; wp of failed production at some station
   (wm-fact (key domain fact wp-at args? wp ?wp m ? side ?))
+
+  ; wp not being picked up already
   (not (goal (class PICKUP-WP) (params wp ?wp)))
   =>
   (assert (goal (id (sym-cat PICKUP-WP-(gensym*))) (class PICKUP-WP)
@@ -1395,7 +1466,9 @@ therefore, discard the disposable wp and free the robot.
 "
   (declare (salience ?*SALIENCE-HIGHEST*))
   (goal (id ?parent) (class PRODUCE-C0|PRODUCE-CX) (mode FINISHED) (outcome FAILED)
-        (meta $?m1 retries ?retries&:(< ?retries ?*GOAL-MAX-TRIES*) $?m2))
+        (meta $?m1 retries ?retries&:(< ?retries ?*GOAL-MAX-TRIES*) $?m2)
+  )
+  ; child of faiiled root
   ?g <- (goal (id ?id) (parent ?parent) (mode FORMULATED))
   =>
   (printout t "Retracting goal " ?id crlf)
