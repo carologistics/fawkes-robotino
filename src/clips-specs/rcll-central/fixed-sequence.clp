@@ -19,6 +19,7 @@
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
 
+
 ; ========================= administrative plans =============================
 
 (defrule goal-expander-send-beacon-signal
@@ -104,25 +105,6 @@
   (modify ?g (mode EXPANDED))
 )
 
-(defrule goal-expander-drop-wp
-  "Robot drops whatever workpiece he is currently holding."
-  ?g <- (goal (id ?goal-id) (class DROP-WP) (mode SELECTED)
-              (params robot ?robot wp ?wp)
-        )
-  =>
-  (printout t "Expanding " ?goal-id " for robot " ?robot crlf)
-  (printout t "Expansion Details: dropped wp " ?wp crlf)
-  (bind ?plan-id (sym-cat DROP-WP-PLAN-(gensym*)))
-  (assert
-    (plan (id ?plan-id) (goal-id ?goal-id))
-    (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
-      (skiller (remote-skiller ?robot))
-      (action-name wp-discard)
-      (param-values ?robot ?wp)
-    )
-  )
-  (modify ?g (mode EXPANDED))
-)
 
 ; ========================= enter-field plan =============================
 
@@ -162,6 +144,7 @@
   (modify ?g (mode EXPANDED))
 )
 
+; TODO: remove?
 ; ========================= visit-station plan =============================
 
 (defrule goal-expander-visit-station
@@ -189,143 +172,10 @@
   (modify ?g (mode EXPANDED))
 )
 
+
 ; ========================= production plans =============================
 
-(defrule goal-expander-fill-cs
-  "Retrieve cap at cap station and discard the unneeded base."
-  ?g <- (goal (id ?goal-id) (class FILL-CS) (mode SELECTED)
-              (params robot ?robot mps ?cap-station)
-        )
-
-  ; get current robot location
-  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-  ; get cc location
-  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cap-station spot ?shelf-spot))
-  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-  ; station not already buffered
-  (not (wm-fact (key domain fact cs-buffered args? m ?cap-station col ?cap-color)))
-  =>
-  (printout t "Expanding " ?goal-id " for robot " ?robot crlf)
-  (printout t "Expansion Details: cap-station " ?cap-station crlf)
-  (bind ?plan-id (sym-cat FILL-CS-PLAN- ?robot - (gensym*)))
-  (assert
-    (plan (id ?plan-id) (goal-id ?goal-id))
-    (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
-      (action-name go-wait)
-      (skiller (remote-skiller ?robot))
-      (param-names r from from-side to)
-      (param-values ?robot ?curr-location ?curr-side (wait-pos ?cap-station INPUT))
-    )
-    (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
-      (action-name move)
-      (skiller (remote-skiller ?robot))
-      (param-names r from from-side to to-side)
-      (param-values ?robot (wait-pos ?cap-station INPUT) WAIT ?cap-station INPUT)
-    )
-    (plan-action (id 3) (plan-id ?plan-id) (goal-id ?goal-id)
-      (action-name wp-get-shelf)
-      (skiller (remote-skiller ?robot))
-      (param-names r cc m spot)
-      (param-values ?robot ?cc ?cap-station ?shelf-spot)
-    )
-    (plan-action (id 4) (plan-id ?plan-id) (goal-id ?goal-id)
-      (action-name wp-put)
-      (skiller (remote-skiller ?robot))
-      (param-names r wp m)
-      (param-values ?robot ?cc ?cap-station)
-    )
-    (plan-action (id 5) (plan-id ?plan-id) (goal-id ?goal-id)
-      (action-name request-cs-retrieve-cap)
-      (param-values ?robot ?cap-station ?cc ?cap-color)
-    )
-    (plan-action (id 6) (plan-id ?plan-id) (goal-id ?goal-id)
-      (action-name move)
-      (skiller (remote-skiller ?robot))
-      (param-names r from from-side to to-side)
-      (param-values ?robot ?cap-station INPUT ?cap-station OUTPUT)
-    )
-    (plan-action (id 7) (plan-id ?plan-id) (goal-id ?goal-id)
-      (action-name wp-get)
-      (skiller (remote-skiller ?robot))
-      (param-names r wp m side)
-      (param-values ?robot ?cc ?cap-station OUTPUT)
-    )
-  )
-  (modify ?g (mode EXPANDED))
-)
-
-; TODO: name change? handles fill-cs and buffer-cs
-(defrule goal-expander-fill-cs-fast-forward
-  "Cap station already buffered, FILL-CS / BUFFER-CS can be fast forwarded"
-  ?g <- (goal (id ?goal-id) (class FILL-CS|BUFFER-CS) (mode SELECTED)
-              (params robot ?robot mps ?cap-station)
-        )
-
-  ; check if cap-station is buffered            
-  (wm-fact (key domain fact cs-buffered args? m ?cap-station col ?cap-color))
-  =>
-  (printout t "Fast-forwarding " ?goal-id " for robot " ?robot crlf)
-  (modify ?g (mode FINISHED) (outcome COMPLETED))
-)
-
-(defrule goal-expander-buffer-cs
-  "Retrieve cap at cap station."
-  ?g <- (goal (id ?goal-id) (class BUFFER-CS) (mode SELECTED)
-              (params robot ?robot mps ?cap-station)
-        )
-
-  ; get current robot location
-  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-  ; get cc location
-  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cap-station spot ?shelf-spot))
-  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-  ; station not already buffered
-  (not (wm-fact (key domain fact cs-buffered args? m ?cap-station col ?cap-color)))
-  =>
-  (printout t "Expanding " ?goal-id " for robot " ?robot crlf)
-  (printout t "Expansion Details: cap-station " ?cap-station crlf)
-  (bind ?plan-id (sym-cat BUFFER-CS-PLAN- ?robot - (gensym*)))
-  (assert
-    (plan (id ?plan-id) (goal-id ?goal-id))
-    (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
-      (action-name go-wait)
-      (skiller (remote-skiller ?robot))
-      (param-names r from from-side to)
-      (param-values ?robot ?curr-location ?curr-side (wait-pos ?cap-station INPUT))
-    )
-    (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
-      (action-name move)
-      (skiller (remote-skiller ?robot))
-      (param-names r from from-side to to-side)
-      (param-values ?robot (wait-pos ?cap-station INPUT) WAIT ?cap-station INPUT)
-    )
-    (plan-action (id 3) (plan-id ?plan-id) (goal-id ?goal-id)
-      (action-name wp-get-shelf)
-      (skiller (remote-skiller ?robot))
-      (param-names r cc m spot)
-      (param-values ?robot ?cc ?cap-station ?shelf-spot)
-    )
-    (plan-action (id 4) (plan-id ?plan-id) (goal-id ?goal-id)
-      (action-name wp-put)
-      (skiller (remote-skiller ?robot))
-      (param-names r wp m)
-      (param-values ?robot ?cc ?cap-station)
-    )
-    (plan-action (id 5) (plan-id ?plan-id) (goal-id ?goal-id)
-      (action-name request-cs-retrieve-cap)
-      (param-values ?robot ?cap-station ?cc ?cap-color)
-    )
-    ;TODO-Note: necessary? (might have been to avoid clear-output completing before async action started)
-    (plan-action (id 6) (plan-id ?plan-id) (goal-id ?goal-id)
-      (action-name go-wait)
-      (skiller (remote-skiller ?robot))
-      (param-names r from from-side to)
-      (param-values ?robot ?cap-station INPUT (wait-pos ?cap-station OUTPUT))
-    )
-  )
-  (modify ?g (mode EXPANDED))
-)
-
+; ========== base station plans ==========
 
 (defrule goal-expander-get-base
   "Get base from base station and move to the target station. The robot will still
@@ -412,41 +262,7 @@
   (modify ?g (mode EXPANDED))
 )
 
-(defrule goal-expander-mount-cap
-  "Mount prepared cap on workpiece."
-  ?g <- (goal (id ?goal-id) (class MOUNT-CAP) (mode SELECTED)
-              (params robot ?robot cs ?cap-station cap-color ?cap-color wp ?wp)
-        )
-
-  ; get current robot location
-  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-  =>
-  (printout t "Expanding " ?goal-id " for robot " ?robot crlf)
-  (printout t "Expansion Details: cap-station " ?cap-station crlf)
-  (bind ?plan-id (sym-cat MOUNT-CAP-PLAN- ?robot - (gensym*)))
-  (assert
-    (plan (id ?plan-id) (goal-id ?goal-id))
-    (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
-      (action-name move)
-      (skiller (remote-skiller ?robot))
-      (param-names r from from-side to to-side)
-      (param-values ?robot ?curr-location ?curr-side ?cap-station INPUT)
-    )
-    (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
-      (action-name wp-put)
-      (skiller (remote-skiller ?robot))
-      (param-names r wp m)
-      (param-values ?robot ?wp ?cap-station)
-    )
-    (plan-action (id 3) (plan-id ?plan-id) (goal-id ?goal-id)
-      (action-name request-cs-mount-cap)
-      (skiller (remote-skiller ?robot))
-      (param-names r mps wp capcol)
-      (param-values ?robot ?cap-station ?wp ?cap-color)
-    )
-  )
-  (modify ?g (mode EXPANDED))
-)
+; ========== ring station plans ==========
 
 (defrule goal-expander-fill-rs
   "Fill a ring station with one additional base"
@@ -549,6 +365,181 @@
   (modify ?g (mode EXPANDED))
 )
 
+; ========== cap station plans ==========
+
+(defrule goal-expander-fill-cs
+  "Retrieve cap at cap station and discard the unneeded base."
+  ?g <- (goal (id ?goal-id) (class FILL-CS) (mode SELECTED)
+              (params robot ?robot mps ?cap-station)
+        )
+
+  ; get current robot location
+  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+  ; get cc location
+  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cap-station spot ?shelf-spot))
+  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+  ; station not already buffered
+  (not (wm-fact (key domain fact cs-buffered args? m ?cap-station col ?cap-color)))
+  =>
+  (printout t "Expanding " ?goal-id " for robot " ?robot crlf)
+  (printout t "Expansion Details: cap-station " ?cap-station crlf)
+  (bind ?plan-id (sym-cat FILL-CS-PLAN- ?robot - (gensym*)))
+  (assert
+    (plan (id ?plan-id) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name go-wait)
+      (skiller (remote-skiller ?robot))
+      (param-names r from from-side to)
+      (param-values ?robot ?curr-location ?curr-side (wait-pos ?cap-station INPUT))
+    )
+    (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name move)
+      (skiller (remote-skiller ?robot))
+      (param-names r from from-side to to-side)
+      (param-values ?robot (wait-pos ?cap-station INPUT) WAIT ?cap-station INPUT)
+    )
+    (plan-action (id 3) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name wp-get-shelf)
+      (skiller (remote-skiller ?robot))
+      (param-names r cc m spot)
+      (param-values ?robot ?cc ?cap-station ?shelf-spot)
+    )
+    (plan-action (id 4) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name wp-put)
+      (skiller (remote-skiller ?robot))
+      (param-names r wp m)
+      (param-values ?robot ?cc ?cap-station)
+    )
+    (plan-action (id 5) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name request-cs-retrieve-cap)
+      (param-values ?robot ?cap-station ?cc ?cap-color)
+    )
+    (plan-action (id 6) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name move)
+      (skiller (remote-skiller ?robot))
+      (param-names r from from-side to to-side)
+      (param-values ?robot ?cap-station INPUT ?cap-station OUTPUT)
+    )
+    (plan-action (id 7) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name wp-get)
+      (skiller (remote-skiller ?robot))
+      (param-names r wp m side)
+      (param-values ?robot ?cc ?cap-station OUTPUT)
+    )
+  )
+  (modify ?g (mode EXPANDED))
+)
+
+(defrule goal-expander-buffer-cs
+  "Retrieve a cap at a cap station without discarding cc."
+  ?g <- (goal (id ?goal-id) (class BUFFER-CS) (mode SELECTED)
+              (params robot ?robot mps ?cap-station)
+        )
+
+  ; get current robot location
+  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+  ; get cc location
+  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cap-station spot ?shelf-spot))
+  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+  ; station not already buffered
+  (not (wm-fact (key domain fact cs-buffered args? m ?cap-station col ?cap-color)))
+  =>
+  (printout t "Expanding " ?goal-id " for robot " ?robot crlf)
+  (printout t "Expansion Details: cap-station " ?cap-station crlf)
+  (bind ?plan-id (sym-cat BUFFER-CS-PLAN- ?robot - (gensym*)))
+  (assert
+    (plan (id ?plan-id) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name go-wait)
+      (skiller (remote-skiller ?robot))
+      (param-names r from from-side to)
+      (param-values ?robot ?curr-location ?curr-side (wait-pos ?cap-station INPUT))
+    )
+    (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name move)
+      (skiller (remote-skiller ?robot))
+      (param-names r from from-side to to-side)
+      (param-values ?robot (wait-pos ?cap-station INPUT) WAIT ?cap-station INPUT)
+    )
+    (plan-action (id 3) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name wp-get-shelf)
+      (skiller (remote-skiller ?robot))
+      (param-names r cc m spot)
+      (param-values ?robot ?cc ?cap-station ?shelf-spot)
+    )
+    (plan-action (id 4) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name wp-put)
+      (skiller (remote-skiller ?robot))
+      (param-names r wp m)
+      (param-values ?robot ?cc ?cap-station)
+    )
+    (plan-action (id 5) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name request-cs-retrieve-cap)
+      (param-values ?robot ?cap-station ?cc ?cap-color)
+    )
+    ;TODO-Note: necessary? (might have been to avoid clear-output completing before async action started)
+    (plan-action (id 6) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name go-wait)
+      (skiller (remote-skiller ?robot))
+      (param-names r from from-side to)
+      (param-values ?robot ?cap-station INPUT (wait-pos ?cap-station OUTPUT))
+    )
+  )
+  (modify ?g (mode EXPANDED))
+)
+
+; TODO: name change? handles fill-cs and buffer-cs
+(defrule goal-expander-fill-cs-fast-forward
+  "Cap station already buffered, FILL-CS / BUFFER-CS can be fast forwarded"
+  ?g <- (goal (id ?goal-id) (class FILL-CS|BUFFER-CS) (mode SELECTED)
+              (params robot ?robot mps ?cap-station)
+        )
+
+  ; check if cap-station is buffered            
+  (wm-fact (key domain fact cs-buffered args? m ?cap-station col ?cap-color))
+  =>
+  (printout t "Fast-forwarding " ?goal-id " for robot " ?robot crlf)
+  (modify ?g (mode FINISHED) (outcome COMPLETED))
+)
+
+(defrule goal-expander-mount-cap
+  "Mount prepared cap on workpiece."
+  ?g <- (goal (id ?goal-id) (class MOUNT-CAP) (mode SELECTED)
+              (params robot ?robot cs ?cap-station cap-color ?cap-color wp ?wp)
+        )
+
+  ; get current robot location
+  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+  =>
+  (printout t "Expanding " ?goal-id " for robot " ?robot crlf)
+  (printout t "Expansion Details: cap-station " ?cap-station crlf)
+  (bind ?plan-id (sym-cat MOUNT-CAP-PLAN- ?robot - (gensym*)))
+  (assert
+    (plan (id ?plan-id) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name move)
+      (skiller (remote-skiller ?robot))
+      (param-names r from from-side to to-side)
+      (param-values ?robot ?curr-location ?curr-side ?cap-station INPUT)
+    )
+    (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name wp-put)
+      (skiller (remote-skiller ?robot))
+      (param-names r wp m)
+      (param-values ?robot ?wp ?cap-station)
+    )
+    (plan-action (id 3) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name request-cs-mount-cap)
+      (skiller (remote-skiller ?robot))
+      (param-names r mps wp capcol)
+      (param-values ?robot ?cap-station ?wp ?cap-color)
+    )
+  )
+  (modify ?g (mode EXPANDED))
+)
+
+; ========== delivery station plans ==========
+
 (defrule goal-expander-deliver
   "Deliver the finished product"
   ?g <- (goal (id ?goal-id) (class DELIVER) (mode SELECTED)
@@ -624,29 +615,8 @@
   (modify ?g (mode EXPANDED))
 )
 
-(defrule goal-expander-clear-station
-  "Remove robot from station by moving to the waiting position"
-  ?g <- (goal (id ?goal-id) (class CLEAR-STATION) (mode SELECTED)
-              (params robot ?robot)
-        )
 
-  ; get current robot location
-  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-  =>
-  (printout t "Expanding " ?goal-id " for robot " ?robot crlf)
-  (printout t "Expansion Details: location " ?curr-location " " ?curr-side crlf)
-  (bind ?plan-id (sym-cat CLEAR-STATION-PLAN- ?robot - (gensym*)))
-  (assert
-    (plan (id ?plan-id) (goal-id ?goal-id))
-    (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
-      (action-name go-wait)
-      (skiller (remote-skiller ?robot))
-      (param-names r from from-side to)
-      (param-values ?robot ?curr-location ?curr-side (wait-pos ?curr-location ?curr-side))
-    )
-  )
-  (modify ?g (mode EXPANDED))
-)
+; ========================= pickup/clear logic plans =============================
 
 (defrule goal-expander-pickup-wp
   "Pickup a wp at some output"
@@ -702,7 +672,6 @@
   (printout t "Fast-forward Details: held by robot " ?robot crlf)
   (modify ?g (mode FINISHED) (outcome COMPLETED))
 )
-
 
 (defrule goal-expander-clear-output
   "Clear the output of some station"
@@ -765,6 +734,57 @@
   (modify ?g (mode FINISHED) (outcome COMPLETED))
 )
 
+
+; ========================= utility plans =============================
+
+; ========== wp handling plans ==========
+
+(defrule goal-expander-drop-wp
+  "Robot drops whatever workpiece he is currently holding."
+  ?g <- (goal (id ?goal-id) (class DROP-WP) (mode SELECTED)
+              (params robot ?robot wp ?wp)
+        )
+  =>
+  (printout t "Expanding " ?goal-id " for robot " ?robot crlf)
+  (printout t "Expansion Details: dropped wp " ?wp crlf)
+  (bind ?plan-id (sym-cat DROP-WP-PLAN-(gensym*)))
+  (assert
+    (plan (id ?plan-id) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
+      (skiller (remote-skiller ?robot))
+      (action-name wp-discard)
+      (param-values ?robot ?wp)
+    )
+  )
+  (modify ?g (mode EXPANDED))
+)
+
+; ========== positioning plans ==========
+
+(defrule goal-expander-clear-station
+  "Remove robot from station by moving to the waiting position"
+  ?g <- (goal (id ?goal-id) (class CLEAR-STATION) (mode SELECTED)
+              (params robot ?robot)
+        )
+
+  ; get current robot location
+  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+  =>
+  (printout t "Expanding " ?goal-id " for robot " ?robot crlf)
+  (printout t "Expansion Details: location " ?curr-location " " ?curr-side crlf)
+  (bind ?plan-id (sym-cat CLEAR-STATION-PLAN- ?robot - (gensym*)))
+  (assert
+    (plan (id ?plan-id) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name go-wait)
+      (skiller (remote-skiller ?robot))
+      (param-names r from from-side to)
+      (param-values ?robot ?curr-location ?curr-side (wait-pos ?curr-location ?curr-side))
+    )
+  )
+  (modify ?g (mode EXPANDED))
+)
+
 (defrule goal-expander-go-wait
   "Expand goal to call a simple go-wait action."
   ?g <- (goal (id ?goal-id) (class GO-WAIT) (mode SELECTED) 
@@ -788,6 +808,8 @@
   )
   (modify ?g (mode EXPANDED))
 )
+
+; ========== storage plans ==========
 
 ;TODO: currently not used due to SS being unusable
 (defrule goal-expander-store-wp
@@ -818,5 +840,4 @@
     )
   )
   (modify ?g (mode EXPANDED))
-)
 )
