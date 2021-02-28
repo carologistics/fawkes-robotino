@@ -59,6 +59,7 @@ fawkes:
     blackboard_size: 2097152
     # Desired loop time of main thread, 0 to disable; microseconds
     desired_loop_time: 66333
+    enable_looptime_warnings: false
     # Maximum time a thread may run per loop, 0 to disable; microseconds
     max_thread_time: 133333
 
