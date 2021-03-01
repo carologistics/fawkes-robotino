@@ -1099,22 +1099,6 @@ therefore, discard the disposable wp and free the robot.
              (outcome UNKNOWN) (error))
 )
 
-(defrule fill-base-in-rs-failed-drop-wp
-" If the filling of a rs failed we just drop the wp, because most likely a wp-put action
-  already failed 3 times.
-"
-  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
-  ?g <- (goal (id ?goal-id) (class FILL-BASE-IN-RS) (mode FINISHED) (outcome FAILED))
-  (goal (parent ?goal-id) (params $? wp ?wp))
-  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
-  (not (goal (class DROP-WP) (params robot ?robot wp ?wp)))
-  =>
-  (printout t ?robot " dropping wp because " ?goal-id " failed" crlf)
-  (assert (goal (id (sym-cat DROP-WP-(gensym*))) (class DROP-WP) (sub-type SIMPLE)
-                (params robot ?robot wp ?wp)
-          )
-  )  
-)
 
 (defrule clean-bs-after-failed
 " If a robot fails at picking up a base from the base station, we want to discard the base.
@@ -1132,37 +1116,12 @@ therefore, discard the disposable wp and free the robot.
   ; bases that act as wp of a production goal are handed separately
   (not (goal (class PRODUCE-C0|PRODUCE-CX) (params $? wp ?wp $?)))
   =>
-  (assert (goal (id (sym-cat CLEAN-BS-(gensym*))) (class CLEAN-BS) 
-                (sub-type RUN-ALL-OF-SUBGOALS) 
+  (assert (goal (id (sym-cat PICKUP-WP-(gensym*))) (class PICKUP-WP)
+                (sub-type SIMPLE)
                 (params wp ?wp)
                 (meta global-priority 2000)
           )
   )
-)
-
-(defrule clean-bs-after-failed-create-subgoals
-  "Create subgoals to remove a discarded base at the base station."
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  ?p <- (goal (id ?parent) (class CLEAN-BS) (params wp ?wp)
-              (mode SELECTED))
-  =>
-  (assert 
-    (goal (id (sym-cat PICKUP-WP-(gensym*))) 
-          (class PICKUP-WP)
-          (sub-type SIMPLE)
-          (priority 1.0)
-          (parent ?parent)
-          (params wp ?wp)
-    )
-    (goal (id (sym-cat DROP-WP-(gensym*)))
-          (class DROP-WP)
-          (sub-type SIMPLE)
-          (priority 0.0)
-          (parent ?parent)
-          (params wp ?wp)
-    )
-  )
-  (modify ?p (mode EXPANDED))
 )
 
 
