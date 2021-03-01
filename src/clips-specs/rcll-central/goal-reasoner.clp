@@ -162,6 +162,8 @@
 "
   (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
   ?g <- (goal (id ?goal-id) (acquired-resources $?acquired&:(> (length$ $?acquired) 0)) (mode RETRACTED))
+  ; mps not still used asynchronously (necessary to not miscount bases filled in rs)
+  (not (goal (class HANDLE-MPS) (params ?mps&:(member$ ?mps $?acquired))))
   =>
   (modify ?g (acquired-resources))
 )
