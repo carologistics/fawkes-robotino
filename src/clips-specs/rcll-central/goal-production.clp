@@ -120,40 +120,6 @@
   (return ?wp)
 )
 
-; =============== Execute actions requested by goal-reasoner ===========
-
-; copied from rcll-agent
-(defrule goal-production-create-reset-mps
-" Reset an mps to restore a consistent world model after getting a workpiece
-  from it failed too often.
-"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (wm-fact (key evaluated reset-mps args? m ?mps))
-  (not (goal (class RESET-MPS) (params m ?mps)))
-  =>
-  (printout t "Goal " RESET-MPS " formulated" crlf)
-  (assert (goal (id (sym-cat RESET-MPS- (gensym*)))
-                (class RESET-MPS) (sub-type SIMPLE)
-                (params m ?mps)
-  ))
-)
-
-(defrule goal-production-create-drop-wp
-" Create goal to drop wp if requested by the goal reasoner after a production
-  root goal has finally failed
-"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (wm-fact (key evaluated drop-wp args? r ?r wp ?wp))
-  (not (goal (class DROP-WP) (params r ?r wp ?wp)))
-  =>
-  (printout t "GOAL " DROP-WP " formulated" crlf)
-  (assert (goal (id (sym-cat DROP-WP- (gensym*)))
-          (class DROP-WP) (sub-type SIMPLE)
-          (params robot ?r wp ?wp)
-  ))
-)
-
-
 ; ============================= Enter-field ===============================
 
 (defrule goal-production-create-enter-field
