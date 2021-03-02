@@ -28,9 +28,7 @@
 ?*PRIORITY-SUPPORTING-TASKS* = 1
 ?*PRIORITY-REFILL-SHELF* = 2
 ?*PRIORITY-GO-WAIT* = 1
-?*FIRST-GOAL* = 1
 ?*RUNNING-TASKS* = 0
-?*MAX-RUNNING-TASKS* = 2
 )
 
 
@@ -182,15 +180,14 @@
 (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
 
 (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
-(not (goal (class PRODUCE-C0)))
+(not (goal (class PRODUCE-C0) (params order ?order bs-color ?any-base-color cs-color ?any-cap-color wp ?any-wp bs ?any-bs cs ?any-cs ds ?any-ds)))
 (goal (id ?produce-cparent-id) (class PRODUCE-CPARENT) (mode SELECTED))
-(not (goal (class RUNNING-TASKS)(params running-tasks 2)))
-(goal (class RUNNING-TASKS)(params running-tasks ?running-tasks))
-
- ;params order ?order bs-color ?any-base-color cs-color ?any-cap-color wp ?any-wp bs ?any-bs cs ?any-cs ds ?any-ds
+(test (< ?*RUNNING-TASKS* 1))
  =>
- (printout t "Goal for C0 order " ?order " formulated: " ?base-color " " ?cap-color " " ?wp rcrlf)
+ (printout t "Goal for C0 order " ?order " formulated: " ?base-color " " ?cap-color " " ?wp " " ?bs " " ?cs " " ?ds crlf)
  (bind ?wp (sym-cat WP- (random-id)))
+ (bind ?*RUNNING-TASKS* (+ ?*RUNNING-TASKS* 1))
+ (printout t "running tasks increased to"  ?*RUNNING-TASKS* crlf)
  (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
                (class PRODUCE-C0)(sub-type RUN-SUBGOALS-IN-PARALLEL)(parent ?produce-cparent-id)(priority ?*PRIORITY-C0*)
                (params order ?order bs-color ?base-color cs-color ?cap-color wp ?wp bs ?bs cs ?cs ds ?ds)
@@ -264,11 +261,13 @@
 
 (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
 (goal (id ?produce-cparent-id) (class PRODUCE-CPARENT) (mode SELECTED))
-(not (goal (class RUNNING-TASKS)(params running-tasks 2)))
-(not (goal (class PRODUCE-C1)))
+(not (goal (class PRODUCE-C1) (params order ?order bs-color ?any-base-color ring1-color ?any-ring1-color cs-color ?any-cap-color wp ?any-wp bs ?any-bs cs ?any-cs ds ?any-ds rs1 ?any-rs1)))
+(test (< ?*RUNNING-TASKS* 1))
  =>
- (printout t "Goal for C1 order " ?order " formulated: " ?base-color " " ?ring1-color " " ?cap-color crlf)
+ (printout t "Goal for C1 order " ?order " formulated: " ?base-color " " ?ring1-color " " ?cap-color " " ?wp " " ?bs " " ?cs " " ?ds " " ?rs1 crlf)
  (bind ?wp (sym-cat WP- (random-id)))
+ (bind ?*RUNNING-TASKS* (+ ?*RUNNING-TASKS* 1))
+ (printout t "running tasks increased to "  ?*RUNNING-TASKS* crlf)
  (assert (goal (id (sym-cat PRODUCE-C1- (gensym*)))
                (class PRODUCE-C1)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-C1*)(parent ?produce-cparent-id)
                (params order ?order bs-color ?base-color ring1-color ?ring1-color cs-color ?cap-color wp ?wp bs ?bs cs ?cs ds ?ds rs1 ?rs1)
@@ -386,14 +385,13 @@
 
 (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
 (goal (id ?produce-cparent-id) (class PRODUCE-CPARENT) (mode SELECTED))
-(not (goal (class RUNNING-TASKS)(params running-tasks 2)))
-(not (goal (class PRODUCE-C2)))
-
-
- ;(params order ?order bs-color ?any-base-color ring1-color ?any-ring1-color ring2-color ?any-ring2-color cs-color ?any-cap-color wp ?any-wp bs ?any-bs cs ?any-cs ds ?any-ds rs1 ?any-rs1 rs2 ?any-rs2)))
+(not (goal (class PRODUCE-C2) (params order ?order bs-color ?any-base-color ring1-color ?any-ring1-color ring2-color ?any-ring2-color cs-color ?any-cap-color wp ?any-wp bs ?any-bs cs ?any-cs ds ?any-ds rs1 ?any-rs1 rs2 ?any-rs2)))
+(test (< ?*RUNNING-TASKS* 1))
  =>
- (printout t "Goal for C2 order " ?order " formulated: " ?base-color " " ?ring1-color " " ?ring2-color " " ?cap-color crlf)
+ (printout t "Goal for C2 order " ?order " formulated: " ?base-color " " ?ring1-color " " ?ring2-color " " ?cap-color " " ?wp " " ?bs " " ?cs " " ?ds " " ?rs1 " " ?rs2 crlf)
  (bind ?wp (sym-cat WP- (random-id)))
+ (bind ?*RUNNING-TASKS* (+ ?*RUNNING-TASKS* 1))
+ (printout t "running tasks increased to "  ?*RUNNING-TASKS* crlf)
  (assert (goal (id (sym-cat PRODUCE-C2- (gensym*)))
                (class PRODUCE-C2)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-C2*)(parent ?produce-cparent-id)
                (params order ?order bs-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color cs-color ?cap-color wp ?wp bs ?bs cs ?cs ds ?ds rs1 ?rs1 rs2 ?rs2)
@@ -550,14 +548,13 @@
  (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
  (goal (id ?produce-cparent-id) (class PRODUCE-CPARENT) (mode SELECTED))
 
- (not (goal (class PRODUCE-C3)))
- (not (goal (class RUNNING-TASKS)(params running-tasks 2)))
-  ;(params order ?order bs-color ?any-base-color ring1-color ?any-ring1-color ring2-color ?any-ring2-color ring3-color ?any-ring3-color cs-color ?any-cap-color wp ?any-wp bs ?any-bs cs ?any-cs ds ?any-ds rs1 ?any-rs1 rs2 ?any-rs2 rs3 ?any-rs3)))
+ (not (goal (class PRODUCE-C3) (params order ?order bs-color ?any-base-color ring1-color ?any-ring1-color ring2-color ?any-ring2-color ring3-color ?any-ring3-color cs-color ?any-cap-color wp ?any-wp bs ?any-bs cs ?any-cs ds ?any-ds rs1 ?any-rs1 rs2 ?any-rs2 rs3 ?any-rs3)))
+ (test (< ?*RUNNING-TASKS* 1))
   =>
-  (printout t "Goal for C3 order " ?order " formulated: " ?base-color " " ?ring1-color " " ?ring2-color " " ?ring3-color " " ?cap-color crlf)
+  (printout t "Goal for C3 order " ?order " formulated: " ?base-color " " ?ring1-color " " ?ring2-color " " ?ring3-color " " ?cap-color " " ?wp " " ?bs " " ?cs " " ?ds " " ?rs1 " " ?rs2 " " ?rs3 crlf)
   (bind ?wp (sym-cat WP- (random-id)))
-  (bind ?*FIRST-GOAL* 0)
-
+  (bind ?*RUNNING-TASKS* (+ ?*RUNNING-TASKS* 1))
+  (printout t "running tasks increased to "  ?*RUNNING-TASKS* crlf)
   (assert (goal (id (sym-cat PRODUCE-C3- (gensym*)))
                 (class PRODUCE-C3)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-C3*)(parent ?produce-cparent-id)
                 (params order ?order bs-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cs-color ?cap-color wp ?wp bs ?bs cs ?cs ds ?ds rs1 ?rs1 rs2 ?rs2 rs3 ?rs3)
@@ -791,9 +788,6 @@
  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
  (wm-fact (key domain fact entered-field args? r ?some-robot))
   (not (goal (class GO-SUPPORTING-TASKS)))
-
-
-
  =>
  (printout t "Goal for supporting tasks formulated "crlf)
  (bind ?wp (sym-cat WP- (random-id)))
@@ -820,30 +814,11 @@
   ))
 )
 
-
-
-(defrule running-tasks
- (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
- (or (goal (class PRODUCE-C0)(mode FORMULATED))
-     (goal (class PRODUCE-C1)(mode FORMULATED))
-     (goal (class PRODUCE-C2)(mode FORMULATED))
-     (goal (class PRODUCE-C3)(mode FORMULATED)))
-   =>
-  (bind ?*RUNNING-TASKS* (+ ?*RUNNING-TASKS* 1)) 
-  (assert (goal (id (sym-cat RUNNING-TASKS- (gensym*))) (class RUNNING-TASKS)(params running-tasks ?*RUNNING-TASKS*)))
-  (printout t "running tasks " ?*RUNNING-TASKS* crlf))
-
-
-
- (defrule finish-tasks
- (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
- (or (goal (class PRODUCE-C0)(mode EVALUATED))
-     (goal (class PRODUCE-C1)(mode EVALUATED))
-     (goal (class PRODUCE-C2)(mode EVALUATED))
-     (goal (class PRODUCE-C3)(mode EVALUATED)))
-  ?g <- (goal (id ?running-tasks-id) (class RUNNING-TASKS) (mode SELECTED))
-  =>
-  (printout t "Finish Tasks formulated"  ?*RUNNING-TASKS* crlf)
-  (bind ?*RUNNING-TASKS* (- ?*RUNNING-TASKS* 1))
-  (modify ?g (mode RETRACTED))
+(defrule reduce-running-tasks
+" Reduces the running task global variable if task is finished
+"
+(goal (id ?goal-id) (class PRODUCE-C0|PRODUCE-C1|PRODUCE-C2|PRODUCE-C3) (mode FINISHED))
+=>
+(bind ?*RUNNING-TASKS* (- ?*RUNNING-TASKS* 1))
+(printout t "running tasks reduced to"  ?*RUNNING-TASKS* crlf)
 )
