@@ -112,11 +112,8 @@
   (retract ?pf)
 )
 
-(defrule refbox-recv-StorageInfo
+(deffunction refbox-recv-ShelfSlotInfo  (?machine-message ?ss)
 " Process the Storage Info and apply all observed changes to the worldmodel."
-  ?pm <- (protobuf-msg (type "llsf_msgs.StorageInfo") (ptr ?si) (rcvd-from ?host ?port))
-  =>
-  (bind ?ss (sym-cat (pb-field-value ?si "machine")))
   ; gather the current knowledge of the storage station
   (bind ?stored-positions (find-all-facts ((?stored-wp wm-fact))
         (and (wm-key-prefix ?stored-wp:key (create$ domain fact ss-stored-wp))
@@ -132,7 +129,7 @@
         (wm-key-prefix ?unused-wp:key
                             (create$ domain fact wp-unused))))
   ; process the update for each storage position
-  (foreach ?o (pb-field-list ?si "shelf_slot_info")
+  (foreach ?o (pb-field-list ?machine-message "status_ss")
     (bind ?shelf (int-to-sym (pb-field-value ?o "shelf")))
     (bind ?slot (int-to-sym (pb-field-value ?o "slot")))
     (bind ?is-filled (pb-field-value ?o "is_filled"))
@@ -191,7 +188,6 @@
       )
     )
   )
-  (retract ?pm)
 )
 
 
@@ -329,7 +325,10 @@
         )
       )
     )
-   (do-for-fact ((?wm-fact wm-fact))
+    (if (eq ?m-type SS) then
+      (refbox-recv-ShelfSlotInfo ?m ?m-name)
+    )
+    (do-for-fact ((?wm-fact wm-fact))
                   (and  (wm-key-prefix ?wm-fact:key (create$ domain fact mps-state))
                         (eq ?m-name (wm-key-arg ?wm-fact:key m))
                         (neq ?m-state (wm-key-arg ?wm-fact:key s)))
