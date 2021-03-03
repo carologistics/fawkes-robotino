@@ -1,14 +1,4 @@
 ## TODO
-* production
-  * competitive order prio
-* stability
-  * look into retrying failed goals (partially done) -> restore consitent states X
-* optimization
-  * retract and clean up a goal if we can no longer complete it in reasonable time X
-  * no unnecessary prefills after all orders have been posted/a certain time
-  * remove some unnecessary actions, e.g., go wait at plan end
-  * dynamically prioritize goals with closer submission time
-  * increase prioritization of unfinished products still being held by a robot, e.g., next ring mount
 * clean submission
   * add more tests (e.g. C0)
   * visualize goal tree for documentation
@@ -32,7 +22,13 @@ robot which is unproblematic because the robot needs to wait)
 * if a piece is finished and delivery too far in the future, put on storage? (not working)
 * retry actions more often?
 * handle down/broken machines
-* rs-filled-with for parallel goals X
+* rs-filled-with for parallel goals
+* competitive order prio
+* look into retrying failed goals (partially done) -> restore consitent states
+* remove some unnecessary actions, e.g., go wait at plan end
+* Generalize rules for cleaning up work stations (e.g. BS is still handled explicitely), use disposable wps
+* no unnecessary prefills after all orders have been posted/a certain time
+* increase prioritization of unfinished products still being held by a robot, e.g., next ring mount
 
 ## Scratched
 * select robots smartly (e.g. distance)
@@ -40,6 +36,8 @@ robot which is unproblematic because the robot needs to wait)
 * limit amount of productions to 2 at a time (solved through later start)
 * balance prefill of bases in rs (slight advantage to 2 base requiring station)
 * get base locked from other side of the map when other robot already waiting -> benefit by early dispense
+* dynamically prioritize goals with closer submission time
+* retract and clean up a goal if we can no longer complete it in reasonable time
 
 ## NOTES
 * verify: go-wait actions before move actions when machine is not reserved
