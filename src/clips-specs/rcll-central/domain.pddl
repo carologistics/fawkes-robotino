@@ -159,6 +159,12 @@
 								 (not (wp-unused ?wp)) (wp-usable ?wp))
 	)
 
+	(:action request-bs-dispense
+		:parameters (?m - mps ?side - mps-side ?wp - workpiece ?basecol - base-color)
+		:precondition (mps-type ?m BS)
+		:effect (mps-type ?m BS)
+	)
+
 	(:action cs-mount-cap
 		:parameters (?m - mps ?wp - workpiece ?capcol - cap-color)
 		:precondition (and (mps-type ?m CS) (or (mps-state ?m PROCESSING) (mps-state ?m READY-AT-OUTPUT)) (locked ?m)

@@ -51,6 +51,17 @@
   (modify ?pa (state FINAL))
 )
 
+(defrule action-execute-request-bs-dispense
+  ?pa <- (plan-action (action-name request-bs-dispense) (state PENDING) (executable TRUE)
+            (param-values ?mps ?side ?wp ?base-color))
+  =>
+  (modify ?pa (state EXECUTION-SUCCEEDED))
+  (assert
+    (wm-fact (key mps-handling prepare prepare-bs ?mps args? m ?mps side ?side bc ?base-color))
+    (wm-fact (key mps-handling process bs-dispense ?mps args? m ?mps side ?side wp ?wp basecol ?base-color))
+  )
+)
+
 (defrule action-execute-request-cs-mount-cap
   ?pa <- (plan-action (action-name request-cs-mount-cap) (state PENDING) (executable TRUE)
             (param-values ?r ?mps ?wp ?capcol))
