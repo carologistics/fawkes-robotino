@@ -173,9 +173,9 @@
   (bind ?comp 0)
   (if (eq ?competitive TRUE) then (bind ?comp 30))
   (switch ?complexity
-    (case C0 then (return (+ 150 ?comp)))
-    (case C1 then (return (+ 210 ?comp)))
-    (case C2 then (return (+ 330 ?comp)))
+    (case C0 then (return (+ 180 ?comp)))
+    (case C1 then (return (+ 240 ?comp)))
+    (case C2 then (return (+ 360 ?comp)))
     (case C3 then (return (+ 390 ?comp)))
     (default none)
   )
@@ -193,7 +193,7 @@
 
 (deffunction order-base-priority (?complexity)
   (switch ?complexity
-    (case C0 then (return 0))
+    (case C0 then (return 70))
     (case C1 then (return 100))
     (case C2 then (return 200))
     (case C3 then (return 300))
@@ -448,8 +448,7 @@
                       ring-base-req ?ring-base-req
               )
         )
-  ; TODO: value true? 
-  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?wp-base-color))
+  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?wp-base-color) (value TRUE))
   =>
   (assert
     (goal (id (sym-cat FILL-BASES-IN-RS-(gensym*)))
@@ -927,8 +926,7 @@ therefore, discard the disposable wp and free the robot.
 
 (defrule passive-prefill-cap-station
   "Prefill a cap station without an immediate need in preparation for future production."
-  ; TODO: own salience?
-  (declare (salience -100))
+  (declare (salience ?*SALIENCE-PREFILL-CS*))
 
   ; debugging conditions TODO:(not working)
   ;(test (neq ?*DEBUG-SKIP-PF-CS* 1))
@@ -977,8 +975,7 @@ therefore, discard the disposable wp and free the robot.
 
 (defrule passive-prefill-ring-station
   "Prefill a ring station without an immediate need in preparation for future production"
-  ; TODO: own salience?
-  (declare (salience -200))
+  (declare (salience ?*SALIENCE-PREFILL-RS*))
 
   ; debugging conditions TODO:(not working)
   ;(test (neq ?*DEBUG-SKIP-PF-RS* 1))
@@ -1003,17 +1000,11 @@ therefore, discard the disposable wp and free the robot.
   (wm-fact (key domain fact mps-team args? m ?ring-station col ?team-color))
   (wm-fact (key domain fact mps-state args? m ?ring-station s ~BROKEN&~PROCESSING&~DOWN))
 
-  ; TODO: remove?
-  ; TODO: discuss max bases vs THREE (done)
-  ; ring station not at max bases
-  ;(wm-fact (key domain fact rs-ring-spec args? m ?ring-station r ?ring-color rn ?ring-base-req&~NA))
-  ;(not (wm-fact (key domain fact rs-ring-spec args? m ?ring-station r ?other-ring-color 
-  ;      rn ?other-ring-base-req&~NA&:(> (sym-to-int ?other-ring-base-req) (sym-to-int ?ring-base-req)))))
-  ;(not (wm-fact (key domain fact rs-filled-with args? m ?ring-station n ?ring-base-req)))
   (wm-fact (key domain fact rs-filled-with args? m ?ring-station n ?filled&~NA&:(< (sym-to-int ?filled) 3)))
 
   ; check time
-  (wm-fact (key refbox game-time) (values ?game-time&:(< ?game-time 720) $?))
+  (or (wm-fact (key refbox game-time) (values ?game-time&:(< ?game-time 720) $?))
+    (not (goal (class FILL-BASE-IN-RS))))
 
   ; don't formulate goal if it can't be executed immediatley
   (not (goal (acquired-resources ?ring-station)))
@@ -1034,6 +1025,7 @@ therefore, discard the disposable wp and free the robot.
 
 (defrule assign-robot-to-production-goal
   "Select a non-busy robot for executing a production leaf goal without assigned robot."
+  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   ?g <- (goal (id ?goal-id) (class ?class) (params $?params) (mode SELECTED)
               (meta $? global-priority ?gprio $?)
         )
