@@ -891,7 +891,13 @@ therefore, discard the disposable wp and free the robot.
 ; TODO: not working, wp-put fails at storage station (not our fault)
 (defrule passive-store-wp-before-deliver
   "Get a robot holding a workpiece waiting for delivery in a furture time slot and
-  store it in the storage station if possible." 
+  store it in the storage station if possible."
+
+  ; check current game state
+  (wm-fact (key refbox state) (value RUNNING))
+  (wm-fact (key refbox phase) (value PRODUCTION))
+  (domain-facts-loaded)
+
   ; storage station activated? 
   (test (neq ?*USE-SS-INPUT* 1))
 
@@ -928,8 +934,13 @@ therefore, discard the disposable wp and free the robot.
   "Prefill a cap station without an immediate need in preparation for future production."
   (declare (salience ?*SALIENCE-PREFILL-CS*))
 
-  ; debugging conditions TODO:(not working)
-  ;(test (neq ?*DEBUG-SKIP-PF-CS* 1))
+  ; check current game state
+  (wm-fact (key refbox state) (value RUNNING))
+  (wm-fact (key refbox phase) (value PRODUCTION))
+  (domain-facts-loaded)
+
+  ; debugging conditions
+  (test (neq ?*DEBUG-SKIP-PF-CS* 1))
 
   ; select non-busy robot
   (wm-fact (key domain fact entered-field args? r ?robot))
@@ -977,8 +988,13 @@ therefore, discard the disposable wp and free the robot.
   "Prefill a ring station without an immediate need in preparation for future production"
   (declare (salience ?*SALIENCE-PREFILL-RS*))
 
-  ; debugging conditions TODO:(not working)
-  ;(test (neq ?*DEBUG-SKIP-PF-RS* 1))
+  ; check current game state
+  (wm-fact (key refbox state) (value RUNNING))
+  (wm-fact (key refbox phase) (value PRODUCTION))
+  (domain-facts-loaded)
+
+  ; debugging conditions
+  (test (neq ?*DEBUG-SKIP-PF-RS* 1))
 
   ; select non-busy robot
   (wm-fact (key domain fact entered-field args? r ?robot))
