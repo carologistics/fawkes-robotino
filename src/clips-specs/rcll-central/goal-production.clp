@@ -199,7 +199,7 @@
 (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
 
 (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
-(not (goal (class PRODUCE-C0) (params order ?order bs-color ?any-base-color cs-color ?any-cap-color wp ?any-wp bs ?any-bs cs ?any-cs ds ?any-ds)))
+(not (goal (class PRODUCE-C0)(params order ?order bs-color ?any-base-color cs-color ?any-cap-color wp ?any-wp bs ?any-bs cs ?any-cs ds ?any-ds)))
 (goal (id ?produce-cparent-id) (class PRODUCE-CPARENT) (mode SELECTED))
 ?r <- (running-tasks (number ?running-tasks))
 (test (< ?running-tasks ?*MAX-RUNNING-TASKS*))
@@ -840,6 +840,7 @@
 ;                (priority  ?*PRIORITY-GO-WAIT*)
 ;  ))
 ;)
+
 
 (defrule reduce-running-tasks
 " Reduces the running task global variable if task is finished
