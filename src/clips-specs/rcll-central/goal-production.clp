@@ -28,71 +28,75 @@
 ?*PRIORITY-SUPPORTING-TASKS* = 1
 ?*PRIORITY-REFILL-SHELF* = 2
 ?*PRIORITY-GO-WAIT* = 1
-?*RUNNING-TASKS* = 0
+?*MAX-RUNNING-TASKS* = 2
+)
+
+(deftemplate running-tasks
+  (slot number(type NUMBER))
 )
 
 
-(defrule goal-production-create-beacon-maintain
-" The parent goal for beacon signals. Allows formulation of
-  goals that periodically communicate with the refbox.
-"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (not (goal (class BEACON-MAINTAIN)))
-  (or (domain-facts-loaded)
-      (wm-fact (key refbox phase) (value ~SETUP&~PRE_GAME)))
-  =>
-  (bind ?goal (goal-tree-assert-run-endless BEACON-MAINTAIN 1))
-  (modify ?goal (verbosity QUIET) (params frequency 1))
-)
+;(defrule goal-production-create-beacon-maintain
+;" The parent goal for beacon signals. Allows formulation of
+;  goals that periodically communicate with the refbox.
+;"
+;  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;  (not (goal (class BEACON-MAINTAIN)))
+;  (or (domain-facts-loaded)
+;      (wm-fact (key refbox phase) (value ~SETUP&~PRE_GAME)))
+;  =>
+;  (bind ?goal (goal-tree-assert-run-endless BEACON-MAINTAIN 1))
+;  (modify ?goal (verbosity QUIET) (params frequency 1))
+;)
 
 
-(defrule goal-production-create-beacon-achieve
-" Send a beacon signal whenever at least one second has elapsed since it
-  last one got sent.
-"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (time $?now)
-  ?g <- (goal (id ?maintain-id) (class BEACON-MAINTAIN) (mode SELECTED))
-  ; TODO: make interval a constant
-  =>
-  (assert (goal (id (sym-cat SEND-BEACON- (gensym*))) (sub-type SIMPLE)
-                (class SEND-BEACON) (parent ?maintain-id) (verbosity QUIET)))
-)
+;(defrule goal-production-create-beacon-achieve
+;" Send a beacon signal whenever at least one second has elapsed since it
+;  last one got sent.
+;"
+;  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;  (time $?now)
+;  ?g <- (goal (id ?maintain-id) (class BEACON-MAINTAIN) (mode SELECTED))
+;  ; TODO: make interval a constant
+;  =>
+;  (assert (goal (id (sym-cat SEND-BEACON- (gensym*))) (sub-type SIMPLE)
+;                (class SEND-BEACON) (parent ?maintain-id) (verbosity QUIET)))
+;)
 
-(defrule goal-production-create-refill-shelf-maintain
-" The parent goal to refill a shelf. Allows formulation of goals to refill
-  a shelf only if the game is in the production phase and the domain is loaded.
-"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (domain-facts-loaded)
-  (not (goal (class REFILL-SHELF-MAINTAIN)))
-  (not (mutex (name ?n&:(eq ?n (resource-to-mutex refill-shelf))) (state LOCKED)))
-  (wm-fact (key refbox phase) (value PRODUCTION))
-  =>
-  (bind ?goal (goal-tree-assert-run-endless REFILL-SHELF-MAINTAIN 1))
-  (modify ?goal (required-resources refill-shelf)
-                (params frequency 1 retract-on-REJECTED)
-                (verbosity QUIET))
-)
+;(defrule goal-production-create-refill-shelf-maintain
+;" The parent goal to refill a shelf. Allows formulation of goals to refill
+;  a shelf only if the game is in the production phase and the domain is loaded.
+;"
+;  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;  (domain-facts-loaded)
+;  (not (goal (class REFILL-SHELF-MAINTAIN)))
+;  (not (mutex (name ?n&:(eq ?n (resource-to-mutex refill-shelf))) (state LOCKED)))
+;  (wm-fact (key refbox phase) (value PRODUCTION))
+;  =>
+;  (bind ?goal (goal-tree-assert-run-endless REFILL-SHELF-MAINTAIN 1))
+;  (modify ?goal (required-resources refill-shelf)
+;                (params frequency 1 retract-on-REJECTED)
+;                (verbosity QUIET))
+;)
 
 
-(defrule goal-production-create-refill-shelf-achieve
-  "Refill a shelf whenever it is empty."
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  ?g <- (goal (id ?maintain-id) (class REFILL-SHELF-MAINTAIN) (mode SELECTED))
-  (not (goal (class REFILL-SHELF)))
-  (wm-fact (key refbox phase) (value PRODUCTION))
-  (wm-fact (key game state) (value RUNNING))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  (not (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot)))
-  =>
-  (assert (goal (id (sym-cat REFILL-SHELF- (gensym*)))
-                (class REFILL-SHELF) (sub-type SIMPLE)
-                (parent ?maintain-id) (verbosity QUIET)
-                (params mps ?mps)))
-)
+;(defrule goal-production-create-refill-shelf-achieve
+;  "Refill a shelf whenever it is empty."
+;  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;  ?g <- (goal (id ?maintain-id) (class REFILL-SHELF-MAINTAIN) (mode SELECTED))
+;  (not (goal (class REFILL-SHELF)))
+;  (wm-fact (key refbox phase) (value PRODUCTION))
+;  (wm-fact (key game state) (value RUNNING))
+;  (wm-fact (key refbox team-color) (value ?team-color))
+;  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+;  (wm-fact (key domain fact mps-type args? m ?mps t CS))
+;  (not (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot)))
+;  =>
+;  (assert (goal (id (sym-cat REFILL-SHELF- (gensym*)))
+;                (class REFILL-SHELF) (sub-type SIMPLE)
+;                (parent ?maintain-id) (verbosity QUIET)
+;                (params mps ?mps)))
+;)
 
 
 (defrule goal-production-navgraph-compute-wait-positions-finished
@@ -143,11 +147,26 @@
 =>
  (printout t "CParent formulated" crlf)
  (bind ?wp (sym-cat WP- (random-id)))
+ (assert (running-tasks (number 0)))
  (assert (goal (id (sym-cat PRODUCE-CPARENT- (gensym*)))
                (class PRODUCE-CPARENT)(sub-type RUN-SUBGOALS-IN-PARALLEL))
 )
-
 )
+
+;(defrule test-goal
+;" Produce a C0 product: Get the correct base and mount the right cap on it.
+;"
+;(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;(not (goal (class TEST-GOAL)))
+;?r <- (running-tasks (number ?running-tasks))
+;(test (< ?running-tasks 1))
+; =>
+; (printout t "running tasks " ?running-tasks crlf)
+; (assert (goal (id (sym-cat TEST-GOAL- (gensym*)))
+;               (class TEST-GOAL)(sub-type RUN-SUBGOALS-IN-PARALLEL)
+; ))
+; )
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;
@@ -161,10 +180,10 @@
 (defrule goal-production-create-produce-c0
 " Produce a C0 product: Get the correct base and mount the right cap on it.
 "
- (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
- (wm-fact (key domain fact order-complexity args? ord ?order com C0))
- (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
- (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+(wm-fact (key domain fact order-complexity args? ord ?order com C0))
+(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+(wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
 
 (wm-fact (key refbox team-color) (value ?team-color))
 
@@ -182,12 +201,14 @@
 (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
 (not (goal (class PRODUCE-C0) (params order ?order bs-color ?any-base-color cs-color ?any-cap-color wp ?any-wp bs ?any-bs cs ?any-cs ds ?any-ds)))
 (goal (id ?produce-cparent-id) (class PRODUCE-CPARENT) (mode SELECTED))
-(test (< ?*RUNNING-TASKS* 1))
+?r <- (running-tasks (number ?running-tasks))
+(test (< ?running-tasks ?*MAX-RUNNING-TASKS*))
  =>
- (printout t "Goal for C0 order " ?order " formulated: " ?base-color " " ?cap-color " " ?wp " " ?bs " " ?cs " " ?ds crlf)
  (bind ?wp (sym-cat WP- (random-id)))
- (bind ?*RUNNING-TASKS* (+ ?*RUNNING-TASKS* 1))
- (printout t "running tasks increased to"  ?*RUNNING-TASKS* crlf)
+ (printout t "Goal for C0 order " ?order " formulated: " ?base-color " " ?cap-color " " ?wp " " ?bs " " ?cs " " ?ds crlf)
+ (assert (running-tasks (number (+ ?running-tasks 1))))
+ (retract ?r)
+ (printout t "running tasks increased to "  (+ ?running-tasks 1) crlf)
  (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
                (class PRODUCE-C0)(sub-type RUN-SUBGOALS-IN-PARALLEL)(parent ?produce-cparent-id)(priority ?*PRIORITY-C0*)
                (params order ?order bs-color ?base-color cs-color ?cap-color wp ?wp bs ?bs cs ?cs ds ?ds)
@@ -262,12 +283,14 @@
 (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
 (goal (id ?produce-cparent-id) (class PRODUCE-CPARENT) (mode SELECTED))
 (not (goal (class PRODUCE-C1) (params order ?order bs-color ?any-base-color ring1-color ?any-ring1-color cs-color ?any-cap-color wp ?any-wp bs ?any-bs cs ?any-cs ds ?any-ds rs1 ?any-rs1)))
-(test (< ?*RUNNING-TASKS* 1))
+ ?r <- (running-tasks (number ?running-tasks))
+(test (< ?running-tasks ?*MAX-RUNNING-TASKS*))
  =>
- (printout t "Goal for C1 order " ?order " formulated: " ?base-color " " ?ring1-color " " ?cap-color " " ?wp " " ?bs " " ?cs " " ?ds " " ?rs1 crlf)
  (bind ?wp (sym-cat WP- (random-id)))
- (bind ?*RUNNING-TASKS* (+ ?*RUNNING-TASKS* 1))
- (printout t "running tasks increased to "  ?*RUNNING-TASKS* crlf)
+ (printout t "Goal for C1 order " ?order " formulated: " ?base-color " " ?ring1-color " " ?cap-color " " ?wp " " ?bs " " ?cs " " ?ds " " ?rs1 crlf)
+(assert (running-tasks (number (+ ?running-tasks 1))))
+ (retract ?r)
+ (printout t "running tasks increased to "  (+ ?running-tasks 1) crlf)
  (assert (goal (id (sym-cat PRODUCE-C1- (gensym*)))
                (class PRODUCE-C1)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-C1*)(parent ?produce-cparent-id)
                (params order ?order bs-color ?base-color ring1-color ?ring1-color cs-color ?cap-color wp ?wp bs ?bs cs ?cs ds ?ds rs1 ?rs1)
@@ -386,12 +409,14 @@
 (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
 (goal (id ?produce-cparent-id) (class PRODUCE-CPARENT) (mode SELECTED))
 (not (goal (class PRODUCE-C2) (params order ?order bs-color ?any-base-color ring1-color ?any-ring1-color ring2-color ?any-ring2-color cs-color ?any-cap-color wp ?any-wp bs ?any-bs cs ?any-cs ds ?any-ds rs1 ?any-rs1 rs2 ?any-rs2)))
-(test (< ?*RUNNING-TASKS* 1))
+ ?r <- (running-tasks (number ?running-tasks))
+(test (< ?running-tasks ?*MAX-RUNNING-TASKS*))
  =>
- (printout t "Goal for C2 order " ?order " formulated: " ?base-color " " ?ring1-color " " ?ring2-color " " ?cap-color " " ?wp " " ?bs " " ?cs " " ?ds " " ?rs1 " " ?rs2 crlf)
  (bind ?wp (sym-cat WP- (random-id)))
- (bind ?*RUNNING-TASKS* (+ ?*RUNNING-TASKS* 1))
- (printout t "running tasks increased to "  ?*RUNNING-TASKS* crlf)
+ (printout t "Goal for C2 order " ?order " formulated: " ?base-color " " ?ring1-color " " ?ring2-color " " ?cap-color " " ?wp " " ?bs " " ?cs " " ?ds " " ?rs1 " " ?rs2 crlf)
+ (assert (running-tasks (number (+ ?running-tasks 1))))
+ (retract ?r)
+ (printout t "running tasks increased to "  (+ ?running-tasks 1) crlf)
  (assert (goal (id (sym-cat PRODUCE-C2- (gensym*)))
                (class PRODUCE-C2)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-C2*)(parent ?produce-cparent-id)
                (params order ?order bs-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color cs-color ?cap-color wp ?wp bs ?bs cs ?cs ds ?ds rs1 ?rs1 rs2 ?rs2)
@@ -549,12 +574,14 @@
  (goal (id ?produce-cparent-id) (class PRODUCE-CPARENT) (mode SELECTED))
 
  (not (goal (class PRODUCE-C3) (params order ?order bs-color ?any-base-color ring1-color ?any-ring1-color ring2-color ?any-ring2-color ring3-color ?any-ring3-color cs-color ?any-cap-color wp ?any-wp bs ?any-bs cs ?any-cs ds ?any-ds rs1 ?any-rs1 rs2 ?any-rs2 rs3 ?any-rs3)))
- (test (< ?*RUNNING-TASKS* 1))
+ ?r <- (running-tasks (number ?running-tasks))
+(test (< ?running-tasks ?*MAX-RUNNING-TASKS*))
   =>
-  (printout t "Goal for C3 order " ?order " formulated: " ?base-color " " ?ring1-color " " ?ring2-color " " ?ring3-color " " ?cap-color " " ?wp " " ?bs " " ?cs " " ?ds " " ?rs1 " " ?rs2 " " ?rs3 crlf)
   (bind ?wp (sym-cat WP- (random-id)))
-  (bind ?*RUNNING-TASKS* (+ ?*RUNNING-TASKS* 1))
-  (printout t "running tasks increased to "  ?*RUNNING-TASKS* crlf)
+  (printout t "Goal for C3 order " ?order " formulated: " ?base-color " " ?ring1-color " " ?ring2-color " " ?ring3-color " " ?cap-color " " ?wp " " ?bs " " ?cs " " ?ds " " ?rs1 " " ?rs2 " " ?rs3 crlf)
+  (assert (running-tasks (number (+ ?running-tasks 1))))
+  (retract ?r)
+  (printout t "running tasks increased to "  (+ ?running-tasks 1) crlf)
   (assert (goal (id (sym-cat PRODUCE-C3- (gensym*)))
                 (class PRODUCE-C3)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-C3*)(parent ?produce-cparent-id)
                 (params order ?order bs-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cs-color ?cap-color wp ?wp bs ?bs cs ?cs ds ?ds rs1 ?rs1 rs2 ?rs2 rs3 ?rs3)
@@ -703,122 +730,124 @@
 ;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defrule goal-produce-create-refill-shelf
-  "Refill a shelf whenever it is empty."
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (wm-fact (key refbox phase) (value PRODUCTION))
-  (wm-fact (key game state) (value RUNNING))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  (not (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot)))
-
-  (goal (id ?produce-cparent-id) (class PRODUCE-CPARENT) (mode SELECTED))
-  =>
-  (printout t "Goal REFILL-SHELF formulated" crlf)
-  (assert (goal (id (sym-cat REFILL-SHELF- (gensym*))) (class REFILL-SHELF) (parent ?produce-cparent-id) (sub-type SIMPLE)(priority ?*PRIORITY-REFILL-SHELF*)(mode FORMULATED)(params m ?mps )))
-)
-
-
-(defrule goal-production-create-get-base-to-fill-rs
-  "Fill the ring station with a fresh base from the base station."
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?produce-cparent-id) (class PRODUCE-CPARENT) (mode SELECTED))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  ;Robot CEs
-  (wm-fact (key domain fact self args? r ?robot))
-  (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-  ;MPS-RS CEs (a cap carrier can be used to fill a RS later)
-  (wm-fact (key domain fact mps-type args? m ?mps t RS))
-  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
-  ;MPS-BS CEs
-  (wm-fact (key domain fact mps-type args? m ?bs t BS))
-  (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN))
-  (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
-  (domain-object (name ?bs-side&:(or (eq ?bs-side INPUT) (eq ?bs-side OUTPUT))) (type mps-side))
-
-  (wm-fact (key domain fact order-base-color args? ord ?any-order col ?base-color))
-  (not (goal (class GET-BASE-TO-FILL-RS) (params robot ?robot
-                                          bs ?bs
-                                          bs-side ?bs-side
-                                          base-color ?
-                                          wp ?spawned-wp)))
-  =>
-  (printout t "Goal " GET-BASE-TO-FILL-RS " formulated" crlf)
-  (bind ?distance (node-distance (str-cat ?bs - (if (eq ?bs-side INPUT) then I else O))))
-  (assert (goal (id (sym-cat GET-BASE-TO-FILL-RS- (gensym*)))
-                (class GET-BASE-TO-FILL-RS)
-                (parent ?produce-cparent-id) (sub-type SIMPLE)
-                             (params robot ?robot
-                                     bs ?bs
-                                     bs-side ?bs-side
-                                     base-color ?base-color
-                                     wp ?spawned-wp
-                                     )
-                            (required-resources ?spawned-wp)
-  ))
-)
-
-(defrule goal-production-create-discard-wp
-  "Discard a base which is not needed."
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-
-  (goal (id ?produce-cparent-id) (class PRODUCE-CPARENT) (mode SELECTED))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  (wm-fact (key domain fact self args? r ?robot))
-  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
-  =>
-  (printout t "Goal " DISCARD-WP " formulated" crlf)
-  (assert (goal (id (sym-cat DISCARD-WP- (gensym*)))
-                (class DISCARD-WP) (sub-type SIMPLE)
-                (parent ?produce-cparent-id)
-                (params robot ?robot
-                        wp ?wp
-                )
-                (required-resources ?wp)
-  ))
-)
-
-
-(defrule goal-produce-supporting-tasks
-" Unused robots can be assigned to general tasks such as refill shelf
-"
- (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
- (wm-fact (key domain fact entered-field args? r ?some-robot))
-  (not (goal (class GO-SUPPORTING-TASKS)))
- =>
- (printout t "Goal for supporting tasks formulated "crlf)
- (bind ?wp (sym-cat WP- (random-id)))
- (assert (goal (id (sym-cat PRODUCE-SUPPORTING-TASKS- (gensym*)))
-               (class SUPPORTING-TASKS)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-SUPPORTING-TASKS*)
- ))
-)
-
-
-(defrule goal-production-create-go-wait
-  "Drive to a waiting position and wait there."
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (wm-fact (key domain fact entered-field args? r ?robot))
-  (wm-fact (key domain fact self args? r ?self))
-  (goal (id ?produce-sp-id) (class PRODUCE-SUPPORTING-TASKS) (mode SELECTED))
-
-  (not (goal (class GO-WAIT)))
-  =>
-  (printout t "Goal " GO-WAIT " formulated" crlf)
-  (assert (goal (id (sym-cat GO-WAIT- (gensym*)))
-                (parent ?produce-sp-id) 
-                (class GO-WAIT) (sub-type SIMPLE)
-                (priority  ?*PRIORITY-GO-WAIT*)
-  ))
-)
+;(defrule goal-produce-create-refill-shelf
+;  "Refill a shelf whenever it is empty."
+;  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;  (wm-fact (key refbox phase) (value PRODUCTION))
+;  (wm-fact (key game state) (value RUNNING))
+;  (wm-fact (key refbox team-color) (value ?team-color))
+;  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+;  (wm-fact (key domain fact mps-type args? m ?mps t CS))
+;  (not (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot)))
+;
+;  (goal (id ?produce-cparent-id) (class PRODUCE-CPARENT) (mode SELECTED))
+;  =>
+;  (printout t "Goal REFILL-SHELF formulated" crlf)
+;  (assert (goal (id (sym-cat REFILL-SHELF- (gensym*))) (class REFILL-SHELF) (parent ?produce-cparent-id) (sub-type SIMPLE)(priority ?*PRIORITY-REFILL-SHELF*)(mode FORMULATED)(params m ?mps )))
+;)
+;
+;
+;(defrule goal-production-create-get-base-to-fill-rs
+;  "Fill the ring station with a fresh base from the base station."
+;  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;  (goal (id ?produce-cparent-id) (class PRODUCE-CPARENT) (mode SELECTED))
+;  (wm-fact (key refbox team-color) (value ?team-color))
+;  ;Robot CEs
+;  (wm-fact (key domain fact self args? r ?robot))
+;  (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
+;  (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+;  ;MPS-RS CEs (a cap carrier can be used to fill a RS later)
+;  (wm-fact (key domain fact mps-type args? m ?mps t RS))
+;  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+;  (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
+;  ;MPS-BS CEs
+;  (wm-fact (key domain fact mps-type args? m ?bs t BS))
+;  (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN))
+;  (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
+;  (domain-object (name ?bs-side&:(or (eq ?bs-side INPUT) (eq ?bs-side OUTPUT))) (type mps-side))
+;
+;  (wm-fact (key domain fact order-base-color args? ord ?any-order col ?base-color))
+;  (not (goal (class GET-BASE-TO-FILL-RS) (params robot ?robot
+;                                          bs ?bs
+;                                          bs-side ?bs-side
+;                                          base-color ?
+;                                          wp ?spawned-wp)))
+;  =>
+;  (printout t "Goal " GET-BASE-TO-FILL-RS " formulated" crlf)
+;  (bind ?distance (node-distance (str-cat ?bs - (if (eq ?bs-side INPUT) then I else O))))
+;  (assert (goal (id (sym-cat GET-BASE-TO-FILL-RS- (gensym*)))
+;                (class GET-BASE-TO-FILL-RS)
+;                (parent ?produce-cparent-id) (sub-type SIMPLE)
+;                             (params robot ?robot
+;                                     bs ?bs
+;                                     bs-side ?bs-side
+;                                     base-color ?base-color
+;                                     wp ?spawned-wp
+;                                     )
+;                            (required-resources ?spawned-wp)
+;  ))
+;)
+;
+;(defrule goal-production-create-discard-wp
+;  "Discard a base which is not needed."
+;  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;
+;  (goal (id ?produce-cparent-id) (class PRODUCE-CPARENT) (mode SELECTED))
+;  (wm-fact (key refbox team-color) (value ?team-color))
+;  (wm-fact (key domain fact self args? r ?robot))
+;  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+;  =>
+;  (printout t "Goal " DISCARD-WP " formulated" crlf)
+;  (assert (goal (id (sym-cat DISCARD-WP- (gensym*)))
+;                (class DISCARD-WP) (sub-type SIMPLE)
+;                (parent ?produce-cparent-id)
+;                (params robot ?robot
+;                        wp ?wp
+;                )
+;                (required-resources ?wp)
+;  ))
+;)
+;
+;
+;(defrule goal-produce-supporting-tasks
+;" Unused robots can be assigned to general tasks such as refill shelf
+;"
+; (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+; (wm-fact (key domain fact entered-field args? r ?some-robot))
+;  (not (goal (class GO-SUPPORTING-TASKS)))
+; =>
+; (printout t "Goal for supporting tasks formulated "crlf)
+; (bind ?wp (sym-cat WP- (random-id)))
+; (assert (goal (id (sym-cat PRODUCE-SUPPORTING-TASKS- (gensym*)))
+;               (class SUPPORTING-TASKS)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-SUPPORTING-TASKS*)
+; ))
+;)
+;
+;
+;(defrule goal-production-create-go-wait
+;  "Drive to a waiting position and wait there."
+;  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;  (wm-fact (key domain fact entered-field args? r ?robot))
+;  (wm-fact (key domain fact self args? r ?self))
+;  (goal (id ?produce-sp-id) (class PRODUCE-SUPPORTING-TASKS) (mode SELECTED))
+;
+;  (not (goal (class GO-WAIT)))
+;  =>
+;  (printout t "Goal " GO-WAIT " formulated" crlf)
+;  (assert (goal (id (sym-cat GO-WAIT- (gensym*)))
+;                (parent ?produce-sp-id) 
+;                (class GO-WAIT) (sub-type SIMPLE)
+;                (priority  ?*PRIORITY-GO-WAIT*)
+;  ))
+;)
 
 (defrule reduce-running-tasks
 " Reduces the running task global variable if task is finished
 "
 (goal (id ?goal-id) (class PRODUCE-C0|PRODUCE-C1|PRODUCE-C2|PRODUCE-C3) (mode FINISHED))
+?r <- (running-tasks (number ?running-tasks))
 =>
-(bind ?*RUNNING-TASKS* (- ?*RUNNING-TASKS* 1))
-(printout t "running tasks reduced to"  ?*RUNNING-TASKS* crlf)
+(assert (running-tasks (number (- ?running-tasks 1))))
+(retract ?r)
+(printout t "running tasks reduced to"  ?running-tasks crlf)
 )
