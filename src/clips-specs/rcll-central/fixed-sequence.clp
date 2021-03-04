@@ -335,8 +335,7 @@
 
  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cs spot ?shelf-spot))
  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
- 
- (not(goal (class BUFFER-CS) (params robot ?some-robot wp ?cc)))
+ (not (goal (class BUFFER-CS)(params robot ?some-robot wp ?cc)))
  =>
       (bind ?planid (sym-cat BUFFER-CS-PLAN- (gensym*)))
       (assert
@@ -1097,10 +1096,7 @@
 (defrule goal-expander-go-wait
   "Move to a waiting position."
    ?p <- (goal (mode DISPATCHED) (id ?parent))
-   ?g <- (goal (id ?goal-id) (class GO-WAIT) (mode SELECTED) (parent ?parent)
-               (params r ?robot
-                 point ?waitpoint
-         ))
+   ?g <- (goal (id ?goal-id) (class GO-WAIT) (mode SELECTED) (parent ?parent))
    (wm-fact (key domain fact self args? r ?robot))
    (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
    =>
@@ -1108,8 +1104,9 @@
         (plan (id GO-WAIT-PLAN) (goal-id ?goal-id))
         (plan-action (id 1) (plan-id GO-WAIT-PLAN) (goal-id ?goal-id)
                      (action-name go-wait)
+                     (skiller(remote-skiller ?robot))
                      (param-names r from from-side to)
-                     (param-values ?robot ?curr-location ?curr-side ?waitpoint))
+                     (param-values ?robot ?curr-location ?curr-side START INPUT))
    )
    (modify ?g (mode EXPANDED))
 )
