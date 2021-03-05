@@ -28,7 +28,7 @@
 ?*PRIORITY-SUPPORTING-TASKS* = 1
 ?*PRIORITY-REFILL-SHELF* = 2
 ?*PRIORITY-GO-WAIT* = 1
-?*MAX-RUNNING-TASKS* = 2
+?*MAX-RUNNING-TASKS* = 1
 )
 
 (deftemplate running-tasks
@@ -840,15 +840,3 @@
 ;                (priority  ?*PRIORITY-GO-WAIT*)
 ;  ))
 ;)
-
-
-(defrule reduce-running-tasks
-" Reduces the running task global variable if task is finished
-"
-(goal (id ?goal-id) (class PRODUCE-C0|PRODUCE-C1|PRODUCE-C2|PRODUCE-C3) (mode FINISHED))
-?r <- (running-tasks (number ?running-tasks))
-=>
-(assert (running-tasks (number (- ?running-tasks 1))))
-(retract ?r)
-(printout t "running tasks reduced to"  ?running-tasks crlf)
-)

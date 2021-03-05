@@ -66,6 +66,10 @@
   ?*SALIENCE-GOAL-EVALUATE-GENERIC* = -1
 )
 
+(deftemplate running-tasks
+  (slot number(type NUMBER))
+)
+
 (deffunction requires-subgoal (?goal-type)
   (return (or (eq ?goal-type TRY-ONE-OF-SUBGOALS)
               (eq ?goal-type TIMEOUT-SUBGOAL)
@@ -137,10 +141,18 @@
   All pre evaluation steps should have been executed, enforced by the higher priority
 "
   (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome))
+  ?g <- (goal (id ?goal-id) (class ?class) (mode FINISHED) (outcome ?outcome))
+  ?r <- (running-tasks (number ?running-tasks))
 =>
   (printout debug "Goal '" ?goal-id "' has been completed, Evaluating" crlf)
   (modify ?g (mode EVALUATED))
+  (if
+   (or(eq ?class PRODUCE-C0)(eq ?class PRODUCE-C1)(eq ?class PRODUCE-C2)(eq ?class PRODUCE-C3))
+   then
+   (assert (running-tasks (number (- ?running-tasks 1))))
+   (retract ?r)
+   (printout t "running tasks reduced to"  ?running-tasks crlf)
+  )
 )
 
 ; ----------------------- EVALUATE SPECIFIC GOALS ---------------------------
