@@ -21,14 +21,19 @@
 
 
 (defglobal
-?*PRIORITY-C0* = 6
-?*PRIORITY-C1* = 7
-?*PRIORITY-C2* = 8
-?*PRIORITY-C3* = 9
+?*PRIORITY-C0* = 60
+?*PRIORITY-C1* = 70
+?*PRIORITY-C2* = 80
+?*PRIORITY-C3* = 90
 ?*PRIORITY-SUPPORTING-TASKS* = 1
 ?*PRIORITY-REFILL-SHELF* = 2
 ?*PRIORITY-GO-WAIT* = 1
-?*MAX-RUNNING-TASKS* = 1
+?*MAX-RUNNING-TASKS* = 20
+;?*GET-BASE-PRIO-DIFF* = 1
+;?*BUFFER-CS-PRIO-DIFF* = 2
+;?*BUFFER-RS-PRIO-DIFF* = 0
+;?*DELIVER-PRIO-DIFF* = 5
+;?*MOUNT-RING-PRIO-DIFF* = 2 
 )
 
 (deftemplate running-tasks
@@ -147,8 +152,7 @@
 =>
  (printout t "CParent formulated" crlf)
  (bind ?wp (sym-cat WP- (random-id)))
- (assert (running-tasks (number 0)))
- (assert (goal (id (sym-cat PRODUCE-CPARENT- (gensym*)))
+ (assert (goal (id (sym-cat PRODUCE-CPARENT- (gensym*))) (mode EXPANDED)
                (class PRODUCE-CPARENT)(sub-type RUN-SUBGOALS-IN-PARALLEL))
 )
 )
@@ -167,6 +171,12 @@
 ; ))
 ; )
 
+(defrule init-running-tasks
+(not (running-tasks (number ?some-number)))
+=>
+ (printout t "running tasks initialized" crlf)
+ (assert (running-tasks (number 0)))
+)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;
@@ -200,7 +210,7 @@
 
 (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
 (not (goal (class PRODUCE-C0)(params order ?order bs-color ?any-base-color cs-color ?any-cap-color wp ?any-wp bs ?any-bs cs ?any-cs ds ?any-ds)))
-(goal (id ?produce-cparent-id) (class PRODUCE-CPARENT) (mode SELECTED))
+(goal (id ?produce-cparent-id) (class PRODUCE-CPARENT))
 ?r <- (running-tasks (number ?running-tasks))
 (test (< ?running-tasks ?*MAX-RUNNING-TASKS*))
  =>
@@ -210,7 +220,7 @@
  (retract ?r)
  (printout t "running tasks increased to "  (+ ?running-tasks 1) crlf)
  (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
-               (class PRODUCE-C0)(sub-type RUN-SUBGOALS-IN-PARALLEL)(parent ?produce-cparent-id)(priority ?*PRIORITY-C0*)
+               (class PRODUCE-C0)(sub-type RUN-SUBGOALS-IN-PARALLEL)(parent ?produce-cparent-id)(priority ?*PRIORITY-C0*) (mode FORMULATED)
                (params order ?order bs-color ?base-color cs-color ?cap-color wp ?wp bs ?bs cs ?cs ds ?ds)
  ))
 )
@@ -281,7 +291,7 @@
 (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
 
 (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
-(goal (id ?produce-cparent-id) (class PRODUCE-CPARENT) (mode SELECTED))
+(goal (id ?produce-cparent-id) (class PRODUCE-CPARENT))
 (not (goal (class PRODUCE-C1) (params order ?order bs-color ?any-base-color ring1-color ?any-ring1-color cs-color ?any-cap-color wp ?any-wp bs ?any-bs cs ?any-cs ds ?any-ds rs1 ?any-rs1)))
  ?r <- (running-tasks (number ?running-tasks))
 (test (< ?running-tasks ?*MAX-RUNNING-TASKS*))
@@ -292,7 +302,7 @@
  (retract ?r)
  (printout t "running tasks increased to "  (+ ?running-tasks 1) crlf)
  (assert (goal (id (sym-cat PRODUCE-C1- (gensym*)))
-               (class PRODUCE-C1)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-C1*)(parent ?produce-cparent-id)
+               (class PRODUCE-C1)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-C1*)(parent ?produce-cparent-id) (mode FORMULATED)
                (params order ?order bs-color ?base-color ring1-color ?ring1-color cs-color ?cap-color wp ?wp bs ?bs cs ?cs ds ?ds rs1 ?rs1)
  ))
 )
@@ -407,7 +417,7 @@
 (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
 
 (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
-(goal (id ?produce-cparent-id) (class PRODUCE-CPARENT) (mode SELECTED))
+(goal (id ?produce-cparent-id) (class PRODUCE-CPARENT))
 (not (goal (class PRODUCE-C2) (params order ?order bs-color ?any-base-color ring1-color ?any-ring1-color ring2-color ?any-ring2-color cs-color ?any-cap-color wp ?any-wp bs ?any-bs cs ?any-cs ds ?any-ds rs1 ?any-rs1 rs2 ?any-rs2)))
  ?r <- (running-tasks (number ?running-tasks))
 (test (< ?running-tasks ?*MAX-RUNNING-TASKS*))
@@ -418,7 +428,7 @@
  (retract ?r)
  (printout t "running tasks increased to "  (+ ?running-tasks 1) crlf)
  (assert (goal (id (sym-cat PRODUCE-C2- (gensym*)))
-               (class PRODUCE-C2)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-C2*)(parent ?produce-cparent-id)
+               (class PRODUCE-C2)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-C2*)(parent ?produce-cparent-id) (mode FORMULATED)
                (params order ?order bs-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color cs-color ?cap-color wp ?wp bs ?bs cs ?cs ds ?ds rs1 ?rs1 rs2 ?rs2)
  ))
 )
@@ -571,7 +581,7 @@
  (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
 
  (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
- (goal (id ?produce-cparent-id) (class PRODUCE-CPARENT) (mode SELECTED))
+ (goal (id ?produce-cparent-id) (class PRODUCE-CPARENT))
 
  (not (goal (class PRODUCE-C3) (params order ?order bs-color ?any-base-color ring1-color ?any-ring1-color ring2-color ?any-ring2-color ring3-color ?any-ring3-color cs-color ?any-cap-color wp ?any-wp bs ?any-bs cs ?any-cs ds ?any-ds rs1 ?any-rs1 rs2 ?any-rs2 rs3 ?any-rs3)))
  ?r <- (running-tasks (number ?running-tasks))
@@ -583,7 +593,7 @@
   (retract ?r)
   (printout t "running tasks increased to "  (+ ?running-tasks 1) crlf)
   (assert (goal (id (sym-cat PRODUCE-C3- (gensym*)))
-                (class PRODUCE-C3)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-C3*)(parent ?produce-cparent-id)
+                (class PRODUCE-C3)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-C3*)(parent ?produce-cparent-id) (mode FORMULATED)
                 (params order ?order bs-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cs-color ?cap-color wp ?wp bs ?bs cs ?cs ds ?ds rs1 ?rs1 rs2 ?rs2 rs3 ?rs3)
   ))
 )
