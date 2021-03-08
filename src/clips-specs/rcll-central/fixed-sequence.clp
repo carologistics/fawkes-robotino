@@ -43,6 +43,7 @@
 (wm-fact (key domain fact entered-field args? r ?robot))
 (not(goal (params robot ?robot $?rest-params)))
 (not (idle-robot (robot ?robot)))
+(not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
 =>
 (printout t "Robot " ?robot " set to idle" crlf)
 (assert (idle-robot (robot ?robot)))
