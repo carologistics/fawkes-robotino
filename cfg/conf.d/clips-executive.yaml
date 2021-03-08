@@ -91,6 +91,7 @@ clips-executive:
               - goals/timeout.clp
               - goals/try-all.clp
               - goals/run-parallel.clp
+              - goals/run-on-idle.clp
               - goal-tree.clp
               - rcll-central/goals/run-endless.clp
               - rcll-central/goals/simple.clp

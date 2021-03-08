@@ -28,6 +28,7 @@
 ?*PRIORITY-SUPPORTING-TASKS* = 1
 ?*PRIORITY-REFILL-SHELF* = 2
 ?*PRIORITY-GO-WAIT* = 1
+; MAX-RUNNING-TASKS can be useful for debugging purposes
 ?*MAX-RUNNING-TASKS* = 20
 ;?*GET-BASE-PRIO-DIFF* = 1
 ;?*BUFFER-CS-PRIO-DIFF* = 2
@@ -35,11 +36,6 @@
 ;?*DELIVER-PRIO-DIFF* = 5
 ;?*MOUNT-RING-PRIO-DIFF* = 2 
 )
-
-(deftemplate running-tasks
-  (slot number(type NUMBER))
-)
-
 
 ;(defrule goal-production-create-beacon-maintain
 ;" The parent goal for beacon signals. Allows formulation of
@@ -153,7 +149,7 @@
  (printout t "CParent formulated" crlf)
  (bind ?wp (sym-cat WP- (random-id)))
  (assert (goal (id (sym-cat PRODUCE-CPARENT- (gensym*))) (mode EXPANDED)
-               (class PRODUCE-CPARENT)(sub-type RUN-SUBGOALS-IN-PARALLEL))
+               (class PRODUCE-CPARENT)(sub-type RUN-SUBGOALS-ON-IDLE))
 )
 )
 

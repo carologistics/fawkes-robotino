@@ -19,6 +19,11 @@
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
 
+(defglobal
+  ?*SALIENCE-IDLE-CHECK* = -1
+  ?*SALIENCE-EXPANDER-GENERIC* = 600
+)
+
 (defrule goal-expander-send-beacon-signal
   ?p <- (goal (mode DISPATCHED) (id ?parent-id))
   ?g <- (goal (id ?goal-id) (class SEND-BEACON) (mode SELECTED)
@@ -31,7 +36,21 @@
   (modify ?g (mode EXPANDED))
 )
 
+; Set Robot to idle if there is no task left
+; Will trigger the selection of new tasks
+(defrule idle-check
+(declare (salience ?*SALIENCE-IDLE-CHECK*))
+(wm-fact (key domain fact entered-field args? r ?robot))
+(not(goal (params robot ?robot $?rest-params)))
+(not (idle-robot (robot ?robot)))
+=>
+(printout t "Robot " ?robot " set to idle" crlf)
+(assert (idle-robot (robot ?robot)))
+)
+
+
 (defrule goal-expander-refill-shelf
+  (declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
   ?p <- (goal (mode DISPATCHED) (id ?parent) (class PRODUCE-CPARENT))
   ?g <- (goal (id ?goal-id) (class REFILL-SHELF) (mode SELECTED)
               (params mps ?mps ) (parent ?parent-id))
@@ -59,6 +78,7 @@
 
 
 (defrule goal-expander-get-base-to-fill-rs
+(declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
  ?p <- (goal (mode DISPATCHED) (id ?parent) (class PRODUCE-CPARENT))
  ?g <- (goal (mode SELECTED) (parent ?parent) (id ?goal-id)
              (class GET-BASE-TO-FILL-RS)
@@ -118,6 +138,7 @@
 
 
 (defrule goal-expander-discard-wp
+(declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
  ?p <- (goal (mode DISPATCHED) (id ?parent))
  ?g <- (goal (id ?goal-id) (class DISCARD-WP) (mode SELECTED)
              (parent ?parent)
@@ -159,6 +180,7 @@
 )
 
 (defrule goal-expander-produce-c0-mount-cap-deliver
+(declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
  ?p <- (goal (mode DISPATCHED) (id ?parent) (class PRODUCE-C0) (params order ?order bs-color ?base-color cs-color ?cap-color wp ?wp bs ?bs cs ?cs ds ?ds))
  ?g <- (goal (id ?goal-id) (parent ?parent) (class MOUNT-CAP-DELIVER) (mode SELECTED))
 
@@ -261,6 +283,7 @@
 )
 
 (defrule goal-expander-base-wait
+  (declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
  ?p <- (goal (mode DISPATCHED) (id ?parent))
  ?g <- (goal (id ?goal-id) (parent ?parent) (class GET-BASE-WAIT) (mode SELECTED) (params bs-color ?base-color wp ?wp bs ?bs wait-pos ?wait-pos wait-side ?wait-side))
  (wm-fact (key domain fact entered-field args? r ?robot))
@@ -320,6 +343,7 @@
 )
 
 (defrule goal-expander-buffer-cs
+  (declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
  ?p <- (goal (mode DISPATCHED) (id ?parent))
  ?g <- (goal (id ?goal-id) (parent ?parent) (class BUFFER-CS) (mode SELECTED) (params cs-color ?cap-color cs ?cs))
 
@@ -409,6 +433,7 @@
 )
 
 (defrule goal-expander-produce-c1-mount-cap-deliver
+  (declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
  ?p <- (goal (mode DISPATCHED) (id ?parent) (class PRODUCE-C1) (params order ?order bs-color ?base-color ring1-color ?ring1-color cs-color ?cap-color wp ?wp bs ?bs cs ?cs ds ?ds rs1 ?rs1))
  ?g <- (goal (id ?goal-id) (parent ?parent) (class MOUNT-CAP-DELIVER-C1) (mode SELECTED))
 
@@ -512,6 +537,7 @@
 )
 
 (defrule goal-expander-buffer-rs
+  (declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
  ?p <- (goal (mode DISPATCHED) (id ?parent))
  ?g <- (goal (id ?goal-id) (parent ?parent) (class BUFFER-RS) (mode SELECTED) (params bs ?bs rs ?rs for ?ring-num))
  (wm-fact (key domain fact entered-field args? r ?robot))
@@ -593,6 +619,7 @@
 )
 
 (defrule goal-expander-mount-ring1
+(declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
  ?p <- (goal (mode DISPATCHED) (id ?parent))
  ?g <- (goal (id ?goal-id) (parent ?parent) (class MOUNT-RING1) (mode SELECTED) (params ring1-color ?ring1-color wp ?wp rs ?rs wait-pos ?wait-pos wait-side ?wait-side))
 
@@ -683,6 +710,7 @@
 )
 
 (defrule goal-expander-mount-ring2
+  (declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
  ?p <- (goal (mode DISPATCHED) (id ?parent))
  ?g <- (goal (id ?goal-id) (parent ?parent) (class MOUNT-RING2) (mode SELECTED) (params ring1-color ?ring1-color ring2-color ?ring2-color wp ?wp rs ?rs wait-pos ?wait-pos wait-side ?wait-side))
 
@@ -774,6 +802,7 @@
 )
 
 (defrule goal-expander-mount-ring3
+  (declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
  ?p <- (goal (mode DISPATCHED) (id ?parent))
  ?g <- (goal (id ?goal-id) (parent ?parent) (class MOUNT-RING3) (mode SELECTED) (params ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color wp ?wp rs ?rs wait-pos ?wait-pos wait-side ?wait-side))
 
@@ -866,8 +895,11 @@
 )
 
 (defrule goal-expander-produce-c2-mount-cap-deliver
+  (declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
  ?p <- (goal (mode DISPATCHED) (id ?parent) (class PRODUCE-C2) (params order ?order bs-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color cs-color ?cap-color wp ?wp bs ?bs cs ?cs ds ?ds rs1 ?rs1 rs2 ?rs2))
  ?g <- (goal (id ?goal-id) (parent ?parent) (class MOUNT-CAP-DELIVER-C2) (mode SELECTED))
+
+(not(goal (parent ?parent) (class BUFFER-CS)))
 
  (wm-fact (key domain fact cs-buffered args? m ?cs col ?cap-color))
  (wm-fact (key domain fact mps-side-free args? m ?cs side OUTPUT))
@@ -970,6 +1002,7 @@
 )
 
 (defrule goal-expander-produce-c3-mount-cap-deliver
+  (declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
  ?p <- (goal (mode DISPATCHED) (id ?parent) (class PRODUCE-C3) (params order ?order bs-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cs-color ?cap-color wp ?wp bs ?bs cs ?cs ds ?ds rs1 ?rs1 rs2 ?rs2 rs3 ?rs3))
  ?g <- (goal (id ?goal-id) (parent ?parent) (class MOUNT-CAP-DELIVER-C3) (mode SELECTED))
 
@@ -1076,6 +1109,7 @@
 
 (defrule goal-expander-go-wait
   "Move to a waiting position."
+  (declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
    ?p <- (goal (mode DISPATCHED) (id ?parent))
    ?g <- (goal (id ?goal-id) (class GO-WAIT) (mode SELECTED) (parent ?parent))
    (wm-fact (key domain fact self args? r ?robot))
