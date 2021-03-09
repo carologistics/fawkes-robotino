@@ -193,6 +193,9 @@
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  (wm-fact (key domain fact entered-field args? r ?robot))
 
+ (wm-fact (key refbox game-time) (values $?game-time))
+ (wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin&:(< ?delivery-begin (nth$ 1 ?game-time))))
+
 (not(goal (params robot ?robot $?rest-params)))
  =>
       (bind ?planid (sym-cat PRODUCE-C0-MOUNT-CAP-DELIVER-PLAN- (gensym*)))
@@ -446,6 +449,9 @@
  
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  (wm-fact (key domain fact entered-field args? r ?robot))
+
+ (wm-fact (key refbox game-time) (values $?game-time))
+ (wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin&:(< ?delivery-begin (nth$ 1 ?game-time))))
 
  (not(goal (params robot ?robot $?rest-params)))
  =>
@@ -912,6 +918,9 @@
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  (wm-fact (key domain fact entered-field args? r ?robot))
 
+ (wm-fact (key refbox game-time) (values $?game-time))
+ (wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin&:(< ?delivery-begin (nth$ 1 ?game-time))))
+
  (not(goal (params robot ?robot $?rest-params)))
  =>
       (bind ?planid (sym-cat PRODUCE-C2-MOUNT-CAP-DELIVER-PLAN- (gensym*)))
@@ -1017,6 +1026,9 @@
  
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  (wm-fact (key domain fact entered-field args? r ?robot))
+
+ (wm-fact (key refbox game-time) (values $?game-time))
+ (wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin&:(< ?delivery-begin (nth$ 1 ?game-time))))
 
  (not(goal (params robot ?robot $?rest-params)))
  =>

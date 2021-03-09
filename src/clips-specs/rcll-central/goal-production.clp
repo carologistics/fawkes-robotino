@@ -25,6 +25,10 @@
 ?*PRIORITY-C1* = 70
 ?*PRIORITY-C2* = 80
 ?*PRIORITY-C3* = 90
+?*DURATION-C0* = 120
+?*DURATION-C1* = 160
+?*DURATION-C2* = 200
+?*DURATION-C3* = 240
 ?*PRIORITY-SUPPORTING-TASKS* = 1
 ?*PRIORITY-REFILL-SHELF* = 2
 ?*PRIORITY-GO-WAIT* = 1
@@ -193,6 +197,9 @@
 
 (wm-fact (key refbox team-color) (value ?team-color))
 
+(wm-fact (key refbox game-time) (values $?game-time))
+(wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin&:(< ?delivery-begin (+ (nth$ 1 ?game-time) ?*DURATION-C0*) )))
+
 (wm-fact (key domain fact mps-type args? m ?cs t CS))
 (wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
 (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cs spot ?shelf-spot))
@@ -268,6 +275,10 @@
  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
 
 (wm-fact (key refbox team-color) (value ?team-color))
+
+(wm-fact (key refbox game-time) (values $?game-time))
+(wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin&:(< ?delivery-begin (+ (nth$ 1 ?game-time) ?*DURATION-C1*) )))
+
 ; wait for machines to be initialized. Thanks to Chris for this fix.
 (wm-fact (key domain fact entered-field args? r ?some-robot))
 
@@ -332,8 +343,8 @@
   )
   (wm-fact (key domain fact rs-ring-spec args? m ?rs1 r ?ring1-color rn ?bases-needed1))
   
-  (not (goal (class BUFFER-RS) (parent ?produce-c2-id) (params bs ?any-bs rs ?any-rs1 for ONE)))
-  (not (goal (class BUFFER-RS) (parent ?produce-c2-id) (params robot ?any-robot bs ?any-bs rs ?any-rs1 for ONE)))
+  (not (goal (class BUFFER-RS) (parent ?produce-c1-id) (params bs ?any-bs rs ?any-rs1 for ONE)))
+  (not (goal (class BUFFER-RS) (parent ?produce-c1-id) (params robot ?any-robot bs ?any-bs rs ?any-rs1 for ONE)))
   =>
   (printout t "Goals BUFFER-RS formulated. bases-needed: " ?bases-needed1 crlf)
   (if (eq ?bases-needed1 ONE) then 
@@ -390,6 +401,9 @@
  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
 
 (wm-fact (key refbox team-color) (value ?team-color))
+
+(wm-fact (key refbox game-time) (values $?game-time))
+(wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin&:(< ?delivery-begin (+ (nth$ 1 ?game-time) ?*DURATION-C2*) )))
 ; wait for machines to be initialized. Thanks to Chris for this fix.
 (wm-fact (key domain fact entered-field args? r ?some-robot))
 
@@ -550,6 +564,9 @@
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
 
  (wm-fact (key refbox team-color) (value ?team-color))
+
+ (wm-fact (key refbox game-time) (values $?game-time))
+(wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin&:(< ?delivery-begin (+ (nth$ 1 ?game-time) ?*DURATION-C3*) )))
  ; wait for machines to be initialized. Thanks to Chris for this fix.
  (wm-fact (key domain fact entered-field args? r ?some-robot))
 
