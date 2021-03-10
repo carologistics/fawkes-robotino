@@ -575,7 +575,7 @@
 
   (:action prepare-ss-to-retrieve
     :parameters (?m - mps ?wp - workpiece ?shelf - ss-shelf ?slot - ss-slot)
-    :precondition (and (mps-type ?m SS) (mps-state ?m IDLE)
+    :precondition (and (mps-type ?m SS) (mps-state ?m IDLE) (locked ?m)
                        (ss-stored-wp ?m ?wp ?shelf ?slot))
     :effect (and (not (mps-state ?m IDLE)) (mps-state ?m PREPARED)
                  (ss-prepared-for ?m RETRIEVE ?wp ?shelf ?slot))
@@ -583,7 +583,7 @@
 
   (:action prepare-ss-to-store
     :parameters (?m - mps ?wp - workpiece ?shelf - ss-shelf ?slot - ss-slot)
-    :precondition (and (mps-type ?m SS) (mps-state ?m IDLE)
+    :precondition (and (mps-type ?m SS) (mps-state ?m IDLE) (locked ?m)
                        (ss-shelf-slot-free ?m ?shelf ?slot))
     :effect (and (not (mps-state ?m IDLE)) (mps-state ?m PREPARED)
                  (ss-prepared-for ?m STORE ?wp ?shelf ?slot))
@@ -597,6 +597,7 @@
                  ?cap-col - cap-color)
     :precondition (and
       (mps-type ?m SS)
+      (locked ?m)
       (wp-spawned-for ?wp ?r)
       (wp-unused ?wp)
       (wp-base-color ?wp BASE_NONE)
@@ -633,7 +634,7 @@
   (:action ss-retrieve-wp
    :parameters (?m - mps ?old-wp - workpiece ?wp - workpiece
                 ?shelf - ss-shelf ?slot - ss-slot)
-   :precondition (and (mps-type ?m SS)
+   :precondition (and (mps-type ?m SS) (locked ?m)
                       (or (mps-state ?m PROCESSING)
                           (mps-state ?m READY-AT-OUTPUT))
                       (ss-prepared-for ?m RETRIEVE ?wp ?shelf ?slot)
@@ -652,6 +653,7 @@
     :parameters (?m - mps ?wp - workpiece ?shelf - ss-shelf ?slot - ss-slot)
     :precondition (and
       (mps-type ?m SS)
+      (locked ?m)
       (or (mps-state ?m PROCESSING) (mps-state ?m IDLE))
       (wp-at ?wp ?m INPUT)
       (ss-prepared-for ?m STORE ?wp ?shelf ?slot)
