@@ -1637,7 +1637,11 @@
                         wp ?wp
                         shelf ?shelf
                         slot ?slot)
-                (required-resources (sym-cat ?mps -OUTPUT) ?wp (sym-cat ?ss -OUTPUT) (sym-cat ?ss -INPUT) ?ss)
+                (required-resources (sym-cat ?mps -OUTPUT)
+                                    ?wp
+                                    (sym-cat ?ss -OUTPUT)
+                                    (sym-cat ?ss -INPUT)
+                                    ?ss)
   ))
 )
 
