@@ -159,7 +159,7 @@
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-col))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-col))
   (wm-fact (key domain fact wp-unused args? wp ?wp))
-  ;(wm-fact (key config rcll use-ss) (value TRUE))
+  (wm-fact (key config rcll use-ss) (value TRUE))
   =>
   (assert (goal (id (sym-cat SS-ASSIGN-WP- (gensym*))) (sub-type SIMPLE)
                 (class SS-ASSIGN-WP) (parent ?maintain-id)
@@ -1390,6 +1390,7 @@
            (value ?del-begin&:(< (- ?del-begin (nth$ 1 ?game-time)) 0)))
   (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?ss side ?any-side)))
 	(not (goal (class GET-STORED-WP) (params $? wp ?wp)))
+  (wm-fact (key config rcll use-ss) (value TRUE))
 =>
   (assert (goal (id (sym-cat GET-STORED-WP- (gensym*))) (class GET-STORED-WP)
                 (sub-type SIMPLE) (mode FORMULATED) (parent ?production-id)
@@ -1619,6 +1620,7 @@
                         shelf ?shelf
                         slot ?slot)))
   (wm-fact (key domain fact ss-shelf-slot-free args? m ?ss  shelf ?shelf slot ?slot))
+  (wm-fact (key config rcll use-ss) (value TRUE))
   =>
   (printout t "Goal " STORE-WP " formulated" crlf)
   (bind ?distance (node-distance (str-cat ?mps -I)))
