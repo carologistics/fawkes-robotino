@@ -19,17 +19,6 @@
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
 
-(defrule goal-expander-send-beacon-signal
-  ?p <- (goal (mode DISPATCHED) (id ?parent-id))
-  ?g <- (goal (id ?goal-id) (class SEND-BEACON) (mode SELECTED)
-              (parent ?parent-id))
-=>
-  (assert
-    (plan (id BEACONPLAN) (goal-id ?goal-id))
-    (plan-action (id 1) (plan-id BEACONPLAN) (goal-id ?goal-id)
-      (action-name send-beacon)))
-  (modify ?g (mode EXPANDED))
-)
 
 (defrule goal-expander-refill-shelf
   ?p <- (goal (mode DISPATCHED) (id ?parent-id))
@@ -74,9 +63,18 @@
 
 
 (deftemplate idea
+  (slot id (default-dynamic (gensym*)))
   (slot class (type SYMBOL))
   (slot goal-id (type SYMBOL))
-  (slot priority (type FLOAT) (default 0.0))
+  (slot priority (type FLOAT) (default -999.0))
+  (slot build-time (type INTEGER) (default 999))
+  (slot goal-priority (type FLOAT))
+  (slot distance (type FLOAT))
+  (slot base-color (type SYMBOL) (default BASE_NONE))
+  (slot ring1-color (type SYMBOL) (default RING_NONE))
+  (slot ring2-color (type SYMBOL) (default RING_NONE))
+  (slot ring3-color (type SYMBOL) (default RING_NONE))
+  (slot cap-color (type SYMBOL) (default RING_NONE))
   (multislot params)
 )
 
@@ -86,6 +84,24 @@
   (do-for-all-facts ((?i idea)) TRUE
 		(retract ?i)
 	)
+  (refresh idea-production-fetch-cc)
+  (refresh idea-production-transport)
+  (refresh idea-production-discard-base)
+  (refresh idea-production-create-base)
+  (refresh idea-production-feed-rs)
+)
+
+(defrule goal-expander-send-beacon-signal
+  ?p <- (goal (mode DISPATCHED) (id ?parent-id))
+  ?g <- (goal (id ?goal-id) (class SEND-BEACON) (mode SELECTED)
+              (parent ?parent-id))
+=>
+  (assert
+    (plan (id BEACONPLAN) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id BEACONPLAN) (goal-id ?goal-id)
+      (action-name send-beacon)))
+  (modify ?g (mode EXPANDED))
+  (retract-ideas)
 )
 
 (defglobal
@@ -93,6 +109,46 @@
   ?*SALIENCE-IDEA-PRODUCTION* = (+ ?*SALIENCE-GOAL-EXPAND* 2)
   ?*SALIENCE-IDEA-GOAL-EXPAND* = (+ ?*SALIENCE-GOAL-EXPAND* 1)
 )
+
+
+(defrule compute-idea-priority
+  (declare (salience (+ 1 ?*SALIENCE-IDEA-PRODUCTION*)))
+  ?i <- (idea (priority -999.0) (goal-id ?goal-id) (goal-priority ?goal-priority) (distance ?distance)
+              (base-color ?wp-base-color) (ring1-color ?wp-ring1-color) (ring2-color ?wp-ring2-color) (ring3-color ?wp-ring3-color) (cap-color ?wp-cap-color)
+  )
+  (goal (id ?goal-id) (parent ?parent-id) (class ?class))
+  (goal (id ?parent-id) (meta ?order))
+  ; Order facts
+  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
+  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
+  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+  ; Refbox facts
+  (wm-fact (key refbox game-time) (values ?game-time ?))
+  (wm-fact (key refbox order ?order delivery-begin) (value ?begin))
+  (wm-fact (key refbox order ?order delivery-end) (value ?end))
+  => 
+  (bind ?order_prio 0.0)
+  (if (or (eq ?class TRANSPORT) (eq ?class CREATE-BASE)) then
+    (bind ?build-time 0)
+    (if (neq ?base-color ?wp-base-color) then (bind ?build-time (+ ?build-time ?*TIME-GET-BASE*)))
+    (if (neq ?ring1-color ?wp-ring1-color) then (bind ?build-time (+ ?build-time ?*TIME-MOUNT-RING*)))
+    (if (neq ?ring2-color ?wp-ring2-color) then (bind ?build-time (+ ?build-time ?*TIME-MOUNT-RING*)))
+    (if (neq ?ring3-color ?wp-ring3-color) then (bind ?build-time (+ ?build-time ?*TIME-MOUNT-RING*)))
+    (if (neq ?cap-color ?wp-cap-color) then (bind ?build-time (+ ?build-time ?*TIME-MOUNT-CAP*)))
+    (bind ?eta (+ ?game-time ?build-time))
+    (printout t "ETA for " ?order " " ?goal-id ": " ?begin " "  ?eta " " ?end crlf)
+    (bind ?order_prio (/ ?eta (* 17 60 10)))
+    (if (<= ?begin ?eta ?end) then (bind ?order_prio (+ ?order_prio 0.9))) ; ETA is in delivery interval
+    (if (> ?eta (* 17 60)) then (bind ?order_prio -1.0)) ; ETA is after end of game
+    (if (> ?begin (+ ?eta 180)) then (bind ?order_prio -990.0)) ; ETA is more than 60s before delivery begin
+  )
+  (bind ?priority (+ ?goal-priority (goal-distance-prio ?distance) ?order_prio))
+  (printout t "Priority " ?priority crlf)
+  (modify ?i (build-time ?build-time) (priority ?priority))
+)
+
 
 ; Fetch CC
 (defrule idea-production-fetch-cc
@@ -109,25 +165,22 @@
   (wm-fact (key domain fact mps-state args? m ?cs s ~BROKEN))
   (wm-fact (key domain fact cs-color args? m ?cs col ?cap-color))
   (wm-fact (key domain fact mps-side-free args? m ?cs side INPUT))
-  (wm-fact (key domain fact mps-side-free args? m ?cs side OUTPUT))
   (wm-fact (key domain fact cs-can-perform args? m ?cs op RETRIEVE_CAP))
   (not (plan (mps ?cs)))
-  (not (idea (class FETCH-CC) (goal-id ?goal-id) (params cs ?cs robot ?robot)))
 =>
-  (bind ?prio (goal-distance-prio (node-distance (mps-node ?cs INPUT) ?robot)))
-  (printout t "Formulated FETCH-CC idea " ?cs " with " ?robot " (" ?prio ")" crlf)
+  (printout t "Formulated FETCH-CC idea " ?cs " with " ?robot crlf)
   (assert
         (idea (class FETCH-CC)
               (goal-id ?goal-id)
-              (priority ?prio)
+              (distance (node-distance (mps-node ?cs INPUT) ?robot))
+              (goal-priority 0.0)
               (params cs ?cs robot ?robot))
   )
-  (refresh idea-production-fetch-cc)
 )
 
 (defrule goal-expander-fetch-cc
   (declare (salience ?*SALIENCE-IDEA-GOAL-EXPAND*))
-  (idea (class FETCH-CC) (priority ?prio) (goal-id ?goal-id)
+  (idea (class FETCH-CC) (priority ?prio&:(> ?prio -100.0)) (goal-id ?goal-id)
         (params cs ?cs robot ?robot))
   (not (idea (priority ?prio2&:(> ?prio2 ?prio))))
   ?g <- (goal (id ?goal-id))
@@ -208,22 +261,20 @@
   (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side OUTPUT))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
   (not (plan (wp ?wp)))
-  (not (idea (class DISCARD-BASE) (goal-id ?goal-id) (params cs ?cs wp ?wp robot ?robot)))
 =>
-  (bind ?prio (goal-distance-prio (node-distance (mps-node ?cs OUTPUT) ?robot)))
-  (printout t "Formulated DISCARD-BASE idea " ?cs " with " ?robot " (" ?prio ")" crlf)
+  (printout t "Formulated DISCARD-BASE idea " ?cs " with " ?robot crlf)
   (assert
         (idea (class DISCARD-BASE)
               (goal-id ?goal-id)
-              (priority ?prio)
+              (distance (node-distance (mps-node ?cs OUTPUT) ?robot))
+              (goal-priority 0.0)
               (params cs ?cs wp ?wp robot ?robot))
   )
-  (refresh idea-production-discard-base)
 )
 
 (defrule goal-expander-discard-base
   (declare (salience ?*SALIENCE-IDEA-GOAL-EXPAND*))
-  (idea (class DISCARD-BASE) (priority ?prio) (goal-id ?goal-id)
+  (idea (class DISCARD-BASE) (priority ?prio&:(> ?prio -100.0)) (goal-id ?goal-id)
         (params cs ?cs wp ?wp robot ?robot))
   (not (idea (priority ?prio2&:(> ?prio2 ?prio))))
   ?g <- (goal (id ?goal-id))
@@ -279,22 +330,21 @@
     (wm-fact (key domain fact cs-can-perform args? m ?mps-to op MOUNT_CAP))
   )
   (not (plan (mps ?mps-to)))
-  (not (idea (class TRANSPORT) (goal-id ?goal-id) (params mps-to ?mps-to wp ?wp robot ?robot)))
 =>
-  (bind ?prio (goal-distance-prio (node-distance (mps-node ?mps-from ?mps-from-side) ?robot)))
-  (printout t "Formulated TRANSPORT idea " ?wp " to " ?mps-to " with " ?robot " (" ?prio ")" crlf)
+  (printout t "Formulated TRANSPORT idea " ?wp " to " ?mps-to " with " ?robot crlf)
   (assert
         (idea (class TRANSPORT)
               (goal-id ?goal-id)
-              (priority ?prio)
+              (distance (node-distance (mps-node ?mps-from ?mps-from-side) ?robot))
+              (goal-priority 0.1)
+              (base-color ?base-color) (ring1-color ?ring1-color) (ring2-color ?ring2-color) (ring3-color ?ring3-color) (cap-color ?cap-color)
               (params mps-to ?mps-to wp ?wp robot ?robot))
   )
-  (refresh idea-production-transport)
 )
 
 (defrule goal-expander-transport
   (declare (salience ?*SALIENCE-IDEA-GOAL-EXPAND*))
-  (idea (class TRANSPORT) (priority ?prio) (goal-id ?goal-id)
+  (idea (class TRANSPORT) (priority ?prio&:(> ?prio -100.0)) (goal-id ?goal-id)
         (params mps-to ?mps-to wp ?wp robot ?robot))
   (not (idea (priority ?prio2&:(> ?prio2 ?prio))))
   ?g <- (goal (id ?goal-id))
@@ -347,22 +397,21 @@
   (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN))
   (wm-fact (key domain fact mps-side-free args? m ?bs side INPUT))
   (not (plan (mps ?bs)))
-  (not (idea (class CREATE-BASE) (goal-id ?goal-id) (params bs ?bs base-color ?base-color)))
 =>
-  (bind ?prio 0.0)
-  (printout t "Formulated CREATE-BASE idea " ?base-color " (" ?prio ")" crlf)
+  (printout t "Formulated CREATE-BASE idea " ?base-color crlf)
   (assert
         (idea (class CREATE-BASE)
               (goal-id ?goal-id)
-              (priority ?prio)
+              (distance 0.0)
+              (goal-priority -1.0)
+              (base-color ?base-color)
               (params bs ?bs base-color ?base-color))
   )
-  (refresh idea-production-create-base)
 )
 
 (defrule goal-expander-create-base
   (declare (salience ?*SALIENCE-IDEA-GOAL-EXPAND*))
-  (idea (class CREATE-BASE) (priority ?prio) (goal-id ?goal-id)
+  (idea (class CREATE-BASE) (priority ?prio&:(> ?prio -100.0)) (goal-id ?goal-id)
         (params bs ?bs base-color ?base-color))
   (not (idea (priority ?prio2&:(> ?prio2 ?prio))))
   ?g <- (goal (id ?goal-id))
@@ -438,8 +487,8 @@
   (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
   (wm-fact (key domain fact order-gate args? ord ?order gate ?gate))
-  (wm-fact (key refbox game-time) (values $?game-time))
-  (wm-fact (key refbox order ?order delivery-begin) (value ?begin&:(> (nth$ 1 ?game-time) ?begin)))
+  (wm-fact (key refbox game-time) (values ?game-time ?))
+  (wm-fact (key refbox order ?order delivery-begin) (value ?begin&:(> ?game-time ?begin)))
   ; DS facts
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact mps-type args? m ?ds t DS))
@@ -475,6 +524,20 @@
                   (action-name fulfill-order-c1)
                   (param-names ord wp m g basecol capcol ring1col)
                   (param-values ?order ?wp ?ds ?gate ?base-color ?cap-color ?ring1-color))
+    )
+  )
+  (if (eq ?complexity C2) then
+    (assert (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
+                  (action-name fulfill-order-c2)
+                  (param-names ord wp m g basecol capcol ring1col ring2col)
+                  (param-values ?order ?wp ?ds ?gate ?base-color ?cap-color ?ring1-color ?ring2-color))
+    )
+  )
+  (if (eq ?complexity C3) then
+    (assert (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
+                  (action-name fulfill-order-c3)
+                  (param-names ord wp m g basecol capcol ring1col ring2col ring3col)
+                  (param-values ?order ?wp ?ds ?gate ?base-color ?cap-color ?ring1-color ?ring2-color ?ring3-color))
     )
   )
   (modify ?g (mode EXPANDED))
@@ -638,22 +701,22 @@
   (wm-fact (key domain fact rs-sub args? minuend ?bases-needed
                                          subtrahend ?bases-filled
                                          difference ?bases-remain&ONE|TWO|THREE))
-  (not (idea (class FEED-RS) (goal-id ?goal-id) (params rs ?rs wp ?wp robot ?robot)))
 =>
-  (bind ?prio (goal-distance-prio (node-distance (mps-node ?rs INPUT) ?robot)))
-  (printout t "Formulated FEED-RS idea " ?rs " with " ?robot " (" ?prio ")" crlf)
+  (printout t "Formulated FEED-RS idea " ?rs " with " ?robot crlf)
   (assert
         (idea (class FEED-RS)
               (goal-id ?goal-id)
-              (priority ?prio)
+              (distance (* 0.5 (+ (node-distance (mps-node ?mps-from ?mps-from-side) ?robot)
+                                  (node-distance (mps-node ?mps-from ?mps-from-side) (mps-node ?rs INPUT))
+                               )))
+              (goal-priority 1.0)
               (params rs ?rs wp ?wp robot ?robot))
   )
-  (refresh idea-production-feed-rs)
 )
 
 (defrule goal-expander-feed-rs
   (declare (salience ?*SALIENCE-IDEA-GOAL-EXPAND*))
-  (idea (class FEED-RS) (priority ?prio) (goal-id ?goal-id)
+  (idea (class FEED-RS) (priority ?prio&:(> ?prio -100.0)) (goal-id ?goal-id)
         (params rs ?rs wp ?wp robot ?robot))
   (not (idea (priority ?prio2&:(> ?prio2 ?prio))))
   ?g <- (goal (id ?goal-id))
@@ -731,21 +794,21 @@
   (wm-fact (key domain fact mps-type args? m ?mps-to t ~SS))
   (wm-fact (key domain fact mps-side-free args? m ?mps-to side INPUT))
   (not (plan (mps ?mps-to)))
-  (not (idea (class PUT-AWAY) (goal-id ?goal-id) (params mps-to ?mps-to wp ?wp robot ?robot)))
 =>
-  (bind ?prio (goal-distance-prio (node-distance (mps-node ?mps-to INPUT) ?robot)))
-  (printout t "Formulated PUT-AWAY idea " ?wp " to " ?mps-to " with " ?robot " (" ?prio ")" crlf)
+  (printout t "Formulated PUT-AWAY idea " ?wp " to " ?mps-to " with " ?robot crlf)
   (assert
         (idea (class PUT-AWAY)
               (goal-id ?goal-id)
-              (priority ?prio)
+              (priority (goal-distance-prio (node-distance (mps-node ?mps-to INPUT) ?robot)))
+              (distance 0.0)
+              (goal-priority 0.0)
               (params mps-to ?mps-to wp ?wp robot ?robot))
   )
 )
 
 (defrule goal-expander-put-away
   (declare (salience ?*SALIENCE-IDEA-GOAL-EXPAND*))
-  (idea (class PUT-AWAY) (priority ?prio) (goal-id ?goal-id)
+  (idea (class PUT-AWAY) (priority ?prio&:(> ?prio -100.0)) (goal-id ?goal-id)
         (params mps-to ?mps-to wp ?wp robot ?robot))
   (not (idea (priority ?prio2&:(> ?prio2 ?prio))))
   ?g <- (goal (id ?goal-id))
