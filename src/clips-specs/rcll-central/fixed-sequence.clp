@@ -185,6 +185,8 @@
  ?p <- (goal (mode DISPATCHED) (id ?parent) (class PRODUCE-C0) (params order ?order bs-color ?base-color cs-color ?cap-color wp ?wp bs ?bs cs ?cs ds ?ds))
  ?g <- (goal (id ?goal-id) (parent ?parent) (class MOUNT-CAP-DELIVER) (mode SELECTED))
 
+ (not (goal (parent ?parent) (class BUFFER-CS)))
+
  (wm-fact (key domain fact cs-buffered args? m ?cs col ?cap-color))
  (wm-fact (key domain fact mps-side-free args? m ?cs side OUTPUT))
 
@@ -281,9 +283,14 @@
               (skiller (remote-skiller ?robot))
               (param-values ?order ?wp ?ds INPUT ?base-color ?cap-color))
         (plan-action (id 20) (plan-id ?planid) (goal-id ?goal-id)
+              (action-name go-wait)
+              (skiller (remote-skiller ?robot))
+              (param-names r from from-side to)
+              (param-values ?robot ?ds INPUT (wait-pos ?ds INPUT)))
+        (plan-action (id 21) (plan-id ?planid) (goal-id ?goal-id)
               (action-name location-unlock) (param-values ?ds INPUT))
 	  )
-        (modify ?g (mode EXPANDED)(params robot ?robot))
+        (modify ?g (mode EXPANDED)(params robot ?robot order ?order bs-color ?base-color cs-color ?cap-color wp ?wp bs ?bs cs ?cs ds ?ds))
 )
 
 (defrule goal-expander-base-wait
@@ -359,7 +366,8 @@
  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cs spot ?shelf-spot))
  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
  (wm-fact (key domain fact cs-can-perform args? m ?cs op RETRIEVE_CAP))
- (not (goal (class BUFFER-CS)(params robot ?some-robot wp ?cc)))
+ (not (goal (class BUFFER-CS)(params robot ?some-robot wp ?cc cs ?some-cs)))
+ (not (goal (class BUFFER-CS)(mode EXPANDED|DISPATCHED)(params robot ?some-robot2 wp ?some-wp cs ?cs)))
  =>
       (bind ?planid (sym-cat BUFFER-CS-PLAN- (gensym*)))
       (assert
@@ -433,13 +441,15 @@
         (plan-action (id 16) (plan-id ?planid) (goal-id ?goal-id)
               (action-name location-unlock) (param-values ?cs OUTPUT))
 	  )
-        (modify ?g (mode EXPANDED)(params robot ?robot wp ?cc))
+        (modify ?g (mode EXPANDED)(params robot ?robot wp ?cc cs ?cs))
 )
 
 (defrule goal-expander-produce-c1-mount-cap-deliver
   (declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
  ?p <- (goal (mode DISPATCHED) (id ?parent) (class PRODUCE-C1) (params order ?order bs-color ?base-color ring1-color ?ring1-color cs-color ?cap-color wp ?wp bs ?bs cs ?cs ds ?ds rs1 ?rs1))
  ?g <- (goal (id ?goal-id) (parent ?parent) (class MOUNT-CAP-DELIVER-C1) (mode SELECTED))
+
+ (not (goal (parent ?parent) (class BUFFER-CS)))
 
  (wm-fact (key domain fact cs-buffered args? m ?cs col ?cap-color))
  (wm-fact (key domain fact mps-side-free args? m ?cs side OUTPUT))
@@ -538,9 +548,14 @@
               (skiller (remote-skiller ?robot))
               (param-values ?order ?wp ?ds INPUT ?base-color ?cap-color ?ring1-color))
         (plan-action (id 20) (plan-id ?planid) (goal-id ?goal-id)
+              (action-name go-wait)
+              (skiller (remote-skiller ?robot))
+              (param-names r from from-side to)
+              (param-values ?robot ?ds INPUT (wait-pos ?ds INPUT)))
+        (plan-action (id 21) (plan-id ?planid) (goal-id ?goal-id)
               (action-name location-unlock) (param-values ?ds INPUT))
 	  )
-        (modify ?g (mode EXPANDED)(params robot ?robot ?order bs-color ?base-color ring1-color ?ring1-color cs-color ?cap-color wp ?wp bs ?bs cs ?cs ds ?ds rs1 ?rs1))
+        (modify ?g (mode EXPANDED)(params robot ?robot order ?order bs-color ?base-color ring1-color ?ring1-color cs-color ?cap-color wp ?wp bs ?bs cs ?cs ds ?ds rs1 ?rs1))
 )
 
 (defrule goal-expander-buffer-rs
@@ -906,7 +921,7 @@
  ?p <- (goal (mode DISPATCHED) (id ?parent) (class PRODUCE-C2) (params order ?order bs-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color cs-color ?cap-color wp ?wp bs ?bs cs ?cs ds ?ds rs1 ?rs1 rs2 ?rs2))
  ?g <- (goal (id ?goal-id) (parent ?parent) (class MOUNT-CAP-DELIVER-C2) (mode SELECTED))
 
-(not(goal (parent ?parent) (class BUFFER-CS)))
+(not (goal (parent ?parent) (class BUFFER-CS)))
 
  (wm-fact (key domain fact cs-buffered args? m ?cs col ?cap-color))
  (wm-fact (key domain fact mps-side-free args? m ?cs side OUTPUT))
@@ -1006,6 +1021,11 @@
               (skiller (remote-skiller ?robot))
               (param-values ?order ?wp ?ds INPUT ?base-color ?cap-color ?ring1-color ?ring2-color))
         (plan-action (id 20) (plan-id ?planid) (goal-id ?goal-id)
+              (action-name go-wait)
+              (skiller (remote-skiller ?robot))
+              (param-names r from from-side to)
+              (param-values ?robot ?ds INPUT (wait-pos ?ds INPUT)))
+        (plan-action (id 21) (plan-id ?planid) (goal-id ?goal-id)
               (action-name location-unlock) (param-values ?ds INPUT))
 	  )
         (modify ?g (mode EXPANDED)(params robot ?robot order ?order bs-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color cs-color ?cap-color wp ?wp bs ?bs cs ?cs ds ?ds rs1 ?rs1 rs2 ?rs2))
@@ -1015,6 +1035,8 @@
   (declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
  ?p <- (goal (mode DISPATCHED) (id ?parent) (class PRODUCE-C3) (params order ?order bs-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cs-color ?cap-color wp ?wp bs ?bs cs ?cs ds ?ds rs1 ?rs1 rs2 ?rs2 rs3 ?rs3))
  ?g <- (goal (id ?goal-id) (parent ?parent) (class MOUNT-CAP-DELIVER-C3) (mode SELECTED))
+
+ (not (goal (parent ?parent) (class BUFFER-CS)))
 
  (wm-fact (key domain fact cs-buffered args? m ?cs col ?cap-color))
  (wm-fact (key domain fact mps-side-free args? m ?cs side OUTPUT))
@@ -1115,6 +1137,11 @@
               (skiller (remote-skiller ?robot))
               (param-values ?order ?wp ?ds INPUT ?base-color ?cap-color ?ring1-color ?ring2-color ?ring3-color))
         (plan-action (id 20) (plan-id ?planid) (goal-id ?goal-id)
+              (action-name go-wait)
+              (skiller (remote-skiller ?robot))
+              (param-names r from from-side to)
+              (param-values ?robot ?ds INPUT (wait-pos ?ds INPUT)))
+        (plan-action (id 21) (plan-id ?planid) (goal-id ?goal-id)
               (action-name location-unlock) (param-values ?ds INPUT))
 	  )
         (modify ?g (mode EXPANDED)(params robot ?robot order ?order bs-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cs-color ?cap-color wp ?wp bs ?bs cs ?cs ds ?ds rs1 ?rs1 rs2 ?rs2 rs3 ?rs3))
