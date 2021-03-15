@@ -64,6 +64,7 @@
   ?*SALIENCE-GOAL-EXPAND* = 300
   ?*SALIENCE-GOAL-SELECT* = 200
   ?*SALIENCE-GOAL-EVALUATE-GENERIC* = -1
+  ?*SALIENCE-GOAL-PRE-EVALUATE* = 1
 )
 
 (deftemplate running-tasks
@@ -162,6 +163,25 @@
 
 
 ; ================================= Goal Clean up ============================
+
+;copied from rcll code
+(defrule goal-reasoner-pre-evaluate-clean-location-locks
+" Unlock all remaining location-locks of a failed goal."
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  (wm-fact (key cx identity) (value ?identity))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
+  ?p <- (plan (id ?plan-id) (goal-id ?goal-id))
+  ?a <- (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id ?plan-id)
+                     (action-name location-lock) (param-values ?loc ?side))
+  (mutex (name ?name&:(eq ?name (sym-cat ?loc - ?side)))
+         (state LOCKED) (request ~UNLOCK) (locked-by ?identity)
+         (pending-requests $?pending&:(not (member$ UNLOCK ?pending))))
+=>
+  ; TODO only unlock if we are at a safe distance
+  (printout warn "Removing location lock " ?name " without moving away!" crlf)
+  (assert (goal-reasoner-unlock-pending ?name))
+  (mutex-unlock-async ?name)
+)
 
 (defrule goal-reasoner-retract-achieve
 " Retract a goal if all sub-goals are retracted. Clean up any plans and plan

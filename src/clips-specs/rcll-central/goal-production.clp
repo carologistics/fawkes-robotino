@@ -26,9 +26,9 @@
 ?*PRIORITY-C2* = 80
 ?*PRIORITY-C3* = 90
 ?*DURATION-C0* = 120
-?*DURATION-C1* = 160
-?*DURATION-C2* = 200
-?*DURATION-C3* = 240
+?*DURATION-C1* = 200
+?*DURATION-C2* = 300
+?*DURATION-C3* = 400
 ?*PRIORITY-SUPPORTING-TASKS* = 1
 ?*PRIORITY-REFILL-SHELF* = 2
 ?*PRIORITY-GO-WAIT* = 1
@@ -240,11 +240,13 @@
 (defrule goal-produce-c0-mount-cap-deliver
   "mount the cap for c0-production and and deliver the product"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?produce-c0-id) (class PRODUCE-C0) (mode SELECTED))
-  (not (goal (class MOUNT-CAP-DELIVER) (parent ?produce-c0-id)))
+  (goal (id ?produce-c0-id) (class PRODUCE-C0) (mode SELECTED) (params order ?order bs-color ?base-color cs-color ?cap-color wp ?wp))
+  (not (goal (class MOUNT-CAP) (parent ?produce-c0-id)))
+  (not (goal (class DELIVER) (parent ?produce-c0-id)))
   =>
-  (printout t "Goal MOUNT-CAP-DELIVER formulated" crlf)
-  (assert (goal (id (sym-cat MOUNT-CAP-DELIVER- (gensym*))) (class MOUNT-CAP-DELIVER) (parent ?produce-c0-id) (sub-type SIMPLE) (mode FORMULATED)))
+  (printout t "Goal MOUNT-CAP and DELIVER formulated" crlf)
+  (assert (goal (id (sym-cat DELIVER- (gensym*))) (class DELIVER) (parent ?produce-c0-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat MOUNT-CAP- (gensym*))) (class MOUNT-CAP) (parent ?produce-c0-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -353,11 +355,13 @@
 (defrule goal-produce-c1-mount-cap-deliver
   "mount the cap for c1-production and and deliver the product"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?produce-c1-id) (class PRODUCE-C1) (mode SELECTED))
-  (not (goal (class MOUNT-CAP-DELIVER-C1) (parent ?produce-c1-id)))
+  (goal (id ?produce-c1-id) (class PRODUCE-C1) (mode SELECTED) (params order ?order bs-color ?base-color ring1-color ?ring1-color cs-color ?cap-color wp ?wp rs1 ?rs1))
+  (not (goal (class MOUNT-CAP) (parent ?produce-c1-id)))
+  (not (goal (class DELIVER) (parent ?produce-c1-id)))
   =>
-  (printout t "Goal MOUNT-CAP-DELIVER formulated" crlf)
-  (assert (goal (id (sym-cat MOUNT-CAP-DELIVER- (gensym*))) (class MOUNT-CAP-DELIVER-C1) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED)))
+  (printout t "Goal MOUNT-CAP and DELIVER formulated" crlf)
+  (assert (goal (id (sym-cat DELIVER- (gensym*))) (class DELIVER) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat MOUNT-CAP- (gensym*))) (class MOUNT-CAP) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
 )
 
 
@@ -505,11 +509,13 @@
 (defrule goal-produce-c2-mount-cap-deliver
   "mount the cap for c2-production and and deliver the product"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?produce-c2-id) (class PRODUCE-C2) (mode SELECTED))
-  (not (goal (class MOUNT-CAP-DELIVER-C2) (parent ?produce-c2-id)))
+  (goal (id ?produce-c2-id) (class PRODUCE-C2) (mode SELECTED) (params order ?order bs-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color cs-color ?cap-color wp ?wp rs1 ?rs1 rs2 ?rs2))
+  (not (goal (class MOUNT-CAP) (parent ?produce-c2-id)))
+  (not (goal (class DELIVER) (parent ?produce-c2-id)))
   =>
-  (printout t "Goal MOUNT-CAP-DELIVER formulated" crlf)
-  (assert (goal (id (sym-cat MOUNT-CAP-DELIVER- (gensym*))) (class MOUNT-CAP-DELIVER-C2) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED)))
+  (printout t "Goal MOUNT-CAP and DELIVER formulated" crlf)
+  (assert (goal (id (sym-cat DELIVER- (gensym*))) (class DELIVER) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat MOUNT-CAP- (gensym*))) (class MOUNT-CAP) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -695,11 +701,13 @@
 (defrule goal-produce-c3-mount-cap-deliver
   "mount the cap for c3-production and and deliver the product"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?produce-c3-id) (class PRODUCE-C3) (mode SELECTED))
-  (not (goal (class MOUNT-CAP-DELIVER-C3) (parent ?produce-c3-id)))
+  (goal (id ?produce-c3-id) (class PRODUCE-C3) (mode SELECTED) (params order ?order bs-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cs-color ?cap-color wp ?wp rs1 ?rs1 rs2 ?rs2 rs3 ?rs3))
+  (not (goal (class MOUNT-CAP) (parent ?produce-c3-id)))
+  (not (goal (class DELIVER) (parent ?produce-c3-id)))
   =>
-  (printout t "Goal MOUNT-CAP-DELIVER formulated" crlf)
-  (assert (goal (id (sym-cat MOUNT-CAP-DELIVER- (gensym*))) (class MOUNT-CAP-DELIVER-C3) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED)))
+  (printout t "Goal MOUNT-CAP and DELIVER formulated" crlf)
+  (assert (goal (id (sym-cat DELIVER- (gensym*))) (class DELIVER) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat MOUNT-CAP- (gensym*))) (class MOUNT-CAP) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
 )
 
 
