@@ -799,7 +799,6 @@
 
  (not(goal (params robot ?robot $?rest-params)))
  =>
-      ;(bind ?bases-needed ZERO)
       (printout t " " ?order " " ?rs " " ?ring-num " " (eq ?ring-num ONE) " " ?bases-needed crlf)
       (bind ?planid (sym-cat MOUNT-RING-PLAN- (gensym*)))
       (if (eq ?ring-num ONE)
