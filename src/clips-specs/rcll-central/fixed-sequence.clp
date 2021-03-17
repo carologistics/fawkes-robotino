@@ -26,6 +26,11 @@
   ?*SALIENCE-DELIVER-DIFF* = 100
 )
 
+(deftemplate wp-lock
+  (slot wp(type SYMBOL))
+  (slot order(type SYMBOL))
+)
+
 (defrule goal-expander-send-beacon-signal
   ?p <- (goal (mode DISPATCHED) (id ?parent-id))
   ?g <- (goal (id ?goal-id) (class SEND-BEACON) (mode SELECTED)
@@ -380,12 +385,17 @@
               (param-names r from from-side to)
               (param-values ?robot ?cs OUTPUT (wait-pos ?cs OUTPUT)))
 	  )
+        (if (not (any-factp ((?wl wp-lock)) (and (eq ?wl:wp ?wp)(eq ?wl:order ?order))))
+            then
+            (assert (wp-lock (wp ?wp) (order ?order)))
+            (printout t "lock wp " ?wp " for order " ?order crlf))
         (modify ?g (mode EXPANDED)(params robot ?robot cs ?cs order ?order))
 )
 
 (defrule goal-expander-get-base
   (declare (salience (+ ?*SALIENCE-EXPANDER-GENERIC* ?*SALIENCE-GET-BASE-DIFF*)))
- ?g <- (goal (id ?goal-id) (parent ?parent) (class GET-BASE) (mode SELECTED) (params bs-color ?base-color))
+ ?g <- (goal (id ?goal-id) (parent ?parent) (class GET-BASE) (mode SELECTED) (params order ?order))
+ (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
  (wm-fact (key domain fact entered-field args? r ?robot))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  (wm-fact (key domain fact can-hold args? r ?robot))
@@ -441,6 +451,11 @@
               (param-values ?bs INPUT))
 	  )
         (modify ?g (mode EXPANDED)(params robot ?robot bs-color ?base-color))
+        ; reserve last base as delivery wp
+        (if (and (not (any-factp ((?g goal)) (and (eq ?g:parent ?parent)(eq ?g:class GET-BASE)(eq ?g:mode SELECTED))) ) (not (any-factp ((?wl wp-lock)) (and (eq ?wl:wp ?wp)(eq ?wl:order ?order)))))
+            then
+      (assert (wp-lock (wp ?wp) (order ?order)))
+      (printout t "lock wp " ?wp " for order " ?order crlf))
 )
 
 (defrule goal-expander-get-cap-carrier
@@ -458,6 +473,8 @@
 
  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cs spot ?shelf-spot))
  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+
+ (not (goal (class GET-CC)(mode EXPANDED|DISPATCHED)(params robot ?some-robot cs ?cs)))
 
  =>
       (bind ?planid (sym-cat GET-CC-PLAN- (gensym*)))
@@ -490,7 +507,7 @@
               (param-names r from from-side to)
               (param-values ?robot ?cs INPUT (wait-pos ?cs INPUT)))
 	  )
-        (modify ?g (mode EXPANDED)(params robot ?robot cs-color ?cap-color))
+        (modify ?g (mode EXPANDED)(params robot ?robot cs ?cs))
 )
 
 
@@ -593,14 +610,13 @@
  ?g <- (goal (id ?goal-id) (parent ?parent) (class BUFFER-RS) (mode SELECTED) (params rs ?rs))
  (wm-fact (key domain fact entered-field args? r ?robot))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
- (wm-fact (key domain fact can-hold args? r ?robot))
+
+ ;; check wp conditions
+ (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+ (not (wp-lock (wp ?wp) (order ?any-order)))
 
  (wm-fact (key domain fact rs-filled-with args? m ?rs n ?bases-before&~THREE))
  (wm-fact (key domain fact rs-inc args? summand ?bases-before sum ?bases-after))
-
- (wm-fact (key refbox team-color) (value ?team-color))
- (wm-fact (key domain fact mps-type args? m ?bs t BS))
- (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
 
  (not(goal (class MOUNT-RING) (mode EXPANDED|DISPATCHED) (params robot ?some-robot1 order ?some-order rs ?rs wp ?some-wp ring-num ?some-ring-num)))
  (not(goal (class BUFFER-RS) (mode EXPANDED|DISPATCHED) (params robot ?some-robot2 rs ?rs)))
@@ -609,69 +625,29 @@
  =>
       (printout t "buffer rs "  ?rs " bases before: " ?bases-before " bases after: " ?bases-after crlf)
       (bind ?planid (sym-cat BUFFER-RS-PLAN- (gensym*)))
-      (bind ?fwp (sym-cat WP- (random-id)))
       (assert
         (plan (id ?planid) (goal-id ?goal-id))
         (plan-action (id 1) (plan-id ?planid) (goal-id ?goal-id)
-              (action-name spawn-wp)
-              (param-values ?fwp ?robot))
+              (action-name go-wait)
+              (skiller (remote-skiller ?robot))
+              (param-names r from from-side to)
+              (param-values ?robot ?curr-location ?curr-side (wait-pos ?rs INPUT)))
         (plan-action (id 2) (plan-id ?planid) (goal-id ?goal-id)
-              (action-name go-wait)
-              (skiller (remote-skiller ?robot))
-              (param-names r from from-side to)
-              (param-values ?robot ?curr-location ?curr-side (wait-pos ?bs INPUT)))
-        (plan-action (id 3) (plan-id ?planid) (goal-id ?goal-id)
-              (action-name location-lock)
-              (param-values ?bs INPUT))
-        (plan-action (id 4) (plan-id ?planid) (goal-id ?goal-id)
-              (action-name move)
-              (skiller (remote-skiller ?robot))
-              (param-names r from from-side to to-side )
-              (param-values ?robot (wait-pos ?bs INPUT) WAIT ?bs INPUT))
-        (plan-action (id 5) (plan-id ?planid) (goal-id ?goal-id)
-              (action-name prepare-bs)
-              (skiller (remote-skiller ?robot))
-              (param-names m side bc)
-              (param-values ?bs INPUT BASE_BLACK))
-        (plan-action (id 6) (plan-id ?planid) (goal-id ?goal-id)
-              (action-name bs-dispense)
-              (skiller (remote-skiller ?robot))
-              (param-names r m side wp basecol)
-              (param-values ?robot ?bs INPUT ?fwp BASE_BLACK))
-        (plan-action (id 7) (plan-id ?planid) (goal-id ?goal-id)
-              (action-name wp-get)
-              (skiller (remote-skiller ?robot))
-              (param-names r wp m side)
-              (param-values ?robot ?fwp ?bs INPUT))
-        (plan-action (id 8) (plan-id ?planid) (goal-id ?goal-id)
-              (action-name go-wait)
-              (skiller (remote-skiller ?robot))
-              (param-names r from from-side to)
-              (param-values ?robot ?bs INPUT (wait-pos ?bs INPUT)))
-        (plan-action (id 9) (plan-id ?planid) (goal-id ?goal-id)
-              (action-name location-unlock)
-              (param-values ?bs INPUT))
-        (plan-action (id 10) (plan-id ?planid) (goal-id ?goal-id)
-              (action-name go-wait)
-              (skiller (remote-skiller ?robot))
-              (param-names r from from-side to)
-              (param-values ?robot (wait-pos ?bs INPUT) WAIT (wait-pos ?rs INPUT)))
-        (plan-action (id 11) (plan-id ?planid) (goal-id ?goal-id)
               (action-name location-lock)
               (param-values ?rs INPUT))
-        (plan-action (id 12) (plan-id ?planid) (goal-id ?goal-id)
+        (plan-action (id 3) (plan-id ?planid) (goal-id ?goal-id)
               (action-name move)
               (skiller (remote-skiller ?robot))
               (param-names r from from-side to to-side)
               (param-values ?robot (wait-pos ?rs INPUT) WAIT ?rs INPUT))
-        (plan-action (id 13) (plan-id ?planid) (goal-id ?goal-id)
+        (plan-action (id 4) (plan-id ?planid) (goal-id ?goal-id)
               (action-name wp-put-slide-cc)
               (skiller (remote-skiller ?robot))
-              (param-values ?robot ?fwp ?rs ?bases-before ?bases-after))
-        (plan-action (id 14) (plan-id ?planid) (goal-id ?goal-id)
+              (param-values ?robot ?wp ?rs ?bases-before ?bases-after))
+        (plan-action (id 5) (plan-id ?planid) (goal-id ?goal-id)
               (action-name location-unlock)
               (param-values ?rs INPUT))
-        (plan-action (id 15) (plan-id ?planid) (goal-id ?goal-id)
+        (plan-action (id 6) (plan-id ?planid) (goal-id ?goal-id)
               (action-name go-wait)
               (skiller (remote-skiller ?robot))
               (param-names r from from-side to)
@@ -824,6 +800,11 @@
               (action-name location-unlock)
               (param-values ?rs OUTPUT))
 	  )
+        ;; hierzu any-fact anschauen
+        (if (not (any-factp ((?wl wp-lock)) (and (eq ?wl:wp ?wp)(eq ?wl:order ?order))))
+            then
+            (assert (wp-lock (wp ?wp) (order ?order)))
+            (printout t "lock wp " ?wp " for order " ?order crlf))
         (modify ?g (mode EXPANDED)(params robot ?robot order ?order rs ?rs wp ?wp ring-num ?ring-num))
 )
 
