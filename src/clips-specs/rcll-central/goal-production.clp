@@ -247,6 +247,7 @@
   (not (goal (class BUFFER-CS) (parent ?produce-c0-id)))
   =>
   (printout t "Goal BUFFER-CS formulated" crlf)
+  (assert (goal (id (sym-cat GET-CC- (gensym*))) (class GET-CC) (parent ?produce-c0-id) (sub-type SIMPLE) (mode FORMULATED) (params cs-color ?cap-color)))
   (assert (goal (id (sym-cat BUFFER-CS- (gensym*))) (class BUFFER-CS) (parent ?produce-c0-id) (sub-type SIMPLE) (mode FORMULATED) (params cs-color ?cap-color)))
 )
 
@@ -316,6 +317,7 @@
   (not (goal (class BUFFER-CS) (parent ?produce-c1-id)))
   =>
   (printout t "Goal BUFFER-CS formulated" crlf)
+  (assert (goal (id (sym-cat GET-CC- (gensym*))) (class GET-CC) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params cs-color ?cap-color)))
   (assert (goal (id (sym-cat BUFFER-CS- (gensym*))) (class BUFFER-CS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params cs-color ?cap-color)))
 )
 
@@ -418,6 +420,7 @@
   (not (goal (class BUFFER-CS) (parent ?produce-c2-id)))
   =>
   (printout t "Goal BUFFER-CS formulated" crlf)
+  (assert (goal (id (sym-cat GET-CC- (gensym*))) (class GET-CC) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params cs-color ?cap-color)))
   (assert (goal (id (sym-cat BUFFER-CS- (gensym*))) (class BUFFER-CS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params cs-color ?cap-color)))
 )
 
@@ -537,6 +540,7 @@
   (not (goal (class BUFFER-CS) (parent ?produce-c3-id)))
   =>
   (printout t "Goal BUFFER-CS formulated" crlf)
+  (assert (goal (id (sym-cat GET-CC- (gensym*))) (class GET-CC) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params cs-color ?cap-color)))
   (assert (goal (id (sym-cat BUFFER-CS- (gensym*))) (class BUFFER-CS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params cs-color ?cap-color)))
 )
 

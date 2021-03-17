@@ -159,7 +159,7 @@
   (assert
     (wm-fact (key monitoring action-retried args? r ?r a ?an id (sym-cat ?id) m ?mps g ?goal-id) (value 0))
   )
-  (printout error "Start retrying" crlf)
+  (printout error "Start retrying " ?an " " ?plan-id crlf)
 )
 
 
