@@ -32,26 +32,6 @@
 ;    Reject formulated inner production tree goals if no suitable sub-goal
 ;    could be formulated
 ;  - Reject formulated production tree goals once some leaf goal is dispatched
-;
-;
-; The intended goal life-cycle of the production tree (assuming no goal gets
-; rejected due to resource locks) can be summarized to:
-;  - Formulate inner tree nodes to expand the root
-;  - Formulate all currently achievable production goals
-;  - Reject all inner tree nodes that have no sub-goal
-;  - Recursively dispatch inner goals until a leaf goal is dispatched
-;  - Reject all tree nodes that are not dispatched
-;  - Once a leaf goal is finished and evaluated, the outcome is recursively
-;    handed back to the root
-;  - After the root is evaluated all other tree goals (by the time in mode
-;    RETRACTED) are deleted
-;  - The root gets reformulated and selected
-;
-; If a leaf goal has to be rejected, the parent goal dispatches another
-; leaf goal instead. If this is not possible then the parent is rejected and
-; recursively another goal is tried until either one leaf can be dispatched or
-; all goals are rejected (this should never happen, since we have WAIT goals),
-; leading the root to be rejected and reformulated.
 
 (defglobal
   ?*SALIENCE-HIGHEST* = 1000 ; used for cleanup of failed goals
@@ -98,8 +78,7 @@
 )
 
 (deffunction production-root-goal (?goal-class)
-  (return (or (eq ?goal-class PRODUCE-C0)
-              (eq ?goal-class PRODUCE-CX)))
+  (return (eq ?goal-class PRODUCE-CX))
 )
 
 (deffunction goal-tree-assert-run-endless (?class ?frequency $?fact-addresses)
@@ -146,9 +125,12 @@
 ; and thus freed up again.
 
 (defrule goal-reasoner-assign-resource
-" Assign resources to goals that require exactly one resource"
+" Assign resources to goals that require exactly one resource
+"
+  ; get a goal that needs a resource
   ?g <- (goal (id ?goal-id) (required-resources $?resources&:(eq (length$ $?resources) 1)) (mode COMMITTED)
               (meta $? global-priority ?gprio $?))
+  ; check that resource is not in use right now
   (not (goal (acquired-resources $?not-available&:(member$ (nth$ 1 $?resources) $?not-available))))
   
   ; check that there isn't a goal with higher priority waiting
@@ -197,9 +179,8 @@
 )
 
 (defrule goal-reasoner-create-retry-counter
-" Make sure that every goal has a retry counter in the meta slot
+" Create retry counter in meta slot for every goal.
 "
-  ; TODO: Only for production goals?
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ?g <- (goal (meta $?meta&:(not (member$ retries $?meta))) (mode FORMULATED))
   =>
@@ -247,18 +228,24 @@
   and reset retry counter
 "
   (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  ; get a production root goal and its retry counter
   ?p <- (goal (id ?parent) (class ?class&:(production-root-goal ?class))
               (meta $?m1 retries ?retries $?m2))
+  ; get a failed subgoal (which caused the retry counter to increase)
   ?g <- (goal (parent ?parent) (class ?subgoal-class) (mode RETRACTED) (outcome FAILED))
+  ; check that a goal of the same class is FINISHED and COMPLETED
+  ; this means that the failed subgoal was retried and succeeded
   (goal (parent ?parent) (class ?subgoal-class) (mode FINISHED) (outcome COMPLETED))
   =>
+  ; delete failed subgoal (mainly for cleanup/better overview in goal tree) 
+  ; and decrease retry counter (so that another goal can be retried in the future)
   (retract ?g)
   (modify ?p (meta $?m1 retries (- ?retries 1) $?m2))
   (printout t "Retry of " ?parent " reset to " (- ?retries 1) crlf)  
 )
 
 
-; remove locks of failed goals
+; copied and adapted from the decentral agent
 (defrule goal-reasoner-pre-evaluate-clean-locks
 " Unlock all remaining locks of a failed goal."
   (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
@@ -276,6 +263,7 @@
 )
 
 
+; copied and adapted from the decentral agent
 (defrule goal-reasoner-pre-evaluate-clean-location-locks
 " Unlock all remaining location-locks of a failed goal."
   (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
@@ -320,19 +308,8 @@
 
 ; ----------------------- EVALUATE SPECIFIC GOALS ---------------------------
 
-(defrule goal-reasoner-evaluate-visit-success
-  "Evaluate VISIT-STATION goal. Assert fact that station was
-  visited in case of success."
-  ?g <- (goal (class VISIT-STATION) (mode FINISHED) (outcome ?outcome&COMPLETED)
-    (params r ?robot station ?station side ?side))
-  =>
-  (assert (visited ?station))
-  (printout t "Evaluating goal: Station " ?station " visited successfully" crlf)
-  (modify ?g (mode EVALUATED))
-)
 
-
-; copied
+; copied from decentral agent
 (defrule goal-reasoner-evaluate-process-ds
   " Enhance the order-delivered fact of the order of a successful deliver goal,
     delete the mps-handling fact if the preparation took place.
@@ -358,7 +335,8 @@
 
 
 (defrule goal-reasoner-reject-subgoals-of-failed-goal
-  "Reject a subgoal if its parent has failed or is rejected"
+" Reject a subgoal if its parent has failed or has been rejected
+"
   ?g <- (goal (id ?goal-id) (mode FORMULATED|SELECTED|EXPANDED) (parent ?parent))
   (goal (id ?parent) (mode EVALUATED) 
         (outcome ?parent-outcome&:(or (eq ?parent-outcome FAILED) (eq ?parent-outcome REJECTED))))
@@ -382,7 +360,7 @@
 
 
 (defrule goal-reasoner-remove-retracted-goal-common
-" Remove a retracted goal if it has no child (anymore).
+" Remove a retracted goal if it has no child and the parent is finished.
   Goal trees are retracted recursively from bottom to top. This has to be done
   with low priority to avoid races with the sub-type goal lifecycle.
 "

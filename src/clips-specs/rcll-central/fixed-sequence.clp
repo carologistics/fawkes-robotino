@@ -428,8 +428,7 @@
   (modify ?g (mode EXPANDED))
 )
 
-; TODO: name change? handles fill-cs and buffer-cs
-(defrule goal-expander-fill-cs-fast-forward
+(defrule goal-expander-cs-fast-forward
   "Cap station already buffered, FILL-CS / BUFFER-CS can be fast forwarded"
   ?g <- (goal (id ?goal-id) (class FILL-CS|BUFFER-CS) (mode SELECTED)
               (params robot ?robot mps ?cap-station)
