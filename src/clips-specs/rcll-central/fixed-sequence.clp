@@ -675,6 +675,7 @@
 
  (not(goal (params robot ?robot $?rest-params)))
  =>
+      (printout t "buffer rs "  ?rs " bases before: " ?bases-before " bases after: " ?bases-after crlf)
       (bind ?planid (sym-cat BUFFER-RS-PLAN- (gensym*)))
       (bind ?fwp (sym-cat WP- (random-id)))
       (assert
@@ -784,7 +785,7 @@
          )
 
 ;ring management taken from rcll code
- (wm-fact (key domain fact rs-filled-with args? m ?mps-rs n ?bases-filled))
+ (wm-fact (key domain fact rs-filled-with args? m ?rs n ?bases-filled))
  (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
                                          subtrahend ?bases-needed
                                          difference ?bases-remain&ZERO|ONE|TWO|THREE))
@@ -799,7 +800,7 @@
 
  (not(goal (params robot ?robot $?rest-params)))
  =>
-      (printout t " " ?order " " ?rs " " ?ring-num " " (eq ?ring-num ONE) " " ?bases-needed crlf)
+      (printout t "mount ring "  ?rs " bases needed: " ?bases-needed " bases before: " ?bases-filled " bases after: " ?bases-remain crlf)
       (bind ?planid (sym-cat MOUNT-RING-PLAN- (gensym*)))
       (if (eq ?ring-num ONE)
             then

@@ -160,6 +160,15 @@
 ; ----------------------- EVALUATE SPECIFIC GOALS ---------------------------
 
 
+(defrule retry-production-subgoals
+	?gf <- (goal (id ?id) (type ACHIEVE) (class PRODUCE-C0|PRODUCE-C1|PRODUCE-C2|PRODUCE-C3) (mode DISPATCHED))
+	?sg <- (goal (id ?sub-goal) (parent ?id) (acquired-resources)
+	             (type ACHIEVE) (mode RETRACTED) (outcome ?outcome&FAILED|REJECTED))
+	=>
+    (printout warn "Goal " ?sub-goal " failed. Start retry." crlf)
+		(modify ?sg (mode SELECTED) (outcome UNKNOWN))
+	)
+)
 
 
 ; ================================= Goal Clean up ============================
@@ -231,9 +240,3 @@
   =>
     (modify ?g (mode SELECTED))
 )
-
-;(defrule goal-production-select-produce-c0
-;  ?g <- (goal (class C0-PRODUCE-RETRY) (mode FORMULATED))
-;  =>
-;    (modify ?g (mode SELECTED))
-;)
