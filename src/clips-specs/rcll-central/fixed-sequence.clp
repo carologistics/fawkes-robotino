@@ -87,6 +87,7 @@
   (refresh idea-production-fetch-cc)
   (refresh idea-production-transport)
   (refresh idea-production-discard-base)
+  (refresh idea-production-discard-base-urgent)
   (refresh idea-production-create-base)
   (refresh idea-production-feed-rs)
 )
@@ -142,7 +143,7 @@
     (bind ?order_prio (/ ?eta (* 17 60 10)))
     (if (<= ?begin ?eta ?end) then (bind ?order_prio (+ ?order_prio 0.9))) ; ETA is in delivery interval
     (if (> ?eta (* 17 60)) then (bind ?order_prio -1.0)) ; ETA is after end of game
-    (if (> ?begin (+ ?eta 180)) then (bind ?order_prio -990.0)) ; ETA is more than 60s before delivery begin
+    (if (> ?begin (+ ?eta 180)) then (bind ?order_prio -990.0)) ; ETA is more than 3 min before delivery begin
   )
   (bind ?priority (+ ?goal-priority (goal-distance-prio ?distance) ?order_prio))
   (printout t "Priority " ?priority crlf)
@@ -267,10 +268,34 @@
         (idea (class DISCARD-BASE)
               (goal-id ?goal-id)
               (distance (node-distance (mps-node ?cs OUTPUT) ?robot))
-              (goal-priority 0.0)
+              (goal-priority -0.5)
               (params cs ?cs wp ?wp robot ?robot))
   )
 )
+(defrule idea-production-discard-base-urgent
+  (declare (salience ?*SALIENCE-IDEA-PRODUCTION*))
+  ?g <- (goal (id ?goal-id) (mode SELECTED) (class DISCARD-BASE) (params cs ?cs))
+  ; Robot facts
+  (wm-fact (key domain fact entered-field args? r ?robot))
+  (not (plan (r ?robot)))
+  (wm-fact (key domain fact can-hold args? r ?robot))
+  ; WP facts
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side OUTPUT))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+  (not (plan (wp ?wp)))
+  ; CS facts
+  (not (wm-fact (key domain fact mps-side-free args? m ?cs side INPUT))) ; WP already at input
+=>
+  (printout t "Formulated DISCARD-BASE (urgent) idea " ?cs " with " ?robot crlf)
+  (assert
+        (idea (class DISCARD-BASE)
+              (goal-id ?goal-id)
+              (distance (node-distance (mps-node ?cs OUTPUT) ?robot))
+              (goal-priority 0.5)
+              (params cs ?cs wp ?wp robot ?robot))
+  )
+)
+
 
 (defrule goal-expander-discard-base
   (declare (salience ?*SALIENCE-IDEA-GOAL-EXPAND*))
