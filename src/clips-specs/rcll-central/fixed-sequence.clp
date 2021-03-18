@@ -284,12 +284,12 @@
               (param-names r from from-side to)
               (param-values ?robot ?ds INPUT (wait-pos ?ds INPUT)))
 	  )
-        (modify ?g (mode EXPANDED)(params robot ?robot))
+        (modify ?g (mode EXPANDED)(params robot ?robot order ?order))
 )
 
 (defrule goal-expander-mount-cap
 (declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
- ?g <- (goal (id ?goal-id) (parent ?parent) (class MOUNT-CAP) (mode SELECTED) (params order ?order))
+ ?g <- (goal (id ?goal-id) (parent ?parent) (class MOUNT-CAP) (mode SELECTED) (params order ?order cs ?any-cs))
 
  (wm-fact (key refbox team-color) (value ?team-color))
 
@@ -319,7 +319,7 @@
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  (wm-fact (key domain fact entered-field args? r ?robot))
 
- (not (goal (class MOUNT-CAP)(mode EXPANDED|DISPATCHED)(params robot ?some-robot cs ?cs order ?some-order)))
+ (not (goal (class MOUNT-CAP)(mode EXPANDED|DISPATCHED)(params robot ?some-robot order ?some-order cs ?cs)))
  (not(goal (params robot ?robot $?rest-params)))
  =>
       (bind ?planid (sym-cat MOUNT-CAP-PLAN- (gensym*)))
@@ -389,12 +389,12 @@
             then
             (assert (wp-lock (wp ?wp) (order ?order)))
             (printout t "lock wp " ?wp " for order " ?order crlf))
-        (modify ?g (mode EXPANDED)(params robot ?robot cs ?cs order ?order))
+        (modify ?g (mode EXPANDED)(params robot ?robot order ?order cs ?cs))
 )
 
 (defrule goal-expander-get-base
   (declare (salience (+ ?*SALIENCE-EXPANDER-GENERIC* ?*SALIENCE-GET-BASE-DIFF*)))
- ?g <- (goal (id ?goal-id) (parent ?parent) (class GET-BASE) (mode SELECTED) (params order ?order))
+ ?g <- (goal (id ?goal-id) (parent ?parent) (class GET-BASE) (mode SELECTED) (params order ?order bs ?any-bs))
  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
  (wm-fact (key domain fact entered-field args? r ?robot))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
@@ -404,6 +404,7 @@
  (wm-fact (key domain fact mps-type args? m ?bs t BS))
  (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
 
+ (not (goal (class GET-BASE)(mode EXPANDED|DISPATCHED)(params robot ?some-robot order ?some-order bs ?bs)))
  (not(goal (params robot ?robot $?rest-params)))
  =>
       (bind ?wp (sym-cat WP- (random-id)))
@@ -450,7 +451,7 @@
               (action-name location-unlock)
               (param-values ?bs INPUT))
 	  )
-        (modify ?g (mode EXPANDED)(params robot ?robot bs-color ?base-color))
+        (modify ?g (mode EXPANDED)(params robot ?robot order ?order bs ?bs))
         ; reserve last base as delivery wp
         (if (and (not (any-factp ((?g goal)) (and (eq ?g:parent ?parent)(eq ?g:class GET-BASE)(eq ?g:mode SELECTED))) ) (not (any-factp ((?wl wp-lock)) (and (eq ?wl:wp ?wp)(eq ?wl:order ?order)))))
             then
@@ -460,7 +461,7 @@
 
 (defrule goal-expander-get-cap-carrier
   (declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
- ?g <- (goal (id ?goal-id) (parent ?parent) (class GET-CC) (mode SELECTED) (params cs-color ?cap-color))
+ ?g <- (goal (id ?goal-id) (parent ?parent) (class GET-CC) (mode SELECTED) (params cs-color ?cap-color cs ?any-cs))
 
  (wm-fact (key refbox team-color) (value ?team-color))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
@@ -474,7 +475,7 @@
  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cs spot ?shelf-spot))
  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
 
- (not (goal (class GET-CC)(mode EXPANDED|DISPATCHED)(params robot ?some-robot cs ?cs)))
+ (not (goal (class GET-CC)(mode EXPANDED|DISPATCHED)(params robot ?some-robot cs-color ?some-cap-color cs ?cs)))
 
  =>
       (bind ?planid (sym-cat GET-CC-PLAN- (gensym*)))
@@ -507,14 +508,14 @@
               (param-names r from from-side to)
               (param-values ?robot ?cs INPUT (wait-pos ?cs INPUT)))
 	  )
-        (modify ?g (mode EXPANDED)(params robot ?robot cs ?cs))
+        (modify ?g (mode EXPANDED)(params robot ?robot cs-color ?cap-color cs ?cs))
 )
 
 
 
 (defrule goal-expander-buffer-cs
   (declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
- ?g <- (goal (id ?goal-id) (parent ?parent) (class BUFFER-CS) (mode SELECTED) (params cs-color ?cap-color))
+ ?g <- (goal (id ?goal-id) (parent ?parent) (class BUFFER-CS) (mode SELECTED) (params cs-color ?cap-color cs ?any-cs))
 
  (wm-fact (key refbox team-color) (value ?team-color))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
@@ -531,7 +532,7 @@
 
  (wm-fact (key domain fact cs-can-perform args? m ?cs op RETRIEVE_CAP))
 
- (not (goal (class BUFFER-CS)(mode EXPANDED|DISPATCHED)(params robot ?some-robot cs ?cs)))
+ (not (goal (class BUFFER-CS)(mode EXPANDED|DISPATCHED)(params robot ?some-robot cs-color ?some-cap-color cs ?cs)))
  =>
       (bind ?planid (sym-cat BUFFER-CS-PLAN- (gensym*)))
       (assert
@@ -600,7 +601,7 @@
         (plan-action (id 16) (plan-id ?planid) (goal-id ?goal-id)
               (action-name location-unlock) (param-values ?cs OUTPUT))
 	  )
-        (modify ?g (mode EXPANDED)(params robot ?robot cs ?cs))
+        (modify ?g (mode EXPANDED)(params robot ?robot cs-color ?cap-color cs ?cs))
 )
 
 
@@ -613,6 +614,7 @@
 
  ;; check wp conditions
  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+ (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
  (not (wp-lock (wp ?wp) (order ?any-order)))
 
  (wm-fact (key domain fact rs-filled-with args? m ?rs n ?bases-before&~THREE))

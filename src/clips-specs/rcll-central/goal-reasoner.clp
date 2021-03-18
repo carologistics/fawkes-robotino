@@ -163,10 +163,10 @@
 (defrule retry-production-subgoals
 	?gf <- (goal (id ?id) (type ACHIEVE) (class PRODUCE-C0|PRODUCE-C1|PRODUCE-C2|PRODUCE-C3) (mode DISPATCHED))
 	?sg <- (goal (id ?sub-goal) (parent ?id) (acquired-resources)
-	             (type ACHIEVE) (mode RETRACTED) (outcome ?outcome&FAILED|REJECTED))
+	             (type ACHIEVE) (mode RETRACTED) (outcome ?outcome&FAILED|REJECTED)(params robot ?robot $?rest-params))
 	=>
     (printout warn "Goal " ?sub-goal " failed. Start retry." crlf)
-		(modify ?sg (mode SELECTED) (outcome UNKNOWN))
+		(modify ?sg (mode SELECTED) (outcome UNKNOWN) (params ?rest-params))
 	)
 )
 

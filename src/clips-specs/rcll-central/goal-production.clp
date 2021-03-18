@@ -235,7 +235,7 @@
   (not (goal (class GET-BASE) (parent ?produce-c0-id)))
   =>
   (printout t "Goal GET-BASE-WAIT formulated" crlf)
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c0-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c0-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
 )
 
 (defrule goal-produce-c0-buffer-cs
@@ -246,8 +246,8 @@
   (not (goal (class BUFFER-CS) (parent ?produce-c0-id)))
   =>
   (printout t "Goal BUFFER-CS formulated" crlf)
-  (assert (goal (id (sym-cat GET-CC- (gensym*))) (class GET-CC) (parent ?produce-c0-id) (sub-type SIMPLE) (mode FORMULATED) (params cs-color ?cap-color)))
-  (assert (goal (id (sym-cat BUFFER-CS- (gensym*))) (class BUFFER-CS) (parent ?produce-c0-id) (sub-type SIMPLE) (mode FORMULATED) (params cs-color ?cap-color)))
+  (assert (goal (id (sym-cat GET-CC- (gensym*))) (class GET-CC) (parent ?produce-c0-id) (sub-type SIMPLE) (mode FORMULATED) (params cs-color ?cap-color cs DUMMY)))
+  (assert (goal (id (sym-cat BUFFER-CS- (gensym*))) (class BUFFER-CS) (parent ?produce-c0-id) (sub-type SIMPLE) (mode FORMULATED) (params cs-color ?cap-color cs DUMMY)))
 )
 
 (defrule goal-produce-c0-mount-cap-deliver
@@ -259,7 +259,7 @@
   =>
   (printout t "Goal MOUNT-CAP and DELIVER formulated" crlf)
   (assert (goal (id (sym-cat DELIVER- (gensym*))) (class DELIVER) (parent ?produce-c0-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
-  (assert (goal (id (sym-cat MOUNT-CAP- (gensym*))) (class MOUNT-CAP) (parent ?produce-c0-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat MOUNT-CAP- (gensym*))) (class MOUNT-CAP) (parent ?produce-c0-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order cs DUMMY)))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -304,7 +304,7 @@
 
   =>
   (printout t "Goal GET-BASE formulated" crlf)
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
 )
 
 (defrule goal-produce-c1-buffer-cs
@@ -315,8 +315,8 @@
   (not (goal (class BUFFER-CS) (parent ?produce-c1-id)))
   =>
   (printout t "Goal BUFFER-CS formulated" crlf)
-  (assert (goal (id (sym-cat GET-CC- (gensym*))) (class GET-CC) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params cs-color ?cap-color)))
-  (assert (goal (id (sym-cat BUFFER-CS- (gensym*))) (class BUFFER-CS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params cs-color ?cap-color)))
+  (assert (goal (id (sym-cat GET-CC- (gensym*))) (class GET-CC) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params cs-color ?cap-color cs DUMMY)))
+  (assert (goal (id (sym-cat BUFFER-CS- (gensym*))) (class BUFFER-CS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params cs-color ?cap-color cs DUMMY)))
 )
 
 (defrule goal-produce-c1-mount-rings
@@ -340,21 +340,21 @@
   (assert (goal (id (sym-cat MOUNT-RING- (gensym*))) (class MOUNT-RING) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs1 ring-num ONE)))
   (if (eq ?bases-needed1 ONE) then 
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed1 TWO) then 
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed1 THREE) then 
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
 )
 
@@ -367,7 +367,7 @@
   =>
   (printout t "Goal MOUNT-CAP and DELIVER formulated" crlf)
   (assert (goal (id (sym-cat DELIVER- (gensym*))) (class DELIVER) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
-  (assert (goal (id (sym-cat MOUNT-CAP- (gensym*))) (class MOUNT-CAP) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat MOUNT-CAP- (gensym*))) (class MOUNT-CAP) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order cs DUMMY)))
 )
 
 
@@ -412,7 +412,7 @@
 
   =>
   (printout t "Goal GET-BASE formulated" crlf)
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
 )
 
 (defrule goal-produce-c2-buffer-cs
@@ -423,8 +423,8 @@
   (not (goal (class BUFFER-CS) (parent ?produce-c2-id)))
   =>
   (printout t "Goal BUFFER-CS formulated" crlf)
-  (assert (goal (id (sym-cat GET-CC- (gensym*))) (class GET-CC) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params cs-color ?cap-color)))
-  (assert (goal (id (sym-cat BUFFER-CS- (gensym*))) (class BUFFER-CS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params cs-color ?cap-color)))
+  (assert (goal (id (sym-cat GET-CC- (gensym*))) (class GET-CC) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params cs-color ?cap-color cs DUMMY)))
+  (assert (goal (id (sym-cat BUFFER-CS- (gensym*))) (class BUFFER-CS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params cs-color ?cap-color cs DUMMY)))
 )
 
 (defrule goal-produce-c2-mount-rings
@@ -454,39 +454,39 @@
   (assert (goal (id (sym-cat MOUNT-RING- (gensym*))) (class MOUNT-RING) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs2 ring-num TWO)))
   (if (eq ?bases-needed1 ONE) then 
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed1 TWO) then 
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed1 THREE) then 
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed2 ONE) then 
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs2)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed2 TWO) then 
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs2)))
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs2)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed2 THREE) then 
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs2)))
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs2)))
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs2)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
 )
 
@@ -499,7 +499,7 @@
   =>
   (printout t "Goal MOUNT-CAP and DELIVER formulated" crlf)
   (assert (goal (id (sym-cat DELIVER- (gensym*))) (class DELIVER) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
-  (assert (goal (id (sym-cat MOUNT-CAP- (gensym*))) (class MOUNT-CAP) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat MOUNT-CAP- (gensym*))) (class MOUNT-CAP) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order cs DUMMY)))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -543,7 +543,7 @@
   (not (goal (class GET-BASE) (parent ?produce-c3-id)))
   =>
   (printout t "Goal GET-BASE formulated" crlf)
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
 )
 
 (defrule goal-produce-c3-buffer-cs
@@ -554,8 +554,8 @@
   (not (goal (class BUFFER-CS) (parent ?produce-c3-id)))
   =>
   (printout t "Goal BUFFER-CS formulated" crlf)
-  (assert (goal (id (sym-cat GET-CC- (gensym*))) (class GET-CC) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params cs-color ?cap-color)))
-  (assert (goal (id (sym-cat BUFFER-CS- (gensym*))) (class BUFFER-CS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params cs-color ?cap-color)))
+  (assert (goal (id (sym-cat GET-CC- (gensym*))) (class GET-CC) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params cs-color ?cap-color cs DUMMY)))
+  (assert (goal (id (sym-cat BUFFER-CS- (gensym*))) (class BUFFER-CS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params cs-color ?cap-color cs DUMMY)))
 )
 
 (defrule goal-produce-c3-mount-rings
@@ -591,57 +591,57 @@
   (assert (goal (id (sym-cat MOUNT-RING- (gensym*))) (class MOUNT-RING) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs3 ring-num THREE)))
   (if (eq ?bases-needed1 ONE) then 
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed1 TWO) then 
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed1 THREE) then 
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed2 ONE) then 
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs2)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed2 TWO) then 
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs2)))
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs2)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed2 THREE) then 
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs2)))
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs2)))
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs2)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed3 ONE) then 
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs3)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed3 TWO) then 
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs3)))
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs3)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed3 THREE) then 
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs3)))
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs3)))
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs3)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
-  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
+  (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
 )
 
@@ -654,7 +654,7 @@
   =>
   (printout t "Goal MOUNT-CAP and DELIVER formulated" crlf)
   (assert (goal (id (sym-cat DELIVER- (gensym*))) (class DELIVER) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
-  (assert (goal (id (sym-cat MOUNT-CAP- (gensym*))) (class MOUNT-CAP) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
+  (assert (goal (id (sym-cat MOUNT-CAP- (gensym*))) (class MOUNT-CAP) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order cs DUMMY)))
 )
 
 
