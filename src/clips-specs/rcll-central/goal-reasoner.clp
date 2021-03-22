@@ -178,7 +178,7 @@
 " Unlock all remaining location-locks of a failed goal."
   (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
   (wm-fact (key cx identity) (value ?identity))
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
+  ?g <- (goal (id ?goal-id) (mode FINISHED|RETRACTED) (outcome FAILED|REJECTED))
   ?p <- (plan (id ?plan-id) (goal-id ?goal-id))
   ?a <- (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id ?plan-id)
                      (action-name location-lock) (param-values ?loc ?side))
@@ -190,6 +190,20 @@
   (printout warn "Removing location lock " ?name " without moving away!" crlf)
   (assert (goal-reasoner-unlock-pending ?name))
   (mutex-unlock-async ?name)
+)
+
+(defrule goal-reasoner-pre-evaluate-location-unlock-done
+" React to a successful unlock of an location by removing the corresponding location-locked domain-fact"
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  ?p <- (goal-reasoner-unlock-pending ?lock)
+  ?m <- (mutex (name ?lock) (request UNLOCK) (state OPEN))
+  ?df <- (domain-fact (name location-locked) (param-values ?mps ?side))
+  (test (not (eq FALSE (str-index (str-cat ?mps) (str-cat ?lock)))))
+  (test (not (eq FALSE (str-index (str-cat ?side) (str-cat ?lock)))))
+  =>
+  (modify ?m (request NONE) (response NONE))
+  (retract ?df)
+  (retract ?p)
 )
 
 (defrule goal-reasoner-retract-achieve

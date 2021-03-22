@@ -319,7 +319,9 @@
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  (wm-fact (key domain fact entered-field args? r ?robot))
 
- (not (goal (class MOUNT-CAP)(mode EXPANDED|DISPATCHED)(params robot ?some-robot order ?some-order cs ?cs)))
+ (not (goal (class BUFFER-CS)(mode EXPANDED|DISPATCHED)(params robot ?some-robot1 cs-color ?some-cap-color cs ?cs)))
+ (not (goal (class MOUNT-CAP)(mode EXPANDED|DISPATCHED)(params robot ?some-robot2 order ?some-order cs ?cs)))
+ (not (goal (class MOUNT-CAP)(mode EXPANDED|DISPATCHED)(params robot ?some-robot3 order ?order cs ?cs)))
  (not(goal (params robot ?robot $?rest-params)))
  =>
       (bind ?planid (sym-cat MOUNT-CAP-PLAN- (gensym*)))
@@ -404,7 +406,7 @@
  (wm-fact (key domain fact mps-type args? m ?bs t BS))
  (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
 
- (not (goal (class GET-BASE)(mode EXPANDED|DISPATCHED)(params robot ?some-robot order ?some-order bs ?bs)))
+ ;(not (goal (class GET-BASE)(mode EXPANDED|DISPATCHED)(params robot ?some-robot order ?some-order bs ?bs)))
  (not(goal (params robot ?robot $?rest-params)))
  =>
       (bind ?wp (sym-cat WP- (random-id)))
