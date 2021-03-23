@@ -30,6 +30,11 @@
 ?*PRIORITY-GO-WAIT* = 1
 ; MAX-RUNNING-TASKS can be useful for debugging purposes
 ?*MAX-RUNNING-TASKS* = 20
+;?*GET-BASE-PRIO-DIFF* = 1
+;?*BUFFER-CS-PRIO-DIFF* = 2
+;?*BUFFER-RS-PRIO-DIFF* = 0
+;?*DELIVER-PRIO-DIFF* = 5
+;?*MOUNT-RING-PRIO-DIFF* = 2 
 )
 
 ;(defrule goal-production-create-beacon-maintain
@@ -199,7 +204,6 @@
 (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 (wm-fact (key domain fact order-complexity args? ord ?order com C0))
 (wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin))
-(wm-fact (key refbox order ?order quantity-requested) (value ?quantity))
 
 (wm-fact (key refbox game-time) (values $?game-time))
 
@@ -210,20 +214,18 @@
 ?r <- (running-tasks (number ?running-tasks))
 (test (< ?running-tasks ?*MAX-RUNNING-TASKS*))
  =>
+ (printout t "bind c3 hier." ?delivery-begin  crlf)
+ (if (< ?delivery-begin (- (nth$ 1 ?game-time) 100))then 
+ (bind ?delivery-begin (nth$ 1 ?game-time)) (printout t "bind c3." (- (nth$ 1 ?game-time) 100)crlf))
+
  (printout t "Goal for C0 order " ?order " formulated." crlf)
  (assert (running-tasks (number (+ ?running-tasks 1))))
  (retract ?r)
  (printout t "running tasks increased to "  (+ ?running-tasks 1) crlf)
  (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
-               (class PRODUCE-C0)(sub-type RUN-SUBGOALS-IN-PARALLEL)(parent ?produce-cparent-id)(meta delivery-begin ?delivery-begin game-time (nth$ 1 ?game-time)) (priority ?*PRIORITY-C0*) (mode FORMULATED)
+               (class PRODUCE-C0)(sub-type RUN-SUBGOALS-IN-PARALLEL)(parent ?produce-cparent-id)(meta delivery-begin ?delivery-begin) (priority ?*PRIORITY-C0*) (mode FORMULATED)
                (params order ?order)
  ))
- (if (eq ?quantity 2) then 
-  (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
-               (class PRODUCE-C0)(sub-type RUN-SUBGOALS-IN-PARALLEL)(parent ?produce-cparent-id)(priority ?*PRIORITY-C0*) (mode FORMULATED)
-               (params order ?order)
- ))
- )
 )
 
 (defrule goal-produce-c0-get-base
@@ -270,11 +272,9 @@
 (defrule goal-production-create-produce-c1
 " Produce a C1 product: Get the correct base and mount the right ring and then a cap on it.
 "
-(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-(wm-fact (key domain fact order-complexity args? ord ?order com C1))
-(wm-fact (key refbox order ?order quantity-requested) (value ?quantity))
-(wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin))
-
+ (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+ (wm-fact (key domain fact order-complexity args? ord ?order com C1))
+  (wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin))
 
 (wm-fact (key refbox game-time) (values $?game-time))
 
@@ -285,21 +285,17 @@
  ?r <- (running-tasks (number ?running-tasks))
 (test (< ?running-tasks ?*MAX-RUNNING-TASKS*))
  =>
+ (if (< ?delivery-begin (- (nth$ 1 ?game-time) 100))then 
+ (bind ?delivery-begin (nth$ 1 ?game-time)))
  (bind ?wp (sym-cat WP- (random-id)))
  (printout t "Goal for C1 order " ?order " formulated." crlf)
 (assert (running-tasks (number (+ ?running-tasks 1))))
  (retract ?r)
  (printout t "running tasks increased to "  (+ ?running-tasks 1) crlf)
  (assert (goal (id (sym-cat PRODUCE-C1- (gensym*)))
-               (class PRODUCE-C1)(sub-type RUN-SUBGOALS-IN-PARALLEL)(meta delivery-begin ?delivery-begin game-time (nth$ 1 ?game-time)) (priority ?*PRIORITY-C1*)(parent ?produce-cparent-id) (mode FORMULATED)
+               (class PRODUCE-C1)(sub-type RUN-SUBGOALS-IN-PARALLEL)(meta delivery-begin ?delivery-begin ) (priority ?*PRIORITY-C1*)(parent ?produce-cparent-id) (mode FORMULATED)
                (params order ?order)
  ))
- (if (eq ?quantity 2) then 
-  (assert (goal (id (sym-cat PRODUCE-C1- (gensym*)))
-               (class PRODUCE-C1)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-C1*)(parent ?produce-cparent-id) (mode FORMULATED)
-               (params order ?order)
- ))
- )
 )
 
 (defrule goal-produce-c1-get-base
@@ -329,6 +325,7 @@
   "mount rings for a c1-production and buffer rs appropriately"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?produce-c1-id) (class PRODUCE-C1) (mode SELECTED) (params order ?order))
+
   (wm-fact (key refbox team-color) (value ?team-color))
 
   ;; get order information
@@ -344,19 +341,19 @@
   (printout t "MOUNT-RING goals formulated " ?bases-needed1 crlf)
   (assert (goal (id (sym-cat MOUNT-RING- (gensym*))) (class MOUNT-RING) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs1 ring-num ONE)))
   (if (eq ?bases-needed1 ONE) then 
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs1)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed1 TWO) then 
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs1)))
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs1)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed1 THREE) then 
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs1)))
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs1)))
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs1)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
@@ -393,27 +390,22 @@
 (wm-fact (key refbox game-time) (values $?game-time))
 
 (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
-(wm-fact (key refbox order ?order quantity-requested) (value ?quantity))
 (goal (id ?produce-cparent-id) (class PRODUCE-CPARENT))
 (not (goal (class PRODUCE-C2) (params order ?order)))
  ?r <- (running-tasks (number ?running-tasks))
 (test (< ?running-tasks ?*MAX-RUNNING-TASKS*))
  =>
+(if (< ?delivery-begin (- (nth$ 1 ?game-time) 100))then 
+ (bind ?delivery-begin (nth$ 1 ?game-time)))
  (bind ?wp (sym-cat WP- (random-id)))
  (printout t "Goal for C2 order " ?order " formulated." crlf)
  (assert (running-tasks (number (+ ?running-tasks 1))))
  (retract ?r)
  (printout t "running tasks increased to "  (+ ?running-tasks 1) crlf)
  (assert (goal (id (sym-cat PRODUCE-C2- (gensym*)))
-               (class PRODUCE-C2)(sub-type RUN-SUBGOALS-IN-PARALLEL)(meta delivery-begin ?delivery-begin game-time (nth$ 1 ?game-time)) (priority ?*PRIORITY-C2*)(parent ?produce-cparent-id) (mode FORMULATED)
+               (class PRODUCE-C2)(sub-type RUN-SUBGOALS-IN-PARALLEL)(meta delivery-begin ?delivery-begin) (priority ?*PRIORITY-C2*)(parent ?produce-cparent-id) (mode FORMULATED)
                (params order ?order)
  ))
- (if (eq ?quantity 2) then 
-  (assert (goal (id (sym-cat PRODUCE-C2- (gensym*)))
-               (class PRODUCE-C2)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-C2*)(parent ?produce-cparent-id) (mode FORMULATED)
-               (params order ?order)
- ))
- )
 )
 
 (defrule goal-produce-c2-get-base
@@ -465,37 +457,37 @@
   (assert (goal (id (sym-cat MOUNT-RING- (gensym*))) (class MOUNT-RING) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs1 ring-num ONE)))
   (assert (goal (id (sym-cat MOUNT-RING- (gensym*))) (class MOUNT-RING) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs2 ring-num TWO)))
   (if (eq ?bases-needed1 ONE) then 
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs1)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed1 TWO) then 
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs1)))
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs1)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed1 THREE) then 
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs1)))
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs1)))
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs1)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed2 ONE) then 
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs2)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs2)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed2 TWO) then 
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs2)))
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs2)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs2)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs2)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed2 THREE) then 
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs2)))
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs2)))
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs2)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs2)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs2)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs2)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c2-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
@@ -527,7 +519,6 @@
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key domain fact order-complexity args? ord ?order com C3))
   (wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin))
-  (wm-fact (key refbox order ?order quantity-requested) (value ?quantity))
 
  (wm-fact (key refbox game-time) (values $?game-time))
 
@@ -538,21 +529,18 @@
  ?r <- (running-tasks (number ?running-tasks))
 (test (< ?running-tasks ?*MAX-RUNNING-TASKS*))
   =>
+  (if (< ?delivery-begin (- (nth$ 1 ?game-time) 100))then 
+  (bind ?delivery-begin (nth$ 1 ?game-time)))
+
   (bind ?wp (sym-cat WP- (random-id)))
   (printout t "Goal for C3 order " ?order " formulated." crlf)
   (assert (running-tasks (number (+ ?running-tasks 1))))
   (retract ?r)
   (printout t "running tasks increased to "  (+ ?running-tasks 1) crlf)
   (assert (goal (id (sym-cat PRODUCE-C3- (gensym*)))
-                (class PRODUCE-C3)(sub-type RUN-SUBGOALS-IN-PARALLEL)(meta delivery-begin ?delivery-begin game-time (nth$ 1 ?game-time)) (priority ?*PRIORITY-C3*)(parent ?produce-cparent-id) (mode FORMULATED)
+                (class PRODUCE-C3)(sub-type RUN-SUBGOALS-IN-PARALLEL)(meta delivery-begin ?delivery-begin) (priority ?*PRIORITY-C3*)(parent ?produce-cparent-id) (mode FORMULATED)
                 (params order ?order)
   ))
-  (if (eq ?quantity 2) then 
-  (assert (goal (id (sym-cat PRODUCE-C3- (gensym*)))
-                (class PRODUCE-C3)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-C3*)(parent ?produce-cparent-id) (mode FORMULATED)
-                (params order ?order)
-  ))
- )
 )
 
 (defrule goal-produce-c3-get-base
@@ -609,55 +597,55 @@
   (assert (goal (id (sym-cat MOUNT-RING- (gensym*))) (class MOUNT-RING) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs2 ring-num TWO)))
   (assert (goal (id (sym-cat MOUNT-RING- (gensym*))) (class MOUNT-RING) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs3 ring-num THREE)))
   (if (eq ?bases-needed1 ONE) then 
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs1)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed1 TWO) then 
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs1)))
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs1)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed1 THREE) then 
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs1)))
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs1)))
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs1)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs1)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed2 ONE) then 
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs2)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs2)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed2 TWO) then 
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs2)))
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs2)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs2)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs2)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed2 THREE) then 
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs2)))
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs2)))
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs2)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs2)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs2)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs2)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed3 ONE) then 
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs3)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs3)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed3 TWO) then 
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs3)))
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs3)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs3)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs3)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   )
   (if (eq ?bases-needed3 THREE) then 
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs3)))
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs3)))
-  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs3)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs3)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs3)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params rs ?rs3)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
   (assert (goal (id (sym-cat GET-BASE- (gensym*))) (class GET-BASE) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order bs DUMMY)))
