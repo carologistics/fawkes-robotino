@@ -194,6 +194,7 @@
 
  (wm-fact (key domain fact mps-type args? m ?ds t DS))
  (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
+ (not (wm-fact (key domain fact mps-state args? m ?ds s BROKEN)))
 
  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
 
@@ -295,11 +296,13 @@
 
  (wm-fact (key domain fact mps-type args? m ?cs t CS))
  (wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
+ (not (wm-fact (key domain fact mps-state args? m ?cs s BROKEN)))
 
  (wm-fact (key domain fact cs-buffered args? m ?cs col ?cap-color))
  (wm-fact (key domain fact mps-side-free args? m ?cs side OUTPUT))
 
  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+ (wp-lock (wp ?wp) (order ?order))
 
  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
@@ -387,14 +390,10 @@
               (param-names r from from-side to)
               (param-values ?robot ?cs OUTPUT (wait-pos ?cs OUTPUT)))
 	  )
-        (if (not (any-factp ((?wl wp-lock)) (and (eq ?wl:wp ?wp)(eq ?wl:order ?order))))
-            then
-            (assert (wp-lock (wp ?wp) (order ?order)))
-            (printout t "lock wp " ?wp " for order " ?order crlf))
         (modify ?g (mode EXPANDED)(params robot ?robot order ?order cs ?cs))
 )
 
-(defrule goal-expander-get-base
+(defrule goal-expander-get-base-complete
   (declare (salience (+ ?*SALIENCE-EXPANDER-GENERIC* ?*SALIENCE-GET-BASE-DIFF*)))
  ?g <- (goal (id ?goal-id) (parent ?parent) (class GET-BASE) (mode SELECTED) (params order ?order bs ?any-bs))
  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
@@ -405,6 +404,9 @@
  (wm-fact (key refbox team-color) (value ?team-color))
  (wm-fact (key domain fact mps-type args? m ?bs t BS))
  (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
+ (not (wm-fact (key domain fact mps-state args? m ?bs s BROKEN)))
+
+ (wm-fact (key domain fact mps-side-free args? m ?bs side INPUT))
 
  ;(not (goal (class GET-BASE)(mode EXPANDED|DISPATCHED)(params robot ?some-robot order ?some-order bs ?bs)))
  (not(goal (params robot ?robot $?rest-params)))
@@ -454,11 +456,62 @@
               (param-values ?bs INPUT))
 	  )
         (modify ?g (mode EXPANDED)(params robot ?robot order ?order bs ?bs))
-        ; reserve last base as delivery wp
-        (if (and (not (any-factp ((?g goal)) (and (eq ?g:parent ?parent)(eq ?g:class GET-BASE)(eq ?g:mode SELECTED))) ) (not (any-factp ((?wl wp-lock)) (and (eq ?wl:wp ?wp)(eq ?wl:order ?order)))))
-            then
       (assert (wp-lock (wp ?wp) (order ?order)))
-      (printout t "lock wp " ?wp " for order " ?order crlf))
+      (printout t "lock wp " ?wp " for order " ?order crlf)
+)
+
+(defrule goal-expander-get-base-recover-wp
+  (declare (salience (+ ?*SALIENCE-EXPANDER-GENERIC* ?*SALIENCE-GET-BASE-DIFF*)))
+ ?g <- (goal (id ?goal-id) (parent ?parent) (class GET-BASE) (mode SELECTED) (params order ?order bs ?any-bs))
+ (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+ (wm-fact (key domain fact entered-field args? r ?robot))
+ (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+ (wm-fact (key domain fact can-hold args? r ?robot))
+
+ (wm-fact (key refbox team-color) (value ?team-color))
+ (wm-fact (key domain fact mps-type args? m ?bs t BS))
+ (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
+
+ (wm-fact (key domain fact wp-at args? wp ?wp m ?bs side INPUT))
+ (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+
+ (not (goal (class GET-BASE)(mode EXPANDED|DISPATCHED)(params robot ?some-robot order ?some-order bs ?bs)))
+ (not(goal (params robot ?robot $?rest-params)))
+ =>
+      (bind ?wp (sym-cat WP- (random-id)))
+      (bind ?planid (sym-cat GET-BASE-PLAN- (gensym*)))
+      (assert
+        (plan (id ?planid) (goal-id ?goal-id))
+        (plan-action (id 1) (plan-id ?planid) (goal-id ?goal-id)
+              (action-name go-wait)
+              (skiller (remote-skiller ?robot))
+              (param-names r from from-side to)
+              (param-values ?robot ?curr-location ?curr-side (wait-pos ?bs INPUT)))
+        (plan-action (id 2) (plan-id ?planid) (goal-id ?goal-id)
+              (action-name location-lock)
+              (param-values ?bs INPUT))
+        (plan-action (id 3) (plan-id ?planid) (goal-id ?goal-id)
+              (action-name move)
+              (skiller (remote-skiller ?robot))
+              (param-names r from from-side to to-side )
+              (param-values ?robot (wait-pos ?bs INPUT) WAIT ?bs INPUT))
+        (plan-action (id 4) (plan-id ?planid) (goal-id ?goal-id)
+              (action-name wp-get)
+              (skiller (remote-skiller ?robot))
+              (param-names r wp m side)
+              (param-values ?robot ?wp ?bs INPUT))
+        (plan-action (id 5) (plan-id ?planid) (goal-id ?goal-id)
+              (action-name go-wait)
+              (skiller (remote-skiller ?robot))
+              (param-names r from from-side to)
+              (param-values ?robot ?bs INPUT (wait-pos ?bs INPUT)))
+        (plan-action (id 6) (plan-id ?planid) (goal-id ?goal-id)
+              (action-name location-unlock)
+              (param-values ?bs INPUT))
+	  )
+        (modify ?g (mode EXPANDED)(params robot ?robot order ?order bs ?bs))
+      (assert (wp-lock (wp ?wp) (order ?order)))
+      (printout t "lock wp " ?wp " for order " ?order crlf)
 )
 
 (defrule goal-expander-get-cap-carrier
@@ -476,6 +529,12 @@
 
  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cs spot ?shelf-spot))
  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+
+ (wm-fact (key domain fact mps-type args? m ?some-cs t CS))
+ (wm-fact (key domain fact mps-team args? m ?some-cs col ?team-color))
+
+ (or (wm-fact (key domain fact cs-can-perform args? m ?cs op RETRIEVE_CAP))
+     (wm-fact (key domain fact cs-can-perform args? m ?some-cs op RETRIEVE_CAP)))
 
  (not (goal (class GET-CC)(mode EXPANDED|DISPATCHED)(params robot ?some-robot cs-color ?some-cap-color cs ?cs)))
 
@@ -526,11 +585,13 @@
  ; match cc, avoid proper wp
  (wm-fact (key domain fact holding args? r ?robot wp ?cc))
  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+ (not (wp-lock (wp ?cc) (order ?some-order)))
 
  (not(goal (params robot ?robot $?rest-params)))
 
  (wm-fact (key domain fact mps-type args? m ?cs t CS))
  (wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
+ (not (wm-fact (key domain fact mps-state args? m ?cs s BROKEN)))
 
  (wm-fact (key domain fact cs-can-perform args? m ?cs op RETRIEVE_CAP))
 
@@ -610,20 +671,21 @@
 
 (defrule goal-expander-buffer-rs
   (declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
- ?g <- (goal (id ?goal-id) (parent ?parent) (class BUFFER-RS) (mode SELECTED) (params rs ?rs))
+ ?g <- (goal (id ?goal-id) (parent ?parent) (class BUFFER-RS) (mode SELECTED) (params order ?order rs ?rs))
  (wm-fact (key domain fact entered-field args? r ?robot))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 
  ;; check wp conditions
  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
  (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
- (not (wp-lock (wp ?wp) (order ?any-order)))
+ (wp-lock (wp ?wp) (order ?order))
 
  (wm-fact (key domain fact rs-filled-with args? m ?rs n ?bases-before&~THREE))
  (wm-fact (key domain fact rs-inc args? summand ?bases-before sum ?bases-after))
+ (not (wm-fact (key domain fact mps-state args? m ?rs s BROKEN)))
 
- (not(goal (class MOUNT-RING) (mode EXPANDED|DISPATCHED) (params robot ?some-robot1 order ?some-order rs ?rs wp ?some-wp ring-num ?some-ring-num)))
- (not(goal (class BUFFER-RS) (mode EXPANDED|DISPATCHED) (params robot ?some-robot2 rs ?rs)))
+ (not(goal (class MOUNT-RING) (mode EXPANDED|DISPATCHED) (params robot ?some-robot1 order ?some-order1 rs ?rs wp ?some-wp ring-num ?some-ring-num)))
+ (not(goal (class BUFFER-RS) (mode EXPANDED|DISPATCHED) (params robot ?some-robot2 order ?some-order2 rs ?rs)))
 
  (not(goal (params robot ?robot $?rest-params)))
  =>
@@ -657,7 +719,7 @@
               (param-names r from from-side to)
               (param-values ?robot ?rs INPUT (wait-pos ?rs INPUT)))
 	  )
-        (modify ?g (mode EXPANDED)(params robot ?robot rs ?rs))
+        (modify ?g (mode EXPANDED)(params robot ?robot order ?order rs ?rs))
 )
 
 
@@ -678,6 +740,7 @@
  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
  (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+ (wp-lock (wp ?wp) (order ?order))
 
  (or (and (test (eq ?ring-num ONE))
          (wm-fact (key domain fact wp-ring1-color args? wp ?wp col RING_NONE))
@@ -707,6 +770,7 @@
 
  (wm-fact (key domain fact mps-side-free args? m ?rs side INPUT))
  (wm-fact (key domain fact mps-side-free args? m ?rs side OUTPUT))
+ (not (wm-fact (key domain fact mps-state args? m ?rs s BROKEN)))
  
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 
@@ -804,11 +868,6 @@
               (action-name location-unlock)
               (param-values ?rs OUTPUT))
 	  )
-        ;; hierzu any-fact anschauen
-        (if (not (any-factp ((?wl wp-lock)) (and (eq ?wl:wp ?wp)(eq ?wl:order ?order))))
-            then
-            (assert (wp-lock (wp ?wp) (order ?order)))
-            (printout t "lock wp " ?wp " for order " ?order crlf))
         (modify ?g (mode EXPANDED)(params robot ?robot order ?order rs ?rs wp ?wp ring-num ?ring-num))
 )
 
