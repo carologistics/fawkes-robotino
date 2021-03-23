@@ -95,14 +95,18 @@
 	(goal (id ?id) (type ACHIEVE) (sub-type RUN-SUBGOALS-ON-IDLE)
 	      (mode DISPATCHED) (params $?params))
 	?g <- (goal (parent ?id) (id ?sub-id) (type ACHIEVE) (mode FORMULATED)
-	      (priority ?prio))
+	      (meta delivery-begin ?delivery-begin game-time ?game-time)(priority ?prio))
 	(not (goal (parent ?id) (type ACHIEVE) (mode FORMULATED)
-	           (priority ?o-prio&:(> ?o-prio ?prio))))
+	           (meta delivery-begin ?o-delivery-begin game-time ?game-time)(priority ?o-prio&:(> (+ ?o-prio (- ?game-time ?o-delivery-begin)) (+ ?prio (- ?game-time ?delivery-begin))))))
+	(not (goal (parent ?id) (type ACHIEVE) (mode FORMULATED)
+	           (meta delivery-begin ?o-delivery-begin game-time ?game-time)(priority ?prio&:(and (> ?game-time 800) (> ?prio 70)))))
 	(not (goal (parent ?id) (type ACHIEVE)
 	           (outcome ?outcome&:(run-on-idle-stop-execution ?params ?outcome))))
 	=>
 	(modify ?g (mode SELECTED))
 	(do-for-all-facts ((?i idle-robot))
+		(printout t "hier" ?delivery-begin "hier" ?game-time crlf)
+
 	(printout t "retract idle robot " crlf)
 	(retract ?i)
 	)
@@ -112,13 +116,15 @@
 	(goal (id ?id) (type ACHIEVE) (sub-type RUN-SUBGOALS-ON-IDLE)
 	      (mode DISPATCHED) (params $?params))
 	?sg <- (goal (parent ?id) (id ?sub-id) (type ACHIEVE) (mode FORMULATED)
-	              (priority ?prio))
+	               (meta delivery-begin ?delivery-begin game-time ?game-time)(priority ?prio))
 	(not (goal (parent ?id) (type ACHIEVE) (mode FORMULATED)
-	           (priority ?o-prio&:(< ?o-prio ?prio))))
+	            (meta delivery-begin ?o-delivery-begin game-time ?game-time)(priority ?o-prio&:(< (+ ?o-prio (- ?game-time ?o-delivery-begin)) (+ ?prio (- ?game-time ?delivery-begin))))))
 	(not (goal (parent ?id) (type ACHIEVE) (mode SELECTED|EXPANDED|COMMITTED)))
 	(goal (parent ?id) (type ACHIEVE)
 	      (outcome ?outcome&:(run-on-idle-stop-execution ?params ?outcome)))
 	=>
+	(printout t "hier" ?delivery-begin "hier" ?game-time crlf)
+
 	(modify ?sg (mode FINISHED) (outcome REJECTED))
 )
 

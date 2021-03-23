@@ -25,10 +25,6 @@
 ?*PRIORITY-C1* = 70
 ?*PRIORITY-C2* = 80
 ?*PRIORITY-C3* = 90
-?*DURATION-C0* = 120
-?*DURATION-C1* = 200
-?*DURATION-C2* = 300
-?*DURATION-C3* = 400
 ?*PRIORITY-SUPPORTING-TASKS* = 1
 ?*PRIORITY-REFILL-SHELF* = 2
 ?*PRIORITY-GO-WAIT* = 1
@@ -207,10 +203,10 @@
 "
 (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 (wm-fact (key domain fact order-complexity args? ord ?order com C0))
+(wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin))
 (wm-fact (key refbox order ?order quantity-requested) (value ?quantity))
 
 (wm-fact (key refbox game-time) (values $?game-time))
-(wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin&:(< ?delivery-begin (+ (nth$ 1 ?game-time) ?*DURATION-C0*) )))
 
 (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
 (not (goal (class PRODUCE-C0)(params order ?order)))
@@ -224,7 +220,7 @@
  (retract ?r)
  (printout t "running tasks increased to "  (+ ?running-tasks 1) crlf)
  (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
-               (class PRODUCE-C0)(sub-type RUN-SUBGOALS-IN-PARALLEL)(parent ?produce-cparent-id)(priority ?*PRIORITY-C0*) (mode FORMULATED)
+               (class PRODUCE-C0)(sub-type RUN-SUBGOALS-IN-PARALLEL)(parent ?produce-cparent-id)(meta delivery-begin ?delivery-begin game-time (nth$ 1 ?game-time)) (priority ?*PRIORITY-C0*) (mode FORMULATED)
                (params order ?order)
  ))
  (if (eq ?quantity 2) then 
@@ -282,10 +278,10 @@
 (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 (wm-fact (key domain fact order-complexity args? ord ?order com C1))
 (wm-fact (key refbox order ?order quantity-requested) (value ?quantity))
+(wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin))
 
 
 (wm-fact (key refbox game-time) (values $?game-time))
-(wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin&:(< ?delivery-begin (+ (nth$ 1 ?game-time) ?*DURATION-C1*) )))
 
 (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
 (goal (id ?produce-cparent-id) (class PRODUCE-CPARENT))
@@ -300,7 +296,7 @@
  (retract ?r)
  (printout t "running tasks increased to "  (+ ?running-tasks 1) crlf)
  (assert (goal (id (sym-cat PRODUCE-C1- (gensym*)))
-               (class PRODUCE-C1)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-C1*)(parent ?produce-cparent-id) (mode FORMULATED)
+               (class PRODUCE-C1)(sub-type RUN-SUBGOALS-IN-PARALLEL)(meta delivery-begin ?delivery-begin game-time (nth$ 1 ?game-time)) (priority ?*PRIORITY-C1*)(parent ?produce-cparent-id) (mode FORMULATED)
                (params order ?order)
  ))
  (if (eq ?quantity 2) then 
@@ -397,9 +393,9 @@
 "
  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
  (wm-fact (key domain fact order-complexity args? ord ?order com C2))
- 
+   (wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin))
+
 (wm-fact (key refbox game-time) (values $?game-time))
-(wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin&:(< ?delivery-begin (+ (nth$ 1 ?game-time) ?*DURATION-C2*) )))
 
 (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
 (wm-fact (key refbox order ?order quantity-requested) (value ?quantity))
@@ -414,7 +410,7 @@
  (retract ?r)
  (printout t "running tasks increased to "  (+ ?running-tasks 1) crlf)
  (assert (goal (id (sym-cat PRODUCE-C2- (gensym*)))
-               (class PRODUCE-C2)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-C2*)(parent ?produce-cparent-id) (mode FORMULATED)
+               (class PRODUCE-C2)(sub-type RUN-SUBGOALS-IN-PARALLEL)(meta delivery-begin ?delivery-begin game-time (nth$ 1 ?game-time)) (priority ?*PRIORITY-C2*)(parent ?produce-cparent-id) (mode FORMULATED)
                (params order ?order)
  ))
  (if (eq ?quantity 2) then 
@@ -535,11 +531,9 @@
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key domain fact order-complexity args? ord ?order com C3))
+  (wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin))
 
  (wm-fact (key refbox game-time) (values $?game-time))
-(wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin&:(< ?delivery-begin (+ (nth$ 1 ?game-time) ?*DURATION-C3*) )))
-(wm-fact (key refbox order ?order quantity-requested) (value ?quantity))
-
 
  (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
  (goal (id ?produce-cparent-id) (class PRODUCE-CPARENT))
@@ -554,7 +548,7 @@
   (retract ?r)
   (printout t "running tasks increased to "  (+ ?running-tasks 1) crlf)
   (assert (goal (id (sym-cat PRODUCE-C3- (gensym*)))
-                (class PRODUCE-C3)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-C3*)(parent ?produce-cparent-id) (mode FORMULATED)
+                (class PRODUCE-C3)(sub-type RUN-SUBGOALS-IN-PARALLEL)(meta delivery-begin ?delivery-begin game-time (nth$ 1 ?game-time)) (priority ?*PRIORITY-C3*)(parent ?produce-cparent-id) (mode FORMULATED)
                 (params order ?order)
   ))
   (if (eq ?quantity 2) then 
