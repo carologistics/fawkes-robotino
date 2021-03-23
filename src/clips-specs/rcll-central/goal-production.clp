@@ -204,6 +204,7 @@
 (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 (wm-fact (key domain fact order-complexity args? ord ?order com C0))
 (wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin))
+(wm-fact (key refbox order ?order quantity-requested) (value ?quantity))
 
 (wm-fact (key refbox game-time) (values $?game-time))
 
@@ -222,6 +223,12 @@
                (class PRODUCE-C0)(sub-type RUN-SUBGOALS-IN-PARALLEL)(parent ?produce-cparent-id)(meta delivery-begin ?delivery-begin game-time (nth$ 1 ?game-time)) (priority ?*PRIORITY-C0*) (mode FORMULATED)
                (params order ?order)
  ))
+ (if (eq ?quantity 2) then 
+  (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
+               (class PRODUCE-C0)(sub-type RUN-SUBGOALS-IN-PARALLEL)(parent ?produce-cparent-id)(priority ?*PRIORITY-C0*) (mode FORMULATED)
+               (params order ?order)
+ ))
+ )
 )
 
 (defrule goal-produce-c0-get-base
@@ -268,9 +275,11 @@
 (defrule goal-production-create-produce-c1
 " Produce a C1 product: Get the correct base and mount the right ring and then a cap on it.
 "
- (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
- (wm-fact (key domain fact order-complexity args? ord ?order com C1))
-  (wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin))
+(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+(wm-fact (key domain fact order-complexity args? ord ?order com C1))
+(wm-fact (key refbox order ?order quantity-requested) (value ?quantity))
+(wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin))
+
 
 (wm-fact (key refbox game-time) (values $?game-time))
 
@@ -290,6 +299,12 @@
                (class PRODUCE-C1)(sub-type RUN-SUBGOALS-IN-PARALLEL)(meta delivery-begin ?delivery-begin game-time (nth$ 1 ?game-time)) (priority ?*PRIORITY-C1*)(parent ?produce-cparent-id) (mode FORMULATED)
                (params order ?order)
  ))
+ (if (eq ?quantity 2) then 
+  (assert (goal (id (sym-cat PRODUCE-C1- (gensym*)))
+               (class PRODUCE-C1)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-C1*)(parent ?produce-cparent-id) (mode FORMULATED)
+               (params order ?order)
+ ))
+ )
 )
 
 (defrule goal-produce-c1-get-base
@@ -319,7 +334,6 @@
   "mount rings for a c1-production and buffer rs appropriately"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?produce-c1-id) (class PRODUCE-C1) (mode SELECTED) (params order ?order))
-
   (wm-fact (key refbox team-color) (value ?team-color))
 
   ;; get order information
@@ -384,6 +398,7 @@
 (wm-fact (key refbox game-time) (values $?game-time))
 
 (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
+(wm-fact (key refbox order ?order quantity-requested) (value ?quantity))
 (goal (id ?produce-cparent-id) (class PRODUCE-CPARENT))
 (not (goal (class PRODUCE-C2) (params order ?order)))
  ?r <- (running-tasks (number ?running-tasks))
@@ -398,6 +413,12 @@
                (class PRODUCE-C2)(sub-type RUN-SUBGOALS-IN-PARALLEL)(meta delivery-begin ?delivery-begin game-time (nth$ 1 ?game-time)) (priority ?*PRIORITY-C2*)(parent ?produce-cparent-id) (mode FORMULATED)
                (params order ?order)
  ))
+ (if (eq ?quantity 2) then 
+  (assert (goal (id (sym-cat PRODUCE-C2- (gensym*)))
+               (class PRODUCE-C2)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-C2*)(parent ?produce-cparent-id) (mode FORMULATED)
+               (params order ?order)
+ ))
+ )
 )
 
 (defrule goal-produce-c2-get-base
@@ -530,6 +551,12 @@
                 (class PRODUCE-C3)(sub-type RUN-SUBGOALS-IN-PARALLEL)(meta delivery-begin ?delivery-begin game-time (nth$ 1 ?game-time)) (priority ?*PRIORITY-C3*)(parent ?produce-cparent-id) (mode FORMULATED)
                 (params order ?order)
   ))
+  (if (eq ?quantity 2) then 
+  (assert (goal (id (sym-cat PRODUCE-C3- (gensym*)))
+                (class PRODUCE-C3)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-C3*)(parent ?produce-cparent-id) (mode FORMULATED)
+                (params order ?order)
+  ))
+ )
 )
 
 (defrule goal-produce-c3-get-base
