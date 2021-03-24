@@ -57,6 +57,10 @@
 )
 
 (defrule action-start-execute-wait-at-action
+" Wait action for arbitrary positions, used mainly for smooth entering of the robots
+  at the start of the game. The generic wait action on the other hand can only
+  wait at waitpoints.
+"
   ?pa <- (plan-action (id ?action-id) (plan-id ?plan-id) (goal-id ?goal-id)
                       (action-name wait-at) (state PENDING) (executable TRUE))
   =>
@@ -89,6 +93,10 @@
 )
 
 (defrule action-start-execute-wait-until-delivery-action
+" Wait action that takes a game time as argument. It does not time out
+  and only succeeds once the given game-time is reached. This is used
+  to wait until a product can be delivered, to avoid early deliveries.
+"
   ?pa <- (plan-action (id ?action-id) (plan-id ?plan-id) (goal-id ?goal-id)
                       (action-name wait-until-delivery) (state PENDING) (executable TRUE))
   (wm-fact (key refbox game-time) (values $?game-time))
