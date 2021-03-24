@@ -225,16 +225,10 @@
 	(confval (path "/clips-executive/gamestate-loader/game") (type STRING) (value ?game))
 	(confval (path "/clips-executive/gamestate-loader/timepoint") (type STRING) (value ?timepoint))
 	=>
-  (bind ?game "2020-12-13 23:07:40.624Z")
-  (bind ?timepoint  "2020-12-13 23:08:02.862Z")
-	(printout t "" crlf crlf crlf crlf crlf)
 	(printout t "Loading WM from storage" crlf)
 	(printout t "Game:      " ?game crlf)
 	(printout t "Timepoint: " ?timepoint crlf)
 	(printout t "Source:    Icks" crlf)
-	(printout t "" crlf crlf crlf crlf crlf)
-
-
 
 	(bind ?cursor (wm-robmem-load-from-storage ?game ?timepoint))
 	(if ?cursor then
@@ -257,7 +251,6 @@
             (bind ?sym-values (create$ ?sym-values (sym-cat (nth$ ?cnt ?values))))
           )
         )
-        (printout t "Values: " ?sym-values crlf)
 
         (assert (wm-fact (id ?id) (key (wm-id-to-key ?id)) (is-list (sym-cat ?islist)) (type (sym-cat ?type)) (values ?sym-values)))
       else 
