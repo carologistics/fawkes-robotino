@@ -217,11 +217,13 @@
 )
 
 (defrule domain-load-from-storage
-  (loading-from-storage)
   ;(domain-loaded)
   ;?flushed <- (domain-wm-flushed)
   ;(wm-fact (key refbox phase) (value SETUP))
   (wm-fact (key config agent name) (value "Icks"))
+	(confval (path "/clips-executive/gamestate-loader/enable") (type BOOL) (value TRUE))
+	(confval (path "/clips-executive/gamestate-loader/game") (type STRING) (value ?game))
+	(confval (path "/clips-executive/gamestate-loader/timepoint") (type STRING) (value ?timepoint))
 	=>
   (bind ?game "2020-12-13 23:07:40.624Z")
   (bind ?timepoint  "2020-12-13 23:08:02.862Z")
@@ -277,16 +279,9 @@
 	)
 )
 
-(defrule switch-initialization
-  (not (loading-from-storage))
-  =>
-  (assert (loading-from-storage))
-)
-
-
 (defrule domain-load-initial-facts ;anfang des games 
 " Load all initial domain facts on startup of the game "
-  (not (loading-from-storage))
+  (not (confval (path "/clips-executive/gamestate-loader/enable") (type BOOL) (value TRUE)))
 
   (domain-loaded)
   ?flushed <- (domain-wm-flushed)
