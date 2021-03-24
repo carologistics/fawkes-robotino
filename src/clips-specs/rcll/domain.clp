@@ -248,15 +248,19 @@
 
         (bind ?sym-values (create$))
         (loop-for-count (?cnt 1 (length$ ?values)) do
-          (bind ?sym-values (create$ ?sym-values (sym-cat (nth$ ?cnt ?values))))
+          (if (or (eq (sym-cat ?type) UINT) (eq (sym-cat ?type) INT)) then
+            (bind ?sym-values (create$ ?sym-values (integer (string-to-field (nth$ ?cnt ?values)))))
+          )
+          (if (eq (sym-cat ?type) SYMBOL) then
+            (bind ?sym-values (create$ ?sym-values (sym-cat (nth$ ?cnt ?values))))
+          )
         )
         (printout t "Values: " ?sym-values crlf)
 
         (assert (wm-fact (id ?id) (key (wm-id-to-key ?id)) (is-list (sym-cat ?islist)) (type (sym-cat ?type)) (values ?sym-values)))
       else 
         (bind ?value (bson-get ?doc "value"))
-        (printout t "Value: " ?value crlf)
-        (if (eq (sym-cat ?type) UINT) then
+        (if (or (eq (sym-cat ?type) UINT) (eq (sym-cat ?type) INT)) then
           (bind ?value (integer (string-to-field ?value)))
         )
         (if (eq (sym-cat ?type) SYMBOL) then
