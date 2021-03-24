@@ -218,10 +218,10 @@
 
 (defrule domain-load-from-storage
   (loading-from-storage)
+  ;(domain-loaded)
+  ;?flushed <- (domain-wm-flushed)
+  ;(wm-fact (key refbox phase) (value SETUP))
   (wm-fact (key config agent name) (value "Icks"))
-  (domain-loaded)
-  ?flushed <- (domain-wm-flushed)
-  (wm-fact (key refbox phase) (value SETUP))
 	=>
   (bind ?game "2020-12-13 23:07:40.624Z")
   (bind ?timepoint  "2020-12-13 23:08:02.862Z")
