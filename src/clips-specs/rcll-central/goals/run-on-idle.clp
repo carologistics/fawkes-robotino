@@ -94,19 +94,19 @@
 	(idle-robot (robot ?robot))
 	(goal (id ?id) (type ACHIEVE) (sub-type RUN-SUBGOALS-ON-IDLE)
 	      (mode DISPATCHED) (params $?params))
+	(wm-fact (key refbox game-time) (values $?game-time))
+
 	?g <- (goal (parent ?id) (id ?sub-id) (type ACHIEVE) (mode FORMULATED)
-	      (meta delivery-begin ?delivery-begin game-time ?game-time)(priority ?prio))
+	      (meta delivery-begin ?delivery-begin )(priority ?prio))
 	(not (goal (parent ?id) (type ACHIEVE) (mode FORMULATED)
-	           (meta delivery-begin ?o-delivery-begin game-time ?game-time)(priority ?o-prio&:(> (+ ?o-prio (- ?game-time ?o-delivery-begin)) (+ ?prio (- ?game-time ?delivery-begin))))))
+	           (meta delivery-begin ?o-delivery-begin )(priority ?o-prio&:(> (+ ?o-prio (- (nth$ 1 ?game-time)?o-delivery-begin)) (+ ?prio (- (nth$ 1 ?game-time) ?delivery-begin))))))
 	(not (goal (parent ?id) (type ACHIEVE) (mode FORMULATED)
-	           (meta delivery-begin ?o-delivery-begin game-time ?game-time)(priority ?prio&:(and (> ?game-time 800) (> ?prio 70)))))
+	           (meta delivery-begin ?o-delivery-begin )(priority ?prio&:(and (> (nth$ 1 ?game-time) 800) (> ?prio 70)))))
 	(not (goal (parent ?id) (type ACHIEVE)
 	           (outcome ?outcome&:(run-on-idle-stop-execution ?params ?outcome))))
 	=>
 	(modify ?g (mode SELECTED))
 	(do-for-all-facts ((?i idle-robot))
-		(printout t "hier" ?delivery-begin "hier" ?game-time crlf)
-
 	(printout t "retract idle robot " crlf)
 	(retract ?i)
 	)
@@ -115,16 +115,16 @@
 (defrule run-on-idle-subgoal-reject-other-subgoal-rejected
 	(goal (id ?id) (type ACHIEVE) (sub-type RUN-SUBGOALS-ON-IDLE)
 	      (mode DISPATCHED) (params $?params))
+	(wm-fact (key refbox game-time) (values $?game-time))
+
 	?sg <- (goal (parent ?id) (id ?sub-id) (type ACHIEVE) (mode FORMULATED)
-	               (meta delivery-begin ?delivery-begin game-time ?game-time)(priority ?prio))
+	               (meta delivery-begin ?delivery-begin)(priority ?prio))
 	(not (goal (parent ?id) (type ACHIEVE) (mode FORMULATED)
-	            (meta delivery-begin ?o-delivery-begin game-time ?game-time)(priority ?o-prio&:(< (+ ?o-prio (- ?game-time ?o-delivery-begin)) (+ ?prio (- ?game-time ?delivery-begin))))))
+	            (meta delivery-begin ?o-delivery-begin)(priority ?o-prio&:(< (+ ?o-prio (- (nth$ 1 ?game-time) ?o-delivery-begin)) (+ ?prio (- (nth$ 1 ?game-time) ?delivery-begin))))))
 	(not (goal (parent ?id) (type ACHIEVE) (mode SELECTED|EXPANDED|COMMITTED)))
 	(goal (parent ?id) (type ACHIEVE)
 	      (outcome ?outcome&:(run-on-idle-stop-execution ?params ?outcome)))
 	=>
-	(printout t "hier" ?delivery-begin "hier" ?game-time crlf)
-
 	(modify ?sg (mode FINISHED) (outcome REJECTED))
 )
 

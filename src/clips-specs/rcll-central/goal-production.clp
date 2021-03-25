@@ -21,10 +21,10 @@
 
 
 (defglobal
-?*PRIORITY-C0* = 60
-?*PRIORITY-C1* = 70
-?*PRIORITY-C2* = 80
-?*PRIORITY-C3* = 90
+?*PRIORITY-C0* = 100
+?*PRIORITY-C1* = 170
+?*PRIORITY-C2* = 240
+?*PRIORITY-C3* = 310
 ?*PRIORITY-SUPPORTING-TASKS* = 1
 ?*PRIORITY-REFILL-SHELF* = 2
 ?*PRIORITY-GO-WAIT* = 1
@@ -215,7 +215,7 @@
  (retract ?r)
  (printout t "running tasks increased to "  (+ ?running-tasks 1) crlf)
  (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
-               (class PRODUCE-C0)(sub-type RUN-SUBGOALS-IN-PARALLEL)(parent ?produce-cparent-id)(meta delivery-begin ?delivery-begin game-time (nth$ 1 ?game-time)) (priority ?*PRIORITY-C0*) (mode FORMULATED)
+               (class PRODUCE-C0)(sub-type RUN-SUBGOALS-IN-PARALLEL)(parent ?produce-cparent-id)(meta delivery-begin ?delivery-begin) (priority ?*PRIORITY-C0*) (mode FORMULATED)
                (params order ?order)
  ))
  (if (eq ?quantity 2) then 
@@ -291,7 +291,7 @@
  (retract ?r)
  (printout t "running tasks increased to "  (+ ?running-tasks 1) crlf)
  (assert (goal (id (sym-cat PRODUCE-C1- (gensym*)))
-               (class PRODUCE-C1)(sub-type RUN-SUBGOALS-IN-PARALLEL)(meta delivery-begin ?delivery-begin game-time (nth$ 1 ?game-time)) (priority ?*PRIORITY-C1*)(parent ?produce-cparent-id) (mode FORMULATED)
+               (class PRODUCE-C1)(sub-type RUN-SUBGOALS-IN-PARALLEL)(meta delivery-begin ?delivery-begin ) (priority ?*PRIORITY-C1*)(parent ?produce-cparent-id) (mode FORMULATED)
                (params order ?order)
  ))
  (if (eq ?quantity 2) then 
@@ -405,7 +405,7 @@
  (retract ?r)
  (printout t "running tasks increased to "  (+ ?running-tasks 1) crlf)
  (assert (goal (id (sym-cat PRODUCE-C2- (gensym*)))
-               (class PRODUCE-C2)(sub-type RUN-SUBGOALS-IN-PARALLEL)(meta delivery-begin ?delivery-begin game-time (nth$ 1 ?game-time)) (priority ?*PRIORITY-C2*)(parent ?produce-cparent-id) (mode FORMULATED)
+               (class PRODUCE-C2)(sub-type RUN-SUBGOALS-IN-PARALLEL)(meta delivery-begin ?delivery-begin) (priority ?*PRIORITY-C2*)(parent ?produce-cparent-id) (mode FORMULATED)
                (params order ?order)
  ))
  (if (eq ?quantity 2) then 
@@ -544,7 +544,7 @@
   (retract ?r)
   (printout t "running tasks increased to "  (+ ?running-tasks 1) crlf)
   (assert (goal (id (sym-cat PRODUCE-C3- (gensym*)))
-                (class PRODUCE-C3)(sub-type RUN-SUBGOALS-IN-PARALLEL)(meta delivery-begin ?delivery-begin game-time (nth$ 1 ?game-time)) (priority ?*PRIORITY-C3*)(parent ?produce-cparent-id) (mode FORMULATED)
+                (class PRODUCE-C3)(sub-type RUN-SUBGOALS-IN-PARALLEL)(meta delivery-begin ?delivery-begin) (priority ?*PRIORITY-C3*)(parent ?produce-cparent-id) (mode FORMULATED)
                 (params order ?order)
   ))
   (if (eq ?quantity 2) then 
