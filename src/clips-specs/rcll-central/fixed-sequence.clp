@@ -894,5 +894,3 @@
    )
    (modify ?g (mode EXPANDED))
 )
-
-
