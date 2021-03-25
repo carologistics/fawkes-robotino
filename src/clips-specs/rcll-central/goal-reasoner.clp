@@ -67,10 +67,6 @@
   ?*SALIENCE-GOAL-PRE-EVALUATE* = 1
 )
 
-(deftemplate running-tasks
-  (slot number(type NUMBER))
-)
-
 (deffunction requires-subgoal (?goal-type)
   (return (or (eq ?goal-type TRY-ONE-OF-SUBGOALS)
               (eq ?goal-type TIMEOUT-SUBGOAL)

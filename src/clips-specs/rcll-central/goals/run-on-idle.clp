@@ -52,6 +52,21 @@
 ; - User: EVALUATE goal
 ; - User: RETRACT goal
 
+(defglobal
+  ?*MAX-RUNNING-TASKS* = 2
+)
+
+(deftemplate running-tasks
+  (slot number(type NUMBER))
+)
+
+(defrule init-running-tasks
+(not (running-tasks (number ?some-number)))
+=>
+ (printout t "running tasks initialized" crlf)
+ (assert (running-tasks (number 0)))
+)
+
 (deftemplate idle-robot
   (slot robot(type SYMBOL))
 )
@@ -92,6 +107,8 @@
 
 (defrule run-on-idle-subgoals-select
 	(idle-robot (robot ?robot))
+	?r <- (running-tasks (number ?running-tasks))
+	(test (< ?running-tasks ?*MAX-RUNNING-TASKS*))
 	(goal (id ?id) (type ACHIEVE) (sub-type RUN-SUBGOALS-ON-IDLE)
 	      (mode DISPATCHED) (params $?params))
 	?g <- (goal (parent ?id) (id ?sub-id) (type ACHIEVE) (mode FORMULATED)
@@ -99,11 +116,13 @@
 	(not (goal (parent ?id) (type ACHIEVE) (mode FORMULATED)
 	           (meta delivery-begin ?o-delivery-begin game-time ?game-time)(priority ?o-prio&:(> (+ ?o-prio (- ?game-time ?o-delivery-begin)) (+ ?prio (- ?game-time ?delivery-begin))))))
 	(not (goal (parent ?id) (type ACHIEVE) (mode FORMULATED)
-	           (meta delivery-begin ?o-delivery-begin game-time ?game-time)(priority ?prio&:(and (> ?game-time 800) (> ?prio 70)))))
+	           (meta delivery-begin ?o-delivery-begin game-time ?game-time)(priority ?prio&:(and (> ?game-time 800) (> ?prio 200)))))
 	(not (goal (parent ?id) (type ACHIEVE)
 	           (outcome ?outcome&:(run-on-idle-stop-execution ?params ?outcome))))
 	=>
 	(modify ?g (mode SELECTED))
+	(assert (running-tasks (number (+ ?running-tasks 1))))
+ 	(retract ?r)
 	(do-for-all-facts ((?i idle-robot))
 		(printout t "hier" ?delivery-begin "hier" ?game-time crlf)
 
