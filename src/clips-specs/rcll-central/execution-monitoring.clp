@@ -33,7 +33,7 @@
   (declare (salience ?*MONITORING-SALIENCE*))
   (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
       (id ?id)
-      (state ?status&~FORMULATED&~RUNNING&~FAILED&~FINAL)
+      (state ?status&~FORMULATED&~FAILED&~FINAL)
       (action-name ?action-name)
       (param-values $?param-values))
   (plan (id ?plan-id) (goal-id ?goal-id))

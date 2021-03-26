@@ -405,6 +405,8 @@
  (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
  (not (wm-fact (key domain fact mps-state args? m ?bs s BROKEN)))
 
+ (wm-fact (key domain fact mps-side-free args? m ?bs side INPUT))
+ (wm-fact (key domain fact mps-side-free args? m ?bs side OUTPUT))
  (wm-fact (key domain fact mps-side-free args? m ?bs side ?bs-side))
 
  (not (goal (class GET-BASE)(mode EXPANDED|DISPATCHED)(params robot ?some-robot order ?some-order bs ?bs bs-side ?bs-side)))
@@ -459,6 +461,7 @@
       (printout t "lock wp " ?wp " for order " ?order crlf)
 )
 
+ ; if the wp is unused it was not dispensed yet
 (defrule goal-expander-get-base-recover-wp
   (declare (salience (+ ?*SALIENCE-EXPANDER-GENERIC* ?*SALIENCE-GET-BASE-DIFF*)))
  ?g <- (goal (id ?goal-id) (parent ?parent) (class GET-BASE) (mode SELECTED) (params order ?order bs ?any-bs bs-side ?any-side))
@@ -473,12 +476,12 @@
 
  (wm-fact (key domain fact wp-at args? wp ?wp m ?bs side ?bs-side))
  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+ (not(wm-fact (key wp-unused args? wp ?wp)))
 
  (not (goal (class GET-BASE)(mode EXPANDED|DISPATCHED)(params robot ?some-robot order ?some-order bs ?bs bs-side ?bs-side)))
  (not(goal (params robot ?robot $?rest-params)))
  =>
-      (bind ?wp (sym-cat WP- (random-id)))
-      (bind ?planid (sym-cat GET-BASE-PLAN- (gensym*)))
+ (bind ?planid (sym-cat GET-BASE-PLAN- (gensym*)))
       (assert
         (plan (id ?planid) (goal-id ?goal-id))
         (plan-action (id 1) (plan-id ?planid) (goal-id ?goal-id)
@@ -505,6 +508,66 @@
               (param-names r from from-side to)
               (param-values ?robot ?bs ?bs-side (wait-pos ?bs ?bs-side)))
         (plan-action (id 6) (plan-id ?planid) (goal-id ?goal-id)
+              (action-name location-unlock)
+              (param-values ?bs ?bs-side))
+	  )
+        (modify ?g (mode EXPANDED)(params robot ?robot order ?order bs ?bs bs-side ?bs-side))
+      (assert (wp-lock (wp ?wp) (order ?order)))
+      (printout t "lock wp " ?wp " for order " ?order crlf)
+)
+
+ ; if the wp is unused it was not dispensed yet
+(defrule goal-expander-get-base-recover-unused-wp
+  (declare (salience (+ ?*SALIENCE-EXPANDER-GENERIC* ?*SALIENCE-GET-BASE-DIFF*)))
+ ?g <- (goal (id ?goal-id) (parent ?parent) (class GET-BASE) (mode SELECTED) (params order ?order bs ?any-bs bs-side ?any-side))
+ (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+ (wm-fact (key domain fact entered-field args? r ?robot))
+ (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+ (wm-fact (key domain fact can-hold args? r ?robot))
+
+ (wm-fact (key refbox team-color) (value ?team-color))
+ (wm-fact (key domain fact mps-type args? m ?bs t BS))
+ (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
+
+ (wm-fact (key domain fact wp-at args? wp ?wp m ?bs side ?bs-side))
+ (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+ (wm-fact (key wp-unused args? wp ?wp))
+
+ (not (goal (class GET-BASE)(mode EXPANDED|DISPATCHED)(params robot ?some-robot order ?some-order bs ?bs bs-side ?bs-side)))
+ (not(goal (params robot ?robot $?rest-params)))
+ =>
+ (bind ?planid (sym-cat GET-BASE-PLAN- (gensym*)))
+      (assert
+        (plan (id ?planid) (goal-id ?goal-id))
+        (plan-action (id 1) (plan-id ?planid) (goal-id ?goal-id)
+              (action-name go-wait)
+              (skiller (remote-skiller ?robot))
+              (param-names r from from-side to)
+              (param-values ?robot ?curr-location ?curr-side (wait-pos ?bs ?bs-side)))
+        (plan-action (id 2) (plan-id ?planid) (goal-id ?goal-id)
+              (action-name location-lock)
+              (param-values ?bs ?bs-side))
+        (plan-action (id 3) (plan-id ?planid) (goal-id ?goal-id)
+              (action-name move)
+              (skiller (remote-skiller ?robot))
+              (param-names r from from-side to to-side )
+              (param-values ?robot (wait-pos ?bs ?bs-side) WAIT ?bs ?bs-side))
+        (plan-action (id 4) (plan-id ?planid) (goal-id ?goal-id)
+              (action-name bs-dispense)
+              (skiller (remote-skiller ?robot))
+              (param-names r m side wp basecol)
+              (param-values ?robot ?bs ?bs-side ?wp ?base-color))
+        (plan-action (id 5) (plan-id ?planid) (goal-id ?goal-id)
+              (action-name wp-get)
+              (skiller (remote-skiller ?robot))
+              (param-names r wp m side)
+              (param-values ?robot ?wp ?bs ?bs-side))
+        (plan-action (id 6) (plan-id ?planid) (goal-id ?goal-id)
+              (action-name go-wait)
+              (skiller (remote-skiller ?robot))
+              (param-names r from from-side to)
+              (param-values ?robot ?bs ?bs-side (wait-pos ?bs ?bs-side)))
+        (plan-action (id 7) (plan-id ?planid) (goal-id ?goal-id)
               (action-name location-unlock)
               (param-values ?bs ?bs-side))
 	  )

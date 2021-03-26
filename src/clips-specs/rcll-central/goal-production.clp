@@ -320,7 +320,7 @@
   (wm-fact (key domain fact mps-team args? m ?rs1 col ?team-color))
   (wm-fact (key domain fact rs-ring-spec args? m ?rs1 r ?ring1-color rn ?bases-needed1))
 
-  (not (goal (class MOUNT-RING) (parent ?produce-c2-id)))
+  (not (goal (class MOUNT-RING) (parent ?produce-c1-id)))
   =>
   (printout t "MOUNT-RING goals formulated " ?bases-needed1 crlf)
   (assert (goal (id (sym-cat MOUNT-RING- (gensym*))) (class MOUNT-RING) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order rs ?rs1 ring-num ONE)))

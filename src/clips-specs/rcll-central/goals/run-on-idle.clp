@@ -53,7 +53,7 @@
 ; - User: RETRACT goal
 
 (defglobal
-  ?*MAX-RUNNING-TASKS* = 2
+  ?*MAX-RUNNING-TASKS* = 3
 )
 
 (deftemplate running-tasks
