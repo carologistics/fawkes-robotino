@@ -23,6 +23,7 @@
   ?*SALIENCE-IDLE-CHECK* = -1
   ?*SALIENCE-EXPANDER-GENERIC* = 600
   ?*SALIENCE-GET-BASE-DIFF* = -10
+  ?*SALIENCE-BUFFER-RS-DIFF* = 10
   ?*SALIENCE-DELIVER-DIFF* = 100
 )
 
@@ -183,6 +184,25 @@
                                  (skiller (remote-skiller ?robot))
                                  (param-names r team-color)
                                  (param-values ?robot ?team-color)))
+  (modify ?g (mode EXPANDED))
+)
+
+;move somewhere after failed goal. This should help with relocalization.
+(defrule goal-expander-recover
+  ?g <- (goal (id ?goal-id) (mode SELECTED) (class RECOVER)
+              (params robot ?robot))
+ (wm-fact (key domain fact mps-type args? m ?mps t ?t))
+ (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+ (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+=>
+(bind ?planid (sym-cat RECOVER-PLAN- (gensym*)))
+  (assert
+    (plan (id ?planid) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id ?planid) (goal-id ?goal-id)
+              (action-name go-wait)
+              (skiller (remote-skiller ?robot))
+              (param-names r from from-side to)
+              (param-values ?robot ?curr-location ?curr-side (wait-pos ?mps OUTPUT))))
   (modify ?g (mode EXPANDED))
 )
 
@@ -426,35 +446,41 @@
               (param-values ?robot ?curr-location ?curr-side (wait-pos ?bs ?bs-side)))
         (plan-action (id 3) (plan-id ?planid) (goal-id ?goal-id)
               (action-name location-lock)
-              (param-values ?bs ?bs-side))
+              (param-values ?bs INPUT))
         (plan-action (id 4) (plan-id ?planid) (goal-id ?goal-id)
+              (action-name location-lock)
+              (param-values ?bs OUTPUT))
+        (plan-action (id 5) (plan-id ?planid) (goal-id ?goal-id)
               (action-name move)
               (skiller (remote-skiller ?robot))
               (param-names r from from-side to to-side )
               (param-values ?robot (wait-pos ?bs ?bs-side) WAIT ?bs ?bs-side))
-        (plan-action (id 5) (plan-id ?planid) (goal-id ?goal-id)
+        (plan-action (id 6) (plan-id ?planid) (goal-id ?goal-id)
               (action-name prepare-bs)
               (skiller (remote-skiller ?robot))
               (param-names m side bc)
               (param-values ?bs ?bs-side ?base-color))
-        (plan-action (id 6) (plan-id ?planid) (goal-id ?goal-id)
+        (plan-action (id 7) (plan-id ?planid) (goal-id ?goal-id)
               (action-name bs-dispense)
               (skiller (remote-skiller ?robot))
               (param-names r m side wp basecol)
               (param-values ?robot ?bs ?bs-side ?wp ?base-color))
-        (plan-action (id 7) (plan-id ?planid) (goal-id ?goal-id)
+        (plan-action (id 8) (plan-id ?planid) (goal-id ?goal-id)
               (action-name wp-get)
               (skiller (remote-skiller ?robot))
               (param-names r wp m side)
               (param-values ?robot ?wp ?bs ?bs-side))
-        (plan-action (id 8) (plan-id ?planid) (goal-id ?goal-id)
+        (plan-action (id 9) (plan-id ?planid) (goal-id ?goal-id)
               (action-name go-wait)
               (skiller (remote-skiller ?robot))
               (param-names r from from-side to)
               (param-values ?robot ?bs ?bs-side (wait-pos ?bs ?bs-side)))
-        (plan-action (id 9) (plan-id ?planid) (goal-id ?goal-id)
+        (plan-action (id 10) (plan-id ?planid) (goal-id ?goal-id)
               (action-name location-unlock)
-              (param-values ?bs ?bs-side))
+              (param-values ?bs INPUT))
+        (plan-action (id 11) (plan-id ?planid) (goal-id ?goal-id)
+              (action-name location-unlock)
+              (param-values ?bs OUTPUT))
 	  )
         (modify ?g (mode EXPANDED)(params robot ?robot order ?order bs ?bs bs-side ?bs-side))
       (assert (wp-lock (wp ?wp) (order ?order)))
@@ -732,7 +758,7 @@
 
 
 (defrule goal-expander-buffer-rs
-  (declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
+  (declare (salience (+ ?*SALIENCE-EXPANDER-GENERIC* ?*SALIENCE-BUFFER-RS-DIFF*)))
  ?g <- (goal (id ?goal-id) (parent ?parent) (class BUFFER-RS) (mode SELECTED) (params order ?order rs ?rs))
  (wm-fact (key domain fact entered-field args? r ?robot))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))

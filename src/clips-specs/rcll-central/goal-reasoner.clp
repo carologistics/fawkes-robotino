@@ -161,8 +161,9 @@
 	?sg <- (goal (id ?sub-goal) (parent ?id) (acquired-resources)
 	             (type ACHIEVE) (mode RETRACTED) (outcome ?outcome&FAILED|REJECTED)(params robot ?robot $?rest-params))
 	=>
-    (printout warn "Goal " ?sub-goal " failed. Start retry." crlf)
+    (printout warn "Goal " ?sub-goal " failed. Start retry. Send Robot to wait somewhere." crlf)
 		(modify ?sg (mode SELECTED) (outcome UNKNOWN) (params ?rest-params))
+    (assert (goal (id (sym-cat RECOVER- (gensym*))) (class RECOVER) (sub-type SIMPLE) (params robot ?robot)))
 	)
 )
 
