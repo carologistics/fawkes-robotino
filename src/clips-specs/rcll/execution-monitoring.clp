@@ -125,7 +125,6 @@
      (state FORMULATED|PENDING)
      (param-values $? ?mps $?)
      (action-name ?an))
-  (domain-atomic-precondition (operator ?an) (predicate mps-state) (param-values ?mps ?state))
   (not (wm-fact (key monitoring fail-goal args? g ?goal-id)))
   =>
   (assert (wm-fact (key monitoring fail-goal args? g ?goal-id) ))
@@ -493,7 +492,7 @@
 	          (state RUNNING)
 	          (param-values ?bs ?side))
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
-  (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (action-name bs-dispense))
+  (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (action-name bs-dispense-trash|bs-dispense-for-order))
   ?li <- (lock-info (name ?name) (goal-id ?goal-id) (plan-id ?plan-id) (action-id ?id) (status WAITING))
   (test (eq ?name (sym-cat ?bs - ?side)))
   ; Do not switch sides if the other side is blocked, too.

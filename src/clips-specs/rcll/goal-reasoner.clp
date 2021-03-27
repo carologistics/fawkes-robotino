@@ -98,7 +98,7 @@
               (eq ?goal-class MOUNT-FIRST-RING)
               (eq ?goal-class MOUNT-NEXT-RING)
               (eq ?goal-class DELIVER)
-              (eq ?goal-class RESET-MPS) 
+              (eq ?goal-class RESET-MPS)
               (eq ?goal-class WAIT)
               (eq ?goal-class GO-WAIT)
               (eq ?goal-class WAIT-FOR-MPS-PROCESS)))
@@ -384,33 +384,6 @@
 )
 
 
-(defrule goal-reasoner-evaluate-completed-produce-c0-and-mount-first-ring
-" Bind a workpiece to the order it belongs to.
-
-  Workpieces that got dispensed during PRODUCE-C0 and MOUNT-FIRST-RING get
-  tied to their order independent of the goal outcome as long as they are
-  still usable.
-"
-  ?g <- (goal (id ?goal-id) (class PRODUCE-C0|MOUNT-FIRST-RING)
-              (parent ?parent-id)
-              (mode FINISHED) (outcome ?outcome)
-              (params $?params))
- (plan (goal-id ?goal-id) (id ?plan-id))
- (time $?now)
- (wm-fact (key domain fact wp-usable args? wp ?wp&:(eq ?wp (get-param-by-arg ?params wp))))
- (wm-fact (key domain fact self args? r ?robot))
- (wm-fact (key order meta points-max
-           args? ord ?order&:(eq ?order (get-param-by-arg ?params order)))
-          (value ?max))
- =>
- (printout t "Goal '" ?goal-id "' has been completed, Evaluating" crlf)
- (assert (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order) (type BOOL) (value TRUE)))
- (printout t "Started producing order " ?order " which potentially yields "
-             ?max " points" crlf)
- (modify ?g (mode EVALUATED))
-)
-
-
 (defrule goal-reasoner-evaluate-completed-subgoal-refill-shelf
   ?g <- (goal (class REFILL-SHELF) (mode FINISHED))
   =>
@@ -525,7 +498,7 @@
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
   ; other wp
   ;Order-CEs
-  (wm-fact (key order meta wp-for-order
+  (wm-fact (key domain fact wp-for-order
             args? wp ?other-wp&:(neq ?wp ?other-wp) ord ?other-order))
   (wm-fact (key wp meta next-step args? wp ?other-wp) (value DELIVER))
   (wm-fact (key refbox order ?other-order delivery-begin)

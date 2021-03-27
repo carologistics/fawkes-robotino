@@ -26,7 +26,8 @@ OPTIONS:
                      Calls: roslaunch package file.launch
    --ros-launch      Run launch file for each robot (on their roscore)
    -e arg            Record replay
-   -d                Detailed simulation (e.g. simulated webcam)
+   -d|--debug        Run Fawkes with debug output enabled
+   --detailed        Detailed simulation (e.g. simulated webcam)
    -o                Omitt starting gazebo (necessary when starting
                      different teams)
    -f arg            First Robotino Number (default 1, choose 4 when
@@ -45,6 +46,7 @@ OPTIONS:
                       to set the phase explicitly)
                      Typically requires at least --team-cyan.
    --mongodb         Start central mongodb instance
+   --keep-tmpfiles   Do not delete tmp files on exit
    --asp             Run with ASP agent and global planner
 EOF
 }
@@ -60,8 +62,10 @@ ROS_LAUNCH_MAIN=
 ROS_LAUNCH_ROBOT=
 ROS_LAUNCH_MOVEBASE=
 AGENT=
+DEBUG=
 DETAILED=
 KEEP=
+KEEP_TMPFILES=
 SHUTDOWN=
 NUM_ROBOTINOS=3
 NUM_CYAN=3
@@ -72,7 +76,6 @@ FAWKES_BIN=$FAWKES_DIR/bin
 META_PLUGIN=
 CENTRAL_AGENT=
 START_GAZEBO=true
-TERM_GEOMETRY=105x56
 GDB=
 SKIP_EXPLORATION=
 FAWKES_USED=false
@@ -97,7 +100,7 @@ fi
 
 case "$TERMINAL" in
     gnome-terminal)
-        TERM_COMMAND="gnome-terminal --window --geometry=$TERM_GEOMETRY -- bash -i -c '"
+        TERM_COMMAND="gnome-terminal --maximize -- bash -i -c '"
         TERM_COMMAND_END=" echo -e \"\n\n\nAll commands started. This tab may now be closed.\"'"
         SUBTERM_PREFIX="gnome-terminal --tab -- "
         SUBTERM_SUFFIX=" ; "
@@ -127,7 +130,7 @@ echo "Using $TERMINAL"
 ROS_MASTER_PORT=${ROS_MASTER_URI##*:}
 ROS_MASTER_PORT=${ROS_MASTER_PORT%%/*}
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:" -- "$@")
+OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "debug,ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:,keep-tmpfiles" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
@@ -194,7 +197,10 @@ while true; do
 	 -e)
 	     REPLAY="-e $OPTARG"
 	     ;;
-	 -d)
+     -d|--debug)
+         DEBUG="--debug"
+         ;;
+	 --detailed)
 	     DETAILED="-d"
 	     ;;
 	 -m)
@@ -205,6 +211,9 @@ while true; do
 	     ;;
      --mongodb)
          START_MONGODB=true
+         ;;
+     --keep-tmpfiles)
+         KEEP_TMPFILES=true
          ;;
 	 --central-agent)
 	     CENTRAL_AGENT="$OPTARG"
@@ -336,9 +345,17 @@ if [  $COMMAND  == start ]; then
     # delete old shm files. Only do this for the simulation, not on live bot.
     [[ -f /dev/shm/*fawkes* ]] && rm /dev/shm/*fawkes*
 
-    #construct command to open everything in one terminal window with multiple tabs instead of 10.000 windows
+    # Re-define TMPDIR so we can delete all temporary files afterwards.
+    GAZSIM_TMPDIR=$(mktemp -d --tmpdir gazsim-XXXXXXXXXXXX)
+    TMPDIR="${GAZSIM_TMPDIR}"
+    export TMPDIR
 
+    #construct command to open everything in one terminal window with multiple tabs instead of 10.000 windows
     COMMANDS=()
+
+    if [[ -z "$KEEP_TMPFILES" ]] ; then
+      COMMANDS=("bash -i -c \"trap \\\"sleep 1; rm -rf $GAZSIM_TMPDIR\\\" EXIT; echo \\\"Cleanup on $GAZSIM_TMPDIR: Waiting for shutdown\\\"; while true; do sleep 1; done\"")
+    fi
 
     if $START_GAZEBO
     then
@@ -380,31 +397,30 @@ if [  $COMMAND  == start ]; then
 
     # start mongodb central instance
     if $START_MONGODB ; then
-        MONGODB_DBPATH=/tmp/mongodb-27017
-        mkdir -p $MONGODB_DBPATH
+        MONGODB_DBPATH=$(mktemp -d --tmpdir mongodb-27017-XXXXXXXXXXXX)
         COMMANDS+=("bash -i -c \"mongod --port 27017 --dbpath $MONGODB_DBPATH | tee mongodb.log \"")
     fi
     #start fawkes for robotinos
     for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     do
-	COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x fawkes -p 1132$ROBO -i robotino$ROBO $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $META_PLUGIN $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
+	COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x fawkes -p 1132$ROBO -i robotino$ROBO $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $META_PLUGIN $DEBUG $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
 	FAWKES_USED=true
     done
 
     if $START_CENTRAL_AGENT ; then
         if [ $NUM_CYAN -gt 0 ] ; then
 		    ROBO=11
-		    COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 20; $startup_script_location -x fawkes -i robotino$ROBO $KEEP $CONF $GDB -m $CENTRAL_AGENT $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
+		    COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 20; $startup_script_location -x fawkes -i robotino$ROBO $KEEP $CONF $GDB -m $CENTRAL_AGENT $DEBUG $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
         fi
         if [ $NUM_MAGENTA -gt 0 ] ; then
 		    ROBO=12
-		    COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 20; $startup_script_location -x fawkes -i robotino$ROBO $KEEP $CONF $GDB -m $CENTRAL_AGENT $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
+		    COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 20; $startup_script_location -x fawkes -i robotino$ROBO $KEEP $CONF $GDB -m $CENTRAL_AGENT $DEBUG $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
         fi
     fi
 
     if $START_ASP_PLANER
     then
-	COMMANDS+=("bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x asp -p ${ROS_MASTER_URI##*:} $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
+	COMMANDS+=("bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x asp -p ${ROS_MASTER_URI##*:} $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $DEBUG $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
     fi
 
     #start fawkes for communication, llsfrbcomm and eventually statistics
@@ -413,7 +429,7 @@ if [  $COMMAND  == start ]; then
     else
         comm_plugin=comm-no-gazebo
     fi
-	COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 0; $startup_script_location -x $comm_plugin $KEEP $SHUTDOWN $@\"")
+	COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 0; $startup_script_location -x $comm_plugin $DEBUG $KEEP $SHUTDOWN $@\"")
 
     PREFIXED_COMMANDS=("${COMMANDS[@]/#/${SUBTERM_PREFIX}}")
     SUFFIXED_COMMANDS=("${PREFIXED_COMMANDS[@]/%/${SUBTERM_SUFFIX}}")

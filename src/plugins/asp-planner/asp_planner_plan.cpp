@@ -330,16 +330,14 @@ AspPlannerThread::loopPlan(void)
 
 	// Some helper functions to handle plan elements.
 	// If two plan elements refer to the same task.
-	auto sameTask = [](const BasicPlanElement &e1, const BasicPlanElement &e2) noexcept
-	{
+	auto sameTask = [](const BasicPlanElement &e1, const BasicPlanElement &e2) noexcept {
 		return e1.Task == e2.Task;
 	};
 	// Compares the begin and end time point and if their difference is above a
 	// given threshold. This is only valid if both elements are about the same
 	// task.
-	auto needsUpdate =
-	  [this, sameTask](const BasicPlanElement &e1, const BasicPlanElement &e2) noexcept
-	{
+	auto needsUpdate = [this, sameTask](const BasicPlanElement &e1,
+	                                    const BasicPlanElement &e2) noexcept {
 		assert(sameTask(e1, e2));
 		static_assert(std::is_signed<decltype(e1.Begin)>::value,
 		              "For unsigned values std::abs doesn't make any sense.");
@@ -563,14 +561,13 @@ AspPlannerThread::loopPlan(void)
 static std::string
 taskASPtoCLIPS(std::string string)
 {
-	std::transform(
-	  string.begin(), string.end(), string.begin(), [](const char c) noexcept {
-		  switch (c) {
-		  case ',': return ' ';
-		  case '"': return '\'';
-		  } // switch ( c )
-		  return c;
-	  });
+	std::transform(string.begin(), string.end(), string.begin(), [](const char c) noexcept {
+		switch (c) {
+		case ',': return ' ';
+		case '"': return '\'';
+		} // switch ( c )
+		return c;
+	});
 	return string;
 }
 
@@ -582,14 +579,13 @@ taskASPtoCLIPS(std::string string)
 static std::string
 taskCLIPStoASP(std::string string)
 {
-	std::transform(
-	  string.begin(), string.end(), string.begin(), [](const char c) noexcept {
-		  switch (c) {
-		  case ' ': return ',';
-		  case '\'': return '"';
-		  } // switch ( c )
-		  return c;
-	  });
+	std::transform(string.begin(), string.end(), string.begin(), [](const char c) noexcept {
+		switch (c) {
+		case ' ': return ',';
+		case '\'': return '"';
+		} // switch ( c )
+		return c;
+	});
 	return string;
 }
 

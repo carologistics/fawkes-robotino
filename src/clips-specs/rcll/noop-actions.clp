@@ -21,7 +21,9 @@
 
 (defrule action-execute-exogenous-noops
   ?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state PENDING)
-                   (action-name ?action&bs-dispense|cs-retrieve-cap
+                   (action-name ?action&bs-dispense-for-order
+                        |bs-dispense-trash
+                        |cs-retrieve-cap
                         |cs-mount-cap
                         |rs-mount-ring1
                         |rs-mount-ring2
@@ -108,7 +110,7 @@
   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
   ;Order-CEs
-  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))
   (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
