@@ -1,0 +1,7 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+clips-executive/gamestate-loader:
+    enable: true
+    game: "gx"
+    timepoint: "ty"
