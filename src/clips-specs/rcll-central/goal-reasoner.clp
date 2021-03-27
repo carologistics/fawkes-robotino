@@ -163,6 +163,13 @@
 	=>
     (printout warn "Goal " ?sub-goal " failed. Start retry. Send Robot to wait somewhere." crlf)
 		(modify ?sg (mode SELECTED) (outcome UNKNOWN) (params ?rest-params))
+    ;retract plan
+    (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?sub-goal)
+    (delayed-do-for-all-facts ((?a plan-action)) (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?sub-goal))
+      (retract ?a)
+    )
+    (retract ?p)
+    )
     (assert (goal (id (sym-cat RECOVER- (gensym*))) (class RECOVER) (sub-type SIMPLE) (params robot ?robot)))
 	)
 )

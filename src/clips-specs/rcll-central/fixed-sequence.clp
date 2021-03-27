@@ -191,9 +191,9 @@
 (defrule goal-expander-recover
   ?g <- (goal (id ?goal-id) (mode SELECTED) (class RECOVER)
               (params robot ?robot))
- (wm-fact (key domain fact mps-type args? m ?mps t SS))
- (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+ (wm-fact (key domain fact mps-type args? m ?mps t ?t))
+ (wm-fact (key domain fact mps-team args? m ?mps&~?curr-location col ?team-color))
 =>
 (bind ?planid (sym-cat RECOVER-PLAN- (gensym*)))
   (assert
@@ -201,8 +201,8 @@
     (plan-action (id 1) (plan-id ?planid) (goal-id ?goal-id)
               (action-name go-wait)
               (skiller (remote-skiller ?robot))
-              (param-names r from from-side to)
-              (param-values ?robot ?curr-location ?curr-side (wait-pos ?mps INPUT))))
+              (param-names r from from-side to to-side)
+              (param-values ?robot ?curr-location ?curr-side ?mps)))
   (modify ?g (mode EXPANDED))
 )
 
@@ -1091,7 +1091,7 @@
               (action-name location-unlock)
               (param-values ?rs OUTPUT))
 	  )
-        (modify ?g (mode EXPANDED)(params robot ?robot order ?order rs ?rs wp ?wp ring-num ?ring-num))
+        (modify ?g (mode EXPANDED)(params robot ?robot order ?order rs ?rs ring-num ?ring-num))
 )
 
 
@@ -1144,7 +1144,7 @@
               (action-name location-unlock)
               (param-values ?rs OUTPUT))
 	  )
-        (modify ?g (mode EXPANDED)(params robot ?robot order ?order rs ?rs wp ?wp ring-num ?ring-num))
+        (modify ?g (mode EXPANDED)(params robot ?robot order ?order rs ?rs ring-num ?ring-num))
 )
 
 

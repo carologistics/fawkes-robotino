@@ -33,7 +33,7 @@
   (declare (salience ?*MONITORING-SALIENCE*))
   (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
       (id ?id)
-      (state ?status&~FORMULATED&~FAILED&~FINAL)
+      (state ?status&~FORMULATED&~RUNNING&~FAILED&~FINAL)
       (action-name ?action-name)
       (param-values $?param-values))
   (plan (id ?plan-id) (goal-id ?goal-id))
@@ -120,7 +120,7 @@
   (if (or (eq ?error "Conveyor Align Failed") (eq ?error "Drive To Machine Point Failed")) then
     (return TRUE)
   )
-  (if (eq ?error "Unsatisfied precondition") then (return TRUE))
+  (if (eq ?error "Unsatisfied precondition") then (return FALSE))
   (if (and (or (eq ?an wp-put) (eq ?an wp-put-slide-cc))
            (any-factp ((?if RobotinoSensorInterface))
                       (and (not (nth$ 1 ?if:digital_in)) (nth$ 2 ?if:digital_in)))) then

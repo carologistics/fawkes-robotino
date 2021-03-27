@@ -175,13 +175,14 @@
 )
 )
 
-;; retract unstarted complex goals after it becomes infeasible to complete them timewise
+;; Retract unstarted complex goals after it becomes infeasible to complete them timewise
 (defrule goal-production-retract-late-productions
 (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 (wm-fact (key refbox game-time) (values $?game-time))
 ?g <- (goal (class PRODUCE-C2|PRODUCE-C3) (mode FORMULATED)
 	           (meta delivery-begin ?o-delivery-begin )(priority ?prio&:(and (> (nth$ 1 ?game-time) 800) (> ?prio 200))))
 =>
+(printout t "Retract unstarted complex goals." crlf)
 (retract ?g)
 )
 
