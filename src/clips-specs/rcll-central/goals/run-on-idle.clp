@@ -117,8 +117,6 @@
 	      (meta delivery-begin ?delivery-begin )(priority ?prio))
 	(not (goal (parent ?id) (type ACHIEVE) (mode FORMULATED)
 	           (meta delivery-begin ?o-delivery-begin )(priority ?o-prio&:(> (+ ?o-prio (- (nth$ 1 ?game-time) ?o-delivery-begin)) (+ ?prio (- (nth$ 1 ?game-time) ?delivery-begin))))))
-	(not (goal (parent ?id) (type ACHIEVE) (mode FORMULATED)
-	           (meta delivery-begin ?o-delivery-begin )(priority ?prio&:(and (> (nth$ 1 ?game-time) 800) (> ?prio 200)))))
 	(not (goal (parent ?id) (type ACHIEVE)
 	           (outcome ?outcome&:(run-on-idle-stop-execution ?params ?outcome))))
 	=>

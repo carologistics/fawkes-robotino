@@ -175,6 +175,16 @@
 )
 )
 
+;; retract unstarted complex goals after it becomes infeasible to complete them timewise
+(defrule goal-production-retract-late-productions
+(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+(wm-fact (key refbox game-time) (values $?game-time))
+?g <- (goal (class PRODUCE-C2|PRODUCE-C3) (mode FORMULATED)
+	           (meta delivery-begin ?o-delivery-begin )(priority ?prio&:(and (> (nth$ 1 ?game-time) 800) (> ?prio 200))))
+=>
+(retract ?g)
+)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;
 ;C0 Production
@@ -369,9 +379,10 @@
 "
  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
  (wm-fact (key domain fact order-complexity args? ord ?order com C2))
-   (wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin))
+ (wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin))
 
 (wm-fact (key refbox game-time) (values $?game-time))
+(test (< (nth$ 1 ?game-time) 800))
 
 (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
 (wm-fact (key refbox order ?order quantity-requested) (value ?quantity))
@@ -506,6 +517,7 @@
   (wm-fact (key refbox order ?order quantity-requested) (value ?quantity))
 
  (wm-fact (key refbox game-time) (values $?game-time))
+ (test (< (nth$ 1 ?game-time) 800))
 
  (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
  (goal (id ?produce-cparent-id) (class PRODUCE-CPARENT))
