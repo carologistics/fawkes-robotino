@@ -52,6 +52,7 @@
 ; - User: EVALUATE goal
 ; - User: RETRACT goal
 
+;define maximum number of running tasks
 (defglobal
   ?*MAX-RUNNING-TASKS* = 3
 )
@@ -71,7 +72,9 @@
   (slot robot(type SYMBOL))
 )
 
+
 (deffunction run-on-idle-stop-execution (?params ?sub-goal-outcome)
+"stop exection on failure or rejected"
 	(return (and (or (eq ?sub-goal-outcome FAILED)
 	                 (eq ?sub-goal-outcome REJECTED))
 	             (not (member$ (create$ continue-on FAILED) ?params))
@@ -79,6 +82,7 @@
 )
 
 (defrule run-on-idle-goal-expand-failed
+"fail a goal, if no subgoals exist"
 	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type RUN-SUBGOALS-ON-IDLE)
 	             (mode EXPANDED))
 	(not (goal (type ACHIEVE) (parent ?id)))
@@ -106,6 +110,7 @@
 )
 
 (defrule run-on-idle-subgoals-select
+"select a subgoal based on the priority, delivery time and the game time itself"
 	(idle-robot (robot ?robot))
 	?r <- (running-tasks (number ?running-tasks))
 	(test (< ?running-tasks ?*MAX-RUNNING-TASKS*))
@@ -130,6 +135,7 @@
 )
 
 (defrule run-on-idle-subgoal-reject-other-subgoal-rejected
+"reject a subgoal based on the priority, delivery time and the game time itself"
 	(goal (id ?id) (type ACHIEVE) (sub-type RUN-SUBGOALS-ON-IDLE)
 	      (mode DISPATCHED) (params $?params))
 	(wm-fact (key refbox game-time) (values $?game-time))
@@ -152,29 +158,3 @@
 	=>
 	(modify ?sg (mode RETRACTED))
 )
-
-;(defrule run-on-idle-goal-finish-all-subgoals-retracted
-;	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type RUN-SUBGOALS-ON-IDLE)
-;	             (mode DISPATCHED))
-;	(not (goal (parent ?id) (type ACHIEVE)
-;	           (acquired-resources $?acq&:(> (length ?acq) 0))))
-;	(not (goal (parent ?id) (type ACHIEVE) (mode ~RETRACTED)))
-;	=>
-;	(if (not (do-for-fact ((?g goal))
-;	                      (and (eq ?g:parent ?id) (eq ?g:outcome FAILED))
-;		(modify ?gf (mode FINISHED) (outcome ?g:outcome)
-;		          (error SUB-GOAL-FAILED ?g:id)
-;		          (message (str-cat "Sub-goal '" ?g:id "' of run-on-idle goal '"
-;		                            ?id "' has failed")))))
-;	 then
-;		(if (not (do-for-fact ((?g goal))
-;		                    (and (eq ?g:parent ?id) (eq ?g:outcome REJECTED))
-;			(modify ?gf (mode FINISHED) (outcome ?g:outcome)
-;			          (error SUB-GOAL-REJECTED ?g:id)
-;			          (message (str-cat "Sub-goal '" ?g:id "' of run-on-idle goal '"
-;			                            ?id "' was rejected")))))
-;		 then
-;			(modify ?gf (mode FINISHED) (outcome COMPLETED))
-;		)
-;	)
-;)
