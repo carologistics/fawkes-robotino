@@ -173,7 +173,7 @@
     (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
   ))
   ; Subgoal does not exist yet
-  (not (goal (class TRANSPORT) (parent ?parent-id) (params mps-to ?ds base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cap-color ?cap-color)))
+  (not (goal (class TRANSPORT) (outcome ~FAILED) (parent ?parent-id) (params mps-to ?ds base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cap-color ?cap-color)))
   => 
    (assert
         (goal (id (sym-cat TRANSPORT-TO-DS- (gensym*))) (parent ?parent-id)
@@ -205,7 +205,7 @@
     (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
   ))
   ; Subgoal does not exist yet
-  (not (goal (class MOUNT-CAP) (parent ?parent-id) (params base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cap-color ?cap-color)))
+  (not (goal (class MOUNT-CAP) (outcome ~FAILED) (parent ?parent-id) (params base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cap-color ?cap-color)))
   => 
    (assert
         (goal (id (sym-cat MOUNT-CAP- (gensym*))) (parent ?parent-id)
@@ -242,7 +242,7 @@
     (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
   ))
   ; Subgoal does not exist yet
-  (not (goal (class TRANSPORT) (parent ?parent-id) (params mps-to ?cs base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cap-color CAP_NONE)))
+  (not (goal (class TRANSPORT) (outcome ~FAILED) (parent ?parent-id) (params mps-to ?cs base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cap-color CAP_NONE)))
   => 
    (assert
         (goal (id (sym-cat TRANSPORT-TO-CS- (gensym*))) (parent ?parent-id)
@@ -272,7 +272,7 @@
   (wm-fact (key domain fact cs-color args? m ?cs col ?cap-color))
   (not (wm-fact (key domain fact cs-buffered args? m ?cs col ?cap-color)))
   ; Subgoal does not exist yet
-  (not (goal (class RETRIEVE-CAP) (parent ?parent-id) (params cap-color ?cap-color)))
+  (not (goal (class RETRIEVE-CAP) (outcome ~FAILED) (parent ?parent-id) (params cap-color ?cap-color)))
   => 
    (assert
         (goal (id (sym-cat RETRIEVE-CAP- (gensym*))) (parent ?parent-id)
@@ -307,7 +307,7 @@
     (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
   ))
   ; Subgoal does not exist yet
-  (not (goal (class FETCH-CC) (parent ?parent-id) (params cap-color ?cap-color)))
+  (not (goal (class FETCH-CC) (outcome ~FAILED) (parent ?parent-id) (params cap-color ?cap-color)))
   => 
    (assert
         (goal (id (sym-cat FETCH-CC- (gensym*))) (parent ?parent-id)
@@ -338,7 +338,7 @@
   (wm-fact (key domain fact wp-at args? wp ?wp-output m ?cs side OUTPUT))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp-output col CAP_NONE))
   ; Subgoal does not exist yet
-  (not (goal (class DISCARD-BASE) (parent ?parent-id) (params cs ?cs)))
+  (not (goal (class DISCARD-BASE) (outcome ~FAILED) (parent ?parent-id) (params cs ?cs)))
   => 
    (assert
         (goal (id (sym-cat DISCARD-BASE- ?cs - (gensym*))) (parent ?parent-id)
@@ -371,7 +371,7 @@
     (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
   ))
   ; Subgoal does not exist yet
-  (not (goal (class CREATE-BASE) (parent ?parent-id) (params base-color ?base-color)))
+  (not (goal (class CREATE-BASE) (outcome ~FAILED) (parent ?parent-id) (params base-color ?base-color)))
   => 
    (assert
         (goal (id (sym-cat CREATE-BASE- (gensym*))) (parent ?parent-id)
@@ -408,7 +408,7 @@
     (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
   ))
   ; Subgoal does not exist yet
-  (not (goal (class MOUNT-RING1) (parent ?parent-id) (params base-color ?base-color ring1-color ?ring1-color)))
+  (not (goal (class MOUNT-RING1) (outcome ~FAILED) (parent ?parent-id) (params base-color ?base-color ring1-color ?ring1-color)))
   => 
   (assert
         (goal (id (sym-cat MOUNT-RING1- (gensym*))) (parent ?parent-id)
@@ -443,7 +443,7 @@
     (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
   ))
   ; Subgoal does not exist yet
-  (not (goal (class MOUNT-RING2) (parent ?parent-id) (params base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color)))
+  (not (goal (class MOUNT-RING2) (outcome ~FAILED)  (parent ?parent-id) (params base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color)))
   => 
   (assert
         (goal (id (sym-cat MOUNT-RING2- (gensym*))) (parent ?parent-id)
@@ -478,7 +478,7 @@
     (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
   ))
   ; Subgoal does not exist yet
-  (not (goal (class MOUNT-RING3) (parent ?parent-id) (params base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color)))
+  (not (goal (class MOUNT-RING3) (outcome ~FAILED) (parent ?parent-id) (params base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color)))
   => 
   (assert
         (goal (id (sym-cat MOUNT-RING3- (gensym*))) (parent ?parent-id)
@@ -517,7 +517,7 @@
                                          subtrahend ?bases-filled
                                          difference ?bases-remain&ONE|TWO|THREE))
   ; Subgoal does not exist yet
-  (not (goal (class FEED-RS) (params ring-color ?ring-color)))
+  (not (goal (class FEED-RS) (outcome ~FAILED) (params ring-color ?ring-color)))
   => 
    (assert
         (goal (id (sym-cat FEED- ?rs - (gensym*))) (parent ?parent-id)
@@ -553,7 +553,7 @@
     (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
   ))
   ; Subgoal does not exist yet
-  (not (goal (class CREATE-BASE) (parent ?parent-id) (params base-color BASE_RED)))
+  (not (goal (class CREATE-BASE) (outcome ~FAILED) (parent ?parent-id) (params base-color BASE_RED)))
   => 
    (assert
         (goal (id (sym-cat CREATE-BASE- (gensym*))) (parent ?parent-id)
@@ -581,7 +581,7 @@
     (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
   ))
   ; Subgoal does not exist yet
-  (not (goal (class TRANSPORT) (params mps-to ?rs base-color ?base-color ring1-color RING_NONE ring2-color RING_NONE ring3-color RING_NONE cap-color CAP_NONE)))
+  (not (goal (class TRANSPORT) (outcome ~FAILED) (params mps-to ?rs base-color ?base-color ring1-color RING_NONE ring2-color RING_NONE ring3-color RING_NONE cap-color CAP_NONE)))
   => 
    (assert
         (goal (id (sym-cat TRANSPORT-TO- ?rs - (gensym*))) (parent ?parent-id)
@@ -619,7 +619,7 @@
     (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
   ))
   ; Subgoal does not exist yet
-  (not (goal (class TRANSPORT) (params mps-to ?rs base-color ?base-color ring1-color ?ring1-color ring2-color RING_NONE ring3-color RING_NONE cap-color CAP_NONE)))
+  (not (goal (class TRANSPORT) (outcome ~FAILED) (params mps-to ?rs base-color ?base-color ring1-color ?ring1-color ring2-color RING_NONE ring3-color RING_NONE cap-color CAP_NONE)))
   => 
    (assert
         (goal (id (sym-cat TRANSPORT-TO- ?rs - (gensym*))) (parent ?parent-id)
@@ -657,7 +657,7 @@
     (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
   ))
   ; Subgoal does not exist yet
-  (not (goal (class TRANSPORT) (params mps-to ?rs base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color RING_NONE cap-color CAP_NONE)))
+  (not (goal (class TRANSPORT) (outcome ~FAILED) (params mps-to ?rs base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color RING_NONE cap-color CAP_NONE)))
   => 
    (assert
         (goal (id (sym-cat TRANSPORT-TO- ?rs - (gensym*))) (parent ?parent-id)

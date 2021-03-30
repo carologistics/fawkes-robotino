@@ -86,6 +86,7 @@
 	)
   (refresh idea-production-fetch-cc)
   (refresh idea-production-transport)
+  (refresh idea-production-transport-from-hand)
   (refresh idea-production-discard-base)
   (refresh idea-production-discard-base-urgent)
   (refresh idea-production-create-base)
@@ -360,7 +361,9 @@
   (assert
         (idea (class TRANSPORT)
               (goal-id ?goal-id)
-              (distance (node-distance (mps-node ?mps-from ?mps-from-side) ?robot))
+              (distance (* 0.5 (+ (node-distance (mps-node ?mps-from ?mps-from-side) ?robot)
+                                  (node-distance (mps-node ?mps-from ?mps-from-side) (mps-node ?mps-to INPUT))
+                               )))
               (goal-priority 0.1)
               (base-color ?base-color) (ring1-color ?ring1-color) (ring2-color ?ring2-color) (ring3-color ?ring3-color) (cap-color ?cap-color)
               (params mps-to ?mps-to wp ?wp robot ?robot))
@@ -375,6 +378,7 @@
   ?g <- (goal (id ?goal-id))
   ; Robot facts
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+  (wm-fact (key domain fact can-hold args? r ?robot))
   ; wp facts
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps-from side ?mps-from-side))
 =>
@@ -398,6 +402,71 @@
               (param-names r from from-side to to-side)
               (param-values ?robot ?mps-from ?mps-from-side ?mps-to INPUT))
     (plan-action (id 4) (plan-id ?plan-id) (goal-id ?goal-id)
+              (action-name wp-put)
+              (skiller (remote-skiller ?robot))
+              (param-names r wp m)
+              (param-values ?robot ?wp ?mps-to))
+  )
+  (modify ?g (mode EXPANDED))
+  (retract-ideas)
+)
+
+; Transport from hand
+(defrule idea-production-transport-from-hand
+  (declare (salience ?*SALIENCE-IDEA-PRODUCTION*))
+  ?g <- (goal (id ?goal-id) (mode SELECTED) (class TRANSPORT)
+              (params mps-to ?mps-to base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cap-color ?cap-color))
+  ; Robot facts
+  (wm-fact (key domain fact entered-field args? r ?robot))
+  (not (plan (r ?robot)))
+  (wm-fact (key domain fact holding args? r ?robot wp ?wp)) ; Robot can only have wp already in hand if previous transport failed
+  ; wp facts
+  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
+  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
+  (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
+  (not (plan (wp ?wp)))
+  ; mps facts
+  (wm-fact (key domain fact mps-side-free args? m ?mps-to side INPUT))
+  (or  
+    (wm-fact (key domain fact mps-type args? m ?mps-to t ~CS))
+    (wm-fact (key domain fact cs-can-perform args? m ?mps-to op MOUNT_CAP))
+  )
+  (not (plan (mps ?mps-to)))
+=>
+  (printout t "Formulated TRANSPORT (from hand) idea " ?wp " to " ?mps-to " with " ?robot crlf)
+  (assert
+        (idea (class TRANSPORT)
+              (goal-id ?goal-id)
+              (distance 0.0)
+              (goal-priority 10.0)
+              (base-color ?base-color) (ring1-color ?ring1-color) (ring2-color ?ring2-color) (ring3-color ?ring3-color) (cap-color ?cap-color)
+              (params mps-to ?mps-to wp ?wp robot ?robot))
+  )
+)
+
+(defrule goal-expander-transport-from-hand
+  (declare (salience ?*SALIENCE-IDEA-GOAL-EXPAND*))
+  (idea (class TRANSPORT) (priority ?prio&:(> ?prio -100.0)) (goal-id ?goal-id)
+        (params mps-to ?mps-to wp ?wp robot ?robot))
+  (not (idea (priority ?prio2&:(> ?prio2 ?prio))))
+  ?g <- (goal (id ?goal-id))
+  ; Robot facts
+  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+  ; wp facts
+  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+=>
+  (printout t "Expanded TRANSPORT (from-hand) idea " ?wp " to " ?mps-to " with " ?robot " (" ?prio ")" crlf)
+  (bind ?plan-id (sym-cat TRANSPORT-PLAN- (gensym*)))
+  (assert
+    (plan (id ?plan-id) (goal-id ?goal-id) (r ?robot) (mps ?mps-to) (wp ?wp))
+    (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
+              (action-name move)
+              (skiller (remote-skiller ?robot))
+              (param-names r from from-side to to-side)
+              (param-values ?robot ?curr-location ?curr-side ?mps-to INPUT))
+    (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
               (action-name wp-put)
               (skiller (remote-skiller ?robot))
               (param-names r wp m)
@@ -826,7 +895,7 @@
               (goal-id ?goal-id)
               (priority (goal-distance-prio (node-distance (mps-node ?mps-to INPUT) ?robot)))
               (distance 0.0)
-              (goal-priority 0.0)
+              (goal-priority 5.0)
               (params mps-to ?mps-to wp ?wp robot ?robot))
   )
 )
