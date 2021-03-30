@@ -436,8 +436,7 @@
 )
 
 (defrule goal-expander-get-base-recover-wp
-      "Expands a get base recovery for all Production complexities, if the wp is used - performs move action 
-      in order for the robot to get stabalized against delocalization, etc."
+      "Expands a get base recovery for all Production complexities, if the wp is used - performs move action"
       (declare (salience (+ ?*SALIENCE-EXPANDER-GENERIC* ?*SALIENCE-GET-BASE-DIFF*)))
       ?g <- (goal (id ?goal-id) (parent ?parent) (class GET-BASE) (mode SELECTED) (params order ?order bs ?any-bs bs-side ?any-side))
       
@@ -550,7 +549,7 @@
 )
 
 (defrule goal-expander-get-cap-carrier
-      "Expands a get cap carrier goal, where the cap is taken from the current cap station"
+      "Expands a get cap carrier goal, where the cap carrier is taken from the current cap station"
       (declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
       ?g <- (goal (id ?goal-id) (parent ?parent) (class GET-CC) (mode SELECTED) (params cs-color ?cap-color cs ?any-cs)) 
 
@@ -606,7 +605,7 @@
 
 
 (defrule goal-expander-buffer-cs
-      "Expands a get buffer cs goal, where a cap station is buffered with a cap"
+      "Expands a buffer cs goal, where a cap station is buffered with a cap carrier"
 
       (declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
       ?g <- (goal (id ?goal-id) (parent ?parent) (class BUFFER-CS) (mode SELECTED) (params cs-color ?cap-color cs ?any-cs))  
@@ -700,6 +699,7 @@
 
 
 (defrule goal-expander-buffer-cs-recover-cc
+"Expands a buffer cs goal, where a cap station is buffered with a cap carrier that is already placed at the cs"
   (declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
  ?g <- (goal (id ?goal-id) (parent ?parent) (class BUFFER-CS) (mode SELECTED) (params cs-color ?cap-color cs ?any-cs))
 
@@ -777,7 +777,7 @@
 
 
 (defrule goal-expander-buffer-cs-recover-discard 
-      "Expands a get buffer cs recovery, where the workpiece gets discarded"
+      "Expands a buffer cs goal, where a cap carrier that was used for buffering previously is discarded"
       (declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
       ?g <- (goal (id ?goal-id) (parent ?parent) (class BUFFER-CS) (mode SELECTED) (params cs-color ?cap-color cs ?any-cs))   
 
@@ -836,7 +836,7 @@
 
 
 (defrule goal-expander-buffer-rs
-      "Expands a get buffer rs goal, where a ring station gets buffered with a base"
+      "Expands a buffer rs goal, where a ring station is buffered with a base"
       (declare (salience (+ ?*SALIENCE-EXPANDER-GENERIC* ?*SALIENCE-BUFFER-RS-DIFF*)))
       ?g <- (goal (id ?goal-id) (parent ?parent) (class BUFFER-RS) (mode SELECTED) (params order ?order rs ?rs))
 
@@ -895,7 +895,7 @@
 
 
 (defrule goal-expander-mount-ring
-      "Expands a mount ring goal, where a ring is mounted on the current workpiece"
+      "Expands a mount ring goal, where a ring is mounted on the current workpiece. Works for every ring"
       (declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
       ?g <- (goal (id ?goal-id) (parent ?parent) (class MOUNT-RING) (mode SELECTED) (params order ?order rs ?rs ring-num ?ring-num))  
 
@@ -1038,7 +1038,7 @@
 )
 
 (defrule goal-expander-mount-ring-recover-wp
-      "Expands a mount ring recovery, where a move action is performed in order for the robot to get stabalized against delocalization, etc."
+      "Expands a mount ring goal, where a where a wp is recovered from the output of an rs"
       (declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
       ?g <- (goal (id ?goal-id) (parent ?parent) (class MOUNT-RING) (mode SELECTED) (params order ?order rs ?rs ring-num ?ring-num))  
 

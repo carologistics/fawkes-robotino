@@ -73,7 +73,7 @@
               (eq ?goal-type RUN-ENDLESS)
               (eq ?goal-type RUN-ALL-OF-SUBGOALS)
               (eq ?goal-type RUN-SUBGOALS-ON-IDLE)
-              (eq ?goal-type RUN-SUBGOALS-IN-PARALLEL))); Thanks to Cris Dax for suggesting this fix
+              (eq ?goal-type RUN-SUBGOALS-IN-PARALLEL))); Thanks to Chris Dax for suggesting this fix
 )
 
 (deffunction goal-tree-assert-run-endless (?class ?frequency $?fact-addresses)
@@ -154,6 +154,7 @@
 ;----------------------- EVALUATE SPECIFIC GOALS ---------------------------
 
 (defrule retry-production-subgoals
+"Restart production subgoals in case they fail. Send robots somewhere as recovery measure. This can sometimes enable robots to recover from delocalization."
 	?gf <- (goal (id ?id) (type ACHIEVE) (class PRODUCE-C0|PRODUCE-C1|PRODUCE-C2|PRODUCE-C3) (mode DISPATCHED))
 	?sg <- (goal (id ?sub-goal) (parent ?id) (acquired-resources)
 	             (type ACHIEVE) (mode RETRACTED) (outcome ?outcome&FAILED|REJECTED)(params robot ?robot $?rest-params))

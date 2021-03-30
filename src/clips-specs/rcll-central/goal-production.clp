@@ -157,7 +157,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defrule goal-production-create-produce-cparent
-  "Root goal for all productions with subgoal-type run subgoals on idle
+  "Root goal for all productions with subgoal-type run-on-idle
   "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key domain fact entered-field args? r ?some-robot))
@@ -177,7 +177,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defrule goal-production-create-produce-c0
-  " Produce a C0 product: Get the correct base and mount the right cap on it.
+  " Produce a C0 product
   "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key domain fact order-complexity args? ord ?order com C0))
@@ -210,7 +210,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defrule goal-produce-c0-get-base
-  "get a base for c0-production and wait at the cap-station"
+  "get a base for c0-production"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?produce-c0-id) (class PRODUCE-C0) (mode SELECTED) (params order ?order))
   (not (goal (class GET-BASE) (parent ?produce-c0-id)))
@@ -220,7 +220,7 @@
 )
 
 (defrule goal-produce-c0-buffer-cs
-  "feed a cap into the a cap station for c0-production"
+  "feed a cap into the a cap station for the C0 production"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?produce-c0-id) (class PRODUCE-C0) (mode SELECTED) (params order ?order))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
@@ -232,7 +232,7 @@
 )
 
 (defrule goal-produce-c0-mount-cap-deliver
-  "mount the cap for c0-production and and deliver the product"
+  "mount the cap for C0 production and and deliver the product"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?produce-c0-id) (class PRODUCE-C0) (mode SELECTED) (params order ?order))
   (not (goal (class MOUNT-CAP) (parent ?produce-c0-id)))
@@ -250,7 +250,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defrule goal-production-create-produce-c1
-  " Produce a C1 product: Get the correct base and mount the right ring and then a cap on it.
+  " Produce a C1 product
   "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key domain fact order-complexity args? ord ?order com C1))
@@ -285,7 +285,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defrule goal-produce-c1-get-base
-  "get a base for c1-production and wait at the ring-station"
+  "get a base for c1-production"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?produce-c1-id) (class PRODUCE-C1) (mode SELECTED) (params order ?order))
   (not (goal (class GET-BASE) (parent ?produce-c1-id)))
@@ -365,7 +365,7 @@
 
 
 (defrule goal-production-create-produce-c2
-  " Produce a C2 product: Get the correct base and mount the right rings and then a cap on it.
+  " Produce a C2 product
   "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key domain fact order-complexity args? ord ?order com C2))
@@ -399,7 +399,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defrule goal-produce-c2-get-base
-  "get a base for c2-production and wait at the ring-station"
+  "get a base for c2-production"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?produce-c2-id) (class PRODUCE-C2) (mode SELECTED) (params order ?order))
   (not (goal (class GET-BASE) (parent ?produce-c2-id)))
@@ -504,7 +504,7 @@
 
 
 (defrule goal-production-create-produce-c3
-" Produce a C3 product: Get the correct base and mount the right rings and then a cap on it.
+" Produce a C3 product
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key domain fact order-complexity args? ord ?order com C3))
@@ -536,7 +536,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defrule goal-produce-c3-get-base
-  "get a base for c3-production and wait at the ring-station"
+  "get a base for c3-production"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?produce-c3-id) (class PRODUCE-C3) (mode SELECTED) (params order ?order))
   (not (goal (class GET-BASE) (parent ?produce-c3-id)))

@@ -1,5 +1,5 @@
 ;---------------------------------------------------------------------------
-;  run-on-idle.clp - CLIPS executive - goal to run all sub-goals in parallel
+;  run-on-idle.clp - CLIPS executive - goal to run all sub-goals in parallel whenever robot idles
 ;
 ;  Created: Mon Mar 8 2021
 ;  Copyright  2021  Luis Laas
@@ -7,7 +7,7 @@
 ;---------------------------------------------------------------------------
 
 ; Sub-type: RUN-SUBGOALS-ON-IDLE
-; Perform: all sub-goals in parallel
+; Perform: all sub-goals in parallel, select if robots idle
 ; Params: (params continue-on FAILED|REJECTED) to not stop SELECTION of
 ;         other goals when a sub-goal FAILED/is REJECTED
 ;         other values will be ignored
@@ -16,7 +16,7 @@
 ; Reject:  if any sub-goal is rejected but no sub-goal failed
 ;
 ; A run-on-idle parent goal will run all sub-goals in parallel by
-; continuously SELECTING all sub-goals with the highest priority.
+; continuously SELECTING all sub-goals with the highest priority whenever there is an idling robot.
 ; If any goal fails, the parent fails. If any sub-goal is rejected,
 ; the parent is rejected. If all goals have been completed successfully,
 ; the parent goal succeeds.
@@ -32,11 +32,11 @@
 ; - User EXPANDS goal, consisting of:
 ;   * create goals with parent ID equal the run-on-idle goal ID
 ;   * set run-on-idle goal mode to EXPANDED
+; - User sets robots on idle
 ; - Automatic: if no sub-goal formulated -> FAIL
 ; - Automatic: if all sub-goals rejected -> REJECT
-; - Automatic: SELECT all formulated sub-goals with highest priority,
-;              SELECT next batch of sub-goals once all
-;              previously SELECTED sub-goals are DISPATCHED|FINISHED|RETRACTED.
+; - Automatic: SELECT a formulated sub-goals with highest priority if at least one robot is in idle,
+;              retract the robot idle fact.
 ; - User: handle sub-goal expansion, committing, dispatching, evaluating
 ; - Automatic: when sub-goal is EVALUATED, outcome determines parent goal:
 ;   * REJECTED or FAILED: Reject formulated sub-goals
@@ -159,6 +159,7 @@
 	(modify ?sg (mode RETRACTED))
 )
 
+;suspended for our use case to prevent the production root to be retracted
 ;(defrule run-on-idle-goal-finish-all-subgoals-retracted
 ;	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type RUN-SUBGOALS-ON-IDLE)
 ;	             (mode DISPATCHED))
