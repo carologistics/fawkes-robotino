@@ -6,21 +6,21 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
+;Define multiple Global variables to describe duration, salience and timeout 
+(defglobal
+  ?*MONITORING-SALIENCE* = 1
+  ?*COMMON-TIMEOUT-DURATION* = 15
+  ?*MPS-DOWN-TIMEOUT-DURATION* = 120
+  ?*HOLDING-MONITORING* = 60
+)
 
-;A timeout for an action
+;timeout for an action
 (deftemplate action-timer
   (slot plan-id (type SYMBOL))
   (slot action-id(type NUMBER))
   (slot timeout-duration)
   (multislot start-time)
   (slot status)
-)
-
-(defglobal
-  ?*MONITORING-SALIENCE* = 1
-  ?*COMMON-TIMEOUT-DURATION* = 15
-  ?*MPS-DOWN-TIMEOUT-DURATION* = 120
-  ?*HOLDING-MONITORING* = 60
 )
 
 ;
@@ -49,7 +49,6 @@
               (status ?status)
               (start-time ?now)))
 )
-
 
 (defrule execution-monitoring-detect-timeout
 " If an action was longer than its timeout-duration in a volatile state like pending or pending-sensed-effect
@@ -95,7 +94,6 @@
   (modify ?p (state FAILED) (error-msg "Unsatisfied precondition"))
   (retract ?pt)
 )
-
 
 (defrule execution-monitoring-remove-timer
 " If an action is in a different state than when creating a timer,
@@ -216,3 +214,4 @@
   (retract ?wm)
 )
 
+;=============================================================================================

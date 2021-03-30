@@ -17,7 +17,6 @@
 ; GNU Library General Public License for more details.
 ;
 ; Read the full text in the LICENSE.GPL file in the doc directory.
-;
 
 
 (defglobal
@@ -30,37 +29,19 @@
 ?*PRIORITY-GO-WAIT* = 1
 )
 
-;(defrule goal-production-create-beacon-maintain
-;" The parent goal for beacon signals. Allows formulation of
-;  goals that periodically communicate with the refbox.
-;"
-;  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-;  (not (goal (class BEACON-MAINTAIN)))
-;  (or (domain-facts-loaded)
-;      (wm-fact (key refbox phase) (value ~SETUP&~PRE_GAME)))
-;  =>
-;  (bind ?goal (goal-tree-assert-run-endless BEACON-MAINTAIN 1))
-;  (modify ?goal (verbosity QUIET) (params frequency 1))
-;)
-
-
-;(defrule goal-production-create-beacon-achieve
-;" Send a beacon signal whenever at least one second has elapsed since it
-;  last one got sent.
-;"
-;  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-;  (time $?now)
-;  ?g <- (goal (id ?maintain-id) (class BEACON-MAINTAIN) (mode SELECTED))
-;  ; TODO: make interval a constant
-;  =>
-;  (assert (goal (id (sym-cat SEND-BEACON- (gensym*))) (sub-type SIMPLE)
-;                (class SEND-BEACON) (parent ?maintain-id) (verbosity QUIET)))
-;)
 
 (deftemplate color-assignment
   (slot cs(type SYMBOL))
   (slot color(type SYMBOL))
 )
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;
+;Tasks to support production 
+;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 (defrule goal-production-create-refill-shelf-maintain
 " The parent goal to refill a shelf. Allows formulation of goals to refill
@@ -157,6 +138,18 @@
 )
 
 
+(defrule goal-production-retract-late-productions
+  "Retract unstarted complex goals after it becomes infeasible to complete them timewise
+  "
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (wm-fact (key refbox game-time) (values $?game-time))
+  ?g <- (goal (class PRODUCE-C2|PRODUCE-C3) (mode FORMULATED)
+	           (meta delivery-begin ?o-delivery-begin )(priority ?prio&:(and (> (nth$ 1 ?game-time) 800) (> ?prio 200))))
+  =>
+  (printout t "Retract unstarted complex goals." crlf)
+  (retract ?g)
+)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;
 ;CParent Production
@@ -164,26 +157,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defrule goal-production-create-produce-cparent
-(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-(wm-fact (key domain fact entered-field args? r ?some-robot))
-(not (goal (class PRODUCE-CPARENT)))
-=>
- (printout t "CParent formulated" crlf)
- (bind ?wp (sym-cat WP- (random-id)))
- (assert (goal (id (sym-cat PRODUCE-CPARENT- (gensym*))) (mode EXPANDED)
+  "Root goal for all productions with subgoal-type run subgoals on idle
+  "
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (wm-fact (key domain fact entered-field args? r ?some-robot))
+  (not (goal (class PRODUCE-CPARENT)))
+  =>
+  (printout t "CParent formulated" crlf)
+  (bind ?wp (sym-cat WP- (random-id)))
+  (assert (goal (id (sym-cat PRODUCE-CPARENT- (gensym*))) (mode EXPANDED)
                (class PRODUCE-CPARENT)(sub-type RUN-SUBGOALS-ON-IDLE))
-)
-)
-
-;; Retract unstarted complex goals after it becomes infeasible to complete them timewise
-(defrule goal-production-retract-late-productions
-(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-(wm-fact (key refbox game-time) (values $?game-time))
-?g <- (goal (class PRODUCE-C2|PRODUCE-C3) (mode FORMULATED)
-	           (meta delivery-begin ?o-delivery-begin )(priority ?prio&:(and (> (nth$ 1 ?game-time) 800) (> ?prio 200))))
-=>
-(printout t "Retract unstarted complex goals." crlf)
-(retract ?g)
+  )
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -192,36 +176,38 @@
 ;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
-
-
 (defrule goal-production-create-produce-c0
-" Produce a C0 product: Get the correct base and mount the right cap on it.
-"
-(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-(wm-fact (key domain fact order-complexity args? ord ?order com C0))
-(wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin))
-(wm-fact (key refbox order ?order quantity-requested) (value ?quantity))
+  " Produce a C0 product: Get the correct base and mount the right cap on it.
+  "
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (wm-fact (key domain fact order-complexity args? ord ?order com C0))
+  (wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin))
+  (wm-fact (key refbox order ?order quantity-requested) (value ?quantity))
 
-(wm-fact (key refbox game-time) (values $?game-time))
+  (wm-fact (key refbox game-time) (values $?game-time))
 
-(not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
-(not (goal (class PRODUCE-C0)(params order ?order)))
-(goal (id ?produce-cparent-id) (class PRODUCE-CPARENT))
-
- =>
- (printout t "Goal for C0 order " ?order " formulated." crlf)
- (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
-               (class PRODUCE-C0)(sub-type RUN-SUBGOALS-IN-PARALLEL)(parent ?produce-cparent-id)(meta delivery-begin ?delivery-begin) (priority ?*PRIORITY-C0*) (mode FORMULATED)
-               (params order ?order)
- ))
- (if (eq ?quantity 2) then 
-  (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
-               (class PRODUCE-C0)(sub-type RUN-SUBGOALS-IN-PARALLEL)(parent ?produce-cparent-id)(priority ?*PRIORITY-C0*) (mode FORMULATED)
-               (params order ?order)
- ))
- )
+  (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
+  (not (goal (class PRODUCE-C0)(params order ?order)))
+  (goal (id ?produce-cparent-id) (class PRODUCE-CPARENT))
+   =>
+   (printout t "Goal for C0 order " ?order " formulated." crlf)
+   (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
+                 (class PRODUCE-C0)(sub-type RUN-SUBGOALS-IN-PARALLEL)(parent ?produce-cparent-id)(meta delivery-begin ?delivery-begin) (priority ?*PRIORITY-C0*) (mode FORMULATED)
+                 (params order ?order)
+   ))
+   (if (eq ?quantity 2) then 
+    (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
+                 (class PRODUCE-C0)(sub-type RUN-SUBGOALS-IN-PARALLEL)(parent ?produce-cparent-id)(priority ?*PRIORITY-C0*) (mode FORMULATED)
+                 (params order ?order)
+   ))
+   )
 )
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;
+; C0 Production Subgoals
+;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defrule goal-produce-c0-get-base
   "get a base for c0-production and wait at the cap-station"
@@ -263,36 +249,40 @@
 ;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
 (defrule goal-production-create-produce-c1
-" Produce a C1 product: Get the correct base and mount the right ring and then a cap on it.
-"
-(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-(wm-fact (key domain fact order-complexity args? ord ?order com C1))
-(wm-fact (key refbox order ?order quantity-requested) (value ?quantity))
-(wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin))
+  " Produce a C1 product: Get the correct base and mount the right ring and then a cap on it.
+  "
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (wm-fact (key domain fact order-complexity args? ord ?order com C1))
+  (wm-fact (key refbox order ?order quantity-requested) (value ?quantity))
+  (wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin))
 
 
-(wm-fact (key refbox game-time) (values $?game-time))
+  (wm-fact (key refbox game-time) (values $?game-time))
 
-(not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
-(goal (id ?produce-cparent-id) (class PRODUCE-CPARENT))
+  (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
+  (goal (id ?produce-cparent-id) (class PRODUCE-CPARENT))
 
-(not (goal (class PRODUCE-C1) (params order ?order)))
- =>
- (bind ?wp (sym-cat WP- (random-id)))
- (printout t "Goal for C1 order " ?order " formulated." crlf)
- (assert (goal (id (sym-cat PRODUCE-C1- (gensym*)))
-               (class PRODUCE-C1)(sub-type RUN-SUBGOALS-IN-PARALLEL)(meta delivery-begin ?delivery-begin ) (priority ?*PRIORITY-C1*)(parent ?produce-cparent-id) (mode FORMULATED)
-               (params order ?order)
- ))
- (if (eq ?quantity 2) then 
+  (not (goal (class PRODUCE-C1) (params order ?order)))
+  =>
+  (bind ?wp (sym-cat WP- (random-id)))
+  (printout t "Goal for C1 order " ?order " formulated." crlf)
   (assert (goal (id (sym-cat PRODUCE-C1- (gensym*)))
-               (class PRODUCE-C1)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-C1*)(parent ?produce-cparent-id) (mode FORMULATED)
-               (params order ?order)
- ))
- )
+                 (class PRODUCE-C1)(sub-type RUN-SUBGOALS-IN-PARALLEL)(meta delivery-begin ?delivery-begin ) (priority ?*PRIORITY-C1*)(parent ?produce-cparent-id) (mode FORMULATED)
+                 (params order ?order)
+  ))
+  (if (eq ?quantity 2) then 
+    (assert (goal (id (sym-cat PRODUCE-C1- (gensym*)))
+                 (class PRODUCE-C1)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-C1*)(parent ?produce-cparent-id) (mode FORMULATED)
+                 (params order ?order)
+  )))
 )
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;
+; C1 Production Subgoals
+;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defrule goal-produce-c1-get-base
   "get a base for c1-production and wait at the ring-station"
@@ -367,7 +357,6 @@
   (assert (goal (id (sym-cat MOUNT-CAP- (gensym*))) (class MOUNT-CAP) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order cs DUMMY)))
 )
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;
 ; C2 Production
@@ -376,33 +365,38 @@
 
 
 (defrule goal-production-create-produce-c2
-" Produce a C2 product: Get the correct base and mount the right rings and then a cap on it.
-"
- (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
- (wm-fact (key domain fact order-complexity args? ord ?order com C2))
- (wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin))
+  " Produce a C2 product: Get the correct base and mount the right rings and then a cap on it.
+  "
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (wm-fact (key domain fact order-complexity args? ord ?order com C2))
+  (wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin))
 
-(wm-fact (key refbox game-time) (values $?game-time))
-(test (< (nth$ 1 ?game-time) 800))
+  (wm-fact (key refbox game-time) (values $?game-time))
+  (test (< (nth$ 1 ?game-time) 800))
 
-(not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
-(wm-fact (key refbox order ?order quantity-requested) (value ?quantity))
-(goal (id ?produce-cparent-id) (class PRODUCE-CPARENT))
-(not (goal (class PRODUCE-C2) (params order ?order)))
- =>
- (bind ?wp (sym-cat WP- (random-id)))
- (printout t "Goal for C2 order " ?order " formulated." crlf)
- (assert (goal (id (sym-cat PRODUCE-C2- (gensym*)))
-               (class PRODUCE-C2)(sub-type RUN-SUBGOALS-IN-PARALLEL)(meta delivery-begin ?delivery-begin) (priority ?*PRIORITY-C2*)(parent ?produce-cparent-id) (mode FORMULATED)
-               (params order ?order)
- ))
- (if (eq ?quantity 2) then 
+  (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
+  (wm-fact (key refbox order ?order quantity-requested) (value ?quantity))
+  (goal (id ?produce-cparent-id) (class PRODUCE-CPARENT))
+  (not (goal (class PRODUCE-C2) (params order ?order)))
+  =>
+  (bind ?wp (sym-cat WP- (random-id)))
+  (printout t "Goal for C2 order " ?order " formulated." crlf)
   (assert (goal (id (sym-cat PRODUCE-C2- (gensym*)))
-               (class PRODUCE-C2)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-C2*)(parent ?produce-cparent-id) (mode FORMULATED)
-               (params order ?order)
- ))
- )
+                 (class PRODUCE-C2)(sub-type RUN-SUBGOALS-IN-PARALLEL)(meta delivery-begin ?delivery-begin) (priority ?*PRIORITY-C2*)(parent ?produce-cparent-id) (mode FORMULATED)
+                 (params order ?order)
+  ))
+  (if (eq ?quantity 2) then 
+    (assert (goal (id (sym-cat PRODUCE-C2- (gensym*)))
+                 (class PRODUCE-C2)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-C2*)(parent ?produce-cparent-id) (mode FORMULATED)
+                 (params order ?order)
+  )))
 )
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;
+; C2 Production Subgoals
+;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defrule goal-produce-c2-get-base
   "get a base for c2-production and wait at the ring-station"
@@ -515,29 +509,31 @@
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key domain fact order-complexity args? ord ?order com C3))
   (wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin))
-  (wm-fact (key refbox order ?order quantity-requested) (value ?quantity))
-
- (wm-fact (key refbox game-time) (values $?game-time))
- (test (< (nth$ 1 ?game-time) 800))
-
- (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
- (goal (id ?produce-cparent-id) (class PRODUCE-CPARENT))
-
- (not (goal (class PRODUCE-C3) (params order ?order)))
+  (wm-fact (key refbox order ?order quantity-requested) (value ?quantity)) 
+  (wm-fact (key refbox game-time) (values $?game-time))
+  (test (< (nth$ 1 ?game-time) 800))  
+  (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
+  (goal (id ?produce-cparent-id) (class PRODUCE-CPARENT)) 
+  (not (goal (class PRODUCE-C3) (params order ?order)))
   =>
   (bind ?wp (sym-cat WP- (random-id)))
   (printout t "Goal for C3 order " ?order " formulated." crlf)
   (assert (goal (id (sym-cat PRODUCE-C3- (gensym*)))
-                (class PRODUCE-C3)(sub-type RUN-SUBGOALS-IN-PARALLEL)(meta delivery-begin ?delivery-begin) (priority ?*PRIORITY-C3*)(parent ?produce-cparent-id) (mode FORMULATED)
-                (params order ?order)
+                 (class PRODUCE-C3)(sub-type RUN-SUBGOALS-IN-PARALLEL)(meta delivery-begin ?delivery-begin) (priority ?*PRIORITY-C3*)(parent ?produce-cparent-id) (mode FORMULATED)
+                 (params order ?order)
   ))
   (if (eq ?quantity 2) then 
   (assert (goal (id (sym-cat PRODUCE-C3- (gensym*)))
-                (class PRODUCE-C3)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-C3*)(parent ?produce-cparent-id) (mode FORMULATED)
-                (params order ?order)
-  ))
- )
+                 (class PRODUCE-C3)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-C3*)(parent ?produce-cparent-id) (mode FORMULATED)
+                 (params order ?order)
+  )))
 )
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;
+; C3 Production Subgoals
+;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defrule goal-produce-c3-get-base
   "get a base for c3-production and wait at the ring-station"
@@ -649,7 +645,7 @@
 )
 
 (defrule goal-produce-c3-mount-cap-deliver
-  "mount the cap for c3-production and and deliver the product"
+  "mount the cap for c3-production and and deliver the product."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?produce-c3-id) (class PRODUCE-C3) (mode SELECTED) (params order ?order))
   (not (goal (class MOUNT-CAP) (parent ?produce-c3-id)))
@@ -659,105 +655,3 @@
   (assert (goal (id (sym-cat DELIVER- (gensym*))) (class DELIVER) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order)))
   (assert (goal (id (sym-cat MOUNT-CAP- (gensym*))) (class MOUNT-CAP) (parent ?produce-c3-id) (sub-type SIMPLE) (mode FORMULATED) (params order ?order cs DUMMY)))
 )
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;
-; Supporting TASKS
-;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;
-;(defrule goal-production-create-get-base-to-fill-rs
-;  "Fill the ring station with a fresh base from the base station."
-;  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-;  (goal (id ?produce-cparent-id) (class PRODUCE-CPARENT) (mode SELECTED))
-;  (wm-fact (key refbox team-color) (value ?team-color))
-;  ;Robot CEs
-;  (wm-fact (key domain fact self args? r ?robot))
-;  (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
-;  (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-;  ;MPS-RS CEs (a cap carrier can be used to fill a RS later)
-;  (wm-fact (key domain fact mps-type args? m ?mps t RS))
-;  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-;  (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
-;  ;MPS-BS CEs
-;  (wm-fact (key domain fact mps-type args? m ?bs t BS))
-;  (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN))
-;  (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
-;  (domain-object (name ?bs-side&:(or (eq ?bs-side INPUT) (eq ?bs-side OUTPUT))) (type mps-side))
-;
-;  (wm-fact (key domain fact order-base-color args? ord ?any-order col ?base-color))
-;  (not (goal (class GET-BASE-TO-FILL-RS) (params robot ?robot
-;                                          bs ?bs
-;                                          bs-side ?bs-side
-;                                          base-color ?
-;                                          wp ?spawned-wp)))
-;  =>
-;  (printout t "Goal " GET-BASE-TO-FILL-RS " formulated" crlf)
-;  (bind ?distance (node-distance (str-cat ?bs - (if (eq ?bs-side INPUT) then I else O))))
-;  (assert (goal (id (sym-cat GET-BASE-TO-FILL-RS- (gensym*)))
-;                (class GET-BASE-TO-FILL-RS)
-;                (parent ?produce-cparent-id) (sub-type SIMPLE)
-;                             (params robot ?robot
-;                                     bs ?bs
-;                                     bs-side ?bs-side
-;                                     base-color ?base-color
-;                                     wp ?spawned-wp
-;                                     )
-;                            (required-resources ?spawned-wp)
-;  ))
-;)
-;
-;(defrule goal-production-create-discard-wp
-;  "Discard a base which is not needed."
-;  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-;
-;  (goal (id ?produce-cparent-id) (class PRODUCE-CPARENT) (mode SELECTED))
-;  (wm-fact (key refbox team-color) (value ?team-color))
-;  (wm-fact (key domain fact self args? r ?robot))
-;  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
-;  =>
-;  (printout t "Goal " DISCARD-WP " formulated" crlf)
-;  (assert (goal (id (sym-cat DISCARD-WP- (gensym*)))
-;                (class DISCARD-WP) (sub-type SIMPLE)
-;                (parent ?produce-cparent-id)
-;                (params robot ?robot
-;                        wp ?wp
-;                )
-;                (required-resources ?wp)
-;  ))
-;)
-;
-;
-;(defrule goal-produce-supporting-tasks
-;" Unused robots can be assigned to general tasks such as refill shelf
-;"
-; (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-; (wm-fact (key domain fact entered-field args? r ?some-robot))
-;  (not (goal (class GO-SUPPORTING-TASKS)))
-; =>
-; (printout t "Goal for supporting tasks formulated "crlf)
-; (bind ?wp (sym-cat WP- (random-id)))
-; (assert (goal (id (sym-cat PRODUCE-SUPPORTING-TASKS- (gensym*)))
-;               (class SUPPORTING-TASKS)(sub-type RUN-SUBGOALS-IN-PARALLEL)(priority ?*PRIORITY-SUPPORTING-TASKS*)
-; ))
-;)
-;
-;
-;(defrule goal-production-create-go-wait
-;  "Drive to a waiting position and wait there."
-;  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-;  (wm-fact (key domain fact entered-field args? r ?robot))
-;  (wm-fact (key domain fact self args? r ?self))
-;  (goal (id ?produce-sp-id) (class PRODUCE-SUPPORTING-TASKS) (mode SELECTED))
-;
-;  (not (goal (class GO-WAIT)))
-;  =>
-;  (printout t "Goal " GO-WAIT " formulated" crlf)
-;  (assert (goal (id (sym-cat GO-WAIT- (gensym*)))
-;                (parent ?produce-sp-id) 
-;                (class GO-WAIT) (sub-type SIMPLE)
-;                (priority  ?*PRIORITY-GO-WAIT*)
-;  ))
-;)

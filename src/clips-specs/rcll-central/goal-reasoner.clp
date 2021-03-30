@@ -54,11 +54,9 @@
 ; leading the root to be rejected and reformulated.
 
 (defglobal
-
   ?*MAX-RETRIES-PICK* = 2
   ?*MAX-RETRIES-PUT-SLIDE* = 2
   ?*GOAL-MAX-TRIES* = 3
-
   ?*SALIENCE-GOAL-FORMULATE* = 500
   ?*SALIENCE-GOAL-REJECT* = 400
   ?*SALIENCE-GOAL-EXPAND* = 300
@@ -153,8 +151,7 @@
   )
 )
 
-; ----------------------- EVALUATE SPECIFIC GOALS ---------------------------
-
+;----------------------- EVALUATE SPECIFIC GOALS ---------------------------
 
 (defrule retry-production-subgoals
 	?gf <- (goal (id ?id) (type ACHIEVE) (class PRODUCE-C0|PRODUCE-C1|PRODUCE-C2|PRODUCE-C3) (mode DISPATCHED))
@@ -175,7 +172,7 @@
 )
 
 
-; ================================= Goal Clean up ============================
+;================================= Goal Clean up ============================
 
 ;copied from rcll code
 (defrule goal-reasoner-pre-evaluate-clean-location-locks
@@ -251,7 +248,6 @@
 =>
   (printout error ?goal " of class " ?class " has no sub-type" crlf)
 )
-
 
 (defrule goal-production-select-enter-field
   ?g <- (goal (class ENTER-FIELD-LOOP) (mode FORMULATED))
