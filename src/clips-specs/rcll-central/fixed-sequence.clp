@@ -19,8 +19,6 @@
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
 
-
-;Global variables for Saliences of the different goal expanders
 (defglobal
   ?*SALIENCE-IDLE-CHECK* = -1
   ?*SALIENCE-EXPANDER-GENERIC* = 600
@@ -29,21 +27,12 @@
   ?*SALIENCE-DELIVER-DIFF* = 100
 )
 
-;lock mechanism for a workpiece
 (deftemplate wp-lock
-  (slot wp(type SYMBOL))
-  (slot order(type SYMBOL))
+      (slot wp(type SYMBOL))
+      (slot order(type SYMBOL))
 )
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;
-;Goal expanders to support production 
-;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (defrule goal-expander-send-beacon-signal
-"Send beacon signal, if robots do nothing"
       ?p <- (goal (mode DISPATCHED) (id ?parent-id))
       ?g <- (goal (id ?goal-id) (class SEND-BEACON) (mode SELECTED)
             (parent ?parent-id))
@@ -51,12 +40,13 @@
       (assert
             (plan (id BEACONPLAN) (goal-id ?goal-id))
             (plan-action (id 1) (plan-id BEACONPLAN) (goal-id ?goal-id)
-                  (action-name send-beacon)))
+            (action-name send-beacon)))
       (modify ?g (mode EXPANDED))
 )
 
+; Set Robot to idle if there is no task left
+; Will trigger the selection of new tasks
 (defrule idle-check
-"Set Robot to idle if there is no task left - will trigger the selection of new tasks"
       (declare (salience ?*SALIENCE-IDLE-CHECK*))
       (wm-fact (key domain fact entered-field args? r ?robot))
       (not(goal (params robot ?robot $?rest-params)))
@@ -67,27 +57,50 @@
       (assert (idle-robot (robot ?robot)))
 )
 
+(defrule goal-expander-discard-wp
+      (declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
+      ?p <- (goal (mode DISPATCHED) (id ?parent))
+      ?g <- (goal (id ?goal-id) (class DISCARD-WP) (mode SELECTED)
+            (parent ?parent)
+            (params robot ?robot
+                  wp ?wp
+            ))
+       =>
+      (assert
+      (plan (id DISCARD-WP-PLAN) (goal-id ?goal-id))
+      (plan-action (id 1) (plan-id DISCARD-WP-PLAN) (goal-id ?goal-id)
+            (action-name wp-discard)
+            (skiller (remote-skiller ?robot))
+            (param-names r cc )
+            (param-values ?robot ?wp))
+      )
+      (modify ?g (mode EXPANDED))
+)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 (defrule goal-expander-enter-field
-"Goal expander for enter field at the begining of the game"
       ?g <- (goal (id ?goal-id) (mode SELECTED) (class ENTER-FIELD)
             (params r ?robot team-color ?team-color))
       (wm-fact (key domain fact mps-type args? m ?mps t ?t))
       (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
       =>
       (bind ?planid (sym-cat ENTER-FIELD-PLAN- (gensym*)))
-            (assert
-                  (plan (id ?planid) (goal-id ?goal-id))
-                  (plan-action (id 1) (plan-id ?planid) (goal-id ?goal-id)
-                        (action-name enter-field)
-                        (skiller (remote-skiller ?robot))
-                        (param-names r team-color)
-                        (param-values ?robot ?team-color)))
+      (assert
+            (plan (id ?planid) (goal-id ?goal-id))
+            (plan-action (id 1) (plan-id ?planid) (goal-id ?goal-id)
+                              (action-name enter-field)
+                              (skiller (remote-skiller ?robot))
+                              (param-names r team-color)
+                              (param-values ?robot ?team-color)))
       (modify ?g (mode EXPANDED))
 )
 
+;move somewhere after failed goal. This should help with relocalization.
 (defrule goal-expander-recover
-"Move somewhere after failed goal. This should help with relocalization"
       ?g <- (goal (id ?goal-id) (mode SELECTED) (class RECOVER)
             (params robot ?robot))
       (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
@@ -100,108 +113,103 @@
             (plan-action (id 1) (plan-id ?planid) (goal-id ?goal-id)
                   (action-name go-wait)
                   (skiller (remote-skiller ?robot))
-                  (param-names r from from-side to to-side)
+                  (param-names r from from-side to)
                   (param-values ?robot ?curr-location ?curr-side ?mps)))
-            (modify ?g (mode EXPANDED))
+      (modify ?g (mode EXPANDED))
 )
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;
-;Goal expander for production tasks
-;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 (defrule goal-expander-deliver
 (declare (salience (+ ?*SALIENCE-EXPANDER-GENERIC* ?*SALIENCE-DELIVER-DIFF*)))
-"Expands delivery goal for all production complexities - workpieces are brought to the delivery station and processed"
-      ?g <- (goal (id ?goal-id) (parent ?parent) (class DELIVER) (mode SELECTED) (params order ?order))  
+?g <- (goal (id ?goal-id) (parent ?parent) (class DELIVER) (mode SELECTED) (params order ?order))
 
-      (wm-fact (key refbox team-color) (value ?team-color)) 
-      (wm-fact (key domain fact mps-type args? m ?ds t DS))
-      (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
-      (not (wm-fact (key domain fact mps-state args? m ?ds s BROKEN)))  
-      (wm-fact (key domain fact holding args? r ?robot wp ?wp))   
-      (wm-fact (key domain fact order-complexity args? ord ?order com ?comp)) 
-      (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-      (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))  
-      (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
-      (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))      
-      (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
-      (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))      
-      (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
-      (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))      
-      (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
-      (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
-      (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-      (wm-fact (key domain fact entered-field args? r ?robot))    
-      (wm-fact (key refbox game-time) (values $?game-time))
-      (wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin&:(< ?delivery-begin (nth$ 1 ?game-time))))
+(wm-fact (key refbox team-color) (value ?team-color))
+(wm-fact (key domain fact mps-type args? m ?ds t DS))
+(wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
+(not (wm-fact (key domain fact mps-state args? m ?ds s BROKEN)))
+(wm-fact (key domain fact holding args? r ?robot wp ?wp))
+(wm-fact (key domain fact order-complexity args? ord ?order com ?comp))
+(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+(wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+(wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
+(wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
+(wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
+(wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
+(wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
+(wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
+(wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+(wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
 
-      (not(goal (params robot ?robot $?rest-params)))
-      =>
+(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+(wm-fact (key domain fact entered-field args? r ?robot))
+(wm-fact (key refbox game-time) (values $?game-time))
+(wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin&:(< ?delivery-begin (nth$ 1 ?game-time))))
+
+(not(goal (params robot ?robot $?rest-params)))
+ =>
       (bind ?planid (sym-cat DELIVER-PLAN- (gensym*)))
-      (if (eq ?comp C0) then
+      (if (eq ?comp C0)
+            then
             (assert
                   (plan-action (id 6) (plan-id ?planid) (goal-id ?goal-id)
                         (action-name fulfill-order-c0)
                         (skiller (remote-skiller ?robot))
                         (param-values ?order ?wp ?ds INPUT ?base-color ?cap-color))))
-                  (if (eq ?comp C1) then
-                  (assert
+      (if (eq ?comp C1)
+                        then
+            (assert
                   (plan-action (id 6) (plan-id ?planid) (goal-id ?goal-id)
                         (action-name fulfill-order-c1)
                         (skiller (remote-skiller ?robot))
                         (param-values ?order ?wp ?ds INPUT ?base-color ?cap-color ?ring1-color))))
-                  (if (eq ?comp C2) then
-                  (assert
+      (if (eq ?comp C2)
+                        then
+            (assert
                   (plan-action (id 6) (plan-id ?planid) (goal-id ?goal-id)
                         (action-name fulfill-order-c2)
                         (skiller (remote-skiller ?robot))
                         (param-values ?order ?wp ?ds INPUT ?base-color ?cap-color ?ring1-color ?ring2-color))))
-                  (if (eq ?comp C3) then
-                  (assert
+      (if (eq ?comp C3)
+                  then
+            (assert
                   (plan-action (id 6) (plan-id ?planid) (goal-id ?goal-id)
                         (action-name fulfill-order-c3)
                         (skiller (remote-skiller ?robot))
                         (param-values ?order ?wp ?ds INPUT ?base-color ?cap-color ?ring1-color ?ring2-color ?ring3-color))))
-            (assert
-                  (plan (id ?planid) (goal-id ?goal-id))
-                  (plan-action (id 1) (plan-id ?planid) (goal-id ?goal-id)
-                        (action-name go-wait)
-                        (skiller (remote-skiller ?robot))
-                        (param-names r from from-side to)
-                        (param-values ?robot ?curr-location ?curr-side (wait-pos ?ds INPUT)))
-                  (plan-action (id 2) (plan-id ?planid) (goal-id ?goal-id)
-                        (action-name location-lock)
-                        (param-values ?ds INPUT))
-                  (plan-action (id 3) (plan-id ?planid) (goal-id ?goal-id)
-                        (action-name move)
-                        (skiller (remote-skiller ?robot))
-                        (param-names r from from-side to to-side)
-                        (param-values ?robot (wait-pos ?ds INPUT) WAIT ?ds INPUT))
-                  (plan-action (id 4) (plan-id ?planid) (goal-id ?goal-id)
-                        (action-name wp-put)
-                        (skiller (remote-skiller ?robot))
-                        (param-names r wp m)
-                        (param-values ?robot ?wp ?ds))
-                  (plan-action (id 5) (plan-id ?planid) (goal-id ?goal-id)
-                        (action-name prepare-ds)
-                        (skiller (remote-skiller ?robot))
-                        (param-values ?ds ?order))
-
+      (assert
+            (plan (id ?planid) (goal-id ?goal-id))
+            (plan-action (id 1) (plan-id ?planid) (goal-id ?goal-id)
+                  (action-name go-wait)
+                  (skiller (remote-skiller ?robot))
+                  (param-names r from from-side to)
+                  (param-values ?robot ?curr-location ?curr-side (wait-pos ?ds INPUT)))
+            (plan-action (id 2) (plan-id ?planid) (goal-id ?goal-id)
+                  (action-name location-lock)
+                  (param-values ?ds INPUT))
+            (plan-action (id 3) (plan-id ?planid) (goal-id ?goal-id)
+                  (action-name move)
+                  (skiller (remote-skiller ?robot))
+                  (param-names r from from-side to to-side)
+                  (param-values ?robot (wait-pos ?ds INPUT) WAIT ?ds INPUT))
+            (plan-action (id 4) (plan-id ?planid) (goal-id ?goal-id)
+                  (action-name wp-put)
+                  (skiller (remote-skiller ?robot))
+                  (param-names r wp m)
+                  (param-values ?robot ?wp ?ds))
+            (plan-action (id 5) (plan-id ?planid) (goal-id ?goal-id)
+                  (action-name prepare-ds)
+                  (skiller (remote-skiller ?robot))
+                  (param-values ?ds ?order))
                   ;empty slot 6 for the deliver action
-                  (plan-action (id 7) (plan-id ?planid) (goal-id ?goal-id)
-                        (action-name location-unlock) (param-values ?ds INPUT))
-                  (plan-action (id 8) (plan-id ?planid) (goal-id ?goal-id)
-                        (action-name go-wait)
-                        (skiller (remote-skiller ?robot))
-                        (param-names r from from-side to)
-                        (param-values ?robot ?ds INPUT (wait-pos ?ds INPUT)))
-	            )
-            (modify ?g (mode EXPANDED)(params robot ?robot order ?order))
+            (plan-action (id 7) (plan-id ?planid) (goal-id ?goal-id)
+                  (action-name location-unlock) (param-values ?ds INPUT))
+            (plan-action (id 8) (plan-id ?planid) (goal-id ?goal-id)
+                  (action-name go-wait)
+                  (skiller (remote-skiller ?robot))
+                  (param-names r from from-side to)
+                  (param-values ?robot ?ds INPUT (wait-pos ?ds INPUT)))
+	)
+      (modify ?g (mode EXPANDED)(params robot ?robot order ?order))
 )
-
 (defrule goal-expander-mount-cap
 "Expands a mount cap goal for all Production complexities, robot brings wp to cap station and processes the cap mounting"
       (declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
