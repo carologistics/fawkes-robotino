@@ -779,6 +779,7 @@
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   ; WP facts
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps-from side ?mps-from-side))
+  (wm-fact (key domain fact mps-type args? m ?mps-from t ~RS))
   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col RING_NONE))
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col RING_NONE))
   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col RING_NONE))
