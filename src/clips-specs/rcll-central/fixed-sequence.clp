@@ -100,9 +100,35 @@
             (plan-action (id 1) (plan-id ?planid) (goal-id ?goal-id)
                   (action-name go-wait)
                   (skiller (remote-skiller ?robot))
-                  (param-names r from from-side to to-side)
+                  (param-names r from from-side to)
                   (param-values ?robot ?curr-location ?curr-side ?mps)))
             (modify ?g (mode EXPANDED))
+)
+
+(defrule goal-expander-refill-shelf
+      (declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
+      ?p <- (goal (mode DISPATCHED) (id ?parent) (class PRODUCE-CPARENT))
+       ?g <- (goal (id ?goal-id) (class REFILL-SHELF) (mode SELECTED)
+            (params mps ?mps color ?col) (parent ?parent-id))
+       (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+       =>
+       (assert
+            (plan (id REFILL-PLAN) (goal-id ?goal-id))
+            (plan-action (id 1) (plan-id REFILL-PLAN) (goal-id ?goal-id)
+                  (action-name lock) (param-values ?mps))
+            (plan-action (id 2) (plan-id REFILL-PLAN) (goal-id ?goal-id)
+                  (action-name refill-shelf) (skiller (remote-skiller ?robot))
+                  (param-values ?mps LEFT (sym-cat CC- (random-id)) ?col))
+            (plan-action (id 3) (plan-id REFILL-PLAN) (goal-id ?goal-id)
+                  (action-name refill-shelf) (skiller (remote-skiller ?robot))
+                  (param-values ?mps MIDDLE (sym-cat CC- (random-id)) ?col))
+            (plan-action (id 4) (plan-id REFILL-PLAN) (goal-id ?goal-id)
+                  (action-name refill-shelf) (skiller (remote-skiller ?robot))
+                  (param-values ?mps RIGHT (sym-cat CC- (random-id)) ?col))
+            (plan-action (id 5) (plan-id REFILL-PLAN) (goal-id ?goal-id)
+                  (action-name unlock) (param-values ?mps)))
+  
+      (modify ?g (mode EXPANDED))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -113,8 +139,8 @@
 
 
 (defrule goal-expander-deliver
-(declare (salience (+ ?*SALIENCE-EXPANDER-GENERIC* ?*SALIENCE-DELIVER-DIFF*)))
 "Expands delivery goal for all production complexities - workpieces are brought to the delivery station and processed"
+(declare (salience (+ ?*SALIENCE-EXPANDER-GENERIC* ?*SALIENCE-DELIVER-DIFF*)))
       ?g <- (goal (id ?goal-id) (parent ?parent) (class DELIVER) (mode SELECTED) (params order ?order))  
 
       (wm-fact (key refbox team-color) (value ?team-color)) 
