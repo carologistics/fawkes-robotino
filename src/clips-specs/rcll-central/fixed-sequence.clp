@@ -65,7 +65,7 @@
             (params robot ?robot
                   wp ?wp
             ))
-       =>
+      =>
       (assert
       (plan (id DISCARD-WP-PLAN) (goal-id ?goal-id))
       (plan-action (id 1) (plan-id DISCARD-WP-PLAN) (goal-id ?goal-id)
@@ -73,10 +73,36 @@
             (skiller (remote-skiller ?robot))
             (param-names r cc )
             (param-values ?robot ?wp))
-      )
-      (modify ?g (mode EXPANDED))
+  )
+  (modify ?g (mode EXPANDED))
 )
 
+
+(defrule goal-expander-refill-shelf
+      (declare (salience ?*SALIENCE-EXPANDER-GENERIC*))
+      ?p <- (goal (mode DISPATCHED) (id ?parent) (class PRODUCE-CPARENT))
+       ?g <- (goal (id ?goal-id) (class REFILL-SHELF) (mode SELECTED)
+            (params mps ?mps color ?col) (parent ?parent-id))
+       (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+       =>
+       (assert
+            (plan (id REFILL-PLAN) (goal-id ?goal-id))
+            (plan-action (id 1) (plan-id REFILL-PLAN) (goal-id ?goal-id)
+                  (action-name lock) (param-values ?mps))
+            (plan-action (id 2) (plan-id REFILL-PLAN) (goal-id ?goal-id)
+                  (action-name refill-shelf) (skiller (remote-skiller ?robot))
+                  (param-values ?mps LEFT (sym-cat CC- (random-id)) ?col))
+            (plan-action (id 3) (plan-id REFILL-PLAN) (goal-id ?goal-id)
+                  (action-name refill-shelf) (skiller (remote-skiller ?robot))
+                  (param-values ?mps MIDDLE (sym-cat CC- (random-id)) ?col))
+            (plan-action (id 4) (plan-id REFILL-PLAN) (goal-id ?goal-id)
+                  (action-name refill-shelf) (skiller (remote-skiller ?robot))
+                  (param-values ?mps RIGHT (sym-cat CC- (random-id)) ?col))
+            (plan-action (id 5) (plan-id REFILL-PLAN) (goal-id ?goal-id)
+                  (action-name unlock) (param-values ?mps)))
+  
+      (modify ?g (mode EXPANDED))
+)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -99,8 +125,9 @@
       (modify ?g (mode EXPANDED))
 )
 
-;move somewhere after failed goal. This should help with relocalization.
 (defrule goal-expander-recover
+"move somewhere after failed goal. This should help with relocalization.
+"
       ?g <- (goal (id ?goal-id) (mode SELECTED) (class RECOVER)
             (params robot ?robot))
       (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
@@ -632,7 +659,7 @@
       (not (wm-fact (key domain fact mps-state args? m ?cs s BROKEN)))  
       (wm-fact (key domain fact cs-can-perform args? m ?cs op RETRIEVE_CAP))  
 
- (wm-fact (key domain fact mps-side-free args? m ?cs side INPUT))
+      (wm-fact (key domain fact mps-side-free args? m ?cs side INPUT))
       (not (goal (class BUFFER-CS)(mode EXPANDED|DISPATCHED)(params robot ?some-robot cs-color ?some-cap-color cs ?cs)))
       =>
       (bind ?planid (sym-cat BUFFER-CS-PLAN- (gensym*)))
