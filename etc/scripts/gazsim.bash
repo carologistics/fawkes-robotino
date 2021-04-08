@@ -50,6 +50,7 @@ OPTIONS:
    --asp             Run with ASP agent and global planner
    --challenge       Start refbox challenge script instead of refbox
    --refbox-args     Pass options to the refbox
+   --no-refbox       Do not start the refbox
    --terminal TERM   The terminal to use, e.g., gnome-terminal or tmux
 EOF
 }
@@ -91,6 +92,7 @@ TEAM_MAGENTA=
 START_CENTRAL_AGENT=false
 START_ASP_PLANER=false
 START_MONGODB=false
+START_REFBOX=true
 
 if [ -z $TERMINAL ] ; then
     if [[ -n $TMUX ]] ; then
@@ -107,7 +109,7 @@ fi
 ROS_MASTER_PORT=${ROS_MASTER_URI##*:}
 ROS_MASTER_PORT=${ROS_MASTER_PORT%%/*}
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "debug,ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:,keep-tmpfiles,challenge,refbox-args:,terminal:" -- "$@")
+OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "debug,ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:,keep-tmpfiles,challenge,refbox-args:,no-refbox,terminal:" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
@@ -214,6 +216,9 @@ while true; do
 	 -o)
 	     START_GAZEBO=false
 	     ;;
+     --no-refbox)
+         START_REFBOX=false
+         ;;
 	 -r|--ros)
 	     ROS=-r
 	     ;;
@@ -403,10 +408,12 @@ if [  $COMMAND  == start ]; then
 	fi
     	done
     fi
-    #start refbox
-    COMMANDS+=("bash -i -c \"$startup_script_location -x $REFBOX  $KEEP $@ -- $REFBOX_ARGS\"")
-    #start refbox frontend
-    COMMANDS+=("bash -i -c \"$startup_script_location -x refbox-frontend $KEEP $@\"")
+    if $START_REFBOX ; then
+        #start refbox
+        COMMANDS+=("bash -i -c \"$startup_script_location -x $REFBOX  $KEEP $@ -- $REFBOX_ARGS\"")
+        #start refbox frontend
+        COMMANDS+=("bash -i -c \"$startup_script_location -x refbox-frontend $KEEP $@\"")
+    fi
 
     # start mongodb central instance
     if $START_MONGODB ; then
