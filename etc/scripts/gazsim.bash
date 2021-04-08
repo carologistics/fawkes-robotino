@@ -50,6 +50,7 @@ OPTIONS:
    --asp             Run with ASP agent and global planner
    --challenge       Start refbox challenge script instead of refbox
    --refbox-args     Pass options to the refbox
+   --terminal TERM   The terminal to use, e.g., gnome-terminal or tmux
 EOF
 }
 
@@ -103,39 +104,10 @@ if [ -n $LLSF_REFBOX_DIR ] ; then
     export PATH=$LLSF_REFBOX_DIR/bin:$PATH
 fi
 
-case "$TERMINAL" in
-    gnome-terminal)
-        TERM_COMMAND="gnome-terminal --maximize -- bash -i -c '"
-        TERM_COMMAND_END=" echo -e \"\n\n\nAll commands started. This tab may now be closed.\"'"
-        SUBTERM_PREFIX="gnome-terminal --tab -- "
-        SUBTERM_SUFFIX=" ; "
-        ;;
-    screen)
-        TERM_COMMAND="screen -A -d -m -S gazsim /usr/bin/sleep 1 ; "
-        SUBTERM_PREFIX="screen -S gazsim -X screen "
-        SUBTERM_SUFFIX=" ; "
-        ;;
-    tmux)
-        if [[ -n $TMUX ]] ; then
-            TERM_COMMAND=""
-        else
-            TERM_COMMAND="tmux new-session -s gazsim -d;"
-        fi
-        TERM_COMMAND_END=""
-        SUBTERM_PREFIX="tmux new-window "
-        SUBTERM_SUFFIX=";"
-        ;;
-    *)
-        >&2 echo "Unknown terminal $TERMINAL"
-        exit 1
-esac
-
-echo "Using $TERMINAL"
-
 ROS_MASTER_PORT=${ROS_MASTER_URI##*:}
 ROS_MASTER_PORT=${ROS_MASTER_PORT%%/*}
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "debug,ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:,keep-tmpfiles,challenge,refbox-args:" -- "$@")
+OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "debug,ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:,keep-tmpfiles,challenge,refbox-args:,terminal:" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
@@ -226,6 +198,9 @@ while true; do
      --keep-tmpfiles)
          KEEP_TMPFILES=true
          ;;
+     --terminal)
+         TERMINAL=$OPTARG
+         ;;
 	 --central-agent)
 	     CENTRAL_AGENT="$OPTARG"
          START_CENTRAL_AGENT=true
@@ -281,6 +256,35 @@ while true; do
      esac
      shift
 done
+
+echo "Using $TERMINAL"
+
+case "$TERMINAL" in
+    gnome-terminal)
+        TERM_COMMAND="gnome-terminal --maximize -- bash -i -c '"
+        TERM_COMMAND_END=" echo -e \"\n\n\nAll commands started. This tab may now be closed.\"'"
+        SUBTERM_PREFIX="gnome-terminal --tab -- "
+        SUBTERM_SUFFIX=" ; "
+        ;;
+    screen)
+        TERM_COMMAND="screen -A -d -m -S gazsim /usr/bin/sleep 1 ; "
+        SUBTERM_PREFIX="screen -S gazsim -X screen "
+        SUBTERM_SUFFIX=" ; "
+        ;;
+    tmux)
+        if [[ -n $TMUX ]] ; then
+            TERM_COMMAND=""
+        else
+            TERM_COMMAND="tmux new-session -s gazsim -d;"
+        fi
+        TERM_COMMAND_END=""
+        SUBTERM_PREFIX="tmux new-window "
+        SUBTERM_SUFFIX=";"
+        ;;
+    *)
+        >&2 echo "Unknown terminal $TERMINAL"
+        exit 1
+esac
 
 if [[ -z $COMMAND ]]
 then
