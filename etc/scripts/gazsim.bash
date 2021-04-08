@@ -20,7 +20,9 @@ OPTIONS:
    -l                Run Gazebo headless
    -k                Keep started shells open after finish
    -s                Keep statistics and shutdown after game
-   -r|--ros          Start with ROS support
+   -r|--ros          Start with ROS support,
+                     also starts move base, unless --no-move-base is given
+   --no-move-base    Do not start move base (only meaningful with -r)
    --ros-launch-main Run ROS launch file once for main (non-robot) master
                      Argument: package:file.launch
                      Calls: roslaunch package file.launch
@@ -108,7 +110,7 @@ fi
 ROS_MASTER_PORT=${ROS_MASTER_URI##*:}
 ROS_MASTER_PORT=${ROS_MASTER_PORT%%/*}
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "debug,ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:,keep-tmpfiles,challenge,refbox-args:,no-refbox,terminal:" -- "$@")
+OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "debug,ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:,keep-tmpfiles,challenge,refbox-args:,no-refbox,terminal:,no-move-base" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
@@ -145,6 +147,9 @@ while true; do
            ROS=-r
            ROS_LAUNCH_MOVE_BASE=true
              ;;
+         --no-move-base)
+           ROS_LAUNCH_MOVE_BASE=false
+           ;;
          -g)
 	     if [ -n "$GDB" ]; then
 				echo "Can pass only either valgrind or GDB, not both"
