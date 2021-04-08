@@ -79,7 +79,6 @@ NUM_CYAN=3
 NUM_MAGENTA=0
 FIRST_ROBOTINO_NUMBER=1
 REPLAY=
-FAWKES_BIN=$FAWKES_DIR/bin
 META_PLUGIN=
 CENTRAL_AGENT=
 START_GAZEBO=true
@@ -324,9 +323,11 @@ NUM_MAGENTA=$(($NUM_ROBOTINOS-$NUM_CYAN))
 
 echo 'Automated Simulation control'
 
-script_path=$FAWKES_DIR/bin
-startup_script_location=$script_path/gazsim-startup.bash
-initial_pose_script_location=$script_path/gazsim-publish-initial-pose.bash
+script_path=$(realpath $(dirname ${BASH_SOURCE[0]}))
+FAWKES_DIR=${FAWKES_DIR:-$(realpath ${script_path}/..)}
+FAWKES_BIN=$FAWKES_DIR/bin
+startup_script_location=$script_path/gazsim-startup.bash 
+initial_pose_script_location=$script_path/gazsim-publish-initial-pose.bash 
 
 function stop_simulation {
   echo 'Kill Gazebo-sim'
@@ -355,6 +356,7 @@ if [  $COMMAND  == start ]; then
 	echo "FAWKES_DIR is not set"
 	exit 1
     fi
+    export FAWKES_DIR
     if $START_GAZEBO && ! [[ $GAZEBO_PLUGIN_PATH == *gazebo-rcll* ]]
     then
 	echo "Missing path to Gazebo Plugins in GAZEBO_PLUGIN_PATH";
