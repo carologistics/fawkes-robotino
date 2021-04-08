@@ -67,7 +67,7 @@ REFBOX_ARGS="--cfg-simulation simulation/gazebo_simulation.yaml"
 ROS=
 ROS_LAUNCH_MAIN=
 ROS_LAUNCH_ROBOT=
-ROS_LAUNCH_MOVEBASE=
+ROS_LAUNCH_MOVE_BASE=false
 AGENT=
 DEBUG=
 DETAILED=
@@ -143,7 +143,7 @@ while true; do
              ;;
          -r)
            ROS=-r
-           ROS_LAUNCH_MOVE_BASE=yes
+           ROS_LAUNCH_MOVE_BASE=true
              ;;
          -g)
 	     if [ -n "$GDB" ]; then
@@ -210,7 +210,7 @@ while true; do
 	     CONF="-c asp-planner"
 	     META_PLUGIN="-m asp-sim-2016"
 	     START_ASP_PLANER=true
-       ROS_LAUNCH_MOVE_BASE=
+       ROS_LAUNCH_MOVE_BASE=false
 	     ;;
 	 -o)
 	     START_GAZEBO=false
@@ -402,7 +402,7 @@ if [  $COMMAND  == start ]; then
 				# robot roscore
 				COMMANDS+=("bash -i -c \"$startup_script_location -x roscore -p 1132$ROBO $KEEP $@\"")
         # move_base
-				if $START_GAZEBO && [ -n "$ROS_LAUNCH_MOVE_BASE" ]; then
+				if $ROS_LAUNCH_MOVE_BASE ; then
 					COMMANDS+=("bash -i -c \"$startup_script_location -x move_base -p 1132$ROBO $KEEP $@\"")
 				fi
 	if [ -n "$ROS_LAUNCH_ROBOT" ]; then
@@ -467,7 +467,7 @@ if [  $COMMAND  == start ]; then
     echo "Executing $TERM_COMMAND ${SUFFIXED_COMMANDS[@]} ${TERM_COMMAND_END}"
     eval "$TERM_COMMAND ${SUFFIXED_COMMANDS[@]} ${TERM_COMMAND_END}"
 
-    if $FAWKES_USED && $START_GAZEBO
+    if $FAWKES_USED && $ROS_LAUNCH_MOVE_BASE
     then
 	# publish initial poses
 	echo "publish initial poses"
