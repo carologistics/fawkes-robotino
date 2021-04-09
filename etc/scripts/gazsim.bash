@@ -54,6 +54,7 @@ OPTIONS:
    --refbox-args     Pass options to the refbox
    --no-refbox       Do not start the refbox
    --terminal TERM   The terminal to use, e.g., gnome-terminal or tmux
+   --wait            Wait for completion
 EOF
 }
 
@@ -94,6 +95,7 @@ START_CENTRAL_AGENT=false
 START_ASP_PLANER=false
 START_MONGODB=false
 START_REFBOX=true
+WAIT=false
 
 if [ -z $TERMINAL ] ; then
     if [[ -n $TMUX ]] ; then
@@ -110,7 +112,7 @@ fi
 ROS_MASTER_PORT=${ROS_MASTER_URI##*:}
 ROS_MASTER_PORT=${ROS_MASTER_PORT%%/*}
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "debug,ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:,keep-tmpfiles,challenge,refbox-args:,no-refbox,terminal:,no-move-base" -- "$@")
+OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "debug,ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:,keep-tmpfiles,challenge,refbox-args:,no-refbox,terminal:,no-move-base,wait" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
@@ -206,6 +208,9 @@ while true; do
          ;;
      --terminal)
          TERMINAL=$OPTARG
+         ;;
+     --wait)
+         WAIT=true
          ;;
 	 --central-agent)
 	     CENTRAL_AGENT="$OPTARG"
@@ -495,6 +500,11 @@ if [  $COMMAND  == start ]; then
 
     else
     usage
+fi
+
+if $FAWKES_USED && $WAIT ; then
+    # Just wait and watch robot 1.
+    tail -f robot1_latest.log
 fi
 
 # vim:et:sw=4:ts=4
