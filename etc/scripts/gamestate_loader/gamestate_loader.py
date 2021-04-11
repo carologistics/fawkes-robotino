@@ -386,6 +386,7 @@ else:
                             fact["value"])
                         gamereport["phase-points-cyan"]["PRODUCTION"] = int(
                             fact["value"])
+                        gamereport["points"].append({"points":int(fact["value"]), "team":"CYAN", "game-time":0.0, "phase":"PRODUCTION", "reason":"Restored using script", "product-step":0})
                     else:
                         gamereport["total-points"][1] = bson.Int64(
                             fact["value"])
@@ -393,6 +394,7 @@ else:
                             fact["value"])
                         gamereport["phase-points-magenta"]["PRODUCTION"] = int(
                             fact["value"])
+                        gamereport["points"].append({"points":int(fact["value"]), "team":"MAGENTA", "game-time":0.0, "phase":"PRODUCTION", "reason":"Restored using script", "product-step":0})
 
                 # gametime production phase (last gamtime update we got?)
                 if "/refbox/game-time" in id:
