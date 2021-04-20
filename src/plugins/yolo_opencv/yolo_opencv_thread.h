@@ -42,19 +42,6 @@ class YoloOpenCVInterface;
 
 namespace yolo_opencv {
 
-float                    confThreshold;
-float                    nmsThreshold;
-std::vector<std::string> classes;
-
-void preprocess(const cv::Mat &   frame,
-                cv::dnn::Net &    net,
-                cv::Size          inpSize,
-                float             scale,
-                const cv::Scalar &mean,
-                bool              swapRB);
-
-void postprocess(cv::Mat &frame, const std::vector<Mat> &out, cv::dnn::Net &net, int backend);
-
 /**
  * Queueing frames for image detection
  * @author Alessandro de Oliveira Faria
@@ -139,8 +126,43 @@ public:
 	virtual void loop();
 	virtual void finalize();
 
+protected:
+	std::string read_image_path();
+
+private:
+	inline void preprocess(const cv::Mat &   frame,
+	                       cv::dnn::Net &    net,
+	                       cv::Size          inpSize,
+	                       float             scale,
+	                       const cv::Scalar &mean,
+	                       bool              swapRB);
+
+	void postprocess(cv::Mat &                   frame,
+	                 const std::vector<cv::Mat> &outs,
+	                 cv::dnn::Net &              net,
+	                 std::vector<int> &          classIds,
+	                 std::vector<float> &        confidences,
+	                 std::vector<cv::Rect> &     boxes,
+	                 int                         backend);
+
 private:
 	fawkes::YoloOpenCVInterface *yolo_opencv_if_;
+	std::string                  model_path;
+	std::string                  config_path;
+	std::string                  classes_path;
+	std::string                  framework;
+	std::vector<std::string>     outNames;
+	float                        confThreshold;
+	float                        nmsThreshold;
+	float                        scale;
+	bool                         swapRB;
+	int                          inpWidth;
+	int                          inpHeight;
+	int                          backend;
+	int                          target;
+	size_t                       asyncNumReq;
+	std::vector<std::string>     classes;
+	cv::dnn::Net                 net;
 };
 
 #endif
