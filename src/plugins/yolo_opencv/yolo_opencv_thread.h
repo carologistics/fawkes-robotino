@@ -47,11 +47,6 @@ namespace yolo_opencv {
  * @author Alessandro de Oliveira Faria
  */
 
-/**
- * Queueing frames for image detection
- * @author Alessandro de Oliveira Faria
- */
-
 template <typename T>
 class QueueFPS : public std::queue<T>
 {
