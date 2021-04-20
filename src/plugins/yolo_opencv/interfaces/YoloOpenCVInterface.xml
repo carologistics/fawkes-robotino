@@ -7,11 +7,11 @@
     <comment>
         Interface to run Image detection based on the Yolo implementation in OpenCV
     </comment>
-    <field type="vector" name="detection_boxes">
+    <field type="string" length="1024" name="detection_boxes">
         Vector for bounding boxes around detected objects
     </field>
   </data>
-  <message name="DetectObjectMessagMessage">
+  <message name="DetectObjectMessage">
     <comment>
       Detect an object based on existing weights
     </comment>
