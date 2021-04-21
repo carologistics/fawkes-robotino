@@ -127,16 +127,32 @@ public:
 	virtual void finalize();
 
 protected:
+	/** Read the path to the image for object detection
+    * @return path2img Path to the image file */
 	std::string read_image_path();
 
 private:
+	/** Preprocess the frame
+    * @param frame      Frame to run NN on
+    * @param net        NN to use
+    * @param inpSize    Frame width and height
+    * @param scale      Scaling factor for the frame
+    * @param mean       Scalar
+    * @param swapRB     swapRB */
 	inline void preprocess(const cv::Mat &   frame,
 	                       cv::dnn::Net &    net,
 	                       cv::Size          inpSize,
 	                       float             scale,
 	                       const cv::Scalar &mean,
 	                       bool              swapRB);
-
+	/** extract bounding boxes of detected objects into vectors
+    * @param frame          preprocessed frame from NN
+    * @param outs           output frame from net.forward
+    * @param net            NN to use
+    * @param classIds       Identifier of classes
+    * @param confidences    confidences of detection
+    * @param boxes          bounding boxes
+    * @param backend        which backend to use */
 	void postprocess(cv::Mat &                   frame,
 	                 const std::vector<cv::Mat> &outs,
 	                 cv::dnn::Net &              net,
