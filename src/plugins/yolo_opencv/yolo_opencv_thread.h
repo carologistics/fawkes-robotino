@@ -176,7 +176,6 @@ private:
 	int                          inpHeight;
 	int                          backend;
 	int                          target;
-	size_t                       asyncNumReq;
 	std::vector<std::string>     classes;
 	cv::dnn::Net                 net;
 };
