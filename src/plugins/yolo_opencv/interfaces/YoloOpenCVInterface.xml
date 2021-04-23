@@ -5,10 +5,10 @@
   </constants>
   <data>
     <comment>
-        Interface to run Image detection based on the Yolo implementation in OpenCV
+      Interface to run Image detection based on the Yolo implementation in OpenCV
     </comment>
-    <field type="string" length="1024" name="detection_boxes">
-        Vector for bounding boxes around detected objects
+    <field type="uint32" name="msgid">
+      Last processed Message
     </field>
   </data>
   <message name="DetectObjectMessage">
@@ -20,6 +20,35 @@
     </field>
     <field type="string" length="1024" name="video_device">
 	Which video device to use
+    </field>
+  </message>
+  <message name="DetectedMessage">
+    <comment>
+      Values of the detected object
+    </comment>
+    <field type="bool" name="detection_successful">
+        Whether anything was detected
+    </field>
+    <field type="string" length="128" name="error_message">
+	Cause of failure
+    </field>
+    <field type="int64" name="classId">
+	Class Identifier of object
+    </field>
+    <field type="float" name="confidence">
+	Confidence of detection
+    </field>
+    <field type="int64" name="centerX">
+	X-Axis center of bounding box
+    </field>
+    <field type="int64" name="centerY">
+	Y-Axis center of bounding box
+    </field>
+    <field type="int64" name="width">
+	Width of bounding box
+    </field>
+    <field type="int64" name="height">
+	Height of bounding box
     </field>
   </message>
 </interface>
