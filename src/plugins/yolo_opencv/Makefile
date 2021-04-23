@@ -28,15 +28,12 @@ LDFLAGS  += $(LDFLAGS_OPENCV)
 
 PRESUBDIRS = interfaces 
 
-LIBS_yolo_opencv = fawkescore fawkesutils fawkesaspects fvutils \
+LIBS_yolo_opencv = m fawkescore fawkesutils fawkesaspects \
 	       fawkesinterface fawkesblackboard \
 	       YoloOpenCVInterface
 OBJS_yolo_opencv = yolo_opencv_plugin.o yolo_opencv_thread.o
 
 OBJS_all    = $(OBJS_yolo_opencv)
-
-CFLAGS  += $(CFLAGS_TF)  -DIS_SLIM_BUILD -std=c++11
-LDFLAGS += $(LDFLAGS_TF)  -lstdc++ -lm -lz  -ldl
 
 PLUGINS_all = $(PLUGINDIR)/yolo_opencv.$(SOEXT)
 
@@ -45,10 +42,7 @@ OPENCV_MIN_VERSION = 4.2.0
 ifeq ($(shell $(PKGCONFIG) --exists opencv; echo $$?),0)
     ifeq ($(shell $(PKGCONFIG) --atleast-version $(OPENCV_MIN_VERSION) opencv; echo $$?),0)
         CFLAGS  += $(shell $(PKGCONFIG) --cflags opencv) -Wno-error
-        LDFLAGS  += "-lopencv_imgproc"
- 	LDFLAGS  += "-lopencv_dnn"
-	LDFLAGS  += "-lopencv_highgui"
-        LIBS_opencv += opencv
+	LDFLAGS += $(shell $(PKGCONFIG) --libs opencv)
         PLUGINS_build = $(PLUGINS_all)
     else
         WARN_TARGETS += warning_opencv_version
@@ -67,8 +61,5 @@ warning_opencv:
 warning_opencv_version:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting Yolo OpenCV Plugin$(TNORMAL) (incompatible opencv version $(OPENCV_VERSION); required >= $(OPENCV_MIN_VERSION))"
 endif
-
-
-PLUGINS_build += $(PLUGINS_all)
 
 include $(BUILDSYSDIR)/base.mk
