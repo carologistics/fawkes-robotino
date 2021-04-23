@@ -66,7 +66,6 @@ YoloOpenCVThread::init()
 	inpHeight     = this->config->get_int((prefix + "height"));
 	backend       = this->config->get_int((prefix + "backend"));
 	target        = this->config->get_int((prefix + "target"));
-	asyncNumReq   = this->config->get_int((prefix + "async"));
 
 	std::ifstream classes2detect(classes_path);
 	if (!classes2detect.is_open())
@@ -90,17 +89,18 @@ YoloOpenCVThread::loop()
 	// empty string = reading the interface failed
 	if (path2img == "") {
 		logger->log_warn(name(), "Got empty string as filename");
+		YoloOpenCVInterface::DetectedMessage *feedback_nofn =
+		  new YoloOpenCVInterface::DetectedMessage();
+		feedback_nofn->set_detection_successful(false);
+		feedback_nofn->set_error_message("Got empty string as filename");
+		yolo_opencv_if_->msgq_enqueue(feedback_nofn);
 		return;
 	} else {
 		// check if path to image exists
 		Mat frame = imread(path2img, IMREAD_COLOR);
 		Mat blob;
+		//run picture through NN
 		if (!frame.empty()) {
-			//run picture through NN
-			if (asyncNumReq)
-				CV_Error(Error::StsNotImplemented,
-				         "Asynchronous forward is supported only with Inference Engine backend.");
-
 			// Process frames.
 			preprocess(frame, net, Size(inpWidth, inpHeight), scale, Scalar(), swapRB);
 			std::vector<Mat> outs;
@@ -109,9 +109,36 @@ YoloOpenCVThread::loop()
 			std::vector<float> confidences;
 			std::vector<Rect>  bounding_boxes;
 			postprocess(frame, outs, net, class_id, confidences, bounding_boxes, backend);
-
+			// detected something
+			if (!class_id.empty()) {
+				for (uint i = 0; i < class_id.size(); i++) {
+					YoloOpenCVInterface::DetectedMessage *feedback =
+					  new YoloOpenCVInterface::DetectedMessage();
+					feedback->set_detection_successful(true);
+					feedback->set_classId(class_id[i]);
+					feedback->set_confidence(confidences[i]);
+					feedback->set_centerX(bounding_boxes[i].x);
+					feedback->set_centerY(bounding_boxes[i].y);
+					feedback->set_height(bounding_boxes[i].height);
+					feedback->set_width(bounding_boxes[i].width);
+					yolo_opencv_if_->msgq_enqueue(feedback);
+				};
+			} else { //didn't detect anything
+				logger->log_warn(name(), "Did not detect anything in: %s", path2img.c_str());
+				YoloOpenCVInterface::DetectedMessage *feedback_nodetect =
+				  new YoloOpenCVInterface::DetectedMessage();
+				feedback_nodetect->set_detection_successful(false);
+				feedback_nodetect->set_error_message("Did not detect anything");
+				yolo_opencv_if_->msgq_enqueue(feedback_nodetect);
+				return;
+			};
 		} else {
 			logger->log_warn(name(), "Cannot open %s", path2img.c_str());
+			YoloOpenCVInterface::DetectedMessage *feedback_noopen =
+			  new YoloOpenCVInterface::DetectedMessage();
+			feedback_noopen->set_detection_successful(false);
+			feedback_noopen->set_error_message("Cannot open file");
+			yolo_opencv_if_->msgq_enqueue(feedback_noopen);
 			return;
 		};
 	};
@@ -120,7 +147,7 @@ std::string
 YoloOpenCVThread::read_image_path()
 { //get picture/video
 	yolo_opencv_if_->read();
-	std::string path2img;
+	std::string path2img = "";
 	while (!yolo_opencv_if_->msgq_empty()) {
 		if (yolo_opencv_if_->msgq_first_is<YoloOpenCVInterface::DetectObjectMessage>()) {
 			YoloOpenCVInterface::DetectObjectMessage *msg =
