@@ -112,6 +112,7 @@ YoloOpenCVThread::loop()
 		logger->log_warn(name(), "Got empty string as filename");
 		yolo_opencv_if_write->set_detection_successful(false);
 		yolo_opencv_if_write->set_error("Got empty string as filename");
+		return;
 	} else {
 		// check if path to image exists
 		Mat frame = imread(path2img, IMREAD_COLOR);
