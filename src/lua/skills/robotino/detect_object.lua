@@ -62,7 +62,7 @@ end
 
 function DETECT:init()
    local detect_feedback = nil
-   while ~yolo-interface:empty() do
+   while (not yolo-interface:empty()) do
       detect_feedback = yolo-interface.msgq_first()
       self.fsm.vars.feedback_error_msg = detect_feedback:error_message()
       self.fsm.vars.detection_successful = detect_feedback:is_detection_successful()
