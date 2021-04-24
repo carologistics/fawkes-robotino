@@ -27,6 +27,7 @@ name               = "detect_object"
 fsm                = SkillHSM:new{name=name, start="INIT"}
 depends_skills     = {}
 depends_interfaces = {
+<<<<<<< HEAD
    {v = "yolo_interface_write", type = "YoloOpenCVInterface", id = "YoloOpenCVwrite"},
    {v = "realsense_control", type = "CameraControlInterface", id = "realsense2_cam"},
    {v = "realsense_switch", type = "SwitchInterface", id = "realsense2"},
@@ -37,7 +38,11 @@ documentation      = [==[
 sends an image file path to the YoloOpenCV plugin to get the bounding boxes of detected objects
 
 Parameters:
+<<<<<<< HEAD
       @param classId What kind of object to detect (depends on your yolo model)
+=======
+      @param imgpath path to the image to detect objects in
+>>>>>>> 821cc9e7c (skills/detect_object: fix typo in name and init)
 ]==]
 
 -- Initialize as skill module
@@ -123,4 +128,3 @@ function DETECTED:init()
    end
    self.fsm.vars.detection_successful = true
 end
-
