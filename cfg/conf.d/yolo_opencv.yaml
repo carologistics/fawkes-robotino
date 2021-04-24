@@ -6,11 +6,11 @@ doc-url: !url https://docs.opencv.org/master/da/d9d/tutorial_dnn_yolo.html
 
 plugins/yolo_opencv:
   # path to weigths
-  model_path: "../cfg/yolo/"
+  model_path: "../cfg/yolo/yolo-obj_final.weights"
   # yolo config
-  config_path: "../cfg/yolo/"
+  config_path: "../cfg/yolo/yolo-obj.cfg"
   # classes to detect
-  classes_path: "../cfg/yolo/"
+  classes_path: "../cfg/yolo/obj.names"
   # optional origin framework
   # (opencv detects what net you are using based on the config you define)
   framework: ""
