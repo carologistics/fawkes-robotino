@@ -164,7 +164,7 @@ YoloOpenCVThread::read_image_path()
 		}
 		yolo_opencv_if_write->msgq_pop();
 	}
-	return path2img = "/home/neltester/Pictures/Pictures/c0_b_gripping_dist_Color_Color.png";
+	return path2img;
 }
 
 inline void
