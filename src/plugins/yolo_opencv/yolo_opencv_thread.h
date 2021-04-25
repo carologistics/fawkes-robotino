@@ -162,7 +162,8 @@ private:
 	                 int                         backend);
 
 private:
-	fawkes::YoloOpenCVInterface *yolo_opencv_if_;
+	fawkes::YoloOpenCVInterface *yolo_opencv_if_read;
+	fawkes::YoloOpenCVInterface *yolo_opencv_if_write;
 	std::string                  model_path;
 	std::string                  config_path;
 	std::string                  classes_path;

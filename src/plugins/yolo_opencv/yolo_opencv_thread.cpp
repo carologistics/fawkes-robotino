@@ -45,14 +45,16 @@ YoloOpenCVThread::YoloOpenCVThread() : Thread("YoloOpenCVThread", Thread::OPMODE
 void
 YoloOpenCVThread::finalize()
 {
-	blackboard->close(yolo_opencv_if_);
+	blackboard->close(yolo_opencv_if_write);
+	blackboard->close(yolo_opencv_if_read);
 }
 
 void
 YoloOpenCVThread::init()
 {
-	yolo_opencv_if_    = blackboard->open_for_writing<YoloOpenCVInterface>("YoloOpenCV");
-	std::string prefix = CFG_PREFIX;
+	yolo_opencv_if_read  = blackboard->open_for_reading<YoloOpenCVInterface>("YoloOpenCV");
+	yolo_opencv_if_write = blackboard->open_for_writing<YoloOpenCVInterface>("YoloOpenCV");
+	std::string prefix   = CFG_PREFIX;
 	//get NN params
 	model_path    = this->config->get_string((prefix + "model_path").c_str());
 	config_path   = this->config->get_string((prefix + "config_path").c_str());
@@ -93,7 +95,7 @@ YoloOpenCVThread::loop()
 		  new YoloOpenCVInterface::DetectedMessage();
 		feedback_nofn->set_detection_successful(false);
 		feedback_nofn->set_error_message("Got empty string as filename");
-		yolo_opencv_if_->msgq_enqueue(feedback_nofn);
+		yolo_opencv_if_read->msgq_enqueue(feedback_nofn);
 		return;
 	} else {
 		// check if path to image exists
@@ -121,7 +123,8 @@ YoloOpenCVThread::loop()
 					feedback->set_centerY(bounding_boxes[i].y);
 					feedback->set_height(bounding_boxes[i].height);
 					feedback->set_width(bounding_boxes[i].width);
-					yolo_opencv_if_->msgq_enqueue(feedback);
+					yolo_opencv_if_read->msgq_enqueue(feedback);
+					logger->log_warn(name(), "Detection in: %s", path2img.c_str());
 				};
 			} else { //didn't detect anything
 				logger->log_warn(name(), "Did not detect anything in: %s", path2img.c_str());
@@ -129,7 +132,7 @@ YoloOpenCVThread::loop()
 				  new YoloOpenCVInterface::DetectedMessage();
 				feedback_nodetect->set_detection_successful(false);
 				feedback_nodetect->set_error_message("Did not detect anything");
-				yolo_opencv_if_->msgq_enqueue(feedback_nodetect);
+				yolo_opencv_if_read->msgq_enqueue(feedback_nodetect);
 				return;
 			};
 		} else {
@@ -138,7 +141,7 @@ YoloOpenCVThread::loop()
 			  new YoloOpenCVInterface::DetectedMessage();
 			feedback_noopen->set_detection_successful(false);
 			feedback_noopen->set_error_message("Cannot open file");
-			yolo_opencv_if_->msgq_enqueue(feedback_noopen);
+			yolo_opencv_if_read->msgq_enqueue(feedback_noopen);
 			return;
 		};
 	};
@@ -146,12 +149,12 @@ YoloOpenCVThread::loop()
 std::string
 YoloOpenCVThread::read_image_path()
 { //get picture/video
-	yolo_opencv_if_->read();
+	yolo_opencv_if_write->read();
 	std::string path2img = "";
-	while (!yolo_opencv_if_->msgq_empty()) {
-		if (yolo_opencv_if_->msgq_first_is<YoloOpenCVInterface::DetectObjectMessage>()) {
+	while (!yolo_opencv_if_write->msgq_empty()) {
+		if (yolo_opencv_if_write->msgq_first_is<YoloOpenCVInterface::DetectObjectMessage>()) {
 			YoloOpenCVInterface::DetectObjectMessage *msg =
-			  yolo_opencv_if_->msgq_first<YoloOpenCVInterface::DetectObjectMessage>();
+			  yolo_opencv_if_write->msgq_first<YoloOpenCVInterface::DetectObjectMessage>();
 			if (msg->path_to_picture()) {
 				path2img = msg->path_to_picture();
 			}
@@ -159,9 +162,9 @@ YoloOpenCVThread::read_image_path()
 			logger->log_warn(name(), "Unknown message received");
 			path2img = "";
 		}
-		yolo_opencv_if_->msgq_pop();
+		yolo_opencv_if_write->msgq_pop();
 	}
-	return path2img;
+	return path2img = "/home/neltester/Pictures/Pictures/c0_b_gripping_dist_Color_Color.png";
 }
 
 inline void
