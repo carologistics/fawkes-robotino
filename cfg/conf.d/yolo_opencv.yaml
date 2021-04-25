@@ -22,8 +22,8 @@ plugins/yolo_opencv:
   # swapRB
   rgb: true
   # image size
-  width: 1920
-  height: 1080
+  width: 608
+  height: 608
   # computation backend: auto:0, halide:1, intel dlie:2, opencv:3
   backend: 0
   # computation device: cpu:0, opencl:1 opencl fp16:2, vpu:3
