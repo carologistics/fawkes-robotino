@@ -37,7 +37,7 @@ OBJS_all    = $(OBJS_yolo_opencv)
 
 PLUGINS_all = $(PLUGINDIR)/yolo_opencv.$(SOEXT)
 
-OPENCV_MIN_VERSION = 4.2.0
+OPENCV_MIN_VERSION = 4.5.0
 
 ifeq ($(shell $(PKGCONFIG) --exists opencv; echo $$?),0)
     ifeq ($(shell $(PKGCONFIG) --atleast-version $(OPENCV_MIN_VERSION) opencv; echo $$?),0)
@@ -46,7 +46,7 @@ ifeq ($(shell $(PKGCONFIG) --exists opencv; echo $$?),0)
         PLUGINS_build = $(PLUGINS_all)
     else
         WARN_TARGETS += warning_opencv_version
-        REALSENSE_VERSION = $(shell $(PKGCONFIG) --modversion opencv)
+        OPENCV_VERSION = $(shell $(PKGCONFIG) --modversion opencv)
     endif
 else
     WARN_TARGETS += warning_opencv
@@ -55,7 +55,7 @@ endif
 ifeq ($(OBJSSUBMAKE),1)
 all: $(WARN_TARGETS)
 
-.PHONY: warning_librealsense warning_librealsense_version
+.PHONY: warning_opencv warning_opencv_version
 warning_opencv:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting Yolo OpenCV Plugin$(TNORMAL) (opencv not found)"
 warning_opencv_version:
