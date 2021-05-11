@@ -21,7 +21,7 @@
 #include "tag_vision_thread.h"
 
 #include <interfaces/Position3DInterface.h>
-#include <opencv/cv.h>
+#include <opencv2/opencv.hpp>
 #include <tf/types.h>
 
 #include <math.h>
@@ -51,7 +51,6 @@ TagVisionThread::TagVisionThread()
 	fv_cam_       = nullptr;
 	shm_buffer_   = nullptr;
 	image_buffer_ = nullptr;
-	ipl_image_    = nullptr;
 	markers_      = nullptr;
 }
 
@@ -124,7 +123,7 @@ TagVisionThread::init()
 
 	image_buffer_ = shm_buffer_->buffer();
 	ipl_image_ =
-	  cvCreateImage(cvSize(this->img_width_, this->img_height_), IPL_DEPTH_8U, IMAGE_CAHNNELS);
+      cv::Mat(cv::Size(this->img_width_, this->img_height_), CV_8UC1, IMAGE_CAHNNELS);
 
 	// set up marker
 	max_marker_    = 16;
@@ -163,8 +162,7 @@ TagVisionThread::finalize()
 	delete shm_buffer_;
 	shm_buffer_   = nullptr;
 	image_buffer_ = nullptr;
-	cvReleaseImage(&ipl_image_);
-	ipl_image_ = nullptr;
+    ipl_image_.release();
 	delete this->tag_interfaces_;
 
 	while (!laser_line_ifs_->empty()) {
@@ -211,7 +209,7 @@ TagVisionThread::loop()
 	                    this->img_height_);
 	fv_cam_->dispose_buffer();
 	// convert img
-	firevision::IplImageAdapter::convert_image_bgr(image_buffer_, ipl_image_);
+    firevision::CvMatAdapter::convert_image_bgr(image_buffer_, ipl_image_);
 	// get marker from img
 	get_marker();
 
@@ -238,7 +236,7 @@ TagVisionThread::get_marker()
 		// add up to markers
 		tmp_marker.Visualize(ipl_image_, &alvar_cam_);
 	}
-	firevision::IplImageAdapter::convert_image_yuv422_planar(ipl_image_, image_buffer_);
+    firevision::CvMatAdapter::convert_image_yuv422_planar(ipl_image_, image_buffer_);
 }
 
 // config handling
