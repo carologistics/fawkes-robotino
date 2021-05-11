@@ -126,7 +126,7 @@ private:
 	virtual void config_value_changed(const fawkes::Configuration::ValueIterator *v) override;
 
 	/// cv image
-    cv::Mat ipl_image_;
+	cv::Mat ipl_image_;
 
 	/// blackboard communication
 	TagPositionList *                          tag_interfaces_;
