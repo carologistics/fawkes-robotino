@@ -73,7 +73,7 @@ ifneq ($(HAVE_ALVAR),1)
 endif
 
 ifeq ($(HAVE_TF)$(HAVE_ALVAR)$(HAVE_CPP11),111)
-  CFLAGS  += $(CFLAGS_ALVAR)  $(CFLAGS_TF) $(CFLAGS_CPP11)
+  CFLAGS  += $(CFLAGS_ALVAR)  $(CFLAGS_TF) $(CFLAGS_CPP11) -Wno-error
   LDFLAGS += $(LDFLAGS_ALVAR) $(LDFLAGS_TF)
   LIBS_tag_vision += $(LIBS_ALVAR)
   PLUGINS_build = $(PLUGINS_all)

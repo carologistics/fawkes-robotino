@@ -82,19 +82,19 @@ TagPositionInterfaceHelper::~TagPositionInterfaceHelper()
 void
 TagPositionInterfaceHelper::set_pose(alvar::Pose new_pose)
 {
-	// temp mat to get cv data
-	CvMat mat;
+
 	// angles in quaternion
 	double rot[4];
-	// create the mat
-	cvInitMatHeader(&mat, 4, 1, CV_64F, rot);
+    // create the mat
+    // temp mat to get cv data
+    cv::Mat mat = cv::Mat(4, 1, CV_64F, rot);
 	// get the angles in euler
-	new_pose.GetQuaternion(&mat);
+    new_pose.GetQuaternion(mat);
 	// get the temporary quaternion in wxyz
-	rot[0] = CV_MAT_ELEM(mat, double, 0, 0);
-	rot[1] = CV_MAT_ELEM(mat, double, 1, 0);
-	rot[2] = CV_MAT_ELEM(mat, double, 2, 0);
-	rot[3] = CV_MAT_ELEM(mat, double, 3, 0);
+    rot[0] =mat.at<double>( 0, 0);
+    rot[1] = mat.at<double>( 1, 0);
+    rot[2] = mat.at<double>(  2, 0);
+    rot[3] = mat.at<double>( 3, 0);
 	// create a quaternion on the angles.
 	fawkes::tf::Quaternion tag_rot(rot[ALVAR_ROT::A_X],
 	                               rot[ALVAR_ROT::A_Y],
