@@ -91,3 +91,25 @@
 	)
   (modify ?g (mode EXPANDED))
 )
+
+(defrule goal-expander-prefill-cap-station
+" Feed a CS with a cap from its shelf so that afterwards
+   it can directly put the cap on a product."
+	;?p <- (goal (mode DISPATCHED) (id ?parent))
+	?g <- (goal (id ?goal-id) (class FILL-CAP) (mode SELECTED) (parent ?parent)
+	            (params robot ?robot
+	                    mps ?mps
+	                    cc ?cc
+	                    cap-color ?cap-color
+	            ))
+	(wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?shelf-spot))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	=>
+	(plan-assert-sequential (sym-cat FILL-CAP-PLAN- (gensym*)) ?goal-id ?robot
+		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?mps INPUT
+			(plan-assert-action wp-get-shelf ?robot ?cc ?mps ?shelf-spot)
+			(plan-assert-action wp-put ?robot ?cc ?mps)
+		)
+	)
+	(modify ?g (mode EXPANDED))
+)
