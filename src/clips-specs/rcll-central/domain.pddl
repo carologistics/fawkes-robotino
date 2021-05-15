@@ -242,12 +242,6 @@
 	        )
 )
 
-(:action request-cs-mount-cap
-	:parameters (?r - robot ?m - mps ?wp - workpiece ?capcol - cap-color)
-	:precondition ()
-	:effect ()
-)
-
 (:action cs-retrieve-cap
 	:parameters (?m - mps ?cc - cap-carrier ?capcol - cap-color)
 	:precondition (and (mps-type ?m CS) 
@@ -270,12 +264,6 @@
 	             (cs-can-perform ?m MOUNT_CAP)
 	             (not (cs-prepared-for ?m RETRIEVE_CAP))
 	        )
-)
-
-(:action request-cs-retrieve-cap
-	:parameters (?r - robot ?m - mps ?cc - cap-carrier ?capcol - cap-color)
-	:precondition ()
-	:effect ()
 )
 
 (:action prepare-rs
@@ -385,14 +373,6 @@
 	             (not (rs-filled-with ?m ?rs-before)) 
 	             (rs-filled-with ?m ?rs-after)
 	        )
-)
-
-(:action request-rs-mount-ring
-	:parameters (?r - robot ?m - mps ?wp - workpiece ?col - ring-color
-	             ?ring-pos - ring-num ?col1 - ring-color ?col2 - ring-color 
-	             ?col3 - ring-color ?r-req - ring-num)
-	:precondition ()
-	:effect ()
 )
 
 ; The following is the generic move version.
@@ -660,12 +640,6 @@
 	             (not (wp-base-color ?wp ?basecol))
 	             (not (wp-cap-color ?wp ?capcol))
 	        )
-)
-
-(:action request-ds-fulfill-order
-	:parameters (?r - robot ?m - mps ?wp - workpiece ?ord - order)
-	:precondition ()
-	:effect ()
 )
 
 (:action move-node
