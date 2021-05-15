@@ -167,3 +167,34 @@
 	)
  (modify ?g (mode EXPANDED))
 )
+
+(defrule goal-expander-deliver
+	;?p <- (goal (mode DISPATCHED) (id ?parent))
+	?g <- (goal (id ?goal-id) (class DELIVER) (mode SELECTED) (parent ?parent)
+	            (params robot ?robot
+	                         mps ?mps
+	                         order ?order
+	                         wp ?wp
+	                         ds ?ds
+	      ))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	=>
+	(plan-assert-sequential (sym-cat MOUNT-CAP-PLAN- (gensym*)) ?goal-id ?robot
+		(if (not (is-holding ?robot ?wp))
+		 then
+			(create$ ; only last statement of if is returned
+				(plan-assert-safe-move ?robot ?curr-location ?curr-side ?mps OUTPUT
+					(plan-assert-action wp-get ?robot ?wp ?mps OUTPUT)
+				)
+				(plan-assert-safe-move ?robot ?mps OUTPUT ?ds INPUT
+					(plan-assert-action wp-put ?robot ?wp)
+				)
+			)
+		 else
+			(plan-assert-safe-move ?robot ?curr-location ?curr-side ?ds INPUT
+				(plan-assert-action wp-put ?robot ?wp ?ds)
+			)
+		)
+	)
+	(modify ?g (mode EXPANDED))
+)
