@@ -70,7 +70,6 @@
 )
 
 (:predicates
-	(self ?r - robot)
 	(at ?r - robot ?m - location ?side - mps-side)
 	(holding ?r - robot ?wp - workpiece)
 	(can-hold ?r - robot)
@@ -181,7 +180,6 @@
 	                   (wp-base-color ?wp BASE_NONE) 
 	                   (wp-unused ?wp)
 	                   (wp-spawned-for ?wp ?r)
-	                   (self ?r)
 	                   (mps-side-free ?m ?side)
 	              )
 	:effect (and (wp-at ?wp ?m ?side) 
@@ -204,7 +202,6 @@
 	                   (wp-base-color ?wp BASE_NONE) 
 	                   (wp-unused ?wp)
 	                   (wp-spawned-for ?wp ?r)
-	                   (self ?r)
 	                   (mps-side-free ?m ?side)
 	              )
 	:effect (and (wp-at ?wp ?m ?side) 
@@ -247,8 +244,8 @@
 
 (:action request-cs-mount-cap
 	:parameters (?r - robot ?m - mps ?wp - workpiece ?capcol - cap-color)
-	:precondition (self ?r)
-	:effect (self ?r)
+	:precondition ()
+	:effect ()
 )
 
 (:action cs-retrieve-cap
@@ -277,8 +274,8 @@
 
 (:action request-cs-retrieve-cap
 	:parameters (?r - robot ?m - mps ?cc - cap-carrier ?capcol - cap-color)
-	:precondition (self ?r)
-	:effect (self ?r)
+	:precondition ()
+	:effect ()
 )
 
 (:action prepare-rs
@@ -394,8 +391,8 @@
 	:parameters (?r - robot ?m - mps ?wp - workpiece ?col - ring-color
 	             ?ring-pos - ring-num ?col1 - ring-color ?col2 - ring-color 
 	             ?col3 - ring-color ?r-req - ring-num)
-	:precondition (self ?r)
-	:effect (self ?r)
+	:precondition ()
+	:effect ()
 )
 
 ; The following is the generic move version.
@@ -667,20 +664,20 @@
 
 (:action request-ds-fulfill-order
 	:parameters (?r - robot ?m - mps ?wp - workpiece ?ord - order)
-	:precondition (self ?r)
-	:effect (self ?r)
+	:precondition ()
+	:effect ()
 )
 
 (:action move-node
 	:parameters (?r - robot ?z - zone)
-	:precondition (self ?r)
-	:effect (self ?r)
+	:precondition ()
+	:effect ()
 )
 
 (:action explore-zone
 	:parameters (?r - robot ?z - zone)
-	:precondition (self ?r)
-	:effect (self ?r)
+	:precondition ()
+	:effect ()
 )
 
 (:action spawn-wp
