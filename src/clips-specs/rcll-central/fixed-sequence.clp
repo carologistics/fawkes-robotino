@@ -19,15 +19,49 @@
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
 
+(deffunction plan-assert-action (?name $?param-values)
+	(assert (plan-action (action-name ?name) (param-values $?param-values)))
+)
+
+(deffunction plan-assert-sequential (?plan-id ?goal-id ?robot $?action-tuples)
+	(assert (plan (id ?plan-id) (goal-id ?goal-id)))
+	(foreach ?pa $?action-tuples
+		(modify ?pa (id ?pa-index) (plan-id ?plan-id) (goal-id ?goal-id)
+		            (skiller (remote-skiller ?robot)))
+	)
+)
+
+(deffunction plan-assert-safe-move (?robot
+                                    ?curr-location
+                                    ?curr-side
+                                    ?mps
+                                    ?mps-side
+                                    $?actions)
+	(return
+	  (create$
+	    (plan-assert-action go-wait
+	      ?robot ?curr-location ?curr-side (wait-pos ?mps ?mps-side))
+	    (plan-assert-action location-lock
+	      ?mps ?mps-side)
+	    (plan-assert-action move
+	      ?robot (wait-pos ?mps ?mps-side) WAIT ?mps ?mps-side)
+	    $?actions
+	    (plan-assert-action location-unlock
+	      ?mps ?mps-side)
+	    (plan-assert-action go-wait
+	      ?robot ?mps ?mps-side (wait-pos ?mps ?mps-side))
+	  )
+	)
+)
+
 (defrule goal-expander-send-beacon-signal
   ?p <- (goal (mode DISPATCHED) (id ?parent-id))
   ?g <- (goal (id ?goal-id) (class SEND-BEACON) (mode SELECTED)
               (parent ?parent-id))
 =>
-  (assert
-    (plan (id BEACONPLAN) (goal-id ?goal-id))
-    (plan-action (id 1) (plan-id BEACONPLAN) (goal-id ?goal-id)
-      (action-name send-beacon)))
+	(plan-assert-sequential BEACONPLAN ?goal-id central
+		(plan-assert-action send-beacon)
+	)
   (modify ?g (mode EXPANDED))
 )
 
@@ -37,22 +71,14 @@
               (params mps ?mps) (parent ?parent-id))
   (wm-fact (key domain fact cs-color args? m ?mps col ?col))
   =>
-  (assert
-    (plan (id REFILL-PLAN) (goal-id ?goal-id))
-    (plan-action (id 1) (plan-id REFILL-PLAN) (goal-id ?goal-id)
-                 (action-name lock) (param-values ?mps))
-    (plan-action (id 2) (plan-id REFILL-PLAN) (goal-id ?goal-id)
-                 (action-name refill-shelf)
-                 (param-values ?mps LEFT (sym-cat CC- (random-id)) ?col))
-    (plan-action (id 3) (plan-id REFILL-PLAN) (goal-id ?goal-id)
-                 (action-name refill-shelf)
-                 (param-values ?mps MIDDLE (sym-cat CC- (random-id)) ?col))
-    (plan-action (id 4) (plan-id REFILL-PLAN) (goal-id ?goal-id)
-                 (action-name refill-shelf)
-                 (param-values ?mps RIGHT (sym-cat CC- (random-id)) ?col))
-    (plan-action (id 5) (plan-id REFILL-PLAN) (goal-id ?goal-id)
-                 (action-name unlock) (param-values ?mps))
-  )
+	(plan-assert-sequential REFILL-PLAN ?goal-id central
+		(plan-assert-action refill-shelf
+		  ?mps LEFT (sym-cat CC- (random-id)) ?col)
+		(plan-assert-action refill-shelf
+		  ?mps MIDDLE (sym-cat CC- (random-id)) ?col)
+		(plan-assert-action refill-shelf
+		  ?mps RIGHT (sym-cat CC- (random-id)) ?col)
+	)
   (modify ?g (mode EXPANDED))
 )
 
@@ -60,13 +86,8 @@
   ?g <- (goal (id ?goal-id) (mode SELECTED) (class ENTER-FIELD)
               (params r ?robot team-color ?team-color))
 =>
-  (assert
-    (plan (id ENTER-FIELD-PLAN) (goal-id ?goal-id))
-    (plan-action (id 1) (plan-id ENTER-FIELD-PLAN) (goal-id ?goal-id)
-                                 (action-name enter-field)
-                                 (skiller (remote-skiller ?robot))
-                                 (param-names r team-color)
-                                 (param-values ?robot ?team-color))
-    )
+	(plan-assert-sequential ENTER-FIELD-PLAN ?goal-id ?robot
+		(plan-assert-action enter-field ?robot ?team-color)
+	)
   (modify ?g (mode EXPANDED))
 )
