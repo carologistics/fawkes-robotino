@@ -404,33 +404,6 @@
 	        )
 )
 
-; Move actions specific for the expected follow-up action.
-; This models the move in two versions specific to the expected next action,
-; either the retrieval or the delivery of a workpiece. While a more generic
-; such as the one would be desirable, in typical test cases these specific
-; actions cut the planning time by about 95%.
-(:action move-wp-put
-	:parameters (?r - robot ?from - location ?from-side - mps-side ?to - mps)
-	:precondition (and (at ?r ?from ?from-side)
-	                   (mps-state ?to IDLE)
-	              )
-	:effect (and (not (at ?r ?from ?from-side))
-	             (at ?r ?to INPUT)
-	        )
-)
-
-(:action move-wp-get
-	:parameters (?r - robot ?from - location ?from-side - mps-side 
-	             ?to - mps ?to-side - mps-side)
-	:precondition (and (at ?r ?from ?from-side)
-	                   (mps-state ?to READY-AT-OUTPUT)
-	                   (can-hold ?r)
-	              )
-	:effect (and (not (at ?r ?from ?from-side))
-	             (at ?r ?to ?to-side)
-	        )
-)
-
 (:action enter-field
 	:parameters (?r - robot ?team-color - team-color)
 	:precondition (robot-waiting ?r)
@@ -643,12 +616,6 @@
 )
 
 (:action move-node
-	:parameters (?r - robot ?z - zone)
-	:precondition ()
-	:effect ()
-)
-
-(:action explore-zone
 	:parameters (?r - robot ?z - zone)
 	:precondition ()
 	:effect ()
