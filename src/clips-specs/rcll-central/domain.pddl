@@ -121,11 +121,11 @@
 	(ss-stored-wp ?m  - mps ?wp - workpiece ?shelf - ss-shelf ?slot - ss-slot)
 	(ss-shelf-slot-free ?m  - mps ?shelf - ss-shelf ?slot - ss-slot)
 	(ss-new-wp-at ?m  - mps ?wp - workpiece ?shelf - ss-shelf
-	?slot - ss-slot ?base-col - base-color
-	?ring1-col - ring-color ?ring2-col - ring-color
-	?ring3-col - ring-color ?cap-col - cap-color)
 	(locked ?name - object)
 	(location-locked ?m - mps ?s - mps-side)
+	              ?slot - ss-slot ?base-col - base-color
+	              ?ring1-col - ring-color ?ring2-col - ring-color
+	              ?ring3-col - ring-color ?cap-col - cap-color)
 )
 
 ;Kind of a hack. actually it should model the removal of present workpieces
