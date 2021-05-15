@@ -129,68 +129,33 @@
 	(modify ?g (mode EXPANDED))
 )
 
-(defrule goal-expander-mount-cap
+(defrule goal-expander-transport-goals
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
-	?g <- (goal (id ?goal-id) (class MOUNT-CAP) (mode SELECTED) (parent ?parent)
-	                                             (params robot ?robot
-	                                                     bs ?bs
-	                                                     bs-side ?bs-side
-	                                                     bs-color ?base-color
-	                                                     mps ?mps
-	                                                     cs-color ?cap-color
-	                                                     order ?order
-	                                                     wp ?wp
-	                                                     ))
+	?g <- (goal (id ?goal-id) (class ?class&MOUNT-CAP|MOUNT-RING|DELIVER)
+	                          (mode SELECTED) (parent ?parent)
+	                          (params robot ?robot
+	                                   wp ?wp
+	                                   wp-loc ?wp-loc
+	                                   wp-side ?wp-side
+	                                   target-mps ?target-mps
+	                                   target-side ?target-side
+	                                   $?))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
-	(plan-assert-sequential (sym-cat MOUNT-CAP-PLAN- (gensym*)) ?goal-id ?robot
+	(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
 		(if (not (is-holding ?robot ?wp))
 		 then
 			(create$ ; only last statement of if is returned
-				(plan-assert-safe-move ?robot ?curr-location ?curr-side ?bs ?bs-side
-					(plan-assert-action prepare-bs ?bs ?bs-side ?base-color)
-					(plan-assert-action bs-dispense-for-order
-					  ?robot ?bs ?bs-side ?order ?wp ?base-color)
-					(plan-assert-action wp-get ?robot ?wp ?bs ?bs-side)
+				(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
+					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
 				)
-				(plan-assert-safe-move ?robot ?bs ?bs-side ?mps INPUT
-					(plan-assert-action wp-put ?robot ?wp ?mps)
+				(plan-assert-safe-move ?robot ?wp-loc ?wp-side ?target-mps ?target-side
+					(plan-assert-action wp-put ?robot ?wp ?target-mps)
 				)
 			)
 		 else
-			(plan-assert-safe-move ?robot ?curr-location ?curr-side ?mps INPUT
-				(plan-assert-action wp-put ?robot ?wp ?mps)
-			)
-		)
-	)
- (modify ?g (mode EXPANDED))
-)
-
-(defrule goal-expander-deliver
-	;?p <- (goal (mode DISPATCHED) (id ?parent))
-	?g <- (goal (id ?goal-id) (class DELIVER) (mode SELECTED) (parent ?parent)
-	            (params robot ?robot
-	                         mps ?mps
-	                         order ?order
-	                         wp ?wp
-	                         ds ?ds
-	      ))
-	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-	=>
-	(plan-assert-sequential (sym-cat MOUNT-CAP-PLAN- (gensym*)) ?goal-id ?robot
-		(if (not (is-holding ?robot ?wp))
-		 then
-			(create$ ; only last statement of if is returned
-				(plan-assert-safe-move ?robot ?curr-location ?curr-side ?mps OUTPUT
-					(plan-assert-action wp-get ?robot ?wp ?mps OUTPUT)
-				)
-				(plan-assert-safe-move ?robot ?mps OUTPUT ?ds INPUT
-					(plan-assert-action wp-put ?robot ?wp)
-				)
-			)
-		 else
-			(plan-assert-safe-move ?robot ?curr-location ?curr-side ?ds INPUT
-				(plan-assert-action wp-put ?robot ?wp ?ds)
+			(plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps ?target-side
+				(plan-assert-action wp-put ?robot ?wp ?target-mps)
 			)
 		)
 	)
