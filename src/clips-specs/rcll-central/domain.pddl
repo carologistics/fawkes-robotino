@@ -615,12 +615,6 @@
 	        )
 )
 
-(:action move-node
-	:parameters (?r - robot ?z - zone)
-	:precondition ()
-	:effect ()
-)
-
 (:action spawn-wp
 	:parameters (?wp - workpiece ?r - robot)
 	:precondition (and (not (wp-unused ?wp))
