@@ -100,13 +100,14 @@
 )
 
 (defrule goal-expander-enter-field
-  ?g <- (goal (id ?goal-id) (mode SELECTED) (class ENTER-FIELD)
-              (params r ?robot team-color ?team-color))
-=>
+	?g <- (goal (id ?goal-id) (mode SELECTED) (class ENTER-FIELD)
+	            (params team-color ?team-color)
+	            (meta $? assigned-to ?robot $?))
+	=>
 	(plan-assert-sequential ENTER-FIELD-PLAN ?goal-id ?robot
 		(plan-assert-action enter-field ?robot ?team-color)
 	)
-  (modify ?g (mode EXPANDED))
+	(modify ?g (mode EXPANDED))
 )
 
 (defrule goal-expander-prefill-cap-station
@@ -114,11 +115,11 @@
    it can directly put the cap on a product."
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class FILL-CAP) (mode SELECTED) (parent ?parent)
-	            (params robot ?robot
-	                    mps ?mps
-	                    cc ?cc
+	            (params wp ?cc
+	                    target-mps ?mps
 	                    cap-color ?cap-color
-	            ))
+	            )
+	            (meta $? assigned-to ?robot $?))
 	(wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?shelf-spot))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
@@ -135,13 +136,13 @@
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class ?class&MOUNT-CAP|MOUNT-RING|DELIVER)
 	                          (mode SELECTED) (parent ?parent)
-	                          (params robot ?robot
-	                                   wp ?wp
+	                          (params  wp ?wp
 	                                   wp-loc ?wp-loc
 	                                   wp-side ?wp-side
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
-	                                   $?))
+	                                   $?)
+	                          (meta $? assigned-to ?robot $?))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
 	(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
