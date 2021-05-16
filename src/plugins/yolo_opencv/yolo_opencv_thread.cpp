@@ -29,6 +29,8 @@
 
 #define CFG_PREFIX "/plugins/yolo_opencv/"
 
+#include <ctime>
+
 using namespace fawkes;
 using namespace std;
 using namespace cv;
