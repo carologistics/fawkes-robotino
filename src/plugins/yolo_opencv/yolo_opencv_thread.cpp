@@ -29,6 +29,8 @@
 
 #define CFG_PREFIX "/plugins/yolo_opencv/"
 
+#include <ctime>
+
 using namespace fawkes;
 using namespace std;
 using namespace cv;
@@ -82,6 +84,7 @@ YoloOpenCVThread::init()
 	net.setPreferableBackend(backend);
 	net.setPreferableTarget(target);
 	outNames = net.getUnconnectedOutLayersNames();
+	logger->log_info(name(), "Loaded Yolo Object Detection plugin");
 }
 
 void
@@ -125,6 +128,8 @@ YoloOpenCVThread::loop()
 					feedback->set_width(bounding_boxes[i].width);
 					yolo_opencv_if_read->msgq_enqueue(feedback);
 					logger->log_warn(name(), "Detection in: %s", path2img.c_str());
+					// logger->log_warn(name(), "Center: %i, %i", bounding_boxes[i].x, bounding_boxes[i].y);
+					// logger->log_warn(name(), "Confidence: %f", confidences[i]);
 				};
 			} else { //didn't detect anything
 				logger->log_warn(name(), "Did not detect anything in: %s", path2img.c_str());
