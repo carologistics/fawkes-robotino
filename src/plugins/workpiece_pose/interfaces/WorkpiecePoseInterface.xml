@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="WorkpiecePoseInterface" author="Sebastian Eltester" year="2021">
+  <constants>
+  </constants>
+  <data>
+    <comment>The last transformation computed by the workpiece-pose plugin.</comment>
+    <field type="string" length="32" name="frame">
+      Reference coordinate frame for the data.
+    </field>
+    <field type="int64" length="2" name="input_timestamp">
+      Timestamp { sec, usec } of the input cloud used for this matching.
+    </field>
+    <field type="uint32" name="msgid">
+      Last processed message ID.
+    </field>
+    <field type="bool" name="busy">
+      Whether the plugin is currently working.
+    </field>
+    <field type="double" length="4" name="rotation">
+      Rotation quaternion relative to reference frame, ordered as (x, y, z, w).
+    </field>
+    <field type="double" length="3" name="translation">
+      Translation vector from the reference frame's origin, ordered as (x, y, z).
+    </field>
+  </data>
+  <message name="Match">
+    <comment>Pixel coordinates to match to Pointcloud</comment>
+    <field type="double" length="2" name="bounding_box_center">
+      Target on the MPS.
+    </field>
+  </message>
+</interface>
