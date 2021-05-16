@@ -62,7 +62,7 @@ WorkpiecePoseThread::init()
 	realsense_switch_ =
 	  blackboard->open_for_reading<SwitchInterface>(cfg_bb_realsense_switch_name_.c_str());
 
-	workpiece_frame_id_ = "workpiece";
+	workpiece_frame_id_ = "workpiece_pose";
 }
 
 void
@@ -83,9 +83,9 @@ WorkpiecePoseThread::loop()
 		result_pose_.reset(new tf::Stamped<tf::Pose>{result_pose});
 
 		// set workpiece orientation to orientation of conveyor cam
-		fawkes::tf::StampedTransform gripper_pose;
-		tf_listener->lookup_transform("cam_conveyor", "world", gripper_pose);
-		result_pose_->setRotation(gripper_pose.getRotation());
+		//fawkes::tf::StampedTransform gripper_pose;
+		//tf_listener->lookup_transform("cam_conveyor", "gripper_y_dyn", gripper_pose);
+		result_pose_->setRotation({0, 0, 0, 1});
 		result_pose_->setOrigin({msg->translation(0), msg->translation(1), msg->translation(2)});
 		pose_write();
 		pose_publish_tf(*result_pose_);
@@ -137,15 +137,22 @@ WorkpiecePoseThread::read_xyz()
 void
 WorkpiecePoseThread::pose_publish_tf(const tf::Stamped<tf::Pose> &pose)
 {
-	// transform data into cam conveyor frame
-	tf::Stamped<tf::Pose> tf_pose_gripper;
-	tf_listener->transform_pose("cam_conveyor", pose, tf_pose_gripper);
+	tf::StampedTransform tf_pose_gripper;
+	// cam_conveyor frame is in the actual sensor, realsense plugin returns pose relative to the center of the camera
+	tf::Vector3 depth_sensor_offset(-0.02, 0.0, 0);
 
-	// publish the transform from the gripper to the conveyor
-	tf::Transform        transform(tf_pose_gripper.getRotation(), tf_pose_gripper.getOrigin());
-	tf::StampedTransform stamped_transform(transform,
-	                                       tf_pose_gripper.stamp,
-	                                       tf_pose_gripper.frame_id,
-	                                       workpiece_frame_id_);
-	tf_publisher->send_transform(stamped_transform);
+	tf::Stamped<tf::Pose> tmp_pose(fawkes::tf::Pose(pose.getRotation(),
+	                                                pose.getOrigin() + depth_sensor_offset),
+	                               pose.stamp,
+	                               workpiece_frame_id_);
+	tf_listener->lookup_transform("cam_conveyor", "gripper", 0.0, tf_pose_gripper);
+	tf::Quaternion bt_quat(tf_pose_gripper.getRotation());
+
+	tf::Transform transform(bt_quat, tmp_pose.getOrigin());
+
+	tf::StampedTransform gripper_pose_stamped(transform,
+	                                          tf_pose_gripper.stamp,
+	                                          "cam_conveyor",
+	                                          workpiece_frame_id_);
+	tf_publisher->send_transform(gripper_pose_stamped);
 }
