@@ -194,3 +194,245 @@
   (modify ?pa (state EXECUTION-SUCCEEDED))
   (modify ?g (mode DISPATCHED) (outcome UNKNOWN))
 )
+
+(defrule goal-production-buffer-cap-executable
+" Bring a cap-carrier from a cap stations shelf to the corresponding mps input
+  to buffer its cap. "
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (class BUFFER-CAP) (sub-type SIMPLE)
+	            (mode FORMULATED)
+	            (params target-mps ?mps
+	                    cap-color ?cap-color
+	            )
+	            (meta $? assigned-to ?robot $?)
+	            (is-executable FALSE))
+
+	(wm-fact (key refbox team-color) (value ?team-color))
+	; Robot CEs
+	(wm-fact (key central agent robot args? r ?robot))
+	(not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
+	; MPS CEs
+	(wm-fact (key domain fact mps-type args? m ?mps t CS))
+	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+	(wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP))
+	(not (wm-fact (key domain fact cs-buffered args? m ?mps col ?any-cap-color)))
+	(not (wm-fact (key domain fact wp-at args? wp ?wp-a m ?mps side INPUT)))
+	; Capcarrier CEs
+	(wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
+	(wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+	=>
+	(printout t "Goal BUFFER-CAP executable for " ?robot crlf)
+	(modify ?g (is-executable TRUE))
+)
+
+(defrule goal-production-mount-cap-executable
+" Bring a product to a cap station to mount a cap on it.
+"
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class MOUNT-CAP)
+	                          (mode FORMULATED)
+	                          (params  wp ?wp
+	                                   wp-loc ?wp-loc
+	                                   wp-side ?wp-side
+	                                   target-mps ?target-mps
+	                                   target-side ?target-side
+	                                   $?)
+	                          (meta $? assigned-to ?robot $?)
+	                          (is-executable FALSE))
+
+	; Robot CEs
+	(wm-fact (key central agent robot args? r ?robot))
+	(wm-fact (key refbox team-color) (value ?team-color))
+
+	; MPS-CS CEs
+	(wm-fact (key domain fact mps-type args? m ?target-mps t CS))
+	(wm-fact (key domain fact mps-state args? m ?target-mps s ~BROKEN))
+	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?target-mps side INPUT)))
+	(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
+	(wm-fact (key domain fact cs-buffered args? m ?target-mps col ?cap-color))
+	(wm-fact (key domain fact cs-can-perform args? m ?target-mps op MOUNT_CAP))
+	; WP CEs
+	(wm-fact (key wp meta next-step args? wp ?wp) (value CAP))
+	; MPS-Source CEs
+	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
+	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
+
+	(or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+	         (or (goal (class INSTRUCT-BS-DISPENSE-BASE)
+	                   (params wp ?wp target-mps ?wp-loc $?)
+	                   (is-executable TRUE) (mode ~FINISHED&~EVALUATED&~RETRACTED))
+	             (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side))
+	         )
+	    )
+	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+	=>
+	(printout t "Goal MOUNT-CAP executable for " ?robot crlf)
+	(modify ?g (is-executable TRUE))
+)
+
+
+(defrule goal-production-deliver-executable
+" Bring a product to the delivery station.
+"
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class DELIVER)
+	                          (mode FORMULATED)
+	                          (params  wp ?wp
+	                                   wp-loc ?wp-loc
+	                                   wp-side ?wp-side
+	                                   target-mps ?target-mps
+	                                   target-side ?target-side
+	                                   $?)
+	                          (meta $? assigned-to ?robot $?)
+	                          (is-executable FALSE))
+
+	; Robot CEs
+	(wm-fact (key central agent robot args? r ?robot))
+	(wm-fact (key refbox team-color) (value ?team-color))
+
+	; MPS-CS CEs
+	(wm-fact (key domain fact mps-type args? m ?target-mps t DS))
+	(wm-fact (key domain fact mps-state args? m ?target-mps s ~BROKEN))
+	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?target-mps side INPUT)))
+	(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
+	; WP CEs
+	(wm-fact (key wp meta next-step args? wp ?wp) (value DELIVER))
+	; MPS-Source CEs
+	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
+	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
+
+	(or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+	         (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side)))
+	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+	=>
+	(printout t "Goal DELIVER executable for " ?robot crlf)
+	(modify ?g (is-executable TRUE))
+)
+
+(defrule goal-production-discard-executable
+" Bring a product to a cap station to mount a cap on it.
+"
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class DISCARD)
+	                          (mode FORMULATED)
+	                          (params  wp ?wp
+	                                   wp-loc ?wp-loc
+	                                   wp-side ?wp-side)
+	                          (meta $? assigned-to ?robot $?)
+	                          (is-executable FALSE))
+
+	; Robot CEs
+	(wm-fact (key central agent robot args? r ?robot))
+	(wm-fact (key refbox team-color) (value ?team-color))
+
+	; MPS-Source CEs
+	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
+	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
+
+	(or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+	         (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side)))
+	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+	=>
+	(printout t "Goal DISCARD executable for " ?robot crlf)
+	(modify ?g (is-executable TRUE))
+)
+
+; ----------------------- MPS Instruction GOALS -------------------------------
+
+(defrule goal-production-instruct-cs-buffer-cap-executable
+" Instruct cap station to buffer a cap. "
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (class INSTRUCT-CS-BUFFER-CAP) (sub-type SIMPLE)
+	             (mode FORMULATED)
+	            (params target-mps ?mps
+	                    cap-color ?cap-color
+	             )
+	             (is-executable FALSE))
+
+	(wm-fact (key refbox team-color) (value ?team-color))
+	; MPS CEs
+	(wm-fact (key domain fact mps-type args? m ?mps t CS))
+	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+	(wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP))
+	(not (wm-fact (key domain fact cs-buffered args? m ?mps col ?any-cap-color)))
+	; WP CEs
+  (wm-fact (key domain fact wp-at args? wp ?cc m ?mps side INPUT))
+  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+  (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side OUTPUT)))
+	=>
+	(printout t "Goal INSTRUCT-CS-BUFFER-CAP executable" crlf)
+	(modify ?g (is-executable TRUE))
+)
+
+(defrule goal-production-instruct-cs-mount-cap-executable
+" Instruct cap station to buffer a cap. "
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (class INSTRUCT-CS-MOUNT-CAP) (sub-type SIMPLE)
+	             (mode FORMULATED)
+	            (params target-mps ?mps
+	                    cap-color ?cap-color
+	             )
+	             (is-executable FALSE))
+
+	(wm-fact (key refbox team-color) (value ?team-color))
+	; MPS CEs
+	(wm-fact (key domain fact mps-type args? m ?mps t CS))
+	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+	(wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
+	(wm-fact (key domain fact cs-buffered args? m ?mps col ?any-cap-color))
+	; WP CEs
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
+	(wm-fact (key wp meta next-step args? wp ?wp) (value CAP))
+  (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side OUTPUT)))
+	=>
+	(printout t "Goal INSTRUCT-CS-MOUNT-CAP executable" crlf)
+	(modify ?g (is-executable TRUE))
+)
+
+(defrule goal-production-instruct-bs-dispense-base-executable
+" Instruct base station to dispense a base. "
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class INSTRUCT-BS-DISPENSE-BASE)
+	            (mode FORMULATED)
+	            (params wp ?wp
+	                    target-mps ?mps
+	                    target-side ?side
+	                    base-color ?base-color)
+	            (meta $? assigned-to ?robot $?) (is-executable FALSE))
+
+	(wm-fact (key refbox team-color) (value ?team-color))
+	; MPS CEs
+	(wm-fact (key domain fact mps-type args? m ?mps t BS))
+	(wm-fact (key domain fact mps-state args? m ?mps s IDLE))
+	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+	; WP CEs
+	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps $?)))
+  (wm-fact (key domain fact wp-unused args? wp ?wp))
+	=>
+	(printout t "Goal INSTRUCT-BS-DISPENSE executable" crlf)
+	(modify ?g (is-executable TRUE))
+)
+
+(defrule goal-production-instruct-ds-deliver-executable
+" Instruct base station to dispense a base. "
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class INSTRUCT-DS-DELIVER)
+	            (mode FORMULATED)
+	            (params wp ?wp target-mps ?mps)
+	            (meta $? assigned-to ?robot $?) (is-executable FALSE))
+
+	(wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact mps-type args? m ?mps t DS))
+  (wm-fact (key domain fact mps-state args? m ?mps s IDLE))
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key refbox game-time) (values $?game-time))
+  (wm-fact (key refbox order ?order delivery-begin) (type UINT)
+           (value ?begin&:(< ?begin (nth$ 1 ?game-time))))
+	=>
+	(printout t "Goal INSTRUCT-DS-DELIVER executable" crlf)
+	(modify ?g (is-executable TRUE))
+)
