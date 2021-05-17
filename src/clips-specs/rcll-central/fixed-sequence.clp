@@ -173,7 +173,7 @@
 				(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
 					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
 				)
-				(plan-assert-safe-move ?robot ?wp-loc ?wp-side ?target-mps ?target-side
+				(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps ?target-side
 					(plan-assert-action wp-put ?robot ?wp ?target-mps)
 				)
 			)
