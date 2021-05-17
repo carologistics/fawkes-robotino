@@ -167,8 +167,8 @@
 	        )
 )
 
-(:action bs-dispense-trash
-	:parameters (?r - robot ?m - mps ?side - mps-side ?wp - workpiece 
+(:action bs-dispense
+	:parameters (?m - mps ?side - mps-side ?wp - workpiece
 	             ?basecol - base-color)
 	:precondition (and (mps-type ?m BS) 
 	                   (or (mps-state ?m PROCESSING) 
@@ -178,7 +178,6 @@
 	                   (bs-prepared-side ?m ?side)
 	                   (wp-base-color ?wp BASE_NONE) 
 	                   (wp-unused ?wp)
-	                   (wp-spawned-for ?wp ?r)
 	                   (mps-side-free ?m ?side)
 	              )
 	:effect (and (wp-at ?wp ?m ?side) 
@@ -186,31 +185,6 @@
 	             (not (wp-base-color ?wp BASE_NONE)) 
 	             (wp-base-color ?wp ?basecol)
 	             (not (wp-unused ?wp)) (wp-usable ?wp)
-	             (not (wp-spawned-for ?wp ?r))
-	        )
-)
-
-(:action bs-dispense-for-order
-	:parameters (?r - robot ?m - mps ?side - mps-side ?ord - order 
-	             ?wp - workpiece ?basecol - base-color)
-	:precondition (and (mps-type ?m BS) 
-	                   (mps-state ?m READY-AT-OUTPUT)
-	                   (bs-prepared-color ?m ?basecol)
-	                   (bs-prepared-side ?m ?side)
-	                   (order-base-color ?ord ?basecol)
-	                   (wp-base-color ?wp BASE_NONE) 
-	                   (wp-unused ?wp)
-	                   (wp-spawned-for ?wp ?r)
-	                   (mps-side-free ?m ?side)
-	              )
-	:effect (and (wp-at ?wp ?m ?side) 
-	             (not (mps-side-free ?m ?side))
-	             (not (wp-base-color ?wp BASE_NONE)) 
-	             (wp-base-color ?wp ?basecol)
-	             (not (wp-unused ?wp)) 
-	             (wp-usable ?wp)
-	             (not (wp-spawned-for ?wp ?r))
-	             (wp-for-order ?wp ?ord)
 	        )
 )
 
