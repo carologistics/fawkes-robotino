@@ -44,13 +44,13 @@
 	  (create$
 	    (plan-assert-action go-wait
 	      ?robot ?curr-location ?curr-side (wait-pos ?mps ?mps-side))
-	    (plan-assert-action location-lock
-	      ?mps ?mps-side)
+	    ;(plan-assert-action location-lock
+	    ;  ?mps ?mps-side)
 	    (plan-assert-action move
 	      ?robot (wait-pos ?mps ?mps-side) WAIT ?mps ?mps-side)
 	    $?actions
-	    (plan-assert-action location-unlock
-	      ?mps ?mps-side)
+	    ;(plan-assert-action location-unlock
+	    ;  ?mps ?mps-side)
 	    (plan-assert-action go-wait
 	      ?robot ?mps ?mps-side (wait-pos ?mps ?mps-side))
 	  )
