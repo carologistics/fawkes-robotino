@@ -18,6 +18,45 @@
 ;
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
+
+(deffunction assign-robot-to-goal (?meta ?robot)
+	(if (eq ?meta nil) then (return (create$ assigned-to ?robot)))
+	(bind ?pos (member$ assigned-to ?meta))
+	(if ?pos
+	 then
+		(return (replace$ ?meta ?pos (+ ?pos 1) (create$ assigned-to ?robot)))
+	 else
+		(return (create$ ?meta assigned-to ?robot))
+	)
+)
+
+(deffunction remove-robot-assignment-from-goal (?meta ?robot)
+	(bind ?pos (member$ assigned-to ?meta))
+	(bind ?pos2 (member$ ?robot ?meta))
+	(if (and ?pos ?pos2 (eq ?pos2 (+ ?pos 1)))
+	 then
+		(return (delete$ ?meta ?pos ?pos2))
+	 else
+		(return ?meta)
+	)
+)
+
+(defrule goal-production-navgraph-compute-wait-positions-finished
+  "Add the waiting points to the domain once their generation is finished."
+  (NavGraphWithMPSGeneratorInterface (final TRUE))
+  (not (NavGraphWithMPSGeneratorInterface (final ~TRUE)))
+=>
+  (printout t "Navgraph generation of waiting-points finished. Getting waitpoints." crlf)
+  (do-for-all-facts ((?waitzone navgraph-node)) (str-index "WAIT-" ?waitzone:name)
+    (assert
+      (domain-object (name (sym-cat ?waitzone:name)) (type waitpoint))
+      (wm-fact (key navgraph waitzone args? name (sym-cat ?waitzone:name)) (is-list TRUE) (type INT) (values (nth$ 1 ?waitzone:pos) (nth$ 2 ?waitzone:pos)))
+    )
+  )
+  (assert (wm-fact (key navgraph waitzone generated) (type BOOL) (value TRUE)))
+)
+
+
 (defrule goal-production-create-beacon-maintain
 " The parent goal for beacon signals. Allows formulation of
   goals that periodically communicate with the refbox.
@@ -81,38 +120,64 @@
 )
 
 
-(defrule goal-production-navgraph-compute-wait-positions-finished
-  "Add the waiting points to the domain once their generation is finished."
-  (NavGraphWithMPSGeneratorInterface (final TRUE))
-  (not (NavGraphWithMPSGeneratorInterface (final ~TRUE)))
-=>
-  (printout t "Navgraph generation of waiting-points finished. Getting waitpoints." crlf)
-  (do-for-all-facts ((?waitzone navgraph-node)) (str-index "WAIT-" ?waitzone:name)
-    (assert
-      (domain-object (name (sym-cat ?waitzone:name)) (type waitpoint))
-      (wm-fact (key navgraph waitzone args? name (sym-cat ?waitzone:name)) (is-list TRUE) (type INT) (values (nth$ 1 ?waitzone:pos) (nth$ 2 ?waitzone:pos)))
-    )
-  )
-  (assert (wm-fact (key navgraph waitzone generated) (type BOOL) (value TRUE)))
+(defrule goal-production-assign-robot-to-simple-goals
+" Before checking SIMPLE goals for their executability, pick a waiting robot
+  that should get a new goal assigned to it next. "
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	(goal (sub-type SIMPLE) (mode FORMULATED)
+	      (meta $?meta&:(not (member$ assigned-to ?meta)))
+	      (is-executable FALSE))
+	(wm-fact (key central agent robot args? r ?robot))
+	(not (goal (meta $? assigned-to ?robot $?)))
+	(wm-fact (key central agent robot-waiting args? r ?robot))
+	(not (and (wm-fact (key central agent robot-waiting
+	                    args? r ?o-robot&:(> (str-compare ?robot ?o-robot) 0)))
+	          (not (goal (meta $? assigned-to ?o-robot $?)))))
+	=>
+	(delayed-do-for-all-facts ((?g goal))
+		(and (not (member$ assigned-to ?g:meta)) (eq ?g:is-executable FALSE)
+		     (eq ?g:sub-type SIMPLE) (eq ?g:mode FORMULATED))
+		(modify ?g (meta (assign-robot-to-goal ?meta ?robot)))
+	)
 )
 
-(defrule goal-production-create-enter-field
-  "Enter the field (drive outside of the starting box)."
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (not (goal (class ENTER-FIELD)))
-  (wm-fact (key central agent robot args? r ?robot&robot1))
-  (wm-fact (key domain fact robot-waiting args? r ?robot))
-  (wm-fact (key refbox state) (value RUNNING))
-  (wm-fact (key refbox phase) (value PRODUCTION|EXPLORATION))
-  (wm-fact (key navgraph waitzone generated) (type BOOL) (value TRUE))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  ; (NavGraphGeneratorInterface (final TRUE))
-  ; (not (wm-fact (key domain fact entered-field args? r ?robot)))
-  =>
-  (printout t "Goal " ENTER-FIELD " formulated" crlf)
-  (assert (goal (id (sym-cat ENTER-FIELD- (gensym*)))
-                (class ENTER-FIELD) (sub-type SIMPLE)
-                (params r ?robot team-color ?team-color)))
+(defrule goal-production-unassign-robot-from-simple-goals
+" A waiting robot got a new goal, clear executability and robot assignment from other goals. "
+	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	(goal (sub-type SIMPLE) (mode SELECTED)
+	      (meta $? assigned-to ?robot $?)
+	      (is-executable TRUE))
+	(wm-fact (key central agent robot args? r ?robot))
+	(goal (sub-type SIMPLE) (mode FORMULATED)
+	      (meta $? assigned-to ?robot $?))
+	?waiting <- (wm-fact (key central agent robot-waiting args? r ?robot))
+	=>
+	(delayed-do-for-all-facts ((?g goal))
+		(and (subsetp (create$ assigned-to ?robot) ?g:meta)
+		     (eq ?g:mode FORMULATED))
+		(modify ?g (meta (remove-robot-assignment-from-goal ?g:meta ?robot))
+		           (is-executable FALSE))
+	)
+	(retract ?waiting)
+)
+
+(defrule goal-production-enter-field-executable
+ " ENTER-FIELD is executable for a robot if it has not entered the field yet."
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (class ENTER-FIELD) (sub-type SIMPLE) (mode FORMULATED)
+	      (params team-color ?team-color) (meta $? assigned-to ?robot $?)
+	      (is-executable FALSE))
+
+	(wm-fact (key refbox state) (value RUNNING))
+	(wm-fact (key refbox phase) (value PRODUCTION|EXPLORATION))
+	(wm-fact (key navgraph waitzone generated) (type BOOL) (value TRUE))
+	(wm-fact (key refbox team-color) (value ?team-color))
+	; (NavGraphGeneratorInterface (final TRUE))
+	(not (wm-fact (key domain fact entered-field
+	               args? r ?robot team-color ?team-color)))
+	=>
+	(printout t "Goal ENTER-FIELD executable for " ?robot crlf)
+	(modify ?g (is-executable TRUE))
 )
 
 (defrule goal-production-hack-failed-enter-field
