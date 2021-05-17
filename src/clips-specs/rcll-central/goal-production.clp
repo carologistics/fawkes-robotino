@@ -76,13 +76,14 @@
 " Send a beacon signal whenever at least one second has elapsed since it
   last one got sent.
 "
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (time $?now)
-  ?g <- (goal (id ?maintain-id) (class BEACON-MAINTAIN) (mode SELECTED))
-  ; TODO: make interval a constant
-  =>
-  (assert (goal (id (sym-cat SEND-BEACON- (gensym*))) (sub-type SIMPLE)
-                (class SEND-BEACON) (parent ?maintain-id) (verbosity QUIET)))
+	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	(time $?now)
+	?g <- (goal (id ?maintain-id) (class BEACON-MAINTAIN) (mode SELECTED))
+	=>
+	(assert (goal (id (sym-cat SEND-BEACON- (gensym*))) (sub-type SIMPLE)
+	              (class SEND-BEACON) (parent ?maintain-id) (verbosity QUIET))
+	              (meta assign-to central)
+	              (is-executable TRUE))
 )
 
 (defrule goal-production-create-refill-shelf-maintain
@@ -103,21 +104,22 @@
 
 
 (defrule goal-production-create-refill-shelf-achieve
-  "Refill a shelf whenever it is empty."
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  ?g <- (goal (id ?maintain-id) (class REFILL-SHELF-MAINTAIN) (mode SELECTED))
-  (not (goal (class REFILL-SHELF)))
-  (wm-fact (key refbox phase) (value PRODUCTION))
-  (wm-fact (key game state) (value RUNNING))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  (not (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot)))
-  =>
-  (assert (goal (id (sym-cat REFILL-SHELF- (gensym*)))
-                (class REFILL-SHELF) (sub-type SIMPLE)
-                (parent ?maintain-id) (verbosity QUIET)
-                (params mps ?mps)))
+	"Refill a shelf whenever it is empty."
+	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	?g <- (goal (id ?maintain-id) (class REFILL-SHELF-MAINTAIN) (mode SELECTED))
+	(not (goal (class REFILL-SHELF)))
+	(wm-fact (key refbox phase) (value PRODUCTION))
+	(wm-fact (key game state) (value RUNNING))
+	(wm-fact (key refbox team-color) (value ?team-color))
+	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+	(wm-fact (key domain fact mps-type args? m ?mps t CS))
+	(not (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot)))
+	=>
+	(assert (goal (id (sym-cat REFILL-SHELF- (gensym*)))
+	              (class REFILL-SHELF) (sub-type SIMPLE)
+	              (parent ?maintain-id) (verbosity QUIET)
+	              (meta assign-to central)
+	              (params mps ?mps) (is-executable TRUE)))
 )
 
 
