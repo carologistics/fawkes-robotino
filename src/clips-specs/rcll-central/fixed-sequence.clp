@@ -132,6 +132,28 @@
 	(modify ?g (mode EXPANDED))
 )
 
+(defrule goal-expander-discard
+" Pick up a product and discard it."
+	;?p <- (goal (mode DISPATCHED) (id ?parent))
+	?g <- (goal (id ?goal-id) (class DISCARD) (mode SELECTED) (parent ?parent)
+	            (params wp ?wp wp-loc ?wp-loc wp-side ?wp-side)
+	            (meta $? assigned-to ?robot $?))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	=>
+	(plan-assert-sequential (sym-cat DISCARD-PLAN- (gensym*)) ?goal-id ?robot
+		(if (not (is-holding ?robot ?wp))
+		 then
+			(create$ ; only last statement of if is returned
+				(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
+					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
+				)
+			)
+		)
+		(plan-assert-action wp-discard ?robot ?wp)
+	)
+	(modify ?g (mode EXPANDED))
+)
+
 (defrule goal-expander-transport-goals
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class ?class&MOUNT-CAP|MOUNT-RING|DELIVER)
@@ -164,3 +186,90 @@
 	)
 	(modify ?g (mode EXPANDED))
 )
+
+
+(defrule goal-expander-instruct-cs-buffer-cap
+	;?p <- (goal (mode DISPATCHED) (id ?parent))
+	?g <- (goal (id ?goal-id) (class INSTRUCT-CS-BUFFER-CAP) (mode SELECTED)
+	            (params target-mps ?mps cap-color ?cap-color)
+	            (meta $? assigned-to ?robot $?))
+	(wm-fact (key domain fact wp-at args? wp ?cap-carrier m ?mps side INPUT))
+	=>
+	(plan-assert-sequential INSTRUCT-TO-BUFFER-CAP-PLAN ?goal-id ?robot
+		(plan-assert-action prepare-cs ?mps RETRIEVE_CAP)
+		(plan-assert-action cs-retrieve-cap ?mps ?cap-carrier ?cap-color)
+	)
+	(modify ?g (mode EXPANDED))
+)
+
+(defrule goal-expander-instruct-cs-mount-cap
+	;?p <- (goal (mode DISPATCHED) (id ?parent))
+	?g <- (goal (id ?goal-id) (class INSTRUCT-CS-MOUNT-CAP) (mode SELECTED)
+	            (params target-mps ?mps cap-color ?cap-color)
+	            (meta $? assigned-to ?robot $?))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
+	=>
+	(plan-assert-sequential INSTRUCT-TO-MOUNT-CAP-PLAN ?goal-id ?robot
+		(plan-assert-action prepare-cs ?mps MOUNT_CAP)
+		(plan-assert-action cs-mount-cap ?mps ?wp ?cap-color)
+	)
+	(modify ?g (mode EXPANDED))
+)
+
+(defrule goal-expander-instruct-bs-dispense-base
+	;?p <- (goal (mode DISPATCHED) (id ?parent))
+	?g <- (goal (id ?goal-id) (class INSTRUCT-BS-DISPENSE-BASE) (mode SELECTED)
+	            (params wp ?wp target-mps ?mps  target-side ?side base-color ?base-color)
+	            (meta $? assigned-to ?robot $?))
+	(domain-atomic-precondition (operator wp-get) (goal-id ?g-id) (plan-id ?p-id)
+	                            (predicate wp-at) (param-values ?wp ?mps ?side)
+	                            (grounded TRUE) (is-satisfied FALSE))
+	(plan-action (action-name wp-get) (param-values ? ?wp ?mps ?side)
+	             (goal-id ?g-id) (plan-id ?p-id) (state PENDING))
+	(not (goal (class INSTRUCT-BS-DISPENSE-BASE) (mode ~FORMULATED&~SELECTED)))
+	=>
+	(plan-assert-sequential INSTRUCT-BS-DISPENSE-BASE-PLAN ?goal-id ?robot
+		(plan-assert-action prepare-bs ?mps ?side ?base-color)
+		(plan-assert-action bs-dispense ?mps ?side ?wp ?base-color)
+	)
+	(modify ?g (mode EXPANDED))
+)
+
+(defrule goal-expander-instruct-ds-deliver
+	;?p <- (goal (mode DISPATCHED) (id ?parent))
+	?g <- (goal (id ?goal-id) (class INSTRUCT-DS-DELIVER) (mode SELECTED)
+	            (params wp ?wp target-mps ?mps)
+	            (meta $? assigned-to ?robot $?))
+	(wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+	(wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
+	(wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
+	(wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
+	(wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
+	; Order-CEs
+	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+	(wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
+	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+	(wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
+	(wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
+	(wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
+	(wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+	(wm-fact (key domain fact order-gate args? ord ?order gate ?gate))
+	=>
+	(bind ?params (create$))
+	(switch ?complexity
+		(case C0 then
+		    (bind ?params (create$ ?order ?wp ?mps ?gate ?base-color ?cap-color)))
+		(case C1 then
+		    (bind ?params (create$ ?order ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color)))
+		(case C2 then
+		    (bind ?params (create$ ?order ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color ?ring2-color)))
+		(case C3 then
+		    (bind ?params (create$ ?order ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color ?ring2-color ?ring3-color)))
+ )
+	(plan-assert-sequential INSTRUCT-DS-DELIVER-PLAN ?goal-id ?robot
+		(plan-assert-action prepare-ds ?mps ?order)
+		(plan-assert-action (sym-cat fulfill-order- (lowcase ?complexity)) ?params)
+	)
+	(modify ?g (mode EXPANDED))
+)
+
