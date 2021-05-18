@@ -34,22 +34,43 @@
 ; - User EVALUATES goal
 ; - Automatic: Clean up any attached goals and RETRACT goal
 
+(deffunction simple-goal-log-debug ($?verbosity)
+	(bind ?v (nth$ 1 ?verbosity))
+	(switch ?v
+		(case NOISY then (return t))
+		(case DEFAULT then (return nil))
+		(case QUIET then (return nil))
+	)
+	(return nil)
+)
 
+(deffunction simple-goal-log-info ($?verbosity)
+	(bind ?v (nth$ 1 ?verbosity))
+	(switch ?v
+		(case NOISY then (return warn))
+		(case DEFAULT then (return t))
+		(case QUIET then (return nil))
+	)
+	(return t)
+)
 
 
 (defrule simple-goal-commit
-  ?g <- (goal (id ?goal-id) (sub-type SIMPLE) (mode EXPANDED))
+  ?g <- (goal (id ?goal-id) (sub-type SIMPLE) (mode EXPANDED) (verbosity ?v))
   (not (goal (parent ?goal-id)))
 =>
+  (printout (simple-goal-log-debug ?v) "Goal " ?goal-id " COMMITTED (SIMPLE)" crlf)
   (modify ?g (mode COMMITTED))
 )
 
 
 (defrule simple-goal-fail-because-of-subgoal
-  ?g <- (goal (id ?goal-id) (sub-type SIMPLE)
+  ?g <- (goal (id ?goal-id) (sub-type SIMPLE) (verbosity ?v)
               (mode ~FINISHED&~EVALUATED&~RETRACTED))
   (goal (parent ?goal-id))
 =>
+  (printout (simple-goal-log-debug ?v) "Goal " ?goal-id
+            " FINISHED with FAILED (SIMPLE)" crlf)
   (modify ?g (mode FINISHED) (outcome FAILED)
               (error SUB-GOAL)
               (message (str-cat "Sub-goal for SIMPLE goal '" ?goal-id "'")))
@@ -59,20 +80,18 @@
 (defrule simple-goal-dispatch
   ?g <- (goal (id ?goal-id) (type ACHIEVE) (sub-type SIMPLE) (mode COMMITTED)
               (class ?type)  (committed-to nil) (required-resources $?req)
-							(verbosity ?verbosity)
+              (verbosity ?v)
               (acquired-resources $?acq&:(subsetp ?req ?acq)))
   (not (goal (parent ?goal-id)))
 =>
-  (if (neq ?verbosity QUIET) then
-    (printout t "Goal " ?goal-id " DISPATCHED!" crlf)
-  )
+  (printout (simple-goal-log-info ?v) "Goal " ?goal-id " DISPATCHED (SIMPLE)" crlf)
   (modify ?g (mode DISPATCHED))
 )
 
 
 (defrule simple-goal-retract
  ?g <- (goal (id ?goal-id) (type ACHIEVE) (sub-type SIMPLE) (mode EVALUATED)
-             (acquired-resources))
+             (verbosity ?v) (acquired-resources))
   (not (goal (parent ?goal-id)))
 =>
   (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
@@ -81,5 +100,6 @@
     )
     (retract ?p)
   )
+ (printout (simple-goal-log-debug ?v) "Goal " ?goal-id " RETRACTED (SIMPLE)" crlf)
  (modify ?g (mode RETRACTED))
 )
