@@ -33,7 +33,6 @@
 (deffunction remove-robot-assignment-from-goal (?meta ?robot)
 	(bind ?pos (member$ assigned-to ?meta))
 	(bind ?pos2 (member$ ?robot ?meta))
-	(printout error ?pos " " ?pos2 crlf)
 	(if (and ?pos ?pos2 (eq ?pos2 (+ ?pos 1)))
 	 then
 		(return (delete$ ?meta ?pos ?pos2))
