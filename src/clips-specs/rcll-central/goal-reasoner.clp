@@ -70,6 +70,26 @@
               (eq ?goal-type RUN-ENDLESS)))
 )
 
+(deffunction log-debug ($?verbosity)
+	(bind ?v (nth$ 1 ?verbosity))
+	(switch ?v
+		(case NOISY then (return t))
+		(case DEFAULT then (return nil))
+		(case QUIET then (return nil))
+	)
+	(return nil)
+)
+
+(deffunction log-info ($?verbosity)
+	(bind ?v (nth$ 1 ?verbosity))
+	(switch ?v
+		(case NOISY then (return warn))
+		(case DEFAULT then (return t))
+		(case QUIET then (return nil))
+	)
+	(return t)
+)
+
 (deffunction set-robot-to-waiting (?meta)
 " Sets a robot that was assigned in a goal meta to waiting.
   If no robot was assigned in the meta nothing happens.
@@ -107,13 +127,39 @@
 ; ============================= Goal Selection ===============================
 
 
-(defrule goal-reasoner-select-root
-"  Select all root goals (having no parent) in order to expand them."
+(defrule goal-reasoner-select-root-maintain
+"  Select all root maintain goals (having no parent) in order to expand them."
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
-  ?g <- (goal (parent nil) (type ACHIEVE|MAINTAIN) (sub-type ~nil) (id ?goal-id) (mode FORMULATED))
+  ?g <- (goal (parent nil) (type MAINTAIN) (sub-type ~nil) (id ?goal-id)
+        (mode FORMULATED) (verbosity ?v))
   (not (goal (parent ?goal-id)))
 =>
-  (printout error " i select a root " ?goal-id crlf)
+  (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
+  (modify ?g (mode SELECTED))
+)
+
+(defrule goal-reasoner-select-root-robot-goal
+"  Select all root goals assigned to the central."
+  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  ?g <- (goal (parent nil) (type ACHIEVE) (sub-type SIMPLE) (id ?goal-id)
+              (mode FORMULATED) (meta $? assigned-to ?r&~central $?)
+              (is-executable TRUE) (verbosity ?v))
+  (not (goal (parent ?goal-id)))
+  (not (goal (meta $? assigned-to ?r $?) (mode ~FORMULATED)))
+=>
+  (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
+  (modify ?g (mode SELECTED))
+)
+
+(defrule goal-reasoner-select-root-central
+"  Select all root goals assigned to the central."
+  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  ?g <- (goal (parent nil) (type ACHIEVE) (sub-type SIMPLE) (id ?goal-id)
+              (mode FORMULATED) (meta $? assigned-to central $?)
+              (is-executable TRUE) (verbosity ?v))
+  (not (goal (parent ?goal-id)))
+=>
+  (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
   (modify ?g (mode SELECTED))
 )
 
