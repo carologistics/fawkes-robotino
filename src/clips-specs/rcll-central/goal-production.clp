@@ -435,3 +435,61 @@
 	(printout t "Goal INSTRUCT-DS-DELIVER executable" crlf)
 	(modify ?g (is-executable TRUE))
 )
+
+(defrule goal-production-test-C0
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	(not (wm-fact (key order meta wp-for-order args? wp WP-TEST ord O1)))
+  (wm-fact (key domain fact order-base-color args? ord O1 col ?base-color))
+  (wm-fact (key domain fact order-cap-color args? ord O1 col ?cap-color))
+	(wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps $?))
+	(wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
+=>
+	(assert
+	  (domain-object (name WP-TEST) (type workpiece))
+	  (domain-fact (name wp-unused) (param-values WP-TEST))
+	  (domain-fact (name wp-base-color) (param-values WP-TEST BASE_NONE))
+	  (domain-fact (name wp-ring1-color) (param-values WP-TEST RING_NONE))
+	  (domain-fact (name wp-ring2-color) (param-values WP-TEST RING_NONE))
+	  (domain-fact (name wp-ring3-color) (param-values WP-TEST RING_NONE))
+	  (domain-fact (name wp-cap-color) (param-values WP-TEST CAP_NONE))
+	  (wm-fact (key order meta wp-for-order args? wp WP-TEST ord O1))
+	  (goal (id BUFFER-CAP1) (class BUFFER-CAP) (sub-type SIMPLE)
+	        (verbosity NOISY)
+	        (params target-mps ?mps
+	                cap-color ?cap-color))
+	  (goal (id MOUNT-CAP1) (class MOUNT-CAP) (sub-type SIMPLE)
+	        (params wp WP-TEST
+	                wp-loc C-BS
+	                wp-side INPUT
+	                target-mps ?mps
+	                target-side INPUT))
+	  (goal (id INSTRUCT-CS-BUFFER-CAP1) (class INSTRUCT-CS-BUFFER-CAP) (sub-type SIMPLE)
+	        (verbosity NOISY)
+	        (params target-mps ?mps cap-color ?cap-color)
+	        (meta assigned-to central))
+	  (goal (id INSTRUCT-DS-DELIVER1) (class INSTRUCT-DS-DELIVER) (sub-type SIMPLE)
+	        (verbosity NOISY)
+	        (params wp WP-TEST target-mps C-DS) (meta assigned-to central))
+	  (goal (id INSTRUCT-CS-MOUNT-CAP1) (class INSTRUCT-CS-MOUNT-CAP) (sub-type SIMPLE)
+	        (verbosity NOISY)
+	        (params target-mps ?mps cap-color ?cap-color)
+	        (meta assigned-to central))
+	  (goal (id INSTRUCT-BS-DISPENSE-BASE1) (class INSTRUCT-BS-DISPENSE-BASE) (sub-type SIMPLE)
+	        (verbosity NOISY)
+	        (params  wp WP-TEST
+	                 target-mps C-BS
+	                 target-side INPUT
+	                 base-color ?base-color)
+	        (meta assigned-to central))
+	  (goal (id DELIVER1) (class DELIVER) (sub-type SIMPLE)
+	        (verbosity NOISY)
+	        (params  wp WP-TEST
+	                 wp-loc ?mps
+	                 wp-side OUTPUT
+	                 target-mps C-DS
+	                 target-side INPUT))
+	  (goal (id DISCARD1) (class DISCARD) (sub-type SIMPLE)
+	        (verbosity NOISY)
+	        (params wp ?wp wp-loc ?mps wp-side OUTPUT))
+	)
+)
