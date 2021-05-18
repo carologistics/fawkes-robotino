@@ -22,26 +22,19 @@
 ; Perform: itself
 ;
 ; A SIMPLE goal has no children. If the goal has no parent it gets selected
-; automatically. The user expands and evaluates the goal. Cleanup is automated
-; as well. Thefore SIMPLE goals are suited to act as leaf nodes of trees or
-; goals without any goal structure that should be executed directly after
-; formulation.
+; automatically. The user expands and evaluates the goal. Cleanup is automated.
+; Thefore SIMPLE goals are suited to act as leaf nodes of trees or
+; goals without any goal.
 ;
 ; Interactions:
 ; - User FORMULATES goal
-; - Automatic:  SELECT goal if it has no parent, else User has to SELECT it
+; - User  SELECT goal
 ; - User EXPANDS goal
 ; - Automatic: COMMIT and DISPATCH goal
 ; - User EVALUATES goal
 ; - Automatic: Clean up any attached goals and RETRACT goal
 
 
-(defrule simple-goal-select
-  ?g <- (goal (parent nil) (id ?goal-id) (sub-type SIMPLE) (mode FORMULATED))
-  (not (goal (parent ?goal-id)))
-=>
-  (modify ?g (mode SELECTED))
-)
 
 
 (defrule simple-goal-commit
