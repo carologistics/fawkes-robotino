@@ -259,13 +259,14 @@
 
 	(or (and ; Either the workpiece needs to picked up...
 	         (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-	             ; ... and will be dispensed at the BS soon (is already SELECTED
-	             ; and just waits until a robot actually needs a workpiece
-	         (or (goal (class INSTRUCT-BS-DISPENSE-BASE)
-	                   (params wp ?wp target-mps ?wp-loc $?)
-	                   (mode SELECTED))
+	             ; ... and it is a fresh base located in a base station
+	         (or (and (wm-fact (key domain fact mps-type args? m ?wp-loc t BS))
+	                  (wm-fact (key domain fact wp-unused args? wp ?wp))
+	                  (wm-fact (key domain fact wp-base-color
+	                            args? wp ?wp col BASE_NONE)))
 	             ; ... or is already at some machine
-	             (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side))
+	             (wm-fact (key domain fact wp-at
+	                       args? wp ?wp m ?wp-loc side ?wp-side))
 	         )
 	    )
 	    ; or the workpiece is already being held
