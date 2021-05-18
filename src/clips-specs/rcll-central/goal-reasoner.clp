@@ -167,9 +167,11 @@
 " Expand a goal with sub-type, if it has a child."
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   ?p <- (goal (id ?parent-id) (type ACHIEVE|MAINTAIN)
-              (sub-type ?sub-type&:(requires-subgoal ?sub-type)) (mode SELECTED))
-  ?g <- (goal (parent ?parent-id) (mode FORMULATED))
+              (sub-type ?sub-type&:(requires-subgoal ?sub-type)) (mode SELECTED)
+              (verbosity ?v))
+  ?g <- (goal (id ?goal-id) (parent ?parent-id) (mode FORMULATED))
 =>
+  (printout (log-debug ?v) "Goal " ?goal-id " EXPANDED" crlf)
   (modify ?p (mode EXPANDED))
 )
 
@@ -194,11 +196,13 @@
   All pre evaluation steps should have been executed, enforced by the higher priority
 "
 	(declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
-	?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome) (meta $?meta))
+	?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome) (meta $?meta)
+	            (verbosity ?v))
 =>
 	(set-robot-to-waiting ?meta)
 	;(printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
 	;  "') has been completed, Evaluating" crlf)
+  (printout (log-debug ?v) "Goal " ?goal-id " EXPANDED" crlf)
 	(modify ?g (mode EVALUATED))
 )
 
@@ -212,10 +216,10 @@
   actions attached to it.
 "
   ?g <-(goal (id ?goal-id) (type ACHIEVE) (mode EVALUATED)
-             (acquired-resources))
+             (acquired-resources) (verbosity ?v))
   (not (goal (parent ?goal-id) (mode ?mode&~RETRACTED)))
 =>
-  ;(printout t "Goal '" ?goal-id "' has been Evaluated, cleaning up" crlf)
+  (printout (log-debug) "Goal " ?goal-id " RETRACTED" crlf)
   (modify ?g (mode RETRACTED))
 )
 
@@ -226,7 +230,7 @@
   with low priority to avoid races with the sub-type goal lifecycle.
 "
   (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
-  ?g <- (goal (id ?goal-id)
+  ?g <- (goal (id ?goal-id) (verbosity ?v)
         (mode RETRACTED) (acquired-resources))
   (not (goal (parent ?goal-id)))
 =>
@@ -237,6 +241,7 @@
     (retract ?p)
   )
   (retract ?g)
+  (printout (log-debug ?v) "Goal " ?goal-id " removed" crlf)
 )
 
 (defrule goal-reasoner-error-goal-without-sub-type-detected
