@@ -63,10 +63,8 @@
 	                (eq (wm-key-arg ?holding:key r) ?robot)
 	                (eq (wm-key-arg ?holding:key wp) ?wp)))
 	 then
-		(printout error "is-holding is " TRUE crlf)
 		(return TRUE)
 	 else
-		(printout error "is-holding is " FALSE crlf)
 		(return FALSE)
 	)
 )
