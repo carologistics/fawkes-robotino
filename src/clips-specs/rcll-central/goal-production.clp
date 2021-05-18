@@ -258,13 +258,18 @@
 	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
 	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
 
-	(or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+	(or (and ; Either the workpiece needs to picked up...
+	         (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+	             ; ... and will be dispensed at the BS soon (is already SELECTED
+	             ; and just waits until a robot actually needs a workpiece
 	         (or (goal (class INSTRUCT-BS-DISPENSE-BASE)
 	                   (params wp ?wp target-mps ?wp-loc $?)
-	                   (is-executable TRUE) (mode ~FINISHED&~EVALUATED&~RETRACTED))
+	                   (mode SELECTED))
+	             ; ... or is already at some machine
 	             (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side))
 	         )
 	    )
+	    ; or the workpiece is already being held
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
 	=>
 	(printout t "Goal MOUNT-CAP executable for " ?robot crlf)
