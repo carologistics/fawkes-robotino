@@ -42,20 +42,23 @@ using namespace dnn;
  */
 
 /** Constructor. */
-YoloOpenCVThread::YoloOpenCVThread() : Thread("YoloOpenCVThread", Thread::OPMODE_WAITFORWAKEUP){};
+YoloOpenCVThread::YoloOpenCVThread()
+: Thread("YoloOpenCVThread", Thread::OPMODE_WAITFORWAKEUP),
+  BlackBoardInterfaceListener("YoloOpenCVwrite")
+{
+	set_coalesce_wakeups(false);
+};
 
 void
 YoloOpenCVThread::finalize()
 {
 	blackboard->close(yolo_opencv_if_write);
-	blackboard->close(yolo_opencv_if_read);
 }
 
 void
 YoloOpenCVThread::init()
 {
-	yolo_opencv_if_read  = blackboard->open_for_reading<YoloOpenCVInterface>("YoloOpenCV");
-	yolo_opencv_if_write = blackboard->open_for_writing<YoloOpenCVInterface>("YoloOpenCV");
+	yolo_opencv_if_write = blackboard->open_for_writing<YoloOpenCVInterface>("YoloOpenCVwrite");
 	std::string prefix   = CFG_PREFIX;
 	//get NN params
 	model_path    = this->config->get_string((prefix + "model_path").c_str());
@@ -84,6 +87,12 @@ YoloOpenCVThread::init()
 	net.setPreferableBackend(backend);
 	net.setPreferableTarget(target);
 	outNames = net.getUnconnectedOutLayersNames();
+
+	bbil_add_message_interface(yolo_opencv_if_write);
+
+	blackboard->register_listener(this);
+	yolo_opencv_if_write->write();
+
 	logger->log_info(name(), "Loaded Yolo Object Detection plugin");
 }
 
@@ -91,14 +100,20 @@ void
 YoloOpenCVThread::loop()
 {
 	std::string path2img = read_image_path();
+	for (uint i = 0; i < yolo_opencv_if_write->maxlenof_classId(); i++) {
+		yolo_opencv_if_write->set_classId(i, 1024);
+		yolo_opencv_if_write->set_confidence(i, 0);
+		yolo_opencv_if_write->set_centerX(i, 0);
+		yolo_opencv_if_write->set_centerY(i, 0);
+		yolo_opencv_if_write->set_height(i, 0);
+		yolo_opencv_if_write->set_width(i, 0);
+	}
+	yolo_opencv_if_write->set_msgid(msgid);
 	// empty string = reading the interface failed
 	if (path2img == "") {
 		logger->log_warn(name(), "Got empty string as filename");
-		YoloOpenCVInterface::DetectedMessage *feedback_nofn =
-		  new YoloOpenCVInterface::DetectedMessage();
-		feedback_nofn->set_detection_successful(false);
-		feedback_nofn->set_error_message("Got empty string as filename");
-		yolo_opencv_if_read->msgq_enqueue(feedback_nofn);
+		yolo_opencv_if_write->set_detection_successful(false);
+		yolo_opencv_if_write->set_error("Got empty string as filename");
 		return;
 	} else {
 		// check if path to image exists
@@ -117,39 +132,29 @@ YoloOpenCVThread::loop()
 			// detected something
 			if (!class_id.empty()) {
 				for (uint i = 0; i < class_id.size(); i++) {
-					YoloOpenCVInterface::DetectedMessage *feedback =
-					  new YoloOpenCVInterface::DetectedMessage();
-					feedback->set_detection_successful(true);
-					feedback->set_classId(class_id[i]);
-					feedback->set_confidence(confidences[i]);
-					feedback->set_centerX(bounding_boxes[i].x);
-					feedback->set_centerY(bounding_boxes[i].y);
-					feedback->set_height(bounding_boxes[i].height);
-					feedback->set_width(bounding_boxes[i].width);
-					yolo_opencv_if_read->msgq_enqueue(feedback);
-					logger->log_warn(name(), "Detection in: %s", path2img.c_str());
-					// logger->log_warn(name(), "Center: %i, %i", bounding_boxes[i].x, bounding_boxes[i].y);
-					// logger->log_warn(name(), "Confidence: %f", confidences[i]);
+					yolo_opencv_if_write->set_detection_successful(true);
+					yolo_opencv_if_write->set_classId(i, class_id[i]);
+					yolo_opencv_if_write->set_confidence(i, confidences[i]);
+					yolo_opencv_if_write->set_centerX(i, bounding_boxes[i].x);
+					yolo_opencv_if_write->set_centerY(i, bounding_boxes[i].y);
+					yolo_opencv_if_write->set_height(i, bounding_boxes[i].height);
+					yolo_opencv_if_write->set_width(i, bounding_boxes[i].width);
 				};
+				yolo_opencv_if_write->set_msgid(msgid);
 			} else { //didn't detect anything
 				logger->log_warn(name(), "Did not detect anything in: %s", path2img.c_str());
-				YoloOpenCVInterface::DetectedMessage *feedback_nodetect =
-				  new YoloOpenCVInterface::DetectedMessage();
-				feedback_nodetect->set_detection_successful(false);
-				feedback_nodetect->set_error_message("Did not detect anything");
-				yolo_opencv_if_read->msgq_enqueue(feedback_nodetect);
+				yolo_opencv_if_write->set_detection_successful(false);
+				yolo_opencv_if_write->set_error("Did not detect anything");
 				return;
 			};
 		} else {
 			logger->log_warn(name(), "Cannot open %s", path2img.c_str());
-			YoloOpenCVInterface::DetectedMessage *feedback_noopen =
-			  new YoloOpenCVInterface::DetectedMessage();
-			feedback_noopen->set_detection_successful(false);
-			feedback_noopen->set_error_message("Cannot open file");
-			yolo_opencv_if_read->msgq_enqueue(feedback_noopen);
+			yolo_opencv_if_write->set_detection_successful(false);
+			yolo_opencv_if_write->set_error("Cannot open file");
 			return;
 		};
 	};
+	yolo_opencv_if_write->write();
 }
 std::string
 YoloOpenCVThread::read_image_path()
@@ -162,6 +167,7 @@ YoloOpenCVThread::read_image_path()
 			  yolo_opencv_if_write->msgq_first<YoloOpenCVInterface::DetectObjectMessage>();
 			if (msg->path_to_picture()) {
 				path2img = msg->path_to_picture();
+				msgid    = msg->id();
 			}
 		} else {
 			logger->log_warn(name(), "Unknown message received");
@@ -302,4 +308,11 @@ YoloOpenCVThread::postprocess(Mat &                   frame,
 		classIds    = nmsClassIds;
 		confidences = nmsConfidences;
 	}
+}
+
+bool
+YoloOpenCVThread::bb_interface_message_received(Interface *interface, Message *message) throw()
+{
+	wakeup();
+	return true;
 }

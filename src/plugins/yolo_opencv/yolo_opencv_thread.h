@@ -22,10 +22,10 @@
 
 //Fawkes
 #include <aspect/blackboard.h>
-#include <aspect/blocked_timing.h>
 #include <aspect/clock.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
+#include <blackboard/interface_listener.h>
 #include <core/threading/mutex.h>
 #include <core/threading/thread.h>
 
@@ -117,10 +117,14 @@ class YoloOpenCVThread : public fawkes::Thread,
                          public fawkes::LoggingAspect,
                          public fawkes::ConfigurableAspect,
                          public fawkes::BlackBoardAspect,
+                         public fawkes::BlackBoardInterfaceListener,
                          public fawkes::ClockAspect
 {
 public:
 	YoloOpenCVThread();
+
+	virtual bool bb_interface_message_received(fawkes::Interface *interface,
+	                                           fawkes::Message *  message) throw();
 
 	virtual void init();
 	virtual void loop();
@@ -162,7 +166,6 @@ private:
 	                 int                         backend);
 
 private:
-	fawkes::YoloOpenCVInterface *yolo_opencv_if_read;
 	fawkes::YoloOpenCVInterface *yolo_opencv_if_write;
 	std::string                  model_path;
 	std::string                  config_path;
@@ -177,6 +180,7 @@ private:
 	int                          inpHeight;
 	int                          backend;
 	int                          target;
+	int                          msgid;
 	std::vector<std::string>     classes;
 	cv::dnn::Net                 net;
 };
