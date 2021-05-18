@@ -70,6 +70,23 @@
               (eq ?goal-type RUN-ENDLESS)))
 )
 
+(deffunction set-robot-to-waiting (?meta)
+" Sets a robot that was assigned in a goal meta to waiting.
+  If no robot was assigned in the meta nothing happens.
+
+  @param ?meta: goal meta
+"
+	(bind ?is-assigned (member$ assigned-to ?meta))
+	(if ?is-assigned then
+		(do-for-fact ((?r wm-fact))
+			(and (wm-key-prefix ?r:key (create$ central agent robot))
+			     (eq (nth$ (+ 1 ?is-assigned) ?meta) (wm-key-arg ?r:key r)))
+			(assert (wm-fact (key central agent robot-waiting
+			                  args? r (wm-key-arg ?r:key r))))
+		)
+	)
+)
+
 (deffunction goal-tree-assert-run-endless (?class ?frequency $?fact-addresses)
         (bind ?id (sym-cat MAINTAIN- ?class - (gensym*)))
         (bind ?goal (assert (goal (id ?id) (class ?class) (type MAINTAIN)
@@ -130,12 +147,13 @@
 " Finally set a finished goal to evaluated.
   All pre evaluation steps should have been executed, enforced by the higher priority
 "
-  (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome))
+	(declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
+	?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome) (meta $?meta))
 =>
-  ;(printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
-  ;  "') has been completed, Evaluating" crlf)
-  (modify ?g (mode EVALUATED))
+	(set-robot-to-waiting ?meta)
+	;(printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
+	;  "') has been completed, Evaluating" crlf)
+	(modify ?g (mode EVALUATED))
 )
 
 ; ----------------------- EVALUATE SPECIFIC GOALS ---------------------------
