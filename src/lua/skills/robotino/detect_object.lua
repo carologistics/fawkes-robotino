@@ -27,7 +27,7 @@ name               = "detect_object"
 fsm                = SkillHSM:new{name=name, start="INIT"}
 depends_skills     = {}
 depends_interfaces = {
-   {v = "yolo-interface", type = "YoloOpenCVInterface", id="YoloOpenCV"},
+   {v = "yolo_interface_write", type = "YoloOpenCVInterface", id="YoloOpenCVwrite"},
 }
 
 documentation      = [==[
@@ -42,42 +42,53 @@ skillenv.skill_module(_M)
 
 -- Constants
 
-fsm:define_states{ export_to=_M, closure={},
+function has_writer()
+   return yolo_interface_write:has_writer()
+end
+
+function checkid(self)
+   return yolo_interface_write:msgid() == self.fsm.vars.msgid
+end
+
+fsm:define_states{ export_to=_M, closure={has_writer=has_writer},
    {"INIT", JumpState},
-   {"DETECT", JumpState},
+   {"DETECTED", JumpState},
 }
 
 fsm:add_transitions{
-   {"INIT", "FAILED", cond="not yolo-interface:has_writer()", desc="YoloOpenCV has no writer"},
-   {"INIT", "DETECT", cond=true, desc="Detect objects"},
-   {"DETECT", "FAILED", cond="not vars.detection_successful", desc="vars.feedback_error_msg"},
-   {"DETECT", "FINAL", cond="vars.detection_successful"},
+   {"INIT", "FAILED", cond="not has_writer()", desc="YoloOpenCV has no writer"},
+   {"INIT", "DETECTED", cond=checkid, desc="Detected objects"},
+   {"DETECTED", "FAILED", cond="not vars.detection_successful", desc="vars.feedback_error_msg"},
+   {"DETECTED", "FINAL", cond="vars.detection_successful"},
 }
 
 function INIT:init()
-   local detect_object_request = yolo-interface.DetectObjectMessage:new()
+   local detect_object_request = yolo_interface_write.DetectObjectMessage:new()
    detect_object_request:set_path_to_picture(self.fsm.vars.imgpath)
-   self.fsm.vars.request_id = yolo-interface:msgq_enqueue(detect_object_request)
+   self.fsm.vars.request_id = yolo_interface_write:msgq_enqueue(detect_object_request)
+   self.fsm.vars.msgid = detect_object_request:id()
 end
 
-function DETECT:init()
+function DETECTED:init()
    local detect_feedback = nil
    local object_nr = 1
+   local index = 1024
    self.fsm.vars.objects = {}
-   while (not yolo-interface:empty()) do
-      detect_feedback = yolo-interface.msgq_first()
-      self.fsm.vars.feedback_error_msg = detect_feedback:error_message()
-      self.fsm.vars.detection_successful = detect_feedback:is_detection_successful()
-      if self.fsm.vars.detection_successful then
-         self.fsm.vars.objects[object_nr] = {c_x = detect_feedback:centerX(),
-                                             c_y = detect_feedback:centerY(),
-                                             h = detect_feedback:height(),
-                                             w = detect_feedback:width(),
-                                             conf = detect_feedback:confidence(),
-                                             class_id = detect_feedback:classId()}
-         print(self.fsm.vars.objects[object_nr].c_x)
+   while (yolo_interface_write:classId(1024 - index) ~= 1024) do
+      if yolo_interface_write:is_detection_successful() then
+         self.fsm.vars.objects[object_nr] = {c_x = yolo_interface_write:centerX(1024 - index),
+                                             c_y = yolo_interface_write:centerY(1024 - index),
+                                             h = yolo_interface_write:height(1024 - index),
+                                             w = yolo_interface_write:width(1024 - index),
+                                             conf = yolo_interface_write:confidence(1024 - index),
+                                             class_id = yolo_interface_write:classId(1024 - index)}
+       
+      else
+         self.fsm.vars.detection_successful = false
+         self.fsm.vars.feedback_error_msg = yolo_interface_write:error()
       end
+      index = index - 1
    end
+   self.fsm.vars.detection_successful = true
 end
-
 
