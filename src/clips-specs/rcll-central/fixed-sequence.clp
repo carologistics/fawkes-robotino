@@ -218,13 +218,6 @@
 	?g <- (goal (id ?goal-id) (class INSTRUCT-BS-DISPENSE-BASE) (mode SELECTED)
 	            (params wp ?wp target-mps ?mps  target-side ?side base-color ?base-color)
 	            (meta $? assigned-to ?robot $?))
-	(domain-atomic-precondition (operator wp-get) (goal-id ?g-id) (plan-id ?p-id)
-	                            (predicate wp-at) (param-values ?wp ?mps ?side)
-	                            (grounded TRUE) (is-satisfied FALSE))
-	; wait until a robot actually needs the base before proceeding
-	(plan-action (action-name wp-get) (param-values ? ?wp ?mps ?side)
-	             (goal-id ?g-id) (plan-id ?p-id) (state PENDING))
-	(not (goal (class INSTRUCT-BS-DISPENSE-BASE) (mode ~FORMULATED&~SELECTED)))
 	=>
 	(plan-assert-sequential INSTRUCT-BS-DISPENSE-BASE-PLAN ?goal-id ?robot
 		(plan-assert-action prepare-bs ?mps ?side ?base-color)
