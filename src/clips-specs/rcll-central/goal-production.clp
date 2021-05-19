@@ -416,6 +416,13 @@
 	; WP CEs
 	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps $?)))
   (wm-fact (key domain fact wp-unused args? wp ?wp))
+	; wait until a robot actually needs the base before proceeding
+	(domain-atomic-precondition (operator wp-get) (goal-id ?g-id) (plan-id ?p-id)
+	                            (predicate wp-at) (param-values ?wp ?mps ?side)
+	                            (grounded TRUE) (is-satisfied FALSE))
+	(plan-action (action-name wp-get) (param-values ? ?wp ?mps ?side)
+	             (goal-id ?g-id) (plan-id ?p-id) (state PENDING))
+	(not (goal (class INSTRUCT-BS-DISPENSE-BASE) (mode ~FORMULATED&~SELECTED)))
 	=>
 	(printout t "Goal INSTRUCT-BS-DISPENSE executable" crlf)
 	(modify ?g (is-executable TRUE))
