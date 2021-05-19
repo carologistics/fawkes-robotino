@@ -202,7 +202,7 @@
 	(set-robot-to-waiting ?meta)
 	;(printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
 	;  "') has been completed, Evaluating" crlf)
-  (printout (log-debug ?v) "Goal " ?goal-id " EXPANDED" crlf)
+  (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" crlf)
 	(modify ?g (mode EVALUATED))
 )
 
