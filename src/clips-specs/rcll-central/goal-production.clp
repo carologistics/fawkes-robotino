@@ -3,6 +3,8 @@
 ;
 ;  Created: Tue 09 Jan 2018 17:03:31 CET
 ;  Copyright  2018  Mostafa Gomaa <gomaa@kbsg.rwth-aachen.de>
+;             2021  Tarik Viehmann <viehmann@kbsg.rwth-aachen.de>
+;             2021  Daniel Swoboda <swoboda@kbsg.rwth-aachen.de>
 ;  Licensed under GPLv2+ license, cf. LICENSE file in the doc directory.
 ;---------------------------------------------------------------------------
 
@@ -505,4 +507,211 @@
 	        (verbosity NOISY)
 	        (params wp ?wp wp-loc ?mps wp-side OUTPUT))
 	)
+
+)
+
+(deffunction goal-production-assert-fill-cap
+  ()
+
+  (bind ?goal (assert (goal (class FILL-CAP) 
+          (id (sym-cat ?parent-id "-" FILL-CAP- (gensym*))) (sub-type SIMPLE)
+          (params ) (is-executable FALSE))))
+  (return ?goal)
+)
+
+(deffunction goal-production-assert-produce-c0
+  ()
+
+  (bind ?goal (assert (goal (class PRODUCE-C0) 
+          (id (sym-cat ?parent-id "-" PRODUCE-C0- (gensym*))) (sub-type SIMPLE)
+          (params ) (is-executable FALSE))))
+  (return ?goal)
+)
+
+(deffunction goal-production-assert-produce-cx
+  ()
+
+  (bind ?goal (assert (goal (class PRODUCE-CX)  
+          (id (sym-cat ?parent-id "-" PRODUCE-CX- (gensym*))) (sub-type SIMPLE)
+          (params ) (is-executable FALSE))))
+  (return ?goal)
+)
+
+(deffunction goal-production-assert-clear-mps
+  ()
+
+  (bind ?goal (assert (goal (class CLEAR-MPS) 
+          (id (sym-cat ?parent-id "-" CLEAR-MPS- (gensym*))) (sub-type SIMPLE)
+          (params ) (is-executable FALSE))))
+  (return ?goal)
+)
+
+(deffunction goal-production-assert-deliver
+  ()
+
+  (bind ?goal (assert (goal (class DELIVER)  
+          (id (sym-cat ?parent-id "-" DELIVER- (gensym*))) (sub-type SIMPLE)
+          (params ) (is-executable FALSE))))
+  (return ?goal)
+)
+
+(deffunction goal-production-assert-get-base-to-fill-rs
+  ()
+
+  (bind ?goal (assert (goal (class GET-BASE-TO-FILL-RS)
+          (id (sym-cat ?parent-id "-" GET-BASE-TO-FILL-RS- (gensym*))) (sub-type SIMPLE)
+          (params ) (is-executable FALSE))))
+  (return ?goal)
+)
+
+(deffunction goal-production-assert-mount-ring
+  ()
+
+  (bind ?goal (assert (goal (class MOUNT-RING)  
+          (id (sym-cat ?parent-id "-" MOUNT-RING- (gensym*))) (sub-type SIMPLE)
+          (params ) (is-executable FALSE))))
+  (return ?goal)
+)
+
+(deffunction goal-production-assert-mount-first-ring
+  ()
+
+  (bind ?goal (assert (goal (class MOUNT-FIRST-RING)  
+          (id (sym-cat ?parent-id "-" MOUNT-FIRST-RING- (gensym*))) (sub-type SIMPLE)
+          (params ) (is-executable FALSE))))
+  (return ?goal)
+)
+
+
+(deffunction goal-production-assert-c0
+  (?root-id ?order-id ?wp-for-order)
+
+  (bind ?goal 
+    (goal-tree-assert-central-run-all (sym-cat PRODUCE-ORDER)
+      (goal-tree-assert-central-run-parallel-delayed PREPARE-WP
+        (goal-production-assert-fill-cap)
+        (goal-tree-assert-central-run-parallel-delayed PRODUCE-WP
+          (goal-production-assert-produce-c0)
+          (goal-production-assert-clear-mps)
+          (goal-production-assert-instruct-machine)
+        )
+      )
+      (goal-production-assert-deliver)
+    )
+  )
+  (modify ?goal (meta ?goal:meta for-order ?order-id))
+  (goal-tree-assert-subtree ?root-id ?goal)
+)
+
+(deffunction goal-production-assert-c1
+  (?root-id ?order-id ?wp-for-order)
+
+  (bind ?goal 
+    (goal-tree-assert-central-run-all (sym-cat PRODUCE-ORDER)
+      (goal-tree-assert-central-run-parallel-delayed 
+        (goal-tree-assert-central-run-all MOUNT-RINGS-WP
+          (goal-production-assert-get-base-to-fill-rs)
+          (goal-production-assert-mount-first-ring)
+        )
+        (goal-production-assert-fill-cap)
+        (goal-production-assert-produce-cx)
+        (goal-production-assert-clear-mps)
+      )
+      (goal-production-assert-deliver)
+    )
+  )
+  (modify ?goal (meta ?goal:meta for-order ?order-id))
+  (goal-tree-assert-subtree ?root-id ?goal)
+)
+
+(deffunction goal-production-assert-c2
+  (?root-id ?order-id ?wp-for-order)
+
+  (bind ?goal 
+    (goal-tree-assert-central-run-all (sym-cat PRODUCE-ORDER)
+      (goal-tree-assert-central-run-parallel-delayed 
+        (goal-tree-assert-central-run-all MOUNT-RINGS-WP
+          (goal-production-assert-get-base-to-fill-rs)
+          (goal-production-assert-mount-first-ring)
+        )
+        (goal-tree-assert-central-run-all MOUNT-RINGS-WP
+          (goal-production-assert-get-base-to-fill-rs)
+          (goal-production-assert-mount-first-ring)
+        )
+        (goal-production-assert-fill-cap)
+        (goal-production-assert-produce-cx)
+        (goal-production-assert-clear-mps)
+      )
+      (goal-production-assert-deliver)
+    )
+  )
+  (modify ?goal (meta ?goal:meta for-order ?order-id))
+  (goal-tree-assert-subtree ?root-id ?goal)
+
+)
+(deffunction goal-production-assert-c3
+  (?root-id ?order-id ?wp-for-order)
+
+  (bind ?goal 
+    (goal-tree-assert-central-run-all (sym-cat PRODUCE-ORDER)
+      (goal-tree-assert-central-run-parallel-delayed 
+        (goal-tree-assert-central-run-all MOUNT-RINGS-WP
+          (goal-production-assert-get-base-to-fill-rs)
+          (goal-production-assert-mount-first-ring)
+        )
+        (goal-tree-assert-central-run-all MOUNT-RINGS-WP
+          (goal-production-assert-get-base-to-fill-rs)
+          (goal-production-assert-mount-first-ring)
+        )
+        (goal-tree-assert-central-run-all MOUNT-RINGS-WP
+          (goal-production-assert-get-base-to-fill-rs)
+          (goal-production-assert-mount-first-ring)
+        )
+        (goal-production-assert-fill-cap)
+        (goal-production-assert-produce-cx)
+        (goal-production-assert-clear-mps)
+      )
+      (goal-production-assert-deliver)
+    )
+  )
+  (modify ?goal (meta ?goal:meta for-order ?order-id))
+  (goal-tree-assert-subtree ?root-id ?goal)
+)
+
+(defrule goal-production-create-root
+  ""
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (domain-facts-loaded)
+  (not (goal (class PRODUCTION-ROOT))
+  (wm-fact (key refbox phase) (value PRODUCTION))
+  (wm-fact (key game state) (value RUNNING))
+  =>
+  (goal-tree-assert-run-parallel PRODUCTION-ROOT REJECTED)
+)
+
+(defrule goal-reasoner-create-produce-for-order
+  ""
+  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+  (goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id comp ?comp))
+  (wm-fact (key domain fact order-base-color args? ord ?order-id col ?col-base))
+  (wm-fact (key domain fact order-cap-color  args? ord ?order-id col ?col-cap))
+  (wm-fact (key domain fact order-gate args? ord ?order-id gate ?gate))
+  (not (goal (parent ?goal-id) (class PRODUCE-ORDER) (meta $? for-order ?order-id $?)))
+=>
+  (bind ?wp-for-order (sym-cat wp-O ?order-id))
+  (assert (domain-object (name ?wp-for-order) (type workpiece)))
+  (if (eq ?comp C0)
+    then
+      (goal-production-assert-c0 ?root-id ?order-id ?wp-for-order)
+    else if (eq ?comp C1)
+    then
+      (goal-production-assert-c1 ?root-id ?order-id ?wp-for-order)
+    else if (eq ?comp C2)
+    then
+      (goal-production-assert-c2 ?root-id ?order-id ?wp-for-order)
+    else if (eq ?comp C3)
+    then
+      (goal-production-assert-c3 ?root-id ?order-id ?wp-for-order)
+  )
 )
