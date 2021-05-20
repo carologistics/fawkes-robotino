@@ -189,10 +189,10 @@
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class INSTRUCT-CS-BUFFER-CAP) (mode SELECTED)
 	            (params target-mps ?mps cap-color ?cap-color)
-	            (meta $? assigned-to ?robot $?))
+	            (meta $? assigned-to ?assigned $?))
 	(wm-fact (key domain fact wp-at args? wp ?cap-carrier m ?mps side INPUT))
 	=>
-	(plan-assert-sequential INSTRUCT-TO-BUFFER-CAP-PLAN ?goal-id ?robot
+	(plan-assert-sequential INSTRUCT-TO-BUFFER-CAP-PLAN ?goal-id ?assigned
 		(plan-assert-action prepare-cs ?mps RETRIEVE_CAP)
 		(plan-assert-action cs-retrieve-cap ?mps ?cap-carrier ?cap-color)
 	)
@@ -203,10 +203,10 @@
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class INSTRUCT-CS-MOUNT-CAP) (mode SELECTED)
 	            (params target-mps ?mps cap-color ?cap-color)
-	            (meta $? assigned-to ?robot $?))
+	            (meta $? assigned-to ?assigned $?))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
 	=>
-	(plan-assert-sequential INSTRUCT-TO-MOUNT-CAP-PLAN ?goal-id ?robot
+	(plan-assert-sequential INSTRUCT-TO-MOUNT-CAP-PLAN ?goal-id ?assigned
 		(plan-assert-action prepare-cs ?mps MOUNT_CAP)
 		(plan-assert-action cs-mount-cap ?mps ?wp ?cap-color)
 	)
@@ -217,9 +217,9 @@
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class INSTRUCT-BS-DISPENSE-BASE) (mode SELECTED)
 	            (params wp ?wp target-mps ?mps  target-side ?side base-color ?base-color)
-	            (meta $? assigned-to ?robot $?))
+	            (meta $? assigned-to ?assigned $?))
 	=>
-	(plan-assert-sequential INSTRUCT-BS-DISPENSE-BASE-PLAN ?goal-id ?robot
+	(plan-assert-sequential INSTRUCT-BS-DISPENSE-BASE-PLAN ?goal-id ?assigned
 		(plan-assert-action prepare-bs ?mps ?side ?base-color)
 		(plan-assert-action bs-dispense ?mps ?side ?wp ?base-color)
 	)
@@ -230,7 +230,7 @@
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class INSTRUCT-DS-DELIVER) (mode SELECTED)
 	            (params wp ?wp target-mps ?mps)
-	            (meta $? assigned-to ?robot $?))
+	            (meta $? assigned-to ?assigned $?))
 	(wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
 	(wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
 	(wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
@@ -257,7 +257,7 @@
 		(case C3 then
 		    (bind ?params (create$ ?order ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color ?ring2-color ?ring3-color)))
  )
-	(plan-assert-sequential INSTRUCT-DS-DELIVER-PLAN ?goal-id ?robot
+	(plan-assert-sequential INSTRUCT-DS-DELIVER-PLAN ?goal-id ?assigned
 		(plan-assert-action prepare-ds ?mps ?order)
 		(plan-assert-action (sym-cat fulfill-order- (lowcase ?complexity)) ?params)
 	)
