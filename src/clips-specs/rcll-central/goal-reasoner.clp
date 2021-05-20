@@ -154,6 +154,7 @@
 )
 
 
+
 ; ============================= Goal Selection ===============================
 
 
@@ -204,6 +205,71 @@
   (printout (log-debug ?v) "Goal " ?goal-id " EXPANDED" crlf)
   (modify ?p (mode EXPANDED))
 )
+
+
+(defrule goal-reasoner-select-root-waiting-robot
+  "Select all executable root goals in order to propagate selection."
+  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  ?g <- (goal (parent nil) (type ACHIEVE|MAINTAIN) (sub-type ~nil) 
+      (id ?goal-id) (mode FORMULATED) (is-executable TRUE))
+  (not (goal (parent ?goal-id)))
+  (domain-fact (name robot-waiting) (param-values ?robot))
+  (not (and (wm-fact (key central agent robot-waiting
+                      args? r ?o-robot&:(> (str-compare ?robot ?o-robot) 0)))
+            (not (goal (meta $? assigned-to ?o-robot $?)))))
+=>
+  (printout error " i select a root " ?goal-id crlf)
+  (modify ?g (mode SELECTED))
+)
+
+(defrule goal-reasoner-select-root-central-executable-simple-goal
+  "There is an exectuable simple goal assigned to central, propagate selection."
+  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  ?g <- (goal (parent nil) (type ACHIEVE|MAINTAIN) (sub-type ~nil) 
+      (id ?goal-id) (mode FORMULATED) (is-executable TRUE))
+  (goal (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE) 
+        (meta $? assigned-to central $?))
+  =>
+  (printout error " i select a root " ?goal-id crlf)
+  (modify ?g (mode SELECTED))
+)
+
+(defrule goal-reasoner-propagate-executability
+  "There is an executable goal for a waiting robot or central, propagate."
+  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  (or 
+    ?g <- (goal (sub-type SIMPLE) (mode FORMULATED) (is-exectuable TRUE)
+                (meta $? assigned-to central $?) (parent ?pid))
+    (and 
+      (domain-fact (name robot-waiting) (param-values ?robot))
+      ?g <- (goal (sub-type SIMPLE) (mode FORMULATED) (is-exectuable TRUE)
+                  (meta $?meta&:(not (member$ assigned-to ?meta))))
+    )
+  )
+  =>
+  ;fill missing parts
+  (bind ?propagate TRUE)
+  (bind ?parent-id ?pid)
+  (while (eq ?propagate TRUE)
+    (do-for-fact-all-facts ((?parent goal)) (and (eq ?parent:id ?pid))
+      (modify ?parent (is-executable TRUE))
+      (if (eq ?parent:parent nil)
+        then (bind ?propagate FALSE)
+      )
+    )
+  )
+)
+
+(defrule goal-reasoner-reset-selection-executability
+  "If we selected a leaf node, reset executability flag and goal selection"
+  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  ?g <- (goal (mode SELECTED) (sub-type ~SIMPLE))
+  (goal (mode SELECTED) (sub-type SIMPLE))
+  =>
+  (modify ?g (mode FORMULATED) (is-executable FALSE));better do for fact
+)
+
+
 
 ; ========================= Goal Dispatching =================================
 ; Trigger execution of a plan. We may commit to multiple plans
