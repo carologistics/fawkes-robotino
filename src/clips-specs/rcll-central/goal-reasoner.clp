@@ -55,6 +55,7 @@
 
 (defglobal
   ?*SALIENCE-GOAL-FORMULATE* = 500
+  ?*SALIENCE-GOAL-EXECUTABLE-CHECK* = 450
   ?*SALIENCE-GOAL-REJECT* = 400
   ?*SALIENCE-GOAL-EXPAND* = 300
   ?*SALIENCE-GOAL-SELECT* = 200
@@ -67,6 +68,43 @@
               (eq ?goal-type RUN-ONE-OF-SUBGOALS)
               (eq ?goal-type RETRY-SUBGOAL)
               (eq ?goal-type RUN-ENDLESS)))
+)
+
+(deffunction log-debug ($?verbosity)
+	(bind ?v (nth$ 1 ?verbosity))
+	(switch ?v
+		(case NOISY then (return t))
+		(case DEFAULT then (return nil))
+		(case QUIET then (return nil))
+	)
+	(return nil)
+)
+
+(deffunction log-info ($?verbosity)
+	(bind ?v (nth$ 1 ?verbosity))
+	(switch ?v
+		(case NOISY then (return warn))
+		(case DEFAULT then (return t))
+		(case QUIET then (return nil))
+	)
+	(return t)
+)
+
+(deffunction set-robot-to-waiting (?meta)
+" Sets a robot that was assigned in a goal meta to waiting.
+  If no robot was assigned in the meta nothing happens.
+
+  @param ?meta: goal meta
+"
+	(bind ?is-assigned (member$ assigned-to ?meta))
+	(if ?is-assigned then
+		(do-for-fact ((?r wm-fact))
+			(and (wm-key-prefix ?r:key (create$ central agent robot))
+			     (eq (nth$ (+ 1 ?is-assigned) ?meta) (wm-key-arg ?r:key r)))
+			(assert (wm-fact (key central agent robot-waiting
+			                  args? r (wm-key-arg ?r:key r))))
+		)
+	)
 )
 
 (deffunction goal-tree-assert-run-endless (?class ?frequency $?fact-addresses)
@@ -89,13 +127,39 @@
 ; ============================= Goal Selection ===============================
 
 
-(defrule goal-reasoner-select-root
-"  Select all root goals (having no parent) in order to expand them."
+(defrule goal-reasoner-select-root-maintain
+"  Select all root maintain goals (having no parent) in order to expand them."
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
-  ?g <- (goal (parent nil) (type ACHIEVE|MAINTAIN) (sub-type ~nil) (id ?goal-id) (mode FORMULATED))
+  ?g <- (goal (parent nil) (type MAINTAIN) (sub-type ~nil) (id ?goal-id)
+        (mode FORMULATED) (verbosity ?v))
   (not (goal (parent ?goal-id)))
 =>
-  (printout error " i select a root " ?goal-id crlf)
+  (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
+  (modify ?g (mode SELECTED))
+)
+
+(defrule goal-reasoner-select-root-robot-goal
+"  Select all root goals assigned to the central."
+  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  ?g <- (goal (parent nil) (type ACHIEVE) (sub-type SIMPLE) (id ?goal-id)
+              (mode FORMULATED) (meta $? assigned-to ?r&~central $?)
+              (is-executable TRUE) (verbosity ?v))
+  (not (goal (parent ?goal-id)))
+  (not (goal (meta $? assigned-to ?r $?) (mode ~FORMULATED)))
+=>
+  (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
+  (modify ?g (mode SELECTED))
+)
+
+(defrule goal-reasoner-select-root-central
+"  Select all root goals assigned to the central."
+  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  ?g <- (goal (parent nil) (type ACHIEVE) (sub-type SIMPLE) (id ?goal-id)
+              (mode FORMULATED) (meta $? assigned-to central $?)
+              (is-executable TRUE) (verbosity ?v))
+  (not (goal (parent ?goal-id)))
+=>
+  (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
   (modify ?g (mode SELECTED))
 )
 
@@ -103,9 +167,11 @@
 " Expand a goal with sub-type, if it has a child."
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   ?p <- (goal (id ?parent-id) (type ACHIEVE|MAINTAIN)
-              (sub-type ?sub-type&:(requires-subgoal ?sub-type)) (mode SELECTED))
-  ?g <- (goal (parent ?parent-id) (mode FORMULATED))
+              (sub-type ?sub-type&:(requires-subgoal ?sub-type)) (mode SELECTED)
+              (verbosity ?v))
+  ?g <- (goal (id ?goal-id) (parent ?parent-id) (mode FORMULATED))
 =>
+  (printout (log-debug ?v) "Goal " ?goal-id " EXPANDED" crlf)
   (modify ?p (mode EXPANDED))
 )
 
@@ -129,12 +195,15 @@
 " Finally set a finished goal to evaluated.
   All pre evaluation steps should have been executed, enforced by the higher priority
 "
-  (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome))
+	(declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
+	?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome) (meta $?meta)
+	            (verbosity ?v))
 =>
-  ;(printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
-  ;  "') has been completed, Evaluating" crlf)
-  (modify ?g (mode EVALUATED))
+	(set-robot-to-waiting ?meta)
+	;(printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
+	;  "') has been completed, Evaluating" crlf)
+  (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" crlf)
+	(modify ?g (mode EVALUATED))
 )
 
 ; ----------------------- EVALUATE SPECIFIC GOALS ---------------------------
@@ -147,10 +216,10 @@
   actions attached to it.
 "
   ?g <-(goal (id ?goal-id) (type ACHIEVE) (mode EVALUATED)
-             (acquired-resources))
+             (acquired-resources) (verbosity ?v))
   (not (goal (parent ?goal-id) (mode ?mode&~RETRACTED)))
 =>
-  ;(printout t "Goal '" ?goal-id "' has been Evaluated, cleaning up" crlf)
+  (printout (log-debug) "Goal " ?goal-id " RETRACTED" crlf)
   (modify ?g (mode RETRACTED))
 )
 
@@ -161,7 +230,7 @@
   with low priority to avoid races with the sub-type goal lifecycle.
 "
   (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
-  ?g <- (goal (id ?goal-id)
+  ?g <- (goal (id ?goal-id) (verbosity ?v)
         (mode RETRACTED) (acquired-resources))
   (not (goal (parent ?goal-id)))
 =>
@@ -172,6 +241,7 @@
     (retract ?p)
   )
   (retract ?g)
+  (printout (log-debug ?v) "Goal " ?goal-id " removed" crlf)
 )
 
 (defrule goal-reasoner-error-goal-without-sub-type-detected
