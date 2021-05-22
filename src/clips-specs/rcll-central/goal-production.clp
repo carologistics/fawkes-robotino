@@ -618,26 +618,29 @@
   (modify ?g (meta do-not-finish))
 )
 
-(defrule goal-reasoner-create-produce-for-order
+(defrule goal-production-create-produce-for-order
   ""
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  ;(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED))
+  (goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
   (wm-fact (key domain fact order-base-color args? ord ?order-id col ?col-base))
   (wm-fact (key domain fact order-cap-color  args? ord ?order-id col ?col-cap))
   (wm-fact (key domain fact cs-color args? m ?cs col ?col-cap))
   (wm-fact (key domain fact mps-type args? m ?cs t CS))
-  ;(not (goal (class PRODUCE-ORDER) (meta $? for-order ?order-id $?)))
+  (not (wm-fact (key order meta wp-for-order args? wp ?something ord O1)))
 =>
-  (printout t crlf crlf crlf "PRODUCE FOR ORDER" crlf crlf crlf)
   (bind ?wp-for-order (sym-cat wp-O ?order-id))
   (assert (domain-object (name ?wp-for-order) (type workpiece))
   		  (domain-fact (name wp-unused) (param-values ?wp-for-order))
-		  (wm-fact (key domain fact wp-base-color args? wp ?wp-for-order col BASE_NONE))
+		  (wm-fact (key domain fact wp-base-color args? wp ?wp-for-order col BASE_NONE) (type BOOL) (value TRUE))
+		  (wm-fact (key domain fact wp-cap-color args? wp ?wp-for-order col CAP_NONE) (type BOOL) (value TRUE))
+		  (wm-fact (key domain fact wp-ring1-color args? wp ?wp-for-order col RING_NONE) (type BOOL) (value TRUE))
+		  (wm-fact (key domain fact wp-ring2-color args? wp ?wp-for-order col RING_NONE) (type BOOL) (value TRUE))
+		  (wm-fact (key domain fact wp-ring3-color args? wp ?wp-for-order col RING_NONE) (type BOOL) (value TRUE))
 		  (wm-fact (key order meta wp-for-order args? wp ?wp-for-order ord ?order-id))
   )
   (if (eq ?comp C0)
     then
-      (goal-production-assert-c0 ROOT-PLACEHOLDER ?order-id ?wp-for-order ?cs ?col-cap ?col-base)
+      (goal-production-assert-c0 ?root-id ?order-id ?wp-for-order ?cs ?col-cap ?col-base)
   )
 )
