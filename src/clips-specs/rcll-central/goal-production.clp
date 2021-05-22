@@ -458,14 +458,16 @@
 )
 
 (deffunction goal-production-assert-mount-cap
-  (?wp ?mps)
+  (?wp ?mps ?wp-loc ?wp-side)
 
   (bind ?goal (assert (goal (class MOUNT-CAP) 
           (id (sym-cat MOUNT-CAP- (gensym*))) (sub-type SIMPLE)
           (verbosity NOISY) (is-executable FALSE)
 		  (params wp ?wp
 	              target-mps ?mps
-	              target-side INPUT)
+	              target-side INPUT
+				  wp-loc ?wp-loc
+				  wp-side ?wp-side)
   )))
   (return ?goal)
 )
