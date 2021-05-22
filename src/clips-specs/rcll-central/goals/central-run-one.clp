@@ -34,7 +34,7 @@
 			(mode FORMULATED) (is-executable TRUE) (priority ?priority1))
 
 	(not (goal (id ~?sub-goal) (parent ?id) (type ACHIEVE) (mode FORMULATED)
-	           (priority ?priority2&:(> ?priority2 ?priority)) (is-executable TRUE)))
+	           (priority ?priority2&:(> ?priority2 ?priority1)) (is-executable TRUE)))
 	=>
 	(modify ?sg (mode SELECTED))
 )
