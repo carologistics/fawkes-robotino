@@ -238,21 +238,21 @@
   "There is an executable goal for a waiting robot or central, propagate."
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
   (or 
-    ?g <- (goal (sub-type SIMPLE) (mode FORMULATED) (is-exectuable TRUE)
+    ?g <- (goal (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE)
                 (meta $? assigned-to central $?) (parent ?pid))
     (and 
-      (domain-fact (name robot-waiting) (param-values ?robot))
-      ?g <- (goal (sub-type SIMPLE) (mode FORMULATED) (is-exectuable TRUE)
-                  (meta $?meta&:(not (member$ assigned-to ?meta))))
+      (wm-fact (key central agent robot-waiting args? r ?robot))
+      ?g <- (goal (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE)
+                  (meta $? assigned-to ?robot $?) (parent ?pid))
     )
   )
   =>
-  ;fill missing parts
   (bind ?propagate TRUE)
   (bind ?parent-id ?pid)
   (while (eq ?propagate TRUE)
-    (do-for-fact-all-facts ((?parent goal)) (and (eq ?parent:id ?pid))
+    (do-for-all-facts ((?parent goal)) (eq ?parent:id ?parent-id)
       (modify ?parent (is-executable TRUE))
+      (bind ?parent-id ?parent:parent)
       (if (eq ?parent:parent nil)
         then (bind ?propagate FALSE)
       )
