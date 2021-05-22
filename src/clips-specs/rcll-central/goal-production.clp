@@ -509,119 +509,114 @@
 	)
 
 )
+(deffunction goal-production-assert-buffer-cap
+  (?mps ?cap-color)
 
-(deffunction goal-production-assert-fill-cap
-  ()
-
-  (bind ?goal (assert (goal (class FILL-CAP) 
-          (id (sym-cat ?parent-id "-" FILL-CAP- (gensym*))) (sub-type SIMPLE)
-          (params ) (is-executable FALSE))))
+  (bind ?goal (assert (goal (class BUFFER-CAP)
+          (id (sym-cat BUFFER-CAP- (gensym*))) (sub-type SIMPLE)
+          (verbosity NOISY) (is-executable FALSE) 
+		  (params target-mps ?mps 
+                  cap-color ?cap-color)
+  )))
   (return ?goal)
 )
 
-(deffunction goal-production-assert-produce-c0
-  ()
+(deffunction goal-production-assert-mount-cap
+  (?wp ?mps)
 
-  (bind ?goal (assert (goal (class PRODUCE-C0) 
-          (id (sym-cat ?parent-id "-" PRODUCE-C0- (gensym*))) (sub-type SIMPLE)
-          (params ) (is-executable FALSE))))
+  (bind ?goal (assert (goal (class MOUNT-CAP) 
+          (id (sym-cat MOUNT-CAP- (gensym*))) (sub-type SIMPLE)
+          (verbosity NOISY) (is-executable FALSE)
+		  (params wp ?wp
+	              target-mps ?mps
+	              target-side INPUT)
+  )))
   (return ?goal)
 )
 
-(deffunction goal-production-assert-produce-cx
-  ()
+(deffunction goal-production-assert-discard
+  (?wp)
 
-  (bind ?goal (assert (goal (class PRODUCE-CX)  
-          (id (sym-cat ?parent-id "-" PRODUCE-CX- (gensym*))) (sub-type SIMPLE)
-          (params ) (is-executable FALSE))))
-  (return ?goal)
-)
-
-(deffunction goal-production-assert-clear-mps
-  ()
-
-  (bind ?goal (assert (goal (class CLEAR-MPS) 
-          (id (sym-cat ?parent-id "-" CLEAR-MPS- (gensym*))) (sub-type SIMPLE)
-          (params ) (is-executable FALSE))))
+  (bind ?goal (assert (goal (class DISCARD) 
+          (id (sym-cat DISCARD- (gensym*))) (sub-type SIMPLE)
+          (verbosity NOISY) (is-executable FALSE) 
+	      (params wp ?wp);R 
+  )))
   (return ?goal)
 )
 
 (deffunction goal-production-assert-deliver
-  ()
+  (?wp)
 
   (bind ?goal (assert (goal (class DELIVER)  
-          (id (sym-cat ?parent-id "-" DELIVER- (gensym*))) (sub-type SIMPLE)
-          (params ) (is-executable FALSE))))
+          (id (sym-cat DELIVER- (gensym*))) (sub-type SIMPLE)
+          (verbosity NOISY) (is-executable FALSE)
+		  (params wp ?wp
+				  target-mps C-DS
+				  target-side INPUT) 
+  )))
   (return ?goal)
 )
 
-(deffunction goal-production-assert-get-base-to-fill-rs
-  ()
+(deffunction goal-production-assert-instruct-cs-buffer-cap
+  (?mps ?cap-color)
 
-  (bind ?goal (assert (goal (class GET-BASE-TO-FILL-RS)
-          (id (sym-cat ?parent-id "-" GET-BASE-TO-FILL-RS- (gensym*))) (sub-type SIMPLE)
-          (params ) (is-executable FALSE))))
+  (bind ?goal (assert (goal (class INSTRUCT-CS-BUFFER-CAP)  
+          (id (sym-cat INSTRUCT-CS-BUFFER-CAP- (gensym*))) (sub-type SIMPLE)
+          (verbosity NOISY) (is-executable FALSE) (meta assigned-to central)
+		  (params target-mps ?mps 
+		          cap-color ?cap-color) 
+  )))
   (return ?goal)
 )
 
-(deffunction goal-production-assert-mount-ring
-  ()
+(deffunction goal-production-assert-instruct-bs-dispense-base
+  (?wp ?base-color ?side) 
 
-  (bind ?goal (assert (goal (class MOUNT-RING)  
-          (id (sym-cat ?parent-id "-" MOUNT-RING- (gensym*))) (sub-type SIMPLE)
-          (params ) (is-executable FALSE))))
+  (bind ?goal (assert (goal (class INSTRUCT-BS-DISPENSE-BASE)  
+          (id (sym-cat INSTRUCT-BS-DISPENSE-BASE- (gensym*))) (sub-type SIMPLE)
+          (verbosity NOISY) (is-executable FALSE) (meta assigned-to central)
+		  (params wp ?wp
+	              target-mps C-BS
+	              target-side ?side
+	              base-color ?base-color) 
+  )))
   (return ?goal)
 )
 
-(deffunction goal-production-assert-mount-first-ring
-  ()
+(deffunction goal-production-assert-instruct-ds-deliver
+  (?wp)
 
-  (bind ?goal (assert (goal (class MOUNT-FIRST-RING)  
-          (id (sym-cat ?parent-id "-" MOUNT-FIRST-RING- (gensym*))) (sub-type SIMPLE)
-          (params ) (is-executable FALSE))))
+  (bind ?goal (assert (goal (class INSTRUCT-DS-DELIVER)  
+          (id (sym-cat INSTRUCT-DS-DELIVER- (gensym*))) (sub-type SIMPLE)
+          (verbosity NOISY) (is-executable FALSE) (meta assigned-to central)
+		  (params wp ?wp 
+		          target-mps C-DS) 
+  )))
   (return ?goal)
 )
 
+(deffunction goal-production-assert-instruct-cs-mount-cap
+  (?mps ?cap-color)
 
-(deffunction goal-production-assert-c0
-  (?root-id ?order-id ?wp-for-order)
-
-  (bind ?goal 
-    (goal-tree-assert-central-run-all (sym-cat PRODUCE-ORDER)
-      (goal-tree-assert-central-run-parallel-delayed PREPARE-WP
-        (goal-production-assert-fill-cap)
-        (goal-tree-assert-central-run-parallel-delayed PRODUCE-WP
-          (goal-production-assert-produce-c0)
-          (goal-production-assert-clear-mps)
-          (goal-production-assert-instruct-machine)
-        )
-      )
-      (goal-production-assert-deliver)
-    )
-  )
-  (modify ?goal (meta ?goal:meta for-order ?order-id))
-  (goal-tree-assert-subtree ?root-id ?goal)
+  (bind ?goal (assert (goal (class INSTRUCT-CS-MOUNT-CAP)  
+          (id (sym-cat INSTRUCT-CS-MOUNT-CAP- (gensym*))) (sub-type SIMPLE)
+          (verbosity NOISY) (is-executable FALSE) (meta assigned-to central)
+		  (params target-mps ?mps 
+		          cap-color ?cap-color) 
+  )))
+  (return ?goal)  
 )
 
-(deffunction goal-production-assert-c1
-  (?root-id ?order-id ?wp-for-order)
+(deffunction goal-production-assert-enter-field
+  (?team-color)
 
-  (bind ?goal 
-    (goal-tree-assert-central-run-all (sym-cat PRODUCE-ORDER)
-      (goal-tree-assert-central-run-parallel-delayed 
-        (goal-tree-assert-central-run-all MOUNT-RINGS-WP
-          (goal-production-assert-get-base-to-fill-rs)
-          (goal-production-assert-mount-first-ring)
-        )
-        (goal-production-assert-fill-cap)
-        (goal-production-assert-produce-cx)
-        (goal-production-assert-clear-mps)
-      )
-      (goal-production-assert-deliver)
-    )
-  )
-  (modify ?goal (meta ?goal:meta for-order ?order-id))
-  (goal-tree-assert-subtree ?root-id ?goal)
+  (bind ?goal (assert (goal (class ENTER-FIELD)  
+          (id (sym-cat ENTER-FIELD- (gensym*))) (sub-type SIMPLE)
+          (verbosity NOISY) (is-executable FALSE)
+		  (params team-color ?team-color) 
+  )))
+  (return ?goal)  
 )
 
 (deffunction goal-production-assert-c2
