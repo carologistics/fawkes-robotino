@@ -145,24 +145,30 @@
 	)
 )
 
-(defrule goal-production-unassign-robot-from-simple-goals
+(defrule goal-production-flush-executability
 " A waiting robot got a new goal, clear executability and robot assignment from other goals. "
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(goal (sub-type SIMPLE) (mode SELECTED)
 	      (meta $? assigned-to ?robot $?)
 	      (is-executable TRUE))
-	(wm-fact (key central agent robot args? r ?robot))
 	(goal (sub-type SIMPLE) (mode FORMULATED)
 	      (meta $? assigned-to ?robot $?))
-	?waiting <- (wm-fact (key central agent robot-waiting args? r ?robot))
 	=>
-	(delayed-do-for-all-facts ((?g goal))
-		(and (subsetp (create$ assigned-to ?robot) ?g:meta)
-		     (eq ?g:mode FORMULATED))
-		(modify ?g (meta (remove-robot-assignment-from-goal ?g:meta ?robot))
-		           (is-executable FALSE))
+	(delayed-do-for-all-facts ((?g goal)) TRUE
+		(modify ?g (is-executable FALSE))
 	)
-	(retract ?waiting)
+	(if (neq ?robot central)
+		then 
+		(delayed-do-for-all-facts ((?g goal))
+			(and (subsetp (create$ assigned-to ?robot) ?g:meta) (eq ?g:mode FORMULATED) (not (eq ?g:type MAINTAIN)))
+			(modify ?g (meta (remove-robot-assignment-from-goal ?g:meta ?robot)))
+		)
+		(do-for-fact ((?waiting wm-fact)) (and (wm-key-prefix ?waiting:key (create$ central agent robot-waiting))
+												(eq (wm-key-arg ?waiting:key r) ?robot))
+			(retract ?waiting)
+		)
+	)
+)
 )
 
 (defrule goal-production-enter-field-executable
