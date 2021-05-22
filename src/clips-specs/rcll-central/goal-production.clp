@@ -555,58 +555,38 @@
   (return ?goal)  
 )
 
-(deffunction goal-production-assert-c2
-  (?root-id ?order-id ?wp-for-order)
+
+
+(deffunction goal-production-assert-c0
+  (?root-id ?order-id ?wp-for-order ?cs ?cap-col ?base-col)
 
   (bind ?goal 
-    (goal-tree-assert-central-run-all (sym-cat PRODUCE-ORDER)
-      (goal-tree-assert-central-run-parallel-delayed 
-        (goal-tree-assert-central-run-all MOUNT-RINGS-WP
-          (goal-production-assert-get-base-to-fill-rs)
-          (goal-production-assert-mount-first-ring)
-        )
-        (goal-tree-assert-central-run-all MOUNT-RINGS-WP
-          (goal-production-assert-get-base-to-fill-rs)
-          (goal-production-assert-mount-first-ring)
-        )
-        (goal-production-assert-fill-cap)
-        (goal-production-assert-produce-cx)
-        (goal-production-assert-clear-mps)
+    (goal-tree-assert-central-run-all-sequence PRODUCE-ORDER
+      (goal-tree-assert-central-run-all PREPARE-WP
+	  	(goal-tree-assert-central-run-all-sequence BUFFER-GOALS
+			(goal-production-assert-buffer-cap ?cs ?cap-col)
+			(goal-production-assert-instruct-cs-buffer-cap ?cs ?cap-col)
+			;(goal-tree-assert-central-run-one HANDLE-CARRIER
+				;add payment option
+				;(goal-production-assert-discard ?wp-for-order)
+			;)
+		)
+	  	(goal-tree-assert-central-run-all-sequence MOUNT-GOALS
+			(goal-production-assert-mount-cap ?wp-for-order ?cs)
+			(goal-tree-assert-central-run-one INSTRUCT-BS
+				(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?base-col OUTPUT)
+				(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?base-col INPUT)
+			)
+		)
+		(goal-production-assert-instruct-cs-mount-cap ?cs ?cap-col)
       )
-      (goal-production-assert-deliver)
+      (goal-production-assert-deliver ?wp-for-order)
+      (goal-production-assert-instruct-ds-deliver ?wp-for-order)
     )
   )
-  (modify ?goal (meta ?goal:meta for-order ?order-id))
-  (goal-tree-assert-subtree ?root-id ?goal)
-
+  (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id))
+  ;(goal-tree-assert-subtree ?root-id ?goal)
 )
-(deffunction goal-production-assert-c3
-  (?root-id ?order-id ?wp-for-order)
-
-  (bind ?goal 
-    (goal-tree-assert-central-run-all (sym-cat PRODUCE-ORDER)
-      (goal-tree-assert-central-run-parallel-delayed 
-        (goal-tree-assert-central-run-all MOUNT-RINGS-WP
-          (goal-production-assert-get-base-to-fill-rs)
-          (goal-production-assert-mount-first-ring)
-        )
-        (goal-tree-assert-central-run-all MOUNT-RINGS-WP
-          (goal-production-assert-get-base-to-fill-rs)
-          (goal-production-assert-mount-first-ring)
-        )
-        (goal-tree-assert-central-run-all MOUNT-RINGS-WP
-          (goal-production-assert-get-base-to-fill-rs)
-          (goal-production-assert-mount-first-ring)
-        )
-        (goal-production-assert-fill-cap)
-        (goal-production-assert-produce-cx)
-        (goal-production-assert-clear-mps)
-      )
-      (goal-production-assert-deliver)
-    )
-  )
-  (modify ?goal (meta ?goal:meta for-order ?order-id))
-  (goal-tree-assert-subtree ?root-id ?goal)
 )
 
 (defrule goal-production-create-root
@@ -633,27 +613,24 @@
 
 (defrule goal-reasoner-create-produce-for-order
   ""
-  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
-  (goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED))
-  (wm-fact (key domain fact order-complexity args? ord ?order-id comp ?comp))
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ;(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
   (wm-fact (key domain fact order-base-color args? ord ?order-id col ?col-base))
   (wm-fact (key domain fact order-cap-color  args? ord ?order-id col ?col-cap))
-  (wm-fact (key domain fact order-gate args? ord ?order-id gate ?gate))
-  (not (goal (parent ?goal-id) (class PRODUCE-ORDER) (meta $? for-order ?order-id $?)))
+  (wm-fact (key domain fact cs-color args? m ?cs col ?col-cap))
+  (wm-fact (key domain fact mps-type args? m ?cs t CS))
+  ;(not (goal (class PRODUCE-ORDER) (meta $? for-order ?order-id $?)))
 =>
+  (printout t crlf crlf crlf "PRODUCE FOR ORDER" crlf crlf crlf)
   (bind ?wp-for-order (sym-cat wp-O ?order-id))
-  (assert (domain-object (name ?wp-for-order) (type workpiece)))
+  (assert (domain-object (name ?wp-for-order) (type workpiece))
+  		  (domain-fact (name wp-unused) (param-values ?wp-for-order))
+		  (wm-fact (key domain fact wp-base-color args? wp ?wp-for-order col BASE_NONE))
+		  (wm-fact (key order meta wp-for-order args? wp ?wp-for-order ord ?order-id))
+  )
   (if (eq ?comp C0)
     then
-      (goal-production-assert-c0 ?root-id ?order-id ?wp-for-order)
-    else if (eq ?comp C1)
-    then
-      (goal-production-assert-c1 ?root-id ?order-id ?wp-for-order)
-    else if (eq ?comp C2)
-    then
-      (goal-production-assert-c2 ?root-id ?order-id ?wp-for-order)
-    else if (eq ?comp C3)
-    then
-      (goal-production-assert-c3 ?root-id ?order-id ?wp-for-order)
+      (goal-production-assert-c0 ROOT-PLACEHOLDER ?order-id ?wp-for-order ?cs ?col-cap ?col-base)
   )
 )
