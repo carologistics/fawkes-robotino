@@ -26,7 +26,8 @@
 	(assert (plan-action (id (string-to-field ?id-str)) (action-name ?name) (param-values $?param-values)))
 )
 
-(deffunction plan-assert-sequential (?plan-id ?goal-id ?robot $?action-tuples)
+(deffunction plan-assert-sequential (?plan-name ?goal-id ?robot $?action-tuples)
+	(bind ?plan-id (sym-cat ?plan-name (gensym*)))
 	(assert (plan (id ?plan-id) (goal-id ?goal-id)))
 	(foreach ?pa $?action-tuples
 		(modify ?pa (id ?pa-index) (plan-id ?plan-id) (goal-id ?goal-id)
