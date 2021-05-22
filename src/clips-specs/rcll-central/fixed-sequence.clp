@@ -159,10 +159,19 @@
 	                          (params  wp ?wp
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
-	                                   $?)
+	                                   $?params)
 	                          (meta $? assigned-to ?robot $?))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
+	(if (not (do-for-fact ((?wp-at wm-fact)) (and (wm-key-prefix ?wp-at:key (create$ domain fact wp-at)) (eq (wm-key-arg ?wp-at:key wp) ?wp))
+		(bind ?wp-loc (wm-key-arg ?wp-at:key m))
+		(bind ?wp-side (wm-key-arg ?wp-at:key side))))
+		then
+		(bind ?wp-loc (multifield-key-value ?params wp-loc))
+		(bind ?wp-side (multifield-key-value ?params wp-side))
+	)
+	(if (eq ?wp-loc nil) then (printout error "Field wp-loc is nil!" crlf))
+
 	(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
 		(if (not (is-holding ?robot ?wp))
 		 then
