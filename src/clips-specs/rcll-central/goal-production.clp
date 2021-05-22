@@ -83,7 +83,7 @@
 	=>
 	(assert (goal (id (sym-cat SEND-BEACON- (gensym*))) (sub-type SIMPLE)
 	              (class SEND-BEACON) (parent ?maintain-id) (verbosity QUIET))
-	              (meta assign-to central)
+	              (meta assigned-to central)
 	              (is-executable TRUE))
 )
 
@@ -119,7 +119,7 @@
 	(assert (goal (id (sym-cat REFILL-SHELF- (gensym*)))
 	              (class REFILL-SHELF) (sub-type SIMPLE)
 	              (parent ?maintain-id) (verbosity QUIET)
-	              (meta assign-to central)
+	              (meta assigned-to central)
 	              (params mps ?mps) (is-executable TRUE)))
 )
 
