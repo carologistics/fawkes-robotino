@@ -643,3 +643,14 @@
       (goal-production-assert-c0 ?root-id ?order-id ?wp-for-order ?cs ?col-cap ?col-base)
   )
 )
+
+(defrule goal-production-fill-in-unknown-wp-discard
+	"Fill in missing workpiece information into the discard goals"
+	?g <- (goal (id ?goal-id) (class DISCARD) (mode FORMULATED) (parent ?parent)
+	            (params wp UNKNOWN mps ?mps mps-side ?mps-side)
+	            (meta $? assigned-to ?robot $?))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?mps-side))
+	(goal (parent ?parent) (class INSTRUCT-CS-BUFFER-CAP) (mode DISPATCHED|FINISHED|RETRACTED))
+	=>
+	(modify ?g (params wp ?wp mps ?mps mps-side ?mps-side))
+)
