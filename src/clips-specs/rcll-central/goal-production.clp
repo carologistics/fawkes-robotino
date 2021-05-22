@@ -234,8 +234,6 @@
 	?g <- (goal (id ?goal-id) (class MOUNT-CAP)
 	                          (mode FORMULATED)
 	                          (params  wp ?wp
-	                                   wp-loc ?wp-loc
-	                                   wp-side ?wp-side
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
 	                                   $?)
@@ -286,8 +284,6 @@
 	?g <- (goal (id ?goal-id) (class DELIVER)
 	                          (mode FORMULATED)
 	                          (params  wp ?wp
-	                                   wp-loc ?wp-loc
-	                                   wp-side ?wp-side
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
 	                                   $?)
@@ -323,9 +319,7 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class DISCARD)
 	                          (mode FORMULATED)
-	                          (params  wp ?wp
-	                                   wp-loc ?wp-loc
-	                                   wp-side ?wp-side)
+	                          (params  wp ?wp)
 	                          (meta $? assigned-to ?robot $?)
 	                          (is-executable FALSE))
 
