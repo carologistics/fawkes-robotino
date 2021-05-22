@@ -588,19 +588,6 @@
   ;(goal-tree-assert-subtree ?root-id ?goal)
 )
 
-(defrule goal-production-insert-discard
-	"HACK TO MAKE THIS WORKING"
-	(wm-fact (key domain fact wp-at args? wp ?wp m ?m side INPUT))
-	(wm-fact (key domain fact mps-type args? m ?m t CS))
-	(domain-object (name ?wp) (type cap-carrier))
-	(wm-fact (key domain objects-by-type cap-carrier) (values $? ?wp $?))
-	(goal (class BUFFER-GOALS) (id ?id))
-	(not (goal (parent ?id) (class BUFFER-CAP)))
-	=>
-	(bind ?g (goal-production-assert-discard ?wp))
-	(modify ?g (parent ?id))
-)
-
 (defrule goal-production-create-root
   ""
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
