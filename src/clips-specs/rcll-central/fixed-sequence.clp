@@ -134,17 +134,16 @@
 " Pick up a product and discard it."
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class DISCARD) (mode SELECTED) (parent ?parent)
-	            (params wp ?wp)
+	            (params wp ?wp mps ?mps mps-side ?mps-side)
 	            (meta $? assigned-to ?robot $?))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-	(wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side))
 	=>
 	(plan-assert-sequential (sym-cat DISCARD-PLAN- (gensym*)) ?goal-id ?robot
 		(if (not (is-holding ?robot ?wp))
 		 then
 			(create$ ; only last statement of if is returned
-				(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
-					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
+				(plan-assert-safe-move ?robot ?curr-location ?curr-side ?mps ?mps-side
+					(plan-assert-action wp-get ?robot ?wp ?mps ?mps-side)
 				)
 			)
 		)
