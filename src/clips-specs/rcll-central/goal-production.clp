@@ -169,6 +169,14 @@
 		)
 	)
 )
+
+(defrule goal-production-unassign-robot-from-finshed-goals
+	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	?g <- (goal (sub-type SIMPLE) (mode RETRACTED)
+	      (meta $? assigned-to ?robot $?) (parent ?parent))
+	(not (goal (id ?parent) (type MAINTAIN)))
+	=>
+	(modify ?g (meta (remove-robot-assignment-from-goal (fact-slot-value ?g meta) ?robot)))
 )
 
 (defrule goal-production-enter-field-executable
