@@ -40,7 +40,7 @@
 )
 
 (defrule central-run-parallel-goal-finish-all-subgoals
-	?gf <- (goal (id ?id) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL))
+	?gf <- (goal (id ?id) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL) (mode FORMULATED))
 	(not (goal (parent ?id) (mode FORMULATED|SELECTED)))
 	=>
 	(if (not (do-for-fact ((?g goal))
