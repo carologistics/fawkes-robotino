@@ -255,6 +255,11 @@
 	(return (str-cat (wm-key-arg ?key m) ?suffix))
 )
 
+(deffunction multifield-key-value
+	(?params ?key)
+	(bind ?pos (member$ ?key ?params))
+	(return (nth$ (+ ?pos 1) ?params))
+)
 
 ;---------------Exploration-Phase functions--------------------------
 
