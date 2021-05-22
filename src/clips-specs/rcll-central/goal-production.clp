@@ -597,7 +597,8 @@
 )
 
 (defrule goal-production-create-root
-  ""
+  "Create the production root under which all production trees for the orders
+  are asserted"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (domain-facts-loaded)
   (not (goal (class PRODUCTION-ROOT)))
@@ -605,17 +606,8 @@
   (wm-fact (key game state) (value RUNNING))
   (wm-fact (key refbox team-color) (value ?color))
   =>
-  (printout t crlf crlf crlf "CREATE A PRODUCTION ROOT" crlf crlf crlf)
-  (goal-tree-assert-central-run-parallel ENTER-ROOT
-	(goal-production-assert-enter-field ?color)
-  )
-)
-
-(defrule goal-production-select-enter-root
-  ?g <- (goal (class ENTER-ROOT) (id ?pid) (mode FORMULATED))
-  (goal (sub-type SIMPLE) (parent ?pid) (is-executable TRUE))
-  =>
-  (modify ?g (mode SELECTED))
+  (bind ?g (goal-tree-assert-central-run-parallel PRODUCTION-ROOT))
+  (modify ?g (meta do-not-finish))
 )
 
 (defrule goal-reasoner-create-produce-for-order
