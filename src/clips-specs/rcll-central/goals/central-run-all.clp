@@ -29,6 +29,11 @@
 ; fails. If all goals have been completed successfully, the parent 
 ; goal succeeds.
 ;
+; Through the goal meta a CENTRAL-RUN-ALL goal can be set to sequence mode
+; (add sequence-mode to goal meta). Then goal selection behavior changes 
+; the following way: if there is a formulated goal of higher priority that is 
+; not executable, do not select any child. 
+;
 ; This goal is part of the centralized goal reasoning approach for the 
 ; RCLL 2021 season. It has less modes than normal goals (formulated, selected,
 ; dispatched, finished, failed). The CENTRAL-RUN-ALL goal is used to implement
@@ -47,12 +52,27 @@
 (defrule central-run-all-goal-select-child
 	"Select the exectuable child with the highest priority."
 	?gf <- (goal (id ?id) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS) 
-			(mode SELECTED) (is-executable TRUE))
+			(mode SELECTED) (is-executable TRUE) 
+			(meta $?meta&:(not (member$ sequence-mode ?meta))))
 	?sg <- (goal (id ?sub-goal) (parent ?id) (type ACHIEVE) 
 			(mode FORMULATED) (is-executable TRUE) (priority ?priority1))
 
 	(not (goal (id ~?sub-goal) (parent ?id) (type ACHIEVE) (mode FORMULATED)
-	           (priority ?priority2&:(> ?priority2 ?priority)) (is-executable TRUE)))
+	           (priority ?priority2&:(> ?priority2 ?priority1)) (is-executable TRUE)))
+	=>
+	(modify ?sg (mode SELECTED))
+)
+
+(defrule central-run-all-goal-select-child-sequential
+	"Select the child with the highest priority. If it is not executable, stop
+	selection."
+	?gf <- (goal (id ?id) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS) 
+			(mode SELECTED) (is-executable TRUE) (meta $? sequence-mode $?))
+	?sg <- (goal (id ?sub-goal) (parent ?id)  
+			(mode FORMULATED) (is-executable TRUE) (priority ?priority1))
+
+	(not (goal (id ~?sub-goal) (parent ?id) (mode FORMULATED)
+	           (priority ?priority2&:(> ?priority2 ?priority1))))
 	=>
 	(modify ?sg (mode SELECTED))
 )
@@ -60,7 +80,7 @@
 (defrule central-run-all-goal-subgoal-finished
 	"Set the goal to finished when all subgoals are finished."
 	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
-			(mode ~FINISHED))
+			(mode FORMULATED))
 	(not  (goal (parent ?id) (type ACHIEVE) (mode ~FINISHED)))
 	=>
 	(modify ?gf (mode FINISHED) (outcome COMPLETED))
