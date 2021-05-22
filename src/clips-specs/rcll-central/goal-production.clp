@@ -82,9 +82,9 @@
 	?g <- (goal (id ?maintain-id) (class BEACON-MAINTAIN) (mode SELECTED))
 	=>
 	(assert (goal (id (sym-cat SEND-BEACON- (gensym*))) (sub-type SIMPLE)
-	              (class SEND-BEACON) (parent ?maintain-id) (verbosity QUIET))
+	              (class SEND-BEACON) (parent ?maintain-id) (verbosity QUIET)
 	              (meta assigned-to central)
-	              (is-executable TRUE))
+	              (is-executable TRUE)))
 )
 
 (defrule goal-production-create-refill-shelf-maintain
