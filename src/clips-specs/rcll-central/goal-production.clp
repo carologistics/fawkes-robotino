@@ -571,37 +571,36 @@
   (return ?goal)  
 )
 
-
-
 (deffunction goal-production-assert-c0
   (?root-id ?order-id ?wp-for-order ?cs ?cap-col ?base-col)
 
   (bind ?goal 
-    (goal-tree-assert-central-run-all-sequence PRODUCE-ORDER
-      (goal-tree-assert-central-run-all PREPARE-WP
-	  	(goal-tree-assert-central-run-all-sequence BUFFER-GOALS
-			(goal-production-assert-buffer-cap ?cs ?cap-col)
-			(goal-production-assert-instruct-cs-buffer-cap ?cs ?cap-col)
-			;(goal-tree-assert-central-run-one HANDLE-CARRIER
-				;add payment option
-				;(goal-production-assert-discard ?wp-for-order)
-			;)
-		)
-	  	(goal-tree-assert-central-run-all-sequence MOUNT-GOALS
-			(goal-production-assert-mount-cap ?wp-for-order ?cs)
-			(goal-tree-assert-central-run-one INSTRUCT-BS
-				(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?base-col OUTPUT)
-				(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?base-col INPUT)
+    (goal-tree-assert-central-run-parallel PRODUCE-ORDER
+		(goal-tree-assert-central-run-parallel PREPARE-CS
+			(goal-tree-assert-central-run-parallel BUFFER-GOALS
+				(goal-production-assert-buffer-cap ?cs ?cap-col)
+				(goal-production-assert-instruct-cs-buffer-cap ?cs ?cap-col)
+				(goal-production-assert-discard UNKNOWN ?cs OUTPUT) 
 			)
 		)
-		(goal-production-assert-instruct-cs-mount-cap ?cs ?cap-col)
-      )
-      (goal-production-assert-deliver ?wp-for-order)
-      (goal-production-assert-instruct-ds-deliver ?wp-for-order)
-    )
+		(goal-tree-assert-central-run-parallel MOUNT-GOALS
+			(goal-tree-assert-central-run-one INTERACT-BS
+				(goal-tree-assert-central-run-parallel OUTPUT-BS
+					(goal-production-assert-mount-cap ?wp-for-order ?cs C-BS OUTPUT)
+					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?base-col OUTPUT)
+				)
+				(goal-tree-assert-central-run-parallel INPUT-BS
+					(goal-production-assert-mount-cap ?wp-for-order ?cs C-BS INPUT)
+					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?base-col INPUT)
+				)
+			)
+			(goal-production-assert-instruct-cs-mount-cap ?cs ?cap-col)
+		)
+		(goal-production-assert-deliver ?wp-for-order)
+		(goal-production-assert-instruct-ds-deliver ?wp-for-order)
+	)
   )
-  (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id))
-  ;(goal-tree-assert-subtree ?root-id ?goal)
+  (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (parent ?root-id))
 )
 
 (defrule goal-production-create-root
