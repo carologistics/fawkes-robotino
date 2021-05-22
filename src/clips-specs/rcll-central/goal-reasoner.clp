@@ -169,68 +169,31 @@
   (modify ?g (mode SELECTED))
 )
 
-(defrule goal-reasoner-select-root-robot-goal
-"  Select all root goals assigned to the central."
-  (declare (salience ?*SALIENCE-GOAL-SELECT*))
-  ?g <- (goal (parent nil) (type ACHIEVE) (sub-type SIMPLE) (id ?goal-id)
-              (mode FORMULATED) (meta $? assigned-to ?r&~central $?)
-              (is-executable TRUE) (verbosity ?v))
-  (not (goal (parent ?goal-id)))
-  (not (goal (meta $? assigned-to ?r $?) (mode ~FORMULATED)))
-=>
-  (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
-  (modify ?g (mode SELECTED))
-)
-
-(defrule goal-reasoner-select-root-central
-"  Select all root goals assigned to the central."
-  (declare (salience ?*SALIENCE-GOAL-SELECT*))
-  ?g <- (goal (parent nil) (type ACHIEVE) (sub-type SIMPLE) (id ?goal-id)
-              (mode FORMULATED) (meta $? assigned-to central $?)
-              (is-executable TRUE) (verbosity ?v))
-  (not (goal (parent ?goal-id)))
-=>
-  (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
-  (modify ?g (mode SELECTED))
-)
-
-(defrule goal-reasoner-expand-goal-with-sub-type
-" Expand a goal with sub-type, if it has a child."
-  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
-  ?p <- (goal (id ?parent-id) (type ACHIEVE|MAINTAIN)
-              (sub-type ?sub-type&:(requires-subgoal ?sub-type)) (mode SELECTED)
-              (verbosity ?v))
-  ?g <- (goal (id ?goal-id) (parent ?parent-id) (mode FORMULATED))
-=>
-  (printout (log-debug ?v) "Goal " ?goal-id " EXPANDED" crlf)
-  (modify ?p (mode EXPANDED))
-)
-
-
 (defrule goal-reasoner-select-root-waiting-robot
   "Select all executable root goals in order to propagate selection."
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
-  ?g <- (goal (parent nil) (type ACHIEVE|MAINTAIN) (sub-type ~nil) 
-      (id ?goal-id) (mode FORMULATED) (is-executable TRUE))
-  (not (goal (parent ?goal-id)))
-  (domain-fact (name robot-waiting) (param-values ?robot))
+  ?g <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil) 
+      (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
+
+  (not (goal (meta $? assigned-to ?robot $?) (mode ~FORMULATED)))
+  (wm-fact (key central agent robot-waiting args? r ?robot))
   (not (and (wm-fact (key central agent robot-waiting
                       args? r ?o-robot&:(> (str-compare ?robot ?o-robot) 0)))
             (not (goal (meta $? assigned-to ?o-robot $?)))))
 =>
-  (printout error " i select a root " ?goal-id crlf)
+  (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
   (modify ?g (mode SELECTED))
 )
 
 (defrule goal-reasoner-select-root-central-executable-simple-goal
   "There is an exectuable simple goal assigned to central, propagate selection."
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
-  ?g <- (goal (parent nil) (type ACHIEVE|MAINTAIN) (sub-type ~nil) 
-      (id ?goal-id) (mode FORMULATED) (is-executable TRUE))
+  ?g <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil) 
+      (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
   (goal (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE) 
         (meta $? assigned-to central $?))
   =>
-  (printout error " i select a root " ?goal-id crlf)
+  (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
   (modify ?g (mode SELECTED))
 )
 
