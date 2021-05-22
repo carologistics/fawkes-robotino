@@ -312,8 +312,9 @@
 "
   (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
   ?g <- (goal (id ?goal-id) (verbosity ?v)
-        (mode RETRACTED) (acquired-resources))
+        (mode RETRACTED) (acquired-resources) (parent ?parent))
   (not (goal (parent ?goal-id)))
+  (goal (id ?parent) (type MAINTAIN))
 =>
   (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
     (delayed-do-for-all-facts ((?a plan-action)) (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
