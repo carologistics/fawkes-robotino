@@ -143,6 +143,17 @@
 	(return ?goal)
 )
 
+(deffunction goal-tree-assert-central-run-all-sequence (?class $?fact-addresses)
+	(bind ?id (sym-cat CENTRAL-RUN-ALL- ?class - (gensym*)))
+	(bind ?goal 
+    (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS) 
+                  (meta sequence-mode)))
+  )
+	(foreach ?f ?fact-addresses
+		(goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
+	(return ?goal)
+)
+
 (deffunction goal-tree-assert-central-run-parallel (?class $?fact-addresses)
 	(bind ?id (sym-cat CENTRAL-RUN-PARALLEL- ?class - (gensym*)))
 	(bind ?goal 
