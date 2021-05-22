@@ -209,7 +209,8 @@
 )
 
 (defrule goal-reasoner-propagate-executability
-  "There is an executable goal for a waiting robot or central, propagate."
+  "There is an executable goal for a waiting robot or central, propagate until
+  we hit the root or a goal that is not FORMULATED."
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
   (or 
     ?g <- (goal (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE)
@@ -225,9 +226,13 @@
   (bind ?parent-id ?pid)
   (while (eq ?propagate TRUE)
     (do-for-all-facts ((?parent goal)) (eq ?parent:id ?parent-id)
-      (modify ?parent (is-executable TRUE))
-      (bind ?parent-id ?parent:parent)
-      (if (eq ?parent:parent nil)
+      (if (eq ?parent:mode FORMULATED)
+        then 
+        (modify ?parent (is-executable TRUE)) 
+        (bind ?parent-id ?parent:parent)
+      )
+      
+      (if (or (eq ?parent:parent nil) (neq ?parent:mode FORMULATED))
         then (bind ?propagate FALSE)
       )
     )
