@@ -418,7 +418,7 @@
 	                            (grounded TRUE) (is-satisfied FALSE))
 	(plan-action (action-name wp-get) (param-values ? ?wp ?mps ?side)
 	             (goal-id ?g-id) (plan-id ?p-id) (state PENDING))
-	(not (goal (class INSTRUCT-BS-DISPENSE-BASE) (mode ~FORMULATED&~SELECTED)))
+	(not (goal (class INSTRUCT-BS-DISPENSE-BASE) (mode SELECTED|DISPATCHED|COMMITTED|EXPANDED)))
 	=>
 	(printout t "Goal INSTRUCT-BS-DISPENSE executable" crlf)
 	(modify ?g (is-executable TRUE))
