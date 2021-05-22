@@ -251,6 +251,22 @@
   (modify ?p (mode EXPANDED))
 )
 
+(defrule goal-reasoner-select-from-dispatched-children
+  "Select the goal of highest priority of a run parallel if it is dispatched and 
+  is executable"
+  (goal (mode DISPATCHED) (class PRODUCTION-ROOT))
+  (goal (id ?parent) (mode DISPATCHED) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL))
+  ?g <- (goal (id ?id) (parent ?parent) (is-executable TRUE) (priority ?p) (mode FORMULATED))
+  (goal (id ?parent2) (mode DISPATCHED) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL))
+  (not (goal (id ?nid&~?id) (parent ?parent2) (priority ?p2&:(> ?p2 ?p)) (mode FORMULATED) (is-executable TRUE)))
+  (wm-fact (key central agent robot-waiting args? r ?robot))
+  (not (and (wm-fact (key central agent robot-waiting
+                      args? r ?o-robot&:(> (str-compare ?robot ?o-robot) 0)))
+            (not (goal (meta $? assigned-to ?o-robot $?)))))
+  =>
+  (modify ?g (mode SELECTED))
+)
+
 
 ; ========================= Goal Dispatching =================================
 ; Trigger execution of a plan. We may commit to multiple plans
