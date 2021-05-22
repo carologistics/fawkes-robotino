@@ -613,11 +613,22 @@
   ""
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (domain-facts-loaded)
-  (not (goal (class PRODUCTION-ROOT))
+  (not (goal (class PRODUCTION-ROOT)))
   (wm-fact (key refbox phase) (value PRODUCTION))
   (wm-fact (key game state) (value RUNNING))
+  (wm-fact (key refbox team-color) (value ?color))
   =>
-  (goal-tree-assert-run-parallel PRODUCTION-ROOT REJECTED)
+  (printout t crlf crlf crlf "CREATE A PRODUCTION ROOT" crlf crlf crlf)
+  (goal-tree-assert-central-run-parallel ENTER-ROOT
+	(goal-production-assert-enter-field ?color)
+  )
+)
+
+(defrule goal-production-select-enter-root
+  ?g <- (goal (class ENTER-ROOT) (id ?pid) (mode FORMULATED))
+  (goal (sub-type SIMPLE) (parent ?pid) (is-executable TRUE))
+  =>
+  (modify ?g (mode SELECTED))
 )
 
 (defrule goal-reasoner-create-produce-for-order
