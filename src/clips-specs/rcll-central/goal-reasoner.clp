@@ -234,15 +234,6 @@
   )
 )
 
-(defrule goal-reasoner-reset-selection-executability
-  "If we selected a leaf node, reset executability flag and goal selection"
-  (declare (salience ?*SALIENCE-GOAL-SELECT*))
-  ?g <- (goal (mode SELECTED) (sub-type ~SIMPLE) (type ~MAINTAIN))
-  (goal (mode EXPANDED) (sub-type SIMPLE) (class ~SEND-BEACON))
-  =>
-  (modify ?g (mode FORMULATED) (is-executable FALSE));better do for fact
-)
-
 (defrule goal-reasoner-expand-goal-with-sub-type
 " Expand a goal with sub-type, if it has a child."
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
