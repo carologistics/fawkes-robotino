@@ -26,7 +26,8 @@
 	(assert (plan-action (id (string-to-field ?id-str)) (action-name ?name) (param-values $?param-values)))
 )
 
-(deffunction plan-assert-sequential (?plan-id ?goal-id ?robot $?action-tuples)
+(deffunction plan-assert-sequential (?plan-name ?goal-id ?robot $?action-tuples)
+	(bind ?plan-id (sym-cat ?plan-name (gensym*)))
 	(assert (plan (id ?plan-id) (goal-id ?goal-id)))
 	(foreach ?pa $?action-tuples
 		(modify ?pa (id ?pa-index) (plan-id ?plan-id) (goal-id ?goal-id)
@@ -156,33 +157,45 @@
 	?g <- (goal (id ?goal-id) (class ?class&MOUNT-CAP|MOUNT-RING|DELIVER)
 	                          (mode SELECTED) (parent ?parent)
 	                          (params  wp ?wp
-	                                   wp-loc ?wp-loc
-	                                   wp-side ?wp-side
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
-	                                   $?)
+	                                   $?params)
 	                          (meta $? assigned-to ?robot $?))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
-	(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
-		(if (not (is-holding ?robot ?wp))
-		 then
-			(create$ ; only last statement of if is returned
-				(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
-					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
-				)
-				(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps ?target-side
-					(plan-assert-action wp-put ?robot ?wp ?target-mps)
+	(if (not (do-for-fact ((?wp-at wm-fact)) (and (wm-key-prefix ?wp-at:key (create$ domain fact wp-at)) (eq (wm-key-arg ?wp-at:key wp) ?wp))
+		(bind ?wp-loc (wm-key-arg ?wp-at:key m))
+		(bind ?wp-side (wm-key-arg ?wp-at:key side))))
+		then
+		(bind ?wp-loc (multifield-key-value ?params wp-loc))
+		(bind ?wp-side (multifield-key-value ?params wp-side))
+	)
+	(if (eq ?wp-loc nil) 
+		then 
+			(printout error "The fields wp-loc and wp-side must either be set manually or there must be a wp-at fact!" crlf)
+		else
+			(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
+				(if (not (is-holding ?robot ?wp))
+				then
+					(create$ ; only last statement of if is returned
+						(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
+							(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
+						)
+						(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps ?target-side
+							(plan-assert-action wp-put ?robot ?wp ?target-mps)
+						)
+					)
+				else
+					(plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps ?target-side
+						(plan-assert-action wp-put ?robot ?wp ?target-mps)
+					)
 				)
 			)
-		 else
-			(plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps ?target-side
-				(plan-assert-action wp-put ?robot ?wp ?target-mps)
-			)
+			(modify ?g (mode EXPANDED))
 		)
 	)
-	(modify ?g (mode EXPANDED))
-)
+
+	
 
 
 (defrule goal-expander-instruct-cs-buffer-cap

@@ -123,6 +123,48 @@
                 (goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
 )
 
+(deffunction goal-tree-assert-central-run-one (?class $?fact-addresses)
+	(bind ?id (sym-cat CENTRAL-RUN-ONE- ?class - (gensym*)))
+	(bind ?goal 
+    (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ONE-OF-SUBGOALS)))
+  )
+	(foreach ?f ?fact-addresses
+		(goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
+	(return ?goal)
+)
+
+(deffunction goal-tree-assert-central-run-all (?class $?fact-addresses)
+	(bind ?id (sym-cat CENTRAL-RUN-ALL- ?class - (gensym*)))
+	(bind ?goal 
+    (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)))
+  )
+	(foreach ?f ?fact-addresses
+		(goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
+	(return ?goal)
+)
+
+(deffunction goal-tree-assert-central-run-all-sequence (?class $?fact-addresses)
+	(bind ?id (sym-cat CENTRAL-RUN-ALL- ?class - (gensym*)))
+	(bind ?goal 
+    (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS) 
+                  (meta sequence-mode)))
+  )
+	(foreach ?f ?fact-addresses
+		(goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
+	(return ?goal)
+)
+
+(deffunction goal-tree-assert-central-run-parallel (?class $?fact-addresses)
+	(bind ?id (sym-cat CENTRAL-RUN-PARALLEL- ?class - (gensym*)))
+	(bind ?goal 
+    (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)))
+  )
+	(foreach ?f ?fact-addresses
+		(goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
+	(return ?goal)
+)
+
+
 
 ; ============================= Goal Selection ===============================
 
@@ -138,29 +180,63 @@
   (modify ?g (mode SELECTED))
 )
 
-(defrule goal-reasoner-select-root-robot-goal
-"  Select all root goals assigned to the central."
+(defrule goal-reasoner-select-root-waiting-robot
+  "Select all executable root goals in order to propagate selection."
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
-  ?g <- (goal (parent nil) (type ACHIEVE) (sub-type SIMPLE) (id ?goal-id)
-              (mode FORMULATED) (meta $? assigned-to ?r&~central $?)
-              (is-executable TRUE) (verbosity ?v))
-  (not (goal (parent ?goal-id)))
-  (not (goal (meta $? assigned-to ?r $?) (mode ~FORMULATED)))
-=>
+  ?g <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil) 
+      (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
+
+  (not (goal (meta $? assigned-to ?robot $?) (mode ~FORMULATED)))
+  (wm-fact (key central agent robot-waiting args? r ?robot))
+  (not (and (wm-fact (key central agent robot-waiting
+                      args? r ?o-robot&:(> (str-compare ?robot ?o-robot) 0)))
+            (not (goal (meta $? assigned-to ?o-robot $?)))))
+  =>
   (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
   (modify ?g (mode SELECTED))
 )
 
-(defrule goal-reasoner-select-root-central
-"  Select all root goals assigned to the central."
+(defrule goal-reasoner-select-root-central-executable-simple-goal
+  "There is an exectuable simple goal assigned to central, propagate selection."
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
-  ?g <- (goal (parent nil) (type ACHIEVE) (sub-type SIMPLE) (id ?goal-id)
-              (mode FORMULATED) (meta $? assigned-to central $?)
-              (is-executable TRUE) (verbosity ?v))
-  (not (goal (parent ?goal-id)))
-=>
+  ?g <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil) 
+      (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
+  (goal (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE) 
+        (meta $? assigned-to central $?))
+  =>
   (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
   (modify ?g (mode SELECTED))
+)
+
+(defrule goal-reasoner-propagate-executability
+  "There is an executable goal for a waiting robot or central, propagate until
+  we hit the root or a goal that is not FORMULATED."
+  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  (or 
+    ?g <- (goal (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE)
+                (meta $? assigned-to central $?) (parent ?pid))
+    (and 
+      (wm-fact (key central agent robot-waiting args? r ?robot))
+      ?g <- (goal (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE)
+                  (meta $? assigned-to ?robot $?) (parent ?pid))
+    )
+  )
+  =>
+  (bind ?propagate TRUE)
+  (bind ?parent-id ?pid)
+  (while (eq ?propagate TRUE)
+    (do-for-all-facts ((?parent goal)) (eq ?parent:id ?parent-id)
+      (if (eq ?parent:mode FORMULATED)
+        then 
+        (modify ?parent (is-executable TRUE)) 
+        (bind ?parent-id ?parent:parent)
+      )
+      
+      (if (or (eq ?parent:parent nil) (neq ?parent:mode FORMULATED))
+        then (bind ?propagate FALSE)
+      )
+    )
+  )
 )
 
 (defrule goal-reasoner-expand-goal-with-sub-type
@@ -170,10 +246,28 @@
               (sub-type ?sub-type&:(requires-subgoal ?sub-type)) (mode SELECTED)
               (verbosity ?v))
   ?g <- (goal (id ?goal-id) (parent ?parent-id) (mode FORMULATED))
-=>
+  =>
   (printout (log-debug ?v) "Goal " ?goal-id " EXPANDED" crlf)
   (modify ?p (mode EXPANDED))
 )
+
+(defrule goal-reasoner-select-from-dispatched-children
+  "Select the goal of highest priority of a run parallel if it is dispatched and 
+  is executable"
+  (goal (mode DISPATCHED) (class PRODUCTION-ROOT))
+  (goal (id ?parent1) (mode DISPATCHED) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL) (priority ?p1))
+  ?g <- (goal (id ?id) (parent ?parent1) (is-executable TRUE) (mode FORMULATED) (priority ?pc1))
+  (not (goal (id ?nid&~?id) (parent ?parent1) (mode FORMULATED) (is-executable TRUE) (priority ?pc2&:(> ?pc2 ?pc1))))
+
+  (not (and 
+      (goal (id ?parent2&~?parent1) (mode DISPATCHED) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL) (priority ?p2&:(> ?p2 ?p1)))
+      (goal (id ?c1) (parent ?parent2) (mode FORMULATED) (is-executable TRUE))
+    )
+  )
+  =>
+  (modify ?g (mode SELECTED))
+)
+
 
 ; ========================= Goal Dispatching =================================
 ; Trigger execution of a plan. We may commit to multiple plans
@@ -231,8 +325,9 @@
 "
   (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
   ?g <- (goal (id ?goal-id) (verbosity ?v)
-        (mode RETRACTED) (acquired-resources))
+        (mode RETRACTED) (acquired-resources) (parent ?parent))
   (not (goal (parent ?goal-id)))
+  (goal (id ?parent) (type MAINTAIN))
 =>
   (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
     (delayed-do-for-all-facts ((?a plan-action)) (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
