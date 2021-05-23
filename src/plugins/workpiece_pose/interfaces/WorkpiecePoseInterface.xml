@@ -24,10 +24,10 @@
       Translation vector from the reference frame's origin, ordered as (x, y, z).
     </field>
   </data>
-  <message name="Match">
-    <comment>Pixel coordinates to match to Pointcloud</comment>
-    <field type="double" length="2" name="bounding_box_center">
-      Target on the MPS.
+  <message name="WPPoseMessage">
+    <comment>Publish Workpiece Pose</comment>
+    <field type="double" length="3" name="translation">
+      XYZ of the Workpiece
     </field>
   </message>
 </interface>
