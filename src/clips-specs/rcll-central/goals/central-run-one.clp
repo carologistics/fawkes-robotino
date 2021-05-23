@@ -113,6 +113,14 @@
 	(modify ?gf (mode FINISHED) (outcome COMPLETED) (committed-to nil))
 )
 
+(defrule central-run-one-goal-subgoal-completed-clear-uncompleted
+	(goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-ONE-OF-SUBGOALS) 
+	      (mode FINISHED) (outcome COMPLETED))
+	?sg <- (goal (id ?sub-goal) (parent ?id) (type ACHIEVE) (mode FORMULATED))
+	=>
+	(retract ?sg)
+)
+
 (defrule central-run-one-set-to-expanded
 	"when a central-run-parall goal is selected it is automatically expanded"
 	?gf <- (goal (id ?id) (type ACHIEVE) 
