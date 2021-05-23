@@ -367,7 +367,7 @@
 	                    cap-color ?cap-color
 	             )
 	             (is-executable FALSE))
-
+	(not (goal (class INSTRUCT-CS-BUFFER-CAP) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; MPS CEs
 	(wm-fact (key domain fact mps-type args? m ?mps t CS))
@@ -394,6 +394,7 @@
 	             )
 	             (is-executable FALSE))
 
+	(not (goal (class INSTRUCT-CS-MOUNT-CAP) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; MPS CEs
 	(wm-fact (key domain fact mps-type args? m ?mps t CS))
@@ -449,6 +450,7 @@
 	            (params wp ?wp target-mps ?mps)
 	            (meta $? assigned-to ?robot $?) (is-executable FALSE))
 
+	(not (goal (class INSTRUCT-DS-DELIVER) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	(wm-fact (key domain fact mps-type args? m ?mps t DS))
 	(wm-fact (key domain fact mps-state args? m ?mps s IDLE))
