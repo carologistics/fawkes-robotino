@@ -265,6 +265,7 @@
       (goal (id ?c1) (parent ?parent2) (mode FORMULATED) (is-executable TRUE))
     )
   )
+  (not (goal (mode SELECTED|EXPANDED|COMMITTED) (type ACHIEVE)))
   =>
   (modify ?g (mode SELECTED))
 )
