@@ -67,9 +67,9 @@
 	"Select the child with the highest priority. If it is not executable, stop
 	selection."
 	?gf <- (goal (id ?id) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS) 
-			(mode SELECTED) (is-executable TRUE) (meta $? sequence-mode $?))
+	              (mode SELECTED) (is-executable TRUE) (meta $? sequence-mode $?))
 	?sg <- (goal (id ?sub-goal) (parent ?id)  
-			(mode FORMULATED) (is-executable TRUE) (priority ?priority1))
+	             (mode FORMULATED) (is-executable TRUE) (priority ?priority1))
 
 	(not (goal (id ~?sub-goal) (parent ?id) (mode FORMULATED)
 	           (priority ?priority2&:(> ?priority2 ?priority1))))
@@ -80,7 +80,7 @@
 (defrule central-run-all-goal-subgoal-finished
 	"Set the goal to finished when all subgoals are finished."
 	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
-			(mode FORMULATED))
+	             (mode FORMULATED))
 	(not  (goal (parent ?id) (type ACHIEVE) (mode ~FINISHED)))
 	=>
 	(modify ?gf (mode FINISHED) (outcome COMPLETED))
@@ -89,10 +89,10 @@
 (defrule central-run-all-goal-subgoal-failed
 	"Fail the goal if any of the child goals fail to propagate error handling."
 	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
-			(mode ~FINISHED))
+	             (mode ~FINISHED))
 	?sg <- (goal (parent ?id) (type ACHIEVE) (mode FINISHED) (outcome FAILED))
 	=>
 	(modify ?gf (mode FINISHED) (outcome FAILED)
-					(error SUB-GOAL-FAILED ?sg)
-					(message (str-cat "Sub-goal '" ?sg "' of CENTRAL-RUN-ALL goal '" ?id "' has failed")))
+	            (error SUB-GOAL-FAILED ?sg)
+	            (message (str-cat "Sub-goal '" ?sg "' of CENTRAL-RUN-ALL goal '" ?id "' has failed")))
 )
