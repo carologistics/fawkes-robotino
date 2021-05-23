@@ -254,6 +254,7 @@
 (defrule goal-reasoner-select-from-dispatched-children
   "Select the goal of highest priority of a run parallel if it is dispatched and 
   is executable"
+  (declare (salience ?*SALIENCE-GOAL-SELECT*))
   (goal (mode DISPATCHED) (class PRODUCTION-ROOT))
   (goal (id ?parent1) (mode DISPATCHED) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL) (priority ?p1))
   ?g <- (goal (id ?id) (parent ?parent1) (is-executable TRUE) (mode FORMULATED) (priority ?pc1))
