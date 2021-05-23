@@ -50,12 +50,6 @@
 ; - User: EVALUATE goal
 ; - User: RETRACT goal
 
-(deffunction central-run-parallel-stop-execution (?params ?sub-goal-outcome)
-	(return (and (or (eq ?sub-goal-outcome FAILED)
-	                 (eq ?sub-goal-outcome REJECTED))
-	             (not (member$ (create$ continue-on FAILED) ?params))
-	             (not (member$ (create$ continue-on ?sub-goal-outcome) ?params))))
-)
 
 (defrule central-run-parallel-goal-expand-failed
 	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)
