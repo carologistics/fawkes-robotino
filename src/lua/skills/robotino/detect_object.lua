@@ -27,9 +27,9 @@ name               = "detect_object"
 fsm                = SkillHSM:new{name=name, start="INIT"}
 depends_skills     = {}
 depends_interfaces = {
-   {v = "yolo_interface_write", type = "YoloOpenCVInterface", id= "YoloOpenCVwrite"},
-   {v = "realsense_control", type = "CameraControlInterface", id= "realsense2_cam"},
-   {v = "realsense_switch", type = "SwitchInterface", id= "realsense2"},
+   {v = "yolo_interface_write", type = "YoloOpenCVInterface", id = "YoloOpenCVwrite"},
+   {v = "realsense_control", type = "CameraControlInterface", id = "realsense2_cam"},
+   {v = "realsense_switch", type = "SwitchInterface", id = "realsense2"},
 }
 
 documentation      = [==[
@@ -73,7 +73,7 @@ fsm:add_transitions{
    {"TAKE_PICTURE", "DETECT", cond="new_img(self)", desc="Detect objects"},
    {"DETECT", "DETECTED", cond=checkid, desc="Detected objects"},
    {"DETECTED", "FAILED", cond="not vars.detection_successful", desc="vars.feedback_error_msg"},
-   {"DETECTED", "FINAL", cond="vars.detection_successful"},
+   {"DETECTED", "FINAL", cond="vars.detection_successful", desc="Detection successful"},
 }
 
 function INIT:init()
@@ -93,7 +93,6 @@ function DETECT:init()
    self.fsm.vars.request_id = yolo_interface_write:msgq_enqueue(detect_object_request)
    self.fsm.vars.msgid = detect_object_request:id()
 end
-
 
 function DETECTED:init()
    local detect_feedback = nil
