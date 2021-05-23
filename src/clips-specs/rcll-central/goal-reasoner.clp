@@ -211,7 +211,7 @@
 (defrule goal-reasoner-propagate-executability
   "There is an executable goal for a waiting robot or central, propagate until
   we hit the root or a goal that is not FORMULATED."
-  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  (declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
   (or 
     ?g <- (goal (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE)
                 (meta $? assigned-to central $?) (parent ?pid))
