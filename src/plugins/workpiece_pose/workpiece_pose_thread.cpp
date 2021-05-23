@@ -22,15 +22,7 @@
 #include "workpiece_pose_thread.h"
 
 #include <core/exceptions/system.h>
-#include <interfaces/ConveyorPoseInterface.h>
-#include <interfaces/LaserLineInterface.h>
 #include <interfaces/SwitchInterface.h>
-#include <pcl/common/distances.h>
-#include <pcl/common/transforms.h>
-#include <pcl/conversions.h>
-#include <pcl/filters/approximate_voxel_grid.h>
-#include <pcl/io/pcd_io.h>
-#include <pcl/point_cloud.h>
 #include <tf/types.h>
 #include <utils/math/angle.h>
 #include <utils/time/clock.h>
@@ -52,8 +44,6 @@ WorkpiecePoseThread::WorkpiecePoseThread()
   BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PROCESS),
   ConfigurationChangeHandler(CFG_PREFIX),
   fawkes::TransformAspect(fawkes::TransformAspect::BOTH, "workpiece_pose"),
-  cloud_out_raw_name_("raw"),
-  cloud_out_trimmed_name_("trimmed"),
   realsense_switch_(nullptr)
 {
 }
@@ -63,16 +53,7 @@ WorkpiecePoseThread::init()
 {
 	config->add_change_handler(this);
 
-	cloud_in_name_ = config->get_string(CFG_PREFIX "/cloud_in");
-
-	cfg_if_prefix_ = config->get_string(CFG_PREFIX "/if/prefix");
-	if (cfg_if_prefix_.back() != '/')
-		cfg_if_prefix_.append("/");
-
-	wp_pose_ =
-	  blackboard->open_for_writing<WorkpiecePoseInterface>((cfg_if_prefix_ + "status").c_str());
-	wp_pose_->set_current_mps_type(wp_pose_->DEFAULT_TYPE);
-	wp_pose_->set_current_mps_target(wp_pose_->DEFAULT_TARGET);
+	wp_pose_ = blackboard->open_for_writing<WorkpiecePoseInterface>("WorkpiecePose");
 
 	wp_pose_->write();
 
@@ -80,29 +61,16 @@ WorkpiecePoseThread::init()
 
 	cfg_bb_realsense_switch_name_ =
 	  config->get_string_or_default(CFG_PREFIX "/realsense_switch", "realsense");
-	wait_time_ = Time(double(config->get_float_or_default(CFG_PREFIX "/realsense_wait_time", 1.0f)));
-
-	trimmed_scene_.reset(new Cloud());
-
-	cloud_in_registered_ = false;
-
-	cloud_out_raw_     = new Cloud();
-	cloud_out_trimmed_ = new Cloud();
-	cloud_out_model_   = new Cloud();
-	pcl_manager->add_pointcloud(cloud_out_raw_name_.c_str(), cloud_out_raw_);
-	pcl_manager->add_pointcloud(cloud_out_trimmed_name_.c_str(), cloud_out_trimmed_);
-	pcl_manager->add_pointcloud("model", cloud_out_model_);
 
 	realsense_switch_ =
 	  blackboard->open_for_reading<SwitchInterface>(cfg_bb_realsense_switch_name_.c_str());
+
+	workpiece_frame_id_ = "workpiece";
 }
 
 void
 WorkpiecePoseThread::finalize()
 {
-	pcl_manager->remove_pointcloud(cloud_out_raw_name_.c_str());
-	pcl_manager->remove_pointcloud(cloud_out_trimmed_name_.c_str());
-	pcl_manager->remove_pointcloud("model");
 	blackboard->close(realsense_switch_);
 	blackboard->close(wp_pose_);
 }
@@ -110,98 +78,21 @@ WorkpiecePoseThread::finalize()
 void
 WorkpiecePoseThread::loop()
 {
-	//-- skip processing if camera is not enabled
-	realsense_switch_->read();
+	if (read_xyz()) {
+		result_pose_.release();
 
-	// Check for Messages in ConveyorPoseInterface and update information if
-	// needed
-	while (!wp_pose_->msgq_empty()) {
-		if (wp_pose_->msgq_first_is<ConveyorPoseInterface::RunICPMessage>()) {
-			// Update station related information
-			logger->log_info(name(), "Received RunICPMessage");
-			ConveyorPoseInterface::RunICPMessage *msg =
-			  wp_pose_->msgq_first<ConveyorPoseInterface::RunICPMessage>();
+		tf::Stamped<tf::Pose> result_pose{fawkes::tf::Pose(), fawkes::Time(), workpiece_frame_id_};
 
-			result_pose_.release();
-		}
-		wp_pose_->msgq_pop();
+		result_pose_.reset(new tf::Stamped<tf::Pose>{result_pose});
+
+		// set workpiece orientation to orientation of conveyor cam
+		fawkes::tf::StampedTransform gripper_pose;
+		tf_listener->lookup_transform("cam_conveyor", "world", gripper_pose);
+		result_pose_->setRotation(gripper_pose.getRotation());
+		result_pose_->setOrigin({msg->translation(0), msg->translation(1), msg->translation(2)});
+		pose_write();
+		pose_publish_tf(*result_pose_);
 	}
-
-	if (need_to_wait()) {
-		logger->log_debug(name(),
-		                  "Waiting for %s for %f sec, still %f sec remaining",
-		                  cfg_bb_realsense_switch_name_.c_str(),
-		                  wait_time_.in_sec(),
-		                  (wait_start_ + wait_time_ - Time()).in_sec());
-		return;
-	}
-
-	if (!realsense_switch_->is_enabled()) {
-		logger->log_warn(name(), "Waiting for RealSense camera to be enabled");
-		return;
-	}
-
-	if (update_input_cloud()) {
-		CloudPtr cloud_in(new Cloud(**cloud_in_));
-
-		size_t   in_size  = cloud_in->points.size();
-		CloudPtr cloud_vg = cloud_voxel_grid(cloud_in);
-		size_t   out_size = cloud_vg->points.size();
-		if (in_size == out_size) {
-			logger->log_error(name(), "Voxel Grid failed, skipping loop!");
-			return;
-		}
-
-		trimmed_scene_ = cloud_trim(cloud_vg);
-
-		cloud_publish(cloud_in, cloud_out_raw_);
-		cloud_publish(trimmed_scene_, cloud_out_trimmed_);
-	} // ! cfg_record_model_
-} // update_input_cloud()
-
-bool
-WorkpiecePoseThread::update_input_cloud()
-{
-	if (pcl_manager->exists_pointcloud(cloud_in_name_.c_str())) {
-		if (!cloud_in_registered_) { // do I already have this pc
-			cloud_in_ = pcl_manager->get_pointcloud<Point>(cloud_in_name_.c_str());
-			if (cloud_in_->points.size() > 0) {
-				cloud_in_registered_ = true;
-			}
-		}
-
-		unsigned long time_old = input_pc_header_.stamp;
-		input_pc_header_       = cloud_in_->header;
-
-		return time_old != input_pc_header_.stamp; // true, if there is a new cloud, false otherwise
-
-	} else {
-		logger->log_debug(name(), "can't get pointcloud %s", cloud_in_name_.c_str());
-		cloud_in_registered_ = false;
-		return false;
-	}
-}
-
-WorkpiecePoseThread::CloudPtr
-WorkpiecePoseThread::cloud_voxel_grid(WorkpiecePoseThread::CloudPtr in)
-{
-	float                                    ls = cfg_voxel_grid_leaf_size_;
-	pcl::ApproximateVoxelGrid<pcl::PointXYZ> vg;
-	CloudPtr                                 out(new Cloud);
-	vg.setInputCloud(in);
-	// logger->log_debug(name(), "voxel leaf size is %f", ls);
-	vg.setLeafSize(ls, ls, ls);
-	vg.filter(*out);
-	out->header = in->header;
-	return out;
-}
-
-void
-WorkpiecePoseThread::cloud_publish(WorkpiecePoseThread::CloudPtr cloud_in,
-                                   fawkes::RefPtr<Cloud>         cloud_out)
-{
-	**cloud_out       = *cloud_in;
-	cloud_out->header = input_pc_header_;
 }
 
 void
@@ -226,12 +117,32 @@ WorkpiecePoseThread::pose_write()
 	wp_pose_->write();
 }
 
+/**
+ * Read XYZ pose and write to result pose
+ * @return new_msg
+ */
+bool
+WorkpiecePoseThread::read_xyz()
+{
+	bool new_msg = false;
+	while (!wp_pose_->msgq_empty()) {
+		if (wp_pose_->msgq_first_is<WorkpiecePoseInterface::WPPoseMessage>()) {
+			msg     = wp_pose_->msgq_first<WorkpiecePoseInterface::WPPoseMessage>();
+			new_msg = true;
+		} else {
+			logger->log_warn(name(), "Unknown message received");
+		}
+		wp_pose_->msgq_pop();
+	}
+	return new_msg;
+}
+
 void
 WorkpiecePoseThread::pose_publish_tf(const tf::Stamped<tf::Pose> &pose)
 {
-	// transform data into gripper frame (this is better for later use)
+	// transform data into cam conveyor frame
 	tf::Stamped<tf::Pose> tf_pose_gripper;
-	tf_listener->transform_pose("gripper", pose, tf_pose_gripper);
+	tf_listener->transform_pose("cam_conveyor", pose, tf_pose_gripper);
 
 	// publish the transform from the gripper to the conveyor
 	tf::Transform        transform(tf_pose_gripper.getRotation(), tf_pose_gripper.getOrigin());
@@ -240,58 +151,4 @@ WorkpiecePoseThread::pose_publish_tf(const tf::Stamped<tf::Pose> &pose)
 	                                       tf_pose_gripper.frame_id,
 	                                       workpiece_frame_id_);
 	tf_publisher->send_transform(stamped_transform);
-}
-
-void
-WorkpiecePoseThread::start_waiting()
-{
-	wait_start_ = Time();
-}
-
-bool
-WorkpiecePoseThread::need_to_wait()
-{
-	return Time() < wait_start_ + wait_time_;
-}
-
-void
-WorkpiecePoseThread::bb_set_busy(bool busy)
-{
-	wp_pose_->set_busy(busy);
-	wp_pose_->write();
-}
-
-float
-WorkpiecePoseThread::cloud_resolution() const
-{
-	return cfg_voxel_grid_leaf_size_;
-}
-
-Eigen::Matrix4f
-pose_to_eigen(const fawkes::tf::Pose &pose)
-{
-	const tf::Matrix3x3 &rot   = pose.getBasis();
-	const tf::Vector3 &  trans = pose.getOrigin();
-	Eigen::Matrix4f      rv(Eigen::Matrix4f::Identity());
-	rv.block<3, 3>(0, 0) << float(rot[0][0]), float(rot[0][1]), float(rot[0][2]), float(rot[1][0]),
-	  float(rot[1][1]), float(rot[1][2]), float(rot[2][0]), float(rot[2][1]), float(rot[2][2]);
-	rv.block<3, 1>(0, 3) << float(trans[X_DIR]), float(trans[Y_DIR]), float(trans[Z_DIR]);
-	return rv;
-}
-
-fawkes::tf::Pose
-eigen_to_pose(const Eigen::Matrix4f &m)
-{
-	fawkes::tf::Pose rv;
-	rv.setOrigin({double(m(0, 3)), double(m(1, 3)), double(m(2, 3))});
-	rv.setBasis({double(m(0, 0)),
-	             double(m(0, 1)),
-	             double(m(0, 2)),
-	             double(m(1, 0)),
-	             double(m(1, 1)),
-	             double(m(1, 2)),
-	             double(m(2, 0)),
-	             double(m(2, 1)),
-	             double(m(2, 2))});
-	return rv;
 }

@@ -37,7 +37,6 @@
 #include <core/threading/thread.h>
 #include <interfaces/Position3DInterface.h>
 #include <interfaces/WorkpiecePoseInterface.h>
-#include <pcl_utils/compatibility.h>
 #include <plugins/ros/aspect/ros.h>
 
 #define CFG_PREFIX "/plugins/workpiece_pose"
@@ -74,70 +73,27 @@ public:
 	virtual void finalize() override;
 
 private:
-	typedef pcl::PointXYZ          Point;
-	typedef pcl::PointCloud<Point> Cloud;
-	typedef Cloud::Ptr             CloudPtr;
-	typedef Cloud::ConstPtr        CloudConstPtr;
-
 	// cfg values
-	std::string       cfg_if_prefix_;
-	std::string       cloud_in_name_;
-	const std::string cloud_out_raw_name_;
-	const std::string cloud_out_trimmed_name_;
-	std::string       cfg_bb_realsense_switch_name_;
-	std::string       workpiece_frame_id_;
-	float             cfg_voxel_grid_leaf_size_;
-
-	CloudPtr trimmed_scene_;
+	std::string cfg_bb_realsense_switch_name_;
+	std::string workpiece_frame_id_;
 
 	// state vars
-	bool           cfg_enable_switch_;
-	bool           cloud_in_registered_;
-	pcl::PCLHeader input_pc_header_;
-
-	// point clouds from pcl_manager
-	fawkes::RefPtr<const Cloud> cloud_in_;
+	bool cfg_enable_switch_;
 
 	// interfaces write
-	fawkes::WorkpiecePoseInterface *wp_pose_;
+	fawkes::WorkpiecePoseInterface *               wp_pose_;
+	fawkes::WorkpiecePoseInterface::WPPoseMessage *msg;
 
 	// interfaces read
 	fawkes::SwitchInterface *realsense_switch_;
-	fawkes::Time             wait_start_;
-	fawkes::Time             wait_time_;
-
-	float cloud_resolution() const;
-	void  cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out);
-
-	void bb_set_busy(bool busy);
-
-	CloudPtr model_;
-	CloudPtr scene_;
-
-	fawkes::Mutex cloud_mutex_;
-	fawkes::Mutex bb_mutex_;
-
-	fawkes::RefPtr<Cloud> cloud_out_raw_;
-	fawkes::RefPtr<Cloud> cloud_out_trimmed_;
-	fawkes::RefPtr<Cloud> cloud_out_model_;
 
 	std::unique_ptr<fawkes::tf::Stamped<fawkes::tf::Pose>> result_pose_;
 
-	bool update_input_cloud();
-
-	bool set_external_initial_tf(fawkes::tf::Stamped<fawkes::tf::Pose> &);
-
-	CloudPtr cloud_trim(CloudPtr in);
-
-	pcl::shared_ptr<std::vector<pcl::PointIndices>> cloud_cluster(CloudPtr in);
-	CloudPtr                                        cloud_voxel_grid(CloudPtr in);
-
 	void pose_write();
-	void record_model();
-
 	void pose_publish_tf(const fawkes::tf::Stamped<fawkes::tf::Pose> &pose);
 	void start_waiting();
 	bool need_to_wait();
+	bool read_xyz();
 
 protected:
 	virtual void
@@ -146,8 +102,5 @@ protected:
 		Thread::run();
 	}
 };
-
-Eigen::Matrix4f  pose_to_eigen(const fawkes::tf::Pose &pose);
-fawkes::tf::Pose eigen_to_pose(const Eigen::Matrix4f &m);
 
 #endif // WORKPIECE_POSE_THREAD_H
