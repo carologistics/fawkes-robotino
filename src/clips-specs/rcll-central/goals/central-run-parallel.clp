@@ -34,10 +34,8 @@
 ; - Automatic: expand goal (since goal trees are static, simple swtich)
 ; - Automatic: if no sub-goal formulated -> FAIL
 ; - Automatic: if all sub-goals rejected -> REJECT
-; - Automatic: SELECT all executable and formulated sub-goals with highest 
-;              priority, SELECT next batch of sub-goals once all
-;              previously SELECTED sub-goals are DISPATCHED|FINISHED|RETRACTED.
-; - User: handle sub-goal expansion, committing, dispatching, evaluating
+; - User: handle sub-goal selection, expansion, committing, dispatching, 
+;         evaluating
 ; - Automatic: when sub-goal is EVALUATED, outcome determines parent goal:
 ;   * REJECTED or FAILED: Reject formulated sub-goals
 ;                         (unless configured otherwise),
@@ -85,39 +83,6 @@
 	=>
 	(modify ?gf (mode DISPATCHED))
 )
-
-(defrule central-run-parallel-subgoals-select
-	(goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)
-	      (mode DISPATCHED) (params $?params))
-	(goal (parent ?id) (id ?sub-id) (type ACHIEVE) (mode FORMULATED)
-	      (priority ?prio) (is-executable TRUE))
-	(not (goal (parent ?id) (type ACHIEVE) (mode FORMULATED)
-	           (priority ?o-prio&:(> ?o-prio ?prio)) (is-executable TRUE)))
-	(not (goal (parent ?id) (type ACHIEVE) (mode SELECTED|EXPANDED|COMMITTED)))
-	(not (goal (parent ?id) (type ACHIEVE)
-	           (outcome ?outcome&:(run-parallel-stop-execution ?params ?outcome))))
-	=>
-	(do-for-all-facts ((?g goal)) (and (eq ?g:parent ?id)
-	                                   (eq ?g:mode FORMULATED)
-	                                   (eq ?g:priority ?prio)
-									   (eq ?g:is-executable TRUE))
-		(modify ?g (mode SELECTED))
-	)
-)
-
-; (defrule central-run-parallel-subgoal-reject-other-subgoal-rejected
-; 	(goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)
-; 	      (mode DISPATCHED) (params $?params))
-; 	?sg <- (goal (parent ?id) (id ?sub-id) (type ACHIEVE) (mode FORMULATED)
-; 	              (priority ?prio))
-; 	(not (goal (parent ?id) (type ACHIEVE) (mode FORMULATED)
-; 	           (priority ?o-prio&:(< ?o-prio ?prio))))
-; 	(not (goal (parent ?id) (type ACHIEVE) (mode SELECTED|EXPANDED|COMMITTED)))
-; 	(goal (parent ?id) (type ACHIEVE)
-; 	      (outcome ?outcome&:(run-parallel-stop-execution ?params ?outcome)))
-; 	=>
-; 	(modify ?sg (mode FINISHED) (outcome REJECTED))
-; )
 
 (defrule central-run-parallel-subgoal-evaluated
 	(goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)
