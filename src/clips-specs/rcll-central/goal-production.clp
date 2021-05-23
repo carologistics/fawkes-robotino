@@ -333,7 +333,7 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class DISCARD)
 	                          (mode FORMULATED)
-	                          (params  wp ?wp&~UNKNOWN mps ?mps mps-side ?mps-side)
+	                          (params  wp ?wp&~UNKNOWN wp-loc ?wp-loc wp-side ?wp-side)
 	                          (meta $? assigned-to ?robot $?)
 	                          (is-executable FALSE))
 
@@ -342,11 +342,11 @@
 	(wm-fact (key refbox team-color) (value ?team-color))
 
 	; MPS-Source CEs
-	(wm-fact (key domain fact mps-type args? m ?mps t ?))
-	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
+	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
 
 	(or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-	         (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?mps-side)))
+	         (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side)))
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
 	=>
 	(printout t "Goal DISCARD executable for " ?robot crlf)
@@ -492,7 +492,7 @@
   (bind ?goal (assert (goal (class DISCARD) 
           (id (sym-cat DISCARD- (gensym*))) (sub-type SIMPLE)
           (verbosity NOISY) (is-executable FALSE) 
-	      (params wp ?wp mps ?cs mps-side ?side);R 
+	      (params wp ?wp wp-loc ?cs wp-side ?side)
   )))
   (return ?goal)
 )
@@ -647,10 +647,10 @@
 (defrule goal-production-fill-in-unknown-wp-discard
 	"Fill in missing workpiece information into the discard goals"
 	?g <- (goal (id ?goal-id) (class DISCARD) (mode FORMULATED) (parent ?parent)
-	            (params wp UNKNOWN mps ?mps mps-side ?mps-side)
+	            (params wp UNKNOWN wp-loc ?mps wp-side ?mps-side)
 	            (meta $? assigned-to ?robot $?))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?mps-side))
 	(goal (parent ?parent) (class INSTRUCT-CS-BUFFER-CAP) (mode DISPATCHED|FINISHED|RETRACTED))
 	=>
-	(modify ?g (params wp ?wp mps ?mps mps-side ?mps-side))
+	(modify ?g (params wp ?wp wp-loc ?mps wp-side ?mps-side))
 )
