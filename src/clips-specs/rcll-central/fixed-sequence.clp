@@ -170,27 +170,32 @@
 		(bind ?wp-loc (multifield-key-value ?params wp-loc))
 		(bind ?wp-side (multifield-key-value ?params wp-side))
 	)
-	(if (eq ?wp-loc nil) then (printout error "Field wp-loc is nil!" crlf))
-
-	(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
-		(if (not (is-holding ?robot ?wp))
-		 then
-			(create$ ; only last statement of if is returned
-				(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
-					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
-				)
-				(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps ?target-side
-					(plan-assert-action wp-put ?robot ?wp ?target-mps)
+	(if (eq ?wp-loc nil) 
+		then 
+			(printout error "The fields wp-loc and wp-side must either be set manually or there must be a wp-at fact!" crlf)
+		else
+			(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
+				(if (not (is-holding ?robot ?wp))
+				then
+					(create$ ; only last statement of if is returned
+						(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
+							(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
+						)
+						(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps ?target-side
+							(plan-assert-action wp-put ?robot ?wp ?target-mps)
+						)
+					)
+				else
+					(plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps ?target-side
+						(plan-assert-action wp-put ?robot ?wp ?target-mps)
+					)
 				)
 			)
-		 else
-			(plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps ?target-side
-				(plan-assert-action wp-put ?robot ?wp ?target-mps)
-			)
+			(modify ?g (mode EXPANDED))
 		)
 	)
-	(modify ?g (mode EXPANDED))
-)
+
+	
 
 
 (defrule goal-expander-instruct-cs-buffer-cap
