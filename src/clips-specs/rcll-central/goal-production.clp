@@ -646,7 +646,7 @@
 	)
 	(if (eq ?comp C0)
 		then
-		goal-production-assert-c0 ?root-id ?order-id ?wp-for-order ?cs ?col-cap ?col-base)
+		(goal-production-assert-c0 ?root-id ?order-id ?wp-for-order ?cs ?col-cap ?col-base)
 	)
 )
 
