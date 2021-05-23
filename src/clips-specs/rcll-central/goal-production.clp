@@ -628,7 +628,7 @@
   (wm-fact (key domain fact mps-type args? m ?cs t CS))
   (not (wm-fact (key order meta wp-for-order args? wp ?something ord O1)))
 =>
-  (bind ?wp-for-order (sym-cat wp-O ?order-id))
+  (bind ?wp-for-order (sym-cat wp- ?order-id))
   (assert (domain-object (name ?wp-for-order) (type workpiece))
   		  (domain-fact (name wp-unused) (param-values ?wp-for-order))
 		  (wm-fact (key domain fact wp-base-color args? wp ?wp-for-order col BASE_NONE) (type BOOL) (value TRUE))
