@@ -41,7 +41,7 @@
 	(not (goal (type ACHIEVE) (parent ?id)))
 	=>
 	(modify ?gf (mode FINISHED) (outcome FAILED)
-					(message (str-cat "No sub-goal for RUN-ONE goal '" ?id "'")))
+	            (message (str-cat "No sub-goal for RUN-ONE goal '" ?id "'")))
 )
 
 (defrule central-run-one-goal-commit
@@ -100,8 +100,8 @@
 	             (type ACHIEVE) (mode RETRACTED) (outcome FAILED))
 	=>
 	(modify ?gf (mode FINISHED) (outcome FAILED) (committed-to nil)
-					(error SUB-GOAL-FAILED)
-					(message (str-cat "Sub-goal '" ?sub-goal "' of RUN-ONE goal '" ?id "' has failed")))
+	            (error SUB-GOAL-FAILED)
+	            (message (str-cat "Sub-goal '" ?sub-goal "' of RUN-ONE goal '" ?id "' has failed")))
 )
 
 (defrule central-run-one-goal-subgoal-completed-resources-clear
@@ -116,7 +116,7 @@
 (defrule central-run-one-set-to-expanded
 	"when a central-run-parall goal is selected it is automatically expanded"
 	?gf <- (goal (id ?id) (type ACHIEVE) 
-                 (sub-type CENTRAL-RUN-ONE-OF-SUBGOALS) (mode SELECTED))
+	             (sub-type CENTRAL-RUN-ONE-OF-SUBGOALS) (mode SELECTED))
 	=>
 	(modify ?gf (mode EXPANDED))
 )

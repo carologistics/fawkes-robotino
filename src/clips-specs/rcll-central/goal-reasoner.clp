@@ -191,7 +191,7 @@
   (not (and (wm-fact (key central agent robot-waiting
                       args? r ?o-robot&:(> (str-compare ?robot ?o-robot) 0)))
             (not (goal (meta $? assigned-to ?o-robot $?)))))
-=>
+  =>
   (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
   (modify ?g (mode SELECTED))
 )
@@ -246,7 +246,7 @@
               (sub-type ?sub-type&:(requires-subgoal ?sub-type)) (mode SELECTED)
               (verbosity ?v))
   ?g <- (goal (id ?goal-id) (parent ?parent-id) (mode FORMULATED))
-=>
+  =>
   (printout (log-debug ?v) "Goal " ?goal-id " EXPANDED" crlf)
   (modify ?p (mode EXPANDED))
 )
