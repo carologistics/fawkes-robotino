@@ -348,3 +348,10 @@
 =>
   (printout error ?goal " of class " ?class " has no sub-type" crlf)
 )
+
+(defrule goal-reasoner-clean-goals-separated-from-parent
+	?g <- (goal (parent ?pid&~nil))
+	(not (goal (id ?pid)))
+	=>
+	(retract ?g)
+)
