@@ -621,7 +621,7 @@
   ""
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
-  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id&:(eq ?order-id O1) com ?comp))
   (wm-fact (key domain fact order-base-color args? ord ?order-id col ?col-base))
   (wm-fact (key domain fact order-cap-color  args? ord ?order-id col ?col-cap))
   (wm-fact (key domain fact cs-color args? m ?cs col ?col-cap))
