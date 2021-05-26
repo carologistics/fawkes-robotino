@@ -15,7 +15,7 @@ plugins/yolo_opencv:
   # (opencv detects what net you are using based on the config you define)
   framework: ""
   # Threshold when to detect
-  confThreshold: 0.5
+  confThreshold: 0.7
   nmsThreshold: 0.4
   # scaling factor
   scale: 0.00392
