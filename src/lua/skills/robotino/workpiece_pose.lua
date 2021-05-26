@@ -1,0 +1,8 @@
+-- get_product_from gives shelf position left middle right
+-- detect object gives all objects with classId, pixel pos and confidences
+-- 
+-- TODO in workpiece_pose skill:
+-- determine left, middle, right pixel pos (currently only for shelf) (known from argument)
+-- then send to realsense plugin
+-- realsense writes XYZ from pixel to Realsense2 interface translation
+-- workpiece pose plugin gives tf frame from xyz
