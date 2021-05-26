@@ -2,6 +2,12 @@
 %TAG ! tag:fawkesrobotics.org,cfg/
 ---
 fawkes/meta_plugins:
+  m-yolo:
+    - yolo_opencv
+    - navgraph
+    - navgraph-generator
+    - navgraph-generator-mps
+    - skiller
   m-bare:
     - bbsync
     - static-transforms
