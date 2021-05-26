@@ -25,6 +25,7 @@
   (not (domain-loaded))
 =>
   (parse-pddl-domain (path-resolve "rcll/domain.pddl"))
+  (assert (skiller-control))
   (assert (domain-loaded))
 )
 
