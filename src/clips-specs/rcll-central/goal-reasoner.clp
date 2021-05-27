@@ -211,7 +211,7 @@
 (defrule goal-reasoner-propagate-executability
   "There is an executable goal for a waiting robot or central, propagate until
   we hit the root or a goal that is not FORMULATED."
-  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  (declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
   (or 
     ?g <- (goal (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE)
                 (meta $? assigned-to central $?) (parent ?pid))
@@ -254,6 +254,7 @@
 (defrule goal-reasoner-select-from-dispatched-children
   "Select the goal of highest priority of a run parallel if it is dispatched and 
   is executable"
+  (declare (salience ?*SALIENCE-GOAL-SELECT*))
   (goal (mode DISPATCHED) (class PRODUCTION-ROOT))
   (goal (id ?parent1) (mode DISPATCHED) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL) (priority ?p1))
   ?g <- (goal (id ?id) (parent ?parent1) (is-executable TRUE) (mode FORMULATED) (priority ?pc1))
@@ -264,6 +265,7 @@
       (goal (id ?c1) (parent ?parent2) (mode FORMULATED) (is-executable TRUE))
     )
   )
+  (not (goal (mode SELECTED|EXPANDED|COMMITTED) (type ACHIEVE)))
   =>
   (modify ?g (mode SELECTED))
 )
@@ -347,4 +349,11 @@
   (goal (id ?goal) (class ?class) (sub-type nil))
 =>
   (printout error ?goal " of class " ?class " has no sub-type" crlf)
+)
+
+(defrule goal-reasoner-clean-goals-separated-from-parent
+	?g <- (goal (parent ?pid&~nil))
+	(not (goal (id ?pid)))
+	=>
+	(retract ?g)
 )
