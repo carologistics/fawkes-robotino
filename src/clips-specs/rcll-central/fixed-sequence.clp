@@ -208,8 +208,8 @@
 		(bind ?wp-loc (multifield-key-value ?params wp-loc))
 		(bind ?wp-side (multifield-key-value ?params wp-side))
 	)
-	(if (eq ?wp-loc nil) 
-		then 
+	(if (eq ?wp-loc nil)
+		then
 			(printout error "The fields wp-loc and wp-side must either be set manually or there must be a wp-at fact!" crlf)
 		else
 			(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
@@ -233,8 +233,48 @@
 		)
 	)
 
-	
 
+
+(defrule goal-expander-pay-for-rings-with-base
+	;?p <- (goal (mode DISPATCHED) (id ?parent))
+	?g <- (goal (id ?goal-id) (class ?class& PAY-FOR-RINGS-WITH-BASE)
+	                          (mode SELECTED) (parent ?parent)
+	                          (params  wp ?wp
+	                                   wp-loc ?wp-loc
+	                                   wp-side ?wp-side
+	                                   target-mps ?target-mps
+	                                   target-side ?target-side
+	                                   $?)
+	                          (meta $? assigned-to ?robot $?))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	(wm-fact (key domain fact rs-inc args? summand ?rs-before
+	                                  sum ?rs-after))
+	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before))
+	=>
+	(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
+		(if (not (is-holding ?robot ?wp))
+		 then
+			(create$ ; only last statement of if is returned
+				(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
+					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
+				)
+				(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps ?target-side
+					(plan-assert-action wp-put-slide-cc ?robot
+					 ?wp ?target-mps ?rs-before ?rs-after)
+				)
+			)
+		 else
+			(plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps ?target-side
+				(plan-assert-action wp-put ?robot ?wp ?target-mps)
+			)
+		)
+	)
+	(modify ?g (mode EXPANDED))
+)
+
+
+
+; ----------------------- MPS Instruction GOALS -------------------------------
 
 (defrule goal-expander-instruct-cs-buffer-cap
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
@@ -331,3 +371,24 @@
 	(modify ?g (mode EXPANDED))
 )
 
+(defrule goal-expander-instruct-rs-mount-ring
+	?g <- (goal (id ?goal-id) (class INSTRUCT-RS-MOUNT-RING) (mode SELECTED)
+	            (params target-mps ?mps
+	                    ring-color ?ring-color)
+	            (meta $? assigned-to ?robot $?))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
+	(wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring-color rn ?req))
+	(wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before))
+	(wm-fact (key domain fact rs-sub args? minuend ?rs-before subtrahend
+	                                       ?req difference ?rs-after))
+	(wm-fact (key wp meta next-step args? wp ?wp) (value ?step&RING1|RING2|RING3))
+	=>
+	(plan-assert-sequential INSTRUCT-TO-MOUNT-RING-PLAN ?goal-id ?robot
+		(plan-assert-action prepare-rs
+	                         ?mps ?ring-color ?rs-before ?rs-after ?req )
+		(plan-assert-action
+	         (sym-cat rs-mount-ring (sub-string 5 5 ?step) )
+	         ?mps ?wp ?ring-color ?rs-before ?rs-after ?req )
+	)
+	(modify ?g (mode EXPANDED))
+)
