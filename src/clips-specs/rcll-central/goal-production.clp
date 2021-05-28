@@ -43,6 +43,11 @@
 	)
 )
 
+(deffunction is-goal-running (?mode)
+	(return (or (eq ?mode SELECTED) (eq ?mode EXPANDED)
+	            (eq ?mode COMMITTED) (eq ?mode DISPATCHED)))
+)
+
 (defrule goal-production-navgraph-compute-wait-positions-finished
   "Add the waiting points to the domain once their generation is finished."
   (NavGraphWithMPSGeneratorInterface (id "/navgraph-generator-mps") (final TRUE))
@@ -388,6 +393,143 @@
 	(modify ?g (is-executable TRUE))
 )
 
+
+(defrule goal-production-create-get-base-to-fill-rs
+"Fill the ring station with a fresh base from the base station."
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class PAY-FOR-RINGS-WITH-BASE)
+	                          (mode FORMULATED)
+	                          (params  wp ?wp
+	                                   wp-loc ?wp-loc
+	                                   wp-side ?wp-side
+	                                   target-mps ?target-mps
+	                                   target-side ?target-side
+	                                   $?)
+	                          (meta $? assigned-to ?robot $?)
+	                          (is-executable FALSE))
+
+	(wm-fact (key refbox team-color) (value ?team-color))
+	;MPS-RS CEs (a cap carrier can be used to fill a RS later)
+	(wm-fact (key domain fact mps-type args? m ?target-mps t RS))
+	(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
+	;check ring payment - prevention of overwilling rs
+	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before&ZERO|ONE|TWO))
+	;check that not to may robots try to fill the rs at the same time
+	(or (not (goal (class PAY-FOR-RINGS-WITH-BASE) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	               (params $? target-mps ?target-mps $?)))
+	    (and (goal (class PAY-FOR-RINGS-WITH-BASE) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	               (params $? target-mps ?target-mps $?))
+	         (test (< (+ (length$ (find-all-facts ((?other-goal goal))
+	                     (and (eq ?other-goal:class PAY-FOR-RINGS-WITH-BASE)
+	                              (is-goal-running ?other-goal:mode)
+	                          (member$ ?target-mps ?other-goal:params))))
+	                     (sym-to-int ?rs-before)) 3))
+	   )
+	)
+	; MPS-Source CEs
+	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
+	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
+
+	(or (and ; Either the workpiece needs to picked up...
+	         (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+	             ; ... and it is a fresh base located in a base station
+	         (or (and (wm-fact (key domain fact mps-type args? m ?wp-loc t BS))
+	                  (wm-fact (key domain fact wp-unused args? wp ?wp))
+	                  (wm-fact (key domain fact wp-base-color
+	                            args? wp ?wp col BASE_NONE)))
+	             ; ... or is already at some machine
+	             (wm-fact (key domain fact wp-at
+	                       args? wp ?wp m ?wp-loc side ?wp-side))
+	         )
+	    )
+	    ; or the workpiece is already being held
+	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+	=>
+	(printout t "Goal " GET-BASE-TO-FILL-RS " formulated" crlf)
+	(modify ?g (is-executable TRUE))
+)
+
+
+(defrule goal-production-mount-ring-executable
+" Bring a product to a ring station to mount a ring on it.
+The workpiece remains in the output of the used ring station after
+  successfully finishing this goal.
+"
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class MOUNT-RING) ;TODO MONT-FIRST/Next-RING?
+	                          (mode FORMULATED)
+	                          (params  wp ?wp
+	                                   wp-loc ?wp-loc
+	                                   wp-side ?wp-side
+	                                   target-mps ?target-mps
+	                                   target-side ?target-side
+	                                   $?)
+	                          (meta $? assigned-to ?robot $?)
+	                          (is-executable FALSE))
+
+	; Robot CEs
+	(wm-fact (key refbox team-color) (value ?team-color))
+
+	; MPS-RS CEs
+	(wm-fact (key domain fact mps-type args?       m ?target-mps t RS))
+	(wm-fact (key domain fact mps-state args?      m ?target-mps s ~BROKEN))
+	(wm-fact (key domain fact mps-team args?       m ?target-mps col ?team-color))
+	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?bases-filled))
+	; WP CEs
+	(wm-fact (key wp meta next-step args? wp ?wp) (value ?ring))
+	(wm-fact (key domain fact ?wp-ring-color&:(eq ?wp-ring-color
+	         (sym-cat wp-ring (sub-string 5 5 ?ring) -color))
+	          args? wp ?wp col RING_NONE ))
+	; Order CEs
+	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+	(wm-fact (key domain fact ?order-ring-color&:(eq ?order-ring-color
+	         (sym-cat order-ring (sub-string 5 5 ?ring) -color))
+	          args? ord ?order col ?ring-color ))
+	(wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C1|C2|C3))
+	; Ring spec & costs
+	(wm-fact (key domain fact rs-ring-spec
+	          args? m ?target-mps r ?ring-color&~RING_NONE rn ?bases-needed))
+	(wm-fact (key domain fact rs-sub args? minuend ?bases-filled
+	                                  subtrahend ?bases-needed
+	                                  difference ?bases-remain&ZERO|ONE|TWO|THREE))
+
+	(not (wm-fact (key domain fact wp-at args? wp ?wp-loc m ?target-mps side INPUT)))
+	(wm-fact (key domain fact mps-type args? m ?other-rs&~?target-mps t RS))
+	(wm-fact (key domain fact mps-team args? m ?other-rs col ?team-color))
+	;TODO what does this mean for the goal dependencies?
+	; There is at least one other rs side, except for the target input, that
+	; is free (because occupying all 4 sides at once can cause deadlocks)
+	(or (wm-fact (key domain fact mps-side-free args? m ?target-mps side OUTPUT))
+	 (wm-fact (key domain fact mps-side-free args? m ?other-rs side ?any-side)))
+
+	; MPS-Source CEs
+	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
+	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
+
+	(or (and ; Either the workpiece needs to picked up...
+	         (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+	             ; ... and it is a fresh base located in a base station
+	         (or (and (wm-fact (key domain fact mps-type args? m ?wp-loc t BS))
+	                  (wm-fact (key domain fact wp-unused args? wp ?wp))
+	                  (wm-fact (key domain fact wp-base-color
+	                            args? wp ?wp col BASE_NONE)))
+	             ; ... or is already at some machine
+	             (wm-fact (key domain fact wp-at
+	                       args? wp ?wp m ?wp-loc side ?wp-side))
+	         )
+	    )
+	    ; or the workpiece is already being held
+	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+	=>
+	;If not ring Kosten bezahlt
+	; (plan-assert-action fill-rs )
+	(printout t "Goal MOUNT-RING executable for " ?robot crlf)
+	(modify ?g (is-executable TRUE))
+)
+
+
+
+
 ; ----------------------- MPS Instruction GOALS -------------------------------
 
 (defrule goal-production-instruct-cs-buffer-cap-executable
@@ -493,6 +635,46 @@
 	         (value ?begin&:(< ?begin (nth$ 1 ?game-time))))
 	=>
 	(printout t "Goal INSTRUCT-DS-DELIVER executable" crlf)
+	(modify ?g (is-executable TRUE))
+)
+
+
+(defrule goal-production-instruct-rs-mount-ring-executable
+" Instruct ring station to mount a ring on the product. "
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (class INSTRUCT-RS-MOUNT-RING) (sub-type SIMPLE)
+	            (mode FORMULATED)
+	            (params target-mps ?mps
+	                    ring-color ?ring-color
+	             )
+	             (is-executable FALSE))
+
+	(wm-fact (key refbox team-color) (value ?team-color))
+	; MPS CEs
+	(wm-fact (key domain fact mps-type args? m ?mps t RS))
+	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+	(wm-fact (key domain fact rs-filled-with args? m ?mps n ?bases-filled))
+	; Ring Cost
+	(wm-fact (key domain fact rs-ring-spec
+            args? m ?mps r ?ring-color&~RING_NONE rn ?bases-needed))
+	(wm-fact (key domain fact rs-sub args? minuend ?bases-filled
+                                         subtrahend ?bases-needed
+                                         difference ?bases-remain&ZERO|ONE|TWO|THREE))
+
+	; WP CEs
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
+	(wm-fact (key wp meta next-step args? wp ?wp) (value ?ring))
+	(wm-fact (key domain fact ?wp-ring-color&:(eq ?wp-ring-color
+	         (sym-cat wp-ring (sub-string 5 5 ?ring) -color))
+	          args? wp ?wp col RING_NONE ))
+	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+	(wm-fact (key domain fact ?order-ring-color&:(eq ?order-ring-color
+	         (sym-cat order-ring (sub-string 5 5 ?ring) -color))
+	          args? ord ?order col ?ring-color ))
+	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side OUTPUT)))
+	=>
+	(printout t "Goal INSTRUCT-RS-MOUNT-RING executable" crlf)
 	(modify ?g (is-executable TRUE))
 )
 
