@@ -30,6 +30,7 @@ depends_interfaces = {
    {v = "yolo_interface_write", type = "YoloOpenCVInterface", id = "YoloOpenCVwrite"},
    {v = "realsense_control", type = "CameraControlInterface", id = "realsense2_cam"},
    {v = "realsense_switch", type = "SwitchInterface", id = "realsense2"},
+   {v = "realsense_busy", type = "Realsense2Interface", id = "BoundingBoxInterface"},
 }
 
 documentation      = [==[
@@ -45,7 +46,10 @@ skillenv.skill_module(_M)
 -- Constants
 
 function has_writer()
-   return yolo_interface_write:has_writer() and realsense_control:has_writer() and realsense_switch:has_writer()
+   return (yolo_interface_write:has_writer() and 
+           realsense_control:has_writer() and 
+           realsense_switch:has_writer() and 
+           realsense_busy:has_writer())
 end
 
 function checkid(self)
@@ -57,10 +61,10 @@ function realsense_on()
 end
 
 function new_img(self)
-   return self.fsm.vars.prev_im_name ~= realsense_control:image_name()
+   return self.fsm.vars.camera_if_msgid == realsense_control:msgid()
 end
 
-fsm:define_states{ export_to=_M, closure={has_writer=has_writer},
+fsm:define_states{ export_to=_M, closure={has_writer=has_writer, new_img=new_img, checkid=checkid},
    {"INIT", JumpState},
    {"TAKE_PICTURE", JumpState},
    {"DETECT", JumpState},
@@ -71,7 +75,7 @@ fsm:add_transitions{
    {"INIT", "FAILED", cond="not has_writer()", desc="YoloOpenCV or Realsense Interface has no writer"},
    {"INIT", "TAKE_PICTURE", cond=realsense_on, desc="Taking Picture"},
    {"TAKE_PICTURE", "DETECT", cond="new_img(self)", desc="Detect objects"},
-   {"DETECT", "DETECTED", cond=checkid, desc="Detected objects"},
+   {"DETECT", "DETECTED", cond="checkid(self)", desc="Detected objects"},
    {"DETECTED", "FAILED", cond="not vars.detection_successful", desc="vars.feedback_error_msg"},
    {"DETECTED", "FINAL", cond="vars.detection_successful", desc="Detection successful"},
 }
@@ -79,12 +83,15 @@ fsm:add_transitions{
 function INIT:init()
    realsense_switch:msgq_enqueue(realsense_switch.EnableSwitchMessage:new())
    self.fsm.vars.prev_img_name = realsense_control:image_name()
+   self.fsm.vars.camera_if_msgid = nil
+   self.fsm.vars.msgid = nil
 end
 
 function TAKE_PICTURE:init()
    local picture_msg = realsense_control.SaveImageMessage:new()
-   picture_msg.set_image_name(tostring(self.fsm.vars.classId))
+   picture_msg:set_image_name(tostring(self.fsm.vars.classId))
    realsense_control:msgq_enqueue(picture_msg)
+   self.fsm.vars.camera_if_msgid = picture_msg:id()
 end
 
 function DETECT:init()
@@ -101,14 +108,13 @@ function DETECTED:init()
    self.fsm.vars.objects = {}
    while (yolo_interface_write:classId(1024 - index) ~= 1024) do
       if (yolo_interface_write:is_detection_successful() and
-         yolo_interface_write():classId(1024 - index) == self.fsm.vars.classId ) then
+         yolo_interface_write:classId(1024 - index) == self.fsm.vars.classId ) then
          self.fsm.vars.objects[object_nr] = {c_x = yolo_interface_write:centerX(1024 - index),
                                              c_y = yolo_interface_write:centerY(1024 - index),
                                              h = yolo_interface_write:height(1024 - index),
                                              w = yolo_interface_write:width(1024 - index),
                                              conf = yolo_interface_write:confidence(1024 - index),
                                              class_id = yolo_interface_write:classId(1024 - index)}
-       
       else
          self.fsm.vars.detection_successful = false
          self.fsm.vars.feedback_error_msg = yolo_interface_write:error()
