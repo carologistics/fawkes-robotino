@@ -42,7 +42,6 @@ using namespace fawkes;
 WorkpiecePoseThread::WorkpiecePoseThread()
 : Thread("WorkpiecePoseThread", Thread::OPMODE_WAITFORWAKEUP),
   BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PROCESS),
-  ConfigurationChangeHandler(CFG_PREFIX),
   fawkes::TransformAspect(fawkes::TransformAspect::BOTH, "workpiece_pose"),
   realsense_switch_(nullptr)
 {
@@ -51,8 +50,6 @@ WorkpiecePoseThread::WorkpiecePoseThread()
 void
 WorkpiecePoseThread::init()
 {
-	config->add_change_handler(this);
-
 	wp_pose_ = blackboard->open_for_writing<WorkpiecePoseInterface>("WorkpiecePose");
 
 	wp_pose_->write();
