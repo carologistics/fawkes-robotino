@@ -1,0 +1,10 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/webview
+---
+plugins/workpiece_pose:
+  # sets the switch interface the plugin is waiting for before
+  # starting the plugin
+  realsense_switch: "realsense2"
+  switch_default: false
