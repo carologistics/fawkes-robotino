@@ -39,8 +39,7 @@ public:
    */
 	WorkpiecePosePlugin(Configuration *config) : Plugin(config)
 	{
-		WorkpiecePoseThread *pose_thread = new WorkpiecePoseThread();
-		thread_list.push_back(pose_thread);
+		thread_list.push_back(new WorkpiecePoseThread());
 	}
 };
 
