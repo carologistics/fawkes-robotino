@@ -33,7 +33,8 @@ SUBDIRS	= clips-motor-switch \
 		skiller_motor_state \
 		protoboard-rcll \
 		asp-planner \
-    yolo_opencv
+    yolo_opencv \
+    workpiece_pose
 
 
 include $(BUILDSYSDIR)/rules.mk
