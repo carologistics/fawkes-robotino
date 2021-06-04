@@ -30,7 +30,7 @@ PLUGINS_all = $(PLUGINDIR)/marker-writer.$(SOEXT)
 ifeq ($(HAVE_ROS)$(HAVE_CPP11),11)
   ifeq ($(call ros-have-pkg,visualization_msgs),1)
     CFLAGS += $(CFLAGS_CPP11) \
-              $(CFLAGS_ROS) $(call ros-pkg-cflags,visualization_msgs)
+              $(CFLAGS_ROS) $(call ros-pkg-cflags,visualization_msgs) -Wno-free-nonheap-object
     LDFLAGS += $(LDFLAGS_ROS) $(call ros-pkg-lflags,visualization_msgs)
 
     PLUGINS_build = $(PLUGINS_all)
