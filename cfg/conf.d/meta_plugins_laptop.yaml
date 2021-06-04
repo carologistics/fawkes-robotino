@@ -4,10 +4,19 @@
 fawkes/meta_plugins:
   m-yolo:
     - yolo_opencv
+    - ros
     - navgraph
     - navgraph-generator
     - navgraph-generator-mps
     - skiller
+    - skiller-rest-api
+    - skiller_motor_state
+    - m-fv
+    - fvretriever
+    - m-realsense
+    - static-transforms
+    - ros-tf
+    - workpiece_pose
   m-bare:
     - bbsync
     - static-transforms
@@ -18,7 +27,7 @@ fawkes/meta_plugins:
   m-fv-vision:
     - m-bare
     - m-fv
-    - tag_vision
+    # - tag_vision
     - fvretriever
   m-realsense:
     - realsense2
