@@ -28,10 +28,8 @@
 #include <aspect/clock.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
-#include <aspect/pointcloud.h>
 #include <aspect/syncpoint_manager.h>
 #include <aspect/tf.h>
-#include <config/change_handler.h>
 #include <core/threading/mutex.h>
 #include <core/threading/mutex_locker.h>
 #include <core/threading/thread.h>
@@ -55,7 +53,6 @@ class WorkpiecePoseThread : public fawkes::Thread,
                             public fawkes::BlockedTimingAspect,
                             public fawkes::LoggingAspect,
                             public fawkes::ConfigurableAspect,
-                            public fawkes::ConfigurationChangeHandler,
                             public fawkes::BlackBoardAspect,
                             public fawkes::ROSAspect,
                             public fawkes::TransformAspect,
@@ -63,8 +60,6 @@ class WorkpiecePoseThread : public fawkes::Thread,
                             public fawkes::ClockAspect
 {
 public:
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
 	WorkpiecePoseThread();
 
 	virtual void init() override;

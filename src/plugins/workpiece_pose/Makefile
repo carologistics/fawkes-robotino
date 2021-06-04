@@ -23,7 +23,7 @@ include $(BUILDSYSDIR)/boost.mk
 include $(BUILDSYSDIR)/ros.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 
-REQUIRED_PCL_LIBS = filters kdtree recognition
+HAVE_BULLET_VERSION = $(if $(shell $(PKGCONFIG) --atleast-version=2.82 'bullet'; echo $${?/1/}),1,0)
 
 PRESUBDIRS = interfaces
 
@@ -35,13 +35,17 @@ LIBS_workpiece_pose = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
 OBJS_workpiece_pose = workpiece_pose_plugin.o workpiece_pose_thread.o
 
 OBJS_all    = $(OBJS_workpiece_pose)
-PLUGINS_all = $(PLUGINDIR)/workpiece-pose.$(SOEXT)
+PLUGINS_all = $(PLUGINDIR)/workpiece_pose.$(SOEXT)
 
-CFLAGS  += $(CFLAGS_TF) $(CFLAGS_ROS) $(CFLAGS_workpiece_pose)
+CFLAGS  += $(CFLAGS_TF) $(CFLAGS_ROS) $(CFLAGS_workpiece_pose) -Wno-maybe-uninitialized
 LDFLAGS += $(LDFLAGS_TF)
 
 ifeq ($(HAVE_ROS),1)
+  ifeq ($(HAVE_BULLET_VERSION),1)
     PLUGINS_build = $(PLUGINS_all)
+	else
+    WARN_TARGETS += warning_bullet
+  endif
 else
   WARN_TARGETS += warning_ros
 endif
@@ -50,7 +54,9 @@ ifeq ($(OBJSSUBMAKE),1)
   ifneq ($(WARN_TARGETS),)
 all: $(WARN_TARGETS)
   endif
-.PHONY: warning_ros
+.PHONY: warning_bullet warning_ros
+warning_bullet:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting workpiece_pose Plugin$(TNORMAL) (bullet version < 2.82)"
 warning_ros:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting workpiece_pose Plugin$(TNORMAL) (ROS not found)"
 endif
