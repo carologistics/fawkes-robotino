@@ -103,7 +103,7 @@ end
 
 function DETECTED:init()
    local detect_feedback = nil
-   local object_nr = 1
+   local object_nr = 0
    local index = 1024
    self.fsm.vars.objects = {}
    while (yolo_interface_write:classId(1024 - index) ~= 1024) do
@@ -115,6 +115,7 @@ function DETECTED:init()
                                              w = yolo_interface_write:width(1024 - index),
                                              conf = yolo_interface_write:confidence(1024 - index),
                                              class_id = yolo_interface_write:classId(1024 - index)}
+         object_nr = object_nr + 1
       else
          self.fsm.vars.detection_successful = false
          self.fsm.vars.feedback_error_msg = yolo_interface_write:error()
