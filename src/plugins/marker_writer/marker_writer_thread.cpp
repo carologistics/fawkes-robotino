@@ -75,7 +75,6 @@ MarkerWriterThread::finalize()
 	}
 	pub_->shutdown();
 	delete pub_;
-	delete &pos_ifs_;
 }
 
 void
