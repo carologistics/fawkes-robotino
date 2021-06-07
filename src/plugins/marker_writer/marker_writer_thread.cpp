@@ -75,9 +75,6 @@ MarkerWriterThread::finalize()
 	}
 	pub_->shutdown();
 	delete pub_;
-	for (Position3DInterface *pos_if : pos_ifs_) {
-		delete pos_if;
-	}
 }
 
 void
