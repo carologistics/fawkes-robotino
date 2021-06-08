@@ -415,14 +415,17 @@
 	;check ring payment - prevention of overwilling rs
 	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before&ZERO|ONE|TWO))
 	;check that not to may robots try to fill the rs at the same time
-	(or (not (goal (class PAY-FOR-RINGS-WITH-BASE) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	(or (not (goal (class PAY-FOR-RINGS-WITH-BASE| PAY-RING-WITH-CAP-CARRIER)
+	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	               (params $? target-mps ?target-mps $?)))
-	    (and (goal (class PAY-FOR-RINGS-WITH-BASE) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	    (and (goal (class PAY-FOR-RINGS-WITH-BASE| PAY-RING-WITH-CAP-CARRIER)
+	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	               (params $? target-mps ?target-mps $?))
 	         (test (< (+ (length$ (find-all-facts ((?other-goal goal))
-	                     (and (eq ?other-goal:class PAY-FOR-RINGS-WITH-BASE)
+	                         (and (or (eq ?other-goal:class PAY-FOR-RINGS-WITH-BASE)
+	                                  (eq ?other-goal:class PAY-RING-WITH-CAP-CARRIER))
 	                              (is-goal-running ?other-goal:mode)
-	                          (member$ ?target-mps ?other-goal:params))))
+	                              (member$ ?target-mps ?other-goal:params))))
 	                     (sym-to-int ?rs-before)) 3))
 	   )
 	)
@@ -446,6 +449,69 @@
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
 	=>
 	(printout t "Goal " GET-BASE-TO-FILL-RS " formulated" crlf)
+	(modify ?g (is-executable TRUE))
+)
+
+(defrule goal-production-create-get-cap-carrier-to-fill-rs
+"Fill the ring station with a cap carrier located at the output of a cap station."
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class PAY-RING-WITH-CAP-CARRIER)
+	                          (mode FORMULATED)
+	                          (params  wp ?wp
+	                                   wp-loc ?wp-loc
+	                                   wp-side ?wp-side
+	                                   target-mps ?target-mps
+	                                   target-side ?target-side
+	                                   $?)
+	                          (meta $? assigned-to ?robot $?)
+	                          (is-executable FALSE))
+
+	(wm-fact (key refbox team-color) (value ?team-color))
+	;MPS-RS CEs (a cap carrier can be used to fill a RS later)
+	(wm-fact (key domain fact mps-type args? m ?target-mps t RS))
+	(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
+	;check ring payment - prevention of overwilling rs
+	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before&ZERO|ONE|TWO))
+	;check that not to may robots try to fill the rs at the same time
+	(or (not (goal (class PAY-FOR-RINGS-WITH-BASE| PAY-RING-WITH-CAP-CARRIER)
+	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	               (params $? target-mps ?target-mps $?)))
+	    (and (goal (class PAY-FOR-RINGS-WITH-BASE|PAY-RING-WITH-CAP-CARRIER)
+	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	               (params $? target-mps ?target-mps $?))
+	         (test (< (+ (length$ (find-all-facts ((?other-goal goal))
+	                               (and (or (eq ?other-goal:class PAY-FOR-RINGS-WITH-BASE)
+	                                        (eq ?other-goal:class PAY-RING-WITH-CAP-CARRIER))
+	                                    (is-goal-running ?other-goal:mode)
+	                                    (member$ ?target-mps ?other-goal:params)
+	                               )))
+	                     (sym-to-int ?rs-before)) 3))
+	                            ;|PAY-RING-WITH-CAP-CARRIER)
+	   )
+	)
+	; MPS-Source CEs
+	(wm-fact (key domain fact mps-type args? m ?wp-loc t CS))
+	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
+
+	;check wp has no cap and is at the output of the CS
+	(wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+	(or (and ; Either the workpiece needs to picked up...
+	         (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+	             ; ... and it is a fresh base located in a base station
+	         (or (and (wm-fact (key domain fact mps-type args? m ?wp-loc t CS))
+	                  (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side OUTPUT))
+	                  (wm-fact (key domain fact wp-unused args? wp ?wp))
+	                  (wm-fact (key domain fact wp-base-color
+	                            args? wp ?wp col BASE_NONE)))
+	             ; ... or is already at some machine
+	             (wm-fact (key domain fact wp-at
+	                       args? wp ?wp m ?wp-loc side ?wp-side))
+	         )
+	    )
+	    ; or the workpiece is already being held
+	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+	=>
+	(printout t "Goal "  PAY-RING-WITH-CAP-CARRIER " formulated" crlf)
 	(modify ?g (is-executable TRUE))
 )
 
