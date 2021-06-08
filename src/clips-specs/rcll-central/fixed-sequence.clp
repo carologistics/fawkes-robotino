@@ -171,7 +171,9 @@
 
 (defrule goal-expander-transport-goals
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
-	?g <- (goal (id ?goal-id) (class ?class&MOUNT-CAP|MOUNT-RING|DELIVER)
+	?g <- (goal (id ?goal-id) (class ?class&MOUNT-CAP|
+	                                       MOUNT-RING|
+	                                       DELIVER)
 	                          (mode SELECTED) (parent ?parent)
 	                          (params  wp ?wp
 	                                   target-mps ?target-mps
@@ -217,6 +219,45 @@
 (defrule goal-expander-pay-for-rings-with-base
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class ?class& PAY-FOR-RINGS-WITH-BASE)
+	                          (mode SELECTED) (parent ?parent)
+	                          (params  wp ?wp
+	                                   wp-loc ?wp-loc
+	                                   wp-side ?wp-side
+	                                   target-mps ?target-mps
+	                                   target-side ?target-side
+	                                   $?)
+	                          (meta $? assigned-to ?robot $?))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	(wm-fact (key domain fact rs-inc args? summand ?rs-before
+	                                  sum ?rs-after))
+	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before))
+	=>
+	(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
+		(if (not (is-holding ?robot ?wp))
+		 then
+			(create$ ; only last statement of if is returned
+				(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
+					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
+				)
+				(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side)
+					 WAIT ?target-mps ?target-side
+					(plan-assert-action wp-put-slide-cc ?robot
+					 ?wp ?target-mps ?rs-before ?rs-after)
+				)
+			)
+		 else
+			(plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps ?target-side
+				(plan-assert-action wp-put ?robot ?wp ?target-mps)
+			)
+		)
+	)
+	(modify ?g (mode EXPANDED))
+)
+
+
+(defrule goal-expander-get-cap-carrier-to-fill-rs
+	;?p <- (goal (mode DISPATCHED) (id ?parent))
+	?g <- (goal (id ?goal-id) (class ?class& PAY-RING-WITH-CAP-CARRIER)
 	                          (mode SELECTED) (parent ?parent)
 	                          (params  wp ?wp
 	                                   wp-loc ?wp-loc
