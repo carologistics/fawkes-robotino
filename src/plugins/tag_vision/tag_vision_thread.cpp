@@ -122,7 +122,7 @@ TagVisionThread::init()
 	shm_buffer_->set_frame_id(frame.c_str());
 
 	image_buffer_ = shm_buffer_->buffer();
-	ipl_image_    = cv::Mat(cv::Size(this->img_width_, this->img_height_), CV_8UC1, IMAGE_CAHNNELS);
+	ipl_image_    = cv::Mat(cv::Size(this->img_width_, this->img_height_), CV_8UC3, 3);
 
 	// set up marker
 	max_marker_    = 16;
@@ -210,7 +210,10 @@ TagVisionThread::loop()
 	// convert img
 	firevision::CvMatAdapter::convert_image_bgr(image_buffer_, ipl_image_);
 	// get marker from img
-	get_marker();
+	try {
+		get_marker();
+	} catch (std::exception &exc) {
+	}
 
 	this->tag_interfaces_->update_blackboard(this->markers_, laser_line_ifs_);
 
