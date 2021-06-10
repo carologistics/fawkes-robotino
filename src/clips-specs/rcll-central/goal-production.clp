@@ -394,18 +394,19 @@
 	;MPS-RS CEs (a cap carrier can be used to fill a RS later)
 	(wm-fact (key domain fact mps-type args? m ?target-mps t RS))
 	(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
-	;check ring payment - prevention of overwilling rs
+	;check ring payment - prevention of overfilling rs
 	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before&ZERO|ONE|TWO))
 	;check that not to may robots try to fill the rs at the same time
-	(or (not (goal (class PAY-FOR-RINGS-WITH-BASE| PAY-RING-WITH-CAP-CARRIER)
+	(or (not (goal (class PAY-FOR-RINGS-WITH-BASE| PAY-RING-WITH-CAP-CARRIER| PAY-RING-WITH-CARRIER-FROM-SHELF)
 	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	               (params $? target-mps ?target-mps $?)))
-	    (and (goal (class PAY-FOR-RINGS-WITH-BASE| PAY-RING-WITH-CAP-CARRIER)
+	    (and (goal (class PAY-FOR-RINGS-WITH-BASE| PAY-RING-WITH-CAP-CARRIER| PAY-RING-WITH-CARRIER-FROM-SHELF)
 	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	               (params $? target-mps ?target-mps $?))
 	         (test (< (+ (length$ (find-all-facts ((?other-goal goal))
 	                         (and (or (eq ?other-goal:class PAY-FOR-RINGS-WITH-BASE)
-	                                  (eq ?other-goal:class PAY-RING-WITH-CAP-CARRIER))
+	                                  (eq ?other-goal:class PAY-RING-WITH-CAP-CARRIER)
+	                                  (eq ?other-goal:class PAY-RING-WITH-CARRIER-FROM-SHELF))
 	                              (is-goal-running ?other-goal:mode)
 	                              (member$ ?target-mps ?other-goal:params))))
 	                     (sym-to-int ?rs-before)) 3))
@@ -452,18 +453,19 @@
 	;MPS-RS CEs (a cap carrier can be used to fill a RS later)
 	(wm-fact (key domain fact mps-type args? m ?target-mps t RS))
 	(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
-	;check ring payment - prevention of overwilling rs
+	;check ring payment - prevention of overfilling rs
 	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before&ZERO|ONE|TWO))
 	;check that not to may robots try to fill the rs at the same time
-	(or (not (goal (class PAY-FOR-RINGS-WITH-BASE| PAY-RING-WITH-CAP-CARRIER)
+	(or (not (goal (class PAY-FOR-RINGS-WITH-BASE| PAY-RING-WITH-CAP-CARRIER| PAY-RING-WITH-CARRIER-FROM-SHELF)
 	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	               (params $? target-mps ?target-mps $?)))
-	    (and (goal (class PAY-FOR-RINGS-WITH-BASE|PAY-RING-WITH-CAP-CARRIER)
+	    (and (goal (class PAY-FOR-RINGS-WITH-BASE|PAY-RING-WITH-CAP-CARRIER| PAY-RING-WITH-CARRIER-FROM-SHELF)
 	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	               (params $? target-mps ?target-mps $?))
 	         (test (< (+ (length$ (find-all-facts ((?other-goal goal))
 	                               (and (or (eq ?other-goal:class PAY-FOR-RINGS-WITH-BASE)
-	                                        (eq ?other-goal:class PAY-RING-WITH-CAP-CARRIER))
+	                                        (eq ?other-goal:class PAY-RING-WITH-CAP-CARRIER)
+	                                        (eq ?other-goal:class PAY-RING-WITH-CARRIER-FROM-SHELF))
 	                                    (is-goal-running ?other-goal:mode)
 	                                    (member$ ?target-mps ?other-goal:params)
 	                               )))
@@ -497,6 +499,60 @@
 	(modify ?g (is-executable TRUE))
 )
 
+(defrule goal-production-create-get-shelf-to-fill-rs
+  "Get a capcarrier from a shelf to feed an rs with it later."
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class PAY-RING-WITH-CARRIER-FROM-SHELF)
+	                          (mode FORMULATED)
+	                          (params  wp ?wp
+	                                   wp-loc ?wp-loc
+	                                   wp-side ?wp-side
+	                                   shelf-spot ?spot
+	                                   target-mps ?target-mps
+	                                   target-side ?target-side
+	                                   $?)
+	                          (meta $? assigned-to ?robot $?)
+	                          (is-executable FALSE))
+
+	(wm-fact (key refbox team-color) (value ?team-color))
+	;Robot CEs
+	(not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+	;MPS-RS CEs
+	(wm-fact (key domain fact mps-type args? m ?target-mps t RS))
+	(wm-fact (key domain fact mps-state args? m ?target-mps s ~BROKEN))
+	(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
+	;check ring payment - prevention of overfilling rs
+	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before&ZERO|ONE|TWO))
+	;check that not to may robots try to fill the rs at the same time
+	(or (not (goal (class PAY-FOR-RINGS-WITH-BASE|PAY-RING-WITH-CAP-CARRIER|PAY-RING-WITH-CARRIER-FROM-SHELF)
+	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	               (params $? target-mps ?target-mps $?)))
+	    (and (goal (class PAY-FOR-RINGS-WITH-BASE|PAY-RING-WITH-CAP-CARRIER|PAY-RING-WITH-CARRIER-FROM-SHELF)
+	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	               (params $? target-mps ?target-mps $?))
+	         (test (< (+ (length$ (find-all-facts ((?other-goal goal))
+	                               (and (or (eq ?other-goal:class PAY-FOR-RINGS-WITH-BASE)
+	                                        (eq ?other-goal:class PAY-RING-WITH-CAP-CARRIER)
+	                                        (eq ?other-goal:class PAY-RING-WITH-CARRIER-FROM-SHELF))
+	                              (is-goal-running ?other-goal:mode)
+	                          (member$ ?target-mps ?other-goal:params))))
+	                     (sym-to-int ?rs-before)) 3))
+	   )
+	)
+	;MPS-CS CEs
+	(wm-fact (key domain fact mps-type args? m ?wp-loc t CS))
+;	(wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side OUTPUT)) TODO brauchen wir nicht?
+	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
+	(wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?wp-loc spot ?spot))
+	;ToDO check if wp has no cap and can be used to feed the rs
+	; Formulate the goal only if it is not already formulated (prevents doubling
+	; the goals due to matching with RS-1 and RS-2)
+	(not (goal (class  PAY-RING-WITH-CARRIER-FROM-SHELF) (parent goal-id)
+	     (params robot ?robot cs ?wp-loc wp ?wp spot ?spot)))
+	=>
+	(printout t "Goal " PAY-RING-WITH-CARRIER-FROM-SHELF " formulated" crlf)
+	(modify ?g (is-executable TRUE))
+)
 
 (defrule goal-production-mount-ring-executable
 " Bring a product to a ring station to mount a ring on it.
