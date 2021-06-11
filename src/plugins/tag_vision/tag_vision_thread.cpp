@@ -210,10 +210,7 @@ TagVisionThread::loop()
 	// convert img
 	firevision::CvMatAdapter::convert_image_bgr(image_buffer_, ipl_image_);
 	// get marker from img
-	try {
-		get_marker();
-	} catch (std::exception &exc) {
-	}
+	get_marker();
 
 	this->tag_interfaces_->update_blackboard(this->markers_, laser_line_ifs_);
 
