@@ -42,20 +42,11 @@ PLUGINS_all = $(PLUGINDIR)/tag_vision.$(SOEXT)
 
 PRESUBDIRS = interfaces
 
-ifneq ($(wildcard $(SYSROOT)/usr/include/alvar),)
-  ifneq ($(wildcard $(SYSROOT)/usr/lib$(LIB_SUFFIX)/libalvar200.so),)
+ifeq ($(shell $(PKGCONFIG) --exists alvar; echo $$?),0)
     HAVE_ALVAR = 1
-
-    CFLAGS_ALVAR = -DHAVE_ALVAR
-    LIBS_ALVAR   = alvar200
-  else
-    ifneq ($(wildcard $(SYSROOT)/usr/lib$(LIB_SUFFIX)/libalvar.so),)
-    HAVE_ALVAR = 1
-
-    CFLAGS_ALVAR = -DHAVE_ALVAR
+    CFLAGS_ALVAR = $(shell $(PKGCONFIG) --cflags alvar)
+    LDFLAGS_ALVAR = $(shell $(PKGCONFIG) --libs alvar)
     LIBS_ALVAR   = alvar
-    endif
-  endif
 endif
 ifneq ($(HAVE_ALVAR),1)
   ifeq ($(HAVE_ROS),1)
@@ -64,7 +55,7 @@ ifneq ($(HAVE_ALVAR),1)
     HAVE_AR_TRACK_ALVAR=$(call ros-have-pkg,ar_track_alvar)
     ifeq ($(HAVE_AR_TRACK_ALVAR),1)
       HAVE_ALVAR     = 1
-      CFLAGS_ALVAR  += -DHAVE_ALVAR -DHAVE_AR_TRACK_ALVAR \
+      CFLAGS_ALVAR  += $(shell $(PKGCONFIG) --cflags alvar) -DHAVE_AR_TRACK_ALVAR \
 		       $(call ros-pkg-cflags,ar_track_alvar) \
 		       -Wno-unused-variable
       LDFLAGS_ALVAR += $(call ros-pkg-lflags,ar_track_alvar)
