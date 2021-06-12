@@ -55,7 +55,7 @@ skillenv.skill_module(_M)
 
 -- Constants
 local LEFT = {x = { min = 0, max = 0}, y = { min = 0, max = 0}}
-local MIDDLE = {x = { min = 273, max = 390}, y = { min = 214, max = 297}}
+local MIDDLE = {x = { min = 264, max = 371}, y = { min = 200, max = 280}}
 local RIGHT = {x = { min = 0, max = 0}, y = { min = 0, max = 0}}
 
 -- TBD
@@ -93,7 +93,7 @@ fsm:add_transitions{
    {"GET_XYZ", "FAILED", cond="vars.low_conf_or_out_of_range", 
       desc="Confindences too low or Bounding box out of range"},
    {"GET_XYZ", "PUBLISH_POSE", cond="check_bounding_box_if_msgid(self)", desc="Deprojected pixel to point"},
-   {"PUBLISH_POSE", "FAILED", cond="vars.zero_pose", desc="Can't get XYZ, unable to deproject pixel to point"},
+   {"PUBLISH_POSE", "FAILED", cond="vars.zero_pose", desc="Can't get XYZ, deprojection returned 0,0,0"},
    {"PUBLISH_POSE", "FINAL", cond=true},
 }
 
@@ -142,14 +142,13 @@ function PUBLISH_POSE:init()
    local x = realsense_boundingbox:translation(0)
    local y = realsense_boundingbox:translation(1)
    local z = realsense_boundingbox:translation(2)
-   
    if x == 0 and y == 0 and z == 0 then
       self.fsm.vars.zero_pose = true
    else
       wp_pose_msg = workpiece_pose.WPPoseMessage:new()
       wp_pose_msg:set_translation(0, x)
-      wp_pose_msg:set_translation(0, y)
-      wp_pose_msg:set_translation(0, z)
+      wp_pose_msg:set_translation(1, y)
+      wp_pose_msg:set_translation(2, z)
       workpiece_pose:msgq_enqueue(wp_pose_msg)
    end
 end
