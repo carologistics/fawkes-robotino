@@ -37,7 +37,7 @@
 #include <config/change_handler.h>
 
 // cv is needed for image conversion to alvar
-#include <cv.h>
+#include <opencv2/opencv.hpp>
 // alvar marker detection to get poses
 #ifdef HAVE_AR_TRACK_ALVAR
 #	include <ar_track_alvar/MarkerDetector.h>
@@ -48,7 +48,7 @@
 // firevision camera
 #include <fvcams/camera.h>
 #include <fvclassifiers/simple.h>
-#include <fvutils/adapters/iplimage.h>
+#include <fvutils/adapters/cvmatadapter.h>
 #include <fvutils/base/roi.h>
 #include <fvutils/color/conversions.h>
 #include <fvutils/ipc/shm_image.h>
@@ -126,7 +126,7 @@ private:
 	virtual void config_value_changed(const fawkes::Configuration::ValueIterator *v) override;
 
 	/// cv image
-	IplImage *ipl_image_;
+	cv::Mat ipl_image_;
 
 	/// blackboard communication
 	TagPositionList *                          tag_interfaces_;
