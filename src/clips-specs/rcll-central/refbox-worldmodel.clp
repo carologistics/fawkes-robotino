@@ -20,6 +20,9 @@
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
 
+
+; DANGERZONE: NEVER use a foreach on a pb-field-list. It will crash. Use progn$. Thank me later. Bye.  
+
 (defrule refbox-recv-BeaconSignal
   ?pf <- (protobuf-msg (type "llsf_msgs.BeaconSignal") (ptr ?p))
   (time $?now)
@@ -266,5 +269,70 @@
       (retract ?wm-fact)
       (assert (wm-fact (key domain fact rs-ring-spec args? m ?mps r ?color rn ?rn) (type BOOL) (value TRUE)))
     )
+  )
+)
+
+(defrule refbox-recv-NavigationRoutes-initialize
+  ?pf <- (protobuf-msg (type "llsf_msgs.NavigationRoutes") (ptr ?p))
+  (not (wm-fact (key domain fact waypoints $?)))
+  (not (wm-fact (key domain fact reached $?)))
+  (not (wm-fact (key domain fact remaining $?)))
+  =>
+  (bind ?waypoints (create$))
+  (bind ?remaining (create$))
+  (bind ?reached   (create$))
+
+  (foreach ?r (pb-field-list ?p "routes")
+    (progn$ (?waypoint (pb-field-list ?r "route"))
+      (bind ?waypoints (insert$ ?waypoints 100 ?waypoint))
+    )
+    (progn$ (?waypoint (pb-field-list ?r "reached"))
+      (bind ?reached (insert$ ?reached 100 ?waypoint))
+    )
+    (progn$ (?waypoint (pb-field-list ?r "remaining"))
+      (bind ?remaining (insert$ ?remaining 100 ?waypoint))
+    )
+  )
+
+  (assert (wm-fact (key domain fact waypoints args? ?waypoints)))
+  (assert (wm-fact (key domain fact reached args? ?reached)))
+  (assert (wm-fact (key domain fact remaining args? ?remaining)))
+)
+
+(defrule refbox-recv-NavigationRoutes-update
+  ?pf <- (protobuf-msg (type "llsf_msgs.NavigationRoutes") (ptr ?p))
+  ?waypoints-fact <- (wm-fact (key domain fact waypoints args? $?waypoints-old))
+  ?reached-fact <- (wm-fact (key domain fact reached args? $?reached-old))
+  ?remaining-fact <- (wm-fact (key domain fact remaining args? $?remaining-old))
+  =>
+  (bind ?waypoints (create$))
+  (bind ?remaining (create$))
+  (bind ?reached   (create$))
+
+  (foreach ?r (pb-field-list ?p "routes")
+    (progn$ (?waypoint (pb-field-list ?r "route"))
+      (bind ?waypoints (insert$ ?waypoints 100 ?waypoint))
+    )
+    (progn$ (?waypoint (pb-field-list ?r "reached"))
+      (bind ?reached (insert$ ?reached 100 ?waypoint))
+    )
+    (progn$ (?waypoint (pb-field-list ?r "remaining"))
+      (bind ?remaining (insert$ ?remaining 100 ?waypoint))
+    )
+  )
+  (if (neq ?waypoints-old ?waypoints) then
+    (printout t crlf crlf ?waypoints-old crlf ?waypoints crlf crlf)
+    (retract ?waypoints-fact)
+    (assert (wm-fact (key domain fact waypoints args? ?waypoints)))
+  )
+  (if (neq ?remaining-old ?remaining) then
+    (printout t crlf crlf ?remaining-old crlf ?remaining crlf crlf)
+    (retract ?remaining-fact)
+    (assert (wm-fact (key domain fact remaining args? ?remaining)))
+  )
+  (if (neq ?reached-old ?reached) then
+    (printout t crlf crlf ?reached-old crlf ?reached crlf crlf)
+    (retract ?reached-fact)
+    (assert (wm-fact (key domain fact reached args? ?reached)))
   )
 )
