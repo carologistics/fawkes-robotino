@@ -4,8 +4,12 @@
 hardware/laser:
   front:
     time_offset: -0.072911
+    host: 192.168.0.32
+    port: 2112
   back:
     time_offset: -0.028779
+    host: 192.168.0.33
+    port: 2112
 
 plugins/laser-filter:
   back-downsample:

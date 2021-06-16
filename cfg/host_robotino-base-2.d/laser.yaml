@@ -4,5 +4,9 @@
 hardware/laser:
   front:
     time_offset: -0.061254
+    host: 192.168.0.22
+    port: 2112
   back:
     time_offset: -0.040254
+    host: 192.168.0.23
+    port: 2112
