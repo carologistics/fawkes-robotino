@@ -27,6 +27,7 @@
 	location - object
 	waitpoint - location
 	mps - location
+	zone - location
 	mps-typename - object
 	mps-statename - object
 	mps-side - object
@@ -67,6 +68,11 @@
 	NA ZERO ONE TWO THREE - ring-num
 	ZERO ONE TWO THREE FOUR FIVE - ss-shelf
 	ZERO ONE TWO THREE FOUR FIVE SIX SEVEN - ss-slot
+	G-1-1 G-2-1 G-3-1 G-4-1 G-5-1 - waitpoint
+	G-1-2 G-2-2 G-3-2 G-4-2 G-5-2 - waitpoint
+	G-1-3 G-2-3 G-3-3 G-4-3 G-5-3 - waitpoint
+	G-1-4 G-2-4 G-3-4 G-4-4 G-5-4 - waitpoint
+	G-1-5 G-2-5 G-3-5 G-4-5 G-5-5 - waitpoint
 )
 
 (:predicates
