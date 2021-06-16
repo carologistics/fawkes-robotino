@@ -138,7 +138,7 @@ clips-executive:
           enabled: false
           testbed: ENTER-FIELD
         rcll:
-          peer-address: 172.26.255.255
+          peer-address: 10.12.0.0
           peer-port: 4444
           cyan-port: 4441
           magenta-port: 4442
