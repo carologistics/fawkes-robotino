@@ -20,7 +20,7 @@
 ;
 
 (defglobal
- ?*WAIT-DURATION* = 5
+ ?*WAIT-DURATION* = 7
 )
 
 (defrule action-start-execute-wait-action
