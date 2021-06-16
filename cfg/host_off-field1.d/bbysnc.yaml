@@ -1,0 +1,86 @@
+fawkes:
+  agent:
+    name: Icks
+    number: 1
+    team: Carologistics
+
+network:
+  fawkes:
+    tcp_port: !tcp-port 1931
+    service_name: "Fawkes on Agent (Cyan)"
+
+plugins/mongodb:
+  clients:
+    default/enabled: true
+    arbiter/enabled: false
+    robot-memory-local/hosts:
+      - localhost:27021
+    robot-memory-distributed/hosts:
+      - localhost:27031
+    robot-memory-local-direct/hostport: localhost:27021
+    robot-memory-distributed-direct/hostport: localhost:27031
+  instances:
+    robot-memory-local:
+      port: 27021
+      data-path: /tmp/mongodb-robot-memory-local-1
+      log/path: /tmp/mongodb-robot-memory-local-1.log
+    robot-memory-distributed:
+      port: 27031
+      data-path: /tmp/mongodb-robot-memory-distributed-1
+      log/path: /tmp/mongodb-robot-memory-distributed-1.log
+  replica-sets:
+    bootstrap-mongodb/client: default
+    managed-sets:
+      robot-memory-local/hosts:
+        - localhost:27021
+      robot-memory-distributed/hosts:
+        - localhost:27031
+
+#clips-executive/specs/rcll-central/parameters/rcll:
+#
+#  peer-address: 127.0.0.1
+#  peer-port: 0
+#  cyan-port: 0
+#  magenta-port: 0
+#  peer-recv-port: 4411
+#  peer-send-port: 4421
+#  cyan-recv-port: 4451
+#  magenta-recv-port: 4461
+#  cyan-send-port: 4471
+#  magenta-send-port: 4481
+
+fawkes/bbsync:
+  check_interval: 1000
+  peers:
+    robotino-base/active: false
+    robot1:
+      active: true #(set via the gazsim startup)
+      host: robotino-laptop-1
+      port: !tcp-port 1910
+      reading:
+        skiller: SkillerInterface::Skiller=/robot1/Skiller
+        pose: Position3DInterface::Pose=/robot1/Pose
+        navgraph-generator: NavGraphGeneratorInterface::/navgraph-generator=/robot1/navgraph-generator
+        navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/robot1/navgraph-generator-mps
+        navigator: NavigatorInterface::Navigator=/robot1/Navigator
+        robotino: MotorInterface::Robotino=/robot1/Robotino
+    robot2:
+      active: false # set via the gazsim startup)
+      host: robotino-laptop-2
+      port: !tcp-port 1910
+      reading:
+        skiller: SkillerInterface::Skiller=/robot2/Skiller
+        pose: Position3DInterface::Pose=/robot2/Pose
+        navgraph-generator: NavGraphGeneratorInterface::/navgraph-generator=/robot2/navgraph-generator
+        navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/robot2/navgraph-generator-mps
+        navigator: NavigatorInterface::Navigator=/robot2/Navigator
+    robot3:
+      active: false # (set via the gazsim startup)
+      host: robotino-laptop-3
+      port: !tcp-port 1910
+      reading:
+        skiller: SkillerInterface::Skiller=/robot3/Skiller
+        pose: Position3DInterface::Pose=/robot3/Pose
+        navgraph-generator: NavGraphGeneratorInterface::/navgraph-generator=/robot3/navgraph-generator
+        navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/robot3/navgraph-generator-mps
+        navigator: NavigatorInterface::Navigator=/robot3/Navigator
