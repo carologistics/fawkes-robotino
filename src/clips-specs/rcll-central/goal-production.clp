@@ -660,3 +660,78 @@
 	=>
 	(modify ?g (params wp ?wp wp-loc ?mps wp-side ?mps-side))
 )
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;
+; NAVIGATION CHALLENGE ;
+;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;
+
+(deffunction navigation-challenge-translate-location 
+	(?map-style-location)
+
+	(bind ?x-value (- 8 (integer (string-to-field (sub-string 4 4 (str-cat ?map-style-location))))))
+	(bind ?y-value (sym-cat (sub-string 5 5 (str-cat ?map-style-location))))
+	(bind ?grid-style-location (sym-cat G- ?x-value "-" ?y-value))
+
+	(printout t "Conversion of grids: " ?map-style-location ?grid-style-location crlf)
+
+	(return ?grid-style-location)
+)
+
+(defrule goal-production-navigation-challenge-move-executable
+" Bring a product to a cap station to mount a cap on it.
+"
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class NAVIGATION-CHALLENGE-MOVE)
+	                          (mode FORMULATED)
+	                          (params target ?target)
+	                          (meta $? assigned-to ?robot $?)
+	                          (is-executable FALSE))
+	=>
+	(printout t "Goal NAVIGATION-CHALLENGE-MOVE executable for " ?robot crlf)
+	(modify ?g (is-executable TRUE))
+)
+
+
+
+(deffunction goal-production-assert-navigation-challenge-move
+	(?location)
+
+	(bind ?goal (assert (goal (class NAVIGATION-CHALLENGE-MOVE)  
+					(id (sym-cat NAVIGATION-CHALLENGE-MOVE- (gensym*))) 
+					(sub-type SIMPLE)
+					(verbosity NOISY) (is-executable FALSE)
+					(params target (navigation-challenge-translate-location ?location)) 
+				)))
+	(return ?goal)
+)
+
+(deffunction goal-production-assert-navigation-challenge
+  (?root-id ?locations)
+
+  (bind ?goals (create$))
+  (foreach ?location ?locations
+	(bind ?goals (insert$ ?goals 100 (goal-production-assert-navigation-challenge-move ?location)))
+  )
+
+  (bind ?goal 
+    (goal-tree-assert-central-run-parallel NAVIGATION-CHALLENGE-PARENT
+		?goals 
+	)
+  )
+  (modify ?goal (parent ?root-id))
+)
+
+
+(defrule goal-production-create-navigation-challenge-tree
+	""
+	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+	(wm-fact (key domain fact waypoints args? $?waypoints))
+	(not (goal (class NAVIGATION-CHALLENGE-PARENT)))
+	=>
+	(goal-production-assert-navigation-challenge ?root-id ?waypoints)
+)
