@@ -42,6 +42,7 @@ skillenv.use_skill("skills.robotino.explore_zone")
 skillenv.use_skill("skills.robotino.gripper_commands")
 skillenv.use_skill("skills.robotino.reset_gripper")
 skillenv.use_skill("skills.robotino.detect_object")
+skillenv.use_skill("skills.robotino.workpiece_pose")
 -- Skills for MPS interaction
 skillenv.use_skill("skills.robotino.check_tag")
 skillenv.use_skill("skills.robotino.mps_align")

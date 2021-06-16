@@ -27,7 +27,6 @@
 -- then send to realsense plugin
 -- realsense writes XYZ from pixel to Realsense2 interface translation
 -- workpiece pose plugin gives tf frame from xyz
---
 
 -- Initialize module
 module(..., skillenv.module_init)
@@ -53,10 +52,11 @@ Parameters:
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
--- Constants
-local LEFT = {x = { min = 0, max = 0}, y = { min = 0, max = 0}}
-local MIDDLE = {x = { min = 264, max = 371}, y = { min = 200, max = 280}}
-local RIGHT = {x = { min = 0, max = 0}, y = { min = 0, max = 0}}
+-- Constants x(235, 371;289,428;278,420)
+-- y(263,371;261,365;258,366)
+-- local LEFT = {x = { min = 510, max = 617}, y = { min = 220, max = 300}}
+local MIDDLE = {x = { min = 260, max = 400}, y = { min = 260, max = 360}}
+-- local RIGHT = {x = { min = 0, max = 115}, y = { min = 220, max = 300}}
 
 -- TBD
 local CONVEYOR = {x = { min = 0, max = 0}, y = { min = 0, max = 0}}
@@ -121,7 +121,7 @@ function GET_XYZ:init()
              tolerances[self.fsm.vars.location].x.max >= yolo_interface:centerX(1024 - index) and
              tolerances[self.fsm.vars.location].y.min <= yolo_interface:centerY(1024 - index) and
              tolerances[self.fsm.vars.location].y.max >= yolo_interface:centerY(1024 - index) and
-             yolo_interface:confidence(1024 - index) > 0.95) then
+             yolo_interface:confidence(1024 - index) > 0.90) then
                bbox_msg = realsense_boundingbox.BoundingBoxMessage:new()
                bbox_msg:set_center_x(yolo_interface:centerX(1024 - index))
                bbox_msg:set_center_y(yolo_interface:centerY(1024 - index))
