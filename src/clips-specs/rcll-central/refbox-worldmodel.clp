@@ -145,8 +145,11 @@
   (wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
   =>
   ; (printout t "***** Received MachineInfo *****" crlf)
+  (bind ?machines (create$)) ;keep track of the machines that actually exist
+
   (foreach ?m (pb-field-list ?p "machines")
     (bind ?m-name (sym-cat (pb-field-value ?m "name")))
+    (bind ?machines (insert$ ?machines(+ (length$ ?machines) 1) ?m-name))
     (bind ?m-type (sym-cat (pb-field-value ?m "type")))
     (bind ?m-team (sym-cat (pb-field-value ?m "team_color")))
     (bind ?m-state (sym-cat (pb-field-value ?m "state")))
@@ -171,7 +174,15 @@
       (retract ?wm-fact)
       (assert (wm-fact (key domain fact mps-state args? m ?m-name s ?m-state) (type BOOL) (value TRUE))) 
     )
-   )
+  )
+  ;remove machines that do not exist
+  (printout t "Available machines: " ?machines crlf)
+  (do-for-all-facts ((?wm-fact wm-fact))
+      (and  (wm-key-prefix ?wm-fact:key (create$ domain fact mps-team))
+            (not (member$ (wm-key-arg ?wm-fact:key m) ?machines))
+      )
+      (retract ?wm-fact)
+  )
 )
 
 
