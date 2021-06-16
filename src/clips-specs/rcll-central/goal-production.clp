@@ -695,8 +695,6 @@
 	(modify ?g (is-executable TRUE))
 )
 
-
-
 (deffunction goal-production-assert-navigation-challenge-move
 	(?location)
 
@@ -724,7 +722,6 @@
   )
   (modify ?goal (parent ?root-id))
 )
-
 
 (defrule goal-production-create-navigation-challenge-tree
 	""
