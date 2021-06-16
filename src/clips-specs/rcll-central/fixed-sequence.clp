@@ -191,11 +191,10 @@
 					)
 				)
 			)
-			(modify ?g (mode EXPANDED))
+			(modify ?g (mode EXPANDED)
 		)
 	)
-
-	
+)
 
 
 (defrule goal-expander-instruct-cs-buffer-cap
@@ -289,6 +288,52 @@
 			?robot ?curr-location ?curr-side ?target);target is a waitpoint
 		(plan-assert-action wait
 			?robot ?target);wait there
+	)
+	(modify ?g (mode EXPANDED))
+)
+
+(defrule goal-expander-deliver-rc21
+	;?p <- (goal (mode DISPATCHED) (id ?parent))
+	?g <- (goal (id ?goal-id) (class DELIVER-RC21)
+	                          (mode SELECTED) (parent ?parent)
+	                          (params  wp ?wp)
+	                          (meta $? assigned-to ?robot $?))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	(wm-fact (key refbox team-color) (value ?team-color))
+	=>
+	(bind ?dropzone M-ins-out)
+	(if (eq ?team-color CYAN) then
+		(bind ?dropzone C-ins-out)
+	)
+
+	(plan-assert-sequential (sym-cat DELIVER-RC21-PLAN- (gensym*)) ?goal-id ?robot
+		(if (not (is-holding ?robot ?wp))
+		then
+			(bind ?wp-loc nil)
+			(bind ?wp-side nil)
+
+			(do-for-fact ((?wp-at wm-fact)) (and (wm-key-prefix ?wp-at:key (create$ domain fact wp-at))
+												(eq (wm-key-arg ?wp-at:key wp) ?wp))
+				(bind ?wp-loc (wm-key-arg ?wp-at:key m))
+				(bind ?wp-side (wm-key-arg ?wp-at:key side))
+			)
+
+			(printout t crlf crlf ?wp-loc crlf crlf)
+			(printout t crlf crlf ?wp-side crlf crlf)
+
+			(create$ ; only last statement of if is returned
+				(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
+					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
+				)
+				(plan-assert-action go-wait
+					?robot (wait-pos ?wp-loc ?wp-side) WAIT ?dropzone)
+				(plan-assert-action wp-discard ?robot ?wp)
+			)
+		else
+			(plan-assert-safe-move ?robot ?curr-location ?curr-side ?dropzone WAIT
+				(plan-assert-action wp-discard ?robot ?wp)
+			)
+		)
 	)
 	(modify ?g (mode EXPANDED))
 )

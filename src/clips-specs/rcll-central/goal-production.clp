@@ -336,6 +336,33 @@
 	(modify ?g (is-executable TRUE))
 )
 
+(defrule goal-production-deliver-rc21-executable
+" Bring a product to the insertion zone and drop it."
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class DELIVER-RC21)
+	                          (mode FORMULATED)
+	                          (params  wp ?wp
+	                                   $?)
+	                          (meta $? assigned-to ?robot $?)
+	                          (is-executable FALSE))
+
+	; Robot CEs
+	(wm-fact (key central agent robot args? r ?robot))
+	(wm-fact (key refbox team-color) (value ?team-color))
+	; WP CEs
+	(wm-fact (key wp meta next-step args? wp ?wp) (value DELIVER))
+	; MPS-Source CEs
+	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
+	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
+
+	(or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+	         (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side)))
+	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+	=>
+	(printout t "Goal DELIVER-RC212 executable for " ?robot crlf)
+	(modify ?g (is-executable TRUE))
+)
+
 (defrule goal-production-discard-executable
 " Bring a product to a cap station to mount a cap on it.
 "
@@ -521,6 +548,18 @@
 	(return ?goal)
 )
 
+
+(deffunction goal-production-assert-deliver-rc21
+	(?wp)
+
+	(bind ?goal (assert (goal (class DELIVER-RC21)
+	      (id (sym-cat DELIVER-RC21- (gensym*))) (sub-type SIMPLE)
+	      (verbosity NOISY) (is-executable FALSE)
+	      (params wp ?wp)
+	)))
+	(return ?goal)
+)
+
 (deffunction goal-production-assert-instruct-cs-buffer-cap
  	(?mps ?cap-color)
 
@@ -608,8 +647,9 @@
 			)
 			(goal-production-assert-instruct-cs-mount-cap ?cs ?cap-col)
 		)
-		(goal-production-assert-deliver ?wp-for-order)
-		(goal-production-assert-instruct-ds-deliver ?wp-for-order)
+		;(goal-production-assert-deliver ?wp-for-order)
+		;(goal-production-assert-instruct-ds-deliver ?wp-for-order)
+		(goal-production-assert-deliver-rc21 ?wp-for-order)
 	)
   )
   (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (parent ?root-id))
