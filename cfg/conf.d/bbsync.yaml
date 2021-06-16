@@ -99,4 +99,5 @@ fawkes/bbsync:
         tfTags: TransformInterface::TF tags
         conveyor_pose: TransformInterface::/tf/conveyor_pose
         conveyor_pose_init: TransformInterface::/tf/conveyor_pose_initial_guess
+        workpiece_pose: TransformInterface::/tf/workpiece_pose
         laser_non_static: Laser360Interface::Laser MPS
