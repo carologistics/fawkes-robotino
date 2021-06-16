@@ -317,7 +317,6 @@
 		    (printout error ?r-active crlf)
 		    (bind ?curr-robot (nth$ 1 ?r-active))
 		    (assert (wm-fact (key central agent robot args? r ?curr-robot))
-		            (wm-fact (key central agent robot-waiting args? r ?curr-robot))
 		            (domain-object (name ?curr-robot) (type robot))
 		            (domain-fact (name at) (param-values ?curr-robot START INPUT))
 		            (domain-fact (name robot-waiting) (param-values ?curr-robot))
