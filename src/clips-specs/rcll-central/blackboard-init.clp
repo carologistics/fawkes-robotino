@@ -56,6 +56,7 @@
   (ff-feature-loaded blackboard)
   (ff-feature-loaded skills)
   (wm-fact (key central agent robot args? r ?robot))
+  (not (skiller-control (skiller ?skiller&:(eq ?skiller (remote-if-id ?robot "Skiller")))))
   =>
   (blackboard-open "SkillerInterface"
                    (remote-if-id ?robot "Skiller"))
