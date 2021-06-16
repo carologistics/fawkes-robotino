@@ -286,7 +286,9 @@
 	=>
 	(plan-assert-sequential NAVIGATION-CHALLENGE-MOVE-PLAN ?goal-id ?robot
 		(plan-assert-action go-wait
-	    	?robot ?curr-location ?curr-side ?target);target is a waitpoint
+			?robot ?curr-location ?curr-side ?target);target is a waitpoint
+		(plan-assert-action wait
+			?robot ?target);wait there
 	)
 	(modify ?g (mode EXPANDED))
 )
