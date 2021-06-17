@@ -1107,6 +1107,8 @@ The workpiece remains in the output of the used ring station after
 			)
 			(goal-production-assert-instruct-cs-mount-cap ?cs ?cap-col)
 		)
+		;deliver-rc21 is a change specific to robocup 2021, for the normal game keep
+		;the old structure
 		;(goal-production-assert-deliver ?wp-for-order)
 		;(goal-production-assert-instruct-ds-deliver ?wp-for-order)
 		(goal-production-assert-deliver-rc21 ?wp-for-order)
