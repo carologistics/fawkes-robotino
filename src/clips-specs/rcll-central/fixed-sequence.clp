@@ -247,7 +247,7 @@
 			)
 		 else
 			(plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps ?target-side
-				(plan-assert-action wp-put ?robot ?wp ?target-mps)
+				(plan-assert-action wp-put-slide-cc ?robot ?wp ?target-mps ?rs-before ?rs-after)
 			)
 		)
 	)
@@ -285,7 +285,7 @@
 			)
 		 else
 			(plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps ?target-side
-				(plan-assert-action wp-put ?robot ?wp ?target-mps)
+				(plan-assert-action wp-put-slide-cc ?robot ?wp ?target-mps ?rs-before ?rs-after)
 			)
 		)
 	)
@@ -294,26 +294,23 @@
 
 (defrule goal-expander-get-shelf-to-fill-rs
 ;	 ?p <- (goal (mode DISPATCHED) (id ?parent))
-	 ?g <- (goal (mode SELECTED) (parent ?parent) (id ?goal-id)
-	             (class ?class& PAY-RING-WITH-CARRIER-FROM-SHELF)
-	             (params wp ?wp
-	                     wp-loc ?wp-loc
-	                     wp-side ?wp-side
-	                     shelf-spot ?shelf-spot
-	                     target-mps ?target-mps;cs
-	                     target-side ?target-side;shelf-spot
+	 ?g <- (goal (id ?goal-id) (class ?class& PAY-RING-WITH-CARRIER-FROM-SHELF)
+	             (mode SELECTED) (parent ?parent)
+	             (params wp-loc ?wp-loc;cs
+	                     target-mps ?target-mps;rs
+	                     target-side ?target-side
 	                     $?)
 	             (meta $? assigned-to ?robot $?))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-	(wm-fact (key domain fact rs-inc args? summand ?rs-before
-	                                  sum ?rs-after))
+	(wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?wp-loc spot ?shelf-spot))
+	(wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
 	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before))
 	 =>
 	(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
-		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
-			(plan-assert-action wp-get-shelf ?robot ?wp ?wp-loc ?shelf-spot))
-		(plan-assert-safe-move ?robot ?wp-loc ?wp-side ?target-mps INPUT
-			(plan-assert-action wp-put ?robot ?wp ?target-mps))
+		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc INPUT
+			(plan-assert-action wp-get-shelf ?robot ?cc ?wp-loc ?shelf-spot))
+		(plan-assert-safe-move ?robot (wait-pos ?wp-loc INPUT) WAIT ?target-mps ?target-side
+			(plan-assert-action wp-put-slide-cc ?robot ?cc ?target-mps ?rs-before ?rs-after))
 	)
 	(modify ?g (mode EXPANDED))
 )

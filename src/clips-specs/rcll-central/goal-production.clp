@@ -504,10 +504,7 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class PAY-RING-WITH-CARRIER-FROM-SHELF)
 	                          (mode FORMULATED)
-	                          (params  wp ?wp
-	                                   wp-loc ?wp-loc
-	                                   wp-side ?wp-side
-	                                   shelf-spot ?spot
+	                          (params  wp-loc ?wp-loc
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
 	                                   $?)
@@ -541,14 +538,15 @@
 	)
 	;MPS-CS CEs
 	(wm-fact (key domain fact mps-type args? m ?wp-loc t CS))
-;	(wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side OUTPUT)) TODO brauchen wir nicht?
+	(wm-fact (key domain fact mps-state args? m ?wp-loc s ~BROKEN))
 	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
+
+	;Capcarrier CEs
 	(wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?wp-loc spot ?spot))
-	;ToDO check if wp has no cap and can be used to feed the rs
 	; Formulate the goal only if it is not already formulated (prevents doubling
 	; the goals due to matching with RS-1 and RS-2)
 	(not (goal (class  PAY-RING-WITH-CARRIER-FROM-SHELF) (parent goal-id)
-	     (params robot ?robot cs ?wp-loc wp ?wp spot ?spot)))
+	     (params robot ?robot cs ?wp-loc wp ?wp $?)))
 	=>
 	(printout t "Goal " PAY-RING-WITH-CARRIER-FROM-SHELF " formulated" crlf)
 	(modify ?g (is-executable TRUE))
