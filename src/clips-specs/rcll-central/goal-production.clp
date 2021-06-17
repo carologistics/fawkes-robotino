@@ -669,18 +669,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
-(deffunction navigation-challenge-translate-location 
-	(?map-style-location)
-
-	(bind ?x-value (- 8 (integer (string-to-field (sub-string 4 4 (str-cat ?map-style-location))))))
-	(bind ?y-value (sym-cat (sub-string 5 5 (str-cat ?map-style-location))))
-	(bind ?grid-style-location (sym-cat G- ?x-value "-" ?y-value))
-
-	(printout t "Conversion of grids: " ?map-style-location ?grid-style-location crlf)
-
-	(return ?grid-style-location)
-)
-
 (defrule goal-production-navigation-challenge-move-executable
 " Move to a navgraph node 
 "
@@ -702,7 +690,7 @@
 					(id (sym-cat NAVIGATION-CHALLENGE-MOVE- (gensym*))) 
 					(sub-type SIMPLE)
 					(verbosity NOISY) (is-executable FALSE)
-					(params target (navigation-challenge-translate-location ?location)) 
+					(params target (translate-location-map-to-grid ?location))
 				)))
 	(return ?goal)
 )
