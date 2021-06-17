@@ -394,7 +394,7 @@
 )
 
 
-(defrule goal-production-create-get-base-to-fill-rs
+(defrule goal-production-get-base-to-fill-rs-executable
 "Fill the ring station with a fresh base from the base station."
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class PAY-FOR-RINGS-WITH-BASE)
@@ -407,7 +407,6 @@
 	                                   $?)
 	                          (meta $? assigned-to ?robot $?)
 	                          (is-executable FALSE))
-
 	(wm-fact (key refbox team-color) (value ?team-color))
 	;MPS-RS CEs (a cap carrier can be used to fill a RS later)
 	(wm-fact (key domain fact mps-type args? m ?target-mps t RS))
@@ -415,10 +414,12 @@
 	;check ring payment - prevention of overfilling rs
 	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before&ZERO|ONE|TWO))
 	;check that not to may robots try to fill the rs at the same time
-	(or (not (goal (class PAY-FOR-RINGS-WITH-BASE| PAY-RING-WITH-CAP-CARRIER| PAY-RING-WITH-CARRIER-FROM-SHELF)
+	(or (not (goal (class PAY-FOR-RINGS-WITH-BASE| PAY-RING-WITH-CAP-CARRIER|
+	                      PAY-RING-WITH-CARRIER-FROM-SHELF)
 	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	               (params $? target-mps ?target-mps $?)))
-	    (and (goal (class PAY-FOR-RINGS-WITH-BASE| PAY-RING-WITH-CAP-CARRIER| PAY-RING-WITH-CARRIER-FROM-SHELF)
+	    (and (goal (class PAY-FOR-RINGS-WITH-BASE| PAY-RING-WITH-CAP-CARRIER|
+	                      PAY-RING-WITH-CARRIER-FROM-SHELF)
 	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	               (params $? target-mps ?target-mps $?))
 	         (test (< (+ (length$ (find-all-facts ((?other-goal goal))
@@ -453,7 +454,7 @@
 	(modify ?g (is-executable TRUE))
 )
 
-(defrule goal-production-create-get-cap-carrier-to-fill-rs
+(defrule goal-production-get-cap-carrier-to-fill-rs-executable
 "Fill the ring station with a cap carrier located at the output of a cap station."
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class PAY-RING-WITH-CAP-CARRIER)
@@ -474,10 +475,12 @@
 	;check ring payment - prevention of overfilling rs
 	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before&ZERO|ONE|TWO))
 	;check that not to may robots try to fill the rs at the same time
-	(or (not (goal (class PAY-FOR-RINGS-WITH-BASE| PAY-RING-WITH-CAP-CARRIER| PAY-RING-WITH-CARRIER-FROM-SHELF)
+	(or (not (goal (class PAY-FOR-RINGS-WITH-BASE| PAY-RING-WITH-CAP-CARRIER|
+	                      PAY-RING-WITH-CARRIER-FROM-SHELF)
 	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	               (params $? target-mps ?target-mps $?)))
-	    (and (goal (class PAY-FOR-RINGS-WITH-BASE|PAY-RING-WITH-CAP-CARRIER| PAY-RING-WITH-CARRIER-FROM-SHELF)
+	    (and (goal (class PAY-FOR-RINGS-WITH-BASE|PAY-RING-WITH-CAP-CARRIER|
+	                      PAY-RING-WITH-CARRIER-FROM-SHELF)
 	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	               (params $? target-mps ?target-mps $?))
 	         (test (< (+ (length$ (find-all-facts ((?other-goal goal))
@@ -517,7 +520,7 @@
 	(modify ?g (is-executable TRUE))
 )
 
-(defrule goal-production-create-get-shelf-to-fill-rs
+(defrule goal-production-pay-ring-with-carrier-from-shelf-executable
   "Get a capcarrier from a shelf to feed an rs with it later."
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class PAY-RING-WITH-CARRIER-FROM-SHELF)
@@ -539,10 +542,12 @@
 	;check ring payment - prevention of overfilling rs
 	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before&ZERO|ONE|TWO))
 	;check that not to may robots try to fill the rs at the same time
-	(or (not (goal (class PAY-FOR-RINGS-WITH-BASE|PAY-RING-WITH-CAP-CARRIER|PAY-RING-WITH-CARRIER-FROM-SHELF)
+	(or (not (goal (class PAY-FOR-RINGS-WITH-BASE|PAY-RING-WITH-CAP-CARRIER|
+	                      PAY-RING-WITH-CARRIER-FROM-SHELF)
 	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	               (params $? target-mps ?target-mps $?)))
-	    (and (goal (class PAY-FOR-RINGS-WITH-BASE|PAY-RING-WITH-CAP-CARRIER|PAY-RING-WITH-CARRIER-FROM-SHELF)
+	    (and (goal (class PAY-FOR-RINGS-WITH-BASE|PAY-RING-WITH-CAP-CARRIER|
+	                      PAY-RING-WITH-CARRIER-FROM-SHELF)
 	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	               (params $? target-mps ?target-mps $?))
 	         (test (< (+ (length$ (find-all-facts ((?other-goal goal))
