@@ -128,6 +128,24 @@
 	(navigator-set-speed ?r ?vel ?rot)
 )
 
+(defrule goal-production-enter-field-executable
+ " ENTER-FIELD is executable for a robot if it has not entered the field yet."
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (class EXPLORATION) (sub-type SIMPLE) (mode FORMULATED)
+	      (params team-color ?team-color) (meta $? assigned-to ?robot $?)
+	      (is-executable FALSE))
+
+	(wm-fact (key refbox state) (value RUNNING))
+	(wm-fact (key refbox phase) (value PRODUCTION|EXPLORATION))
+	(wm-fact (key refbox team-color) (value ?team-color))
+	(not (wm-fact (key domain fact entered-field
+	               args? r ?robot team-color ?team-color)))
+	=>
+	(printout t "Goal ENTER-FIELD executable for " ?robot crlf)
+	(modify ?g (is-executable TRUE))
+)
+
+
 (defrule exp-passed-through-quadrant
 " If the robot drove through a zone slow enough and passed the middle of the zone with a certain margin
   we can conclude, that there is no machine in this zone
