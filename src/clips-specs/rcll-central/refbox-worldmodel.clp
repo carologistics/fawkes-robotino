@@ -273,6 +273,8 @@
 )
 
 (defrule refbox-recv-NavigationRoutes-initialize
+  "When there are no waypoints,reached and remaining facts, initialize them based on
+  the NavigationRoutes message from the refbox."
   ?pf <- (protobuf-msg (type "llsf_msgs.NavigationRoutes") (ptr ?p))
   (not (wm-fact (key domain fact waypoints $?)))
   (not (wm-fact (key domain fact reached $?)))
@@ -300,6 +302,8 @@
 )
 
 (defrule refbox-recv-NavigationRoutes-update
+  "When there are waypoints, reached and remaining facts, compare the incoming new lists
+  from the refbox with the existing facts and update them if necessary. "
   ?pf <- (protobuf-msg (type "llsf_msgs.NavigationRoutes") (ptr ?p))
   ?waypoints-fact <- (wm-fact (key domain fact waypoints args? $?waypoints-old))
   ?reached-fact <- (wm-fact (key domain fact reached args? $?reached-old))
@@ -321,17 +325,14 @@
     )
   )
   (if (neq ?waypoints-old ?waypoints) then
-    (printout t crlf crlf ?waypoints-old crlf ?waypoints crlf crlf)
     (retract ?waypoints-fact)
     (assert (wm-fact (key domain fact waypoints args? ?waypoints)))
   )
   (if (neq ?remaining-old ?remaining) then
-    (printout t crlf crlf ?remaining-old crlf ?remaining crlf crlf)
     (retract ?remaining-fact)
     (assert (wm-fact (key domain fact remaining args? ?remaining)))
   )
   (if (neq ?reached-old ?reached) then
-    (printout t crlf crlf ?reached-old crlf ?reached crlf crlf)
     (retract ?reached-fact)
     (assert (wm-fact (key domain fact reached args? ?reached)))
   )
