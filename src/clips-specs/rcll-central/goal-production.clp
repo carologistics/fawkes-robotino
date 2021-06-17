@@ -414,18 +414,18 @@
 	;check ring payment - prevention of overfilling rs
 	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before&ZERO|ONE|TWO))
 	;check that not to may robots try to fill the rs at the same time
-	(or (not (goal (class PAY-FOR-RINGS-WITH-BASE| PAY-RING-WITH-CAP-CARRIER|
-	                      PAY-RING-WITH-CARRIER-FROM-SHELF)
+	(or (not (goal (class PAY-FOR-RINGS-WITH-BASE| PAY-FOR-RINGS-WITH-CAP-CARRIER|
+	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
 	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	               (params $? target-mps ?target-mps $?)))
-	    (and (goal (class PAY-FOR-RINGS-WITH-BASE| PAY-RING-WITH-CAP-CARRIER|
-	                      PAY-RING-WITH-CARRIER-FROM-SHELF)
+	    (and (goal (class PAY-FOR-RINGS-WITH-BASE| PAY-FOR-RINGS-WITH-CAP-CARRIER|
+	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
 	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	               (params $? target-mps ?target-mps $?))
 	         (test (< (+ (length$ (find-all-facts ((?other-goal goal))
 	                         (and (or (eq ?other-goal:class PAY-FOR-RINGS-WITH-BASE)
-	                                  (eq ?other-goal:class PAY-RING-WITH-CAP-CARRIER)
-	                                  (eq ?other-goal:class PAY-RING-WITH-CARRIER-FROM-SHELF))
+	                                  (eq ?other-goal:class PAY-FOR-RINGS-WITH-CAP-CARRIER)
+	                                  (eq ?other-goal:class PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF))
 	                              (is-goal-running ?other-goal:mode)
 	                              (member$ ?target-mps ?other-goal:params))))
 	                     (sym-to-int ?rs-before)) 3))
@@ -457,7 +457,7 @@
 (defrule goal-production-get-cap-carrier-to-fill-rs-executable
 "Fill the ring station with a cap carrier located at the output of a cap station."
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
-	?g <- (goal (id ?goal-id) (class PAY-RING-WITH-CAP-CARRIER)
+	?g <- (goal (id ?goal-id) (class PAY-FOR-RINGS-WITH-CAP-CARRIER)
 	                          (mode FORMULATED)
 	                          (params  wp ?wp
 	                                   wp-loc ?wp-loc
@@ -475,23 +475,23 @@
 	;check ring payment - prevention of overfilling rs
 	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before&ZERO|ONE|TWO))
 	;check that not to may robots try to fill the rs at the same time
-	(or (not (goal (class PAY-FOR-RINGS-WITH-BASE| PAY-RING-WITH-CAP-CARRIER|
-	                      PAY-RING-WITH-CARRIER-FROM-SHELF)
+	(or (not (goal (class PAY-FOR-RINGS-WITH-BASE| PAY-FOR-RINGS-WITH-CAP-CARRIER|
+	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
 	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	               (params $? target-mps ?target-mps $?)))
-	    (and (goal (class PAY-FOR-RINGS-WITH-BASE|PAY-RING-WITH-CAP-CARRIER|
-	                      PAY-RING-WITH-CARRIER-FROM-SHELF)
+	    (and (goal (class PAY-FOR-RINGS-WITH-BASE|PAY-FOR-RINGS-WITH-CAP-CARRIER|
+	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
 	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	               (params $? target-mps ?target-mps $?))
 	         (test (< (+ (length$ (find-all-facts ((?other-goal goal))
 	                               (and (or (eq ?other-goal:class PAY-FOR-RINGS-WITH-BASE)
-	                                        (eq ?other-goal:class PAY-RING-WITH-CAP-CARRIER)
-	                                        (eq ?other-goal:class PAY-RING-WITH-CARRIER-FROM-SHELF))
+	                                        (eq ?other-goal:class PAY-FOR-RINGS-WITH-CAP-CARRIER)
+	                                        (eq ?other-goal:class PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF))
 	                                    (is-goal-running ?other-goal:mode)
 	                                    (member$ ?target-mps ?other-goal:params)
 	                               )))
 	                     (sym-to-int ?rs-before)) 3))
-	                            ;|PAY-RING-WITH-CAP-CARRIER)
+	                            ;|PAY-FOR-RINGS-WITH-CAP-CARRIER)
 	   )
 	)
 	; MPS-Source CEs
@@ -516,14 +516,14 @@
 	    ; or the workpiece is already being held
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
 	=>
-	(printout t "Goal "  PAY-RING-WITH-CAP-CARRIER " formulated" crlf)
+	(printout t "Goal "  PAY-FOR-RINGS-WITH-CAP-CARRIER " formulated" crlf)
 	(modify ?g (is-executable TRUE))
 )
 
 (defrule goal-production-pay-ring-with-carrier-from-shelf-executable
   "Get a capcarrier from a shelf to feed an rs with it later."
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
-	?g <- (goal (id ?goal-id) (class PAY-RING-WITH-CARRIER-FROM-SHELF)
+	?g <- (goal (id ?goal-id) (class PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
 	                          (mode FORMULATED)
 	                          (params  wp-loc ?wp-loc
 	                                   target-mps ?target-mps
@@ -542,18 +542,18 @@
 	;check ring payment - prevention of overfilling rs
 	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before&ZERO|ONE|TWO))
 	;check that not to may robots try to fill the rs at the same time
-	(or (not (goal (class PAY-FOR-RINGS-WITH-BASE|PAY-RING-WITH-CAP-CARRIER|
-	                      PAY-RING-WITH-CARRIER-FROM-SHELF)
+	(or (not (goal (class PAY-FOR-RINGS-WITH-BASE|PAY-FOR-RINGS-WITH-CAP-CARRIER|
+	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
 	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	               (params $? target-mps ?target-mps $?)))
-	    (and (goal (class PAY-FOR-RINGS-WITH-BASE|PAY-RING-WITH-CAP-CARRIER|
-	                      PAY-RING-WITH-CARRIER-FROM-SHELF)
+	    (and (goal (class PAY-FOR-RINGS-WITH-BASE|PAY-FOR-RINGS-WITH-CAP-CARRIER|
+	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
 	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	               (params $? target-mps ?target-mps $?))
 	         (test (< (+ (length$ (find-all-facts ((?other-goal goal))
 	                               (and (or (eq ?other-goal:class PAY-FOR-RINGS-WITH-BASE)
-	                                        (eq ?other-goal:class PAY-RING-WITH-CAP-CARRIER)
-	                                        (eq ?other-goal:class PAY-RING-WITH-CARRIER-FROM-SHELF))
+	                                        (eq ?other-goal:class PAY-FOR-RINGS-WITH-CAP-CARRIER)
+	                                        (eq ?other-goal:class PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF))
 	                              (is-goal-running ?other-goal:mode)
 	                          (member$ ?target-mps ?other-goal:params))))
 	                     (sym-to-int ?rs-before)) 3))
@@ -568,10 +568,10 @@
 	(wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?wp-loc spot ?spot))
 	; Formulate the goal only if it is not already formulated (prevents doubling
 	; the goals due to matching with RS-1 and RS-2)
-	(not (goal (class  PAY-RING-WITH-CARRIER-FROM-SHELF) (parent goal-id)
+	(not (goal (class  PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF) (parent goal-id)
 	     (params robot ?robot cs ?wp-loc wp ?wp $?)))
 	=>
-	(printout t "Goal " PAY-RING-WITH-CARRIER-FROM-SHELF " formulated" crlf)
+	(printout t "Goal " PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF " formulated" crlf)
 	(modify ?g (is-executable TRUE))
 )
 
@@ -584,10 +584,10 @@ The workpiece remains in the output of the used ring station after
 	?g <- (goal (id ?goal-id) (class MOUNT-RING) ;TODO MONT-FIRST/Next-RING?
 	                          (mode FORMULATED)
 	                          (params  wp ?wp
-	                                   wp-loc ?wp-loc
-	                                   wp-side ?wp-side
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
+	                                   wp-loc ?wp-loc
+	                                   wp-side ?wp-side
 	                                   $?)
 	                          (meta $? assigned-to ?robot $?)
 	                          (is-executable FALSE))
@@ -841,6 +841,21 @@ The workpiece remains in the output of the used ring station after
 	(return ?goal)
 )
 
+(deffunction goal-production-assert-mount-ring
+	(?wp ?rs ?wp-loc ?wp-side)
+	(bind ?goal (assert (goal (class MOUNT-RING)
+	      (id (sym-cat MOUNT-RING- (gensym*))) (sub-type SIMPLE)
+	      (verbosity NOISY) (is-executable FALSE)
+	      (params  wp ?wp
+	               target-mps ?rs
+	               target-side INPUT
+	               wp-loc ?wp-loc
+	               wp-side ?wp-side
+	               )
+	)))
+	(return ?goal)
+)
+
 (deffunction goal-production-assert-discard
 	(?wp ?cs ?side)
 
@@ -865,6 +880,78 @@ The workpiece remains in the output of the used ring station after
 	(return ?goal)
 )
 
+(deffunction goal-production-assert-pay-for-rings-with-base
+	(?wp ?wp-loc ?wp-side ?target-mps ?target-side)
+
+	(bind ?goal (assert (goal (class PAY-FOR-RINGS-WITH-BASE)
+	      (id (sym-cat DELIVER- (gensym*))) (sub-type SIMPLE)
+	      (verbosity NOISY) (is-executable FALSE)
+	      (params  wp ?wp
+	               wp-loc ?wp-loc
+	               wp-side ?wp-side
+	               target-mps ?target-mps
+	               target-side ?target-side
+	               )
+	)))
+	(return ?goal)
+)
+
+(deffunction goal-production-assert-pay-for-rings-with-cap-carrier
+	(?wp ?wp-loc ?wp-side ?target-mps ?target-side)
+
+	(bind ?goal (assert (goal (class PAY-FOR-RINGS-WITH-CAP-CARRIER)
+	      (id (sym-cat DELIVER- (gensym*))) (sub-type SIMPLE)
+	      (verbosity NOISY) (is-executable FALSE)
+	      (params  wp ?wp
+	               wp-loc ?wp-loc
+	               wp-side ?wp-side
+	               target-mps ?target-mps
+	               target-side ?target-side
+	               )
+	)))
+	(return ?goal)
+)
+
+(deffunction goal-production-assert-pay-for-rings-with-cap-carrier-from-shelf
+	(?wp-loc ?target-mps ?target-side)
+
+	(bind ?goal (assert (goal (class PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
+	      (id (sym-cat DELIVER- (gensym*))) (sub-type SIMPLE)
+	      (verbosity NOISY) (is-executable FALSE)
+	      (params  wp-loc ?wp-loc
+	               target-mps ?target-mps
+	               target-side ?target-side
+	               )
+	)))
+	(return ?goal)
+)
+
+(deffunction goal-production-assert-payment-goals
+	(?rs ?col-ring1)
+	(bind ?price 0)
+	(do-for-fact ((?rs-ring-spec wm-fact))
+	             (and (wm-key-prefix ?rs-ring-spec:key (create$ domain fact rs-ring-spec))
+	                  (eq (wm-key-arg ?rs-ring-spec:key r ) ?col-ring1)
+	             )
+	           (bind ?num (wm-key-arg ?rs-ring-spec:key rn))
+	           (if (eq ?num ONE)
+			then
+			(bind ?price 1))
+	           (if (eq ?num TWO)
+			then
+			(bind ?price 2))
+	)
+	(bind ?goals (create$))
+	(loop-for-count ?price
+	   (append$ ?goals
+		(goal-tree-assert-central-run-one PAY-FOR-RING-GOAL
+			(goal-production-assert-pay-for-rings-with-base nil C-BS INPUT ?rs INPUT)
+			(goal-production-assert-pay-for-rings-with-cap-carrier nil C-CS1 nil ?rs INPUT)
+			(goal-production-assert-pay-for-rings-with-cap-carrier-from-shelf C-CS1 ?rs INPUT)
+		)
+	 ))
+	(return ?goals)
+)
 (deffunction goal-production-assert-instruct-cs-buffer-cap
  	(?mps ?cap-color)
 
@@ -915,6 +1002,18 @@ The workpiece remains in the output of the used ring station after
 	(return ?goal)
 )
 
+(deffunction goal-production-assert-instruct-rs-mount-ring
+	(?mps ?col-ring)
+	(bind ?goal (assert (goal (class INSTRUCT-RS-MOUNT-RING)
+	      (id (sym-cat INSTRUCT-RS-MOUNT-RING- (gensym*))) (sub-type SIMPLE)
+	      (verbosity NOISY) (is-executable FALSE) (meta assigned-to central)
+	            (params target-mps ?mps
+	                    ring-color ?col-ring
+	             )
+	)))
+	(return ?goal)
+)
+
 (deffunction goal-production-assert-enter-field
 	(?team-color)
 
@@ -954,6 +1053,44 @@ The workpiece remains in the output of the used ring station after
 		)
 		(goal-production-assert-deliver ?wp-for-order)
 		(goal-production-assert-instruct-ds-deliver ?wp-for-order)
+	)
+  )
+  (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (parent ?root-id))
+)
+
+(deffunction goal-production-assert-c1
+  (?root-id ?order-id ?wp-for-order ?cs ?rs ?col-cap ?col-base ?col-ring1)
+
+  (bind ?goal
+    (goal-tree-assert-central-run-parallel PRODUCE-ORDER
+		(goal-tree-assert-central-run-parallel PREPARE-CS
+			(goal-tree-assert-central-run-parallel BUFFER-GOALS
+				(goal-production-assert-buffer-cap ?cs ?col-cap)
+				(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap)
+				(goal-production-assert-discard UNKNOWN ?cs OUTPUT)
+			)
+		)
+		(goal-tree-assert-central-run-parallel MOUNT-GOALS
+			(goal-tree-assert-central-run-one INTERACT-BS
+				(goal-tree-assert-central-run-parallel OUTPUT-BS
+					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs OUTPUT)
+					(goal-production-assert-mount-ring ?wp-for-order ?rs C-BS OUTPUT)
+					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT)
+				)
+				(goal-tree-assert-central-run-parallel INPUT-BS
+					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs OUTPUT)
+					(goal-production-assert-mount-ring ?wp-for-order ?rs C-BS INPUT)
+					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base INPUT)
+				)
+			)
+			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap)
+			(goal-production-assert-instruct-rs-mount-ring ?rs ?col-ring1)
+		)
+		(goal-production-assert-deliver ?wp-for-order)
+		(goal-production-assert-instruct-ds-deliver ?wp-for-order)
+		(goal-tree-assert-central-run-parallel PAYMENT-GOALS
+			(goal-production-assert-payment-goals ?rs ?col-ring1)
+		)
 	)
   )
   (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (parent ?root-id))
@@ -1029,9 +1166,13 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key domain fact order-complexity args? ord ?order-id&:(eq ?order-id O1) com ?comp))
 	(wm-fact (key domain fact order-base-color args? ord ?order-id col ?col-base))
 	(wm-fact (key domain fact order-cap-color  args? ord ?order-id col ?col-cap))
+	(wm-fact (key domain fact order-ring1-color args? ord ?order-id col ?col-ring1))
 	(wm-fact (key domain fact cs-color args? m ?cs col ?col-cap))
 	(wm-fact (key domain fact mps-type args? m ?cs t CS))
+	(wm-fact (key domain fact mps-type args? m ?rs t RS))
 	(not (wm-fact (key order meta wp-for-order args? wp ?something ord O1)))
+	(or (wm-fact (key domain fact order-ring1-color args? ord ?order-id col RING_NONE))
+	    (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?col-ring1 $?)))
 	=>
 	(bind ?wp-for-order (sym-cat wp- ?order-id))
 	(assert (domain-object (name ?wp-for-order) (type workpiece))
@@ -1047,6 +1188,11 @@ The workpiece remains in the output of the used ring station after
 		then
 		(goal-production-assert-c0 ?root-id ?order-id ?wp-for-order ?cs ?col-cap ?col-base)
 	)
+	(if (eq ?comp C1)
+		then
+		(goal-production-assert-c1 ?root-id ?order-id ?wp-for-order ?cs ?rs ?col-cap ?col-base ?col-ring1)
+	)
+
 )
 
 (defrule goal-production-fill-in-unknown-wp-discard
