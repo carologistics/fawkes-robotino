@@ -176,14 +176,24 @@
     )
   )
   ;remove machines that do not exist
-  (printout t "Available machines: " ?machines crlf)
   (do-for-all-facts ((?wm-fact wm-fact))
-      (and  (wm-key-prefix ?wm-fact:key (create$ domain fact mps-team))
-            (not (member$ (wm-key-arg ?wm-fact:key m) ?machines))
+      (or   (and  (wm-key-prefix ?wm-fact:key (create$ domain fact mps-team))
+              (not (member$ (wm-key-arg ?wm-fact:key m) ?machines))
+            )
+            (and  (wm-key-prefix ?wm-fact:key (create$ domain fact mps-side-free))
+              (not (member$ (wm-key-arg ?wm-fact:key m) ?machines))
+            )
+            (and  (wm-key-prefix ?wm-fact:key (create$ domain fact mps-state))
+              (not (member$ (wm-key-arg ?wm-fact:key m) ?machines))
+            )
+            (and  (wm-key-prefix ?wm-fact:key (create$ domain fact mps-type))
+              (not (member$ (wm-key-arg ?wm-fact:key m) ?machines))
+            )
       )
       (retract ?wm-fact)
   )
 )
+
 
 
 (defrule game-receive-field-layout-protobuf
