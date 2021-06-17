@@ -91,6 +91,7 @@ clips-executive:
               - rcll-central/goal-dependencies.clp
               - rcll-central/goal-production.clp
               - rcll-central/production-strategy.clp
+              - rcll-central/exploration.clp
           - name: goal-expander
             file: rcll-central/fixed-sequence.clp
           - name: action-selection
@@ -141,6 +142,21 @@ clips-executive:
           challenge-flip-insertion: true
 
           start-with-waiting-robots: true
+          exploration:
+            # Reduce navigator velocity while traveling the field so we can
+            # find laser-lines more reliably
+            low-velocity: 0.4
+            low-rotation: 0.5
+
+            # Increased speed and rotation when exploring a zone
+            max-velocity: 1.0
+            max-rotation: 1.0
+
+            # Center of a laser-line must be this far from the zone border
+            # before we start investigating it further (i.e. call the
+            # explore_zone skill on it)
+
+            zone-margin: 0.15
 
       blackboard-preload:
         - Position3DInterface
