@@ -1025,3 +1025,19 @@
 "
   (return (- 1 (/ ?dist ?*MAX-DISTANCE*)))
 )
+
+(deffunction translate-location-map-to-grid (?map-style-location)
+  "This function takes an RCLL 'map-style' tile coordinate (e.g. M-Z21) and translates it
+  to the corresponding navgraph-node grid coordinate of the same location.
+
+  @param An RCLL 'map-style' tile coordinate
+
+  @return A navgraph-node grid coordinate"
+	(bind ?x-value (- 8 (integer (string-to-field (sub-string 4 4 (str-cat ?map-style-location))))))
+	(bind ?y-value (sym-cat (sub-string 5 5 (str-cat ?map-style-location))))
+	(bind ?grid-style-location (sym-cat G- ?x-value "-" ?y-value))
+
+	;(printout t "Conversion of grids: " ?map-style-location ?grid-style-location crlf)
+
+	(return ?grid-style-location)
+)
