@@ -74,14 +74,15 @@
 (defrule exp-conf-get-vmax
 " Reads maximum values for rotating and velocity from the config and stores it as a fact
 "
-
   (wm-fact (id "/config/rcll/exploration/low-velocity") (type FLOAT) (value ?low-velocity))
   (wm-fact (id "/config/rcll/exploration/low-rotation") (type FLOAT) (value ?low-rotation))
   (wm-fact (id "/config/rcll/exploration/max-velocity") (type FLOAT) (value ?max-velocity))
   (wm-fact (id "/config/rcll/exploration/max-rotation") (type FLOAT) (value ?max-rotation))
   =>
-  (assert (exp-navigator-vmax ?max-velocity ?max-rotation))
-  (assert (exp-navigator-vlow ?low-velocity ?low-rotation))
+	(do-for-all-facts ((?robot-wm wm-fact)) (wm-key-prefix ?robot-wm:key (create$ central agent robot))
+		(assert (exp-navigator-vmax (wm-key-arg ?robot-wm:key r) ?max-velocity ?max-rotation))
+		(assert (exp-navigator-vlow (wm-key-arg ?robot-wm:key r) ?low-velocity ?low-rotation))
+	)
 )
 
 
@@ -91,35 +92,53 @@
   The EXPLORATION-PLAN let the robot visit a number of configurable points. If a possible machine was detected, this plan is interrupted
 "
 
-  (not (goal (id ?goal-id) (class EXPLORATION)))
 
   (wm-fact (key domain fact entered-field args? r ?r))
-  (wm-fact (key domain fact self args? r ?r))
+	(wm-fact (key central agent robot args? r ?r))
+  (not (goal (id ?goal-id) (class EXPLORATION) (meta assigned-to ?r)))
   (wm-fact (key refbox phase) (value EXPLORATION))
   (wm-fact (key game state) (value RUNNING))
 
   ?cv <- (wm-fact (id "/config/rcll/exploration/zone-margin") (type FLOAT) (value ?zone-margin))
-  (exp-navigator-vlow ?vel ?rot)
-  =>
+  (exp-navigator-vlow ?r ?vel ?rot)
+  ; TODO: do not assign the robot while creating the goal
+   =>
   (assert (exp-zone-margin ?zone-margin))
   (assert (timer (name send-machine-reports)))
   (assert (goal (id (sym-cat EXPLORATION- (gensym*))) (class EXPLORATION)
-                (type ACHIEVE) (sub-type SIMPLE)))
-  "Lower the speed, for a more robust line and tag detection"
-  (navigator-set-speed ?vel ?rot)
+                (type ACHIEVE) (sub-type SIMPLE) (meta assigned-to ?r)))
 )
 
+(defrule exp-exploration-executable
+" Initial goal creating
+  Refer to fixed-squence.clp for the expandation of the goal and the creation of the EXPLORATION-PLAN
+  The EXPLORATION-PLAN let the robot visit a number of configurable points. If a possible machine was detected, this plan is interrupted
+"
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (class EXPLORATION)
+	            (type ACHIEVE) (sub-type SIMPLE) (meta assigned-to ?r) (is-executable FALSE) (mode FORMULATED))
+	(wm-fact (key domain fact entered-field args? r ?r))
+	(wm-fact (key central agent robot args? r ?r))
+	?cv <- (wm-fact (id "/config/rcll/exploration/zone-margin") (type FLOAT) (value ?zone-margin))
+	(exp-navigator-vlow ?r ?vel ?rot)
+	=>
+	(modify ?g (is-executable TRUE))
+	; TODO: this should only be set if the goal is executed
+	"Lower the speed, for a more robust line and tag detection"
+	(navigator-set-speed ?r ?vel ?rot)
+)
 
 (defrule exp-passed-through-quadrant
 " If the robot drove through a zone slow enough and passed the middle of the zone with a certain margin
   we can conclude, that there is no machine in this zone
 "
-  (goal (class EXPLORATION) (mode DISPATCHED))
-  (exp-navigator-vlow ?max-velocity ?max-rotation)
-  (MotorInterface (id "Robotino")
+  (goal (class EXPLORATION) (mode DISPATCHED) (meta assigned-to ?r))
+  (exp-navigator-vlow ?r ?max-velocity ?max-rotation)
+  (MotorInterface (id ?motor-id &:(eq ?motor-id (remote-if-id ?r "Robotino")))
     (vx ?vx&:(< ?vx ?max-velocity)) (vy ?vy&:(< ?vy ?max-velocity)) (omega ?w&:(< ?w ?max-rotation))
   )
-  (Position3DInterface (id "Pose") (translation $?trans) (time $?timestamp) (visibility_history ?vh&:(>= ?vh 10)))
+  (Position3DInterface (id ?pose-id&:(eq ?pose-id (remote-if-id ?r "Pose"))) (translation $?trans)
+	                     (time $?timestamp) (visibility_history ?vh&:(>= ?vh 10)))
   ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn&:(eq ?zn (get-zone 0.15 ?trans))) (value ?time-searched))
   ?zm <- (wm-fact (key exploration zone ?zn args? machine UNKNOWN team ?team))
 =>
@@ -136,15 +155,18 @@
 " If a laserline was found, that lies inside a zone with a certain margin,
   update the line-vis fact of this zone
 "
-  (goal (class EXPLORATION) (mode DISPATCHED))
+  (goal (class EXPLORATION) (mode DISPATCHED) (meta assigned-to ?r))
   (LaserLineInterface
+		(id ?laser-id&:(str-index (str-cat ?r) ?laser-id))
     (visibility_history ?vh&:(>= ?vh 1))
     (time $?timestamp)
     (end_point_1 $?ep1)
     (end_point_2 $?ep2)
     (frame_id ?frame)
   )
-  (MotorInterface (id "Robotino") (vx ?vx) (vy ?vy))
+  (MotorInterface (id ?motor-id &:(eq ?motor-id (remote-if-id ?r "Robotino")))
+	                (vx ?vx) (vy ?vy))
+
   (exp-zone-margin ?zone-margin)
   ?ze-f <- (wm-fact (key exploration fact line-vis args? zone ?zn&:(eq ?zn (get-zone ?zone-margin
                                             (compensate-movement
@@ -185,14 +207,14 @@
 (defrule exp-found-tag
 " If a tag was found in a zone that we dont have any information of, update the corresponding tag-vis fact
 "
-  (goal (class EXPLORATION) (mode DISPATCHED))
+  (goal (class EXPLORATION) (mode DISPATCHED) (meta assigned-to ?r))
   (domain-fact (name tag-matching) (param-values ?machine ?side ?col ?tag))
-  (TagVisionInterface (id "/tag-vision/info")
+  (TagVisionInterface (id ?tag-vis-id &:(eq ?tag-vis-id (remote-if-id ?r "/tag-vision/info")))
     (tags_visible ?num-tags&:(> ?num-tags 0))
     (tag_id $?tag-ids&:(member$ ?tag ?tag-ids))
   )
   (Position3DInterface
-    (id ?tag-if-id&:(eq ?tag-if-id (str-cat "/tag-vision/" (- (member$ ?tag ?tag-ids) 1))))
+    (id ?tag-if-id&:(eq ?tag-if-id (str-cat (remote-if-id ?r (str-cat " tag-vision/" (- (member$ ?tag ?tag-ids) 1))))))
     (visibility_history ?vh&:(> ?vh 1))
     (translation $?trans) (rotation $?rot)
     (frame ?frame) (time $?timestamp)
@@ -221,9 +243,8 @@
 (defrule exp-start-zone-exploring
 " If there is a zone, where we suspect a machine, interrupt the EXPLORATION-PLAN and start exploring the zone
 "
-  (goal (id ?goal-id) (class EXPLORATION) (mode DISPATCHED))
-  (wm-fact (key domain fact self args? r ?r))
-  (Position3DInterface (id "Pose") (translation $?trans))
+  (goal (id ?goal-id) (class EXPLORATION) (mode DISPATCHED) (meta assigned-to ?r))
+  (Position3DInterface (id ?pos-id&:(eq ?pos-id (remote-if-id ?r "Pose"))) (translation $?trans))
   ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn) (value ?ts&:(<= ?ts ?*EXP-SEARCH-LIMIT*)))
   (wm-fact (key exploration zone ?zn args? machine UNKNOWN team ?team))
   (wm-fact (key exploration fact line-vis args? zone ?zn) (value ?vh))
@@ -264,21 +285,17 @@
   ?skill <- (skill (id ?skill-id) (name ?action-name) (status S_RUNNING))
   (not (exploration-result (zone ?zn)))
 
-  (exp-navigator-vmax ?vel ?rot)
+  (exp-navigator-vmax ?r ?vel ?rot)
   =>
-  (navigator-set-speed ?vel ?rot)
+  (navigator-set-speed ?r ?vel ?rot)
   (bind ?new-ts (+ 1 ?ts))
   (modify ?ze (value ?new-ts))
   (modify ?skill (status S_FAILED))
   (printout t "EXP formulating zone exploration plan " ?zn " with line: " ?vh " and tag: " ?tv crlf)
   (assert
     (plan (id EXPLORE-ZONE) (goal-id ?goal-id))
-    (plan-action (id 1) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name one-time-lock) (param-names name) (param-values ?zn))
-    (plan-action (id 2) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name one-time-lock) (param-names name) (param-values (mirror-name ?zn)))
-    (plan-action (id 3) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name explore-zone) (param-names r z) (param-values ?r ?zn))
-    (plan-action (id 4) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name evaluation))
-    (plan-action (id 5) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name unlock) (param-names name) (param-values (mirror-name ?zn)) (executable TRUE))
-    (plan-action (id 6) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name unlock) (param-names name) (param-values ?zn) (executable TRUE))
+    (plan-action (id 1) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name explore-zone) (param-names r z) (param-values ?r ?zn))
+    (plan-action (id 2) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name evaluation))
   )
 )
 
@@ -310,12 +327,13 @@
 (defrule exp-skill-explore-zone-final
 " Exploration of a zone finished succesfully. Update zone wm-fact and assert exploration-result
 "
-  (goal (id ?goal-id) (class EXPLORATION) (mode DISPATCHED))
+  (goal (id ?goal-id) (class EXPLORATION) (mode DISPATCHED) (meta assigned-to ?r))
   (plan-action (action-name explore-zone) (state FINAL))
   ?pa <- (plan-action (action-name evaluation) (goal-id ?goal-id)
                       (plan-id EXPLORE-ZONE) (state PENDING))
-  (ZoneInterface (id "/explore-zone/info") (zone ?zn-str)
-    (orientation ?orientation) (tag_id ?tag-id) (search_state YES)
+  (ZoneInterface (id ?zone-id&:(eq ?zone-id (remote-if-id ?r "explore-zone/info")))
+	               (zone ?zn-str) (orientation ?orientation)
+	               (tag_id ?tag-id) (search_state YES)
   )
   (domain-fact (name tag-matching) (param-values ?machine ?side ?team-color ?tag-id))
   (domain-fact (name mps-type) (param-values ?machine ?mtype))
@@ -325,9 +343,9 @@
   ?zm2 <- (wm-fact (key exploration zone ?zn3&:(eq (mirror-name ?zn2) ?zn3) args? machine ? team ?team2))
 
   (not (exploration-result (machine ?machine) (zone ?zn2)))
-  (exp-navigator-vlow ?vel ?rot)
+  (exp-navigator-vlow ?r ?vel ?rot)
   =>
-  (navigator-set-speed ?vel ?rot)
+  (navigator-set-speed ?r ?vel ?rot)
   (modify ?pa (state FINAL))
   (modify ?ze (value (+ 1 ?times-searched)))
   (modify ?zm (key exploration zone ?zn2 args? machine ?machine team ?team))
@@ -351,11 +369,15 @@
 
 (defrule exp-skill-explore-zone-failed
 " Exploration of a zone failed. Simply set the evaluation action to final to continue"
-  (plan-action (action-name explore-zone) (state FAILED))
-  ?p <- (plan-action (action-name evaluation) (state PENDING))
-  (exp-navigator-vlow ?vel ?rot)
+  (plan-action (action-name explore-zone) (plan-id ?plan-id) (goal-id ?goal-id)
+	             (state FAILED))
+  ?p <- (plan-action (action-name evaluation) (state PENDING)
+	                   (plan-id ?plan-id) (goal-id ?goal-id))
+	(plan (id ?plan-id) (goal-id ?goal-id))
+	(goal (id ?goal-id) (mode DISPATCHED) (meta assigned-to ?r))
+  (exp-navigator-vlow ?r ?vel ?rot)
   =>
-  (navigator-set-speed ?vel ?rot)
+  (navigator-set-speed ?r ?vel ?rot)
   (printout t "EXP exploration fact zone fail, nothing to do for evaluation" crlf)
   (modify ?p (state FINAL))
 )
@@ -392,11 +414,11 @@
 
 
 (defrule exp-exploration-ends-cleanup
-" As soon as the game phase switches to production, set the exploration goal to finished 
+" As soon as the game phase switches to production, set the exploration goal to finished
   and reset the velocity
 
 "
-  ?g <- (goal (class EXPLORATION) (mode DISPATCHED))
+  ?g <- (goal (class EXPLORATION) (mode DISPATCHED) (meta assigned-to ?r))
   (wm-fact (key refbox phase) (value PRODUCTION))
   (wm-fact (key game state) (value RUNNING))
   (wm-fact (id "/config/rcll/max-velocity") (type FLOAT) (value ?max-velocity))
@@ -405,7 +427,7 @@
 =>
   (printout t "exploration phase ended, cleaning up" crlf)
   (modify ?g (mode FINISHED) (outcome COMPLETED))
-  (navigator-set-speed ?max-velocity ?max-rotation)
+  (navigator-set-speed ?r ?max-velocity ?max-rotation)
 )
 
 

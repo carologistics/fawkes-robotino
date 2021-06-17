@@ -115,6 +115,20 @@
 	)
 )
 
+(defrule goal-expander-exploration
+  ?g <- (goal (id ?goal-id) (mode SELECTED) (class EXPLORATION) (meta $? assigned-to ?r $?))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (id ?id&: (eq ?id (str-cat "/config/rcll/route/" ?team-color "/" ?r))) (values $?route))
+  =>
+  (assert (plan (goal-id ?goal-id) (id (sym-cat EXPLORATION-PLAN-(gensym*)))))
+  (bind ?action-id 1)
+  (foreach ?node ?route
+!-(assert (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id EXPLORATION-PLAN) (action-name move-node) (param-values ?r ?node)))
+!-(bind ?action-id (+ ?action-id 1))
+  )
+  (modify ?g (mode EXPANDED))
+)
+
 (defrule goal-expander-send-beacon-signal
   ?p <- (goal (mode DISPATCHED) (id ?parent-id))
   ?g <- (goal (id ?goal-id) (class SEND-BEACON) (mode SELECTED)
