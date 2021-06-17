@@ -64,10 +64,37 @@ fawkes/bbsync:
       reading:
         skiller: SkillerInterface::Skiller=/robot1/Skiller
         pose: Position3DInterface::Pose=/robot1/Pose
+        tag0: Position3DInterface::/tag-vision/0=/robot1/tag-vision/0
+        tag0: Position3DInterface::/tag-vision/1=/robot1/tag-vision/1
+        tag0: Position3DInterface::/tag-vision/2=/robot1/tag-vision/2
+        tag0: Position3DInterface::/tag-vision/3=/robot1/tag-vision/3
+        tag0: Position3DInterface::/tag-vision/4=/robot1/tag-vision/4
+        tag0: Position3DInterface::/tag-vision/5=/robot1/tag-vision/5
+        tag0: Position3DInterface::/tag-vision/6=/robot1/tag-vision/6
+        tag0: Position3DInterface::/tag-vision/7=/robot1/tag-vision/7
+        tag0: Position3DInterface::/tag-vision/8=/robot1/tag-vision/8
+        tag0: Position3DInterface::/tag-vision/9=/robot1/tag-vision/9
+        tag0: Position3DInterface::/tag-vision/10=/robot1/tag-vision/10
+        tag0: Position3DInterface::/tag-vision/11=/robot1/tag-vision/11
+        tag0: Position3DInterface::/tag-vision/12=/robot1/tag-vision/12
+        tag0: Position3DInterface::/tag-vision/13=/robot1/tag-vision/13
+        tag0: Position3DInterface::/tag-vision/14=/robot1/tag-vision/14
+        tag0: Position3DInterface::/tag-vision/15=/robot1/tag-vision/15
+        foundtag: Position3DInterface::/explore-zone/found-tag=/robot1/explore-zone/found-tag
         navgraph-generator: NavGraphGeneratorInterface::/navgraph-generator=/robot1/navgraph-generator
         navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/robot1/navgraph-generator-mps
         navigator: NavigatorInterface::Navigator=/robot1/Navigator
         robotino: MotorInterface::Robotino=/robot1/Robotino
+        laser: LaserLineInterface::Laser=/robot1/Laser
+        laser1: LaserLineInterface::/laser-lines/1=/robot1/laser-lines/1
+        laser2: LaserLineInterface::/laser-lines/2=/robot1/laser-lines/2
+        laser3: LaserLineInterface::/laser-lines/3=/robot1/laser-lines/3
+        laser4: LaserLineInterface::/laser-lines/4=/robot1/laser-lines/4
+        laser5: LaserLineInterface::/laser-lines/5=/robot1/laser-lines/5
+        laser6: LaserLineInterface::/laser-lines/6=/robot1/laser-lines/6
+        laser7: LaserLineInterface::/laser-lines/7=/robot1/laser-lines/7
+        laser8: LaserLineInterface::/laser-lines/8=/robot1/laser-lines/8
+        zone: ZoneInterface::/tag-vision/info=/robot1/tag-vision/info
     robot2:
       #active: true (set via the off-field startup)
       host: robotino-laptop-2
