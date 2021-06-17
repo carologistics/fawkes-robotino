@@ -286,13 +286,13 @@
 
   (foreach ?r (pb-field-list ?p "routes")
     (progn$ (?waypoint (pb-field-list ?r "route"))
-      (bind ?waypoints (insert$ ?waypoints 100 ?waypoint))
+      (bind ?waypoints (append$ ?waypoints ?waypoint))
     )
     (progn$ (?waypoint (pb-field-list ?r "reached"))
-      (bind ?reached (insert$ ?reached 100 ?waypoint))
+      (bind ?reached (append$ ?reached ?waypoint))
     )
     (progn$ (?waypoint (pb-field-list ?r "remaining"))
-      (bind ?remaining (insert$ ?remaining 100 ?waypoint))
+      (bind ?remaining (append$ ?remaining ?waypoint))
     )
   )
 
@@ -315,13 +315,13 @@
 
   (foreach ?r (pb-field-list ?p "routes")
     (progn$ (?waypoint (pb-field-list ?r "route"))
-      (bind ?waypoints (insert$ ?waypoints 100 ?waypoint))
+      (bind ?waypoints (append$ ?waypoints ?waypoint))
     )
     (progn$ (?waypoint (pb-field-list ?r "reached"))
-      (bind ?reached (insert$ ?reached 100 ?waypoint))
+      (bind ?reached (append$ ?reached ?waypoint))
     )
     (progn$ (?waypoint (pb-field-list ?r "remaining"))
-      (bind ?remaining (insert$ ?remaining 100 ?waypoint))
+      (bind ?remaining (append$ ?remaining ?waypoint))
     )
   )
   (if (neq ?waypoints-old ?waypoints) then
