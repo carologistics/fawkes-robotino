@@ -293,7 +293,6 @@
 )
 
 (defrule goal-expander-deliver-rc21
-	;?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class DELIVER-RC21)
 	                          (mode SELECTED) (parent ?parent)
 	                          (params  wp ?wp)
@@ -318,10 +317,7 @@
 				(bind ?wp-side (wm-key-arg ?wp-at:key side))
 			)
 
-			(printout t crlf crlf ?wp-loc crlf crlf)
-			(printout t crlf crlf ?wp-side crlf crlf)
-
-			(create$ ; only last statement of if is returned
+			(create$
 				(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
 					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
 				)
