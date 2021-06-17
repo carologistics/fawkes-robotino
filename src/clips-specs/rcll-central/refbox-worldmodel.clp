@@ -21,7 +21,7 @@
 ;
 
 
-; DANGERZONE: NEVER use a foreach on a pb-field-list. It will crash. Use progn$. Thank me later. Bye.  
+; DANGERZONE: NEVER use a foreach on a pb-field-list. It will crash. Use progn$ instead. 
 
 (defrule refbox-recv-BeaconSignal
   ?pf <- (protobuf-msg (type "llsf_msgs.BeaconSignal") (ptr ?p))
