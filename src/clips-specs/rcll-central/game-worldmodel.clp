@@ -82,6 +82,7 @@
     (wm-fact (key game found-tag rot args? m ?mps) (type FLOAT) (is-list TRUE) (values (tf-quat-from-yaw ?yaw )))
     (wm-fact (key game found-tag zone args? m ?mps) (value ?zone))
     ; add tags for the other team
+    ; removed mirroring for RC21, might be necessary to be reverted
     (wm-fact (key game found-tag name args? m  ?mps) (type BOOL) (value TRUE))
     (wm-fact (key game found-tag side args? m  ?mps) (value INPUT))
     (wm-fact (key game found-tag frame args? m  ?mps) (type STRING) (value "map"))

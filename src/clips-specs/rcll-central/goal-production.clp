@@ -682,7 +682,7 @@
 )
 
 (defrule goal-production-navigation-challenge-move-executable
-" Bring a product to a cap station to mount a cap on it.
+" Move to a navgraph node 
 "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class NAVIGATION-CHALLENGE-MOVE)
@@ -712,7 +712,8 @@
 
   (bind ?goals (create$))
   (foreach ?location ?locations
-	(bind ?goals (insert$ ?goals 100 (goal-production-assert-navigation-challenge-move ?location)))
+	(bind ?goals (insert$ ?goals (+ 1 (length$ ?goal)) 
+				 (goal-production-assert-navigation-challenge-move ?location)))
   )
 
   (bind ?goal 
@@ -724,11 +725,11 @@
 )
 
 (defrule goal-production-create-navigation-challenge-tree
-	""
-	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
-	(wm-fact (key domain fact waypoints args? $?waypoints))
-	(not (goal (class NAVIGATION-CHALLENGE-PARENT)))
-	=>
-	(goal-production-assert-navigation-challenge ?root-id ?waypoints)
+  "Create a goal tree for the navigation challenge if there is a waypoint fact."
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+  (wm-fact (key domain fact waypoints args? $?waypoints))
+  (not (goal (class NAVIGATION-CHALLENGE-PARENT)))
+  =>
+  (goal-production-assert-navigation-challenge ?root-id ?waypoints)
 )
