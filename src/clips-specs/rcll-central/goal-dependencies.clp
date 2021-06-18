@@ -27,8 +27,8 @@
 	; goal class of dependence-goal
 	(slot class (type SYMBOL))
 
-	; identifying parameters
-	; for mount-cap: target-mps
+	; necessary parameters used for goal-expander of dependency-goal, set in execution-check
+	; for deliver-mount-cap:	wp, wp-loc, wp-side
 	(multislot params (type SYMBOL))
 
 	; id of dependence-goal, nil if ungrounded
@@ -48,12 +48,49 @@
 	=>
 	(printout t "Goal MOUNT-CAP " ?goal-id " depends on class BUFFER-CAP " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
-	          (class BUFFER-CAP)
-	          (params target-mps ?target-mps) (grounded-with nil)))
+	        					   (class BUFFER-CAP)
+	        					   (grounded-with nil)))
 	(printout t "Goal MOUNT-CAP " ?goal-id " depends on class INSTRUCT-CS-BUFFER-CAP " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
-	          (class INSTRUCT-CS-BUFFER-CAP)
-	          (params target-mps ?target-mps) (grounded-with nil)))
+	        					   (class INSTRUCT-CS-BUFFER-CAP)
+	        					   (grounded-with nil)))
+)
+
+(defrule goal-dependencies-deliver-mount-cap
+" Every deliver goal depends on the mount-cap class. Per default, no mount-cap goal is grounded. "
+	; needs to be higher than SALIENCE-GOAL-EXECUTABLE-CHECK
+	(declare (salience (+ ?*SALIENCE-GOAL-EXECUTABLE-CHECK* 1)))
+	?g <- (goal (id ?goal-id) (class DELIVER) (mode FORMULATED)
+	            (params wp ?wp $?))
+	(not (dependency-assignment (goal-id ?goal-id) (class MOUNT-CAP)))
+	(not (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-CS-MOUNT-CAP)))
+	=>
+	(printout t "Goal DELIVER " ?goal-id " depends on class MOUNT-CAP " crlf)
+	(assert (dependency-assignment (goal-id ?goal-id)
+	        					   (class MOUNT-CAP)
+								   (grounded-with nil)))
+	(printout t "Goal DELIVER " ?goal-id " depends on class INSTRUCT-CS-MOUNT-CAP " crlf)
+	(assert (dependency-assignment (goal-id ?goal-id)
+	        					   (class INSTRUCT-CS-MOUNT-CAP)
+								   (grounded-with nil)))
+)
+
+(defrule goal-dependencies-discard-buffer-cap
+" Every discard goal depends on the buffer-cap class. Per default, no buffer-cap goal is grounded. "
+	; needs to be higher than SALIENCE-GOAL-EXECUTABLE-CHECK
+	(declare (salience (+ ?*SALIENCE-GOAL-EXECUTABLE-CHECK* 1)))
+	?g <- (goal (id ?goal-id) (class DISCARD) (mode FORMULATED))
+	(not (dependency-assignment (goal-id ?goal-id) (class BUFFER-CAP)))
+	(not (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-CS-BUFFER-CAP)))
+	=>
+	(printout t "Goal DISCARD " ?goal-id " depends on class BUFFER-CAP " crlf)
+	(assert (dependency-assignment (goal-id ?goal-id)
+	        					   (class BUFFER-CAP)
+								   (grounded-with nil)))
+	(printout t "Goal DISCARD " ?goal-id " depends on class INSTRUCT-CS-BUFFER-CAP " crlf)
+	(assert (dependency-assignment (goal-id ?goal-id)
+	        					   (class INSTRUCT-CS-BUFFER-CAP)
+								   (grounded-with nil)))
 )
 
 
@@ -64,8 +101,6 @@
 	?g <- (goal (id ?goal-id) (class MOUNT-CAP)
 	                          (mode FORMULATED)
 	                          (params  wp ?wp
-	                                   wp-loc ?wp-loc
-	                                   wp-side ?wp-side
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
 	                                   $?)
@@ -151,8 +186,6 @@
 	?g <- (goal (id ?goal-id) (class MOUNT-CAP)
 	                          (mode FORMULATED)
 	                          (params  wp ?wp
-	                                   wp-loc ?wp-loc
-	                                   wp-side ?wp-side
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
 	                                   $?)
@@ -175,10 +208,7 @@
 	(wm-fact (key domain fact wp-at args? wp ?blocking-wp m ?target-mps side OUTPUT))
 	; CS output is not free, but with this goal executing, we can assume it will soon
     (goal (id ?deliver-id) (class DELIVER) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-	         (params  wp ?blocking-wp
-	                  wp-loc ?target-mps
-	                  wp-side OUTPUT
-	                  $?))
+	         (params  wp ?blocking-wp $?))
 
 	; CS is not buffered, but with the following dependency, we can assume it will soon
 	(and  ; A feasible (same parameter) buffer-cap or instruct-cs-buffer-cap goal is executing...
@@ -227,7 +257,7 @@
 				" and DELIVER goal " ?deliver-id crlf)
 	(modify ?g (is-executable TRUE))
 	(modify ?da (grounded-with ?dependency-goal-id))
-	(assert (dependency-assignment (goal-id ?goal-id) (class DELIVER) (params wp ?blocking-wp) (grounded-with ?deliver-id)))
+	(assert (dependency-assignment (goal-id ?goal-id) (class DELIVER) (grounded-with ?deliver-id)))
 
 	; If a buffer-cap goal is grounded with ?g, also ground its instruct-cs-buffer-cap goal to ?g
 	(if (eq ?dependency-class BUFFER-CAP)
@@ -240,6 +270,107 @@
 		 	(printout t "MOUNT-CAP Goal executable for " ?robot
 			            " depending on INSTRUCT-CS-BUFFER-CAP goal" crlf)
 	)
+)
+
+(defrule goal-dependencies-deliver-mount-cap-executable
+" Bring a product to the delivery station.
+"
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class DELIVER)
+	                          (mode FORMULATED)
+	                          (params  wp ?unknown-wp
+	                                   target-mps ?target-mps
+	                                   target-side ?target-side
+	                                   $?)
+	                          (meta $? assigned-to ?robot $?)
+	                          (is-executable FALSE))
+
+	; Robot CEs
+	(wm-fact (key central agent robot args? r ?robot))
+	(wm-fact (key refbox team-color) (value ?team-color))
+
+	; MPS-CS CEs
+	(wm-fact (key domain fact mps-type args? m ?target-mps t DS))
+	(wm-fact (key domain fact mps-state args? m ?target-mps s ~BROKEN))
+	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?target-mps side INPUT)))
+	(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
+
+	; wp is not at CS OUTPUT, but after these goals finished, it will be
+	(goal (id ?mount-goal-id) ;TODO: dafür sorgen, dass das auch das richtige mount-cap goal ist
+	      (class MOUNT-CAP)
+		  (parent ?parent)
+	      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	      (params wp ?wp
+		  		  target-mps ?mps
+				  $?))
+	?mount-da <- (dependency-assignment (goal-id ?goal-id) (class MOUNT-CAP))
+
+	(wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
+	(wm-fact (key domain fact mps-side-free args? m ?mps side OUTPUT))
+
+	; get instruct goal through tree relationship to mount-cap, in this case sibling of grandparent
+	(goal (id ?parent) (parent ?grandparent))
+	(goal (id ?grandparent) (parent ?great-grandparent))
+	(goal (id ?instruct-goal-id)
+	      (class INSTRUCT-CS-MOUNT-CAP)
+	      (parent ?great-grandparent)
+	      (mode FORMULATED))
+	?instruct-da <- (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-CS-MOUNT-CAP))
+
+	(not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
+	=>
+	(printout t "DELIVER Goal executable for " ?robot " depending on " MOUNT-CAP " goal " ?mount-goal-id
+				" and INSTRUCT-CS-MOUNT-CAP goal " ?instruct-goal-id crlf)
+	(modify ?g (is-executable TRUE))
+	(modify ?mount-da (params  wp ?wp
+							   wp-loc ?mps
+	                    	   wp-side OUTPUT)
+					  (grounded-with ?mount-goal-id))
+	(modify ?instruct-da (grounded-with ?instruct-goal-id))
+)
+
+(defrule goal-dependencies-discard-buffer-cap-executable
+" Bring a product to a cap station to mount a cap on it.
+"
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class DISCARD)
+	                          (mode FORMULATED)
+							  (parent ?parent)
+	                          (params  $? wp-loc ?wp-loc wp-side ?wp-side)
+	                          (meta $? assigned-to ?robot $?)
+	                          (is-executable FALSE))
+
+	; Robot CEs
+	(wm-fact (key central agent robot args? r ?robot))
+	(wm-fact (key refbox team-color) (value ?team-color))
+	(not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+
+	; MPS-Source CEs
+	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
+	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
+
+	; wp is not at CS OUTPUT, but after these goals finished, it will be
+	(goal (id ?buffer-goal-id)
+	      (class BUFFER-CAP)
+		  (parent ?parent)
+	      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	      (params target-mps ?wp-loc $?))
+	?buffer-da <- (dependency-assignment (goal-id ?goal-id) (class BUFFER-CAP))
+
+	; get cc through buffer actions
+	(plan-action (goal-id ?buffer-goal-id) (action-name wp-put) (param-values ?r ?cc ?wp-loc))
+
+	(goal (id ?instruct-goal-id)
+	      (class INSTRUCT-CS-BUFFER-CAP)
+	      (parent ?parent)	; depends on tree structur
+	      (mode FORMULATED))
+	?instruct-da <- (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-CS-BUFFER-CAP))
+	=>
+	(printout t "DISCARD Goal executable for " ?robot " depending on " BUFFER-CAP " goal " ?buffer-goal-id
+				" and INSTRUCT-CS-BUFFER-CAP goal " ?instruct-goal-id crlf)
+	(modify ?g (params  wp ?cc wp-loc ?wp-loc wp-side ?wp-side) (is-executable TRUE))
+	(modify ?buffer-da (grounded-with ?buffer-goal-id))
+	(modify ?instruct-da (grounded-with ?instruct-goal-id))
 )
 
 
