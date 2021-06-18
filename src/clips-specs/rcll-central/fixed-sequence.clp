@@ -217,7 +217,6 @@
 
 
 (defrule goal-expander-pay-for-rings-with-base
-	;?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class ?class&PAY-FOR-RINGS-WITH-BASE)
 	                          (mode SELECTED) (parent ?parent)
 	                          (params  wp ?wp
@@ -256,7 +255,6 @@
 
 
 (defrule goal-expander-get-cap-carrier-to-fill-rs
-	;?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class ?class&PAY-FOR-RINGS-WITH-CAP-CARRIER)
 	                          (mode SELECTED) (parent ?parent)
 	                          (params  wp ?wp
@@ -293,7 +291,6 @@
 )
 
 (defrule goal-expander-get-shelf-to-fill-rs
-;	 ?p <- (goal (mode DISPATCHED) (id ?parent))
 	 ?g <- (goal (id ?goal-id) (class ?class&PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
 	             (mode SELECTED) (parent ?parent)
 	             (params wp-loc ?wp-loc;cs
@@ -333,7 +330,6 @@
 )
 
 (defrule goal-expander-instruct-cs-mount-cap
-	;?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class INSTRUCT-CS-MOUNT-CAP) (mode SELECTED)
 	            (params target-mps ?mps cap-color ?cap-color)
 	            (meta $? assigned-to ?assigned $?))
@@ -428,18 +424,17 @@
 	(bind ?num (string-to-field ( sub-string 5 5 ?step) ))
 	(bind ?prev-rings (create$ ))
 	(loop-for-count (?count 1 (- ?num 1))
-	                (do-for-fact ((?ring wm-fact))
-		            (and (wm-key-prefix ?ring:key (create$ domain fact (sym-cat wp-ring ?count -color)))
-				(eq (wm-key-arg ?ring:key wp) ?wp))
-			    (bind ?prev-rings (append$ ?prev-rings (wm-key-arg ?ring:key col)))
+	   (do-for-fact ((?ring wm-fact))
+	      (and (wm-key-prefix ?ring:key (create$ domain fact (sym-cat wp-ring ?count -color)))
+	           (eq (wm-key-arg ?ring:key wp) ?wp))
+	      (bind ?prev-rings (append$ ?prev-rings (wm-key-arg ?ring:key col)))
 	))
 	(plan-assert-sequential INSTRUCT-TO-MOUNT-RING-PLAN ?goal-id ?robot
 		(plan-assert-action prepare-rs
-	                         ?mps ?ring-color ?rs-before ?rs-after ?req )
-
+		      ?mps ?ring-color ?rs-before ?rs-after ?req )
 		(plan-assert-action
-	         (sym-cat rs-mount-ring (sub-string 5 5 ?step) )
-	         ?mps ?wp ?ring-color ?prev-rings ?rs-before ?rs-after ?req )
+		      (sym-cat rs-mount-ring (sub-string 5 5 ?step) )
+		      ?mps ?wp ?ring-color ?prev-rings ?rs-before ?rs-after ?req )
 	)
 	(modify ?g (mode EXPANDED))
 )
