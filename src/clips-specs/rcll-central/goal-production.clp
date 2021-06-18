@@ -441,9 +441,9 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class PAY-FOR-RINGS-WITH-CAP-CARRIER)
 	                          (mode FORMULATED)
-	                          (params  wp ?wp
+	                          (params  wp UNKNOWN
 	                                   wp-loc ?wp-loc
-	                                   wp-side ?wp-side
+	                                   wp-side UNKNOWN
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
 	                                   $?)
@@ -498,8 +498,19 @@
 	    ; or the workpiece is already being held
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
 	=>
+	(bind ?wp-side nil)
+	(do-for-fact ((?wp-at wm-fact))
+	             (and (wm-key-prefix ?wp-at:key (create$ domain fact wp-at))
+	                  (eq (wm-key-arg ?wp-at:key wp) ?wp))
+	             (bind ?wp-side (wm-key-arg ?wp-at:key side))
+	)
 	(printout t "Goal "  PAY-FOR-RINGS-WITH-CAP-CARRIER " formulated" crlf)
-	(modify ?g (is-executable TRUE))
+	(modify ?g (is-executable TRUE)(params wp ?wp
+	                                       wp-loc ?wp-loc
+	                                       wp-side ?wp-side
+	                                       target-mps ?target-mps
+	                                       target-side ?target-side)
+	)
 )
 
 (defrule goal-production-pay-ring-with-carrier-from-shelf-executable
@@ -852,12 +863,13 @@ The workpiece remains in the output of the used ring station after
 )
 
 (deffunction goal-production-assert-pay-for-rings-with-base
-	(?wp ?wp-loc ?wp-side ?target-mps ?target-side)
-
+	(?wp-loc ?wp-side ?target-mps ?target-side)
+	(bind ?wp-name (sym-cat BASE-PAY- (gensym*)))
+	(assert (domain-object (name ?wp-name) (type workpiece)))
 	(bind ?goal (assert (goal (class PAY-FOR-RINGS-WITH-BASE)
-	      (id (sym-cat DELIVER- (gensym*))) (sub-type SIMPLE)
+	      (id (sym-cat PAY-FOR-RINGS-WITH-BASE- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE)
-	      (params  wp ?wp
+	      (params  wp ?wp-name
 	               wp-loc ?wp-loc
 	               wp-side ?wp-side
 	               target-mps ?target-mps
@@ -871,7 +883,7 @@ The workpiece remains in the output of the used ring station after
 	(?wp ?wp-loc ?wp-side ?target-mps ?target-side)
 
 	(bind ?goal (assert (goal (class PAY-FOR-RINGS-WITH-CAP-CARRIER)
-	      (id (sym-cat DELIVER- (gensym*))) (sub-type SIMPLE)
+	      (id (sym-cat PAY-FOR-RINGS-WITH-CAP-CARRIER- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE)
 	      (params  wp ?wp
 	               wp-loc ?wp-loc
@@ -887,7 +899,7 @@ The workpiece remains in the output of the used ring station after
 	(?wp-loc ?target-mps ?target-side)
 
 	(bind ?goal (assert (goal (class PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
-	      (id (sym-cat DELIVER- (gensym*))) (sub-type SIMPLE)
+	      (id (sym-cat PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE)
 	      (params  wp-loc ?wp-loc
 	               target-mps ?target-mps
@@ -914,12 +926,13 @@ The workpiece remains in the output of the used ring station after
 	)
 	(bind ?goals (create$))
 	(loop-for-count ?price
-	   (append$ ?goals
+	   (bind ?goals
+	      (insert$ ?goals (+ (length$ ?goals) 1)
 		(goal-tree-assert-central-run-one PAY-FOR-RING-GOAL
-			(goal-production-assert-pay-for-rings-with-base nil C-BS INPUT ?rs INPUT)
-			(goal-production-assert-pay-for-rings-with-cap-carrier nil C-CS1 nil ?rs INPUT)
+			(goal-production-assert-pay-for-rings-with-base C-BS INPUT ?rs INPUT)
+			(goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN C-CS1 UNKNOWN ?rs INPUT)
 			(goal-production-assert-pay-for-rings-with-cap-carrier-from-shelf C-CS1 ?rs INPUT)
-		)
+		))
 	 ))
 	(return ?goals)
 )
@@ -1076,6 +1089,7 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key refbox phase) (value PRODUCTION))
 	(wm-fact (key game state) (value RUNNING))
 	(wm-fact (key refbox team-color) (value ?color))
+	(not (wm-fact (key domain fact rs-ring-spec args? $? rn  NA)))
 	=>
 	(bind ?g (goal-tree-assert-central-run-parallel PRODUCTION-ROOT))
 	(modify ?g (meta do-not-finish))
