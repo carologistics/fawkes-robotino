@@ -239,7 +239,7 @@
 
 (defrule goal-expander-pay-for-rings-with-base
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
-	?g <- (goal (id ?goal-id) (class ?class& PAY-FOR-RINGS-WITH-BASE)
+	?g <- (goal (id ?goal-id) (class ?class&PAY-FOR-RINGS-WITH-BASE)
 	                          (mode SELECTED) (parent ?parent)
 	                          (params  wp ?wp
 	                                   wp-loc ?wp-loc
@@ -278,7 +278,7 @@
 
 (defrule goal-expander-get-cap-carrier-to-fill-rs
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
-	?g <- (goal (id ?goal-id) (class ?class& PAY-RING-WITH-CAP-CARRIER)
+	?g <- (goal (id ?goal-id) (class ?class&PAY-FOR-RINGS-WITH-CAP-CARRIER)
 	                          (mode SELECTED) (parent ?parent)
 	                          (params  wp ?wp
 	                                   wp-loc ?wp-loc
@@ -315,7 +315,7 @@
 
 (defrule goal-expander-get-shelf-to-fill-rs
 ;	 ?p <- (goal (mode DISPATCHED) (id ?parent))
-	 ?g <- (goal (id ?goal-id) (class ?class& PAY-RING-WITH-CARRIER-FROM-SHELF)
+	 ?g <- (goal (id ?goal-id) (class ?class&PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
 	             (mode SELECTED) (parent ?parent)
 	             (params wp-loc ?wp-loc;cs
 	                     target-mps ?target-mps;rs
