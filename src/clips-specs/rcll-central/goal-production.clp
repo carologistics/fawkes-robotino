@@ -182,6 +182,11 @@
 			(retract ?waiting)
 		)
 	)
+	;cleaning goal dependencies by flushing grounded-with for formulated goals
+	(delayed-do-for-all-facts ((?da dependency-assignment) (?g goal)) 
+		(and (eq ?da:goal-id ?g:id) (neq ?da:grounded-with nil) (eq ?g:mode FORMULATED))
+		(modify ?da (grounded-with nil))
+	)
 )
 
 (defrule goal-production-unassign-robot-from-finshed-goals
