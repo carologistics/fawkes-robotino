@@ -491,7 +491,6 @@
 	                                    (member$ ?target-mps ?other-goal:params)
 	                               )))
 	                     (sym-to-int ?rs-before)) 3))
-	                            ;|PAY-FOR-RINGS-WITH-CAP-CARRIER)
 	   )
 	)
 	; MPS-Source CEs
@@ -948,11 +947,11 @@ The workpiece remains in the output of the used ring station after
 	             )
 	           (bind ?num (wm-key-arg ?rs-ring-spec:key rn))
 	           (if (eq ?num ONE)
-			then
-			(bind ?price 1))
+	             then
+	              (bind ?price 1))
 	           (if (eq ?num TWO)
-			then
-			(bind ?price 2))
+	             then
+	               (bind ?price 2))
 	)
 	(bind ?goals (create$))
 	(loop-for-count ?price
@@ -982,8 +981,8 @@ The workpiece remains in the output of the used ring station after
 	(?wp ?base-color ?side)
 
 	(bind ?goal (assert (goal (class INSTRUCT-BS-DISPENSE-BASE)
-          (id (sym-cat INSTRUCT-BS-DISPENSE-BASE- (gensym*))) (sub-type SIMPLE)
-          (verbosity NOISY) (is-executable FALSE) (meta assigned-to central)
+	  (id (sym-cat INSTRUCT-BS-DISPENSE-BASE- (gensym*))) (sub-type SIMPLE)
+	  (verbosity NOISY) (is-executable FALSE) (meta assigned-to central)
 	      (params wp ?wp
 	              target-mps C-BS
 	              target-side ?side
@@ -996,8 +995,8 @@ The workpiece remains in the output of the used ring station after
 	(?wp)
 
 	(bind ?goal (assert (goal (class INSTRUCT-DS-DELIVER)
-          (id (sym-cat INSTRUCT-DS-DELIVER- (gensym*))) (sub-type SIMPLE)
-          (verbosity NOISY) (is-executable FALSE) (meta assigned-to central)
+	  (id (sym-cat INSTRUCT-DS-DELIVER- (gensym*))) (sub-type SIMPLE)
+	  (verbosity NOISY) (is-executable FALSE) (meta assigned-to central)
 	      (params wp ?wp
 	              target-mps C-DS)
 	)))
@@ -1005,8 +1004,7 @@ The workpiece remains in the output of the used ring station after
 )
 
 (deffunction goal-production-assert-instruct-cs-mount-cap
- 	(?mps ?cap-color)
-
+	(?mps ?cap-color)
 	(bind ?goal (assert (goal (class INSTRUCT-CS-MOUNT-CAP)
 	      (id (sym-cat INSTRUCT-CS-MOUNT-CAP- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE) (meta assigned-to central)
@@ -1033,8 +1031,8 @@ The workpiece remains in the output of the used ring station after
 
 	(bind ?goal (assert (goal (class ENTER-FIELD)
 	            (id (sym-cat ENTER-FIELD- (gensym*)))
-				(sub-type SIMPLE)
-                (verbosity NOISY) (is-executable FALSE)
+	            (sub-type SIMPLE)
+	            (verbosity NOISY) (is-executable FALSE)
 	            (params team-color ?team-color)
 	)))
 	(return ?goal)
