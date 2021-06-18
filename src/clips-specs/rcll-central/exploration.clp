@@ -78,11 +78,10 @@
   (wm-fact (id "/config/rcll/exploration/low-rotation") (type FLOAT) (value ?low-rotation))
   (wm-fact (id "/config/rcll/exploration/max-velocity") (type FLOAT) (value ?max-velocity))
   (wm-fact (id "/config/rcll/exploration/max-rotation") (type FLOAT) (value ?max-rotation))
-  =>
-	(do-for-all-facts ((?robot-wm wm-fact)) (wm-key-prefix ?robot-wm:key (create$ central agent robot))
-		(assert (exp-navigator-vmax (wm-key-arg ?robot-wm:key r) ?max-velocity ?max-rotation))
-		(assert (exp-navigator-vlow (wm-key-arg ?robot-wm:key r) ?low-velocity ?low-rotation))
-	)
+	(wm-fact (key central agent robot args? r ?robot))
+	=>
+	(assert (exp-navigator-vmax ?robot ?max-velocity ?max-rotation))
+	(assert (exp-navigator-vlow ?robot ?low-velocity ?low-rotation))
 )
 
 
