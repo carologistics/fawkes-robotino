@@ -549,12 +549,12 @@
 )
 
 
-(deffunction navigator-set-speed (?max-velocity ?max-rotation ?robot)
+(deffunction navigator-set-speed (?robot ?max-velocity ?max-rotation)
   "Uses the NavigatorInterface to set the max velocity and speed"
   (bind ?msg (blackboard-create-msg (remote-if "NavigatorInterface" ?robot "Navigator") "SetMaxVelocityMessage"))
   (blackboard-set-msg-field ?msg "max_velocity" ?max-velocity)
   (blackboard-send-msg ?msg)
-  (bind ?msg (blackboard-create-msg "NavigatorInterface::/robot1/Navigator" "SetMaxRotationMessage"))
+  (bind ?msg (blackboard-create-msg (remote-if "NavigatorInterface" ?robot "Navigator") "SetMaxRotationMessage"))
   (blackboard-set-msg-field ?msg "max_rotation" ?max-rotation)
   (blackboard-send-msg ?msg)
 )
