@@ -1109,6 +1109,94 @@ The workpiece remains in the output of the used ring station after
   (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (parent ?root-id))
 )
 
+(deffunction goal-production-assert-c2
+  (?root-id ?order-id ?wp-for-order ?cs ?rs1 ?rs2 ?col-cap ?col-base ?col-ring1 ?col-ring2)
+
+  (bind ?goal
+    (goal-tree-assert-central-run-parallel PRODUCE-ORDER
+		(goal-tree-assert-central-run-parallel PREPARE-CS
+			(goal-tree-assert-central-run-parallel BUFFER-GOALS
+				(goal-production-assert-buffer-cap ?cs ?col-cap)
+				(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap)
+				(goal-production-assert-discard UNKNOWN ?cs OUTPUT)
+			)
+		)
+		(goal-tree-assert-central-run-parallel MOUNT-GOALS
+			(goal-tree-assert-central-run-one INTERACT-BS
+				(goal-tree-assert-central-run-parallel OUTPUT-BS
+					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs2 OUTPUT)
+					(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT)
+					(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS OUTPUT)
+					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT)
+				)
+				(goal-tree-assert-central-run-parallel INPUT-BS
+					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs2 OUTPUT)
+					(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT)
+					(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS INPUT)
+					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base INPUT)
+				)
+			)
+			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap)
+			(goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1)
+			(goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2)
+		)
+		(goal-production-assert-deliver ?wp-for-order)
+		(goal-production-assert-instruct-ds-deliver ?wp-for-order)
+		(goal-tree-assert-central-run-parallel PAYMENT-GOALS
+			(goal-production-assert-payment-goals ?rs1 ?col-ring1)
+			(goal-production-assert-payment-goals ?rs2 ?col-ring2)
+		)
+	)
+  )
+  (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (parent ?root-id))
+)
+
+(deffunction goal-production-assert-c3
+  (?root-id ?order-id ?wp-for-order ?cs ?rs1 ?rs2 ?rs3 ?col-cap ?col-base ?col-ring1 ?col-ring2 ?col-ring3)
+
+  (bind ?goal
+    (goal-tree-assert-central-run-parallel PRODUCE-ORDER
+		(goal-tree-assert-central-run-parallel PREPARE-CS
+			(goal-tree-assert-central-run-parallel BUFFER-GOALS
+				(goal-production-assert-buffer-cap ?cs ?col-cap)
+				(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap)
+				(goal-production-assert-discard UNKNOWN ?cs OUTPUT)
+			)
+		)
+		(goal-tree-assert-central-run-parallel MOUNT-GOALS
+			(goal-tree-assert-central-run-one INTERACT-BS
+				(goal-tree-assert-central-run-parallel OUTPUT-BS
+					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs3 OUTPUT)
+					(goal-production-assert-mount-ring ?wp-for-order ?rs3 ?rs2 OUTPUT)
+					(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT)
+					(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS OUTPUT)
+					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT)
+				)
+				(goal-tree-assert-central-run-parallel INPUT-BS
+					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs3 OUTPUT)
+					(goal-production-assert-mount-ring ?wp-for-order ?rs3 ?rs2 OUTPUT)
+					(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT)
+					(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS INPUT)
+					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base INPUT)
+				)
+			)
+			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap)
+			(goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1)
+			(goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2)
+			(goal-production-assert-instruct-rs-mount-ring ?rs3 ?col-ring3)
+		)
+		(goal-production-assert-deliver ?wp-for-order)
+		(goal-production-assert-instruct-ds-deliver ?wp-for-order)
+		(goal-tree-assert-central-run-parallel PAYMENT-GOALS
+			(goal-production-assert-payment-goals ?rs1 ?col-ring1)
+			(goal-production-assert-payment-goals ?rs2 ?col-ring2)
+			(goal-production-assert-payment-goals ?rs3 ?col-ring3)
+		)
+	)
+  )
+  (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (parent ?root-id))
+)
+
 (defrule goal-production-create-root
 	"Create the production root under which all production trees for the orders
 	are asserted"
@@ -1181,12 +1269,20 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key domain fact order-base-color args? ord ?order-id col ?col-base))
 	(wm-fact (key domain fact order-cap-color  args? ord ?order-id col ?col-cap))
 	(wm-fact (key domain fact order-ring1-color args? ord ?order-id col ?col-ring1))
+	(wm-fact (key domain fact order-ring2-color args? ord ?order-id col ?col-ring2))
+	(wm-fact (key domain fact order-ring3-color args? ord ?order-id col ?col-ring3))
 	(wm-fact (key domain fact cs-color args? m ?cs col ?col-cap))
 	(wm-fact (key domain fact mps-type args? m ?cs t CS))
-	(wm-fact (key domain fact mps-type args? m ?rs t RS))
+	(wm-fact (key domain fact mps-type args? m ?rs1 t RS))
+	(wm-fact (key domain fact mps-type args? m ?rs2 t RS))
+	(wm-fact (key domain fact mps-type args? m ?rs3 t RS))
 	(not (wm-fact (key order meta wp-for-order args? wp ?something ord O1)))
 	(or (wm-fact (key domain fact order-ring1-color args? ord ?order-id col RING_NONE))
-	    (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?col-ring1 $?)))
+	    (wm-fact (key domain fact rs-ring-spec args? m ?rs1 r ?col-ring1 $?)))
+	(or (wm-fact (key domain fact order-ring2-color args? ord ?order-id col RING_NONE))
+	    (wm-fact (key domain fact rs-ring-spec args? m ?rs2 r ?col-ring2 $?)))
+	(or (wm-fact (key domain fact order-ring3-color args? ord ?order-id col RING_NONE))
+	    (wm-fact (key domain fact rs-ring-spec args? m ?rs3 r ?col-ring3 $?)))
 	=>
 	(bind ?wp-for-order (sym-cat wp- ?order-id))
 	(assert (domain-object (name ?wp-for-order) (type workpiece))
@@ -1204,7 +1300,17 @@ The workpiece remains in the output of the used ring station after
 	)
 	(if (eq ?comp C1)
 		then
-		(goal-production-assert-c1 ?root-id ?order-id ?wp-for-order ?cs ?rs ?col-cap ?col-base ?col-ring1)
+		(goal-production-assert-c1 ?root-id ?order-id ?wp-for-order ?cs ?rs1 ?col-cap ?col-base ?col-ring1)
+	)
+	(if (eq ?comp C2)
+		then
+		(goal-production-assert-c2 ?root-id ?order-id ?wp-for-order ?cs
+	              ?rs1 ?rs2 ?col-cap ?col-base ?col-ring1 ?col-ring2)
+	)
+	(if (eq ?comp C3)
+		then
+		(goal-production-assert-c3 ?root-id ?order-id ?wp-for-order ?cs
+	              ?rs1 ?rs2 ?rs3 ?col-cap ?col-base ?col-ring1 ?col-ring2 ?col-ring3)
 	)
 
 )
