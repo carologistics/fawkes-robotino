@@ -446,12 +446,21 @@
 	                                       ?req difference ?rs-after))
 	(wm-fact (key wp meta next-step args? wp ?wp) (value ?step&RING1|RING2|RING3))
 	=>
+	(bind ?num (string-to-field ( sub-string 5 5 ?step) ))
+	(bind ?prev-rings (create$ ))
+	(loop-for-count (?count 1 (- ?num 1))
+	                (do-for-fact ((?ring wm-fact))
+		            (and (wm-key-prefix ?ring:key (create$ domain fact (sym-cat wp-ring ?count -color)))
+				(eq (wm-key-arg ?ring:key wp) ?wp))
+			    (bind ?prev-rings (append$ ?prev-rings (wm-key-arg ?ring:key col)))
+	))
 	(plan-assert-sequential INSTRUCT-TO-MOUNT-RING-PLAN ?goal-id ?robot
 		(plan-assert-action prepare-rs
 	                         ?mps ?ring-color ?rs-before ?rs-after ?req )
+
 		(plan-assert-action
 	         (sym-cat rs-mount-ring (sub-string 5 5 ?step) )
-	         ?mps ?wp ?ring-color ?rs-before ?rs-after ?req )
+	         ?mps ?wp ?ring-color ?prev-rings ?rs-before ?rs-after ?req )
 	)
 	(modify ?g (mode EXPANDED))
 )
