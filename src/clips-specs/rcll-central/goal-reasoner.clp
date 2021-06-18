@@ -229,6 +229,7 @@
                   (meta $? assigned-to ?robot $?) (parent ?pid))
     )
   )
+  (test (neq ?pid nil))
   =>
   (bind ?propagate TRUE)
   (bind ?parent-id ?pid)
