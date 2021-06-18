@@ -296,18 +296,18 @@
     )
   )
 
-  (assert (wm-fact (key domain fact waypoints args? ?waypoints)))
-  (assert (wm-fact (key domain fact reached args? ?reached)))
-  (assert (wm-fact (key domain fact remaining args? ?remaining)))
+  (assert (wm-fact (key domain fact waypoints args?) (is-list TRUE) (values $?waypoints)))
+  (assert (wm-fact (key domain fact reached args?) (is-list TRUE) (values $?reached)))
+  (assert (wm-fact (key domain fact remaining args?)  (is-list TRUE) (values $?remaining)))
 )
 
 (defrule refbox-recv-NavigationRoutes-update
   "When there are waypoints, reached and remaining facts, compare the incoming new lists
   from the refbox with the existing facts and update them if necessary. "
   ?pf <- (protobuf-msg (type "llsf_msgs.NavigationRoutes") (ptr ?p))
-  ?waypoints-fact <- (wm-fact (key domain fact waypoints args? $?waypoints-old))
-  ?reached-fact <- (wm-fact (key domain fact reached args? $?reached-old))
-  ?remaining-fact <- (wm-fact (key domain fact remaining args? $?remaining-old))
+  ?waypoints-fact <- (wm-fact (key domain fact waypoints args?) (values $?waypoints-old))
+  ?reached-fact <- (wm-fact (key domain fact reached args?) (values $?reached-old))
+  ?remaining-fact <- (wm-fact (key domain fact remaining args?) (values $?remaining-old))
   =>
   (bind ?waypoints (create$))
   (bind ?remaining (create$))
@@ -326,14 +326,14 @@
   )
   (if (neq ?waypoints-old ?waypoints) then
     (retract ?waypoints-fact)
-    (assert (wm-fact (key domain fact waypoints args? ?waypoints)))
+    (assert (wm-fact (key domain fact waypoints args?) (is-list TRUE) (values $?waypoints)))
   )
   (if (neq ?remaining-old ?remaining) then
     (retract ?remaining-fact)
-    (assert (wm-fact (key domain fact remaining args? ?remaining)))
+    (assert (wm-fact (key domain fact remaining args?) (is-list TRUE) (values $?remaining)))
   )
   (if (neq ?reached-old ?reached) then
     (retract ?reached-fact)
-    (assert (wm-fact (key domain fact reached args? ?reached)))
+    (assert (wm-fact (key domain fact reached args?) (is-list TRUE) (values $?reached)))
   )
 )

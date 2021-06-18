@@ -696,11 +696,11 @@
 )
 
 (deffunction goal-production-assert-navigation-challenge
-  (?root-id ?locations)
+  (?root-id $?locations)
 
   (bind ?goals (create$))
   (foreach ?location ?locations
-	(bind ?goals (insert$ ?goals (+ 1 (length$ ?goal)) 
+	(bind ?goals (insert$ ?goals (+ 1 (length$ ?goals))
 				 (goal-production-assert-navigation-challenge-move ?location)))
   )
 
@@ -716,7 +716,7 @@
   "Create a goal tree for the navigation challenge if there is a waypoint fact."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
-  (wm-fact (key domain fact waypoints args? $?waypoints))
+  (wm-fact (key domain fact waypoints args?) (values $?waypoints))
   (not (goal (class NAVIGATION-CHALLENGE-PARENT)))
   =>
   (goal-production-assert-navigation-challenge ?root-id ?waypoints)
