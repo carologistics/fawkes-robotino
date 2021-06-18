@@ -63,16 +63,17 @@ end
 
 -- function to evaluate sensor data
 function is_grabbed()
- if not robotino_sensor:has_writer() then
-   print_warn("No robotino sensor writer to check sensor")
    return true
- end
- if robotino_sensor:is_digital_in(0) == false and robotino_sensor:is_digital_in(1) == true then -- white cable on DI1 and black on DI2
-    return true
- else
-   -- Ignore puck laser, until realsense is disabled by default 
-   return true
- end
+-- if not robotino_sensor:has_writer() then
+--   print_warn("No robotino sensor writer to check sensor")
+--   return true
+-- end
+-- if robotino_sensor:is_digital_in(0) == false and robotino_sensor:is_digital_in(1) == true then -- white cable on DI1 and black on DI2
+--    return true
+-- else
+--   -- Ignore puck laser, until realsense is disabled by default 
+--   return true
+-- end
 end
 
 function pose_not_exist()
