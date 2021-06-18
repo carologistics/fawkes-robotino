@@ -164,6 +164,9 @@
 		 then
 			(create$ ; only last statement of if is returned
 				(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
+					(plan-assert-action go-wait ?robot ?wp-loc ?wp-side (wait-pos ?wp-loc ?wp-side))
+					(plan-assert-action wait-for-dependencies ?robot (wait-pos ?wp-loc ?wp-side))
+					(plan-assert-action move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?wp-loc ?wp-side)
 					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
 				)
 			)
@@ -172,6 +175,63 @@
 	)
 	(modify ?g (mode EXPANDED))
 )
+
+
+(defrule goal-expander-deliver-goals
+	;?p <- (goal (mode DISPATCHED) (id ?parent))
+	?g <- (goal (id ?goal-id) (class ?class&DELIVER);changed
+	                          (mode SELECTED) (parent ?parent)
+	                          (params  wp ?wp
+	                                   target-mps ?target-mps
+	                                   target-side ?target-side
+	                                   $?params)
+	                          (meta $? assigned-to ?robot $?))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	=>
+	(if (and (not (do-for-fact ((?wp-at wm-fact)) (and (wm-key-prefix ?wp-at:key (create$ domain fact wp-at)) (eq (wm-key-arg ?wp-at:key wp) ?wp))
+		(bind ?wp-loc (wm-key-arg ?wp-at:key m))
+		(bind ?wp-side (wm-key-arg ?wp-at:key side))))
+			 (not (do-for-fact ((?da dependency-assignment)) (and (neq ?da:grounded-with nil) 
+			 													  (member$ wp ?da:params)
+																  (member$ wp-loc ?da:params)
+																  (member$ wp-side ?da:params)
+																  (eq ?da:goal-id ?goal-id))
+						(bind ?wp (multifield-key-value ?da:params wp))
+						(bind ?wp-loc (multifield-key-value ?da:params wp-loc))
+						(bind ?wp-side (multifield-key-value ?da:params wp-side))))
+		)
+		then
+		(bind ?wp-loc (multifield-key-value ?params wp-loc))
+		(bind ?wp-side (multifield-key-value ?params wp-side))
+	)
+	(if (eq ?wp-loc nil) 
+		then 
+			(printout error "The fields wp-loc and wp-side must either be set manually or there must be a wp-at fact!" crlf)
+		else
+			(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
+				(if (not (is-holding ?robot ?wp))
+				then
+					(create$ ; only last statement of if is returned
+						(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
+							(plan-assert-action go-wait ?robot ?wp-loc ?wp-side (wait-pos ?wp-loc ?wp-side))
+							(plan-assert-action wait-for-dependencies ?robot (wait-pos ?wp-loc ?wp-side))
+							(plan-assert-action move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?wp-loc ?wp-side)
+							(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
+						)
+						(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps ?target-side
+							(plan-assert-action wp-put ?robot ?wp ?target-mps)
+						)
+					)
+				else
+					(plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps ?target-side
+						(plan-assert-action wp-put ?robot ?wp ?target-mps)
+					)
+				)
+			)
+			(modify ?g (mode EXPANDED))
+		)
+	)
+
 
 (defrule goal-expander-transport-goals
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
@@ -186,9 +246,18 @@
 	                          (meta $? assigned-to ?robot $?))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
-	(if (not (do-for-fact ((?wp-at wm-fact)) (and (wm-key-prefix ?wp-at:key (create$ domain fact wp-at)) (eq (wm-key-arg ?wp-at:key wp) ?wp))
+	(if (and (not (do-for-fact ((?wp-at wm-fact)) (and (wm-key-prefix ?wp-at:key (create$ domain fact wp-at)) (eq (wm-key-arg ?wp-at:key wp) ?wp))
 		(bind ?wp-loc (wm-key-arg ?wp-at:key m))
 		(bind ?wp-side (wm-key-arg ?wp-at:key side))))
+			 (not (do-for-fact ((?da dependency-assignment)) (and (neq ?da:grounded-with nil) 
+			 													  (member$ wp ?da:params)
+																  (member$ wp-loc ?da:params)
+																  (member$ wp-side ?da:params)
+																  (eq ?da:goal-id ?goal-id))
+						(bind ?wp (multifield-key-value ?da:params wp))
+						(bind ?wp-loc (multifield-key-value ?da:params wp-loc))
+						(bind ?wp-side (multifield-key-value ?da:params wp-side))))
+		)
 		then
 		(bind ?wp-loc (multifield-key-value ?params wp-loc))
 		(bind ?wp-side (multifield-key-value ?params wp-side))
@@ -205,6 +274,9 @@
 							(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
 						)
 						(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps ?target-side
+							(plan-assert-action go-wait ?robot ?target-mps ?target-side (wait-pos ?target-mps ?target-side))
+							(plan-assert-action wait-for-dependencies ?robot (wait-pos ?target-mps ?target-side)) ;TODO: auf wait-for-dependencies setzen
+							(plan-assert-action move ?robot (wait-pos ?target-mps ?target-side) WAIT ?target-mps ?target-side)
 							(plan-assert-action wp-put ?robot ?wp ?target-mps)
 						)
 					)
