@@ -791,6 +791,7 @@ The workpiece remains in the output of the used ring station after
 	         (sym-cat order-ring (sub-string 5 5 ?ring) -color))
 	          args? ord ?order col ?ring-color ))
 	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side OUTPUT)))
+	(not (goal (class INSTRUCT-RS-MOUNT-RING) (mode EXPANDED|SELECTED|DISPATCHED|COMMITTED)))
 	=>
 	(printout t "Goal INSTRUCT-RS-MOUNT-RING executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -1047,6 +1048,7 @@ The workpiece remains in the output of the used ring station after
 
   (bind ?goal
     (goal-tree-assert-central-run-parallel PRODUCE-ORDER
+		(goal-production-assert-deliver ?wp-for-order)
 		(goal-tree-assert-central-run-parallel PREPARE-CS
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
 				(goal-production-assert-buffer-cap ?cs ?col-cap)
@@ -1070,7 +1072,6 @@ The workpiece remains in the output of the used ring station after
 			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap)
 			(goal-production-assert-instruct-rs-mount-ring ?rs ?col-ring1)
 		)
-		(goal-production-assert-deliver ?wp-for-order)
 		(goal-production-assert-instruct-ds-deliver ?wp-for-order)
 		(goal-tree-assert-central-run-parallel PAYMENT-GOALS
 			(goal-production-assert-payment-goals ?rs ?col-ring1)
@@ -1085,6 +1086,7 @@ The workpiece remains in the output of the used ring station after
 
   (bind ?goal
     (goal-tree-assert-central-run-parallel PRODUCE-ORDER
+		(goal-production-assert-deliver ?wp-for-order)
 		(goal-tree-assert-central-run-parallel PREPARE-CS
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
 				(goal-production-assert-buffer-cap ?cs ?col-cap)
@@ -1111,7 +1113,6 @@ The workpiece remains in the output of the used ring station after
 			(goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1)
 			(goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2)
 		)
-		(goal-production-assert-deliver ?wp-for-order)
 		(goal-production-assert-instruct-ds-deliver ?wp-for-order)
 		(goal-tree-assert-central-run-parallel PAYMENT-GOALS
 			(goal-production-assert-payment-goals ?rs1 ?col-ring1)
@@ -1127,6 +1128,7 @@ The workpiece remains in the output of the used ring station after
 
   (bind ?goal
     (goal-tree-assert-central-run-parallel PRODUCE-ORDER
+		(goal-production-assert-deliver ?wp-for-order)
 		(goal-tree-assert-central-run-parallel PREPARE-CS
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
 				(goal-production-assert-buffer-cap ?cs ?col-cap)
@@ -1156,7 +1158,6 @@ The workpiece remains in the output of the used ring station after
 			(goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2)
 			(goal-production-assert-instruct-rs-mount-ring ?rs3 ?col-ring3)
 		)
-		(goal-production-assert-deliver ?wp-for-order)
 		(goal-production-assert-instruct-ds-deliver ?wp-for-order)
 		(goal-tree-assert-central-run-parallel PAYMENT-GOALS
 			(goal-production-assert-payment-goals ?rs1 ?col-ring1)
@@ -1243,6 +1244,7 @@ The workpiece remains in the output of the used ring station after
 	            (params wp UNKNOWN wp-loc ?mps wp-side ?mps-side)
 	            (meta $? assigned-to ?robot $?))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?mps-side))
+	(not (wm-fact (key order meta wp-for-order args? wp ?wp $?)))
 	(goal (parent ?parent) (class INSTRUCT-CS-BUFFER-CAP) (mode DISPATCHED|FINISHED|RETRACTED))
 	=>
 	(modify ?g (params wp ?wp wp-loc ?mps wp-side ?mps-side))
