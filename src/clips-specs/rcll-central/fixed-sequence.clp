@@ -58,6 +58,56 @@
 	)
 )
 
+(deffunction plan-assert-safe-move-wait-for-wp (?robot
+                                                ?curr-location
+                                                ?curr-side
+                                                ?mps
+                                                ?mps-side
+                                                $?actions)
+	(return
+	  (create$
+	    (plan-assert-action go-wait
+	      ?robot ?curr-location ?curr-side (wait-pos ?mps ?mps-side))
+	    (plan-assert-action wait-for-wp
+	      ?robot (wait-pos ?mps ?mps-side))
+	    ;(plan-assert-action location-lock
+	    ;  ?mps ?mps-side)
+	    (plan-assert-action move
+	      ?robot (wait-pos ?mps ?mps-side) WAIT ?mps ?mps-side)
+	    $?actions
+	    ;(plan-assert-action location-unlock
+	    ;  ?mps ?mps-side)
+	    (plan-assert-action go-wait
+	      ?robot ?mps ?mps-side (wait-pos ?mps ?mps-side))
+	  )
+	)
+)
+
+(deffunction plan-assert-safe-move-wait-for-free-side (?robot
+                                                       ?curr-location
+                                                       ?curr-side
+                                                       ?mps
+                                                       ?mps-side
+                                                       $?actions)
+	(return
+	  (create$
+	    (plan-assert-action go-wait
+	      ?robot ?curr-location ?curr-side (wait-pos ?mps ?mps-side))
+	    (plan-assert-action wait-for-free-side
+	      ?robot (wait-pos ?mps ?mps-side))
+	    ;(plan-assert-action location-lock
+	    ;  ?mps ?mps-side)
+	    (plan-assert-action move
+	      ?robot (wait-pos ?mps ?mps-side) WAIT ?mps ?mps-side)
+	    $?actions
+	    ;(plan-assert-action location-unlock
+	    ;  ?mps ?mps-side)
+	    (plan-assert-action go-wait
+	      ?robot ?mps ?mps-side (wait-pos ?mps ?mps-side))
+	  )
+	)
+)
+
 (deffunction is-holding (?robot ?wp)
 	(if (any-factp ((?holding wm-fact))
 	           (and (wm-key-prefix ?holding:key (create$ domain fact holding))
@@ -173,8 +223,7 @@
 		(if (not (is-holding ?robot ?wp))
 		 then
 			(create$ ; only last statement of if is returned
-				(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
-					(plan-assert-action wait-for-wp ?robot ?wp-loc ?wp-side)
+				(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
 					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
 				)
 			)
@@ -228,19 +277,16 @@
 				(if (not (is-holding ?robot ?wp))
 				then
 					(create$ ; only last statement of if is returned
-						(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
-							(plan-assert-action wait-for-wp ?robot ?wp-loc ?wp-side)
+						(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
 							(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
 						)
-						(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps ?target-side
-							(plan-assert-action wait-for-free-side ?robot ?target-mps ?target-side)
+						(plan-assert-safe-move-wait-for-free-side ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps ?target-side
 							(plan-assert-action wp-put ?robot ?wp ?target-mps)
 						)
 					)
 				else
-					(plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps ?target-side
-							(plan-assert-action wait-for-free-side ?robot ?target-mps ?target-side)
-							(plan-assert-action wp-put ?robot ?wp ?target-mps)
+					(plan-assert-safe-move-wait-for-free-side ?robot ?curr-location ?curr-side ?target-mps ?target-side							
+						(plan-assert-action wp-put ?robot ?wp ?target-mps)
 					)
 				)
 			)
