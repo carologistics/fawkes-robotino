@@ -91,6 +91,12 @@ std::vector<Eigen::Vector2i> NavGraphGeneratorMPSThread::reserved_zones_ = {
   {5, 1},
   {6, 1},
   {7, 1},
+  {1,3},
+    {1,1},
+    {1,2},
+    {1,3},
+    {1,4},
+    {1,5},
 };
 
 /** Constructor. */
