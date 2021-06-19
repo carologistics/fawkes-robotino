@@ -154,24 +154,24 @@
 (defrule goal-production-flush-executability
 " A waiting robot got a new goal, clear executability and robot assignment from other goals. "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
-	(goal (sub-type SIMPLE) (mode SELECTED) 
-	      (meta $? assigned-to ?robot2 $?)
- 	      (is-executable TRUE) (type ACHIEVE) (class ~SEND-BEACON))
+	(goal (sub-type SIMPLE) (mode SELECTED)
+	      (meta $? assigned-to ?robot $?)
+	      (is-executable TRUE) (type ACHIEVE) (class ~SEND-BEACON))
 	(goal (sub-type SIMPLE) (mode FORMULATED)
 	      (meta $? assigned-to ?robot $?))
 	=>
-	(delayed-do-for-all-facts ((?g goal)) 
+	(delayed-do-for-all-facts ((?g goal))
 		(and (eq ?g:is-executable TRUE) (neq ?g:class SEND-BEACON))
 		(modify ?g (is-executable FALSE))
 	)
 	(if (neq ?robot central)
-		then 
+		then
 		(delayed-do-for-all-facts ((?g goal))
-			(and (subsetp (create$ assigned-to ?robot) ?g:meta) 
+			(and (subsetp (create$ assigned-to ?robot) ?g:meta)
 			     (eq ?g:mode FORMULATED) (not (eq ?g:type MAINTAIN)))
 			(modify ?g (meta (remove-robot-assignment-from-goal ?g:meta ?robot)))
 		)
-		(do-for-fact ((?waiting wm-fact)) 
+		(do-for-fact ((?waiting wm-fact))
 			(and (wm-key-prefix ?waiting:key (create$ central agent robot-waiting))
 		         (eq (wm-key-arg ?waiting:key r) ?robot))
 			(retract ?waiting)
@@ -229,9 +229,8 @@
 	            (params target-mps ?mps )
 	            (meta $? assigned-to ?robot $?)
 	            (is-executable FALSE))
-	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
-	; TODO insert check if mps sides are free?
+	(wm-fact (key domain fact mps-side-free args? m ?mps side INPUT))
 	=>
 	(printout t "Goal PICK-AND-PLACE executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
@@ -493,19 +492,20 @@
 
 	(bind ?goal (assert (goal (class BUFFER-CAP)
 	      (id (sym-cat BUFFER-CAP- (gensym*))) (sub-type SIMPLE)
-	      (verbosity NOISY) (is-executable FALSE) 
-	      (params target-mps ?mps 
+	      (verbosity NOISY) (is-executable FALSE)
+	      (params target-mps ?mps
 	              cap-color ?cap-color)
 	)))
 	(return ?goal)
 )
 
 (deffunction goal-production-assert-pick-and-place
-	(?mps)
+	(?mps ?robot)
 	(bind ?goal (assert (goal (class PICK-AND-PLACE)
 	      (id (sym-cat PICK-AND-PLACE- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE)
 	      (params target-mps ?mps)
+	      (meta assigned-to ?robot)
 	)))
 	(return ?goal)
 )
@@ -513,7 +513,7 @@
 (deffunction goal-production-assert-mount-cap
 	(?wp ?mps ?wp-loc ?wp-side)
 
-	(bind ?goal (assert (goal (class MOUNT-CAP) 
+	(bind ?goal (assert (goal (class MOUNT-CAP)
 	      (id (sym-cat MOUNT-CAP- (gensym*))) (sub-type SIMPLE)
  	      (verbosity NOISY) (is-executable FALSE)
 	      (params wp ?wp
@@ -528,9 +528,9 @@
 (deffunction goal-production-assert-discard
 	(?wp ?cs ?side)
 
-	(bind ?goal (assert (goal (class DISCARD) 
+	(bind ?goal (assert (goal (class DISCARD)
 	      (id (sym-cat DISCARD- (gensym*))) (sub-type SIMPLE)
-	      (verbosity NOISY) (is-executable FALSE) 
+	      (verbosity NOISY) (is-executable FALSE)
 	      (params wp ?wp wp-loc ?cs wp-side ?side)
 	)))
 	(return ?goal)
@@ -539,12 +539,12 @@
 (deffunction goal-production-assert-deliver
 	(?wp)
 
-	(bind ?goal (assert (goal (class DELIVER)  
+	(bind ?goal (assert (goal (class DELIVER)
 	      (id (sym-cat DELIVER- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE)
 	      (params wp ?wp
 	              target-mps C-DS
-	              target-side INPUT) 
+	              target-side INPUT)
 	)))
 	(return ?goal)
 )
@@ -552,25 +552,25 @@
 (deffunction goal-production-assert-instruct-cs-buffer-cap
  	(?mps ?cap-color)
 
- 	(bind ?goal (assert (goal (class INSTRUCT-CS-BUFFER-CAP)  
+ 	(bind ?goal (assert (goal (class INSTRUCT-CS-BUFFER-CAP)
 	      (id (sym-cat INSTRUCT-CS-BUFFER-CAP- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE) (meta assigned-to central)
-	      (params target-mps ?mps 
-	              cap-color ?cap-color) 
+	      (params target-mps ?mps
+	              cap-color ?cap-color)
  	)))
 	(return ?goal)
 )
 
 (deffunction goal-production-assert-instruct-bs-dispense-base
-	(?wp ?base-color ?side) 
+	(?wp ?base-color ?side)
 
-	(bind ?goal (assert (goal (class INSTRUCT-BS-DISPENSE-BASE)  
+	(bind ?goal (assert (goal (class INSTRUCT-BS-DISPENSE-BASE)
           (id (sym-cat INSTRUCT-BS-DISPENSE-BASE- (gensym*))) (sub-type SIMPLE)
           (verbosity NOISY) (is-executable FALSE) (meta assigned-to central)
 	      (params wp ?wp
 	              target-mps C-BS
 	              target-side ?side
-	              base-color ?base-color) 
+	              base-color ?base-color)
 	)))
 	(return ?goal)
 )
@@ -578,11 +578,11 @@
 (deffunction goal-production-assert-instruct-ds-deliver
 	(?wp)
 
-	(bind ?goal (assert (goal (class INSTRUCT-DS-DELIVER)  
+	(bind ?goal (assert (goal (class INSTRUCT-DS-DELIVER)
           (id (sym-cat INSTRUCT-DS-DELIVER- (gensym*))) (sub-type SIMPLE)
           (verbosity NOISY) (is-executable FALSE) (meta assigned-to central)
-	      (params wp ?wp 
-	              target-mps C-DS) 
+	      (params wp ?wp
+	              target-mps C-DS)
 	)))
 	(return ?goal)
 )
@@ -590,37 +590,37 @@
 (deffunction goal-production-assert-instruct-cs-mount-cap
  	(?mps ?cap-color)
 
-	(bind ?goal (assert (goal (class INSTRUCT-CS-MOUNT-CAP)  
+	(bind ?goal (assert (goal (class INSTRUCT-CS-MOUNT-CAP)
 	      (id (sym-cat INSTRUCT-CS-MOUNT-CAP- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE) (meta assigned-to central)
-	      (params target-mps ?mps 
-	              cap-color ?cap-color) 
+	      (params target-mps ?mps
+	              cap-color ?cap-color)
 	)))
-	(return ?goal)  
+	(return ?goal)
 )
 
 (deffunction goal-production-assert-enter-field
 	(?team-color)
 
-	(bind ?goal (assert (goal (class ENTER-FIELD)  
-	            (id (sym-cat ENTER-FIELD- (gensym*))) 
+	(bind ?goal (assert (goal (class ENTER-FIELD)
+	            (id (sym-cat ENTER-FIELD- (gensym*)))
 				(sub-type SIMPLE)
                 (verbosity NOISY) (is-executable FALSE)
-	            (params team-color ?team-color) 
+	            (params team-color ?team-color)
 	)))
-	(return ?goal)  
+	(return ?goal)
 )
 
 (deffunction goal-production-assert-c0
   (?root-id ?order-id ?wp-for-order ?cs ?cap-col ?base-col)
 
-  (bind ?goal 
+  (bind ?goal
     (goal-tree-assert-central-run-parallel PRODUCE-ORDER
 		(goal-tree-assert-central-run-parallel PREPARE-CS
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
 				(goal-production-assert-buffer-cap ?cs ?cap-col)
 				(goal-production-assert-instruct-cs-buffer-cap ?cs ?cap-col)
-				(goal-production-assert-discard UNKNOWN ?cs OUTPUT) 
+				(goal-production-assert-discard UNKNOWN ?cs OUTPUT)
 			)
 		)
 		(goal-tree-assert-central-run-parallel MOUNT-GOALS
@@ -657,10 +657,56 @@
 	(modify ?g (meta do-not-finish))
 )
 
+(defrule goal-production-create-pick-and-place
+	 "Creates pick and place"
+	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+	(wm-fact (key config rcll pick-and-place-challenge) (value TRUE))
+	(not (goal (class PICK-AND-PLACE)))
+	?mps1-free <- (wm-fact (key domain fact mps-side-free args? m C-BS side OUTPUT ))
+	?mps2-free <- (wm-fact (key domain fact mps-side-free args? m C-CS1 side OUTPUT ))
+	?mps3-free <- (wm-fact (key domain fact mps-side-free args? m C-RS1 side OUTPUT ))
+	=>
+	(retract ?mps1-free)
+	(retract ?mps2-free)
+	(retract ?mps3-free)
+	(assert
+	   (domain-object (name WP-WARUM) (type workpiece))
+	   (domain-object (name WP-FUNKTIONIERT) (type workpiece))
+	   (domain-object (name WP-DAS) (type workpiece))
+	   (domain-fact (name wp-usable) (param-values WP-WARUM))
+	   (domain-fact (name wp-usable) (param-values WP-FUNKTIONIERT))
+	   (domain-fact (name wp-usable) (param-values WP-DAS))
+	   (wm-fact (key domain fact wp-at args? wp WP-WARUM m C-BS side OUTPUT))
+	   (wm-fact (key domain fact wp-at args? wp WP-FUNKTIONIERT m C-CS1 side OUTPUT))
+	   (wm-fact (key domain fact wp-at args? wp WP-DAS m C-RS1 side OUTPUT))
+	)
+
+	(bind ?g (goal-tree-assert-central-run-parallel PICK-AND-PLACE
+		( goal-production-assert-pick-and-place C-BS robot1)
+		( goal-production-assert-pick-and-place C-BS robot1)
+		( goal-production-assert-pick-and-place C-BS robot1)
+	))
+	(modify ?g (parent ?root-id))
+	(bind ?g1 (goal-tree-assert-central-run-parallel PICK-AND-PLACE
+		( goal-production-assert-pick-and-place C-CS1 robot2)
+		( goal-production-assert-pick-and-place C-CS1 robot2)
+		( goal-production-assert-pick-and-place C-CS1 robot2)
+	))
+	(modify ?g1 (parent ?root-id))
+	(bind ?g2 (goal-tree-assert-central-run-parallel PICK-AND-PLACE
+		( goal-production-assert-pick-and-place C-RS1 robot3)
+		( goal-production-assert-pick-and-place C-RS1 robot3)
+		( goal-production-assert-pick-and-place C-RS1 robot3)
+	))
+	(modify ?g2 (parent ?root-id))
+)
+
 (defrule goal-production-create-produce-for-order
 	"Create for each incoming order a grounded production tree with the"
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+	(wm-fact (key config rcll pick-and-place-challenge) (value FALSE))
 	(wm-fact (key domain fact order-complexity args? ord ?order-id&:(eq ?order-id O1) com ?comp))
 	(wm-fact (key domain fact order-base-color args? ord ?order-id col ?col-base))
 	(wm-fact (key domain fact order-cap-color  args? ord ?order-id col ?col-cap))
@@ -704,7 +750,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defrule goal-production-navigation-challenge-move-executable
-" Move to a navgraph node 
+" Move to a navgraph node
 "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class NAVIGATION-CHALLENGE-MOVE)
@@ -720,8 +766,8 @@
 (deffunction goal-production-assert-navigation-challenge-move
 	(?location)
 
-	(bind ?goal (assert (goal (class NAVIGATION-CHALLENGE-MOVE)  
-					(id (sym-cat NAVIGATION-CHALLENGE-MOVE- (gensym*))) 
+	(bind ?goal (assert (goal (class NAVIGATION-CHALLENGE-MOVE)
+					(id (sym-cat NAVIGATION-CHALLENGE-MOVE- (gensym*)))
 					(sub-type SIMPLE)
 					(verbosity NOISY) (is-executable FALSE)
 					(params target (translate-location-map-to-grid ?location))
@@ -738,9 +784,9 @@
 				 (goal-production-assert-navigation-challenge-move ?location)))
   )
 
-  (bind ?goal 
+  (bind ?goal
     (goal-tree-assert-central-run-parallel NAVIGATION-CHALLENGE-PARENT
-		?goals 
+		?goals
 	)
   )
   (modify ?goal (parent ?root-id))

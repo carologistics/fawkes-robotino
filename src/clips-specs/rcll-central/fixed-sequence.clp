@@ -120,11 +120,12 @@
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
 	=>
 	(plan-assert-sequential (sym-cat PICK-AND-PLACE-PLAN- (gensym*)) ?goal-id ?robot
-		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?mps OUTPUT
-			(plan-assert-action wp-get ?robot ?wp ?mps OUTPUT))
-		(plan-assert-safe-move ?robot ?mps OUTPUT ?mps INPUT
-			(plan-assert-action wp-put ?robot ?wp ?mps))
-		(plan-assert-safe-move ?robot ?mps INPUT ?mps OUTPUT)
+		(plan-assert-action move ?robot ?curr-location ?curr-side ?mps OUTPUT)
+		(plan-assert-action wp-get ?robot ?wp ?mps OUTPUT)
+		(plan-assert-action move ?robot ?mps OUTPUT ?mps INPUT)
+		(plan-assert-action wp-put ?robot ?wp ?mps)
+		(plan-assert-action move ?robot ?mps INPUT ?mps OUTPUT)
+		(plan-assert-action move-wp-input-output ?mps ?wp)
 	)
 	(modify ?g (mode EXPANDED))
 )
