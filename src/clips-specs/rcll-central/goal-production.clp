@@ -675,7 +675,7 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class NAVIGATION-CHALLENGE-MOVE)
 	                          (mode FORMULATED)
-	                          (params target ?target)
+	                          (params target ?target $?)
 	                          (meta $? assigned-to ?robot $?)
 	                          (is-executable FALSE))
 	=>
@@ -690,7 +690,7 @@
 					(id (sym-cat NAVIGATION-CHALLENGE-MOVE- (gensym*))) 
 					(sub-type SIMPLE)
 					(verbosity NOISY) (is-executable FALSE)
-					(params target (translate-location-map-to-grid ?location))
+					(params target (translate-location-map-to-grid ?location) location ?location)
 				)))
 	(return ?goal)
 )
