@@ -146,7 +146,7 @@ clips-executive:
           team-name: Carologistics
           crypto-key: randomkey
           cipher: "aes-128-cbc"
-          pick-and-place-challenge: TRUE
+          pick-and-place-challenge: true
 
       blackboard-preload:
         - Position3DInterface
