@@ -158,3 +158,12 @@
 	(printout info "Init  " ?m " with " ?wp ": " ?base " " ?cap crlf)
 	(modify ?pa (state EXECUTION-SUCCEEDED))
 )
+
+(defrule action-execute-move-wp-input-output
+	?pa <- (plan-action (plan-id ?plan-id) (state PENDING) (executable TRUE)
+	                    (action-name move-wp-input-output)
+	                    (param-values ?mps ?wp))
+	=>
+	(printout info "At " ?mps " move  " ?wp " from input to ouptut " crlf)
+	(modify ?pa (state EXECUTION-SUCCEEDED))
+)
