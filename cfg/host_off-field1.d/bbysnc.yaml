@@ -54,7 +54,7 @@ fawkes/bbsync:
   peers:
     robotino-base/active: false
     robot1:
-      active: true #(set via the gazsim startup)
+      #active: true (set via the off-field startup)
       host: robotino-laptop-1
       port: !tcp-port 1910
       reading:
@@ -65,7 +65,7 @@ fawkes/bbsync:
         navigator: NavigatorInterface::Navigator=/robot1/Navigator
         robotino: MotorInterface::Robotino=/robot1/Robotino
     robot2:
-      active: false # set via the gazsim startup)
+      #active: true (set via the off-field startup)
       host: robotino-laptop-2
       port: !tcp-port 1910
       reading:
@@ -75,7 +75,7 @@ fawkes/bbsync:
         navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/robot2/navgraph-generator-mps
         navigator: NavigatorInterface::Navigator=/robot2/Navigator
     robot3:
-      active: false # (set via the gazsim startup)
+      #active: true (set via the off-field startup)
       host: robotino-laptop-3
       port: !tcp-port 1910
       reading:
