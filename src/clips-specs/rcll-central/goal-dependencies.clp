@@ -198,13 +198,14 @@
 		      (modify ?instruct-da (grounded-with ?instruct-goal:id))
 		  )
 		  (printout t "Goal " ?goal-id " executable for " ?robot
-		              " depending on goal INSTRUCT-CS-BUFFER-CAP" crlf)
+		              " also depending on goal INSTRUCT-CS-BUFFER-CAP" crlf)
 	)
 )
 
-(defrule goal-dependencies-mount-cap-deliver-executable ; output is blocked
-" Even if the CS is not buffered and a wp is blocking its output, mount-cap can be executable if the there is
-  a running deliver goal for the blocking wp and a running buffer-cap goal for the CS. "
+(defrule goal-dependencies-mount-cap-buffer-cap-output-blocked-executable
+" Even if the CS is not buffered and a wp is blocking its output, mount-cap can
+  be executable if the there is a running deliver goal for the blocking wp and
+  a running buffer-cap goal for the CS. "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class MOUNT-CAP)
 	                          (mode FORMULATED)
@@ -230,7 +231,7 @@
 
 	(wm-fact (key domain fact wp-at args? wp ?blocking-wp m ?target-mps side OUTPUT))
 	; CS output is not free, but with this goal executing, we can assume it will soon
-    (goal (id ?deliver-id) (class DELIVER) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	(goal (id ?deliver-id) (class DELIVER) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	         (params  wp ?blocking-wp $?))
 
 	; CS is not buffered, but with the following dependency, we can assume it will soon
@@ -278,10 +279,9 @@
 	=>
 	(printout t "Goal " ?goal-id " executable for " ?robot
 	            " depending on goal " ?dependency-goal-id
-	            " and goal " ?deliver-id crlf)
+	            " and relying on goal " ?deliver-id " to clear output" crlf)
 	(modify ?g (is-executable TRUE))
 	(modify ?da (grounded-with ?dependency-goal-id))
-	(assert (dependency-assignment (goal-id ?goal-id) (class DELIVER) (grounded-with ?deliver-id)))
 
 	; If a buffer-cap goal is grounded with ?g, also ground its instruct-cs-buffer-cap goal to ?g
 	(if (eq ?dependency-class BUFFER-CAP)
@@ -292,7 +292,7 @@
 			     (eq ?instruct-da:class INSTRUCT-CS-BUFFER-CAP))
 			(modify ?instruct-da (grounded-with ?instruct-goal:id)))
 			(printout t "Goal " ?goal-id " executable for " ?robot
-			            " depending on goal INSTRUCT-CS-BUFFER-CAP" crlf)
+			            " also depending on goal INSTRUCT-CS-BUFFER-CAP" crlf)
 	)
 )
 
