@@ -375,15 +375,15 @@
 )
 
 (:action wait-for-wp
-	:parameters (?r - robot ?m - mps ?side - mps-side)
-	:precondition (at ?r ?m ?side)
-	:effect (at ?r ?m ?side)
+	:parameters (?r - robot ?point - waitpoint)
+	:precondition (at ?r ?point WAIT)
+	:effect (at ?r ?point WAIT)
 )
 
 (:action wait-for-free-side
-	:parameters (?r - robot ?m - mps ?side - mps-side)
-	:precondition (at ?r ?m ?side)
-	:effect (at ?r ?m ?side)
+	:parameters (?r - robot ?point - waitpoint)
+	:precondition (at ?r ?point WAIT)
+	:effect (at ?r ?point WAIT)
 )
 
 (:action move
