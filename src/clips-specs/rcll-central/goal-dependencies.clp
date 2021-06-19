@@ -34,6 +34,7 @@
 
 	; necessary parameters used for goal-expander of dependency-goal, set in execution-check
 	; for deliver-mount-cap:	wp, wp-loc, wp-side
+	; for discard-buffer-cap:	wp, wp-loc, wp-side
 	(multislot params (type SYMBOL))
 
 	; id of dependence-goal, nil if ungrounded
@@ -378,11 +379,11 @@
 	      (class BUFFER-CAP)
 	      (parent ?parent)
 	      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-	      (params target-mps ?wp-loc $?))
+	      (params target-mps ?cs $?))
 	?buffer-da <- (dependency-assignment (goal-id ?goal-id) (class BUFFER-CAP))
 
 	; get cc through buffer actions
-	(plan-action (goal-id ?buffer-goal-id) (action-name wp-put) (param-values ?r ?cc ?wp-loc))
+	(plan-action (goal-id ?buffer-goal-id) (action-name wp-put) (param-values ?r ?cc $?))
 
 	(goal (id ?instruct-goal-id)
 	      (class INSTRUCT-CS-BUFFER-CAP)
@@ -394,7 +395,10 @@
 	            " depending on goal " ?buffer-goal-id
 	            " and goal " ?instruct-goal-id crlf)
 	(modify ?g (params  wp ?cc wp-loc ?wp-loc wp-side ?wp-side) (is-executable TRUE))
-	(modify ?buffer-da (grounded-with ?buffer-goal-id))
+	(modify ?buffer-da (params  wp ?cc
+	                            wp-loc ?cs
+	                            wp-side OUTPUT)
+	                   (grounded-with ?buffer-goal-id))
 	(modify ?instruct-da (grounded-with ?instruct-goal-id))
 )
 
