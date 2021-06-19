@@ -45,8 +45,11 @@
 
 (defrule goal-production-navgraph-compute-wait-positions-finished
   "Add the waiting points to the domain once their generation is finished."
-  (NavGraphWithMPSGeneratorInterface (final TRUE))
-  (not (NavGraphWithMPSGeneratorInterface (final ~TRUE)))
+  (NavGraphWithMPSGeneratorInterface (id "/navgraph-generator-mps") (final TRUE))
+  (forall
+    (wm-fact (key central agent robot args? r ?robot))
+    (NavGraphWithMPSGeneratorInterface (id ?id&:(eq ?id (remote-if-id ?robot "navgraph-generator-mps"))) (final TRUE))
+  )
 =>
   (printout t "Navgraph generation of waiting-points finished. Getting waitpoints." crlf)
   (do-for-all-facts ((?waitzone navgraph-node)) (str-index "WAIT-" ?waitzone:name)
@@ -56,6 +59,9 @@
     )
   )
   (assert (wm-fact (key navgraph waitzone generated) (type BOOL) (value TRUE)))
+  (delayed-do-for-all-facts ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ central agent robot))
+    (assert (wm-fact (key central agent robot-waiting args? r (wm-key-arg ?wm:key r))))
+  )
 )
 
 
