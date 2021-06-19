@@ -219,6 +219,24 @@
 	(modify ?g (mode DISPATCHED) (outcome UNKNOWN))
 )
 
+(defrule goal-production-pick-and-place-executable
+"Check executability for pick and place
+ Picks a wp from the output of the given mps
+  and feeds it into the input of the same mps"
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (class PICK-AND-PLACE) (sub-type SIMPLE)
+	            (mode FORMULATED)
+	            (params target-mps ?mps )
+	            (meta $? assigned-to ?robot $?)
+	            (is-executable FALSE))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+	; TODO insert check if mps sides are free?
+	=>
+	(printout t "Goal PICK-AND-PLACE executable for " ?robot crlf)
+	(modify ?g (is-executable TRUE))
+)
+
 (defrule goal-production-buffer-cap-executable
 " Bring a cap-carrier from a cap stations shelf to the corresponding mps input
   to buffer its cap. "
@@ -478,6 +496,16 @@
 	      (verbosity NOISY) (is-executable FALSE) 
 	      (params target-mps ?mps 
 	              cap-color ?cap-color)
+	)))
+	(return ?goal)
+)
+
+(deffunction goal-production-assert-pick-and-place
+	(?mps)
+	(bind ?goal (assert (goal (class PICK-AND-PLACE)
+	      (id (sym-cat PICK-AND-PLACE- (gensym*))) (sub-type SIMPLE)
+	      (verbosity NOISY) (is-executable FALSE)
+	      (params target-mps ?mps)
 	)))
 	(return ?goal)
 )
