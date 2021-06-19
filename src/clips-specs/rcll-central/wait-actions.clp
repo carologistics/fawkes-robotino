@@ -79,7 +79,7 @@
                       (action-name wait-for-dependencies) (state RUNNING) (executable TRUE))
   ; check if a dependency-goal failed
   (and (dependency-assignment (goal-id ?goal-id) (grounded-with ?dependency-id)) 
-            (goal (id ?dependency-id) (outcome FAILED)))
+       (goal (id ?dependency-id) (outcome FAILED)))
   =>
   (printout warn "Goal " ?goal-id " failed to wait, because the dependency goal " ?dependency-id " failed" crlf)
   (modify ?pa (state EXECUTION-FAILED))
