@@ -164,9 +164,7 @@
 		 then
 			(create$ ; only last statement of if is returned
 				(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
-					(plan-assert-action go-wait ?robot ?wp-loc ?wp-side (wait-pos ?wp-loc ?wp-side))
-					(plan-assert-action wait-for-wp ?robot (wait-pos ?wp-loc ?wp-side))
-					(plan-assert-action move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?wp-loc ?wp-side)
+					(plan-assert-action wait-for-wp ?robot ?wp-loc ?wp-side)
 					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
 				)
 			)
@@ -221,23 +219,17 @@
 				then
 					(create$ ; only last statement of if is returned
 						(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
-							(plan-assert-action go-wait ?robot ?wp-loc ?wp-side (wait-pos ?wp-loc ?wp-side))
-							(plan-assert-action wait-for-wp ?robot (wait-pos ?wp-loc ?wp-side))
-							(plan-assert-action move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?wp-loc ?wp-side)
+							(plan-assert-action wait-for-wp ?robot ?wp-loc ?wp-side)
 							(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
 						)
 						(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps ?target-side
-							(plan-assert-action go-wait ?robot ?target-mps ?target-side (wait-pos ?target-mps ?target-side))
-							(plan-assert-action wait-for-free-side ?robot (wait-pos ?target-mps ?target-side))
-							(plan-assert-action move ?robot (wait-pos ?target-mps ?target-side) WAIT ?target-mps ?target-side)
+							(plan-assert-action wait-for-free-side ?robot ?target-mps ?target-side)
 							(plan-assert-action wp-put ?robot ?wp ?target-mps)
 						)
 					)
 				else
 					(plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps ?target-side
-							(plan-assert-action go-wait ?robot ?target-mps ?target-side (wait-pos ?target-mps ?target-side))
-							(plan-assert-action wait-for-free-side ?robot (wait-pos ?target-mps ?target-side))
-							(plan-assert-action move ?robot (wait-pos ?target-mps ?target-side) WAIT ?target-mps ?target-side)
+							(plan-assert-action wait-for-free-side ?robot ?target-mps ?target-side)
 							(plan-assert-action wp-put ?robot ?wp ?target-mps)
 					)
 				)
