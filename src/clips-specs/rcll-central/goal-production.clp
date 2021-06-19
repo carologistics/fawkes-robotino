@@ -79,25 +79,6 @@
     (assert (wm-fact (key central agent robot-waiting args? r (wm-key-arg ?wm:key r))))
   )
 )
-(defrule goal-production-create-enter-field
-  "Enter the field (drive outside of the starting box)."
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (NavGraphGeneratorInterface (id "/navgraph-generator") (final TRUE))
-  (forall
-    (wm-fact (key central agent robot args? r ?robot))
-    (NavGraphGeneratorInterface (id ?id&:(eq ?id (remote-if-id ?robot "navgraph-generator"))) (final TRUE))
-  )
-  (wm-fact (key central agent robot args? r ?robot))
-  (not (wm-fact (key domain fact entered-field args? r ?robot)))
-  (or (not (goal (class ENTER-FIELD)))
-	    (forall (goal (id ?some-goal-id) (class ENTER-FIELD))
-	            (goal (id ?some-goal-id) (meta $? assigned-to ~?robot $?))))
-	(domain-facts-loaded)
-	(wm-fact (key refbox team-color) (value ?team-color))
-  =>
-  (printout t "Goal " ENTER-FIELD " formulated" crlf)
-	(goal-production-assert-enter-field ?team-color)
-)
 
 (defrule goal-production-create-beacon-maintain
 " The parent goal for beacon signals. Allows formulation of
@@ -1573,8 +1554,6 @@ The workpiece remains in the output of the used ring station after
 	(modify ?g (params wp ?wp wp-loc ?mps wp-side ?mps-side))
 )
 
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ; NAVIGATION CHALLENGE ;
@@ -1608,19 +1587,20 @@ The workpiece remains in the output of the used ring station after
 )
 
 (deffunction goal-production-assert-navigation-challenge
-  (?root-id $?locations)
+	(?root-id $?locations)
 
-  (bind ?goals (create$))
-  (foreach ?location ?locations
-	(bind ?goals (insert$ ?goals (+ 1 (length$ ?goals))
-				 (goal-production-assert-navigation-challenge-move ?location)))
-  )
-
-  (bind ?goal
-    (goal-tree-assert-central-run-parallel NAVIGATION-CHALLENGE-PARENT
-		?goals
+	(bind ?goals (create$))
+	(foreach ?location ?locations
+		(bind ?goals (insert$ ?goals (+ 1 (length$ ?goals))
+		             (goal-production-assert-navigation-challenge-move ?location)))
 	)
-  )
+
+	(bind ?goal
+	  (goal-tree-assert-central-run-parallel NAVIGATION-CHALLENGE-PARENT
+	                                         ?goals
+	  )
+	)
+
   (modify ?goal (parent ?root-id))
 )
 
@@ -1658,3 +1638,16 @@ The workpiece remains in the output of the used ring station after
   (retract ?g)
 )
 
+(defrule goal-production-create-enter-field
+  "Enter the field (drive outside of the starting box)."
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (wm-fact (key central agent robot args? r ?robot))
+  (not (wm-fact (key domain fact entered-field args? r ?robot)))
+	(forall (goal (id ?some-goal-id) (class ENTER-FIELD))
+	        (goal (id ?some-goal-id) (meta $? assigned-to ~?robot $?)))
+	(domain-facts-loaded)
+	(wm-fact (key refbox team-color) (value ?team-color))
+  =>
+  (printout t "Goal " ENTER-FIELD " formulated" crlf)
+	(goal-production-assert-enter-field ?team-color)
+)
