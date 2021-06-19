@@ -56,31 +56,47 @@
 )
 
 (defrule action-start-execute-wait-for-dependencies-action
-  ?pa <- (plan-action (id ?action-id) (plan-id ?plan-id) (goal-id ?goal-id)
-                      (action-name wait-for-dependencies) (state PENDING) (executable TRUE))
+  ?pa <- (plan-action (id ?action-id)
+                      (plan-id ?plan-id)
+                      (goal-id ?goal-id)
+                      (action-name wait-for-dependencies)
+                      (state PENDING)
+                      (executable TRUE))
   =>
-  (printout info "Starting to wait for dependencies" crlf)
+  (printout info "Goal " ?goal-id " started waiting for dependencies" crlf)
   (modify ?pa (state RUNNING))
 )
 
 (defrule action-finish-execute-wait-for-dependencies-action
-  ?pa <- (plan-action (id ?action-id) (plan-id ?plan-id) (goal-id ?goal-id)
-                      (action-name wait-for-dependencies) (state RUNNING) (executable TRUE))
+  ?pa <- (plan-action (id ?action-id)
+                      (plan-id ?plan-id)
+                      (goal-id ?goal-id)
+                      (action-name wait-for-dependencies)
+                      (state RUNNING)
+                      (executable TRUE))
   ; check if every dependency-goal is executed successfully
-  (not (and (dependency-assignment (goal-id ?goal-id) (grounded-with ?dependency-id)) 
+  (not (and (dependency-assignment (goal-id ?goal-id)
+                                   (grounded-with ?dependency-id))
             (goal (id ?dependency-id) (outcome ~COMPLETED))))
   =>
-  (printout info "Finished waiting for dependencies" crlf)
+  (printout info "Goal " ?goal-id " finished waiting for dependencies" crlf)
   (modify ?pa (state EXECUTION-SUCCEEDED))
 )
 
 (defrule action-fail-execute-wait-for-dependencies-action
-  ?pa <- (plan-action (id ?action-id) (plan-id ?plan-id) (goal-id ?goal-id)
-                      (action-name wait-for-dependencies) (state RUNNING) (executable TRUE))
+  ?pa <- (plan-action (id ?action-id)
+                      (plan-id ?plan-id)
+                      (goal-id ?goal-id)
+                      (action-name wait-for-dependencies)
+                      (state RUNNING)
+                      (executable TRUE))
   ; check if a dependency-goal failed
-  (and (dependency-assignment (goal-id ?goal-id) (grounded-with ?dependency-id)) 
+  (and (dependency-assignment (goal-id ?goal-id)
+                              (grounded-with ?dependency-id))
        (goal (id ?dependency-id) (outcome FAILED)))
   =>
-  (printout warn "Goal " ?goal-id " failed to wait, because the dependency goal " ?dependency-id " failed" crlf)
+  (printout warn "Goal " ?goal-id
+                       " failed to wait, because dependency-goal "
+                       ?dependency-id " failed" crlf)
   (modify ?pa (state EXECUTION-FAILED))
 )
