@@ -109,6 +109,26 @@
 	(modify ?g (mode EXPANDED))
 )
 
+(defrule goal-expander-pick-and-place
+" Picks a wp from the output of the given mps
+  feeds it into the input of the same mps
+  moves back to the output of the mps "
+	?g <- (goal (id ?goal-id) (class PICK-AND-PLACE) (mode SELECTED) (parent ?parent)
+	            (params target-mps ?mps )
+	            (meta $? assigned-to ?robot $?))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+	=>
+	(plan-assert-sequential (sym-cat PICK-AND-PLACE-PLAN- (gensym*)) ?goal-id ?robot
+		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?mps OUTPUT
+			(plan-assert-action wp-get ?robot ?wp ?mps OUTPUT))
+		(plan-assert-safe-move ?robot ?mps OUTPUT ?mps INPUT
+			(plan-assert-action wp-put ?robot ?wp ?mps))
+		(plan-assert-safe-move ?robot ?mps INPUT ?mps OUTPUT)
+	)
+	(modify ?g (mode EXPANDED))
+)
+
 (defrule goal-expander-buffer-cap
 " Feed a CS with a cap from its shelf so that afterwards
    it can directly put the cap on a product."
