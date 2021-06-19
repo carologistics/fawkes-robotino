@@ -37,6 +37,10 @@
 	;(slot priority (type float) (default 0.0))
 )
 
+; ---------------------------- Class Dependencies ----------------------------
+; A goal depends on a class of a dependency-goal if such a dependency-goal is
+; always required for executing this goal under dependencies
+
 (defrule goal-dependencies-mount-cap-buffer-cap
 " Every mount-cap goal depends on the buffer-cap class. Per default, no buffer-cap goal is grounded. "
 	; needs to be higher than SALIENCE-GOAL-EXECUTABLE-CHECK
@@ -48,11 +52,11 @@
 	(not (dependency-assignment (goal-id ?goal-id) (class BUFFER-CAP)))
 	(not (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-CS-BUFFER-CAP)))
 	=>
-	(printout t "Goal MOUNT-CAP " ?goal-id " depends on class BUFFER-CAP " crlf)
+	(printout t "Goal " ?goal-id " depends on class BUFFER-CAP " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class BUFFER-CAP)
 	                               (grounded-with nil)))
-	(printout t "Goal MOUNT-CAP " ?goal-id " depends on class INSTRUCT-CS-BUFFER-CAP " crlf)
+	(printout t "Goal " ?goal-id " depends on class INSTRUCT-CS-BUFFER-CAP " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class INSTRUCT-CS-BUFFER-CAP)
 	                               (grounded-with nil)))
@@ -69,11 +73,11 @@
 	(not (dependency-assignment (goal-id ?goal-id) (class MOUNT-CAP)))
 	(not (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-CS-MOUNT-CAP)))
 	=>
-	(printout t "Goal DELIVER " ?goal-id " depends on class MOUNT-CAP " crlf)
+	(printout t "Goal " ?goal-id " depends on class MOUNT-CAP " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class MOUNT-CAP)
 	                               (grounded-with nil)))
-	(printout t "Goal DELIVER " ?goal-id " depends on class INSTRUCT-CS-MOUNT-CAP " crlf)
+	(printout t "Goal " ?goal-id " depends on class INSTRUCT-CS-MOUNT-CAP " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class INSTRUCT-CS-MOUNT-CAP)
 	                               (grounded-with nil)))
@@ -87,16 +91,18 @@
 	(not (dependency-assignment (goal-id ?goal-id) (class BUFFER-CAP)))
 	(not (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-CS-BUFFER-CAP)))
 	=>
-	(printout t "Goal DISCARD " ?goal-id " depends on class BUFFER-CAP " crlf)
+	(printout t "Goal " ?goal-id " depends on class BUFFER-CAP " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class BUFFER-CAP)
 	                               (grounded-with nil)))
-	(printout t "Goal DISCARD " ?goal-id " depends on class INSTRUCT-CS-BUFFER-CAP " crlf)
+	(printout t "Goal " ?goal-id " depends on class INSTRUCT-CS-BUFFER-CAP " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class INSTRUCT-CS-BUFFER-CAP)
 	                               (grounded-with nil)))
 )
 
+; ---------------------------- Executability Check ---------------------------
+; ----------------------------- under Dependencies ---------------------------
 
 (defrule goal-dependencies-mount-cap-buffer-cap-executable
 " Even if the CS is not buffered, mount-cap can be executable if the output is
@@ -165,21 +171,22 @@
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp))
 	)
 	=>
-	(printout t "MOUNT-CAP Goal executable for " ?robot " depending on "
-	            ?dependency-class " goal " ?dependency-goal-id crlf)
+	(printout t "Goal " ?goal-id " executable for " ?robot
+	            " depending on goal " ?dependency-goal-id crlf)
 	(modify ?g (is-executable TRUE))
 	(modify ?da (grounded-with ?dependency-goal-id))
 
 	; If a buffer-cap goal is grounded with ?g, also ground its instruct-cs-buffer-cap goal to ?g
 	(if (eq ?dependency-class BUFFER-CAP)
-		then (do-for-fact ((?instruct-goal goal) (?instruct-da dependency-assignment))
-			(and (eq ?instruct-goal:parent ?parent) ; depending on tree: in this case buffer-cap is its sibling
-			   (eq ?instruct-goal:class INSTRUCT-CS-BUFFER-CAP)
-			   (eq ?instruct-da:goal-id ?goal-id)
-			   (eq ?instruct-da:class INSTRUCT-CS-BUFFER-CAP))
-			(modify ?instruct-da (grounded-with ?instruct-goal:id)))
-			(printout t "MOUNT-CAP Goal executable for " ?robot
-			            " depending on INSTRUCT-CS-BUFFER-CAP goal " crlf)
+	 then (do-for-fact ((?instruct-goal goal) (?instruct-da dependency-assignment))
+		      (and (eq ?instruct-goal:parent ?parent) ; depending on tree: in this case buffer-cap is its sibling
+		           (eq ?instruct-goal:class INSTRUCT-CS-BUFFER-CAP)
+		           (eq ?instruct-da:goal-id ?goal-id)
+		           (eq ?instruct-da:class INSTRUCT-CS-BUFFER-CAP))
+		      (modify ?instruct-da (grounded-with ?instruct-goal:id))
+		  )
+		  (printout t "Goal " ?goal-id " executable for " ?robot
+		              " depending on goal INSTRUCT-CS-BUFFER-CAP" crlf)
 	)
 )
 
@@ -257,8 +264,9 @@
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp))
 	)
 	=>
-	(printout t "MOUNT-CAP Goal executable for " ?robot " depending on " ?dependency-class " goal " ?dependency-goal-id
-	            " and DELIVER goal " ?deliver-id crlf)
+	(printout t "Goal " ?goal-id " executable for " ?robot
+	            " depending on goal " ?dependency-goal-id
+	            " and goal " ?deliver-id crlf)
 	(modify ?g (is-executable TRUE))
 	(modify ?da (grounded-with ?dependency-goal-id))
 	(assert (dependency-assignment (goal-id ?goal-id) (class DELIVER) (grounded-with ?deliver-id)))
@@ -271,8 +279,8 @@
 			     (eq ?instruct-da:goal-id ?goal-id)
 			     (eq ?instruct-da:class INSTRUCT-CS-BUFFER-CAP))
 			(modify ?instruct-da (grounded-with ?instruct-goal:id)))
-			(printout t "MOUNT-CAP Goal executable for " ?robot
-			            " depending on INSTRUCT-CS-BUFFER-CAP goal" crlf)
+			(printout t "Goal " ?goal-id " executable for " ?robot
+			            " depending on goal INSTRUCT-CS-BUFFER-CAP" crlf)
 	)
 )
 
@@ -323,8 +331,9 @@
 
 	(not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
 	=>
-	(printout t "DELIVER Goal executable for " ?robot " depending on " MOUNT-CAP " goal " ?mount-goal-id
-	            " and INSTRUCT-CS-MOUNT-CAP goal " ?instruct-goal-id crlf)
+	(printout t "Goal " ?goal-id " executable for " ?robot
+	            " depending on goal " ?mount-goal-id
+	            " and goal " ?instruct-goal-id crlf)
 	(modify ?g (is-executable TRUE))
 	(modify ?mount-da (params  wp ?wp
 	                           wp-loc ?mps
@@ -370,8 +379,9 @@
 	      (mode FORMULATED))
 	?instruct-da <- (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-CS-BUFFER-CAP))
 	=>
-	(printout t "DISCARD Goal executable for " ?robot " depending on " BUFFER-CAP " goal " ?buffer-goal-id
-	            " and INSTRUCT-CS-BUFFER-CAP goal " ?instruct-goal-id crlf)
+	(printout t "Goal " ?goal-id " executable for " ?robot
+	            " depending on goal " ?buffer-goal-id
+	            " and goal " ?instruct-goal-id crlf)
 	(modify ?g (params  wp ?cc wp-loc ?wp-loc wp-side ?wp-side) (is-executable TRUE))
 	(modify ?buffer-da (grounded-with ?buffer-goal-id))
 	(modify ?instruct-da (grounded-with ?instruct-goal-id))
