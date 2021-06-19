@@ -228,7 +228,6 @@
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
-	(not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
 	; MPS CEs
 	(wm-fact (key domain fact mps-type args? m ?mps t CS))
 	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
@@ -237,8 +236,16 @@
 	(not (wm-fact (key domain fact cs-buffered args? m ?mps col ?any-cap-color)))
 	(not (wm-fact (key domain fact wp-at args? wp ?wp-a m ?mps side INPUT)))
 	; Capcarrier CEs
-	(wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
-	(wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+	(or (and
+			(not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
+			(wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
+			(wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+		)
+		(and
+			(wm-fact (key domain fact holding args? r ?robot wp ?cc))
+			(wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+		)
+	)
 	=>
 	(printout t "Goal BUFFER-CAP executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
