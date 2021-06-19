@@ -27,6 +27,11 @@
 	; goal class of dependence-goal
 	(slot class (type SYMBOL))
 
+	; defines if goal waits for dependency before wp-get (wait-for-wp)
+	; or before wp-put (wait-for-free-side), set when asserting
+	; values: WP, FREE-SIDE
+	(slot wait-for (type SYMBOL))
+
 	; necessary parameters used for goal-expander of dependency-goal, set in execution-check
 	; for deliver-mount-cap:	wp, wp-loc, wp-side
 	(multislot params (type SYMBOL))
@@ -55,10 +60,12 @@
 	(printout t "Goal " ?goal-id " depends on class BUFFER-CAP " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class BUFFER-CAP)
+	                               (wait-for FREE-SIDE)
 	                               (grounded-with nil)))
 	(printout t "Goal " ?goal-id " depends on class INSTRUCT-CS-BUFFER-CAP " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class INSTRUCT-CS-BUFFER-CAP)
+	                               (wait-for FREE-SIDE)
 	                               (grounded-with nil)))
 )
 
@@ -76,10 +83,12 @@
 	(printout t "Goal " ?goal-id " depends on class MOUNT-CAP " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class MOUNT-CAP)
+	                               (wait-for WP)
 	                               (grounded-with nil)))
 	(printout t "Goal " ?goal-id " depends on class INSTRUCT-CS-MOUNT-CAP " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class INSTRUCT-CS-MOUNT-CAP)
+	                               (wait-for WP)
 	                               (grounded-with nil)))
 )
 
@@ -94,10 +103,12 @@
 	(printout t "Goal " ?goal-id " depends on class BUFFER-CAP " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class BUFFER-CAP)
+	                               (wait-for WP)
 	                               (grounded-with nil)))
 	(printout t "Goal " ?goal-id " depends on class INSTRUCT-CS-BUFFER-CAP " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class INSTRUCT-CS-BUFFER-CAP)
+	                               (wait-for WP)
 	                               (grounded-with nil)))
 )
 
