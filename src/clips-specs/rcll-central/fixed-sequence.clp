@@ -159,6 +159,16 @@
 	            (meta $? assigned-to ?robot $?))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
+	; used when wp-loc and wp-side is removed
+;	(if (not (do-for-fact ((?da dependency-assignment))
+;	             (and (neq ?da:grounded-with nil)
+;	                  (member$ wp ?da:params)
+;	                  (member$ wp-loc ?da:params)
+;	                  (member$ wp-side ?da:params)
+;	                  (eq ?da:goal-id ?goal-id))
+;	             (bind ?wp (multifield-key-value ?da:params wp))
+;	             (bind ?wp-loc (multifield-key-value ?da:params wp-loc))
+;	             (bind ?wp-side (multifield-key-value ?da:params wp-side)))))
 	(plan-assert-sequential (sym-cat DISCARD-PLAN- (gensym*)) ?goal-id ?robot
 		(if (not (is-holding ?robot ?wp))
 		 then
