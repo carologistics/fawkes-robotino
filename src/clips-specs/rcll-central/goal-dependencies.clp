@@ -320,7 +320,7 @@
 	(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
 
 	; wp is not at CS OUTPUT, but after these goals finished, it will be
-	(goal (id ?mount-goal-id) ;TODO: dafür sorgen, dass das auch das richtige mount-cap goal ist
+	(goal (id ?mount-goal-id)
 	      (class MOUNT-CAP)
 	      (parent ?parent)
 	      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
@@ -401,36 +401,3 @@
 	                   (grounded-with ?buffer-goal-id))
 	(modify ?instruct-da (grounded-with ?instruct-goal-id))
 )
-
-
-;TODO:  use noop-action "wait" to test dependency-assignments and wait-for-goal actions reliable:
-;			wait is the first action of each tested dependence-goal, is doing nothing and for xxx seconds (set in wait-actions.clp)
-;				therefore, the goal, which is executable under the dependency-assignment of the dependence-goal, needs to be
-;				 selected while the dependence-goal is still dispatched and needs to wait for it using the wait-for-goal noop-action
-;TODO:  write code when flushing executability to also flush grounded-with of all dependency-assignments of formulated goals
-;TODO:	write defrule goal-dependencies-mount-ring-feed-rs
-;			this defrule creates multiple dependency-assignments for every formulated mount-ring goal depending on the number
-;			 of payments with class slot feed-rs
-;			my assumption: mount ring is only executable if rs is paid with a minimum number of bases or the number of already paid
-;			 bases and feed-rs goals for that rs sum up to this number
-;				my reason: even though there should not be a wait-for-goal noop-action stopping moun-ring from blocking the rs input,
-;				 performing the mount-ring goal is very commiting to mounting this wp. Whenever there is the choice between
-;				 a mount-ring goal, which is not executable with my assumption, and a feed-ring, feed-ring should be chosen since
-;				 it is more uncommitle.
-;				possible exception: the distance between the wp to mount the ring on and the robot is closer than to a feedable base
-;									in RoboCup 2021 there is only 1 order, therefore dependencies are not needed. Mount-ring
-;									 can be executed whenever possible
-;				a defrule goal-dependencies-mount-ring-executable needs to be written accordingly
-;					meaning all dependency-assignments of mount-ring are grounded with finished & completed and
-;					 selected|expanded|commited|dispatched feed-rs goals
-;					potential problem: while checking executability do not assign multiple dependency-assignment of mount-ring to
-;					 the same feed-rs goal
-;			clear-output goals for capcarriers at cs output can change their dependency-priority depending on these
-;			 dependency-assignments
-;IDEA:	dependency-assignments can be used in some way to avoid deadlocks at rs
-;			for example: write defrule goal-dependencies-mount-ring-executable-clear-output
-;				similar to clear-output goals for capcarriers at cs output, there should be a choice between another mount-ring,
-;				 mount-cap and some wait-holding-wp goal just to clear the output whenever a wp is at rs output
-;				this defrule checks if there is a wp at output and creates a dependency-assighnment with the clear-output goal
-;				it also checks if the wp at output needs to mount another ring at the same rs and sets mount-ring to unexecutable
-;				 until wait-holding-wp is executed
