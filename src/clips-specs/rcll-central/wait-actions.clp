@@ -59,35 +59,53 @@
   ?pa <- (plan-action (id ?action-id)
                       (plan-id ?plan-id)
                       (goal-id ?goal-id)
-                      (action-name wait-for-dependencies)
+                      (action-name ?a-name&wait-for-wp|wait-for-free-side)
                       (state PENDING)
                       (executable TRUE))
   =>
-  (printout info "Goal " ?goal-id " started waiting for dependencies" crlf)
+  (printout info "Goal " ?goal-id " started " ?a-name crlf)
   (modify ?pa (state RUNNING))
 )
 
-(defrule action-finish-execute-wait-for-dependencies-action
+(defrule action-finish-execute-wait-for-wp-action
   ?pa <- (plan-action (id ?action-id)
                       (plan-id ?plan-id)
                       (goal-id ?goal-id)
-                      (action-name wait-for-dependencies)
+                      (action-name wait-for-wp)
                       (state RUNNING)
                       (executable TRUE))
-  ; check if every dependency-goal is executed successfully
+  ; check if every wait-for-wp dependency-goal is executed successfully
   (not (and (dependency-assignment (goal-id ?goal-id)
+                                   (wait-for WP)
                                    (grounded-with ?dependency-id))
             (goal (id ?dependency-id) (outcome ~COMPLETED))))
   =>
-  (printout info "Goal " ?goal-id " finished waiting for dependencies" crlf)
+  (printout info "Goal " ?goal-id " finished wait-for-wp" crlf)
   (modify ?pa (state EXECUTION-SUCCEEDED))
 )
 
-(defrule action-fail-execute-wait-for-dependencies-action
+(defrule action-finish-execute-wait-for-free-side-action
   ?pa <- (plan-action (id ?action-id)
                       (plan-id ?plan-id)
                       (goal-id ?goal-id)
-                      (action-name wait-for-dependencies)
+                      (action-name wait-for-free-side)
+                      (state RUNNING)
+                      (executable TRUE))
+  ; check if every wait-for-free-side dependency-goal is executed successfully
+  (not (and (dependency-assignment (goal-id ?goal-id)
+                                   (wait-for FREE-SIDE)
+                                   (grounded-with ?dependency-id))
+            (goal (id ?dependency-id) (outcome ~COMPLETED))))
+  =>
+  (printout info "Goal " ?goal-id " finished wait-for-free-side" crlf)
+  (modify ?pa (state EXECUTION-SUCCEEDED))
+)
+
+(defrule action-fail-execute-wait-for-action
+  ?pa <- (plan-action (id ?action-id)
+                      (plan-id ?plan-id)
+                      (goal-id ?goal-id)
+                      (action-name ?a-name&wait-for-wp|wait-for-free-side)
                       (state RUNNING)
                       (executable TRUE))
   ; check if a dependency-goal failed
@@ -96,7 +114,7 @@
        (goal (id ?dependency-id) (outcome FAILED)))
   =>
   (printout warn "Goal " ?goal-id
-                       " failed to wait, because dependency-goal "
+                       " failed waiting, because dependency-goal "
                        ?dependency-id " failed" crlf)
   (modify ?pa (state EXECUTION-FAILED))
 )
