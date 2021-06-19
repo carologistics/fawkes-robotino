@@ -159,8 +159,6 @@
 	(modify ?pa (state EXECUTION-SUCCEEDED))
 )
 
-
-
 ; ROBOCUP 2021 NAVIGATION CHALLENGE
 (defrule action-execute-wait-for-reached
   ?pa <- (plan-action (plan-id ?plan-id) (state PENDING) (executable TRUE)
