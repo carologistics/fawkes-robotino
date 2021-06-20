@@ -181,7 +181,7 @@ plugins/conveyor_pose:
       # On the OUTPUT side, the y value is multiplied by -1.
       input_conveyor:
         x: -0.005
-        y: -0.025
+        y: 0.01
         z: 0.64
       left_shelf:
         x: -0.01
@@ -264,29 +264,29 @@ plugins/conveyor_pose:
   # since rotation of initial_tf to conveyor_cam is small, rotation
   # is NEGLECTED!
   with_ll:  # THESE VALUES IF LASERLINE IS AVAILABLE
-    left_cut: -0.065
-    right_cut: 0.065
+    left_cut: -0.05
+    right_cut: 0.05
     top_cut: -0.05
     bottom_cut: 0.055
     front_cut: -0.055
     back_cut: 0.07
   without_ll:  # THESE VALUES IF LASERLINE IS NOT AVAILABLE
-    left_cut: -0.075
-    right_cut: 0.075
+    left_cut: -0.05
+    right_cut: 0.05
     top_cut: -0.02
     bottom_cut: 0.055
     front_cut: 0.01
     back_cut: 0.5
   shelf:
     with_ll:  # THESE VALUES IF LASERLINE IS AVAILABLE
-      left_cut: -0.055  # -0.035
-      right_cut: 0.095  # 0.065
+      left_cut: -0.05  # -0.035
+      right_cut: 0.05  # 0.065
       top_cut: 0.005
       bottom_cut: 0.09
       front_cut: -0.02
       back_cut: 0.10
     without_ll:  # THESE VALUES IF LASERLINE IS NOT AVAILABLE
-      left_cut: -0.05
+      left_cut: -0.045
       right_cut: 0.05
       top_cut: -0.02
       bottom_cut: 0.05
@@ -298,7 +298,6 @@ plugins/conveyor_pose:
     left_off: -0.03
     middle_off: 0.10
     right_off: 0.0
-
   # Laserline specific configurations
   ll:
     # The maximum bearing to allow a laser line
