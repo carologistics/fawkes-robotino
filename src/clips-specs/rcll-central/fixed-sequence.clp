@@ -299,15 +299,45 @@
 	                     $?)
 	             (meta $? assigned-to ?robot $?))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-	(wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?wp-loc spot ?shelf-spot))
+
+	(or
+ 		(and (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?wp-loc $?))
+ 		     (not (wm-fact (key domain fact holding args? r ?robot $?)))
+ 		)
+ 		(and (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+ 		     (not (wm-fact (key domain fact wp-on-shelf args? wp ?wp $?)))
+ 		)
+ 	)
+
 	(wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
 	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before))
 	 =>
+	(bind ?shelf-spot nil)
+	(if (not (is-holding ?robot ?wp))
+		then
+		(do-for-fact ((?wp-on-shelf wm-fact)) (and (wm-key-prefix ?wp-on-shelf:key (create$ domain fact wp-on-shelf))
+		                                      (eq (wm-key-arg ?wp-on-shelf:key wp) ?wp)
+		                                      (eq (wm-key-arg ?wp-on-shelf:key m) ?wp-loc))
+			(bind ?shelf-spot (wm-key-arg ?wp-on-shelf:key spot))
+		)
+	)
+
 	(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
-		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc INPUT
-			(plan-assert-action wp-get-shelf ?robot ?cc ?wp-loc ?shelf-spot))
-		(plan-assert-safe-move ?robot (wait-pos ?wp-loc INPUT) WAIT ?target-mps ?target-side
-			(plan-assert-action wp-put-slide-cc ?robot ?cc ?target-mps ?rs-before ?rs-after))
+		(if (not (is-holding ?robot ?wp))
+		 then
+			(create$ ; only last statement of if is returned
+				(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc INPUT
+					(plan-assert-action wp-get-shelf ?robot ?wp ?wp-loc ?shelf-spot)
+				)
+				(plan-assert-safe-move ?robot (wait-pos ?wp-loc INPUT) WAIT ?target-mps ?target-side
+					(plan-assert-action wp-put-slide-cc ?robot ?wp ?target-mps ?rs-before ?rs-after)
+				)
+			)
+		else
+			(plan-assert-safe-move ?robot (wait-pos ?wp-loc INPUT) WAIT ?target-mps ?target-side
+				(plan-assert-action wp-put-slide-cc ?robot ?wp ?target-mps ?rs-before ?rs-after)
+			)
+		)
 	)
 	(modify ?g (mode EXPANDED))
 )

@@ -525,8 +525,6 @@
 	                          (is-executable FALSE))
 
 	(wm-fact (key refbox team-color) (value ?team-color))
-	;Robot CEs
-	(not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
 	;MPS-RS CEs
 	(wm-fact (key domain fact mps-type args? m ?target-mps t RS))
 	(wm-fact (key domain fact mps-state args? m ?target-mps s ~BROKEN))
@@ -556,8 +554,16 @@
 	(wm-fact (key domain fact mps-state args? m ?wp-loc s ~BROKEN))
 	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
 
-	;Capcarrier CEs
-	(wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?wp-loc spot ?spot))
+	;either there is a wp on the shelf and we don't hold any or we hold one and it is
+	;a CC (e.g. if the goal fails after pick-up)
+	(or (and (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?wp-loc spot ?spot))
+		     (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+		)
+		(and (domain-object (name ?wp) (type cap-carrier))
+		     (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+		)
+	)
+
 	; Formulate the goal only if it is not already formulated (prevents doubling
 	; the goals due to matching with RS-1 and RS-2)
 	(not (goal (class  PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF) (parent goal-id)
