@@ -164,6 +164,6 @@
 	                    (action-name move-wp-input-output)
 	                    (param-values ?mps ?wp))
 	=>
-	(printout info "At " ?mps " move  " ?wp " from input to ouptut " crlf)
+	(printout info "At " ?mps " move  " ?wp " from input to output " crlf)
 	(modify ?pa (state EXECUTION-SUCCEEDED))
 )
