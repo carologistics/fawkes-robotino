@@ -170,7 +170,7 @@
 
 ; ROBOCUP 2021 NAVIGATION CHALLENGE
 (defrule action-stop-execute-wait-for-reached
-  (plan (id ?plan-id))
+  (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (params $? location ?location))
   ?pa <- (plan-action (plan-id ?plan-id) (state RUNNING) (executable TRUE)
 	                    (action-name wait-for-reached) (param-values ?robot ?target))
