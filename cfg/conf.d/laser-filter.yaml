@@ -205,7 +205,7 @@ plugins/laser-filter:
         timestamp_selection: first
 
   map:
-    active: false
+    active: true
 
     # URG input interface
     in/filtered: Laser360Interface::Laser urg-filtered
@@ -220,7 +220,7 @@ plugins/laser-filter:
         type: map_filter
 
   non-static:
-    active: false
+    active: true
 
     # URG input interface
     in/mapless: Laser360Interface::Laser mapless
