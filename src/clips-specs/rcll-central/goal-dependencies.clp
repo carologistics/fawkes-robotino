@@ -24,7 +24,7 @@
 	; id of goal that might rely on another goal/dependence-goal
 	(slot goal-id (type SYMBOL))
 
-	; goal class of dependence-goal
+	; goal class of dependency-goal
 	(slot class (type SYMBOL))
 
 	; defines if goal waits for dependency before wp-get (wait-for-wp)
@@ -204,7 +204,7 @@
 
 (defrule goal-dependencies-mount-cap-buffer-cap-output-blocked-executable
 " Even if the CS is not buffered and a wp is blocking its output, mount-cap can
-  be executable if the there is a running deliver goal for the blocking wp and
+  be executable if there is a running deliver goal for the blocking wp and
   a running buffer-cap goal for the CS. "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class MOUNT-CAP)
@@ -297,8 +297,8 @@
 )
 
 (defrule goal-dependencies-deliver-mount-cap-executable
-" Bring a product to the delivery station.
-"
+" Even if mount-cap is still executing, deliver can already be executable
+  if the CS is buffered and its output is free. "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class DELIVER)
 	                          (mode FORMULATED)
@@ -355,7 +355,7 @@
 )
 
 (defrule goal-dependencies-discard-buffer-cap-executable
-" Bring a product to a cap station to mount a cap on it.
+" Discard can be executable while buffer-cap is still running.
 "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class DISCARD)
