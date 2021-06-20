@@ -155,8 +155,8 @@
 " A waiting robot got a new goal, clear executability and robot assignment from other goals. "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	(goal (sub-type SIMPLE) (mode SELECTED)
-	      (meta $? assigned-to ?robot $?)
-	      (is-executable TRUE) (type ACHIEVE) (class ~SEND-BEACON))
+	      (meta $? assigned-to ?robot2 $?)
+ 	      (is-executable TRUE) (type ACHIEVE) (class ~SEND-BEACON))
 	(goal (sub-type SIMPLE) (mode FORMULATED)
 	      (meta $? assigned-to ?robot $?))
 	=>
@@ -261,14 +261,14 @@
 	(not (wm-fact (key domain fact wp-at args? wp ?wp-a m ?mps side INPUT)))
 	; Capcarrier CEs
 	(or (and
-			(not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
-			(wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
-			(wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-		)
-		(and
-			(wm-fact (key domain fact holding args? r ?robot wp ?cc))
-			(wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-		)
+	        (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
+	        (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
+	        (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+	    )
+	    (and
+	        (wm-fact (key domain fact holding args? r ?robot wp ?cc))
+	        (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+	    )
 	)
 	=>
 	(printout t "Goal BUFFER-CAP executable for " ?robot crlf)
