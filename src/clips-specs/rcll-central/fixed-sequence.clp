@@ -510,7 +510,7 @@
 			(bind ?wp-side nil)
 
 			(do-for-fact ((?wp-at wm-fact)) (and (wm-key-prefix ?wp-at:key (create$ domain fact wp-at))
-												(eq (wm-key-arg ?wp-at:key wp) ?wp))
+			                                      (eq (wm-key-arg ?wp-at:key wp) ?wp))
 				(bind ?wp-loc (wm-key-arg ?wp-at:key m))
 				(bind ?wp-side (wm-key-arg ?wp-at:key side))
 			)
