@@ -244,7 +244,7 @@
 	    (and
 	        (wm-fact (key domain fact holding args? r ?robot wp ?cc))
 	        (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-			(domain-object (name ?cc) (type cap-carrier))
+	        (domain-object (name ?cc) (type cap-carrier))
 	    )
 	)
 	=>
