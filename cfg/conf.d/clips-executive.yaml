@@ -147,6 +147,8 @@ clips-executive:
           crypto-key: randomkey
           cipher: "aes-128-cbc"
 
+          challenge-flip-insertion: true
+
       blackboard-preload:
         - Position3DInterface
         - NavGraphWithMPSGeneratorInterface
