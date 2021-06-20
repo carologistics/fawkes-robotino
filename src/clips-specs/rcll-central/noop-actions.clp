@@ -158,3 +158,24 @@
 	(printout info "Init  " ?m " with " ?wp ": " ?base " " ?cap crlf)
 	(modify ?pa (state EXECUTION-SUCCEEDED))
 )
+
+; ROBOCUP 2021 NAVIGATION CHALLENGE
+(defrule action-execute-wait-for-reached
+  ?pa <- (plan-action (plan-id ?plan-id) (state PENDING) (executable TRUE)
+	                    (action-name wait-for-reached) (param-values ?robot ?target))
+  =>
+  (printout info "WAITING until target" ?target " reached!" crlf)
+  (modify ?pa (state RUNNING))
+)
+
+; ROBOCUP 2021 NAVIGATION CHALLENGE
+(defrule action-stop-execute-wait-for-reached
+  (plan (id ?plan-id))
+  (goal (id ?goal-id) (params $? location ?location))
+  ?pa <- (plan-action (plan-id ?plan-id) (state RUNNING) (executable TRUE)
+	                    (action-name wait-for-reached) (param-values ?robot ?target))
+  (wm-fact (key domain fact reached args?) (values $?reached&:(member$ ?location ?reached)))
+  =>
+  (printout info "Refbox confirmed position " ?target " reached!" crlf)
+  (modify ?pa (state FINAL))
+)

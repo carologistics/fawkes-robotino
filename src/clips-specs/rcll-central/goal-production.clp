@@ -45,8 +45,11 @@
 
 (defrule goal-production-navgraph-compute-wait-positions-finished
   "Add the waiting points to the domain once their generation is finished."
-  (NavGraphWithMPSGeneratorInterface (final TRUE))
-  (not (NavGraphWithMPSGeneratorInterface (final ~TRUE)))
+  (NavGraphWithMPSGeneratorInterface (id "/navgraph-generator-mps") (final TRUE))
+  (forall
+    (wm-fact (key central agent robot args? r ?robot))
+    (NavGraphWithMPSGeneratorInterface (id ?id&:(eq ?id (remote-if-id ?robot "navgraph-generator-mps"))) (final TRUE))
+  )
 =>
   (printout t "Navgraph generation of waiting-points finished. Getting waitpoints." crlf)
   (do-for-all-facts ((?waitzone navgraph-node)) (str-index "WAIT-" ?waitzone:name)
@@ -56,6 +59,9 @@
     )
   )
   (assert (wm-fact (key navgraph waitzone generated) (type BOOL) (value TRUE)))
+  (delayed-do-for-all-facts ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ central agent robot))
+    (assert (wm-fact (key central agent robot-waiting args? r (wm-key-arg ?wm:key r))))
+  )
 )
 
 
@@ -683,7 +689,7 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class NAVIGATION-CHALLENGE-MOVE)
 	                          (mode FORMULATED)
-	                          (params target ?target)
+	                          (params target ?target $?)
 	                          (meta $? assigned-to ?robot $?)
 	                          (is-executable FALSE))
 	=>
@@ -698,17 +704,18 @@
 					(id (sym-cat NAVIGATION-CHALLENGE-MOVE- (gensym*)))
 					(sub-type SIMPLE)
 					(verbosity NOISY) (is-executable FALSE)
-					(params target (translate-location-map-to-grid ?location))
+					(params target (translate-location-map-to-grid ?location) location ?location)
 				)))
 	(return ?goal)
 )
 
 (deffunction goal-production-assert-navigation-challenge
-  (?root-id ?locations)
+  (?root-id $?locations)
 
   (bind ?goals (create$))
   (foreach ?location ?locations
-	(bind ?goals (insert$ ?goals (+ 1 (length$ ?goal))
+
+	(bind ?goals (insert$ ?goals (+ 1 (length$ ?goals))
 				 (goal-production-assert-navigation-challenge-move ?location)))
   )
 
@@ -724,7 +731,7 @@
   "Create a goal tree for the navigation challenge if there is a waypoint fact."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
-  (wm-fact (key domain fact waypoints args? $?waypoints))
+  (wm-fact (key domain fact waypoints args?) (values $?waypoints))
   (not (goal (class NAVIGATION-CHALLENGE-PARENT)))
   =>
   (goal-production-assert-navigation-challenge ?root-id ?waypoints)
