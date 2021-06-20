@@ -118,12 +118,29 @@
 	                    cap-color ?cap-color
 	            )
 	            (meta $? assigned-to ?robot $?))
-	(wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?shelf-spot))
+	(or
+		(wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?throwaway-spot))
+		(wm-fact (key domain fact holding args? r ?robot wp ?cc))
+	)
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
+	(bind ?shelf-spot nil)
+	(if (not (is-holding ?robot ?cc))
+		then
+		(do-for-fact ((?wp-on-shelf wm-fact)) (and (wm-key-prefix ?wp-on-shelf:key (create$ domain fact wp-on-shelf))
+		                                      (eq (wm-key-arg ?wp-on-shelf:key wp) ?cc)
+		                                      (eq (wm-key-arg ?wp-on-shelf:key m) ?mps))
+			(bind ?shelf-spot (wm-key-arg ?wp-on-shelf:key spot))
+		)
+	)
+
 	(plan-assert-sequential (sym-cat BUFFER-CAP-PLAN- (gensym*)) ?goal-id ?robot
 		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?mps INPUT
-			(plan-assert-action wp-get-shelf ?robot ?cc ?mps ?shelf-spot)
+			(if (not (is-holding ?robot ?cc)) then
+				(create$
+				    (plan-assert-action wp-get-shelf ?robot ?cc ?mps ?shelf-spot)
+				)
+			)
 			(plan-assert-action wp-put ?robot ?cc ?mps)
 		)
 	)
