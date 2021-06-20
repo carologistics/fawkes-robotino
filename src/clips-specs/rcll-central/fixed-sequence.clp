@@ -119,8 +119,12 @@
 	            )
 	            (meta $? assigned-to ?robot $?))
 	(or
-		(wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?throwaway-spot))
-		(wm-fact (key domain fact holding args? r ?robot wp ?cc))
+		(and (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps $?))
+		     (not (wm-fact (key domain fact holding args? r ?robot $?)))
+		)
+		(and (wm-fact (key domain fact holding args? r ?robot wp ?cc))
+		     (not (wm-fact (key domain fact wp-on-shelf args? wp ?cc $?)))
+		)
 	)
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
