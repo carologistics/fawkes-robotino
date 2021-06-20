@@ -231,8 +231,9 @@
 	            (is-executable FALSE))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
 	(wm-fact (key domain fact mps-side-free args? m ?mps side INPUT))
+	(wm-fact (key domain fact maps args? m ?mps r ?robot))
 	=>
-	(printout t "Goal PICK-AND-PLACE executable for " ?robot crlf)
+	(printout t "Goal PICK-AND-PLACE executable for " ?robot " at " ?mps crlf)
 	(modify ?g (is-executable TRUE))
 )
 
@@ -677,6 +678,9 @@
 	   (domain-fact (name wp-usable) (param-values WP-ONE))
 	   (domain-fact (name wp-usable) (param-values WP-TWO))
 	   (domain-fact (name wp-usable) (param-values WP-THREE))
+	   (wm-fact (key domain fact maps args? m C-BS r robot1))
+	   (wm-fact (key domain fact maps args? m C-CS1 r robot2))
+	   (wm-fact (key domain fact maps args? m C-RS1 r robot3))
 	   (wm-fact (key domain fact wp-at args? wp WP-ONE m C-BS side OUTPUT))
 	   (wm-fact (key domain fact wp-at args? wp WP-TWO m C-CS1 side OUTPUT))
 	   (wm-fact (key domain fact wp-at args? wp WP-THREE m C-RS1 side OUTPUT))
