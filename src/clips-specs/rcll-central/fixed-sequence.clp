@@ -497,9 +497,11 @@
 	                          (meta $? assigned-to ?robot $?))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	(wm-fact (key refbox team-color) (value ?team-color))
+	(wm-fact (key config rcll challenge-flip-insertion) (value ?flip))
 	=>
 	(bind ?dropzone M-ins-out)
-	(if (eq ?team-color CYAN) then
+	(if (or (and (eq ?team-color CYAN) (neq ?flip TRUE))
+	        (and (eq ?team-color MAGENTA) (eq ?flip TRUE))) then
 		(bind ?dropzone C-ins-out)
 	)
 
@@ -524,7 +526,9 @@
 				(plan-assert-action wp-discard ?robot ?wp)
 			)
 		else
-			(plan-assert-safe-move ?robot ?curr-location ?curr-side ?dropzone WAIT
+			(create$
+				(plan-assert-action go-wait
+					?robot ?curr-location ?curr-side ?dropzone)
 				(plan-assert-action wp-discard ?robot ?wp)
 			)
 		)
