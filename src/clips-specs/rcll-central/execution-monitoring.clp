@@ -112,3 +112,84 @@
   =>
   (retract ?pt)
 )
+
+
+;
+;======================================Retries=========================================
+;
+
+(deffunction should-retry (?an ?error)
+  (if (or (eq ?error "Conveyor Align Failed") (eq ?error "Drive To Machine Point Failed")) then
+    (return TRUE)
+  )
+  (if (eq ?error "Unsatisfied precondition") then (return FALSE))
+  (if (and (or (eq ?an wp-put) (eq ?an wp-put-slide-cc))
+           (any-factp ((?if RobotinoSensorInterface))
+                      (and (not (nth$ 1 ?if:digital_in)) (nth$ 2 ?if:digital_in)))) then
+    (return TRUE)
+  )
+  (if (or (eq ?an move) (eq ?an go-wait)) then
+    (return TRUE)
+  )
+  (return FALSE)
+)
+
+(defrule execution-monitoring-start-retry-action
+" For some actions it can be feasible to retry them in case of a failure, e.g. if
+  the align failed. If an action failed and the error-msg inquires, that we should
+  retry, add a action-retried counter and set the action to FORMULATED
+"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  ?pa <- (plan-action
+              (id ?id)
+              (action-name ?an)
+              (plan-id ?plan-id)
+              (goal-id ?goal-id)
+              (state FAILED)
+              (error-msg ?error)
+              (param-values $?param-values))
+  (test (eq TRUE (should-retry ?an ?error)))
+	(wm-fact (key central agent robot args? r ?r))
+  (not (wm-fact (key monitoring action-retried args? r ?r a ?an id ?id2&:(eq ?id2 (sym-cat ?id)) m ? g ?goal-id)))
+  ?sae <- (skill-action-execinfo (goal-id ?goal-id) (plan-id ?plan-id) (skill-name ?an))
+  =>
+  (bind ?mps nil)
+  (do-for-fact ((?do domain-object)) (and (member$ ?do:name ?param-values) (eq ?do:type mps))
+    (bind ?mps ?do:name)
+  )
+  (assert
+    (wm-fact (key monitoring action-retried args? r ?r a ?an id (sym-cat ?id) m ?mps g ?goal-id) (value 0))
+  )
+  (modify ?pa (state FORMULATED) (error-msg ""))
+  (retract ?sae)
+  (printout error "Start retrying" crlf)
+)
+
+(defrule execution-monitoring-retry-action
+" If the retry of an action is failed again, increment the counter and restart the action
+"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  ?pa <- (plan-action
+              (id ?id)
+              (action-name ?an)
+              (plan-id ?plan-id)
+              (goal-id ?goal-id)
+              (state FAILED)
+              (error-msg ?error)
+              (param-values $?param-values))
+	(wm-fact (key central agent robot args? r ?r))
+  (test (eq TRUE (should-retry ?an ?error)))
+  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an id ?id2&:(eq ?id2 (sym-cat ?id)) m ? g ?goal-id)
+          (value ?tries&:(< ?tries 3)));?*MAX-RETRIES-PICK*
+  ?sae <- (skill-action-execinfo (goal-id ?goal-id) (plan-id ?plan-id) (skill-name ?an))
+  =>
+  (bind ?tries (+ 1 ?tries))
+  (modify ?pa (state FORMULATED) (error-msg ""))
+  (printout error "Restarted: " ?tries crlf)
+  (retract ?sae)
+  (modify ?wm (value ?tries))
+)
