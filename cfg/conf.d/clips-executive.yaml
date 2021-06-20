@@ -148,6 +148,8 @@ clips-executive:
           cipher: "aes-128-cbc"
           pick-and-place-challenge: false
 
+          challenge-flip-insertion: true
+
       blackboard-preload:
         - Position3DInterface
         - NavGraphWithMPSGeneratorInterface
