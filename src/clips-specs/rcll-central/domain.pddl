@@ -716,3 +716,9 @@
 )
 
 )
+
+(:action wait-for-reached
+	:parameters (?r - robot ?point - waitpoint)
+	:precondition (at ?r ?point WAIT)
+	:effect (at ?r ?point WAIT)
+)

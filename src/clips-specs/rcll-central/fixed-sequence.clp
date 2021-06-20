@@ -280,14 +280,14 @@
 
 (defrule goal-expander-navigation-challenge-move
 	?g <- (goal (id ?goal-id) (class NAVIGATION-CHALLENGE-MOVE) (mode SELECTED)
-				(params target ?target)
+				(params target ?target $?)
 	            (meta $? assigned-to ?robot $?))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
 	(plan-assert-sequential NAVIGATION-CHALLENGE-MOVE-PLAN ?goal-id ?robot
 		(plan-assert-action go-wait
 			?robot ?curr-location ?curr-side ?target);target is a waitpoint
-		(plan-assert-action wait
+		(plan-assert-action wait-for-reached
 			?robot ?target);wait there
 	)
 	(modify ?g (mode EXPANDED))
