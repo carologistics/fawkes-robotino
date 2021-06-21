@@ -381,6 +381,7 @@ void read_package() {
         cur_cmd == CMD_SET_ACCEL) {
       if(sscanf (buffer_ + (cur_i_cmd + 1),"%ld",&new_value)<=0){buf_i_ = 0; return;} // flush and return if parsing error
     }
+    float opening_speed = motor_A.get_speed(); //get current openening speed
     bool assumed_gripper_state_local; // this is used to store the assumed gripper state locally, to reduce calls to the function get_assumed_gripper_state
     switch (cur_cmd) {
       case CMD_X_NEW_POS:
@@ -457,10 +458,9 @@ void read_package() {
       case CMD_CLOSE:
         check_gripper_endstop();
         assumed_gripper_state_local = get_assumed_gripper_state(false);
-        local opening_speed = motor_A.get_speed(); //get current openening speed
         if(assumed_gripper_state_local)
         { // we do it
-          set_new_speed_acc(opening_speed/2, 0.0, motor_A); //slow down closing speed to half of opening speed
+          set_new_speed_acc(opening_speed/8, 0.0, motor_A); //slow down closing speed to an eighth of opening speed
           set_new_rel_pos(a_toggle_steps,motor_A);
           assumed_gripper_state = false;
           set_new_speed_acc(opening_speed, 0.0, motor_A); //reset speed
