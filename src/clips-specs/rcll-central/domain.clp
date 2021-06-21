@@ -326,3 +326,13 @@
 		)
 	)
 )
+
+(defrule start-with-waiting-robots
+	(wm-fact (key config rcll start-with-waiting-robots) (value TRUE))
+	(wm-fact (key central agent robot args? r ?robot))
+	(not (wm-fact (key central agent robot-waiting args? r ?robot)))
+	(wm-fact (key refbox phase) (value SETUP))
+	=>
+	assert (wm-fact (key central agent robot-waiting args? r ?robot)))
+)
+
