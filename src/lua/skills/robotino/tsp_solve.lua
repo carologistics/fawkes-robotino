@@ -79,13 +79,11 @@ function INIT:init()
     
     if self.fsm.vars.agent_call then
         self.fsm.vars.agent_string = ""
-        for number in string.gmatch(self.fsm.vars.py_result_string, "[^%s]+") do
-            self.fsm.vars.agent_string = self.fsm.vars.agent_string..">G-"..string.sub(number,1,1)..string.sub(number,2,2)
+        local numbers = string.gmatch(self.fsm.vars.py_result_string, "[^%s]+")
+        for number in table.unpack(numbers, 1, #numbers-1) do
+            self.fsm.vars.agent_string = self.fsm.vars.agent_string.."G-"..string.sub(number,1,1).."-"..string.sub(number,2,2)..","
         end
-        local sp_fsm = skillenv.get_skill_fsm("shelf_pick")
-            if sp_fsm.current == sp_fsm.states[sp_fsm.fail_state] then
-        self.fsm.vars.error = "Shelf Pick Failed"
-  end
+        self.fsm.vars.agent_string = self.fsm.vars.agent_string.."G-"..string.sub(numbers[-1],1,1)..string.sub(numbers[-1],2,2)
     else
         self.fsm.vars.result_coords = {}
         for number in string.gmatch(self.fsm.vars.py_result_string, "[^%s]+") do
