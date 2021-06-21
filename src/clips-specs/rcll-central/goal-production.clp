@@ -450,7 +450,7 @@
 	    ; or the workpiece is already being held
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
 	=>
-	(printout t "Goal " GET-BASE-TO-FILL-RS " formulated" crlf)
+	(printout t "Goal " PAY-FOR-RINGS-WITH-BASE " executable" crlf)
 	(modify ?g (is-executable TRUE))
 )
 
@@ -521,7 +521,7 @@
 	                  (eq (wm-key-arg ?wp-at:key wp) ?wp))
 	             (bind ?wp-side (wm-key-arg ?wp-at:key side))
 	)
-	(printout t "Goal "  PAY-FOR-RINGS-WITH-CAP-CARRIER " formulated" crlf)
+	(printout t "Goal "  PAY-FOR-RINGS-WITH-CAP-CARRIER " executable" crlf)
 	(modify ?g (is-executable TRUE)(params wp ?wp
 	                                       wp-loc ?wp-loc
 	                                       wp-side ?wp-side
@@ -587,7 +587,7 @@
 	(not (goal (class  PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF) (parent goal-id)
 	     (params robot ?robot cs ?wp-loc wp ?wp $?)))
 	=>
-	(printout t "Goal " PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF " formulated" crlf)
+	(printout t "Goal " PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF " executable" crlf)
 	(modify ?g (is-executable TRUE))
 )
 
@@ -597,7 +597,7 @@ The workpiece remains in the output of the used ring station after
   successfully finishing this goal.
 "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
-	?g <- (goal (id ?goal-id) (class MOUNT-RING) ;TODO MONT-FIRST/Next-RING?
+	?g <- (goal (id ?goal-id) (class MOUNT-RING)
 	                          (mode FORMULATED)
 	                          (params  wp ?wp
 	                                   target-mps ?target-mps
@@ -637,7 +637,6 @@ The workpiece remains in the output of the used ring station after
 	(not (wm-fact (key domain fact wp-at args? wp ?wp-loc m ?target-mps side INPUT)))
 	(wm-fact (key domain fact mps-type args? m ?other-rs&~?target-mps t RS))
 	(wm-fact (key domain fact mps-team args? m ?other-rs col ?team-color))
-	;TODO what does this mean for the goal dependencies?
 	; There is at least one other rs side, except for the target input, that
 	; is free (because occupying all 4 sides at once can cause deadlocks)
 	(or (wm-fact (key domain fact mps-side-free args? m ?target-mps side OUTPUT))
