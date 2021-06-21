@@ -25,8 +25,10 @@
 	robot - object
 	team-color - object
 	location - object
+	obstacle - object
 	waitpoint - location
 	mps - location
+	mps - obstacle
 	zone - location
 	mps-typename - object
 	mps-statename - object
@@ -47,13 +49,13 @@
 	ring-num - number
 	ss-shelf - number
 	ss-slot - number
-	zone - object
 	token - object
 	master-token - token
 )
 
 (:constants
 	START - location
+	UNKNOWN NONE - obstacle
 	BS CS DS RS SS - mps-typename
 	IDLE BROKEN PREPARED PROCESSING PROCESSED WAIT-IDLE READY-AT-OUTPUT DOWN - mps-statename
 	INPUT OUTPUT WAIT - mps-side
@@ -68,6 +70,23 @@
 	NA ZERO ONE TWO THREE - ring-num
 	ZERO ONE TWO THREE FOUR FIVE - ss-shelf
 	ZERO ONE TWO THREE FOUR FIVE SIX SEVEN - ss-slot
+  C-Z18 C-Z28 C-Z38 C-Z48 C-Z58 C-Z68 C-Z78 - zone
+  C-Z17 C-Z27 C-Z37 C-Z47 C-Z57 C-Z67 C-Z77 - zone
+  C-Z16 C-Z26 C-Z36 C-Z46 C-Z56 C-Z66 C-Z76 - zone
+  C-Z15 C-Z25 C-Z35 C-Z45 C-Z55 C-Z65 C-Z75 - zone
+  C-Z14 C-Z24 C-Z34 C-Z44 C-Z54 C-Z64 C-Z74 - zone
+  C-Z13 C-Z23 C-Z33 C-Z43 C-Z53 C-Z63 C-Z73 - zone
+  C-Z12 C-Z22 C-Z32 C-Z42 C-Z52 C-Z62 C-Z72 - zone
+  C-Z11 C-Z21 C-Z31 C-Z41 - zone
+  M-Z78 M-Z68 M-Z58 M-Z48 M-Z38 M-Z28 M-Z18 - zone
+  M-Z77 M-Z67 M-Z57 M-Z47 M-Z37 M-Z27 M-Z17 - zone
+  M-Z76 M-Z66 M-Z56 M-Z46 M-Z36 M-Z26 M-Z16 - zone
+  M-Z75 M-Z65 M-Z55 M-Z45 M-Z35 M-Z25 M-Z15 - zone
+  M-Z74 M-Z64 M-Z54 M-Z44 M-Z34 M-Z24 M-Z14 - zone
+  M-Z73 M-Z63 M-Z53 M-Z43 M-Z33 M-Z23 M-Z13 - zone
+  M-Z72 M-Z62 M-Z52 M-Z42 M-Z32 M-Z22 M-Z12 - zone
+                    M-Z41 M-Z31 M-Z21 M-Z11 - zone
+
 	G-1-1 G-2-1 G-3-1 G-4-1 G-5-1 - waitpoint
 	G-1-2 G-2-2 G-3-2 G-4-2 G-5-2 - waitpoint
 	G-1-3 G-2-3 G-3-3 G-4-3 G-5-3 - waitpoint
@@ -82,6 +101,7 @@
 	(entered-field ?r - robot)
 	(robot-waiting ?r - robot)
 	(maps ?m - mps ?r -robot)
+	(zone-content ?z - zone ?m - zone-content)
 	(mps-type ?m - mps ?t - mps-typename)
 	(mps-state ?m - mps ?s - mps-statename)
 	(mps-team ?m - mps ?col - team-color)
@@ -129,6 +149,12 @@
 	              ?slot - ss-slot ?base-col - base-color
 	              ?ring1-col - ring-color ?ring2-col - ring-color
 	              ?ring3-col - ring-color ?cap-col - cap-color)
+)
+
+(:action explore-zone
+	:parameters (?z - zone)
+	:precondition (zone-content ?z UNKNOWN)
+	:effect (not (zone-content ?z UNKNOWN))
 )
 
 ;Kind of a hack. actually it should model the removal of present workpieces
