@@ -45,13 +45,51 @@
 	  (create$
 	    (plan-assert-action go-wait
 	      ?robot ?curr-location ?curr-side (wait-pos ?mps ?mps-side))
-	    ;(plan-assert-action location-lock
-	    ;  ?mps ?mps-side)
 	    (plan-assert-action move
 	      ?robot (wait-pos ?mps ?mps-side) WAIT ?mps ?mps-side)
 	    $?actions
-	    ;(plan-assert-action location-unlock
-	    ;  ?mps ?mps-side)
+	    (plan-assert-action go-wait
+	      ?robot ?mps ?mps-side (wait-pos ?mps ?mps-side))
+	  )
+	)
+)
+
+(deffunction plan-assert-safe-move-wait-for-wp (?robot
+                                                ?curr-location
+                                                ?curr-side
+                                                ?mps
+                                                ?mps-side
+                                                $?actions)
+	(return
+	  (create$
+	    (plan-assert-action go-wait
+	      ?robot ?curr-location ?curr-side (wait-pos ?mps ?mps-side))
+	    (plan-assert-action wait-for-wp
+	      ?robot (wait-pos ?mps ?mps-side))
+	    (plan-assert-action move
+	      ?robot (wait-pos ?mps ?mps-side) WAIT ?mps ?mps-side)
+	    $?actions
+	    (plan-assert-action go-wait
+	      ?robot ?mps ?mps-side (wait-pos ?mps ?mps-side))
+	  )
+	)
+)
+
+(deffunction plan-assert-safe-move-wait-for-free-side (?robot
+                                                       ?curr-location
+                                                       ?curr-side
+                                                       ?mps
+                                                       ?mps-side
+                                                       $?actions)
+	(return
+	  (create$
+	    (plan-assert-action go-wait
+	      ?robot ?curr-location ?curr-side (wait-pos ?mps ?mps-side))
+	    (plan-assert-action wait-for-free-side
+	      ?robot (wait-pos ?mps ?mps-side))
+	    (plan-assert-action move
+	      ?robot (wait-pos ?mps ?mps-side) WAIT ?mps ?mps-side)
+	    $?actions
 	    (plan-assert-action go-wait
 	      ?robot ?mps ?mps-side (wait-pos ?mps ?mps-side))
 	  )
@@ -159,11 +197,21 @@
 	            (meta $? assigned-to ?robot $?))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
+	; used when wp-loc and wp-side is removed
+;	(if (not (do-for-fact ((?da dependency-assignment))
+;	             (and (neq ?da:grounded-with nil)
+;	                  (member$ wp ?da:params)
+;	                  (member$ wp-loc ?da:params)
+;	                  (member$ wp-side ?da:params)
+;	                  (eq ?da:goal-id ?goal-id))
+;	             (bind ?wp (multifield-key-value ?da:params wp))
+;	             (bind ?wp-loc (multifield-key-value ?da:params wp-loc))
+;	             (bind ?wp-side (multifield-key-value ?da:params wp-side)))))
 	(plan-assert-sequential (sym-cat DISCARD-PLAN- (gensym*)) ?goal-id ?robot
 		(if (not (is-holding ?robot ?wp))
 		 then
 			(create$ ; only last statement of if is returned
-				(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
+				(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
 					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
 				)
 			)
@@ -186,10 +234,26 @@
 	                          (meta $? assigned-to ?robot $?))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
-	(if (not (do-for-fact ((?wp-at wm-fact)) (and (wm-key-prefix ?wp-at:key (create$ domain fact wp-at)) (eq (wm-key-arg ?wp-at:key wp) ?wp))
-		(bind ?wp-loc (wm-key-arg ?wp-at:key m))
-		(bind ?wp-side (wm-key-arg ?wp-at:key side))))
-		then
+	(if (and (not (do-for-fact ((?wp-at wm-fact))
+	              (and (wm-key-prefix ?wp-at:key (create$ domain fact wp-at))
+	                   (eq (wm-key-arg ?wp-at:key wp) ?wp))
+	              (bind ?wp-loc (wm-key-arg ?wp-at:key m))
+	              (bind ?wp-side (wm-key-arg ?wp-at:key side))
+	              )
+	         )
+	         (not (do-for-fact ((?da dependency-assignment))
+	                  (and (neq ?da:grounded-with nil)
+	                       (member$ wp ?da:params)
+	                       (member$ wp-loc ?da:params)
+	                       (member$ wp-side ?da:params)
+	                       (eq ?da:goal-id ?goal-id))
+	                  (bind ?wp (multifield-key-value ?da:params wp))
+	                  (bind ?wp-loc (multifield-key-value ?da:params wp-loc))
+	                  (bind ?wp-side (multifield-key-value ?da:params wp-side))
+	              )
+	         )
+	    )
+	then
 		(bind ?wp-loc (multifield-key-value ?params wp-loc))
 		(bind ?wp-side (multifield-key-value ?params wp-side))
 	)
@@ -201,15 +265,15 @@
 				(if (not (is-holding ?robot ?wp))
 				then
 					(create$ ; only last statement of if is returned
-						(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
+						(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
 							(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
 						)
-						(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps ?target-side
+						(plan-assert-safe-move-wait-for-free-side ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps ?target-side
 							(plan-assert-action wp-put ?robot ?wp ?target-mps)
 						)
 					)
 				else
-					(plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps ?target-side
+					(plan-assert-safe-move-wait-for-free-side ?robot ?curr-location ?curr-side ?target-mps ?target-side
 						(plan-assert-action wp-put ?robot ?wp ?target-mps)
 					)
 				)

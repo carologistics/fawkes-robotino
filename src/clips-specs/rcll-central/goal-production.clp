@@ -161,7 +161,7 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	(goal (sub-type SIMPLE) (mode SELECTED)
 	      (meta $? assigned-to ?robot2 $?)
- 	      (is-executable TRUE) (type ACHIEVE) (class ~SEND-BEACON))
+	      (is-executable TRUE) (type ACHIEVE) (class ~SEND-BEACON))
 	(goal (sub-type SIMPLE) (mode FORMULATED)
 	      (meta $? assigned-to ?robot $?))
 	=>
@@ -178,9 +178,14 @@
 		)
 		(do-for-fact ((?waiting wm-fact))
 			(and (wm-key-prefix ?waiting:key (create$ central agent robot-waiting))
-		         (eq (wm-key-arg ?waiting:key r) ?robot))
+			     (eq (wm-key-arg ?waiting:key r) ?robot))
 			(retract ?waiting)
 		)
+	)
+	; cleaning goal dependencies by flushing grounded-with for formulated goals
+	(delayed-do-for-all-facts ((?da dependency-assignment) (?g goal))
+		(and (eq ?da:goal-id ?g:id) (neq ?da:grounded-with nil) (eq ?g:mode FORMULATED))
+		(modify ?da (grounded-with nil))
 	)
 )
 
