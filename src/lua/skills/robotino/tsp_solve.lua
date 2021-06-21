@@ -25,23 +25,26 @@ module(..., skillenv.module_init)
 name               = "tsp_solve"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"goto"}
-depends_interfaces = {
-    {v = "navigator", type="NavigatorInterface", id="Navigator"},
-}
-documentation      = [==[ 
+depends_interfaces = {}
+documentation      = 
+[==[ 
     tsp_solve
     This skill does:
         - Solves the travelling salesman problem given a list of coordinates for possible drive points in a 5x5 grid using a python script call
         @param grid_coords  [list of strings]    list of coordinates in robocup 5x5 grid (first entry in list is starting). example: [M-Z12, M-Z33, M-Z51]
-        @param loop         [int]                wether to end at the start point or not (value is 0 or 1)
+        @param return       [bool]                wether to end at the start point or not 
+    Notes: 
+        - The first element in the inputlist is assumed to be the starting point of the robot.
+        - Coordinates can be of structure M-ZXX or G-X-X. Using the M-Z prefix results in the skill executing goto itself. Using the G- prefix results in
+        the skill returning the optimal sequence of coordinates in an errorstring made up of the coordinates in G-X-X format beginning with an '>' followed
+        one after another
 ]==]
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
-local tfm = require("fawkes.tfutils")
 
 function travel_finished(self)
-    return self.fsm.vars.coords_index == #self.fsm.vars.result_coords
+    return self.fsm.vars.coords_index >= #self.fsm.vars.result_coords
 end
 
 fsm:define_states{ export_to=_M, closure={travel_finished=travel_finished},
@@ -51,7 +54,8 @@ fsm:define_states{ export_to=_M, closure={travel_finished=travel_finished},
 }
 
 fsm:add_transitions{
-    {"INIT", "GOTO", cond="vars.finished"},
+    {"INIT", "GOTO", cond="vars.finished and not vars.agent_call"},
+    {"INIT", "FAILED", cond="vars.finished and vars.agent_call"},
     {"WAIT", "GOTO", timeout=5},
     {"WAIT", "FINAL", cond="travel_finished(self)"}
 }
@@ -59,17 +63,37 @@ fsm:add_transitions{
 function INIT:init()
     self.fsm.vars.finished = false
     local py_input_string = ""
-    for i, zone in ipairs(self.fsm.vars.grid_coords) do
-      py_input_string = py_input_string.." "..string.sub(zone, -2, -1)
+    self.fsm.vars.agent_call = string.sub(self.fsm.vars.grid_coords[0],1,1) == "G"
+    if self.fsm.vars.agent_call then
+        for i, zone in ipairs(self.fsm.vars.grid_coords) do
+            py_input_string = py_input_string.." "..string.sub(zone, -3, -3)..string.sub(zone, -1, -1)
+        end
+    else
+        for i, zone in ipairs(self.fsm.vars.grid_coords) do
+            py_input_string = py_input_string.." "..string.sub(zone, -2, -1)
+        end
     end
-    local handle = io.popen("python /home/robotino/fawkes-robotino/src/lua/skills/robotino/tsp_robotino.py "..tostring(self.fsm.vars.loop)..py_input_string)
+    local handle = io.popen("python /home/robotino/fawkes-robotino/src/lua/skills/robotino/tsp_robotino.py "..tostring(self.fsm.vars.return)..py_input_string)
     self.fsm.vars.py_result_string = string.sub(handle:read("*a"),0,-1)
     handle:close()
-    self.fsm.vars.result_coords = {}
-    for number in string.gmatch(self.fsm.vars.py_result_string, "[^%s]+") do
-        table.insert(self.fsm.vars.result_coords, "M-Z"..number)
+    
+    if self.fsm.vars.agent_call then
+        self.fsm.vars.agent_string = ""
+        for number in string.gmatch(self.fsm.vars.py_result_string, "[^%s]+") do
+            self.fsm.vars.agent_string = self.fsm.vars.agent_string..">G-"..string.sub(number,1,1)..string.sub(number,2,2)
+        end
+        local sp_fsm = skillenv.get_skill_fsm("shelf_pick")
+            if sp_fsm.current == sp_fsm.states[sp_fsm.fail_state] then
+        self.fsm.vars.error = "Shelf Pick Failed"
+  end
+    else
+        self.fsm.vars.result_coords = {}
+        for number in string.gmatch(self.fsm.vars.py_result_string, "[^%s]+") do
+            table.insert(self.fsm.vars.result_coords, "M-Z"..number)
+        end
+        self.fsm.vars.coords_index = 1
     end
-    self.fsm.vars.coords_index = 1
+    
     self.fsm.vars.finished = true
 end
 
@@ -77,14 +101,19 @@ function WAIT:init()
 end
 
 function GOTO:init()
-    if self.fsm.vars.coords_index ~= #self.fsm.vars.result_coords then
-        local node = navgraph:node(self.fsm.vars.result_coords[fsm.vars.coords_index])
-        if node:is_valid() then
-            if node:has_property("orientation") then
-              self.fsm.vars.ori = node:property_as_float("orientation");
-            end
-        end
-        self.args["goto"] = { place = self.fsm.vars.result_coords[fsm.vars.coords_index], ori=self.fsm.vars.ori, ori_tolerance=1.6, trans_tolerance=0.7 }
-        self.fsm.vars.coords_index = fsm.vars.coords_index + 1
+    local transform = fawkes.tf.StampedTransform:new()
+    tf:lookup_transform("map", "odom", transform)
+    self.args["goto"] = { place = self.fsm.vars.result_coords[fsm.vars.coords_index], ori=fawkes.tf.get_yaw(transform), ori_tolerance=1.6, trans_tolerance=0.7 }
+    self.fsm.vars.coords_index = fsm.vars.coords_index + 1
+end
+
+function FAILED:init()
+    if self.fsm.vars.error then
+        self.fsm:set_error(self.fsm.vars.agent_string)
+        return
     end
+    if self.fsm.vars.agent_string then
+        self.fsm:set_error(self.fsm.vars.agent_string)
+    end
+    
 end
