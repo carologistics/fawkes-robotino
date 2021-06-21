@@ -32,7 +32,7 @@ documentation      =
     This skill does:
         - Solves the travelling salesman problem given a list of coordinates for possible drive points in a 5x5 grid using a python script call
         @param grid_coords  [list of strings]    list of coordinates in robocup 5x5 grid (first entry in list is starting). example: [M-Z12, M-Z33, M-Z51]
-        @param return       [bool]                wether to end at the start point or not 
+        @param roundtrip    [int]                wether to end at the start point or not  (1 or 0)
     Notes: 
         - The first element in the inputlist is assumed to be the starting point of the robot.
         - Coordinates can be of structure M-ZXX or G-X-X. Using the M-Z prefix results in the skill executing goto itself. Using the G- prefix results in
@@ -73,7 +73,7 @@ function INIT:init()
             py_input_string = py_input_string.." "..string.sub(zone, -2, -1)
         end
     end
-    local handle = io.popen("python /home/robotino/fawkes-robotino/src/lua/skills/robotino/tsp_robotino.py "..tostring(self.fsm.vars.return)..py_input_string)
+    local handle = io.popen("python /home/robotino/fawkes-robotino/src/lua/skills/robotino/tsp_robotino.py "..tostring(self.fsm.vars.roundtrip)..py_input_string)
     self.fsm.vars.py_result_string = string.sub(handle:read("*a"),0,-1)
     handle:close()
     
