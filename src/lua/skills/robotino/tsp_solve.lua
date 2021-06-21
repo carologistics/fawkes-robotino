@@ -81,10 +81,9 @@ function INIT:init()
         self.fsm.vars.agent_string = ""
         local numbers = string.gmatch(self.fsm.vars.py_result_string, "[^%s]+")
         for number in table.unpack(numbers, 1, #numbers-1) do
-            self.fsm.vars.agent_string = self.fsm.vars.agent_string.."G-"..string.sub(number,1,1)..string.sub(number,2,2)..","
+            self.fsm.vars.agent_string = self.fsm.vars.agent_string.."G-"..string.sub(number,1,1).."-"..string.sub(number,2,2)..","
         end
         self.fsm.vars.agent_string = self.fsm.vars.agent_string.."G-"..string.sub(numbers[-1],1,1)..string.sub(numbers[-1],2,2)
-  end
     else
         self.fsm.vars.result_coords = {}
         for number in string.gmatch(self.fsm.vars.py_result_string, "[^%s]+") do
