@@ -681,3 +681,16 @@
 )
 (modify ?g (mode EXPANDED))
 )
+
+(defrule goal-expander-exploration-challenge-move
+	?g <- (goal (id ?goal-id) (class EXPLORATION-CHALLENGE-MOVE) (mode SELECTED)
+				(params target ?target $?)
+	            (meta $? assigned-to ?robot $?))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	=>
+	(plan-assert-sequential EXPLORATION-CHALLENGE-MOVE-PLAN ?goal-id ?robot
+		(plan-assert-action go-wait
+			?robot ?curr-location ?curr-side ?target);target is a waitpoint
+	)
+	(modify ?g (mode EXPANDED))
+)
