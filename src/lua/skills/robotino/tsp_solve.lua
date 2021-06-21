@@ -37,6 +37,7 @@ documentation      =
         - The first element in the inputlist is assumed to be the starting point of the robot.
         - Coordinates can be of structure M-ZXX or G-X-X. Using the M-Z prefix results in the skill executing goto itself. Using the G- prefix results in
         the skill returning the optimal sequence of coordinates in an errorstring made up of the coordinates in G-X-X format separated by commas
+
 ]==]
 
 -- Initialize as skill module

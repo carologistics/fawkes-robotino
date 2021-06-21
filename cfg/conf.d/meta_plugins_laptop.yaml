@@ -27,7 +27,7 @@ fawkes/meta_plugins:
   m-fv-vision:
     - m-bare
     - m-fv
-    # - tag_vision
+    - tag_vision
     - fvretriever
   m-realsense:
     - realsense2
