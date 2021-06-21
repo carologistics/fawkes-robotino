@@ -1650,4 +1650,71 @@ The workpiece remains in the output of the used ring station after
   =>
   (printout t "Goal " ENTER-FIELD " formulated" crlf)
 	(goal-production-assert-enter-field ?team-color)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;
+; EXPLORATION CHALLENGE ;
+;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defrule goal-production-create-exploration-targets
+	(not (wm-fact (key exploration targets args? $?)))
+	=>
+	(assert (wm-fact (key exploration targets args?)
+	                 (is-list TRUE)
+	                 (values M-Z55 M-Z15 M-Z11 M-Z33 M-Z35 M-Z13 M-Z31))
+	)
+)
+
+(defrule goal-production-exploration-challenge-move-executable
+" Move to a navgraph node
+"
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class EXPLORATION-CHALLENGE-MOVE)
+	                          (mode FORMULATED)
+	                          (params target ?target $?)
+	                          (meta $? assigned-to ?robot $?)
+	                          (is-executable FALSE))
+	=>
+	(printout t "Goal EXPLORATION-CHALLENGE-MOVE executable for " ?robot crlf)
+	(modify ?g (is-executable TRUE))
+)
+
+(deffunction goal-production-assert-exploration-challenge-move
+	(?location)
+
+	(bind ?goal (assert (goal (class EXPLORATION-CHALLENGE-MOVE)
+					(id (sym-cat EXPLORATION-CHALLENGE-MOVE- (gensym*)))
+					(sub-type SIMPLE)
+					(verbosity NOISY) (is-executable FALSE)
+					(params target (translate-location-map-to-grid ?location) location ?location)
+				)))
+	(return ?goal)
+)
+
+(defrule goal-production-create-move-goal-lacking-choice
+  "The robot has nothing it can do, move it across the map to explore"
+  ;(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+  (wm-fact (key central agent robot-waiting args? r ?robot))
+  ?exp-targ <- (wm-fact (key exploration targets args?) (values ?location $?locations))
+  (not (goal (class EXPLORATION-CHALLENGE-MOVE) (meta $? assigned-to ?robot $?)))
+  (not (wm-fact (key refbox field-ground-truth name args? m ?name)))
+  (wm-fact (key domain fact mps-state args? m ?name $?))
+  =>
+  (if (any-factp ((?parent goal)) (eq ?parent:class EXPLORATION-CHALLENGE-PARENT)) then
+		(do-for-fact ((?parent goal)) (eq ?parent:class EXPLORATION-CHALLENGE-PARENT)
+			(bind ?goal (goal-production-assert-exploration-challenge-move ?location))
+			(goal-tree-update-child ?goal (fact-slot-value ?parent id) 1)
+		)
+	else
+	(bind ?goal
+		(goal-tree-assert-central-run-parallel EXPLORATION-CHALLENGE-PARENT
+			(goal-production-assert-exploration-challenge-move ?location)
+		)
+	)
+	(modify ?goal (parent ?root-id))
+  )
+  (modify ?exp-targ (values ?locations))
 )
