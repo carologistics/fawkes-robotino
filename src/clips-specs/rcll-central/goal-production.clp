@@ -48,6 +48,17 @@
 	            (eq ?mode COMMITTED) (eq ?mode DISPATCHED)))
 )
 
+(deffunction is-free (?target-pos)
+	(if (any-factp ((?at wm-fact))
+	        (and (wm-key-prefix ?at:key (create$ domain fact at))
+	             (eq (wm-key-arg ?at:key m) ?target-pos)))
+	 then
+		(return FALSE)
+	 else
+		(return TRUE)
+	)
+)
+
 (defrule goal-production-navgraph-compute-wait-positions-finished
   "Add the waiting points to the domain once their generation is finished."
   (NavGraphWithMPSGeneratorInterface (id "/navgraph-generator-mps") (final TRUE))
@@ -244,6 +255,26 @@
 	(wm-fact (key domain fact maps args? m ?mps r ?robot))
 	=>
 	(printout t "Goal PICK-AND-PLACE executable for " ?robot " at " ?mps crlf)
+	(modify ?g (is-executable TRUE))
+)
+
+(defrule goal-production-move-out-of-way-executable
+" Moves an unproductive robot to the given position "
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (class MOVE-OUT-OF-WAY) (sub-type SIMPLE)
+	            (mode FORMULATED)
+	            (params target-pos ?target-pos location ?loc)
+	            (meta $? assigned-to ?robot $?)
+	            (is-executable FALSE))
+	; is executable if no other goal exists which is executable for the robot
+	; beside a goal of the same class
+	(not (goal (meta $? assigned-to ?robot $?) (is-executable TRUE) (class ~MOVE-OUT-OF-WAY)))
+	;    (goal (class MOVE-OUT-OF-WAY)))
+	; check if target position is free
+	(test (is-free ?target-pos))
+	=>
+	(printout t crlf crlf (is-free ?target-pos) " "?loc crlf)
+	(printout t "Goal MOVE-OUT-OF-WAY executable for " ?robot " to pos " ?target-pos  crlf)
 	(modify ?g (is-executable TRUE))
 )
 
@@ -445,7 +476,7 @@
 	(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
 	;check ring payment - prevention of overfilling rs
 	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before&ZERO|ONE|TWO))
-	;check that not to may robots try to fill the rs at the same time
+	;check that not to many robots try to fill the rs at the same time
 	(or (not (goal (class PAY-FOR-RINGS-WITH-BASE| PAY-FOR-RINGS-WITH-CAP-CARRIER|
 	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
 	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
@@ -1087,6 +1118,17 @@ The workpiece remains in the output of the used ring station after
 	(return ?goal)
 )
 
+(deffunction goal-production-assert-move-out-of-way
+	(?location)
+	(bind ?goal (assert (goal (class MOVE-OUT-OF-WAY)
+	            (id (sym-cat MOVE-OUT-OF-WAY- (gensym*)))
+	            (sub-type SIMPLE)
+	            (verbosity NOISY) (is-executable FALSE)
+	            (params target-pos (translate-location-map-to-grid ?location) location ?location)
+	)))
+	(return ?goal)
+)
+
 (deffunction goal-production-assert-c0
   (?root-id ?order-id ?wp-for-order ?cs ?cap-col ?base-col)
 
@@ -1308,6 +1350,18 @@ The workpiece remains in the output of the used ring station after
 		( goal-production-assert-pick-and-place C-RS1 robot3)
 		( goal-production-assert-pick-and-place C-RS1 robot3)
 	))
+	(modify ?g2 (parent ?root-id))
+)
+
+(defrule goal-production-create-move-out-of-way
+	"Creates a move out of way goal. As soon as it is completed it's reset"
+	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED));PRODUCE-ORDER
+	(not (goal (class MOVE-OUT-OF-WAY))) ; (mode FORMULATED|SELECTED) ))
+	=>
+	(bind ?g1 (goal-production-assert-move-out-of-way M_Z41))
+	(bind ?g2 (goal-production-assert-move-out-of-way M_Z31))
+	(modify ?g1 (parent ?root-id))
 	(modify ?g2 (parent ?root-id))
 )
 
