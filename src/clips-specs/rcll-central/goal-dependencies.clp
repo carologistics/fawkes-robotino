@@ -27,10 +27,10 @@
 	; goal class of dependency-goal
 	(slot class (type SYMBOL))
 
-	; defines if goal waits for dependency before wp-get (wait-for-wp)
-	; or before wp-put (wait-for-free-side), set when asserting
-	; values: WP, FREE-SIDE
-	(slot wait-for (type SYMBOL))
+	; defines if goal waits for dependency before wp-get (wait-for-wp),
+	; before wp-put (wait-for-free-side), or not at all (nil)
+	; set when asserting
+	(slot wait-for (type SYMBOL) (allowed-values nil WP FREE-SIDE))
 
 	; necessary parameters used for goal-expander of dependency-goal, set in execution-check
 	; for deliver-mount-cap:	wp, wp-loc, wp-side
