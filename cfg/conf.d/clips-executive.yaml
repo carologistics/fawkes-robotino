@@ -150,6 +150,8 @@ clips-executive:
 
           challenge-flip-insertion: true
 
+          start-with-waiting-robots: true
+
       blackboard-preload:
         - Position3DInterface
         - NavGraphWithMPSGeneratorInterface
