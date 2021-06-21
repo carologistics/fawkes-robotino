@@ -923,6 +923,8 @@ The workpiece remains in the output of the used ring station after
 	               target-mps ?target-mps
 	               target-side ?target-side
 	               )
+	)))
+)
 
 (deffunction goal-production-assert-deliver-rc21
 	(?wp)
