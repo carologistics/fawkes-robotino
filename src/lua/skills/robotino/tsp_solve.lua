@@ -36,8 +36,7 @@ documentation      =
     Notes: 
         - The first element in the inputlist is assumed to be the starting point of the robot.
         - Coordinates can be of structure M-ZXX or G-X-X. Using the M-Z prefix results in the skill executing goto itself. Using the G- prefix results in
-        the skill returning the optimal sequence of coordinates in an errorstring made up of the coordinates in G-X-X format beginning with an '>' followed
-        one after another
+        the skill returning the optimal sequence of coordinates in an errorstring made up of the coordinates in G-X-X format separated by commas
 ]==]
 
 -- Initialize as skill module
@@ -79,12 +78,11 @@ function INIT:init()
     
     if self.fsm.vars.agent_call then
         self.fsm.vars.agent_string = ""
-        for number in string.gmatch(self.fsm.vars.py_result_string, "[^%s]+") do
-            self.fsm.vars.agent_string = self.fsm.vars.agent_string..">G-"..string.sub(number,1,1)..string.sub(number,2,2)
+        local numbers = string.gmatch(self.fsm.vars.py_result_string, "[^%s]+")
+        for number in table.unpack(numbers, 1, #numbers-1) do
+            self.fsm.vars.agent_string = self.fsm.vars.agent_string.."G-"..string.sub(number,1,1)..string.sub(number,2,2)..","
         end
-        local sp_fsm = skillenv.get_skill_fsm("shelf_pick")
-            if sp_fsm.current == sp_fsm.states[sp_fsm.fail_state] then
-        self.fsm.vars.error = "Shelf Pick Failed"
+        self.fsm.vars.agent_string = self.fsm.vars.agent_string.."G-"..string.sub(numbers[-1],1,1)..string.sub(numbers[-1],2,2)
   end
     else
         self.fsm.vars.result_coords = {}
