@@ -105,3 +105,10 @@
   (printout t "Trigering NavGraph generation with Ground-truth" crlf)
   (navgraph-add-all-new-tags)
 )
+
+(defrule game-retrigger-navgraph-generation-when-no-interface
+  (wm-fact (key central agent robot args? r ?robot))
+  (not (NavGraphWithMPSGeneratorInterface (id ?id&:(eq ?id (remote-if-id ?robot "navgraph-generator-mps"))) (final TRUE)))
+  =>
+  (navgraph-add-all-new-tags)
+)
