@@ -125,7 +125,7 @@
 
 (deffunction goal-tree-assert-central-run-one (?class $?fact-addresses)
 	(bind ?id (sym-cat CENTRAL-RUN-ONE- ?class - (gensym*)))
-	(bind ?goal 
+	(bind ?goal
     (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ONE-OF-SUBGOALS)))
   )
 	(foreach ?f ?fact-addresses
@@ -135,7 +135,7 @@
 
 (deffunction goal-tree-assert-central-run-all (?class $?fact-addresses)
 	(bind ?id (sym-cat CENTRAL-RUN-ALL- ?class - (gensym*)))
-	(bind ?goal 
+	(bind ?goal
     (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)))
   )
 	(foreach ?f ?fact-addresses
@@ -145,8 +145,8 @@
 
 (deffunction goal-tree-assert-central-run-all-sequence (?class $?fact-addresses)
 	(bind ?id (sym-cat CENTRAL-RUN-ALL- ?class - (gensym*)))
-	(bind ?goal 
-    (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS) 
+	(bind ?goal
+    (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
                   (meta sequence-mode)))
   )
 	(foreach ?f ?fact-addresses
@@ -156,7 +156,7 @@
 
 (deffunction goal-tree-assert-central-run-parallel (?class $?fact-addresses)
 	(bind ?id (sym-cat CENTRAL-RUN-PARALLEL- ?class - (gensym*)))
-	(bind ?goal 
+	(bind ?goal
     (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)))
   )
 	(foreach ?f ?fact-addresses
@@ -183,7 +183,7 @@
 (defrule goal-reasoner-select-root-waiting-robot
   "Select all executable root goals in order to propagate selection."
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
-  ?g <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil) 
+  ?g <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
       (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
 
   (not (goal (meta $? assigned-to ?robot $?) (mode ~FORMULATED)))
@@ -199,9 +199,9 @@
 (defrule goal-reasoner-select-root-central-executable-simple-goal
   "There is an exectuable simple goal assigned to central, propagate selection."
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
-  ?g <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil) 
+  ?g <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
       (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
-  (goal (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE) 
+  (goal (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE)
         (meta $? assigned-to central $?))
   =>
   (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
@@ -212,10 +212,10 @@
   "There is an executable goal for a waiting robot or central, propagate until
   we hit the root or a goal that is not FORMULATED."
   (declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
-  (or 
+  (or
     ?g <- (goal (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE)
                 (meta $? assigned-to central $?) (parent ?pid))
-    (and 
+    (and
       (wm-fact (key central agent robot-waiting args? r ?robot))
       ?g <- (goal (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE)
                   (meta $? assigned-to ?robot $?) (parent ?pid))
@@ -227,11 +227,11 @@
   (while (eq ?propagate TRUE)
     (do-for-all-facts ((?parent goal)) (eq ?parent:id ?parent-id)
       (if (eq ?parent:mode FORMULATED)
-        then 
-        (modify ?parent (is-executable TRUE)) 
+        then
+        (modify ?parent (is-executable TRUE))
         (bind ?parent-id ?parent:parent)
       )
-      
+
       (if (or (eq ?parent:parent nil) (neq ?parent:mode FORMULATED))
         then (bind ?propagate FALSE)
       )
@@ -252,7 +252,7 @@
 )
 
 (defrule goal-reasoner-select-from-dispatched-children
-  "Select the goal of highest priority of a run parallel if it is dispatched and 
+  "Select the goal of highest priority of a run parallel if it is dispatched and
   is executable"
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
   (goal (mode DISPATCHED) (class PRODUCTION-ROOT))
@@ -260,7 +260,7 @@
   ?g <- (goal (id ?id) (parent ?parent1) (is-executable TRUE) (mode FORMULATED) (priority ?pc1))
   (not (goal (id ?nid&~?id) (parent ?parent1) (mode FORMULATED) (is-executable TRUE) (priority ?pc2&:(> ?pc2 ?pc1))))
 
-  (not (and 
+  (not (and
       (goal (id ?parent2&~?parent1) (mode DISPATCHED) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL) (priority ?p2&:(> ?p2 ?p1)))
       (goal (id ?c1) (parent ?parent2) (mode FORMULATED) (is-executable TRUE))
     )
