@@ -119,8 +119,12 @@
 	            )
 	            (meta $? assigned-to ?robot $?))
 	(or
-		(wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?throwaway-spot))
-		(wm-fact (key domain fact holding args? r ?robot wp ?cc))
+		(and (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps $?))
+		     (not (wm-fact (key domain fact holding args? r ?robot $?)))
+		)
+		(and (wm-fact (key domain fact holding args? r ?robot wp ?cc))
+		     (not (wm-fact (key domain fact wp-on-shelf args? wp ?cc $?)))
+		)
 	)
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
@@ -210,10 +214,10 @@
 					)
 				)
 			)
-			(modify ?g (mode EXPANDED))
+			(modify ?g (mode EXPANDED)
 		)
 	)
-
+)
 
 
 (defrule goal-expander-pay-for-rings-with-base
@@ -465,6 +469,52 @@
 		(plan-assert-action
 		      (sym-cat rs-mount-ring (sub-string 5 5 ?step) )
 		      ?mps ?wp ?ring-color ?prev-rings ?rs-before ?rs-after ?req )
+	)
+	(modify ?g (mode EXPANDED))
+)
+
+(defrule goal-expander-deliver-rc21
+	?g <- (goal (id ?goal-id) (class DELIVER-RC21)
+	                          (mode SELECTED) (parent ?parent)
+	                          (params  wp ?wp)
+	                          (meta $? assigned-to ?robot $?))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	(wm-fact (key refbox team-color) (value ?team-color))
+	(wm-fact (key config rcll challenge-flip-insertion) (value ?flip))
+	=>
+	(bind ?dropzone M-ins-out)
+	(if (or (and (eq ?team-color CYAN) (neq ?flip TRUE))
+	        (and (eq ?team-color MAGENTA) (eq ?flip TRUE))) then
+		(bind ?dropzone C-ins-out)
+	)
+
+	(plan-assert-sequential (sym-cat DELIVER-RC21-PLAN- (gensym*)) ?goal-id ?robot
+		(if (not (is-holding ?robot ?wp))
+		then
+			(bind ?wp-loc nil)
+			(bind ?wp-side nil)
+
+			(do-for-fact ((?wp-at wm-fact)) (and (wm-key-prefix ?wp-at:key (create$ domain fact wp-at))
+			                                      (eq (wm-key-arg ?wp-at:key wp) ?wp))
+				(bind ?wp-loc (wm-key-arg ?wp-at:key m))
+				(bind ?wp-side (wm-key-arg ?wp-at:key side))
+			)
+
+			(create$
+				(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
+					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
+				)
+				(plan-assert-action go-wait
+					?robot (wait-pos ?wp-loc ?wp-side) WAIT ?dropzone)
+				(plan-assert-action wp-discard ?robot ?wp)
+			)
+		else
+			(create$
+				(plan-assert-action go-wait
+					?robot ?curr-location ?curr-side ?dropzone)
+				(plan-assert-action wp-discard ?robot ?wp)
+			)
+		)
 	)
 	(modify ?g (mode EXPANDED))
 )
