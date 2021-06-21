@@ -81,9 +81,9 @@ plugins/static-transforms:
     gripper_x_origin:
       frame: !frame plate_top
       child_frame: !frame gripper_x_origin
-      trans_x: 0.034
+      trans_x: 0.0197
       trans_y: 0.0
-      trans_z: 0.0492
+      trans_z: 0.0493
 
     # Offset from the X axis' moving carriage middle point to the topmost
     # middle point of the Y axis' carriage, when the gripper
