@@ -457,10 +457,13 @@ void read_package() {
       case CMD_CLOSE:
         check_gripper_endstop();
         assumed_gripper_state_local = get_assumed_gripper_state(false);
+        local opening_speed = motor_A.get_speed(); //get current openening speed
         if(assumed_gripper_state_local)
         { // we do it
+          set_new_speed_acc(opening_speed/2, 0.0, motor_A); //slow down closing speed to half of opening speed
           set_new_rel_pos(a_toggle_steps,motor_A);
           assumed_gripper_state = false;
+          set_new_speed_acc(opening_speed, 0.0, motor_A); //reset speed
         } else { // we don't do it
           send_status();
           send_status();
