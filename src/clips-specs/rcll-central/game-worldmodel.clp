@@ -64,119 +64,46 @@
 )
 
 
-; (defrule game-add-ground-truth-for-tags
-;   "Integrate incoming field-ground-truth facts into our world model."
-;   ?gt <-  (wm-fact (key refbox field-ground-truth name args? m ?mps))
-;   ?gt-y <-(wm-fact (key refbox field-ground-truth yaw args? m ?mps) (value ?yaw))
-;   ?gt-z <-(wm-fact (key refbox field-ground-truth zone args? m ?mps) (value ?zone))
-;   ?gt-t <-(wm-fact (key refbox field-ground-truth mtype args? m ?mps) (value ?mtype))
-;   ?gt-o <-(wm-fact (key refbox field-ground-truth orientation args? m ?mps) (value ?ori))
-;   (not (wm-fact (key game found-tag name args? m ?mps)))
-; =>
-;   (bind ?mirror-yaw (deg-to-rad (mirror-orientation ?mtype ?zone ?ori)))
-;   (assert
-;     (wm-fact (key game found-tag name args? m ?mps) (type BOOL) (value TRUE))
-;     (wm-fact (key game found-tag side args? m ?mps) (value INPUT))
-;     (wm-fact (key game found-tag frame args? m ?mps) (type STRING) (value "map"))
-;     (wm-fact (key game found-tag trans args? m ?mps) (type FLOAT) (is-list TRUE) (values (tag-offset ?zone ?yaw 0.17)))
-;     (wm-fact (key game found-tag rot args? m ?mps) (type FLOAT) (is-list TRUE) (values (tf-quat-from-yaw ?yaw )))
-;     (wm-fact (key game found-tag zone args? m ?mps) (value ?zone))
-;     ; add tags for the other team
-;     ; removed mirroring for RC21, might be necessary to be reverted
-;     (wm-fact (key game found-tag name args? m  ?mps) (type BOOL) (value TRUE))
-;     (wm-fact (key game found-tag side args? m  ?mps) (value INPUT))
-;     (wm-fact (key game found-tag frame args? m  ?mps) (type STRING) (value "map"))
-;     (wm-fact (key game found-tag trans args? m  ?mps) (type FLOAT) (is-list TRUE) (values (tag-offset ?zone ?yaw 0.17)))
-;     (wm-fact (key game found-tag rot args? m  ?mps) (type FLOAT) (is-list TRUE) (values (tf-quat-from-yaw ?yaw )))
-;     (wm-fact (key game found-tag zone args? m  ?mps) (value ?zone))
-;   )
-;   (retract ?gt ?gt-t ?gt-z ?gt-y ?gt-o)
-; )
+(defrule game-add-ground-truth-for-tags
+  "Integrate incoming field-ground-truth facts into our world model."
+  ?gt <-  (wm-fact (key refbox field-ground-truth name args? m ?mps))
+  ?gt-y <-(wm-fact (key refbox field-ground-truth yaw args? m ?mps) (value ?yaw))
+  ?gt-z <-(wm-fact (key refbox field-ground-truth zone args? m ?mps) (value ?zone))
+  ?gt-t <-(wm-fact (key refbox field-ground-truth mtype args? m ?mps) (value ?mtype))
+  ?gt-o <-(wm-fact (key refbox field-ground-truth orientation args? m ?mps) (value ?ori))
+  (not (wm-fact (key game found-tag name args? m ?mps)))
+=>
+  (bind ?mirror-yaw (deg-to-rad (mirror-orientation ?mtype ?zone ?ori)))
+  (assert
+    (wm-fact (key game found-tag name args? m ?mps) (type BOOL) (value TRUE))
+    (wm-fact (key game found-tag side args? m ?mps) (value INPUT))
+    (wm-fact (key game found-tag frame args? m ?mps) (type STRING) (value "map"))
+    (wm-fact (key game found-tag trans args? m ?mps) (type FLOAT) (is-list TRUE) (values (tag-offset ?zone ?yaw 0.17)))
+    (wm-fact (key game found-tag rot args? m ?mps) (type FLOAT) (is-list TRUE) (values (tf-quat-from-yaw ?yaw )))
+    (wm-fact (key game found-tag zone args? m ?mps) (value ?zone))
+    ; add tags for the other team
+    ; removed mirroring for RC21, might be necessary to be reverted
+    (wm-fact (key game found-tag name args? m  ?mps) (type BOOL) (value TRUE))
+    (wm-fact (key game found-tag side args? m  ?mps) (value INPUT))
+    (wm-fact (key game found-tag frame args? m  ?mps) (type STRING) (value "map"))
+    (wm-fact (key game found-tag trans args? m  ?mps) (type FLOAT) (is-list TRUE) (values (tag-offset ?zone ?yaw 0.17)))
+    (wm-fact (key game found-tag rot args? m  ?mps) (type FLOAT) (is-list TRUE) (values (tf-quat-from-yaw ?yaw )))
+    (wm-fact (key game found-tag zone args? m  ?mps) (value ?zone))
+  )
+  (retract ?gt ?gt-t ?gt-z ?gt-y ?gt-o)
+)
 
 
-; (defrule game-generate-navgraph-when-all-tages-found
-;   "Generate the navgraph when all the mps tags where found."
-;   (wm-fact (key refbox phase) (value PRODUCTION))
-;   (forall
-;     (wm-fact (key domain fact mps-team args? m ?mps col ?any-team-color))
-;     (wm-fact (key game found-tag name args? m ?mps ))
-;   )
-; =>
-;   (printout t "Trigering NavGraph generation with Ground-truth" crlf)
-;   (navgraph-add-all-new-tags)
-; )
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;       NAVIGATION CHALLENGE       ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defrule game-generate-navgraph-when-tag-found
-  "Generate a navgraph when one of the mps tags has been found."
+(defrule game-generate-navgraph-when-all-tages-found
+  "Generate the navgraph when all the mps tags where found."
   (wm-fact (key refbox phase) (value PRODUCTION))
-
-  (wm-fact (key domain fact mps-team args? m ?mps col ?any-team-color))
-  (wm-fact (key game found-tag name args? m ?mps))
-  =>
-  (printout t "Triggering NavGraph generation with one ground-truth" crlf)
+  (forall
+    (wm-fact (key domain fact mps-team args? m ?mps col ?any-team-color))
+    (wm-fact (key game found-tag name args? m ?mps ))
+  )
+=>
+  (printout t "Trigering NavGraph generation with Ground-truth" crlf)
   (navgraph-add-all-new-tags)
 )
 
-(defrule game-add-ground-truths-cs1
-  (wm-fact (key refbox phase) (value PRODUCTION))
-  (wm-fact (key refbox game-time) (values ?s&:(> ?s 30) ?m))
-  (not (wm-fact (key domain fact assert-cs1 args? $?)))
-  =>
-  (assert
-    (wm-fact (key game found-tag name args? m C-CS1) (type BOOL) (value TRUE))
-    (wm-fact (key game found-tag side args? m C-CS1) (value INPUT))
-    (wm-fact (key game found-tag frame args? m C-CS1) (type STRING) (value "map"))
-    (wm-fact (key game found-tag trans args? m C-CS1) (type FLOAT) (is-list TRUE) (values (tag-offset M-Z53 (deg-to-rad 90) 0.17)))
-    (wm-fact (key game found-tag rot args? m C-CS1) (type FLOAT) (is-list TRUE) (values (tf-quat-from-yaw (deg-to-rad 90))))
-    (wm-fact (key game found-tag zone args? m C-CS1) (value M-Z53))
-    ; add tags for the other team
-    ; removed mirroring for RC21, might be necessary to be reverted
-    (wm-fact (key game found-tag name args? m  M-CS1) (type BOOL) (value TRUE))
-    (wm-fact (key game found-tag side args? m  M-CS1) (value INPUT))
-    (wm-fact (key game found-tag frame args? m  M-CS1) (type STRING) (value "map"))
-    (wm-fact (key game found-tag trans args? m  M-CS1) (type FLOAT) (is-list TRUE) (values (tag-offset M-Z53 (deg-to-rad 90) 0.17)))
-    (wm-fact (key game found-tag rot args? m  M-CS1) (type FLOAT) (is-list TRUE) (values (tf-quat-from-yaw (deg-to-rad 90))))
-    (wm-fact (key game found-tag zone args? m  M-CS1) (value M-Z53))
 
-    (wm-fact (key domain fact assert-cs1 args?))
-  )
-  (printout t crlf crlf "add information for CS1" crlf crlf)
-)
-
-(defrule game-add-ground-truths-bs
-  (wm-fact (key refbox phase) (value PRODUCTION))
-  (wm-fact (key refbox game-time) (values ?s&:(> ?s 90) ?m))
-  (not (wm-fact (key domain fact assert-bs args? $?)))
-  =>
-  (assert
-    (wm-fact (key game found-tag name args? m C-BS) (type BOOL) (value TRUE))
-    (wm-fact (key game found-tag side args? m C-BS) (value INPUT))
-    (wm-fact (key game found-tag frame args? m C-BS) (type STRING) (value "map"))
-    (wm-fact (key game found-tag trans args? m C-BS) (type FLOAT) (is-list TRUE) (values (tag-offset M-Z12 (deg-to-rad 90) 0.17)))
-    (wm-fact (key game found-tag rot args? m C-BS) (type FLOAT) (is-list TRUE) (values (tf-quat-from-yaw (deg-to-rad 90))))
-    (wm-fact (key game found-tag zone args? m C-BS) (value M-Z12))
-    ; add tags for the other team
-    ; removed mirroring for RC21, might be necessary to be reverted
-    (wm-fact (key game found-tag name args? m  M-BS) (type BOOL) (value TRUE))
-    (wm-fact (key game found-tag side args? m  M-BS) (value INPUT))
-    (wm-fact (key game found-tag frame args? m  M-BS) (type STRING) (value "map"))
-    (wm-fact (key game found-tag trans args? m  M-BS) (type FLOAT) (is-list TRUE) (values (tag-offset M-Z12 (deg-to-rad 90) 0.17)))
-    (wm-fact (key game found-tag rot args? m  M-BS) (type FLOAT) (is-list TRUE) (values (tf-quat-from-yaw (deg-to-rad 90))))
-    (wm-fact (key game found-tag zone args? m  M-BS) (value M-Z12))
-
-    (wm-fact (key domain fact assert-bs args?))
-  )
-  (printout t crlf crlf "add information for BS")
-)
-
-(defrule game-retrigger-navgraph-generation-when-no-interface
-  (wm-fact (key central agent robot args? r ?robot))
-  (not (NavGraphWithMPSGeneratorInterface (id ?id&:(eq ?id (remote-if-id ?robot "navgraph-generator-mps")))))
-  =>
-  (navgraph-add-all-new-tags)
-)
