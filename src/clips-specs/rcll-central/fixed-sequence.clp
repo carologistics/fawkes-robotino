@@ -168,6 +168,20 @@
 	(modify ?g (mode EXPANDED))
 )
 
+(defrule goal-expander-move-out-of-way
+	?g <- (goal (id ?goal-id) (mode SELECTED) (class MOVE-OUT-OF-WAY)
+	            (params target-pos ?target-pos
+	                    location ?loc)
+	            (meta $? assigned-to ?robot $?))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-loc side ?curr-side))
+	=>
+	(plan-assert-sequential MOVE-OUT-OF-WAY-PLAN ?goal-id ?robot
+		(plan-assert-action go-wait ?robot ?curr-loc ?curr-side ?target-pos)
+		(plan-assert-action wait ?robot ?target-pos)
+	)
+	(modify ?g (mode EXPANDED))
+)
+
 (defrule goal-expander-buffer-cap
 " Feed a CS with a cap from its shelf so that afterwards
    it can directly put the cap on a product."
