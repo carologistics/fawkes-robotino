@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------
 --  tsp_solve.lua
 --
---  Created: Thu Aug 14 14:32:47 2021
+--  Created: Thu Aug 14 14:32:47 2008
 --  Copyright  2021  Gjorgji Nikolovski
 --
 ----------------------------------------------------------------------------
@@ -23,7 +23,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "tsp_solve"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"goto"}
 documentation      = [==[ 
     tsp_solve
@@ -37,52 +37,45 @@ documentation      = [==[
 skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
 
-fsm:define_states{ export_to=_M, closure={},
+function travel_finished(self)
+    return self.fsm.vars.coords_index == #self.fsm.vars.result_coords
+end
+
+fsm:define_states{ export_to=_M, closure={travel_finished=travel_finished},
     {"INIT",                    JumpState},
     {"WAIT",                    JumpState},
-    {"GOTO",                    SkillJumpState, skills={"goto"}, final_to="WAIT", fail_to="FAILED"},
-    {"END",                     JumpState}
+    {"GOTO",                    SkillJumpState, skills={{goto}}, final_to="WAIT", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
-    {"INIT", "GOTO", cond=true},
-    {"GOTO", "WAIT", cond=true},
-    {"WAIT", "GOTO", timeout=1},
-    {"WAIT", "END", cond=travel_finished}
+    {"INIT", "GOTO", cond="vars.finished"},
+    {"WAIT", "GOTO", timeout=5},
+    {"WAIT", "FINAL", cond="travel_finished(self)"}
 }
 
-
-function travel_finished(self)
-    return self.fsm.vars.coords_index == #self.fsm.vars.result_coords-1
-end
-
-
-
 function INIT:init()
-
-    local py_input_string = string.sub(self.fsm.vars.grid_coords[0], -2, -1)
-    for coord in table.unpack(self.fsm.vars.grid_coords,1) do
-        py_input_string = py_input_string.." "..string.sub(coord, -2, -1) 
+    self.fsm.vars.finished = false
+    local py_input_string = ""
+    for i, zone in ipairs(self.fsm.vars.grid_coords) do
+      py_input_string = py_input_string.." "..string.sub(zone, -2, -1)
     end
-    local handle = io.popen("python tsp_robotino "..tostring(loop)..py_input_string)
-    self.fsm.vars.py_result_string = string.sub(handle.read("*a"),0,-1)
-    handle.close()
+    local handle = io.popen("python /home/robotino/fawkes-robotino/src/lua/skills/robotino/tsp_robotino.py "..tostring(self.fsm.vars.loop)..py_input_string)
+    self.fsm.vars.py_result_string = string.sub(handle:read("*a"),0,-1)
+    handle:close()
     self.fsm.vars.result_coords = {}
     for number in string.gmatch(self.fsm.vars.py_result_string, "[^%s]+") do
         table.insert(self.fsm.vars.result_coords, "M-Z"..number)
     end
-    self.fsm.vars.coords_index = -1
+    self.fsm.vars.coords_index = 1
+    self.fsm.vars.finished = true
 end
 
-function WAIT:wait()
+function WAIT:init()
 end
 
-function END:end()
-end
-
-function GOTO:do_goto()
-    if self.fsm.vars.coords_index ~= #self.fsm.vars.result_coords-1 then
-        self.fsm.vars.coords_index = fsm.vars.coords_index + 1
+function GOTO:init()
+    if self.fsm.vars.coords_index ~= #self.fsm.vars.result_coords then
         self.args["goto"] = { place = self.fsm.vars.result_coords[fsm.vars.coords_index] }
+        self.fsm.vars.coords_index = fsm.vars.coords_index + 1
     end
 end
