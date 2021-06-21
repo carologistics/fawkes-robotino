@@ -25,6 +25,9 @@ module(..., skillenv.module_init)
 name               = "tsp_solve"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"goto"}
+depends_interfaces = {
+    {v = "navigator", type="NavigatorInterface", id="Navigator"},
+}
 documentation      = [==[ 
     tsp_solve
     This skill does:
@@ -75,7 +78,13 @@ end
 
 function GOTO:init()
     if self.fsm.vars.coords_index ~= #self.fsm.vars.result_coords then
-        self.args["goto"] = { place = self.fsm.vars.result_coords[fsm.vars.coords_index] }
+        local node = navgraph:node(self.fsm.vars.result_coords[fsm.vars.coords_index])
+        if node:is_valid() then
+            if node:has_property("orientation") then
+              self.fsm.vars.ori = node:property_as_float("orientation");
+            end
+        end
+        self.args["goto"] = { place = self.fsm.vars.result_coords[fsm.vars.coords_index], ori=self.fsm.vars.ori, ori_tolerance=1.6, trans_tolerance=0.7 }
         self.fsm.vars.coords_index = fsm.vars.coords_index + 1
     end
 end
