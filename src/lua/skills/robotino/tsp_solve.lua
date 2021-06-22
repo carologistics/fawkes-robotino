@@ -31,10 +31,10 @@ documentation      =
     tsp_solve
     This skill does:
         - Solves the travelling salesman problem given a list of coordinates for possible drive points in a 5x5 grid using a python script call
-        @param grid_coords  [strings]            space separated list of coordinates in robocup 5x5 grid (first entry in list is starting). example: [M-Z12, M-Z33, M-Z51]
-        @param roundtrip    [int]                wether to end at the start point or not  (1 or 0)
+        @param params  [string]             space separated list of parameters. first parameter is the roundtrip condition (values 0 and 1).the rest are coordinates in robocup 
+                                            5x5 grid (first entry of coordinate list is starting point). example: [M-Z12, M-Z33, M-Z51]
     Notes: 
-        - The first element in the inputlist is assumed to be the starting point of the robot.
+        - The first element in the coordinate list is assumed to be the starting point of the robot.
         - Coordinates can be of structure M-ZXX or G-X-X. Using the M-Z prefix results in the skill executing goto itself. Using the G- prefix results in
         the skill returning the optimal sequence of coordinates in an errorstring made up of the coordinates in G-X-X format beginning with an '>' followed
         one after another
@@ -63,8 +63,10 @@ fsm:add_transitions{
 function INIT:init()
     self.fsm.vars.finished = false
     local py_input_string = ""
-    self.fsm.vars.agent_call = string.sub(self.fsm.vars.grid_coords[0],1,1) == "G"
-    local coords = string.gmatch(self.fsm.vars.grid_coords, "[^%s]+")
+    local params_table = string.gmatch(self.fsm.vars.params, "[^%s]+")
+    local roundtrip = params_table[1]
+    local coords = table.unpack(params_table, 2, #params_table)
+    self.fsm.vars.agent_call = string.sub(coords[1],1,1) == "G"
     if self.fsm.vars.agent_call then
         for i, zone in ipairs(coords) do
             if zone ~= "" and zone ~= "\n" then
@@ -74,11 +76,11 @@ function INIT:init()
     else
         for i, zone in ipairs(coords) do
             if zone ~= "" and zone ~= "\n" then
-            py_input_string = py_input_string.." "..string.sub(zone, -2, -1)
+                py_input_string = py_input_string.." "..string.sub(zone, -2, -1)
             end
         end
     end
-    local handle = io.popen("python /home/robotino/fawkes-robotino/src/lua/skills/robotino/tsp_robotino.py "..tostring(self.fsm.vars.return)..py_input_string)
+    local handle = io.popen("python /home/robotino/fawkes-robotino/src/lua/skills/robotino/tsp_robotino.py "..tostring(roundtrip)..py_input_string)
     self.fsm.vars.py_result_string = string.sub(handle:read("*a"),0,-1)
     handle:close()
     
