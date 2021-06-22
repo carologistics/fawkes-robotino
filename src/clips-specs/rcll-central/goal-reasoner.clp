@@ -304,6 +304,27 @@
 
 ; ----------------------- EVALUATE SPECIFIC GOALS ---------------------------
 
+(defrule goal-reasoner-evaluate-failed-workpiece-usable
+" Re-formulate a failed goal if the workpiece it processes is still usable
+"
+	?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED) (meta $?meta)
+	            (params $? wp ?wp $?)
+	            (verbosity ?v))
+	(wm-fact (key domain fact wp-usable args? wp ?wp))
+=>
+	(set-robot-to-waiting ?meta)
+	;(printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
+	;  "') has been completed, Evaluating" crlf)
+  (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as workpiece is still usable" crlf)
+	(modify ?g (mode FORMULATED) (outcome UNKNOWN))
+
+  (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
+    (delayed-do-for-all-facts ((?a plan-action)) (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
+      (retract ?a)
+    )
+    (retract ?p)
+  )
+)
 
 ; ================================= Goal Clean up ============================
 
