@@ -98,6 +98,7 @@ clips-executive:
               - rcll-central/goals/central-run-one.clp
               - rcll-central/goals/central-run-parallel.clp
               - rcll-central/goal-reasoner.clp
+              - rcll-central/goal-dependencies.clp
               - rcll-central/goal-production.clp
               - rcll-central/production-strategy.clp
           - name: goal-expander
@@ -147,6 +148,10 @@ clips-executive:
           crypto-key: randomkey
           cipher: "aes-128-cbc"
           pick-and-place-challenge: false
+
+          challenge-flip-insertion: true
+
+          start-with-waiting-robots: true
 
       blackboard-preload:
         - Position3DInterface

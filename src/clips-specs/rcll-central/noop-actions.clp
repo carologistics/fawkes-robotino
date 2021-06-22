@@ -167,3 +167,88 @@
 	(printout info "At " ?mps " move  " ?wp " from input to output " crlf)
 	(modify ?pa (state EXECUTION-SUCCEEDED))
 )
+
+(defrule action-start-execute-wait-for-dependencies-action
+  ?pa <- (plan-action (id ?action-id)
+                      (plan-id ?plan-id)
+                      (goal-id ?goal-id)
+                      (action-name ?a-name&wait-for-wp|wait-for-free-side)
+                      (state PENDING)
+                      (executable TRUE))
+  =>
+  (printout info "Goal " ?goal-id " started " ?a-name crlf)
+  (modify ?pa (state RUNNING))
+)
+
+(defrule action-finish-execute-wait-for-wp-action
+  ?pa <- (plan-action (id ?action-id)
+                      (plan-id ?plan-id)
+                      (goal-id ?goal-id)
+                      (action-name wait-for-wp)
+                      (state RUNNING)
+                      (executable TRUE))
+  ; check if every wait-for-wp dependency-goal is executed successfully
+  (not (and (dependency-assignment (goal-id ?goal-id)
+                                   (wait-for WP)
+                                   (grounded-with ?dependency-id))
+            (goal (id ?dependency-id) (outcome ~COMPLETED))))
+  =>
+  (printout info "Goal " ?goal-id " finished wait-for-wp" crlf)
+  (modify ?pa (state EXECUTION-SUCCEEDED))
+)
+
+(defrule action-finish-execute-wait-for-free-side-action
+  ?pa <- (plan-action (id ?action-id)
+                      (plan-id ?plan-id)
+                      (goal-id ?goal-id)
+                      (action-name wait-for-free-side)
+                      (state RUNNING)
+                      (executable TRUE))
+  ; check if every wait-for-free-side dependency-goal is executed successfully
+  (not (and (dependency-assignment (goal-id ?goal-id)
+                                   (wait-for FREE-SIDE)
+                                   (grounded-with ?dependency-id))
+            (goal (id ?dependency-id) (outcome ~COMPLETED))))
+  =>
+  (printout info "Goal " ?goal-id " finished wait-for-free-side" crlf)
+  (modify ?pa (state EXECUTION-SUCCEEDED))
+)
+
+(defrule action-fail-execute-wait-for-dependencies-action
+  ?pa <- (plan-action (id ?action-id)
+                      (plan-id ?plan-id)
+                      (goal-id ?goal-id)
+                      (action-name ?a-name&wait-for-wp|wait-for-free-side)
+                      (state RUNNING)
+                      (executable TRUE))
+  ; check if a dependency-goal failed
+  (and (dependency-assignment (goal-id ?goal-id)
+                              (grounded-with ?dependency-id))
+       (goal (id ?dependency-id) (outcome FAILED)))
+  =>
+  (printout warn "Goal " ?goal-id
+                       " failed waiting, because dependency-goal "
+                       ?dependency-id " failed" crlf)
+  (modify ?pa (state EXECUTION-FAILED))
+)
+
+; ROBOCUP 2021 NAVIGATION CHALLENGE
+(defrule action-execute-wait-for-reached
+  ?pa <- (plan-action (plan-id ?plan-id) (state PENDING) (executable TRUE)
+	                    (action-name wait-for-reached) (param-values ?robot ?target))
+  =>
+  (printout info "WAITING until target" ?target " reached!" crlf)
+  (modify ?pa (state RUNNING))
+)
+
+; ROBOCUP 2021 NAVIGATION CHALLENGE
+(defrule action-stop-execute-wait-for-reached
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (goal (id ?goal-id) (params $? location ?location))
+  ?pa <- (plan-action (plan-id ?plan-id) (state RUNNING) (executable TRUE)
+	                    (action-name wait-for-reached) (param-values ?robot ?target))
+  (wm-fact (key domain fact reached args?) (values $?reached&:(member$ ?location ?reached)))
+  =>
+  (printout info "Refbox confirmed position " ?target " reached!" crlf)
+  (modify ?pa (state FINAL))
+)

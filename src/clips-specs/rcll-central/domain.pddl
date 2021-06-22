@@ -374,6 +374,18 @@
 	:effect (at ?r ?point WAIT)
 )
 
+(:action wait-for-wp
+	:parameters (?r - robot ?point - waitpoint)
+	:precondition (at ?r ?point WAIT)
+	:effect (at ?r ?point WAIT)
+)
+
+(:action wait-for-free-side
+	:parameters (?r - robot ?point - waitpoint)
+	:precondition (at ?r ?point WAIT)
+	:effect (at ?r ?point WAIT)
+)
+
 (:action move
 	:parameters (?r - robot ?from - location ?from-side - mps-side
 	             ?to - mps ?to-side - mps-side)
@@ -729,5 +741,10 @@
 	        )
 )
 
+(:action wait-for-reached
+	:parameters (?r - robot ?point - waitpoint)
+	:precondition (at ?r ?point WAIT)
+	:effect (at ?r ?point WAIT)
 )
 
+)
