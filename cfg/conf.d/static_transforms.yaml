@@ -95,8 +95,8 @@ plugins/static-transforms:
       trans_y: 0.0
       trans_z: 0.034
 
-    # Offset from the Y axis' moving carriage middle point to the topmost
-    # middle point of the Z axis' carriage, when the gripper
+    # Offset from the Y axis' moving carriage middle point to the middle point
+    # of the Z axis' carriage on the front facing surface, while the gripper
     # is at its home position.
     gripper_z_origin:
       frame: !frame gripper_y_dyn
