@@ -45,6 +45,18 @@
 	(assert (wm-fact (key exploration active) (type BOOL) (value TRUE)))
 )
 
+(defrule exp-disable
+" Exploration is not needed anymore as all machines were found."
+	(wm-fact (key domain fact mps-state args? m ? $?))
+	(forall
+		(wm-fact (key domain fact mps-state args? m ?name $?))
+		(wm-fact (key domain fact zone-content args? z ? m ?name))
+	)
+	?active <- (wm-fact (key exploration active) (type BOOL) (value TRUE))
+	=>
+	(modify ?active (value FALSE))
+)
+
 (defrule exp-startup
 " Asserts all needed wm-facts for the exploration phase
   line-vis:      value is greater 0 if there was a line detected in the zone
