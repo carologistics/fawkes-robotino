@@ -636,3 +636,24 @@
 	)
 	(modify ?g (mode EXPANDED))
 )
+
+(defrule goal-expander-solve-tsp
+	?g <- (goal (id ?goal-id) (class SOLVE-TSP) (mode SELECTED)
+	            (params coords $?coordinates)
+	            (meta $? assigned-to ?r $?)
+	)
+	=>
+	(bind ?argstr "0")
+	(foreach ?coordinate ?coordinates
+		(if (eq ?argstr "") then
+			(bind ?argstr (str-cat ?coordinate))
+			(printout t ?argstr )
+		else
+			(bind ?argstr (str-cat ?argstr " " ?coordinate))
+		)
+	)
+	(plan-assert-sequential EXPLORATION-CHALLENGE-MOVE-PLAN ?goal-id ?r
+		(plan-assert-action tsp-solve ?r ?argstr)
+	)
+	(modify ?g (mode EXPANDED))
+)

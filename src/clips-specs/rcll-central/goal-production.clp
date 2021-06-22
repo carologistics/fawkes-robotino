@@ -1442,22 +1442,55 @@ The workpiece remains in the output of the used ring station after
 	?g <- (goal (id ?goal-id) (class NAVIGATION-CHALLENGE-MOVE)
 	                          (mode FORMULATED)
 	                          (params target ?target $?)
-	                          (meta $? assigned-to ?robot $?)
+	                          (meta $? robot ?robot $? assigned-to ?robot $?)
 	                          (is-executable FALSE))
 	=>
 	(printout t "Goal NAVIGATION-CHALLENGE-MOVE executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
 )
 
+(defrule goal-production-solve-tsp-executable
+" Activate the solve-tsp skill
+"
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class SOLVE-TSP)
+	                          (mode FORMULATED)
+	                          (meta $? assigned-to ?robot $?)
+	                          (is-executable FALSE))
+	=>
+	(printout t "Goal SOLVE-TSP executable for " ?robot crlf)
+	(modify ?g (is-executable TRUE))
+)
+
 (deffunction goal-production-assert-navigation-challenge-move
-	(?location)
+	(?location ?robot)
 
 	(bind ?goal (assert (goal (class NAVIGATION-CHALLENGE-MOVE)
 					(id (sym-cat NAVIGATION-CHALLENGE-MOVE- (gensym*)))
 					(sub-type SIMPLE)
 					(verbosity NOISY) (is-executable FALSE)
 					(params target (translate-location-map-to-grid ?location) location ?location)
+					(meta robot ?robot)
 				)))
+	(return ?goal)
+)
+
+(deffunction goal-production-assert-solve-tsp
+	(?root-id ?locations)
+
+	(bind ?coords (create$))
+	(foreach ?location ?locations
+		(bind ?coords (insert$ ?coords (+ 1 (length$ ?coords))
+				 (translate-location-map-to-grid ?location)))
+  	)
+
+	(bind ?goal (assert (goal (class SOLVE-TSP)
+					(id (sym-cat SOLVE-TSP- (gensym*)))
+					(sub-type SIMPLE)
+					(verbosity NOISY) (is-executable FALSE)
+					(params coords ?coords)
+					(parent ?root-id))
+				))
 	(return ?goal)
 )
 
@@ -1465,10 +1498,16 @@ The workpiece remains in the output of the used ring station after
   (?root-id $?locations)
 
   (bind ?goals (create$))
-  (foreach ?location ?locations
-
+  (progn$ (?location ?locations)
+	(bind ?robot robot1)
+	(if (> ?location-index 4) then
+		(bind ?robot robot2)
+	)
+	(if (> ?location-index 8) then
+		(bind ?robot robot3)
+	)
 	(bind ?goals (insert$ ?goals (+ 1 (length$ ?goals))
-				 (goal-production-assert-navigation-challenge-move ?location)))
+				 (goal-production-assert-navigation-challenge-move ?location ?robot)))
   )
 
   (bind ?goal
@@ -1479,12 +1518,36 @@ The workpiece remains in the output of the used ring station after
   (modify ?goal (parent ?root-id))
 )
 
-(defrule goal-production-create-navigation-challenge-tree
+(defrule goal-production-create-navigation-challenge-base-tree
   "Create a goal tree for the navigation challenge if there is a waypoint fact."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+  (goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED))
   (wm-fact (key domain fact waypoints args?) (values $?waypoints))
   (not (goal (class NAVIGATION-CHALLENGE-PARENT)))
+  (not (goal (class SOLVE-TSP)))
+  =>
+  (printout t crlf crlf ?waypoints crlf crlf)
+  (goal-production-assert-solve-tsp ?root-id ?waypoints)
+)
+
+(defrule goal-production-create-navigation-challenge-tree
+  "Create a goal tree for the navigation challenge if there is a tsp-plan fact."
+  (wm-fact (key domain fact tsp-plan args?) (values $?waypoints))
+  (goal (id ?root-id) (class PRODUCTION-ROOT))
   =>
   (goal-production-assert-navigation-challenge ?root-id ?waypoints)
+)
+
+(defrule goal-production-catch-error-message-solution-for-tsp
+	(plan-action (action-name tsp-solve) (error-msg ?msg) (state FAILED))
+	(not (wm-fact (key domain fact tsp-plan args?)))
+	=>
+	(bind ?msg (str-cat " " ?msg))
+	(bind ?waypoints (create$ ))
+	(while (neq (str-index " " ?msg) FALSE)
+		(bind ?coord (sub-string (+ 1 (str-index " " ?msg)) (+ 6 (str-index " " ?msg)) ?msg))
+		(bind ?waypoints (append$ ?waypoints (sym-cat ?coord)))
+		(bind ?msg (sub-string (+ 7 (str-index " " ?msg)) (length$ ?msg) ?msg))
+	)
+	(assert (wm-fact (key domain fact tsp-plan args?) (is-list TRUE) (values $?waypoints)))
 )

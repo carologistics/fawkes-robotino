@@ -134,6 +134,7 @@ clips-executive:
           get_product_from{place=?(m)S,
                            side=?(side|/INPUT/input/|/OUTPUT/output/)s}
         wp-discard: discard{}
+        tsp-solve: tsp_solve{params=?(coords)S}
       parameters:
         simtest:
           enabled: false
