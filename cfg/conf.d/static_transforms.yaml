@@ -57,9 +57,9 @@ plugins/static-transforms:
     gripper_home:
       frame: !frame plate_top
       child_frame: !frame gripper_home
-      trans_x: 0.045
+      trans_x: 0.0312
       trans_y: 0.0
-      trans_z: 0.1817
+      trans_z: 0.1808
 
     # Move the gripper to (0,0,0) in this frame to calibrate conveyor_pose
     conveyor_calib:
