@@ -63,37 +63,62 @@ fsm:add_transitions{
 function INIT:init()
     self.fsm.vars.finished = false
     local py_input_string = ""
-    local params_table = string.gmatch(self.fsm.vars.params, "[^%s]+")
-    local roundtrip = params_table[1]
-    local coords = table.unpack(params_table, 2, #params_table)
-    self.fsm.vars.agent_call = string.sub(coords[1],1,1) == "G"
-    if self.fsm.vars.agent_call then
-        for i, zone in ipairs(coords) do
-            if zone ~= "" and zone ~= "\n" then
-                py_input_string = py_input_string.." "..string.sub(zone, -3, -3)..string.sub(zone, -1, -1)
-            end
+    local roundtrip = ""
+    local coords = {}
+    for param_table_value in string.gmatch(self.fsm.vars.params, "%S+") do
+        if roundtrip == "" then
+            roundtrip = param_table_value
+        else
+            coords[#coords+1] = param_table_value
         end
-    else
-        for i, zone in ipairs(coords) do
-            if zone ~= "" and zone ~= "\n" then
+    end
+    --print(string.sub(coords[1],1,1))
+    self.fsm.vars.agent_call = (string.sub(coords[1],1,1) == "G")
+
+    for i, zone in ipairs(coords) do
+        if i == 1 then
+            if self.fsm.vars.agent_call then
+                py_input_string  = string.sub(zone, 3, 3)..string.sub(zone, 5, 5)
+            else
+                py_input_string = string.sub(zone, -2, -1)
+            end 
+        else
+            if self.fsm.vars.agent_call then
+                py_input_string = py_input_string.." "..string.sub(zone, 3, 3)..string.sub(zone, 5, 5)
+                
+            else
                 py_input_string = py_input_string.." "..string.sub(zone, -2, -1)
             end
         end
     end
-    local handle = io.popen("python /home/robotino/fawkes-robotino/src/lua/skills/robotino/tsp_robotino.py "..tostring(roundtrip)..py_input_string)
+    
+    print(py_input_string)
+    local handle = io.popen("python /home/robotino/fawkes-robotino/src/lua/skills/robotino/tsp_robotino.py "..tostring(roundtrip).." "..py_input_string)
     self.fsm.vars.py_result_string = string.sub(handle:read("*a"),0,-1)
+
+    print(self.fsm.vars.py_result_string)
+
     handle:close()
     
+    local numbers = {}
+    for number_string in string.gmatch(self.fsm.vars.py_result_string, "%S+") do
+        numbers[#numbers+1] = number_string
+    end
+
     if self.fsm.vars.agent_call then
         self.fsm.vars.agent_string = ""
-        local numbers = string.gmatch(self.fsm.vars.py_result_string, "[^%s]+")
-        for number in table.unpack(numbers, 1, #numbers-1) do
-            self.fsm.vars.agent_string = self.fsm.vars.agent_string.."G-"..string.sub(number,1,1).."-"..string.sub(number,2,2).." "
+        
+        for i, number in ipairs(numbers) do
+            if i ~= #numbers then
+                self.fsm.vars.agent_string = self.fsm.vars.agent_string.."G-"..string.sub(number,1,1).."-"..string.sub(number,2,2).." "
+            else
+                self.fsm.vars.agent_string = self.fsm.vars.agent_string.."G-"..string.sub(numbers[-1],1,1).."-"..string.sub(numbers[-1],2,2)
+            end
         end
-        self.fsm.vars.agent_string = self.fsm.vars.agent_string.."G-"..string.sub(numbers[-1],1,1).."-"..string.sub(numbers[-1],2,2)
+        
     else
         self.fsm.vars.result_coords = {}
-        for number in string.gmatch(self.fsm.vars.py_result_string, "[^%s]+") do
+        for i, number in ipairs(numbers) do
             table.insert(self.fsm.vars.result_coords, "M-Z"..number)
         end
         self.fsm.vars.coords_index = 1
@@ -108,17 +133,13 @@ end
 function GOTO:init()
     local transform = fawkes.tf.StampedTransform:new()
     tf:lookup_transform("map", "odom", transform)
-    self.args["goto"] = { place = self.fsm.vars.result_coords[fsm.vars.coords_index], ori=fawkes.tf.get_yaw(transform), ori_tolerance=1.6, trans_tolerance=0.7 }
+    self.args["goto"] = { place = self.fsm.vars.result_coords[fsm.vars.coords_index], ori=fawkes.tf.get_yaw(transform:getRotation()), ori_tolerance=1.6, trans_tolerance=0.7 }
     self.fsm.vars.coords_index = fsm.vars.coords_index + 1
 end
 
 function FAILED:init()
-    if self.fsm.vars.error then
-        self.fsm:set_error(self.fsm.vars.agent_string)
-        return
-    end
+    print(self.fsm.vars.agent_string)
     if self.fsm.vars.agent_string then
         self.fsm:set_error(self.fsm.vars.agent_string)
     end
-    
 end
