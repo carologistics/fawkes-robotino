@@ -35,6 +35,16 @@
 	(modify ?zc (key domain fact zone-content args? z ?zone m ?name))
 )
 
+(defrule exp-enable
+" Exploration is needed as we received an mps-state already without knowing
+  the zone."
+	(wm-fact (key domain fact mps-state args? m ?name $?))
+	(not (wm-fact (key domain fact zone-content args? z ? m ?name)))
+	(not (wm-fact (key exploration active) (type BOOL) (value TRUE)))
+	=>
+	(assert (wm-fact (key exploration active) (type BOOL) (value TRUE)))
+)
+
 (defrule exp-startup
 " Asserts all needed wm-facts for the exploration phase
   line-vis:      value is greater 0 if there was a line detected in the zone
