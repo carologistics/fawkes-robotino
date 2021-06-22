@@ -31,8 +31,8 @@ documentation      =
     tsp_solve
     This skill does:
         - Solves the travelling salesman problem given a list of coordinates for possible drive points in a 5x5 grid using a python script call
-        @param grid_coords  [list of strings]    list of coordinates in robocup 5x5 grid (first entry in list is starting). example: [M-Z12, M-Z33, M-Z51]
-        @param return       [bool]                wether to end at the start point or not 
+        @param grid_coords  [strings]            space separated list of coordinates in robocup 5x5 grid (first entry in list is starting). example: [M-Z12, M-Z33, M-Z51]
+        @param roundtrip    [int]                wether to end at the start point or not  (1 or 0)
     Notes: 
         - The first element in the inputlist is assumed to be the starting point of the robot.
         - Coordinates can be of structure M-ZXX or G-X-X. Using the M-Z prefix results in the skill executing goto itself. Using the G- prefix results in
@@ -64,13 +64,18 @@ function INIT:init()
     self.fsm.vars.finished = false
     local py_input_string = ""
     self.fsm.vars.agent_call = string.sub(self.fsm.vars.grid_coords[0],1,1) == "G"
+    local coords = string.gmatch(self.fsm.vars.grid_coords, "[^%s]+")
     if self.fsm.vars.agent_call then
-        for i, zone in ipairs(self.fsm.vars.grid_coords) do
-            py_input_string = py_input_string.." "..string.sub(zone, -3, -3)..string.sub(zone, -1, -1)
+        for i, zone in ipairs(coords) do
+            if zone ~= "" and zone ~= "\n" then
+                py_input_string = py_input_string.." "..string.sub(zone, -3, -3)..string.sub(zone, -1, -1)
+            end
         end
     else
-        for i, zone in ipairs(self.fsm.vars.grid_coords) do
+        for i, zone in ipairs(coords) do
+            if zone ~= "" and zone ~= "\n" then
             py_input_string = py_input_string.." "..string.sub(zone, -2, -1)
+            end
         end
     end
     local handle = io.popen("python /home/robotino/fawkes-robotino/src/lua/skills/robotino/tsp_robotino.py "..tostring(self.fsm.vars.return)..py_input_string)
@@ -81,9 +86,9 @@ function INIT:init()
         self.fsm.vars.agent_string = ""
         local numbers = string.gmatch(self.fsm.vars.py_result_string, "[^%s]+")
         for number in table.unpack(numbers, 1, #numbers-1) do
-            self.fsm.vars.agent_string = self.fsm.vars.agent_string.."G-"..string.sub(number,1,1).."-"..string.sub(number,2,2)..","
+            self.fsm.vars.agent_string = self.fsm.vars.agent_string.."G-"..string.sub(number,1,1).."-"..string.sub(number,2,2).." "
         end
-        self.fsm.vars.agent_string = self.fsm.vars.agent_string.."G-"..string.sub(numbers[-1],1,1)..string.sub(numbers[-1],2,2)
+        self.fsm.vars.agent_string = self.fsm.vars.agent_string.."G-"..string.sub(numbers[-1],1,1).."-"..string.sub(numbers[-1],2,2)
     else
         self.fsm.vars.result_coords = {}
         for number in string.gmatch(self.fsm.vars.py_result_string, "[^%s]+") do
