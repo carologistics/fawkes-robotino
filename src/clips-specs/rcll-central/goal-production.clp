@@ -1278,8 +1278,8 @@ The workpiece remains in the output of the used ring station after
 (defrule goal-production-create-move-out-of-way
 	"Creates a move out of way goal. As soon as it is completed it's reset"
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED));PRODUCE-ORDER
-	(not (goal (class MOVE-OUT-OF-WAY))) ; (mode FORMULATED|SELECTED) ))
+	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+	(not (goal (class MOVE-OUT-OF-WAY)))
 	=>
 	(bind ?g1 (goal-production-assert-move-out-of-way M_Z41))
 	(bind ?g2 (goal-production-assert-move-out-of-way M_Z31))
