@@ -21,6 +21,19 @@
   (slot team (type SYMBOL) (allowed-symbols CYAN MAGENTA))
 )
 
+(defrule exp-sync-ground-truth
+" When the RefBox sends ground-truth of a zone, update the corresponding
+  domain fact. But only do so for ground-truth of the own team, this allows to
+  deal with halve-fields, where only one set of MPS is present but ground truth
+  for all machines is sent.
+"
+	(wm-fact (key refbox team-color) (value ?team-color))
+	(wm-fact (key refbox field-ground-truth zone args? m ?name&:(eq
+	  (sub-string 1 1 ?name) (sub-string 1 1 ?team-color))) (value ?zone))
+	?zc <- (wm-fact (key domain fact zone-content args? z ?zone m UNKNOWN))
+	=>
+	(modify ?zc (key domain fact zone-content args? z ?zone m ?name))
+)
 
 (defrule exp-startup
 " Asserts all needed wm-facts for the exploration phase
