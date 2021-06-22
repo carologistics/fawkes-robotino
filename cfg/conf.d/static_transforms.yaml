@@ -52,7 +52,8 @@ plugins/static-transforms:
       trans_y: 0
       trans_z: 0.768
 
-    # this system is located in the gripper where the puck should be held
+    # this system is located in the middle of the Z axis' carriage when all
+    # three axes are in it's home positions.
     gripper_home:
       frame: !frame plate_top
       child_frame: !frame gripper_home
