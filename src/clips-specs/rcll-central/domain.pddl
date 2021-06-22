@@ -81,6 +81,7 @@
 	(can-hold ?r - robot)
 	(entered-field ?r - robot)
 	(robot-waiting ?r - robot)
+	(maps ?m - mps ?r -robot)
 	(mps-type ?m - mps ?t - mps-typename)
 	(mps-state ?m - mps ?s - mps-statename)
 	(mps-team ?m - mps ?col - team-color)
@@ -727,10 +728,23 @@
 	        )
 )
 
+(:action move-wp-input-output
+	:parameters (?m - mps ?wp - workpiece)
+	:precondition (and (wp-at ?wp ?m INPUT)
+	                   (mps-side-free ?m OUTPUT)
+	                   (not (mps-side-free ?m INPUT))
+	              )
+	:effect (and (not (wp-at ?wp ?m INPUT))
+	             (wp-at ?wp ?m OUTPUT)
+	             (not (mps-side-free ?m OUTPUT))
+	             (mps-side-free ?m INPUT)
+	        )
 )
 
 (:action wait-for-reached
 	:parameters (?r - robot ?point - waitpoint)
 	:precondition (at ?r ?point WAIT)
 	:effect (at ?r ?point WAIT)
+)
+
 )

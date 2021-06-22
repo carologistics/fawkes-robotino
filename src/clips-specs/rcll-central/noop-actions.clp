@@ -159,6 +159,15 @@
 	(modify ?pa (state EXECUTION-SUCCEEDED))
 )
 
+(defrule action-execute-move-wp-input-output
+	?pa <- (plan-action (plan-id ?plan-id) (state PENDING) (executable TRUE)
+	                    (action-name move-wp-input-output)
+	                    (param-values ?mps ?wp))
+	=>
+	(printout info "At " ?mps " move  " ?wp " from input to output " crlf)
+	(modify ?pa (state EXECUTION-SUCCEEDED))
+)
+
 (defrule action-start-execute-wait-for-dependencies-action
   ?pa <- (plan-action (id ?action-id)
                       (plan-id ?plan-id)

@@ -160,7 +160,7 @@
 " A waiting robot got a new goal, clear executability and robot assignment from other goals. "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	(goal (sub-type SIMPLE) (mode SELECTED)
-	      (meta $? assigned-to ?robot2 $?)
+	      (meta $? assigned-to ?robot $?)
 	      (is-executable TRUE) (type ACHIEVE) (class ~SEND-BEACON))
 	(goal (sub-type SIMPLE) (mode FORMULATED)
 	      (meta $? assigned-to ?robot $?))
@@ -227,6 +227,24 @@
 	(printout t "Goal '" ?gid "' has failed, evaluating" crlf)
 	(modify ?pa (state EXECUTION-SUCCEEDED))
 	(modify ?g (mode DISPATCHED) (outcome UNKNOWN))
+)
+
+(defrule goal-production-pick-and-place-executable
+"Check executability for pick and place
+ Picks a wp from the output of the given mps
+  and feeds it into the input of the same mps"
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (class PICK-AND-PLACE) (sub-type SIMPLE)
+	            (mode FORMULATED)
+	            (params target-mps ?mps )
+	            (meta $? assigned-to ?robot $?)
+	            (is-executable FALSE))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+	(wm-fact (key domain fact mps-side-free args? m ?mps side INPUT))
+	(wm-fact (key domain fact maps args? m ?mps r ?robot))
+	=>
+	(printout t "Goal PICK-AND-PLACE executable for " ?robot " at " ?mps crlf)
+	(modify ?g (is-executable TRUE))
 )
 
 (defrule goal-production-buffer-cap-executable
@@ -845,6 +863,17 @@ The workpiece remains in the output of the used ring station after
 	(return ?goal)
 )
 
+(deffunction goal-production-assert-pick-and-place
+	(?mps ?robot)
+	(bind ?goal (assert (goal (class PICK-AND-PLACE)
+	      (id (sym-cat PICK-AND-PLACE- (gensym*))) (sub-type SIMPLE)
+	      (verbosity NOISY) (is-executable FALSE)
+	      (params target-mps ?mps)
+	      (meta assigned-to ?robot)
+	)))
+	(return ?goal)
+)
+
 (deffunction goal-production-assert-mount-cap
 	(?wp ?mps ?wp-loc ?wp-side)
 
@@ -1233,10 +1262,59 @@ The workpiece remains in the output of the used ring station after
 	(modify ?g (meta do-not-finish))
 )
 
+(defrule goal-production-create-pick-and-place
+	 "Creates pick and place"
+	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+	(wm-fact (key config rcll pick-and-place-challenge) (value TRUE))
+	(not (goal (class PICK-AND-PLACE)))
+	?mps1-free <- (wm-fact (key domain fact mps-side-free args? m C-BS side OUTPUT ))
+	?mps2-free <- (wm-fact (key domain fact mps-side-free args? m C-CS1 side OUTPUT ))
+	?mps3-free <- (wm-fact (key domain fact mps-side-free args? m C-RS1 side OUTPUT ))
+	=>
+	(retract ?mps1-free)
+	(retract ?mps2-free)
+	(retract ?mps3-free)
+	(assert
+	   (domain-object (name WP-ONE) (type workpiece))
+	   (domain-object (name WP-TWO) (type workpiece))
+	   (domain-object (name WP-THREE) (type workpiece))
+	   (domain-fact (name wp-usable) (param-values WP-ONE))
+	   (domain-fact (name wp-usable) (param-values WP-TWO))
+	   (domain-fact (name wp-usable) (param-values WP-THREE))
+	   (wm-fact (key domain fact maps args? m C-BS r robot1))
+	   (wm-fact (key domain fact maps args? m C-CS1 r robot2))
+	   (wm-fact (key domain fact maps args? m C-RS1 r robot3))
+	   (wm-fact (key domain fact wp-at args? wp WP-ONE m C-BS side OUTPUT))
+	   (wm-fact (key domain fact wp-at args? wp WP-TWO m C-CS1 side OUTPUT))
+	   (wm-fact (key domain fact wp-at args? wp WP-THREE m C-RS1 side OUTPUT))
+	)
+
+	(bind ?g (goal-tree-assert-central-run-parallel PICK-AND-PLACE
+		( goal-production-assert-pick-and-place C-BS robot1)
+		( goal-production-assert-pick-and-place C-BS robot1)
+		( goal-production-assert-pick-and-place C-BS robot1)
+	))
+	(modify ?g (parent ?root-id))
+	(bind ?g1 (goal-tree-assert-central-run-parallel PICK-AND-PLACE
+		( goal-production-assert-pick-and-place C-CS1 robot2)
+		( goal-production-assert-pick-and-place C-CS1 robot2)
+		( goal-production-assert-pick-and-place C-CS1 robot2)
+	))
+	(modify ?g1 (parent ?root-id))
+	(bind ?g2 (goal-tree-assert-central-run-parallel PICK-AND-PLACE
+		( goal-production-assert-pick-and-place C-RS1 robot3)
+		( goal-production-assert-pick-and-place C-RS1 robot3)
+		( goal-production-assert-pick-and-place C-RS1 robot3)
+	))
+	(modify ?g2 (parent ?root-id))
+)
+
 (defrule goal-production-create-produce-for-order
 	"Create for each incoming order a grounded production tree with the"
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+	(wm-fact (key config rcll pick-and-place-challenge) (value FALSE))
 	(wm-fact (key domain fact order-complexity args? ord ?order-id&:(eq ?order-id O1) com ?comp))
 	(wm-fact (key domain fact order-base-color args? ord ?order-id col ?col-base))
 	(wm-fact (key domain fact order-cap-color  args? ord ?order-id col ?col-cap))
