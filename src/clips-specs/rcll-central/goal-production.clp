@@ -207,7 +207,6 @@
 
 	(wm-fact (key refbox state) (value RUNNING))
 	(wm-fact (key refbox phase) (value PRODUCTION|EXPLORATION))
-	(wm-fact (key navgraph waitzone generated) (type BOOL) (value TRUE))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; (NavGraphGeneratorInterface (final TRUE))
 	(not (wm-fact (key domain fact entered-field
