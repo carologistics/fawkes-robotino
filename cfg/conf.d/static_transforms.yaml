@@ -53,7 +53,7 @@ plugins/static-transforms:
       trans_z: 0.768
 
     # this system is located in the gripper where the puck should be held
-    gripper_z_home:
+    gripper_home:
       frame: !frame plate_top
       child_frame: !frame gripper_home
       trans_x: 0.045
