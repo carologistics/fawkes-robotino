@@ -136,14 +136,20 @@ function tolerance_ok()
       yaw
    )
 
-   --  For debuging
-   --  if  gripper_dist.x < gripper_max.x - GRIPPER_POSE.x then print_info("1") end
-   --  if  gripper_dist.x > gripper_min.x - GRIPPER_POSE.x  then print_info("2") end
-   --  if  gripper_dist.y < 0.8 * (gripper_max.y - GRIPPER_POSE.y)  then print_info("3") end
-   --  if  gripper_dist.y > 0.8 * (gripper_min.y - GRIPPER_POSE.y)  then print_info("4") end
-   --  if  gripper_dist.z < gripper_max.z - GRIPPER_POSE.z then print_info("5") end
-   --  if  gripper_dist.z > gripper_min.z - GRIPPER_POSE.z then print_info("6") end
-   --  if  math.abs(yaw) <= 0.05 then print_info("7") end
+   --For debuging
+   print("x: " .. tostring(gripper_dist.x))
+   print("y: " .. tostring(gripper_dist.y))
+   print("z: " .. tostring(gripper_dist.z))
+   print(tostring(gripper_min.x - GRIPPER_POSE.x))
+   print(tostring(gripper_min.y - GRIPPER_POSE.y))
+   print(tostring(gripper_min.z - GRIPPER_POSE.z))
+   if  gripper_dist.x < gripper_max.x - GRIPPER_POSE.x then print_info("1") end
+   if  gripper_dist.x > gripper_min.x - GRIPPER_POSE.x  then print_info("2") end
+   if  gripper_dist.y < 0.8 * (gripper_max.y - GRIPPER_POSE.y)  then print_info("3") end
+   if  gripper_dist.y > 0.8 * (gripper_min.y - GRIPPER_POSE.y)  then print_info("4") end
+   if  gripper_dist.z < gripper_max.z - GRIPPER_POSE.z then print_info("5") end
+   if  gripper_dist.z > gripper_min.z - GRIPPER_POSE.z then print_info("6") end
+   if  math.abs(yaw) <= 0.05 then print_info("7") end
 
 
    return gripper_dist.x < gripper_max.x - GRIPPER_POSE.x
@@ -177,10 +183,12 @@ function motor_move_tolerance()
 end
 
 function fitness_min()
+  print("euclidean fit: " .. tostring(if_conveyor_pose:euclidean_fitness()))
   return if_conveyor_pose:euclidean_fitness() >= FITNESS_THRESHOLD[fsm.vars.target].low
 end
 
 function fitness_high()
+  print("euclidean fit: " .. tostring(if_conveyor_pose:euclidean_fitness()))
   return if_conveyor_pose:euclidean_fitness() >= FITNESS_THRESHOLD[fsm.vars.target].high
 end
 
@@ -239,13 +247,13 @@ fsm:add_transitions{
    {"LOOK_DONE", "FAILED", cond="vars.retries > MAX_RETRIES"},
    {"LOOK_DONE", "FAILED", cond="vars.vision_retries > MAX_VISION_RETRIES"},
    {"LOOK_DONE", "LOOK", cond="tolerance_ok() == nil", desc="TF error"},
-   {"LOOK_DONE", "FINAL", cond="fitness_high() and tolerance_ok()"},
+   {"LOOK_DONE", "FINAL", cond="fitness_high()"},
    {"LOOK_DONE", "DRIVE", cond="fitness_min()"},
    {"LOOK_DONE", "MOVE_BACK", cond="not fitness_min()"},
 
-   {"DRIVE_DONE", "FINAL", cond="fitness_high() and tolerance_ok()"},
+   {"DRIVE_DONE", "FINAL", cond="fitness_high()"},
    {"DRIVE_DONE", "FAILED", cond="vars.vision_retries > MAX_VISION_RETRIES"},
-   {"DRIVE_DONE", "LOOK", cond="not fitness_high() or not tolerance_ok()"},
+   {"DRIVE_DONE", "LOOK", cond="not fitness_high()"},
 }
 
 function INIT:init()
@@ -284,6 +292,7 @@ function LOOK:exit()
    if_conveyor_pose:msgq_enqueue_copy(msg)
    
    self.fsm.vars.target_pos_odom = tfm.transform(TARGET_POS, "conveyor_pose", "odom")
+   print_info("conveyor_pose fitness: %f", if_conveyor_pose:euclidean_fitness())
 end
 
 function MOVE_BACK:init()
@@ -293,6 +302,7 @@ end
 
 function MOVE_GRIPPER:init()
   self.args["gripper_commands"] = GRIPPER_POSE
+   print_info("conveyor_pose fitness: %f", if_conveyor_pose:euclidean_fitness())
   self.args["gripper_commands"].command = "MOVEABS"
 end
 
