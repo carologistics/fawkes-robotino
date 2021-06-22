@@ -217,3 +217,127 @@
   (retract ?sae)
   (modify ?wm (value ?tries))
 )
+
+; ----------------------- HANDLE BROKEN MPS -----------------------------------
+
+(defrule execution-monitoring-broken-mps-fail-pending-action
+" If an action is pending and depends on a broken mps, we can instantly set it to failed,
+  since the precondition will never be satisfied.
+"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  ?pa <- (plan-action (id ?action-id)
+                      (action-name ?an)
+                      (goal-id ?goal-id)
+                      (param-values $? ?mps $?)
+                      (state PENDING))
+  (domain-atomic-precondition (operator ?an) (grounded-with ?action-id) (is-satisfied FALSE))
+  =>
+  (modify ?pa (state EXECUTION-FAILED))
+)
+
+(defrule execution-monitoring-broken-mps-add-fail-goal-flag
+" If an action makes use of a mps that is broken (and has the mps-state as precondition),
+  mark the corresponding goal to be failed.
+  Reason: A broken mps looses all stored parts, therefore making the current goal unable to achieve
+"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
+  ?g <- (goal (id ?goal-id) (mode DISPATCHED))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (plan-action (id ?id) (plan-id ?plan-id) (goal-id ?goal-id)
+     (state FORMULATED|PENDING)
+     (param-values $? ?mps $?)
+     (action-name ?an))
+  (not (wm-fact (key monitoring fail-goal args? g ?goal-id)))
+  =>
+  (assert (wm-fact (key monitoring fail-goal args? g ?goal-id)))
+)
+
+
+(defrule execution-monitoring-broken-mps-fail-goal
+" If the current dispatched goal is marked to be failed and no action is running,
+  set the goal to finished and failed
+"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  ?fg <-(wm-fact (key monitoring fail-goal args? g ?goal-id) )
+  ?g <- (goal (id ?goal-id) (mode DISPATCHED))
+  (not (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (state ~FORMULATED&~PENDING&~FINAL&~FAILED)))
+  =>
+  (printout t "Fail goal " ?goal-id " because it operates operates on a broken mps." crlf)
+  (retract ?fg)
+  (modify ?g (mode FINISHED) (outcome FAILED))
+)
+
+(defrule execution-monitoring-broken-mps-remove-facts
+" If a mps is broken, all stored parts and stati are lost.
+  Therefore, remove all corresponding facts and mark every workpiece at the machine for cleanup, since its lost
+  Afterwards reset the facts of the mps to the initial state, depending on the type of the mps
+"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
+  (wm-fact (key domain fact mps-type args? m ?mps t ?type))
+  =>
+  (printout t "MPS " ?mps " was broken, cleaning up facts" crlf)
+  (do-for-all-facts ((?wf wm-fact)) (and (neq (member$ ?mps (wm-key-args ?wf:key)) FALSE)
+                                         (or
+                                            (wm-key-prefix ?wf:key (create$ domain fact bs-prepared-color))
+                                            (wm-key-prefix ?wf:key (create$ domain fact ds-prepared-gate))
+                                            (wm-key-prefix ?wf:key (create$ domain fact bs-prepared-side))
+                                            (wm-key-prefix ?wf:key (create$ domain fact cs-prepared-for))
+                                            (wm-key-prefix ?wf:key (create$ domain fact cs-buffered))
+                                            (wm-key-prefix ?wf:key (create$ domain fact cs-can-perform))
+                                            (wm-key-prefix ?wf:key (create$ domain fact rs-filled-with))
+                                            (wm-key-prefix ?wf:key (create$ domain fact rs-prepared-color))
+                                         )
+                                     )
+    (retract ?wf)
+    (printout t "Exec-Monotoring: Broken Machine " ?wf:key crlf " domain facts flushed!"  crlf)
+  )
+
+  (switch ?type
+    (case CS then
+      (assert (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP) (type BOOL) (value TRUE)))
+    )
+    (case RS then
+      (assert (wm-fact (key domain fact rs-filled-with args? m ?mps n ZERO) (type BOOL) (value TRUE)))
+    )
+  )
+  (do-for-all-facts ((?wf wm-fact)) (and (neq (member$ ?mps (wm-key-args ?wf:key)) FALSE)
+                                              (wm-key-prefix ?wf:key (create$ domain fact wp-at)))
+           (assert (wm-fact (key monitoring cleanup-wp args? wp (wm-key-arg ?wf:key wp))))
+  )
+)
+
+(defrule execution-monitoring-cleanup-wp-facts
+"If a workpiece is lost, it is marked for cleanup.
+ In this rule all corresponding fact of a marked workpiece are removed
+"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  ?cleanup <- (wm-fact (key monitoring cleanup-wp args? wp ?wp))
+  =>
+  (do-for-all-facts ((?wf wm-fact)) (and (neq (member$ ?wp (wm-key-args ?wf:key)) FALSE)
+                                         (or
+                                           (wm-key-prefix ?wf:key (create$ domain fact wp-usable))
+	                                   (wm-key-prefix ?wf:key (create$ monitoring cleanup-wp))
+                                         )
+                                    )
+    (retract ?wf)
+    (printout t "WP-fact " ?wf:key crlf " domain fact flushed!"  crlf)
+  )
+  (do-for-all-facts ((?wf wm-fact)) (and (wm-key-prefix ?wf:key (create$ domain fact wp-at))
+				         (eq ?wp (wm-key-arg ?wf:key wp)))
+    (assert (wm-fact (key domain fact mps-side-free args? m (wm-key-arg ?wf:key m) side (wm-key-arg ?wf:key side)) (type BOOL) (value TRUE)))
+    (retract ?wf)
+    (printout t "WP-fact " ?wf:key crlf " domain fact flushed!" crlf)
+  )
+  (do-for-all-facts ((?wf wm-fact)) (and (wm-key-prefix ?wf:key (create$ domain fact wp-on-shelf))
+                                         (eq ?wp (wm-key-arg ?wf:key wp)))
+    (assert (wm-fact (key domain fact spot-free args? m (wm-key-arg ?wf:key m) spot (wm-key-arg ?wf:key spot)) (type BOOL) (value TRUE)))
+    (retract ?wf)
+    (printout t "WP-fact " ?wf:key crlf " domain fact flushed!" crlf)
+  )
+  (assert (wm-fact (key wp-unused args? wp ?wp)))
+  (retract ?cleanup)
+)
