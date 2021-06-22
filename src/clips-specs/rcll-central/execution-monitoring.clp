@@ -113,6 +113,30 @@
   (retract ?pt)
 )
 
+(defrule execution-monitoring-reset-timer-on-move-when-unapproachable
+" Resetting the timeout-timer if a move action is pending while waiting for its target mps-side to be approachable.
+"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+	   (id ?id) (state PENDING)
+	   (action-name move)
+	   (param-values ?r ?from ?from-side ?to ?to-side $?)
+	   )
+  (wm-fact (key domain fact at args? r ?r m ?from side ?from-side))
+  (not (wm-fact (key domain fact mps-side-approachable args? m ?to side ?to-side)))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  (wm-fact (key refbox game-time) (values $?now))
+  ?pt <- (action-timer (plan-id ?plan-id)
+            (action-id ?id)
+            (start-time $?st)
+            (timeout-duration ?timeout&:(timeout ?now ?st ?timeout))
+         )
+  =>
+  (printout t "Detected that " ?goal-id " is waiting with move until "
+               ?to " " ?to-side " is approachable. Reset timeout-timer" crlf)
+  (modify ?pt (start-time ?now))
+)
 
 ;
 ;======================================Retries=========================================
