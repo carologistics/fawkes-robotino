@@ -238,8 +238,9 @@
 	            (params target-mps ?mps )
 	            (meta $? assigned-to ?robot $?)
 	            (is-executable FALSE))
-	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
 	(wm-fact (key domain fact mps-side-free args? m ?mps side INPUT))
+	(or (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
 	(wm-fact (key domain fact maps args? m ?mps r ?robot))
 	=>
 	(printout t "Goal PICK-AND-PLACE executable for " ?robot " at " ?mps crlf)
