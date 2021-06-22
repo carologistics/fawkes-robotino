@@ -1645,6 +1645,7 @@ The workpiece remains in the output of the used ring station after
   =>
   (printout t "Goal " ENTER-FIELD " formulated" crlf)
 	(goal-production-assert-enter-field ?team-color)
+)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;
