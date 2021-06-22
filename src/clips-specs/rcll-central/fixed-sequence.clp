@@ -29,7 +29,14 @@
 (deffunction plan-assert-sequential (?plan-name ?goal-id ?robot $?action-tuples)
 	(bind ?plan-id (sym-cat ?plan-name (gensym*)))
 	(assert (plan (id ?plan-id) (goal-id ?goal-id)))
+	(bind ?actions (create$))
+	; action tuples might contain FALSE in some cases, filter them out
 	(foreach ?pa $?action-tuples
+		(if ?pa then
+			(bind ?actions (append$ ?actions ?pa))
+		)
+	)
+	(foreach ?pa $?actions
 		(modify ?pa (id ?pa-index) (plan-id ?plan-id) (goal-id ?goal-id)
 		            (skiller (remote-skiller ?robot)))
 	)
