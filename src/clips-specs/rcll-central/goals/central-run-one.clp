@@ -70,7 +70,7 @@
 	      (priority ?prio) (is-executable TRUE))
 	(not (goal (parent ?id) (type ACHIEVE) (mode FORMULATED)
 	           (priority ?o-prio&:(> ?o-prio ?prio)) (is-executable TRUE)))
-	(not (goal (parent ?id) (type ACHIEVE) (mode SELECTED|EXPANDED|COMMITTED)))
+	(not (goal (parent ?id) (type ACHIEVE) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 	=>
 	(modify ?g (mode SELECTED))
 )
