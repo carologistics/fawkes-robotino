@@ -51,10 +51,7 @@
 " Every mount-cap goal depends on the buffer-cap class. Per default, no buffer-cap goal is grounded. "
 	; needs to be higher than SALIENCE-GOAL-EXECUTABLE-CHECK
 	(declare (salience (+ ?*SALIENCE-GOAL-EXECUTABLE-CHECK* 1)))
-	?g <- (goal (id ?goal-id)
-	            (class MOUNT-CAP)
-	            (mode FORMULATED)
-	            (params $? target-mps ?target-mps $?))
+	?g <- (goal (id ?goal-id) (class MOUNT-CAP) (mode FORMULATED))
 	(not (dependency-assignment (goal-id ?goal-id) (class BUFFER-CAP)))
 	(not (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-CS-BUFFER-CAP)))
 	=>
@@ -74,10 +71,7 @@
 " Every deliver goal depends on the mount-cap class. Per default, no mount-cap goal is grounded. "
 	; needs to be higher than SALIENCE-GOAL-EXECUTABLE-CHECK
 	(declare (salience (+ ?*SALIENCE-GOAL-EXECUTABLE-CHECK* 1)))
-	?g <- (goal (id ?goal-id)
-	            (class DELIVER)
-	            (mode FORMULATED)
-	            (params wp ?wp $?))
+	?g <- (goal (id ?goal-id) (class DELIVER|DELIVER-RC21) (mode FORMULATED))
 	(not (dependency-assignment (goal-id ?goal-id) (class MOUNT-CAP)))
 	(not (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-CS-MOUNT-CAP)))
 	=>
@@ -318,6 +312,54 @@
 	(wm-fact (key domain fact mps-state args? m ?target-mps s ~BROKEN))
 	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?target-mps side INPUT)))
 	(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
+
+	; wp is not at CS OUTPUT, but after these goals finished, it will be
+	(goal (id ?mount-goal-id)
+	      (class MOUNT-CAP)
+	      (parent ?parent)
+	      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	      (params wp ?wp
+	              target-mps ?mps
+	              $?))
+	?mount-da <- (dependency-assignment (goal-id ?goal-id) (class MOUNT-CAP))
+
+	(wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
+	(wm-fact (key domain fact mps-side-free args? m ?mps side OUTPUT))
+
+	; get instruct goal through tree relationship to mount-cap, in this case sibling of grandparent
+	(goal (id ?parent) (parent ?grandparent))
+	(goal (id ?grandparent) (parent ?great-grandparent))
+	(goal (id ?instruct-goal-id)
+	      (class INSTRUCT-CS-MOUNT-CAP)
+	      (parent ?great-grandparent)
+	      (mode FORMULATED))
+	?instruct-da <- (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-CS-MOUNT-CAP))
+
+	(not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
+	=>
+	(printout t "Goal " ?goal-id " executable for " ?robot
+	            " depending on goal " ?mount-goal-id
+	            " and goal " ?instruct-goal-id crlf)
+	(modify ?g (is-executable TRUE))
+	(modify ?mount-da (params  wp ?wp
+	                           wp-loc ?mps
+	                           wp-side OUTPUT)
+	                  (grounded-with ?mount-goal-id))
+	(modify ?instruct-da (grounded-with ?instruct-goal-id))
+)
+
+(defrule goal-dependencies-deliver-rc21-mount-cap-executable
+" Even if mount-cap is still executing, deliver-rc21 can already be executable
+  if the CS is buffered and its output is free. "
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class DELIVER-RC21)
+	                          (mode FORMULATED)
+	                          (meta $? assigned-to ?robot $?)
+	                          (is-executable FALSE))
+
+	; Robot CEs
+	(wm-fact (key central agent robot args? r ?robot))
+	(wm-fact (key refbox team-color) (value ?team-color))
 
 	; wp is not at CS OUTPUT, but after these goals finished, it will be
 	(goal (id ?mount-goal-id)
