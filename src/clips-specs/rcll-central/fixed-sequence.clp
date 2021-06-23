@@ -29,7 +29,14 @@
 (deffunction plan-assert-sequential (?plan-name ?goal-id ?robot $?action-tuples)
 	(bind ?plan-id (sym-cat ?plan-name (gensym*)))
 	(assert (plan (id ?plan-id) (goal-id ?goal-id)))
+	(bind ?actions (create$))
+	; action tuples might contain FALSE in some cases, filter them out
 	(foreach ?pa $?action-tuples
+		(if ?pa then
+			(bind ?actions (append$ ?actions ?pa))
+		)
+	)
+	(foreach ?pa $?actions
 		(modify ?pa (id ?pa-index) (plan-id ?plan-id) (goal-id ?goal-id)
 		            (skiller (remote-skiller ?robot)))
 	)
@@ -147,6 +154,7 @@
 	(modify ?g (mode EXPANDED))
 )
 
+
 (defrule goal-expander-move-out-of-way
 	?g <- (goal (id ?goal-id) (mode SELECTED) (class MOVE-OUT-OF-WAY)
 	            (params target-pos ?target-pos
@@ -157,6 +165,38 @@
 	(plan-assert-sequential MOVE-OUT-OF-WAY-PLAN ?goal-id ?robot
 		(plan-assert-action go-wait ?robot ?curr-loc ?curr-side ?target-pos)
 		(plan-assert-action wait ?robot ?target-pos)
+	)
+	(modify ?g (mode EXPANDED))
+)
+
+(defrule goal-expander-pick-and-place
+" Picks a wp from the output of the given mps
+  feeds it into the input of the same mps
+  moves back to the output of the mps "
+	?g <- (goal (id ?goal-id) (class PICK-AND-PLACE) (mode SELECTED) (parent ?parent)
+	            (params target-mps ?mps )
+	            (meta $? assigned-to ?robot $?))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	(or (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+	    (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+	)
+	=>
+	(plan-assert-sequential (sym-cat PICK-AND-PLACE-PLAN- (gensym*)) ?goal-id ?robot
+		(if (not (is-holding ?robot ?wp)) then
+			(create$
+			    (plan-assert-action move ?robot ?curr-location ?curr-side ?mps OUTPUT)
+			    (plan-assert-action wp-get ?robot ?wp ?mps OUTPUT)
+			    (plan-assert-action move ?robot ?mps OUTPUT ?mps INPUT)
+			)
+		 else
+			(create$
+			    (plan-assert-action move ?robot ?curr-location ?curr-side ?mps INPUT)
+			)
+		)
+
+		(plan-assert-action wp-put ?robot ?wp ?mps)
+		(plan-assert-action move-wp-input-output ?mps ?wp)
+		(plan-assert-action move ?robot ?mps INPUT ?mps OUTPUT)
 	)
 	(modify ?g (mode EXPANDED))
 )
