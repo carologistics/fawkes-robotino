@@ -548,7 +548,7 @@
 
 (defrule goal-expander-navigation-challenge-move
 	?g <- (goal (id ?goal-id) (class NAVIGATION-CHALLENGE-MOVE) (mode SELECTED)
-				(params target ?target $?)
+				(params target ?target)
 	            (meta $? assigned-to ?robot $?))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
@@ -647,12 +647,11 @@
 	(foreach ?coordinate ?coordinates
 		(if (eq ?argstr "") then
 			(bind ?argstr (str-cat ?coordinate))
-			(printout t ?argstr )
 		else
 			(bind ?argstr (str-cat ?argstr " " ?coordinate))
 		)
 	)
-	(plan-assert-sequential EXPLORATION-CHALLENGE-MOVE-PLAN ?goal-id ?r
+	(plan-assert-sequential TSP-SOLVE-PLAN ?goal-id ?r
 		(plan-assert-action tsp-solve ?r ?argstr)
 	)
 	(modify ?g (mode EXPANDED))

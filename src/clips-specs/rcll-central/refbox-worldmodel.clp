@@ -289,10 +289,10 @@
       (bind ?waypoints (append$ ?waypoints ?waypoint))
     )
     (progn$ (?waypoint (pb-field-list ?r "reached"))
-      (bind ?reached (append$ ?reached ?waypoint))
+      (bind ?reached (append$ ?reached (translate-location-map-to-grid ?waypoint)))
     )
     (progn$ (?waypoint (pb-field-list ?r "remaining"))
-      (bind ?remaining (append$ ?remaining ?waypoint))
+      (bind ?remaining (append$ ?remaining (translate-location-map-to-grid ?waypoint)))
     )
   )
 
@@ -318,10 +318,10 @@
       (bind ?waypoints (append$ ?waypoints ?waypoint))
     )
     (progn$ (?waypoint (pb-field-list ?r "reached"))
-      (bind ?reached (append$ ?reached ?waypoint))
+      (bind ?reached (append$ ?reached (translate-location-map-to-grid ?waypoint)))
     )
     (progn$ (?waypoint (pb-field-list ?r "remaining"))
-      (bind ?remaining (append$ ?remaining ?waypoint))
+      (bind ?remaining (append$ ?remaining (translate-location-map-to-grid ?waypoint)))
     )
   )
   (if (neq ?waypoints-old ?waypoints) then
@@ -335,5 +335,6 @@
   (if (neq ?reached-old ?reached) then
     (retract ?reached-fact)
     (assert (wm-fact (key domain fact reached args?) (is-list TRUE) (values $?reached)))
+    (printout t "REACHED NEW: " ?reached crlf)
   )
 )

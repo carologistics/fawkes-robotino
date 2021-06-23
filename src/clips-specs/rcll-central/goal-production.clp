@@ -1441,9 +1441,9 @@ The workpiece remains in the output of the used ring station after
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class NAVIGATION-CHALLENGE-MOVE)
 	                          (mode FORMULATED)
-	                          (params target ?target $?)
 	                          (meta $? robot ?robot $? assigned-to ?robot $?)
 	                          (is-executable FALSE))
+	(not (goal (class NAVIGATION-CHALLENGE-MOVE) (mode SELECTED|EXPANDED|DISPATCHED) (meta $? assigned-to ?robot $?)))
 	=>
 	(printout t "Goal NAVIGATION-CHALLENGE-MOVE executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
@@ -1469,7 +1469,7 @@ The workpiece remains in the output of the used ring station after
 					(id (sym-cat NAVIGATION-CHALLENGE-MOVE- (gensym*)))
 					(sub-type SIMPLE)
 					(verbosity NOISY) (is-executable FALSE)
-					(params target (translate-location-map-to-grid ?location) location ?location)
+					(params target ?location)
 					(meta robot ?robot)
 				)))
 	(return ?goal)
@@ -1526,28 +1526,54 @@ The workpiece remains in the output of the used ring station after
   (not (goal (class NAVIGATION-CHALLENGE-PARENT)))
   (not (goal (class SOLVE-TSP)))
   =>
-  (printout t crlf crlf ?waypoints crlf crlf)
   (goal-production-assert-solve-tsp ?root-id ?waypoints)
-)
-
-(defrule goal-production-create-navigation-challenge-tree
-  "Create a goal tree for the navigation challenge if there is a tsp-plan fact."
-  (wm-fact (key domain fact tsp-plan args?) (values $?waypoints))
-  (goal (id ?root-id) (class PRODUCTION-ROOT))
-  =>
-  (goal-production-assert-navigation-challenge ?root-id ?waypoints)
+  (printout error crlf crlf "1 - GET WAYPOINTS, CREATE GOAL" crlf crlf)
 )
 
 (defrule goal-production-catch-error-message-solution-for-tsp
-	(plan-action (action-name tsp-solve) (error-msg ?msg) (state FAILED))
+	?pa <- (plan-action (action-name tsp-solve) (error-msg ?msg) (state FAILED))
 	(not (wm-fact (key domain fact tsp-plan args?)))
+	(not (goal (class NAVIGATION-CHALLENGE-PARENT)))
 	=>
 	(bind ?msg (str-cat " " ?msg))
 	(bind ?waypoints (create$ ))
 	(while (neq (str-index " " ?msg) FALSE)
-		(bind ?coord (sub-string (+ 1 (str-index " " ?msg)) (+ 6 (str-index " " ?msg)) ?msg))
+		(bind ?coord (sub-string (+ 1 (str-index " " ?msg)) (+ 5 (str-index " " ?msg)) ?msg))
 		(bind ?waypoints (append$ ?waypoints (sym-cat ?coord)))
-		(bind ?msg (sub-string (+ 7 (str-index " " ?msg)) (length$ ?msg) ?msg))
+		(bind ?msg (sub-string (+ 6 (str-index " " ?msg)) (length$ ?msg) ?msg))
 	)
 	(assert (wm-fact (key domain fact tsp-plan args?) (is-list TRUE) (values $?waypoints)))
+	(printout error crlf crlf "3 - ASSERTED WAYPOINTS" crlf crlf)
+	(retract ?pa)
+)
+
+(defrule goal-production-create-navigation-challenge-tree
+  "Create a goal tree for the navigation challenge if there is a tsp-plan fact."
+  ?tsp <- (wm-fact (key domain fact tsp-plan args?) (values $?waypoints))
+  (goal (id ?root-id) (class PRODUCTION-ROOT))
+  =>
+  (goal-production-assert-navigation-challenge ?root-id ?waypoints)
+  (retract ?tsp)
+  (printout error crlf crlf "4 - CREATE TREE" crlf crlf)
+)
+
+
+; (defrule goal-production-rename-error-message-for-tsp
+; 	(declare (salience 9000))
+; 	?pa <- (plan-action (action-name tsp-solve) (state EXECUTION-SUCCEEDED))
+; 	(wm-fact (key domain fact waypoints args?) (values $?waypoints))
+; 	=>
+; 	(bind ?msg "")
+; 	(foreach ?waypoint ?waypoints
+; 		(bind ?msg (str-cat ?msg " " (translate-location-map-to-grid ?waypoint)))
+; 	)
+; 	(bind ?msg (sub-string 2 (str-length ?msg) ?msg))
+; 	(modify ?pa (state FAILED) (error-msg ?msg))
+; 	(printout error crlf crlf "2 - TAKING OVER CONTROL" crlf crlf)
+; )
+
+(defrule goal-production-remove-tsp-goal-failed
+	?g <- (goal (class SOLVE-TSP) (outcome FAILED))
+	=>
+	(retract ?g)
 )
