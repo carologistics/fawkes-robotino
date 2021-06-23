@@ -226,7 +226,10 @@
     (if (and ?zone ?rot ?type) then
        (printout t "Received ground-truth for Machine: " ?name
         ", rot: " ?rot ", zone: " ?zone ", type: " ?type crlf)
-      (bind ?yaw (deg-to-rad ?rot))
+      (bind ?yaw ?rot)
+      (if (neq ?yaw NOT-SET) then
+        (bind ?yaw (deg-to-rad ?yaw))
+      )
       (assert
         (wm-fact (key refbox field-ground-truth name args? m ?name) (type BOOL) (value TRUE))
         (wm-fact (key refbox field-ground-truth mtype args? m ?name) (value ?type))
