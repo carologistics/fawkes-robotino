@@ -3,7 +3,7 @@
 # vim:fenc=utf-8                                                                
 ##########################################################################      
 #                                                                               
-#  tsp_robotino.py: greedy tsp solver for navigation challenge                  
+#  tsp_robotino_mlrose.py: tsp solver using mlrose for navigation challenge                  
 #                                                                               
 #  Copyright © 2020 Gjorgji Nikolovski  <gjorgji.nikolovski@alumni.fh-aachen.de>
 #                                                                               
@@ -19,17 +19,13 @@
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                
 #  GNU Library General Public License for more details.                         
 #                                                                               
-#  Read the full text in the LICENSE.GPL file in the doc directory.  
+#  Read the full text in the LICENSE.GPL file in the doc directory.   
+
 import mlrose_hiive as mlrose
 import numpy as np
 from sys import argv
 
 #########################
-#parsing arguments
-# argument structure:<whitespace>
-# <whitespace><first_coordinate_start><second_coordinate_start><whitespace>
-# <first_coordinate_start+1><second_coordinate_start+1><whitespace>
-#...<whitespace><first_coordinate_start+N><second_coordinate_start+N>
 if len(argv) > 1:
     coords = []
     for arg in argv[2:]:
