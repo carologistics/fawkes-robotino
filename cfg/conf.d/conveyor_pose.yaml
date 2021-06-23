@@ -7,7 +7,7 @@ plugins/conveyor_pose:
   # sets the debug mode within the plugin, which eases the debugging,
   # which results in the following:
   # - the switch if is ignored, the plugin is always running
-  debug: false
+  debug: true
 
   # sets the switch interface the plugin is waiting for before
   # starting the plugin
@@ -180,9 +180,9 @@ plugins/conveyor_pose:
       # Configure the initial estimate for the INPUT side (uneven tag ID)
       # On the OUTPUT side, the y value is multiplied by -1.
       input_conveyor:
-        x: -0.005
-        y: -0.025
-        z: 0.643
+        x: -0.003
+        y: -0.023
+        z: 0.641
       left_shelf:
         x: -0.01
         y: -0.01
