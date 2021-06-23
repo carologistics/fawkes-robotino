@@ -612,14 +612,25 @@
 			(bind ?wp-loc nil)
 			(bind ?wp-side nil)
 
-			(do-for-fact ((?wp-at wm-fact)) (and (wm-key-prefix ?wp-at:key (create$ domain fact wp-at))
-			                                      (eq (wm-key-arg ?wp-at:key wp) ?wp))
-				(bind ?wp-loc (wm-key-arg ?wp-at:key m))
-				(bind ?wp-side (wm-key-arg ?wp-at:key side))
+			(if (not (do-for-fact ((?da dependency-assignment))
+			         (and (neq ?da:grounded-with nil)
+			              (member$ wp ?da:params)
+			              (member$ wp-loc ?da:params)
+			              (member$ wp-side ?da:params)
+			              (eq ?da:goal-id ?goal-id))
+			         (bind ?wp (multifield-key-value ?da:params wp))
+			         (bind ?wp-loc (multifield-key-value ?da:params wp-loc))
+			         (bind ?wp-side (multifield-key-value ?da:params wp-side))))
+			then
+				(do-for-fact ((?wp-at wm-fact))
+			              (and (wm-key-prefix ?wp-at:key (create$ domain fact wp-at))
+			                   (eq (wm-key-arg ?wp-at:key wp) ?wp))
+			              (bind ?wp-loc (wm-key-arg ?wp-at:key m))
+			              (bind ?wp-side (wm-key-arg ?wp-at:key side)))
 			)
 
 			(create$
-				(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
+				(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
 					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
 				)
 				(plan-assert-action go-wait
