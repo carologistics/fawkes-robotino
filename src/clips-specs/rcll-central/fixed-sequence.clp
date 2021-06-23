@@ -650,7 +650,7 @@
 )
 
 (defrule goal-expander-waitgoal-if-stuck
- ?g <- (goal (id ?goal-id) (class WAIT-AWAY) (mode SELECTED) (is-executable TRUE) (meta $? assigned-to ?robot $?))
+ ?g <- (goal (id ?goal-id) (class WAIT-AWAY) (mode SELECTED) (meta $? assigned-to ?robot $?))
 (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 =>
  (plan-assert-sequential (sym-cat WAIT-AWAY-PLAN-(gensym*)) ?goal-id ?robot
