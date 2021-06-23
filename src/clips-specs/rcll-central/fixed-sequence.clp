@@ -181,7 +181,19 @@
 
 		(plan-assert-action wp-put ?robot ?wp ?mps)
 		(plan-assert-action move-wp-input-output ?mps ?wp)
-		(plan-assert-action move ?robot ?mps INPUT ?mps OUTPUT)
+	)
+	(modify ?g (mode EXPANDED))
+)
+
+(defrule goal-expander-move-robot-to-output
+" Moves the robot to the output of the given mps."
+	?g <- (goal (id ?goal-id) (class MOVE) (mode SELECTED) (parent ?parent)
+	            (params target-mps ?mps )
+	            (meta $? assigned-to ?robot $?))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-loc side ?curr-side))
+	=>
+	(plan-assert-sequential (sym-cat MOVE-PLAN- (gensym*)) ?goal-id ?robot
+		(plan-assert-action move ?robot ?curr-loc ?curr-side ?mps OUTPUT)
 	)
 	(modify ?g (mode EXPANDED))
 )
