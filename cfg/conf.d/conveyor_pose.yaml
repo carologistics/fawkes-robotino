@@ -182,7 +182,7 @@ plugins/conveyor_pose:
       input_conveyor:
         x: -0.005
         y: -0.025
-        z: 0.64
+        z: 0.643
       left_shelf:
         x: -0.01
         y: -0.01
@@ -196,9 +196,9 @@ plugins/conveyor_pose:
         y: 0.19
         z: 0.655
       slide:
-        x: -0.02
-        y: 0.255
-        z: 0.64
+        x: 0.01
+        y: 0.253
+        z: 0.643
 
 
     # MPS-type-specific offset in y direction added to the input_conveyor hint
