@@ -491,6 +491,7 @@
 	(wm-fact (key refbox team-color) (value ?team-color))
 	;MPS-RS CEs (a cap carrier can be used to fill a RS later)
 	(wm-fact (key domain fact mps-type args? m ?target-mps t RS))
+	(wm-fact (key domain fact mps-state args? m ?target-mps s ~BROKEN))
 	(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
 	;check ring payment - prevention of overfilling rs
 	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before&ZERO|ONE|TWO))
@@ -520,6 +521,7 @@
 	         (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
 	             ; ... and it is a fresh base located in a base station
 	         (or (and (wm-fact (key domain fact mps-type args? m ?wp-loc t BS))
+	                  (wm-fact (key domain fact mps-state args? m ?wp-loc s ~BROKEN))
 	                  (wm-fact (key domain fact wp-unused args? wp ?wp))
 	                  (wm-fact (key domain fact wp-base-color
 	                            args? wp ?wp col BASE_NONE)))
@@ -552,6 +554,7 @@
 	(wm-fact (key refbox team-color) (value ?team-color))
 	;MPS-RS CEs (a cap carrier can be used to fill a RS later)
 	(wm-fact (key domain fact mps-type args? m ?target-mps t RS))
+	(wm-fact (key domain fact mps-state args? m ?target-mps s ~BROKEN))
 	(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
 	;check ring payment - prevention of overfilling rs
 	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before&ZERO|ONE|TWO))
@@ -824,7 +827,7 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
 	; WP CEs
 	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps $?)))
-  (wm-fact (key domain fact wp-unused args? wp ?wp))
+	(wm-fact (key domain fact wp-unused args? wp ?wp))
 	; wait until a robot actually needs the base before proceeding
 	(domain-atomic-precondition (operator wp-get) (goal-id ?g-id) (plan-id ?p-id)
 	                            (predicate wp-at) (param-values ?wp ?mps ?side)
@@ -988,14 +991,26 @@ The workpiece remains in the output of the used ring station after
 	(return ?goal)
 )
 
+(deffunction goal-production-assert-instruct-bs-dispense-base
+	(?wp ?base-color ?side)
+
+	(bind ?goal (assert (goal (class INSTRUCT-BS-DISPENSE-BASE)
+	  (id (sym-cat INSTRUCT-BS-DISPENSE-BASE- (gensym*))) (sub-type SIMPLE)
+	  (verbosity NOISY) (is-executable FALSE) (meta assigned-to central)
+	      (params wp ?wp
+	              target-mps C-BS
+	              target-side ?side
+	              base-color ?base-color)
+	)))
+	(return ?goal)
+)
+
 (deffunction goal-production-assert-pay-for-rings-with-base
-	(?wp-loc ?wp-side ?target-mps ?target-side)
-	(bind ?wp-name (sym-cat BASE-PAY- (gensym*)))
-	(assert (domain-object (name ?wp-name) (type workpiece)))
+	(?wp ?wp-loc ?wp-side ?target-mps ?target-side)
 	(bind ?goal (assert (goal (class PAY-FOR-RINGS-WITH-BASE)
 	      (id (sym-cat PAY-FOR-RINGS-WITH-BASE- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE)
-	      (params  wp ?wp-name
+	      (params  wp ?wp
 	               wp-loc ?wp-loc
 	               wp-side ?wp-side
 	               target-mps ?target-mps
@@ -1063,12 +1078,21 @@ The workpiece remains in the output of the used ring station after
 	)
 	(bind ?goals (create$))
 	(loop-for-count ?price
+	   (bind ?wp-base-pay (sym-cat BASE-PAY- (gensym*)))
+	   (assert (domain-object (name ?wp-base-pay) (type workpiece))
+	           (domain-fact (name wp-unused) (param-values ?wp-base-pay))
+	           (wm-fact (key domain fact wp-base-color args? wp ?wp-base-pay col BASE_NONE)
+	                   (type BOOL) (value TRUE))
+	   )
 	   (bind ?goals
 	      (insert$ ?goals (+ (length$ ?goals) 1)
 		(goal-tree-assert-central-run-one PAY-FOR-RING-GOAL
-			(goal-production-assert-pay-for-rings-with-base C-BS INPUT ?rs INPUT)
-			(goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN C-CS1 UNKNOWN ?rs INPUT)
-			(goal-production-assert-pay-for-rings-with-cap-carrier-from-shelf C-CS1 ?rs INPUT)
+			(goal-tree-assert-central-run-parallel INPUT-BS
+				(goal-production-assert-pay-for-rings-with-base ?wp-base-pay C-BS INPUT ?rs INPUT)
+				(goal-production-assert-instruct-bs-dispense-base ?wp-base-pay BASE_RED INPUT)
+			)
+;			(goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN C-CS1 UNKNOWN ?rs INPUT)
+;			(goal-production-assert-pay-for-rings-with-cap-carrier-from-shelf C-CS1 ?rs INPUT)
 		))
 	 ))
 	(return ?goals)
@@ -1086,19 +1110,6 @@ The workpiece remains in the output of the used ring station after
 	(return ?goal)
 )
 
-(deffunction goal-production-assert-instruct-bs-dispense-base
-	(?wp ?base-color ?side)
-
-	(bind ?goal (assert (goal (class INSTRUCT-BS-DISPENSE-BASE)
-	  (id (sym-cat INSTRUCT-BS-DISPENSE-BASE- (gensym*))) (sub-type SIMPLE)
-	  (verbosity NOISY) (is-executable FALSE) (meta assigned-to central)
-	      (params wp ?wp
-	              target-mps C-BS
-	              target-side ?side
-	              base-color ?base-color)
-	)))
-	(return ?goal)
-)
 
 (deffunction goal-production-assert-instruct-ds-deliver
 	(?wp)
@@ -1427,7 +1438,7 @@ The workpiece remains in the output of the used ring station after
 	;create facts for workpiece
 	(bind ?wp-for-order (sym-cat wp- ?order-id))
 	(assert (domain-object (name ?wp-for-order) (type workpiece))
-  		  (domain-fact (name wp-unused) (param-values ?wp-for-order))
+		  (domain-fact (name wp-unused) (param-values ?wp-for-order))
 		  (wm-fact (key domain fact wp-base-color args? wp ?wp-for-order col BASE_NONE) (type BOOL) (value TRUE))
 		  (wm-fact (key domain fact wp-cap-color args? wp ?wp-for-order col CAP_NONE) (type BOOL) (value TRUE))
 		  (wm-fact (key domain fact wp-ring1-color args? wp ?wp-for-order col RING_NONE) (type BOOL) (value TRUE))
