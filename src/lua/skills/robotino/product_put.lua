@@ -180,5 +180,6 @@ function MOVE_BACK:init()
   self.args["motor_move"].x = drive_back_x
   self.args["gripper_commands"].command = "MOVEABS"
   self.args["gripper_commands"].x = 0
+  self.args["gripper_commands"].y = 0
   self.args["gripper_commands"].z = self.fsm.vars.z_max 
 end
