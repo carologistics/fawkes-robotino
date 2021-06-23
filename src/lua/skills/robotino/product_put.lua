@@ -59,7 +59,7 @@ local slide_gripper_down_z = -0.04    -- distance to move gripper down after dri
 local slide_gripper_back_x = -0.01 -- distance to move gripper back after opening the gripper if the target is slide
 local slide_gripper_up_z = 0.01    --distance to move gripper up after opening the gripper if the target is slide
 
-local drive_back_x = -0.1      -- distance to drive back after closing the gripper
+local drive_back_x = -0.1      -- distance to drive back after opening the gripper
 
 function pose_not_exist()
   local target_pos = { x = gripper_pose_offset_x,
@@ -111,8 +111,9 @@ fsm:define_states{ export_to=_M,
   {"INIT", JumpState},
   {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_GRIPPER_FORWARD",fail_to="FAILED"},
   {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands}}, final_to="OPEN_GRIPPER",fail_to="FAILED"},
-  {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="FINAL", fail_to="FAILED"},
-}
+  {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_BACK", fail_to="FAILED"},
+  {"MOVE_BACK", SkillJumpState, skills={{gripper_commands},{motor_move}}, final_to="FINAL",fail_to="FAILED"},
+} 
 
 fsm:add_transitions{
   {"INIT", "FAILED", cond="pose_not_exist()"},
@@ -173,4 +174,11 @@ end
 
 function OPEN_GRIPPER:init()
   self.args["gripper_commands"].command = "OPEN"
+end
+
+function MOVE_BACK:init()
+  self.args["motor_move"].x = drive_back_x
+  self.args["gripper_commands"].command = "MOVEABS"
+  self.args["gripper_commands"].x = -pose.x
+  self.args["gripper_commands"].z = self.fsm.vars.z_max 
 end
