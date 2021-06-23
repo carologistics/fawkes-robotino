@@ -1517,3 +1517,27 @@ The workpiece remains in the output of the used ring station after
   =>
   (goal-production-assert-navigation-challenge ?root-id ?waypoints)
 )
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; ROBOCUP FIXES ;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defrule goal-production-assert-waitgoal-if-stuck
+  "When the robot is stuck, assert a new goal that keeps it waiting"
+  (declare (salience 0))
+  (goal (id ?p) (class PRODUCTION-ROOT))
+  (goal (mode FORMULATED) (meta assigned-to ?robot))
+  (not (goal (mode FORMULATED) (is-executable TRUE)))
+  =>
+  (bind ?goal (assert (goal (class WAIT-AWAY)
+	            (id (sym-cat WAIT-AWAY- (gensym*)))
+	            (sub-type SIMPLE)
+	            (verbosity NOISY) (is-executable TRUE)
+	            (meta assigned-to ?robot)
+  )))
+  (modify ?goal (parent ?p))
+)
+
