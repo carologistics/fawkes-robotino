@@ -107,6 +107,17 @@
 	)
 )
 
+(deffunction remove-robot-assignment-from-goal (?meta ?robot)
+	(bind ?pos (member$ assigned-to ?meta))
+	(bind ?pos2 (member$ ?robot ?meta))
+	(if (and ?pos ?pos2 (eq ?pos2 (+ ?pos 1)))
+	 then
+		(return (delete$ ?meta ?pos ?pos2))
+	 else
+		(return ?meta)
+	)
+)
+
 (deffunction goal-tree-assert-run-endless (?class ?frequency $?fact-addresses)
         (bind ?id (sym-cat MAINTAIN- ?class - (gensym*)))
         (bind ?goal (assert (goal (id ?id) (class ?class) (type MAINTAIN)
@@ -305,15 +316,15 @@
 ; ----------------------- EVALUATE SPECIFIC GOALS ---------------------------
 
 (defrule goal-reasoner-evaluate-move-out-of-way
-" Sets a finished goal independent of the outcome to formulated. "
-  (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
-  ?g <- (goal (id ?goal-id) (class MOVE-OUT-OF-WAY) (mode FINISHED|RETRACTED)
-              (outcome ?outcome)) ;(meta $?assigned-to ?robot $?) (verbosity ?v))
+" Sets a finished move out of way goal independent of the outcome to formulated."
+  ?g <- (goal (id ?goal-id) (class MOVE-OUT-OF-WAY) (mode FINISHED)
+              (outcome ?outcome) (verbosity ?v) (meta $? assigned-to ?robot $?))
 =>
- ; (set-robot-to-waiting ?robot)
-  (printout (log-debug) "Goal " ?goal-id " FORMULATED" crlf)
-  (modify ?g (mode FORMULATED) (outcome UNKNOWN) (is-executable FALSE))
+  (printout (log-debug ?v) "Evaluate move-out-of-way goal " ?goal-id crlf)
+  (set-robot-to-waiting (fact-slot-value ?g meta ))
+  (bind ?meta (remove-robot-assignment-from-goal (fact-slot-value ?g meta) ?robot))
 
+  ; delete plans of the goal
   (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
     (delayed-do-for-all-facts ((?a plan-action))
                               (and (eq ?a:plan-id ?p:id)
@@ -321,7 +332,8 @@
       (retract ?a))
     (retract ?p)
   )
-  (printout (log-debug) "Deleted plans of goal " ?goal-id crlf)
+  (modify ?g (mode FORMULATED) (outcome UNKNOWN) (is-executable FALSE) (meta ?meta ))
+  (printout (log-debug ?v) "Goal " ?goal-id " FORMULATED" crlf)
 )
 
 ; ================================= Goal Clean up ============================
@@ -334,7 +346,7 @@
              (acquired-resources) (verbosity ?v))
   (not (goal (parent ?goal-id) (mode ?mode&~RETRACTED)))
 =>
-  (printout (log-debug) "Goal " ?goal-id " RETRACTED" crlf)
+  (printout (log-debug ?v) "Goal " ?goal-id " RETRACTED" crlf)
   (modify ?g (mode RETRACTED))
 )
 

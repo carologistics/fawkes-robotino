@@ -32,16 +32,6 @@
 	)
 )
 
-(deffunction remove-robot-assignment-from-goal (?meta ?robot)
-	(bind ?pos (member$ assigned-to ?meta))
-	(bind ?pos2 (member$ ?robot ?meta))
-	(if (and ?pos ?pos2 (eq ?pos2 (+ ?pos 1)))
-	 then
-		(return (delete$ ?meta ?pos ?pos2))
-	 else
-		(return ?meta)
-	)
-)
 
 (deffunction is-goal-running (?mode)
 	(return (or (eq ?mode SELECTED) (eq ?mode EXPANDED)
@@ -242,7 +232,7 @@
 
 (defrule goal-production-move-out-of-way-executable
 " Moves an unproductive robot to the given position "
-	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	(declare (salience (- ?*SALIENCE-GOAL-EXECUTABLE-CHECK* 1)))
 	?g <- (goal (class MOVE-OUT-OF-WAY) (sub-type SIMPLE)
 	            (mode FORMULATED)
 	            (params target-pos ?target-pos location ?loc)
@@ -255,7 +245,6 @@
 	; check if target position is free
 	(test (is-free ?target-pos))
 	=>
-	(printout t crlf crlf (is-free ?target-pos) " "?loc crlf)
 	(printout t "Goal MOVE-OUT-OF-WAY executable for " ?robot " to pos " ?target-pos  crlf)
 	(modify ?g (is-executable TRUE))
 )
