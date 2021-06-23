@@ -45,4 +45,4 @@ ros:
 
     # tolerances to be set determining a goal could be reached or not.
     trans_tolerance: 0.1
-    ori_tolerance: 0.05
+    ori_tolerance: 0.1
