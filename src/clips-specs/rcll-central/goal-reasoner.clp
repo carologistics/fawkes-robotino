@@ -296,14 +296,55 @@
 	            (verbosity ?v))
 =>
 	(set-robot-to-waiting ?meta)
-	;(printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
-	;  "') has been completed, Evaluating" crlf)
-  (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" crlf)
+	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" crlf)
 	(modify ?g (mode EVALUATED))
 )
 
 ; ----------------------- EVALUATE SPECIFIC GOALS ---------------------------
 
+(defrule goal-reasoner-evaluate-failed-goto
+" Re-formulate a failed goal if the workpiece it processes is still usable
+"
+	?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED) (meta $?meta)
+	            (verbosity ?v))
+	(plan (id ?plan-id) (goal-id ?goal-id))
+	(plan-action (action-name ?action&move|go-wait)
+	             (goal-id ?goal-id) (plan-id ?plan-id) (state FAILED))
+	=>
+	(set-robot-to-waiting ?meta)
+	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as only a move failed" crlf)
+	(modify ?g (mode FORMULATED) (outcome UNKNOWN))
+
+	(delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
+		(delayed-do-for-all-facts ((?a plan-action)) (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
+			(retract ?a)
+		)
+		(retract ?p)
+	)
+)
+
+(defrule goal-reasoner-evaluate-failed-workpiece-usable
+" Re-formulate a failed goal if the workpiece it processes is still usable
+"
+	?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED) (meta $?meta)
+	            (verbosity ?v))
+	(plan (id ?plan-id) (goal-id ?goal-id))
+	(plan-action (action-name ?action&wp-get|wp-put|wp-put-slide-cc|wp-get-shelf)
+	             (goal-id ?goal-id) (plan-id ?plan-id) (state FAILED)
+	             (param-values $? ?wp $?))
+	(wm-fact (key domain fact wp-usable args? wp ?wp))
+	=>
+	(set-robot-to-waiting ?meta)
+	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as workpiece is still usable after failed " ?action crlf)
+	(modify ?g (mode FORMULATED) (outcome UNKNOWN))
+
+	(delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
+		(delayed-do-for-all-facts ((?a plan-action)) (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
+			(retract ?a)
+		)
+		(retract ?p)
+	)
+)
 
 ; ================================= Goal Clean up ============================
 

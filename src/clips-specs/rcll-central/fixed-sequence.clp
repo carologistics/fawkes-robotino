@@ -29,7 +29,14 @@
 (deffunction plan-assert-sequential (?plan-name ?goal-id ?robot $?action-tuples)
 	(bind ?plan-id (sym-cat ?plan-name (gensym*)))
 	(assert (plan (id ?plan-id) (goal-id ?goal-id)))
+	(bind ?actions (create$))
+	; action tuples might contain FALSE in some cases, filter them out
 	(foreach ?pa $?action-tuples
+		(if ?pa then
+			(bind ?actions (append$ ?actions ?pa))
+		)
+	)
+	(foreach ?pa $?actions
 		(modify ?pa (id ?pa-index) (plan-id ?plan-id) (goal-id ?goal-id)
 		            (skiller (remote-skiller ?robot)))
 	)
@@ -155,15 +162,26 @@
 	            (params target-mps ?mps )
 	            (meta $? assigned-to ?robot $?))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+	(or (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+	    (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+	)
 	=>
 	(plan-assert-sequential (sym-cat PICK-AND-PLACE-PLAN- (gensym*)) ?goal-id ?robot
-		(plan-assert-action move ?robot ?curr-location ?curr-side ?mps OUTPUT)
-		(plan-assert-action wp-get ?robot ?wp ?mps OUTPUT)
-		(plan-assert-action move ?robot ?mps OUTPUT ?mps INPUT)
+		(if (not (is-holding ?robot ?wp)) then
+			(create$
+			    (plan-assert-action move ?robot ?curr-location ?curr-side ?mps OUTPUT)
+			    (plan-assert-action wp-get ?robot ?wp ?mps OUTPUT)
+			    (plan-assert-action move ?robot ?mps OUTPUT ?mps INPUT)
+			)
+		 else
+			(create$
+			    (plan-assert-action move ?robot ?curr-location ?curr-side ?mps INPUT)
+			)
+		)
+
 		(plan-assert-action wp-put ?robot ?wp ?mps)
-		(plan-assert-action move ?robot ?mps INPUT ?mps OUTPUT)
 		(plan-assert-action move-wp-input-output ?mps ?wp)
+		(plan-assert-action move ?robot ?mps INPUT ?mps OUTPUT)
 	)
 	(modify ?g (mode EXPANDED))
 )

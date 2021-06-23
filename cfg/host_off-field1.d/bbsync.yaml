@@ -9,6 +9,10 @@ network:
     tcp_port: !tcp-port 1931
     service_name: "Fawkes on Agent (Cyan)"
 
+webview:
+  # TCP port for Webview HTTP requests; TCP port
+  port: !tcp-port 8091
+
 plugins/mongodb:
   clients:
     default/enabled: true
