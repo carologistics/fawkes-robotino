@@ -1448,6 +1448,42 @@ The workpiece remains in the output of the used ring station after
 	(modify ?g2 (parent ?root-id))
 )
 
+(defrule goal-production-debug-cap
+	"If there is a mismatch between machines and orders, produce output"
+	(wm-fact (key domain fact order-cap-color args? ord ?order-id col ?col))
+	(not (wm-fact (key domain fact cs-color args? m ?cs col ?col)))
+	=>
+	(printout error "Can not build order " ?order-id " with cap color " ?col " because there is no capstation for it" crlf)
+)
+
+(defrule goal-production-debug-ring1
+	"If there is a mismatch between machines and orders, produce output"
+	(wm-fact (key domain fact order-ring1-color args? ord ?order-id col ?col&~RING_NONE))
+	(not (wm-fact (key domain fact rs-ring-spec args? $? r ?col $?)))
+	(not (wm-fact (key domain fact rs-ring-spec args? $? rn NA)))
+	=>
+	(printout error "Can not build order " ?order-id " with ring-1 color " ?col " because there is no ringstation for it" crlf)
+)
+
+(defrule goal-production-debug-ring2
+	"If there is a mismatch between machines and orders, produce output"
+	(wm-fact (key domain fact order-ring2-color args? ord ?order-id col ?col-ring&~RING_NONE))
+	(not (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?col-ring $?)))
+	(not (wm-fact (key domain fact rs-ring-spec args? $? rn NA)))
+	=>
+	(printout error "Can not build order " ?order-id " with ring-2 color " ?col-ring " because there is no ringstation for it" crlf)
+)
+
+(defrule goal-production-debug-ring3
+	"If there is a mismatch between machines and orders, produce output"
+	(wm-fact (key domain fact order-ring3-color args? ord ?order-id col ?col-ring&~RING_NONE))
+	(not (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?col-ring $?)))
+	(not (wm-fact (key domain fact rs-ring-spec args? $? rn NA)))
+	=>
+	(printout error "Can not build order " ?order-id " with ring-3 color " ?col-ring " because there is no ringstation for it" crlf)
+)
+
+
 (defrule goal-production-create-produce-for-order
 	"Create for each incoming order a grounded production tree with the"
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
