@@ -363,6 +363,9 @@
 	(wm-fact (key domain fact rs-inc args? summand ?rs-before
 	                                  sum ?rs-after))
 	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before))
+	(or (wm-fact (key domain fact holdings args? r ?robot wp ?wp))
+	    (wm-fact (key domain fact mps-state args? m ?wp-loc s ~BROKEN))
+	)
 	=>
 	(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
 		(if (not (is-holding ?robot ?wp))
@@ -398,8 +401,7 @@
 	                                   $?)
 	                          (meta $? assigned-to ?robot $?))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-	(wm-fact (key domain fact rs-inc args? summand ?rs-before
-	                                  sum ?rs-after))
+	(wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
 	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before))
 	=>
 	(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
