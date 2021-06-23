@@ -50,7 +50,7 @@ local pam = require("parse_module")
 -- Constants
 local FITNESS_THRESHOLD = {           -- low is the minimum required fitness to do anything
    conveyor = { low = 15, high = 25 }, -- if fitness is >= high, we assume that the fit is perfect
-   slide = { low = 15, high = 25 }     -- and don't re-run ICP after moving
+   slide = { low = 7, high = 15 }     -- and don't re-run ICP after moving
 }
 
 local GRIP_OFFSET = {
@@ -67,6 +67,7 @@ local TARGET_POS = { -- target pose rel. to the conveyor_pose frame
 
 -- initial gripper poses depending on the target
 local GRIPPER_POSE = { x= 0.05, y = 0.00, z = 0.03}
+local GRIPPER_POSE_SLIDE = { x= 0.03, y = 0.00, z = 0.03}
 
 local MAX_RETRIES=2
 local MAX_VISION_RETRIES=2
@@ -292,7 +293,11 @@ function MOVE_BACK:init()
 end
 
 function MOVE_GRIPPER:init()
-  self.args["gripper_commands"] = GRIPPER_POSE
+  if self.fsm.vars.slide then
+    self.args["gripper_commands"] = GRIPPER_POSE_SLIDE
+  else
+    self.args["gripper_commands"] = GRIPPER_POSE
+  end
   self.args["gripper_commands"].command = "MOVEABS"
 end
 
