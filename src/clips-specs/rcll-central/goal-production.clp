@@ -152,7 +152,7 @@
 	(delayed-do-for-all-facts ((?g goal))
 		(and (not (member$ assigned-to ?g:meta)) (eq ?g:is-executable FALSE)
 		     (eq ?g:sub-type SIMPLE) (eq ?g:mode FORMULATED))
-		(modify ?g (meta (assign-robot-to-goal ?meta ?robot)))
+		(modify ?g (meta (assign-robot-to-goal ?g:meta ?robot)))
 	)
 )
 
