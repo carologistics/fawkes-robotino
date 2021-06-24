@@ -109,13 +109,10 @@
 
 (deffunction remove-robot-assignment-from-goal (?meta ?robot)
 	(bind ?pos (member$ assigned-to ?meta))
-	(bind ?pos2 (member$ ?robot ?meta))
-	(if (and ?pos ?pos2 (eq ?pos2 (+ ?pos 1)))
-	 then
-		(return (delete$ ?meta ?pos ?pos2))
-	 else
-		(return ?meta)
+	(if (and (> (length$ ?meta) ?pos) (eq (nth$ (+ 1 ?pos) ?meta) ?robot)) then
+		(return (delete$ ?meta ?pos (+ 1 ?pos)))
 	)
+	(return ?meta)
 )
 
 (deffunction goal-tree-assert-run-endless (?class ?frequency $?fact-addresses)

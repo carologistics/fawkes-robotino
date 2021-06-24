@@ -32,14 +32,6 @@
 	)
 )
 
-(deffunction remove-robot-assignment-from-goal (?meta ?robot)
-	(bind ?pos (member$ assigned-to ?meta))
-	(if (and (> (length$ ?meta) ?pos) (eq (nth$ (+ 1 ?pos) ?meta) ?robot)) then
-		(return (delete$ ?meta ?pos (+ 1 ?pos)))
-	)
-	(return ?meta)
-)
-
 (deffunction is-goal-running (?mode)
 	(return (or (eq ?mode SELECTED) (eq ?mode EXPANDED)
 	            (eq ?mode COMMITTED) (eq ?mode DISPATCHED)))
