@@ -1326,6 +1326,19 @@ The workpiece remains in the output of the used ring station after
 	(modify ?g (meta do-not-finish))
 )
 
+(defrule goal-production-create-move-out-of-way
+	"Creates a move out of way goal. As soon as it is completed it's reset"
+	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+	(not (goal (class MOVE-OUT-OF-WAY)))
+	(not (wm-fact (key config rcll pick-and-place-challenge) (value TRUE)))
+	=>
+	(bind ?g1 (goal-production-assert-move-out-of-way M_Z41))
+	(bind ?g2 (goal-production-assert-move-out-of-way M_Z31))
+	(modify ?g1 (parent ?root-id))
+	(modify ?g2 (parent ?root-id))
+)
+
 (defrule goal-production-create-pick-and-place
 	 "Creates pick and place"
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
@@ -1374,18 +1387,6 @@ The workpiece remains in the output of the used ring station after
 		( goal-production-assert-pick-and-place C-RS1 robot3)
 		( goal-production-assert-move-robot-to-output C-RS1 robot3)
 	))
-	(modify ?g2 (parent ?root-id))
-)
-
-(defrule goal-production-create-move-out-of-way
-	"Creates a move out of way goal. As soon as it is completed it's reset"
-	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED));PRODUCE-ORDER
-	(not (goal (class MOVE-OUT-OF-WAY))) ; (mode FORMULATED|SELECTED) ))
-	=>
-	(bind ?g1 (goal-production-assert-move-out-of-way M_Z41))
-	(bind ?g2 (goal-production-assert-move-out-of-way M_Z31))
-	(modify ?g1 (parent ?root-id))
 	(modify ?g2 (parent ?root-id))
 )
 
