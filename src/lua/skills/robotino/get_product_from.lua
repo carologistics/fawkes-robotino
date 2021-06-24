@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "get_product_from"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"product_pick", "drive_to_machine_point", "conveyor_align", "detect_object"}
+depends_skills     = {"product_pick", "drive_to_machine_point", "conveyor_align","shelf_pick"}
 depends_interfaces = {
    {v = "laserline_switch", type = "SwitchInterface", id="laser-lines"},
 }
@@ -34,7 +34,6 @@ documentation      = [==[
 aligns to a machine and picks a product from the conveyor.
 It will get the offsets and the align distance for the machine 
 from the navgraph
-
 Parameters:
       @param place   the name of the MPS (see navgraph)
       @param side    optional the side of the mps (default is output give "input" to get from input)
@@ -51,8 +50,11 @@ local pam = require("parse_module")
 -- If this matches the desired x distance of conveyor align, conveyor align has the chance
 -- of not needing to move at all.
 -- x distance to laserline
-local X_AT_MPS = 0.28
+local X_AT_MPS = 0.26
 
+local shelf_left = 0.07
+local shelf_middle = 0.17
+local shelf_right = 0.27
 
 function already_at_conveyor(self)
    return (self.fsm.vars.atmps == "CONVEYOR")
@@ -62,19 +64,22 @@ function shelf_set(self)
     return self.fsm.vars.shelf ~= nil
 end
 
-
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph,shelf_set=shelf_set},
    {"INIT", JumpState},
-   {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="GET_GRIPPING_POSE", fail_to="FAILED"},
-   {"GET_GRIPPING_POSE", SkillJumpState, skills={{conveyor_align, detect_object}}, final_to="PRODUCT_PICK", fail_to="FAILED"},
+   {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="DECIDE_SHELF", fail_to="FAILED"},
+   {"DECIDE_SHELF", JumpState},
+   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="PRODUCT_PICK", fail_to="FAILED"},
    {"PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"},
+   {"YOLO_SHELF_PICK", SkillJumpState, skills={{yolo_shelf_pick}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
    {"INIT", "FAILED", cond="not navgraph", desc="navgraph not available"},
    {"INIT", "FAILED", cond="not vars.node:is_valid()", desc="point invalid"},
-   {"INIT", "GET_GRIPPING_POSE", cond=already_at_conveyor, desc="Already in front of the mps, align"},
+   {"INIT", "CONVEYOR_ALIGN", cond=already_at_conveyor, desc="Already in front of the mps, align"},
    {"INIT", "DRIVE_TO_MACHINE_POINT", cond=true, desc="Everything OK"},
+   {"DECIDE_SHELF", "CONVEYOR_ALIGN", cond="not vars.shelf"}
+   {"DECIDE_SHELF", "YOLO_SHELF_PICK", cond="vars.shelf", desc="Using YOLO based shelf pick"}
 }
 
 function INIT:init()
@@ -82,18 +87,30 @@ function INIT:init()
    if self.fsm.vars.side == nil then
      self.fsm.vars.side = "output"
    end
+   if self.fsm.vars.shelf == "LEFT" then
+      self.fsm.vars.shelf_y = shelf_left
+   end
+   if self.fsm.vars.shelf == "MIDDLE" then
+      self.fsm.vars.shelf_y = shelf_middle
+   end
+   if self.fsm.vars.shelf == "RIGHT" then
+      self.fsm.vars.shelf_y = shelf_right
+   else
+      self.fsm.vars.shelf_y = 0.0
+   end
 end
 
 function DRIVE_TO_MACHINE_POINT:init()
+   local option = "CONVEYOR"
    if self.fsm.vars.shelf ~= nil then
      self.fsm.vars.side = "input"
    end
    if self.fsm.vars.side == "input" or self.fsm.vars.shelf then
       self.fsm.vars.tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_input")
-      self.args["drive_to_machine_point"] = {place = self.fsm.vars.place .. "-I", option = "SHELF_" + self.fsm.vars.shelf, x_at_mps=X_AT_MPS, tag_id=self.fsm.vars.tag_id}
+      self.args["drive_to_machine_point"] = {place = self.fsm.vars.place .. "-I", option = option, x_at_mps=X_AT_MPS, y_at_mps=self.fsm.vars.shelf_y, tag_id=self.fsm.vars.tag_id}
    else --if no side is given drive to output
       self.fsm.vars.tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_output")
-      self.args["drive_to_machine_point"] = {place = self.fsm.vars.place .. "-O", option = "CONVEYOR", x_at_mps=X_AT_MPS, tag_id=self.fsm.vars.tag_id}
+      self.args["drive_to_machine_point"] = {place = self.fsm.vars.place .. "-O", option = option, x_at_mps=X_AT_MPS, tag_id=self.fsm.vars.tag_id}
    end
 end
 
@@ -118,7 +135,7 @@ function PRODUCT_PICK:exit()
   end
 end
 
-function GET_GRIPPING_POSE:init()
+function CONVEYOR_ALIGN:init()
    if self.fsm.vars.shelf ~= nil then
      self.args["conveyor_align"].side = "input"
      self.args["conveyor_align"].place = self.fsm.vars.place
@@ -139,13 +156,10 @@ function FAILED:init()
   laserline_switch:msgq_enqueue(laserline_switch.DisableSwitchMessage:new())
 end
 
-function GET_GRIPPING_POSE:exit()
+function CONVEYOR_ALIGN:exit()
   local cv_fsm = skillenv.get_skill_fsm("conveyor_align")
-  local do_fsm = skillenv.get_skill_fsm("detect_object")
   if cv_fsm.current == cv_fsm.states[cv_fsm.fail_state] then
     self.fsm.vars.error = "Conveyor Align Failed"
-  elseif do_fsm.current == do_fsm.states[fail_state] then
-    self.fsm.vars.error = "Detect Object Failed"
   end
 end
 
