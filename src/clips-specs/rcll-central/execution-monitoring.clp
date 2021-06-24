@@ -340,3 +340,21 @@
 	(assert (wm-fact (key wp-unused args? wp ?wp)))
 	(retract ?cleanup)
 )
+
+; ----------------------- HANDLE SAME SIDE MOVE -------------------------------
+
+(defrule execution-monitoring-handle-same-side-move
+" Resetting the timeout-timer if a move action is pending while waiting for its target mps-side to be approachable.
+"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  (plan-action 
+	   (state PENDING)
+	   (action-name move)
+	   (param-values $? ?mps ?mps-side ?mps ?mps-side $?)
+  )
+  (not (wm-fact (key domain fact mps-side-approachable args? m ?mps side ?mps-side)))
+  =>
+  (printout t "Move with equal start and target location "
+               ?mps " " ?mps-side " is detected. Set side approachable" crlf)
+  (assert (wm-fact (key domain fact mps-side-approachable args? m ?mps side ?mps-side) (type BOOL) (value TRUE)))
+)
