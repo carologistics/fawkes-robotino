@@ -107,6 +107,26 @@
 	                               (grounded-with nil)))
 )
 
+(defrule goal-dependencies-pay-with-cc-buffer-cap
+" Every discard goal depends on the buffer-cap class. Per default, no buffer-cap goal is grounded. "
+	; needs to be higher than SALIENCE-GOAL-EXECUTABLE-CHECK
+	(declare (salience (+ ?*SALIENCE-GOAL-EXECUTABLE-CHECK* 1)))
+	?g <- (goal (id ?goal-id) (class PAY-FOR-RINGS-WITH-CAP-CARRIER) (mode FORMULATED))
+	(not (dependency-assignment (goal-id ?goal-id) (class BUFFER-CAP)))
+	(not (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-CS-BUFFER-CAP)))
+	=>
+	(printout t "Goal " ?goal-id " depends on class BUFFER-CAP " crlf)
+	(assert (dependency-assignment (goal-id ?goal-id)
+	                               (class BUFFER-CAP)
+	                               (wait-for WP)
+	                               (grounded-with nil)))
+	(printout t "Goal " ?goal-id " depends on class INSTRUCT-CS-BUFFER-CAP " crlf)
+	(assert (dependency-assignment (goal-id ?goal-id)
+	                               (class INSTRUCT-CS-BUFFER-CAP)
+	                               (wait-for WP)
+	                               (grounded-with nil)))
+)
+
 ; ---------------------------- Executability Check ---------------------------
 ; ----------------------------- under Dependencies ---------------------------
 
@@ -437,6 +457,88 @@
 	            " depending on goal " ?buffer-goal-id
 	            " and goal " ?instruct-goal-id crlf)
 	(modify ?g (params  wp ?cc wp-loc ?wp-loc wp-side ?wp-side) (is-executable TRUE))
+	(modify ?buffer-da (params  wp ?cc
+	                            wp-loc ?cs
+	                            wp-side OUTPUT)
+	                   (grounded-with ?buffer-goal-id))
+	(modify ?instruct-da (grounded-with ?instruct-goal-id))
+)
+
+(defrule goal-dependencies-pay-with-cc-buffer-cap-executable
+" Discard can be executable while buffer-cap is still running.
+"
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class PAY-FOR-RINGS-WITH-CAP-CARRIER)
+	                          (mode FORMULATED)
+	                          (params  wp ?wp
+	                                   wp-loc ?wp-loc
+	                                   wp-side ?wp-side
+	                                   target-mps ?target-mps
+	                                   target-side ?target-side
+	                                   $?)
+	                          ;(params  $? wp-loc ?wp-loc wp-side ?wp-side)
+	                          (meta $? assigned-to ?robot $?)
+	                          (is-executable FALSE))
+
+	(wm-fact (key refbox team-color) (value ?team-color))
+	;MPS-RS CEs (a cap carrier can be used to fill a RS later)
+	(wm-fact (key domain fact mps-type args? m ?target-mps t RS))
+	(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
+	;check ring payment - prevention of overfilling rs
+	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before&ZERO|ONE|TWO))
+	;check that not to may robots try to fill the rs at the same time
+	(or (not (goal (class PAY-FOR-RINGS-WITH-BASE| PAY-FOR-RINGS-WITH-CAP-CARRIER|
+	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
+	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	               (params $? target-mps ?target-mps $?)))
+	    (and (goal (class PAY-FOR-RINGS-WITH-BASE|PAY-FOR-RINGS-WITH-CAP-CARRIER|
+	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
+	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	               (params $? target-mps ?target-mps $?))
+	         (test (< (+ (length$ (find-all-facts ((?other-goal goal))
+	                               (and (or (eq ?other-goal:class PAY-FOR-RINGS-WITH-BASE)
+	                                        (eq ?other-goal:class PAY-FOR-RINGS-WITH-CAP-CARRIER)
+	                                        (eq ?other-goal:class PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF))
+	                                    (is-goal-running ?other-goal:mode)
+	                                    (member$ ?target-mps ?other-goal:params)
+	                               )))
+	                     (sym-to-int ?rs-before)) 3))
+	   )
+	)
+	; Robot CEs
+	(wm-fact (key central agent robot args? r ?robot))
+	(not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+
+	; MPS-Source CEs
+	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
+	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
+
+	; wp is not at CS OUTPUT, but after these goals finished, it will be
+	(goal (id ?buffer-goal-id)
+	      (class BUFFER-CAP)
+	      (parent ?parent)
+	      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	      (params target-mps ?cs $?))
+	?buffer-da <- (dependency-assignment (goal-id ?goal-id) (class BUFFER-CAP))
+
+	; get cc through buffer actions
+	(plan-action (goal-id ?buffer-goal-id) (action-name wp-put) (param-values ?r ?cc $?))
+
+	(goal (id ?instruct-goal-id)
+	      (class INSTRUCT-CS-BUFFER-CAP)
+	      (parent ?parent)	; depends on tree structur
+	      (mode FORMULATED))
+	?instruct-da <- (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-CS-BUFFER-CAP))
+	=>
+	(printout t "Goal " ?goal-id " executable for " ?robot
+	            " depending on goal " ?buffer-goal-id
+	            " and goal " ?instruct-goal-id crlf)
+	(modify ?g (params  wp ?cc 
+	                    wp-loc ?cs
+	                    wp-side OUTPUT
+	                    target-mps ?target-mps
+	                    target-side ?target-side)
+	           (is-executable TRUE))
 	(modify ?buffer-da (params  wp ?cc
 	                            wp-loc ?cs
 	                            wp-side OUTPUT)
