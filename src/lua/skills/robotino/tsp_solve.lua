@@ -140,6 +140,6 @@ end
 function FAILED:init()
     print(self.fsm.vars.agent_string)
     if self.fsm.vars.agent_string then
-        self.fsm:set_error(self.fsm.vars.agent_string)
+        self.fsm.vars.error(self.fsm.vars.agent_string)
     end
 end
