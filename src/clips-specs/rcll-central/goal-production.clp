@@ -711,12 +711,6 @@ The workpiece remains in the output of the used ring station after
 	         (sym-cat order-ring (sub-string 5 5 ?ring) -color))
 	          args? ord ?order col ?ring-color ))
 	(wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C1|C2|C3))
-	; Ring spec & costs
-	(wm-fact (key domain fact rs-ring-spec
-	          args? m ?target-mps r ?ring-color&~RING_NONE rn ?bases-needed))
-	(wm-fact (key domain fact rs-sub args? minuend ?bases-filled
-	                                  subtrahend ?bases-needed
-	                                  difference ?bases-remain&ZERO|ONE|TWO|THREE))
 
 	(not (wm-fact (key domain fact wp-at args? wp ?wp-loc m ?target-mps side INPUT)))
 	(wm-fact (key domain fact mps-type args? m ?other-rs&~?target-mps t RS))
