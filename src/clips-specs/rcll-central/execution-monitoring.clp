@@ -344,7 +344,7 @@
 ; ----------------------- HANDLE SAME SIDE MOVE -------------------------------
 
 (defrule execution-monitoring-handle-same-side-move
-" Resetting the timeout-timer if a move action is pending while waiting for its target mps-side to be approachable.
+" Allows move to current location by setting mps mps-side to be approachable.
 "
   (declare (salience ?*MONITORING-SALIENCE*))
   (plan-action 
