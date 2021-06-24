@@ -194,19 +194,6 @@ void set_status(int status_) {
   }
 }
 
-bool assumed_gripper_state;
-
-// @Return True if gripper is assumed to be open
-// This helper function is necessary to set the assumed_gripper_state initially
-bool get_assumed_gripper_state(bool is_open_command) {
-  static bool initialized = false;
-  if(!initialized){
-    initialized = true;
-    assumed_gripper_state = !is_open_command;// assume closed if command is opening, assume open if command is closing
-  }
-  return assumed_gripper_state;
-}
-
 void double_calibrate()
 {
   // first fast calibration run
@@ -382,7 +369,6 @@ void read_package() {
       if(sscanf (buffer_ + (cur_i_cmd + 1),"%ld",&new_value)<=0){buf_i_ = 0; return;} // flush and return if parsing error
     }
     float opening_speed = motor_A.get_speed(); //get current openening speed
-    bool assumed_gripper_state_local; // this is used to store the assumed gripper state locally, to reduce calls to the function get_assumed_gripper_state
     switch (cur_cmd) {
       case CMD_X_NEW_POS:
         set_new_pos(-new_value, motor_X);
@@ -445,11 +431,9 @@ void read_package() {
         break;
       case CMD_OPEN:
         check_gripper_endstop();
-        assumed_gripper_state_local = get_assumed_gripper_state(true);
-        if(!assumed_gripper_state_local && open_gripper || !open_gripper)
+        if(!open_gripper)
         { // we do it
           set_new_rel_pos(-a_toggle_steps,motor_A);
-          assumed_gripper_state = true;
         } else { // we don't do it
           send_status();
           send_status();
@@ -457,12 +441,10 @@ void read_package() {
         break;
       case CMD_CLOSE:
         check_gripper_endstop();
-        assumed_gripper_state_local = get_assumed_gripper_state(false);
-        if(assumed_gripper_state_local)
+        if(open_gripper)
         { // we do it
           set_new_speed_acc(opening_speed/8, 0.0, motor_A); //slow down closing speed to an eighth of opening speed
           set_new_rel_pos(a_toggle_steps,motor_A);
-          assumed_gripper_state = false;
           set_new_speed_acc(opening_speed, 0.0, motor_A); //reset speed
         } else { // we don't do it
           send_status();
