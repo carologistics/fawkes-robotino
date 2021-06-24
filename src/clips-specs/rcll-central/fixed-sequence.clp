@@ -629,7 +629,6 @@
 			              (member$ wp-loc ?da:params)
 			              (member$ wp-side ?da:params)
 			              (eq ?da:goal-id ?goal-id))
-			         (bind ?wp (multifield-key-value ?da:params wp))
 			         (bind ?wp-loc (multifield-key-value ?da:params wp-loc))
 			         (bind ?wp-side (multifield-key-value ?da:params wp-side))))
 			then
