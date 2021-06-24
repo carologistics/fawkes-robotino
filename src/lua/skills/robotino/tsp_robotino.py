@@ -35,7 +35,7 @@ if len(argv) > 1:
 
     problem_no_fit = mlrose.TSPOpt(length = len(coords), coords=coords, maximize=False)
 
-    best_state, best_fitness, _ = mlrose.genetic_alg(problem_no_fit, random_state=2)
+    best_state, best_fitness, _ = mlrose.genetic_alg(problem_no_fit, pop_size=200, max_attempts=50, mutation_prob=0.2, random_state=2)
 
     print(f"{coords[0][0]}{coords[0][1]} ", end='')
     for v in best_state[:-1]:
