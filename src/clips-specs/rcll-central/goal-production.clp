@@ -1115,7 +1115,9 @@ The workpiece remains in the output of the used ring station after
 	       (bind ?price 2))
 	)
 	(bind ?goals (create$ (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN C-CS1 UNKNOWN ?rs INPUT)))
-	(loop-for-count (- 1 ?price)
+        (printout t crlf crlf ?price crlf crlf)
+	(loop-for-count (- ?price 1)
+           (printout t crlf crlf ?price crlf crlf)
 	   (bind ?wp-base-pay (sym-cat BASE-PAY- (gensym*)))
 	   (assert (domain-object (name ?wp-base-pay) (type workpiece))
 	           (domain-fact (name wp-unused) (param-values ?wp-base-pay))
@@ -1542,5 +1544,13 @@ The workpiece remains in the output of the used ring station after
 	            (meta assigned-to ?robot)
   )))
   (modify ?goal (parent ?p))
+)
+
+(defrule goal-production-remove-retracted-wait-nothing-executable
+  "When a waith-nothing-executable goal is retracted, remove it to prevent spam"
+  (declare (salience 0))
+  ?g <- (goal (class WAIT-NOTHING-EXECUTABLE) (mode RETRACTED))
+  =>
+  (retract ?g)
 )
 
