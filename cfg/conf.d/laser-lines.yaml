@@ -53,3 +53,6 @@ laser-lines:
   moving_avg_enabled: true
   # The size (number of elements) of the moving average window
   moving_avg_window_size: 5
+
+  # Enable transformation of additional laser lines to the map frame
+  to_map_enabled: true
