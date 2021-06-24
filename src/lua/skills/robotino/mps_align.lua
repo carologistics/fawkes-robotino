@@ -389,7 +389,7 @@ function ALIGN_FAST:init()
       x = p.x,
       y = p.y,
       ori = p.ori,
-      tolerance = { x=0.05, y=0.03, ori=0.03 }
+      tolerance = { x=0.05, y=0.02, ori=0.03 }
    }
 end
 
