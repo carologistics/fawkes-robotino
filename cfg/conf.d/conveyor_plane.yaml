@@ -7,7 +7,7 @@ conveyor_plane:
   # sets the debug mode within the plugin, which eases the debugging,
   # which results in the following:
   # - the switch if is ignored, the plugin i running always
-  debug: true
+  debug: false
   # the point cloud that is used to detect the belt
   cloud_in: "/camera/depth/points"
 
