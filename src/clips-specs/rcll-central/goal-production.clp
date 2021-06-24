@@ -32,6 +32,13 @@
 	)
 )
 
+(deffunction remove-robot-assignment-from-goal (?meta ?robot)
+	(bind ?pos (member$ assigned-to ?meta))
+	(if (and (> (length$ ?meta) ?pos) (eq (nth$ (+ 1 ?pos) ?meta) ?robot)) then
+		(return (delete$ ?meta ?pos (+ 1 ?pos)))
+	)
+	(return ?meta)
+)
 
 (deffunction is-goal-running (?mode)
 	(return (or (eq ?mode SELECTED) (eq ?mode EXPANDED)
@@ -153,7 +160,7 @@
 	(delayed-do-for-all-facts ((?g goal))
 		(and (not (member$ assigned-to ?g:meta)) (eq ?g:is-executable FALSE)
 		     (eq ?g:sub-type SIMPLE) (eq ?g:mode FORMULATED))
-		(modify ?g (meta (assign-robot-to-goal ?meta ?robot)))
+		(modify ?g (meta (assign-robot-to-goal ?g:meta ?robot)))
 	)
 )
 
