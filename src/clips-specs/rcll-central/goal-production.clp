@@ -1533,7 +1533,7 @@ The workpiece remains in the output of the used ring station after
   "When the robot is stuck, assert a new goal that keeps it waiting"
   (declare (salience 0))
   (goal (id ?p) (class PRODUCTION-ROOT))
-  (goal (mode FORMULATED) (meta assigned-to ?robot))
+  (goal (mode FORMULATED) (meta assigned-to ?robot&~central))
   (not (goal (mode FORMULATED) (is-executable TRUE)))
   =>
   (bind ?goal (assert (goal (class WAIT-NOTHING-EXECUTABLE)
