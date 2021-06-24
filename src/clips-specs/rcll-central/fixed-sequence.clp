@@ -648,11 +648,11 @@
 	(modify ?g (mode EXPANDED))
 )
 
-(defrule goal-expander-waitgoal-if-stuck
- ?g <- (goal (id ?goal-id) (class WAIT-AWAY) (mode SELECTED) (meta $? assigned-to ?robot $?))
+(defrule goal-expander-wait-nothing-executable
+ ?g <- (goal (id ?goal-id) (class WAIT-NOTHING-EXECUTABLE) (mode SELECTED) (meta $? assigned-to ?robot $?))
 (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 =>
- (plan-assert-sequential (sym-cat WAIT-AWAY-PLAN-(gensym*)) ?goal-id ?robot
+ (plan-assert-sequential (sym-cat WAIT-NOTHING-EXECUTABLE-(gensym*)) ?goal-id ?robot
    (plan-assert-action wait ?robot ?curr-location)
 )
 (modify ?g (mode EXPANDED))
