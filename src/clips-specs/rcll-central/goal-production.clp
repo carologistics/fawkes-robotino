@@ -51,7 +51,7 @@
 (deffunction goal-production-get-machine-for-color
 	(?col-ring)
 
-	(bind ?rs RS_NONE)
+	(bind ?rs FALSE)
 	(do-for-all-facts ((?mps-type wm-fact)) (and (wm-key-prefix ?mps-type:key (create$ domain fact mps-type))
 	                                             (eq (wm-key-arg ?mps-type:key t) RS))
 		(bind ?machine (wm-key-arg ?mps-type:key m))
@@ -1439,16 +1439,16 @@ The workpiece remains in the output of the used ring station after
 		then
 		(goal-production-assert-c0 ?root-id ?order-id ?wp-for-order ?cs ?col-cap ?col-base)
 	)
-	(if (eq ?comp C1)
+	(if (and (eq ?comp C1) ?rs1)
 		then
 		(goal-production-assert-c1 ?root-id ?order-id ?wp-for-order ?cs ?rs1 ?col-cap ?col-base ?col-ring1)
 	)
-	(if (eq ?comp C2)
+	(if (and (eq ?comp C2) ?rs1 ?rs2)
 		then
 		(goal-production-assert-c2 ?root-id ?order-id ?wp-for-order ?cs
 	              ?rs1 ?rs2 ?col-cap ?col-base ?col-ring1 ?col-ring2)
 	)
-	(if (eq ?comp C3)
+	(if (and (eq ?comp C3) ?rs1 ?rs2 ?rs3)
 		then
 		(goal-production-assert-c3 ?root-id ?order-id ?wp-for-order ?cs
 	              ?rs1 ?rs2 ?rs3 ?col-cap ?col-base ?col-ring1 ?col-ring2 ?col-ring3)
