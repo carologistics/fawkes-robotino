@@ -34,6 +34,7 @@ SUBDIRS	= clips-motor-switch \
 		protoboard-rcll \
 		asp-planner \
     yolo_opencv \
+	clips-tsp \
     workpiece_pose
 
 

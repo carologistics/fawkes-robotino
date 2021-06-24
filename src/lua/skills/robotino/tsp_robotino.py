@@ -27,9 +27,14 @@ from sys import argv
 
 #########################
 if len(argv) > 1:
+    is_agent = False
     coords = []
-    for arg in argv[2:]:
-        coords.append((int(arg[0]), int(arg[1])))
+    for arg in argv[1:]:
+        if arg.startswith('G'):
+            is_agent = True 
+            coords.append((int(arg[2]), int(arg[5])))
+        else:
+            coords.append((int(arg[-2]), int(arg[-1])))
 
     #coords = np.array(coords)
 
@@ -37,7 +42,13 @@ if len(argv) > 1:
 
     #best_state, best_fitness, _ = mlrose.genetic_alg(problem_no_fit, random_state=2)
     best_state, best_fitness, _ = mlrose.genetic_alg(problem_no_fit, pop_size=200, max_attempts=50, m    utation_prob=0.2, random_state=2)
-    print(f"{coords[0][0]}{coords[0][1]} ", end='')
-    for v in best_state[:-1]:
-        print(f"{coords[v][0]}{coords[v][1]} ", end='')
-    print(f"{coords[best_state[-1]][0]}{coords[best_state[-1]][1]}")
+    if is_agent:
+        print(f"G-{coords[0][0]}-{coords[0][1]} ", end='')
+        for v in best_state[:-1]:
+            print(f"G-{coords[v][0]}-{coords[v][1]} ", end='')
+        print(f"G-{coords[best_state[-1]][0]}-{coords[best_state[-1]][1]}")
+    else:
+        print(f"M-Z{coords[0][0]}{coords[0][1]} ", end='')
+        for v in best_state[:-1]:
+            print(f"M-Z{coords[v][0]}{coords[v][1]} ", end='')
+        print(f"M-Z{coords[best_state[-1]][0]}{coords[best_state[-1]][1]}")

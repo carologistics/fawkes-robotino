@@ -1,0 +1,59 @@
+#*****************************************************************************
+#           Makefile Build System for Fawkes: CLIPS TSP Plugin
+#                            -------------------
+#   Created on Wed Oct 09 19:23:55 2013
+#   Copyright (C) 2021 by Gjorgji Nikolovski, Carologistics RoboCup Team
+#
+#*****************************************************************************
+#
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 2 of the License, or
+#   (at your option) any later version.
+#
+#*****************************************************************************
+
+BASEDIR = ../../..
+include $(BASEDIR)/etc/buildsys/config.mk
+include $(BUILDSYSDIR)/clips.mk
+
+LIBS_clips_tsp = fawkescore fawkesutils fawkesaspects \
+		      fawkesclipsaspect
+OBJS_clips_tsp = clips_tsp_plugin.o clips_tsp_thread.o
+
+OBJS_all    = $(OBJS_clips_tsp)
+PLUGINS_all = $(PLUGINDIR)/clips-tsp.$(SOEXT)
+
+# Extra files for system-wide install, i.e., "make install"
+FILES_clips_files   = $(subst $(SRCDIR)/,,$(wildcard $(SRCDIR)/clips/*.clp))
+DESTDIR_clips_files = $(EXEC_SHAREDIR)/clips/clips_tsp
+
+ifeq ($(HAVE_CPP11)$(HAVE_CLIPS),11)
+  CFLAGS  += $(CFLAGS_CLIPS) $(CFLAGS_CPP11)
+  LDFLAGS += $(LDFLAGS_CLIPS)
+
+  PLUGINS_build = $(PLUGINS_all)
+
+	INSTALL_extra = clips_files
+else
+  ifneq ($(HAVE_CPP11),1)
+    WARN_TARGETS += warning_cpp11
+  endif
+  ifneq ($(HAVE_CLIPS),1)
+    WARN_TARGETS = warning_clips
+  endif
+endif
+
+ifeq ($(OBJSSUBMAKE),1)
+all: $(WARN_TARGETS)
+
+.PHONY: warning_clips warning_cpp11
+warning_clips:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting clips_tsp plugin$(TNORMAL) ($(CLIPS_ERROR))"
+
+warning_cpp11:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Cannot build clips_tsp plugin$(TNORMAL) (C++11 not supported)"
+
+endif
+
+include $(BUILDSYSDIR)/base.mk

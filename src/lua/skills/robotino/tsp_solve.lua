@@ -93,7 +93,7 @@ function INIT:init()
     end
     
     print(py_input_string)
-    local handle = io.popen("python /home/robotino/fawkes-robotino/src/lua/skills/robotino/tsp_robotino_mlrose.py "..tostring(roundtrip).." "..py_input_string)
+    local handle = io.popen("python /home/robotino/fawkes-robotino/src/lua/skills/robotino/tsp_robotino.py "..tostring(roundtrip).." "..py_input_string)
     self.fsm.vars.py_result_string = string.sub(handle:read("*a"),0,-1)
 
     print(self.fsm.vars.py_result_string)
