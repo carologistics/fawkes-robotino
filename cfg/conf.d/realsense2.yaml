@@ -12,7 +12,7 @@ realsense2:
 
   # If true, the camera will be enabled/disabled on incoming Enable/Disable
   # messages. If false, switch messages will be ignored.
-  use_switch: true
+  use_switch: false
 
   # Desired Frame rate. Device will try deliver new frames in time.
   # Use 0 for don't care
