@@ -1077,16 +1077,14 @@ The workpiece remains in the output of the used ring station after
 	(?rs ?col-ring1)
 	(bind ?price 0)
 	(do-for-fact ((?rs-ring-spec wm-fact))
-	             (and (wm-key-prefix ?rs-ring-spec:key (create$ domain fact rs-ring-spec))
-	                  (eq (wm-key-arg ?rs-ring-spec:key r ) ?col-ring1)
-	             )
-	           (bind ?num (wm-key-arg ?rs-ring-spec:key rn))
-	           (if (eq ?num ONE)
-	             then
-	              (bind ?price 1))
-	           (if (eq ?num TWO)
-	             then
-	               (bind ?price 2))
+	   (and (wm-key-prefix ?rs-ring-spec:key (create$ domain fact rs-ring-spec))
+	        (eq (wm-key-arg ?rs-ring-spec:key r ) ?col-ring1)
+	   )
+	   (bind ?num (wm-key-arg ?rs-ring-spec:key rn))
+	   (if (eq ?num ONE) then
+	      (bind ?price 1))
+	   (if (eq ?num TWO) then
+	       (bind ?price 2))
 	)
 	(bind ?goals (create$))
 	(loop-for-count ?price
@@ -1094,19 +1092,21 @@ The workpiece remains in the output of the used ring station after
 	   (assert (domain-object (name ?wp-base-pay) (type workpiece))
 	           (domain-fact (name wp-unused) (param-values ?wp-base-pay))
 	           (wm-fact (key domain fact wp-base-color args? wp ?wp-base-pay col BASE_NONE)
-	                   (type BOOL) (value TRUE))
+	              (type BOOL) (value TRUE))
 	   )
 	   (bind ?goals
-	      (insert$ ?goals (+ (length$ ?goals) 1)
-		(goal-tree-assert-central-run-one PAY-FOR-RING-GOAL
-			(goal-tree-assert-central-run-parallel INPUT-BS
-				(goal-production-assert-pay-for-rings-with-base ?wp-base-pay C-BS INPUT ?rs INPUT)
-				(goal-production-assert-instruct-bs-dispense-base ?wp-base-pay BASE_RED INPUT)
-			)
-			(goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN C-CS1 UNKNOWN ?rs INPUT)
-			(goal-production-assert-pay-for-rings-with-cap-carrier-from-shelf C-CS1 ?rs INPUT)
-		))
-	 ))
+		(insert$ ?goals (+ (length$ ?goals) 1)
+		   (goal-tree-assert-central-run-one PAY-FOR-RING-GOAL
+		      (goal-tree-assert-central-run-parallel INPUT-BS
+		          (goal-production-assert-pay-for-rings-with-base ?wp-base-pay C-BS INPUT ?rs INPUT)
+		          (goal-production-assert-instruct-bs-dispense-base ?wp-base-pay BASE_RED INPUT)
+		      )
+		     (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN C-CS1 UNKNOWN ?rs INPUT)
+		     (goal-production-assert-pay-for-rings-with-cap-carrier-from-shelf C-CS1 ?rs INPUT)
+		   )
+		)
+	   )
+	 )
 	(return ?goals)
 )
 
