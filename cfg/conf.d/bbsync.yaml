@@ -69,6 +69,22 @@ fawkes/bbsync:
         line7_avg_e2: TransformInterface::/tf/laser_line_avg_7_e2
         line8_avg_e1: TransformInterface::/tf/laser_line_avg_8_e1
         line8_avg_e2: TransformInterface::/tf/laser_line_avg_8_e2
+        line1_map_e1: TransformInterface::/tf/laser_line_map_1_e1
+        line1_map_e2: TransformInterface::/tf/laser_line_map_1_e2
+        line2_map_e1: TransformInterface::/tf/laser_line_map_2_e1
+        line2_map_e2: TransformInterface::/tf/laser_line_map_2_e2
+        line3_map_e1: TransformInterface::/tf/laser_line_map_3_e1
+        line3_map_e2: TransformInterface::/tf/laser_line_map_3_e2
+        line4_map_e1: TransformInterface::/tf/laser_line_map_4_e1
+        line4_map_e2: TransformInterface::/tf/laser_line_map_4_e2
+        line5_map_e1: TransformInterface::/tf/laser_line_map_5_e1
+        line5_map_e2: TransformInterface::/tf/laser_line_map_5_e2
+        line6_map_e1: TransformInterface::/tf/laser_line_map_6_e1
+        line6_map_e2: TransformInterface::/tf/laser_line_map_6_e2
+        line7_map_e1: TransformInterface::/tf/laser_line_map_7_e1
+        line7_map_e2: TransformInterface::/tf/laser_line_map_7_e2
+        line8_map_e1: TransformInterface::/tf/laser_line_map_8_e1
+        line8_map_e2: TransformInterface::/tf/laser_line_map_8_e2
         tfLaserFrontDist: TransformInterface::/tf/laser-front-dist
         motor-switch: SwitchInterface::Robotino Motor
         line1: LaserLineInterface::/laser-lines/1
@@ -87,6 +103,14 @@ fawkes/bbsync:
         line6avg: LaserLineInterface::/laser-lines/6/moving_avg
         line7avg: LaserLineInterface::/laser-lines/7/moving_avg
         line8avg: LaserLineInterface::/laser-lines/8/moving_avg
+        line1map: LaserLineInterface::/laser-lines/1/to_map
+        line2map: LaserLineInterface::/laser-lines/2/to_map
+        line3map: LaserLineInterface::/laser-lines/3/to_map
+        line4map: LaserLineInterface::/laser-lines/4/to_map
+        line5map: LaserLineInterface::/laser-lines/5/to_map
+        line6map: LaserLineInterface::/laser-lines/6/to_map
+        line7map: LaserLineInterface::/laser-lines/7/to_map
+        line8map: LaserLineInterface::/laser-lines/8/to_map
         pose: Position3DInterface::Pose
         laserswitch: SwitchInterface::/laser-cluster/ampel
         navigator: NavigatorInterface::Navigator
