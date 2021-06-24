@@ -947,27 +947,12 @@ The workpiece remains in the output of the used ring station after
 
 (deffunction goal-production-assert-deliver
 	(?wp)
-
 	(bind ?goal (assert (goal (class DELIVER)
 	      (id (sym-cat DELIVER- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE)
 	      (params wp ?wp
 	              target-mps C-DS
 	              target-side INPUT)
-	)))
-	(return ?goal)
-)
-
-(deffunction goal-production-assert-instruct-bs-dispense-base
-	(?wp ?base-color ?side)
-
-	(bind ?goal (assert (goal (class INSTRUCT-BS-DISPENSE-BASE)
-	  (id (sym-cat INSTRUCT-BS-DISPENSE-BASE- (gensym*))) (sub-type SIMPLE)
-	  (verbosity NOISY) (is-executable FALSE) (meta assigned-to central)
-	      (params wp ?wp
-	              target-mps C-BS
-	              target-side ?side
-	              base-color ?base-color)
 	)))
 	(return ?goal)
 )
@@ -1027,43 +1012,6 @@ The workpiece remains in the output of the used ring station after
 	(return ?goal)
 )
 
-(deffunction goal-production-assert-payment-goals
-	(?rs ?col-ring1)
-	(bind ?price 0)
-	(do-for-fact ((?rs-ring-spec wm-fact))
-	             (and (wm-key-prefix ?rs-ring-spec:key (create$ domain fact rs-ring-spec))
-	                  (eq (wm-key-arg ?rs-ring-spec:key r ) ?col-ring1)
-	             )
-	           (bind ?num (wm-key-arg ?rs-ring-spec:key rn))
-	           (if (eq ?num ONE)
-	             then
-	              (bind ?price 1))
-	           (if (eq ?num TWO)
-	             then
-	               (bind ?price 2))
-	)
-	(bind ?goals (create$))
-	(loop-for-count ?price
-	   (bind ?wp-base-pay (sym-cat BASE-PAY- (gensym*)))
-	   (assert (domain-object (name ?wp-base-pay) (type workpiece))
-	           (domain-fact (name wp-unused) (param-values ?wp-base-pay))
-	           (wm-fact (key domain fact wp-base-color args? wp ?wp-base-pay col BASE_NONE)
-	                   (type BOOL) (value TRUE))
-	   )
-	   (bind ?goals
-	      (insert$ ?goals (+ (length$ ?goals) 1)
-		(goal-tree-assert-central-run-one PAY-FOR-RING-GOAL
-			(goal-tree-assert-central-run-parallel INPUT-BS
-				(goal-production-assert-pay-for-rings-with-base ?wp-base-pay C-BS INPUT ?rs INPUT)
-				(goal-production-assert-instruct-bs-dispense-base ?wp-base-pay BASE_RED INPUT)
-			)
-;			(goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN C-CS1 UNKNOWN ?rs INPUT)
-;			(goal-production-assert-pay-for-rings-with-cap-carrier-from-shelf C-CS1 ?rs INPUT)
-		))
-	 ))
-	(return ?goals)
-)
-
 (deffunction goal-production-assert-instruct-cs-buffer-cap
  	(?mps ?cap-color)
 
@@ -1076,6 +1024,19 @@ The workpiece remains in the output of the used ring station after
 	(return ?goal)
 )
 
+(deffunction goal-production-assert-instruct-bs-dispense-base
+	(?wp ?base-color ?side)
+
+	(bind ?goal (assert (goal (class INSTRUCT-BS-DISPENSE-BASE)
+	  (id (sym-cat INSTRUCT-BS-DISPENSE-BASE- (gensym*))) (sub-type SIMPLE)
+	  (verbosity NOISY) (is-executable FALSE) (meta assigned-to central)
+	      (params wp ?wp
+	              target-mps C-BS
+	              target-side ?side
+	              base-color ?base-color)
+	)))
+	(return ?goal)
+)
 
 (deffunction goal-production-assert-instruct-ds-deliver
 	(?wp)
@@ -1110,6 +1071,43 @@ The workpiece remains in the output of the used ring station after
 	             )
 	)))
 	(return ?goal)
+)
+
+(deffunction goal-production-assert-payment-goals
+	(?rs ?col-ring1)
+	(bind ?price 0)
+	(do-for-fact ((?rs-ring-spec wm-fact))
+	             (and (wm-key-prefix ?rs-ring-spec:key (create$ domain fact rs-ring-spec))
+	                  (eq (wm-key-arg ?rs-ring-spec:key r ) ?col-ring1)
+	             )
+	           (bind ?num (wm-key-arg ?rs-ring-spec:key rn))
+	           (if (eq ?num ONE)
+	             then
+	              (bind ?price 1))
+	           (if (eq ?num TWO)
+	             then
+	               (bind ?price 2))
+	)
+	(bind ?goals (create$))
+	(loop-for-count ?price
+	   (bind ?wp-base-pay (sym-cat BASE-PAY- (gensym*)))
+	   (assert (domain-object (name ?wp-base-pay) (type workpiece))
+	           (domain-fact (name wp-unused) (param-values ?wp-base-pay))
+	           (wm-fact (key domain fact wp-base-color args? wp ?wp-base-pay col BASE_NONE)
+	                   (type BOOL) (value TRUE))
+	   )
+	   (bind ?goals
+	      (insert$ ?goals (+ (length$ ?goals) 1)
+		(goal-tree-assert-central-run-one PAY-FOR-RING-GOAL
+			(goal-tree-assert-central-run-parallel INPUT-BS
+				(goal-production-assert-pay-for-rings-with-base ?wp-base-pay C-BS INPUT ?rs INPUT)
+				(goal-production-assert-instruct-bs-dispense-base ?wp-base-pay BASE_RED INPUT)
+			)
+			(goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN C-CS1 UNKNOWN ?rs INPUT)
+			(goal-production-assert-pay-for-rings-with-cap-carrier-from-shelf C-CS1 ?rs INPUT)
+		))
+	 ))
+	(return ?goals)
 )
 
 (deffunction goal-production-assert-enter-field
