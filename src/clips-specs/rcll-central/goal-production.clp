@@ -159,7 +159,6 @@
 	      (meta $?meta&:(not (member$ assigned-to ?meta)))
 	      (is-executable FALSE))
 	(wm-fact (key central agent robot args? r ?robot))
-	(not (goal (class ~BEACON-MAINTAIN&~SEND-BEACON&~REFILL-SHELF-MAINTAIN) (mode SELECTED|EXPANDED|COMMITTED)))
 	(not (goal (meta $? assigned-to ?robot $?)))
 	(wm-fact (key central agent robot-waiting args? r ?robot))
 	(not (and (wm-fact (key central agent robot-waiting
@@ -323,9 +322,7 @@
 	(or (and
 	        (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
 	        (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
-	        (not (and (goal (id ?goal-id) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED))
-	                  (plan-action (goal-id ?goal-id)
-	                               (param-values $? ?cc $?))))
+	        (not (plan-action (action-name wp-get-shelf) (param-values $? ?wp $?)))
 	        (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
 	    )
 	    (and
@@ -664,9 +661,7 @@
 	;a CC (e.g. if the goal fails after pick-up)
 	(or (and (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?wp-loc spot ?spot))
 		     (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-		     (not (and (goal (id ?goal-id) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED))
-		               (plan-action (goal-id ?goal-id)
-		                            (param-values $? ?wp $?))))
+		     (not (plan-action (action-name wp-get-shelf) (param-values $? ?wp $?)))
 		)
 		(and (domain-object (name ?wp) (type cap-carrier))
 		     (wm-fact (key domain fact holding args? r ?robot wp ?wp))
