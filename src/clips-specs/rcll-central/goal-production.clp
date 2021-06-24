@@ -32,11 +32,6 @@
 	)
 )
 
-(deffunction is-goal-running (?mode)
-	(return (or (eq ?mode SELECTED) (eq ?mode EXPANDED)
-	            (eq ?mode COMMITTED) (eq ?mode DISPATCHED)))
-)
-
 (deffunction is-free (?target-pos)
 	(if (any-factp ((?at wm-fact))
 	        (and (wm-key-prefix ?at:key (create$ domain fact at))
