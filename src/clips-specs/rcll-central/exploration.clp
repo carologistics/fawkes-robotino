@@ -168,27 +168,25 @@
 "
 	(wm-fact (key exploration active) (type BOOL) (value TRUE))
 	(wm-fact (key central agent robot args? r ?r))
-  (LaserLineInterface
-		(id ?laser-id&:(str-index (str-cat ?r) ?laser-id))
-    (visibility_history ?vh&:(>= ?vh 1))
-    (time $?timestamp)
-    (end_point_1 $?ep1)
-    (end_point_2 $?ep2)
-    (frame_id ?frame)
-  )
-  (MotorInterface (id ?motor-id &:(eq ?motor-id (remote-if-id ?r "Robotino")))
+	(LaserLineInterface
+	  (id ?laser-id&:(str-index (str-cat ?r) ?laser-id))
+	  (visibility_history ?vh&:(>= ?vh 1))
+	  (time $?timestamp)
+	  (end_point_1 ?e1 ?e2 $?)
+	  (end_point_2 ?e3 ?e4 $?)
+	  (frame_id ?frame)
+	)
+	(MotorInterface (id ?motor-id &:(eq ?motor-id (remote-if-id ?r "Robotino")))
 	                (vx ?vx) (vy ?vy))
 
-  (exp-zone-margin ?zone-margin)
-  ?ze-f <- (wm-fact (key exploration fact line-vis args? zone ?zn&:(eq ?zn (get-zone ?zone-margin
-                                            (compensate-movement
-                                              ?*EXP-MOVEMENT-COMPENSATION*
-                                              (create$ ?vx ?vy)
-                                              (laser-line-center-map ?ep1 ?ep2 ?frame ?timestamp)
-                                              ?timestamp)))) (value ?zn-vh&:(< ?zn-vh 1) ))
-=>
-  (modify ?ze-f (key exploration fact line-vis args? zone ?zn) (value 1 ))
-  (printout warn "EXP found line: " ?zn " vh: " ?vh crlf)
+	(exp-zone-margin ?zone-margin)
+	?ze-f <- (wm-fact (key exploration fact line-vis
+	                  args? zone ?zn&:(eq ?zn (get-zone ?zone-margin
+	                                          (get-2d-center ?e1 ?e2 ?e3 ?e4))))
+	                                          (value ?zn-vh&:(< ?zn-vh 1) ))
+	=>
+	(modify ?ze-f (key exploration fact line-vis args? zone ?zn) (value 1 ))
+	(printout warn "EXP found line: " ?zn " vh: " ?vh crlf)
 )
 
 
