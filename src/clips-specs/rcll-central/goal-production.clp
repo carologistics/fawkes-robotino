@@ -48,6 +48,22 @@
 	)
 )
 
+(deffunction goal-production-get-machine-for-color
+	(?col-ring)
+
+	(bind ?rs FALSE)
+	(do-for-all-facts ((?mps-type wm-fact)) (and (wm-key-prefix ?mps-type:key (create$ domain fact mps-type))
+	                                             (eq (wm-key-arg ?mps-type:key t) RS))
+		(bind ?machine (wm-key-arg ?mps-type:key m))
+		(do-for-fact ((?rs-ring-spec wm-fact)) (and (wm-key-prefix ?rs-ring-spec:key (create$ domain fact rs-ring-spec))
+		                                            (eq (wm-key-arg ?rs-ring-spec:key m) ?machine)
+		                                            (eq (wm-key-arg ?rs-ring-spec:key r) ?col-ring))
+			(bind ?rs ?machine)
+		)
+	)
+	(return ?rs)
+)
+
 (defrule goal-production-navgraph-compute-wait-positions-finished
   "Add the waiting points to the domain once their generation is finished."
   (NavGraphWithMPSGeneratorInterface (id "/navgraph-generator-mps") (final TRUE))
@@ -1394,9 +1410,6 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key domain fact order-ring3-color args? ord ?order-id col ?col-ring3))
 	(wm-fact (key domain fact cs-color args? m ?cs col ?col-cap))
 	(wm-fact (key domain fact mps-type args? m ?cs t CS))
-	(wm-fact (key domain fact mps-type args? m ?rs1 t RS))
-	(wm-fact (key domain fact mps-type args? m ?rs2 t RS))
-	(wm-fact (key domain fact mps-type args? m ?rs3 t RS))
 	(not (wm-fact (key order meta wp-for-order args? wp ?something ord O1)))
 	(or (wm-fact (key domain fact order-ring1-color args? ord ?order-id col RING_NONE))
 	    (wm-fact (key domain fact rs-ring-spec args? m ?rs1 r ?col-ring1 $?)))
@@ -1405,6 +1418,12 @@ The workpiece remains in the output of the used ring station after
 	(or (wm-fact (key domain fact order-ring3-color args? ord ?order-id col RING_NONE))
 	    (wm-fact (key domain fact rs-ring-spec args? m ?rs3 r ?col-ring3 $?)))
 	=>
+	;find the necessary ringstations
+	(bind ?rs1 (goal-production-get-machine-for-color ?col-ring1))
+	(bind ?rs2 (goal-production-get-machine-for-color ?col-ring2))
+	(bind ?rs3 (goal-production-get-machine-for-color ?col-ring3))
+
+	;create facts for workpiece
 	(bind ?wp-for-order (sym-cat wp- ?order-id))
 	(assert (domain-object (name ?wp-for-order) (type workpiece))
   		  (domain-fact (name wp-unused) (param-values ?wp-for-order))
@@ -1419,16 +1438,16 @@ The workpiece remains in the output of the used ring station after
 		then
 		(goal-production-assert-c0 ?root-id ?order-id ?wp-for-order ?cs ?col-cap ?col-base)
 	)
-	(if (eq ?comp C1)
+	(if (and (eq ?comp C1) ?rs1)
 		then
 		(goal-production-assert-c1 ?root-id ?order-id ?wp-for-order ?cs ?rs1 ?col-cap ?col-base ?col-ring1)
 	)
-	(if (eq ?comp C2)
+	(if (and (eq ?comp C2) ?rs1 ?rs2)
 		then
 		(goal-production-assert-c2 ?root-id ?order-id ?wp-for-order ?cs
 	              ?rs1 ?rs2 ?col-cap ?col-base ?col-ring1 ?col-ring2)
 	)
-	(if (eq ?comp C3)
+	(if (and (eq ?comp C3) ?rs1 ?rs2 ?rs3)
 		then
 		(goal-production-assert-c3 ?root-id ?order-id ?wp-for-order ?cs
 	              ?rs1 ?rs2 ?rs3 ?col-cap ?col-base ?col-ring1 ?col-ring2 ?col-ring3)
