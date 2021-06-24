@@ -1518,13 +1518,6 @@ The workpiece remains in the output of the used ring station after
   (goal-production-assert-navigation-challenge ?root-id ?waypoints)
 )
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;
-;;;; ROBOCUP FIXES ;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;
-
 (defrule goal-production-assert-wait-nothing-executable
   "When the robot is stuck, assert a new goal that keeps it waiting"
   (declare (salience 0))
