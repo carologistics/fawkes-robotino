@@ -1,9 +1,9 @@
 
 /***************************************************************************
- *  clips_navgraph_plugin.cpp - NavGraph CLIPS Feature Plugin
+ *  clips_navgraph_plugin.cpp - TSP CLIPS Feature Plugin
  *
  *  Created: Wed Oct 09 19:25:47 2013
- *  Copyright  2006-2013  Tim Niemueller [www.niemueller.de]
+ *  Copyright  2021 Gjorgji Nikolovski [gjorgji.nikolovski@alumni.fh-aachen.de]
  *
  ****************************************************************************/
 

@@ -3,7 +3,7 @@
  *  clips_tsp_thread.cpp -  TSP feature for CLIPS
  *
  *  Created: Wed Oct 09 19:27:41 2013
- *  Copyright  2021 Gjorgji Nikolovski
+ *  Copyright  2021 Gjorgji Nikolovski [gjorgji.nikolovski@alumni.fh-aachen.de]
  ****************************************************************************/
 
 /*  This program is free software; you can redistribute it and/or modify
@@ -20,6 +20,7 @@
  */
 
 #include "clips_tsp_thread.h"
+
 #include <clipsmm.h>
 
 using namespace fawkes;
@@ -54,8 +55,7 @@ ClipsTSPThread::finalize()
 }
 
 void
-ClipsTSPThread::clips_context_init(const std::string &          env_name,
-                                        LockPtr<CLIPS::Environment> &clips)
+ClipsTSPThread::clips_context_init(const std::string &env_name, LockPtr<CLIPS::Environment> &clips)
 {
 	envs_[env_name] = clips;
 	logger->log_info(name(), "Called to initialize environment %s", env_name.c_str());
@@ -63,31 +63,28 @@ ClipsTSPThread::clips_context_init(const std::string &          env_name,
 	clips.lock();
 
 	clips->add_function("solve_tsp",
-	                    sigc::slot<std::string, std::string>(sigc::bind<0>(
-	                      sigc::mem_fun(*this, &ClipsTSPThread::solve_tsp),
-	                      env_name)));
+	                    sigc::slot<std::string, std::string>(
+	                      sigc::bind<0>(sigc::mem_fun(*this, &ClipsTSPThread::solve_tsp), env_name)));
 
 	clips.unlock();
 }
 
-
 std::string
-ClipsTSPThread::solve_tsp(std::string env_name, std::string params) 
+ClipsTSPThread::solve_tsp(std::string env_name, std::string params)
 {
-	char buffer[128];
+	char        buffer[128];
 	std::string result = "";
-	std::string input = "python /home/robotino/fawkes-robotino/src/lua/skills/robotino/tsp_robotino.py" + params;
+	std::string input =
+	  "python /home/robotino/fawkes-robotino/src/lua/skills/robotino/tsp_robotino.py" + params;
 	// Open pipe to file
-	FILE* pipe = popen(input.c_str(), "r");
+	FILE *pipe = popen(input.c_str(), "r");
 	if (!pipe) {
-		logger->log_error(name(),
-	                 "Could not open python script");
+		logger->log_error(name(), "Could not open python script");
 		return "";
 	}
 
 	// read till end of process:
 	while (!feof(pipe)) {
-
 		// use buffer to read and add to result
 		if (fgets(buffer, 128, pipe) != NULL)
 			result += buffer;
@@ -101,15 +98,12 @@ ClipsTSPThread::solve_tsp(std::string env_name, std::string params)
 	return result;
 }
 
-
 void
 ClipsTSPThread::clips_context_destroyed(const std::string &env_name)
 {
 	envs_.erase(env_name);
 	logger->log_info(name(), "Removing environment %s", env_name.c_str());
 }
-
-
 
 void
 ClipsTSPThread::loop()

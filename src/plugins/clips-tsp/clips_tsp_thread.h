@@ -3,7 +3,7 @@
  *  clips_tsp_thread.h - TSP feature for CLIPS
  *
  *  Created: Wed Oct 09 19:26:41 2013
- *  Copyright  2021 Gjorgji Nikolovski
+ *  Copyright  2021 Gjorgji Nikolovski [gjorgji.nikolovski@alumni.fh-aachen.de]
  *
  ****************************************************************************/
 
@@ -20,8 +20,8 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#ifndef _PLUGINS_CLIPS_TSP_CLIPS_NAVGRAPH_THREAD_H_
-#define _PLUGINS_CLIPS_TSP_CLIPS_NAVGRAPH_THREAD_H_
+#ifndef _PLUGINS_CLIPS_TSP_CLIPS_THREAD_H_
+#define _PLUGINS_CLIPS_TSP_CLIPS_THREAD_H_
 
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
@@ -32,13 +32,14 @@
 #include <string>
 #include <vector>
 
-namespace fawkes {}
+namespace fawkes {
+}
 
 class ClipsTSPThread : public fawkes::Thread,
-                            public fawkes::LoggingAspect,
-                            public fawkes::ConfigurableAspect,
-                            public fawkes::CLIPSFeature,
-                            public fawkes::CLIPSFeatureAspect
+                       public fawkes::LoggingAspect,
+                       public fawkes::ConfigurableAspect,
+                       public fawkes::CLIPSFeature,
+                       public fawkes::CLIPSFeatureAspect
 {
 public:
 	ClipsTSPThread();
@@ -60,11 +61,11 @@ protected:
 	{
 		Thread::run();
 	}
+
 private:
 	std::string solve_tsp(std::string env_name, std::string params);
 
 	std::map<std::string, fawkes::LockPtr<CLIPS::Environment>> envs_;
-
 };
 
 #endif
