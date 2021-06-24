@@ -468,7 +468,7 @@
 				)
 			)
 		else
-			(plan-assert-safe-move ?robot (wait-pos ?wp-loc INPUT) WAIT ?target-mps ?target-side
+			(plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps ?target-side
 				(plan-assert-action wp-put-slide-cc ?robot ?wp ?target-mps ?rs-before ?rs-after)
 			)
 		)
