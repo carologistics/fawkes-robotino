@@ -51,10 +51,9 @@ local tfm = require("fawkes.tfutils")
 local llutils = require("fawkes.laser-lines_utils")
 
 local x_distance = 0.28
-local gripper_adjust_z_distance = 0.03
+local gripper_adjust_z_distance = 0.0
 local gripper_adjust_x_distance = 0.005
 local adjust_target_frame = "gripper_home"
-local gripper_down_to_puck = -0.025
 
 local shelf_to_conveyor = 0.1
 local shelf_distance = 0.1
@@ -149,8 +148,7 @@ end
 fsm:define_states{ export_to=_M, closure={is_grabbed=is_grabbed},
    {"INIT", SkillJumpState, skills={{gripper_commands}}, final_to="GOTO_SHELF", fail_to="FAILED" },
    {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="MOVE_ABOVE_PUCK", fail_to="FAILED"},
-   {"MOVE_ABOVE_PUCK", SkillJumpState, skills={{gripper_commands}}, final_to="ADJUST_HEIGHT", fail_to="FAILED" },
-   {"ADJUST_HEIGHT", SkillJumpState, skills={{gripper_commands}}, final_to="GRAB_PRODUCT", fail_to="FAILED" },
+   {"MOVE_ABOVE_PUCK", SkillJumpState, skills={{gripper_commands}}, final_to="GRAB_PRODUCT", fail_to="FAILED" },
    {"GRAB_PRODUCT", SkillJumpState, skills={{gripper_commands}}, final_to="LEAVE_SHELF", fail_to="FAILED"},
    {"LEAVE_SHELF", SkillJumpState, skills={{motor_move}}, final_to="RESET_GRIPPER", fail_to="FAILED"},
    {"RESET_GRIPPER", SkillJumpState, skills={{reset_gripper}}, final_to="CHECK_PUCK", fail_to="FAILED"},
@@ -252,15 +250,6 @@ function MOVE_ABOVE_PUCK:init()
   self.args["gripper_commands"].y = pose.y
   self.args["gripper_commands"].z = gripper_adjust_z_distance
   self.args["gripper_commands"].command = "MOVEABS"
-  self.args["gripper_commands"].target_frame = "gripper_home"
-
-end
-
-function ADJUST_HEIGHT:init()
-
-  local pose = { x = 0, y = 0, z = gripper_down_to_puck }
-  self.args["gripper_commands"] = pose
-  self.args["gripper_commands"].command = "MOVEREL"
   self.args["gripper_commands"].target_frame = "gripper_home"
 
 end
