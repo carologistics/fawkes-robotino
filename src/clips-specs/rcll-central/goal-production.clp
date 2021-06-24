@@ -1114,8 +1114,8 @@ The workpiece remains in the output of the used ring station after
 	   (if (eq ?num TWO) then
 	       (bind ?price 2))
 	)
-	(bind ?goals (create$))
-	(loop-for-count ?price
+	(bind ?goals (create$ (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN C-CS1 UNKNOWN ?rs INPUT)))
+	(loop-for-count (- 1 ?price)
 	   (bind ?wp-base-pay (sym-cat BASE-PAY- (gensym*)))
 	   (assert (domain-object (name ?wp-base-pay) (type workpiece))
 	           (domain-fact (name wp-unused) (param-values ?wp-base-pay))
@@ -1125,7 +1125,6 @@ The workpiece remains in the output of the used ring station after
 	   (bind ?goals
 		(insert$ ?goals (+ (length$ ?goals) 1)
 		   (goal-tree-assert-central-run-one PAY-FOR-RING-GOAL
-		     (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN C-CS1 UNKNOWN ?rs INPUT)
 		     (goal-tree-assert-central-run-parallel INPUT-BS
 		          (goal-production-assert-pay-for-rings-with-base ?wp-base-pay C-BS INPUT ?rs INPUT)
 		          (goal-production-assert-instruct-bs-dispense-base ?wp-base-pay BASE_RED INPUT)
@@ -1206,7 +1205,6 @@ The workpiece remains in the output of the used ring station after
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
 				(goal-production-assert-buffer-cap ?cs ?col-cap)
 				(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap)
-				(goal-production-assert-discard UNKNOWN ?cs OUTPUT)
 			)
 		)
 		(goal-tree-assert-central-run-parallel MOUNT-GOALS
@@ -1244,7 +1242,6 @@ The workpiece remains in the output of the used ring station after
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
 				(goal-production-assert-buffer-cap ?cs ?col-cap)
 				(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap)
-				(goal-production-assert-discard UNKNOWN ?cs OUTPUT)
 			)
 		)
 		(goal-tree-assert-central-run-parallel MOUNT-GOALS
@@ -1286,7 +1283,6 @@ The workpiece remains in the output of the used ring station after
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
 				(goal-production-assert-buffer-cap ?cs ?col-cap)
 				(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap)
-				(goal-production-assert-discard UNKNOWN ?cs OUTPUT)
 			)
 		)
 		(goal-tree-assert-central-run-parallel MOUNT-GOALS
