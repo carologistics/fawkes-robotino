@@ -1,6 +1,0 @@
-%YAML 1.2
-%TAG ! tag:fawkesrobotics.org,cfg/
----
-skills:
-  product_pick:
-    gripper_down_z: -0.02
