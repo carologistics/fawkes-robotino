@@ -25,6 +25,7 @@
 
 #include <interfaces/Position3DInterface.h>
 #include <tf/transform_publisher.h>
+#include <tf/transformer.h>
 #include <tf/types.h>
 #include <utils/math/angle.h>
 
@@ -96,6 +97,7 @@ public:
 	                           u_int32_t                       index_,
 	                           fawkes::Clock *                 clock,
 	                           fawkes::tf::TransformPublisher *tf_publisher,
+                               fawkes::tf::Transformer *       tf_listener_tag,
 	                           std::string                     frame);
 	/// Destructor
 	~TagPositionInterfaceHelper();
@@ -162,6 +164,7 @@ private:
 
 	/// The transform publisher
 	fawkes::tf::TransformPublisher *tf_publisher_;
+    fawkes::tf::Transformer *       tf_listener_tag_;
 };
 
 #endif // TAG_POSITION_INTREFACE_H

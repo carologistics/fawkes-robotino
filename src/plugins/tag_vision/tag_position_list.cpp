@@ -84,7 +84,7 @@ TagPositionList::TagPositionList(fawkes::BlackBoard *     blackboard,
 			// generate a helper class and push it into this vector
 
 			this->push_back(new TagPositionInterfaceHelper(
-			  interface, i, this->clock_, main_thread_->get_tf_publisher(i), cam_frame));
+              interface, i, this->clock_, main_thread_->get_tf_publisher(i), tf_listener_ ,cam_frame));
 		} catch (std::exception &e) {
 			this->logger_->log_error(thread_name.c_str(), "Could not open the blackboard: %s", e.what());
 			throw(e);
