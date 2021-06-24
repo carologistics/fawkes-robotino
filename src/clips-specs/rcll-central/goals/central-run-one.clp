@@ -47,9 +47,9 @@
 (defrule central-run-one-goal-commit
 	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-ONE-OF-SUBGOALS) (mode EXPANDED))
 	(goal (id ?sub-goal) (parent ?id) (type ACHIEVE) (mode FORMULATED)
-	      (priority ?priority))
+	      (priority ?priority) (is-executable TRUE))
 	(not (goal (id ~?sub-goal) (parent ?id) (type ACHIEVE) (mode FORMULATED)
-	           (priority ?priority2&:(> ?priority2 ?priority))))
+	           (priority ?priority2&:(> ?priority2 ?priority)) (is-executable TRUE)))
 	=>
 	(modify ?gf (mode COMMITTED) (committed-to ?sub-goal))
 )
@@ -65,12 +65,9 @@
 
 (defrule central-run-one-goal-subgoals-select
 	(goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-ONE-OF-SUBGOALS)
-	      (mode DISPATCHED) (params $?params))
+	      (mode DISPATCHED) (params $?params) (committed-to ?sub-id))
 	?g <- (goal (parent ?id) (id ?sub-id) (type ACHIEVE) (mode FORMULATED)
 	      (priority ?prio) (is-executable TRUE))
-	(not (goal (parent ?id) (type ACHIEVE) (mode FORMULATED)
-	           (priority ?o-prio&:(> ?o-prio ?prio)) (is-executable TRUE)))
-	(not (goal (parent ?id) (type ACHIEVE) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 	=>
 	(modify ?g (mode SELECTED))
 )
@@ -115,7 +112,7 @@
 
 (defrule central-run-one-goal-subgoal-completed-clear-uncompleted
 	(goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-ONE-OF-SUBGOALS)
-	      (mode FINISHED) (outcome COMPLETED))
+	      (mode EVALUATED) (outcome COMPLETED))
 	?sg <- (goal (id ?sub-goal) (parent ?id) (type ACHIEVE) (mode FORMULATED))
 	=>
 	(retract ?sg)
