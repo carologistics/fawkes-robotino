@@ -274,6 +274,20 @@
 	(modify ?g (is-executable TRUE))
 )
 
+(defrule goal-production-move-robot-to-output-executable
+"Check executability to move to the output of the given mps. "
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (class MOVE) (sub-type SIMPLE)
+	            (mode FORMULATED)
+	            (params target-mps ?mps )
+	            (meta $? assigned-to ?robot $?)
+	            (is-executable FALSE))
+	(wm-fact (key domain fact maps args? m ?mps r ?robot))
+	=>
+	(printout t "Goal MOVE executable for " ?robot " at " ?mps crlf)
+	(modify ?g (is-executable TRUE))
+)
+
 (defrule goal-production-buffer-cap-executable
 " Bring a cap-carrier from a cap stations shelf to the corresponding mps input
   to buffer its cap. "
@@ -901,6 +915,17 @@ The workpiece remains in the output of the used ring station after
 	(return ?goal)
 )
 
+(deffunction goal-production-assert-move-robot-to-output
+	(?mps ?robot)
+	(bind ?goal (assert (goal (class MOVE)
+	      (id (sym-cat MOVE- (gensym*))) (sub-type SIMPLE)
+	      (verbosity NOISY) (is-executable FALSE)
+	      (params target-mps ?mps)
+	      (meta assigned-to ?robot)
+	)))
+	(return ?goal)
+)
+
 (deffunction goal-production-assert-mount-cap
 	(?wp ?mps ?wp-loc ?wp-side)
 
@@ -1344,18 +1369,21 @@ The workpiece remains in the output of the used ring station after
 		( goal-production-assert-pick-and-place C-BS robot1)
 		( goal-production-assert-pick-and-place C-BS robot1)
 		( goal-production-assert-pick-and-place C-BS robot1)
+		( goal-production-assert-move-robot-to-output C-BS robot1)
 	))
 	(modify ?g (parent ?root-id))
 	(bind ?g1 (goal-tree-assert-central-run-parallel PICK-AND-PLACE
 		( goal-production-assert-pick-and-place C-CS1 robot2)
 		( goal-production-assert-pick-and-place C-CS1 robot2)
 		( goal-production-assert-pick-and-place C-CS1 robot2)
+		( goal-production-assert-move-robot-to-output C-CS1 robot2)
 	))
 	(modify ?g1 (parent ?root-id))
 	(bind ?g2 (goal-tree-assert-central-run-parallel PICK-AND-PLACE
 		( goal-production-assert-pick-and-place C-RS1 robot3)
 		( goal-production-assert-pick-and-place C-RS1 robot3)
 		( goal-production-assert-pick-and-place C-RS1 robot3)
+		( goal-production-assert-move-robot-to-output C-RS1 robot3)
 	))
 	(modify ?g2 (parent ?root-id))
 )
