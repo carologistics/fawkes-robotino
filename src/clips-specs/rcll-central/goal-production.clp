@@ -1351,7 +1351,23 @@ The workpiece remains in the output of the used ring station after
   (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (parent ?root-id))
 )
 
-(defrule goal-production-create-root
+(defrule goal-production-create-exploration-root
+	"Create the production root under which all production trees for the orders
+	are asserted"
+	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	(domain-facts-loaded)
+	(not (goal (class EXPLORATION-ROOT)))
+	(wm-fact (key config rcll start-with-waiting-robots) (value TRUE))
+	(wm-fact (key refbox phase) (value EXPLORATION|PRODUCTION))
+	(wm-fact (key game state) (value RUNNING))
+	(wm-fact (key refbox team-color) (value ?color))
+	=>
+	(bind ?g (goal-tree-assert-central-run-parallel EXPLORATION-ROOT))
+	(modify ?g (meta do-not-finish))
+	(assert (wm-fact (key exploration active) (type BOOL) (value TRUE)))
+)
+
+(defrule goal-production-create-production-root
 	"Create the production root under which all production trees for the orders
 	are asserted"
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))

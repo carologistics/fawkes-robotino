@@ -264,7 +264,6 @@
   "Select the goal of highest priority of a run parallel if it is dispatched and
   is executable"
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
-  (goal (mode DISPATCHED) (class PRODUCTION-ROOT))
   (goal (id ?parent1) (mode DISPATCHED) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL) (priority ?p1))
   ?g <- (goal (id ?id) (parent ?parent1) (is-executable TRUE) (mode FORMULATED) (priority ?pc1))
   (not (goal (id ?nid&~?id) (parent ?parent1) (mode FORMULATED) (is-executable TRUE) (priority ?pc2&:(> ?pc2 ?pc1))))

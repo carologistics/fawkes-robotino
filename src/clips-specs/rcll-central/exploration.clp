@@ -256,7 +256,7 @@
 "
 	(wm-fact (key exploration active) (type BOOL) (value TRUE))
 	(wm-fact (key central agent robot args? r ?r))
-  (not (goal (class EXPLORE-ZONE)))
+  (goal (id ?parent) (class EXPLORATION-ROOT))
   (Position3DInterface (id ?pos-id&:(eq ?pos-id (remote-if-id ?r "Pose"))) (translation $?trans))
   ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn) (value ?ts&:(<= ?ts ?*EXP-SEARCH-LIMIT*)))
   (wm-fact (key domain fact zone-content args? z ?zn m UNKNOWN))
@@ -296,11 +296,17 @@
   =>
   (bind ?new-ts (+ 1 ?ts))
   (modify ?ze (value ?new-ts))
-  (printout t "Goal EXPLORE-ZONE  formulated in zone: " ?zn " with line: " ?vh " and tag: " ?tv crlf)
+  (printout t "Goal EXPLORE-ZONE  formulated in zone: " ?zn " with tag: " ?tv crlf)
   (assert (goal (id (sym-cat EXPLORE-ZONE- (gensym*))) (class EXPLORE-ZONE)
-	              (params z ?zn)))
+	              (params z ?zn) (parent ?parent) (mode FORMULATED)))
 )
 
+(defrule exp-explore-zone-executable
+	?g <- (goal (class EXPLORE-ZONE) (params z ?zn) (mode FORMULATED)
+	            (meta $? assigned-to ?robot$?) (is-executable FALSE))
+	=>
+	(modify ?g (is-executable TRUE))
+)
 
 (defrule exp-increase-search-limit
 " There are zones with tag or line findings, but the search limit is reached
