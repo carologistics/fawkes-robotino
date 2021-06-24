@@ -1131,11 +1131,11 @@ The workpiece remains in the output of the used ring station after
 	   (bind ?goals
 		(insert$ ?goals (+ (length$ ?goals) 1)
 		   (goal-tree-assert-central-run-one PAY-FOR-RING-GOAL
-		      (goal-tree-assert-central-run-parallel INPUT-BS
+		     (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN C-CS1 UNKNOWN ?rs INPUT)
+		     (goal-tree-assert-central-run-parallel INPUT-BS
 		          (goal-production-assert-pay-for-rings-with-base ?wp-base-pay C-BS INPUT ?rs INPUT)
 		          (goal-production-assert-instruct-bs-dispense-base ?wp-base-pay BASE_RED INPUT)
-		      )
-		     (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN C-CS1 UNKNOWN ?rs INPUT)
+		     )
 		     (goal-production-assert-pay-for-rings-with-cap-carrier-from-shelf C-CS1 ?rs INPUT)
 		   )
 		)
