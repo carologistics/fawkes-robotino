@@ -542,7 +542,7 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class PAY-FOR-RINGS-WITH-CAP-CARRIER)
 	                          (mode FORMULATED)
-	                          (params  wp UNKNOWN
+	                          (params  wp ?preset-wp
 	                                   wp-loc ?wp-loc
 	                                   wp-side UNKNOWN
 	                                   target-mps ?target-mps
@@ -597,7 +597,7 @@
 	         )
 	    )
 	    ; or the workpiece is already being held
-	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+	    (wm-fact (key domain fact holding args? r ?robot wp ?wp&:(eq ?wp ?preset-wp))))
 	=>
 	(bind ?wp-side nil)
 	(do-for-fact ((?wp-at wm-fact))
