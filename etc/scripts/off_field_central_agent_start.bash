@@ -3,7 +3,8 @@
 #
 # Copyright (C) 2021 Tarik Viehmann <viehmann@kbsg.rwth-aachen.de>
 #
-CFG_DIR=$FAWKES_DIR/cfg/host_off-field1.d
+HOST_DIR=$(uname -n)
+CFG_DIR=$FAWKES_DIR/cfg/host_$HOST_DIR.d
 ACTIVE_ROBOTS=$@
 
 if [ -z "$ACTIVE_ROBOTS" ]
