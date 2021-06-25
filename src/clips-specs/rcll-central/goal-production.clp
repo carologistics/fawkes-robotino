@@ -1110,11 +1110,7 @@ The workpiece remains in the output of the used ring station after
 			(and (wm-key-prefix ?rs-ring-spec:key (create$ domain fact rs-ring-spec))
 					(eq (wm-key-arg ?rs-ring-spec:key r ) (nth$ ?index ?cols-ring))
 			)
-			(bind ?num (wm-key-arg ?rs-ring-spec:key rn))
-			(if (eq ?num ONE) then
-				(bind ?price 1))
-			(if (eq ?num TWO) then
-				(bind ?price 2))
+			(bind ?price (sym-to-int (wm-key-arg ?rs-ring-spec:key rn)))
 		)
 		(if (and (not ?found-payment) (> ?price 0)) then
 			(bind ?found-payment TRUE)
