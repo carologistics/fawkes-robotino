@@ -297,7 +297,7 @@
   (bind ?new-ts (+ 1 ?ts))
   (modify ?ze (value ?new-ts))
   (printout t "Goal EXPLORE-ZONE  formulated in zone: " ?zn " with tag: " ?tv crlf)
-  (assert (goal (id (sym-cat EXPLORE-ZONE- (gensym*))) (class EXPLORE-ZONE)
+  (assert (goal (id (sym-cat EXPLORE-ZONE- (gensym*))) (class EXPLORE-ZONE) (sub-type SIMPLE)
 	              (params z ?zn) (parent ?parent) (mode FORMULATED)))
 )
 
