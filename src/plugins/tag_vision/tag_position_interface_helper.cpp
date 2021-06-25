@@ -48,7 +48,7 @@ TagPositionInterfaceHelper::TagPositionInterfaceHelper(
   u_int32_t                       index,
   fawkes::Clock *                 clock,
   fawkes::tf::TransformPublisher *tf_publisher,
-  fawkes::tf::Transformer *tf_listener_tag,
+  fawkes::tf::Transformer *       tf_listener_tag,
   std::string                     cam_frame)
 {
 	pos_iface_          = position_interface;
@@ -58,10 +58,10 @@ TagPositionInterfaceHelper::TagPositionInterfaceHelper(
 	was_seen_           = false;
 	clock_              = clock;
 
-	cam_frame_    = cam_frame;
-	tag_frame_    = TagVisionThread::tag_frame_basename + std::to_string(index);
-	tf_publisher_ = tf_publisher;
-    tf_listener_tag = tf_listener_tag_;
+	cam_frame_      = cam_frame;
+	tag_frame_      = TagVisionThread::tag_frame_basename + std::to_string(index);
+	tf_publisher_   = tf_publisher;
+	tf_listener_tag = tf_listener_tag_;
 }
 
 /**
@@ -129,7 +129,7 @@ TagPositionInterfaceHelper::set_pose(alvar::Pose new_pose)
 	                                        "map",
 	                                        tag_frame_ + "_to_map");
 	tf_publisher_->send_transform(stamped_transform);
-    tf_listener_tag_->lookup_transform(tag_frame_, "map", time, tag_to_map);
+	tf_listener_tag_->lookup_transform(tag_frame_, "map", time, tag_to_map);
 	tf_publisher_->send_transform(tag_to_map);
 }
 
