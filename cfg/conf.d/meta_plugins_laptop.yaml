@@ -30,8 +30,6 @@ fawkes/meta_plugins:
     - webtools-bridge
   m-clips-executive:
     - m-clips
-    - m-robot-memory
-    - clips_robot_memory
     - clips-pddl-parser
     - clips-executive
     - clips-executive-rest-api
@@ -54,4 +52,9 @@ fawkes/meta_plugins:
     - robot-memory
   m-full:
     - m-skiller
+    - m-clips-executive
+  m-distributed-clips-executive:
+    - m-robot-memory
+    - m-clips
+    - clips_robot_memory
     - m-clips-executive
