@@ -116,7 +116,6 @@
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (domain-facts-loaded)
   (not (goal (class REFILL-SHELF-MAINTAIN)))
-  (not (mutex (name ?n&:(eq ?n (resource-to-mutex refill-shelf))) (state LOCKED)))
   (wm-fact (key refbox phase) (value PRODUCTION))
   =>
   (bind ?goal (goal-tree-assert-run-endless REFILL-SHELF-MAINTAIN 1))
