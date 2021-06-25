@@ -197,6 +197,12 @@
 		(and (eq ?da:goal-id ?g:id) (neq ?da:grounded-with nil) (eq ?g:mode FORMULATED))
 		(modify ?da (grounded-with nil))
 	)
+	; deleting unused payment goal dependencies
+	(delayed-do-for-all-facts ((?da dependency-assignment))
+		(and (eq ?da:grounded-with nil)
+		     (is-goal-running ?da:mode))
+		(retract ?da)
+	)
 )
 
 (defrule goal-production-unassign-robot-from-finshed-goals
@@ -1304,6 +1310,7 @@ The workpiece remains in the output of the used ring station after
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
 				(goal-production-assert-buffer-cap ?cs ?col-cap)
 				(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap)
+				;(goal-production-assert-discard UNKNOWN ?cs OUTPUT)
 			)
 		)
 		(goal-tree-assert-central-run-parallel MOUNT-GOALS
