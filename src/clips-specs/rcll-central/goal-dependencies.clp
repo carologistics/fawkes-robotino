@@ -460,7 +460,7 @@
 	(goal (id ?mount-goal-id) ;TODO: checken ob das das letzte mount ring
 	      (class MOUNT-RING)
 	      (parent ?parent)
-	      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED|FINISHED|EVALUATED|RETRACTED)
 	      (params  wp ?wp
 	               target-mps ?rs
 	               $?))
