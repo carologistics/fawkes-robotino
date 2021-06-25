@@ -370,11 +370,8 @@
          )
   (domain-atomic-precondition (operator wp-put-slide-cc) (grounded-with ?action-id) (is-satisfied FALSE))
   (wm-fact (key domain fact rs-filled-with args? m ?rs n ?rs-num&:(not (eq ?rs-num ?rs-before))))
-  (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
+  (wm-fact (key domain fact rs-inc args? summand ?rs-num sum ?rs-num-after))
   =>
-  (if (and (eq ?rs-num ONE) (eq ?rs-after ONE))
-    then
-	(printout t "rs-before is unequal to rs-filled-with" crlf)
-	(modify ?pa (param-values ?robot ?wp ?rs ?rs-num TWO))
-  )
+  (printout t "execuction monitoring wp-put-slide-cc: rs-before is unequal to rs-filled-with" crlf)
+  (modify ?pa (param-values ?robot ?wp ?rs ?rs-num ?rs-num-after))
 )
