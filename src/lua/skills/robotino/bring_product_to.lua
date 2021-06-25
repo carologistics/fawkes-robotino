@@ -161,17 +161,14 @@ function FAILED:init()
   move_abs_message:set_target_frame("gripper_home")
   arduino:msgq_enqueue_copy(move_abs_message)
   laserline_switch:msgq_enqueue(laserline_switch.DisableSwitchMessage:new())
+  if self.fsm.vars.error then
+    self.fsm:set_error(self.fsm.vars.error)
+  end
 end
 
 function PRODUCT_PUT:exit()
   local pp_fsm = skillenv.get_skill_fsm("product_put")
   if pp_fsm.current == pp_fsm.states[pp_fsm.fail_state] then
     self.fsm.vars.error = "Product Put Failed"
-  end
-end
-
-function FAILED:init()
-  if self.fsm.vars.error then
-    self.fsm:set_error(self.fsm.vars.error)
   end
 end
