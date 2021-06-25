@@ -200,7 +200,10 @@
 	; deleting unused payment goal dependencies
 	(delayed-do-for-all-facts ((?da dependency-assignment))
 		(and (eq ?da:grounded-with nil)
-		     (is-goal-running ?da:mode))
+		     (or
+		         (eq ?da:class PAY-FOR-RINGS-WITH-BASE)
+		         (eq ?da:class PAY-FOR-RINGS-WITH-CAP-CARRIER)
+		         (eq ?da:class PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)))
 		(retract ?da)
 	)
 )
