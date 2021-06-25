@@ -126,7 +126,7 @@
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
-
+	
 	; MPS-CS CEs
 	(wm-fact (key domain fact mps-type args? m ?target-mps t CS))
 	(wm-fact (key domain fact mps-state args? m ?target-mps s ~BROKEN))
@@ -176,6 +176,7 @@
 	      ; or the workpiece is already being held
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp))
 	)
+	(goal (class MOVE-OUT-OF-WAY) (is-executable TRUE))
 	=>
 	(printout t "Goal " ?goal-id " executable for " ?robot
 	            " depending on goal " ?dependency-goal-id crlf)
@@ -270,6 +271,7 @@
 	    ; or the workpiece is already being held
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp))
 	)
+	(goal (class MOVE-OUT-OF-WAY) (is-executable TRUE))
 	=>
 	(printout t "Goal " ?goal-id " executable for " ?robot
 	            " depending on goal " ?dependency-goal-id
@@ -336,6 +338,7 @@
 	?instruct-da <- (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-CS-MOUNT-CAP))
 
 	(not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
+	(goal (class MOVE-OUT-OF-WAY) (is-executable TRUE))
 	=>
 	(printout t "Goal " ?goal-id " executable for " ?robot
 	            " depending on goal " ?mount-goal-id
@@ -384,6 +387,7 @@
 	?instruct-da <- (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-CS-MOUNT-CAP))
 
 	(not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
+	(goal (class MOVE-OUT-OF-WAY) (is-executable TRUE))
 	=>
 	(printout t "Goal " ?goal-id " executable for " ?robot
 	            " depending on goal " ?mount-goal-id
@@ -432,6 +436,7 @@
 	      (parent ?parent)	; depends on tree structur
 	      (mode FORMULATED))
 	?instruct-da <- (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-CS-BUFFER-CAP))
+	(goal (class MOVE-OUT-OF-WAY) (is-executable TRUE))
 	=>
 	(printout t "Goal " ?goal-id " executable for " ?robot
 	            " depending on goal " ?buffer-goal-id
