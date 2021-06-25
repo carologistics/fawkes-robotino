@@ -1369,7 +1369,7 @@ The workpiece remains in the output of the used ring station after
 	(not (wm-fact (key domain fact rs-ring-spec args? $? rn  NA)))
 	=>
 	(bind ?g (goal-tree-assert-central-run-parallel PRODUCTION-ROOT))
-	(modify ?g (meta do-not-finish))
+	(modify ?g (meta do-not-finish)(priority -1))
 )
 
 (defrule goal-production-create-move-out-of-way
@@ -1381,8 +1381,8 @@ The workpiece remains in the output of the used ring station after
 	=>
 	(bind ?g1 (goal-production-assert-move-out-of-way M_Z41))
 	(bind ?g2 (goal-production-assert-move-out-of-way M_Z31))
-	(modify ?g1 (parent ?root-id))
-	(modify ?g2 (parent ?root-id))
+	(modify ?g1 (parent ?root-id) (priority -1))
+	(modify ?g2 (parent ?root-id) (priority -1))
 )
 
 (defrule goal-production-create-pick-and-place
