@@ -444,7 +444,7 @@
   if the CS is buffered. "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class MOUNT-CAP)
-	                          (mode FORMULATED) ;TODO: checken ob das das richtige mount-ring (check if final-ring-color = ?ring-color)
+	                          (mode FORMULATED)
 	                          (params  wp ?wp
 	                                   target-mps ?cs
 	                                   target-side ?cs-side
@@ -457,7 +457,7 @@
 	(wm-fact (key refbox team-color) (value ?team-color))
 
 	; wp is not at RS OUTPUT, but after these goals finished, it will be
-	(goal (id ?mount-goal-id) ;TODO: checken ob das das letzte mount ring
+	(goal (id ?mount-goal-id)
 	      (class MOUNT-RING)
 	      (parent ?parent)
 	      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED|RETRACTED)
@@ -466,11 +466,10 @@
 	               $?))
 	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
 	(wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C1|C2|C3))
-	(or (wm-fact (key wp meta next-step args? wp ?wp) (value ?next-step&:(eq (sub-string 5 5 ?next-step) (sub-string 2 2 ?complexity))))
-	    (wm-fact (key wp meta next-step args? wp ?wp) (value CAP)))
+	(wm-fact (key wp meta next-step args? wp ?wp) (value ?next-step&:(eq (sub-string 5 5 ?next-step) (sub-string 2 2 ?complexity))))
 	?mount-da <- (dependency-assignment (goal-id ?goal-id) (class MOUNT-RING))
 
-	(wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
+	(wm-fact (key domain fact cs-buffered args? m ?cs col ?cap-color))
 
 	; get instruct goal through tree relationship to mount-ring, in this case sibling of grandparent
 	(goal (id ?parent) (parent ?grandparent))
@@ -478,7 +477,7 @@
 	(goal (id ?instruct-goal-id)
 	      (class INSTRUCT-RS-MOUNT-RING)
 	      (parent ?great-grandparent)
-	      (params target-mps ?mps
+	      (params target-mps ?rs
 	              ring-color ?ring-color)
 	      (mode FORMULATED))
 	?instruct-da <- (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-RS-MOUNT-RING))
@@ -487,7 +486,7 @@
 
 	; payments are or will be enough to mount-ring
 	(wm-fact (key domain fact rs-filled-with args? m ?rs n ?bases-filled))
-	(wm-fact (key domain fact rs-ring-spec args? m ?rs r ?col-ring rn ?bases-needed))
+	(wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring-color rn ?bases-needed))
 	(wm-fact (key domain fact rs-sub args? minuend ?bases-needed
 	                                  subtrahend ?bases-filled
 	                                  difference ?bases-missing&ZERO|ONE|TWO|THREE)) ;TODO: or filled>needed
@@ -514,27 +513,6 @@
 	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
 	               (params $? ?rs $?))
 	         (neq ?feed-id-1 ?feed-id-2)
-	    )
-	    (and (eq ?bases-missing THREE)
-	         (goal (id ?feed-id-1)
-	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-	               (class PAY-FOR-RINGS-WITH-BASE|
-	                      PAY-FOR-RINGS-WITH-CAP-CARRIER|
-	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
-	               (params $? ?rs $?))
-	         (goal (id ?feed-id-2)
-	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-	               (class PAY-FOR-RINGS-WITH-BASE|
-	                      PAY-FOR-RINGS-WITH-CAP-CARRIER|
-	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
-	               (params $? ?rs $?))
-	         (goal (id ?feed-id-3)
-	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-	               (class PAY-FOR-RINGS-WITH-BASE|
-	                      PAY-FOR-RINGS-WITH-CAP-CARRIER|
-	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
-	               (params $? ?rs $?))
-	         (neq ?feed-id-1 ?feed-id-2 ?feed-id-3)
 	    )
 	)
 	=>
