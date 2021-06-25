@@ -347,7 +347,7 @@
 " Allows move to current location by setting mps mps-side to be approachable.
 "
   (declare (salience ?*MONITORING-SALIENCE*))
-  (plan-action 
+  (plan-action
 	   (state PENDING)
 	   (action-name move)
 	   (param-values $? ?mps ?mps-side ?mps ?mps-side $?)
@@ -357,4 +357,27 @@
   (printout t "Move with equal start and target location "
                ?mps " " ?mps-side " is detected. Set side approachable" crlf)
   (assert (wm-fact (key domain fact mps-side-approachable args? m ?mps side ?mps-side) (type BOOL) (value TRUE)))
+)
+
+(defrule execution-monitoring-wp-put-slide-cc
+" Adapting params of wp-put-slide-cc if the number of rings of rs-before differs
+  from the number of rings the rs is filled with "
+  (declare (salience ?*MONITORING-SALIENCE*))
+  ?pa <- (plan-action (state PENDING)
+               (action-name wp-put-slide-cc)
+               (id ?action-id)
+               (param-values ?robot ?wp ?rs ?rs-before ?rs-after)
+         )
+  (domain-atomic-precondition (operator wp-put-slide-cc) (grounded-with ?action-id) (is-satisfied FALSE))
+  (wm-fact (key domain fact rs-filled-with args? m ?rs n ?rs-num))
+  (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
+  =>
+  (if (and (not (eq ?rs-num ?rs-before))
+          (eq ?rs-num ONE)
+          (eq ?rs-after ONE))
+    then
+	(printout t "rs-before is unequal to rs-filled-with" crlf)
+	(modify ?pa (param-values ?robot ?wp ?rs ?rs-num TWO))
+  )
+  (printout t "execution monitoring of wp-put-slide-cc" crlf)
 )
