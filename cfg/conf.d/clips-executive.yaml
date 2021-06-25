@@ -59,19 +59,11 @@ clips-executive:
           - name: navgraph
           - name: protobuf
           - name: tf
-          - name: robmem-wait
-            feature-request: false
-            files: ["BATCH|robmem-wait-init.clp"]
-            wait-for: robmem-initialized
-          - name: robot_memory
         stage-3:
           - name: utils
             file: rcll-central/utils.clp
-          - name: coordination
-            file: coordination-mutex.clp
           - name: worldmodel
             files:
-              - wm-robmem-sync.clp
               - rcll-central/init.clp
               - rcll-central/blackboard-init.clp
               - rcll-central/game-worldmodel.clp
@@ -81,8 +73,6 @@ clips-executive:
               - rcll-central/refbox-worldmodel.clp
           - name: domain
             file: rcll-central/domain.clp
-          - name: resource-locking
-            file: resource-locks.clp
           - name: goal-reasoner
             files:
               - goals/retry.clp
@@ -110,7 +100,6 @@ clips-executive:
               - skills-actions.clp
               - rcll-central/noop-actions.clp
               - rcll-central/refbox-actions.clp
-              - rcll-central/lock-actions.clp
               - rcll-central/wait-actions.clp
           - name: execution-monitoring
             file: rcll-central/execution-monitoring.clp
@@ -218,7 +207,6 @@ clips-executive:
           - name: worldmodel
             files:
               - wm-robmem-sync.clp
-              - rcll/init-wm-sync.clp
               - rcll/init-worldmodel.clp
               - rcll/game-worldmodel.clp
           - name: communication
