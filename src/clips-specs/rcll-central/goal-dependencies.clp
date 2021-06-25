@@ -460,13 +460,14 @@
 	(goal (id ?mount-goal-id) ;TODO: checken ob das das letzte mount ring
 	      (class MOUNT-RING)
 	      (parent ?parent)
-	      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED|FINISHED|EVALUATED|RETRACTED)
+	      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED|RETRACTED)
 	      (params  wp ?wp
 	               target-mps ?rs
 	               $?))
 	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
 	(wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C1|C2|C3))
-	(wm-fact (key wp meta next-step args? wp ?wp) (value ?next-step&:(eq (sub-string 5 5 ?next-step) (sub-string 2 2 ?complexity))))
+	(or (wm-fact (key wp meta next-step args? wp ?wp) (value ?next-step&:(eq (sub-string 5 5 ?next-step) (sub-string 2 2 ?complexity))))
+	    (wm-fact (key wp meta next-step args? wp ?wp) (value CAP)))
 	?mount-da <- (dependency-assignment (goal-id ?goal-id) (class MOUNT-RING))
 
 	(wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
