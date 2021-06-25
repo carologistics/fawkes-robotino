@@ -32,11 +32,6 @@
 	)
 )
 
-(deffunction is-goal-running (?mode)
-	(return (or (eq ?mode SELECTED) (eq ?mode EXPANDED)
-	            (eq ?mode COMMITTED) (eq ?mode DISPATCHED)))
-)
-
 (deffunction is-free (?target-pos)
 	(if (any-factp ((?at wm-fact))
 	        (and (wm-key-prefix ?at:key (create$ domain fact at))
@@ -322,6 +317,7 @@
 	(or (and
 	        (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
 	        (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
+	        (not (plan-action (action-name wp-get-shelf) (param-values $? ?wp $?)))
 	        (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
 	    )
 	    (and
@@ -542,7 +538,7 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class PAY-FOR-RINGS-WITH-CAP-CARRIER)
 	                          (mode FORMULATED)
-	                          (params  wp UNKNOWN
+	                          (params  wp ?preset-wp
 	                                   wp-loc ?wp-loc
 	                                   wp-side UNKNOWN
 	                                   target-mps ?target-mps
@@ -597,7 +593,7 @@
 	         )
 	    )
 	    ; or the workpiece is already being held
-	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+	    (wm-fact (key domain fact holding args? r ?robot wp ?wp&:(eq ?wp ?preset-wp))))
 	=>
 	(bind ?wp-side nil)
 	(do-for-fact ((?wp-at wm-fact))
@@ -660,6 +656,7 @@
 	;a CC (e.g. if the goal fails after pick-up)
 	(or (and (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?wp-loc spot ?spot))
 		     (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+		     (not (plan-action (action-name wp-get-shelf) (param-values $? ?wp $?)))
 		)
 		(and (domain-object (name ?wp) (type cap-carrier))
 		     (wm-fact (key domain fact holding args? r ?robot wp ?wp))
@@ -711,12 +708,6 @@ The workpiece remains in the output of the used ring station after
 	         (sym-cat order-ring (sub-string 5 5 ?ring) -color))
 	          args? ord ?order col ?ring-color ))
 	(wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C1|C2|C3))
-	; Ring spec & costs
-	(wm-fact (key domain fact rs-ring-spec
-	          args? m ?target-mps r ?ring-color&~RING_NONE rn ?bases-needed))
-	(wm-fact (key domain fact rs-sub args? minuend ?bases-filled
-	                                  subtrahend ?bases-needed
-	                                  difference ?bases-remain&ZERO|ONE|TWO|THREE))
 
 	(not (wm-fact (key domain fact wp-at args? wp ?wp-loc m ?target-mps side INPUT)))
 	(wm-fact (key domain fact mps-type args? m ?other-rs&~?target-mps t RS))
@@ -1107,39 +1098,51 @@ The workpiece remains in the output of the used ring station after
 )
 
 (deffunction goal-production-assert-payment-goals
-	(?rs ?col-ring1)
-	(bind ?price 0)
-	(do-for-fact ((?rs-ring-spec wm-fact))
-	   (and (wm-key-prefix ?rs-ring-spec:key (create$ domain fact rs-ring-spec))
-	        (eq (wm-key-arg ?rs-ring-spec:key r ) ?col-ring1)
-	   )
-	   (bind ?num (wm-key-arg ?rs-ring-spec:key rn))
-	   (if (eq ?num ONE) then
-	      (bind ?price 1))
-	   (if (eq ?num TWO) then
-	       (bind ?price 2))
-	)
+	(?rs ?cols-ring)
 	(bind ?goals (create$))
-	(loop-for-count ?price
-	   (bind ?wp-base-pay (sym-cat BASE-PAY- (gensym*)))
-	   (assert (domain-object (name ?wp-base-pay) (type workpiece))
-	           (domain-fact (name wp-unused) (param-values ?wp-base-pay))
-	           (wm-fact (key domain fact wp-base-color args? wp ?wp-base-pay col BASE_NONE)
-	              (type BOOL) (value TRUE))
-	   )
-	   (bind ?goals
-		(insert$ ?goals (+ (length$ ?goals) 1)
-		   (goal-tree-assert-central-run-one PAY-FOR-RING-GOAL
-		     (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN C-CS1 UNKNOWN ?rs INPUT)
-		     (goal-tree-assert-central-run-parallel INPUT-BS
-		          (goal-production-assert-pay-for-rings-with-base ?wp-base-pay C-BS INPUT ?rs INPUT)
-		          (goal-production-assert-instruct-bs-dispense-base ?wp-base-pay BASE_RED INPUT)
-		     )
-		     (goal-production-assert-pay-for-rings-with-cap-carrier-from-shelf C-CS1 ?rs INPUT)
-		   )
+
+	(bind ?found-payment FALSE)
+	(bind ?index 1)
+	(bind ?first-rs nil)
+	(loop-for-count (length$ ?rs)
+		(bind ?price 0)
+		(do-for-fact ((?rs-ring-spec wm-fact))
+			(and (wm-key-prefix ?rs-ring-spec:key (create$ domain fact rs-ring-spec))
+					(eq (wm-key-arg ?rs-ring-spec:key r ) (nth$ ?index ?cols-ring))
+			)
+			(bind ?price (sym-to-int (wm-key-arg ?rs-ring-spec:key rn)))
 		)
-	   )
-	 )
+		(if (and (not ?found-payment) (> ?price 0)) then
+			(bind ?found-payment TRUE)
+			(bind ?price (- ?price 1))
+			(bind ?first-rs (nth$ ?index ?rs))
+		)
+
+		(loop-for-count ?price
+			(bind ?wp-base-pay (sym-cat BASE-PAY- (gensym*)))
+			(assert (domain-object (name ?wp-base-pay) (type workpiece))
+					(domain-fact (name wp-unused) (param-values ?wp-base-pay))
+					(wm-fact (key domain fact wp-base-color args? wp ?wp-base-pay col BASE_NONE)
+						(type BOOL) (value TRUE))
+			)
+			(bind ?goals
+				(insert$ ?goals (+ (length$ ?goals) 1)
+					(goal-tree-assert-central-run-one PAY-FOR-RING-GOAL
+						(goal-tree-assert-central-run-parallel INPUT-BS
+							(goal-production-assert-pay-for-rings-with-base ?wp-base-pay C-BS INPUT (nth$ ?index ?rs) INPUT)
+							(goal-production-assert-instruct-bs-dispense-base ?wp-base-pay BASE_RED INPUT)
+						)
+						(goal-production-assert-pay-for-rings-with-cap-carrier-from-shelf C-CS1 (nth$ ?index ?rs) INPUT)
+					)
+				)
+			)
+	 	)
+		(bind ?index (+ ?index 1))
+	)
+	(if (eq ?found-payment TRUE) then
+		(bind ?goals (insert$ ?goals 1 (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN C-CS1 UNKNOWN ?first-rs INPUT)))
+	)
+
 	(return ?goals)
 )
 
@@ -1206,12 +1209,14 @@ The workpiece remains in the output of the used ring station after
 
   (bind ?goal
     (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-		(goal-production-assert-deliver ?wp-for-order)
+		;deliver-rc21 is a change specific to robocup 2021, for the normal game keep
+		;the old structure
+		;(goal-production-assert-deliver ?wp-for-order)
+		(goal-production-assert-deliver-rc21 ?wp-for-order)
 		(goal-tree-assert-central-run-parallel PREPARE-CS
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
 				(goal-production-assert-buffer-cap ?cs ?col-cap)
 				(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap)
-				(goal-production-assert-discard UNKNOWN ?cs OUTPUT)
 			)
 		)
 		(goal-tree-assert-central-run-parallel MOUNT-GOALS
@@ -1230,9 +1235,11 @@ The workpiece remains in the output of the used ring station after
 			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap)
 			(goal-production-assert-instruct-rs-mount-ring ?rs ?col-ring1)
 		)
-		(goal-production-assert-instruct-ds-deliver ?wp-for-order)
+		;deliver-rc21 is a change specific to robocup 2021, for the normal game keep
+		;the old structure
+		;(goal-production-assert-instruct-ds-deliver ?wp-for-order)
 		(goal-tree-assert-central-run-parallel PAYMENT-GOALS
-			(goal-production-assert-payment-goals ?rs ?col-ring1)
+			(goal-production-assert-payment-goals (create$ ?rs) (create$ ?col-ring1))
 		)
 	)
   )
@@ -1244,12 +1251,14 @@ The workpiece remains in the output of the used ring station after
 
   (bind ?goal
     (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-		(goal-production-assert-deliver ?wp-for-order)
+		;deliver-rc21 is a change specific to robocup 2021, for the normal game keep
+		;the old structure
+		;(goal-production-assert-deliver ?wp-for-order)
+		(goal-production-assert-deliver-rc21 ?wp-for-order)
 		(goal-tree-assert-central-run-parallel PREPARE-CS
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
 				(goal-production-assert-buffer-cap ?cs ?col-cap)
 				(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap)
-				(goal-production-assert-discard UNKNOWN ?cs OUTPUT)
 			)
 		)
 		(goal-tree-assert-central-run-parallel MOUNT-GOALS
@@ -1271,10 +1280,11 @@ The workpiece remains in the output of the used ring station after
 			(goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1)
 			(goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2)
 		)
-		(goal-production-assert-instruct-ds-deliver ?wp-for-order)
+		;deliver-rc21 is a change specific to robocup 2021, for the normal game keep
+		;the old structure
+		;(goal-production-assert-instruct-ds-deliver ?wp-for-order)
 		(goal-tree-assert-central-run-parallel PAYMENT-GOALS
-			(goal-production-assert-payment-goals ?rs1 ?col-ring1)
-			(goal-production-assert-payment-goals ?rs2 ?col-ring2)
+			(goal-production-assert-payment-goals (create$ ?rs1 ?rs2) (create$ ?col-ring1 ?col-ring2))
 		)
 	)
   )
@@ -1286,12 +1296,14 @@ The workpiece remains in the output of the used ring station after
 
   (bind ?goal
     (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-		(goal-production-assert-deliver ?wp-for-order)
+		;deliver-rc21 is a change specific to robocup 2021, for the normal game keep
+		;the old structure
+		;(goal-production-assert-deliver ?wp-for-order)
+		(goal-production-assert-deliver-rc21 ?wp-for-order)
 		(goal-tree-assert-central-run-parallel PREPARE-CS
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
 				(goal-production-assert-buffer-cap ?cs ?col-cap)
 				(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap)
-				(goal-production-assert-discard UNKNOWN ?cs OUTPUT)
 			)
 		)
 		(goal-tree-assert-central-run-parallel MOUNT-GOALS
@@ -1316,11 +1328,11 @@ The workpiece remains in the output of the used ring station after
 			(goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2)
 			(goal-production-assert-instruct-rs-mount-ring ?rs3 ?col-ring3)
 		)
-		(goal-production-assert-instruct-ds-deliver ?wp-for-order)
+		;deliver-rc21 is a change specific to robocup 2021, for the normal game keep
+		;the old structure
+		;(goal-production-assert-instruct-ds-deliver ?wp-for-order)
 		(goal-tree-assert-central-run-parallel PAYMENT-GOALS
-			(goal-production-assert-payment-goals ?rs1 ?col-ring1)
-			(goal-production-assert-payment-goals ?rs2 ?col-ring2)
-			(goal-production-assert-payment-goals ?rs3 ?col-ring3)
+			(goal-production-assert-payment-goals (create$ ?rs1 ?rs2 ?rs3) (create$ ?col-ring1 ?col-ring2 ?col-ring3))
 		)
 	)
   )
@@ -1552,5 +1564,13 @@ The workpiece remains in the output of the used ring station after
 	            (meta assigned-to ?robot)
   )))
   (modify ?goal (parent ?p))
+)
+
+(defrule goal-production-remove-retracted-wait-nothing-executable
+  "When a waith-nothing-executable goal is retracted, remove it to prevent spam"
+  (declare (salience 0))
+  ?g <- (goal (class WAIT-NOTHING-EXECUTABLE) (mode RETRACTED))
+  =>
+  (retract ?g)
 )
 
