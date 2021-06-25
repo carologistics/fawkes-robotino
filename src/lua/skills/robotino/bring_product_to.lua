@@ -28,7 +28,8 @@ fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"product_put", "drive_to_machine_point", "conveyor_align"}
 depends_interfaces = {
    {v = "laserline_switch", type = "SwitchInterface", id="laser-lines"},
-   {v = "robotino_sensor", type = "RobotinoSensorInterface", id="Robotino"} -- Interface to read I/O ports
+   {v = "robotino_sensor", type = "RobotinoSensorInterface", id="Robotino"}, -- Interface to read I/O ports
+   {v = "arduino", type = "ArduinoInterface", id="Arduino"},
  }
 
 documentation      = [==[ 
@@ -143,10 +144,22 @@ function PRODUCT_PUT:init()
 end
 
 function FINAL:init()
+  local move_abs_message = arduino.MoveXYZAbsMessage:new()
+  move_abs_message:set_x(0)
+  move_abs_message:set_y(0)
+  move_abs_message:set_z(0)
+  move_abs_message:set_target_frame("gripper_home")
+  arduino:msgq_enqueue_copy(move_abs_message)
   laserline_switch:msgq_enqueue(laserline_switch.DisableSwitchMessage:new())
 end
 
 function FAILED:init()
+  local move_abs_message = arduino.MoveXYZAbsMessage:new()
+  move_abs_message:set_x(0)
+  move_abs_message:set_y(0)
+  move_abs_message:set_z(0)
+  move_abs_message:set_target_frame("gripper_home")
+  arduino:msgq_enqueue_copy(move_abs_message)
   laserline_switch:msgq_enqueue(laserline_switch.DisableSwitchMessage:new())
 end
 
