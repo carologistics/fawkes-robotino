@@ -30,9 +30,9 @@
 	(wm-fact (key refbox team-color) (value ?team-color))
 	(wm-fact (key refbox field-ground-truth zone args? m ?name&:(eq
 	  (sub-string 1 1 ?name) (sub-string 1 1 ?team-color))) (value ?zone))
-	?zc <- (wm-fact (key domain fact zone-content args? z ?zone m UNKNOWN))
+	?zc <- (domain-fact (name zone-content) (param-values ?zone UNKNOWN))
 	=>
-	(modify ?zc (key domain fact zone-content args? z ?zone m ?name))
+	(modify ?zc (param-values ?zone ?name))
 )
 
 (defrule exp-enable
@@ -151,12 +151,12 @@
   (Position3DInterface (id ?pose-id&:(eq ?pose-id (remote-if-id ?r "Pose"))) (translation $?trans)
 	                     (time $?timestamp) (visibility_history ?vh&:(>= ?vh 10)))
   ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn&:(eq ?zn (get-zone 0.15 ?trans))) (value ?time-searched))
-  ?zm <- (wm-fact (key domain fact zone-content args? z ?zn m UNKNOWN))
+  ?zm <- (domain-fact (name zone-content) (param-values ?zn UNKNOWN))
 =>
   (bind ?zone (get-zone 0.07 ?trans))
   (if ?zone then
-    (modify ?ze (key exploration fact time-searched args? zone ?zn) (value (+ 1 ?time-searched)))
-    (modify ?zm (key domain fact zone-content args? z ?zn m NONE))
+    (modify ?ze (value (+ 1 ?time-searched)))
+    (modify ?zm (param-values ?zn NONE))
     (printout t "Passed through " ?zn crlf)
   )
 )
@@ -185,7 +185,7 @@
 	                                          (get-2d-center ?e1 ?e2 ?e3 ?e4))))
 	                                          (value ?zn-vh&:(< ?zn-vh 1) ))
 	=>
-	(modify ?ze-f (key exploration fact line-vis args? zone ?zn) (value 1 ))
+	(modify ?ze-f (value 1 ))
 	(printout warn "EXP found line: " ?zn " vh: " ?vh crlf)
 )
 
@@ -194,10 +194,10 @@
 " Every knowledge of a zone can be snyced to its counterpart on the other side of the field, since they are symmetrical
   Only syncs NONE machine, since syncing of a found machine is handled in another rule
 "
-  ?wm <- (wm-fact (key domain fact zone-content args? z ?zn m NONE))
-  ?we <- (wm-fact (key domain fact zone-content args? z ?zn2&:(eq ?zn2 (mirror-name ?zn)) m UNKNOWN))
+  (wm-fact (key domain fact zone-content args? z ?zn m NONE))
+  ?we <- (domain-fact (name zone-content) (param-values ?zn2&:(eq ?zn2 (mirror-name ?zn)) UNKNOWN))
   =>
-  (modify ?we (key domain fact zone-content args? z ?zn m NONE))
+  (modify ?we (param-values ?zn NONE))
   (printout t "Synced zone: " ?zn2 crlf)
 )
 
@@ -206,10 +206,10 @@
 " Mark a zone as empty if there can not be a machine according to the rules
 "
   (exploration-result (zone ?zn) (machine ?machine) (orientation ?orientation) )
-  ?wm <- (wm-fact (key domain fact zone-content args? z ?zn2 m UNKNOWN))
+  ?wm <- (domain-fact (name zone-content) (param-values ?zn2 UNKNOWN))
   (test (eq TRUE (zone-is-blocked ?zn ?orientation ?zn2 ?machine)))
   =>
-  (modify ?wm (key domain fact zone-content args? z ?zn m NONE))
+  (modify ?wm (param-values ?zn NONE))
   (printout t "There is a machine in " ?zn " with orientation " ?orientation  " so block " ?zn2 crlf)
 )
 
@@ -331,7 +331,6 @@
   (modify ?*EXP-SEARCH-LIMIT* (+ ?*EXP-SEARCH-LIMIT* 1))
 )
 
-
 (defrule exp-skill-explore-zone-final
 " Exploration of a zone finished succesfully. Update zone wm-fact and assert exploration-result
 "
@@ -345,25 +344,26 @@
   (domain-fact (name mps-type) (param-values ?machine ?mtype))
 
   ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (value ?times-searched))
-  ?zm <- (wm-fact (key domain fact zone-content args? z ?zn2 m ?))
-  ?zm2 <- (wm-fact (key domain fact zone-content args? z ?zn3&:(eq (mirror-name ?zn2) ?zn3) m ?))
+  ?zm <- (domain-fact (name zone-content) (param-values ?zn2 ?))
+  ; This is for a mirrored field
+  ;?zm2 <- (domain-fact (name zone-content) (param-values ?zn3&:(eq (mirror-name ?zn2) ?zn3) ?))
 
   (not (exploration-result (machine ?machine) (zone ?zn2)))
   =>
   (modify ?ze (value (+ 1 ?times-searched)))
-  (modify ?zm (key domain fact zone-content args? z ?zn2 m ?machine))
-  (modify ?zm2 (key domain fact zone-content args? z ?zn3 m (mirror-name ?machine)))
+  (modify ?zm (param-values ?zn2 ?machine))
+  ;(modify ?zm2 (param-values ?zn3 (mirror-name ?machine)))
   (assert
     (exploration-result
       (machine ?machine) (zone ?zn2)
       (orientation ?orientation)
       (team ?team-color)
     )
-    (exploration-result
-      (machine (mirror-name ?machine)) (zone (mirror-name ?zn2))
-      (orientation (mirror-orientation ?mtype ?zn2 ?orientation))
-      (team (mirror-team ?team-color))
-    )
+    ;(exploration-result
+    ;  (machine (mirror-name ?machine)) (zone (mirror-name ?zn2))
+    ;  (orientation (mirror-orientation ?mtype ?zn2 ?orientation))
+    ;  (team (mirror-team ?team-color))
+    ;)
   )
   (printout t "EXP exploration fact zone successfull. Found " ?machine " in " ?zn2 crlf)
 )
