@@ -148,7 +148,25 @@
 	                               (grounded-with nil)))
 )
 
-;TODO: same with mount-ring-mount-ring
+(defrule goal-dependencies-mount-ring-mount-ring
+" Every mount-ring goal depends on the mount-ring class. Per default, no mount-ring goal is grounded. "
+	; needs to be higher than SALIENCE-GOAL-EXECUTABLE-CHECK
+	(declare (salience (+ ?*SALIENCE-GOAL-EXECUTABLE-CHECK* 1)))
+	?g <- (goal (id ?goal-id) (class MOUNT-RING) (mode FORMULATED))
+	(not (dependency-assignment (goal-id ?goal-id) (class MOUNT-RING)))
+	(not (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-RS-MOUNT-RING)))
+	=>
+	(printout t "Goal " ?goal-id " depends on class MOUNT-RING " crlf)
+	(assert (dependency-assignment (goal-id ?goal-id)
+	                               (class MOUNT-RING)
+	                               (wait-for WP)
+	                               (grounded-with nil)))
+	(printout t "Goal " ?goal-id " depends on class INSTRUCT-RS-MOUNT-RING " crlf)
+	(assert (dependency-assignment (goal-id ?goal-id)
+	                               (class INSTRUCT-RS-MOUNT-RING)
+	                               (wait-for WP)
+	                               (grounded-with nil)))
+)
 
 ; ---------------------------- Executability Check ---------------------------
 ; ----------------------------- under Dependencies ---------------------------
@@ -441,7 +459,7 @@
 
 (defrule goal-dependencies-mount-cap-mount-ring-executable
 " Even if mount-ring is still executing, mount-cap can already be executable
-  if the CS is buffered. "
+  if the CS is buffered and all payments are about to be done. "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class MOUNT-CAP)
 	                          (mode FORMULATED)
@@ -488,10 +506,10 @@
 	(wm-fact (key domain fact rs-filled-with args? m ?rs n ?bases-filled))
 	(wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring-color rn ?bases-needed))
 	(wm-fact (key domain fact rs-sub args? minuend ?bases-needed
-	                                  subtrahend ?bases-filled
-	                                  difference ?bases-missing&ZERO|ONE|TWO|THREE)) ;TODO: or filled>needed
-	(or (eq ?bases-missing ZERO)
-	    (and (eq ?bases-missing ONE)
+	                                       subtrahend ?bases-filled
+	                                       difference ?bases-missing&ZERO|ONE|TWO|THREE)) ;TODO: or filled>needed
+	(or (test (eq ?bases-missing ZERO))
+	    (and (test (eq ?bases-missing ONE))
 	         (goal (id ?feed-id-1)
 	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	               (class PAY-FOR-RINGS-WITH-BASE|
@@ -499,7 +517,7 @@
 	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
 	               (params $? ?rs $?))
 	    )
-	    (and (eq ?bases-missing TWO)
+	    (and (test (eq ?bases-missing TWO))
 	         (goal (id ?feed-id-1)
 	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	               (class PAY-FOR-RINGS-WITH-BASE|
