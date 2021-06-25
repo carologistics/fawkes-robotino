@@ -48,7 +48,7 @@ TagPositionInterfaceHelper::TagPositionInterfaceHelper(
   u_int32_t                       index,
   fawkes::Clock *                 clock,
   fawkes::tf::TransformPublisher *tf_publisher,
-  fawkes::tf::Transformer *       tf_listener_tag,
+  fawkes::tf::Transformer *       tf_listener,
   std::string                     cam_frame)
 {
 	pos_iface_          = position_interface;
@@ -58,10 +58,10 @@ TagPositionInterfaceHelper::TagPositionInterfaceHelper(
 	was_seen_           = false;
 	clock_              = clock;
 
-	cam_frame_      = cam_frame;
-	tag_frame_      = TagVisionThread::tag_frame_basename + std::to_string(index);
-	tf_publisher_   = tf_publisher;
-	tf_listener_tag = tf_listener_tag_;
+	cam_frame_    = cam_frame;
+	tag_frame_    = TagVisionThread::tag_frame_basename + std::to_string(index);
+	tf_publisher_ = tf_publisher;
+	tf_listener_  = tf_listener;
 }
 
 /**
@@ -123,14 +123,29 @@ TagPositionInterfaceHelper::set_pose(alvar::Pose new_pose)
                                                       new_pose.translation[2] / 1000));
 	fawkes::Time                 time(clock_);
 	fawkes::tf::StampedTransform stamped_transform(transform, time, cam_frame_, tag_frame_);
-	fawkes::tf::StampedTransform tag_to_map(fawkes::tf::Transform(fawkes::tf::Quaternion(),
-	                                                              btVector3()),
-	                                        time,
-	                                        "map",
-	                                        tag_frame_ + "_to_map");
-	tf_publisher_->send_transform(stamped_transform);
-	tf_listener_tag_->lookup_transform(tag_frame_, "map", time, tag_to_map);
-	tf_publisher_->send_transform(tag_to_map);
+
+	try {
+    fawkes::tf::Stamped<fawkes::tf::Pose> tag_in_cam_pose(
+          fawkes::tf::Pose(fawkes::tf::Quaternion(result.getX(),result.getY(),result.getZ(),result.getW()),
+                   fawkes::tf::Vector3(new_pose.translation[0] / 1000, new_pose.translation[1] / 1000, new_pose.translation[2] / 1000)),
+          fawkes::Time(0, 0),
+          cam_frame_);
+      fawkes::tf::Stamped<fawkes::tf::Pose> tag_in_map_pose;
+      tf_listener_->transform_pose("map", tag_in_cam_pose, tag_in_map_pose);
+
+      fawkes::tf::Vector3     tf_pose_pos(tag_in_map_pose.getOrigin());
+      fawkes::tf::Quaternion  tf_pose_ori(tag_in_map_pose.getRotation());
+	    fawkes::tf::StampedTransform tag_to_map(fawkes::tf::Transform(tf_pose_ori, tf_pose_pos),
+	                                            time,
+	                                            "map",
+	                                            tag_frame_ + "_to_map");
+	    tf_publisher_->send_transform(tag_to_map);
+
+
+  } catch (fawkes::tf::TransformException &e) {
+    std::cout << "Can't transform to " << tag_frame_ << " " << e.what() << std::endl;
+  }
+
 }
 
 /**
