@@ -427,3 +427,8 @@
 	=>
 	(retract ?g)
 )
+
+(deffunction is-goal-running (?mode)
+	(return (or (eq ?mode SELECTED) (eq ?mode EXPANDED)
+	            (eq ?mode COMMITTED) (eq ?mode DISPATCHED)))
+)
