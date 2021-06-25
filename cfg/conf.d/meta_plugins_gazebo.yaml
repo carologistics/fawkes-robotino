@@ -70,6 +70,10 @@ fawkes/meta_plugins:
     - gazsim-meta-skiller
     - m-clips-executive
 
+  gazsim-meta-distributed-clips-exec:
+    - gazsim-meta-skiller
+    - m-distributed-clips-executive
+
   gazsim-meta-gologpp:
     - gazsim-meta-skiller
     - protoboard-rcll
