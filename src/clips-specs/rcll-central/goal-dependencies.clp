@@ -126,7 +126,7 @@
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
-	
+
 	; MPS-CS CEs
 	(wm-fact (key domain fact mps-type args? m ?target-mps t CS))
 	(wm-fact (key domain fact mps-state args? m ?target-mps s ~BROKEN))
