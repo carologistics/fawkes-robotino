@@ -3,11 +3,11 @@
 ---
 hardware/laser:
   front:
-    time_offset: -0.072911
+    time_offset: 0.022911
     host: 192.168.0.32
     port: 2112
   back:
-    time_offset: -0.028779
+    time_offset: 0.018779
     host: 192.168.0.33
     port: 2112
 
