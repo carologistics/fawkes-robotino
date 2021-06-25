@@ -247,10 +247,6 @@
 	            (params target-pos ?target-pos location ?loc)
 	            (meta $? assigned-to ?robot $?)
 	            (is-executable FALSE))
-	; is executable if no other goal exists which is executable for the robot
-	; beside a goal of the same class
-	(not (goal (meta $? assigned-to ?robot $?) (is-executable TRUE) (class ~MOVE-OUT-OF-WAY)))
-	;    (goal (class MOVE-OUT-OF-WAY)))
 	; check if target position is free
 	(test (is-free ?target-pos))
 	=>
@@ -1351,7 +1347,7 @@ The workpiece remains in the output of the used ring station after
 	(not (wm-fact (key domain fact rs-ring-spec args? $? rn  NA)))
 	=>
 	(bind ?g (goal-tree-assert-central-run-parallel PRODUCTION-ROOT))
-	(modify ?g (meta do-not-finish))
+	(modify ?g (meta do-not-finish)(priority -1))
 )
 
 (defrule goal-production-create-move-out-of-way
@@ -1363,8 +1359,8 @@ The workpiece remains in the output of the used ring station after
 	=>
 	(bind ?g1 (goal-production-assert-move-out-of-way M_Z41))
 	(bind ?g2 (goal-production-assert-move-out-of-way M_Z31))
-	(modify ?g1 (parent ?root-id))
-	(modify ?g2 (parent ?root-id))
+	(modify ?g1 (parent ?root-id) (priority -1))
+	(modify ?g2 (parent ?root-id) (priority -1))
 )
 
 (defrule goal-production-create-pick-and-place
