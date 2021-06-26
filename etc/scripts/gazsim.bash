@@ -207,7 +207,7 @@ while true; do
 	     META_PLUGIN="-m $OPTARG"
 	     ;;
 	 -a)
-	     META_PLUGIN="-m gazsim-meta-clips-exec"
+	     META_PLUGIN="-m gazsim-meta-distributed-clips-exec"
 	     ;;
      --mongodb)
          START_MONGODB=true
