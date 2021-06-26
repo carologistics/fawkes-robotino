@@ -65,4 +65,4 @@ arduino:
     # CAREFUL! setting this too high can also make open not working
     # a good starting value is 120*a where a
     # is the microstepping mode of the A motor
-    a_toggle_steps: 215
+    a_toggle_steps: 225
