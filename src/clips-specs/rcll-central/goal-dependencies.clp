@@ -507,7 +507,7 @@
 	(wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring-color rn ?bases-needed))
 	(wm-fact (key domain fact rs-sub args? minuend ?bases-needed
 	                                       subtrahend ?bases-filled
-	                                       difference ?bases-missing&ZERO|ONE|TWO|THREE)) ;TODO: or filled>needed
+	                                       difference ?bases-missing&ZERO|ONE|TWO|THREE)) ;for future: or filled>needed
 	(or (test (eq ?bases-missing ZERO))
 	    (and (test (eq ?bases-missing ONE))
 	         (goal (id ?feed-id-1)
@@ -539,7 +539,7 @@
 	            " and goal " ?instruct-goal-id crlf)
 	; create dependency-assignments to all payment goals of dependency-goal mount-ring
 	(do-for-all-facts ((?pay goal))
-	    (and (is-goal-running ?pay:mode) ;TODO: checken, ob expansion goal params ändert
+	    (and (is-goal-running ?pay:mode)  ;for future: check if goal expansion changes params
 	         (or
 	             (eq ?pay:class PAY-FOR-RINGS-WITH-BASE)
 	             (eq ?pay:class PAY-FOR-RINGS-WITH-CAP-CARRIER)
@@ -601,7 +601,7 @@
 	(wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring-color rn ?bases-needed))
 	(wm-fact (key domain fact rs-sub args? minuend ?bases-needed
 	                                       subtrahend ?bases-filled
-	                                       difference ?bases-missing&ZERO|ONE|TWO|THREE)) ;TODO: or filled>needed
+	                                       difference ?bases-missing&ZERO|ONE|TWO|THREE)) ;for future: or filled>needed
 	(or (test (eq ?bases-missing ZERO))
 	    (and (test (eq ?bases-missing ONE))
 	         (goal (id ?feed-id-1)
@@ -633,7 +633,7 @@
 	            " and goal " ?instruct-goal-id crlf)
 	; create dependency-assignments to all payment goals of dependency-goal mount-ring
 	(do-for-all-facts ((?pay goal))
-	    (and (is-goal-running ?pay:mode) ;TODO: checken, ob expansion goal params ändert
+	    (and (is-goal-running ?pay:mode) ;for future: check if goal expansion changes params
 	         (or
 	             (eq ?pay:class PAY-FOR-RINGS-WITH-BASE)
 	             (eq ?pay:class PAY-FOR-RINGS-WITH-CAP-CARRIER)
