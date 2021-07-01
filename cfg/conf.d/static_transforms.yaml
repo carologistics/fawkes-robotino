@@ -52,13 +52,14 @@ plugins/static-transforms:
       trans_y: 0
       trans_z: 0.768
 
-    # this system is located in the gripper where the puck should be held
-    gripper_z_home:
+    # this system is located in the middle of the Z axis' carriage when all
+    # three axes are in it's home positions.
+    gripper_home:
       frame: !frame plate_top
       child_frame: !frame gripper_home
-      trans_x: 0.045
+      trans_x: 0.0312
       trans_y: 0.0
-      trans_z: 0.1817
+      trans_z: 0.1808
 
     # Move the gripper to (0,0,0) in this frame to calibrate conveyor_pose
     conveyor_calib:
@@ -68,22 +69,14 @@ plugins/static-transforms:
       trans_y: 0
       trans_z: 0.01
 
-    # this system is located in the gripper where the puck should be held
-    gripper_base:
-      frame: !frame plate_top
-      child_frame: !frame gripper_base
-      trans_x: 0.04
-      trans_y: 0.0
-      trans_z: 0.147
-
     # Offset from plate_top to the topmost middle point of the
     # X axis'(metal) carriage, when the gripper is at its home position.
     gripper_x_origin:
       frame: !frame plate_top
       child_frame: !frame gripper_x_origin
-      trans_x: 0.034
+      trans_x: 0.0197
       trans_y: 0.0
-      trans_z: 0.0492
+      trans_z: 0.0493
 
     # Offset from the X axis' moving carriage middle point to the topmost
     # middle point of the Y axis' carriage, when the gripper
@@ -91,12 +84,12 @@ plugins/static-transforms:
     gripper_y_origin:
       frame: !frame gripper_x_dyn
       child_frame: !frame gripper_y_origin
-      trans_x: -0.0135
+      trans_x: -0.013
       trans_y: 0.0
       trans_z: 0.034
 
-    # Offset from the Y axis' moving carriage middle point to the topmost
-    # middle point of the Z axis' carriage, when the gripper
+    # Offset from the Y axis' moving carriage middle point to the middle point
+    # of the Z axis' carriage on the front facing surface, while the gripper
     # is at its home position.
     gripper_z_origin:
       frame: !frame gripper_y_dyn
@@ -110,14 +103,14 @@ plugins/static-transforms:
       child_frame: !frame gripper
       trans_x: 0.152
       trans_y: 0.0
-      trans_z: -0.0537
+      trans_z: -0.0545
 
     cam_base:
       frame: !frame gripper_y_dyn
       child_frame: !frame cam_base
-      trans_x: 0.07
-      trans_y: 0.02
-      trans_z: 0.004
+      trans_x: 0.065
+      trans_y: 0.021
+      trans_z: 0.0009
       rot_yaw: 1.57
       rot_pitch: 0.0
       rot_roll: 1.44

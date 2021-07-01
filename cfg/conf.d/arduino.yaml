@@ -23,7 +23,6 @@ arduino:
   joystick_interface_id: Joystick
 
   gripper_frame_id: gripper_home
-  gripper_base_frame_id: gripper_base
   gripper_origin_x_frame_id: gripper_x_origin
   gripper_origin_y_frame_id: gripper_y_origin
   gripper_origin_z_frame_id: gripper_z_origin
