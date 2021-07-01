@@ -245,7 +245,7 @@ ConveyorPlaneThread::loop()
 			//--       I'M SURE THIS COULD AND SHOULD BE DONE MORE FLEXIBLE, BUT I'VE
 			//NO IDEA ATM
 			//-- shift pose to the top conveyor belt
-			pose_average.translation += tf::Vector3(0.f, cfg_plane_height_minimum_ * 0.5f, 0.f);
+			pose_average.translation += tf::Vector3(0.f, cfg_plane_height_minimum_ * 0.85f, 0.f);
 
 			pose_write(pose_average);
 
