@@ -38,7 +38,9 @@
 
 namespace fawkes {
 class YoloOpenCVInterface;
-};
+class Time;
+class TimeTracker;
+}; // namespace fawkes
 
 namespace yolo_opencv {
 
@@ -183,6 +185,15 @@ private:
 	int                          msgid;
 	std::vector<std::string>     classes;
 	cv::dnn::Net                 net;
+
+	bool                 use_timetracker = true;
+	fawkes::TimeTracker *tt_;
+	unsinged int         tt_loopcount_;
+	unsinged int         ttc_full_loop_;
+	unsinged int         ttc_read_image_path_;
+	unsinged int         ttc_preprocessing_;
+	unsinged int         ttc_forward_pass_;
+	unsinged int         ttc_postprocessing_;
 };
 
 #endif

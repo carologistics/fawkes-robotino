@@ -20,6 +20,8 @@
 #include "yolo_opencv_thread.h"
 
 #include <interfaces/YoloOpenCVInterface.h>
+#include <utils/time/tracker.h>
+#include <utils/time/tracker_macros.h>
 
 #include <fstream>
 #include <opencv2/dnn/dnn.hpp>
@@ -51,6 +53,7 @@ void
 YoloOpenCVThread::finalize()
 {
 	blackboard->close(yolo_opencv_if_write);
+	delete tt_;
 }
 
 void
@@ -92,11 +95,25 @@ YoloOpenCVThread::init()
 	yolo_opencv_if_write->write();
 
 	logger->log_info(name(), "Loaded Yolo Object Detection plugin");
+
+	if (use_timetracker) {
+		tt_                  = new TimeTracker();
+		tt_loopcount_        = 0;
+		ttc_full_loop_       = tt_->add_class("Full Loop");
+		ttc_read_image_path_ = tt_->add_class("Read Image Path");
+		ttc_preprocessing_   = tt_->add_class("Preprocessing");
+		ttc_forward_pass_    = tt_->add_class("Forward Pass");
+		ttc_postprocessing_  = tt_->add_class("Postprocessing");
+	}
 }
 
 void
 YoloOpenCVThread::loop()
 {
+	if (use_timetracker) {
+		TIMETRACK_START(ttc_full_loop_);
+		TIMETRACK_START(ttc_read_image_path_);
+	}
 	std::string path2img = read_image_path();
 	for (uint i = 0; i < yolo_opencv_if_write->maxlenof_classId(); i++) {
 		yolo_opencv_if_write->set_classId(i, 1024);
@@ -112,21 +129,41 @@ YoloOpenCVThread::loop()
 		logger->log_warn(name(), "Got empty string as filename");
 		yolo_opencv_if_write->set_detection_successful(false);
 		yolo_opencv_if_write->set_error("Got empty string as filename");
+		if (use_timetracker) {
+			TIMETRACK_END(ttc_read_image_path_);
+		}
 		return;
 	} else {
 		// check if path to image exists
 		Mat frame = imread(path2img, IMREAD_COLOR);
 		Mat blob;
+		if (use_timetracker) {
+			TIMETRACK_END(ttc_read_image_path_);
+		}
 		//run picture through NN
 		if (!frame.empty()) {
+			if (use_timetracker) {
+				TIMETRACK_START(ttc_preprocessing_);
+			}
 			// Process frames.
 			preprocess(frame, net, Size(inpWidth, inpHeight), scale, Scalar(), swapRB);
+			if (use_timetracker) {
+				TIMETRACK_END(ttc_preprocessing_);
+				TIMETRACK_START(ttc_forward_pass_);
+			}
 			std::vector<Mat> outs;
 			net.forward(outs, outNames);
+			if (use_timetracker) {
+				TIMETRACK_END(ttc_forward_pass_);
+				TIMETRACK_START(ttc_postprocessing_);
+			}
 			std::vector<int>   class_id;
 			std::vector<float> confidences;
 			std::vector<Rect>  bounding_boxes;
 			postprocess(frame, outs, net, class_id, confidences, bounding_boxes, backend);
+			if (use_timetracker) {
+				TIMETRACK_END(ttc_postprocessing_);
+			}
 			// detected something
 			if (!class_id.empty()) {
 				for (uint i = 0; i < class_id.size(); i++) {
@@ -153,6 +190,14 @@ YoloOpenCVThread::loop()
 		};
 	};
 	yolo_opencv_if_write->write();
+
+	if (use_timetracker) {
+		TIMETRACK_END(ttc_full_loop_);
+		if (++tt_loopcount_ >= 3) {
+			tt_loopcount_ = 0;
+			tt_->print_to_stdout();
+		}
+	}
 }
 std::string
 YoloOpenCVThread::read_image_path()
