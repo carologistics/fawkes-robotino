@@ -55,6 +55,7 @@ public:
 	QueueFPS() : counter(0)
 	{
 	}
+
 	/** Push frame into queue 
 	 * @param entry The frame to add to the queue*/
 	void
