@@ -16,8 +16,8 @@
     (domain-object-type (name location))
     (domain-operator (name visit))
     (domain-operator-parameter (operator visit) (type location) (name to))
-    (domain-precondition (name visit-precond) (part-of visit) (type negation))
-    (domain-atomic-precondition
+    (pddl-formula (id visit-precond) (part-of visit) (type negation))
+    (pddl-predicate
       (part-of visit-precond) (predicate visited) (param-names to))
     (domain-effect
       (part-of visit) (predicate visited) (param-names to))
