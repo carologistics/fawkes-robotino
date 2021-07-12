@@ -82,8 +82,6 @@
 "
 	(not (wm-fact (key domain fact zone-content args? z ?zn m ?machine)))
 	(wm-fact (id "/config/rcll/exploration/zone-margin") (type FLOAT) (value ?zone-margin))
-	;(wm-fact (key refbox phase) (value EXPLORATION))
-	(wm-fact (key exploration active) (type BOOL) (value TRUE))
 =>
 	(assert (exp-zone-margin ?zone-margin))
   (bind $?Czones (create$))
