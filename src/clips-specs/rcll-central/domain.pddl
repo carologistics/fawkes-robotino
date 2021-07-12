@@ -101,7 +101,7 @@
 	(entered-field ?r - robot)
 	(robot-waiting ?r - robot)
 	(maps ?m - mps ?r -robot)
-	(zone-content ?z - zone ?m - zone-content)
+	(zone-content ?z - zone ?m - obstacle)
 	(mps-type ?m - mps ?t - mps-typename)
 	(mps-state ?m - mps ?s - mps-statename)
 	(mps-team ?m - mps ?col - team-color)
