@@ -1371,8 +1371,8 @@ The workpiece remains in the output of the used ring station after
 )
 
 (defrule goal-production-create-exploration-root
-	"Create the production root under which all production trees for the orders
-	are asserted"
+	"Create the exploration root where all goals regarding the finding of stations
+   are located"
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(domain-facts-loaded)
 	(not (goal (class EXPLORATION-ROOT)))
@@ -1383,6 +1383,7 @@ The workpiece remains in the output of the used ring station after
 	=>
 	(bind ?g (goal-tree-assert-central-run-parallel EXPLORATION-ROOT))
 	(modify ?g (meta do-not-finish))
+	(modify ?g (priority 0.0))
 	(assert (wm-fact (key exploration active) (type BOOL) (value TRUE)))
 )
 
@@ -1398,7 +1399,7 @@ The workpiece remains in the output of the used ring station after
 	(not (wm-fact (key domain fact rs-ring-spec args? $? rn  NA)))
 	=>
 	(bind ?g (goal-tree-assert-central-run-parallel PRODUCTION-ROOT))
-	(modify ?g (meta do-not-finish)(priority -1.0))
+	(modify ?g (meta do-not-finish)(priority 1.0))
 )
 
 (defrule goal-production-create-move-out-of-way
