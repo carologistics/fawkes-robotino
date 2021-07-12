@@ -300,7 +300,7 @@
 	     )
   )
 
-  (not (goal (class EXPLORE-ZONE) (params z ?zn)))
+  (not (goal (class EXPLORE-ZONE) (params z ?zn) (outcome COMPLETED)))
 
   ; Only start interrupting the EXPLORATION-PLAN if the first move action was finished.
   ; This prohibits, that all bots start exploring zones right in front of the insertion zone
