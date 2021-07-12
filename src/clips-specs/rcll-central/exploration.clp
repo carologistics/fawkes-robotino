@@ -150,29 +150,31 @@
   (assert (timer (name send-machine-reports)))
 )
 
-(defrule exp-passed-through-quadrant
-" If the robot drove through a zone slow enough and passed the middle of the zone with a certain margin
-  we can conclude, that there is no machine in this zone
-"
-	(wm-fact (key exploration active) (type BOOL) (value TRUE))
-	(wm-fact (key central agent robot args? r ?r))
-  (exp-navigator-vlow ?r ?max-velocity ?max-rotation)
-  (MotorInterface (id ?motor-id &:(eq ?motor-id (remote-if-id ?r "Robotino")))
-    (vx ?vx&:(< ?vx ?max-velocity)) (vy ?vy&:(< ?vy ?max-velocity)) (omega ?w&:(< ?w ?max-rotation))
-  )
-  (Position3DInterface (id ?pose-id&:(eq ?pose-id (remote-if-id ?r "Pose"))) (translation $?trans)
-	                     (time $?timestamp) (visibility_history ?vh&:(>= ?vh 10)))
-  ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn&:(eq ?zn (get-zone 0.15 ?trans))) (value ?time-searched))
-  ?zm <- (domain-fact (name zone-content) (param-values ?zn UNKNOWN))
-=>
-  (bind ?zone (get-zone 0.07 ?trans))
-  (if ?zone then
-    (modify ?ze (value (+ 1 ?time-searched)))
-    (modify ?zm (param-values ?zn NONE))
-    (printout t "Passed through " ?zn crlf)
-  )
-)
-
+; This did sometimes falsely label zones as free, where a machine was located.
+; Revisit this before enabling again.
+;(defrule exp-passed-through-quadrant
+;" If the robot drove through a zone slow enough and passed the middle of the zone with a certain margin
+;  we can conclude, that there is no machine in this zone
+;"
+;	(wm-fact (key exploration active) (type BOOL) (value TRUE))
+;	(wm-fact (key central agent robot args? r ?r))
+;  (exp-navigator-vlow ?r ?max-velocity ?max-rotation)
+;  (MotorInterface (id ?motor-id &:(eq ?motor-id (remote-if-id ?r "Robotino")))
+;    (vx ?vx&:(< ?vx ?max-velocity)) (vy ?vy&:(< ?vy ?max-velocity)) (omega ?w&:(< ?w ?max-rotation))
+;  )
+;  (Position3DInterface (id ?pose-id&:(eq ?pose-id (remote-if-id ?r "Pose"))) (translation $?trans)
+;	                     (time $?timestamp) (visibility_history ?vh&:(>= ?vh 10)))
+;  ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn&:(eq ?zn (get-zone 0.15 ?trans))) (value ?time-searched))
+;  ?zm <- (domain-fact (name zone-content) (param-values ?zn UNKNOWN))
+;=>
+;  (bind ?zone (get-zone 0.07 ?trans))
+;  (if ?zone then
+;    (modify ?ze (value (+ 1 ?time-searched)))
+;    (modify ?zm (param-values ?zn NONE))
+;    (printout t "Passed through " ?zn crlf)
+;  )
+;)
+;
 
 (defrule exp-found-line
 " If a laserline was found, that lies inside a zone with a certain margin,
