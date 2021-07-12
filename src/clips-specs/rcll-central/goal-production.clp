@@ -1666,15 +1666,15 @@ The workpiece remains in the output of the used ring station after
 
 (defrule goal-production-create-enter-field
   "Enter the field (drive outside of the starting box)."
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (wm-fact (key central agent robot args? r ?robot))
-  (not (wm-fact (key domain fact entered-field args? r ?robot)))
+	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	(wm-fact (key central agent robot args? r ?robot))
+	(not (wm-fact (key domain fact entered-field args? r ?robot)))
 	(forall (goal (id ?some-goal-id) (class ENTER-FIELD))
 	        (goal (id ?some-goal-id) (meta $? assigned-to ~?robot $?)))
 	(domain-facts-loaded)
 	(wm-fact (key refbox team-color) (value ?team-color))
-  =>
-  (printout t "Goal " ENTER-FIELD " formulated" crlf)
+	=>
+	(printout t "Goal " ENTER-FIELD " formulated" crlf)
 	(goal-production-assert-enter-field ?team-color)
 )
 
