@@ -1710,6 +1710,7 @@ The workpiece remains in the output of the used ring station after
 	                          (params target ?target $?)
 	                          (meta $? assigned-to ?robot $?)
 	                          (is-executable FALSE))
+	(not (goal (class EXPLORE-ZONE) (meta $? assigned-to ?robot $?)))
 	=>
 	(printout t "Goal EXPLORATION-CHALLENGE-MOVE executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
@@ -1719,36 +1720,35 @@ The workpiece remains in the output of the used ring station after
 	(?location)
 
 	(bind ?goal (assert (goal (class EXPLORATION-CHALLENGE-MOVE)
-					(id (sym-cat EXPLORATION-CHALLENGE-MOVE- (gensym*)))
-					(sub-type SIMPLE)
-					(verbosity NOISY) (is-executable FALSE)
-					(params target (translate-location-map-to-grid ?location) location ?location)
-				)))
+	        (id (sym-cat EXPLORATION-CHALLENGE-MOVE- (gensym*)))
+	        (sub-type SIMPLE)
+	        (priority 1.0)
+	        (verbosity NOISY) (is-executable FALSE)
+	        (params target (translate-location-map-to-grid ?location) location ?location)
+	        )))
 	(return ?goal)
 )
 
 (defrule goal-production-create-move-goal-lacking-choice
   "The robot has nothing it can do, move it across the map to explore"
-  ;(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
-  (wm-fact (key central agent robot-waiting args? r ?robot))
-  ?exp-targ <- (wm-fact (key exploration targets args?) (values ?location $?locations))
-  (not (goal (class EXPLORATION-CHALLENGE-MOVE) (meta $? assigned-to ?robot $?)))
-  (not (wm-fact (key refbox field-ground-truth name args? m ?name)))
-  (wm-fact (key domain fact mps-state args? m ?name $?))
-  =>
-  (if (any-factp ((?parent goal)) (eq ?parent:class EXPLORATION-CHALLENGE-PARENT)) then
-		(do-for-fact ((?parent goal)) (eq ?parent:class EXPLORATION-CHALLENGE-PARENT)
-			(bind ?goal (goal-production-assert-exploration-challenge-move ?location))
-			(goal-tree-update-child ?goal (fact-slot-value ?parent id) 1)
-		)
-	else
+	;(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	(goal (id ?root-id) (class EXPLORATION-ROOT) (mode FORMULATED|DISPATCHED))
+	(wm-fact (key central agent robot-waiting args? r ?robot))
+	?exp-targ <- (wm-fact (key exploration targets args?) (values ?location $?locations))
+	(not (and (goal (class EXPLORATION-CHALLENGE-MOVE) (mode FORMULATED) (id ?id1))
+	          (goal (class EXPLORATION-CHALLENGE-MOVE) (mode FORMULATED) (id ?id2&~?id1))))
+	;(wm-fact (key refbox field-ground-truth name args? m ?name) (value FALSE))
+	(wm-fact (key exploration active) (type BOOL) (value TRUE))
+	=>
 	(bind ?goal
-		(goal-tree-assert-central-run-parallel EXPLORATION-CHALLENGE-PARENT
-			(goal-production-assert-exploration-challenge-move ?location)
-		)
+	      (goal-production-assert-exploration-challenge-move ?location)
 	)
 	(modify ?goal (parent ?root-id))
-  )
-  (modify ?exp-targ (values ?locations))
+	(modify ?exp-targ (values ?locations))
+)
+
+(defrule goal-production-exploration-challenge-cleanup
+	?g <- (goal (class EXPLORATION-CHALLENGE-MOVE) (mode RETRACTED) (outcome FAILED|COMPLETED))
+	=>
+	(retract ?g)
 )
