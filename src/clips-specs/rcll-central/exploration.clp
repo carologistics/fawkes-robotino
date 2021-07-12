@@ -55,6 +55,22 @@
 	(modify ?active (value FALSE))
 )
 
+(defrule exp-disable-goals
+" Exploration is not needed anymore as all machines were found."
+	?g <-(goal (class EXPLORE-ZONE|EXPLORATION-CHALLENGE-MOVE) (mode FORMULATED))
+	(wm-fact (key exploration active) (type BOOL) (value FALSE))
+	=>
+	(retract ?g)
+)
+
+(defrule exp-fail-goals
+" Exploration is not needed anymore as all machines were found."
+	?g <-(goal (class EXPLORE-ZONE|EXPLORATION-CHALLENGE-MOVE) (mode DISPATCHED))
+	(wm-fact (key exploration active) (type BOOL) (value FALSE))
+	=>
+	(modify ?g (mode FINISHED) (outcome FAILED))
+)
+
 (defrule exp-startup
 " Asserts all needed wm-facts for the exploration phase
   line-vis:      value is greater 0 if there was a line detected in the zone
