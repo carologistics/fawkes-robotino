@@ -17,6 +17,9 @@
 " Template for storing a exploration result. Stores the machine name, zone, orientation and the team this machine belongs to"
   (slot machine (type SYMBOL) (allowed-symbols C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS C-SS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS M-SS))
   (slot zone (type SYMBOL))
+  (multislot trans (type FLOAT))
+  (multislot rot (type FLOAT))
+  (slot tag-id (type INTEGER))
   (slot orientation (type INTEGER) (default -1))
   (slot team (type SYMBOL) (allowed-symbols CYAN MAGENTA))
 )
@@ -342,18 +345,25 @@
   (modify ?*EXP-SEARCH-LIMIT* (+ ?*EXP-SEARCH-LIMIT* 1))
 )
 
-(defrule exp-skill-explore-zone-final
+(defrule exp-skill-explore-zone-apply-sensed-effects
 " Exploration of a zone finished succesfully. Update zone wm-fact and assert exploration-result
 "
-  (goal (id ?goal-id) (class EXPLORATION) (mode DISPATCHED) (meta assigned-to ?r))
-  (plan-action (action-name explore-zone) (state EXECUTION-SUCCEEDED))
+  (goal (id ?goal-id) (class EXPLORE-ZONE) (mode DISPATCHED) (meta $? assigned-to ?r $?))
+  (plan-action (action-name explore-zone) (state SENSED-EFFECTS-WAIT))
   (ZoneInterface (id ?zone-id&:(eq ?zone-id (remote-if-id ?r "explore-zone/info")))
 	               (zone ?zn-str) (orientation ?orientation)
 	               (tag_id ?tag-id) (search_state YES)
   )
+  (TagVisionInterface (id ?tag-vis-id &:(eq ?tag-vis-id (remote-if-id ?r "tag-vision/info")))
+    (tag_id $?tag-ids&:(member$ ?tag-id ?tag-ids))
+  )
+  (Position3DInterface
+    (id ?tag-if-id&:(eq ?tag-if-id (str-cat (remote-if-id ?r (str-cat "tag-vision/" (- (member$ ?tag-id ?tag-ids) 1) "/to_map")))))
+    (translation $?trans)
+    (rotation $?rot)
+  )
   (domain-fact (name tag-matching) (param-values ?machine ?side ?team-color ?tag-id))
-  (domain-fact (name mps-type) (param-values ?machine ?mtype))
-
+  (wm-fact (key domain fact mps-type args? m ?machine t ?mtype))
   ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (value ?times-searched))
   ?zm <- (domain-fact (name zone-content) (param-values ?zn2 ?))
   ; This is for a mirrored field
@@ -369,6 +379,9 @@
       (machine ?machine) (zone ?zn2)
       (orientation ?orientation)
       (team ?team-color)
+      (trans ?trans)
+      (rot ?rot)
+      (tag-id ?tag-id)
     )
     ;(exploration-result
     ;  (machine (mirror-name ?machine)) (zone (mirror-name ?zn2))
