@@ -229,7 +229,7 @@
       (bind ?type (sym-cat (pb-field-value ?machine "type")))
     )
 
-    (if (and ?zone ?rot ?type) then
+    (if (and ?zone ?rot ?type (neq ?rot NOT-SET) (neq ?zone N-T-SET)) then
        (printout t "Received ground-truth for Machine: " ?name
         ", rot: " ?rot ", zone: " ?zone ", type: " ?type crlf)
       (bind ?yaw ?rot)
@@ -246,8 +246,8 @@
       (bind ?rcv-ground-truth TRUE)
     else
       (bind ?incomplete-ground-truth TRUE)
-      (printout t "Received incomplete ground-truth from refbox. Machine: " ?name
-        ", rot: " ?rot ", zone: " ?zone ", type: " ?type crlf)
+      (assert (wm-fact (key refbox field-ground-truth mtype args? m ?name) (value ?type)))
+      (assert (wm-fact (key refbox field-ground-truth name args? m ?name) (type BOOL) (value FALSE)))
     )
   )
   (if (and ?rcv-ground-truth
