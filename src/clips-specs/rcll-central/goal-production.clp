@@ -260,6 +260,7 @@
 	(or (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
 	(wm-fact (key domain fact maps args? m ?mps r ?robot))
+	(domain-fact (name zone-content) (param-values ?zz ?mps))
 	=>
 	(printout t "Goal PICK-AND-PLACE executable for " ?robot " at " ?mps crlf)
 	(modify ?g (is-executable TRUE))
@@ -333,6 +334,7 @@
 	        (domain-object (name ?cc) (type cap-carrier))
 	    )
 	)
+	(domain-fact (name zone-content) (param-values ?zz ?mps))
 	=>
 	(printout t "Goal BUFFER-CAP executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
@@ -382,6 +384,8 @@
 	    )
 	    ; or the workpiece is already being held
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
+	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
 	=>
 	(printout t "Goal MOUNT-CAP executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
@@ -419,6 +423,8 @@
 	(or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
 	         (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side)))
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
+	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
 	=>
 	(printout t "Goal DELIVER executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
@@ -446,6 +452,7 @@
 	(or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
 	         (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side)))
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+	(domain-fact (name zone-content) (param-values ?zz ?wp-loc))
 	=>
 	(printout t "Goal DELIVER-RC212 executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
@@ -472,6 +479,7 @@
 	(or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
 	         (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side)))
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+	(domain-fact (name zone-content) (param-values ?zz ?wp-loc))
 	=>
 	(printout t "Goal DISCARD executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
@@ -535,6 +543,8 @@
 	    )
 	    ; or the workpiece is already being held
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+	(domain-fact (name zone-content) (param-values ?zz1 ?wp-loc))
+	(domain-fact (name zone-content) (param-values ?zz2 ?target-mps))
 	=>
 	(printout t "Goal " PAY-FOR-RINGS-WITH-BASE " executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -601,6 +611,8 @@
 	    )
 	    ; or the workpiece is already being held
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp&:(eq ?wp ?preset-wp))))
+	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
+	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
 	=>
 	(bind ?wp-side nil)
 	(do-for-fact ((?wp-at wm-fact))
@@ -674,6 +686,8 @@
 	; the goals due to matching with RS-1 and RS-2)
 	(not (goal (class  PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF) (parent goal-id)
 	     (params robot ?robot cs ?wp-loc wp ?wp $?)))
+	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
+	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
 	=>
 	(printout t "Goal " PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF " executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -748,9 +762,9 @@ The workpiece remains in the output of the used ring station after
 	    )
 	    ; or the workpiece is already being held
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
+	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
 	=>
-	;If not ring Kosten bezahlt
-	; (plan-assert-action fill-rs )
 	(printout t "Goal MOUNT-RING executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
 )
