@@ -90,6 +90,15 @@
                    (remote-if-id ?robot "Navigator"))
 )
 
+(defrule blackboard-init-compute-navgraph
+  (wm-fact (key central agent robot args? r ?robot))
+  (blackboard-interface (id ?id&:(str-index ?robot ?id))
+                        (type "NavGraphWithMPSGeneratorInterface"))
+  =>
+  (navgraph-compute ?robot)
+)
+
+
 (defrule blackboard-init-open-skiller-interface
   "Open the skiller interface for a remote robot."
   (domain-facts-loaded)
