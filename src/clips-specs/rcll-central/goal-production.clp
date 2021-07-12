@@ -1695,7 +1695,9 @@ The workpiece remains in the output of the used ring station after
 	=>
 	(assert (wm-fact (key exploration targets args?)
 	                 (is-list TRUE)
-	                 (values M-Z55 M-Z15 M-Z11 M-Z33 M-Z35 M-Z13 M-Z31))
+	                 (values M-Z55 M-Z15 M-Z11 M-Z33 M-Z35 M-Z13 M-Z31
+	                         M-Z45 M-Z25 M-Z54 M-Z44 M-Z34 M-Z24 M-Z14
+	                         M-Z52 M-Z42 M-Z32 M-Z22 M-Z12 M-Z43 M-Z23))
 	)
 )
 
