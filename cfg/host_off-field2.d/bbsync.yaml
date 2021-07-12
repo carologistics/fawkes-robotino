@@ -51,22 +51,22 @@ fawkes/bbsync:
       reading:
         skiller: SkillerInterface::Skiller=/robot1/Skiller
         pose: Position3DInterface::Pose=/robot1/Pose
-        tag0: Position3DInterface::/tag-vision/0=/robot1/tag-vision/0
-        tag0: Position3DInterface::/tag-vision/1=/robot1/tag-vision/1
-        tag0: Position3DInterface::/tag-vision/2=/robot1/tag-vision/2
-        tag0: Position3DInterface::/tag-vision/3=/robot1/tag-vision/3
-        tag0: Position3DInterface::/tag-vision/4=/robot1/tag-vision/4
-        tag0: Position3DInterface::/tag-vision/5=/robot1/tag-vision/5
-        tag0: Position3DInterface::/tag-vision/6=/robot1/tag-vision/6
-        tag0: Position3DInterface::/tag-vision/7=/robot1/tag-vision/7
-        tag0: Position3DInterface::/tag-vision/8=/robot1/tag-vision/8
-        tag0: Position3DInterface::/tag-vision/9=/robot1/tag-vision/9
-        tag0: Position3DInterface::/tag-vision/10=/robot1/tag-vision/10
-        tag0: Position3DInterface::/tag-vision/11=/robot1/tag-vision/11
-        tag0: Position3DInterface::/tag-vision/12=/robot1/tag-vision/12
-        tag0: Position3DInterface::/tag-vision/13=/robot1/tag-vision/13
-        tag0: Position3DInterface::/tag-vision/14=/robot1/tag-vision/14
-        tag0: Position3DInterface::/tag-vision/15=/robot1/tag-vision/15
+        tag0: Position3DInterface::/tag-vision/0/to_map=/robot1/tag-vision/0/to_map
+        tag1: Position3DInterface::/tag-vision/1/to_map=/robot1/tag-vision/1/to_map
+        tag2: Position3DInterface::/tag-vision/2/to_map=/robot1/tag-vision/2/to_map
+        tag3: Position3DInterface::/tag-vision/3/to_map=/robot1/tag-vision/3/to_map
+        tag4: Position3DInterface::/tag-vision/4/to_map=/robot1/tag-vision/4/to_map
+        tag5: Position3DInterface::/tag-vision/5/to_map=/robot1/tag-vision/5/to_map
+        tag6: Position3DInterface::/tag-vision/6/to_map=/robot1/tag-vision/6/to_map
+        tag7: Position3DInterface::/tag-vision/7/to_map=/robot1/tag-vision/7/to_map
+        tag8: Position3DInterface::/tag-vision/8/to_map=/robot1/tag-vision/8/to_map
+        tag9: Position3DInterface::/tag-vision/9/to_map=/robot1/tag-vision/9/to_map
+        tag10: Position3DInterface::/tag-vision/10/to_map=/robot1/tag-vision/10/to_map/to_map
+        tag11: Position3DInterface::/tag-vision/11/to_map=/robot1/tag-vision/11/to_map
+        tag12: Position3DInterface::/tag-vision/12/to_map=/robot1/tag-vision/12/to_map
+        tag13: Position3DInterface::/tag-vision/13/to_map=/robot1/tag-vision/13/to_map
+        tag14: Position3DInterface::/tag-vision/14/to_map=/robot1/tag-vision/14/to_map
+        tag15: Position3DInterface::/tag-vision/15/to_map=/robot1/tag-vision/15/to_map
         foundtag: Position3DInterface::/explore-zone/found-tag=/robot1/explore-zone/found-tag
         navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/robot1/navgraph-generator-mps
         navigator: NavigatorInterface::Navigator=/robot1/Navigator
@@ -81,6 +81,7 @@ fawkes/bbsync:
         laser7: LaserLineInterface::/laser-lines/7/to_map=/robot1/laser-lines/7/to_map
         laser8: LaserLineInterface::/laser-lines/8/to_map=/robot1/laser-lines/8/to_map
         zone: ZoneInterface::/explore-zone/info=/robot1/explore-zone/info
+        tag-info: TagVisionInterface::/tag-vision/info=/robot1/tag-vision/info
 
 
     robot2:
@@ -90,22 +91,22 @@ fawkes/bbsync:
       reading:
         skiller: SkillerInterface::Skiller=/robot2/Skiller
         pose: Position3DInterface::Pose=/robot2/Pose
-        tag0: Position3DInterface::/tag-vision/0=/robot2/tag-vision/0
-        tag0: Position3DInterface::/tag-vision/1=/robot2/tag-vision/1
-        tag0: Position3DInterface::/tag-vision/2=/robot2/tag-vision/2
-        tag0: Position3DInterface::/tag-vision/3=/robot2/tag-vision/3
-        tag0: Position3DInterface::/tag-vision/4=/robot2/tag-vision/4
-        tag0: Position3DInterface::/tag-vision/5=/robot2/tag-vision/5
-        tag0: Position3DInterface::/tag-vision/6=/robot2/tag-vision/6
-        tag0: Position3DInterface::/tag-vision/7=/robot2/tag-vision/7
-        tag0: Position3DInterface::/tag-vision/8=/robot2/tag-vision/8
-        tag0: Position3DInterface::/tag-vision/9=/robot2/tag-vision/9
-        tag0: Position3DInterface::/tag-vision/10=/robot2/tag-vision/10
-        tag0: Position3DInterface::/tag-vision/11=/robot2/tag-vision/11
-        tag0: Position3DInterface::/tag-vision/12=/robot2/tag-vision/12
-        tag0: Position3DInterface::/tag-vision/13=/robot2/tag-vision/13
-        tag0: Position3DInterface::/tag-vision/14=/robot2/tag-vision/14
-        tag0: Position3DInterface::/tag-vision/15=/robot2/tag-vision/15
+        tag0: Position3DInterface::/tag-vision/0/to_map=/robot2/tag-vision/0/to_map
+        tag1: Position3DInterface::/tag-vision/1/to_map=/robot2/tag-vision/1/to_map
+        tag2: Position3DInterface::/tag-vision/2/to_map=/robot2/tag-vision/2/to_map
+        tag3: Position3DInterface::/tag-vision/3/to_map=/robot2/tag-vision/3/to_map
+        tag4: Position3DInterface::/tag-vision/4/to_map=/robot2/tag-vision/4/to_map
+        tag5: Position3DInterface::/tag-vision/5/to_map=/robot2/tag-vision/5/to_map
+        tag6: Position3DInterface::/tag-vision/6/to_map=/robot2/tag-vision/6/to_map
+        tag7: Position3DInterface::/tag-vision/7/to_map=/robot2/tag-vision/7/to_map
+        tag8: Position3DInterface::/tag-vision/8/to_map=/robot2/tag-vision/8/to_map
+        tag9: Position3DInterface::/tag-vision/9/to_map=/robot2/tag-vision/9/to_map
+        tag10: Position3DInterface::/tag-vision/10/to_map=/robot2/tag-vision/10/to_map/to_map
+        tag11: Position3DInterface::/tag-vision/11/to_map=/robot2/tag-vision/11/to_map
+        tag12: Position3DInterface::/tag-vision/12/to_map=/robot2/tag-vision/12/to_map
+        tag13: Position3DInterface::/tag-vision/13/to_map=/robot2/tag-vision/13/to_map
+        tag14: Position3DInterface::/tag-vision/14/to_map=/robot2/tag-vision/14/to_map
+        tag15: Position3DInterface::/tag-vision/15/to_map=/robot2/tag-vision/15/to_map
         foundtag: Position3DInterface::/explore-zone/found-tag=/robot2/explore-zone/found-tag
         navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/robot2/navgraph-generator-mps
         navigator: NavigatorInterface::Navigator=/robot2/Navigator
@@ -120,6 +121,7 @@ fawkes/bbsync:
         laser7: LaserLineInterface::/laser-lines/7/to_map=/robot2/laser-lines/7/to_map
         laser8: LaserLineInterface::/laser-lines/8/to_map=/robot2/laser-lines/8/to_map
         zone: ZoneInterface::/explore-zone/info=/robot2/explore-zone/info
+        tag-info: TagVisionInterface::/tag-vision/info=/robot2/tag-vision/info
 
     robot3:
       #active: true (set via the off-field startup)
@@ -127,23 +129,24 @@ fawkes/bbsync:
       port: !tcp-port 1910
       reading:
         skiller: SkillerInterface::Skiller=/robot3/Skiller
+        tag0: Position3DInterface::/tag-vision/0/to_map=/robot3/tag-vision/0/to_map
+        tag1: Position3DInterface::/tag-vision/1/to_map=/robot3/tag-vision/1/to_map
+        tag2: Position3DInterface::/tag-vision/2/to_map=/robot3/tag-vision/2/to_map
+        tag3: Position3DInterface::/tag-vision/3/to_map=/robot3/tag-vision/3/to_map
+        tag4: Position3DInterface::/tag-vision/4/to_map=/robot3/tag-vision/4/to_map
+        tag5: Position3DInterface::/tag-vision/5/to_map=/robot3/tag-vision/5/to_map
+        tag6: Position3DInterface::/tag-vision/6/to_map=/robot3/tag-vision/6/to_map
+        tag7: Position3DInterface::/tag-vision/7/to_map=/robot3/tag-vision/7/to_map
+        tag8: Position3DInterface::/tag-vision/8/to_map=/robot3/tag-vision/8/to_map
+        tag9: Position3DInterface::/tag-vision/9/to_map=/robot3/tag-vision/9/to_map
+        tag10: Position3DInterface::/tag-vision/10/to_map=/robot3/tag-vision/10/to_map/to_map
+        tag11: Position3DInterface::/tag-vision/11/to_map=/robot3/tag-vision/11/to_map
+        tag12: Position3DInterface::/tag-vision/12/to_map=/robot3/tag-vision/12/to_map
+        tag13: Position3DInterface::/tag-vision/13/to_map=/robot3/tag-vision/13/to_map
+        tag14: Position3DInterface::/tag-vision/14/to_map=/robot3/tag-vision/14/to_map
+        tag15: Position3DInterface::/tag-vision/15/to_map=/robot3/tag-vision/15/to_map
+        foundtag: Position3DInterface::/explore-zone/found-tag=/robot3/explore-zone/found-tag
         pose: Position3DInterface::Pose=/robot3/Pose
-        tag0: Position3DInterface::/tag-vision/0=/robot3/tag-vision/0
-        tag0: Position3DInterface::/tag-vision/1=/robot3/tag-vision/1
-        tag0: Position3DInterface::/tag-vision/2=/robot3/tag-vision/2
-        tag0: Position3DInterface::/tag-vision/3=/robot3/tag-vision/3
-        tag0: Position3DInterface::/tag-vision/4=/robot3/tag-vision/4
-        tag0: Position3DInterface::/tag-vision/5=/robot3/tag-vision/5
-        tag0: Position3DInterface::/tag-vision/6=/robot3/tag-vision/6
-        tag0: Position3DInterface::/tag-vision/7=/robot3/tag-vision/7
-        tag0: Position3DInterface::/tag-vision/8=/robot3/tag-vision/8
-        tag0: Position3DInterface::/tag-vision/9=/robot3/tag-vision/9
-        tag0: Position3DInterface::/tag-vision/10=/robot3/tag-vision/10
-        tag0: Position3DInterface::/tag-vision/11=/robot3/tag-vision/11
-        tag0: Position3DInterface::/tag-vision/12=/robot3/tag-vision/12
-        tag0: Position3DInterface::/tag-vision/13=/robot3/tag-vision/13
-        tag0: Position3DInterface::/tag-vision/14=/robot3/tag-vision/14
-        tag0: Position3DInterface::/tag-vision/15=/robot3/tag-vision/15
         foundtag: Position3DInterface::/explore-zone/found-tag=/robot3/explore-zone/found-tag
         navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/robot3/navgraph-generator-mps
         navigator: NavigatorInterface::Navigator=/robot3/Navigator
@@ -158,3 +161,4 @@ fawkes/bbsync:
         laser7: LaserLineInterface::/laser-lines/7/to_map=/robot3/laser-lines/7/to_map
         laser8: LaserLineInterface::/laser-lines/8/to_map=/robot3/laser-lines/8/to_map
         zone: ZoneInterface::/explore-zone/info=/robot3/explore-zone/info
+        tag-info: TagVisionInterface::/tag-vision/info=/robot3/tag-vision/info
