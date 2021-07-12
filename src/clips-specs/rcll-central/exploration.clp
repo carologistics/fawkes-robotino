@@ -27,12 +27,10 @@
   deal with halve-fields, where only one set of MPS is present but ground truth
   for all machines is sent.
 "
-	(wm-fact (key refbox team-color) (value ?team-color))
-	(wm-fact (key refbox field-ground-truth zone args? m ?name&:(eq
-	  (sub-string 1 1 ?name) (sub-string 1 1 ?team-color))) (value ?zone))
-	?zc <- (domain-fact (name zone-content) (param-values ?zone UNKNOWN))
+	(wm-fact (key game found-tag zone args? m ?mps) (value ?zone))
+	?zc <- (domain-fact (name zone-content) (param-values ?zone ?))
 	=>
-	(modify ?zc (param-values ?zone ?name))
+	(modify ?zc (param-values ?zone ?mps))
 )
 
 (defrule exp-enable
