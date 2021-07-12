@@ -44,6 +44,46 @@
   ?*MAX-DISTANCE* = 16.124
 
 )
+(deffunction tag-id-to-side (?tag-id)
+" Output the side that is associated with the given tag id.
+  @param ?tag-id tag id as specified by the rulebook
+  @return INPUT OUTPUT or UNKNOWN
+"
+	(if (or (eq ?tag-id 1)  ; C-CS1
+	        (eq ?tag-id 17) ; C-CS2
+	        (eq ?tag-id 33) ; C-RS1
+	        (eq ?tag-id 177); C-RS2
+	        (eq ?tag-id 65) ; C-BS
+	        (eq ?tag-id 81) ; C-DS
+	        (eq ?tag-id 193); C-SS
+	        (eq ?tag-id 97) ; M-CS1
+	        (eq ?tag-id 113); M-CS2
+	        (eq ?tag-id 129); M-RS1
+	        (eq ?tag-id 145); M-RS2
+	        (eq ?tag-id 161); M-BS
+	        (eq ?tag-id 49) ; M-DS
+	        (eq ?tag-id 209); M-SS
+	    )
+	  then (return INPUT))
+	(if (or (eq ?tag-id 2)  ; C-CS1
+	        (eq ?tag-id 18) ; C-CS2
+	        (eq ?tag-id 34) ; C-RS1
+	        (eq ?tag-id 178); C-RS2
+	        (eq ?tag-id 66) ; C-BS
+	        (eq ?tag-id 82) ; C-DS
+	        (eq ?tag-id 194); C-SS
+	        (eq ?tag-id 98) ; M-CS1
+	        (eq ?tag-id 114); M-CS2
+	        (eq ?tag-id 130); M-RS1
+	        (eq ?tag-id 146); M-RS2
+	        (eq ?tag-id 162); M-BS
+	        (eq ?tag-id 50) ; M-DS
+	        (eq ?tag-id 210); M-SS
+	    )
+	  then (return OUTPUT))
+	(printout error "tag-id-to-side: unknown tag id: " ?tag-id crlf)
+	(return UNKNOWN)
+)
 
 (deffunction random-id ()
   "Return a random task id"
@@ -172,6 +212,57 @@
   (return (create$ ?x ?y 0.48))
 )
 
+(deffunction navgraph-add-tags-from-exploration ()
+  "Send all explored tags to the navgraph generator"
+	(bind ?any-tag-to-add FALSE)
+
+	(bind ?interfaces (get-interfaces "NavGraphWithMPSGeneratorInterface" "navgraph-generator-mps"))
+
+	(delayed-do-for-all-facts ((?res exploration-result)) TRUE
+		(bind ?side (tag-id-to-side ?res:tag-id))
+		(bind ?frame "map")
+		(bind ?trans ?res:trans)
+		(bind ?rot  ?res:rot)
+		(bind ?zone ?res:zone)
+		(bind ?mps ?res:machine)
+		(bind ?any-tag-to-add TRUE)
+
+		; report tag position to navgraph generator
+		(foreach ?interface ?interfaces
+			(bind ?msg (blackboard-create-msg ?interface "UpdateStationByTagMessage"))
+			(blackboard-set-msg-field ?msg "name" (str-cat ?mps))
+			(blackboard-set-msg-field ?msg "side" ?side)
+			(blackboard-set-msg-field ?msg "frame" ?frame)
+			(blackboard-set-msg-multifield ?msg "tag_translation" ?trans)
+			(blackboard-set-msg-multifield ?msg "tag_rotation" ?rot)
+			(blackboard-set-msg-multifield ?msg "zone_coords" (zone-coords ?zone))
+			(blackboard-send-msg ?msg)
+			(printout t "Send UpdateStationByTagMessage: id " (str-cat ?mps)
+			    " side " ?side
+			    " frame " ?frame
+			    " trans " ?trans
+			    " rot " ?rot
+			    " zone " ?zone
+			    crlf)
+			)
+	)
+
+	(foreach ?interface ?interfaces
+		(bind ?msg (blackboard-create-msg ?interface "GenerateWaitZonesMessage"))
+		(blackboard-send-msg ?msg)
+	)
+
+	(if ?any-tag-to-add
+	 then
+		; send compute message so we can drive to the output
+		(foreach ?interface ?interfaces
+			(bind ?msg (blackboard-create-msg ?interface "ComputeMessage"))
+			(bind ?compute-msg-id (blackboard-send-msg ?msg))
+		)
+	 else
+		(printout t "There are no tags to add" crlf)
+	)
+)
 
 (deffunction navgraph-add-all-new-tags ()
   "Send all new tags to the navgraph generator"
