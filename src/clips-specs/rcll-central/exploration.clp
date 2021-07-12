@@ -227,26 +227,23 @@
   (printout t "There is a machine in " ?zn " with orientation " ?orientation  " so block " ?zn2 crlf)
 )
 
-
 (defrule exp-found-tag
 " If a tag was found in a zone that we dont have any information of, update the corresponding tag-vis fact
 "
 	(wm-fact (key exploration active) (type BOOL) (value TRUE))
 	(wm-fact (key central agent robot args? r ?r))
   (domain-fact (name tag-matching) (param-values ?machine ?side ?col ?tag))
-  (TagVisionInterface (id ?tag-vis-id &:(eq ?tag-vis-id (remote-if-id ?r "/tag-vision/info")))
+  (TagVisionInterface (id ?tag-vis-id &:(eq ?tag-vis-id (remote-if-id ?r "tag-vision/info")))
     (tags_visible ?num-tags&:(> ?num-tags 0))
     (tag_id $?tag-ids&:(member$ ?tag ?tag-ids))
   )
   (Position3DInterface
-    (id ?tag-if-id&:(eq ?tag-if-id (str-cat (remote-if-id ?r (str-cat " tag-vision/" (- (member$ ?tag ?tag-ids) 1))))))
+    (id ?tag-if-id&:(eq ?tag-if-id (str-cat (remote-if-id ?r (str-cat "tag-vision/" (- (member$ ?tag ?tag-ids) 1) "/to_map")))))
     (visibility_history ?vh&:(> ?vh 1))
-    (translation $?trans) (rotation $?rot)
-    (frame ?frame) (time $?timestamp)
+    (translation ?x ?y $?)
   )
   (exp-zone-margin ?zone-margin)
-  ?ze-f <- (wm-fact (key exploration fact tag-vis args? zone ?zn&:(eq ?zn (get-zone ?zone-margin
-                                                      (transform-safe "map" ?frame ?timestamp ?trans ?rot)))) (value ?tv&:(< ?tv 1) ))
+  ?ze-f <- (wm-fact (key exploration fact tag-vis args? zone ?zn&:(eq ?zn (get-zone ?zone-margin ?x ?y))) (value ?tv&:(< ?tv 1) ))
   (wm-fact (key domain fact zone-content args? z ?zn m UNKNOWN))
 =>
   (modify ?ze-f (value 1 ))
