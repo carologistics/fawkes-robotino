@@ -20,6 +20,8 @@
 (defglobal
   ?*MONITORING-SALIENCE* = 1
   ?*COMMON-TIMEOUT-DURATION* = 30
+  ; The waiting timeout duration needs to be smaller than the common one above!
+  ?*WAITING-TIMEOUT-DURATION* = 25
   ?*MPS-DOWN-TIMEOUT-DURATION* = 120
   ?*HOLDING-MONITORING* = 60
 )
@@ -43,13 +45,45 @@
 	(not (action-timer (plan-id ?plan-id) (action-id ?id) (status ?status)))
 	(wm-fact (key refbox game-time) (values $?now))
 	=>
+	(bind ?timeout-duration ?*COMMON-TIMEOUT-DURATION*)
+	(if (eq ?status WAITING)
+	 then
+		(bind ?timeout-duration ?*WAITING-TIMEOUT-DURATION*)
+	)
 	(assert (action-timer (plan-id ?plan-id)
 	            (action-id ?id)
-	            (timeout-duration ?*COMMON-TIMEOUT-DURATION*)
+	            (timeout-duration ?timeout-duration)
 	            (status ?status)
 	            (start-time ?now)))
 )
 
+(defrule execution-monitoring-retry-stuck-on-waiting
+" If an action remains in state WAITING for too long, the skill call over the
+  remote blackboard probably got lost. Hence, retry by setting the action
+  back to pending.
+  If the timeout is too small, it may cause skill calls to arrive twice,
+  which aborts the call arriving first. When network delays are frequent, this
+  may cause loops of aborted skills.
+"
+	?p <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+	         (id ?id) (state WAITING)
+	         (action-name ?action-name)
+	         (param-values $?param-values))
+	(plan (id ?plan-id) (goal-id ?goal-id))
+	(goal (id ?goal-id) (mode DISPATCHED))
+	(wm-fact (key game state) (value RUNNING))
+	(wm-fact (key refbox game-time) (values $?now))
+	?pt <- (action-timer (plan-id ?plan-id) (status WAITING)
+	                     (action-id ?id)
+	                     (start-time $?st)
+	                     (timeout-duration ?timeout&:(timeout ?now ?st ?timeout)))
+	?exec-info <- (skill-action-execinfo (goal-id ?goal-id) (plan-id ?plan-id) (action-id ?id))
+	=>
+	(printout t "Action "  ?action-name " stuck on WAITING, retry"  crlf)
+	(modify ?p (state PENDING))
+	(retract ?exec-info)
+	(retract ?pt)
+)
 
 (defrule execution-monitoring-detect-timeout
 " If an action was longer than its timeout-duration in a volatile state like pending or pending-sensed-effect
