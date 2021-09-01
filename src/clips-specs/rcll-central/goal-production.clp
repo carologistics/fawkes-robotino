@@ -1688,8 +1688,8 @@ The workpiece remains in the output of the used ring station after
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(wm-fact (key central agent robot args? r ?robot))
 	(not (wm-fact (key domain fact entered-field args? r ?robot)))
-	(forall (goal (id ?some-goal-id) (class ENTER-FIELD))
-	        (goal (id ?some-goal-id) (meta $? assigned-to ~?robot $?)))
+	(not (goal (id ?some-goal-id) (class ENTER-FIELD)
+	           (meta $? assigned-to ?robot $?)))
 	(domain-facts-loaded)
 	(wm-fact (key refbox team-color) (value ?team-color))
 	=>
