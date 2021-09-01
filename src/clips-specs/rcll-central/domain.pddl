@@ -492,16 +492,16 @@
 )
 
 (:action wp-put
-	:parameters (?r - robot ?wp - workpiece ?m - mps)
-	:precondition (and (at ?r ?m INPUT)
+	:parameters (?r - robot ?wp - workpiece ?m - mps ?side - mps-side)
+	:precondition (and (at ?r ?m ?side)
 	                   (wp-usable ?wp)
 	                   (holding ?r ?wp)
-	                   (mps-side-free ?m INPUT)
+	                   (mps-side-free ?m ?side)
 	              )
-	:effect (and (wp-at ?wp ?m INPUT)
+	:effect (and (wp-at ?wp ?m ?side)
 	             (not (holding ?r ?wp))
 	             (can-hold ?r)
-	             (not (mps-side-free ?m INPUT))
+	             (not (mps-side-free ?m ?side))
 	        )
 )
 
