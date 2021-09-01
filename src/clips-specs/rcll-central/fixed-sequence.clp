@@ -190,7 +190,7 @@
 			)
 		)
 
-		(plan-assert-action wp-put ?robot ?wp ?mps)
+		(plan-assert-action wp-put ?robot ?wp ?mps INPUT)
 		(plan-assert-action move-wp-input-output ?mps ?wp)
 	)
 	(modify ?g (mode EXPANDED))
@@ -259,7 +259,7 @@
 				    (plan-assert-action wp-get-shelf ?robot ?cc ?mps ?shelf-spot)
 				)
 			)
-			(plan-assert-action wp-put ?robot ?cc ?mps)
+			(plan-assert-action wp-put ?robot ?cc ?mps INPUT)
 		)
 	)
 	(modify ?g (mode EXPANDED))
@@ -345,12 +345,12 @@
 							(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
 						)
 						(plan-assert-safe-move-wait-for-free-side ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps ?target-side
-							(plan-assert-action wp-put ?robot ?wp ?target-mps)
+							(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
 						)
 					)
 				else
 					(plan-assert-safe-move-wait-for-free-side ?robot ?curr-location ?curr-side ?target-mps ?target-side
-						(plan-assert-action wp-put ?robot ?wp ?target-mps)
+						(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
 					)
 				)
 			)
