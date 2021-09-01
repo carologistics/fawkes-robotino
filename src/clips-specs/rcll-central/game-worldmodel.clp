@@ -102,7 +102,7 @@
     (wm-fact (key game found-tag name args? m ?mps ))
   )
 =>
-  (printout t "Trigering NavGraph generation with Ground-truth" crlf)
+  (printout t "Triggering NavGraph generation with Ground-truth" crlf)
   (navgraph-add-all-new-tags)
 )
 

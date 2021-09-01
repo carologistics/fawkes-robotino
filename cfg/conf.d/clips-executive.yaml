@@ -140,6 +140,7 @@ clips-executive:
           pick-and-place-challenge: false
 
           challenge-flip-insertion: true
+          use-static-navgraph: false
 
           start-with-waiting-robots: true
           exploration:
