@@ -118,7 +118,8 @@ clips-executive:
         move-wp-put: goto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
         go-wait: goto{place="?(to)Y"}
         wp-get-shelf: get_product_from{place=?(m)S, shelf=?(spot)S}
-        wp-put: bring_product_to{place=?(m)S}
+        wp-put: bring_product_to{place=?(m)S,
+                                 side=?(side|/INPUT/input/|/OUTPUT/output/)s}
         wp-put-slide-cc: bring_product_to{place=?(m)S, slide="TRUE"}
         wp-get: >
           get_product_from{place=?(m)S,
