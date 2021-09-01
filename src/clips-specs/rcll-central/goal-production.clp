@@ -1403,7 +1403,8 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key refbox phase) (value PRODUCTION))
 	(wm-fact (key game state) (value RUNNING))
 	(wm-fact (key refbox team-color) (value ?color))
-	(not (wm-fact (key domain fact rs-ring-spec args? $? rn  NA)))
+	(not (wm-fact (key domain fact rs-ring-spec args? $? rn NA)))
+	(wm-fact (key domain fact rs-ring-spec args? $?))
 	=>
 	(bind ?g (goal-tree-assert-central-run-parallel PRODUCTION-ROOT))
 	(modify ?g (meta do-not-finish)(priority 1.0))
