@@ -270,6 +270,14 @@
 
   (bind ?interfaces (get-interfaces "NavGraphWithMPSGeneratorInterface" "navgraph-generator-mps"))
 
+  (if (any-factp ((?static-nav wm-fact))
+        (and (wm-key-prefix ?static-nav:key (create$ config rcll use-static-navgraph))
+             ?static-nav:value
+        ))
+   then
+    (bind ?interfaces (create$ (nth$ 1 ?interfaces)))
+  )
+
   (delayed-do-for-all-facts ((?ft-n wm-fact))
       (wm-key-prefix ?ft-n:key (create$ game found-tag name))
     (bind ?mps (wm-key-arg ?ft-n:key m))

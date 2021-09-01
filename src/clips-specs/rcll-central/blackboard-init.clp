@@ -95,6 +95,7 @@
   (wm-fact (key central agent robot args? r ?robot))
   (blackboard-interface (id ?id&:(str-index ?robot ?id))
                         (type "NavGraphWithMPSGeneratorInterface"))
+  (wm-fact (key config rcll use-static-navgraph) (type BOOL) (value FALSE))
   =>
   (navgraph-compute ?robot)
 )
