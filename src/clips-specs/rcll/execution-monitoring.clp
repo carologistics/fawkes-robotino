@@ -255,18 +255,15 @@
   (do-for-all-facts ((?gpred grounded-pddl-formula) (?pred pddl-formula)) (and (eq ?gpred:formula-id ?pred:id)
                                                                                (eq ?gpred:grounding ?grounding-id)
                                                                                (eq ?pred:type atom))
-    (if (and ?pred:is-satisfied (any-factp ((?parent pddl-formula))
-                                              (and (eq ?parent:id ?pred:part-of)
-                                                   (eq ?parent:type negation))))
+    (if (and ?pred:is-satisfied (domain-is-formula-negative ?pred:id))
       then
-          (printout error "Precondition (not " ?gpred:predicate-id ") is not satisfied." crlf)
+        (printout error "Precondition (not " ?gpred:predicate-id ") -- which might be nested -- is not satisfied." crlf)
     )
-    (if (and (not ?pred:is-satisfied) (not (any-factp ((?parent pddl-formula))
-                                              (and (eq ?parent:id ?pred:part-of)
-                                                   (eq ?parent:type negation)))))
+    (if (and (not ?pred:is-satisfied) (not (domain-is-formula-negative ?pred:id)))
       then
-          (printout error "Precondition " ?gpred:predicate-id " is not satisfied" crlf)
+        (printout error "Precondition " ?gpred:predicate-id " -- which might be nested -- is not satisfied." crlf)
     )
+
   )
 
   (modify ?p (state FAILED) (error-msg "Unsatisfied precondition"))
