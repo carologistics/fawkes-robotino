@@ -109,8 +109,7 @@
                       (state PENDING)
                       (precondition ?grounding-id)
   )
-  (pddl-grounding (id ?grounding-id) (param-names $?g-param-names) (param-values $?g-param-values))
-  (grounded-pddl-predicate (id ?grounded-predicate) (predicate-id ?predicate-id) (is-satisfied FALSE))
+  (grounded-pddl-predicate (grounding ?grounding-id) (is-satisfied FALSE))
   =>
   (modify ?pa (state EXECUTION-FAILED))
 )
