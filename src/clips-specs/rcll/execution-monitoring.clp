@@ -106,8 +106,10 @@
                       (action-name ?an)
                       (goal-id ?goal-id)
                       (param-values $? ?mps $?)
-                      (state PENDING))
-  (domain-atomic-precondition (operator ?an) (grounded-with ?action-id) (is-satisfied FALSE))
+                      (state PENDING)
+                      (precondition ?grounding-id)
+  )
+  (grounded-pddl-predicate (grounding ?grounding-id) (is-satisfied FALSE))
   =>
   (modify ?pa (state EXECUTION-FAILED))
 )
@@ -231,7 +233,6 @@
               (start-time ?now)))
 )
 
-
 (defrule execution-monitoring-detect-timeout
 " If an action was longer than its timeout-duration in a volatile state like pending or pending-sensed-effect
   reason that this action got stuck and set it to failed
@@ -239,7 +240,8 @@
   ?p <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
 	         (id ?id) (state ?status)
 	         (action-name ?action-name)
-	         (param-values $?param-values))
+	         (param-values $?param-values)
+           (precondition ?grounding-id))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
   (wm-fact (key game state) (value RUNNING))
@@ -250,29 +252,20 @@
             (timeout-duration ?timeout&:(timeout ?now ?st ?timeout)))
   =>
   (printout t "Action "  ?action-name " timedout after " ?status  crlf)
-  (do-for-all-facts ((?da domain-atomic-precondition)) (and (eq ?da:grounded-with ?id)
-                                                            (eq ?da:plan-id ?plan-id)
-                                                            (eq ?da:goal-id ?goal-id)
-                                                            ?da:grounded)
-    (if (and ?da:is-satisfied (any-factp ((?dp domain-precondition))
-                                                (and (eq ?dp:name ?da:part-of)
-                                                     (eq ?dp:goal-id ?goal-id)
-                                                     (eq ?dp:plan-id ?plan-id)
-                                                     (eq ?dp:grounded-with ?id)
-                                                     (eq ?dp:type negation))))
-        then
-          (printout error "Precondition (not " ?da:predicate ?da:param-values ") is not satisfied." crlf)
+  (do-for-all-facts ((?gpred grounded-pddl-formula) (?pred pddl-formula)) (and (eq ?gpred:formula-id ?pred:id)
+                                                                               (eq ?gpred:grounding ?grounding-id)
+                                                                               (eq ?pred:type atom))
+    (if (and ?pred:is-satisfied (domain-is-formula-negative ?pred:id))
+      then
+        (printout error "Precondition (not " ?gpred:predicate-id ") -- which might be nested -- is not satisfied." crlf)
     )
-    (if (and (not ?da:is-satisfied) (not (any-factp ((?dp domain-precondition))
-                                                (and (eq ?dp:name ?da:part-of)
-                                                     (eq ?dp:goal-id ?goal-id)
-                                                     (eq ?dp:plan-id ?plan-id)
-                                                     (eq ?dp:grounded-with ?id)
-                                                     (eq ?dp:type negation)))))
-        then
-          (printout error "Precondition " ?da:predicate ?da:param-values " is not satisfied" crlf)
+    (if (and (not ?pred:is-satisfied) (not (domain-is-formula-negative ?pred:id)))
+      then
+        (printout error "Precondition " ?gpred:predicate-id " -- which might be nested -- is not satisfied." crlf)
     )
+
   )
+
   (modify ?p (state FAILED) (error-msg "Unsatisfied precondition"))
   (retract ?pt)
 )
@@ -300,8 +293,12 @@
   (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
 	   (id ?id) (state PENDING)
 	   (action-name wp-put)
-	   (param-values $? ?mps $? ?side $?))
-  (domain-atomic-precondition (operator ?an) (grounded-with ?id) (predicate mps-side-free) (param-values ?mps ?side))
+	   (param-values $? ?mps $? ?side $?)
+	   (precondition ?grounding-id)
+  )
+  (pddl-grounding (id ?grounding-id) (param-names $?g-param-names) (param-values $?g-param-values))
+  (grounded-pddl-predicate (id ?grounded-predicate) (predicate-id ?predicate-id))
+  (pddl-predicate (id ?predicate-id) (predicate mps-side-free))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
   (wm-fact (key domain fact mps-state args? m ?mps s ?s&~IDLE&~READY-AT-OUTPUT))
