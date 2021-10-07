@@ -361,7 +361,9 @@
 	(plan-action (action-name ?action&wp-get|wp-put|wp-put-slide-cc|wp-get-shelf)
 	             (goal-id ?goal-id) (plan-id ?plan-id) (state FAILED)
 	             (param-values $? ?wp $?))
-	(wm-fact (key domain fact wp-usable args? wp ?wp))
+	(or (wm-fact (key domain fact wp-usable args? wp ?wp))
+	    (wm-fact (key domain fact wp-on-shelf args? wp ?wp $?))
+	)
 	=>
 	(set-robot-to-waiting ?meta)
 	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as workpiece is still usable after failed " ?action crlf)
