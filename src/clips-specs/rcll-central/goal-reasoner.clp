@@ -190,7 +190,7 @@
 
 (defrule goal-reasoner-select-root-waiting-robot
   "Select all executable root goals in order to propagate selection."
-  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ?g <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
       (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
 
