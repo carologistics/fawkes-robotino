@@ -553,7 +553,7 @@
 	                          (mode FORMULATED)
 	                          (params  wp ?preset-wp
 	                                   wp-loc ?wp-loc
-	                                   wp-side UNKNOWN
+	                                   wp-side ?wp-side
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
 	                                   $?)
