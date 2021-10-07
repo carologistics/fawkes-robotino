@@ -197,6 +197,15 @@
 		(and (eq ?da:goal-id ?g:id) (neq ?da:grounded-with nil) (eq ?g:mode FORMULATED))
 		(modify ?da (grounded-with nil))
 	)
+	; deleting unused payment goal dependencies
+	(delayed-do-for-all-facts ((?da dependency-assignment))
+		(and (eq ?da:grounded-with nil)
+		     (or
+		         (eq ?da:class PAY-FOR-RINGS-WITH-BASE)
+		         (eq ?da:class PAY-FOR-RINGS-WITH-CAP-CARRIER)
+		         (eq ?da:class PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)))
+		(retract ?da)
+	)
 )
 
 (defrule goal-production-unassign-robot-from-finshed-goals
@@ -707,6 +716,12 @@ The workpiece remains in the output of the used ring station after
 	         (sym-cat order-ring (sub-string 5 5 ?ring) -color))
 	          args? ord ?order col ?ring-color ))
 	(wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C1|C2|C3))
+	; Ring spec & costs
+	;(wm-fact (key domain fact rs-ring-spec
+	;          args? m ?target-mps r ?ring-color&~RING_NONE rn ?bases-needed))
+	;(wm-fact (key domain fact rs-sub args? minuend ?bases-filled
+	;                                  subtrahend ?bases-needed
+	;                                  difference ?bases-remain&ZERO|ONE|TWO|THREE))
 
 	(not (wm-fact (key domain fact wp-at args? wp ?wp-loc m ?target-mps side INPUT)))
 	(wm-fact (key domain fact mps-type args? m ?other-rs&~?target-mps t RS))
@@ -1216,6 +1231,7 @@ The workpiece remains in the output of the used ring station after
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
 				(goal-production-assert-buffer-cap ?cs ?col-cap)
 				(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap)
+				;(goal-production-assert-discard UNKNOWN ?cs OUTPUT)
 			)
 		)
 		(goal-tree-assert-central-run-parallel MOUNT-GOALS
@@ -1225,11 +1241,11 @@ The workpiece remains in the output of the used ring station after
 					(goal-production-assert-mount-ring ?wp-for-order ?rs C-BS OUTPUT)
 					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT)
 				)
-				(goal-tree-assert-central-run-parallel INPUT-BS
-					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs OUTPUT)
-					(goal-production-assert-mount-ring ?wp-for-order ?rs C-BS INPUT)
-					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base INPUT)
-				)
+				;(goal-tree-assert-central-run-parallel INPUT-BS
+				;	(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs OUTPUT)
+				;	(goal-production-assert-mount-ring ?wp-for-order ?rs C-BS INPUT)
+				;	(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base INPUT)
+				;)
 			)
 			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap)
 			(goal-production-assert-instruct-rs-mount-ring ?rs ?col-ring1)
@@ -1258,6 +1274,7 @@ The workpiece remains in the output of the used ring station after
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
 				(goal-production-assert-buffer-cap ?cs ?col-cap)
 				(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap)
+				;(goal-production-assert-discard UNKNOWN ?cs OUTPUT)
 			)
 		)
 		(goal-tree-assert-central-run-parallel MOUNT-GOALS
@@ -1268,12 +1285,12 @@ The workpiece remains in the output of the used ring station after
 					(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS OUTPUT)
 					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT)
 				)
-				(goal-tree-assert-central-run-parallel INPUT-BS
-					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs2 OUTPUT)
-					(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT)
-					(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS INPUT)
-					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base INPUT)
-				)
+				;(goal-tree-assert-central-run-parallel INPUT-BS
+				;	(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs2 OUTPUT)
+				;	(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT)
+				;	(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS INPUT)
+				;	(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base INPUT)
+				;)
 			)
 			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap)
 			(goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1)
@@ -1303,6 +1320,7 @@ The workpiece remains in the output of the used ring station after
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
 				(goal-production-assert-buffer-cap ?cs ?col-cap)
 				(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap)
+				;(goal-production-assert-discard UNKNOWN ?cs OUTPUT)
 			)
 		)
 		(goal-tree-assert-central-run-parallel MOUNT-GOALS
@@ -1314,13 +1332,13 @@ The workpiece remains in the output of the used ring station after
 					(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS OUTPUT)
 					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT)
 				)
-				(goal-tree-assert-central-run-parallel INPUT-BS
-					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs3 OUTPUT)
-					(goal-production-assert-mount-ring ?wp-for-order ?rs3 ?rs2 OUTPUT)
-					(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT)
-					(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS INPUT)
-					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base INPUT)
-				)
+				;(goal-tree-assert-central-run-parallel INPUT-BS
+				;	(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs3 OUTPUT)
+				;	(goal-production-assert-mount-ring ?wp-for-order ?rs3 ?rs2 OUTPUT)
+				;	(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT)
+				;	(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS INPUT)
+				;	(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base INPUT)
+				;)
 			)
 			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap)
 			(goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1)
