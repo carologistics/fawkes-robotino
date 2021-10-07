@@ -222,9 +222,9 @@
                       (state RUNNING)
                       (executable TRUE))
   ; check if a dependency-goal failed
-  (and (dependency-assignment (goal-id ?goal-id)
+  (dependency-assignment (goal-id ?goal-id)
                               (grounded-with ?dependency-id))
-       (goal (id ?dependency-id) (outcome FAILED) (mode EVALUATED)))
+  (goal (id ?dependency-id) (outcome FAILED) (mode EVALUATED))
   =>
   (printout warn "Goal " ?goal-id
                        " failed waiting, because dependency-goal "
