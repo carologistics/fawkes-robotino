@@ -1415,6 +1415,7 @@ The workpiece remains in the output of the used ring station after
 	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
 	(not (goal (class MOVE-OUT-OF-WAY)))
 	(not (wm-fact (key config rcll pick-and-place-challenge) (value TRUE)))
+	(goal (class DELIVER-RC21))
 	=>
 	(bind ?g (goal-tree-assert-central-run-parallel MOVE-OUT-OF-WAY
 	        (goal-production-assert-move-out-of-way M_Z41)
