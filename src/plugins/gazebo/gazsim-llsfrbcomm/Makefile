@@ -25,7 +25,7 @@ include $(BUILDSYSDIR)/protobuf.mk
 
 CFLAGS += $(CFLAGS_CPP11)
 
-LIBS_gazsim_llsfrbcomm = fawkescore fawkesutils fawkesaspects fawkes_protobuf_comm llsf_msgs fawkesgazeboaspect gazsim_msgs
+LIBS_gazsim_llsfrbcomm = fawkescore fawkesutils fawkesaspects llsf_msgs fawkesgazeboaspect gazsim_msgs
 OBJS_gazsim_llsfrbcomm = gazsim_llsfrbcomm_plugin.o gazsim_llsfrbcomm_thread.o
 
 OBJS_all    = $(OBJS_gazsim_llsfrbcomm)
@@ -34,11 +34,11 @@ PLUGINS_all = $(PLUGINDIR)/gazsim-llsfrbcomm.$(SOEXT)
 REQ_BOOST_LIBS = system
 HAVE_BOOST_LIBS = $(call boost-have-libs,$(REQ_BOOST_LIBS))
 
-ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF)$(HAVE_BOOST_LIBS),111)
-  CFLAGS  += $(CFLAGS_PROTOBUF) \
+ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF)$(HAVE_PROTOBUF_COMM)$(HAVE_BOOST_LIBS),1111)
+  CFLAGS  += $(CFLAGS_PROTOBUF) $(CFLAGS_PROTOBUF_COMM) \
              $(call boost-libs-cflags,$(REQ_BOOST_LIBS)) \
              $(CFLAGS_GAZEBO)
-  LDFLAGS += $(LDFLAGS_PROTOBUF) \
+  LDFLAGS += $(LDFLAGS_PROTOBUF) $(LDFLAGS_PROTOBUF_COMM) \
              $(call boost-libs-ldflags,$(REQ_BOOST_LIBS)) \
              $(LDFLAGS_GAZEBO)
 
@@ -50,6 +50,9 @@ else
   ifneq ($(HAVE_PROTOBUF),1)
     WARN_TARGETS += warning_protobuf
   endif
+  ifneq ($(HAVE_PROTOBUF_COMM),1)
+    WARN_TARGETS += warning_protobuf_comm
+  endif
   ifneq ($(HAVE_BOOST_LIBS),1)
     WARN_TARGETS += warning_boost
   endif
@@ -58,13 +61,16 @@ endif
 ifeq ($(OBJSSUBMAKE),1)
 all: $(WARN_TARGETS)
 
-.PHONY: warning_protobuf warning_gazebo warning_boost
+.PHONY: $(WARN_TARGETS)
 warning_gazebo:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting gazsim-webcam Plugin$(TNORMAL) " \
 		"(Gazebo Simulator not found)"
 warning_protobuf:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting gazsim-webcam Plugin$(TNORMAL) " \
 		"(protobuf[-devel] not installed)"
+warning_protobuf_comm:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting gazsim-webcam Plugin$(TNORMAL) " \
+		"(protobuf_comm[-devel] not installed)"
 warning_boost:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting gazsim-webcam Plugin$(TNORMAL) " \
 		"(req. boost libs not found)"
