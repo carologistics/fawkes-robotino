@@ -1155,13 +1155,13 @@ The workpiece remains in the output of the used ring station after
 			)
 			(bind ?goals
 				(insert$ ?goals (+ (length$ ?goals) 1)
-					(goal-tree-assert-central-run-one PAY-FOR-RING-GOAL
+					;(goal-tree-assert-central-run-one PAY-FOR-RING-GOAL
 						(goal-tree-assert-central-run-parallel INPUT-BS
 							(goal-production-assert-pay-for-rings-with-base ?wp-base-pay C-BS INPUT (nth$ ?index ?rs) INPUT)
 							(goal-production-assert-instruct-bs-dispense-base ?wp-base-pay BASE_RED INPUT)
 						)
-						(goal-production-assert-pay-for-rings-with-cap-carrier-from-shelf C-CS1 (nth$ ?index ?rs) INPUT)
-					)
+						;(goal-production-assert-pay-for-rings-with-cap-carrier-from-shelf C-CS1 (nth$ ?index ?rs) INPUT)
+					;)
 				)
 			)
 	 	)
@@ -1210,15 +1210,18 @@ The workpiece remains in the output of the used ring station after
 			)
 		)
 		(goal-tree-assert-central-run-parallel MOUNT-GOALS
-			(goal-tree-assert-central-run-one INTERACT-BS
+			; Goal selection with run-one goals is broken, as a workaround simply
+			; remove alternative choices and switch to run-parallel
+			;(goal-tree-assert-central-run-one INTERACT-BS
+			(goal-tree-assert-central-run-parallel INTERACT-BS
 				(goal-tree-assert-central-run-parallel OUTPUT-BS
 					(goal-production-assert-mount-cap ?wp-for-order ?cs C-BS OUTPUT)
 					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?base-col OUTPUT)
 				)
-				(goal-tree-assert-central-run-parallel INPUT-BS
-					(goal-production-assert-mount-cap ?wp-for-order ?cs C-BS INPUT)
-					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?base-col INPUT)
-				)
+				;(goal-tree-assert-central-run-parallel INPUT-BS
+				;	(goal-production-assert-mount-cap ?wp-for-order ?cs C-BS INPUT)
+				;	(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?base-col INPUT)
+				;)
 			)
 			(goal-production-assert-instruct-cs-mount-cap ?cs ?cap-col)
 		)
@@ -1249,7 +1252,10 @@ The workpiece remains in the output of the used ring station after
 			)
 		)
 		(goal-tree-assert-central-run-parallel MOUNT-GOALS
-			(goal-tree-assert-central-run-one INTERACT-BS
+			; Goal selection with run-one goals is broken, as a workaround simply
+			; remove alternative choices and switch to run-parallel
+			;(goal-tree-assert-central-run-one INTERACT-BS
+			(goal-tree-assert-central-run-parallel INTERACT-BS
 				(goal-tree-assert-central-run-parallel OUTPUT-BS
 					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs OUTPUT)
 					(goal-production-assert-mount-ring ?wp-for-order ?rs C-BS OUTPUT)
@@ -1292,7 +1298,10 @@ The workpiece remains in the output of the used ring station after
 			)
 		)
 		(goal-tree-assert-central-run-parallel MOUNT-GOALS
-			(goal-tree-assert-central-run-one INTERACT-BS
+			; Goal selection with run-one goals is broken, as a workaround simply
+			; remove alternative choices and switch to run-parallel
+			;(goal-tree-assert-central-run-one INTERACT-BS
+			(goal-tree-assert-central-run-parallel INTERACT-BS
 				(goal-tree-assert-central-run-parallel OUTPUT-BS
 					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs2 OUTPUT)
 					(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT)
@@ -1338,7 +1347,10 @@ The workpiece remains in the output of the used ring station after
 			)
 		)
 		(goal-tree-assert-central-run-parallel MOUNT-GOALS
-			(goal-tree-assert-central-run-one INTERACT-BS
+			; Goal selection with run-one goals is broken, as a workaround simply
+			; remove alternative choices and switch to run-parallel
+			;(goal-tree-assert-central-run-one INTERACT-BS
+			(goal-tree-assert-central-run-parallel INTERACT-BS
 				(goal-tree-assert-central-run-parallel OUTPUT-BS
 					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs3 OUTPUT)
 					(goal-production-assert-mount-ring ?wp-for-order ?rs3 ?rs2 OUTPUT)
