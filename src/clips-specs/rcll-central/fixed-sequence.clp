@@ -682,9 +682,10 @@
 (modify ?g (mode EXPANDED))
 )
 
+
 (defrule goal-expander-exploration-challenge-move
 	?g <- (goal (id ?goal-id) (class EXPLORATION-CHALLENGE-MOVE) (mode SELECTED)
-				(params target ?target $?)
+	            (params target ?target $?)
 	            (meta $? assigned-to ?robot $?))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>

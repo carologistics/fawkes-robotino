@@ -207,7 +207,7 @@
 	)
 )
 
-(defrule goal-production-unassign-robot-from-finshed-goals
+(defrule goal-production-unassign-robot-from-finished-goals
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	?g <- (goal (sub-type SIMPLE) (mode RETRACTED)
 	      (meta $? assigned-to ?robot $?) (parent ?parent))
