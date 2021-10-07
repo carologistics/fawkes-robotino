@@ -117,7 +117,7 @@
 
 (defrule goal-expander-explore-zone
 	?g <- (goal (id ?goal-id) (mode SELECTED) (class EXPLORE-ZONE)
-	            (params r ?zn) (meta $? assigned-to ?r $?))
+	            (params z ?zn) (meta $? assigned-to ?r $?))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	=>
 	(plan-assert-sequential EXPLORE-ZONE ?goal-id ?r
