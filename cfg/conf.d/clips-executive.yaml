@@ -157,6 +157,7 @@ clips-executive:
             # explore_zone skill on it)
 
             zone-margin: 0.15
+            latest-send-last-report-time: 210  # =3:30
 
       blackboard-preload:
         - Position3DInterface
