@@ -252,16 +252,18 @@
             (timeout-duration ?timeout&:(timeout ?now ?st ?timeout)))
   =>
   (printout t "Action "  ?action-name " timedout after " ?status  crlf)
-  (do-for-all-facts ((?gpred grounded-pddl-formula) (?pred pddl-formula)) (and (eq ?gpred:formula-id ?pred:id)
-                                                                               (eq ?gpred:grounding ?grounding-id)
-                                                                               (eq ?pred:type atom))
-    (if (and ?pred:is-satisfied (domain-is-formula-negative ?pred:id))
+  (do-for-all-facts ((?gform grounded-pddl-formula) (?form pddl-formula) (?pred pddl-predicate))
+      (and (eq ?gform:formula-id ?form:id)
+           (eq ?gform:grounding ?grounding-id)
+           (eq ?form:type atom)
+           (eq ?pred:part-of ?form:id))
+    (if (and ?gform:is-satisfied (domain-is-formula-negative ?form:id))
       then
-        (printout error "Precondition (not " ?gpred:predicate-id ") -- which might be nested -- is not satisfied." crlf)
+        (printout error "Precondition (not " ?pred:predicate ") -- which might be nested -- is not satisfied." crlf)
     )
-    (if (and (not ?pred:is-satisfied) (not (domain-is-formula-negative ?pred:id)))
+    (if (and (not ?gform:is-satisfied) (not (domain-is-formula-negative ?form:id)))
       then
-        (printout error "Precondition " ?gpred:predicate-id " -- which might be nested -- is not satisfied." crlf)
+        (printout error "Precondition " ?pred:predicate " -- which might be nested -- is not satisfied." crlf)
     )
 
   )
