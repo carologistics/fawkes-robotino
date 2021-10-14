@@ -46,18 +46,6 @@
 	(assert (wm-fact (key exploration active) (type BOOL) (value TRUE)))
 )
 
-(defrule exp-disable
-" Exploration is not needed anymore as all machines were found."
-	(wm-fact (key domain fact mps-state args? m ? $?))
-	(forall
-		(wm-fact (key domain fact mps-state args? m ?name $?))
-		(wm-fact (key domain fact zone-content args? z ? m ?name))
-	)
-	?active <- (wm-fact (key exploration active) (type BOOL) (value TRUE))
-	=>
-	(modify ?active (value FALSE))
-)
-
 (defrule exp-disable-goals
 " Exploration is not needed anymore as all machines were found."
 	?g <-(goal (class EXPLORE-ZONE|EXPLORATION-CHALLENGE-MOVE) (mode FORMULATED))
@@ -159,7 +147,6 @@
 ;" If the robot drove through a zone slow enough and passed the middle of the zone with a certain margin
 ;  we can conclude, that there is no machine in this zone
 ;"
-;	(wm-fact (key exploration active) (type BOOL) (value TRUE))
 ;	(wm-fact (key central agent robot args? r ?r))
 ;  (exp-navigator-vlow ?r ?max-velocity ?max-rotation)
 ;  (MotorInterface (id ?motor-id &:(eq ?motor-id (remote-if-id ?r "Robotino")))
@@ -183,7 +170,6 @@
 " If a laserline was found, that lies inside a zone with a certain margin,
   update the line-vis fact of this zone
 "
-	(wm-fact (key exploration active) (type BOOL) (value TRUE))
 	(wm-fact (key central agent robot args? r ?r))
 	(LaserLineInterface
 	  (id ?laser-id&:(str-index (str-cat ?r) ?laser-id))
@@ -230,7 +216,6 @@
 (defrule exp-found-tag
 " If a tag was found in a zone that we dont have any information of, update the corresponding tag-vis fact
 "
-	(wm-fact (key exploration active) (type BOOL) (value TRUE))
 	(wm-fact (key central agent robot args? r ?r))
   (domain-fact (name tag-matching) (param-values ?machine ?side ?col ?tag))
   (TagVisionInterface (id ?tag-vis-id &:(eq ?tag-vis-id (remote-if-id ?r "tag-vision/info")))
@@ -265,7 +250,6 @@
 (defrule exp-start-zone-exploring
 " If there is a zone, where we suspect a machine, interrupt the EXPLORATION-PLAN and start exploring the zone
 "
-	(wm-fact (key exploration active) (type BOOL) (value TRUE))
 	(wm-fact (key central agent robot args? r ?r))
   (goal (id ?parent) (class EXPLORATION-ROOT))
   (Position3DInterface (id ?pos-id&:(eq ?pos-id (remote-if-id ?r "Pose"))) (translation $?trans))
@@ -421,5 +405,9 @@
 	                            (param-values ?zz ?target-mps))
 	)))
 	=>
+	(delayed-do-for-all-facts ((?exp wm-fact))
+		(wm-key-prefix ?exp:key (create$ exploration fact))
+		(retract ?exp)
+	)
 	(modify ?exp-active (value FALSE))
 )
