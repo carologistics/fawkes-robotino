@@ -193,9 +193,6 @@
 	  (end_point_2 ?e3 ?e4 $?)
 	  (frame_id ?frame)
 	)
-	(MotorInterface (id ?motor-id &:(eq ?motor-id (remote-if-id ?r "Robotino")))
-	                (vx ?vx) (vy ?vy))
-
 	(exp-zone-margin ?zone-margin)
 	?ze-f <- (wm-fact (key exploration fact line-vis
 	                  args? zone ?zn&:(eq ?zn (get-zone ?zone-margin
@@ -384,11 +381,6 @@
       (rot ?rot)
       (tag-id ?tag-id)
     )
-    ;(exploration-result
-    ;  (machine (mirror-name ?machine)) (zone (mirror-name ?zn2))
-    ;  (orientation (mirror-orientation ?mtype ?zn2 ?orientation))
-    ;  (team (mirror-team ?team-color))
-    ;)
   )
   (printout t "EXP exploration fact zone successfull. Found " ?machine " in " ?zn2 crlf)
 )
