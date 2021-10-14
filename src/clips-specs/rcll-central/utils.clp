@@ -343,9 +343,9 @@
 
 (deffunction navgraph-compute (?robot)
     (bind ?interface (remote-if "NavGraphWithMPSGeneratorInterface" ?robot "navgraph-generator-mps"))
-       (bind ?msg (blackboard-create-msg ?interface "ComputeMessage"))
-       (bind ?compute-msg-id (blackboard-send-msg ?msg))
-       (printout t "Sent compute for " ?robot crlf)
+    (bind ?msg (blackboard-create-msg ?interface "ComputeMessage"))
+    (blackboard-send-msg ?msg)
+    (printout t "Sent compute for " ?robot crlf)
 )
 
 (deffunction wm-fact-to-navgraph-node (?key)
