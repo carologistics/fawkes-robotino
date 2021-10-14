@@ -1452,6 +1452,7 @@ The workpiece remains in the output of the used ring station after
 	"If there is a mismatch between machines and orders, produce output"
 	(wm-fact (key domain fact order-cap-color args? ord ?order-id col ?col))
 	(not (wm-fact (key domain fact cs-color args? m ?cs col ?col)))
+	(goal (id ?root-id) (class PRODUCTION-ROOT))
 	=>
 	(printout error "Can not build order " ?order-id " with cap color " ?col " because there is no capstation for it" crlf)
 )
@@ -1460,7 +1461,7 @@ The workpiece remains in the output of the used ring station after
 	"If there is a mismatch between machines and orders, produce output"
 	(wm-fact (key domain fact order-ring1-color args? ord ?order-id col ?col&~RING_NONE))
 	(not (wm-fact (key domain fact rs-ring-spec args? $? r ?col $?)))
-	(not (wm-fact (key domain fact rs-ring-spec args? $? rn NA)))
+	(goal (id ?root-id) (class PRODUCTION-ROOT))
 	=>
 	(printout error "Can not build order " ?order-id " with ring-1 color " ?col " because there is no ringstation for it" crlf)
 )
@@ -1469,7 +1470,7 @@ The workpiece remains in the output of the used ring station after
 	"If there is a mismatch between machines and orders, produce output"
 	(wm-fact (key domain fact order-ring2-color args? ord ?order-id col ?col-ring&~RING_NONE))
 	(not (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?col-ring $?)))
-	(not (wm-fact (key domain fact rs-ring-spec args? $? rn NA)))
+	(goal (id ?root-id) (class PRODUCTION-ROOT))
 	=>
 	(printout error "Can not build order " ?order-id " with ring-2 color " ?col-ring " because there is no ringstation for it" crlf)
 )
@@ -1478,7 +1479,7 @@ The workpiece remains in the output of the used ring station after
 	"If there is a mismatch between machines and orders, produce output"
 	(wm-fact (key domain fact order-ring3-color args? ord ?order-id col ?col-ring&~RING_NONE))
 	(not (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?col-ring $?)))
-	(not (wm-fact (key domain fact rs-ring-spec args? $? rn NA)))
+	(goal (id ?root-id) (class PRODUCTION-ROOT))
 	=>
 	(printout error "Can not build order " ?order-id " with ring-3 color " ?col-ring " because there is no ringstation for it" crlf)
 )
