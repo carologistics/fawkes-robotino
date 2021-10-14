@@ -24,7 +24,7 @@ CFLAGS += $(CFLAGS_CPP11)
 
 LIBS_navgraph_broker = fawkescore fawkesutils fawkesaspects fawkesinterface \
                        fawkesnavgraphaspect fawkesnavgraph fawkesblackboard \
-                       fawkes_protobuf_comm fawkesgossip fawkesgossipaspect \
+                       fawkesgossip fawkesgossipaspect \
                        navgraph_broker_msgs NavPathInterface
 OBJS_navgraph_broker = navgraph_broker_plugin.o navgraph_broker_thread.o
 
@@ -34,10 +34,10 @@ PLUGINS_all = $(PLUGINDIR)/navgraph-broker.$(SOEXT)
 REQ_BOOST_LIBS = system signals2
 HAVE_BOOST_LIBS = $(call boost-have-libs,$(REQ_BOOST_LIBS))
 
-ifeq ($(HAVE_CPP11)$(HAVE_PROTOBUF)$(HAVE_BOOST_LIBS),111)
-  CFLAGS  += $(CFLAGS_PROTOBUF) $(CFLAGS_CPP11) \
+ifeq ($(HAVE_CPP11)$(HAVE_PROTOBUF)$(HAVE_PROTOBUF_COMM)$(HAVE_BOOST_LIBS),1111)
+  CFLAGS  += $(CFLAGS_PROTOBUF) $(CFLAGS_PROTOBUF_COMM) $(CFLAGS_CPP11) \
              $(call boost-libs-cflags,$(REQ_BOOST_LIBS))
-  LDFLAGS += $(LDFLAGS_PROTOBUF) \
+  LDFLAGS += $(LDFLAGS_PROTOBUF) $(LDFLAGS_PROTOBUF_COMM) \
              $(call boost-libs-ldflags,$(REQ_BOOST_LIBS))
 
   PLUGINS_build = $(PLUGINS_all)
@@ -47,6 +47,9 @@ else
   endif
   ifneq ($(HAVE_PROTOBUF),1)
     WARN_TARGETS += warning_protobuf
+  endif
+  ifneq ($(HAVE_PROTOBUF_comm),1)
+    WARN_TARGETS += warning_protobuf_comm
   endif
   ifneq ($(HAVE_BOOST_LIBS),1)
     WARN_TARGETS_BOOST = $(foreach l,$(REQ_BOOST_LIBS),$(if $(call boost-have-lib,$l),, warning_boost_$l))
@@ -66,6 +69,8 @@ warning_cpp11:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting navgraph-broker plugin$(TNORMAL) (C++11 support required)"
 warning_protobuf:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting navgraph-broker plugin$(TNORMAL) (protobuf not found)"
+warning_protobuf_comm:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting navgraph-broker plugin$(TNORMAL) (protobuf_comm not found)"
 $(WARN_TARGETS_BOOST): warning_boost_%:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Cannot build navgraph-broker plugin$(TNORMAL) (Boost library $* not found)"
 endif
