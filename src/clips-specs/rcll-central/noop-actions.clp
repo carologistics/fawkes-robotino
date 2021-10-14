@@ -231,7 +231,6 @@
                        ?dependency-id " failed" crlf)
   (modify ?pa (state EXECUTION-FAILED))
 )
->>>>>>> e6849536f (rcll-central: move wait-for actions from wait-actions.clp to noop-actions.clp)
 
 ; ROBOCUP 2021 NAVIGATION CHALLENGE
 (defrule action-execute-wait-for-reached

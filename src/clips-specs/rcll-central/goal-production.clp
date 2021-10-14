@@ -171,7 +171,7 @@
 " A waiting robot got a new goal, clear executability and robot assignment from other goals. "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	(goal (sub-type SIMPLE) (mode SELECTED)
-	      (meta $? assigned-to ?robot2 $?)
+	      (meta $? assigned-to ?robot $?)
 	      (is-executable TRUE) (type ACHIEVE) (class ~SEND-BEACON))
 	(goal (sub-type SIMPLE) (mode FORMULATED)
 	      (meta $? assigned-to ?robot $?))
@@ -248,6 +248,21 @@
 	(modify ?g (mode DISPATCHED) (outcome UNKNOWN))
 )
 
+(defrule goal-production-move-out-of-way-executable
+" Moves an unproductive robot to the given position "
+	(declare (salience (- ?*SALIENCE-GOAL-EXECUTABLE-CHECK* 1)))
+	?g <- (goal (class MOVE-OUT-OF-WAY) (sub-type SIMPLE)
+	            (mode FORMULATED)
+	            (params target-pos ?target-pos location ?loc)
+	            (meta $? assigned-to ?robot $?)
+	            (is-executable FALSE))
+	; check if target position is free
+	(test (is-free ?target-pos))
+	=>
+	(printout t "Goal MOVE-OUT-OF-WAY executable for " ?robot " to pos " ?target-pos  crlf)
+  (modify ?g (is-executable TRUE))
+)
+
 (defrule goal-production-pick-and-place-executable
 "Check executability for pick and place
  Picks a wp from the output of the given mps
@@ -265,25 +280,6 @@
 	(domain-fact (name zone-content) (param-values ?zz ?mps))
 	=>
 	(printout t "Goal PICK-AND-PLACE executable for " ?robot " at " ?mps crlf)
-	(modify ?g (is-executable TRUE))
-)
-
-(defrule goal-production-move-out-of-way-executable
-" Moves an unproductive robot to the given position "
-	(declare (salience (- ?*SALIENCE-GOAL-EXECUTABLE-CHECK* 1)))
-	?g <- (goal (class MOVE-OUT-OF-WAY) (sub-type SIMPLE)
-	            (mode FORMULATED)
-	            (params target-pos ?target-pos location ?loc)
-	            (meta $? assigned-to ?robot $?)
-	            (is-executable FALSE))
-	; is executable if no other goal exists which is executable for the robot
-	; beside a goal of the same class
-	(not (goal (meta $? assigned-to ?robot $?) (is-executable TRUE) (class ~MOVE-OUT-OF-WAY)))
-	;    (goal (class MOVE-OUT-OF-WAY)))
-	; check if target position is free
-	(test (is-free ?target-pos))
-	=>
-	(printout t "Goal MOVE-OUT-OF-WAY executable for " ?robot " to pos " ?target-pos  crlf)
 	(modify ?g (is-executable TRUE))
 )
 
@@ -1038,7 +1034,6 @@ The workpiece remains in the output of the used ring station after
 	               target-side ?target-side
 	               )
 	)))
-	(return ?goal)
 )
 
 (deffunction goal-production-assert-deliver-rc21
