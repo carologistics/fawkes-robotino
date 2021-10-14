@@ -1222,10 +1222,6 @@ The workpiece remains in the output of the used ring station after
 			)
 			(goal-production-assert-instruct-cs-mount-cap ?cs ?cap-col)
 		)
-		;deliver-rc21 is a change specific to robocup 2021, for the normal game keep
-		;the old structure
-		;(goal-production-assert-deliver ?wp-for-order)
-		;(goal-production-assert-instruct-ds-deliver ?wp-for-order)
 		(goal-production-assert-deliver-rc21 ?wp-for-order)
 	)
   )
@@ -1237,9 +1233,6 @@ The workpiece remains in the output of the used ring station after
 
   (bind ?goal
     (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-		;deliver-rc21 is a change specific to robocup 2021, for the normal game keep
-		;the old structure
-		;(goal-production-assert-deliver ?wp-for-order)
 		(goal-production-assert-deliver-rc21 ?wp-for-order)
 		(goal-tree-assert-central-run-parallel PREPARE-CS
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
@@ -1258,18 +1251,10 @@ The workpiece remains in the output of the used ring station after
 					(goal-production-assert-mount-ring ?wp-for-order ?rs C-BS OUTPUT)
 					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT)
 				)
-				;(goal-tree-assert-central-run-parallel INPUT-BS
-				;	(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs OUTPUT)
-				;	(goal-production-assert-mount-ring ?wp-for-order ?rs C-BS INPUT)
-				;	(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base INPUT)
-				;)
 			)
 			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap)
 			(goal-production-assert-instruct-rs-mount-ring ?rs ?col-ring1)
 		)
-		;deliver-rc21 is a change specific to robocup 2021, for the normal game keep
-		;the old structure
-		;(goal-production-assert-instruct-ds-deliver ?wp-for-order)
 		(goal-tree-assert-central-run-parallel PAYMENT-GOALS
 			(goal-production-assert-payment-goals (create$ ?rs) (create$ ?col-ring1))
 		)
@@ -1283,9 +1268,6 @@ The workpiece remains in the output of the used ring station after
 
   (bind ?goal
     (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-		;deliver-rc21 is a change specific to robocup 2021, for the normal game keep
-		;the old structure
-		;(goal-production-assert-deliver ?wp-for-order)
 		(goal-production-assert-deliver-rc21 ?wp-for-order)
 		(goal-tree-assert-central-run-parallel PREPARE-CS
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
@@ -1305,20 +1287,11 @@ The workpiece remains in the output of the used ring station after
 					(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS OUTPUT)
 					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT)
 				)
-				;(goal-tree-assert-central-run-parallel INPUT-BS
-				;	(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs2 OUTPUT)
-				;	(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT)
-				;	(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS INPUT)
-				;	(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base INPUT)
-				;)
 			)
 			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap)
 			(goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1)
 			(goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2)
 		)
-		;deliver-rc21 is a change specific to robocup 2021, for the normal game keep
-		;the old structure
-		;(goal-production-assert-instruct-ds-deliver ?wp-for-order)
 		(goal-tree-assert-central-run-parallel PAYMENT-GOALS
 			(goal-production-assert-payment-goals (create$ ?rs1 ?rs2) (create$ ?col-ring1 ?col-ring2))
 		)
@@ -1332,9 +1305,6 @@ The workpiece remains in the output of the used ring station after
 
   (bind ?goal
     (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-		;deliver-rc21 is a change specific to robocup 2021, for the normal game keep
-		;the old structure
-		;(goal-production-assert-deliver ?wp-for-order)
 		(goal-production-assert-deliver-rc21 ?wp-for-order)
 		(goal-tree-assert-central-run-parallel PREPARE-CS
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
@@ -1355,22 +1325,12 @@ The workpiece remains in the output of the used ring station after
 					(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS OUTPUT)
 					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT)
 				)
-				;(goal-tree-assert-central-run-parallel INPUT-BS
-				;	(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs3 OUTPUT)
-				;	(goal-production-assert-mount-ring ?wp-for-order ?rs3 ?rs2 OUTPUT)
-				;	(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT)
-				;	(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS INPUT)
-				;	(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base INPUT)
-				;)
 			)
 			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap)
 			(goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1)
 			(goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2)
 			(goal-production-assert-instruct-rs-mount-ring ?rs3 ?col-ring3)
 		)
-		;deliver-rc21 is a change specific to robocup 2021, for the normal game keep
-		;the old structure
-		;(goal-production-assert-instruct-ds-deliver ?wp-for-order)
 		(goal-tree-assert-central-run-parallel PAYMENT-GOALS
 			(goal-production-assert-payment-goals (create$ ?rs1 ?rs2 ?rs3) (create$ ?col-ring1 ?col-ring2 ?col-ring3))
 		)
