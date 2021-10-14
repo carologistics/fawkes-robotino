@@ -106,7 +106,7 @@
 	(mps-state ?m - mps ?s - mps-statename)
 	(mps-team ?m - mps ?col - team-color)
 	(mps-side-free ?m - mps ?side - mps-side)
-	(mps-side-approachable ?m - mps ?side - mps-side)
+	(mps-side-approachable ?m - location ?side - mps-side)
 	(bs-prepared-color ?m - mps ?col - base-color)
 	(bs-prepared-side ?m - mps ?side - mps-side)
 	(bs-color ?m - mps ?col - base-color)
