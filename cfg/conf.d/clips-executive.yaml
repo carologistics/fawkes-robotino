@@ -221,11 +221,10 @@ clips-executive:
             file: coordination-mutex.clp
           - name: state-estimation
             file: rcll/state-estimation-init.clp
-          - name: blackboard
-            file: rcll/init-blackboard.clp
           - name: worldmodel
             files:
               - wm-robmem-sync.clp
+              - rcll/init-wm-sync.clp
               - rcll/init-worldmodel.clp
               - rcll/game-worldmodel.clp
           - name: communication
@@ -249,6 +248,7 @@ clips-executive:
               - rcll/goal-reasoner.clp
               - rcll/goal-production.clp
               - rcll/production-strategy.clp
+              - rcll/exploration.clp
               - rcll/goal-lock-expiration.clp
           - name: goal-expander
             file: rcll/fixed-sequence.clp
@@ -269,7 +269,7 @@ clips-executive:
       action-mapping:
         enter-field: >
           drive_into_field{team=?(team-color)S,
-                           wait=0.0}
+                           wait=?(r|/Icks/0.0/|/Upsilan/10.0/|/Set/20.0/)f}
         explore-zone: explore_zone{zone=?(z)s}
         move-node: goto{place=?(z)s}
         move: goto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
