@@ -12,18 +12,6 @@
   ?*EXP-SEARCH-LIMIT* = 1
 )
 
-
-(deftemplate exploration-result
-" Template for storing a exploration result. Stores the machine name, zone, orientation and the team this machine belongs to"
-  (slot machine (type SYMBOL) (allowed-symbols C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS C-SS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS M-SS))
-  (slot zone (type SYMBOL))
-  (multislot trans (type FLOAT))
-  (multislot rot (type FLOAT))
-  (slot tag-id (type INTEGER))
-  (slot orientation (type INTEGER) (default -1))
-  (slot team (type SYMBOL) (allowed-symbols CYAN MAGENTA))
-)
-
 (defrule exp-sync-ground-truth
 " When the RefBox sends ground-truth of a zone, update the corresponding
   domain fact. But only do so for ground-truth of the own team, this allows to
