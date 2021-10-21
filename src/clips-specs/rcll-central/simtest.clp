@@ -112,7 +112,7 @@
 		)
 		(default none)
 	)
-	(assert (testcase (type NO-BROKEN-MPS) (termination SUCCESS)))
+	;(assert (testcase (type NO-BROKEN-MPS) (termination SUCCESS)))
 	(assert (simtest-initialized))
 )
 
