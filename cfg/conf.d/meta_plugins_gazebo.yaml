@@ -104,6 +104,10 @@ fawkes/meta_plugins:
     - m-skill-sim
     - m-clips-executive
 
+  m-distributed-skill-sim-clips-exec:
+    - m-skill-sim-clips-exec
+    - m-distributed-clips-executive
+
   m-central-clips-exec:
     - bbsync
     - ros
