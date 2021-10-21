@@ -19,7 +19,7 @@
   for all machines is sent.
 "
 	(wm-fact (key game found-tag zone args? m ?mps) (value ?zone))
-	?zc <- (domain-fact (name zone-content) (param-values ?zone ?))
+	?zc <- (domain-fact (name zone-content) (param-values ?zone ?o-mps&:(neq ?o-mps ?mps)))
 	=>
 	(modify ?zc (param-values ?zone ?mps))
 )
