@@ -44,6 +44,18 @@
   ?*MAX-DISTANCE* = 16.124
 
 )
+
+(deftemplate exploration-result
+" Template for storing a exploration result. Stores the machine name, zone, orientation and the team this machine belongs to"
+  (slot machine (type SYMBOL) (allowed-symbols C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS C-SS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS M-SS))
+  (slot zone (type SYMBOL))
+  (multislot trans (type FLOAT))
+  (multislot rot (type FLOAT))
+  (slot tag-id (type INTEGER))
+  (slot orientation (type INTEGER) (default -1))
+  (slot team (type SYMBOL) (allowed-symbols CYAN MAGENTA))
+)
+
 (deffunction tag-id-to-side (?tag-id)
 " Output the side that is associated with the given tag id.
   @param ?tag-id tag id as specified by the rulebook
