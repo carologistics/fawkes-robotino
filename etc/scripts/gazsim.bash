@@ -336,7 +336,7 @@ if [  $COMMAND  == start ]; then
 	echo "FAWKES_DIR is not set"
 	exit 1
     fi
-    if $START_GAZEBO && ! [[ $GAZEBO_PLUGIN_PATH == *lib/gazebo* ]]
+    if $START_GAZEBO && ! [[ $GAZEBO_PLUGIN_PATH == *gazebo-rcll* ]]
     then
 	echo "Missing path to Gazebo Plugins in GAZEBO_PLUGIN_PATH";
 	exit 1
