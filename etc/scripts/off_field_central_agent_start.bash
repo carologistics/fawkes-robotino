@@ -1,5 +1,10 @@
 #!/bin/bash
-# Automated startup of a Gazebo simulation
+# Automated startup script for starting the central agent with a variable
+# number of robots using the host-specific config (off-field2 is the intended
+# config for the central agent).
+#
+# params: Sequence of numbers that indicate which robot to start (between 1-3)
+#         If nothing is provided, all 3 robots are started.
 #
 # Copyright (C) 2021 Tarik Viehmann <viehmann@kbsg.rwth-aachen.de>
 #
