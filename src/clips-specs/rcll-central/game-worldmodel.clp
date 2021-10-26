@@ -94,7 +94,7 @@
 )
 
 
-(defrule game-generate-navgraph-when-all-tages-found
+(defrule game-generate-navgraph-when-all-tags-found
   "Generate the navgraph when all the mps tags where found."
   (wm-fact (key refbox phase) (value PRODUCTION))
   (forall
