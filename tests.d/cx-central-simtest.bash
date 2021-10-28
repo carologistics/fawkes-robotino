@@ -1,7 +1,7 @@
 #! /bin/bash
 #
-# cx-simtest.bash
-# Copyright (C) 2019 Till Hofmann <hofmann@kbsg.rwth-aachen.de>
+# cx-central-simtest.bash
+# Copyright (C) 2020 Till Hofmann <hofmann@kbsg.rwth-aachen.de>
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -22,11 +22,11 @@ fi
 
 FAWKES_DIR=$(realpath $(dirname ${BASH_SOURCE[0]})/..)
 tmpconfig=$(mktemp $FAWKES_DIR/cfg/conf.d/simtest-XXXXXX.yaml)
-echo "/clips-executive/specs/rcll/parameters/simtest/enabled: true" > $tmpconfig
-echo "/clips-executive/spec: rcll" >> $tmpconfig
+echo "/clips-executive/specs/rcll-central/parameters/simtest/enabled: true" > $tmpconfig
+echo "/clips-executive/spec: rcll-central" >> $tmpconfig
 export FAWKES_DIR
 SCRIPT_PATH=$FAWKES_DIR/bin
-WORKING_DIR=$FAWKES_DIR/tests.out.d/cx-simtest
+WORKING_DIR=$FAWKES_DIR/tests.out.d/cx-central-simtest
 mkdir -p $WORKING_DIR
 cd $WORKING_DIR
 TERMINAL=tmux
@@ -41,6 +41,6 @@ stop_test () {
 
 trap stop_test $TRAP_SIGNALS
 ulimit -c 0
-$SCRIPT_PATH/gazsim.bash -o -r --mongodb -m m-distributed-skill-sim-clips-exec -n 3 --team-cyan Carologistics --start-game=PRODUCTION $@
+$SCRIPT_PATH/gazsim.bash -o -r --mongodb -m m-skill-sim --central-agent m-central-clips-exec -n 1 --team-cyan Carologistics --start-game=PRODUCTION $@
 echo "Waiting for results..."
-$SCRIPT_PATH/cx-simtest-check.bash ./robot1_latest.log ./robot2_latest.log ./robot3_latest.log
+$SCRIPT_PATH/cx-simtest-check.bash ./robot11_latest.log
