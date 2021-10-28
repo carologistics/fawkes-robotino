@@ -90,19 +90,29 @@
 	(return t)
 )
 
-(deffunction set-robot-to-waiting (?meta)
-" Sets a robot that was assigned in a goal meta to waiting.
-  If no robot was assigned in the meta nothing happens.
+;(deffunction set-robot-to-waiting (?meta)
+;" Sets a robot that was assigned in a goal meta to waiting.
+;  If no robot was assigned in the meta nothing happens.
+;
+;  @param ?meta: goal meta
+;"
+;	(bind ?is-assigned (member$ assigned-to ?meta))
+;	(if ?is-assigned then
+;		(do-for-fact ((?r wm-fact))
+;			(and (wm-key-prefix ?r:key (create$ central agent robot))
+;			     (eq (nth$ (+ 1 ?is-assigned) ?meta) (wm-key-arg ?r:key r)))
+;			(assert (wm-fact (key central agent robot-waiting
+;			                  args? r (wm-key-arg ?r:key r))))
+;		)
+;	)
+;)
 
-  @param ?meta: goal meta
-"
-	(bind ?is-assigned (member$ assigned-to ?meta))
-	(if ?is-assigned then
-		(do-for-fact ((?r wm-fact))
-			(and (wm-key-prefix ?r:key (create$ central agent robot))
-			     (eq (nth$ (+ 1 ?is-assigned) ?meta) (wm-key-arg ?r:key r)))
-			(assert (wm-fact (key central agent robot-waiting
-			                  args? r (wm-key-arg ?r:key r))))
+(deffunction set-robot-to-waiting (?robot)
+	(if (neq ?robot nil) then
+		(do-for-fact ((?f wm-fact))
+			(and (wm-key-prefix ?f:key (create$ central agent robot))
+			     (eq ?robot (wm-key-arg ?f:key r)))
+			(assert (wm-fact (key central agent robot-waiting args? r ?robot)))
 		)
 	)
 )
@@ -199,11 +209,14 @@
   ?g <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
       (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
 
-  (not (goal (meta $? assigned-to ?robot $?) (mode ~FORMULATED)))
+  (not (and (goal (mode ~FORMULATED) (id ?g-id))
+            (goal-meta (goal-id ?id) (assigned-to ?robot))))
+;             (meta $? assigned-to ?robot $?)))
   (wm-fact (key central agent robot-waiting args? r ?robot))
   (not (and (wm-fact (key central agent robot-waiting
                       args? r ?o-robot&:(> (str-compare ?robot ?o-robot) 0)))
-            (not (goal (meta $? assigned-to ?o-robot $?)))))
+;            (not (goal (meta $? assigned-to ?o-robot $?)))))
+             (not (goal-meta (assigned-to ?o-robot)))
   =>
   (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
   (modify ?g (mode SELECTED))
@@ -214,8 +227,9 @@
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
   ?g <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
       (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
-  (goal (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE)
-        (meta $? assigned-to central $?))
+  (goal (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE))
+  (goal-meta (goal-id ?goal-id) (assigned-to central))
+;        (meta $? assigned-to central $?))
   =>
   (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
   (modify ?g (mode SELECTED))
@@ -226,12 +240,16 @@
   we hit the root or a goal that is not FORMULATED."
   (declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
   (or
-    ?g <- (goal (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE)
-                (meta $? assigned-to central $?) (parent ?pid))
+    (and ?g <- (goal (id ?id) (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE)
+;                (meta $? assigned-to central $?)
+                (parent ?pid))
+         (goal-meta (goal-id ?id) (assigned-to central)))
     (and
       (wm-fact (key central agent robot-waiting args? r ?robot))
-      ?g <- (goal (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE)
-                  (meta $? assigned-to ?robot $?) (parent ?pid))
+      ?g <- (goal (id ?goal-id) (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE)
+;                  (meta $? assigned-to ?robot $?)
+                  (parent ?pid))
+      (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
     )
   )
   (test (neq ?pid nil))
@@ -305,10 +323,13 @@
   All pre evaluation steps should have been executed, enforced by the higher priority
 "
 	(declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
-	?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome) (meta $?meta)
+	?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome)
+;	      (meta $?meta)
 	            (verbosity ?v))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 =>
-	(set-robot-to-waiting ?meta)
+;	(set-robot-to-waiting ?meta)
+	(set-robot-to-waiting ?robot)
 	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" crlf)
 	(modify ?g (mode EVALUATED))
 )
@@ -318,11 +339,15 @@
 (defrule goal-reasoner-evaluate-move-out-of-way
 " Sets a finished move out of way goal independent of the outcome to formulated."
   ?g <- (goal (id ?goal-id) (class MOVE-OUT-OF-WAY) (mode FINISHED)
-              (outcome ?outcome) (verbosity ?v) (meta $? assigned-to ?robot $?))
+              (outcome ?outcome) (verbosity ?v))
+;             (meta $? assigned-to ?robot $?))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 =>
   (printout (log-debug ?v) "Evaluate move-out-of-way goal " ?goal-id crlf)
-  (set-robot-to-waiting (fact-slot-value ?g meta ))
-  (bind ?meta (remove-robot-assignment-from-goal (fact-slot-value ?g meta) ?robot))
+;  (set-robot-to-waiting (fact-slot-value ?g meta ))
+   (set-robot-to-waiting ?robot)
+;  (bind ?meta (remove-robot-assignment-from-goal (fact-slot-value ?g meta) ?robot))
+  (remove-robot-assignment-from-goal-meta ?g)
 
   ; delete plans of the goal
   (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
@@ -344,8 +369,9 @@
 	(plan (id ?plan-id) (goal-id ?goal-id))
 	(plan-action (action-name ?action&move|go-wait)
 	             (goal-id ?goal-id) (plan-id ?plan-id) (state FAILED))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 	=>
-	(set-robot-to-waiting ?meta)
+	(set-robot-to-waiting ?robot)
 	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as only a move failed" crlf)
 	(modify ?g (mode FORMULATED) (outcome UNKNOWN))
 
@@ -369,8 +395,9 @@
 	(or (wm-fact (key domain fact wp-usable args? wp ?wp))
 	    (wm-fact (key domain fact wp-on-shelf args? wp ?wp $?))
 	)
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 	=>
-	(set-robot-to-waiting ?meta)
+	(set-robot-to-waiting ?robot)
 	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as workpiece is still usable after failed " ?action crlf)
 	(modify ?g (mode FORMULATED) (outcome UNKNOWN))
 
