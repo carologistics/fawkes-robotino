@@ -126,8 +126,12 @@
 )
 
 (deffunction remove-robot-assignment-from-goal-meta (?goal)
-	(bind ?g-meta (goal-meta (goal-id ?goal:id)))
-	(modify ?g-meta (assigned-to nil)
+	(if (not (do-for-fact ((?f goal-meta))
+			(eq ?f:id (fact-slot-value ?goal id))
+			(modify ?f (assigned-to nil))))
+	 then
+		(printout t "Cannot find a goal meta fact for the goal " ?goal crlf)
+	)
 )
 
 (deffunction goal-tree-assert-run-endless (?class ?frequency $?fact-addresses)
@@ -210,13 +214,13 @@
       (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
 
   (not (and (goal (mode ~FORMULATED) (id ?g-id))
-            (goal-meta (goal-id ?id) (assigned-to ?robot))))
+            (goal-meta (goal-id ?g-id) (assigned-to ?robot))))
 ;             (meta $? assigned-to ?robot $?)))
   (wm-fact (key central agent robot-waiting args? r ?robot))
   (not (and (wm-fact (key central agent robot-waiting
                       args? r ?o-robot&:(> (str-compare ?robot ?o-robot) 0)))
 ;            (not (goal (meta $? assigned-to ?o-robot $?)))))
-             (not (goal-meta (assigned-to ?o-robot)))
+             (not (goal-meta (assigned-to ?o-robot)))))
   =>
   (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
   (modify ?g (mode SELECTED))
@@ -357,7 +361,7 @@
       (retract ?a))
     (retract ?p)
   )
-  (modify ?g (mode FORMULATED) (outcome UNKNOWN) (is-executable FALSE) (meta ?meta ))
+  (modify ?g (mode FORMULATED) (outcome UNKNOWN) (is-executable FALSE) )
   (printout (log-debug ?v) "Goal " ?goal-id " FORMULATED" crlf)
 )
 
