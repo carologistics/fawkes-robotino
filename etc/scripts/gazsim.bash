@@ -207,7 +207,7 @@ while true; do
 	     META_PLUGIN="-m $OPTARG"
 	     ;;
 	 -a)
-	     META_PLUGIN="-m gazsim-meta-clips-exec"
+	     META_PLUGIN="-m gazsim-meta-distributed-clips-exec"
 	     ;;
      --mongodb)
          START_MONGODB=true
@@ -410,12 +410,21 @@ if [  $COMMAND  == start ]; then
     if $START_CENTRAL_AGENT ; then
         if [ $NUM_CYAN -gt 0 ] ; then
 		    ROBO=11
-		    COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 20; $startup_script_location -x fawkes -i robotino$ROBO $KEEP $CONF $GDB -m $CENTRAL_AGENT $DEBUG $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
+		    COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x fawkes -i robotino$ROBO $KEEP $CONF $GDB -m $CENTRAL_AGENT $DEBUG $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
         fi
         if [ $NUM_MAGENTA -gt 0 ] ; then
 		    ROBO=12
-		    COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 20; $startup_script_location -x fawkes -i robotino$ROBO $KEEP $CONF $GDB -m $CENTRAL_AGENT $DEBUG $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
+		    COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x fawkes -i robotino$ROBO $KEEP $CONF $GDB -m $CENTRAL_AGENT $DEBUG $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
         fi
+        echo "fawkes/bbsync/peers:" > $FAWKES_DIR/cfg/robotino_${ROBO}_generated.yaml
+        for ((CURR_ROBO=$FIRST_ROBOTINO_NUMBER ; CURR_ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;CURR_ROBO++))
+        do
+            echo "  robot$CURR_ROBO/active: true" >> $FAWKES_DIR/cfg/robotino_${ROBO}_generated.yaml
+        done
+        for ((CURR_ROBO=$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)); CURR_ROBO<4 ;CURR_ROBO++))
+        do
+            echo "  robot$CURR_ROBO/active: false" >> $FAWKES_DIR/cfg/robotino_${ROBO}_generated.yaml
+        done
     fi
 
     if $START_ASP_PLANER

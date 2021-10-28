@@ -70,6 +70,10 @@ fawkes/meta_plugins:
     - gazsim-meta-skiller
     - m-clips-executive
 
+  gazsim-meta-distributed-clips-exec:
+    - gazsim-meta-skiller
+    - m-distributed-clips-executive
+
   gazsim-meta-gologpp:
     - gazsim-meta-skiller
     - protoboard-rcll
@@ -85,16 +89,32 @@ fawkes/meta_plugins:
     - protoboard-rcll
     - gologpp
 
-  m-skill-sim-clips-exec:
+  m-skill-sim:
     - execution-time-estimator
     - skiller-simulator
     - ros
     - navgraph
     - navgraph-generator
     - navgraph-generator-mps
-    - m-clips-executive
     - execution-time-estimator-navgraph
     # - execution-time-estimator-lookup
+    - webview
+
+  m-skill-sim-clips-exec:
+    - m-skill-sim
+    - m-clips-executive
+
+  m-distributed-skill-sim-clips-exec:
+    - m-skill-sim-clips-exec
+    - m-distributed-clips-executive
+
+  m-central-clips-exec:
+    - bbsync
+    - ros
+    - navgraph
+    - navgraph-generator
+    - navgraph-generator-mps
+    - m-clips-executive
     - webview
 
   rcll-sim-2016:

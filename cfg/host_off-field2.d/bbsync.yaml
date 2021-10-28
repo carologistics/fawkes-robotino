@@ -1,0 +1,164 @@
+fawkes:
+  agent:
+    name: Icks
+    number: 1
+    team: Carologistics
+
+network:
+  fawkes:
+    tcp_port: !tcp-port 1931
+    service_name: "Fawkes on Agent (Cyan)"
+
+webview:
+  # TCP port for Webview HTTP requests; TCP port
+  port: !tcp-port 8091
+
+plugins/mongodb:
+  clients:
+    default/enabled: true
+    arbiter/enabled: false
+    robot-memory-local/hosts:
+      - localhost:27021
+    robot-memory-distributed/hosts:
+      - localhost:27031
+    robot-memory-local-direct/hostport: localhost:27021
+    robot-memory-distributed-direct/hostport: localhost:27031
+  instances:
+    robot-memory-local:
+      port: 27021
+      data-path: /tmp/mongodb-robot-memory-local-1
+      log/path: /tmp/mongodb-robot-memory-local-1.log
+    robot-memory-distributed:
+      port: 27031
+      data-path: /tmp/mongodb-robot-memory-distributed-1
+      log/path: /tmp/mongodb-robot-memory-distributed-1.log
+  replica-sets:
+    bootstrap-mongodb/client: default
+    managed-sets:
+      robot-memory-local/hosts:
+        - localhost:27021
+      robot-memory-distributed/hosts:
+        - localhost:27031
+
+fawkes/bbsync:
+  check_interval: 1000
+  peers:
+    robotino-base/active: false
+    robot1:
+      #active: true (set via the off-field startup)
+      host: robotino-laptop-1
+      port: !tcp-port 1910
+      reading:
+        skiller: SkillerInterface::Skiller=/robot1/Skiller
+        pose: Position3DInterface::Pose=/robot1/Pose
+        tag0: Position3DInterface::/tag-vision/0/to_map=/robot1/tag-vision/0/to_map
+        tag1: Position3DInterface::/tag-vision/1/to_map=/robot1/tag-vision/1/to_map
+        tag2: Position3DInterface::/tag-vision/2/to_map=/robot1/tag-vision/2/to_map
+        tag3: Position3DInterface::/tag-vision/3/to_map=/robot1/tag-vision/3/to_map
+        tag4: Position3DInterface::/tag-vision/4/to_map=/robot1/tag-vision/4/to_map
+        tag5: Position3DInterface::/tag-vision/5/to_map=/robot1/tag-vision/5/to_map
+        tag6: Position3DInterface::/tag-vision/6/to_map=/robot1/tag-vision/6/to_map
+        tag7: Position3DInterface::/tag-vision/7/to_map=/robot1/tag-vision/7/to_map
+        tag8: Position3DInterface::/tag-vision/8/to_map=/robot1/tag-vision/8/to_map
+        tag9: Position3DInterface::/tag-vision/9/to_map=/robot1/tag-vision/9/to_map
+        tag10: Position3DInterface::/tag-vision/10/to_map=/robot1/tag-vision/10/to_map/to_map
+        tag11: Position3DInterface::/tag-vision/11/to_map=/robot1/tag-vision/11/to_map
+        tag12: Position3DInterface::/tag-vision/12/to_map=/robot1/tag-vision/12/to_map
+        tag13: Position3DInterface::/tag-vision/13/to_map=/robot1/tag-vision/13/to_map
+        tag14: Position3DInterface::/tag-vision/14/to_map=/robot1/tag-vision/14/to_map
+        tag15: Position3DInterface::/tag-vision/15/to_map=/robot1/tag-vision/15/to_map
+        foundtag: Position3DInterface::/explore-zone/found-tag=/robot1/explore-zone/found-tag
+        navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/robot1/navgraph-generator-mps
+        navigator: NavigatorInterface::Navigator=/robot1/Navigator
+        robotino: MotorInterface::Robotino=/robot1/Robotino
+        laser: LaserLineInterface::Laser=/robot1/Laser
+        laser1: LaserLineInterface::/laser-lines/1/to_map=/robot1/laser-lines/1/to_map
+        laser2: LaserLineInterface::/laser-lines/2/to_map=/robot1/laser-lines/2/to_map
+        laser3: LaserLineInterface::/laser-lines/3/to_map=/robot1/laser-lines/3/to_map
+        laser4: LaserLineInterface::/laser-lines/4/to_map=/robot1/laser-lines/4/to_map
+        laser5: LaserLineInterface::/laser-lines/5/to_map=/robot1/laser-lines/5/to_map
+        laser6: LaserLineInterface::/laser-lines/6/to_map=/robot1/laser-lines/6/to_map
+        laser7: LaserLineInterface::/laser-lines/7/to_map=/robot1/laser-lines/7/to_map
+        laser8: LaserLineInterface::/laser-lines/8/to_map=/robot1/laser-lines/8/to_map
+        zone: ZoneInterface::/explore-zone/info=/robot1/explore-zone/info
+        tag-info: TagVisionInterface::/tag-vision/info=/robot1/tag-vision/info
+
+
+    robot2:
+      #active: true (set via the off-field startup)
+      host: robotino-laptop-2
+      port: !tcp-port 1910
+      reading:
+        skiller: SkillerInterface::Skiller=/robot2/Skiller
+        pose: Position3DInterface::Pose=/robot2/Pose
+        tag0: Position3DInterface::/tag-vision/0/to_map=/robot2/tag-vision/0/to_map
+        tag1: Position3DInterface::/tag-vision/1/to_map=/robot2/tag-vision/1/to_map
+        tag2: Position3DInterface::/tag-vision/2/to_map=/robot2/tag-vision/2/to_map
+        tag3: Position3DInterface::/tag-vision/3/to_map=/robot2/tag-vision/3/to_map
+        tag4: Position3DInterface::/tag-vision/4/to_map=/robot2/tag-vision/4/to_map
+        tag5: Position3DInterface::/tag-vision/5/to_map=/robot2/tag-vision/5/to_map
+        tag6: Position3DInterface::/tag-vision/6/to_map=/robot2/tag-vision/6/to_map
+        tag7: Position3DInterface::/tag-vision/7/to_map=/robot2/tag-vision/7/to_map
+        tag8: Position3DInterface::/tag-vision/8/to_map=/robot2/tag-vision/8/to_map
+        tag9: Position3DInterface::/tag-vision/9/to_map=/robot2/tag-vision/9/to_map
+        tag10: Position3DInterface::/tag-vision/10/to_map=/robot2/tag-vision/10/to_map/to_map
+        tag11: Position3DInterface::/tag-vision/11/to_map=/robot2/tag-vision/11/to_map
+        tag12: Position3DInterface::/tag-vision/12/to_map=/robot2/tag-vision/12/to_map
+        tag13: Position3DInterface::/tag-vision/13/to_map=/robot2/tag-vision/13/to_map
+        tag14: Position3DInterface::/tag-vision/14/to_map=/robot2/tag-vision/14/to_map
+        tag15: Position3DInterface::/tag-vision/15/to_map=/robot2/tag-vision/15/to_map
+        foundtag: Position3DInterface::/explore-zone/found-tag=/robot2/explore-zone/found-tag
+        navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/robot2/navgraph-generator-mps
+        navigator: NavigatorInterface::Navigator=/robot2/Navigator
+        robotino: MotorInterface::Robotino=/robot2/Robotino
+        laser: LaserLineInterface::Laser=/robot2/Laser
+        laser1: LaserLineInterface::/laser-lines/1/to_map=/robot2/laser-lines/1/to_map
+        laser2: LaserLineInterface::/laser-lines/2/to_map=/robot2/laser-lines/2/to_map
+        laser3: LaserLineInterface::/laser-lines/3/to_map=/robot2/laser-lines/3/to_map
+        laser4: LaserLineInterface::/laser-lines/4/to_map=/robot2/laser-lines/4/to_map
+        laser5: LaserLineInterface::/laser-lines/5/to_map=/robot2/laser-lines/5/to_map
+        laser6: LaserLineInterface::/laser-lines/6/to_map=/robot2/laser-lines/6/to_map
+        laser7: LaserLineInterface::/laser-lines/7/to_map=/robot2/laser-lines/7/to_map
+        laser8: LaserLineInterface::/laser-lines/8/to_map=/robot2/laser-lines/8/to_map
+        zone: ZoneInterface::/explore-zone/info=/robot2/explore-zone/info
+        tag-info: TagVisionInterface::/tag-vision/info=/robot2/tag-vision/info
+
+    robot3:
+      #active: true (set via the off-field startup)
+      host: robotino-laptop-3
+      port: !tcp-port 1910
+      reading:
+        skiller: SkillerInterface::Skiller=/robot3/Skiller
+        tag0: Position3DInterface::/tag-vision/0/to_map=/robot3/tag-vision/0/to_map
+        tag1: Position3DInterface::/tag-vision/1/to_map=/robot3/tag-vision/1/to_map
+        tag2: Position3DInterface::/tag-vision/2/to_map=/robot3/tag-vision/2/to_map
+        tag3: Position3DInterface::/tag-vision/3/to_map=/robot3/tag-vision/3/to_map
+        tag4: Position3DInterface::/tag-vision/4/to_map=/robot3/tag-vision/4/to_map
+        tag5: Position3DInterface::/tag-vision/5/to_map=/robot3/tag-vision/5/to_map
+        tag6: Position3DInterface::/tag-vision/6/to_map=/robot3/tag-vision/6/to_map
+        tag7: Position3DInterface::/tag-vision/7/to_map=/robot3/tag-vision/7/to_map
+        tag8: Position3DInterface::/tag-vision/8/to_map=/robot3/tag-vision/8/to_map
+        tag9: Position3DInterface::/tag-vision/9/to_map=/robot3/tag-vision/9/to_map
+        tag10: Position3DInterface::/tag-vision/10/to_map=/robot3/tag-vision/10/to_map/to_map
+        tag11: Position3DInterface::/tag-vision/11/to_map=/robot3/tag-vision/11/to_map
+        tag12: Position3DInterface::/tag-vision/12/to_map=/robot3/tag-vision/12/to_map
+        tag13: Position3DInterface::/tag-vision/13/to_map=/robot3/tag-vision/13/to_map
+        tag14: Position3DInterface::/tag-vision/14/to_map=/robot3/tag-vision/14/to_map
+        tag15: Position3DInterface::/tag-vision/15/to_map=/robot3/tag-vision/15/to_map
+        foundtag: Position3DInterface::/explore-zone/found-tag=/robot3/explore-zone/found-tag
+        pose: Position3DInterface::Pose=/robot3/Pose
+        foundtag: Position3DInterface::/explore-zone/found-tag=/robot3/explore-zone/found-tag
+        navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/robot3/navgraph-generator-mps
+        navigator: NavigatorInterface::Navigator=/robot3/Navigator
+        robotino: MotorInterface::Robotino=/robot3/Robotino
+        laser: LaserLineInterface::Laser=/robot3/Laser
+        laser1: LaserLineInterface::/laser-lines/1/to_map=/robot3/laser-lines/1/to_map
+        laser2: LaserLineInterface::/laser-lines/2/to_map=/robot3/laser-lines/2/to_map
+        laser3: LaserLineInterface::/laser-lines/3/to_map=/robot3/laser-lines/3/to_map
+        laser4: LaserLineInterface::/laser-lines/4/to_map=/robot3/laser-lines/4/to_map
+        laser5: LaserLineInterface::/laser-lines/5/to_map=/robot3/laser-lines/5/to_map
+        laser6: LaserLineInterface::/laser-lines/6/to_map=/robot3/laser-lines/6/to_map
+        laser7: LaserLineInterface::/laser-lines/7/to_map=/robot3/laser-lines/7/to_map
+        laser8: LaserLineInterface::/laser-lines/8/to_map=/robot3/laser-lines/8/to_map
+        zone: ZoneInterface::/explore-zone/info=/robot3/explore-zone/info
+        tag-info: TagVisionInterface::/tag-vision/info=/robot3/tag-vision/info
