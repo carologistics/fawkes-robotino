@@ -1396,57 +1396,6 @@ The workpiece remains in the output of the used ring station after
 	(modify ?g (priority (- ?p 2)))
 )
 
-(defrule goal-production-create-pick-and-place
-	 "Creates pick and place"
-	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
-	(wm-fact (key config rcll pick-and-place-challenge) (value TRUE))
-	(not (goal (class PICK-AND-PLACE)))
-	?mps1-free <- (wm-fact (key domain fact mps-side-free args? m C-BS side OUTPUT ))
-	?mps2-free <- (wm-fact (key domain fact mps-side-free args? m C-CS1 side OUTPUT ))
-	?mps3-free <- (wm-fact (key domain fact mps-side-free args? m C-RS1 side OUTPUT ))
-	=>
-	(retract ?mps1-free)
-	(retract ?mps2-free)
-	(retract ?mps3-free)
-	(assert
-	   (domain-object (name WP-ONE) (type workpiece))
-	   (domain-object (name WP-TWO) (type workpiece))
-	   (domain-object (name WP-THREE) (type workpiece))
-	   (domain-fact (name wp-usable) (param-values WP-ONE))
-	   (domain-fact (name wp-usable) (param-values WP-TWO))
-	   (domain-fact (name wp-usable) (param-values WP-THREE))
-	   (wm-fact (key domain fact maps args? m C-BS r robot1))
-	   (wm-fact (key domain fact maps args? m C-CS1 r robot2))
-	   (wm-fact (key domain fact maps args? m C-RS1 r robot3))
-	   (wm-fact (key domain fact wp-at args? wp WP-ONE m C-BS side OUTPUT))
-	   (wm-fact (key domain fact wp-at args? wp WP-TWO m C-CS1 side OUTPUT))
-	   (wm-fact (key domain fact wp-at args? wp WP-THREE m C-RS1 side OUTPUT))
-	)
-
-	(bind ?g (goal-tree-assert-central-run-parallel PICK-AND-PLACE
-		( goal-production-assert-pick-and-place C-BS robot1)
-		( goal-production-assert-pick-and-place C-BS robot1)
-		( goal-production-assert-pick-and-place C-BS robot1)
-		( goal-production-assert-move-robot-to-output C-BS robot1)
-	))
-	(modify ?g (parent ?root-id))
-	(bind ?g1 (goal-tree-assert-central-run-parallel PICK-AND-PLACE
-		( goal-production-assert-pick-and-place C-CS1 robot2)
-		( goal-production-assert-pick-and-place C-CS1 robot2)
-		( goal-production-assert-pick-and-place C-CS1 robot2)
-		( goal-production-assert-move-robot-to-output C-CS1 robot2)
-	))
-	(modify ?g1 (parent ?root-id))
-	(bind ?g2 (goal-tree-assert-central-run-parallel PICK-AND-PLACE
-		( goal-production-assert-pick-and-place C-RS1 robot3)
-		( goal-production-assert-pick-and-place C-RS1 robot3)
-		( goal-production-assert-pick-and-place C-RS1 robot3)
-		( goal-production-assert-move-robot-to-output C-RS1 robot3)
-	))
-	(modify ?g2 (parent ?root-id))
-)
-
 (defrule goal-production-debug-cap
 	"If there is a mismatch between machines and orders, produce output"
 	(wm-fact (key domain fact order-cap-color args? ord ?order-id col ?col))
@@ -1554,66 +1503,6 @@ The workpiece remains in the output of the used ring station after
 	(modify ?g (params wp ?wp wp-loc ?mps wp-side ?mps-side))
 )
 
-;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;
-; NAVIGATION CHALLENGE ;
-;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defrule goal-production-navigation-challenge-move-executable
-" Move to a navgraph node
-"
-	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
-	?g <- (goal (id ?goal-id) (class NAVIGATION-CHALLENGE-MOVE)
-	                          (mode FORMULATED)
-	                          (params target ?target $?)
-	                          (meta $? assigned-to ?robot $?)
-	                          (is-executable FALSE))
-	=>
-	(printout t "Goal NAVIGATION-CHALLENGE-MOVE executable for " ?robot crlf)
-	(modify ?g (is-executable TRUE))
-)
-
-(deffunction goal-production-assert-navigation-challenge-move
-	(?location)
-
-	(bind ?goal (assert (goal (class NAVIGATION-CHALLENGE-MOVE)
-					(id (sym-cat NAVIGATION-CHALLENGE-MOVE- (gensym*)))
-					(sub-type SIMPLE)
-					(verbosity NOISY) (is-executable FALSE)
-					(params target (translate-location-map-to-grid ?location) location ?location)
-				)))
-	(return ?goal)
-)
-
-(deffunction goal-production-assert-navigation-challenge
-	(?root-id $?locations)
-
-	(bind ?goals (create$))
-	(foreach ?location ?locations
-		(bind ?goals (insert$ ?goals (+ 1 (length$ ?goals))
-		             (goal-production-assert-navigation-challenge-move ?location)))
-	)
-
-	(bind ?goal
-	  (goal-tree-assert-central-run-parallel NAVIGATION-CHALLENGE-PARENT
-	                                         ?goals
-	  )
-	)
-
-  (modify ?goal (parent ?root-id))
-)
-
-(defrule goal-production-create-navigation-challenge-tree
-  "Create a goal tree for the navigation challenge if there is a waypoint fact."
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
-  (wm-fact (key domain fact waypoints args?) (values $?waypoints))
-  (not (goal (class NAVIGATION-CHALLENGE-PARENT)))
-  =>
-  (goal-production-assert-navigation-challenge ?root-id ?waypoints)
-)
-
 (defrule goal-production-assert-wait-nothing-executable
   "When the robot is stuck, assert a new goal that keeps it waiting"
   (declare (salience 0))
@@ -1631,7 +1520,7 @@ The workpiece remains in the output of the used ring station after
 )
 
 (defrule goal-production-remove-retracted-wait-nothing-executable
-  "When a waith-nothing-executable goal is retracted, remove it to prevent spam"
+  "When a wait-nothing-executable goal is retracted, remove it to prevent spam"
   (declare (salience 0))
   ?g <- (goal (class WAIT-NOTHING-EXECUTABLE) (mode RETRACTED))
   =>
@@ -1652,6 +1541,65 @@ The workpiece remains in the output of the used ring station after
 	(goal-production-assert-enter-field ?team-color)
 )
 
+;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;
+; NAVIGATION CHALLENGE ;
+;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defrule goal-production-navigation-challenge-move-executable
+" Move to a navgraph node
+"
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class NAVIGATION-CHALLENGE-MOVE)
+	                          (mode FORMULATED)
+	                          (params target ?target $?)
+	                          (meta $? assigned-to ?robot $?)
+	                          (is-executable FALSE))
+	=>
+	(printout t "Goal NAVIGATION-CHALLENGE-MOVE executable for " ?robot crlf)
+	(modify ?g (is-executable TRUE))
+)
+
+(deffunction goal-production-navigation-challenge-assert-move
+	(?location)
+
+	(bind ?goal (assert (goal (class NAVIGATION-CHALLENGE-MOVE)
+					(id (sym-cat NAVIGATION-CHALLENGE-MOVE- (gensym*)))
+					(sub-type SIMPLE)
+					(verbosity NOISY) (is-executable FALSE)
+					(params target (translate-location-map-to-grid ?location) location ?location)
+				)))
+	(return ?goal)
+)
+
+(deffunction goal-production-navigation-challenge-assert-root
+	(?root-id $?locations)
+
+	(bind ?goals (create$))
+	(foreach ?location ?locations
+		(bind ?goals (insert$ ?goals (+ 1 (length$ ?goals))
+		             (goal-production-navigation-challenge-assert-move ?location)))
+	)
+
+	(bind ?goal
+	  (goal-tree-assert-central-run-parallel NAVIGATION-CHALLENGE-ROOT
+	                                         ?goals
+	  )
+	)
+
+  (modify ?goal (parent ?root-id))
+)
+
+(defrule goal-production-navigation-challenge-create-tree
+  "Create a goal tree for the navigation challenge if there is a waypoint fact."
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+  (wm-fact (key domain fact waypoints args?) (values $?waypoints))
+  (not (goal (class NAVIGATION-CHALLENGE-ROOT)))
+  =>
+  (goal-production-navigation-challenge-assert-root ?root-id ?waypoints)
+)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1659,7 +1607,7 @@ The workpiece remains in the output of the used ring station after
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defrule goal-production-create-exploration-targets
+(defrule goal-production-exploration-challenge-create-targets
 	(not (wm-fact (key exploration targets args? $?)))
 	=>
 	(assert (wm-fact (key exploration targets args?)
@@ -1685,7 +1633,7 @@ The workpiece remains in the output of the used ring station after
 	(modify ?g (is-executable TRUE))
 )
 
-(deffunction goal-production-assert-exploration-challenge-move
+(deffunction goal-production-exploration-challenge-assert-move
 	(?location)
 
 	(bind ?goal (assert (goal (class EXPLORATION-CHALLENGE-MOVE)
@@ -1698,7 +1646,7 @@ The workpiece remains in the output of the used ring station after
 	(return ?goal)
 )
 
-(defrule goal-production-create-move-goal-lacking-choice
+(defrule goal-production-exploration-create-move-goal-lacking-choice
   "The robot has nothing it can do, move it across the map to explore"
 	;(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(goal (id ?root-id) (class EXPLORATION-ROOT) (mode FORMULATED|DISPATCHED))
@@ -1710,7 +1658,7 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key exploration active) (type BOOL) (value TRUE))
 	=>
 	(bind ?goal
-	      (goal-production-assert-exploration-challenge-move ?location)
+	      (goal-production-exploration-challenge-assert-move ?location)
 	)
 	(modify ?goal (parent ?root-id))
 	(modify ?exp-targ (values ?locations))
@@ -1720,4 +1668,60 @@ The workpiece remains in the output of the used ring station after
 	?g <- (goal (class EXPLORATION-CHALLENGE-MOVE) (mode RETRACTED) (outcome FAILED|COMPLETED))
 	=>
 	(retract ?g)
+)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; PICK-AND-PLACE CHALLENGE ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defrule goal-production-pick-and-place-challenge-create
+	 "Creates pick and place"
+	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+	(wm-fact (key config rcll pick-and-place-challenge) (value TRUE))
+	(not (goal (class PICK-AND-PLACE)))
+	?mps1-free <- (wm-fact (key domain fact mps-side-free args? m C-BS side OUTPUT ))
+	?mps2-free <- (wm-fact (key domain fact mps-side-free args? m C-CS1 side OUTPUT ))
+	?mps3-free <- (wm-fact (key domain fact mps-side-free args? m C-RS1 side OUTPUT ))
+	=>
+	(retract ?mps1-free)
+	(retract ?mps2-free)
+	(retract ?mps3-free)
+	(assert
+	   (domain-object (name WP-ONE) (type workpiece))
+	   (domain-object (name WP-TWO) (type workpiece))
+	   (domain-object (name WP-THREE) (type workpiece))
+	   (domain-fact (name wp-usable) (param-values WP-ONE))
+	   (domain-fact (name wp-usable) (param-values WP-TWO))
+	   (domain-fact (name wp-usable) (param-values WP-THREE))
+	   (wm-fact (key domain fact maps args? m C-BS r robot1))
+	   (wm-fact (key domain fact maps args? m C-CS1 r robot2))
+	   (wm-fact (key domain fact maps args? m C-RS1 r robot3))
+	   (wm-fact (key domain fact wp-at args? wp WP-ONE m C-BS side OUTPUT))
+	   (wm-fact (key domain fact wp-at args? wp WP-TWO m C-CS1 side OUTPUT))
+	   (wm-fact (key domain fact wp-at args? wp WP-THREE m C-RS1 side OUTPUT))
+	)
+
+	(bind ?g (goal-tree-assert-central-run-parallel PICK-AND-PLACE
+		( goal-production-assert-pick-and-place C-BS robot1)
+		( goal-production-assert-pick-and-place C-BS robot1)
+		( goal-production-assert-pick-and-place C-BS robot1)
+		( goal-production-assert-move-robot-to-output C-BS robot1)
+	))
+	(modify ?g (parent ?root-id))
+	(bind ?g1 (goal-tree-assert-central-run-parallel PICK-AND-PLACE
+		( goal-production-assert-pick-and-place C-CS1 robot2)
+		( goal-production-assert-pick-and-place C-CS1 robot2)
+		( goal-production-assert-pick-and-place C-CS1 robot2)
+		( goal-production-assert-move-robot-to-output C-CS1 robot2)
+	))
+	(modify ?g1 (parent ?root-id))
+	(bind ?g2 (goal-tree-assert-central-run-parallel PICK-AND-PLACE
+		( goal-production-assert-pick-and-place C-RS1 robot3)
+		( goal-production-assert-pick-and-place C-RS1 robot3)
+		( goal-production-assert-pick-and-place C-RS1 robot3)
+		( goal-production-assert-move-robot-to-output C-RS1 robot3)
+	))
+	(modify ?g2 (parent ?root-id))
 )
