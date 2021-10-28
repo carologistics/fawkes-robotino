@@ -21,16 +21,15 @@
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
 
-(deftemplate goal-meta
-	(slot goal-id (type SYMBOL))
-	(slot assigned-to (type SYMBOL) (allowed-values robot1 robot2 robot3
-	                                                nil central))
-)
 
 (deffunction goal-meta-assign-robot-to-goal (?goal ?robot)
-;TODO check if ?robot is one of the allowed values?
-	(bind ?meta (goal-meta (goal-id ?goal:id)))
-	(modify ?meta (assigned-to ?robot))
+	(if (not (do-for-fact ((?f goal-meta))
+			(eq ?f:id (fact-slot-value ?goal id))
+			(modify ?f (assigned-to ?robot))))
+	 then
+		(printout t "Can not find a goal meta fact for the goal " ?goal
+		            "to assign it to " ?robot crlf)
+	)
 )
 
 (deffunction assign-robot-to-goal (?meta ?robot)
@@ -183,8 +182,11 @@
 		(and (eq ?g:is-executable FALSE)
 ;		     (not (member$ assigned-to ?g:meta))
 		     (eq ?g:sub-type SIMPLE) (eq ?g:mode FORMULATED)
-		     (or (not (goal-meta (goal-id ?g:id)))
-		         (goal-meta (assigned-to nil))))
+		     (or (not (any-factp ((?gm  goal-meta))
+		                        (eq ?gm:goal-id ?g:id)))
+		         (any-factp ((?gm goal-meta))
+		            (and (eq ?gm:goal-id ?g:id)
+		                 (eq ?gm:assigned-to nil)))))
 ;		(modify ?g (meta (assign-robot-to-goal ?g:meta ?robot)))
 		(goal-meta-assign-robot-to-goal ?g ?robot)
 	)
@@ -197,9 +199,9 @@
 ;	      (meta $? assigned-to ?robot $?)
 	      (is-executable TRUE) (type ACHIEVE) (class ~SEND-BEACON))
 	     (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
-	(and (goal (id ?o-id) (sub-type SIMPLE) (mode FORMULATED)
+	(and (goal (id ?o-id) (sub-type SIMPLE) (mode FORMULATED))
 ;	      (meta $? assigned-to ?robot $?))
-	     (goal-meta (goal-id ?o-id) (assigned-to ?robot))))
+	     (goal-meta (goal-id ?o-id) (assigned-to ?robot)))
 	=>
 	(delayed-do-for-all-facts ((?g goal))
 		(and (eq ?g:is-executable TRUE) (neq ?g:class SEND-BEACON))
@@ -210,7 +212,9 @@
 		(delayed-do-for-all-facts ((?g goal))
 ;			(and (subsetp (create$ assigned-to ?robot) ?g:meta)
 			(and (eq ?g:mode FORMULATED) (not (eq ?g:type MAINTAIN))
-			     (goal-meta (goal-id ?g:id) (assigned-to ?robot)))
+			     (any-factp ((?gm goal-meta))
+			                (and (eq ?gm:goal-id ?g:id)
+			                     (eq ?gm:assigned-to ?robot))))
 ;			(modify ?g (meta (remove-robot-assignment-from-goal ?g:meta ?robot)))
 			(remove-robot-assignment-from-goal-meta ?g)
 		)
@@ -985,7 +989,7 @@ The workpiece remains in the output of the used ring station after
 	      (params target-mps ?mps)
 ;	      (meta assigned-to ?robot)
 	)))
-	(goal-meta-assign-robot-to goal ?goal ?robot)
+	(goal-meta-assign-robot-to-goal ?goal ?robot)
 	(return ?goal)
 )
 
@@ -1729,6 +1733,7 @@ The workpiece remains in the output of the used ring station after
 	                          (params target ?target $?)
 ;	                          (meta $? assigned-to ?robot $?)
 	                          (is-executable FALSE))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 	(not (and (goal (id ?p) (class EXPLORE-ZONE))
 	   ; (meta $? assigned-to ?robot $?)))
 	          (goal-meta (goal-id ?p) (assigned-to ?robot))))
