@@ -117,7 +117,9 @@
 
 (defrule goal-expander-explore-zone
 	?g <- (goal (id ?goal-id) (mode SELECTED) (class EXPLORE-ZONE)
-	            (params z ?zn) (meta $? assigned-to ?r $?))
+	            (params z ?zn))
+;	             (meta $? assigned-to ?r $?))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?r))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	=>
 	(plan-assert-sequential EXPLORE-ZONE ?goal-id ?r
@@ -156,8 +158,9 @@
 
 (defrule goal-expander-enter-field
 	?g <- (goal (id ?goal-id) (mode SELECTED) (class ENTER-FIELD)
-	            (params team-color ?team-color)
-	            (meta $? assigned-to ?robot $?))
+	            (params team-color ?team-color))
+;	            (meta $? assigned-to ?robot $?))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 	=>
 	(plan-assert-sequential ENTER-FIELD-PLAN ?goal-id ?robot
 		(plan-assert-action enter-field ?robot ?team-color)
@@ -169,8 +172,9 @@
 (defrule goal-expander-move-out-of-way
 	?g <- (goal (id ?goal-id) (mode SELECTED) (class MOVE-OUT-OF-WAY)
 	            (params target-pos ?target-pos
-	                    location ?loc)
-	            (meta $? assigned-to ?robot $?))
+	                    location ?loc))
+;	            (meta $? assigned-to ?robot $?))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-loc side ?curr-side))
 	=>
 	(plan-assert-sequential MOVE-OUT-OF-WAY-PLAN ?goal-id ?robot
@@ -185,8 +189,9 @@
   feeds it into the input of the same mps
   moves back to the output of the mps "
 	?g <- (goal (id ?goal-id) (class PICK-AND-PLACE) (mode SELECTED) (parent ?parent)
-	            (params target-mps ?mps )
-	            (meta $? assigned-to ?robot $?))
+	            (params target-mps ?mps ))
+;	            (meta $? assigned-to ?robot $?))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	(or (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp))
@@ -214,8 +219,9 @@
 (defrule goal-expander-move-robot-to-output
 " Moves the robot to the output of the given mps."
 	?g <- (goal (id ?goal-id) (class MOVE) (mode SELECTED) (parent ?parent)
-	            (params target-mps ?mps )
-	            (meta $? assigned-to ?robot $?))
+	            (params target-mps ?mps ))
+;	            (meta $? assigned-to ?robot $?))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-loc side ?curr-side))
 	=>
 	(plan-assert-sequential (sym-cat MOVE-PLAN- (gensym*)) ?goal-id ?robot
@@ -231,8 +237,9 @@
 	?g <- (goal (id ?goal-id) (class BUFFER-CAP) (mode SELECTED) (parent ?parent)
 	            (params target-mps ?mps
 	                    cap-color ?cap-color
-	            )
-	            (meta $? assigned-to ?robot $?))
+	            ))
+;	            (meta $? assigned-to ?robot $?))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 	(or
 		(and (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps $?))
 		     (not (wm-fact (key domain fact holding args? r ?robot $?)))
@@ -270,8 +277,9 @@
 " Pick up a product and discard it."
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class DISCARD) (mode SELECTED) (parent ?parent)
-	            (params wp ?wp wp-loc ?wp-loc wp-side ?wp-side)
-	            (meta $? assigned-to ?robot $?))
+	            (params wp ?wp wp-loc ?wp-loc wp-side ?wp-side))
+;	            (meta $? assigned-to ?robot $?))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
 	; used when wp-loc and wp-side is removed
@@ -307,8 +315,9 @@
 	                          (params  wp ?wp
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
-	                                   $?params)
-	                          (meta $? assigned-to ?robot $?))
+	                                   $?params))
+;	                          (meta $? assigned-to ?robot $?))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
 	(if (and (not (do-for-fact ((?da dependency-assignment))
@@ -369,8 +378,9 @@
 	                                   wp-side ?wp-side
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
-	                                   $?)
-	                          (meta $? assigned-to ?robot $?))
+	                                   $?))
+;	                          (meta $? assigned-to ?robot $?))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	(wm-fact (key domain fact rs-inc args? summand ?rs-before
 	                                  sum ?rs-after))
@@ -410,8 +420,9 @@
 	                                   wp-side ?wp-side
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
-	                                   $?)
-	                          (meta $? assigned-to ?robot $?))
+	                                   $?))
+;	                          (meta $? assigned-to ?robot $?))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	(wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
 	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before))
@@ -443,8 +454,9 @@
 	             (params wp-loc ?wp-loc;cs
 	                     target-mps ?target-mps;rs
 	                     target-side ?target-side
-	                     $?)
-	             (meta $? assigned-to ?robot $?))
+	                     $?))
+;	             (meta $? assigned-to ?robot $?))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 
 	(or
@@ -495,11 +507,12 @@
 (defrule goal-expander-instruct-cs-buffer-cap
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class INSTRUCT-CS-BUFFER-CAP) (mode SELECTED)
-	            (params target-mps ?mps cap-color ?cap-color)
-	            (meta $? assigned-to ?assigned $?))
+	            (params target-mps ?mps cap-color ?cap-color))
+;	            (meta $? assigned-to ?assigned $?))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 	(wm-fact (key domain fact wp-at args? wp ?cap-carrier m ?mps side INPUT))
 	=>
-	(plan-assert-sequential INSTRUCT-TO-BUFFER-CAP-PLAN ?goal-id ?assigned
+	(plan-assert-sequential INSTRUCT-TO-BUFFER-CAP-PLAN ?goal-id ?robot
 		(plan-assert-action prepare-cs ?mps RETRIEVE_CAP)
 		(plan-assert-action cs-retrieve-cap ?mps ?cap-carrier ?cap-color)
 	)
@@ -508,11 +521,12 @@
 
 (defrule goal-expander-instruct-cs-mount-cap
 	?g <- (goal (id ?goal-id) (class INSTRUCT-CS-MOUNT-CAP) (mode SELECTED)
-	            (params target-mps ?mps cap-color ?cap-color)
-	            (meta $? assigned-to ?assigned $?))
+	            (params target-mps ?mps cap-color ?cap-color))
+;	            (meta $? assigned-to ?assigned $?))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
 	=>
-	(plan-assert-sequential INSTRUCT-TO-MOUNT-CAP-PLAN ?goal-id ?assigned
+	(plan-assert-sequential INSTRUCT-TO-MOUNT-CAP-PLAN ?goal-id ?robot
 		(plan-assert-action prepare-cs ?mps MOUNT_CAP)
 		(plan-assert-action cs-mount-cap ?mps ?wp ?cap-color)
 	)
@@ -522,10 +536,11 @@
 (defrule goal-expander-instruct-bs-dispense-base
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class INSTRUCT-BS-DISPENSE-BASE) (mode SELECTED)
-	            (params wp ?wp target-mps ?mps  target-side ?side base-color ?base-color)
-	            (meta $? assigned-to ?assigned $?))
+	            (params wp ?wp target-mps ?mps  target-side ?side base-color ?base-color))
+;	            (meta $? assigned-to ?assigned $?))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 	=>
-	(plan-assert-sequential INSTRUCT-BS-DISPENSE-BASE-PLAN ?goal-id ?assigned
+	(plan-assert-sequential INSTRUCT-BS-DISPENSE-BASE-PLAN ?goal-id ?robot
 		(plan-assert-action prepare-bs ?mps ?side ?base-color)
 		(plan-assert-action bs-dispense ?mps ?side ?wp ?base-color)
 	)
@@ -535,8 +550,9 @@
 (defrule goal-expander-instruct-ds-deliver
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class INSTRUCT-DS-DELIVER) (mode SELECTED)
-	            (params wp ?wp target-mps ?mps)
-	            (meta $? assigned-to ?assigned $?))
+	            (params wp ?wp target-mps ?mps))
+;	            (meta $? assigned-to ?assigned $?))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 	(wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
 	(wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
 	(wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
@@ -563,7 +579,7 @@
 		(case C3 then
 		    (bind ?params (create$ ?order ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color ?ring2-color ?ring3-color)))
  )
-	(plan-assert-sequential INSTRUCT-DS-DELIVER-PLAN ?goal-id ?assigned
+	(plan-assert-sequential INSTRUCT-DS-DELIVER-PLAN ?goal-id ?robot
 		(plan-assert-action prepare-ds ?mps ?order)
 		(plan-assert-action (sym-cat fulfill-order- (lowcase ?complexity)) ?params)
 	)
@@ -573,8 +589,9 @@
 
 (defrule goal-expander-navigation-challenge-move
 	?g <- (goal (id ?goal-id) (class NAVIGATION-CHALLENGE-MOVE) (mode SELECTED)
-				(params target ?target $?)
-	            (meta $? assigned-to ?robot $?))
+				(params target ?target $?))
+;	            (meta $? assigned-to ?robot $?))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
 	(plan-assert-sequential NAVIGATION-CHALLENGE-MOVE-PLAN ?goal-id ?robot
@@ -589,8 +606,9 @@
 (defrule goal-expander-instruct-rs-mount-ring
 	?g <- (goal (id ?goal-id) (class INSTRUCT-RS-MOUNT-RING) (mode SELECTED)
 	            (params target-mps ?mps
-	                    ring-color ?ring-color)
-	            (meta $? assigned-to ?robot $?))
+	                    ring-color ?ring-color))
+;	            (meta $? assigned-to ?robot $?))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
 	(wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring-color rn ?req))
 	(wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before))
@@ -619,8 +637,9 @@
 (defrule goal-expander-deliver-rc21
 	?g <- (goal (id ?goal-id) (class DELIVER-RC21)
 	                          (mode SELECTED) (parent ?parent)
-	                          (params  wp ?wp)
-	                          (meta $? assigned-to ?robot $?))
+	                          (params  wp ?wp))
+;	                          (meta $? assigned-to ?robot $?))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	(wm-fact (key config rcll challenge-flip-insertion) (value ?flip))
@@ -673,7 +692,9 @@
 )
 
 (defrule goal-expander-wait-nothing-executable
- ?g <- (goal (id ?goal-id) (class WAIT-NOTHING-EXECUTABLE) (mode SELECTED) (meta $? assigned-to ?robot $?))
+ ?g <- (goal (id ?goal-id) (class WAIT-NOTHING-EXECUTABLE) (mode SELECTED))
+; (meta $? assigned-to ?robot $?))
+(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 =>
  (plan-assert-sequential WAIT-NOTHING-EXECUTABLE- ?goal-id ?robot
@@ -685,8 +706,9 @@
 
 (defrule goal-expander-exploration-challenge-move
 	?g <- (goal (id ?goal-id) (class EXPLORATION-CHALLENGE-MOVE) (mode SELECTED)
-	            (params target ?target $?)
-	            (meta $? assigned-to ?robot $?))
+	            (params target ?target $?))
+;	            (meta $? assigned-to ?robot $?))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
 	(plan-assert-sequential EXPLORATION-CHALLENGE-MOVE-PLAN ?goal-id ?robot

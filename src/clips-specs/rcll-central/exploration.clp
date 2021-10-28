@@ -287,7 +287,8 @@
 (defrule exp-explore-zone-executable
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (class EXPLORE-ZONE) (params z ?zn) (mode FORMULATED)
-	            (meta $? assigned-to ?robot$?) (is-executable FALSE))
+;	            (meta $? assigned-to ?robot$?)
+	      (is-executable FALSE))
 	=>
 	(modify ?g (is-executable TRUE))
 )
@@ -318,7 +319,8 @@
 (defrule exp-skill-explore-zone-apply-sensed-effects
 " Exploration of a zone finished succesfully. Update zone wm-fact and assert exploration-result
 "
-  (goal (id ?goal-id) (class EXPLORE-ZONE) (mode DISPATCHED) (meta $? assigned-to ?r $?))
+  (goal (id ?goal-id) (class EXPLORE-ZONE) (mode DISPATCHED))
+;       (meta $? assigned-to ?r $?))
   (plan-action (action-name explore-zone) (state SENSED-EFFECTS-WAIT))
   (ZoneInterface (id ?zone-id&:(eq ?zone-id (remote-if-id ?r "explore-zone/info")))
 	               (zone ?zn-str) (orientation ?orientation)
