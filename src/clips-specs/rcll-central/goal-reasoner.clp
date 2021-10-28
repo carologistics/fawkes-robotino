@@ -115,6 +115,11 @@
 	(return ?meta)
 )
 
+(deffunction remove-robot-assignment-from-goal-meta (?goal)
+	(bind ?g-meta (goal-meta (goal-id ?goal:id)))
+	(modify ?g-meta (assigned-to nil)
+)
+
 (deffunction goal-tree-assert-run-endless (?class ?frequency $?fact-addresses)
         (bind ?id (sym-cat MAINTAIN- ?class - (gensym*)))
         (bind ?goal (assert (goal (id ?id) (class ?class) (type MAINTAIN)
