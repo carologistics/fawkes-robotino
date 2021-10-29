@@ -181,7 +181,6 @@
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
 	                                   $?)
-;	                          (meta $? assigned-to ?robot $?)
 	                          (is-executable FALSE))
 
 	; Robot CEs
@@ -269,7 +268,6 @@
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
 	                                   $?)
-;	                          (meta $? assigned-to ?robot $?)
 	                          (is-executable FALSE))
 
 	; Robot CEs
@@ -363,7 +361,6 @@
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
 	                                   $?)
-;	                          (meta $? assigned-to ?robot $?)
 	                          (is-executable FALSE))
 
 	; Robot CEs
@@ -418,7 +415,6 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class DELIVER-RC21)
 	                          (mode FORMULATED)
-;	                          (meta $? assigned-to ?robot $?)
 	                          (is-executable FALSE))
 
 	; Robot CEs
@@ -471,7 +467,6 @@
 	                                   target-mps ?cs
 	                                   target-side ?cs-side
 	                                   $?)
-;	                          (meta $? assigned-to ?robot $?)
 	                          (is-executable FALSE))
 
 	; Robot CEs
@@ -665,7 +660,6 @@
 	                          (mode FORMULATED)
 	                          (parent ?parent)
 	                          (params  $? wp-loc ?wp-loc wp-side ?wp-side)
-;	                          (meta $? assigned-to ?robot $?)
 	                          (is-executable FALSE))
 
 	; Robot CEs
@@ -718,8 +712,6 @@
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
 	                                   $?)
-	                          ;(params  $? wp-loc ?wp-loc wp-side ?wp-side)
-;	                          (meta $? assigned-to ?robot $?)
 	                          (is-executable FALSE))
 
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))

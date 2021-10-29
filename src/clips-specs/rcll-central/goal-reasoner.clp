@@ -90,24 +90,12 @@
 	(return t)
 )
 
-;(deffunction set-robot-to-waiting (?meta)
-;" Sets a robot that was assigned in a goal meta to waiting.
-;  If no robot was assigned in the meta nothing happens.
-;
-;  @param ?meta: goal meta
-;"
-;	(bind ?is-assigned (member$ assigned-to ?meta))
-;	(if ?is-assigned then
-;		(do-for-fact ((?r wm-fact))
-;			(and (wm-key-prefix ?r:key (create$ central agent robot))
-;			     (eq (nth$ (+ 1 ?is-assigned) ?meta) (wm-key-arg ?r:key r)))
-;			(assert (wm-fact (key central agent robot-waiting
-;			                  args? r (wm-key-arg ?r:key r))))
-;		)
-;	)
-;)
-
 (deffunction set-robot-to-waiting (?robot)
+" Sets a robot that was assigned in a goal meta to waiting.
+  If no robot was assigned nothing happens.
+
+  @param ?robot: robot1 robot2 robot3 central nil
+"
 	(if (neq ?robot nil) then
 		(do-for-fact ((?f wm-fact))
 			(and (wm-key-prefix ?f:key (create$ central agent robot))
@@ -115,14 +103,6 @@
 			(assert (wm-fact (key central agent robot-waiting args? r ?robot)))
 		)
 	)
-)
-
-(deffunction remove-robot-assignment-from-goal (?meta ?robot)
-	(bind ?pos (member$ assigned-to ?meta))
-	(if (and (> (length$ ?meta) ?pos) (eq (nth$ (+ 1 ?pos) ?meta) ?robot)) then
-		(return (delete$ ?meta ?pos (+ 1 ?pos)))
-	)
-	(return ?meta)
 )
 
 (deffunction remove-robot-assignment-from-goal-meta (?goal)
@@ -215,11 +195,9 @@
 
   (not (and (goal (mode ~FORMULATED) (id ?g-id))
             (goal-meta (goal-id ?g-id) (assigned-to ?robot))))
-;             (meta $? assigned-to ?robot $?)))
   (wm-fact (key central agent robot-waiting args? r ?robot))
   (not (and (wm-fact (key central agent robot-waiting
                       args? r ?o-robot&:(> (str-compare ?robot ?o-robot) 0)))
-;            (not (goal (meta $? assigned-to ?o-robot $?)))))
              (not (goal-meta (assigned-to ?o-robot)))))
   =>
   (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
@@ -233,7 +211,6 @@
       (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
   (goal (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE))
   (goal-meta (goal-id ?goal-id) (assigned-to central))
-;        (meta $? assigned-to central $?))
   =>
   (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
   (modify ?g (mode SELECTED))
@@ -245,13 +222,11 @@
   (declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
   (or
     (and ?g <- (goal (id ?id) (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE)
-;                (meta $? assigned-to central $?)
                 (parent ?pid))
          (goal-meta (goal-id ?id) (assigned-to central)))
     (and
       (wm-fact (key central agent robot-waiting args? r ?robot))
       ?g <- (goal (id ?goal-id) (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE)
-;                  (meta $? assigned-to ?robot $?)
                   (parent ?pid))
       (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
     )
@@ -328,11 +303,9 @@
 "
 	(declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
 	?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome)
-;	      (meta $?meta)
 	            (verbosity ?v))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 =>
-;	(set-robot-to-waiting ?meta)
 	(set-robot-to-waiting ?robot)
 	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" crlf)
 	(modify ?g (mode EVALUATED))
@@ -344,13 +317,10 @@
 " Sets a finished move out of way goal independent of the outcome to formulated."
   ?g <- (goal (id ?goal-id) (class MOVE-OUT-OF-WAY) (mode FINISHED)
               (outcome ?outcome) (verbosity ?v))
-;             (meta $? assigned-to ?robot $?))
   (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 =>
   (printout (log-debug ?v) "Evaluate move-out-of-way goal " ?goal-id crlf)
-;  (set-robot-to-waiting (fact-slot-value ?g meta ))
-   (set-robot-to-waiting ?robot)
-;  (bind ?meta (remove-robot-assignment-from-goal (fact-slot-value ?g meta) ?robot))
+  (set-robot-to-waiting ?robot)
   (remove-robot-assignment-from-goal-meta ?g)
 
   ; delete plans of the goal
