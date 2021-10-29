@@ -287,7 +287,6 @@
 (defrule exp-explore-zone-executable
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (class EXPLORE-ZONE) (params z ?zn) (mode FORMULATED)
-;	            (meta $? assigned-to ?robot$?)
 	      (is-executable FALSE))
 	=>
 	(modify ?g (is-executable TRUE))
@@ -321,7 +320,6 @@
 "
   (goal (id ?goal-id) (class EXPLORE-ZONE) (mode DISPATCHED))
   (goal-meta (goal-id ?goal-id) (assigned-to ?r))
-;       (meta $? assigned-to ?r $?))
   (plan-action (action-name explore-zone) (state SENSED-EFFECTS-WAIT))
   (ZoneInterface (id ?zone-id&:(eq ?zone-id (remote-if-id ?r "explore-zone/info")))
 	               (zone ?zn-str) (orientation ?orientation)
