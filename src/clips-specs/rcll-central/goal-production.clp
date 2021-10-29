@@ -23,23 +23,18 @@
 
 
 (deffunction goal-meta-assign-robot-to-goal (?goal ?robot)
-	(if (not (do-for-fact ((?f goal-meta))
-			(eq ?f:id (fact-slot-value ?goal id))
-			(modify ?f (assigned-to ?robot))))
+"Creates the goal-meta fact if it doen't exists"
+	(if (eq ?robot nil) then (return ))
+	(if (do-for-fact ((?f goal-meta))
+			(eq ?f:goal-id (fact-slot-value ?goal id))
+			(modify ?f (assigned-to ?robot)))
 	 then
-		(printout t "Can not find a goal meta fact for the goal " ?goal
-		            "to assign it to " ?robot crlf)
-	)
-)
-
-(deffunction assign-robot-to-goal (?meta ?robot)
-	(if (eq ?meta nil) then (return (create$ assigned-to ?robot)))
-	(bind ?pos (member$ assigned-to ?meta))
-	(if ?pos
-	 then
-		(return (replace$ ?meta ?pos (+ ?pos 1) (create$ assigned-to ?robot)))
+		(printout t "Assigned robot " ?robot " to goal " ?goal crlf)
 	 else
-		(return (create$ ?meta assigned-to ?robot))
+		(assert (goal-meta (goal-id (fact-slot-value ?goal id))
+		                   (assigned-to ?robot)))
+		(printout t "Created new goal-meta fact to assign " ?robot
+		            " to goal " (fact-slot-value ?goal id) crlf)
 	)
 )
 
@@ -169,7 +164,7 @@
 	(wm-fact (key central agent robot args? r ?robot))
 	(not (goal-meta (assigned-to ?robot)))
 	(wm-fact (key central agent robot-waiting args? r ?robot))
-	;there exist no other robot with a smaller number and unasigned goals
+	;there exist no other robot with a smaller number and unassigned goals
 	(not (and (wm-fact (key central agent robot-waiting
 	                    args? r ?o-robot&:(> (str-compare ?robot ?o-robot) 0)))
 	          (not (goal-meta (assigned-to ?o-robot)))))
@@ -1638,8 +1633,8 @@ The workpiece remains in the output of the used ring station after
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(wm-fact (key central agent robot args? r ?robot))
 	(not (wm-fact (key domain fact entered-field args? r ?robot)))
-	(not (goal (id ?some-goal-id) (class ENTER-FIELD)))
-	(not (goal-meta (goal-id ?some-goal-id) (assigned-to ?robot)))
+	(not (and (goal (id ?some-goal-id) (class ENTER-FIELD))
+	          (goal-meta (goal-id ?some-goal-id) (assigned-to ?robot))))
 	(domain-facts-loaded)
 	(wm-fact (key refbox team-color) (value ?team-color))
 	=>

@@ -97,19 +97,24 @@
   @param ?robot: robot1 robot2 robot3 central nil
 "
 	(if (neq ?robot nil) then
-		(do-for-fact ((?f wm-fact))
-			(and (wm-key-prefix ?f:key (create$ central agent robot))
-			     (eq ?robot (wm-key-arg ?f:key r)))
-			(assert (wm-fact (key central agent robot-waiting args? r ?robot)))
+		(do-for-fact ((?r wm-fact))
+			(and (wm-key-prefix ?r:key (create$ central agent robot))
+			     (eq ?robot (wm-key-arg ?r:key r)))
+			(assert (wm-fact (key central agent robot-waiting
+			                  args? r (wm-key-arg ?r:key r))))
 		)
 	)
 )
 
 (deffunction remove-robot-assignment-from-goal-meta (?goal)
-	(if (not (do-for-fact ((?f goal-meta))
-			(eq ?f:id (fact-slot-value ?goal id))
-			(modify ?f (assigned-to nil))))
+	(if (do-for-fact ((?f goal-meta))
+			(eq ?f:goal-id (fact-slot-value ?goal id))
+			(modify ?f (assigned-to nil))
+			(printout t ?f crlf))
 	 then
+		(printout t "Removed robot assignement from "
+		            (fact-slot-value ?goal id) crlf)
+	 else
 		(printout t "Cannot find a goal meta fact for the goal " ?goal crlf)
 	)
 )
@@ -193,12 +198,11 @@
   ?g <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
       (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
 
-  (not (and (goal (mode ~FORMULATED) (id ?g-id))
-            (goal-meta (goal-id ?g-id) (assigned-to ?robot))))
   (wm-fact (key central agent robot-waiting args? r ?robot))
-  (not (and (wm-fact (key central agent robot-waiting
+
+  (not (wm-fact (key central agent robot-waiting
                       args? r ?o-robot&:(> (str-compare ?robot ?o-robot) 0)))
-             (not (goal-meta (assigned-to ?o-robot)))))
+  )
   =>
   (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
   (modify ?g (mode SELECTED))
@@ -209,8 +213,8 @@
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
   ?g <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
       (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
-  (goal (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE))
-  (goal-meta (goal-id ?goal-id) (assigned-to central))
+  (and (goal (id ?id) (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE))
+       (goal-meta (goal-id ?id) (assigned-to central)))
   =>
   (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
   (modify ?g (mode SELECTED))
@@ -414,6 +418,9 @@
       (retract ?a)
     )
     (retract ?p)
+  )
+  (delayed-do-for-all-facts ((?f goal-meta)) (eq ?f:goal-id ?goal-id)
+    (retract ?f)
   )
   (retract ?g)
   (printout (log-debug ?v) "Goal " ?goal-id " removed" crlf)
