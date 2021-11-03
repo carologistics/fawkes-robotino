@@ -25,8 +25,16 @@
 		robot - object
 		team-color - object
 		location - object
-    waitpoint - location
+		waitpoint - location
 		mps - location
+		;cs - mps
+		bs - mps
+		;ss - mps
+		rs - mps
+		ds - mps
+		fs - mps
+		cs - fs
+		ss - fs
 		mps-typename - object
 		mps-statename - object
 		mps-side - object
@@ -38,7 +46,7 @@
 		cs-operation - object
 		cs-statename - object
 		order - object
-    order-complexity-value - object
+		order-complexity-value - object
 		workpiece - object
 		cap-carrier - workpiece
 		shelf-spot - object
@@ -46,6 +54,8 @@
 		zone - object
 		token - object
 		master-token - token
+		refbox-phasename - object
+		refbox-statename - object
 	)
 
 	(:constants
@@ -100,6 +110,8 @@
 		(order-delivery-begin ?ord - order)
 		(order-delivery-end ?ord - order)
 		(order-gate ?ord - order ?gate - ds-gate)
+		(order-producable ?ord - order)
+		(order-deliverable ?ord - order)
 		(wp-unused ?wp - workpiece)
 		(wp-usable ?wp - workpiece)
 		(wp-at ?wp - workpiece ?m - mps ?side - mps-side)
@@ -110,12 +122,21 @@
 		(wp-cap-color ?wp - workpiece ?col - cap-color)
 		(wp-on-shelf ?wp - workpiece ?m - mps ?spot - shelf-spot)
 		(wp-spawned-for ?wp - workpiece ?r - robot)
-    (wp-for-order ?wp - workpiece ?ord - order)
-    (spot-free ?m - mps ?spot - shelf-spot)
-    (ss-initialized ?m - mps)
-    (ss-stored-wp ?m  - mps ?wp - workpiece)
-    (locked ?name - object)
-    (location-locked ?m - mps ?s - mps-side)
+		(wp-for-order ?wp - workpiece ?ord - order)
+		(spot-free ?m - mps ?spot - shelf-spot)
+		(ss-initialized ?m - mps)
+		(ss-stored-wp ?m  - mps ?wp - workpiece)
+		(locked ?name - object)
+		(location-locked ?m - mps ?s - mps-side)
+		(refbox-order-quantity-requested ?order - order ?quantity - integer)
+		(refbox-order-quantity-delivered ?order - order ?quantity - integer)
+		(refbox-game-time  ?value - float)
+		(refbox-points-cyan ?value - integer)
+		(refbox-points-magenta ?value - integer)
+		(refbox-team-color ?value - team-color)
+		(refbox-phase ?value - refbox-phasename)
+		(refbox-state ?value - refbox-statename)
+		(refbox-field-ground-truth ?name - object ?mtype - object ?zone - object ?yaw - float ?orientation - float)
 	)
 
 ;Kind of a hack. actually it should model the removal of present workpieces

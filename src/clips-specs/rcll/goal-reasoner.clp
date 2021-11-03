@@ -371,6 +371,7 @@
               (params m ?mps ord ?order))
   (wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
   ?od <- (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color) (value ?val))
+  ?odd <- (domain-fact (name refbox-order-quantity-delivered) (param-values ?order ?df-val))
   (plan-action (goal-id ?goal-id) (action-name ?prepare-action) (state FINAL))
   ?pre <- (wm-fact (key mps-handling prepare ?prepare-action ?mps args? $?prepare-params))
   ?pro <- (wm-fact (key mps-handling process ?process-action ?mps args? $?process-params))
@@ -379,6 +380,7 @@
   (if (eq ?outcome COMPLETED)
     then
       (modify ?od (value (+ ?val 1)))
+      (modify ?odd (param-values ?order (+ ?df-val 1)))
   )
   (modify ?g (mode EVALUATED))
 )

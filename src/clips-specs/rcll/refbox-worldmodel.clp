@@ -26,7 +26,7 @@
   =>
   (bind ?beacon-name (pb-field-value ?p "peer_name"))
   (printout debug "Beacon Recieved from " ?beacon-name crlf)
-  (retract ?pf) 
+  (retract ?pf)
 )
 
 
@@ -69,6 +69,10 @@
   (assert (wm-fact (key refbox game-time) (is-list TRUE) (type UINT) (values ?sec (/ ?nsec 1000))))
   (assert (wm-fact (id "/refbox/points/magenta") (type UINT) (value (pb-field-value ?p "points_magenta")) ))
   (assert (wm-fact (id "/refbox/points/cyan") (type UINT) (value (pb-field-value ?p "points_cyan")) ))
+  (assert (wm-fact (key domain fact refbox-game-time args? value ?sec)))
+  (assert (wm-fact (key domain fact refbox-points-magenta args? value (pb-field-value ?p "points_magenta"))))
+  (assert (wm-fact (key domain fact refbox-points-cyan args? value (pb-field-value ?p "points_cyan"))))
+  (assert (domain-fact (name refbox-team-color) (param-values ?new-team-color)))
 )
 
 
@@ -105,14 +109,16 @@
           (loop-for-count (?c (+ 1 ?rings-count) 3) do
             (assert (wm-fact (key domain fact (sym-cat order- ring ?c -color) args? ord ?order-id col RING_NONE) (type BOOL) (value TRUE) ))
           )
-          (assert 
-            (wm-fact (key domain fact order-complexity args? ord ?order-id comp ?complexity) (type BOOL) (value TRUE) )
+          (assert
+            (wm-fact (key domain fact order-complexity args? ord ?order-id com ?complexity) (type BOOL) (value TRUE) )
             (wm-fact (key domain fact order-base-color args? ord ?order-id col ?base) (type BOOL) (value TRUE) )
             (wm-fact (key domain fact order-cap-color  args? ord ?order-id col ?cap) (type BOOL) (value TRUE) )
             (wm-fact (key domain fact order-gate  args? ord ?order-id gate (sym-cat GATE- ?delivery-gate)) (type BOOL) (value TRUE) )
             (wm-fact (key refbox order ?order-id quantity-requested) (type UINT) (value ?quantity-requested) )
+            (domain-fact (name refbox-order-quantity-requested) (param-values ?order-id ?quantity-requested))
             (wm-fact (key domain fact quantity-delivered args? ord ?order-id team CYAN)
                      (type UINT) (value 0))
+            (domain-fact (name refbox-order-quantity-delivered) (param-values ?order-id 0))
             (wm-fact (key domain fact quantity-delivered args? ord ?order-id team MAGENTA)
                      (type UINT) (value 0))
             (wm-fact (key refbox order ?order-id delivery-begin) (type UINT) (value ?begin) )
@@ -150,7 +156,7 @@
     (bind ?m-type (sym-cat (pb-field-value ?m "type")))
     (bind ?m-team (sym-cat (pb-field-value ?m "team_color")))
     (bind ?m-state (sym-cat (pb-field-value ?m "state")))
-    (if (not (any-factp ((?wm-fact wm-fact)) 
+    (if (not (any-factp ((?wm-fact wm-fact))
               (and  (wm-key-prefix ?wm-fact:key (create$ domain fact mps-state))
                     (eq ?m-name (wm-key-arg ?wm-fact:key m)))))
       then
@@ -164,12 +170,12 @@
         )
       )
     )
-   (do-for-fact ((?wm-fact wm-fact)) 
-                  (and  (wm-key-prefix ?wm-fact:key (create$ domain fact mps-state)) 
+   (do-for-fact ((?wm-fact wm-fact))
+                  (and  (wm-key-prefix ?wm-fact:key (create$ domain fact mps-state))
                         (eq ?m-name (wm-key-arg ?wm-fact:key m))
                         (neq ?m-state (wm-key-arg ?wm-fact:key s)))
       (retract ?wm-fact)
-      (assert (wm-fact (key domain fact mps-state args? m ?m-name s ?m-state) (type BOOL) (value TRUE))) 
+      (assert (wm-fact (key domain fact mps-state args? m ?m-name s ?m-state) (type BOOL) (value TRUE)))
     )
    )
 )
@@ -209,6 +215,7 @@
         (wm-fact (key refbox field-ground-truth zone args? m ?name) (value ?zone))
         (wm-fact (key refbox field-ground-truth yaw args? m ?name) (type FLOAT) (value ?yaw))
         (wm-fact (key refbox field-ground-truth orientation args? m ?name) (type FLOAT) (value ?rot))
+        (wm-fact (key domain fact refbox-field-ground-truth args? name ?name  mtype ?type zone ?zone yaw ?yaw orientation ?rot))
       )
       (bind ?rcv-ground-truth TRUE)
     else
@@ -246,4 +253,39 @@
       (assert (wm-fact (key domain fact rs-ring-spec args? m ?mps r ?color rn ?rn) (type BOOL) (value TRUE)))
     )
   )
+)
+
+(defrule refbox-manage-domain-facts-refbox-game-time
+  ?p <- (wm-fact (key domain fact refbox-game-time args? value ?sec))
+  (not (wm-fact (key refbox game-time) (is-list TRUE) (type UINT) (values ?sec $?)))
+  =>
+  (retract ?p)
+)
+
+(defrule refbox-manage-domain-facts-refbox-points-magenta
+  ?p <- (wm-fact (key domain fact refbox-points-magenta args? value ?points))
+  (not (wm-fact (key domain fact refbox points magenta) (type UINT) (value ?points)))
+  =>
+  (retract ?p)
+)
+
+(defrule refbox-manage-domain-facts-refbox-points-cyan
+  ?p <- (wm-fact (key domain fact refbox-points-cyan args? value ?points))
+  (not (wm-fact (key domain fact refbox points cyan)  (type UINT) (value ?points)))
+  =>
+  (retract ?p)
+)
+
+
+(defrule refbox-manage-domain-facts-refbox-field-ground-truth
+  ?p <- (wm-fact (key domain fact refbox-field-ground-truth args? name ?name  mtype ?type zone ?zone yaw ?yaw orientation ?rot))
+  (or
+    (not (wm-fact (key refbox field-ground-truth name args? m ?name)))
+    (not (wm-fact (key refbox field-ground-truth mtype args? m ?name) (value ?type)))
+    (not (wm-fact (key refbox field-ground-truth zone args? m ?name) (value ?zone)))
+    (not (wm-fact (key refbox field-ground-truth yaw args? m ?name) (type FLOAT) (value ?yaw)))
+    (not (wm-fact (key refbox field-ground-truth orientation args? m ?name) (type FLOAT) (value ?rot)))
+  )
+  =>
+  (retract ?p)
 )

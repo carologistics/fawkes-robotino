@@ -192,13 +192,13 @@
     (domain-object (name CCG1) (type cap-carrier))
     (domain-object (name CCG2) (type cap-carrier))
     (domain-object (name CCG3) (type cap-carrier))
-    (domain-object (name ?bs) (type mps))
-    (domain-object (name ?cs1) (type mps))
-    (domain-object (name ?cs2) (type mps))
-    (domain-object (name ?ds) (type mps))
-    (domain-object (name ?rs1) (type mps))
-    (domain-object (name ?rs2) (type mps))
-    (domain-object (name ?ss) (type mps))
+    (domain-object (name ?bs) (type bs))
+    (domain-object (name ?cs1) (type cs))
+    (domain-object (name ?cs2) (type cs))
+    (domain-object (name ?ds) (type ds))
+    (domain-object (name ?rs1) (type rs))
+    (domain-object (name ?rs2) (type rs))
+    (domain-object (name ?ss) (type ss))
     (domain-object (name INPUT) (type mps-side))
     (domain-object (name OUTPUT) (type mps-side))
     (domain-object (name WAIT) (type mps-side))
@@ -314,4 +314,15 @@
 	(domain-load-local-facts (sym-cat ?robot-name) ?team-color)
 	(wm-robmem-sync-restore)
 	(assert (domain-facts-loaded))
+)
+
+(defrule domain-assert-mps-polymorphism
+    (domain-object (name ?mps) (type bs|cs|ds|rs|ss))
+    =>
+    (assert (domain-object (name ?mps) (type mps)))
+)
+(defrule domain-assert-fs-polymorphism
+    (domain-object (name ?mps) (type cs|ss))
+    =>
+    (assert (domain-object (name ?mps) (type fs)))
 )
