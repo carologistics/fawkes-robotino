@@ -250,6 +250,7 @@ clips-executive:
               - rcll/production-strategy.clp
               - rcll/exploration.clp
               - rcll/goal-lock-expiration.clp
+              - rcll/goal-class.clp
           - name: goal-expander
             file: rcll/fixed-sequence.clp
           - name: action-selection

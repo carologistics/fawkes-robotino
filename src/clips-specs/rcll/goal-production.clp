@@ -470,36 +470,36 @@
 )
 
 
-(defrule goal-production-create-clear-bs
-  "Remove a workpiece from the base station."
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class URGENT) (mode FORMULATED))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  ;Robot CEs
-  (wm-fact (key domain fact self args? r ?robot))
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-  ;MPS CEs
-  (wm-fact (key domain fact mps-type args? m ?mps t BS))
-  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
-  ;WP CEs
-  (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side))
-  =>
-  (printout t "Goal " CLEAR-MPS " ("?mps") formulated" crlf)
-  (assert (goal (id (sym-cat CLEAR-MPS- (gensym*)))
-                (class CLEAR-MPS) (sub-type SIMPLE)
-                (priority ?*PRIORITY-CLEAR-BS*)
-                (parent ?production-id)
-                (params robot ?robot
-                        mps ?mps
-                        wp ?wp
-                        side ?side
-                )
-                (required-resources (sym-cat ?mps - ?side) ?wp)
-  ))
-)
+; (defrule goal-production-create-clear-bs
+;   "Remove a workpiece from the base station."
+;   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;   (goal (id ?production-id) (class URGENT) (mode FORMULATED))
+;   (wm-fact (key refbox team-color) (value ?team-color))
+;   ;Robot CEs
+;   (wm-fact (key domain fact self args? r ?robot))
+;   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+;   ;MPS CEs
+;   (wm-fact (key domain fact mps-type args? m ?mps t BS))
+;   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+;   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+;   ;WP CEs
+;   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side))
+;   =>
+;   (printout t "Goal " CLEAR-MPS " ("?mps") formulated" crlf)
+;   (assert (goal (id (sym-cat CLEAR-MPS- (gensym*)))
+;                 (class CLEAR-MPS) (sub-type SIMPLE)
+;                 (priority ?*PRIORITY-CLEAR-BS*)
+;                 (parent ?production-id)
+;                 (params robot ?robot
+;                         mps ?mps
+;                         wp ?wp
+;                         side ?side
+;                 )
+;                 (required-resources (sym-cat ?mps - ?side) ?wp)
+;   ))
+; )
 
-(defrule goal-production-clear-cs-blocked 
+(defrule goal-production-clear-cs-blocked
   "Remove a finished product from a cap station if the station is blocked"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class CLEAR) (mode FORMULATED))
@@ -507,7 +507,7 @@
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-  ;There is a cap-carrier on the input that needs the CS, 
+  ;There is a cap-carrier on the input that needs the CS,
   ;there is a product that needs the CS,
   ;there is a product on the output blocking it
   (wm-fact (key domain fact wp-at args? wp ?cc m ?mps side INPUT))
@@ -807,111 +807,111 @@
 )
 
 
-(defrule goal-production-create-produce-c0
-" Produce a C0 product: Get the correct base and mount the right cap on it.
-  The produced workpiece stays in the output of the used cap station after
-  successfully executing this goal.
-"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
-  (goal (id ?urgent) (class URGENT) (mode FORMULATED))
-  ;To-Do: Model state IDLE|wait-and-look-for-alternatives
-  ;Robot CEs
-  (wm-fact (key domain fact self args? r ?robot))
-  ;MPS-CS CEs
-  (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side INPUT)))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
-  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
-  (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
-  ;MPS-BS CEs
-  (wm-fact (key domain fact mps-type args? m ?bs t BS))
-  (domain-object (name ?bs-side&:(or (eq ?bs-side INPUT) (eq ?bs-side OUTPUT))) (type mps-side))
-  (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
-  ;To-Do: Model the bs active-side
-  ;Order CEs
-  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
-  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
-  (wm-fact (key order meta competitive args? ord ?order)
-           (value ?competitive))
+; (defrule goal-production-create-produce-c0
+; " Produce a C0 product: Get the correct base and mount the right cap on it.
+;   The produced workpiece stays in the output of the used cap station after
+;   successfully executing this goal.
+; "
+;   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;   (goal (id ?production-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
+;   (goal (id ?urgent) (class URGENT) (mode FORMULATED))
+;   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
+;   ;Robot CEs
+;   (wm-fact (key domain fact self args? r ?robot))
+;   ;MPS-CS CEs
+;   (wm-fact (key domain fact mps-type args? m ?mps t CS))
+;   (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side INPUT)))
+;   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+;   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+;   (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
+;   (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
+;   ;MPS-BS CEs
+;   (wm-fact (key domain fact mps-type args? m ?bs t BS))
+;   (domain-object (name ?bs-side&:(or (eq ?bs-side INPUT) (eq ?bs-side OUTPUT))) (type mps-side))
+;   (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
+;   ;To-Do: Model the bs active-side
+;   ;Order CEs
+;   (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
+;   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+;   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+;   (wm-fact (key order meta competitive args? ord ?order)
+;            (value ?competitive))
 
-  (wm-fact (key config rcll competitive-order-priority) (value ?comp-prio))
+;   (wm-fact (key config rcll competitive-order-priority) (value ?comp-prio))
 
-  (wm-fact (key refbox team-color) (value ?team-color))
-  (wm-fact (key refbox game-time) (values $?game-time))
-  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
-  (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
-	(value ?qd&:(> ?qr ?qd)))
-  (wm-fact (key refbox order ?order delivery-begin) (type UINT)
-	(value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-AHEAD-TIME*))))
-  (wm-fact (key refbox order ?order delivery-end) (type UINT)
-	(value ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-LATEST-TIME*))))
-  ;Active Order CEs
-  ;This order complexity is not produced exclusively while another exclusive
-  ;complexity order is already started
-  (not (and (wm-fact (key domain fact wp-for-order args? wp ?ord-wp ord ?any-order))
-            (wm-fact (key domain fact order-complexity args? ord ?any-order com ?other-complexity))
-            (wm-fact (key config rcll exclusive-complexities) (values $?other-exclusive&:(member$ (str-cat ?other-complexity) ?other-exclusive)))
-            (wm-fact (key config rcll exclusive-complexities) (values $?exclusive&:(member$ (str-cat ?complexity) ?exclusive)))))
-  (or (and (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
-           (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN))
-           (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-           (not (wm-fact (key domain fact wp-for-order args? wp ?any-ord-wp ord ?order))))
-      (and (wm-fact (key domain fact holding args? r ?robot wp ?spawned-wp))
-           (wm-fact (key domain fact wp-base-color args? wp ?spawned-wp col ?base-color))
-           (wm-fact (key domain fact wp-cap-color args? wp ?wp cap-color CAP_NONE))
-           (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))))
-  (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
-  (test (eq ?complexity C0))
-  (not (goal (class PRODUCE-C0)
-             (parent ?parent)
-             (params robot ?robot
-                     bs ?bs
-                     bs-side ?bs-side $?
-                     mps ?mps $?
-                     order ?order
-                     wp ?spawned-wp
-             )
-  ))
-  =>
-  (bind ?required-resources ?order ?spawned-wp)
-  ;If this order complexity should be produced exclusively ...
-  (if (any-factp ((?exclusive-complexities wm-fact))
-        (and (wm-key-prefix ?exclusive-complexities:key (create$ config rcll exclusive-complexities))
-             (neq FALSE (member$ (str-cat ?complexity) ?exclusive-complexities:values))))
-    then
-      ;... then an exclusive order token is required.
-      (bind ?required-resources ?mps ?order ?spawned-wp PRODUCE-EXCLUSIVE-COMPLEXITY)
-      (printout t "Goal " PRODUCE-C0 " formulated, it needs the PRODUCE-EXCLUSIVE-COMPLEXITY token" crlf)
-    else
-      (printout t "Goal " PRODUCE-C0 " formulated" crlf))
-  (bind ?parent ?production-id)
-  (bind ?priority-decrease 0)
-  (if (and (eq ?comp-prio "HIGH") ?competitive)
-    then
-     (bind ?parent ?urgent))
-  (if (eq ?comp-prio "LOW")
-    then
-      (bind ?priority-decrease 1))
-  (bind ?distance (node-distance (str-cat ?bs - (if (eq ?bs-side INPUT) then I else O))))
-  (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
-                (class PRODUCE-C0) (sub-type SIMPLE)
-                (priority (+ (- ?*PRIORITY-PRODUCE-C0* ?priority-decrease) (goal-distance-prio ?distance)))
-                (parent ?parent)
-                (params robot ?robot
-                        bs ?bs
-                        bs-side ?bs-side
-                        bs-color ?base-color
-                        mps ?mps
-                        cs-color ?cap-color
-                        order ?order
-                        wp ?spawned-wp
-                )
-                (required-resources (sym-cat ?mps -INPUT) ?required-resources)
-  ))
-)
+;   (wm-fact (key refbox team-color) (value ?team-color))
+;   (wm-fact (key refbox game-time) (values $?game-time))
+;   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+;   (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
+; 	(value ?qd&:(> ?qr ?qd)))
+;   (wm-fact (key refbox order ?order delivery-begin) (type UINT)
+; 	(value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-AHEAD-TIME*))))
+;   (wm-fact (key refbox order ?order delivery-end) (type UINT)
+; 	(value ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-LATEST-TIME*))))
+;   ;Active Order CEs
+;   ;This order complexity is not produced exclusively while another exclusive
+;   ;complexity order is already started
+;   (not (and (wm-fact (key domain fact wp-for-order args? wp ?ord-wp ord ?any-order))
+;             (wm-fact (key domain fact order-complexity args? ord ?any-order com ?other-complexity))
+;             (wm-fact (key config rcll exclusive-complexities) (values $?other-exclusive&:(member$ (str-cat ?other-complexity) ?other-exclusive)))
+;             (wm-fact (key config rcll exclusive-complexities) (values $?exclusive&:(member$ (str-cat ?complexity) ?exclusive)))))
+;   (or (and (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
+;            (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN))
+;            (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+;            (not (wm-fact (key domain fact wp-for-order args? wp ?any-ord-wp ord ?order))))
+;       (and (wm-fact (key domain fact holding args? r ?robot wp ?spawned-wp))
+;            (wm-fact (key domain fact wp-base-color args? wp ?spawned-wp col ?base-color))
+;            (wm-fact (key domain fact wp-cap-color args? wp ?wp cap-color CAP_NONE))
+;            (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))))
+;   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
+;   (test (eq ?complexity C0))
+;   (not (goal (class PRODUCE-C0)
+;              (parent ?parent)
+;              (params robot ?robot
+;                      bs ?bs
+;                      bs-side ?bs-side $?
+;                      mps ?mps $?
+;                      order ?order
+;                      wp ?spawned-wp
+;              )
+;   ))
+;   =>
+;   (bind ?required-resources ?order ?spawned-wp)
+;   ;If this order complexity should be produced exclusively ...
+;   (if (any-factp ((?exclusive-complexities wm-fact))
+;         (and (wm-key-prefix ?exclusive-complexities:key (create$ config rcll exclusive-complexities))
+;              (neq FALSE (member$ (str-cat ?complexity) ?exclusive-complexities:values))))
+;     then
+;       ;... then an exclusive order token is required.
+;       (bind ?required-resources ?mps ?order ?spawned-wp PRODUCE-EXCLUSIVE-COMPLEXITY)
+;       (printout t "Goal " PRODUCE-C0 " formulated, it needs the PRODUCE-EXCLUSIVE-COMPLEXITY token" crlf)
+;     else
+;       (printout t "Goal " PRODUCE-C0 " formulated" crlf))
+;   (bind ?parent ?production-id)
+;   (bind ?priority-decrease 0)
+;   (if (and (eq ?comp-prio "HIGH") ?competitive)
+;     then
+;      (bind ?parent ?urgent))
+;   (if (eq ?comp-prio "LOW")
+;     then
+;       (bind ?priority-decrease 1))
+;   (bind ?distance (node-distance (str-cat ?bs - (if (eq ?bs-side INPUT) then I else O))))
+;   (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
+;                 (class PRODUCE-C0) (sub-type SIMPLE)
+;                 (priority (+ (- ?*PRIORITY-PRODUCE-C0* ?priority-decrease) (goal-distance-prio ?distance)))
+;                 (parent ?parent)
+;                 (params robot ?robot
+;                         bs ?bs
+;                         bs-side ?bs-side
+;                         bs-color ?base-color
+;                         mps ?mps
+;                         cs-color ?cap-color
+;                         order ?order
+;                         wp ?spawned-wp
+;                 )
+;                 (required-resources (sym-cat ?mps -INPUT) ?required-resources)
+;   ))
+; )
 
 
 (defrule goal-production-create-mount-first-ring
@@ -1358,87 +1358,87 @@
   (retract ?t)
 )
 
-(defrule goal-production-create-deliver
-  "Deliver a fully produced workpiece."
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class DELIVER-PRODUCTS) (mode FORMULATED))
-  (goal (id ?urgent) (class URGENT) (mode FORMULATED))
-  ;To-Do: Model state IDLE|wait-and-look-for-alternatives
-  (wm-fact (key refbox team-color) (value ?team-color))
-  (wm-fact (key refbox game-time) (values $?game-time))
-  ;Robot CEs
-  (wm-fact (key domain fact self args? r ?robot))
-  ;MPS-DS CEs
-  (wm-fact (key domain fact mps-type args? m ?ds t DS))
-  (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
-  ;MPS-CEs
-  (wm-fact (key domain fact mps-type args? m ?mps t CS|SS))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
-  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  ;WP-CEs
-  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
-  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
-  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
-  (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
-  (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
-  (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?ds side INPUT)))
-  ;Order-CEs
-  (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))
-  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
-  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
-  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
-  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
-  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
-  (wm-fact (key domain fact order-gate args? ord ?order gate ?gate))
-  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
-  ;note: could be moved to rejected checks
-  (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
-           (value ?qd&:(> ?qr ?qd)))
-  (or (and (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
-           (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp))))
-      (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
-  (not (wm-fact (key wp meta wait-for-delivery args? wp ?wp wait-for ?)))
-  (wm-fact (key order meta competitive args? ord ?order) (value ?competitive))
-  (wm-fact (key config rcll competitive-order-priority) (value ?comp-prio))
-  (wm-fact (key refbox order ?order delivery-begin) (type UINT)
-           (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*DELIVER-AHEAD-TIME*))))
-  (not (goal (class DELIVER)
-             (parent ?parent)
-             (params robot ?robot $?
-                     order ?order
-                     wp ?wp
-                     ds ?ds
-                     ds-gate ?gate $?)))
-  =>
-  (printout t "Goal " DELIVER " formulated" crlf)
-  (bind ?parent ?production-id)
-  (bind ?priority-decrease 0)
-  (if (and (eq ?comp-prio "HIGH") ?competitive)
-    then
-      (bind ?parent ?urgent))
-  (if (eq ?comp-prio "LOW")
-    then
-      (bind ?priority-decrease 1))
-  (assert (goal (id (sym-cat DELIVER- (gensym*)))
-                (class DELIVER) (sub-type SIMPLE)
-                (priority (- ?*PRIORITY-DELIVER* ?priority-decrease))
-                (parent ?parent)
-                (params robot ?robot
-                        mps ?mps
-                        order ?order
-                        wp ?wp
-                        ds ?ds
-                        ds-gate ?gate
-                        base-color ?base-color
-                        ring1-color ?ring1-color
-                        ring2-color ?ring2-color
-                        ring3-color ?ring3-color
-                        cap-color ?cap-color
-                )
-                (required-resources (sym-cat ?mps -OUTPUT) ?order ?wp (sym-cat ?ds -INPUT))
-  ))
-)
+; (defrule goal-production-create-deliver
+;   "Deliver a fully produced workpiece."
+;   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;   (goal (id ?production-id) (class DELIVER-PRODUCTS) (mode FORMULATED))
+;   (goal (id ?urgent) (class URGENT) (mode FORMULATED))
+;   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
+;   (wm-fact (key refbox team-color) (value ?team-color))
+;   (wm-fact (key refbox game-time) (values $?game-time))
+;   ;Robot CEs
+;   (wm-fact (key domain fact self args? r ?robot))
+;   ;MPS-DS CEs
+;   (wm-fact (key domain fact mps-type args? m ?ds t DS))
+;   (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
+;   ;MPS-CEs
+;   (wm-fact (key domain fact mps-type args? m ?mps t CS|SS))
+;   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+;   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+;   ;WP-CEs
+;   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+;   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
+;   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
+;   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
+;   (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
+;   (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?ds side INPUT)))
+;   ;Order-CEs
+;   (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))
+;   (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
+;   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+;   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
+;   (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
+;   (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
+;   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+;   (wm-fact (key domain fact order-gate args? ord ?order gate ?gate))
+;   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+;   ;note: could be moved to rejected checks
+;   (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
+;            (value ?qd&:(> ?qr ?qd)))
+;   (or (and (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+;            (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp))))
+;       (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+;   (not (wm-fact (key wp meta wait-for-delivery args? wp ?wp wait-for ?)))
+;   (wm-fact (key order meta competitive args? ord ?order) (value ?competitive))
+;   (wm-fact (key config rcll competitive-order-priority) (value ?comp-prio))
+;   (wm-fact (key refbox order ?order delivery-begin) (type UINT)
+;            (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*DELIVER-AHEAD-TIME*))))
+;   (not (goal (class DELIVER)
+;              (parent ?parent)
+;              (params robot ?robot $?
+;                      order ?order
+;                      wp ?wp
+;                      ds ?ds
+;                      ds-gate ?gate $?)))
+;   =>
+;   (printout t "Goal " DELIVER " formulated" crlf)
+;   (bind ?parent ?production-id)
+;   (bind ?priority-decrease 0)
+;   (if (and (eq ?comp-prio "HIGH") ?competitive)
+;     then
+;       (bind ?parent ?urgent))
+;   (if (eq ?comp-prio "LOW")
+;     then
+;       (bind ?priority-decrease 1))
+;   (assert (goal (id (sym-cat DELIVER- (gensym*)))
+;                 (class DELIVER) (sub-type SIMPLE)
+;                 (priority (- ?*PRIORITY-DELIVER* ?priority-decrease))
+;                 (parent ?parent)
+;                 (params robot ?robot
+;                         mps ?mps
+;                         order ?order
+;                         wp ?wp
+;                         ds ?ds
+;                         ds-gate ?gate
+;                         base-color ?base-color
+;                         ring1-color ?ring1-color
+;                         ring2-color ?ring2-color
+;                         ring3-color ?ring3-color
+;                         cap-color ?cap-color
+;                 )
+;                 (required-resources (sym-cat ?mps -OUTPUT) ?order ?wp (sym-cat ?ds -INPUT))
+;   ))
+; )
 
 (defrule goal-production-wait-for-mps-processing
 " If a mps is ready to process (IDLE and not wp at input) drive to output
