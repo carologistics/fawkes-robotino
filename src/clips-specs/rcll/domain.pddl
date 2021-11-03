@@ -117,6 +117,7 @@
 		(order-deliverable ?ord - order)
 		(order-has-wp ?ord - order)
 		(order-out-of-delivery ?ord -order)
+		(order-producable ?ord - order)
 		(wp-unused ?wp - workpiece)
 		(wp-usable ?wp - workpiece)
 		(wp-at ?wp - workpiece ?m - mps ?side - mps-side)
