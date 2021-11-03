@@ -1548,6 +1548,7 @@
                                  args? wp ?wp ord ?order)
                             (value TRUE))
   (not (wm-fact (key domain fact wp-usable args? wp ?wp)))
+  ?do <- (domain-object (name ?wp))
   =>
   (retract ?wp-for-order)
   (delayed-do-for-all-facts ((?wm wm-fact))
@@ -1557,4 +1558,5 @@
   )
   (printout debug "WP " ?wp " no longer tied to Order " ?order " because it is
     not usable anymore" crlf)
+  (retract ?do)
 )
