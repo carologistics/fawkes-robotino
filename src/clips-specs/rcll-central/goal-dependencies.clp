@@ -1,6 +1,6 @@
 ;---------------------------------------------------------------------------
 ;  goal-dependencies.clp - Defines dependency-assignments and grounds
-;						   them for executability
+;                          them for executability
 ;
 ;  Created: Sat 22 May 2021 13:07:31 CET
 ;  Copyright  2021  Matteo Tschesche <matteo.tschesche@rwth-aachen.de>
@@ -32,7 +32,8 @@
 	; set when asserting
 	(slot wait-for (type SYMBOL) (allowed-values nil WP FREE-SIDE))
 
-	; necessary parameters used for goal-expander of dependency-goal, set in execution-check
+	; necessary parameters used for goal-expander of dependency-goal,
+	; set in execution-check
 	; for deliver-mount-cap:    wp, wp-loc, wp-side
 	; for mount-cap-mount-ring: wp, wp-loc, wp-side
 	; for discard-buffer-cap:   wp, wp-loc, wp-side
@@ -49,19 +50,24 @@
 ; always required for executing this goal under dependencies
 
 (defrule goal-dependencies-mount-cap-buffer-cap
-" Every mount-cap goal depends on the buffer-cap class. Per default, no buffer-cap goal is grounded. "
+" Every mount-cap goal depends on the buffer-cap class.
+  Per default, no buffer-cap goal is grounded. "
 	; needs to be higher than SALIENCE-GOAL-EXECUTABLE-CHECK
 	(declare (salience (+ ?*SALIENCE-GOAL-EXECUTABLE-CHECK* 1)))
 	?g <- (goal (id ?goal-id) (class MOUNT-CAP) (mode FORMULATED))
-	(not (dependency-assignment (goal-id ?goal-id) (class BUFFER-CAP)))
-	(not (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-CS-BUFFER-CAP)))
+	(not (dependency-assignment (goal-id ?goal-id)
+	                            (class BUFFER-CAP)))
+	(not (dependency-assignment (goal-id ?goal-id)
+	                            (class INSTRUCT-CS-BUFFER-CAP)))
 	=>
-	(printout t "Goal " ?goal-id " depends on class BUFFER-CAP " crlf)
+	(printout t "Goal " ?goal-id
+	            "depends on class BUFFER-CAP " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class BUFFER-CAP)
 	                               (wait-for FREE-SIDE)
 	                               (grounded-with nil)))
-	(printout t "Goal " ?goal-id " depends on class INSTRUCT-CS-BUFFER-CAP " crlf)
+	(printout t "Goal " ?goal-id
+	            " depends on class INSTRUCT-CS-BUFFER-CAP " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class INSTRUCT-CS-BUFFER-CAP)
 	                               (wait-for FREE-SIDE)
@@ -69,19 +75,24 @@
 )
 
 (defrule goal-dependencies-deliver-mount-cap
-" Every deliver goal depends on the mount-cap class. Per default, no mount-cap goal is grounded. "
+" Every deliver goal depends on the mount-cap class.
+  Per default, no mount-cap goal is grounded. "
 	; needs to be higher than SALIENCE-GOAL-EXECUTABLE-CHECK
 	(declare (salience (+ ?*SALIENCE-GOAL-EXECUTABLE-CHECK* 1)))
 	?g <- (goal (id ?goal-id) (class DELIVER|DELIVER-RC21) (mode FORMULATED))
-	(not (dependency-assignment (goal-id ?goal-id) (class MOUNT-CAP)))
-	(not (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-CS-MOUNT-CAP)))
+	(not (dependency-assignment (goal-id ?goal-id)
+	                            (class MOUNT-CAP)))
+	(not (dependency-assignment (goal-id ?goal-id)
+	                            (class INSTRUCT-CS-MOUNT-CAP)))
 	=>
-	(printout t "Goal " ?goal-id " depends on class MOUNT-CAP " crlf)
+	(printout t "Goal " ?goal-id
+	            " depends on class MOUNT-CAP " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class MOUNT-CAP)
 	                               (wait-for WP)
 	                               (grounded-with nil)))
-	(printout t "Goal " ?goal-id " depends on class INSTRUCT-CS-MOUNT-CAP " crlf)
+	(printout t "Goal " ?goal-id
+	            " depends on class INSTRUCT-CS-MOUNT-CAP " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class INSTRUCT-CS-MOUNT-CAP)
 	                               (wait-for WP)
@@ -89,19 +100,24 @@
 )
 
 (defrule goal-dependencies-discard-buffer-cap
-" Every discard goal depends on the buffer-cap class. Per default, no buffer-cap goal is grounded. "
+" Every discard goal depends on the buffer-cap class.
+  Per default, no buffer-cap goal is grounded. "
 	; needs to be higher than SALIENCE-GOAL-EXECUTABLE-CHECK
 	(declare (salience (+ ?*SALIENCE-GOAL-EXECUTABLE-CHECK* 1)))
 	?g <- (goal (id ?goal-id) (class DISCARD) (mode FORMULATED))
-	(not (dependency-assignment (goal-id ?goal-id) (class BUFFER-CAP)))
-	(not (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-CS-BUFFER-CAP)))
+	(not (dependency-assignment (goal-id ?goal-id)
+	                            (class BUFFER-CAP)))
+	(not (dependency-assignment (goal-id ?goal-id)
+	                            (class INSTRUCT-CS-BUFFER-CAP)))
 	=>
-	(printout t "Goal " ?goal-id " depends on class BUFFER-CAP " crlf)
+	(printout t "Goal " ?goal-id
+	            " depends on class BUFFER-CAP " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class BUFFER-CAP)
 	                               (wait-for WP)
 	                               (grounded-with nil)))
-	(printout t "Goal " ?goal-id " depends on class INSTRUCT-CS-BUFFER-CAP " crlf)
+	(printout t "Goal " ?goal-id
+	            " depends on class INSTRUCT-CS-BUFFER-CAP " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class INSTRUCT-CS-BUFFER-CAP)
 	                               (wait-for WP)
@@ -109,19 +125,26 @@
 )
 
 (defrule goal-dependencies-pay-with-cc-buffer-cap
-" Every discard goal depends on the buffer-cap class. Per default, no buffer-cap goal is grounded. "
+" Every discard goal depends on the buffer-cap class.
+  Per default, no buffer-cap goal is grounded. "
 	; needs to be higher than SALIENCE-GOAL-EXECUTABLE-CHECK
 	(declare (salience (+ ?*SALIENCE-GOAL-EXECUTABLE-CHECK* 1)))
-	?g <- (goal (id ?goal-id) (class PAY-FOR-RINGS-WITH-CAP-CARRIER) (mode FORMULATED))
-	(not (dependency-assignment (goal-id ?goal-id) (class BUFFER-CAP)))
-	(not (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-CS-BUFFER-CAP)))
+	?g <- (goal (id ?goal-id)
+	            (class PAY-FOR-RINGS-WITH-CAP-CARRIER)
+	            (mode FORMULATED))
+	(not (dependency-assignment (goal-id ?goal-id)
+	                            (class BUFFER-CAP)))
+	(not (dependency-assignment (goal-id ?goal-id)
+	                            (class INSTRUCT-CS-BUFFER-CAP)))
 	=>
-	(printout t "Goal " ?goal-id " depends on class BUFFER-CAP " crlf)
+	(printout t "Goal " ?goal-id
+	            " depends on class BUFFER-CAP " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class BUFFER-CAP)
 	                               (wait-for WP)
 	                               (grounded-with nil)))
-	(printout t "Goal " ?goal-id " depends on class INSTRUCT-CS-BUFFER-CAP " crlf)
+	(printout t "Goal " ?goal-id
+	            " depends on class INSTRUCT-CS-BUFFER-CAP " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class INSTRUCT-CS-BUFFER-CAP)
 	                               (wait-for WP)
@@ -129,19 +152,24 @@
 )
 
 (defrule goal-dependencies-mount-cap-mount-ring
-" Every mount-cap goal depends on the mount-ring class. Per default, no mount-ring goal is grounded. "
+" Every mount-cap goal depends on the mount-ring class.
+  Per default, no mount-ring goal is grounded. "
 	; needs to be higher than SALIENCE-GOAL-EXECUTABLE-CHECK
 	(declare (salience (+ ?*SALIENCE-GOAL-EXECUTABLE-CHECK* 1)))
 	?g <- (goal (id ?goal-id) (class MOUNT-CAP) (mode FORMULATED))
-	(not (dependency-assignment (goal-id ?goal-id) (class MOUNT-RING)))
-	(not (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-RS-MOUNT-RING)))
+	(not (dependency-assignment (goal-id ?goal-id)
+	                            (class MOUNT-RING)))
+	(not (dependency-assignment (goal-id ?goal-id)
+	                            (class INSTRUCT-RS-MOUNT-RING)))
 	=>
-	(printout t "Goal " ?goal-id " depends on class MOUNT-RING " crlf)
+	(printout t "Goal " ?goal-id
+	            " depends on class MOUNT-RING " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class MOUNT-RING)
 	                               (wait-for WP)
 	                               (grounded-with nil)))
-	(printout t "Goal " ?goal-id " depends on class INSTRUCT-RS-MOUNT-RING " crlf)
+	(printout t "Goal " ?goal-id
+	            " depends on class INSTRUCT-RS-MOUNT-RING " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class INSTRUCT-RS-MOUNT-RING)
 	                               (wait-for WP)
@@ -149,19 +177,24 @@
 )
 
 (defrule goal-dependencies-mount-ring-mount-ring
-" Every mount-ring goal depends on the mount-ring class. Per default, no mount-ring goal is grounded. "
+" Every mount-ring goal depends on the mount-ring class.
+  Per default, no mount-ring goal is grounded. "
 	; needs to be higher than SALIENCE-GOAL-EXECUTABLE-CHECK
 	(declare (salience (+ ?*SALIENCE-GOAL-EXECUTABLE-CHECK* 1)))
 	?g <- (goal (id ?goal-id) (class MOUNT-RING) (mode FORMULATED))
-	(not (dependency-assignment (goal-id ?goal-id) (class MOUNT-RING)))
-	(not (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-RS-MOUNT-RING)))
+	(not (dependency-assignment (goal-id ?goal-id)
+	                            (class MOUNT-RING)))
+	(not (dependency-assignment (goal-id ?goal-id)
+	                            (class INSTRUCT-RS-MOUNT-RING)))
 	=>
-	(printout t "Goal " ?goal-id " depends on class MOUNT-RING " crlf)
+	(printout t "Goal " ?goal-id
+	            " depends on class MOUNT-RING " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class MOUNT-RING)
 	                               (wait-for WP)
 	                               (grounded-with nil)))
-	(printout t "Goal " ?goal-id " depends on class INSTRUCT-RS-MOUNT-RING " crlf)
+	(printout t "Goal " ?goal-id
+	            " depends on class INSTRUCT-RS-MOUNT-RING " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class INSTRUCT-RS-MOUNT-RING)
 	                               (wait-for WP)
@@ -173,7 +206,7 @@
 
 (defrule goal-dependencies-mount-cap-buffer-cap-executable
 " Even if the CS is not buffered, mount-cap can be executable if the output is
-	free and there is a buffer-cap goal running for the CS. "
+  free and there is a buffer-cap goal running for the CS. "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class MOUNT-CAP)
 	                          (mode FORMULATED)
@@ -191,15 +224,19 @@
 	; MPS-CS CEs
 	(wm-fact (key domain fact mps-type args? m ?target-mps t CS))
 	(wm-fact (key domain fact mps-state args? m ?target-mps s ~BROKEN))
-	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?target-mps side INPUT)))
+	(not (wm-fact (key domain fact wp-at args?
+	                               wp ?any-wp
+	                               m ?target-mps
+	                               side INPUT)))
 	(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
 
 	(not (wm-fact (key domain fact cs-buffered args? m ?target-mps col ?)))
-	;(wm-fact (key domain fact cs-can-perform args? m ?target-mps op MOUNT_CAP))
 	(wm-fact (key domain fact mps-side-free args? m ?target-mps side OUTPUT))
 
-	; CS is not buffered, but with the following dependency, we can assume it will soon
-	(and  ; A feasible (same parameter) buffer-cap or instruct-cs-buffer-cap goal is executing...
+	; CS is not buffered, but with the following dependency,
+	  we can assume it will soon
+	(and  ; A feasible (same parameter) buffer-cap or
+	      ; instruct-cs-buffer-cap goal is executing...
 	     (goal (id ?dependency-goal-id)
 	           (class ?dependency-class&BUFFER-CAP|INSTRUCT-CS-BUFFER-CAP)
 	           (parent ?parent)
@@ -207,7 +244,8 @@
 	           (params target-mps ?target-mps $?))
 	       ; ... and it is not already grounded...
 	     (not (and   ; ... meaning there is another dependency...
-	               (dependency-assignment (goal-id ?other-goal-id) (grounded-with ?dependency-goal-id))
+	               (dependency-assignment (goal-id ?other-goal-id)
+	                                      (grounded-with ?dependency-goal-id))
 	                 ; ... and the other goal is already executing
 	               (goal (id ?other-goal-id)
 	                     (class MOUNT-CAP)
@@ -225,13 +263,20 @@
 	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
 
 	(or (and ; Either the workpiece needs to picked up...
-	         (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+	         (not (wm-fact (key domain fact holding args?
+	                                        r ?robot
+	                                        wp ?any-wp)))
 	           ; ... and it is a fresh base located in a base station
 	         (or (and (wm-fact (key domain fact mps-type args? m ?wp-loc t BS))
 	                  (wm-fact (key domain fact wp-unused args? wp ?wp))
-	                  (wm-fact (key domain fact wp-base-color args? wp ?wp col BASE_NONE)))
+	                  (wm-fact (key domain fact wp-base-color args?
+	                                            wp ?wp
+	                                            col BASE_NONE)))
 	               ; ... or is already at some machine
-	             (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side))
+	             (wm-fact (key domain fact wp-at args?
+	                                       wp ?wp
+	                                       m ?wp-loc
+	                                       side ?wp-side))
 	         )
 	    )
 	      ; or the workpiece is already being held
@@ -243,9 +288,11 @@
 	(modify ?g (is-executable TRUE))
 	(modify ?da (grounded-with ?dependency-goal-id))
 
-	; If a buffer-cap goal is grounded with ?g, also ground its instruct-cs-buffer-cap goal to ?g
+	; If a buffer-cap goal is grounded with ?g, also ground its
+	; instruct-cs-buffer-cap goal to ?g
 	(if (eq ?dependency-class BUFFER-CAP)
-	 then (do-for-fact ((?instruct-goal goal) (?instruct-da dependency-assignment))
+	 then (do-for-fact ((?instruct-goal goal)
+	                    (?instruct-da dependency-assignment))
 		      (and (eq ?instruct-goal:parent ?parent) ; depending on tree: in this case buffer-cap is its sibling
 		           (eq ?instruct-goal:class INSTRUCT-CS-BUFFER-CAP)
 		           (eq ?instruct-da:goal-id ?goal-id)
@@ -278,19 +325,34 @@
 	; MPS-CS CEs
 	(wm-fact (key domain fact mps-type args? m ?target-mps t CS))
 	(wm-fact (key domain fact mps-state args? m ?target-mps s ~BROKEN))
-	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?target-mps side INPUT)))
+	(not (wm-fact (key domain fact wp-at args?
+	                               wp ?any-wp
+	                               m ?target-mps
+	                               side INPUT)))
 	(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
 
-	(not (wm-fact (key domain fact cs-buffered args? m ?target-mps col ?cap-color)))
-	;(wm-fact (key domain fact cs-can-perform args? m ?target-mps op MOUNT_CAP))
+	(not (wm-fact (key domain fact cs-buffered args?
+	                               m ?target-mps
+	                               col ?cap-color)))
+	;(wm-fact (key domain fact cs-can-perform args?
+	                           m ?target-mps
+	                           op MOUNT_CAP))
 
-	(wm-fact (key domain fact wp-at args? wp ?blocking-wp m ?target-mps side OUTPUT))
-	; CS output is not free, but with this goal executing, we can assume it will soon
-	(goal (id ?deliver-id) (class DELIVER) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-	         (params  wp ?blocking-wp $?))
+	(wm-fact (key domain fact wp-at args?
+	                          wp ?blocking-wp
+	                          m ?target-mps
+	                          side OUTPUT))
+	; CS output is not free, but with this goal executing, we can assume it
+	; will soon
+	(goal (id ?deliver-id)
+	      (class DELIVER)
+	      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	      (params  wp ?blocking-wp $?))
 
-	; CS is not buffered, but with the following dependency, we can assume it will soon
-	(and  ; A feasible (same parameter) buffer-cap or instruct-cs-buffer-cap goal is executing...
+	; CS is not buffered, but with the following dependency, we can assume it
+	; will soon
+	(and  ; A feasible (same parameter) buffer-cap or
+	      ; instruct-cs-buffer-cap goal is executing...
 	     (goal (id ?dependency-goal-id)
 	           (class ?dependency-class&BUFFER-CAP|INSTRUCT-CS-BUFFER-CAP)
 	           (parent ?parent)
@@ -317,7 +379,9 @@
 	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
 
 	(or (and ; Either the workpiece needs to picked up...
-	         (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+	         (not (wm-fact (key domain fact holding args?
+	                                        r ?robot
+	                                        wp ?any-wp)))
 	         ; ... and it is a fresh base located in a base station
 	         (or (and (wm-fact (key domain fact mps-type args? m ?wp-loc t BS))
 	                  (wm-fact (key domain fact wp-unused args? wp ?wp))
@@ -338,7 +402,8 @@
 	(modify ?g (is-executable TRUE))
 	(modify ?da (grounded-with ?dependency-goal-id))
 
-	; If a buffer-cap goal is grounded with ?g, also ground its instruct-cs-buffer-cap goal to ?g
+	; If a buffer-cap goal is grounded with ?g, also ground its
+	; instruct-cs-buffer-cap goal to ?g
 	(if (eq ?dependency-class BUFFER-CAP)
 		then (do-for-fact ((?instruct-goal goal) (?instruct-da dependency-assignment))
 			(and (eq ?instruct-goal:parent ?parent) ; depending on tree: in this case buffer-cap is its sibling
@@ -371,7 +436,10 @@
 	; MPS-CS CEs
 	(wm-fact (key domain fact mps-type args? m ?target-mps t DS))
 	(wm-fact (key domain fact mps-state args? m ?target-mps s ~BROKEN))
-	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?target-mps side INPUT)))
+	(not (wm-fact (key domain fact wp-at args?
+	                               wp ?any-wp
+	                               m ?target-mps
+	                               side INPUT)))
 	(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
 
 	; wp is not at CS OUTPUT, but after these goals finished, it will be
@@ -483,8 +551,12 @@
 	               target-mps ?rs
 	               $?))
 	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
-	(wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C1|C2|C3))
-	(wm-fact (key wp meta next-step args? wp ?wp) (value ?next-step&:(eq (sub-string 5 5 ?next-step) (sub-string 2 2 ?complexity))))
+	(wm-fact (key domain fact order-complexity args?
+	                          ord ?order
+	                          com ?complexity&C1|C2|C3))
+	(wm-fact (key wp meta next-step args? wp ?wp)
+	         (value ?next-step&:(eq (sub-string 5 5 ?next-step)
+	                                (sub-string 2 2 ?complexity))))
 	?mount-da <- (dependency-assignment (goal-id ?goal-id) (class MOUNT-RING))
 
 	(wm-fact (key domain fact cs-buffered args? m ?cs col ?cap-color))
@@ -504,7 +576,10 @@
 
 	; payments are or will be enough to mount-ring
 	(wm-fact (key domain fact rs-filled-with args? m ?rs n ?bases-filled))
-	(wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring-color rn ?bases-needed))
+	(wm-fact (key domain fact rs-ring-spec args?
+	                          m ?rs
+	                          r ?ring-color
+	                          rn ?bases-needed))
 	(wm-fact (key domain fact rs-sub args? minuend ?bases-needed
 	                                       subtrahend ?bases-filled
 	                                       difference ?bases-missing&ZERO|ONE|TWO|THREE)) ;for future: or filled>needed
@@ -537,7 +612,8 @@
 	(printout t "Goal " ?goal-id " executable for " ?robot
 	            " depending on goal " ?mount-goal-id
 	            " and goal " ?instruct-goal-id crlf)
-	; create dependency-assignments to all payment goals of dependency-goal mount-ring
+	; create dependency-assignments to all payment goals of dependency-goal
+	; mount-ring
 	(do-for-all-facts ((?pay goal))
 	    (and (is-goal-running ?pay:mode)  ;for future: check if goal expansion changes params
 	         (or
@@ -557,104 +633,106 @@
 	(modify ?instruct-da (grounded-with ?instruct-goal-id))
 )
 
-; (defrule goal-dependencies-mount-ring-mount-ring-executable
-; " Even if mount-ring is still executing, mount-ring can already be executable
-;   if all payments are about to be done. "
-; 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
-; 	;only ground with those actions that are prior to our action based on order :D
-; 	?g <- (goal (id ?goal-id) (class MOUNT-RING)
-; 	                          (mode FORMULATED)
-; 	                          (params  wp ?wp
-; 	                                   target-mps ?other-rs
-; 	                                   $?)
-; 	                          (meta $? assigned-to ?robot $?)
-; 	                          (is-executable FALSE))
+(defrule goal-dependencies-mount-ring-mount-ring-executable
+" Even if mount-ring is still executing, mount-ring can already be executable
+  if all payments are about to be done. "
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class MOUNT-RING)
+	                          (mode FORMULATED)
+	                          (params  wp ?wp
+	                                   target-mps ?other-rs
+	                                   $?)
+	                          (meta $? assigned-to ?robot $?)
+	                          (is-executable FALSE))
 
-; 	; Robot CEs
-; 	(wm-fact (key central agent robot args? r ?robot))
-; 	(wm-fact (key refbox team-color) (value ?team-color))
+	; Robot CEs
+	(wm-fact (key central agent robot args? r ?robot))
+	(wm-fact (key refbox team-color) (value ?team-color))
 
-; 	; wp is not at RS OUTPUT, but after these goals finished, it will be
-; 	(goal (id ?mount-goal-id)
-; 	      (class MOUNT-RING)
-; 	      (parent ?parent)
-; 	      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED|RETRACTED)
-; 	      (params  wp ?wp
-; 	               target-mps ?rs&:(neq ?rs ?other-rs)
-; 	               $? ring-color ?ring-color $?))
-; 	?mount-da <- (dependency-assignment (goal-id ?goal-id) (class MOUNT-RING))
+	; wp is not at RS OUTPUT, but after these goals finished, it will be
+	(goal (id ?mount-goal-id)
+	      (class MOUNT-RING)
+	      (parent ?parent)
+	      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED|RETRACTED)
+	      (params  wp ?wp
+	               target-mps ?rs&:(neq ?rs ?other-rs)
+	               $?))
+	?mount-da <- (dependency-assignment (goal-id ?goal-id) (class MOUNT-RING))
 
-; 	; get instruct goal through tree relationship to mount-ring, in this case sibling of grandparent
-; 	(goal (id ?parent) (parent ?grandparent))
-; 	(goal (id ?grandparent) (parent ?great-grandparent))
-; 	(goal (id ?instruct-goal-id)
-; 	      (class INSTRUCT-RS-MOUNT-RING)
-; 	      (parent ?great-grandparent)
-; 	      (params target-mps ?rs
-; 	              ring-color ?ring-color)
-; 	      (mode FORMULATED))
-; 	?instruct-da <- (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-RS-MOUNT-RING))
+	; get instruct goal through tree relationship to mount-ring, in this case sibling of grandparent
+	(goal (id ?parent) (parent ?grandparent))
+	(goal (id ?grandparent) (parent ?great-grandparent))
+	(goal (id ?instruct-goal-id)
+	      (class INSTRUCT-RS-MOUNT-RING)
+	      (parent ?great-grandparent)
+	      (params target-mps ?rs
+	              ring-color ?ring-color)
+	      (mode FORMULATED))
+	?instruct-da <- (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-RS-MOUNT-RING))
 
-; 	(not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
+	(not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
 
-; 	; payments are or will be enough to mount-ring
-; 	(wm-fact (key domain fact rs-filled-with args? m ?rs n ?bases-filled))
-; 	(wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring-color rn ?bases-needed))
-; 	(wm-fact (key domain fact rs-sub args? minuend ?bases-needed
-; 	                                       subtrahend ?bases-filled
-; 	                                       difference ?bases-missing&ZERO|ONE|TWO|THREE)) ;for future: or filled>needed
-; 	(or (test (eq ?bases-missing ZERO))
-; 	    (and (test (eq ?bases-missing ONE))
-; 	         (goal (id ?feed-id-1)
-; 	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-; 	               (class PAY-FOR-RINGS-WITH-BASE|
-; 	                      PAY-FOR-RINGS-WITH-CAP-CARRIER|
-; 	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
-; 	               (params $? ?rs $?))
-; 	    )
-; 	    (and (test (eq ?bases-missing TWO))
-; 	         (goal (id ?feed-id-1)
-; 	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-; 	               (class PAY-FOR-RINGS-WITH-BASE|
-; 	                      PAY-FOR-RINGS-WITH-CAP-CARRIER|
-; 	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
-; 	               (params $? ?rs $?))
-; 	         (goal (id ?feed-id-2)
-; 	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-; 	               (class PAY-FOR-RINGS-WITH-BASE|
-; 	                      PAY-FOR-RINGS-WITH-CAP-CARRIER|
-; 	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
-; 	               (params $? ?rs $?))
-; 	         (neq ?feed-id-1 ?feed-id-2)
-; 	    )
-; 	)
-; 	=>
-; 	(printout t "Goal " ?goal-id " executable for " ?robot
-; 	            " depending on goal " ?mount-goal-id
-; 	            " and goal " ?instruct-goal-id crlf)
-; 	; create dependency-assignments to all payment goals of dependency-goal mount-ring
-; 	(do-for-all-facts ((?pay goal))
-; 	    (and (is-goal-running ?pay:mode) ;for future: check if goal expansion changes params
-; 	         (or
-; 	             (eq ?pay:class PAY-FOR-RINGS-WITH-BASE)
-; 	             (eq ?pay:class PAY-FOR-RINGS-WITH-CAP-CARRIER)
-; 	             (eq ?pay:class PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF))
-; 	         (eq (get-param-by-arg ?pay:params target-mps) ?rs))
-; 	    (assert (dependency-assignment (goal-id ?goal-id)
-; 	                                   (class ?pay:class)
-; 	                                   (grounded-with ?pay:id)))
-; 	)
-; 	(modify ?g (is-executable TRUE))
-; 	(modify ?mount-da (params  wp ?wp
-; 	                           wp-loc ?rs
-; 	                           wp-side OUTPUT)
-; 	                  (grounded-with ?mount-goal-id))
-; 	(modify ?instruct-da (grounded-with ?instruct-goal-id))
-; )
+	; payments are or will be enough to mount-ring
+	(wm-fact (key domain fact rs-filled-with args? m ?rs n ?bases-filled))
+	(wm-fact (key domain fact rs-ring-spec args?
+	                          m ?rs
+	                          r ?ring-color
+	                          rn ?bases-needed))
+	(wm-fact (key domain fact rs-sub args? minuend ?bases-needed
+	                                       subtrahend ?bases-filled
+	                                       difference ?bases-missing&ZERO|ONE|TWO|THREE)) ;for future: or filled>needed
+	(or (test (eq ?bases-missing ZERO))
+	    (and (test (eq ?bases-missing ONE))
+	         (goal (id ?feed-id-1)
+	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	               (class PAY-FOR-RINGS-WITH-BASE|
+	                      PAY-FOR-RINGS-WITH-CAP-CARRIER|
+	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
+	               (params $? ?rs $?))
+	    )
+	    (and (test (eq ?bases-missing TWO))
+	         (goal (id ?feed-id-1)
+	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	               (class PAY-FOR-RINGS-WITH-BASE|
+	                      PAY-FOR-RINGS-WITH-CAP-CARRIER|
+	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
+	               (params $? ?rs $?))
+	         (goal (id ?feed-id-2)
+	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	               (class PAY-FOR-RINGS-WITH-BASE|
+	                      PAY-FOR-RINGS-WITH-CAP-CARRIER|
+	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
+	               (params $? ?rs $?))
+	         (neq ?feed-id-1 ?feed-id-2)
+	    )
+	)
+	=>
+	(printout t "Goal " ?goal-id " executable for " ?robot
+	            " depending on goal " ?mount-goal-id
+	            " and goal " ?instruct-goal-id crlf)
+	; create dependency-assignments to all payment goals of dependency-goal
+	; mount-ring
+	(do-for-all-facts ((?pay goal))
+	    (and (is-goal-running ?pay:mode) ;for future: check if goal expansion changes params
+	         (or
+	             (eq ?pay:class PAY-FOR-RINGS-WITH-BASE)
+	             (eq ?pay:class PAY-FOR-RINGS-WITH-CAP-CARRIER)
+	             (eq ?pay:class PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF))
+	         (eq (get-param-by-arg ?pay:params target-mps) ?rs))
+	    (assert (dependency-assignment (goal-id ?goal-id)
+	                                   (class ?pay:class)
+	                                   (grounded-with ?pay:id)))
+	)
+	(modify ?g (is-executable TRUE))
+	(modify ?mount-da (params  wp ?wp
+	                           wp-loc ?rs
+	                           wp-side OUTPUT)
+	                  (grounded-with ?mount-goal-id))
+	(modify ?instruct-da (grounded-with ?instruct-goal-id))
+)
 
 (defrule goal-dependencies-discard-buffer-cap-executable
-" Discard can be executable while buffer-cap is still running.
-"
+" Discard can be executable while buffer-cap is still running. "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class DISCARD)
 	                          (mode FORMULATED)
@@ -681,18 +759,21 @@
 	?buffer-da <- (dependency-assignment (goal-id ?goal-id) (class BUFFER-CAP))
 
 	; get cc through buffer actions
-	(plan-action (goal-id ?buffer-goal-id) (action-name wp-put) (param-values ?r ?cc $?))
+	(plan-action (goal-id ?buffer-goal-id)
+	             (action-name wp-put)
+	             (param-values ?r ?cc $?))
 
 	(goal (id ?instruct-goal-id)
 	      (class INSTRUCT-CS-BUFFER-CAP)
-	      (parent ?parent)	; depends on tree structur
+	      (parent ?parent)   ; depends on tree structur
 	      (mode FORMULATED))
 	?instruct-da <- (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-CS-BUFFER-CAP))
 	=>
 	(printout t "Goal " ?goal-id " executable for " ?robot
 	            " depending on goal " ?buffer-goal-id
 	            " and goal " ?instruct-goal-id crlf)
-	(modify ?g (params  wp ?cc wp-loc ?wp-loc wp-side ?wp-side) (is-executable TRUE))
+	(modify ?g (params  wp ?cc wp-loc ?wp-loc wp-side ?wp-side)
+	           (is-executable TRUE))
 	(modify ?buffer-da (params  wp ?cc
 	                            wp-loc ?cs
 	                            wp-side OUTPUT)
@@ -701,8 +782,7 @@
 )
 
 (defrule goal-dependencies-pay-with-cc-buffer-cap-executable
-" Discard can be executable while buffer-cap is still running.
-"
+" Discard can be executable while buffer-cap is still running. "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class PAY-FOR-RINGS-WITH-CAP-CARRIER)
 	                          (mode FORMULATED)
@@ -720,23 +800,30 @@
 	(wm-fact (key domain fact mps-type args? m ?target-mps t RS))
 	(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
 	;check ring payment - prevention of overfilling rs
-	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before&ZERO|ONE|TWO))
+	(wm-fact (key domain fact rs-filled-with args?
+	                          m ?target-mps
+	                          n ?rs-before&ZERO|ONE|TWO))
 	;check that not to may robots try to fill the rs at the same time
-	(or (not (goal (class PAY-FOR-RINGS-WITH-BASE| PAY-FOR-RINGS-WITH-CAP-CARRIER|
+	(or (not (goal (class PAY-FOR-RINGS-WITH-BASE|
+	                      PAY-FOR-RINGS-WITH-CAP-CARRIER|
 	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
 	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	               (params $? target-mps ?target-mps $?)))
-	    (and (goal (class PAY-FOR-RINGS-WITH-BASE|PAY-FOR-RINGS-WITH-CAP-CARRIER|
+	    (and (goal (class PAY-FOR-RINGS-WITH-BASE|
+	                      PAY-FOR-RINGS-WITH-CAP-CARRIER|
 	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
 	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	               (params $? target-mps ?target-mps $?))
 	         (test (< (+ (length$ (find-all-facts ((?other-goal goal))
-	                               (and (or (eq ?other-goal:class PAY-FOR-RINGS-WITH-BASE)
-	                                        (eq ?other-goal:class PAY-FOR-RINGS-WITH-CAP-CARRIER)
-	                                        (eq ?other-goal:class PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF))
-	                                    (is-goal-running ?other-goal:mode)
-	                                    (member$ ?target-mps ?other-goal:params)
-	                               )))
+	                       (and (or (eq ?other-goal:class
+	                                    PAY-FOR-RINGS-WITH-BASE)
+	                                (eq ?other-goal:class
+	                                    PAY-FOR-RINGS-WITH-CAP-CARRIER)
+	                                (eq ?other-goal:class
+	                                    PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF))
+	                            (is-goal-running ?other-goal:mode)
+	                            (member$ ?target-mps ?other-goal:params)
+	                        )))
 	                     (sym-to-int ?rs-before)) 3))
 	   )
 	)
@@ -757,13 +844,16 @@
 	?buffer-da <- (dependency-assignment (goal-id ?goal-id) (class BUFFER-CAP))
 
 	; get cc through buffer actions
-	(plan-action (goal-id ?buffer-goal-id) (action-name wp-put) (param-values ?r ?cc $?))
+	(plan-action (goal-id ?buffer-goal-id)
+	             (action-name wp-put)
+	             (param-values ?r ?cc $?))
 
 	(goal (id ?instruct-goal-id)
 	      (class INSTRUCT-CS-BUFFER-CAP)
 	      (parent ?parent)	; depends on tree structur
 	      (mode FORMULATED))
-	?instruct-da <- (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-CS-BUFFER-CAP))
+	?instruct-da <- (dependency-assignment (goal-id ?goal-id)
+	                                       (class INSTRUCT-CS-BUFFER-CAP))
 	=>
 	(printout t "Goal " ?goal-id " executable for " ?robot
 	            " depending on goal " ?buffer-goal-id
