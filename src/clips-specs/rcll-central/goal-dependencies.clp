@@ -561,6 +561,8 @@
 " Even if mount-ring is still executing, mount-ring can already be executable
   if all payments are about to be done. "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	(a)
+	;only ground with those actions that are prior to our action based on order :D
 	?g <- (goal (id ?goal-id) (class MOUNT-RING)
 	                          (mode FORMULATED)
 	                          (params  wp ?wp
@@ -568,6 +570,9 @@
 	                                   $?)
 	                          (meta $? assigned-to ?robot $?)
 	                          (is-executable FALSE))
+
+	;wp
+	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
 
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
@@ -580,7 +585,7 @@
 	      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED|RETRACTED)
 	      (params  wp ?wp
 	               target-mps ?rs&:(neq ?rs ?other-rs)
-	               $?))
+	               $? ring-color ?ring-color $?))
 	?mount-da <- (dependency-assignment (goal-id ?goal-id) (class MOUNT-RING))
 
 	; get instruct goal through tree relationship to mount-ring, in this case sibling of grandparent
@@ -768,7 +773,7 @@
 	(printout t "Goal " ?goal-id " executable for " ?robot
 	            " depending on goal " ?buffer-goal-id
 	            " and goal " ?instruct-goal-id crlf)
-	(modify ?g (params  wp ?cc 
+	(modify ?g (params  wp ?cc
 	                    wp-loc ?cs
 	                    wp-side OUTPUT
 	                    target-mps ?target-mps
