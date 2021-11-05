@@ -239,7 +239,6 @@
 	      ; instruct-cs-buffer-cap goal is executing...
 	     (goal (id ?dependency-goal-id)
 	           (class ?dependency-class&BUFFER-CAP|INSTRUCT-CS-BUFFER-CAP)
-	           (parent ?parent)
 	           (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	           (params target-mps ?target-mps $?))
 	       ; ... and it is not already grounded...
@@ -262,7 +261,7 @@
 	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
 	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
 
-	(or (and ; Either the workpiece needs to picked up...
+	(or (and ; Either the workpiece needs to be picked up...
 	         (not (wm-fact (key domain fact holding args?
 	                                        r ?robot
 	                                        wp ?any-wp)))
@@ -292,9 +291,10 @@
 	; instruct-cs-buffer-cap goal to ?g
 	(if (eq ?dependency-class BUFFER-CAP)
 	 then (do-for-fact ((?instruct-goal goal)
-	                    (?instruct-da dependency-assignment))
-		      (and (eq ?instruct-goal:parent ?parent) ; depending on tree: in this case buffer-cap is its sibling
-		           (eq ?instruct-goal:class INSTRUCT-CS-BUFFER-CAP)
+	                    (?instruct-da dependency-assignment)
+	                    (?buffer-goal-meta goal-meta))
+		      (and (eq ?buffer-goal-meta:goal-id ?dependency-goal-id)
+		           (eq ?buffer-goal-meta:instruct-goal-id ?instruct-goal:id)
 		           (eq ?instruct-da:goal-id ?goal-id)
 		           (eq ?instruct-da:class INSTRUCT-CS-BUFFER-CAP))
 		      (modify ?instruct-da (grounded-with ?instruct-goal:id))
@@ -355,7 +355,6 @@
 	      ; instruct-cs-buffer-cap goal is executing...
 	     (goal (id ?dependency-goal-id)
 	           (class ?dependency-class&BUFFER-CAP|INSTRUCT-CS-BUFFER-CAP)
-	           (parent ?parent)
 	           (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	           (params target-mps ?target-mps $?))
 	       ; ... and it is not already grounded...
@@ -378,7 +377,7 @@
 	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
 	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
 
-	(or (and ; Either the workpiece needs to picked up...
+	(or (and ; Either the workpiece needs to be picked up...
 	         (not (wm-fact (key domain fact holding args?
 	                                        r ?robot
 	                                        wp ?any-wp)))
@@ -405,14 +404,16 @@
 	; If a buffer-cap goal is grounded with ?g, also ground its
 	; instruct-cs-buffer-cap goal to ?g
 	(if (eq ?dependency-class BUFFER-CAP)
-		then (do-for-fact ((?instruct-goal goal) (?instruct-da dependency-assignment))
-			(and (eq ?instruct-goal:parent ?parent) ; depending on tree: in this case buffer-cap is its sibling
-			     (eq ?instruct-goal:class INSTRUCT-CS-BUFFER-CAP)
-			     (eq ?instruct-da:goal-id ?goal-id)
-			     (eq ?instruct-da:class INSTRUCT-CS-BUFFER-CAP))
-			(modify ?instruct-da (grounded-with ?instruct-goal:id)))
-			(printout t "Goal " ?goal-id " executable for " ?robot
-			            " also depending on goal INSTRUCT-CS-BUFFER-CAP" crlf)
+	 then (do-for-fact ((?instruct-goal goal)
+	                    (?instruct-da dependency-assignment)
+	                    (?buffer-goal-meta goal-meta))
+		(and (eq ?buffer-goal-meta:goal-id ?dependency-goal-id)
+		     (eq ?buffer-goal-meta:instruct-goal-id ?instruct-goal:id)
+		     (eq ?instruct-da:goal-id ?goal-id)
+		     (eq ?instruct-da:class INSTRUCT-CS-BUFFER-CAP))
+		(modify ?instruct-da (grounded-with ?instruct-goal:id)))
+		(printout t "Goal " ?goal-id " executable for " ?robot
+		            " also depending on goal INSTRUCT-CS-BUFFER-CAP" crlf)
 	)
 )
 
@@ -445,7 +446,6 @@
 	; wp is not at CS OUTPUT, but after these goals finished, it will be
 	(goal (id ?mount-goal-id)
 	      (class MOUNT-CAP)
-	      (parent ?parent)
 	      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	      (params wp ?wp
 	              target-mps ?mps
@@ -455,14 +455,10 @@
 	(wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
 	(wm-fact (key domain fact mps-side-free args? m ?mps side OUTPUT))
 
-	; get instruct goal through tree relationship to mount-cap, in this case sibling of grandparent
-	(goal (id ?parent) (parent ?grandparent))
-	(goal (id ?grandparent) (parent ?great-grandparent))
-	(goal (id ?instruct-goal-id)
-	      (class INSTRUCT-CS-MOUNT-CAP)
-	      (parent ?great-grandparent)
-	      (mode FORMULATED))
-	?instruct-da <- (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-CS-MOUNT-CAP))
+	; get instruct mount-cap goal
+	(goal-meta (goal-id ?mount-goal-id) (instruct-goal-id ?instruct-goal-id))
+	?instruct-da <- (dependency-assignment (goal-id ?goal-id)
+	                                       (class INSTRUCT-CS-MOUNT-CAP))
 
 	(not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
 	=>
@@ -493,7 +489,6 @@
 	; wp is not at CS OUTPUT, but after these goals finished, it will be
 	(goal (id ?mount-goal-id)
 	      (class MOUNT-CAP)
-	      (parent ?parent)
 	      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	      (params wp ?wp
 	              target-mps ?mps
@@ -503,14 +498,10 @@
 	(wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
 	(wm-fact (key domain fact mps-side-free args? m ?mps side OUTPUT))
 
-	; get instruct goal through tree relationship to mount-cap, in this case sibling of grandparent
-	(goal (id ?parent) (parent ?grandparent))
-	(goal (id ?grandparent) (parent ?great-grandparent))
-	(goal (id ?instruct-goal-id)
-	      (class INSTRUCT-CS-MOUNT-CAP)
-	      (parent ?great-grandparent)
-	      (mode FORMULATED))
-	?instruct-da <- (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-CS-MOUNT-CAP))
+	; get instruct mount-cap goal
+	(goal-meta (goal-id ?mount-goal-id) (instruct-goal-id ?instruct-goal-id))
+	?instruct-da <- (dependency-assignment (goal-id ?goal-id)
+	                                       (class INSTRUCT-CS-MOUNT-CAP))
 
 	(not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
 	=>
@@ -545,7 +536,6 @@
 	; wp is not at RS OUTPUT, but after these goals finished, it will be
 	(goal (id ?mount-goal-id)
 	      (class MOUNT-RING)
-	      (parent ?parent)
 	      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED|RETRACTED)
 	      (params  wp ?wp
 	               target-mps ?rs
@@ -561,15 +551,8 @@
 
 	(wm-fact (key domain fact cs-buffered args? m ?cs col ?cap-color))
 
-	; get instruct goal through tree relationship to mount-ring, in this case sibling of grandparent
-	(goal (id ?parent) (parent ?grandparent))
-	(goal (id ?grandparent) (parent ?great-grandparent))
-	(goal (id ?instruct-goal-id)
-	      (class INSTRUCT-RS-MOUNT-RING)
-	      (parent ?great-grandparent)
-	      (params target-mps ?rs
-	              ring-color ?ring-color)
-	      (mode FORMULATED))
+	; get instruct mount-ring goal
+	(goal-meta (goal-id ?mount-goal-id) (instruct-goal-id ?instruct-goal-id))
 	?instruct-da <- (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-RS-MOUNT-RING))
 
 	(not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
@@ -652,22 +635,14 @@
 	; wp is not at RS OUTPUT, but after these goals finished, it will be
 	(goal (id ?mount-goal-id)
 	      (class MOUNT-RING)
-	      (parent ?parent)
 	      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED|RETRACTED)
 	      (params  wp ?wp
-	               target-mps ?rs&:(neq ?rs ?other-rs)
+	               target-mps ?rs
 	               $?))
 	?mount-da <- (dependency-assignment (goal-id ?goal-id) (class MOUNT-RING))
 
-	; get instruct goal through tree relationship to mount-ring, in this case sibling of grandparent
-	(goal (id ?parent) (parent ?grandparent))
-	(goal (id ?grandparent) (parent ?great-grandparent))
-	(goal (id ?instruct-goal-id)
-	      (class INSTRUCT-RS-MOUNT-RING)
-	      (parent ?great-grandparent)
-	      (params target-mps ?rs
-	              ring-color ?ring-color)
-	      (mode FORMULATED))
+	; get instruct mount-ring goal
+	(goal-meta (goal-id ?mount-goal-id) (instruct-goal-id ?instruct-goal-id))
 	?instruct-da <- (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-RS-MOUNT-RING))
 
 	(not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
@@ -736,9 +711,9 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class DISCARD)
 	                          (mode FORMULATED)
-	                          (parent ?parent)
 	                          (params  $? wp-loc ?wp-loc wp-side ?wp-side)
 	                          (is-executable FALSE))
+	(goal-meta (goal-id ?goal-id) (order ?order))
 
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	; Robot CEs
@@ -753,9 +728,10 @@
 	; wp is not at CS OUTPUT, but after these goals finished, it will be
 	(goal (id ?buffer-goal-id)
 	      (class BUFFER-CAP)
-	      (parent ?parent)
 	      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	      (params target-mps ?cs $?))
+	(goal-meta (goal-id ?buffer-goal-id) (order ?order))
+
 	?buffer-da <- (dependency-assignment (goal-id ?goal-id) (class BUFFER-CAP))
 
 	; get cc through buffer actions
@@ -763,10 +739,8 @@
 	             (action-name wp-put)
 	             (param-values ?r ?cc $?))
 
-	(goal (id ?instruct-goal-id)
-	      (class INSTRUCT-CS-BUFFER-CAP)
-	      (parent ?parent)   ; depends on tree structur
-	      (mode FORMULATED))
+	; get instruct buffer-cap goal
+	(goal-meta (goal-id ?buffer-goal-id) (instruct-goal-id ?instruct-goal-id))
 	?instruct-da <- (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-CS-BUFFER-CAP))
 	=>
 	(printout t "Goal " ?goal-id " executable for " ?robot
@@ -796,14 +770,16 @@
 
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key refbox team-color) (value ?team-color))
-	;MPS-RS CEs (a cap carrier can be used to fill a RS later)
+
+	;MPS-RS CEs
 	(wm-fact (key domain fact mps-type args? m ?target-mps t RS))
 	(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
+
 	;check ring payment - prevention of overfilling rs
 	(wm-fact (key domain fact rs-filled-with args?
 	                          m ?target-mps
 	                          n ?rs-before&ZERO|ONE|TWO))
-	;check that not to may robots try to fill the rs at the same time
+	;check that not too many robots try to fill the rs at the same time
 	(or (not (goal (class PAY-FOR-RINGS-WITH-BASE|
 	                      PAY-FOR-RINGS-WITH-CAP-CARRIER|
 	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
@@ -838,7 +814,6 @@
 	; wp is not at CS OUTPUT, but after these goals finished, it will be
 	(goal (id ?buffer-goal-id)
 	      (class BUFFER-CAP)
-	      (parent ?parent)
 	      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	      (params target-mps ?cs $?))
 	?buffer-da <- (dependency-assignment (goal-id ?goal-id) (class BUFFER-CAP))
@@ -848,10 +823,8 @@
 	             (action-name wp-put)
 	             (param-values ?r ?cc $?))
 
-	(goal (id ?instruct-goal-id)
-	      (class INSTRUCT-CS-BUFFER-CAP)
-	      (parent ?parent)	; depends on tree structur
-	      (mode FORMULATED))
+	; get instruct buffer-cap goal
+	(goal-meta (goal-id ?buffer-goal-id) (instruct-goal-id ?instruct-goal-id))
 	?instruct-da <- (dependency-assignment (goal-id ?goal-id)
 	                                       (class INSTRUCT-CS-BUFFER-CAP))
 	=>
