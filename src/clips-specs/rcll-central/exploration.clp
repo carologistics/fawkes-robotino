@@ -319,7 +319,7 @@
 " Exploration of a zone finished succesfully. Update zone wm-fact and assert exploration-result
 "
   (goal (id ?goal-id) (class EXPLORE-ZONE) (mode DISPATCHED))
-  (goal-meta (goal-id ?goal-id) (assigned-to ?r))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?r&~nil))
   (plan-action (action-name explore-zone) (state SENSED-EFFECTS-WAIT))
   (ZoneInterface (id ?zone-id&:(eq ?zone-id (remote-if-id ?r "explore-zone/info")))
 	               (zone ?zn-str) (orientation ?orientation)

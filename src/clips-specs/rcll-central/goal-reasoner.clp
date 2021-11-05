@@ -232,7 +232,7 @@
       (wm-fact (key central agent robot-waiting args? r ?robot))
       ?g <- (goal (id ?goal-id) (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE)
                   (parent ?pid))
-      (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+      (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
     )
   )
   (test (neq ?pid nil))
@@ -308,7 +308,7 @@
 	(declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
 	?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome)
 	            (verbosity ?v))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 =>
 	(set-robot-to-waiting ?robot)
 	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" crlf)

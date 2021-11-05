@@ -24,6 +24,10 @@
 
 (deffunction goal-meta-assign-robot-to-goal (?goal ?robot)
 "Creates the goal-meta fact if it doen't exists"
+	(if (eq (fact-slot-value ?goal id) FALSE) then
+		(printout t "Goal has no id! " ?goal crlf)
+		(return)
+	)
 	(if (eq ?robot nil) then (return ))
 	(if (do-for-fact ((?f goal-meta))
 			(eq ?f:goal-id (fact-slot-value ?goal id))
@@ -271,7 +275,7 @@
 	            (mode FORMULATED)
 	            (params target-pos ?target-pos location ?loc)
 	            (is-executable FALSE))
-	(goal-meta (goal-id ?id) (assigned-to ?robot))
+	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
 	; check if target position is free
 	(test (is-free ?target-pos))
 	=>
@@ -288,7 +292,7 @@
 	            (mode FORMULATED)
 	            (params target-mps ?mps )
 	            (is-executable FALSE))
-	(goal-meta (goal-id ?id) (assigned-to ?robot))
+	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact mps-side-free args? m ?mps side INPUT))
 	(or (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
@@ -306,7 +310,7 @@
 	            (mode FORMULATED)
 	            (params target-mps ?mps )
 	            (is-executable FALSE))
-	(goal-meta (goal-id ?id) (assigned-to ?robot))
+	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact maps args? m ?mps r ?robot))
 	=>
 	(printout t "Goal MOVE executable for " ?robot " at " ?mps crlf)
@@ -323,7 +327,7 @@
 	                    cap-color ?cap-color
 	            )
 	            (is-executable FALSE))
-	(goal-meta (goal-id ?id) (assigned-to ?robot))
+	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
@@ -364,7 +368,7 @@
 	                                   target-side ?target-side
 	                                   $?)
 	                          (is-executable FALSE))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -415,7 +419,7 @@
 	                                   target-side ?target-side
 	                                   $?)
 	                          (is-executable FALSE))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
@@ -450,7 +454,7 @@
 	                          (params  wp ?wp
 	                                   $?)
 	                          (is-executable FALSE))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
@@ -478,7 +482,7 @@
 	                          (mode FORMULATED)
 	                          (params  wp ?wp&~UNKNOWN wp-loc ?wp-loc wp-side ?wp-side)
 	                          (is-executable FALSE))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
@@ -510,7 +514,7 @@
 	                                   target-side ?target-side
 	                                   $?)
 	                          (is-executable FALSE))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	;MPS-RS CEs (a cap carrier can be used to fill a RS later)
 	(wm-fact (key domain fact mps-type args? m ?target-mps t RS))
@@ -574,7 +578,7 @@
 	                                   target-side ?target-side
 	                                   $?)
 	                          (is-executable FALSE))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	;MPS-RS CEs (a cap carrier can be used to fill a RS later)
 	(wm-fact (key domain fact mps-type args? m ?target-mps t RS))
@@ -642,7 +646,7 @@
 	                                   target-side ?target-side
 	                                   $?)
 	                          (is-executable FALSE))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	;MPS-RS CEs
 	(wm-fact (key domain fact mps-type args? m ?target-mps t RS))
@@ -711,7 +715,7 @@ The workpiece remains in the output of the used ring station after
 	                                   ring-color ?ring-color
 	                                   $?)
 	                          (is-executable FALSE))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	; Robot CEs
 	(wm-fact (key refbox team-color) (value ?team-color))
 
@@ -1556,7 +1560,7 @@ The workpiece remains in the output of the used ring station after
 	                          (mode FORMULATED)
 	                          (params target ?target $?)
 	                          (is-executable FALSE))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	=>
 	(printout t "Goal NAVIGATION-CHALLENGE-MOVE executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
@@ -1609,15 +1613,15 @@ The workpiece remains in the output of the used ring station after
   (goal (id ?p) (class PRODUCTION-ROOT))
   (goal (id ?goal-id) (mode FORMULATED))
   (not (goal (mode FORMULATED) (is-executable TRUE)))
-  (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~central))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~central&~nil))
   =>
   (bind ?goal (assert (goal (class WAIT-NOTHING-EXECUTABLE)
 	            (id (sym-cat WAIT-NOTHING-EXECUTABLE- (gensym*)))
 	            (sub-type SIMPLE)
 	            (verbosity NOISY) (is-executable TRUE)
   )))
-  (modify ?goal (parent ?p))
   (goal-meta-assign-robot-to-goal ?goal ?robot)
+  (modify ?goal (parent ?p))
 )
 
 (defrule goal-production-remove-retracted-wait-nothing-executable
@@ -1687,7 +1691,7 @@ The workpiece remains in the output of the used ring station after
 	                          (mode FORMULATED)
 	                          (params target ?target $?)
 	                          (is-executable FALSE))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(not (and (goal (id ?p) (class EXPLORE-ZONE))
 	          (goal-meta (goal-id ?p) (assigned-to ?robot))))
 	=>
