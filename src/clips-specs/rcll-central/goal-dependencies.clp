@@ -184,7 +184,7 @@
 	                          (is-executable FALSE))
 
 	; Robot CEs
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
 
@@ -271,7 +271,7 @@
 	                          (is-executable FALSE))
 
 	; Robot CEs
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
 
@@ -364,7 +364,7 @@
 	                          (is-executable FALSE))
 
 	; Robot CEs
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
 
@@ -418,7 +418,7 @@
 	                          (is-executable FALSE))
 
 	; Robot CEs
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
 
@@ -470,7 +470,7 @@
 	                          (is-executable FALSE))
 
 	; Robot CEs
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
 
@@ -663,7 +663,7 @@
 	                          (is-executable FALSE))
 
 	; Robot CEs
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	(not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
@@ -714,7 +714,7 @@
 	                                   $?)
 	                          (is-executable FALSE))
 
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	;MPS-RS CEs (a cap carrier can be used to fill a RS later)
 	(wm-fact (key domain fact mps-type args? m ?target-mps t RS))
