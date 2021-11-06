@@ -596,19 +596,11 @@
 	(wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
 	(or (and ; Either the workpiece needs to picked up...
 	         (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-	             ; ... and it is a fresh base located in a base station
-	         (or (and (wm-fact (key domain fact mps-type args? m ?wp-loc t CS))
-	                  (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side OUTPUT))
-	                  (wm-fact (key domain fact wp-unused args? wp ?wp))
-	                  (wm-fact (key domain fact wp-base-color
-	                            args? wp ?wp col BASE_NONE)))
-	             ; ... or is already at some machine
-	             (wm-fact (key domain fact wp-at
-	                       args? wp ?wp m ?wp-loc side ?wp-side))
-	         )
+	         (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side OUTPUT))
 	    )
 	    ; or the workpiece is already being held
-	    (wm-fact (key domain fact holding args? r ?robot wp ?wp&:(eq ?wp ?preset-wp))))
+	    (wm-fact (key domain fact holding args? r ?robot wp ?wp&:(eq ?wp ?preset-wp)))
+	)
 	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
 	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
 	=>
