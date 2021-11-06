@@ -44,7 +44,7 @@
 
 	(not (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (state PENDING|WAITING|RUNNING|FAILED)))
 	(not (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (state FORMULATED) (id ?oid&:(< ?oid ?id))))
-	(not (plan-action (state PENDING|WAITING|RUNNING)
+	(not (plan-action (state ~FORMULATED&~FAILED&~FINAL&~PENDING)
 	                  (param-values ? ? ? ?to ?to-side)))
 	=>
 	(modify ?pa (state PENDING))
