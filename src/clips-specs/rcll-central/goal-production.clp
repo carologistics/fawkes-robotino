@@ -851,9 +851,8 @@ The workpiece remains in the output of the used ring station after
 	(plan-action (action-name wp-get) (param-values ? ?wp ?mps ?side)
 	             (goal-id ?g-id) (plan-id ?p-id) (state PENDING)
 	             (precondition ?precondition-id))
-	(grounded-pddl-predicate (grounding ?precondition-id) (predicate-id ?pred-id)
-	                         (is-satisfied FALSE))
-	(pddl-predicate (id ?pred-id) (predicate wp-get))
+	(grounded-pddl-formula (formula-id ?formula-id) (grounding ?precondition-id) (is-satisfied FALSE))
+	(pddl-formula (id ?formula-id) (part-of wp-get))
 	(not (goal (class INSTRUCT-BS-DISPENSE-BASE) (mode SELECTED|DISPATCHED|COMMITTED|EXPANDED)))
 	=>
 	(printout t "Goal INSTRUCT-BS-DISPENSE executable" crlf)
