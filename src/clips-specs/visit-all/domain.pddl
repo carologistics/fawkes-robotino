@@ -21,23 +21,38 @@
 
 (define (domain visit-machines)
   (:requirements :strips :typing)
-  (:types 
-          machine - object
-          team - object
+  (:types
+    robot - object
+    team-color - object
+    location - object
+    mps - location
+    mps-typename - object
+    mps-statename - object
+    mps-side - object
   )
   (:constants
-    CYAN MAGENTA - team
+    CYAN MAGENTA - team-color
+    START - location
+    BS CS DS RS SS - mps-typename
+    IDLE BROKEN PREPARED PROCESSING PROCESSED WAIT-IDLE READY-AT-OUTPUT DOWN - mps-statename
+    INPUT OUTPUT WAIT - mps-side
   )
   (:predicates
-    (visited ?m - machine)
-    (team-color ?t - team)
-    (team-machine ?t - team ?m - machine)
+    (visited ?m - mps)
+    (team-color ?t - team-color)
+    (at ?r - robot ?m - location ?side - mps-side)
+    (entered-field ?r - robot)
+    (robot-waiting ?r - robot)
+    (mps-type ?m - mps ?t - mps-typename)
+    (mps-state ?m - mps ?s - mps-statename)
+    (mps-team ?m - mps ?col - team-color)
+    (mps-side-free ?m - mps ?side - mps-side)
   )
   (:action visit
-    :parameters (?m - machine ?t - team )
-    :precondition (and (team-color ?t) 
-                       (team-machine ?t ?m)
-                       (not (visited ?m)))
-    :effect (visited ?m)
+    :parameters (?to - mps ?to-side - mps-side ?t - team-color)
+    :precondition (and (team-color ?t)
+                       (mps-team ?to ?t)
+                       (not (visited ?to)))
+    :effect (visited ?to)
   )
 )
