@@ -1,0 +1,66 @@
+%YAML 1.2
+---
+---
+
+clips-executive:
+  specs:
+    visitall:
+      init:
+        stage-1:
+          - name: pddl-parser
+          - name: motor-switch
+          - name: navgraph
+          - name: protobuf
+          - name: tf
+        stage-3:
+          - name: utils
+            file: rcll-central/utils.clp
+          - name: domain
+            file: visit-all/visitall-domain.clp
+          - name: communication
+            files:
+              - rcll-central/refbox-comm-init.clp
+              - rcll-central/refbox-worldmodel.clp
+              - rcll-central/refbox-actions.clp
+          - name: worldmodel
+            files:
+              - rcll-central/game-worldmodel.clp
+              - rcll-central/blackboard-init.clp
+          - name: goal-reasoner
+            files:
+              - rcll-central/goals/run-endless.clp
+              - goal-tree.clp
+              - visit-all/goal-reasoner.clp
+          - name: goal-expander
+            file: visit-all/fixed-sequence.clp
+          - name: action-selection
+            file: action-selection/sequential.clp
+          - name: action-execution
+            files:
+              - skills-actions.clp
+          - name: simtest
+            file: visit-all/simtest.clp
+
+      action-mapping:
+        visit: goto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
+      parameters:
+        simtest:
+          enabled: false
+          testbed: VISITED-ONE
+        rcll:
+          peer-address: 10.12.0.0
+          peer-port: 4444
+          cyan-port: 4441
+          magenta-port: 4442
+
+          team-name: Carologistics
+          crypto-key: randomkey
+          cipher: "aes-128-cbc"
+          use-static-navgraph: false
+
+      blackboard-preload:
+        - Position3DInterface
+        - NavGraphWithMPSGeneratorInterface
+        - NavGraphGeneratorInterface
+        - NavigatorInterface
+        - MotorInterface
