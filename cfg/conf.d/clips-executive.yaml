@@ -48,7 +48,7 @@ clips-executive:
 
   # Agent name. On startup the clips-agent will try to resolve a file named
   # <agent name>.clp. It must be in the CLIPS path directories.
-  spec: rcll-central
+  spec: visitall
 
   specs:
     rcll-central:
@@ -187,19 +187,67 @@ clips-executive:
         say: say{text=?(text)s, wait=true}
         say-hello: say{text="Hello ?(name)y", wait=true}
         say-goodbye: say{text="Good bye", wait=true}
+
     visitall:
-      domain: visit-all/visitall-domain.clp
-      goal-reasoner: visit-all/goal-reasoner.clp
-      goal-expander: visit-all/fixed-sequence.clp
-      action-selection: visit-all/action-selection.clp
-      # macro-expansion: visit-all/action-selection.clp
-      action-execution: plan-exec.clp
-      execution-monitoring: visit-all/execution-monitoring.clp
-      state-estimation: visit-all/state-estimation-init.clp
+      init:
+        stage-1:
+          - name: pddl-parser
+          - name: motor-switch
+          - name: navgraph
+          - name: protobuf
+          - name: tf
+        stage-3:
+          - name: utils
+            file: rcll-central/utils.clp
+          - name: domain
+            file: visit-all/visitall-domain.clp
+          - name: communication
+            files:
+              - rcll-central/refbox-comm-init.clp
+              - rcll-central/refbox-worldmodel.clp
+              - rcll-central/refbox-actions.clp
+          - name: worldmodel
+            files:
+              - rcll-central/game-worldmodel.clp
+              - rcll-central/blackboard-init.clp
+          - name: goal-reasoner
+            files:
+              - rcll-central/goals/run-endless.clp
+              - goal-tree.clp
+              - visit-all/goal-reasoner.clp
+          - name: goal-expander
+            file: visit-all/fixed-sequence.clp
+          - name: action-selection
+            file: action-selection/sequential.clp
+          - name: action-execution
+            files:
+              - skills-actions.clp
+          - name: simtest
+            file: visit-all/simtest.clp
 
       action-mapping:
-        visit: ppgoto{place=?(m)S}
-      blackboard-preload: ["Position3DInterface"]
+        visit: goto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
+      parameters:
+        simtest:
+          enabled: false
+          testbed: VISITED-ONE
+        rcll:
+          peer-address: 10.12.0.0
+          peer-port: 4444
+          cyan-port: 4441
+          magenta-port: 4442
+
+          team-name: Carologistics
+          crypto-key: randomkey
+          cipher: "aes-128-cbc"
+          use-static-navgraph: false
+
+      blackboard-preload:
+        - Position3DInterface
+        - NavGraphWithMPSGeneratorInterface
+        - NavGraphGeneratorInterface
+        - NavigatorInterface
+        - MotorInterface
 
     rcll:
       init:
