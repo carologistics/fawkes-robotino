@@ -23,33 +23,31 @@
 #ifndef __PLUGINS_GAZSIM_OBJECT_TRACKING_THREAD_H_
 #define __PLUGINS_GAZSIM_OBJECT_TRACKING_THREAD_H_
 
-#include <string.h>
-
-#include <core/threading/thread.h>
+#include <aspect/blackboard.h>
+#include <aspect/blocked_timing.h>
 #include <aspect/clock.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
-#include <aspect/blackboard.h>
-#include <aspect/blocked_timing.h>
+#include <core/threading/thread.h>
 #include <plugins/gazebo/aspect/gazebo.h>
 
+#include <string.h>
+
 //from Gazebo
-#include <gazebo/transport/TransportTypes.hh>
 #include <gazebo/msgs/MessageTypes.hh>
+#include <gazebo/transport/TransportTypes.hh>
 #include <gazebo/transport/transport.hh>
 
-
 namespace fawkes {
-	class Position3DInterface;
+class Position3DInterface;
 }
 
-class ObjectTrackingThread
-: public fawkes::Thread,
-  public fawkes::ClockAspect,
-  public fawkes::LoggingAspect,
-  public fawkes::ConfigurableAspect,
-  public fawkes::BlockedTimingAspect,
-  public fawkes::GazeboAspect
+class ObjectTrackingThread : public fawkes::Thread,
+                             public fawkes::ClockAspect,
+                             public fawkes::LoggingAspect,
+                             public fawkes::ConfigurableAspect,
+                             public fawkes::BlockedTimingAspect,
+                             public fawkes::GazeboAspect
 {
 public:
 	ObjectTrackingThread();
@@ -59,18 +57,18 @@ public:
 private:
 	//Subscriber to receive localization data from gazebo
 	gazebo::transport::SubscriberPtr localization_sub_;
-	std::string gps_topic_;
+	std::string                      gps_topic_;
 	gazebo::transport::SubscriberPtr factory_sub_;
-	std::string factory_topic_;
+	std::string                      factory_topic_;
 
 	//handler function for incoming localization data messages
 	void on_localization_msg(ConstPosePtr &msg);
 	void on_factory_msg(ConstFactoryPtr &msg);
 
 	//puck tracking data
-	int tracked_pucks_;
+	int         tracked_pucks_;
 	std::string puck_names_[50];
-	double puck_positions_[50][3];
+	double      puck_positions_[50][3];
 
 	//MPS tracking data
 	std::string mps_names_[14] = {"M-BS",
@@ -87,7 +85,7 @@ private:
 	                              "C-CS2",
 	                              "C-DS",
 	                              "C-SS"};
-	double mps_positions_[14][3];
+	double      mps_positions_[14][3];
 
 	//MPS values used to compute expected object position on MPS
 	//puck values:
@@ -112,7 +110,6 @@ private:
 	//target frame offsets:
 	double gripper_offset_;
 	double base_offset_;
-
 
 	//called from skill
 	void start_tracking(bool grab, std::string mps_name, std::string mps_side);
@@ -142,7 +139,7 @@ private:
 
 	//updating tracker
 	double last_sent_time_;
-	bool tracking_;
+	bool   tracking_;
 };
 
 #endif
