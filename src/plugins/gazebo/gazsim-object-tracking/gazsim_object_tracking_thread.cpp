@@ -63,6 +63,15 @@ void ObjectTrackingThread::init()
 
 	//init tracking
 	tracked_pucks_ = 0;
+
+	logger->log_info(name(), "Initializing Simulation of the MPS Positions");
+
+	//read cofig values
+	factory_topic_ = config->get_string("/gazsim/topics/factory");
+
+	//subscribing to gazebo publisher
+	factory_sub_ = gazebo_world_node->Subscribe(factory_topic_,
+	               &ObjectTrackingThread::on_factory_msg, this);
 }
 
 //updating Puck positions:
@@ -108,5 +117,42 @@ void ObjectTrackingThread::on_localization_msg(ConstPosePtr &msg)
 			logger->log_error(std::string(msg->name()).c_str(),
 			                  "cannot be tracked! Array full!");
 		}
+	}
+}
+
+//save MPS positions at the start:
+void ObjectTrackingThread::on_factory_msg(ConstFactoryPtr &msg)
+{
+	//if MPS
+	if(!std::string(msg->clone_model_name()).rfind("M-", 0) ||
+	   !std::string(msg->clone_model_name()).rfind("C-", 0))
+	{
+		//find index and update position
+		for(int i = 0; i < 14; i++)
+		{
+			if(!std::string(msg->clone_model_name()).compare(mps_names_[i]))
+			{
+				mps_positions_[i][0] = msg->pose().position().x();
+				mps_positions_[i][1] = msg->pose().position().y();
+				//converting wierd orientation value into Gazebo yaw value
+				mps_positions_[i][2] = 2 * std::asin(msg->pose().orientation().z());
+				logger->log_info(std::string(msg->clone_model_name()).c_str(),
+				                 "updated position");
+				//testing:
+				if(!std::string(msg->clone_model_name()).compare(mps_names_[10]))
+				{
+					start_tracking(false, "C-CS1", "SHELF_RIGHT");
+				}
+				//logger->log_info(std::string(msg->clone_model_name()).c_str(),
+				//                 std::to_string(mps_positions_[i][0]).c_str());
+				//logger->log_info(std::string(msg->clone_model_name()).c_str(),
+				//                 std::to_string(mps_positions_[i][1]).c_str());
+				//logger->log_info(std::string(msg->clone_model_name()).c_str(),
+				//                 std::to_string(mps_positions_[i][2]).c_str());
+				return;
+			}
+		}
+		logger->log_error(std::string(msg->clone_model_name()).c_str(),
+		                  "not found.");
 	}
 }

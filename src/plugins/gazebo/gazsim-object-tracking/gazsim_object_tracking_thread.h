@@ -60,14 +60,34 @@ private:
 	//Subscriber to receive localization data from gazebo
 	gazebo::transport::SubscriberPtr localization_sub_;
 	std::string gps_topic_;
+	gazebo::transport::SubscriberPtr factory_sub_;
+	std::string factory_topic_;
 
 	//handler function for incoming localization data messages
 	void on_localization_msg(ConstPosePtr &msg);
+	void on_factory_msg(ConstFactoryPtr &msg);
 
 	//puck tracking data
 	int tracked_pucks_;
 	std::string puck_names_[50];
 	double puck_positions_[50][3];
+
+	//MPS tracking data
+	std::string mps_names_[14] = {"M-BS",
+	                              "M-RS1",
+	                              "M-RS2",
+	                              "M-CS1",
+	                              "M-CS2",
+	                              "M-DS",
+	                              "M-SS",
+	                              "C-BS",
+	                              "C-RS1",
+	                              "C-RS2",
+	                              "C-CS1",
+	                              "C-CS2",
+	                              "C-DS",
+	                              "C-SS"};
+	double mps_positions_[14][3];
 };
 
 #endif
