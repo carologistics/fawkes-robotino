@@ -345,11 +345,6 @@ if [  $COMMAND  == start ]; then
 	echo "FAWKES_DIR is not set"
 	exit 1
     fi
-    if $START_GAZEBO && ! [[ $GAZEBO_PLUGIN_PATH == *gazebo-rcll* ]]
-    then
-	echo "Missing path to Gazebo Plugins in GAZEBO_PLUGIN_PATH";
-	exit 1
-    fi
 
     # delete old shm files. Only do this for the simulation, not on live bot.
     [[ -f /dev/shm/*fawkes* ]] && rm /dev/shm/*fawkes*
@@ -362,9 +357,9 @@ if [  $COMMAND  == start ]; then
     #construct command to open everything in one terminal window with multiple tabs instead of 10.000 windows
     COMMANDS=()
 
-    if [[ -z "$KEEP_TMPFILES" ]] ; then
-      COMMANDS=("bash -i -c \"trap \\\"sleep 1; rm -rf $GAZSIM_TMPDIR\\\" EXIT; echo \\\"Cleanup on $GAZSIM_TMPDIR: Waiting for shutdown\\\"; while true; do sleep 1; done\"")
-    fi
+    #if [[ -z "$KEEP_TMPFILES" ]] ; then
+      #COMMANDS=("bash -i -c \"trap \\\"sleep 1; rm -rf $GAZSIM_TMPDIR\\\" EXIT; echo \\\"Cleanup on $GAZSIM_TMPDIR: Waiting for shutdown\\\"; while true; do sleep 1; done\"")
+    #fi
 
     if $START_GAZEBO
     then
