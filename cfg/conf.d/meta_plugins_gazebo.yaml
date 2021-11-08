@@ -14,6 +14,7 @@ fawkes/meta_plugins:
     - gazsim-gripper
     - gazsim-meta-robotino-vision-high-level
     - laser_front_dist
+    - gazsim-object-tracking
     - webview
   gazsim-meta-robotino-ros:
     - gazsim-meta-robotino
