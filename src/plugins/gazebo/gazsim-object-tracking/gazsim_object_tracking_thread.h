@@ -88,6 +88,61 @@ private:
 	                              "C-DS",
 	                              "C-SS"};
 	double mps_positions_[14][3];
+
+	//MPS values used to compute expected object position on MPS
+	//puck values:
+	double puck_size_;
+	double puck_height_;
+
+	//belt values:
+	double belt_height_;
+	double belt_lenght_;
+	double belt_offset_side_;
+
+	//slide values:
+	double slide_offset_side_;
+	double slide_height_;
+
+	//shelf values:
+	double left_shelf_offset_side_;
+	double middle_shelf_offset_side_;
+	double right_shelf_offset_side_;
+	double shelf_height_;
+
+	//target frame offsets:
+	double gripper_offset_;
+	double base_offset_;
+
+
+	//called from skill
+	void start_tracking(bool grab, std::string mps_name, std::string mps_side);
+
+	//tracking variables
+	//grab indicates type of action
+	bool grab_;
+
+	//tracked MPS:
+	double mps_x_;
+	double mps_y_;
+	double mps_ori_;
+
+	//middle point:
+	//if grab == false, this is the tracked point
+	double middle_x_;
+	double middle_y_;
+	double middle_z_;
+
+	//if grab == true, this is the index of the tracked WP
+	int closest_puck_ind_;
+
+	//helper functions for calculating target frame
+	double compute_middle_x(double x_offset);
+	double compute_middle_y(double y_offset);
+	double distance_middle_to_puck(int puck_ind);
+
+	//updating tracker
+	double last_sent_time_;
+	bool tracking_;
 };
 
 #endif
