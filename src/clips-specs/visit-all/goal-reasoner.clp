@@ -13,9 +13,9 @@
 	(not (goal-already-tried))
 	(wm-fact (key refbox phase) (value PRODUCTION))
 	(wm-fact (key game state) (value RUNNING))
-	(wm-fact (key refbox team-color) (value ?color))
+	(wm-fact (key refbox team-color) (value ?color&~nil))
 	(domain-facts-loaded)
-	(wm-fact (key domain fact robot-waiting args? r robot1))
+	(wm-fact (key navgraph waitzone generated) (value TRUE))
 	=>
 	(assert (goal (id TESTGOAL)))
 	; This is just to make sure we formulate the goal only once.
