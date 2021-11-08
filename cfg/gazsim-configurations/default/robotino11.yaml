@@ -17,6 +17,7 @@ fawkes:
   # Main app relevant settings
   mainapp:
     loggers: console;file:robot11_$time.log;file/debug:debug11_$time.log
+    enable_looptime_warnings: false
 
 clips-executive:
   spec: labcegor
