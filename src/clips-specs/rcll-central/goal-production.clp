@@ -1512,15 +1512,16 @@ The workpiece remains in the output of the used ring station after
   "When the robot is stuck, assert a new goal that keeps it waiting"
   (declare (salience 0))
   (goal (id ?p) (class PRODUCTION-ROOT))
-  (goal (mode FORMULATED) (meta assigned-to ?robot&~central))
+  (goal (id ?goal-id) (mode FORMULATED))
   (not (goal (mode FORMULATED) (is-executable TRUE)))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~central&~nil))
   =>
   (bind ?goal (assert (goal (class WAIT-NOTHING-EXECUTABLE)
 	            (id (sym-cat WAIT-NOTHING-EXECUTABLE- (gensym*)))
 	            (sub-type SIMPLE)
 	            (verbosity NOISY) (is-executable TRUE)
-	            (meta assigned-to ?robot)
   )))
+  (goal-meta-assign-robot-to-goal ?goal ?robot)
   (modify ?goal (parent ?p))
 )
 
@@ -1537,8 +1538,8 @@ The workpiece remains in the output of the used ring station after
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(wm-fact (key central agent robot args? r ?robot))
 	(not (wm-fact (key domain fact entered-field args? r ?robot)))
-	(not (goal (id ?some-goal-id) (class ENTER-FIELD)
-	           (meta $? assigned-to ?robot $?)))
+	(not (and (goal (id ?some-goal-id) (class ENTER-FIELD))
+	          (goal-meta (goal-id ?some-goal-id) (assigned-to ?robot))))
 	(domain-facts-loaded)
 	(wm-fact (key refbox team-color) (value ?team-color))
 	=>
@@ -1604,46 +1605,6 @@ The workpiece remains in the output of the used ring station after
   (not (goal (class NAVIGATION-CHALLENGE-ROOT)))
   =>
   (goal-production-navigation-challenge-assert-root ?root-id ?waypoints)
-)
-
-
-(defrule goal-production-assert-wait-nothing-executable
-  "When the robot is stuck, assert a new goal that keeps it waiting"
-  (declare (salience 0))
-  (goal (id ?p) (class PRODUCTION-ROOT))
-  (goal (id ?goal-id) (mode FORMULATED))
-  (not (goal (mode FORMULATED) (is-executable TRUE)))
-  (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~central&~nil))
-  =>
-  (bind ?goal (assert (goal (class WAIT-NOTHING-EXECUTABLE)
-	            (id (sym-cat WAIT-NOTHING-EXECUTABLE- (gensym*)))
-	            (sub-type SIMPLE)
-	            (verbosity NOISY) (is-executable TRUE)
-  )))
-  (goal-meta-assign-robot-to-goal ?goal ?robot)
-  (modify ?goal (parent ?p))
-)
-
-(defrule goal-production-remove-retracted-wait-nothing-executable
-  "When a waith-nothing-executable goal is retracted, remove it to prevent spam"
-  (declare (salience 0))
-  ?g <- (goal (class WAIT-NOTHING-EXECUTABLE) (mode RETRACTED))
-  =>
-  (retract ?g)
-)
-
-(defrule goal-production-create-enter-field
-  "Enter the field (drive outside of the starting box)."
-	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-	(wm-fact (key central agent robot args? r ?robot))
-	(not (wm-fact (key domain fact entered-field args? r ?robot)))
-	(not (and (goal (id ?some-goal-id) (class ENTER-FIELD))
-	          (goal-meta (goal-id ?some-goal-id) (assigned-to ?robot))))
-	(domain-facts-loaded)
-	(wm-fact (key refbox team-color) (value ?team-color))
-	=>
-	(printout t "Goal " ENTER-FIELD " formulated" crlf)
-	(goal-production-assert-enter-field ?team-color)
 )
 
 
