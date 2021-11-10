@@ -99,7 +99,7 @@
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (not (goal (class BEACON-MAINTAIN)))
   (or (domain-facts-loaded)
-      (wm-fact (key refbox phase) (value ~SETUP&~PRE_GAME)))
+      (wm-fact (key refbox phase) (value ~PRE_GAME)))
   =>
   (bind ?goal (goal-tree-assert-run-endless BEACON-MAINTAIN 1))
   (modify ?goal (verbosity QUIET) (params frequency 1))
@@ -113,6 +113,7 @@
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(time $?now)
 	?g <- (goal (id ?maintain-id) (class BEACON-MAINTAIN) (mode SELECTED))
+	(wm-fact (key central agent robot args? r robot1))
 	=>
 	(bind ?goal (assert (goal (id (sym-cat SEND-BEACON- (gensym*))) (sub-type SIMPLE)
 	              (class SEND-BEACON) (parent ?maintain-id) (verbosity QUIET)
@@ -845,6 +846,7 @@ The workpiece remains in the output of the used ring station after
 	                    target-side ?side
 	                    base-color ?base-color)
 	            (is-executable FALSE))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; MPS CEs
 	(wm-fact (key domain fact mps-type args? m ?mps t BS))
@@ -872,7 +874,7 @@ The workpiece remains in the output of the used ring station after
 	            (mode FORMULATED)
 	            (params wp ?wp target-mps ?mps)
 	            (is-executable FALSE))
-
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(not (goal (class INSTRUCT-DS-DELIVER) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	(wm-fact (key domain fact mps-type args? m ?mps t DS))

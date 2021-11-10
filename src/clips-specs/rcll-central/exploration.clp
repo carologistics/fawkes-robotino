@@ -286,8 +286,9 @@
 
 (defrule exp-explore-zone-executable
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
-	?g <- (goal (class EXPLORE-ZONE) (params z ?zn) (mode FORMULATED)
+	?g <- (goal (id ?id) (class EXPLORE-ZONE) (params z ?zn) (mode FORMULATED)
 	      (is-executable FALSE))
+	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
 	=>
 	(modify ?g (is-executable TRUE))
 )
