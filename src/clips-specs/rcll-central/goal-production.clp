@@ -596,19 +596,11 @@
 	(wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
 	(or (and ; Either the workpiece needs to picked up...
 	         (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-	             ; ... and it is a fresh base located in a base station
-	         (or (and (wm-fact (key domain fact mps-type args? m ?wp-loc t CS))
-	                  (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side OUTPUT))
-	                  (wm-fact (key domain fact wp-unused args? wp ?wp))
-	                  (wm-fact (key domain fact wp-base-color
-	                            args? wp ?wp col BASE_NONE)))
-	             ; ... or is already at some machine
-	             (wm-fact (key domain fact wp-at
-	                       args? wp ?wp m ?wp-loc side ?wp-side))
-	         )
+	         (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side OUTPUT))
 	    )
 	    ; or the workpiece is already being held
-	    (wm-fact (key domain fact holding args? r ?robot wp ?wp&:(eq ?wp ?preset-wp))))
+	    (wm-fact (key domain fact holding args? r ?robot wp ?wp&:(eq ?wp ?preset-wp)))
+	)
 	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
 	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
 	=>
@@ -704,6 +696,7 @@ The workpiece remains in the output of the used ring station after
 	                                   target-side ?target-side
 	                                   wp-loc ?wp-loc
 	                                   wp-side ?wp-side
+	                                   ring-color ?ring-color
 	                                   $?)
 	                          (meta $? assigned-to ?robot $?)
 	                          (is-executable FALSE))
@@ -733,6 +726,8 @@ The workpiece remains in the output of the used ring station after
 	;(wm-fact (key domain fact rs-sub args? minuend ?bases-filled
 	;                                  subtrahend ?bases-needed
 	;                                  difference ?bases-remain&ZERO|ONE|TWO|THREE))
+
+
 
 	(not (wm-fact (key domain fact wp-at args? wp ?wp-loc m ?target-mps side INPUT)))
 	(wm-fact (key domain fact mps-type args? m ?other-rs&~?target-mps t RS))
@@ -848,9 +843,8 @@ The workpiece remains in the output of the used ring station after
 	(plan-action (action-name wp-get) (param-values ? ?wp ?mps ?side)
 	             (goal-id ?g-id) (plan-id ?p-id) (state PENDING)
 	             (precondition ?precondition-id))
-	(grounded-pddl-predicate (grounding ?precondition-id) (predicate-id ?pred-id)
-	                         (is-satisfied FALSE))
-	(pddl-predicate (id ?pred-id) (predicate wp-get))
+	(grounded-pddl-formula (formula-id ?formula-id) (grounding ?precondition-id) (is-satisfied FALSE))
+	(pddl-formula (id ?formula-id) (part-of wp-get))
 	(not (goal (class INSTRUCT-BS-DISPENSE-BASE) (mode SELECTED|DISPATCHED|COMMITTED|EXPANDED)))
 	=>
 	(printout t "Goal INSTRUCT-BS-DISPENSE executable" crlf)
@@ -970,7 +964,7 @@ The workpiece remains in the output of the used ring station after
 )
 
 (deffunction goal-production-assert-mount-ring
-	(?wp ?rs ?wp-loc ?wp-side)
+	(?wp ?rs ?wp-loc ?wp-side ?ring-color)
 	(bind ?goal (assert (goal (class MOUNT-RING)
 	      (id (sym-cat MOUNT-RING- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE)
@@ -979,6 +973,7 @@ The workpiece remains in the output of the used ring station after
 	               target-side INPUT
 	               wp-loc ?wp-loc
 	               wp-side ?wp-side
+				   ring-color ?ring-color
 	               )
 	)))
 	(return ?goal)
@@ -1220,7 +1215,9 @@ The workpiece remains in the output of the used ring station after
 			)
 			(goal-production-assert-instruct-cs-mount-cap ?cs ?cap-col)
 		)
-		(goal-production-assert-deliver-rc21 ?wp-for-order)
+		;(goal-production-assert-deliver-rc21 ?wp-for-order)
+		(goal-production-assert-deliver ?wp-for-order)
+		(goal-production-assert-instruct-ds-deliver ?wp-for-order)
 	)
   )
   (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (parent ?root-id))
@@ -1232,6 +1229,8 @@ The workpiece remains in the output of the used ring station after
   (bind ?goal
     (goal-tree-assert-central-run-parallel PRODUCE-ORDER
 		(goal-production-assert-deliver-rc21 ?wp-for-order)
+		;(goal-production-assert-deliver ?wp-for-order)
+		;(goal-production-assert-instruct-ds-deliver ?wp-for-order)
 		(goal-tree-assert-central-run-parallel PREPARE-CS
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
 				(goal-production-assert-buffer-cap ?cs ?col-cap)
@@ -1246,7 +1245,7 @@ The workpiece remains in the output of the used ring station after
 			(goal-tree-assert-central-run-parallel INTERACT-BS
 				(goal-tree-assert-central-run-parallel OUTPUT-BS
 					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs OUTPUT)
-					(goal-production-assert-mount-ring ?wp-for-order ?rs C-BS OUTPUT)
+					(goal-production-assert-mount-ring ?wp-for-order ?rs C-BS OUTPUT ?col-ring1)
 					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT)
 				)
 			)
@@ -1267,6 +1266,8 @@ The workpiece remains in the output of the used ring station after
   (bind ?goal
     (goal-tree-assert-central-run-parallel PRODUCE-ORDER
 		(goal-production-assert-deliver-rc21 ?wp-for-order)
+		;(goal-production-assert-deliver ?wp-for-order)
+		;(goal-production-assert-instruct-ds-deliver ?wp-for-order)
 		(goal-tree-assert-central-run-parallel PREPARE-CS
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
 				(goal-production-assert-buffer-cap ?cs ?col-cap)
@@ -1281,8 +1282,8 @@ The workpiece remains in the output of the used ring station after
 			(goal-tree-assert-central-run-parallel INTERACT-BS
 				(goal-tree-assert-central-run-parallel OUTPUT-BS
 					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs2 OUTPUT)
-					(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT)
-					(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS OUTPUT)
+					(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT ?col-ring2)
+					(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS OUTPUT ?col-ring1)
 					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT)
 				)
 			)
@@ -1304,6 +1305,8 @@ The workpiece remains in the output of the used ring station after
   (bind ?goal
     (goal-tree-assert-central-run-parallel PRODUCE-ORDER
 		(goal-production-assert-deliver-rc21 ?wp-for-order)
+		;(goal-production-assert-deliver ?wp-for-order)
+		;(goal-production-assert-instruct-ds-deliver ?wp-for-order)
 		(goal-tree-assert-central-run-parallel PREPARE-CS
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
 				(goal-production-assert-buffer-cap ?cs ?col-cap)
@@ -1318,9 +1321,9 @@ The workpiece remains in the output of the used ring station after
 			(goal-tree-assert-central-run-parallel INTERACT-BS
 				(goal-tree-assert-central-run-parallel OUTPUT-BS
 					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs3 OUTPUT)
-					(goal-production-assert-mount-ring ?wp-for-order ?rs3 ?rs2 OUTPUT)
-					(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT)
-					(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS OUTPUT)
+					(goal-production-assert-mount-ring ?wp-for-order ?rs3 ?rs2 OUTPUT ?col-ring3)
+					(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT ?col-ring2)
+					(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS OUTPUT ?col-ring1)
 					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT)
 				)
 			)
@@ -1335,23 +1338,6 @@ The workpiece remains in the output of the used ring station after
 	)
   )
   (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (parent ?root-id))
-)
-
-(defrule goal-production-create-exploration-root
-	"Create the exploration root where all goals regarding the finding of stations
-   are located"
-	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-	(domain-facts-loaded)
-	(not (goal (class EXPLORATION-ROOT)))
-	(wm-fact (key config rcll start-with-waiting-robots) (value TRUE))
-	(wm-fact (key refbox phase) (value EXPLORATION|PRODUCTION))
-	(wm-fact (key game state) (value RUNNING))
-	(wm-fact (key refbox team-color) (value ?color))
-	=>
-	(bind ?g (goal-tree-assert-central-run-parallel EXPLORATION-ROOT))
-	(modify ?g (meta do-not-finish))
-	(modify ?g (priority 0.0))
-	(assert (wm-fact (key exploration active) (type BOOL) (value TRUE)))
 )
 
 (defrule goal-production-create-production-root
@@ -1609,6 +1595,7 @@ The workpiece remains in the output of the used ring station after
 
 (defrule goal-production-exploration-challenge-create-targets
 	(not (wm-fact (key exploration targets args? $?)))
+	(wm-fact (key exploration active) (value TRUE))
 	=>
 	(assert (wm-fact (key exploration targets args?)
 	                 (is-list TRUE)
@@ -1616,6 +1603,23 @@ The workpiece remains in the output of the used ring station after
 	                         M-Z45 M-Z25 M-Z54 M-Z44 M-Z34 M-Z24 M-Z14
 	                         M-Z52 M-Z42 M-Z32 M-Z22 M-Z12 M-Z43 M-Z23))
 	)
+)
+
+(defrule goal-production-exploration-challenge-assert-root
+	"Create the exploration root where all goals regarding the finding of stations
+   are located"
+	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	(domain-facts-loaded)
+	(not (goal (class EXPLORATION-CHALLENGE-ROOT)))
+	(wm-fact (key config rcll start-with-waiting-robots) (value TRUE))
+	(wm-fact (key refbox phase) (value EXPLORATION|PRODUCTION))
+	(wm-fact (key game state) (value RUNNING))
+	(wm-fact (key refbox team-color) (value ?color))
+	(wm-fact (key exploration active) (value TRUE))
+	=>
+	(bind ?g (goal-tree-assert-central-run-parallel EXPLORATION-CHALLENGE-ROOT))
+	(modify ?g (meta do-not-finish))
+	(modify ?g (priority 0.0))
 )
 
 (defrule goal-production-exploration-challenge-move-executable
@@ -1648,8 +1652,7 @@ The workpiece remains in the output of the used ring station after
 
 (defrule goal-production-exploration-create-move-goal-lacking-choice
   "The robot has nothing it can do, move it across the map to explore"
-	;(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-	(goal (id ?root-id) (class EXPLORATION-ROOT) (mode FORMULATED|DISPATCHED))
+	(goal (id ?root-id) (class EXPLORATION-CHALLENGE-ROOT) (mode FORMULATED|DISPATCHED))
 	(wm-fact (key central agent robot-waiting args? r ?robot))
 	?exp-targ <- (wm-fact (key exploration targets args?) (values ?location $?locations))
 	(not (and (goal (class EXPLORATION-CHALLENGE-MOVE) (mode FORMULATED) (id ?id1))
