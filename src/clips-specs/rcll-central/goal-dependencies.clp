@@ -469,8 +469,8 @@
 	                                   $?)
 	                          (is-executable FALSE))
 
-	; Robot CEs
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
 
