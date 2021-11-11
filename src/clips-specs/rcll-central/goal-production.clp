@@ -29,16 +29,12 @@
 		(return)
 	)
 	(if (eq ?robot nil) then (return ))
-	(if (do-for-fact ((?f goal-meta))
+	(if (not (do-for-fact ((?f goal-meta))
 			(eq ?f:goal-id (fact-slot-value ?goal id))
-			(modify ?f (assigned-to ?robot)))
+			(modify ?f (assigned-to ?robot))))
 	 then
-		(printout t "Assigned robot " ?robot " to goal " ?goal crlf)
-	 else
-		(assert (goal-meta (goal-id (fact-slot-value ?goal id))
-		                   (assigned-to ?robot)))
-		(printout t "Created new goal-meta fact to assign " ?robot
-		            " to goal " (fact-slot-value ?goal id) crlf)
+		(printout t "FAILED assign robot " ?robot " to goal "
+		  (fact-slot-value ?goal id) crlf)
 	)
 )
 
@@ -117,7 +113,7 @@
 	=>
 	(bind ?goal (assert (goal (id (sym-cat SEND-BEACON- (gensym*))) (sub-type SIMPLE)
 	              (class SEND-BEACON) (parent ?maintain-id) (verbosity QUIET)
-	              (is-executable TRUE))))
+	              (is-executable TRUE) (meta-template goal-meta))))
 	(goal-meta-assign-robot-to-goal ?goal central)
 )
 
@@ -162,10 +158,9 @@
   that should get a new goal assigned to it next. "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 ;	"a simple unassigned goal"
-	(and (goal (id ?g-id) (sub-type SIMPLE) (mode FORMULATED)
-	      (is-executable FALSE))
-	     (or (not (goal-meta (goal-id ?g-id)))
-	         (goal-meta (goal-id ?g-id) (assigned-to nil))))
+	(goal (id ?g-id) (sub-type SIMPLE) (mode FORMULATED) (is-executable FALSE))
+	(or (not (goal-meta (goal-id ?g-id)))
+	    (goal-meta (goal-id ?g-id) (assigned-to nil)))
 	(wm-fact (key central agent robot args? r ?robot))
 	(not (goal-meta (assigned-to ?robot)))
 	(wm-fact (key central agent robot-waiting args? r ?robot))
@@ -189,11 +184,11 @@
 (defrule goal-production-flush-executability
 " A waiting robot got a new goal, clear executability and robot assignment from other goals. "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
-	(and (goal (id ?goal-id) (sub-type SIMPLE) (mode SELECTED)
+	(goal (id ?goal-id) (sub-type SIMPLE) (mode SELECTED)
 	      (is-executable TRUE) (type ACHIEVE) (class ~SEND-BEACON))
-	     (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
-	(and (goal (id ?o-id) (sub-type SIMPLE) (mode FORMULATED))
-	     (goal-meta (goal-id ?o-id) (assigned-to ?robot)))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+	(goal (id ?o-id) (sub-type SIMPLE) (mode FORMULATED))
+	(goal-meta (goal-id ?o-id) (assigned-to ?robot))
 	=>
 	(delayed-do-for-all-facts ((?g goal))
 		(and (eq ?g:is-executable TRUE) (neq ?g:class SEND-BEACON))
@@ -235,6 +230,7 @@
 	?g <- (goal (id ?id) (sub-type SIMPLE) (mode RETRACTED)
 	      (parent ?parent))
 	(not (goal (id ?parent) (type MAINTAIN)))
+	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
 	=>
 	(remove-robot-assignment-from-goal-meta ?g)
 )
@@ -935,7 +931,7 @@ The workpiece remains in the output of the used ring station after
 
 	(bind ?goal (assert (goal (class BUFFER-CAP)
 	      (id (sym-cat BUFFER-CAP- (gensym*))) (sub-type SIMPLE)
-	      (verbosity NOISY) (is-executable FALSE)
+	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
 	      (params target-mps ?mps
 	              cap-color ?cap-color)
 	)))
@@ -948,6 +944,7 @@ The workpiece remains in the output of the used ring station after
 	      (id (sym-cat PICK-AND-PLACE- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE)
 	      (params target-mps ?mps)
+	      (meta-template goal-meta)
 	)))
 	(goal-meta-assign-robot-to-goal ?goal ?robot)
 	(return ?goal)
@@ -957,7 +954,7 @@ The workpiece remains in the output of the used ring station after
 	(?mps ?robot)
 	(bind ?goal (assert (goal (class MOVE)
 	      (id (sym-cat MOVE- (gensym*))) (sub-type SIMPLE)
-	      (verbosity NOISY) (is-executable FALSE)
+	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
 	      (params target-mps ?mps)
 	)))
 	(goal-meta-assign-robot-to-goal ?goal ?robot)
@@ -969,7 +966,7 @@ The workpiece remains in the output of the used ring station after
 
 	(bind ?goal (assert (goal (class MOUNT-CAP)
 	      (id (sym-cat MOUNT-CAP- (gensym*))) (sub-type SIMPLE)
- 	      (verbosity NOISY) (is-executable FALSE)
+ 	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
 	      (params wp ?wp
 	              target-mps ?mps
 	              target-side INPUT
@@ -983,7 +980,7 @@ The workpiece remains in the output of the used ring station after
 	(?wp ?rs ?wp-loc ?wp-side ?ring-color)
 	(bind ?goal (assert (goal (class MOUNT-RING)
 	      (id (sym-cat MOUNT-RING- (gensym*))) (sub-type SIMPLE)
-	      (verbosity NOISY) (is-executable FALSE)
+	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
 	      (params  wp ?wp
 	               target-mps ?rs
 	               target-side INPUT
@@ -1001,7 +998,7 @@ The workpiece remains in the output of the used ring station after
 	(bind ?goal (assert (goal (class DISCARD)
 	      (id (sym-cat DISCARD- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE)
-	      (params wp ?wp wp-loc ?cs wp-side ?side)
+	      (params wp ?wp wp-loc ?cs wp-side ?side) (meta-template goal-meta)
 	)))
 	(return ?goal)
 )
@@ -1010,7 +1007,7 @@ The workpiece remains in the output of the used ring station after
 	(?wp)
 	(bind ?goal (assert (goal (class DELIVER)
 	      (id (sym-cat DELIVER- (gensym*))) (sub-type SIMPLE)
-	      (verbosity NOISY) (is-executable FALSE)
+	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
 	      (params wp ?wp
 	              target-mps C-DS
 	              target-side INPUT)
@@ -1022,7 +1019,7 @@ The workpiece remains in the output of the used ring station after
 	(?wp ?wp-loc ?wp-side ?target-mps ?target-side)
 	(bind ?goal (assert (goal (class PAY-FOR-RINGS-WITH-BASE)
 	      (id (sym-cat PAY-FOR-RINGS-WITH-BASE- (gensym*))) (sub-type SIMPLE)
-	      (verbosity NOISY) (is-executable FALSE)
+	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
 	      (params  wp ?wp
 	               wp-loc ?wp-loc
 	               wp-side ?wp-side
@@ -1038,7 +1035,7 @@ The workpiece remains in the output of the used ring station after
 
 	(bind ?goal (assert (goal (class PAY-FOR-RINGS-WITH-CAP-CARRIER)
 	      (id (sym-cat PAY-FOR-RINGS-WITH-CAP-CARRIER- (gensym*))) (sub-type SIMPLE)
-	      (verbosity NOISY) (is-executable FALSE)
+	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
 	      (params  wp ?wp
 	               wp-loc ?wp-loc
 	               wp-side ?wp-side
@@ -1053,7 +1050,7 @@ The workpiece remains in the output of the used ring station after
 
 	(bind ?goal (assert (goal (class DELIVER-RC21)
 	      (id (sym-cat DELIVER-RC21- (gensym*))) (sub-type SIMPLE)
-	      (verbosity NOISY) (is-executable FALSE)
+	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
 	      (params wp ?wp)
 	)))
 	(return ?goal)
@@ -1064,7 +1061,7 @@ The workpiece remains in the output of the used ring station after
 
 	(bind ?goal (assert (goal (class PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
 	      (id (sym-cat PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF- (gensym*))) (sub-type SIMPLE)
-	      (verbosity NOISY) (is-executable FALSE)
+	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
 	      (params  wp-loc ?wp-loc
 	               target-mps ?target-mps
 	               target-side ?target-side
@@ -1078,7 +1075,7 @@ The workpiece remains in the output of the used ring station after
 
 	(bind ?goal (assert (goal (class INSTRUCT-CS-BUFFER-CAP)
 	      (id (sym-cat INSTRUCT-CS-BUFFER-CAP- (gensym*))) (sub-type SIMPLE)
-	      (verbosity NOISY) (is-executable FALSE)
+	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
 	      (params target-mps ?mps
 	              cap-color ?cap-color)
 	)))
@@ -1091,7 +1088,7 @@ The workpiece remains in the output of the used ring station after
 
 	(bind ?goal (assert (goal (class INSTRUCT-BS-DISPENSE-BASE)
 	  (id (sym-cat INSTRUCT-BS-DISPENSE-BASE- (gensym*))) (sub-type SIMPLE)
-	  (verbosity NOISY) (is-executable FALSE)
+	  (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
 	      (params wp ?wp
 	              target-mps C-BS
 	              target-side ?side
@@ -1106,7 +1103,7 @@ The workpiece remains in the output of the used ring station after
 
 	(bind ?goal (assert (goal (class INSTRUCT-DS-DELIVER)
 	  (id (sym-cat INSTRUCT-DS-DELIVER- (gensym*))) (sub-type SIMPLE)
-	  (verbosity NOISY) (is-executable FALSE)
+	  (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
 	  (params wp ?wp
 	          target-mps C-DS)
 	)))
@@ -1118,7 +1115,7 @@ The workpiece remains in the output of the used ring station after
 	(?mps ?cap-color)
 	(bind ?goal (assert (goal (class INSTRUCT-CS-MOUNT-CAP)
 	      (id (sym-cat INSTRUCT-CS-MOUNT-CAP- (gensym*))) (sub-type SIMPLE)
-	      (verbosity NOISY) (is-executable FALSE)
+	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
 	      (params target-mps ?mps
 	              cap-color ?cap-color)
 	)))
@@ -1130,7 +1127,7 @@ The workpiece remains in the output of the used ring station after
 	(?mps ?col-ring)
 	(bind ?goal (assert (goal (class INSTRUCT-RS-MOUNT-RING)
 	      (id (sym-cat INSTRUCT-RS-MOUNT-RING- (gensym*))) (sub-type SIMPLE)
-	      (verbosity NOISY) (is-executable FALSE)
+	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
 	            (params target-mps ?mps
 	                    ring-color ?col-ring
 	             )
@@ -1193,6 +1190,7 @@ The workpiece remains in the output of the used ring station after
 	            (sub-type SIMPLE)
 	            (verbosity NOISY) (is-executable FALSE)
 	            (params team-color ?team-color)
+	            (meta-template goal-meta)
 	)))
 	(return ?goal)
 )
@@ -1203,6 +1201,7 @@ The workpiece remains in the output of the used ring station after
 	            (id (sym-cat MOVE-OUT-OF-WAY- (gensym*)))
 	            (sub-type SIMPLE)
 	            (verbosity NOISY) (is-executable FALSE)
+	            (meta-template goal-meta)
 	            (params target-pos (translate-location-map-to-grid ?location) location ?location)
 	)))
 	(return ?goal)
@@ -1502,7 +1501,6 @@ The workpiece remains in the output of the used ring station after
 	"Fill in missing workpiece information into the discard goals"
 	?g <- (goal (id ?goal-id) (class DISCARD) (mode FORMULATED) (parent ?parent)
 	            (params wp UNKNOWN wp-loc ?mps wp-side ?mps-side))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?mps-side))
 	(not (wm-fact (key order meta wp-for-order args? wp ?wp $?)))
 	(goal (parent ?parent) (class INSTRUCT-CS-BUFFER-CAP) (mode DISPATCHED|FINISHED|RETRACTED))
@@ -1521,6 +1519,7 @@ The workpiece remains in the output of the used ring station after
   (bind ?goal (assert (goal (class WAIT-NOTHING-EXECUTABLE)
 	            (id (sym-cat WAIT-NOTHING-EXECUTABLE- (gensym*)))
 	            (sub-type SIMPLE)
+	            (meta-template goal-meta)
 	            (verbosity NOISY) (is-executable TRUE)
   )))
   (goal-meta-assign-robot-to-goal ?goal ?robot)

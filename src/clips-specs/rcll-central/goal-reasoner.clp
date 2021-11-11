@@ -321,7 +321,7 @@
 " Sets a finished move out of way goal independent of the outcome to formulated."
   ?g <- (goal (id ?goal-id) (class MOVE-OUT-OF-WAY) (mode FINISHED)
               (outcome ?outcome) (verbosity ?v))
-  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 =>
   (printout (log-debug ?v) "Evaluate move-out-of-way goal " ?goal-id crlf)
   (set-robot-to-waiting ?robot)
@@ -335,7 +335,7 @@
       (retract ?a))
     (retract ?p)
   )
-  (modify ?g (mode FORMULATED) (outcome UNKNOWN) (is-executable FALSE) )
+  (modify ?g (mode FORMULATED) (outcome UNKNOWN) (is-executable FALSE))
   (printout (log-debug ?v) "Goal " ?goal-id " FORMULATED" crlf)
 )
 
