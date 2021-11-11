@@ -334,9 +334,6 @@
 	(not (wm-fact (key domain fact cs-buffered args?
 	                               m ?target-mps
 	                               col ?cap-color)))
-	;(wm-fact (key domain fact cs-can-perform args?
-	                           m ?target-mps
-	                           op MOUNT_CAP))
 
 	(wm-fact (key domain fact wp-at args?
 	                          wp ?blocking-wp
@@ -536,10 +533,14 @@
 	; wp is not at RS OUTPUT, but after these goals finished, it will be
 	(goal (id ?mount-goal-id)
 	      (class MOUNT-RING)
-	      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED|RETRACTED)
 	      (params  wp ?wp
 	               target-mps ?rs
 	               $?))
+	(or (goal (id ?mount-goal-id) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	    (and (goal (id ?mount-goal-id) (outcome COMPLETED))
+	         (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side INPUT))
+	    )
+	)
 	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
 	(wm-fact (key domain fact order-complexity args?
 	                          ord ?order
@@ -635,10 +636,14 @@
 	; wp is not at RS OUTPUT, but after these goals finished, it will be
 	(goal (id ?mount-goal-id)
 	      (class MOUNT-RING)
-	      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED|RETRACTED)
 	      (params  wp ?wp
 	               target-mps ?rs
 	               $?))
+	(or (goal (id ?mount-goal-id) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED))
+	    (and (goal (id ?mount-goal-id) (outcome COMPLETED))
+	         (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side INPUT))
+	    )
+	)
 	?mount-da <- (dependency-assignment (goal-id ?goal-id) (class MOUNT-RING))
 
 	; get instruct mount-ring goal
@@ -791,15 +796,15 @@
 	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	               (params $? target-mps ?target-mps $?))
 	         (test (< (+ (length$ (find-all-facts ((?other-goal goal))
-	                       (and (or (eq ?other-goal:class
-	                                    PAY-FOR-RINGS-WITH-BASE)
-	                                (eq ?other-goal:class
-	                                    PAY-FOR-RINGS-WITH-CAP-CARRIER)
-	                                (eq ?other-goal:class
-	                                    PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF))
-	                            (is-goal-running ?other-goal:mode)
-	                            (member$ ?target-mps ?other-goal:params)
-	                        )))
+	                                              (and (or (eq ?other-goal:class
+	                                                           PAY-FOR-RINGS-WITH-BASE)
+	                                                       (eq ?other-goal:class
+	                                                           PAY-FOR-RINGS-WITH-CAP-CARRIER)
+	                                                       (eq ?other-goal:class
+	                                                           PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF))
+	                                                   (is-goal-running ?other-goal:mode)
+	                                                   (member$ ?target-mps ?other-goal:params)
+	                                              )))
 	                     (sym-to-int ?rs-before)) 3))
 	   )
 	)
