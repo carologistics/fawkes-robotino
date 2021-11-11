@@ -183,8 +183,8 @@
 	                                   $?)
 	                          (is-executable FALSE))
 
-	; Robot CEs
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
 
@@ -270,8 +270,8 @@
 	                                   $?)
 	                          (is-executable FALSE))
 
-	; Robot CEs
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
 
@@ -363,8 +363,8 @@
 	                                   $?)
 	                          (is-executable FALSE))
 
-	; Robot CEs
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
 
@@ -417,8 +417,8 @@
 	                          (mode FORMULATED)
 	                          (is-executable FALSE))
 
-	; Robot CEs
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
 
@@ -662,8 +662,8 @@
 	                          (params  $? wp-loc ?wp-loc wp-side ?wp-side)
 	                          (is-executable FALSE))
 
-	; Robot CEs
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	(not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
