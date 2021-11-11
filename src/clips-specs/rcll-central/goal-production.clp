@@ -23,7 +23,7 @@
 
 
 (deffunction goal-meta-assign-robot-to-goal (?goal ?robot)
-"Creates the goal-meta fact if it doen't exists"
+"Changes an existing goal-meta fact and assign it to the given robot"
 	(if (eq (fact-slot-value ?goal id) FALSE) then
 		(printout t "Goal has no id! " ?goal crlf)
 		(return)
@@ -37,6 +37,17 @@
 		  (fact-slot-value ?goal id) crlf)
 	)
 )
+
+(deffunction assert-goal-meta-assign-robot-to-goal (?goal ?robot)
+"Creates the goal-meta fact and assign the goal to the robot"
+	(if (neq ?robot nil) then
+		(assert (goal-meta (goal-id (fact-slot-value ?goal id))
+		                   (assigned-to ?robot)))
+		(printout t "Created new goal-meta fact to assign " ?robot
+		            " to goal " (fact-slot-value ?goal id) crlf)
+	)
+)
+
 
 (deffunction is-free (?target-pos)
 	(if (any-factp ((?at wm-fact))
@@ -95,7 +106,7 @@
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (not (goal (class BEACON-MAINTAIN)))
   (or (domain-facts-loaded)
-      (wm-fact (key refbox phase) (value ~PRE_GAME)))
+      (wm-fact (key refbox phase) (value ~SETUP&~PRE_GAME)))
   =>
   (bind ?goal (goal-tree-assert-run-endless BEACON-MAINTAIN 1))
   (modify ?goal (verbosity QUIET) (params frequency 1))
@@ -113,8 +124,8 @@
 	=>
 	(bind ?goal (assert (goal (id (sym-cat SEND-BEACON- (gensym*))) (sub-type SIMPLE)
 	              (class SEND-BEACON) (parent ?maintain-id) (verbosity QUIET)
-	              (is-executable TRUE) (meta-template goal-meta))))
-	(goal-meta-assign-robot-to-goal ?goal central)
+	              (is-executable TRUE))))
+	(assert-goal-meta-assign-robot-to-goal ?goal central)
 )
 
 (defrule goal-production-create-refill-shelf-maintain
@@ -149,7 +160,7 @@
 	              (class REFILL-SHELF) (sub-type SIMPLE)
 	              (parent ?maintain-id) (verbosity QUIET)
 	              (params mps ?mps) (is-executable TRUE))))
-	(goal-meta-assign-robot-to-goal ?goal central)
+	(assert-goal-meta-assign-robot-to-goal ?goal central)
 )
 
 
@@ -944,9 +955,8 @@ The workpiece remains in the output of the used ring station after
 	      (id (sym-cat PICK-AND-PLACE- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE)
 	      (params target-mps ?mps)
-	      (meta-template goal-meta)
 	)))
-	(goal-meta-assign-robot-to-goal ?goal ?robot)
+	(assert-goal-meta-assign-robot-to-goal ?goal ?robot)
 	(return ?goal)
 )
 
@@ -954,10 +964,10 @@ The workpiece remains in the output of the used ring station after
 	(?mps ?robot)
 	(bind ?goal (assert (goal (class MOVE)
 	      (id (sym-cat MOVE- (gensym*))) (sub-type SIMPLE)
-	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+	      (verbosity NOISY) (is-executable FALSE)
 	      (params target-mps ?mps)
 	)))
-	(goal-meta-assign-robot-to-goal ?goal ?robot)
+	(assert-goal-meta-assign-robot-to-goal ?goal ?robot)
 	(return ?goal)
 )
 
@@ -1075,11 +1085,11 @@ The workpiece remains in the output of the used ring station after
 
 	(bind ?goal (assert (goal (class INSTRUCT-CS-BUFFER-CAP)
 	      (id (sym-cat INSTRUCT-CS-BUFFER-CAP- (gensym*))) (sub-type SIMPLE)
-	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+	      (verbosity NOISY) (is-executable FALSE)
 	      (params target-mps ?mps
 	              cap-color ?cap-color)
 	)))
-	(goal-meta-assign-robot-to-goal ?goal central)
+	(assert-goal-meta-assign-robot-to-goal ?goal central)
 	(return ?goal)
 )
 
@@ -1088,13 +1098,13 @@ The workpiece remains in the output of the used ring station after
 
 	(bind ?goal (assert (goal (class INSTRUCT-BS-DISPENSE-BASE)
 	  (id (sym-cat INSTRUCT-BS-DISPENSE-BASE- (gensym*))) (sub-type SIMPLE)
-	  (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+	  (verbosity NOISY) (is-executable FALSE)
 	      (params wp ?wp
 	              target-mps C-BS
 	              target-side ?side
 	              base-color ?base-color)
 	)))
-	(goal-meta-assign-robot-to-goal ?goal central)
+	(assert-goal-meta-assign-robot-to-goal ?goal central)
 	(return ?goal)
 )
 
@@ -1103,11 +1113,11 @@ The workpiece remains in the output of the used ring station after
 
 	(bind ?goal (assert (goal (class INSTRUCT-DS-DELIVER)
 	  (id (sym-cat INSTRUCT-DS-DELIVER- (gensym*))) (sub-type SIMPLE)
-	  (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+	  (verbosity NOISY) (is-executable FALSE)
 	  (params wp ?wp
 	          target-mps C-DS)
 	)))
-	(goal-meta-assign-robot-to-goal ?goal central)
+	(assert-goal-meta-assign-robot-to-goal ?goal central)
 	(return ?goal)
 )
 
@@ -1115,11 +1125,11 @@ The workpiece remains in the output of the used ring station after
 	(?mps ?cap-color)
 	(bind ?goal (assert (goal (class INSTRUCT-CS-MOUNT-CAP)
 	      (id (sym-cat INSTRUCT-CS-MOUNT-CAP- (gensym*))) (sub-type SIMPLE)
-	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+	      (verbosity NOISY) (is-executable FALSE)
 	      (params target-mps ?mps
 	              cap-color ?cap-color)
 	)))
-	(goal-meta-assign-robot-to-goal ?goal central)
+	(assert-goal-meta-assign-robot-to-goal ?goal central)
 	(return ?goal)
 )
 
@@ -1127,12 +1137,12 @@ The workpiece remains in the output of the used ring station after
 	(?mps ?col-ring)
 	(bind ?goal (assert (goal (class INSTRUCT-RS-MOUNT-RING)
 	      (id (sym-cat INSTRUCT-RS-MOUNT-RING- (gensym*))) (sub-type SIMPLE)
-	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+	      (verbosity NOISY) (is-executable FALSE)
 	            (params target-mps ?mps
 	                    ring-color ?col-ring
 	             )
 	)))
-	(goal-meta-assign-robot-to-goal ?goal central)
+	(assert-goal-meta-assign-robot-to-goal ?goal central)
 	(return ?goal)
 )
 
@@ -1519,10 +1529,9 @@ The workpiece remains in the output of the used ring station after
   (bind ?goal (assert (goal (class WAIT-NOTHING-EXECUTABLE)
 	            (id (sym-cat WAIT-NOTHING-EXECUTABLE- (gensym*)))
 	            (sub-type SIMPLE)
-	            (meta-template goal-meta)
 	            (verbosity NOISY) (is-executable TRUE)
   )))
-  (goal-meta-assign-robot-to-goal ?goal ?robot)
+  (assert-goal-meta-assign-robot-to-goal ?goal ?robot)
   (modify ?goal (parent ?p))
 )
 

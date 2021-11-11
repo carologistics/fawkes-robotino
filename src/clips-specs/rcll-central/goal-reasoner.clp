@@ -200,8 +200,12 @@
 
   (wm-fact (key central agent robot-waiting args? r ?robot))
 
-  (not (wm-fact (key central agent robot-waiting
+  (not (and (goal-meta (goal-id ?g-id) (assigned-to ?robot))
+            (goal (id ?g-id) (mode ~FORMULATED))))
+
+  (not (and (wm-fact (key central agent robot-waiting
                       args? r ?o-robot&:(> (str-compare ?robot ?o-robot) 0)))
+       (goal-meta (assigned-to ?o-robot)))
   )
   =>
   (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
@@ -213,8 +217,8 @@
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
   ?g <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
       (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
-  (and (goal (id ?id) (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE))
-       (goal-meta (goal-id ?id) (assigned-to central)))
+  (goal (id ?id) (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE))
+  (goal-meta (goal-id ?id) (assigned-to central))
   =>
   (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
   (modify ?g (mode SELECTED))
