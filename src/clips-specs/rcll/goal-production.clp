@@ -914,107 +914,106 @@
 ; )
 
 
-(defrule goal-production-create-mount-first-ring
-" Start a higher order product by getting the base and mounting the first ring.
-  The workpiece remains in the output of the used ring station after
-  successfully finishing this goal.
-"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
-
-  (wm-fact (key refbox game-time) (values $?game-time))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  ;Robot CEs
-  (wm-fact (key domain fact self args?         r ?robot))
-  ;MPS-RS CEs
-  (wm-fact (key domain fact mps-type args?       m ?mps-rs t RS))
-  (wm-fact (key domain fact mps-state args?      m ?mps-rs s ~BROKEN))
-  (wm-fact (key domain fact mps-team args?       m ?mps-rs col ?team-color))
-  (wm-fact (key domain fact rs-filled-with args? m ?mps-rs n ?bases-filled))
-  (wm-fact (key domain fact rs-ring-spec
-            args? m ?mps-rs r ?ring1-color&~RING_NONE rn ?bases-needed))
-  (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
-                                         subtrahend ?bases-needed
-                                         difference ?bases-remain&ZERO|ONE|TWO|THREE))
-  (not (wm-fact (key domain fact rs-prepared-color args?  m ?mps-rs col ?some-col)))
-  (not (wm-fact (key domain fact wp-at args? wp ?wp-rs m ?mps-rs side INPUT)))
-  (wm-fact (key domain fact mps-type args? m ?other-rs&~?mps-rs t RS))
-  (wm-fact (key domain fact mps-team args? m ?other-rs col ?team-color))
-  ; There is at least one other rs side, except for the target input, that
-  ; is free (because occupying all 4 sides at once can cause deadlocks)
-  (or (wm-fact (key domain fact mps-side-free args? m ?mps-rs side OUTPUT))
-      (wm-fact (key domain fact mps-side-free args? m ?other-rs side ?any-side)))
-  ;MPS-BS CEs
-  (wm-fact (key domain fact mps-type args?  m ?mps-bs t BS))
-  (wm-fact (key domain fact mps-team args?  m ?mps-bs col ?team-color))
-  (domain-object (name ?bs-side&:(or (eq ?bs-side INPUT) (eq ?bs-side OUTPUT))) (type mps-side))
-  ;Order CEs
-  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
-  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
-  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
-  (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color) (value ?qd&:(> ?qr ?qd)))
-  ;Active Order CEs
-  ;No one started this order already
-  (or (and (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
-           (wm-fact (key domain fact mps-state args? m ?mps-bs s ~BROKEN&~DOWN))
-           (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-           (not (wm-fact (key domain fact wp-for-order args? wp ?any-ord-wp ord ?order))))
-      (and (wm-fact (key domain fact holding args? r ?robot wp ?spawned-wp))
-           (wm-fact (key domain fact wp-base-color args? wp ?spawned-wp col ?base-color))
-           (wm-fact (key domain fact wp-for-order args? wp ?spawned-wp ord ?order))
-           (wm-fact (key domain fact wp-ring1-color args? wp ?spawned-wp col RING_NONE))))
-  ;This order complexity is not produced exclusively while another exclusive
-  ;complexity order is already started
-  (not (and (wm-fact (key domain fact wp-for-order args? wp ?ord-wp&~?spawned-wp ord ?any-order))
-            (wm-fact (key domain fact order-complexity args? ord ?any-order com ?other-complexity))
-            (wm-fact (key config rcll exclusive-complexities) (values $?other-exclusive&:(member$ (str-cat ?other-complexity) ?other-exclusive)))
-            (wm-fact (key config rcll exclusive-complexities) (values $?exclusive&:(member$ (str-cat ?complexity) ?exclusive)))))
-  (or (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
-      (allowed ?complexity)
-  )
-  (test (neq ?complexity C0))
-  (not (blocked ?complexity))
-  ; Strategy CEs
-  (not (goal (class MOUNT-FIRST-RING)
-             (parent ?production-id)
-             (params robot ?robot $?
-                     bs-side ?bs-side $?
-                     order ?order
-                     wp ?spawned-wp)))
-  (not (wm-fact (key strategy keep-mps-side-free args? m ?mps-rs side INPUT $?)))
-  =>
-  (bind ?required-resources ?order ?spawned-wp)
-  ;If this order complexity should be produced exclusively ...
-  (if (any-factp ((?exclusive-complexities wm-fact))
-        (and (wm-key-prefix ?exclusive-complexities:key (create$ config rcll exclusive-complexities))
-             (neq FALSE (member$ (str-cat ?complexity) ?exclusive-complexities:values))))
-    then
-      ;... then an exclusive order token is required.
-      (bind ?required-resources ?mps-rs ?order ?spawned-wp PRODUCE-EXCLUSIVE-COMPLEXITY)
-      (printout t "Goal " MOUNT-FIRST-RING " formulated, it needs the PRODUCE-EXCLUSIVE-COMPLEXITY token" crlf)
-    else
-      (printout t "Goal " MOUNT-FIRST-RING " formulated" crlf))
-  (bind ?distance (node-distance (str-cat ?mps-bs - (if (eq ?bs-side INPUT) then I else O))))
-  (assert (goal (id (sym-cat MOUNT-FIRST-RING- (gensym*)))
-                (class MOUNT-FIRST-RING) (sub-type SIMPLE)
-                (priority (+ ?*PRIORITY-MOUNT-FIRST-RING* (goal-distance-prio ?distance)))
-                (parent ?production-id)
-                (params robot ?robot
-                        bs ?mps-bs
-                        bs-side ?bs-side
-                        bs-color ?base-color
-                        mps ?mps-rs
-                        ring-color ?ring1-color
-                        rs-before ?bases-filled
-                        rs-after ?bases-remain
-                        rs-req ?bases-needed
-                        order ?order
-                        wp ?spawned-wp
-                )
-                (required-resources (sym-cat ?mps-rs -INPUT) ?required-resources)
-  ))
-)
+; (defrule goal-production-create-mount-first-ring
+; " Start a higher order product by getting the base and mounting the first ring.
+;   The workpiece remains in the output of the used ring station after
+;   successfully finishing this goal.
+; "
+;   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;   (goal (id ?production-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
+;   (wm-fact (key refbox game-time) (values $?game-time))
+;   (wm-fact (key refbox team-color) (value ?team-color))
+;   ;Robot CEs
+;   (wm-fact (key domain fact self args?         r ?robot))
+;   ;MPS-RS CEs
+;   (wm-fact (key domain fact mps-type args?       m ?mps-rs t RS))
+;   (wm-fact (key domain fact mps-state args?      m ?mps-rs s ~BROKEN))
+;   (wm-fact (key domain fact mps-team args?       m ?mps-rs col ?team-color))
+;   (wm-fact (key domain fact rs-filled-with args? m ?mps-rs n ?bases-filled))
+;   (wm-fact (key domain fact rs-ring-spec
+;             args? m ?mps-rs r ?ring1-color&~RING_NONE rn ?bases-needed))
+;   (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
+;                                          subtrahend ?bases-needed
+;                                          difference ?bases-remain&ZERO|ONE|TWO|THREE))
+;   (not (wm-fact (key domain fact rs-prepared-color args?  m ?mps-rs col ?some-col)))
+;   (not (wm-fact (key domain fact wp-at args? wp ?wp-rs m ?mps-rs side INPUT)))
+;   (wm-fact (key domain fact mps-type args? m ?other-rs&~?mps-rs t RS))
+;   (wm-fact (key domain fact mps-team args? m ?other-rs col ?team-color))
+;   ; There is at least one other rs side, except for the target input, that
+;   ; is free (because occupying all 4 sides at once can cause deadlocks)
+;   (or (wm-fact (key domain fact mps-side-free args? m ?mps-rs side OUTPUT))
+;       (wm-fact (key domain fact mps-side-free args? m ?other-rs side ?any-side)))
+;   ;MPS-BS CEs
+;   (wm-fact (key domain fact mps-type args?  m ?mps-bs t BS))
+;   (wm-fact (key domain fact mps-team args?  m ?mps-bs col ?team-color))
+;   (domain-object (name ?bs-side&:(or (eq ?bs-side INPUT) (eq ?bs-side OUTPUT))) (type mps-side))
+;   ;Order CEs
+;   (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
+;   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+;   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
+;   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+;   (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color) (value ?qd&:(> ?qr ?qd)))
+;   ;Active Order CEs
+;   ;No one started this order already
+;   (or (and (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
+;            (wm-fact (key domain fact mps-state args? m ?mps-bs s ~BROKEN&~DOWN))
+;            (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+;            (not (wm-fact (key domain fact wp-for-order args? wp ?any-ord-wp ord ?order))))
+;       (and (wm-fact (key domain fact holding args? r ?robot wp ?spawned-wp))
+;            (wm-fact (key domain fact wp-base-color args? wp ?spawned-wp col ?base-color))
+;            (wm-fact (key domain fact wp-for-order args? wp ?spawned-wp ord ?order))
+;            (wm-fact (key domain fact wp-ring1-color args? wp ?spawned-wp col RING_NONE))))
+;   ;This order complexity is not produced exclusively while another exclusive
+;   ;complexity order is already started
+;   (not (and (wm-fact (key domain fact wp-for-order args? wp ?ord-wp&~?spawned-wp ord ?any-order))
+;             (wm-fact (key domain fact order-complexity args? ord ?any-order com ?other-complexity))
+;             (wm-fact (key config rcll exclusive-complexities) (values $?other-exclusive&:(member$ (str-cat ?other-complexity) ?other-exclusive)))
+;             (wm-fact (key config rcll exclusive-complexities) (values $?exclusive&:(member$ (str-cat ?complexity) ?exclusive)))))
+;   (or (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
+;       (allowed ?complexity)
+;   )
+;   (test (neq ?complexity C0))
+;   (not (blocked ?complexity))
+;   ; Strategy CEs
+;   (not (goal (class MOUNT-FIRST-RING)
+;              (parent ?production-id)
+;              (params robot ?robot $?
+;                      bs-side ?bs-side $?
+;                      order ?order
+;                      wp ?spawned-wp)))
+;   (not (wm-fact (key strategy keep-mps-side-free args? m ?mps-rs side INPUT $?)))
+;   =>
+;   (bind ?required-resources ?order ?spawned-wp)
+;   ;If this order complexity should be produced exclusively ...
+;   (if (any-factp ((?exclusive-complexities wm-fact))
+;         (and (wm-key-prefix ?exclusive-complexities:key (create$ config rcll exclusive-complexities))
+;              (neq FALSE (member$ (str-cat ?complexity) ?exclusive-complexities:values))))
+;     then
+;       ;... then an exclusive order token is required.
+;       (bind ?required-resources ?mps-rs ?order ?spawned-wp PRODUCE-EXCLUSIVE-COMPLEXITY)
+;       (printout t "Goal " MOUNT-FIRST-RING " formulated, it needs the PRODUCE-EXCLUSIVE-COMPLEXITY token" crlf)
+;     else
+;       (printout t "Goal " MOUNT-FIRST-RING " formulated" crlf))
+;   (bind ?distance (node-distance (str-cat ?mps-bs - (if (eq ?bs-side INPUT) then I else O))))
+;   (assert (goal (id (sym-cat MOUNT-FIRST-RING- (gensym*)))
+;                 (class MOUNT-FIRST-RING) (sub-type SIMPLE)
+;                 (priority (+ ?*PRIORITY-MOUNT-FIRST-RING* (goal-distance-prio ?distance)))
+;                 (parent ?production-id)
+;                 (params robot ?robot
+;                         bs ?mps-bs
+;                         bs-side ?bs-side
+;                         bs-color ?base-color
+;                         mps ?mps-rs
+;                         ring-color ?ring1-color
+;                         rs-before ?bases-filled
+;                         rs-after ?bases-remain
+;                         rs-req ?bases-needed
+;                         order ?order
+;                         wp ?spawned-wp
+;                 )
+;                 (required-resources (sym-cat ?mps-rs -INPUT) ?required-resources)
+;   ))
+; )
 
 
 (defrule goal-production-create-mount-next-ring
