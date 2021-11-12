@@ -28,7 +28,6 @@
           (domain-fact (name mps-type) (param-values C-BS BS))
 
 		  (domain-fact (name mps-type) (param-values C-CS1 CS))	
-
 		  (domain-fact (name mps-type) (param-values C-DS DS))
 		  (domain-fact (name mps-type) (param-values C-CS2 CS))
 		  (domain-fact (name mps-type) (param-values C-RS1 RS))
