@@ -340,3 +340,15 @@
     =>
     (assert (domain-object (name ?mps) (type fs)))
 )
+(defrule domain-assert-order-has-wp
+  (domain-fact (name wp-for-order) (param-values ?wp ?order))
+  (not (domain-fact (name order-has-wp) (param-values ?order)))
+  =>
+  (assert (domain-fact (name order-has-wp) (param-values ?order)))
+)
+(defrule domain-retract-order-has-wp
+  ?df <- (domain-fact (name order-has-wp) (param-values ?order))
+  (not (domain-fact (name wp-for-order) (param-values ?wp ?order)))
+  =>
+  (retract ?df)
+)
