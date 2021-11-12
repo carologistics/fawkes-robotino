@@ -1,4 +1,4 @@
 fawkes/bbsync/peers:
   robot1/active: true
-  robot2/active: false
-  robot3/active: false
+  robot2/active: true
+  robot3/active: true

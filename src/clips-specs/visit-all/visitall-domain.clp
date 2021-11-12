@@ -22,6 +22,7 @@
 		  (domain-fact (name mps-team) (param-values C-RS1 CYAN))
 		  (domain-fact (name mps-team) (param-values C-RS2 CYAN))
 	      (domain-fact (name mps-team) (param-values C-SS CYAN))
+
           (domain-fact (name team-color) (param-values CYAN))
 
           (domain-fact (name mps-type) (param-values C-BS BS))
