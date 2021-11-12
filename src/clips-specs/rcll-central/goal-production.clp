@@ -38,7 +38,7 @@
 	)
 )
 
-(deffunction assert-goal-meta-assign-robot-to-goal (?goal ?robot)
+(deffunction goal-meta-assert (?goal ?robot)
 "Creates the goal-meta fact and assign the goal to the robot"
 	(if (neq ?robot nil) then
 		(assert (goal-meta (goal-id (fact-slot-value ?goal id))
@@ -125,7 +125,7 @@
 	(bind ?goal (assert (goal (id (sym-cat SEND-BEACON- (gensym*))) (sub-type SIMPLE)
 	              (class SEND-BEACON) (parent ?maintain-id) (verbosity QUIET)
 	              (is-executable TRUE))))
-	(assert-goal-meta-assign-robot-to-goal ?goal central)
+	(goal-meta-assert ?goal central)
 )
 
 (defrule goal-production-create-refill-shelf-maintain
@@ -160,7 +160,7 @@
 	              (class REFILL-SHELF) (sub-type SIMPLE)
 	              (parent ?maintain-id) (verbosity QUIET)
 	              (params mps ?mps) (is-executable TRUE))))
-	(assert-goal-meta-assign-robot-to-goal ?goal central)
+	(goal-meta-assert ?goal central)
 )
 
 
@@ -956,7 +956,7 @@ The workpiece remains in the output of the used ring station after
 	      (verbosity NOISY) (is-executable FALSE)
 	      (params target-mps ?mps)
 	)))
-	(assert-goal-meta-assign-robot-to-goal ?goal ?robot)
+	(goal-meta-assert ?goal ?robot)
 	(return ?goal)
 )
 
@@ -967,7 +967,7 @@ The workpiece remains in the output of the used ring station after
 	      (verbosity NOISY) (is-executable FALSE)
 	      (params target-mps ?mps)
 	)))
-	(assert-goal-meta-assign-robot-to-goal ?goal ?robot)
+	(goal-meta-assert ?goal ?robot)
 	(return ?goal)
 )
 
@@ -1089,7 +1089,7 @@ The workpiece remains in the output of the used ring station after
 	      (params target-mps ?mps
 	              cap-color ?cap-color)
 	)))
-	(assert-goal-meta-assign-robot-to-goal ?goal central)
+	(goal-meta-assert ?goal central)
 	(return ?goal)
 )
 
@@ -1104,7 +1104,7 @@ The workpiece remains in the output of the used ring station after
 	              target-side ?side
 	              base-color ?base-color)
 	)))
-	(assert-goal-meta-assign-robot-to-goal ?goal central)
+	(goal-meta-assert ?goal central)
 	(return ?goal)
 )
 
@@ -1117,7 +1117,7 @@ The workpiece remains in the output of the used ring station after
 	  (params wp ?wp
 	          target-mps C-DS)
 	)))
-	(assert-goal-meta-assign-robot-to-goal ?goal central)
+	(goal-meta-assert ?goal central)
 	(return ?goal)
 )
 
@@ -1129,7 +1129,7 @@ The workpiece remains in the output of the used ring station after
 	      (params target-mps ?mps
 	              cap-color ?cap-color)
 	)))
-	(assert-goal-meta-assign-robot-to-goal ?goal central)
+	(goal-meta-assert ?goal central)
 	(return ?goal)
 )
 
@@ -1142,7 +1142,7 @@ The workpiece remains in the output of the used ring station after
 	                    ring-color ?col-ring
 	             )
 	)))
-	(assert-goal-meta-assign-robot-to-goal ?goal central)
+	(goal-meta-assert ?goal central)
 	(return ?goal)
 )
 
@@ -1531,7 +1531,7 @@ The workpiece remains in the output of the used ring station after
 	            (sub-type SIMPLE)
 	            (verbosity NOISY) (is-executable TRUE)
   )))
-  (assert-goal-meta-assign-robot-to-goal ?goal ?robot)
+  (goal-meta-assert ?goal ?robot)
   (modify ?goal (parent ?p))
 )
 
