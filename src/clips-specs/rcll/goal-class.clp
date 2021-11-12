@@ -135,6 +135,78 @@
     )
 )
 
+(defrule goal-class-create-produce-cx
+    "If there exists an order for a C1, C2, or C3 product of a certain configuration,
+    assert a goal class fact for it that holds the preconditions for the formulation of
+    its production goal. "
+    (wm-fact (key domain fact self args? r ?robot))
+    (wm-fact (key refbox team-color) (value ?team-color))
+    (wm-fact (key domain fact order-complexity args? ord ?order com ?com&C1|C2|C3))
+    (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+    (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
+    (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
+    (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
+    (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+    (wm-fact (key domain fact cs-color args? m ?cs col ?cap-color))
+
+    (wm-fact (key domain fact rs-ring-spec args? m ?rs1 r ?ring1-color $?))
+    (wm-fact (key domain fact rs-ring-spec args? m ?rs2 r ?ring2-color $?))
+    (wm-fact (key domain fact rs-ring-spec args? m ?rs3 r ?ring3-color $?))
+
+    (not (goal-class (class PRODUCE-CX) (meta order ?order) (sub-type SIMPLE)))
+    =>
+    (bind ?rs nil)
+    (if (eq ?com C1) then
+        (bind ?rs ?rs1)
+    )
+    (if (eq ?com C2) then
+        (bind ?rs ?rs2)
+    )
+    (if (eq ?com C3) then
+        (bind ?rs ?rs3)
+    )
+    (assert
+        (goal-class (class PRODUCE-CX)
+                    (id (sym-cat PRODUCE-CX- ?order))
+                    (meta order ?order)
+                    (type ACHIEVE)
+                    (sub-type SIMPLE)
+                    (param-names     team-color  robot  cs  order  base-color  ring1-color  ring2-color  ring3-color  cap-color  wp        rs)
+                    (param-constants ?team-color ?robot ?cs ?order ?base-color ?ring1-color ?ring2-color ?ring3-color ?cap-color nil       ?rs)
+                    (param-types     team-color  robot  cs  order  base-color  ring-color   ring-color   ring-color   cap-color  workpiece rs)
+                    (param-quantified)
+                    (preconditions "
+                        (and
+                            ;cs CEs
+                            (mps-side-free ?cs INPUT)
+                            (mps-team ?cs ?team-color)
+                            (not (mps-state ?cs BROKEN))
+                            (cs-buffered ?cs ?cap-color)
+                            (cs-can-perform ?cs MOUNT_CAP)
+                            ;wp CEs
+                            (wp-for-order ?wp ?order)
+                            (wp-base-color ?wp ?base-color)
+                            (wp-ring1-color ?wp ?ring1-color)
+                            (wp-ring2-color ?wp ?ring2-color)
+                            (wp-ring3-color ?wp ?ring3-color)
+                            (wp-cap-color ?wp CAP_NONE)
+                            (or
+                                (and
+                                    (mps-team ?rs ?team-color)
+                                    (wp-at ?wp ?rs OUTPUT)
+                                    (can-hold ?robot)
+                                )
+                                (holding ?robot ?wp)
+                            )
+                            ;order CEs
+                            (order-deliverable ?order)
+                        )
+                    ")
+                    (effects "")
+        )
+    )
+)
+
 (defrule goal-class-create-clear-bs
     "Assert a goal class for CLEAR-MPS goals that holds the precondition for formulation
     of potential BS clear goals."
@@ -247,6 +319,46 @@
                             wp ?wp
                     )
                     (required-resources (sym-cat ?mps -INPUT) ?order ?wp)
+    ))
+)
+
+(defrule goal-class-assert-goal-produce-cx
+    "If the precondition of a goal-class for a CX order is fulfilled, assert the goal
+    fact and thus formulate the goal. Determine the priority of the goal based on
+    its complexity."
+    (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+    (goal (id ?production-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
+    (goal (id ?urgent) (class URGENT) (mode FORMULATED))
+
+    (goal-class (class PRODUCE-CX) (id ?cid) (meta order ?order))
+    (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
+    (pddl-formula (part-of ?cid) (id ?formula-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
+    (pddl-grounding (id ?grounding-id) (param-values ?team-color ?robot ?cs ?order ?base-color ?ring1-color ?ring2-color ?ring3-color ?cap-color ?wp ?rs))
+
+    (not (goal (class PRODUCE-CX)
+                (parent ?production-id)
+                (params robot ?robot
+                        wp ?wp $?
+                        mps ?cs $?
+                        order ?order)))
+    =>
+    (bind ?prio ?*PRIORITY-PRODUCE-C1*)
+    (if (eq ?com C2) then (bind ?prio ?*PRIORITY-PRODUCE-C2*))
+    (if (eq ?com C3) then (bind ?prio ?*PRIORITY-PRODUCE-C3*))
+    (printout t "Goal " PRODUCE-CX " formulated from PDDL for order " ?order crlf)
+    (assert (goal (id (sym-cat PRODUCE-CX- (gensym*)))
+                    (class PRODUCE-CX) (sub-type SIMPLE)
+                    (priority ?prio)
+                    (parent ?production-id)
+                    (params robot ?robot
+                            wp ?wp
+                            rs ?rs
+                            mps ?cs
+                            cs-color ?cap-color
+                            order ?order
+                    )
+                    (required-resources (sym-cat ?cs -INPUT) (sym-cat ?rs -OUTPUT) ?wp)
     ))
 )
 

@@ -1109,204 +1109,204 @@
 )
 
 
-(defrule goal-production-create-produce-c1
-" Produce a C1 product: Get the workpiece with the mounted ring and mount
-  a cap on it.
-  The produced workpiece stays in the output of the used cap station after
-  successfully executing this goal.
+; (defrule goal-production-create-produce-c1
+; " Produce a C1 product: Get the workpiece with the mounted ring and mount
+;   a cap on it.
+;   The produced workpiece stays in the output of the used cap station after
+;   successfully executing this goal.
 
-  Note that the produce-c1, produce-c2, produce-c3 goal creation is
-  deliberately split into separate rules. This is done for readability and
-  to leave the option open to customize the strategy for CX products in
-  the future.
-"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?maintain-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
-  ;To-Do: Model state IDLE|wait-and-look-for-alternatives
-  ;Robot CEs
-  (wm-fact (key domain fact self args? r ?robot))
-  ;MPS-CS CEs
-  (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
-  (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side INPUT)))
-  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
-  (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
-  ;WP CEs
-  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
-  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
-  (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
-  ;MPS-RS CEs
-  (wm-fact (key domain fact mps-type args? m ?rs t RS))
-  (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
-  ;Order CEs
-  (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))
-  (wm-fact (key domain fact order-complexity args? ord ?order com C1))
-  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
-  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+;   Note that the produce-c1, produce-c2, produce-c3 goal creation is
+;   deliberately split into separate rules. This is done for readability and
+;   to leave the option open to customize the strategy for CX products in
+;   the future.
+; "
+;   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;   (goal (id ?maintain-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
+;   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
+;   ;Robot CEs
+;   (wm-fact (key domain fact self args? r ?robot))
+;   ;MPS-CS CEs
+;   (wm-fact (key domain fact mps-type args? m ?mps t CS))
+;   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+;   (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side INPUT)))
+;   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+;   (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
+;   (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
+;   ;WP CEs
+;   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+;   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
+;   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+;   ;MPS-RS CEs
+;   (wm-fact (key domain fact mps-type args? m ?rs t RS))
+;   (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
+;   ;Order CEs
+;   (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))
+;   (wm-fact (key domain fact order-complexity args? ord ?order com C1))
+;   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+;   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
+;   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
 
-  (wm-fact (key refbox game-time) (values $?game-time))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
-  (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
-           (value ?qd&:(> ?qr ?qd)))
-  (or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-           (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT)))
-      (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
-  (not (goal (class PRODUCE-CX)
-             (parent ?maintain-id)
-             (params robot ?robot
-                     wp ?wp $?
-                     mps ?mps $?
-                     order ?order)))
-  =>
-  (printout t "Goal " PRODUCE-CX " formulated" crlf)
-  (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
-                (priority ?*PRIORITY-PRODUCE-C1*) (sub-type SIMPLE)
-                                (parent ?maintain-id)
-                                (params robot ?robot
-                                        wp ?wp
-                                        rs ?rs
-                                        mps ?mps
-                                        cs-color ?cap-color
-                                        order ?order
-                                )
-                                (required-resources (sym-cat ?mps -INPUT) (sym-cat ?rs -OUTPUT) ?wp)
-  ))
-)
-
-
-(defrule goal-production-create-produce-c2
-" Produce a C2 product: Get the workpiece with the mounted ring and mount
-  a cap on it.
-  The produced workpiece stays in the output of the used cap station after
-  successfully executing this goal.
-"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (class INTERMEDEATE-STEPS) (id ?maintain-id) (mode FORMULATED))
-  ;To-Do: Model state IDLE|wait-and-look-for-alternatives
-  ;Robot CEs
-  (wm-fact (key domain fact self args? r ?robot))
-  ;MPS-CS CEs
-  (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
-  (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side INPUT)))
-  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
-  (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
-  ;WP CEs
-  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
-  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
-  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
-  (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
-  ;MPS-RS CEs
-  (wm-fact (key domain fact mps-type args? m ?rs t RS))
-  (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
-  ;Order CEs
-  (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))
-  (wm-fact (key domain fact order-complexity args? ord ?order com C2))
-  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
-  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
-  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
-
-  (wm-fact (key refbox game-time) (values $?game-time))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
-  (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
-           (value ?qd&:(> ?qr ?qd)))
-  (or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-           (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT)))
-      (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
-  (not (goal (class PRODUCE-CX)
-             (parent ?maintain-id)
-             (params robot ?robot
-                     wp ?wp $?
-                     mps ?mps $?
-                     order ?order)))
-  =>
-  (printout t "Goal " PRODUCE-CX " (C2) formulated" crlf)
-  (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
-                (priority ?*PRIORITY-PRODUCE-C2*) (sub-type SIMPLE)
-                (parent ?maintain-id)
-                (params robot ?robot
-                        wp ?wp
-                        rs ?rs
-                        mps ?mps
-                        cs-color ?cap-color
-                        order ?order
-                )
-                (required-resources (sym-cat ?mps -INPUT) (sym-cat ?rs -OUTPUT) ?wp)
-  ))
-)
+;   (wm-fact (key refbox game-time) (values $?game-time))
+;   (wm-fact (key refbox team-color) (value ?team-color))
+;   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+;   (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
+;            (value ?qd&:(> ?qr ?qd)))
+;   (or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+;            (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT)))
+;       (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+;   (not (goal (class PRODUCE-CX)
+;              (parent ?maintain-id)
+;              (params robot ?robot
+;                      wp ?wp $?
+;                      mps ?mps $?
+;                      order ?order)))
+;   =>
+;   (printout t "Goal " PRODUCE-CX " formulated" crlf)
+;   (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
+;                 (priority ?*PRIORITY-PRODUCE-C1*) (sub-type SIMPLE)
+;                                 (parent ?maintain-id)
+;                                 (params robot ?robot
+;                                         wp ?wp
+;                                         rs ?rs
+;                                         mps ?mps
+;                                         cs-color ?cap-color
+;                                         order ?order
+;                                 )
+;                                 (required-resources (sym-cat ?mps -INPUT) (sym-cat ?rs -OUTPUT) ?wp)
+;   ))
+; )
 
 
-(defrule goal-production-create-produce-c3
-" Produce a C3 product: Get the workpiece with the mounted ring and mount
-  a cap on it.
-  The produced workpiece stays in the output of the used cap station after
-  successfully executing this goal.
-"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (class INTERMEDEATE-STEPS) (id ?maintain-id) (mode FORMULATED))
-  ;To-Do: Model state IDLE|wait-and-look-for-alternatives
-  ;Robot CEs
-  (wm-fact (key domain fact self args? r ?robot))
-  ;MPS-CS CEs
-  (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
-  (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side INPUT)))
-  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
-  (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
-  ;WP CEs
-  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
-  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
-  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
-  (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
-  (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
-  ;MPS-RS CEs
-  (wm-fact (key domain fact mps-type args? m ?rs t RS))
-  (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
-  ;Order CEs
-  (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))
-  (wm-fact (key domain fact order-complexity args? ord ?order com C3))
-  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
-  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
-  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
-  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+; (defrule goal-production-create-produce-c2
+; " Produce a C2 product: Get the workpiece with the mounted ring and mount
+;   a cap on it.
+;   The produced workpiece stays in the output of the used cap station after
+;   successfully executing this goal.
+; "
+;   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;   (goal (class INTERMEDEATE-STEPS) (id ?maintain-id) (mode FORMULATED))
+;   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
+;   ;Robot CEs
+;   (wm-fact (key domain fact self args? r ?robot))
+;   ;MPS-CS CEs
+;   (wm-fact (key domain fact mps-type args? m ?mps t CS))
+;   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+;   (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side INPUT)))
+;   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+;   (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
+;   (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
+;   ;WP CEs
+;   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+;   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
+;   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
+;   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+;   ;MPS-RS CEs
+;   (wm-fact (key domain fact mps-type args? m ?rs t RS))
+;   (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
+;   ;Order CEs
+;   (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))
+;   (wm-fact (key domain fact order-complexity args? ord ?order com C2))
+;   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+;   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
+;   (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
+;   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
 
-  (wm-fact (key refbox game-time) (values $?game-time))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
-  (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
-  (value ?qd&:(> ?qr ?qd)))
-  (or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-           (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT)))
-      (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
-  (not (goal (class PRODUCE-CX)
-                 (parent ?maintain-id)
-                 (params robot ?robot
-                         wp ?wp $?
-                         mps ?mps $?
-                         order ?order)))
-  =>
-  (printout t "Goal " PRODUCE-CX " (C3) formulated" crlf)
-  (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
-                (priority ?*PRIORITY-PRODUCE-C3*) (sub-type SIMPLE)
-                (parent ?maintain-id)
-                (params robot ?robot
-                        wp ?wp
-                        rs ?rs
-                        mps ?mps
-                        cs-color ?cap-color
-                        order ?order
-                )
-                (required-resources (sym-cat ?mps -INPUT) (sym-cat ?rs -OUTPUT) ?wp)
-  ))
-)
+;   (wm-fact (key refbox game-time) (values $?game-time))
+;   (wm-fact (key refbox team-color) (value ?team-color))
+;   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+;   (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
+;            (value ?qd&:(> ?qr ?qd)))
+;   (or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+;            (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT)))
+;       (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+;   (not (goal (class PRODUCE-CX)
+;              (parent ?maintain-id)
+;              (params robot ?robot
+;                      wp ?wp $?
+;                      mps ?mps $?
+;                      order ?order)))
+;   =>
+;   (printout t "Goal " PRODUCE-CX " (C2) formulated" crlf)
+;   (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
+;                 (priority ?*PRIORITY-PRODUCE-C2*) (sub-type SIMPLE)
+;                 (parent ?maintain-id)
+;                 (params robot ?robot
+;                         wp ?wp
+;                         rs ?rs
+;                         mps ?mps
+;                         cs-color ?cap-color
+;                         order ?order
+;                 )
+;                 (required-resources (sym-cat ?mps -INPUT) (sym-cat ?rs -OUTPUT) ?wp)
+;   ))
+; )
+
+
+; (defrule goal-production-create-produce-c3
+; " Produce a C3 product: Get the workpiece with the mounted ring and mount
+;   a cap on it.
+;   The produced workpiece stays in the output of the used cap station after
+;   successfully executing this goal.
+; "
+;   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;   (goal (class INTERMEDEATE-STEPS) (id ?maintain-id) (mode FORMULATED))
+;   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
+;   ;Robot CEs
+;   (wm-fact (key domain fact self args? r ?robot))
+;   ;MPS-CS CEs
+;   (wm-fact (key domain fact mps-type args? m ?mps t CS))
+;   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+;   (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side INPUT)))
+;   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+;   (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
+;   (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
+;   ;WP CEs
+;   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+;   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
+;   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
+;   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
+;   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+;   ;MPS-RS CEs
+;   (wm-fact (key domain fact mps-type args? m ?rs t RS))
+;   (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
+;   ;Order CEs
+;   (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))
+;   (wm-fact (key domain fact order-complexity args? ord ?order com C3))
+;   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+;   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
+;   (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
+;   (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
+;   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+
+;   (wm-fact (key refbox game-time) (values $?game-time))
+;   (wm-fact (key refbox team-color) (value ?team-color))
+;   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+;   (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
+;   (value ?qd&:(> ?qr ?qd)))
+;   (or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+;            (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT)))
+;       (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+;   (not (goal (class PRODUCE-CX)
+;                  (parent ?maintain-id)
+;                  (params robot ?robot
+;                          wp ?wp $?
+;                          mps ?mps $?
+;                          order ?order)))
+;   =>
+;   (printout t "Goal " PRODUCE-CX " (C3) formulated" crlf)
+;   (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
+;                 (priority ?*PRIORITY-PRODUCE-C3*) (sub-type SIMPLE)
+;                 (parent ?maintain-id)
+;                 (params robot ?robot
+;                         wp ?wp
+;                         rs ?rs
+;                         mps ?mps
+;                         cs-color ?cap-color
+;                         order ?order
+;                 )
+;                 (required-resources (sym-cat ?mps -INPUT) (sym-cat ?rs -OUTPUT) ?wp)
+;   ))
+; )
 
 
 (defrule goal-production-create-reset-mps
