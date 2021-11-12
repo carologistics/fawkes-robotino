@@ -31,6 +31,7 @@
 
 
 (defrule refbox-recv-GameState
+  (declare (salience 1000))
   ?pf <- (protobuf-msg (type "llsf_msgs.GameState") (ptr ?p) (rcvd-from ?host ?port))
   ?gt <- (wm-fact (key refbox game-time))
   ?rp <- (wm-fact (id "/refbox/phase")  (value ?phase) )
