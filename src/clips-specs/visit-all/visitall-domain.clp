@@ -31,6 +31,7 @@
 		  (domain-fact (name mps-type) (param-values C-RS1 RS))
 		  (domain-fact (name mps-type) (param-values C-RS2 RS))
 		  (domain-fact (name mps-type) (param-values C-SS SS))
+
           (domain-object (name C-BS) (type mps))
 		  (domain-object (name C-CS1) (type mps))
           (domain-object (name C-DS) (type mps))
