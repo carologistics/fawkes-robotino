@@ -85,6 +85,7 @@
 		(mps-state ?m - mps ?s - mps-statename)
 		(mps-team ?m - mps ?col - team-color)
 		(mps-side-free ?m - mps ?side - mps-side)
+		(mps-has-side ?m - mps ?side - mps-side)
 		(bs-prepared-color ?m - mps ?col - base-color)
 		(bs-prepared-side ?m - mps ?side - mps-side)
 		(cs-can-perform ?m - mps ?op - cs-operation)
