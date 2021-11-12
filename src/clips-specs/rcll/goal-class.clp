@@ -22,6 +22,95 @@
 
 ; ------------------------- ASSERT GOAL CLASSES -----------------------------------
 
+(defrule goal-class-create-mount-first-ring
+    (wm-fact (key domain fact self args? r ?robot))
+    (wm-fact (key refbox team-color) (value ?team-color))
+
+    (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+    (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C1|C2|C3))
+    (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
+    (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring1-color rn ?bases-needed))
+    (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?other-color rn ?other-bases))
+
+    (test (not (eq ?ring1-color ?other-color)))
+    (test (not (eq ?ring1-color RING_NONE)))
+    (test (not (eq ?other-color RING_NONE)))
+    (test (not (eq ?bases-needed NA)))
+    (test (not (eq ?other-bases NA)))
+    (not (goal-class (class MOUNT-FIRST-RING) (meta order ?order)))
+    =>
+    (assert
+        (goal-class (class MOUNT-FIRST-RING)
+                    (id (sym-cat MOUNT-FIRST-RING- ?order))
+                    (meta order ?order)
+                    (type ACHIEVE)
+                    (sub-type SIMPLE)
+                    (param-names     rs  bases-needed  other-color  ring1-color  bs  wp        side     order  robot  base-color)
+                    (param-constants ?rs ?bases-needed ?other-color ?ring1-color nil nil       nil      ?order ?robot ?base-color)
+                    (param-types     rs  ring-num      ring-color   ring-color   bs  workpiece mps-side order  robot  base-color)
+                    (param-quantified )
+                    (preconditions "
+                        (and
+                            (not (mps-state ?rs BROKEN))
+                            (rs-paid-for ?rs ?bases-needed)
+                            (mps-side-free ?rs INPUT)
+                            (not
+                                (and
+                                    (rs-prepared-color ?rs ?other-color)
+                                    (rs-prepared-color ?rs ?ring1-color)
+                                )
+                            )
+                            (mps-has-side ?bs ?side)
+                            (order-deliverable ?order)
+                            (or
+                                (and
+                                    (not (order-has-wp ?order))
+                                    (can-hold ?robot)
+                                    (not (mps-state ?bs DOWN))
+                                    (not (mps-state ?bs BROKEN))
+                                    (wp-spawned-for ?wp ?robot)
+                                )
+                                (and
+                                    (holding ?robot ?wp)
+                                    (wp-base-color ?wp ?base-color)
+                                    (wp-for-order ?wp ?order)
+                                    (wp-ring1-color ?wp RING_NONE)
+                                )
+                            )
+                            ;exclusivity
+                        )
+
+                    ")
+                    (effects "")
+        )
+    )
+)
+
+; (defrule goal-class-create-mount-next-ring
+;     (a)
+
+;     =>
+;     (assert
+;         (goal-class (class MOUNT-NEXT-RING)
+;                     (id (sym-cat MOUNT-NEXT-RING- ?order))
+;                     (meta order ?order)
+;                     (type ACHIEVE)
+;                     (sub-type SIMPLE)
+;                     (param-names    )
+;                     (param-constants )
+;                     (param-types     )
+;                     (param-quantified )
+;                     (preconditions "
+
+
+;                     ")
+;                     (effects "")
+;         )
+;     )
+
+; )
+
+
 (defrule goal-class-create-deliver
     "If there exists an order for a product of a certain configuration,
     assert a goal class fact for it that holds the preconditions for the formulation of
@@ -239,6 +328,67 @@
 )
 
 ; ------------------------- ASSERT GOALS -----------------------------------
+
+(defrule goal-class-assert-goal-mount-first-ring
+    (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+    (goal (id ?production-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
+
+    (goal-class (class MOUNT-FIRST-RING) (id ?cid) (meta order ?order))
+    (pddl-formula (part-of ?cid) (id ?formula-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
+    (pddl-grounding (id ?grounding-id) (param-values ?rs ?bases-needed ?other-color ?ring1-color ?bs ?wp ?side ?order ?robot ?base-color))
+
+    (wm-fact (key domain fact rs-filled-with args? m ?rs n ?bases-filled))
+    (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
+                                            subtrahend ?bases-needed
+                                            difference ?bases-remain&ZERO|ONE|TWO|THREE))
+    (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
+    (not (and (wm-fact (key domain fact wp-for-order args? wp ?ord-wp&~?wp ord ?any-order))
+            (wm-fact (key domain fact order-complexity args? ord ?any-order com ?other-complexity))
+            (wm-fact (key config rcll exclusive-complexities) (values $?other-exclusive&:(member$ (str-cat ?other-complexity) ?other-exclusive)))
+            (wm-fact (key config rcll exclusive-complexities) (values $?exclusive&:(member$ (str-cat ?complexity) ?exclusive)))))
+    (or (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
+        (allowed ?complexity)
+    )
+
+    (not (goal (class MOUNT-FIRST-RING)
+                (parent ?production-id)
+                (params robot ?robot $?
+                        bs-side ?side $?
+                        order ?order
+                        wp ?wp)))
+    =>
+    (bind ?required-resources ?order ?wp)
+    (if (any-factp ((?exclusive-complexities wm-fact))
+            (and (wm-key-prefix ?exclusive-complexities:key (create$ config rcll exclusive-complexities))
+                (neq FALSE (member$ (str-cat ?complexity) ?exclusive-complexities:values))))
+        then
+        (bind ?required-resources ?rs ?order ?wp PRODUCE-EXCLUSIVE-COMPLEXITY)
+        (printout t "Goal " MOUNT-FIRST-RING " formulated from PDDL for order " ?order ", it needs the PRODUCE-EXCLUSIVE-COMPLEXITY token" crlf)
+        else
+        (printout t "Goal " MOUNT-FIRST-RING " formulated from PDDL for order " ?order crlf)
+    )
+    (bind ?distance (node-distance (str-cat ?bs - (if (eq ?side INPUT) then I else O))))
+
+    (assert (goal (id (sym-cat MOUNT-FIRST-RING- (gensym*)))
+                    (class MOUNT-FIRST-RING) (sub-type SIMPLE)
+                    (priority (+ ?*PRIORITY-MOUNT-FIRST-RING* (goal-distance-prio ?distance)))
+                    (parent ?production-id)
+                    (params robot ?robot
+                            bs ?bs
+                            bs-side ?side
+                            bs-color ?base-color
+                            mps ?rs
+                            ring-color ?ring1-color
+                            rs-before ?bases-filled
+                            rs-after ?bases-remain
+                            rs-req ?bases-needed
+                            order ?order
+                            wp ?wp
+                    )
+                    (required-resources (sym-cat ?rs -INPUT) ?required-resources)
+    ))
+)
 
 (defrule goal-class-assert-goal-deliver
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
