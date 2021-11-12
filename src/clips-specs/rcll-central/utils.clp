@@ -56,6 +56,12 @@
   (slot team (type SYMBOL) (allowed-symbols CYAN MAGENTA))
 )
 
+(deftemplate goal-meta
+	(slot goal-id (type SYMBOL))
+	(slot assigned-to (type SYMBOL) (allowed-values robot1 robot2 robot3
+	                                                nil central))
+)
+
 (deffunction tag-id-to-side (?tag-id)
 " Output the side that is associated with the given tag id.
   @param ?tag-id tag id as specified by the rulebook

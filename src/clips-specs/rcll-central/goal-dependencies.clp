@@ -181,9 +181,9 @@
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
 	                                   $?)
-	                          (meta $? assigned-to ?robot $?)
 	                          (is-executable FALSE))
 
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -268,9 +268,9 @@
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
 	                                   $?)
-	                          (meta $? assigned-to ?robot $?)
 	                          (is-executable FALSE))
 
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -361,9 +361,9 @@
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
 	                                   $?)
-	                          (meta $? assigned-to ?robot $?)
 	                          (is-executable FALSE))
 
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -415,9 +415,9 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class DELIVER-RC21)
 	                          (mode FORMULATED)
-	                          (meta $? assigned-to ?robot $?)
 	                          (is-executable FALSE))
 
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -467,9 +467,9 @@
 	                                   target-mps ?cs
 	                                   target-side ?cs-side
 	                                   $?)
-	                          (meta $? assigned-to ?robot $?)
 	                          (is-executable FALSE))
 
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -660,9 +660,9 @@
 	                          (mode FORMULATED)
 	                          (parent ?parent)
 	                          (params  $? wp-loc ?wp-loc wp-side ?wp-side)
-	                          (meta $? assigned-to ?robot $?)
 	                          (is-executable FALSE))
 
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -712,10 +712,9 @@
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
 	                                   $?)
-	                          ;(params  $? wp-loc ?wp-loc wp-side ?wp-side)
-	                          (meta $? assigned-to ?robot $?)
 	                          (is-executable FALSE))
 
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	;MPS-RS CEs (a cap carrier can be used to fill a RS later)
 	(wm-fact (key domain fact mps-type args? m ?target-mps t RS))
