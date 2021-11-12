@@ -11,7 +11,7 @@ This script starts a specified program for simulation
 OPTIONS:
   COMMON:
    -h             Show this message
-   -x gzserver|gzclient|fawkes|comm|roscore|move_base|refbox|refbox_shell  
+   -x gzserver|gzclient|fawkes|comm|roscore|move_base|refbox|refbox-shell|refbox-frontend
                   Start specified program
    -p arg         Specify ros port
 
@@ -242,6 +242,15 @@ case $COMMAND in
 	sleep 3
 	llsf-refbox-shell $@
 	;;
+  refbox-frontend )
+    if [ -z "$RCLL_REFBOX_FRONTEND_DIR" ] ; then
+      echo "Cannot start refbox frontend, RCLL_REFBOX_FRONTEND_DIR is not set!" >&2
+    else
+      cd $RCLL_REFBOX_FRONTEND_DIR
+      npm run serve
+    fi
+  ;;
+
 esac
 
 
