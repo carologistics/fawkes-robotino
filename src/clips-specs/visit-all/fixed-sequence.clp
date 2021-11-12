@@ -1,31 +1,29 @@
-
 (defrule goal-expander-create-sequence
-	?g <- (goal (mode SELECTED) (id TESTGOAL))
+	?g <- (goal (mode SELECTED) (id TESTGOAL)) 
 	=>
 	(assert
 	  (plan (id TESTGOAL-PLAN) (goal-id TESTGOAL)
 	        (type SEQUENTIAL))
-	(plan-action (id 1) (plan-id TESTGOAL-PLAN) (goal-id TESTGOAL)
-	             (action-name visit) (skiller "/robot1/Skiller")
-	             (param-values C-DS OUTPUT CYAN))
-	(plan-action (id 2) (plan-id TESTGOAL-PLAN) (goal-id TESTGOAL)
-				 (action-name visit) (skiller "/robot1/Skiller")
-				 (param-values C-BS OUTPUT CYAN))	
-	(plan-action (id 3) (plan-id TESTGOAL-PLAN) (goal-id TESTGOAL)
-				 (action-name visit) (skiller "/robot1/Skiller")
-				 (param-values C-CS1 OUTPUT CYAN))		
-	(plan-action (id 4) (plan-id TESTGOAL-PLAN) (goal-id TESTGOAL)
-				 (action-name visit) (skiller "/robot1/Skiller")
-				 (param-values C-CS2 OUTPUT CYAN))	
-	(plan-action (id 5) (plan-id TESTGOAL-PLAN) (goal-id TESTGOAL)
-				 (action-name visit) (skiller "/robot1/Skiller")
-				 (param-values C-SS OUTPUT CYAN))	
-	(plan-action (id 6) (plan-id TESTGOAL-PLAN) (goal-id TESTGOAL)
-				 (action-name visit) (skiller "/robot1/Skiller")
-				 (param-values C-RS1 OUTPUT CYAN))	
-	(plan-action (id 7) (plan-id TESTGOAL-PLAN) (goal-id TESTGOAL)
-				 (action-name visit) (skiller "/robot1/Skiller")
-				 (param-values C-RS2 OUTPUT CYAN))	 
+	)
+
+	(bind ?i 1)
+	(bind ?r "/robot1/Skiller")
+	(do-for-all-facts ((?m domain-fact)) (eq ?m:name mps-type) 
+		(if (and (> ?i 3) (< ?i 6))
+			then(
+				bind ?r "/robot2/Skiller"
+			)
+			else(
+				if (> ?i 5)
+					then(
+						bind ?r "/robot3/Skiller"
+					)
+			)			
+		)
+		(assert (plan-action (id ?i) (plan-id TESTGOAL-PLAN) (goal-id TESTGOAL)
+							(action-name visit) (skiller ?r)
+						(param-values (nth$ 1 ?m:param-values) OUTPUT CYAN)))
+		(bind ?i (+ ?i 1))
 	)
 	(modify ?g (mode EXPANDED))
 )
