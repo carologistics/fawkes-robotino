@@ -19,6 +19,10 @@
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
 
+(defglobal
+  ?*MIN-EXEC-DURATION* = 2
+)
+
 ;A timeout for an action
 (deftemplate action-timer
   (slot plan-id (type SYMBOL))
@@ -44,6 +48,14 @@
                         |fulfill-order-c3)
          (executable TRUE)
          (param-values $?param-values))
+
+  (wm-fact (key game state) (value RUNNING))
+  (wm-fact (key refbox game-time) (values $?now))
+  ?pt <- (action-timer (plan-id ?plan-id) (status ?status)
+            (action-id ?id)
+            (start-time $?st)
+          )
+  (test (timeout ?now ?st ?*MIN-EXEC-DURATION*))
   =>
   (printout t "Executing " ?action ?param-values crlf)
   (modify ?pa (state EXECUTION-SUCCEEDED))
