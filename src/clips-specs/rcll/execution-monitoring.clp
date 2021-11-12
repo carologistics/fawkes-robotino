@@ -8,15 +8,6 @@
 
 
 
-;A timeout for an action
-(deftemplate action-timer
-  (slot plan-id (type SYMBOL))
-  (slot action-id(type NUMBER))
-  (slot timeout-duration)
-  (multislot start-time)
-  (slot status)
-)
-
 (defglobal
   ?*MONITORING-SALIENCE* = 1
   ?*COMMON-TIMEOUT-DURATION* = 30

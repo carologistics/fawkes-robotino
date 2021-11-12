@@ -19,6 +19,15 @@
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
 
+;A timeout for an action
+(deftemplate action-timer
+  (slot plan-id (type SYMBOL))
+  (slot action-id(type NUMBER))
+  (slot timeout-duration)
+  (multislot start-time)
+  (slot status)
+)
+
 (defrule action-execute-exogenous-noops
   ?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state PENDING)
                    (action-name ?action&bs-dispense-for-order
