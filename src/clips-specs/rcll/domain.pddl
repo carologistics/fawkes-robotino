@@ -111,7 +111,7 @@
 		(order-delivery-begin ?ord - order)
 		(order-delivery-end ?ord - order)
 		(order-gate ?ord - order ?gate - ds-gate)
-		(order-producable ?ord - order)
+		(order-producible ?ord - order)
 		(order-deliverable ?ord - order)
 		(order-has-wp ?ord - order)
 		(wp-unused ?wp - workpiece)
