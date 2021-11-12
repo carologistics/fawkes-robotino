@@ -11,8 +11,6 @@
 	  (plan (id TESTGOAL-PLAN3) (goal-id TESTGOAL3)
 	        (type SEQUENTIAL))
 
-	)
-
 	(bind ?i 1)
 	(bind ?rnum 0)
 	;(bind ?r "/robot1/Skiller")
