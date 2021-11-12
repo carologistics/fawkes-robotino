@@ -113,6 +113,7 @@
 		(order-gate ?ord - order ?gate - ds-gate)
 		(order-producable ?ord - order)
 		(order-deliverable ?ord - order)
+		(order-has-wp ?ord - order)
 		(wp-unused ?wp - workpiece)
 		(wp-usable ?wp - workpiece)
 		(wp-at ?wp - workpiece ?m - mps ?side - mps-side)
