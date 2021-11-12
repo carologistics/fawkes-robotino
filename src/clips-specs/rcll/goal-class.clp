@@ -23,61 +23,49 @@
 ; ------------------------- ASSERT GOAL CLASSES -----------------------------------
 
 (defrule goal-class-create-deliver
+    "If there exists an order for a product of a certain configuration,
+    assert a goal class fact for it that holds the preconditions for the formulation of
+    its deliver goal. "
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
-    ; (wm-fact (key domain fact order-complexity args? ord ?order com ?comp))
-    ; (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-    ; (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
-    ; (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
-    ; (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
-    ; (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
-    ; (wm-fact (key domain fact order-gate args? ord ?order gate ?gate))
+    (wm-fact (key domain fact order-complexity args? ord ?order com ?comp))
+    (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+    (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
+    (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
+    (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
+    (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+    (wm-fact (key domain fact order-gate args? ord ?order gate ?gate))
 
-    (not (goal-class (class DELIVER))) ;(meta order ?order)))
+    (not (goal-class (class DELIVER) (meta order ?order)))
     =>
     (assert
         (goal-class (class DELIVER)
-                    (id DELIVER)
-                    ;(id (sym-cat DELIVER- ?order))
-                    ;(meta order ?order)
+                    (id (sym-cat DELIVER- ?order))
+                    (meta order ?order)
                     (type ACHIEVE)
                     (sub-type SIMPLE)
-                    (param-names team-color robot ds mps wp base-color ring1-color ring2-color ring3-color cap-color any-wp order complexity gate)
-                    ;(param-constants ?team-color ?robot nil nil nil ?base-color ?ring1-color ?ring2-color ?ring3-color ?cap-color nil ?order ?comp ?gate)
-                    (param-constants ?team-color ?robot nil nil nil nil nil nil nil nil nil nil nil nil)
-                    (param-types team-color robot ds fs workpiece base-color ring-color ring-color ring-color cap-color workpiece order order-complexity-value ds-gate)
-                    (param-quantified any-wp)
+                    (param-names     team-color  robot  ds  fs wp         base-color  ring1-color  ring2-color  ring3-color  cap-color  order  complexity             gate)
+                    (param-constants ?team-color ?robot nil nil nil       ?base-color ?ring1-color ?ring2-color ?ring3-color ?cap-color ?order ?comp                  ?gate)
+                    (param-types     team-color  robot  ds  fs  workpiece base-color  ring-color   ring-color   ring-color   cap-color  order  order-complexity-value ds-gate)
+                    (param-quantified )
                     (preconditions "
                         (and
-                            (refbox-team-color ?team-color)
-                            (self ?robot)
-                            (mps-type ?ds DS)
+                            ;mps CEs
                             (mps-team ?ds ?team-color)
-                            (or
-                                (and
-                                    (mps-type ?mps CS)
-                                    (not (mps-state ?mps BROKEN))
-                                    (mps-team ?mps ?team-color)
-                                )
-                                (and
-                                    (mps-type ?mps SS)
-                                    (not (mps-state ?mps BROKEN))
-                                    (mps-team ?mps ?team-color)
-                                )
-                            )
+                            (not (mps-state ?mps BROKEN))
+                            (mps-team ?fs ?team-color)
+                            (mps-side-free ?ds INPUT)
+
+                            ;wp CEs
+                            (wp-for-order ?wp ?order)
                             (wp-base-color ?wp ?base-color)
                             (wp-ring1-color ?wp ?ring1-color)
                             (wp-ring2-color ?wp ?ring2-color)
                             (wp-ring3-color ?wp ?ring3-color)
                             (wp-cap-color ?wp ?cap-color)
-                            (not (exists (?any-wp - workpiece) (wp-at ?any-wp ?ds INPUT)))
-                            (wp-for-order ?wp ?order)
-                            (order-complexity ?order ?complexity)
-                            (order-base-color ?order ?base-color)
-                            (order-ring1-color ?order ?ring1-color)
-                            (order-ring2-color ?order ?ring2-color)
-                            (order-ring3-color ?order ?ring3-color)
-                            (order-cap-color ?order ?cap-color)
+                            (wp-at ?wp ?fs OUTPUT)
+
+                            ;order CEs
                             (order-gate ?order ?gate)
                             (order-deliverable ?order)
                         )
@@ -88,60 +76,50 @@
 )
 
 (defrule goal-class-create-produce-c0
+    "If there exists an order for a C0 product of a certain configuration,
+    assert a goal class fact for it that holds the preconditions for the formulation of
+    its production goal. "
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
-    ; (wm-fact (key domain fact order-complexity args? ord ?order com C0))
-    ; (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-    ; (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+    (wm-fact (key domain fact order-complexity args? ord ?order com C0))
+    (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+    (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+    (wm-fact (key domain fact cs-color args? m ?cs col ?cap-color))
 
-    (not (goal-class (class PRODUCE-C0))) ;(meta order ?order) (sub-type SIMPLE)))
+    (not (goal-class (class PRODUCE-C0) (meta order ?order) (sub-type SIMPLE)))
     =>
     (assert
         (goal-class (class PRODUCE-C0)
-                    (id PRODUCE-C0)
-                    ;(id (sym-cat PRODUCE-C0- ?order))
-                    ;(meta order ?order)
+                    (id (sym-cat PRODUCE-C0- ?order))
+                    (meta order ?order)
                     (type ACHIEVE)
                     (sub-type SIMPLE)
-                    (param-names team-color robot any-wp mps wp cap-color bs side order base-color any-hold-wp any-ord-wp)
-                    ;(param-constants ?team-color ?robot nil nil nil ?cap-color nil nil ?order ?base-color nil nil)
-                    (param-constants ?team-color ?robot nil nil nil nil nil nil nil nil nil nil)
-                    (param-types team-color robot workpiece cs workpiece cap-color bs mps-side order base-color workpiece workpiece)
-                    (param-quantified any-wp any-hold-wp any-ord-wp)
+                    (param-names     team-color  robot  cs wp         cap-color  bs  side     order  base-color)
+                    (param-constants ?team-color ?robot ?cs nil       ?cap-color nil nil      ?order ?base-color)
+                    (param-types     team-color  robot  cs  workpiece cap-color  bs  mps-side order  base-color)
+                    (param-quantified)
                     (preconditions "
                         (and
-                            (refbox-team-color ?team-color)
-                            (self ?robot)
-                            (mps-type ?mps CS)
-                            (not (exists (?any-wp - workpiece) (wp-at ?any-wp ?mps INPUT)))
-                            (not (mps-state ?mps BROKEN))
-                            (mps-team ?mps ?team-color)
-                            (cs-buffered ?mps ?cap-color)
-                            (cs-can-perform ?mps MOUNT_CAP)
-                            (mps-type ?bs BS)
-                            (mps-side-free ?bs ?side);redo
+                            ;cs CEs
+                            (mps-side-free ?cs INPUT)
+                            (not (mps-state ?cs BROKEN))
+                            (mps-team ?cs ?team-color)
+                            (cs-buffered ?cs ?cap-color)
+                            (cs-can-perform ?cs MOUNT_CAP)
+                            ;bs CEs
+                            (mps-has-side ?bs ?side)
                             (mps-team ?bs ?team-color)
-                            (order-complexity ?order C0)
-                            (order-base-color ?order ?base-color)
-                            (order-cap-color ?order ?cap-color)
+                            ;order CEs
                             (order-producible ?order)
-                            (or
-                                (and
-                                    (refbox-order-quantity-requested ?order 1)
-                                    (not (refbox-order-quantity-delivered ?order 1))
-                                )
-                                (and;
-                                    (refbox-order-quantity-requested ?order 2)
-                                    (not (refbox-order-quantity-delivered ?order 2))
-                                )
-                            )
+                            (order-deliverable ?order)
+                            ;wp CEs
                             (or
                                 (and
                                     (wp-spawned-for ?wp ?robot)
                                     (not (mps-state ?bs BROKEN))
                                     (not (mps-state ?bs DOWN))
-                                    (not (exists (?any-hold-wp - workpiece) (holding ?robot ?any-hold-wp)))
-                                    (not (exists (?any-ord-wp - workpiece) (wp-for-order ?any-ord-wp ?order)))
+                                    (can-hold ?robot)
+                                    (not (order-has-wp ?order))
                                 )
                                 (and
                                     (holding ?robot ?wp)
@@ -158,29 +136,31 @@
 )
 
 (defrule goal-class-create-clear-bs
+    "Assert a goal class for CLEAR-MPS goals that holds the precondition for formulation
+    of potential BS clear goals."
     (not (goal-class (class CLEAR-MPS) (sub-type SIMPLE)))
     (wm-fact (key domain fact self args? r ?robot))
+    (wm-fact (key refbox team-color) (value ?team-color))
     =>
     (assert
         (goal-class (class CLEAR-MPS)
                     (id CLEAR-MPS)
                     (type ACHIEVE)
                     (sub-type SIMPLE)
-                    (param-names team-color robot any-wp mps wp side)
-                    (param-constants nil ?robot nil nil nil nil)
-                    (param-types team-color robot workpiece bs workpiece mps-side)
-                    (param-quantified any-wp)
+                    (param-names     team-color  robot  mps wp        side)
+                    (param-constants ?team-color ?robot nil nil       nil)
+                    (param-types     team-color  robot  bs  workpiece mps-side)
+                    (param-quantified)
                     (preconditions "
                         (and
-                            (refbox-team-color ?team-color)
-                            (self ?robot)
-                            (not (exists (?any-wp - workpiece) (holding ?robot ?any-wp)))
+                            (can-hold ?robot)
+
                             (mps-type ?mps BS)
                             (mps-team ?mps ?team-color)
                             (not (mps-state ?mps BROKEN))
                             (wp-at ?wp ?mps ?side)
                         )
-                    ");"
+                    ")
                     (effects "")
         )
     )
@@ -195,7 +175,7 @@
     (goal-class (class DELIVER) (id ?cid) (meta order ?order))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
-    (pddl-grounding (id ?grounding-id) (param-values ?team-color ?robot ?ds ?mps ?wp ?base-color ?ring1-color ?ring2-color ?ring3-color ?cap-color ?any-wp ?order ?complexity ?gate))
+    (pddl-grounding (id ?grounding-id) (param-values ?team-color ?robot ?ds ?mps ?wp ?base-color ?ring1-color ?ring2-color ?ring3-color ?cap-color ?order ?complexity ?gate))
 
     (not (goal (class DELIVER) (params $? robot ?robot $?
                                           order ?order
@@ -203,8 +183,7 @@
                                           ds ?ds
                                           ds-gate ?gate $?)))
     =>
-    (printout t "PDDL: Goal " DELIVER " formulated from PDDL for order " ?order crlf)
-    (printout t ?robot ?mps ?order ?wp ?ds ?gate ?base-color ?ring1-color ?ring2-color ?ring3-color ?cap-color crlf)
+    (printout t "Goal " DELIVER " formulated from PDDL for order " ?order crlf)
     (assert (goal (id (sym-cat DELIVER- (gensym*)))
                     (class DELIVER) (sub-type SIMPLE)
                     (priority ?*PRIORITY-DELIVER*)
@@ -226,6 +205,9 @@
 )
 
 (defrule goal-class-assert-goal-produce-c0
+    "If the precondition of a goal-class for a C0 order is fulfilled, assert the goal fact
+    and thus formulate the goal. Determine the priority of the goal through meta reasoning
+    on additional facts."
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (goal (id ?production-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
     (goal (id ?urgent) (class URGENT) (mode FORMULATED))
@@ -233,15 +215,28 @@
     (goal-class (class PRODUCE-C0) (id ?cid) (meta order ?order))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
-    (pddl-grounding (id ?grounding-id) (param-values ?team-color ?robot ?any-wp ?mps ?wp ?cap-color ?bs ?side ?order ?base-color ?any-hold-wp ?any-ord-wp))
+    (pddl-grounding (id ?grounding-id) (param-values ?team-color ?robot ?mps ?wp ?cap-color ?bs ?side ?order ?base-color))
 
     (not (goal (class PRODUCE-C0) (params $? order ?order $?)))
+
+    (wm-fact (key order meta competitive args? ord ?order) (value ?competitive))
+    (wm-fact (key config rcll competitive-order-priority) (value ?comp-prio))
     =>
-    (printout t "PDDL: Goal " PRODUCE-C0 " formulated from PDDL for order " ?order crlf)
+    (printout t "Goal " PRODUCE-C0 " formulated from PDDL for order " ?order crlf)
+    (bind ?distance (node-distance (str-cat ?bs - (if (eq ?side INPUT) then I else O))))
+    (bind ?priority-decrease 0)
+    (bind ?parent ?production-id)
+    (if (and (eq ?comp-prio "HIGH") ?competitive)
+    then
+        (bind ?parent ?urgent))
+    (if (eq ?comp-prio "LOW")
+    then
+        (bind ?priority-decrease 1)
+    )
     (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
                     (class PRODUCE-C0) (sub-type SIMPLE)
-                    (priority ?*PRIORITY-PRODUCE-C0*)
-                    (parent ?production-id)
+                    (priority (+ (- ?*PRIORITY-PRODUCE-C0* ?priority-decrease) (goal-distance-prio ?distance)))
+                    (parent ?parent)
                     (params robot ?robot
                             bs ?bs
                             bs-side ?side
@@ -256,13 +251,15 @@
 )
 
 (defrule goal-class-assert-goal-clear-bs
+    "If the precondition of a goal-class for a CLEAR-MPS type is fulfilled, assert
+    the goal fact and thus formulate the goal. "
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (goal (id ?production-id) (class URGENT) (mode FORMULATED))
 
     (goal-class (class CLEAR-MPS) (id ?cid))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
-    (pddl-grounding (id ?grounding-id) (param-values ?team-color ?robot ?any-wp ?mps ?wp ?side))
+    (pddl-grounding (id ?grounding-id) (param-values ?team-color ?robot ?mps ?wp ?side))
     =>
     (printout t "Goal " CLEAR-MPS " ("?mps") formulated from PDDL" crlf)
     (assert (goal (id (sym-cat CLEAR-MPS- (gensym*)))
@@ -334,5 +331,3 @@
     =>
     (retract ?wmf)
 )
-
-
