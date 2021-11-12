@@ -310,6 +310,8 @@
 
     (domain-fact (name rs-filled-with) (param-values ?rs1 ZERO))
     (domain-fact (name rs-filled-with) (param-values ?rs2 ZERO))
+    (domain-fact (name rs-filled-for) (param-values ?rs1 ZERO))
+    (domain-fact (name rs-filled-for) (param-values ?rs2 ZERO))
   )
 
   (assert (domain-facts-loaded))
@@ -349,6 +351,28 @@
 (defrule domain-retract-order-has-wp
   ?df <- (domain-fact (name order-has-wp) (param-values ?order))
   (not (domain-fact (name wp-for-order) (param-values ?wp ?order)))
+  =>
+  (retract ?df)
+)
+(defrule domain-assert-rs-paid-for
+  (domain-fact (name rs-filled-with) (param-values ?rs ?bases-filled))
+  (not (domain-fact (name rs-filled-with) (param-values ?rs ?other-bases&~?bases-filled)))
+  (domain-constant (type ring-num) (value ?required))
+  (not (domain-fact (name rs-paid-for) (param-values ?rs ?required)))
+  (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
+                                         subtrahend ?required
+                                         difference ZERO|ONE|TWO|THREE))
+  =>
+  (assert (domain-fact (name rs-paid-for) (param-values ?rs ?required)))
+)
+(defrule domain-retract-rs-paid-for
+  (domain-fact (name rs-filled-with) (param-values ?rs ?bases-filled))
+  (not (domain-fact (name rs-filled-with) (param-values ?rs ?other-bases&~?bases-filled)))
+  (domain-constant (type ring-num) (value ?required))
+  ?df <- (domain-fact (name rs-paid-for) (param-values ?rs ?required))
+  (not (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
+                                         subtrahend ?required
+                                         difference ZERO|ONE|TWO|THREE)))
   =>
   (retract ?df)
 )
