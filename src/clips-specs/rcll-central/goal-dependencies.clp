@@ -633,8 +633,8 @@
 	                          (params  wp ?wp
 	                                   target-mps ?other-rs
 	                                   $?)
-	                          (meta $? assigned-to ?robot $?)
 	                          (is-executable FALSE))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
