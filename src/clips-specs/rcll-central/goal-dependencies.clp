@@ -564,32 +564,39 @@
 	                          m ?rs
 	                          r ?ring-color
 	                          rn ?bases-needed))
-	(wm-fact (key domain fact rs-sub args? minuend ?bases-needed
-	                                       subtrahend ?bases-filled
-	                                       difference ?bases-missing&ZERO|ONE|TWO|THREE)) ;for future: or filled>needed
-	(or (test (eq ?bases-missing ZERO))
-	    (and (test (eq ?bases-missing ONE))
-	         (goal (id ?feed-id-1)
-	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-	               (class PAY-FOR-RINGS-WITH-BASE|
-	                      PAY-FOR-RINGS-WITH-CAP-CARRIER|
-	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
-	               (params $? ?rs $?))
-	    )
-	    (and (test (eq ?bases-missing TWO))
-	         (goal (id ?feed-id-1)
-	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-	               (class PAY-FOR-RINGS-WITH-BASE|
-	                      PAY-FOR-RINGS-WITH-CAP-CARRIER|
-	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
-	               (params $? ?rs $?))
-	         (goal (id ?feed-id-2)
-	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-	               (class PAY-FOR-RINGS-WITH-BASE|
-	                      PAY-FOR-RINGS-WITH-CAP-CARRIER|
-	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
-	               (params $? ?rs $?))
-	         (neq ?feed-id-1 ?feed-id-2)
+	(or ;filled >= needed payments
+	    (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
+	                                           subtrahend ?bases-needed
+	                                           difference ?bases-remaining&ZERO|ONE|TWO|THREE))
+	    ;or filled + depending fill goals >= needed payments
+	    (and (wm-fact (key domain fact rs-sub args? minuend ?bases-needed
+	                                                subtrahend ?bases-filled
+	                                                difference ?bases-missing&ZERO|ONE|TWO|THREE))
+	         (or (test (eq ?bases-missing ZERO))
+	             (and (test (eq ?bases-missing ONE))
+	                  (goal (id ?feed-id-1)
+	                        (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	                        (class PAY-FOR-RINGS-WITH-BASE|
+	                               PAY-FOR-RINGS-WITH-CAP-CARRIER|
+	                               PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
+	                        (params $? ?rs $?))
+	             )
+	             (and (test (eq ?bases-missing TWO))
+	                  (goal (id ?feed-id-1)
+	                        (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	                        (class PAY-FOR-RINGS-WITH-BASE|
+	                               PAY-FOR-RINGS-WITH-CAP-CARRIER|
+	                               PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
+	                        (params $? ?rs $?))
+	                  (goal (id ?feed-id-2)
+	                        (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	                        (class PAY-FOR-RINGS-WITH-BASE|
+	                               PAY-FOR-RINGS-WITH-CAP-CARRIER|
+	                               PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
+	                        (params $? ?rs $?))
+	                  (neq ?feed-id-1 ?feed-id-2)
+	             )
+	         )
 	    )
 	)
 	=>
@@ -598,14 +605,14 @@
 	            " and goal " ?instruct-goal-id crlf)
 	; create dependency-assignments to all payment goals of dependency-goal
 	; mount-ring
-	(do-for-all-facts ((?pay goal))
-	    (and (is-goal-running ?pay:mode)  ;for future: check if goal expansion changes params
+	(do-for-all-facts ((?pay goal)) ;for future: find payment goals through goal-meta
+	    (and (is-goal-running ?pay:mode)
 	         (or
 	             (eq ?pay:class PAY-FOR-RINGS-WITH-BASE)
 	             (eq ?pay:class PAY-FOR-RINGS-WITH-CAP-CARRIER)
 	             (eq ?pay:class PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF))
 	         (eq (get-param-by-arg ?pay:params target-mps) ?rs))
-	    (assert (dependency-assignment (goal-id ?goal-id)
+	    (assert (dependency-assignment (goal-id ?goal-id)  ;for future: change asserting to modify fixed dependency
 	                                   (class ?pay:class)
 	                                   (grounded-with ?pay:id)))
 	)
@@ -658,32 +665,40 @@
 	                          m ?rs
 	                          r ?ring-color
 	                          rn ?bases-needed))
-	(wm-fact (key domain fact rs-sub args? minuend ?bases-needed
-	                                       subtrahend ?bases-filled
-	                                       difference ?bases-missing&ZERO|ONE|TWO|THREE)) ;for future: or filled>needed
-	(or (test (eq ?bases-missing ZERO))
-	    (and (test (eq ?bases-missing ONE))
-	         (goal (id ?feed-id-1)
-	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-	               (class PAY-FOR-RINGS-WITH-BASE|
-	                      PAY-FOR-RINGS-WITH-CAP-CARRIER|
-	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
-	               (params $? ?rs $?))
-	    )
-	    (and (test (eq ?bases-missing TWO))
-	         (goal (id ?feed-id-1)
-	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-	               (class PAY-FOR-RINGS-WITH-BASE|
-	                      PAY-FOR-RINGS-WITH-CAP-CARRIER|
-	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
-	               (params $? ?rs $?))
-	         (goal (id ?feed-id-2)
-	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-	               (class PAY-FOR-RINGS-WITH-BASE|
-	                      PAY-FOR-RINGS-WITH-CAP-CARRIER|
-	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
-	               (params $? ?rs $?))
-	         (neq ?feed-id-1 ?feed-id-2)
+
+	(or ;filled >= needed payments
+	    (wm-fact (key domain fact rs-sub args? minuend ?bases-needed
+	                                           subtrahend ?bases-filled
+	                                           difference ?bases-missing&ZERO|ONE|TWO|THREE))
+	    ;or filled + depending fill goals >= needed payments
+	    (and (wm-fact (key domain fact rs-sub args? minuend ?bases-needed
+	                                                subtrahend ?bases-filled
+	                                                difference ?bases-missing&ZERO|ONE|TWO|THREE))
+	         (or (test (eq ?bases-missing ZERO))
+	             (and (test (eq ?bases-missing ONE))
+	                  (goal (id ?feed-id-1)
+	                        (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	                        (class PAY-FOR-RINGS-WITH-BASE|
+	                               PAY-FOR-RINGS-WITH-CAP-CARRIER|
+	                               PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
+	                        (params $? ?rs $?))
+	             )
+	             (and (test (eq ?bases-missing TWO))
+	                  (goal (id ?feed-id-1)
+	                        (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	                        (class PAY-FOR-RINGS-WITH-BASE|
+	                               PAY-FOR-RINGS-WITH-CAP-CARRIER|
+	                               PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
+	                        (params $? ?rs $?))
+	                  (goal (id ?feed-id-2)
+	                        (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	                        (class PAY-FOR-RINGS-WITH-BASE|
+	                               PAY-FOR-RINGS-WITH-CAP-CARRIER|
+	                               PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
+	                        (params $? ?rs $?))
+	                  (neq ?feed-id-1 ?feed-id-2)
+	             )
+	         )
 	    )
 	)
 	=>
@@ -692,14 +707,14 @@
 	            " and goal " ?instruct-goal-id crlf)
 	; create dependency-assignments to all payment goals of dependency-goal
 	; mount-ring
-	(do-for-all-facts ((?pay goal))
-	    (and (is-goal-running ?pay:mode) ;for future: check if goal expansion changes params
+	(do-for-all-facts ((?pay goal)) ;for future: find payment goals through goal-meta
+	    (and (is-goal-running ?pay:mode)
 	         (or
 	             (eq ?pay:class PAY-FOR-RINGS-WITH-BASE)
 	             (eq ?pay:class PAY-FOR-RINGS-WITH-CAP-CARRIER)
 	             (eq ?pay:class PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF))
 	         (eq (get-param-by-arg ?pay:params target-mps) ?rs))
-	    (assert (dependency-assignment (goal-id ?goal-id)
+	    (assert (dependency-assignment (goal-id ?goal-id) ;for future: change asserting to modify fixed dependency
 	                                   (class ?pay:class)
 	                                   (grounded-with ?pay:id)))
 	)
