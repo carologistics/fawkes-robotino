@@ -40,8 +40,18 @@
 	)
 )
 
-(deffunction goal-meta-assert (?goal ?robot)
-"Creates the goal-meta fact and assign the goal to the robot"
+(deffunction goal-meta-assert (?goal ?robot ?order-id ?ring-nr)
+"Creates the goal-meta fact, assigns the goal to the robot and to its order"
+	(assert (goal-meta (goal-id (fact-slot-value ?goal id))
+	                   (assigned-to ?robot)
+	                   (order-id ?order-id)))
+	(printout t "Created new goal-meta fact to assign " ?robot
+	            " to goal " (fact-slot-value ?goal id)
+	            " for order " ?order-id crlf)
+)
+
+(deffunction goal-meta-assert-restricted (?goal ?robot)
+"Creates the goal-meta fact and restricts the goal to the robot"
 	(if (neq ?robot nil) then
 		(assert (goal-meta (goal-id (fact-slot-value ?goal id))
 		                   (restricted-to ?robot)))
@@ -944,14 +954,15 @@ The workpiece remains in the output of the used ring station after
 )
 
 (deffunction goal-production-assert-buffer-cap
-	(?mps ?cap-color)
+	(?mps ?cap-color ?order-id)
 
 	(bind ?goal (assert (goal (class BUFFER-CAP)
 	      (id (sym-cat BUFFER-CAP- (gensym*))) (sub-type SIMPLE)
-	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+	      (verbosity NOISY) (is-executable FALSE)
 	      (params target-mps ?mps
 	              cap-color ?cap-color)
 	)))
+	(goal-meta-assert ?goal nil ?order-id nil)
 	(return ?goal)
 )
 
@@ -962,7 +973,7 @@ The workpiece remains in the output of the used ring station after
 	      (verbosity NOISY) (is-executable FALSE)
 	      (params target-mps ?mps)
 	)))
-	(goal-meta-assert ?goal ?robot)
+	(goal-meta-assert-restricted ?goal ?robot)
 	(return ?goal)
 )
 
@@ -973,60 +984,64 @@ The workpiece remains in the output of the used ring station after
 	      (verbosity NOISY) (is-executable FALSE)
 	      (params target-mps ?mps)
 	)))
-	(goal-meta-assert ?goal ?robot)
+	(goal-meta-assert-restricted ?goal ?robot)
 	(return ?goal)
 )
 
 (deffunction goal-production-assert-mount-cap
-	(?wp ?mps ?wp-loc ?wp-side)
+	(?wp ?mps ?wp-loc ?wp-side ?order-id)
 
 	(bind ?goal (assert (goal (class MOUNT-CAP)
 	      (id (sym-cat MOUNT-CAP- (gensym*))) (sub-type SIMPLE)
- 	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+ 	      (verbosity NOISY) (is-executable FALSE)
 	      (params wp ?wp
 	              target-mps ?mps
 	              target-side INPUT
 	              wp-loc ?wp-loc
 	              wp-side ?wp-side)
 	)))
+	(goal-meta-assert ?goal nil ?order-id nil)
 	(return ?goal)
 )
 
 (deffunction goal-production-assert-mount-ring
-	(?wp ?rs ?wp-loc ?wp-side ?ring-color)
+	(?wp ?rs ?wp-loc ?wp-side ?ring-color ?order-id ?ring-nr)
 	(bind ?goal (assert (goal (class MOUNT-RING)
 	      (id (sym-cat MOUNT-RING- (gensym*))) (sub-type SIMPLE)
-	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+	      (verbosity NOISY) (is-executable FALSE)
 	      (params  wp ?wp
 	               target-mps ?rs
 	               target-side INPUT
 	               wp-loc ?wp-loc
 	               wp-side ?wp-side
-				   ring-color ?ring-color
+	               ring-color ?ring-color
 	               )
 	)))
+	(goal-meta-assert ?goal nil ?order-id ?ring-nr)
 	(return ?goal)
 )
 
 (deffunction goal-production-assert-discard
-	(?wp ?cs ?side)
+	(?wp ?cs ?side ?order-id)
 
 	(bind ?goal (assert (goal (class DISCARD)
 	      (id (sym-cat DISCARD- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE)
-	      (params wp ?wp wp-loc ?cs wp-side ?side) (meta-template goal-meta)
+	      (params wp ?wp wp-loc ?cs wp-side ?side)
 	)))
+	(goal-meta-assert ?goal nil ?order-id nil)
 	(return ?goal)
 )
 
 (deffunction goal-production-assert-deliver-rc21
-	(?wp)
+	(?wp ?order-id)
 
 	(bind ?goal (assert (goal (class DELIVER-RC21)
 	      (id (sym-cat DELIVER-RC21- (gensym*))) (sub-type SIMPLE)
-	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+	      (verbosity NOISY) (is-executable FALSE)
 	      (params wp ?wp)
 	)))
+	(goal-meta-assert ?goal nil ?order-id nil)
 	(return ?goal)
 )
 
@@ -1070,10 +1085,10 @@ The workpiece remains in the output of the used ring station after
 )
 
 (deffunction goal-production-assert-pay-for-rings-with-base
-	(?wp ?wp-loc ?wp-side ?target-mps ?target-side)
+	(?wp ?wp-loc ?wp-side ?target-mps ?target-side ?order-id)
 	(bind ?goal (assert (goal (class PAY-FOR-RINGS-WITH-BASE)
 	      (id (sym-cat PAY-FOR-RINGS-WITH-BASE- (gensym*))) (sub-type SIMPLE)
-	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+	      (verbosity NOISY) (is-executable FALSE)
 	      (params  wp ?wp
 	               wp-loc ?wp-loc
 	               wp-side ?wp-side
@@ -1081,15 +1096,16 @@ The workpiece remains in the output of the used ring station after
 	               target-side ?target-side
 	               )
 	)))
+	(goal-meta-assert ?goal nil ?order-id nil)
 	(return ?goal)
 )
 
 (deffunction goal-production-assert-pay-for-rings-with-cap-carrier
-	(?wp ?wp-loc ?wp-side ?target-mps ?target-side)
+	(?wp ?wp-loc ?wp-side ?target-mps ?target-side ?order-id)
 
 	(bind ?goal (assert (goal (class PAY-FOR-RINGS-WITH-CAP-CARRIER)
 	      (id (sym-cat PAY-FOR-RINGS-WITH-CAP-CARRIER- (gensym*))) (sub-type SIMPLE)
-	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+	      (verbosity NOISY) (is-executable FALSE);for future, TODO: remove template goal-meta whereever goal-meta-assert is used
 	      (params  wp ?wp
 	               wp-loc ?wp-loc
 	               wp-side ?wp-side
@@ -1097,24 +1113,26 @@ The workpiece remains in the output of the used ring station after
 	               target-side ?target-side
 	               )
 	)))
+	(goal-meta-assert ?goal nil ?order-id nil)
 )
 
 (deffunction goal-production-assert-pay-for-rings-with-cap-carrier-from-shelf
-	(?wp-loc ?target-mps ?target-side)
+	(?wp-loc ?target-mps ?target-side ?order-id)
 
 	(bind ?goal (assert (goal (class PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
 	      (id (sym-cat PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF- (gensym*))) (sub-type SIMPLE)
-	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+	      (verbosity NOISY) (is-executable FALSE)
 	      (params  wp-loc ?wp-loc
 	               target-mps ?target-mps
 	               target-side ?target-side
 	               )
 	)))
+	(goal-meta-assert ?goal nil ?order-id nil)
 	(return ?goal)
 )
 
 (deffunction goal-production-assert-instruct-cs-buffer-cap
-	(?mps ?cap-color)
+	(?mps ?cap-color ?order-id)
 
 	(bind ?goal (assert (goal (class INSTRUCT-CS-BUFFER-CAP)
 	      (id (sym-cat INSTRUCT-CS-BUFFER-CAP- (gensym*))) (sub-type SIMPLE)
@@ -1122,12 +1140,12 @@ The workpiece remains in the output of the used ring station after
 	      (params target-mps ?mps
 	              cap-color ?cap-color)
 	)))
-	(goal-meta-assert ?goal central)
+	(goal-meta-assert ?goal central ?order-id nil)
 	(return ?goal)
 )
 
 (deffunction goal-production-assert-instruct-bs-dispense-base
-	(?wp ?base-color ?side)
+	(?wp ?base-color ?side ?order-id)
 
 	(bind ?goal (assert (goal (class INSTRUCT-BS-DISPENSE-BASE)
 	  (id (sym-cat INSTRUCT-BS-DISPENSE-BASE- (gensym*))) (sub-type SIMPLE)
@@ -1137,24 +1155,24 @@ The workpiece remains in the output of the used ring station after
 	              target-side ?side
 	              base-color ?base-color)
 	)))
-	(goal-meta-assert ?goal central)
+	(goal-meta-assert ?goal central ?order-id nil)
 	(return ?goal)
 )
 
 (deffunction goal-production-assert-instruct-cs-mount-cap
-	(?mps ?cap-color)
+	(?mps ?cap-color ?order-id)
 	(bind ?goal (assert (goal (class INSTRUCT-CS-MOUNT-CAP)
 	      (id (sym-cat INSTRUCT-CS-MOUNT-CAP- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE)
 	      (params target-mps ?mps
 	              cap-color ?cap-color)
 	)))
-	(goal-meta-assert ?goal central)
+	(goal-meta-assert ?goal central ?order-id nil)
 	(return ?goal)
 )
 
 (deffunction goal-production-assert-instruct-rs-mount-ring
-	(?mps ?col-ring)
+	(?mps ?col-ring ?order-id ?ring-nr)
 	(bind ?goal (assert (goal (class INSTRUCT-RS-MOUNT-RING)
 	      (id (sym-cat INSTRUCT-RS-MOUNT-RING- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE)
@@ -1162,12 +1180,12 @@ The workpiece remains in the output of the used ring station after
 	                    ring-color ?col-ring
 	             )
 	)))
-	(goal-meta-assert ?goal central)
+	(goal-meta-assert ?goal central ?order-id ?ring-nr)
 	(return ?goal)
 )
 
 (deffunction goal-production-assert-payment-goals
-	(?rs ?cols-ring ?cs)
+	(?rs ?cols-ring ?cs ?order-id)
 	(bind ?goals (create$))
 
 	(bind ?found-payment FALSE)
@@ -1197,8 +1215,8 @@ The workpiece remains in the output of the used ring station after
 			(bind ?goals
 				(insert$ ?goals (+ (length$ ?goals) 1)
 					(goal-tree-assert-central-run-parallel PAY-FOR-RING-GOAL
-						(goal-production-assert-pay-for-rings-with-base ?wp-base-pay C-BS INPUT (nth$ ?index ?rs) INPUT)
-						(goal-production-assert-instruct-bs-dispense-base ?wp-base-pay BASE_RED INPUT)
+						(goal-production-assert-pay-for-rings-with-base ?wp-base-pay C-BS INPUT (nth$ ?index ?rs) INPUT ?order-id)
+						(goal-production-assert-instruct-bs-dispense-base ?wp-base-pay BASE_RED INPUT ?order-id)
 					)
 				)
 			)
@@ -1206,7 +1224,7 @@ The workpiece remains in the output of the used ring station after
 		(bind ?index (+ ?index 1))
 	)
 	(if (eq ?found-payment TRUE) then
-		(bind ?goals (insert$ ?goals 1 (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN ?cs UNKNOWN ?first-rs INPUT)))
+		(bind ?goals (insert$ ?goals 1 (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN ?cs UNKNOWN ?first-rs INPUT ?order-id)))
 	)
 
 	(return ?goals)
@@ -1244,9 +1262,9 @@ The workpiece remains in the output of the used ring station after
     (goal-tree-assert-central-run-parallel PRODUCE-ORDER
 		(goal-tree-assert-central-run-parallel PREPARE-CS
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
-				(goal-production-assert-buffer-cap ?cs ?cap-col)
-				(goal-production-assert-instruct-cs-buffer-cap ?cs ?cap-col)
-				(goal-production-assert-discard UNKNOWN ?cs OUTPUT)
+				(goal-production-assert-buffer-cap ?cs ?cap-col ?order-id)
+				(goal-production-assert-instruct-cs-buffer-cap ?cs ?cap-col ?order-id)
+				(goal-production-assert-discard UNKNOWN ?cs OUTPUT ?order-id)
 			)
 		)
 		(goal-tree-assert-central-run-parallel MOUNT-GOALS
@@ -1255,17 +1273,17 @@ The workpiece remains in the output of the used ring station after
 			;(goal-tree-assert-central-run-one INTERACT-BS
 			(goal-tree-assert-central-run-parallel INTERACT-BS
 				(goal-tree-assert-central-run-parallel OUTPUT-BS
-					(goal-production-assert-mount-cap ?wp-for-order ?cs C-BS OUTPUT)
-					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?base-col OUTPUT)
+					(goal-production-assert-mount-cap ?wp-for-order ?cs C-BS OUTPUT ?order-id)
+					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?base-col OUTPUT ?order-id)
 				)
 				;(goal-tree-assert-central-run-parallel INPUT-BS
-				;	(goal-production-assert-mount-cap ?wp-for-order ?cs C-BS INPUT)
-				;	(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?base-col INPUT)
+				;	(goal-production-assert-mount-cap ?wp-for-order ?cs C-BS INPUT ?order-id)
+				;	(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?base-col INPUT ?order-id)
 				;)
 			)
-			(goal-production-assert-instruct-cs-mount-cap ?cs ?cap-col)
+			(goal-production-assert-instruct-cs-mount-cap ?cs ?cap-col ?order-id)
 		)
-		(goal-production-assert-deliver ?wp-for-order)
+		(goal-production-assert-deliver ?wp-for-order ?order-id)
 	)
   )
   (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (parent ?root-id))
@@ -1276,12 +1294,12 @@ The workpiece remains in the output of the used ring station after
 
   (bind ?goal
     (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-		(goal-production-assert-deliver ?wp-for-order)
+		(goal-production-assert-deliver ?wp-for-order ?order-id)
 		(goal-tree-assert-central-run-parallel PREPARE-CS
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
-				(goal-production-assert-buffer-cap ?cs ?col-cap)
-				(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap)
-				;(goal-production-assert-discard UNKNOWN ?cs OUTPUT)
+				(goal-production-assert-buffer-cap ?cs ?col-cap ?order-id)
+				(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap ?order-id)
+				;(goal-production-assert-discard UNKNOWN ?cs OUTPUT ?order-id)
 			)
 		)
 		(goal-tree-assert-central-run-parallel MOUNT-GOALS
@@ -1290,16 +1308,16 @@ The workpiece remains in the output of the used ring station after
 			;(goal-tree-assert-central-run-one INTERACT-BS
 			(goal-tree-assert-central-run-parallel INTERACT-BS
 				(goal-tree-assert-central-run-parallel OUTPUT-BS
-					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs OUTPUT)
-					(goal-production-assert-mount-ring ?wp-for-order ?rs C-BS OUTPUT ?col-ring1)
-					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT)
+					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs OUTPUT ?order-id)
+					(goal-production-assert-mount-ring ?wp-for-order ?rs C-BS OUTPUT ?col-ring1 ?order-id ONE)
+					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id)
 				)
 			)
-			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap)
-			(goal-production-assert-instruct-rs-mount-ring ?rs ?col-ring1)
+			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
+			(goal-production-assert-instruct-rs-mount-ring ?rs ?col-ring1 ?order-id ONE)
 		)
 		(goal-tree-assert-central-run-parallel PAYMENT-GOALS
-			(goal-production-assert-payment-goals (create$ ?rs) (create$ ?col-ring1) ?cs)
+			(goal-production-assert-payment-goals (create$ ?rs) (create$ ?col-ring1) ?cs ?order-id)
 		)
 	)
   )
@@ -1311,12 +1329,12 @@ The workpiece remains in the output of the used ring station after
 
   (bind ?goal
     (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-		(goal-production-assert-deliver ?wp-for-order)
+		(goal-production-assert-deliver ?wp-for-order ?order-id)
 		(goal-tree-assert-central-run-parallel PREPARE-CS
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
-				(goal-production-assert-buffer-cap ?cs ?col-cap)
-				(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap)
-				;(goal-production-assert-discard UNKNOWN ?cs OUTPUT)
+				(goal-production-assert-buffer-cap ?cs ?col-cap ?order-id)
+				(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap ?order-id)
+				;(goal-production-assert-discard UNKNOWN ?cs OUTPUT ?order-id)
 			)
 		)
 		(goal-tree-assert-central-run-parallel MOUNT-GOALS
@@ -1325,18 +1343,18 @@ The workpiece remains in the output of the used ring station after
 			;(goal-tree-assert-central-run-one INTERACT-BS
 			(goal-tree-assert-central-run-parallel INTERACT-BS
 				(goal-tree-assert-central-run-parallel OUTPUT-BS
-					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs2 OUTPUT)
-					(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT ?col-ring2)
-					(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS OUTPUT ?col-ring1)
-					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT)
+					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs2 OUTPUT ?order-id)
+					(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT ?col-ring2 ?order-id TWO)
+					(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS OUTPUT ?col-ring1 ?order-id ONE)
+					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id)
 				)
 			)
-			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap)
-			(goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1)
-			(goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2)
+			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
+			(goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
+			(goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2 ?order-id TWO)
 		)
 		(goal-tree-assert-central-run-parallel PAYMENT-GOALS
-			(goal-production-assert-payment-goals (create$ ?rs1 ?rs2) (create$ ?col-ring1 ?col-ring2) ?cs)
+			(goal-production-assert-payment-goals (create$ ?rs1 ?rs2) (create$ ?col-ring1 ?col-ring2) ?cs ?order-id)
 		)
 	)
   )
@@ -1348,12 +1366,12 @@ The workpiece remains in the output of the used ring station after
 
   (bind ?goal
     (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-		(goal-production-assert-deliver ?wp-for-order)
+		(goal-production-assert-deliver ?wp-for-order ?order-id)
 		(goal-tree-assert-central-run-parallel PREPARE-CS
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
-				(goal-production-assert-buffer-cap ?cs ?col-cap)
-				(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap)
-				;(goal-production-assert-discard UNKNOWN ?cs OUTPUT)
+				(goal-production-assert-buffer-cap ?cs ?col-cap ?order-id)
+				(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap ?order-id)
+				;(goal-production-assert-discard UNKNOWN ?cs OUTPUT ?order-id)
 			)
 		)
 		(goal-tree-assert-central-run-parallel MOUNT-GOALS
@@ -1362,20 +1380,20 @@ The workpiece remains in the output of the used ring station after
 			;(goal-tree-assert-central-run-one INTERACT-BS
 			(goal-tree-assert-central-run-parallel INTERACT-BS
 				(goal-tree-assert-central-run-parallel OUTPUT-BS
-					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs3 OUTPUT)
-					(goal-production-assert-mount-ring ?wp-for-order ?rs3 ?rs2 OUTPUT ?col-ring3)
-					(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT ?col-ring2)
-					(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS OUTPUT ?col-ring1)
-					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT)
+					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs3 OUTPUT ?order-id)
+					(goal-production-assert-mount-ring ?wp-for-order ?rs3 ?rs2 OUTPUT ?col-ring3 ?order-id THREE)
+					(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT ?col-ring2 ?order-id TWO)
+					(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS OUTPUT ?col-ring1 ?order-id ONE)
+					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id)
 				)
 			)
-			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap)
-			(goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1)
-			(goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2)
-			(goal-production-assert-instruct-rs-mount-ring ?rs3 ?col-ring3)
+			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
+			(goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
+			(goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2 ?order-id TWO)
+			(goal-production-assert-instruct-rs-mount-ring ?rs3 ?col-ring3 ?order-id THREE)
 		)
 		(goal-tree-assert-central-run-parallel PAYMENT-GOALS
-			(goal-production-assert-payment-goals (create$ ?rs1 ?rs2 ?rs3) (create$ ?col-ring1 ?col-ring2 ?col-ring3) ?cs)
+			(goal-production-assert-payment-goals (create$ ?rs1 ?rs2 ?rs3) (create$ ?col-ring1 ?col-ring2 ?col-ring3) ?cs ?order-id)
 		)
 	)
   )
