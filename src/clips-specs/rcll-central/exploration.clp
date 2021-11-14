@@ -289,6 +289,9 @@
 	?g <- (goal (id ?id) (class EXPLORE-ZONE) (params z ?zn) (mode FORMULATED)
 	      (is-executable FALSE))
 	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
+	(not (and (goal (id ?other-id) (class EXPLORE-ZONE) (params z ?zn) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED))
+	          (goal-meta (goal-id ?other-id) (assigned-to ?other-robot&:(neq ?other-robot ?robot))))
+	)
 	=>
 	(modify ?g (is-executable TRUE))
 )
