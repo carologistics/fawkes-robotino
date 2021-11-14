@@ -43,8 +43,6 @@
 	(if (neq ?robot nil) then
 		(assert (goal-meta (goal-id (fact-slot-value ?goal id))
 		                   (assigned-to ?robot)))
-		(printout t "Created new goal-meta fact to assign " ?robot
-		            " to goal " (fact-slot-value ?goal id) crlf)
 	)
 )
 
