@@ -1677,6 +1677,7 @@ The workpiece remains in the output of the used ring station after
 	        (id (sym-cat EXPLORATION-CHALLENGE-MOVE- (gensym*)))
 	        (sub-type SIMPLE)
 	        (priority 1.0)
+	        (meta-template goal-meta)
 	        (verbosity NOISY) (is-executable FALSE)
 	        (params target (translate-location-map-to-grid ?location) location ?location)
 	        )))

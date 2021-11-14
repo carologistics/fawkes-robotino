@@ -239,7 +239,7 @@
 " If there is a zone, where we suspect a machine, interrupt the EXPLORATION-PLAN and start exploring the zone
 "
 	(wm-fact (key central agent robot args? r ?r))
-  (goal (id ?parent) (class EXPLORATION-ROOT))
+  (goal (id ?parent) (class EXPLORATION-CHALLENGE-ROOT))
   (Position3DInterface (id ?pos-id&:(eq ?pos-id (remote-if-id ?r "Pose"))) (translation $?trans))
   ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn) (value ?ts&:(<= ?ts ?*EXP-SEARCH-LIMIT*)))
   (wm-fact (key domain fact zone-content args? z ?zn m UNKNOWN))
@@ -281,7 +281,7 @@
   (modify ?ze (value ?new-ts))
   (printout t "Goal EXPLORE-ZONE  formulated in zone: " ?zn " with tag: " ?tv crlf)
   (assert (goal (id (sym-cat EXPLORE-ZONE- (gensym*))) (class EXPLORE-ZONE) (sub-type SIMPLE)
-	              (params z ?zn) (parent ?parent) (priority 100.) (mode FORMULATED)))
+	              (params z ?zn) (meta-template goal-meta) (parent ?parent) (priority 100.) (mode FORMULATED)))
 )
 
 (defrule exp-explore-zone-executable
