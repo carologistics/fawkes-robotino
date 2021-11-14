@@ -752,12 +752,12 @@ The workpiece remains in the output of the used ring station after
 
 
 	(not (wm-fact (key domain fact wp-at args? wp ?wp-loc m ?target-mps side INPUT)))
-	(wm-fact (key domain fact mps-type args? m ?other-rs&~?target-mps t RS))
-	(wm-fact (key domain fact mps-team args? m ?other-rs col ?team-color))
 	; There is at least one other rs side, except for the target input, that
 	; is free (because occupying all 4 sides at once can cause deadlocks)
 	(or (wm-fact (key domain fact mps-side-free args? m ?target-mps side OUTPUT))
-	 (wm-fact (key domain fact mps-side-free args? m ?other-rs side ?any-side)))
+	    (and (wm-fact (key domain fact mps-type args? m ?other-rs&~?target-mps t RS))
+	         (wm-fact (key domain fact mps-team args? m ?other-rs col ?team-color))
+	         (wm-fact (key domain fact mps-side-free args? m ?other-rs side ?any-side))))
 
 	; MPS-Source CEs
 	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
