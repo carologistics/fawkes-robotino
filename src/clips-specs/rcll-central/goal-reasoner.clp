@@ -123,7 +123,7 @@
         (bind ?id (sym-cat MAINTAIN- ?class - (gensym*)))
         (bind ?goal (assert (goal (id ?id) (class ?class) (type MAINTAIN)
                             (sub-type RUN-ENDLESS) (params frequency ?frequency)
-                            (meta last-formulated (now)))))
+                            (meta last-formulated (now)) (meta-template goal-meta))))
         (foreach ?f ?fact-addresses
                 (goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
         (return ?goal)
@@ -312,7 +312,7 @@
 	(declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
 	?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome)
 	            (verbosity ?v))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 =>
 	(set-robot-to-waiting ?robot)
 	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" crlf)

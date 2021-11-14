@@ -120,7 +120,8 @@
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(time $?now)
 	?g <- (goal (id ?maintain-id) (class BEACON-MAINTAIN) (mode SELECTED))
-	(wm-fact (key central agent robot args? r robot1))
+	(not (goal (parent ?maintain-id)))
+	(wm-fact (key central agent robot args? r ?r))
 	=>
 	(bind ?goal (assert (goal (id (sym-cat SEND-BEACON- (gensym*))) (sub-type SIMPLE)
 	              (class SEND-BEACON) (parent ?maintain-id) (verbosity QUIET)
