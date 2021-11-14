@@ -310,7 +310,7 @@
   (not (and
 	       (wm-fact (key exploration fact line-vis args? zone ?zn2) (value ?vh-tmp))
 	       (wm-fact (key exploration fact tag-vis args? zone ?zn2) (value ?tv-tmp))
-         (wm-fact (key exploration fact time-searched args? zone ?zn2) (value ?ts&:(<= ?ts ?*EXP-SEARCH-LIMIT*)))
+         (wm-fact (key exploration fact time-searched args? zone ?zn2) (value ?ts&:(< ?ts ?*EXP-SEARCH-LIMIT*)))
 	       (wm-fact (key domain fact zone-content args? z ?zn2 m UNKNOWN))
 	       (test (or (> ?vh-tmp 0) (> ?tv-tmp 0)))
 	     )
