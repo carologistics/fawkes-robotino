@@ -30,6 +30,7 @@ depends_skills     = { }
 depends_interfaces = {
 --   {v = "pose", type="Position3DInterface", id="Pose"},
    {v = "navigator", type="NavigatorInterface", id="Navigator"},
+   {v = "laserline_switch", type="SwitchInterface", id="laser-lines"},
 }
 
 documentation      = [==[Move to a known location via place or x, y, ori.
@@ -127,6 +128,9 @@ function INIT:init()
     -- check for waiting position
     if string.match(self.fsm.vars.place, "WAIT") then 
        self.fsm.vars.waiting_pos = true
+    end
+    if string.match(self.fsm.vars.place, "G-") then
+       laserline_switch:msgq_enqueue(laserline_switch.EnableSwitchMessage:new())
     end
     if string.match(self.fsm.vars.place, "^[MC][-]Z[1-7][1-8]$") then
       -- place argument is a zone, e.g. M-Z21
