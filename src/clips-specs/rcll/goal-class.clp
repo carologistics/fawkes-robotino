@@ -504,6 +504,58 @@
     ))
 )
 
+(defrule goal-class-assert-goal-mount-next-ring
+    (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
+    (goal (id ?production-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
+
+    (goal-class (class MOUNT-NEXT-RING) (id ?cid) (meta order ?order ring ?ring))
+    (pddl-formula (part-of ?cid) (id ?formula-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
+    (pddl-grounding (id ?grounding-id) (param-values ?order ?robot ?wp ?base-color ?ring1-color ?ring2-color ?ring3-color ?other-color ?rs ?prev-rs ?bases-needed))
+
+    (wm-fact (key domain fact rs-filled-with args? m ?rs n ?bases-filled))
+    (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
+                                            subtrahend ?bases-needed
+                                            difference ?bases-remain&ZERO|ONE|TWO|THREE))
+    (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
+
+
+    (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
+    (not (wm-fact (key strategy keep-mps-side-free args? m ?mps-rs side INPUT cause ~?wp)))
+    (not (goal (class MOUNT-NEXT-RING) (parent ?maintain-id) (params robot ?robot $?
+                                                                     wp ?wp $?
+                                                                     order ?order)))
+    =>
+    (bind ?curr-ring-color ?ring2-color)
+    (bind ?ring-pos 2)
+    (if (eq ?ring ring3) then
+        (bind ?curr-ring-color ?ring3-color)
+        (bind ?ring-pos 3)
+    )
+
+    (printout t "Goal " MOUNT-NEXT-RING " formulated from PDDL for order " ?order " (Ring " ?ring-pos ") " crlf)
+    (assert (goal (id (sym-cat MOUNT-NEXT-RING- (gensym*)))
+                    (class MOUNT-NEXT-RING) (priority (+ ?ring-pos ?*PRIORITY-MOUNT-NEXT-RING*))
+                    (parent ?production-id) (sub-type SIMPLE)
+                    (params robot ?robot
+                            prev-rs ?prev-rs
+                            prev-rs-side OUTPUT
+                            wp ?wp
+                            rs ?rs
+                            ring1-color ?ring1-color
+                            ring2-color ?ring2-color
+                            ring3-color ?ring3-color
+                            curr-ring-color ?curr-ring-color
+                            ring-pos (int-to-sym ?ring-pos)
+                            rs-before ?bases-filled
+                            rs-after ?bases-remain
+                            rs-req ?bases-needed
+                            order ?order
+                    )
+                    (required-resources (sym-cat ?rs -INPUT) (sym-cat ?prev-rs -OUTPUT) ?wp)
+    ))
+)
+
 (defrule goal-class-assert-goal-deliver
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (goal (id ?production-id) (class DELIVER-PRODUCTS) (mode FORMULATED))

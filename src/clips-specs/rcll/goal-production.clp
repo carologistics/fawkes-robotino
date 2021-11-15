@@ -1016,96 +1016,96 @@
 ; )
 
 
-(defrule goal-production-create-mount-next-ring
-" Mount the next ring on a CX product:
-   - Take the started workpiece from the ring station output.
-   - Bring it to the ring station that can mount the next ring.
-  The workpiece remains in the output of the used ring station after
-  successfully finishing this goal.
-"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (class INTERMEDEATE-STEPS) (id ?maintain-id) (mode FORMULATED))
-  (wm-fact (key refbox game-time) (values $?game-time))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  ;Robot CEs
-  (wm-fact (key domain fact self args?         r ?robot))
+; (defrule goal-production-create-mount-next-ring
+; " Mount the next ring on a CX product:
+;    - Take the started workpiece from the ring station output.
+;    - Bring it to the ring station that can mount the next ring.
+;   The workpiece remains in the output of the used ring station after
+;   successfully finishing this goal.
+; "
+;   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;   (goal (class INTERMEDEATE-STEPS) (id ?maintain-id) (mode FORMULATED))
+;   (wm-fact (key refbox game-time) (values $?game-time))
+;   (wm-fact (key refbox team-color) (value ?team-color))
+;   ;Robot CEs
+;   (wm-fact (key domain fact self args?         r ?robot))
 
-  ;MPS-RS CEs
-  (wm-fact (key domain fact mps-type args?       m ?mps-rs t RS))
-  (wm-fact (key domain fact mps-state args?      m ?mps-rs s ~BROKEN))
-  (wm-fact (key domain fact mps-team args?       m ?mps-rs col ?team-color))
-  (wm-fact (key domain fact rs-filled-with args? m ?mps-rs n ?bases-filled))
-  (wm-fact (key domain fact rs-ring-spec
-            args? m ?mps-rs r ?next-ring-color&~RING_NONE rn ?bases-needed))
-  (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
-                                         subtrahend ?bases-needed
-                                         difference ?bases-remain&ZERO|ONE|TWO|THREE))
-  (not (wm-fact (key domain fact rs-prepared-color args?  m ?mps-rs col ?some-col)))
+;   ;MPS-RS CEs
+;   (wm-fact (key domain fact mps-type args?       m ?mps-rs t RS))
+;   (wm-fact (key domain fact mps-state args?      m ?mps-rs s ~BROKEN))
+;   (wm-fact (key domain fact mps-team args?       m ?mps-rs col ?team-color))
+;   (wm-fact (key domain fact rs-filled-with args? m ?mps-rs n ?bases-filled))
+;   (wm-fact (key domain fact rs-ring-spec
+;             args? m ?mps-rs r ?next-ring-color&~RING_NONE rn ?bases-needed))
+;   (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
+;                                          subtrahend ?bases-needed
+;                                          difference ?bases-remain&ZERO|ONE|TWO|THREE))
+;   (not (wm-fact (key domain fact rs-prepared-color args?  m ?mps-rs col ?some-col)))
 
-  ;Order CEs
-  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C2|C3))
-  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?order-ring1-color))
-  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?order-ring2-color))
-  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?order-ring3-color))
-  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
-  (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color) (value ?qd&:(> ?qr ?qd)))
-  ;WP CEs
-  (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))
-  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
-  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?wp-ring1-color))
-  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?wp-ring2-color))
-  (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?wp-ring3-color))
-  (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+;   ;Order CEs
+;   (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C2|C3))
+;   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+;   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?order-ring1-color))
+;   (wm-fact (key domain fact order-ring2-color args? ord ?order col ?order-ring2-color))
+;   (wm-fact (key domain fact order-ring3-color args? ord ?order col ?order-ring3-color))
+;   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+;   (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color) (value ?qd&:(> ?qr ?qd)))
+;   ;WP CEs
+;   (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))
+;   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+;   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?wp-ring1-color))
+;   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?wp-ring2-color))
+;   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?wp-ring3-color))
+;   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
 
-  ;The workpiece misses a ring
-  (test (or
-            (and (eq ?wp-ring1-color ?order-ring1-color)
-                 (eq ?wp-ring2-color ?order-ring2-color)
-                 (neq ?wp-ring3-color ?order-ring3-color)
-                 (eq ?next-ring-color ?order-ring3-color))
-            (and (eq ?wp-ring1-color ?order-ring1-color)
-                 (neq ?wp-ring2-color ?order-ring2-color)
-                 (eq ?next-ring-color ?order-ring2-color))))
-  (or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-           (wm-fact (key domain fact wp-at args? wp ?wp m ?prev-rs side OUTPUT)))
-      (and (wm-fact (key domain fact holding args? r ?robot wp ?wp))
-           (wm-fact (key domain fact mps-type args? m ?prev-rs t RS))))
-  (not (wm-fact (key domain fact wp-at args? wp ?wp-rs&:(neq ?wp-rs ?wp) m ?mps-rs side INPUT)))
-  (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
-  ; Strategy CEs
-  (not (wm-fact (key strategy keep-mps-side-free
-                 args? m ?mps-rs side INPUT cause ~?wp)))
-  (not (goal (class MOUNT-NEXT-RING)
-             (parent ?maintain-id)
-             (params robot ?robot $?
-                     wp ?wp $?
-                     order ?order)))
-  =>
-  (bind ?ring-pos (member$ RING_NONE (create$ ?wp-ring1-color ?wp-ring2-color ?wp-ring3-color)))
-  (bind ?curr-ring-color (nth$ ?ring-pos (create$ ?order-ring1-color ?order-ring2-color ?order-ring3-color)))
-  (printout t "Goal " MOUNT-NEXT-RING " formulated (Ring " ?ring-pos")" crlf)
-  (assert (goal (id (sym-cat MOUNT-NEXT-RING- (gensym*)))
-                (class MOUNT-NEXT-RING) (priority (+ ?ring-pos ?*PRIORITY-MOUNT-NEXT-RING*))
-                (parent ?maintain-id) (sub-type SIMPLE)
-                (params robot ?robot
-                        prev-rs ?prev-rs
-                        prev-rs-side OUTPUT
-                        wp ?wp
-                        rs ?mps-rs
-                        ring1-color ?order-ring1-color
-                        ring2-color ?order-ring2-color
-                        ring3-color ?order-ring3-color
-                        curr-ring-color ?curr-ring-color
-                        ring-pos (int-to-sym ?ring-pos)
-                        rs-before ?bases-filled
-                        rs-after ?bases-remain
-                        rs-req ?bases-needed
-                        order ?order
-                )
-                (required-resources (sym-cat ?mps-rs -INPUT) (sym-cat ?prev-rs -OUTPUT) ?wp)
-  ))
-)
+;   ;The workpiece misses a ring
+;   (test (or
+;             (and (eq ?wp-ring1-color ?order-ring1-color)
+;                  (eq ?wp-ring2-color ?order-ring2-color)
+;                  (neq ?wp-ring3-color ?order-ring3-color)
+;                  (eq ?next-ring-color ?order-ring3-color))
+;             (and (eq ?wp-ring1-color ?order-ring1-color)
+;                  (neq ?wp-ring2-color ?order-ring2-color)
+;                  (eq ?next-ring-color ?order-ring2-color))))
+;   (or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+;            (wm-fact (key domain fact wp-at args? wp ?wp m ?prev-rs side OUTPUT)))
+;       (and (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+;            (wm-fact (key domain fact mps-type args? m ?prev-rs t RS))))
+;   (not (wm-fact (key domain fact wp-at args? wp ?wp-rs&:(neq ?wp-rs ?wp) m ?mps-rs side INPUT)))
+;   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
+;   ; Strategy CEs
+;   (not (wm-fact (key strategy keep-mps-side-free
+;                  args? m ?mps-rs side INPUT cause ~?wp)))
+;   (not (goal (class MOUNT-NEXT-RING)
+;              (parent ?maintain-id)
+;              (params robot ?robot $?
+;                      wp ?wp $?
+;                      order ?order)))
+;   =>
+;   (bind ?ring-pos (member$ RING_NONE (create$ ?wp-ring1-color ?wp-ring2-color ?wp-ring3-color)))
+;   (bind ?curr-ring-color (nth$ ?ring-pos (create$ ?order-ring1-color ?order-ring2-color ?order-ring3-color)))
+;   (printout t "Goal " MOUNT-NEXT-RING " formulated (Ring " ?ring-pos")" crlf)
+;   (assert (goal (id (sym-cat MOUNT-NEXT-RING- (gensym*)))
+;                 (class MOUNT-NEXT-RING) (priority (+ ?ring-pos ?*PRIORITY-MOUNT-NEXT-RING*))
+;                 (parent ?maintain-id) (sub-type SIMPLE)
+;                 (params robot ?robot
+;                         prev-rs ?prev-rs
+;                         prev-rs-side OUTPUT
+;                         wp ?wp
+;                         rs ?mps-rs
+;                         ring1-color ?order-ring1-color
+;                         ring2-color ?order-ring2-color
+;                         ring3-color ?order-ring3-color
+;                         curr-ring-color ?curr-ring-color
+;                         ring-pos (int-to-sym ?ring-pos)
+;                         rs-before ?bases-filled
+;                         rs-after ?bases-remain
+;                         rs-req ?bases-needed
+;                         order ?order
+;                 )
+;                 (required-resources (sym-cat ?mps-rs -INPUT) (sym-cat ?prev-rs -OUTPUT) ?wp)
+;   ))
+; )
 
 
 ; (defrule goal-production-create-produce-c1
