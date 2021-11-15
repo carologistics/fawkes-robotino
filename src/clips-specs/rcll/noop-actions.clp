@@ -20,7 +20,7 @@
 ;
 
 (defglobal
-  ?*MIN-EXEC-DURATION* = 2
+  ?*MIN-EXEC-DURATION* = 4
 )
 
 ;A timeout for an action
