@@ -17,7 +17,9 @@
 	(domain-facts-loaded)
 	(wm-fact (key navgraph waitzone generated) (value TRUE))
 	=>
-	(assert (goal (id TESTGOAL)))
+	(assert (goal (id TESTGOAL1))
+		     (goal (id TESTGOAL2))
+			 (goal (id TESTGOAL3)))
 	; This is just to make sure we formulate the goal only once.
 	; In an actual domain this would be more sophisticated.
 	(assert (goal-already-tried))
