@@ -7,20 +7,29 @@
 	)
 
 	(bind ?i 1)
-	(bind ?r "/robot1/Skiller")
+	;(bind ?r "/robot1/Skiller")
 	(do-for-all-facts ((?m domain-fact)) (eq ?m:name mps-type) 
-		(if (and (> ?i 3) (< ?i 6))
-			then(
-				bind ?r "/robot2/Skiller"
-			)
-			else(
-				if (> ?i 5)
-					then(
-						bind ?r "/robot3/Skiller"
-					)
-			)			
-		)
-		(assert (plan-action (id ?i) (plan-id TESTGOAL-PLAN) (goal-id TESTGOAL)
+		(bind ?rnum (random 1 3))
+		(printout t "FGBFGBRNTHMJDJFSOJDFIEOJOISHFPOSHEFO" crlf)
+		(printout t "FGBFGBRNTHMJDJFSOJDFIEOJOISHFPOSHEFO" crlf)
+		(printout t "FGBFGBRNTHMJDJFSOJDFIEOJOISHFPOSHEFO" crlf)
+		(printout t "FGBFGBRNTHMJDJFSOJDFIEOJOISHFPOSHEFO" crlf)
+		(printout t "FGBFGBRNTHMJDJFSOJDFIEOJOISHFPOSHEFO" crlf)
+		(bind ?r (str-cat (str-cat "/robot" ?rnum) "/Skiller"))
+		(printout t ?r crlf)
+		
+		;(if (and (> ?i 3) (< ?i 6))
+		;	then(
+		;		bind ?r "/robot2/Skiller"
+		;	)
+		;	else(
+		;		if (> ?i 5)
+		;			then(
+		;				bind ?r "/robot3/Skiller"
+		;			)
+		;	)			
+		;)
+		(assert (plan-action (id ?i) (plan-id TESTGOAL-PLAN) (goal-id TESTGOAL) 
 							(action-name visit) (skiller ?r)
 						(param-values (nth$ 1 ?m:param-values) OUTPUT CYAN)))
 		(bind ?i (+ ?i 1))
