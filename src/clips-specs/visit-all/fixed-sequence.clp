@@ -16,7 +16,6 @@
 	;(bind ?r "/robot1/Skiller")
 	(do-for-all-facts ((?m domain-fact)) (eq ?m:name mps-type) 
 		(bind ?rnum (+ (mod ?rnum 3) 1))
-
 		(bind ?r (str-cat (str-cat "/robot" ?rnum) "/Skiller"))
 		(printout t ?r crlf)
 		(assert (plan-action (id ?i) (plan-id (sym-cat TESTGOAL-PLAN ?rnum)) (goal-id (sym-cat TESTGOAL ?rnum))
