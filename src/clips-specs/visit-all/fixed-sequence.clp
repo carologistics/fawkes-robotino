@@ -9,7 +9,7 @@
 	(bind ?i 1)
 	;(bind ?r "/robot1/Skiller")
 	(do-for-all-facts ((?m domain-fact)) (eq ?m:name mps-type) 
-		(bind ?rnum (random 1 3))
+		(bind ?rnum (+ (mod ?rnum 3) 1)
 		(printout t "FGBFGBRNTHMJDJFSOJDFIEOJOISHFPOSHEFO" crlf)
 		(printout t "FGBFGBRNTHMJDJFSOJDFIEOJOISHFPOSHEFO" crlf)
 		(printout t "FGBFGBRNTHMJDJFSOJDFIEOJOISHFPOSHEFO" crlf)
