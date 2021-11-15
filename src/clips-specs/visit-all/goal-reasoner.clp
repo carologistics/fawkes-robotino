@@ -22,6 +22,34 @@
 	; In an actual domain this would be more sophisticated.
 	(assert (goal-already-tried))
 )
+(defrule goal2-reasoner-create
+	(not (goal (id TESTGOAL2)))
+	(not (goal-already-tried))
+	(wm-fact (key refbox phase) (value PRODUCTION))
+	(wm-fact (key game state) (value RUNNING))
+	(wm-fact (key refbox team-color) (value ?color&~nil))
+	(domain-facts-loaded)
+	(wm-fact (key navgraph waitzone generated) (value TRUE))
+	=>
+	(assert (goal (id TESTGOAL2)))
+	; This is just to make sure we formulate the goal only once.
+	; In an actual domain this would be more sophisticated.
+	(assert (goal-already-tried))
+)
+(defrule goal3-reasoner-create
+	(not (goal (id TESTGOAL3)))
+	(not (goal-already-tried))
+	(wm-fact (key refbox phase) (value PRODUCTION))
+	(wm-fact (key game state) (value RUNNING))
+	(wm-fact (key refbox team-color) (value ?color&~nil))
+	(domain-facts-loaded)
+	(wm-fact (key navgraph waitzone generated) (value TRUE))
+	=>
+	(assert (goal (id TESTGOAL3)))
+	; This is just to make sure we formulate the goal only once.
+	; In an actual domain this would be more sophisticated.
+	(assert (goal-already-tried))
+)
 
 
 ; #  Goal Selection
