@@ -7,28 +7,12 @@
 	)
 
 	(bind ?i 1)
+	(bind ?rnum 0)
 	;(bind ?r "/robot1/Skiller")
 	(do-for-all-facts ((?m domain-fact)) (eq ?m:name mps-type) 
 		(bind ?rnum (+ (mod ?rnum 3) 1))
-		(printout t "FGBFGBRNTHMJDJFSOJDFIEOJOISHFPOSHEFO" crlf)
-		(printout t "FGBFGBRNTHMJDJFSOJDFIEOJOISHFPOSHEFO" crlf)
-		(printout t "FGBFGBRNTHMJDJFSOJDFIEOJOISHFPOSHEFO" crlf)
-		(printout t "FGBFGBRNTHMJDJFSOJDFIEOJOISHFPOSHEFO" crlf)
-		(printout t "FGBFGBRNTHMJDJFSOJDFIEOJOISHFPOSHEFO" crlf)
 		(bind ?r (str-cat (str-cat "/robot" ?rnum) "/Skiller"))
 		(printout t ?r crlf)
-		
-		;(if (and (> ?i 3) (< ?i 6))
-		;	then(
-		;		bind ?r "/robot2/Skiller"
-		;	)
-		;	else(
-		;		if (> ?i 5)
-		;			then(
-		;				bind ?r "/robot3/Skiller"
-		;			)
-		;	)			
-		;)
 		(assert (plan-action (id ?i) (plan-id TESTGOAL-PLAN) (goal-id TESTGOAL) 
 							(action-name visit) (skiller ?r)
 						(param-values (nth$ 1 ?m:param-values) OUTPUT CYAN)))
