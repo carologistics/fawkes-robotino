@@ -141,7 +141,7 @@
                         (and
                             ;mps CEs
                             (mps-team ?ds ?team-color)
-                            (not (mps-state ?mps BROKEN))
+                            (not (mps-state ?fs BROKEN))
                             (mps-team ?fs ?team-color)
                             (mps-side-free ?ds INPUT)
 
