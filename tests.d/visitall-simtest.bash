@@ -21,7 +21,7 @@ fi
 
 
 FAWKES_DIR=$(realpath $(dirname ${BASH_SOURCE[0]})/..)
-tmpconfig=$(mktemp $FAWKES_DIR/cfg/conf.d/simtest-XXXXXX.yaml)
+tmpconfig=$(mktemp $FAWKES_DIR/cfg/conf.d/z_simtest-XXXXXX.yaml)
 echo "/clips-executive/specs/visitall/parameters/simtest/enabled: true" > $tmpconfig
 echo "/clips-executive/spec: visitall" >> $tmpconfig
 export FAWKES_DIR
