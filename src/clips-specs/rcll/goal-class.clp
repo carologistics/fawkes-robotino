@@ -86,29 +86,143 @@
     )
 )
 
-; (defrule goal-class-create-mount-next-ring
-;     (a)
+(defrule goal-class-create-mount-next-ring2
+    (wm-fact (key refbox team-color) (value ?team-color))
+    (wm-fact (key domain fact self args? r ?robot))
 
-;     =>
-;     (assert
-;         (goal-class (class MOUNT-NEXT-RING)
-;                     (id (sym-cat MOUNT-NEXT-RING- ?order))
-;                     (meta order ?order)
-;                     (type ACHIEVE)
-;                     (sub-type SIMPLE)
-;                     (param-names    )
-;                     (param-constants )
-;                     (param-types     )
-;                     (param-quantified )
-;                     (preconditions "
+    (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+    (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C2|C3))
+    (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
+    (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
+    (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
+    (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring2-color rn ?bases-needed))
+    (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?other-color&~?ring2-color $?))
 
+    (wm-fact (key domain fact rs-ring-spec args? m ?prev-rs r ?ring1-color $?))
 
-;                     ")
-;                     (effects "")
-;         )
-;     )
+    (test (neq ?ring1-color RING_NONE))
+    (test (neq ?ring2-color RING_NONE))
+    (test (neq ?other-color RING_NONE))
+    (test (neq ?bases-needed NA))
 
-; )
+    (not (goal-class (class MOUNT-NEXT-RING) (meta order ?order ring ring2)))
+    =>
+    (assert
+        (goal-class (class MOUNT-NEXT-RING)
+                    (id (sym-cat MOUNT-NEXT-RING-2- ?order))
+                    (meta order ?order ring ring2)
+                    (type ACHIEVE)
+                    (sub-type SIMPLE)
+                    (param-names     order  robot  wp        base-color  ring1-color  ring2-color  ring3-color  other-color  rs  prev-rs  bases-needed)
+                    (param-constants ?order ?robot nil       ?base-color ?ring1-color ?ring2-color ?ring3-color ?other-color ?rs ?prev-rs ?bases-needed)
+                    (param-types     order  robot  workpiece base-color  ring-color   ring-color   ring-color   ring-color   rs  rs       ring-num)
+                    (param-quantified )
+                    (preconditions "
+                        (and
+                            (order-deliverable ?order)
+                            (wp-for-order ?wp ?order)
+                            (wp-base-color ?wp ?base-color)
+                            (wp-ring1-color ?wp ?ring1-color)
+                            (wp-ring2-color ?wp RING_NONE)
+                            (wp-ring3-color ?wp RING_NONE)
+                            (wp-cap-color ?wp CAP_NONE)
+                            (rs-paid-for ?rs ?bases-needed)
+
+                            (not (mps-state ?rs BROKEN))
+                            (mps-side-free ?rs INPUT)
+                            (not
+                                (and
+                                    (rs-prepared-color ?rs ?ring2-color)
+                                    (rs-prepared-color ?rs ?other-color)
+                                )
+                            )
+
+                            (or
+                                (and
+                                    (can-hold ?robot)
+                                    (wp-at ?wp ?prev-rs OUTPUT)
+                                )
+                                (and
+                                    (holding ?robot ?wp)
+                                    (mps-type ?prev-rs RS)
+                                )
+                            )
+                        )
+                    ")
+                    (effects "")
+        )
+    )
+)
+
+(defrule goal-class-create-mount-next-ring3
+    (wm-fact (key refbox team-color) (value ?team-color))
+    (wm-fact (key domain fact self args? r ?robot))
+
+    (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+    (wm-fact (key domain fact order-complexity args? ord ?order com C3))
+    (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
+    (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
+    (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
+    (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring3-color rn ?bases-needed))
+    (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?other-color&~?ring3-color $?))
+
+    (wm-fact (key domain fact rs-ring-spec args? m ?prev-rs r ?ring2-color $?))
+
+    (test (neq ?ring1-color RING_NONE))
+    (test (neq ?ring2-color RING_NONE))
+    (test (neq ?ring3-color RING_NONE))
+    (test (neq ?other-color RING_NONE))
+    (test (neq ?bases-needed NA))
+
+    (not (goal-class (class MOUNT-NEXT-RING) (meta order ?order ring ring3)))
+    =>
+    (assert
+        (goal-class (class MOUNT-NEXT-RING)
+                    (id (sym-cat MOUNT-NEXT-RING-3- ?order))
+                    (meta order ?order ring ring3)
+                    (type ACHIEVE)
+                    (sub-type SIMPLE)
+                    (param-names     order  robot  wp        base-color  ring1-color  ring2-color  ring3-color  other-color  rs  prev-rs  bases-needed)
+                    (param-constants ?order ?robot nil       ?base-color ?ring1-color ?ring2-color ?ring3-color ?other-color ?rs ?prev-rs ?bases-needed)
+                    (param-types     order  robot  workpiece base-color  ring-color   ring-color   ring-color   ring-color   rs  rs       ring-num)
+                    (param-quantified )
+                    (preconditions "
+                        (and
+                            (order-deliverable ?order)
+                            (wp-for-order ?wp ?order)
+                            (wp-base-color ?wp ?base-color)
+                            (wp-ring1-color ?wp ?ring1-color)
+                            (wp-ring2-color ?wp ?ring2-color)
+                            (wp-ring3-color ?wp RING_NONE)
+                            (wp-cap-color ?wp CAP_NONE)
+                            (rs-paid-for ?rs ?bases-needed)
+
+                            (not (mps-state ?rs BROKEN))
+                            (mps-side-free ?rs INPUT)
+                            (not
+                                (and
+                                    (rs-prepared-color ?rs ?ring3-color)
+                                    (rs-prepared-color ?rs ?other-color)
+                                )
+                            )
+
+                            (or
+                                (and
+                                    (can-hold ?robot)
+                                    (wp-at ?wp ?prev-rs OUTPUT)
+                                )
+                                (and
+                                    (holding ?robot ?wp)
+                                    (mps-type ?prev-rs RS)
+                                )
+                            )
+                        )
+                    ")
+                    (effects "")
+        )
+    )
+)
+
 
 
 (defrule goal-class-create-deliver
