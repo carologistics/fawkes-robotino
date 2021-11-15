@@ -46,7 +46,7 @@ clips-executive:
       parameters:
         simtest:
           enabled: false
-          testbed: VISITED-ONE
+          testbed: VISITED-ALL
         rcll:
           peer-address: 10.12.0.0
           peer-port: 4444
