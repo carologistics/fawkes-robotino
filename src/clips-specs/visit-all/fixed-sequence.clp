@@ -9,7 +9,6 @@
 	  (plan (id TESTGOAL-PLAN2) (goal-id TESTGOAL2)
 	        (type SEQUENTIAL))
 	  (plan (id TESTGOAL-PLAN3) (goal-id TESTGOAL3)
-	        (type SEQUENTIAL))
 	)
 
 	(bind ?i 1)
