@@ -19,7 +19,6 @@
 		(bind ?r (str-cat (str-cat "/robot" ?rnum) "/Skiller"))
 		(printout t ?r crlf)
 		(assert (plan-action (id ?i) (plan-id (sym-cat TESTGOAL-PLAN ?rnum)) (goal-id (sym-cat TESTGOAL ?rnum))
-
 							(action-name visit) (skiller ?r)
 						(param-values (nth$ 1 ?m:param-values) OUTPUT CYAN)))
 		(bind ?i (+ ?i 1))
