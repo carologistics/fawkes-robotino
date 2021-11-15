@@ -45,8 +45,8 @@ clips-executive:
         visit: goto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
       parameters:
         simtest:
-          enabled: false
-          testbed: VISITED-ONE
+          enabled: true
+          testbed: VISITED-ALL
         rcll:
           peer-address: 10.12.0.0
           peer-port: 4444
