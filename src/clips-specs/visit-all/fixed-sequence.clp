@@ -1,11 +1,7 @@
 (defrule goal-expander-create-sequence
-<<<<<<< HEAD
 	?g1 <- (goal (mode SELECTED) (id TESTGOAL1))
 	?g2 <- (goal (mode SELECTED) (id TESTGOAL2))
 	?g3 <- (goal (mode SELECTED) (id TESTGOAL3))
-=======
-	?g <- (goal (mode SELECTED) (id TESTGOAL)) 
->>>>>>> e37444c5e (task 1 done)
 	=>
 	(assert
 	  (plan (id TESTGOAL-PLAN1) (goal-id TESTGOAL1)
