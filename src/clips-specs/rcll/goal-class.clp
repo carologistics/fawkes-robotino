@@ -22,6 +22,39 @@
 
 ; ------------------------- ASSERT GOAL CLASSES -----------------------------------
 
+(defrule goal-class-create-fill-cap
+    (wm-fact (key domain fact self args? r ?robot))
+    (wm-fact (key refbox team-color) (value ?team-color))
+    (wm-fact (key domain fact cs-color args? m ?cs col ?cap-color))
+
+    (not (goal-class (class FILL-CAP) (meta cs ?cs)))
+    =>
+    (assert
+        (goal-class (class FILL-CAP)
+                    (id (sym-cat FILL-CAP- ?cs))
+                    (meta cs ?cs)
+                    (type ACHIEVE)
+                    (sub-type SIMPLE)
+                    (param-names     robot  cs  cc          spot       cap-color)
+                    (param-constants ?robot ?cs nil         nil        ?cap-color)
+                    (param-types     robot  cs  cap-carrier shelf-spot cap-color)
+                    (param-quantified )
+                    (preconditions "
+                        (and
+                            (can-hold ?robot)
+                            (not (mps-state ?cs BROKEN))
+                            (cs-can-perform ?cs RETRIEVE_CAP)
+                            (not (cs-buffered ?cs CAP_BLACK))
+                            (not (cs-buffered ?cs CAP_GREY))
+                            (mps-side-free ?cs INPUT)
+                            (wp-on-shelf ?cc ?cs ?spot)
+                            (wp-cap-color ?cc ?cap-color)
+                        )
+                    ")
+        )
+    )
+)
+
 (defrule goal-class-create-mount-first-ring
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
