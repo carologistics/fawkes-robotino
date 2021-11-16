@@ -59,6 +59,141 @@
 
 
 ; PRODUCTION MAINTENANCE GOALS
+
+(defrule goal-class-create-get-from-bs-for-rs
+    (wm-fact (key domain fact self args? r ?robot))
+    (wm-fact (key refbox team-color) (value ?team-color))
+
+    (not (goal-class (class GET-BASE-TO-FILL-RS)))
+    =>
+    (assert
+        (goal-class (class GET-BASE-TO-FILL-RS)
+                    (id GET-BASE-TO-FILL-RS)
+                    (type ACHIEVE)
+                    (sub-type SIMPLE)
+                    (param-names     robot  wp        rs  bs  side)
+                    (param-constants ?robot nil       nil nil nil)
+                    (param-types     robot  workpiece rs  bs  mps-side)
+                    (param-quantified )
+                    (preconditions "
+                        (and
+                            (can-hold ?robot)
+                            (wp-spawned-for ?wp ?robot)
+                            (or
+                                (rs-filled-with ?rs ZERO)
+                                (rs-filled-with ?rs ONE)
+                                (rs-filled-with ?rs TWO)
+                            )
+                            (not (mps-state ?bs BROKEN))
+                            (not (mps-state ?bs DOWN))
+                            (mps-has-side ?bs ?side)
+                        )
+                    ")
+        )
+    )
+)
+
+(defrule goal-class-create-get-from-shelf-for-rs
+    (wm-fact (key domain fact self args? r ?robot))
+    (wm-fact (key refbox team-color) (value ?team-color))
+
+    (not (goal-class (class GET-SHELF-TO-FILL-RS)))
+    =>
+    (assert
+        (goal-class (class GET-SHELF-TO-FILL-RS)
+                    (id GET-SHELF-TO-FILL-RS)
+                    (type ACHIEVE)
+                    (sub-type SIMPLE)
+                    (param-names     robot  rs  cc          cs  spot)
+                    (param-constants ?robot nil nil         nil nil)
+                    (param-types     robot  rs  cap-carrier cs  shelf-spot)
+                    (param-quantified )
+                    (preconditions "
+                        (and
+                            (can-hold ?robot)
+                            (not (mps-state ?rs BROKEN))
+                            (or
+                                (rs-filled-with ?rs ZERO)
+                                (rs-filled-with ?rs ONE)
+                                (rs-filled-with ?rs TWO)
+                            )
+                            (wp-on-shelf ?cc ?cs ?spot)
+                        )
+                    ")
+        )
+    )
+)
+
+(defrule goal-class-create-fill-rs
+    (wm-fact (key domain fact self args? r ?robot))
+    (wm-fact (key refbox team-color) (value ?team-color))
+    (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
+    (wm-fact (key domain fact mps-type args? m ?rs t RS))
+
+    (not (goal-class (class FILL-RS) (meta rs ?rs cc FALSE)))
+    =>
+    (assert
+        (goal-class (class FILL-RS)
+                    (id (sym-cat FILL-RS- ?rs))
+                    (meta rs ?rs cc FALSE)
+                    (type ACHIEVE)
+                    (sub-type SIMPLE)
+                    (param-names     wp        robot  rs  filled)
+                    (param-constants nil       ?robot ?rs nil)
+                    (param-types     workpiece robot  rs  ring-num)
+                    (param-quantified )
+                    (preconditions "
+                        (and
+                            (wp-usable ?wp)
+                            (holding ?robot ?wp)
+                            (not (mps-state ?rs BROKEN))
+                            (rs-filled-with ?rs ?filled)
+                            (or
+                                (rs-filled-with ?rs ZERO)
+                                (rs-filled-with ?rs ONE)
+                                (rs-filled-with ?rs TWO)
+                            )
+                        )
+                    ")
+        )
+    )
+)
+
+(defrule goal-class-create-fill-rs-cc
+    (wm-fact (key domain fact self args? r ?robot))
+    (wm-fact (key refbox team-color) (value ?team-color))
+    (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
+    (wm-fact (key domain fact mps-type args? m ?rs t RS))
+
+    (not (goal-class (class FILL-RS) (meta rs ?rs cc TRUE)))
+    =>
+    (assert
+        (goal-class (class FILL-RS)
+                    (id (sym-cat FILL-RS- ?rs))
+                    (meta rs ?rs cc TRUE)
+                    (type ACHIEVE)
+                    (sub-type SIMPLE)
+                    (param-names     wp        robot  rs  filled)
+                    (param-constants nil       ?robot ?rs nil)
+                    (param-types     cap-carrier robot  rs  ring-num)
+                    (param-quantified )
+                    (preconditions "
+                        (and
+                            (wp-usable ?wp)
+                            (holding ?robot ?wp)
+                            (not (mps-state ?rs BROKEN))
+                            (rs-filled-with ?rs ?filled)
+                            (or
+                                (rs-filled-with ?rs ZERO)
+                                (rs-filled-with ?rs ONE)
+                                (rs-filled-with ?rs TWO)
+                            )
+                        )
+                    ")
+        )
+    )
+)
+
 (defrule goal-class-create-fill-cap
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
