@@ -60,6 +60,7 @@
                                     (rs-prepared-color ?rs ?ring1-color)
                                 )
                             )
+                            ;missing deadlock prevention
                             (mps-has-side ?bs ?side)
                             (order-producible ?order)
                             (or
@@ -390,7 +391,6 @@
                         (and
                             ;cs CEs
                             (mps-side-free ?cs INPUT)
-                            (mps-team ?cs ?team-color)
                             (not (mps-state ?cs BROKEN))
                             (cs-buffered ?cs ?cap-color)
                             (cs-can-perform ?cs MOUNT_CAP)
@@ -403,7 +403,6 @@
                             (wp-cap-color ?wp CAP_NONE)
                             (or
                                 (and
-                                    (mps-team ?rs ?team-color)
                                     (wp-at ?wp ?rs OUTPUT)
                                     (can-hold ?robot)
                                 )
