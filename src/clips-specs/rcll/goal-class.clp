@@ -483,6 +483,44 @@
 
 ; ------------------------- ASSERT GOALS -----------------------------------
 
+(defrule goal-class-assert-goal-fill-cap
+    (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+    (goal (id ?production-id) (class PREPARE-CAPS) (mode FORMULATED))
+
+    (goal-class (class FILL-CAP) (id ?cid))
+    (pddl-formula (part-of ?cid) (id ?formula-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
+    (pddl-grounding (id ?grounding-id) (param-values ?robot ?cs ?cc ?spot ?cap-color))
+
+    =>
+    (bind ?priority-increase 0)
+    ;increase priority if there is a product being produced that requires this cap-color
+    (if (any-factp ((?order-cap-color wm-fact))
+                    (and (wm-key-prefix ?order-cap-color:key (create$ domain fact order-cap-color))
+                        (eq (wm-key-arg ?order-cap-color:key col) ?cap-color)
+                        (any-factp ((?wp-for-order wm-fact))
+                            (and (wm-key-prefix ?wp-for-order:key (create$ domain fact wp-for-order))
+                                (eq (wm-key-arg ?wp-for-order:key ord) (wm-key-arg ?order-cap-color:key ord)))))
+        )
+    then
+        (bind ?priority-increase 1)
+        (printout t "Goal " FILL-CAP " formulated from PDDL with higher priority" crlf)
+    else
+        (printout t "Goal " FILL-CAP " formulated from PDDL" crlf)
+    )
+    (bind ?distance (node-distance (str-cat ?cs -I)))
+    (assert (goal (id (sym-cat FILL-CAP- (gensym*)))
+                    (class FILL-CAP) (sub-type SIMPLE)
+                    (priority (+ ?priority-increase ?*PRIORITY-PREFILL-CS* (goal-distance-prio ?distance)))
+                    (parent ?production-id)
+                    (params robot ?robot
+                            mps ?cs
+                            cc ?cc
+                    )
+                    (required-resources (sym-cat ?cs -INPUT) ?cc)
+    ))
+)
+
 (defrule goal-class-assert-goal-mount-first-ring
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (goal (id ?production-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
