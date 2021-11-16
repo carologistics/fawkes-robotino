@@ -22,7 +22,10 @@
 
 ; ------------------------- ASSERT GOAL CLASSES -----------------------------------
 
+; MPS INTERACTION GOALS
 
+
+; CLEANUP GOALS
 (defrule goal-class-create-clear-bs
     "Assert a goal class for CLEAR-MPS goals that holds the precondition for formulation
     of potential BS clear goals."
@@ -54,6 +57,8 @@
     )
 )
 
+
+; PRODUCTION MAINTENANCE GOALS
 (defrule goal-class-create-fill-cap
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
@@ -86,6 +91,8 @@
         )
     )
 )
+
+; MAINLINE PRODUCTION GOALS
 
 (defrule goal-class-create-mount-first-ring
     (wm-fact (key domain fact self args? r ?robot))
@@ -482,6 +489,11 @@
     )
 )
 
+; ------------------------- ASSERT GOALS -----------------------------------
+
+; MPS INTERACTION GOALS
+
+; CLEANUP GOALS
 (defrule goal-class-assert-goal-clear-bs
     "If the precondition of a goal-class for a CLEAR-MPS type is fulfilled, assert
     the goal fact and thus formulate the goal. "
@@ -507,10 +519,12 @@
     ))
 )
 
+
+
+; PRODUCTION MAINTENANCE GOALS
     )
 )
 
-; ------------------------- ASSERT GOALS -----------------------------------
 
 (defrule goal-class-assert-goal-fill-cap
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
@@ -549,6 +563,9 @@
                     (required-resources (sym-cat ?cs -INPUT) ?cc)
     ))
 )
+
+
+; MAINLINE PRODUCTION GOALS
 
 (defrule goal-class-assert-goal-mount-first-ring
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
