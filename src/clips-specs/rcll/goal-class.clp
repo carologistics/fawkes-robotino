@@ -266,11 +266,19 @@
                             (wp-ring2-color ?wp ?ring2-color)
                             (wp-ring3-color ?wp ?ring3-color)
                             (wp-cap-color ?wp ?cap-color)
-                            (wp-at ?wp ?fs OUTPUT)
 
                             ;order CEs
                             (order-gate ?order ?gate)
                             (order-deliverable ?order)
+
+                            ;positional CEs
+                            (or
+                                (and
+                                    (wp-at ?wp ?fs OUTPUT)
+                                    (can-hold ?robot)
+                                )
+                                (holding ?robot ?wp)
+                            )
                         )
                     ")
                     (effects "")
