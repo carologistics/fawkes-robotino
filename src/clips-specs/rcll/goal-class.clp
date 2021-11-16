@@ -748,6 +748,27 @@
     (retract ?wmf)
 )
 
+(defrule goal-class-order-producible-CX
+    (wm-fact (key domain fact order-complexity args? ord ?order com ~C0))
+    (wm-fact (key refbox team-color) (value ?team-color))
+    (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+    (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
+        (value ?qd&:(> ?qr ?qd)))
+    (not (domain-fact (name order-producible) (param-values ?order)))
+    =>
+    (assert (domain-fact (name order-producible) (param-values ?order)))
+)
+
+(defrule goal-class-order-not-producible-CX
+    (wm-fact (key refbox team-color) (value ?team-color))
+    (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+    (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
+        (value ?qd&:(<= ?qr ?qd)))
+    ?wmf <- (domain-fact (name order-producible) (param-values ?order))
+    =>
+    (retract ?wmf)
+)
+
 (defrule goal-class-order-deliverable
     (wm-fact (key refbox team-color) (value ?team-color))
     (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
