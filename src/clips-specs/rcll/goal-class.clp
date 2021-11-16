@@ -775,6 +775,9 @@
     (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
         (value ?qd&:(> ?qr ?qd)))
     (not (domain-fact (name order-deliverable) (param-values ?order)))
+    (wm-fact (key refbox game-time) (values $?game-time))
+    (wm-fact (key refbox order ?order delivery-begin) (type UINT)
+             (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*DELIVER-AHEAD-TIME*))))
     =>
     (assert (domain-fact (name order-deliverable) (param-values ?order)))
 )
