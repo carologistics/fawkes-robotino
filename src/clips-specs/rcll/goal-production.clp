@@ -638,136 +638,136 @@
 )
 
 
-(defrule goal-production-create-get-base-to-fill-rs
-  "Fill the ring station with a fresh base from the base station."
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?maintain-id) (class PREPARE-RINGS) (mode FORMULATED))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  ;Robot CEs
-  (wm-fact (key domain fact self args? r ?robot))
-  (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-  ;MPS-RS CEs (a cap carrier can be used to fill a RS later)
-  (wm-fact (key domain fact mps-type args? m ?mps t RS))
-  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
-  ;MPS-BS CEs
-  (wm-fact (key domain fact mps-type args? m ?bs t BS))
-  (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN))
-  (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
-  (domain-object (name ?bs-side&:(or (eq ?bs-side INPUT) (eq ?bs-side OUTPUT))) (type mps-side))
+; (defrule goal-production-create-get-base-to-fill-rs
+;   "Fill the ring station with a fresh base from the base station."
+;   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;   (goal (id ?maintain-id) (class PREPARE-RINGS) (mode FORMULATED))
+;   (wm-fact (key refbox team-color) (value ?team-color))
+;   ;Robot CEs
+;   (wm-fact (key domain fact self args? r ?robot))
+;   (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
+;   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+;   ;MPS-RS CEs (a cap carrier can be used to fill a RS later)
+;   (wm-fact (key domain fact mps-type args? m ?mps t RS))
+;   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+;   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
+;   ;MPS-BS CEs
+;   (wm-fact (key domain fact mps-type args? m ?bs t BS))
+;   (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN))
+;   (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
+;   (domain-object (name ?bs-side&:(or (eq ?bs-side INPUT) (eq ?bs-side OUTPUT))) (type mps-side))
 
-  (wm-fact (key domain fact order-base-color args? ord ?any-order col ?base-color))
-  ; Formulate the goal only if it is not already formulated (prevents doubling
-  ; the goals due to matching with RS-1 and RS-2)
-  (not (goal (class GET-BASE-TO-FILL-RS) (params robot ?robot
-                                          bs ?bs
-                                          bs-side ?bs-side
-                                          base-color ?
-                                          wp ?spawned-wp)))
-  =>
-  (printout t "Goal " GET-BASE-TO-FILL-RS " formulated" crlf)
-  (bind ?distance (node-distance (str-cat ?bs - (if (eq ?bs-side INPUT) then I else O))))
-  (assert (goal (id (sym-cat GET-BASE-TO-FILL-RS- (gensym*)))
-                (class GET-BASE-TO-FILL-RS)
-                (priority  (+ ?*PRIORITY-PREFILL-RS-WITH-FRESH-BASE* (goal-distance-prio ?distance)))
-                (parent ?maintain-id) (sub-type SIMPLE)
-                             (params robot ?robot
-                                     bs ?bs
-                                     bs-side ?bs-side
-                                     base-color ?base-color
-                                     wp ?spawned-wp
-                                     )
-                            (required-resources ?spawned-wp)
-  ))
-)
-
-
-(defrule goal-production-create-get-shelf-to-fill-rs
-  "Get a capcarrier from a shelf to feed it later."
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?maintain-id) (class PREPARE-RINGS) (mode FORMULATED))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  ;Robot CEs
-  (wm-fact (key domain fact self args? r ?robot))
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-  ;MPS-RS CEs (a cap carrier can be used to fill a RS later)
-  (wm-fact (key domain fact mps-type args? m ?mps t RS))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
-  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
-  ;MPS-CS CEs
-  (wm-fact (key domain fact mps-type args? m ?cs t CS))
-  (wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
-  (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?cs spot ?spot))
-  ; Formulate the goal only if it is not already formulated (prevents doubling
-  ; the goals due to matching with RS-1 and RS-2)
-  (not (goal (class GET-SHELF-TO-FILL-RS) (parent ?maintain-id)
-             (params robot ?robot cs ?cs wp ?wp spot ?spot
-                                     )))
-  =>
-  (printout t "Goal " GET-SHELF-TO-FILL-RS " formulated" crlf)
-  (bind ?distance (node-distance (str-cat ?mps -I)))
-  (assert (goal (id (sym-cat GET-SHELF-TO-FILL-RS- (gensym*)))
-                (class GET-SHELF-TO-FILL-RS)
-                (priority (+ ?*PRIORITY-PREFILL-RS* (goal-distance-prio ?distance)))
-                (parent ?maintain-id) (sub-type SIMPLE)
-                             (params robot ?robot
-                                     cs ?cs
-                                     wp ?wp
-                                     spot ?spot
-                                     )
-                             (required-resources ?wp)
-  ))
-)
+;   (wm-fact (key domain fact order-base-color args? ord ?any-order col ?base-color))
+;   ; Formulate the goal only if it is not already formulated (prevents doubling
+;   ; the goals due to matching with RS-1 and RS-2)
+;   (not (goal (class GET-BASE-TO-FILL-RS) (params robot ?robot
+;                                           bs ?bs
+;                                           bs-side ?bs-side
+;                                           base-color ?
+;                                           wp ?spawned-wp)))
+;   =>
+;   (printout t "Goal " GET-BASE-TO-FILL-RS " formulated" crlf)
+;   (bind ?distance (node-distance (str-cat ?bs - (if (eq ?bs-side INPUT) then I else O))))
+;   (assert (goal (id (sym-cat GET-BASE-TO-FILL-RS- (gensym*)))
+;                 (class GET-BASE-TO-FILL-RS)
+;                 (priority  (+ ?*PRIORITY-PREFILL-RS-WITH-FRESH-BASE* (goal-distance-prio ?distance)))
+;                 (parent ?maintain-id) (sub-type SIMPLE)
+;                              (params robot ?robot
+;                                      bs ?bs
+;                                      bs-side ?bs-side
+;                                      base-color ?base-color
+;                                      wp ?spawned-wp
+;                                      )
+;                             (required-resources ?spawned-wp)
+;   ))
+; )
 
 
-(defrule goal-production-create-prefill-ring-station
-  ;Fill a ring station with the currently holding workpiece.
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class PREPARE-RINGS) (mode FORMULATED))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  ;Robot CEs
-  (wm-fact (key domain fact self args? r ?robot))
-  (wm-fact (key domain fact wp-usable args? wp ?wp))
-  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
-  ;MPS-RS CEs
-  (wm-fact (key domain fact mps-type args? m ?mps t RS))
-  (wm-fact (key domain fact mps-state args? m ?mps s ?state&~BROKEN))
-  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
-  (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
-  ;CCs don't have a base color. Hence, models base with UNKOWN color
-  ; (not (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color)))
-  =>
-  ;Check if this ring station should be filled with increased priority.
-  (bind ?priority-increase 0)
-  (do-for-all-facts ((?prio wm-fact)) (and (wm-key-prefix ?prio:key (create$ evaluated fact rs-fill-priority))
-                                           (eq (wm-key-arg ?prio:key m) ?mps))
-      (if (< ?priority-increase ?prio:value)
-         then
-          (bind ?priority-increase ?prio:value)
-      ))
-  ;
-  (if (eq ?state DOWN)
-    then
-      (bind ?priority-increase (- ?priority-increase 1))
-  )
-  (bind ?distance (node-distance (str-cat ?mps -I)))
-  (printout t "Goal " FILL-RS " formulated" crlf)
-  (assert (goal (id (sym-cat FILL-RS- (gensym*)))
-                (class FILL-RS) (sub-type SIMPLE)
-                (priority (+ ?*PRIORITY-PREFILL-RS* ?priority-increase (goal-distance-prio ?distance)))
-                (parent ?production-id)
-                (params robot ?robot
-                        mps ?mps
-                        wp ?wp
-                        rs-before ?rs-before
-                        rs-after ?rs-after
-                )
-                (required-resources ?mps ?wp)
-  ))
-)
+; (defrule goal-production-create-get-shelf-to-fill-rs
+;   "Get a capcarrier from a shelf to feed it later."
+;   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;   (goal (id ?maintain-id) (class PREPARE-RINGS) (mode FORMULATED))
+;   (wm-fact (key refbox team-color) (value ?team-color))
+;   ;Robot CEs
+;   (wm-fact (key domain fact self args? r ?robot))
+;   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+;   ;MPS-RS CEs (a cap carrier can be used to fill a RS later)
+;   (wm-fact (key domain fact mps-type args? m ?mps t RS))
+;   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+;   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+;   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
+;   ;MPS-CS CEs
+;   (wm-fact (key domain fact mps-type args? m ?cs t CS))
+;   (wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
+;   (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?cs spot ?spot))
+;   ; Formulate the goal only if it is not already formulated (prevents doubling
+;   ; the goals due to matching with RS-1 and RS-2)
+;   (not (goal (class GET-SHELF-TO-FILL-RS) (parent ?maintain-id)
+;              (params robot ?robot cs ?cs wp ?wp spot ?spot
+;                                      )))
+;   =>
+;   (printout t "Goal " GET-SHELF-TO-FILL-RS " formulated" crlf)
+;   (bind ?distance (node-distance (str-cat ?mps -I)))
+;   (assert (goal (id (sym-cat GET-SHELF-TO-FILL-RS- (gensym*)))
+;                 (class GET-SHELF-TO-FILL-RS)
+;                 (priority (+ ?*PRIORITY-PREFILL-RS* (goal-distance-prio ?distance)))
+;                 (parent ?maintain-id) (sub-type SIMPLE)
+;                              (params robot ?robot
+;                                      cs ?cs
+;                                      wp ?wp
+;                                      spot ?spot
+;                                      )
+;                              (required-resources ?wp)
+;   ))
+; )
+
+
+; (defrule goal-production-create-prefill-ring-station
+;   ;Fill a ring station with the currently holding workpiece.
+;   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;   (goal (id ?production-id) (class PREPARE-RINGS) (mode FORMULATED))
+;   (wm-fact (key refbox team-color) (value ?team-color))
+;   ;Robot CEs
+;   (wm-fact (key domain fact self args? r ?robot))
+;   (wm-fact (key domain fact wp-usable args? wp ?wp))
+;   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+;   ;MPS-RS CEs
+;   (wm-fact (key domain fact mps-type args? m ?mps t RS))
+;   (wm-fact (key domain fact mps-state args? m ?mps s ?state&~BROKEN))
+;   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+;   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
+;   (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
+;   ;CCs don't have a base color. Hence, models base with UNKOWN color
+;   ; (not (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color)))
+;   =>
+;   ;Check if this ring station should be filled with increased priority.
+;   (bind ?priority-increase 0)
+;   (do-for-all-facts ((?prio wm-fact)) (and (wm-key-prefix ?prio:key (create$ evaluated fact rs-fill-priority))
+;                                            (eq (wm-key-arg ?prio:key m) ?mps))
+;       (if (< ?priority-increase ?prio:value)
+;          then
+;           (bind ?priority-increase ?prio:value)
+;       ))
+;   ;
+;   (if (eq ?state DOWN)
+;     then
+;       (bind ?priority-increase (- ?priority-increase 1))
+;   )
+;   (bind ?distance (node-distance (str-cat ?mps -I)))
+;   (printout t "Goal " FILL-RS " formulated" crlf)
+;   (assert (goal (id (sym-cat FILL-RS- (gensym*)))
+;                 (class FILL-RS) (sub-type SIMPLE)
+;                 (priority (+ ?*PRIORITY-PREFILL-RS* ?priority-increase (goal-distance-prio ?distance)))
+;                 (parent ?production-id)
+;                 (params robot ?robot
+;                         mps ?mps
+;                         wp ?wp
+;                         rs-before ?rs-before
+;                         rs-after ?rs-after
+;                 )
+;                 (required-resources ?mps ?wp)
+;   ))
+; )
 
 
 (defrule goal-production-create-discard-unknown

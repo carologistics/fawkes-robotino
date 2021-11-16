@@ -657,9 +657,109 @@
 
 
 ; PRODUCTION MAINTENANCE GOALS
+
+(defrule goal-class-assert-goal-get-from-bs-for-rs
+    (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
+    (goal (id ?maintain-id) (class PREPARE-RINGS) (mode FORMULATED))
+
+    (goal-class (class GET-BASE-TO-FILL-RS) (id ?cid))
+    (pddl-formula (part-of ?cid) (id ?formula-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
+    (pddl-grounding (id ?grounding-id) (param-values  ?robot ?wp ?rs ?bs ?side))
+
+    (not (goal (class GET-BASE-TO-FILL-RS) (params robot ?robot
+                                            bs ?bs
+                                            bs-side ?side
+                                            base-color ?any-base
+                                            wp ?wp)))
+    =>
+    (printout t "Goal " GET-BASE-TO-FILL-RS " formulated from PDDL" crlf)
+    (bind ?distance (node-distance (str-cat ?bs - (if (eq ?side INPUT) then I else O))))
+    (assert (goal (id (sym-cat GET-BASE-TO-FILL-RS- (gensym*)))
+                    (class GET-BASE-TO-FILL-RS)
+                    (priority  (+ ?*PRIORITY-PREFILL-RS-WITH-FRESH-BASE* (goal-distance-prio ?distance)))
+                    (parent ?maintain-id) (sub-type SIMPLE)
+                    (params robot ?robot
+                            bs ?bs
+                            bs-side ?side
+                            base-color BASE_RED
+                            wp ?wp
+                    )
+                    (required-resources ?wp)
+            )
     )
 )
 
+(defrule goal-class-assert-goal-get-from-shelf-for-rs
+    (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
+    (goal (id ?maintain-id) (class PREPARE-RINGS) (mode FORMULATED))
+
+    (goal-class (class GET-SHELF-TO-FILL-RS) (id ?cid))
+    (pddl-formula (part-of ?cid) (id ?formula-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
+    (pddl-grounding (id ?grounding-id) (param-values ?robot ?rs ?cc ?cs ?spot))
+
+    (not (goal (class GET-SHELF-TO-FILL-RS) (parent ?maintain-id) (params robot ?robot
+                                                                          cs ?cs
+                                                                          wp ?cc
+                                                                          spot ?spot)))
+    =>
+    (printout t "Goal " GET-SHELF-TO-FILL-RS " formulated from PDDL" crlf)
+    (bind ?distance (node-distance (str-cat ?rs -I)))
+    (assert (goal (id (sym-cat GET-SHELF-TO-FILL-RS- (gensym*)))
+                    (class GET-SHELF-TO-FILL-RS)
+                    (priority (+ ?*PRIORITY-PREFILL-RS* (goal-distance-prio ?distance)))
+                    (parent ?maintain-id) (sub-type SIMPLE)
+                    (params robot ?robot
+                            cs ?cs
+                            wp ?cc
+                            spot ?spot
+                    )
+                    (required-resources ?cc)
+            )
+    )
+)
+
+(defrule goal-class-assert-goal-fill-rs
+    (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+    (goal (id ?production-id) (class PREPARE-RINGS) (mode FORMULATED))
+
+    (goal-class (class FILL-RS) (id ?cid))
+    (pddl-formula (part-of ?cid) (id ?formula-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
+    (pddl-grounding (id ?grounding-id) (param-values ?wp ?robot ?rs ?filled))
+
+    (wm-fact (key domain fact mps-state args? m ?rs s ?state))
+    (wm-fact (key domain fact rs-inc args? summand ?filled sum ?after))
+    =>
+    ;Check if this ring station should be filled with increased priority.
+    (bind ?priority-increase 0)
+    (do-for-all-facts ((?prio wm-fact)) (and (wm-key-prefix ?prio:key (create$ evaluated fact rs-fill-priority))
+                                            (eq (wm-key-arg ?prio:key m) ?rs))
+        (if (< ?priority-increase ?prio:value)
+            then
+            (bind ?priority-increase ?prio:value)
+        ))
+    ;
+    (if (eq ?state DOWN)
+        then
+        (bind ?priority-increase (- ?priority-increase 1))
+    )
+    (bind ?distance (node-distance (str-cat ?rs -I)))
+    (printout t "Goal " FILL-RS " formulated from PDDL" crlf)
+    (assert (goal (id (sym-cat FILL-RS- (gensym*)))
+                    (class FILL-RS) (sub-type SIMPLE)
+                    (priority (+ ?*PRIORITY-PREFILL-RS* ?priority-increase (goal-distance-prio ?distance)))
+                    (parent ?production-id)
+                    (params robot ?robot
+                            mps ?rs
+                            wp ?wp
+                            rs-before ?filled
+                            rs-after ?after
+                    )
+                    (required-resources ?rs ?wp)
+    ))
+)
 
 (defrule goal-class-assert-goal-fill-cap
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
@@ -669,7 +769,6 @@
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?robot ?cs ?cc ?spot ?cap-color))
-
     =>
     (bind ?priority-increase 0)
     ;increase priority if there is a product being produced that requires this cap-color
