@@ -22,6 +22,38 @@
 
 ; ------------------------- ASSERT GOAL CLASSES -----------------------------------
 
+
+(defrule goal-class-create-clear-bs
+    "Assert a goal class for CLEAR-MPS goals that holds the precondition for formulation
+    of potential BS clear goals."
+    (not (goal-class (class CLEAR-MPS) (sub-type SIMPLE)))
+    (wm-fact (key domain fact self args? r ?robot))
+    (wm-fact (key refbox team-color) (value ?team-color))
+    =>
+    (assert
+        (goal-class (class CLEAR-MPS)
+                    (id CLEAR-MPS)
+                    (type ACHIEVE)
+                    (sub-type SIMPLE)
+                    (param-names     team-color  robot  mps wp        side)
+                    (param-constants ?team-color ?robot nil nil       nil)
+                    (param-types     team-color  robot  bs  workpiece mps-side)
+                    (param-quantified)
+                    (preconditions "
+                        (and
+                            (can-hold ?robot)
+
+                            (mps-type ?mps BS)
+                            (mps-team ?mps ?team-color)
+                            (not (mps-state ?mps BROKEN))
+                            (wp-at ?wp ?mps ?side)
+                        )
+                    ")
+                    (effects "")
+        )
+    )
+)
+
 (defrule goal-class-create-fill-cap
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
@@ -450,34 +482,31 @@
     )
 )
 
-(defrule goal-class-create-clear-bs
-    "Assert a goal class for CLEAR-MPS goals that holds the precondition for formulation
-    of potential BS clear goals."
-    (not (goal-class (class CLEAR-MPS) (sub-type SIMPLE)))
-    (wm-fact (key domain fact self args? r ?robot))
-    (wm-fact (key refbox team-color) (value ?team-color))
-    =>
-    (assert
-        (goal-class (class CLEAR-MPS)
-                    (id CLEAR-MPS)
-                    (type ACHIEVE)
-                    (sub-type SIMPLE)
-                    (param-names     team-color  robot  mps wp        side)
-                    (param-constants ?team-color ?robot nil nil       nil)
-                    (param-types     team-color  robot  bs  workpiece mps-side)
-                    (param-quantified)
-                    (preconditions "
-                        (and
-                            (can-hold ?robot)
+(defrule goal-class-assert-goal-clear-bs
+    "If the precondition of a goal-class for a CLEAR-MPS type is fulfilled, assert
+    the goal fact and thus formulate the goal. "
+    (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+    (goal (id ?production-id) (class URGENT) (mode FORMULATED))
 
-                            (mps-type ?mps BS)
-                            (mps-team ?mps ?team-color)
-                            (not (mps-state ?mps BROKEN))
-                            (wp-at ?wp ?mps ?side)
-                        )
-                    ")
-                    (effects "")
-        )
+    (goal-class (class CLEAR-MPS) (id ?cid))
+    (pddl-formula (part-of ?cid) (id ?formula-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
+    (pddl-grounding (id ?grounding-id) (param-values ?team-color ?robot ?mps ?wp ?side))
+    =>
+    (printout t "Goal " CLEAR-MPS " ("?mps") formulated from PDDL" crlf)
+    (assert (goal (id (sym-cat CLEAR-MPS- (gensym*)))
+                    (class CLEAR-MPS) (sub-type SIMPLE)
+                    (priority ?*PRIORITY-CLEAR-BS*)
+                    (parent ?production-id)
+                    (params robot ?robot
+                            mps ?mps
+                            wp ?wp
+                            side ?side
+                    )
+                    (required-resources (sym-cat ?mps - ?side) ?wp)
+    ))
+)
+
     )
 )
 
@@ -753,31 +782,6 @@
                             order ?order
                     )
                     (required-resources (sym-cat ?cs -INPUT) (sym-cat ?rs -OUTPUT) ?wp)
-    ))
-)
-
-(defrule goal-class-assert-goal-clear-bs
-    "If the precondition of a goal-class for a CLEAR-MPS type is fulfilled, assert
-    the goal fact and thus formulate the goal. "
-    (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-    (goal (id ?production-id) (class URGENT) (mode FORMULATED))
-
-    (goal-class (class CLEAR-MPS) (id ?cid))
-    (pddl-formula (part-of ?cid) (id ?formula-id))
-    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
-    (pddl-grounding (id ?grounding-id) (param-values ?team-color ?robot ?mps ?wp ?side))
-    =>
-    (printout t "Goal " CLEAR-MPS " ("?mps") formulated from PDDL" crlf)
-    (assert (goal (id (sym-cat CLEAR-MPS- (gensym*)))
-                    (class CLEAR-MPS) (sub-type SIMPLE)
-                    (priority ?*PRIORITY-CLEAR-BS*)
-                    (parent ?production-id)
-                    (params robot ?robot
-                            mps ?mps
-                            wp ?wp
-                            side ?side
-                    )
-                    (required-resources (sym-cat ?mps - ?side) ?wp)
     ))
 )
 
