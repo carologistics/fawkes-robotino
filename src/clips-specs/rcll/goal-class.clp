@@ -61,7 +61,7 @@
                                 )
                             )
                             (mps-has-side ?bs ?side)
-                            (order-deliverable ?order)
+                            (order-producible ?order)
                             (or
                                 (and
                                     (not (order-has-wp ?order))
@@ -119,7 +119,7 @@
                     (param-quantified )
                     (preconditions "
                         (and
-                            (order-deliverable ?order)
+                            (order-producible ?order)
                             (wp-for-order ?wp ?order)
                             (wp-base-color ?wp ?base-color)
                             (wp-ring1-color ?wp ?ring1-color)
@@ -188,7 +188,7 @@
                     (param-quantified )
                     (preconditions "
                         (and
-                            (order-deliverable ?order)
+                            (order-producible ?order)
                             (wp-for-order ?wp ?order)
                             (wp-base-color ?wp ?base-color)
                             (wp-ring1-color ?wp ?ring1-color)
@@ -410,7 +410,7 @@
                                 (holding ?robot ?wp)
                             )
                             ;order CEs
-                            (order-deliverable ?order)
+                            (order-producible ?order)
                         )
                     ")
                     (effects "")
