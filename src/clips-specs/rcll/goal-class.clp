@@ -1185,3 +1185,21 @@
     =>
     (retract ?wmf)
 )
+(defrule goal-class-failed-put-slide
+    (wm-fact (key domain fact self args? r ?robot))
+    (wm-fact (key domain fact mps-type args? m ?rs t RS))
+    ?t <- (wm-fact (key monitoring action-retried args? r ?robot a wp-put-slide-cc m ?rs wp ?wp)
+                   (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
+    (not (domain-fact (name rs-failed-put-slide) (param-values ?rs ?robot ?wp)))
+    =>
+    (assert (domain-fact (name rs-failed-put-slide) (param-values ?rs ?robot ?wp)))
+)
+
+(defrule goal-class-order-out-of-delivery
+    (wm-fact (key refbox game-time) (values $?game-time))
+    (wm-fact (key refbox order ?order delivery-end) (type UINT)
+        (value ?end&:(< ?end (nth$ 1 ?game-time))))
+    (not (domain-fact (name order-out-of-delivery) (param-values ?order)))
+    =>
+    (assert (domain-fact (name order-out-of-delivery) (param-values ?order)))
+)

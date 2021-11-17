@@ -98,6 +98,7 @@
 		(rs-ring-spec ?m - mps ?r - ring-color ?rn - ring-num)
 		(rs-filled-with ?m - mps ?n - ring-num)
 		(rs-paid-for ?rs - mps ?n - ring-num)
+		(rs-failed-put-slide ?rs - mps ?robot - robot ?wp - workpiece)
 		;rs-sub and rs-inc are static predicates stating the legal ring-num operations
 		(rs-sub ?minuend - ring-num ?subtrahend - ring-num ?difference - ring-num)
 		(rs-inc ?summand - ring-num ?sum - ring-num)
@@ -115,6 +116,7 @@
 		(order-producible ?ord - order)
 		(order-deliverable ?ord - order)
 		(order-has-wp ?ord - order)
+		(order-out-of-delivery ?ord -order)
 		(wp-unused ?wp - workpiece)
 		(wp-usable ?wp - workpiece)
 		(wp-at ?wp - workpiece ?m - mps ?side - mps-side)
