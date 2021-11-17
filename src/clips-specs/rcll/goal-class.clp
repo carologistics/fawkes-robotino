@@ -57,6 +57,77 @@
     )
 )
 
+(defrule goal-class-create-discard-wp
+    (wm-fact (key domain fact self args? r ?robot))
+    (wm-fact (key refbox team-color) (value ?team-color))
+
+    (not (goal-class (class DISCARD-UNKNOWN) (id DISCARD-UNKNOWN-WP)))
+    =>
+    (assert
+        (goal-class (class DISCARD-UNKNOWN)
+                    (id DISCARD-UNKNOWN-WP)
+                    (type ACHIEVE)
+                    (sub-type SIMPLE)
+                    (param-names     robot  wp        rs  order)
+                    (param-constants ?robot nil       nil nil)
+                    (param-types     robot  workpiece rs  order)
+                    (param-quantified )
+                    (preconditions "
+                        (and
+                            (holding ?robot ?wp)
+                            (or
+                                (rs-failed-put-slide ?rs ?robot ?wp)
+                                (or
+                                    (not (wp-for-order ?wp ?order))
+                                    (and
+                                        (wp-for-order ?wp ?order)
+                                        (wp-cap-color ?wp CAP_NONE)
+                                        (wp-ring1-color ?wp RING_NONE)
+                                    )
+                                )
+                            )
+                        )
+                    ")
+        )
+    )
+)
+
+(defrule goal-class-create-discard-cc
+    (wm-fact (key domain fact self args? r ?robot))
+    (wm-fact (key refbox team-color) (value ?team-color))
+
+    (not (goal-class (class DISCARD-UNKNOWN) (id DISCARD-UNKNOWN-CC)))
+    =>
+    (assert
+        (goal-class (class DISCARD-UNKNOWN)
+                    (id DISCARD-UNKNOWN-WP)
+                    (type ACHIEVE)
+                    (sub-type SIMPLE)
+                    (param-names     robot  wp        rs  order)
+                    (param-constants ?robot nil       nil nil)
+                    (param-types     robot  cap-carrier rs  order)
+                    (param-quantified )
+                    (preconditions "
+                        (and
+                            (holding ?robot ?wp)
+                            (or
+                                (rs-failed-put-slide ?rs ?robot ?wp)
+                                (or
+                                    (not (wp-for-order ?wp ?order))
+                                    (and
+                                        (wp-for-order ?wp ?order)
+                                        (wp-cap-color ?wp CAP_NONE)
+                                        (wp-ring1-color ?wp RING_NONE)
+                                    )
+                                )
+                            )
+                        )
+                    ")
+        )
+    )
+)
+
+
 
 ; PRODUCTION MAINTENANCE GOALS
 
