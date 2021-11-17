@@ -262,7 +262,7 @@
                             (rs-paid-for ?rs ?bases-needed)
                             (mps-side-free ?rs INPUT)
                             (not
-                                (and
+                                (or
                                     (rs-prepared-color ?rs ?other-color)
                                     (rs-prepared-color ?rs ?ring1-color)
                                 )
@@ -285,7 +285,6 @@
                                     (wp-ring1-color ?wp RING_NONE)
                                 )
                             )
-                            ;exclusivity
                         )
 
                     ")
@@ -339,7 +338,7 @@
                             (not (mps-state ?rs BROKEN))
                             (mps-side-free ?rs INPUT)
                             (not
-                                (and
+                                (or
                                     (rs-prepared-color ?rs ?ring2-color)
                                     (rs-prepared-color ?rs ?other-color)
                                 )
@@ -408,7 +407,7 @@
                             (not (mps-state ?rs BROKEN))
                             (mps-side-free ?rs INPUT)
                             (not
-                                (and
+                                (or
                                     (rs-prepared-color ?rs ?ring3-color)
                                     (rs-prepared-color ?rs ?other-color)
                                 )
@@ -819,9 +818,8 @@
             (wm-fact (key domain fact order-complexity args? ord ?any-order com ?other-complexity))
             (wm-fact (key config rcll exclusive-complexities) (values $?other-exclusive&:(member$ (str-cat ?other-complexity) ?other-exclusive)))
             (wm-fact (key config rcll exclusive-complexities) (values $?exclusive&:(member$ (str-cat ?complexity) ?exclusive)))))
-    (or (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
-        (allowed ?complexity)
-    )
+    (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
+
 
     (not (goal (class MOUNT-FIRST-RING)
                 (parent ?production-id)
@@ -879,7 +877,7 @@
 
 
     (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
-    (not (wm-fact (key strategy keep-mps-side-free args? m ?mps-rs side INPUT cause ~?wp)))
+    (not (wm-fact (key strategy keep-mps-side-free args? m ?rs side INPUT cause ~?wp)))
     (not (goal (class MOUNT-NEXT-RING) (parent ?maintain-id) (params robot ?robot $?
                                                                      wp ?wp $?
                                                                      order ?order)))
