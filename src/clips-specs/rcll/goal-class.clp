@@ -26,16 +26,100 @@
 
 
 ; CLEANUP GOALS
-(defrule goal-class-create-clear-bs
-    "Assert a goal class for CLEAR-MPS goals that holds the precondition for formulation
-    of potential BS clear goals."
-    (not (goal-class (class CLEAR-MPS) (sub-type SIMPLE)))
+(defrule goal-class-create-clear-rs-from-expired-product
+    (not (goal-class (class CLEAR-MPS) (id CLEAR-MPS-RS) (sub-type SIMPLE)))
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
     =>
     (assert
         (goal-class (class CLEAR-MPS)
-                    (id CLEAR-MPS)
+                    (id CLEAR-MPS-RS)
+                    (type ACHIEVE)
+                    (sub-type SIMPLE)
+                    (param-names     team-color  robot  rs  wp          side)
+                    (param-constants ?team-color ?robot nil nil         OUTPUT)
+                    (param-types     team-color  robot  rs  workpiece mps-side)
+                    (param-quantified)
+                    (preconditions "
+                        (and
+                            (can-hold ?robot)
+                            (not (mps-state ?rs BROKEN))
+                            (wp-at ?wp ?rs OUTPUT)
+                            (wp-cap-color ?wp CAP_NONE)
+                            (wp-for-order ?wp ?order)
+                            (order-out-of-delivery ?order)
+                        )
+                    ")
+                    (effects "")
+        )
+    )
+)
+
+(defrule goal-class-create-clear-cs-from-capless-carrier
+    (not (goal-class (class CLEAR-MPS) (id CLEAR-MPS-CS-CC) (sub-type SIMPLE)))
+    (wm-fact (key domain fact self args? r ?robot))
+    (wm-fact (key refbox team-color) (value ?team-color))
+    =>
+    (assert
+        (goal-class (class CLEAR-MPS)
+                    (id CLEAR-MPS-CS-CC)
+                    (type ACHIEVE)
+                    (sub-type SIMPLE)
+                    (param-names     team-color  robot  cs  cc          side)
+                    (param-constants ?team-color ?robot nil nil         OUTPUT)
+                    (param-types     team-color  robot  cs  cap-carrier mps-side)
+                    (param-quantified)
+                    (preconditions "
+                        (and
+                            (can-hold ?robot)
+                            (not (mps-state ?cs BROKEN))
+                            (wp-at ?cc ?cs OUTPUT)
+                            (wp-cap-color ?cc CAP_NONE)
+                        )
+                    ")
+                    (effects "")
+        )
+    )
+)
+
+(defrule goal-class-create-clear-cs-from-finished-product
+    (not (goal-class (class CLEAR-MPS) (id CLEAR-MPS-CS-WP) (sub-type SIMPLE)))
+    (wm-fact (key domain fact self args? r ?robot))
+    (wm-fact (key refbox team-color) (value ?team-color))
+    =>
+    (assert
+        (goal-class (class CLEAR-MPS)
+                    (id CLEAR-MPS-CS-WP)
+                    (type ACHIEVE)
+                    (sub-type SIMPLE)
+                    (param-names     team-color  robot  cs  wp        side)
+                    (param-constants ?team-color ?robot nil nil       OUTPUT)
+                    (param-types     team-color  robot  cs  workpiece mps-side)
+                    (param-quantified)
+                    (preconditions "
+                        (and
+                            (can-hold ?robot)
+                            (not (mps-side-free ?cs INPUT))
+                            (not (mps-state ?cs BROKEN))
+                            (wp-at ?wp ?cs OUTPUT)
+                            (not (wp-cap-color ?wp CAP_NONE))
+                        )
+                    ")
+                    (effects "")
+        )
+    )
+)
+
+(defrule goal-class-create-clear-bs
+    "Assert a goal class for CLEAR-MPS goals that holds the precondition for formulation
+    of potential BS clear goals."
+    (not (goal-class (class CLEAR-MPS) (id CLEAR-MPS-BS) (sub-type SIMPLE)))
+    (wm-fact (key domain fact self args? r ?robot))
+    (wm-fact (key refbox team-color) (value ?team-color))
+    =>
+    (assert
+        (goal-class (class CLEAR-MPS)
+                    (id CLEAR-MPS-BS)
                     (type ACHIEVE)
                     (sub-type SIMPLE)
                     (param-names     team-color  robot  mps wp        side)
