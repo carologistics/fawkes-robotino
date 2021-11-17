@@ -783,22 +783,62 @@
 ; MPS INTERACTION GOALS
 
 ; CLEANUP GOALS
-(defrule goal-class-assert-goal-clear-bs
+
+(defrule goal-class-assert-goal-clear-mps
     "If the precondition of a goal-class for a CLEAR-MPS type is fulfilled, assert
     the goal fact and thus formulate the goal. "
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-    (goal (id ?production-id) (class URGENT) (mode FORMULATED))
+    (or
+        (goal (class URGENT) (mode FORMULATED))
+        (goal (class CLEAR) (mode FORMULATED))
 
+    )
     (goal-class (class CLEAR-MPS) (id ?cid))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?team-color ?robot ?mps ?wp ?side))
+
+    (wm-fact (key domain fact mps-type args? m ?mps t ?mps-type))
     =>
     (printout t "Goal " CLEAR-MPS " ("?mps") formulated from PDDL" crlf)
+
+    (bind ?parent nil)
+    (bind ?priority nil)
+
+    (if (eq ?mps-type CS)
+        then
+        (do-for-fact ((?goal goal)) (and (eq ?goal:class CLEAR) (eq ?goal:mode FORMULATED))
+            (bind ?parent ?goal:id)
+            (bind ?priority ?*PRIORITY-CLEAR-CS*)
+            (if (and (any-factp ((?wm wm-fact)) (and (wm-key-prefix ?wm:key (create$ domain fact wp-at))
+                                                (eq (wm-key-arg ?wm:key m) ?mps)
+                                                (eq (wm-key-arg ?wm:key side) INPUT)))
+                (eq ?cid CLEAR-MPS-CS-CC))
+                then
+                (bind ?priority (+ 1 ?priority))
+                (printout warn "Enhance CLEAR-MPS priority, since there is a product at the input already" crlf)
+            )
+        )
+        else
+        (if (eq ?mps-type BS) then
+            (do-for-fact ((?goal goal)) (and (eq ?goal:class URGENT) (eq ?goal:mode FORMULATED))
+                (bind ?parent ?goal:id)
+                (bind ?priority ?*PRIORITY-CLEAR-BS*)
+            )
+            else
+            (if (eq ?mps-type RS) then
+                (do-for-fact ((?goal goal)) (and (eq ?goal:class CLEAR) (eq ?goal:mode FORMULATED))
+                    (bind ?parent ?goal:id)
+                    (bind ?priority ?*PRIORITY-CLEAR-RS*)
+                )
+            )
+        )
+    )
+
     (assert (goal (id (sym-cat CLEAR-MPS- (gensym*)))
                     (class CLEAR-MPS) (sub-type SIMPLE)
-                    (priority ?*PRIORITY-CLEAR-BS*)
-                    (parent ?production-id)
+                    (priority ?priority)
+                    (parent ?parent)
                     (params robot ?robot
                             mps ?mps
                             wp ?wp
@@ -1296,6 +1336,7 @@
     =>
     (retract ?wmf)
 )
+
 (defrule goal-class-failed-put-slide
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key domain fact mps-type args? m ?rs t RS))

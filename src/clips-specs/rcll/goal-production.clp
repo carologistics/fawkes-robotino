@@ -391,83 +391,83 @@
 ; )
 
 
-(defrule goal-production-create-clear-rs-from-expired-product
-  "Remove an unfinished product from the output of a ring station."
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (class CLEAR) (id ?maintain-id) (mode FORMULATED))
-  (wm-fact (key refbox game-time) (values $?game-time))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  ;Robot CEs
-  (wm-fact (key domain fact self args? r ?robot))
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-  ;MPS CEs
-  (wm-fact (key domain fact mps-type args? m ?mps t RS))
-  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
-  ;WP CEs
-  (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
-  (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
-  (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))
+; (defrule goal-production-create-clear-rs-from-expired-product
+;   "Remove an unfinished product from the output of a ring station."
+;   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;   (goal (class CLEAR) (id ?maintain-id) (mode FORMULATED))
+;   (wm-fact (key refbox game-time) (values $?game-time))
+;   (wm-fact (key refbox team-color) (value ?team-color))
+;   ;Robot CEs
+;   (wm-fact (key domain fact self args? r ?robot))
+;   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+;   ;MPS CEs
+;   (wm-fact (key domain fact mps-type args? m ?mps t RS))
+;   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+;   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+;   ;WP CEs
+;   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+;   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+;   (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))
 
-  ;TODO: Discuss strategy, throwing away expired products is usually not desired.
-  (wm-fact (key refbox order ?order delivery-end) (type UINT)
-    (value ?end&:(< ?end (nth$ 1 ?game-time))))
-  =>
-  (printout t "Goal " CLEAR-MPS " ("?mps") formulated" crlf)
-  (assert (goal (id (sym-cat CLEAR-MPS- (gensym*))) (class CLEAR-MPS)
-                (sub-type SIMPLE)
-                (priority ?*PRIORITY-CLEAR-RS*)
-                (parent ?maintain-id)
-                (params robot ?robot
-                        mps ?mps
-                        wp ?wp
-                        side OUTPUT
-                )
-                (required-resources (sym-cat ?mps -OUTPUT) ?wp)
-  ))
-)
+;   ;TODO: Discuss strategy, throwing away expired products is usually not desired.
+;   (wm-fact (key refbox order ?order delivery-end) (type UINT)
+;     (value ?end&:(< ?end (nth$ 1 ?game-time))))
+;   =>
+;   (printout t "Goal " CLEAR-MPS " ("?mps") formulated" crlf)
+;   (assert (goal (id (sym-cat CLEAR-MPS- (gensym*))) (class CLEAR-MPS)
+;                 (sub-type SIMPLE)
+;                 (priority ?*PRIORITY-CLEAR-RS*)
+;                 (parent ?maintain-id)
+;                 (params robot ?robot
+;                         mps ?mps
+;                         wp ?wp
+;                         side OUTPUT
+;                 )
+;                 (required-resources (sym-cat ?mps -OUTPUT) ?wp)
+;   ))
+; )
 
 
-(defrule goal-production-create-clear-cs-for-capless-carriers
-" Remove a capless capcarrier from the output of a cap station after
-  retrieving a cap from it.
-"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class CLEAR) (mode FORMULATED))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  ;Robot CEs
-  (wm-fact (key domain fact self args? r ?robot))
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-  ;MPS CEs
-  ;Maybe add a check for the base_color
-  (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
-  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  ;WP CEs
-  (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
-  (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
-  =>
-  (printout t "Goal " CLEAR-MPS " ("?mps") formulated" crlf)
-  (bind ?prio ?*PRIORITY-CLEAR-CS*)
-  (if (any-factp ((?wm wm-fact)) (and (wm-key-prefix ?wm:key (create$ domain fact wp-at))
-                                      (eq (wm-key-arg ?wm:key m) ?mps)
-                                      (eq (wm-key-arg ?wm:key side) INPUT)))
-    then
-      (bind ?prio (+ 1 ?prio))
-      (printout warn "Enhance CLEAR-MPS priority, since there is a product at the input already" crlf)
-  )
-  (assert (goal (id (sym-cat CLEAR-MPS- (gensym*)))
-                (class CLEAR-MPS) (sub-type SIMPLE)
-                (priority ?prio)
-                (parent ?production-id)
-                (params robot ?robot
-                        mps ?mps
-                        wp ?wp
-                        side OUTPUT
-                )
-                (required-resources (sym-cat ?mps -OUTPUT) ?wp)
-  ))
-)
+; (defrule goal-production-create-clear-cs-for-capless-carriers
+; " Remove a capless capcarrier from the output of a cap station after
+;   retrieving a cap from it.
+; "
+;   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;   (goal (id ?production-id) (class CLEAR) (mode FORMULATED))
+;   (wm-fact (key refbox team-color) (value ?team-color))
+;   ;Robot CEs
+;   (wm-fact (key domain fact self args? r ?robot))
+;   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+;   ;MPS CEs
+;   ;Maybe add a check for the base_color
+;   (wm-fact (key domain fact mps-type args? m ?mps t CS))
+;   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+;   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+;   ;WP CEs
+;   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+;   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+;   =>
+;   (printout t "Goal " CLEAR-MPS " ("?mps") formulated" crlf)
+;   (bind ?prio ?*PRIORITY-CLEAR-CS*)
+;   (if (any-factp ((?wm wm-fact)) (and (wm-key-prefix ?wm:key (create$ domain fact wp-at))
+;                                       (eq (wm-key-arg ?wm:key m) ?mps)
+;                                       (eq (wm-key-arg ?wm:key side) INPUT)))
+;     then
+;       (bind ?prio (+ 1 ?prio))
+;       (printout warn "Enhance CLEAR-MPS priority, since there is a product at the input already" crlf)
+;   )
+;   (assert (goal (id (sym-cat CLEAR-MPS- (gensym*)))
+;                 (class CLEAR-MPS) (sub-type SIMPLE)
+;                 (priority ?prio)
+;                 (parent ?production-id)
+;                 (params robot ?robot
+;                         mps ?mps
+;                         wp ?wp
+;                         side OUTPUT
+;                 )
+;                 (required-resources (sym-cat ?mps -OUTPUT) ?wp)
+;   ))
+; )
 
 
 ; (defrule goal-production-create-clear-bs
@@ -499,41 +499,41 @@
 ;   ))
 ; )
 
-(defrule goal-production-clear-cs-blocked
-  "Remove a finished product from a cap station if the station is blocked"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class CLEAR) (mode FORMULATED))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  ;Robot CEs
-  (wm-fact (key domain fact self args? r ?robot))
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-  ;There is a cap-carrier on the input that needs the CS,
-  ;there is a product that needs the CS,
-  ;there is a product on the output blocking it
-  (wm-fact (key domain fact wp-at args? wp ?cc m ?mps side INPUT))
-  (wm-fact (key wp meta next-step args? wp ?next-wp) (value CAP))
-  (wm-fact (key domain fact wp-for-order args? wp ?next-wp ord ?order))
-  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
-  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-  (wm-fact (key domain fact wp-at args? wp ?wp-output m ?mps side OUTPUT))
-  ;MPS CEs
-  (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
-  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  =>
-  (printout t "Goal " CLEAR-MPS " (" ?mps ") formulated" crlf)
-  (assert (goal (id (sym-cat CLEAR-MPS- (gensym*)))
-                (class CLEAR-MPS) (sub-type SIMPLE)
-                (priority ?*PRIORITY-CLEAR-CS-NEEDED*)
-                (parent ?production-id)
-                (params robot ?robot
-                        mps ?mps
-                        wp ?wp-output
-                        side OUTPUT
-                )
-                (required-resources (sym-cat ?mps -OUTPUT) ?wp-output)
-  ))
-)
+; (defrule goal-production-clear-cs-blocked
+;   "Remove a finished product from a cap station if the station is blocked"
+;   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;   (goal (id ?production-id) (class CLEAR) (mode FORMULATED))
+;   (wm-fact (key refbox team-color) (value ?team-color))
+;   ;Robot CEs
+;   (wm-fact (key domain fact self args? r ?robot))
+;   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+;   ;There is a cap-carrier on the input that needs the CS,
+;   ;there is a product that needs the CS,
+;   ;there is a product on the output blocking it
+;   (wm-fact (key domain fact wp-at args? wp ?cc m ?mps side INPUT))
+;   (wm-fact (key wp meta next-step args? wp ?next-wp) (value CAP))
+;   (wm-fact (key domain fact wp-for-order args? wp ?next-wp ord ?order))
+;   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+;   (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+;   (wm-fact (key domain fact wp-at args? wp ?wp-output m ?mps side OUTPUT))
+;   ;MPS CEs
+;   (wm-fact (key domain fact mps-type args? m ?mps t CS))
+;   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+;   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+;   =>
+;   (printout t "Goal " CLEAR-MPS " (" ?mps ") formulated" crlf)
+;   (assert (goal (id (sym-cat CLEAR-MPS- (gensym*)))
+;                 (class CLEAR-MPS) (sub-type SIMPLE)
+;                 (priority ?*PRIORITY-CLEAR-CS-NEEDED*)
+;                 (parent ?production-id)
+;                 (params robot ?robot
+;                         mps ?mps
+;                         wp ?wp-output
+;                         side OUTPUT
+;                 )
+;                 (required-resources (sym-cat ?mps -OUTPUT) ?wp-output)
+;   ))
+; )
 
 
 (defrule goal-production-increase-priority-to-prefill-rs-for-started-order
