@@ -49,7 +49,7 @@
 	             (param-values C-CS1 OUTPUT CYAN))
 	(plan-action (id 12) (plan-id TESTGOAL2-PLAN) (goal-id TESTGOAL2)
 	             (action-name visit) (skiller "/robot2/Skiller")
-	             (param-values C-BS2OUTPUT CYAN))
+	             (param-values C-BS2 OUTPUT CYAN))
 	(plan-action (id 13) (plan-id TESTGOAL2-PLAN) (goal-id TESTGOAL2)
 	             (action-name visit) (skiller "/robot2/Skiller")
 	             (param-values C-SS OUTPUT CYAN))
