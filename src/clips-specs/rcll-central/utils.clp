@@ -58,8 +58,8 @@
 
 (deftemplate goal-meta
 	(slot goal-id (type SYMBOL))
-	(slot assigned-to (type SYMBOL) (allowed-values robot1 robot2 robot3
-	                                                nil central))
+	(slot assigned-to (type SYMBOL) (allowed-values nil robot1 robot2 robot3
+	                                                central) (default nil))
 )
 
 (deffunction tag-id-to-side (?tag-id)

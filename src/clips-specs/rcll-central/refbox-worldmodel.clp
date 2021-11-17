@@ -197,6 +197,7 @@
             )
             (and  (wm-key-prefix ?wm-fact:key (create$ domain fact rs-ring-spec))
               (not (member$ (wm-key-arg ?wm-fact:key m) ?machines))
+              (neq (wm-key-arg ?wm-fact:key r) RING_NONE)
             )
       )
       (retract ?wm-fact)

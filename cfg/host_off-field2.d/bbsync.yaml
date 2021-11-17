@@ -46,7 +46,7 @@ fawkes/bbsync:
     robotino-base/active: false
     robot1:
       #active: true (set via the off-field startup)
-      host: robotino-laptop-1
+      host: robotino-base-1
       port: !tcp-port 1910
       reading:
         skiller: SkillerInterface::Skiller=/robot1/Skiller
@@ -86,7 +86,7 @@ fawkes/bbsync:
 
     robot2:
       #active: true (set via the off-field startup)
-      host: robotino-laptop-2
+      host: robotino-base-2
       port: !tcp-port 1910
       reading:
         skiller: SkillerInterface::Skiller=/robot2/Skiller
@@ -125,7 +125,7 @@ fawkes/bbsync:
 
     robot3:
       #active: true (set via the off-field startup)
-      host: robotino-laptop-3
+      host: robotino-base-3
       port: !tcp-port 1910
       reading:
         skiller: SkillerInterface::Skiller=/robot3/Skiller

@@ -239,7 +239,7 @@
 " If there is a zone, where we suspect a machine, interrupt the EXPLORATION-PLAN and start exploring the zone
 "
 	(wm-fact (key central agent robot args? r ?r))
-  (goal (id ?parent) (class EXPLORATION-ROOT))
+  (goal (id ?parent) (class EXPLORATION-CHALLENGE-ROOT))
   (Position3DInterface (id ?pos-id&:(eq ?pos-id (remote-if-id ?r "Pose"))) (translation $?trans))
   ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn) (value ?ts&:(<= ?ts ?*EXP-SEARCH-LIMIT*)))
   (wm-fact (key domain fact zone-content args? z ?zn m UNKNOWN))
@@ -281,7 +281,7 @@
   (modify ?ze (value ?new-ts))
   (printout t "Goal EXPLORE-ZONE  formulated in zone: " ?zn " with tag: " ?tv crlf)
   (assert (goal (id (sym-cat EXPLORE-ZONE- (gensym*))) (class EXPLORE-ZONE) (sub-type SIMPLE)
-	              (params z ?zn) (parent ?parent) (priority 100.) (mode FORMULATED)))
+	              (params z ?zn) (meta-template goal-meta) (parent ?parent) (priority 100.) (mode FORMULATED)))
 )
 
 (defrule exp-explore-zone-executable
@@ -289,6 +289,9 @@
 	?g <- (goal (id ?id) (class EXPLORE-ZONE) (params z ?zn) (mode FORMULATED)
 	      (is-executable FALSE))
 	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
+	(not (and (goal (id ?other-id) (class EXPLORE-ZONE) (params z ?zn) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED))
+	          (goal-meta (goal-id ?other-id) (assigned-to ?other-robot&:(neq ?other-robot ?robot))))
+	)
 	=>
 	(modify ?g (is-executable TRUE))
 )
@@ -307,7 +310,7 @@
   (not (and
 	       (wm-fact (key exploration fact line-vis args? zone ?zn2) (value ?vh-tmp))
 	       (wm-fact (key exploration fact tag-vis args? zone ?zn2) (value ?tv-tmp))
-         (wm-fact (key exploration fact time-searched args? zone ?zn2) (value ?ts&:(<= ?ts ?*EXP-SEARCH-LIMIT*)))
+         (wm-fact (key exploration fact time-searched args? zone ?zn2) (value ?ts&:(< ?ts ?*EXP-SEARCH-LIMIT*)))
 	       (wm-fact (key domain fact zone-content args? z ?zn2 m UNKNOWN))
 	       (test (or (> ?vh-tmp 0) (> ?tv-tmp 0)))
 	     )

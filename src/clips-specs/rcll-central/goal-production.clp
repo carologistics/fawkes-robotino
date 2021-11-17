@@ -43,8 +43,6 @@
 	(if (neq ?robot nil) then
 		(assert (goal-meta (goal-id (fact-slot-value ?goal id))
 		                   (assigned-to ?robot)))
-		(printout t "Created new goal-meta fact to assign " ?robot
-		            " to goal " (fact-slot-value ?goal id) crlf)
 	)
 )
 
@@ -120,7 +118,8 @@
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(time $?now)
 	?g <- (goal (id ?maintain-id) (class BEACON-MAINTAIN) (mode SELECTED))
-	(wm-fact (key central agent robot args? r robot1))
+	(not (goal (parent ?maintain-id)))
+	(wm-fact (key central agent robot args? r ?r))
 	=>
 	(bind ?goal (assert (goal (id (sym-cat SEND-BEACON- (gensym*))) (sub-type SIMPLE)
 	              (class SEND-BEACON) (parent ?maintain-id) (verbosity QUIET)
@@ -753,12 +752,12 @@ The workpiece remains in the output of the used ring station after
 
 
 	(not (wm-fact (key domain fact wp-at args? wp ?wp-loc m ?target-mps side INPUT)))
-	(wm-fact (key domain fact mps-type args? m ?other-rs&~?target-mps t RS))
-	(wm-fact (key domain fact mps-team args? m ?other-rs col ?team-color))
 	; There is at least one other rs side, except for the target input, that
 	; is free (because occupying all 4 sides at once can cause deadlocks)
 	(or (wm-fact (key domain fact mps-side-free args? m ?target-mps side OUTPUT))
-	 (wm-fact (key domain fact mps-side-free args? m ?other-rs side ?any-side)))
+	    (and (wm-fact (key domain fact mps-type args? m ?other-rs&~?target-mps t RS))
+	         (wm-fact (key domain fact mps-team args? m ?other-rs col ?team-color))
+	         (wm-fact (key domain fact mps-side-free args? m ?other-rs side ?any-side))))
 
 	; MPS-Source CEs
 	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
@@ -1245,8 +1244,8 @@ The workpiece remains in the output of the used ring station after
 			)
 			(goal-production-assert-instruct-cs-mount-cap ?cs ?cap-col)
 		)
-		;(goal-production-assert-deliver-rc21 ?wp-for-order)
-		(goal-production-assert-deliver ?wp-for-order)
+		(goal-production-assert-deliver-rc21 ?wp-for-order)
+		;(goal-production-assert-deliver ?wp-for-order)
 		(goal-production-assert-instruct-ds-deliver ?wp-for-order)
 	)
   )
@@ -1380,7 +1379,9 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key game state) (value RUNNING))
 	(wm-fact (key refbox team-color) (value ?color))
 	(not (wm-fact (key domain fact rs-ring-spec args? $? rn NA)))
-	(wm-fact (key domain fact rs-ring-spec args? $? r ~RING_NONE $?))
+	; Ensure that a MachineInfo was received already.
+	; So if there are ring stations with specs, then those specs are registered.
+	(wm-fact (key domain fact mps-state args? m ?any-mps s IDLE))
 	=>
 	(bind ?g (goal-tree-assert-central-run-parallel PRODUCTION-ROOT))
 	(modify ?g (meta do-not-finish)(priority 1.0))
@@ -1677,6 +1678,7 @@ The workpiece remains in the output of the used ring station after
 	        (id (sym-cat EXPLORATION-CHALLENGE-MOVE- (gensym*)))
 	        (sub-type SIMPLE)
 	        (priority 1.0)
+	        (meta-template goal-meta)
 	        (verbosity NOISY) (is-executable FALSE)
 	        (params target (translate-location-map-to-grid ?location) location ?location)
 	        )))
