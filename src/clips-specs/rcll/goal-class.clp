@@ -724,6 +724,33 @@
     ))
 )
 
+(defrule goal-class-assert-goal-discard
+    (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
+    (goal (id ?parent) (class NO-PROGRESS) (mode FORMULATED))
+    (goal (id ?urgent) (class URGENT) (mode FORMULATED))
+
+    (goal-class (class DISCARD-UNKNOWN) (id ?cid))
+    (pddl-formula (part-of ?cid) (id ?formula-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
+    (pddl-grounding (id ?grounding-id) (param-values ?robot ?wp ?rs ?order))
+
+    (not (goal (class DISCARD-UNKNOWN) (params robot ?robot wp ?wp)))
+    =>
+    (do-for-fact ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ monitoring safety-discard))
+        (bind ?parent ?urgent)
+        (retract ?wm)
+    )
+    (printout t "Goal " DISCARD-UNKNOWN " formulated from PDDL" crlf)
+    (assert (goal (id (sym-cat DISCARD-UNKNOWN- (gensym*)))
+                    (class DISCARD-UNKNOWN) (sub-type SIMPLE)
+                    (priority ?*PRIORITY-DISCARD-UNKNOWN*)
+                    (parent ?parent)
+                    (params robot ?robot
+                            wp ?wp
+                    )
+                    (required-resources ?wp)
+    ))
+)
 
 
 ; PRODUCTION MAINTENANCE GOALS

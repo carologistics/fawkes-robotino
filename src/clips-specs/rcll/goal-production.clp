@@ -770,41 +770,41 @@
 ; )
 
 
-(defrule goal-production-create-discard-unknown
-  "Discard a base which is not needed."
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?parent) (class NO-PROGRESS) (mode FORMULATED))
-  (goal (id ?urgent) (class URGENT) (mode FORMULATED))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  ;TODO: Model state IDLE
-  (wm-fact (key domain fact self args? r ?robot))
-  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
-  ;only discard if ring stations have at least two bases loaded
-  ;(wm-fact (key domain fact rs-filled-with args? m ?mps n TWO|THREE))
-  ;question: or would be more correct to create it and later
-  ;  reject it because its not useful
-  ;only discard if there is no cap mounted (i.e. wp is not a finished product)
-  (or (and (and (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
-                (wm-fact (key domain fact wp-ring1-color args? wp ?wp col RING_NONE)))
-           (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order)))
-      (not (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))))
-  =>
-  (do-for-fact ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ monitoring safety-discard))
-    (bind ?parent ?urgent)
-    (retract ?wm)
-  )
-  (printout t "Goal " DISCARD-UNKNOWN " formulated" crlf)
-  (assert (goal (id (sym-cat DISCARD-UNKNOWN- (gensym*)))
-                (class DISCARD-UNKNOWN) (sub-type SIMPLE)
-                (priority ?*PRIORITY-DISCARD-UNKNOWN*)
-                (parent ?parent)
-                (params robot ?robot
-                        wp ?wp
-                )
-                (required-resources ?wp)
-  ))
-  ; (assert (goal-already-tried DISCARD-UNKNOWN))
-)
+; (defrule goal-production-create-discard-unknown
+;   "Discard a base which is not needed."
+;   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;   (goal (id ?parent) (class NO-PROGRESS) (mode FORMULATED))
+;   (goal (id ?urgent) (class URGENT) (mode FORMULATED))
+;   (wm-fact (key refbox team-color) (value ?team-color))
+;   ;TODO: Model state IDLE
+;   (wm-fact (key domain fact self args? r ?robot))
+;   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+;   ;only discard if ring stations have at least two bases loaded
+;   ;(wm-fact (key domain fact rs-filled-with args? m ?mps n TWO|THREE))
+;   ;question: or would be more correct to create it and later
+;   ;  reject it because its not useful
+;   ;only discard if there is no cap mounted (i.e. wp is not a finished product)
+;   (or (and (and (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+;                 (wm-fact (key domain fact wp-ring1-color args? wp ?wp col RING_NONE)))
+;            (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order)))
+;       (not (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))))
+;   =>
+;   (do-for-fact ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ monitoring safety-discard))
+;     (bind ?parent ?urgent)
+;     (retract ?wm)
+;   )
+;   (printout t "Goal " DISCARD-UNKNOWN " formulated" crlf)
+;   (assert (goal (id (sym-cat DISCARD-UNKNOWN- (gensym*)))
+;                 (class DISCARD-UNKNOWN) (sub-type SIMPLE)
+;                 (priority ?*PRIORITY-DISCARD-UNKNOWN*)
+;                 (parent ?parent)
+;                 (params robot ?robot
+;                         wp ?wp
+;                 )
+;                 (required-resources ?wp)
+;   ))
+;   ; (assert (goal-already-tried DISCARD-UNKNOWN))
+; )
 
 
 ; (defrule goal-production-create-produce-c0
@@ -1329,33 +1329,33 @@
 )
 
 
-(defrule goal-production-create-discard-failed-put-slide
-" Discard the currently held workpiece after filling it to a ring station
-  failed too often
-"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class NO-PROGRESS) (mode FORMULATED))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  ;To-Do: Model state IDLE
-  (wm-fact (key domain fact self args? r ?robot))
-  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
-  (wm-fact (key domain fact mps-type args? m ?mps t RS))
-  ?t <- (wm-fact (key monitoring action-retried args? r ?self a wp-put-slide-cc m ?mps wp ?wp)
-                (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
+; (defrule goal-production-create-discard-failed-put-slide
+; " Discard the currently held workpiece after filling it to a ring station
+;   failed too often
+; "
+;   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;   (goal (id ?production-id) (class NO-PROGRESS) (mode FORMULATED))
+;   (wm-fact (key refbox team-color) (value ?team-color))
+;   ;To-Do: Model state IDLE
+;   (wm-fact (key domain fact self args? r ?robot))
+;   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+;   (wm-fact (key domain fact mps-type args? m ?mps t RS))
+;   ?t <- (wm-fact (key monitoring action-retried args? r ?self a wp-put-slide-cc m ?mps wp ?wp)
+;                 (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
 
-  =>
-  (printout t "Goal " DISCARD-UNKNOWN " formulated" crlf)
- (assert (goal (id (sym-cat DISCARD-UNKNOWN- (gensym*)))
-                (class DISCARD-UNKNOWN) (sub-type SIMPLE)
-                (priority ?*PRIORITY-RESET*)
-                (parent ?production-id)
-                (params robot ?robot
-                        wp ?wp
-                )
-                (required-resources ?wp)
-  ))
-  (retract ?t)
-)
+;   =>
+;   (printout t "Goal " DISCARD-UNKNOWN " formulated" crlf)
+;  (assert (goal (id (sym-cat DISCARD-UNKNOWN- (gensym*)))
+;                 (class DISCARD-UNKNOWN) (sub-type SIMPLE)
+;                 (priority ?*PRIORITY-RESET*)
+;                 (parent ?production-id)
+;                 (params robot ?robot
+;                         wp ?wp
+;                 )
+;                 (required-resources ?wp)
+;   ))
+;   (retract ?t)
+; )
 
 ; (defrule goal-production-create-deliver
 ;   "Deliver a fully produced workpiece."
