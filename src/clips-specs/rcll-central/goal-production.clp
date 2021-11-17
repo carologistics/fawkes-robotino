@@ -44,10 +44,11 @@
 "Creates the goal-meta fact, assigns the goal to the robot and to its order"
 	(assert (goal-meta (goal-id (fact-slot-value ?goal id))
 	                   (assigned-to ?robot)
-	                   (order-id ?order-id)))
+	                   (order-id ?order-id)
+	                   (ring-nr ?ring-nr)))
 	(printout t "Created new goal-meta fact to assign " ?robot
 	            " to goal " (fact-slot-value ?goal id)
-	            " for order " ?order-id crlf)
+	            " with ring-nr " ?ring-nr " for order " ?order-id crlf)
 )
 
 (deffunction goal-meta-assert-restricted (?goal ?robot)
@@ -135,7 +136,7 @@
 	(bind ?goal (assert (goal (id (sym-cat SEND-BEACON- (gensym*))) (sub-type SIMPLE)
 	              (class SEND-BEACON) (parent ?maintain-id) (verbosity QUIET)
 	              (is-executable TRUE))))
-	(goal-meta-assert ?goal central)
+	(goal-meta-assert ?goal central nil nil)
 )
 
 (defrule goal-production-create-refill-shelf-maintain
@@ -170,7 +171,7 @@
 	              (class REFILL-SHELF) (sub-type SIMPLE)
 	              (parent ?maintain-id) (verbosity QUIET)
 	              (params mps ?mps) (is-executable TRUE))))
-	(goal-meta-assert ?goal central)
+	(goal-meta-assert ?goal central nil nil)
 )
 
 
@@ -268,7 +269,7 @@
 	?g <- (goal (id ?id) (class ENTER-FIELD) (sub-type SIMPLE) (mode FORMULATED)
 	      (params team-color ?team-color)
 	      (is-executable FALSE))
-	(goal-meta (goal-id ?id) (assigned-to ?robot))
+	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
 	(wm-fact (key refbox state) (value RUNNING))
 	(wm-fact (key refbox phase) (value PRODUCTION|EXPLORATION))
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -1105,7 +1106,7 @@ The workpiece remains in the output of the used ring station after
 
 	(bind ?goal (assert (goal (class PAY-FOR-RINGS-WITH-CAP-CARRIER)
 	      (id (sym-cat PAY-FOR-RINGS-WITH-CAP-CARRIER- (gensym*))) (sub-type SIMPLE)
-	      (verbosity NOISY) (is-executable FALSE);for future, TODO: remove template goal-meta whereever goal-meta-assert is used
+	      (verbosity NOISY) (is-executable FALSE)
 	      (params  wp ?wp
 	               wp-loc ?wp-loc
 	               wp-side ?wp-side

@@ -216,7 +216,7 @@
 	                                   $?)
 	                          (is-executable FALSE))
 
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (order-id ?order-id))
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -234,15 +234,16 @@
 	(wm-fact (key domain fact mps-side-free args? m ?target-mps side OUTPUT))
 
 	; CS is not buffered, but with the following dependency,
-	  we can assume it will soon
+	;  we can assume it will soon
 	(and  ; A feasible (same parameter) buffer-cap or
 	      ; instruct-cs-buffer-cap goal is executing...
 	     (goal (id ?dependency-goal-id)
 	           (class ?dependency-class&BUFFER-CAP|INSTRUCT-CS-BUFFER-CAP)
 	           (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	           (params target-mps ?target-mps $?))
+	     (goal-meta (goal-id ?dependency-goal-id) (order-id ?order-id))
 	       ; ... and it is not already grounded...
-	     (not (and   ; ... meaning there is another dependency...
+	     (not (and   ; ... meaning there is another dependency... ;for future: wrong case: dependency-goal is instruct but buffer-cap is still running, ground both in every case
 	               (dependency-assignment (goal-id ?other-goal-id)
 	                                      (grounded-with ?dependency-goal-id))
 	                 ; ... and the other goal is already executing
@@ -292,9 +293,10 @@
 	(if (eq ?dependency-class BUFFER-CAP)
 	 then (do-for-fact ((?instruct-goal goal)
 	                    (?instruct-da dependency-assignment)
-	                    (?buffer-goal-meta goal-meta))
-		      (and (eq ?buffer-goal-meta:goal-id ?dependency-goal-id)
-		           (eq ?buffer-goal-meta:instruct-goal-id ?instruct-goal:id)
+	                    (?instruct-goal-meta goal-meta))
+		      (and (eq ?instruct-goal-meta:goal-id ?instruct-goal:id)
+		           (eq ?instruct-goal-meta:order-id ?order-id)
+		           (eq ?instruct-goal:class INSTRUCT-CS-BUFFER-CAP)
 		           (eq ?instruct-da:goal-id ?goal-id)
 		           (eq ?instruct-da:class INSTRUCT-CS-BUFFER-CAP))
 		      (modify ?instruct-da (grounded-with ?instruct-goal:id))
@@ -317,7 +319,7 @@
 	                                   $?)
 	                          (is-executable FALSE))
 
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (order-id ?order-id))
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -348,14 +350,15 @@
 
 	; CS is not buffered, but with the following dependency, we can assume it
 	; will soon
-	(and  ; A feasible (same parameter) buffer-cap or
+	(and  ; A feasible (same parameter) buffer-cap or ;for future: no ands at the start
 	      ; instruct-cs-buffer-cap goal is executing...
 	     (goal (id ?dependency-goal-id)
 	           (class ?dependency-class&BUFFER-CAP|INSTRUCT-CS-BUFFER-CAP)
 	           (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	           (params target-mps ?target-mps $?))
+	     (goal-meta (goal-id ?dependency-goal-id) (order-id ?order-id))
 	       ; ... and it is not already grounded...
-	     (not (and    ; ... meaning there is another dependency...
+	     (not (and    ; ... meaning there is another dependency... ;for future: instruct and mount cap belong to same order, no need to check for this?
 	               (dependency-assignment (goal-id ?other-goal-id)
 	                                      (grounded-with ?dependency-goal-id))
 	                  ; ... and the other goal is already executing
@@ -403,14 +406,15 @@
 	(if (eq ?dependency-class BUFFER-CAP)
 	 then (do-for-fact ((?instruct-goal goal)
 	                    (?instruct-da dependency-assignment)
-	                    (?buffer-goal-meta goal-meta))
-		(and (eq ?buffer-goal-meta:goal-id ?dependency-goal-id)
-		     (eq ?buffer-goal-meta:instruct-goal-id ?instruct-goal:id)
-		     (eq ?instruct-da:goal-id ?goal-id)
-		     (eq ?instruct-da:class INSTRUCT-CS-BUFFER-CAP))
-		(modify ?instruct-da (grounded-with ?instruct-goal:id)))
-		(printout t "Goal " ?goal-id " executable for " ?robot
-		            " also depending on goal INSTRUCT-CS-BUFFER-CAP" crlf)
+	                    (?instruct-goal-meta goal-meta))
+		      (and (eq ?instruct-goal-meta:goal-id ?instruct-goal:id)
+		           (eq ?instruct-goal-meta:order-id ?order-id)
+		           (eq ?instruct-goal:class INSTRUCT-CS-BUFFER-CAP)
+		           (eq ?instruct-da:goal-id ?goal-id)
+		           (eq ?instruct-da:class INSTRUCT-CS-BUFFER-CAP))
+		      (modify ?instruct-da (grounded-with ?instruct-goal:id)))
+		  (printout t "Goal " ?goal-id " executable for " ?robot
+		              " also depending on goal INSTRUCT-CS-BUFFER-CAP" crlf)
 	)
 )
 
@@ -426,7 +430,7 @@
 	                                   $?)
 	                          (is-executable FALSE))
 
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (order-id ?order-id))
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -453,7 +457,8 @@
 	(wm-fact (key domain fact mps-side-free args? m ?mps side OUTPUT))
 
 	; get instruct mount-cap goal
-	(goal-meta (goal-id ?mount-goal-id) (instruct-goal-id ?instruct-goal-id))
+	(goal (id ?instruct-goal-id) (class INSTRUCT-CS-MOUNT-CAP))
+	(goal-meta (goal-id ?instruct-goal-id) (order-id ?order-id))
 	?instruct-da <- (dependency-assignment (goal-id ?goal-id)
 	                                       (class INSTRUCT-CS-MOUNT-CAP))
 
@@ -478,7 +483,7 @@
 	                          (mode FORMULATED)
 	                          (is-executable FALSE))
 
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (order-id ?order-id))
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -496,7 +501,8 @@
 	(wm-fact (key domain fact mps-side-free args? m ?mps side OUTPUT))
 
 	; get instruct mount-cap goal
-	(goal-meta (goal-id ?mount-goal-id) (instruct-goal-id ?instruct-goal-id))
+	(goal (id ?instruct-goal-id) (class INSTRUCT-CS-MOUNT-CAP))
+	(goal-meta (goal-id ?instruct-goal-id) (order-id ?order-id))
 	?instruct-da <- (dependency-assignment (goal-id ?goal-id)
 	                                       (class INSTRUCT-CS-MOUNT-CAP))
 
@@ -525,7 +531,7 @@
 	                                   $?)
 	                          (is-executable FALSE))
 
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (order-id ?order-id))
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -536,11 +542,13 @@
 	      (params  wp ?wp
 	               target-mps ?rs
 	               $?))
-	(or (goal (id ?mount-goal-id) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	(or (goal (id ?mount-goal-id) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED))
 	    (and (goal (id ?mount-goal-id) (outcome COMPLETED))
 	         (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side INPUT))
 	    )
 	)
+	(goal-meta (goal-id ?mount-goal-id) (order-id ?order-id) (ring-nr ?ring-nr))
+
 	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
 	(wm-fact (key domain fact order-complexity args?
 	                          ord ?order
@@ -553,7 +561,7 @@
 	(wm-fact (key domain fact cs-buffered args? m ?cs col ?cap-color))
 
 	; get instruct mount-ring goal
-	(goal-meta (goal-id ?mount-goal-id) (instruct-goal-id ?instruct-goal-id))
+	(goal-meta (goal-id ?instruct-goal-id) (order-id ?order-id) (ring-nr ?ring-nr))
 	?instruct-da <- (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-RS-MOUNT-RING))
 
 	(not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
@@ -571,7 +579,7 @@
 	    ;or filled + depending fill goals >= needed payments
 	    (and (wm-fact (key domain fact rs-sub args? minuend ?bases-needed
 	                                                subtrahend ?bases-filled
-	                                                difference ?bases-missing&ZERO|ONE|TWO|THREE))
+	                                                difference ?bases-missing&ZERO|ONE|TWO))
 	         (or (test (eq ?bases-missing ZERO))
 	             (and (test (eq ?bases-missing ONE))
 	                  (goal (id ?feed-id-1)
@@ -580,6 +588,7 @@
 	                               PAY-FOR-RINGS-WITH-CAP-CARRIER|
 	                               PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
 	                        (params $? ?rs $?))
+	                  (goal-meta (goal-id ?feed-id-1) (order-id ?order-id))
 	             )
 	             (and (test (eq ?bases-missing TWO))
 	                  (goal (id ?feed-id-1)
@@ -588,30 +597,37 @@
 	                               PAY-FOR-RINGS-WITH-CAP-CARRIER|
 	                               PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
 	                        (params $? ?rs $?))
+	                  (goal-meta (goal-id ?feed-id-1) (order-id ?order-id))
 	                  (goal (id ?feed-id-2)
 	                        (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	                        (class PAY-FOR-RINGS-WITH-BASE|
 	                               PAY-FOR-RINGS-WITH-CAP-CARRIER|
 	                               PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
 	                        (params $? ?rs $?))
+	                  (goal-meta (goal-id ?feed-id-2) (order-id ?order-id))
 	                  (neq ?feed-id-1 ?feed-id-2)
 	             )
 	         )
 	    )
 	)
+
+	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps)) ;for-future: include them from goal-production
+	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
 	=>
 	(printout t "Goal " ?goal-id " executable for " ?robot
 	            " depending on goal " ?mount-goal-id
 	            " and goal " ?instruct-goal-id crlf)
 	; create dependency-assignments to all payment goals of dependency-goal
 	; mount-ring
-	(do-for-all-facts ((?pay goal)) ;for future: find payment goals through goal-meta
+	(do-for-all-facts ((?pay goal) (?gm goal-meta))
 	    (and (is-goal-running ?pay:mode)
 	         (or
 	             (eq ?pay:class PAY-FOR-RINGS-WITH-BASE)
 	             (eq ?pay:class PAY-FOR-RINGS-WITH-CAP-CARRIER)
 	             (eq ?pay:class PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF))
-	         (eq (get-param-by-arg ?pay:params target-mps) ?rs))
+	         (eq (get-param-by-arg ?pay:params target-mps) ?rs)
+	         (eq ?gm:goal-id ?pay:id)
+	         (eq ?gm:order-id ?order-id))
 	    (assert (dependency-assignment (goal-id ?goal-id)  ;for future: change asserting to modify fixed dependency
 	                                   (class ?pay:class)
 	                                   (grounded-with ?pay:id)))
@@ -634,7 +650,7 @@
 	                                   target-mps ?other-rs
 	                                   $?)
 	                          (is-executable FALSE))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (order-id ?order-id))
 
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
@@ -651,10 +667,12 @@
 	         (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side INPUT))
 	    )
 	)
+	(goal-meta (goal-id ?mount-goal-id) (order-id ?order-id) (ring-nr ?ring-nr))
 	?mount-da <- (dependency-assignment (goal-id ?goal-id) (class MOUNT-RING))
 
 	; get instruct mount-ring goal
-	(goal-meta (goal-id ?mount-goal-id) (instruct-goal-id ?instruct-goal-id))
+	(goal (id ?instruct-goal-id) (class INSTRUCT-RS-MOUNT-RING))
+	(goal-meta (goal-id ?instruct-goal-id) (order-id ?order-id) (ring-nr ?ring-nr))
 	?instruct-da <- (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-RS-MOUNT-RING))
 
 	(not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
@@ -673,7 +691,7 @@
 	    ;or filled + depending fill goals >= needed payments
 	    (and (wm-fact (key domain fact rs-sub args? minuend ?bases-needed
 	                                                subtrahend ?bases-filled
-	                                                difference ?bases-missing&ZERO|ONE|TWO|THREE))
+	                                                difference ?bases-missing&ZERO|ONE|TWO))
 	         (or (test (eq ?bases-missing ZERO))
 	             (and (test (eq ?bases-missing ONE))
 	                  (goal (id ?feed-id-1)
@@ -682,6 +700,7 @@
 	                               PAY-FOR-RINGS-WITH-CAP-CARRIER|
 	                               PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
 	                        (params $? ?rs $?))
+	                  (goal-meta (goal-id ?feed-id-1) (order-id ?order-id))
 	             )
 	             (and (test (eq ?bases-missing TWO))
 	                  (goal (id ?feed-id-1)
@@ -690,12 +709,14 @@
 	                               PAY-FOR-RINGS-WITH-CAP-CARRIER|
 	                               PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
 	                        (params $? ?rs $?))
+	                  (goal-meta (goal-id ?feed-id-1) (order-id ?order-id))
 	                  (goal (id ?feed-id-2)
 	                        (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	                        (class PAY-FOR-RINGS-WITH-BASE|
 	                               PAY-FOR-RINGS-WITH-CAP-CARRIER|
 	                               PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
 	                        (params $? ?rs $?))
+	                  (goal-meta (goal-id ?feed-id-2) (order-id ?order-id))
 	                  (neq ?feed-id-1 ?feed-id-2)
 	             )
 	         )
@@ -707,13 +728,15 @@
 	            " and goal " ?instruct-goal-id crlf)
 	; create dependency-assignments to all payment goals of dependency-goal
 	; mount-ring
-	(do-for-all-facts ((?pay goal)) ;for future: find payment goals through goal-meta
+	(do-for-all-facts ((?pay goal) (?gm goal-meta))
 	    (and (is-goal-running ?pay:mode)
 	         (or
 	             (eq ?pay:class PAY-FOR-RINGS-WITH-BASE)
 	             (eq ?pay:class PAY-FOR-RINGS-WITH-CAP-CARRIER)
 	             (eq ?pay:class PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF))
-	         (eq (get-param-by-arg ?pay:params target-mps) ?rs))
+	         (eq (get-param-by-arg ?pay:params target-mps) ?rs)
+	         (eq ?gm:goal-id ?pay:id)
+	         (eq ?gm:order-id ?order-id))
 	    (assert (dependency-assignment (goal-id ?goal-id) ;for future: change asserting to modify fixed dependency
 	                                   (class ?pay:class)
 	                                   (grounded-with ?pay:id)))
@@ -733,9 +756,8 @@
 	                          (mode FORMULATED)
 	                          (params  $? wp-loc ?wp-loc wp-side ?wp-side)
 	                          (is-executable FALSE))
-	(goal-meta (goal-id ?goal-id) (order ?order))
 
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (order-id ?order-id))
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -750,8 +772,7 @@
 	      (class BUFFER-CAP)
 	      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	      (params target-mps ?cs $?))
-	(goal-meta (goal-id ?buffer-goal-id) (order ?order))
-
+	(goal-meta (goal-id ?buffer-goal-id) (order-id ?order-id))
 	?buffer-da <- (dependency-assignment (goal-id ?goal-id) (class BUFFER-CAP))
 
 	; get cc through buffer actions
@@ -760,7 +781,8 @@
 	             (param-values ?r ?cc $?))
 
 	; get instruct buffer-cap goal
-	(goal-meta (goal-id ?buffer-goal-id) (instruct-goal-id ?instruct-goal-id))
+	(goal (id ?instruct-goal-id) (class INSTRUCT-CS-BUFFER-CAP))
+	(goal-meta (goal-id ?instruct-goal-id) (order-id ?order-id))
 	?instruct-da <- (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-CS-BUFFER-CAP))
 	=>
 	(printout t "Goal " ?goal-id " executable for " ?robot
@@ -788,7 +810,7 @@
 	                                   $?)
 	                          (is-executable FALSE))
 
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (order-id ?order-id))
 	(wm-fact (key refbox team-color) (value ?team-color))
 
 	;MPS-RS CEs
@@ -836,6 +858,7 @@
 	      (class BUFFER-CAP)
 	      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	      (params target-mps ?cs $?))
+	(goal-meta (goal-id ?buffer-goal-id) (order-id ?order-id))
 	?buffer-da <- (dependency-assignment (goal-id ?goal-id) (class BUFFER-CAP))
 
 	; get cc through buffer actions
@@ -844,7 +867,8 @@
 	             (param-values ?r ?cc $?))
 
 	; get instruct buffer-cap goal
-	(goal-meta (goal-id ?buffer-goal-id) (instruct-goal-id ?instruct-goal-id))
+	(goal (id ?instruct-goal-id) (class INSTRUCT-CS-BUFFER-CAP))
+	(goal-meta (goal-id ?instruct-goal-id) (order-id ?order-id))
 	?instruct-da <- (dependency-assignment (goal-id ?goal-id)
 	                                       (class INSTRUCT-CS-BUFFER-CAP))
 	=>
