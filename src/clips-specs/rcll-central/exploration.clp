@@ -27,8 +27,9 @@
 (defrule exp-enable
 " Exploration is needed as we received an mps-state already without knowing
   the zone."
-	(wm-fact (key domain fact mps-state args? m ?name $?))
-	(not (wm-fact (key domain fact zone-content args? z ? m ?name)))
+	(or (and (wm-fact (key domain fact mps-state args? m ?name $?))
+		       (not (wm-fact (key domain fact zone-content args? z ? m ?name))))
+	    (wm-fact (key refbox phase) (value EXPLORATION)))
 	(not (wm-fact (key exploration active) (type BOOL) (value TRUE)))
 	=>
 	(assert (wm-fact (key exploration active) (type BOOL) (value TRUE)))
