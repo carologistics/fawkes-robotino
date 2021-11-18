@@ -1669,7 +1669,7 @@ The workpiece remains in the output of the used ring station after
 " Move to a navgraph node
 "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
-	?g <- (goal (id ?goal-id) (class EXPLORATION-CHALLENGE-MOVE)
+	?g <- (goal (id ?goal-id) (class EXPLORATION-MOVE)
 	                          (mode FORMULATED)
 	                          (params target ?target $?)
 	                          (is-executable FALSE))
@@ -1678,15 +1678,15 @@ The workpiece remains in the output of the used ring station after
 	          (goal-meta (goal-id ?p) (assigned-to ?robot))))
 	(navgraph-node (name ?str-target&:(eq ?str-target (str-cat ?target))))
 	=>
-	(printout t "Goal EXPLORATION-CHALLENGE-MOVE executable for " ?robot crlf)
+	(printout t "Goal EXPLORATION-MOVE executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
 )
 
 (deffunction goal-production-exploration-challenge-assert-move
 	(?location)
 
-	(bind ?goal (assert (goal (class EXPLORATION-CHALLENGE-MOVE)
-	        (id (sym-cat EXPLORATION-CHALLENGE-MOVE- (gensym*)))
+	(bind ?goal (assert (goal (class EXPLORATION-MOVE)
+	        (id (sym-cat EXPLORATION-MOVE- (gensym*)))
 	        (sub-type SIMPLE)
 	        (priority 1.0)
 	        (meta-template goal-meta)
@@ -1707,7 +1707,7 @@ The workpiece remains in the output of the used ring station after
 " A exploration move that is not executable can be removed as the target can
   never be targeted again.
 "
-	?g <- (goal (class EXPLORATION-CHALLENGE-MOVE) (mode FORMULATED) (is-executable FALSE))
+	?g <- (goal (class EXPLORATION-MOVE) (mode FORMULATED) (is-executable FALSE))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	=>
 	(retract ?g)
@@ -1718,8 +1718,8 @@ The workpiece remains in the output of the used ring station after
 	(goal (id ?root-id) (class EXPLORATION-CHALLENGE-ROOT) (mode FORMULATED|DISPATCHED))
 	(wm-fact (key central agent robot-waiting args? r ?robot))
 	?exp-targ <- (wm-fact (key exploration targets args?) (values ?location $?locations))
-	(not (and (goal (class EXPLORATION-CHALLENGE-MOVE) (mode FORMULATED) (id ?id1))
-	          (goal (class EXPLORATION-CHALLENGE-MOVE) (mode FORMULATED) (id ?id2&~?id1))))
+	(not (and (goal (class EXPLORATION-MOVE) (mode FORMULATED) (id ?id1))
+	          (goal (class EXPLORATION-MOVE) (mode FORMULATED) (id ?id2&~?id1))))
 	;(wm-fact (key refbox field-ground-truth name args? m ?name) (value FALSE))
 	(wm-fact (key exploration active) (type BOOL) (value TRUE))
 	=>
@@ -1731,7 +1731,7 @@ The workpiece remains in the output of the used ring station after
 )
 
 (defrule goal-production-exploration-challenge-cleanup
-	?g <- (goal (class EXPLORATION-CHALLENGE-MOVE) (mode RETRACTED) (outcome FAILED|COMPLETED))
+	?g <- (goal (class EXPLORATION-MOVE) (mode RETRACTED) (outcome FAILED|COMPLETED))
 	=>
 	(retract ?g)
 )
