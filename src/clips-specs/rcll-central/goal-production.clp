@@ -1146,7 +1146,7 @@ The workpiece remains in the output of the used ring station after
 )
 
 (deffunction goal-production-assert-payment-goals
-	(?rs ?cols-ring)
+	(?rs ?cols-ring ?cs)
 	(bind ?goals (create$))
 
 	(bind ?found-payment FALSE)
@@ -1185,7 +1185,7 @@ The workpiece remains in the output of the used ring station after
 		(bind ?index (+ ?index 1))
 	)
 	(if (eq ?found-payment TRUE) then
-		(bind ?goals (insert$ ?goals 1 (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN C-CS1 UNKNOWN ?first-rs INPUT)))
+		(bind ?goals (insert$ ?goals 1 (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN ?cs UNKNOWN ?first-rs INPUT)))
 	)
 
 	(return ?goals)
@@ -1282,7 +1282,7 @@ The workpiece remains in the output of the used ring station after
 			(goal-production-assert-instruct-rs-mount-ring ?rs ?col-ring1)
 		)
 		(goal-tree-assert-central-run-parallel PAYMENT-GOALS
-			(goal-production-assert-payment-goals (create$ ?rs) (create$ ?col-ring1))
+			(goal-production-assert-payment-goals (create$ ?rs) (create$ ?col-ring1) ?cs)
 		)
 	)
   )
@@ -1321,7 +1321,7 @@ The workpiece remains in the output of the used ring station after
 			(goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2)
 		)
 		(goal-tree-assert-central-run-parallel PAYMENT-GOALS
-			(goal-production-assert-payment-goals (create$ ?rs1 ?rs2) (create$ ?col-ring1 ?col-ring2))
+			(goal-production-assert-payment-goals (create$ ?rs1 ?rs2) (create$ ?col-ring1 ?col-ring2) ?cs)
 		)
 	)
   )
@@ -1362,7 +1362,7 @@ The workpiece remains in the output of the used ring station after
 			(goal-production-assert-instruct-rs-mount-ring ?rs3 ?col-ring3)
 		)
 		(goal-tree-assert-central-run-parallel PAYMENT-GOALS
-			(goal-production-assert-payment-goals (create$ ?rs1 ?rs2 ?rs3) (create$ ?col-ring1 ?col-ring2 ?col-ring3))
+			(goal-production-assert-payment-goals (create$ ?rs1 ?rs2 ?rs3) (create$ ?col-ring1 ?col-ring2 ?col-ring3) ?cs)
 		)
 	)
   )
