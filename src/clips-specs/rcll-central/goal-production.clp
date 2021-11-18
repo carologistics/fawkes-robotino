@@ -1682,6 +1682,7 @@ The workpiece remains in the output of the used ring station after
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(not (and (goal (id ?p) (class EXPLORE-ZONE))
 	          (goal-meta (goal-id ?p) (assigned-to ?robot))))
+	(navgraph-node (name ?str-target&:(eq ?str-target (str-cat ?target))))
 	=>
 	(printout t "Goal EXPLORATION-CHALLENGE-MOVE executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
@@ -1706,6 +1707,16 @@ The workpiece remains in the output of the used ring station after
 	(not (navgraph-node (name ?str-target&:(eq ?str-target (str-cat ?target)))))
 	=>
 	(modify ?exp-target (values (create$ ?before ?after)))
+)
+
+(defrule goal-production-cleanup-exploration-move
+" A exploration move that is not executable can be removed as the target can
+  never be targeted again.
+"
+	?g <- (goal (class EXPLORATION-CHALLENGE-MOVE) (mode FORMULATED) (is-executable FALSE))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	=>
+	(retract ?g)
 )
 
 (defrule goal-production-exploration-create-move-goal-lacking-choice
