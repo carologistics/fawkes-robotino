@@ -170,16 +170,21 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 ;	"a simple unassigned goal"
 	(goal (id ?g-id) (sub-type SIMPLE) (mode FORMULATED) (is-executable FALSE))
-	(or (not (goal-meta (goal-id ?g-id)))
-	    (goal-meta (goal-id ?g-id) (assigned-to nil)))
+	(goal-meta (goal-id ?g-id) (assigned-to nil))
 	(wm-fact (key central agent robot args? r ?robot))
 	(not (goal-meta (assigned-to ?robot)))
 	(wm-fact (key central agent robot-waiting args? r ?robot))
-	;there exist no other robot with a smaller number and unassigned goals
-	(not (and (wm-fact (key central agent robot-waiting
-	                    args? r ?o-robot&:(> (str-compare ?robot ?o-robot) 0)))
-	          (not (goal-meta (assigned-to ?o-robot)))))
 	=>
+	(bind ?longest-waiting 0)
+	(bind ?longest-waiting-robot ?robot)
+	(delayed-do-for-all-facts ((?waiting wm-fact))
+	  (wm-key-prefix ?waiting:key (create$ central agent robot-waiting))
+	  (if (or (eq ?longest-waiting 0) (< (fact-index ?waiting) ?longest-waiting))
+	   then
+	    (bind ?longest-waiting-robot (wm-key-arg ?waiting:key r))
+	    (bind ?longest-waiting (fact-index ?waiting))
+	  )
+	)
 	(delayed-do-for-all-facts ((?g goal))
 		(and (eq ?g:is-executable FALSE)
 		     (eq ?g:sub-type SIMPLE) (eq ?g:mode FORMULATED)
@@ -190,6 +195,7 @@
 		                 (eq ?gm:assigned-to nil)))))
 		(goal-meta-assign-robot-to-goal ?g ?robot)
 	)
+	(modify ?longest-waiting)
 )
 
 (defrule goal-production-flush-executability
