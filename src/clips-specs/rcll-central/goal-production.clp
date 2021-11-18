@@ -1631,8 +1631,18 @@ The workpiece remains in the output of the used ring station after
 ; EXPLORATION CHALLENGE ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;
+(defrule goal-production-exploration-challenge-remove-empty-targets
+" If no more target are available, remove the fact, this triggers the
+  creation of new targets.
+"
+	?targets <- (wm-fact (key exploration targets args? $?) (values))
+	=>
+	(retract ?targets)
+)
+
 
 (defrule goal-production-exploration-challenge-create-targets
+" Create exploration targets, a list of zones that is targeted in order."
 	(not (wm-fact (key exploration targets args? $?)))
 	(wm-fact (key exploration active) (value TRUE))
 	=>
@@ -1689,6 +1699,13 @@ The workpiece remains in the output of the used ring station after
 	        (params target (translate-location-map-to-grid ?location) location ?location)
 	        )))
 	(return ?goal)
+)
+
+(defrule goal-production-maintain-targets
+	?exp-target <- (wm-fact (key exploration targets args?) (values $?before ?target $?after))
+	(not (navgraph-node (name ?str-target&:(eq ?str-target (str-cat ?target)))))
+	=>
+	(modify ?exp-target (values (create$ ?before ?after)))
 )
 
 (defrule goal-production-exploration-create-move-goal-lacking-choice
