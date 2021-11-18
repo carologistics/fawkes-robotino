@@ -30,7 +30,9 @@
 	)
 	(if (eq ?robot nil) then (return ))
 	(if (not (do-for-fact ((?f goal-meta))
-			(eq ?f:goal-id (fact-slot-value ?goal id))
+			(and (eq ?f:goal-id (fact-slot-value ?goal id))
+			     (or (eq ?f:restricted-to ?robot)
+			         (eq ?f:restricted-to nil)))
 			(modify ?f (assigned-to ?robot))))
 	 then
 		(printout t "FAILED assign robot " ?robot " to goal "
@@ -42,10 +44,9 @@
 "Creates the goal-meta fact and assign the goal to the robot"
 	(if (neq ?robot nil) then
 		(assert (goal-meta (goal-id (fact-slot-value ?goal id))
-		                   (assigned-to ?robot)))
+		                   (assigned-to ?robot) (restricted-to ?robot)))
 	)
 )
-
 
 (deffunction is-free (?target-pos)
 	(if (any-factp ((?at wm-fact))
