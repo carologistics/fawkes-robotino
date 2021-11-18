@@ -36,7 +36,7 @@
 
 (defrule exp-disable-goals
 " Exploration is not needed anymore as all machines were found."
-	?g <-(goal (class EXPLORE-ZONE|EXPLORATION-CHALLENGE-MOVE) (mode FORMULATED))
+	?g <-(goal (class EXPLORE-ZONE|EXPLORATION-MOVE) (mode FORMULATED))
 	(wm-fact (key exploration active) (type BOOL) (value FALSE))
 	=>
 	(retract ?g)
@@ -44,7 +44,7 @@
 
 (defrule exp-fail-goals
 " Exploration is not needed anymore as all machines were found."
-	?g <-(goal (class EXPLORE-ZONE|EXPLORATION-CHALLENGE-MOVE) (mode DISPATCHED))
+	?g <-(goal (class EXPLORE-ZONE|EXPLORATION-MOVE) (mode DISPATCHED))
 	(wm-fact (key exploration active) (type BOOL) (value FALSE))
 	=>
 	(modify ?g (mode FINISHED) (outcome FAILED))
