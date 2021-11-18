@@ -288,12 +288,20 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?id) (class EXPLORE-ZONE) (params z ?zn) (mode FORMULATED)
 	      (is-executable FALSE))
+	(wm-fact (key domain fact zone-content args? z ?zn m UNKNOWN))
 	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
 	(not (and (goal (id ?other-id) (class EXPLORE-ZONE) (params z ?zn) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED))
 	          (goal-meta (goal-id ?other-id) (assigned-to ?other-robot&:(neq ?other-robot ?robot))))
 	)
 	=>
 	(modify ?g (is-executable TRUE))
+)
+
+(defrule exp-explore-zone-retract-not-executable
+	?g <- (goal (id ?id) (class EXPLORE-ZONE) (params z ?zn) (mode FORMULATED))
+	(wm-fact (key domain fact zone-content args? z ?zn m ~UNKNOWN))
+	=>
+	(retract ?g)
 )
 
 (defrule exp-increase-search-limit
