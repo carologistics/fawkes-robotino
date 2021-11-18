@@ -599,7 +599,7 @@
                                             ring-color ?ring-color)
                                     (mode FORMULATED)
        )
-       (goal-meta (goal-id ?goal-id) (ring-meta ?order ?rpred-ring-id))
+       (goal-meta (goal-id ?instruct-goal-id) (ring-meta ?order ?pred-ring-id))
        ?instruct-da <- (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-RS-MOUNT-RING))
 
 
