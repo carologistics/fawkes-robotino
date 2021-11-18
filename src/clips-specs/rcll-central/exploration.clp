@@ -239,7 +239,7 @@
 " If there is a zone, where we suspect a machine, interrupt the EXPLORATION-PLAN and start exploring the zone
 "
 	(wm-fact (key central agent robot args? r ?r))
-  (goal (id ?parent) (class EXPLORATION-CHALLENGE-ROOT))
+  (goal (id ?parent) (class EXPLORATION-ROOT))
   (Position3DInterface (id ?pos-id&:(eq ?pos-id (remote-if-id ?r "Pose"))) (translation $?trans))
   ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn) (value ?ts&:(<= ?ts ?*EXP-SEARCH-LIMIT*)))
   (wm-fact (key domain fact zone-content args? z ?zn m UNKNOWN))
