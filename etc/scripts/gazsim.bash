@@ -319,7 +319,6 @@ function stop_simulation {
       killall fawkes
       killall roscore
       killall llsf-refbox
-      killall llsf-refbox-shell
       killall roslaunch
   fi
 }
@@ -392,8 +391,8 @@ if [  $COMMAND  == start ]; then
 
     #start refbox
     COMMANDS+=("bash -i -c \"$startup_script_location -x refbox $KEEP $@\"")
-    #start refbox shell
-    COMMANDS+=("bash -i -c \"$startup_script_location -x refbox-shell $KEEP $@\"")
+    #start refbox frontend
+    COMMANDS+=("bash -i -c \"$startup_script_location -x refbox-frontend $KEEP $@\"")
 
     # start mongodb central instance
     if $START_MONGODB ; then
