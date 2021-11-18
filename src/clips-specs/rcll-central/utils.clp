@@ -60,6 +60,7 @@
 	(slot goal-id (type SYMBOL))
 	(slot assigned-to (type SYMBOL) (allowed-values nil robot1 robot2 robot3
 	                                                central) (default nil))
+  (multislot ring-meta (type SYMBOL));contains (<order> <ring-id>) with ring-id in ring1, ring2, ring3
 )
 
 (deffunction tag-id-to-side (?tag-id)
