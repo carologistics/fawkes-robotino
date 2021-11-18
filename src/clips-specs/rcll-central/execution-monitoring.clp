@@ -87,41 +87,52 @@
 
 (defrule execution-monitoring-detect-timeout
 " If an action was longer than its timeout-duration in a volatile state like pending or pending-sensed-effect
-  reason that this action got stuck and set it to failed
+  reason that this action got stuck. Print a notification, set state to failed and retract the timer.
 "
-	?p <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+  ?p <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
 	         (id ?id) (state ?status)
 	         (action-name ?action-name)
 	         (param-values $?param-values)
-	         (precondition ?grounding-id))
-	(plan (id ?plan-id) (goal-id ?goal-id))
-	(goal (id ?goal-id) (mode DISPATCHED))
-	(wm-fact (key game state) (value RUNNING))
-	(wm-fact (key refbox game-time) (values $?now))
-	?pt <- (action-timer (plan-id ?plan-id) (status ?status)
-	                     (action-id ?id)
-	                     (start-time $?st)
-	                     (timeout-duration ?timeout&:(timeout ?now ?st ?timeout)))
-	=>
-	(printout t "Action "  ?action-name " timedout after " ?status  crlf)
-	(do-for-all-facts ((?gform grounded-pddl-formula) (?form pddl-formula) (?pred pddl-predicate))
-			(and (eq ?gform:formula-id ?form:id)
-			     (eq ?gform:grounding ?grounding-id)
-			     (eq ?form:type atom)
-			     (eq ?pred:part-of ?form:id))
-		(if (and ?gform:is-satisfied (domain-is-formula-negative ?form:id))
-		 then
-			(printout error "Precondition (not " ?pred:predicate ") -- which might be nested -- is not satisfied." crlf)
-		)
-		(if (and (not ?gform:is-satisfied) (not (domain-is-formula-negative ?form:id)))
-		 then
-			(printout error "Precondition " ?pred:predicate " -- which might be nested -- is not satisfied." crlf)
-		)
-	)
-	(modify ?p (state FAILED) (error-msg "Unsatisfied precondition"))
-	(retract ?pt)
+           (precondition ?grounding-id))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  (wm-fact (key game state) (value RUNNING))
+  (wm-fact (key refbox game-time) (values $?now))
+  ?pt <- (action-timer (plan-id ?plan-id) (status ?status)
+            (action-id ?id)
+            (start-time $?st)
+            (timeout-duration ?timeout&:(timeout ?now ?st ?timeout)))
+  =>
+  (printout t "Action "  ?action-name " timed out after " ?status  crlf)
+  (modify ?p (state FAILED) (error-msg "Unsatisfied precondition"))
+  (retract ?pt)
 )
 
+(defrule execution-monitoring-detect-timeout-cause
+" If an action FAILED and has an unsatisfied precondition error, match all unsatisifed predicates
+  and print the cause. This rule might execute multiple times per timed out formula.
+"
+  ?p <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+	         (id ?id) (state FAILED)
+	         (action-name ?action-name)
+	         (param-values $?param-values)
+           (precondition ?grounding-id) (error-msg "Unsatisfied precondition"))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (pddl-formula (id ?formula-id) (type atom))
+  (grounded-pddl-formula (formula-id ?formula-id) (grounding ?grounding-id) (is-satisfied ?sat))
+  (pddl-predicate (part-of ?formula-id) (predicate ?predicate))
+  (or
+    (test (and ?sat (domain-is-formula-negative ?formula-id)))
+    (test (and (not ?sat) (not (domain-is-formula-negative ?formula-id))))
+  )
+  =>
+  (if ?sat
+    then
+      (printout error  "Action "  ?action-name " precondition (not " ?predicate ") -- which might be nested -- is not satisfied." crlf)
+    else
+      (printout error "Action "  ?action-name " precondition " ?predicate " -- which might be nested -- is not satisfied." crlf)
+  )
+)
 
 (defrule execution-monitoring-remove-timer
 " If an action is in a different state than when creating a timer,
