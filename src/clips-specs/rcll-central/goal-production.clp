@@ -1652,6 +1652,8 @@ The workpiece remains in the output of the used ring station after
 " Create exploration targets, a list of zones that is targeted in order."
 	(not (wm-fact (key exploration targets args? $?)))
 	(wm-fact (key exploration active) (value TRUE))
+	; start to explore the grid only if grid coordinates are available
+	(navgraph-node (name ?str-target&:(eq (sub-string 1 2 ?str-target) "G-")))
 	=>
 	(assert (wm-fact (key exploration targets args?)
 	                 (is-list TRUE)
@@ -1709,18 +1711,11 @@ The workpiece remains in the output of the used ring station after
 	(return ?goal)
 )
 
-(defrule goal-production-maintain-targets
-	?exp-target <- (wm-fact (key exploration targets args?) (values $?before ?target $?after))
-	(not (navgraph-node (name ?str-target&:(eq ?str-target (str-cat ?target)))))
-	=>
-	(modify ?exp-target (values (create$ ?before ?after)))
-)
-
 (defrule goal-production-cleanup-exploration-move
 " A exploration move that is not executable can be removed as the target can
   never be targeted again.
 "
-	?g <- (goal (class EXPLORATION-MOVE) (mode FORMULATED) (is-executable FALSE))
+	?g <- (goal (id ?goal-id) (class EXPLORATION-MOVE) (mode FORMULATED) (is-executable FALSE))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	=>
 	(retract ?g)
@@ -1731,9 +1726,7 @@ The workpiece remains in the output of the used ring station after
 	(goal (id ?root-id) (class EXPLORATION-ROOT) (mode FORMULATED|DISPATCHED))
 	(wm-fact (key central agent robot-waiting args? r ?robot))
 	?exp-targ <- (wm-fact (key exploration targets args?) (values ?location $?locations))
-	(not (and (goal (class EXPLORATION-MOVE) (mode FORMULATED) (id ?id1))
-	          (goal (class EXPLORATION-MOVE) (mode FORMULATED) (id ?id2&~?id1))))
-	;(wm-fact (key refbox field-ground-truth name args? m ?name) (value FALSE))
+	(not (goal (class EXPLORATION-MOVE) (mode FORMULATED)))
 	(wm-fact (key exploration active) (type BOOL) (value TRUE))
 	=>
 	(bind ?goal
