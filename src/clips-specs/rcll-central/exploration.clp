@@ -406,6 +406,7 @@
 	          (not (domain-fact (name zone-content)
 	                            (param-values ?zz ?target-mps))
 	)))
+	(wm-fact (key refbox phase) (value PRODUCTION))
 	=>
 	(delayed-do-for-all-facts ((?exp wm-fact))
 		(wm-key-prefix ?exp:key (create$ exploration fact))
