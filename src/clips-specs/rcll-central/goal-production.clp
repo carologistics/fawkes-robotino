@@ -1653,14 +1653,14 @@ The workpiece remains in the output of the used ring station after
    are located"
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(domain-facts-loaded)
-	(not (goal (class EXPLORATION-CHALLENGE-ROOT)))
+	(not (goal (class EXPLORATION-ROOT)))
 	(wm-fact (key config rcll start-with-waiting-robots) (value TRUE))
 	(wm-fact (key refbox phase) (value EXPLORATION|PRODUCTION))
 	(wm-fact (key game state) (value RUNNING))
 	(wm-fact (key refbox team-color) (value ?color))
 	(wm-fact (key exploration active) (value TRUE))
 	=>
-	(bind ?g (goal-tree-assert-central-run-parallel EXPLORATION-CHALLENGE-ROOT))
+	(bind ?g (goal-tree-assert-central-run-parallel EXPLORATION-ROOT))
 	(modify ?g (meta do-not-finish))
 	(modify ?g (priority 0.0))
 )
@@ -1715,7 +1715,7 @@ The workpiece remains in the output of the used ring station after
 
 (defrule goal-production-exploration-create-move-goal-lacking-choice
   "The robot has nothing it can do, move it across the map to explore"
-	(goal (id ?root-id) (class EXPLORATION-CHALLENGE-ROOT) (mode FORMULATED|DISPATCHED))
+	(goal (id ?root-id) (class EXPLORATION-ROOT) (mode FORMULATED|DISPATCHED))
 	(wm-fact (key central agent robot-waiting args? r ?robot))
 	?exp-targ <- (wm-fact (key exploration targets args?) (values ?location $?locations))
 	(not (and (goal (class EXPLORATION-MOVE) (mode FORMULATED) (id ?id1))
