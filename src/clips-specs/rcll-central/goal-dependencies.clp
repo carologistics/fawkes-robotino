@@ -557,100 +557,106 @@
 	(modify ?instruct-da (grounded-with ?instruct-goal-id))
 )
 
-; (defrule goal-dependencies-mount-ring-mount-ring-executable
-; " Even if mount-ring is still executing, mount-ring can already be executable
-;   if all payments are about to be done. "
-; 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
-; 	;only ground with those actions that are prior to our action based on order :D
-; 	?g <- (goal (id ?goal-id) (class MOUNT-RING)
-; 	                          (mode FORMULATED)
-; 	                          (params  wp ?wp
-; 	                                   target-mps ?other-rs
-; 	                                   $?)
-; 	                          (meta $? assigned-to ?robot $?)
-; 	                          (is-executable FALSE))
+(defrule goal-dependencies-mount-ring-mount-ring-executable
+" Even if mount-ring is still executing, mount-ring can already be executable
+  if all payments are about to be done. "
+       (declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+       ;only ground with those actions that are prior to our action based on order :D
+       ?g <- (goal (id ?goal-id) (class MOUNT-RING)
+                                 (mode FORMULATED)
+                                 (params   wp ?wp
+                                           target-mps ?rs
+                                           target-side ?side
+                                           wp-loc ?wp-loc
+                                           wp-side ?wp-sides
+                                          $?
+                                 )
+                                 (is-executable FALSE)
+       )
+       (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (ring-meta ?order ?ring-id))
+       ?goal-da <- (dependency-assignment (goal-id ?goal-id) (class MOUNT-RING))
 
-; 	; Robot CEs
-; 	(wm-fact (key central agent robot args? r ?robot))
-; 	(wm-fact (key refbox team-color) (value ?team-color))
+       ; Robot CEs
+       (wm-fact (key central agent robot args? r ?robot))
+       (not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
+       (wm-fact (key refbox team-color) (value ?team-color))
 
-; 	; wp is not at RS OUTPUT, but after these goals finished, it will be
-; 	(goal (id ?mount-goal-id)
-; 	      (class MOUNT-RING)
-; 	      (parent ?parent)
-; 	      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED|RETRACTED)
-; 	      (params  wp ?wp
-; 	               target-mps ?rs&:(neq ?rs ?other-rs)
-; 	               $? ring-color ?ring-color $?))
-; 	?mount-da <- (dependency-assignment (goal-id ?goal-id) (class MOUNT-RING))
+       ; predecessor goal is working on that goal
+       (goal (id ?pred-goal)
+             (class MOUNT-RING)
+             (parent ?parent)
+             (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED|RETRACTED)
+             (params  wp ?wp
+                      target-mps ?pred-rs;&:(neq ?pred-rs ?rs)
+                      $? ring-color ?ring-color $?))
+       (goal-meta (goal-id ?pred-goal) (ring-meta ?order ?pred-ring-id&:(or
+               (and (eq ?ring-id ring2) (eq ?pred-ring-id ring1))
+               (and (eq ?ring-id ring3) (eq ?pred-ring-id ring2))
+       )))
 
-; 	; get instruct goal through tree relationship to mount-ring, in this case sibling of grandparent
-; 	(goal (id ?parent) (parent ?grandparent))
-; 	(goal (id ?grandparent) (parent ?great-grandparent))
-; 	(goal (id ?instruct-goal-id)
-; 	      (class INSTRUCT-RS-MOUNT-RING)
-; 	      (parent ?great-grandparent)
-; 	      (params target-mps ?rs
-; 	              ring-color ?ring-color)
-; 	      (mode FORMULATED))
-; 	?instruct-da <- (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-RS-MOUNT-RING))
+       (goal (id ?instruct-goal-id) (class INSTRUCT-RS-MOUNT-RING) ;(parent ?great-grandparent)
+                                    (params target-mps ?pred-rs
+                                            ring-color ?ring-color)
+                                    (mode FORMULATED)
+       )
+       (goal-meta (goal-id ?goal-id) (ring-meta ?order ?rpred-ring-id))
+       ?instruct-da <- (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-RS-MOUNT-RING))
 
-; 	(not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
 
-; 	; payments are or will be enough to mount-ring
-; 	(wm-fact (key domain fact rs-filled-with args? m ?rs n ?bases-filled))
-; 	(wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring-color rn ?bases-needed))
-; 	(wm-fact (key domain fact rs-sub args? minuend ?bases-needed
-; 	                                       subtrahend ?bases-filled
-; 	                                       difference ?bases-missing&ZERO|ONE|TWO|THREE)) ;for future: or filled>needed
-; 	(or (test (eq ?bases-missing ZERO))
-; 	    (and (test (eq ?bases-missing ONE))
-; 	         (goal (id ?feed-id-1)
-; 	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-; 	               (class PAY-FOR-RINGS-WITH-BASE|
-; 	                      PAY-FOR-RINGS-WITH-CAP-CARRIER|
-; 	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
-; 	               (params $? ?rs $?))
-; 	    )
-; 	    (and (test (eq ?bases-missing TWO))
-; 	         (goal (id ?feed-id-1)
-; 	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-; 	               (class PAY-FOR-RINGS-WITH-BASE|
-; 	                      PAY-FOR-RINGS-WITH-CAP-CARRIER|
-; 	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
-; 	               (params $? ?rs $?))
-; 	         (goal (id ?feed-id-2)
-; 	               (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-; 	               (class PAY-FOR-RINGS-WITH-BASE|
-; 	                      PAY-FOR-RINGS-WITH-CAP-CARRIER|
-; 	                      PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
-; 	               (params $? ?rs $?))
-; 	         (neq ?feed-id-1 ?feed-id-2)
-; 	    )
-; 	)
-; 	=>
-; 	(printout t "Goal " ?goal-id " executable for " ?robot
-; 	            " depending on goal " ?mount-goal-id
-; 	            " and goal " ?instruct-goal-id crlf)
-; 	; create dependency-assignments to all payment goals of dependency-goal mount-ring
-; 	(do-for-all-facts ((?pay goal))
-; 	    (and (is-goal-running ?pay:mode) ;for future: check if goal expansion changes params
-; 	         (or
-; 	             (eq ?pay:class PAY-FOR-RINGS-WITH-BASE)
-; 	             (eq ?pay:class PAY-FOR-RINGS-WITH-CAP-CARRIER)
-; 	             (eq ?pay:class PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF))
-; 	         (eq (get-param-by-arg ?pay:params target-mps) ?rs))
-; 	    (assert (dependency-assignment (goal-id ?goal-id)
-; 	                                   (class ?pay:class)
-; 	                                   (grounded-with ?pay:id)))
-; 	)
-; 	(modify ?g (is-executable TRUE))
-; 	(modify ?mount-da (params  wp ?wp
-; 	                           wp-loc ?rs
-; 	                           wp-side OUTPUT)
-; 	                  (grounded-with ?mount-goal-id))
-; 	(modify ?instruct-da (grounded-with ?instruct-goal-id))
-; )
+       ; payments are or will be enough to mount-ring
+       (wm-fact (key domain fact rs-filled-with args? m ?pred-rs n ?bases-filled))
+       (wm-fact (key domain fact rs-ring-spec args? m ?pred-rs r ?ring-color rn ?bases-needed))
+       (wm-fact (key domain fact rs-sub args? minuend ?bases-needed
+                                              subtrahend ?bases-filled
+                                              difference ?bases-missing&ZERO|ONE|TWO|THREE)) ;for future: or filled>needed
+       (or (test (eq ?bases-missing ZERO))
+           (and (test (eq ?bases-missing ONE))
+                (goal (id ?feed-id-1)
+                      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+                      (class PAY-FOR-RINGS-WITH-BASE|
+                             PAY-FOR-RINGS-WITH-CAP-CARRIER|
+                             PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
+                      (params $? ?pred-rs $?))
+           )
+           (and (test (eq ?bases-missing TWO))
+                (goal (id ?feed-id-1)
+                      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+                      (class PAY-FOR-RINGS-WITH-BASE|
+                             PAY-FOR-RINGS-WITH-CAP-CARRIER|
+                             PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
+                      (params $? ?pred-rs $?))
+                (goal (id ?feed-id-2)
+                      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+                      (class PAY-FOR-RINGS-WITH-BASE|
+                             PAY-FOR-RINGS-WITH-CAP-CARRIER|
+                             PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
+                      (params $? ?pred-rs $?))
+                (neq ?feed-id-1 ?feed-id-2)
+           )
+       )
+       =>
+       (printout t "Goal " ?goal-id " executable for " ?robot
+                   " depending on goal " ?pred-goal
+                   " and goal " ?instruct-goal-id crlf)
+       ; create dependency-assignments to all payment goals of dependency-goal mount-ring
+       (do-for-all-facts ((?pay goal))
+           (and (is-goal-running ?pay:mode) ;for future: check if goal expansion changes params
+                (or
+                    (eq ?pay:class PAY-FOR-RINGS-WITH-BASE)
+                    (eq ?pay:class PAY-FOR-RINGS-WITH-CAP-CARRIER)
+                    (eq ?pay:class PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF))
+                (eq (get-param-by-arg ?pay:params target-mps) ?pred-rs))
+           (assert (dependency-assignment (goal-id ?goal-id)
+                                          (class ?pay:class)
+                                          (grounded-with ?pay:id)))
+       )
+       (modify ?g (is-executable TRUE))
+       (modify ?goal-da (params  wp ?wp
+                                  wp-loc ?pred-rs
+                                  wp-side OUTPUT)
+                         (grounded-with ?pred-goal))
+       (modify ?instruct-da (grounded-with ?instruct-goal-id))
+)
 
 (defrule goal-dependencies-discard-buffer-cap-executable
 " Discard can be executable while buffer-cap is still running.
