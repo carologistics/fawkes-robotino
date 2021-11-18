@@ -1590,7 +1590,7 @@ The workpiece remains in the output of the used ring station after
 
 	(bind ?goal (assert (goal (class NAVIGATION-CHALLENGE-MOVE)
 					(id (sym-cat NAVIGATION-CHALLENGE-MOVE- (gensym*)))
-					(sub-type SIMPLE)
+					(sub-type SIMPLE) (meta-template goal-meta)
 					(verbosity NOISY) (is-executable FALSE)
 					(params target (translate-location-map-to-grid ?location) location ?location)
 				)))
