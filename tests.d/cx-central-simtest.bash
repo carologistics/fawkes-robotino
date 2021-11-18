@@ -22,7 +22,12 @@ fi
 
 FAWKES_DIR=$(realpath $(dirname ${BASH_SOURCE[0]})/..)
 tmpconfig=$(mktemp $FAWKES_DIR/cfg/conf.d/simtest-XXXXXX.yaml)
+
+specs_path="/clips-executive/specs/rcll-central/parameters/simtest/"
 echo "/clips-executive/specs/rcll-central/parameters/simtest/enabled: true" > $tmpconfig
+#echo $specs_path +  "enabled/testbed: ENTER-FIELD" > $tmpconfig
+echo $specs_path +  "enabled/testbed: CO-PRODUCTION" > $tmpconfig
+
 echo "/clips-executive/spec: rcll-central" >> $tmpconfig
 export FAWKES_DIR
 SCRIPT_PATH=$FAWKES_DIR/bin

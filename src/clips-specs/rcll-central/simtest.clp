@@ -81,6 +81,15 @@
 		(case "ENTER-FIELD" then
 			(assert (testcase (type ENTER-FIELD)))
 		)
+		(case "C0-PRODUCTION" then
+			(assert (testcase (type C0-PRODUCTION)))
+		)
+		(case "C3-PRODUCTION" then
+			(assert (testcase (type C3-PRODUCTION)))
+		)
+		(case "PICK-AND-PLACE-CHALLENGE" then
+			(assert (testcase (type PICK-AND-PLACE-CHALLENGE)))
+		)
 		(case "FAST" then
 			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 1 points 1)))
 		)
@@ -263,6 +272,26 @@
 " The ENTER-FIELD goal failed; something is broken."
 	?testcase <- (testcase (type ENTER-FIELD) (state PENDING))
 	(goal (class ENTER-FIELD) (mode FINISHED) (outcome ~COMPLETED))
+	=>
+	(modify ?testcase (state FAILED))
+)
+
+(defrule simtest-C0-production-success
+" The C0 production was successful and the product is delivered "
+	?testcase <- (testcase (type C0-PRODUCTION) (state PENDING))
+	(wm-fact (key domain fact order-complexity args? ord ?ord com C0))
+	(wm-fact (key domain fact quantity-delivered args? ord ?ord team ?team-color&~nil)
+	         (value ?delivered&:(> ?delivered 0)))
+	=>
+	(modify ?testcase (state SUCCEEDED))
+)
+
+(defrule simtest-C0-production-failed
+" The ENTER-FIELD goal failed; something is broken."
+	?testcase <- (testcase (type C0-PRODUCTION) (state PENDING))
+	(wm-fact (key domain fact order-complexity args? ord ?ord com C0))
+	(wm-fact (key domain fact quantity-delivered args? ord ?ord team ?team-color&~nil)
+	         (value ?delivered&:(= ?delivered 0)))
 	=>
 	(modify ?testcase (state FAILED))
 )
