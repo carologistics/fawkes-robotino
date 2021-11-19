@@ -122,18 +122,16 @@
                     (id CLEAR-MPS-BS)
                     (type ACHIEVE)
                     (sub-type SIMPLE)
-                    (param-names     team-color  robot  mps wp        side)
+                    (param-names     team-color  robot  bs  wp        side)
                     (param-constants ?team-color ?robot nil nil       nil)
                     (param-types     team-color  robot  bs  workpiece mps-side)
                     (param-quantified)
                     (preconditions "
                         (and
                             (can-hold ?robot)
-
-                            (mps-type ?mps BS)
-                            (mps-team ?mps ?team-color)
-                            (not (mps-state ?mps BROKEN))
-                            (wp-at ?wp ?mps ?side)
+                            (mps-team ?bs ?team-color)
+                            (not (mps-state ?bs BROKEN))
+                            (wp-at ?wp ?bs ?side)
                         )
                     ")
                     (effects "")
@@ -152,9 +150,9 @@
                     (id DISCARD-UNKNOWN-WP)
                     (type ACHIEVE)
                     (sub-type SIMPLE)
-                    (param-names     robot  wp        rs  order)
-                    (param-constants ?robot nil       nil nil)
-                    (param-types     robot  workpiece rs  order)
+                    (param-names     robot  wp        rs)
+                    (param-constants ?robot nil       nil)
+                    (param-types     robot  workpiece rs)
                     (param-quantified )
                     (preconditions "
                         (and
@@ -162,9 +160,9 @@
                             (or
                                 (rs-failed-put-slide ?rs ?robot ?wp)
                                 (or
-                                    (not (wp-for-order ?wp ?order))
+                                    (not (wp-has-order ?wp))
                                     (and
-                                        (wp-for-order ?wp ?order)
+                                        (wp-has-order ?wp)
                                         (wp-cap-color ?wp CAP_NONE)
                                         (wp-ring1-color ?wp RING_NONE)
                                     )
@@ -187,9 +185,9 @@
                     (id DISCARD-UNKNOWN-WP)
                     (type ACHIEVE)
                     (sub-type SIMPLE)
-                    (param-names     robot  wp        rs  order)
-                    (param-constants ?robot nil       nil nil)
-                    (param-types     robot  cap-carrier rs  order)
+                    (param-names     robot  wp        rs)
+                    (param-constants ?robot nil       nil)
+                    (param-types     robot  cap-carrier rs)
                     (param-quantified )
                     (preconditions "
                         (and
@@ -197,9 +195,9 @@
                             (or
                                 (rs-failed-put-slide ?rs ?robot ?wp)
                                 (or
-                                    (not (wp-for-order ?wp ?order))
+                                    (not (wp-has-order ?wp))
                                     (and
-                                        (wp-for-order ?wp ?order)
+                                        (wp-has-order ?wp)
                                         (wp-cap-color ?wp CAP_NONE)
                                         (wp-ring1-color ?wp RING_NONE)
                                     )
@@ -289,7 +287,7 @@
     =>
     (assert
         (goal-class (class FILL-RS)
-                    (id (sym-cat FILL-RS- ?rs))
+                    (id (sym-cat FILL-RS-WP- ?rs))
                     (meta rs ?rs cc FALSE)
                     (type ACHIEVE)
                     (sub-type SIMPLE)
@@ -301,6 +299,7 @@
                         (and
                             (wp-usable ?wp)
                             (holding ?robot ?wp)
+                            (not (wp-has-order ?wp))
                             (not (mps-state ?rs BROKEN))
                             (rs-filled-with ?rs ?filled)
                             (or
@@ -324,7 +323,7 @@
     =>
     (assert
         (goal-class (class FILL-RS)
-                    (id (sym-cat FILL-RS- ?rs))
+                    (id (sym-cat FILL-RS-CC- ?rs))
                     (meta rs ?rs cc TRUE)
                     (type ACHIEVE)
                     (sub-type SIMPLE)
@@ -616,9 +615,6 @@
                     (preconditions "
                         (and
                             ;mps CEs
-                            (mps-team ?ds ?team-color)
-                            (not (mps-state ?fs BROKEN))
-                            (mps-team ?fs ?team-color)
                             (mps-side-free ?ds INPUT)
 
                             ;wp CEs
@@ -637,6 +633,7 @@
                             (or
                                 (and
                                     (wp-at ?wp ?fs OUTPUT)
+                                    (not (mps-state ?fs BROKEN))
                                     (can-hold ?robot)
                                 )
                                 (holding ?robot ?wp)
@@ -856,7 +853,7 @@
     (goal-class (class DISCARD-UNKNOWN) (id ?cid))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
-    (pddl-grounding (id ?grounding-id) (param-values ?robot ?wp ?rs ?order))
+    (pddl-grounding (id ?grounding-id) (param-values ?robot ?wp ?rs))
 
     (not (goal (class DISCARD-UNKNOWN) (params robot ?robot wp ?wp)))
     =>
