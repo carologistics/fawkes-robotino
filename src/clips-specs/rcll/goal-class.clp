@@ -182,7 +182,7 @@
     =>
     (assert
         (goal-class (class DISCARD-UNKNOWN)
-                    (id DISCARD-UNKNOWN-WP)
+                    (id DISCARD-UNKNOWN-CC)
                     (type ACHIEVE)
                     (sub-type SIMPLE)
                     (param-names     robot  wp        rs)
@@ -681,7 +681,6 @@
                             (mps-team ?bs ?team-color)
                             ;order CEs
                             (order-producible ?order)
-                            (order-deliverable ?order)
                             ;wp CEs
                             (or
                                 (and
@@ -1039,13 +1038,11 @@
             (wm-fact (key config rcll exclusive-complexities) (values $?exclusive&:(member$ (str-cat ?complexity) ?exclusive)))))
     (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
 
-
-    (not (goal (class MOUNT-FIRST-RING)
-                (parent ?production-id)
-                (params robot ?robot $?
-                        bs-side ?side $?
-                        order ?order
-                        wp ?wp)))
+    (not (wm-fact (key strategy keep-mps-side-free args? m ?rs side INPUT cause ~?wp)))
+    (not (goal (class MOUNT-FIRST-RING) (parent ?production-id) (params robot ?robot $?
+                                                                              bs-side ?side $?
+                                                                              order ?order
+                                                                              wp ?wp)))
     =>
     (bind ?required-resources ?order ?wp)
     (if (any-factp ((?exclusive-complexities wm-fact))
@@ -1267,8 +1264,6 @@
         (value ?qd&:(> ?qr ?qd)))
     (wm-fact (key refbox order ?order delivery-begin) (type UINT)
         (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-AHEAD-TIME*))))
-    (wm-fact (key refbox order ?order delivery-end) (type UINT)
-        (value ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-LATEST-TIME*))))
     (not (domain-fact (name order-producible) (param-values ?order)))
     =>
     (assert (domain-fact (name order-producible) (param-values ?order)))
