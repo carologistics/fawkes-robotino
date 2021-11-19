@@ -332,6 +332,15 @@
 	(assert (domain-facts-loaded))
 )
 
+; ----------------- PDDL Goal Formulation Objects and Predicates -------------------
+; the following objects and predicates cary information that make it easier to
+; define goal-formulation preconditions in PDDL by either removing the need for
+; quantification, or by reducing the size of the grounding space in the case of object
+; types.
+; (e.g. to detect if the given order has a workpiece assigned to it,
+; order-has-wp can be used instead just for that order instead of having to use
+; wp-for-order and quantifying over all workpieces)
+
 (defrule domain-assert-mps-polymorphism
     (domain-object (name ?mps) (type bs|cs|ds|rs|ss))
     =>
@@ -342,12 +351,14 @@
     =>
     (assert (domain-object (name ?mps) (type fs)))
 )
+
 (defrule domain-assert-order-has-wp
   (domain-fact (name wp-for-order) (param-values ?wp ?order))
   (not (domain-fact (name order-has-wp) (param-values ?order)))
   =>
   (assert (domain-fact (name order-has-wp) (param-values ?order)))
 )
+
 (defrule domain-retract-order-has-wp
   ?df <- (domain-fact (name order-has-wp) (param-values ?order))
   (not (domain-fact (name wp-for-order) (param-values ?wp ?order)))
@@ -368,6 +379,7 @@
     =>
     (retract ?wmf)
 )
+
 (defrule domain-assert-rs-paid-for
   (domain-fact (name rs-filled-with) (param-values ?rs ?bases-filled))
   (not (domain-fact (name rs-filled-with) (param-values ?rs ?other-bases&~?bases-filled)))
@@ -379,6 +391,7 @@
   =>
   (assert (domain-fact (name rs-paid-for) (param-values ?rs ?required)))
 )
+
 (defrule domain-retract-rs-paid-for
   (domain-fact (name rs-filled-with) (param-values ?rs ?bases-filled))
   (not (domain-fact (name rs-filled-with) (param-values ?rs ?other-bases&~?bases-filled)))
