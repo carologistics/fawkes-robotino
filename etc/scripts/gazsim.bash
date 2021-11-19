@@ -53,7 +53,7 @@ OPTIONS:
 EOF
 }
 
- 
+
 #check options
 
 COMMAND=start
@@ -315,8 +315,8 @@ NUM_MAGENTA=$(($NUM_ROBOTINOS-$NUM_CYAN))
 echo 'Automated Simulation control'
 
 script_path=$FAWKES_DIR/bin
-startup_script_location=$script_path/gazsim-startup.bash 
-initial_pose_script_location=$script_path/gazsim-publish-initial-pose.bash 
+startup_script_location=$script_path/gazsim-startup.bash
+initial_pose_script_location=$script_path/gazsim-publish-initial-pose.bash
 
 function stop_simulation {
   echo 'Kill Gazebo-sim'
@@ -398,7 +398,6 @@ if [  $COMMAND  == start ]; then
 	fi
     	done
     fi
-
     #start refbox
     COMMANDS+=("bash -i -c \"$startup_script_location -x $REFBOX  $KEEP $@ -- $REFBOX_ARGS\"")
     #start refbox frontend

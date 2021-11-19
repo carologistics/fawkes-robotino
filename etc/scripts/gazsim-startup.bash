@@ -37,7 +37,7 @@ OPTIONS:
    -e arg         Record Replay
 EOF
 }
- 
+
 #check options
 
 #default values
@@ -220,15 +220,15 @@ case $COMMAND in
 		read
 	fi
 	;;
-    roscore ) 
+    roscore )
 	export ROS_MASTER_URI=http://localhost:$PORT
 	roscore -p $PORT $@
 	;;
     roslaunch)
 	export ROS_MASTER_URI=http://localhost:$PORT
-	roslaunch $@ --wait ${ROS_LAUNCH%:*} ${ROS_LAUNCH##*:} 
+	roslaunch $@ --wait ${ROS_LAUNCH%:*} ${ROS_LAUNCH##*:}
 	;;
-    move_base ) 
+    move_base )
 	export ROS_MASTER_URI=http://localhost:$PORT
 	rosparam set /use_sim_time true
 	export ROS_PACKAGE_PATH=$FAWKES_DIR/cfg/move_base_robotino:$ROS_PACKAGE_PATH
