@@ -1301,6 +1301,8 @@
         (value ?qd&:(> ?qr ?qd)))
     (wm-fact (key refbox order ?order delivery-begin) (type UINT)
         (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-AHEAD-TIME*))))
+    (wm-fact (key refbox order ?order delivery-end) (type UINT)
+        (value ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-LATEST-TIME*))))
     (not (domain-fact (name order-producible) (param-values ?order)))
     =>
     (assert (domain-fact (name order-producible) (param-values ?order)))
