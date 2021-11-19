@@ -128,6 +128,7 @@
 		(wp-on-shelf ?wp - workpiece ?m - mps ?spot - shelf-spot)
 		(wp-spawned-for ?wp - workpiece ?r - robot)
 		(wp-for-order ?wp - workpiece ?ord - order)
+		(wp-has-order ?wp - workpiece)
 		(spot-free ?m - mps ?spot - shelf-spot)
 		(ss-initialized ?m - mps)
 		(ss-stored-wp ?m  - mps ?wp - workpiece)

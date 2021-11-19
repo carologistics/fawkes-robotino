@@ -354,6 +354,20 @@
   =>
   (retract ?df)
 )
+
+(defrule goal-class-wp-has-order
+    (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))
+    (not (domain-fact (name wp-has-order) (param-values ?wp)))
+    =>
+    (assert (domain-fact (name wp-has-order) (param-values ?wp)))
+)
+
+(defrule goal-class-not-wp-has-order
+    ?wmf <- (domain-fact (name wp-has-order) (param-values ?wp))
+    (not (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order)))
+    =>
+    (retract ?wmf)
+)
 (defrule domain-assert-rs-paid-for
   (domain-fact (name rs-filled-with) (param-values ?rs ?bases-filled))
   (not (domain-fact (name rs-filled-with) (param-values ?rs ?other-bases&~?bases-filled)))
