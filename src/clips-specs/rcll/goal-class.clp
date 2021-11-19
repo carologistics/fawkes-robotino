@@ -22,11 +22,14 @@
 
 ; ------------------------- ASSERT GOAL CLASSES -----------------------------------
 
-; MPS INTERACTION GOALS
+; MPS INTERACTION GOALS ARE KEPT AT OLD STATE FORE NOW
 
 
 ; CLEANUP GOALS
+
 (defrule goal-class-create-clear-rs-from-expired-product
+    "Assert a goal class for CLEAR-MPS goals that holds the precondition for formulation
+    in case an expired product blocks a RS."
     (not (goal-class (class CLEAR-MPS) (id CLEAR-MPS-RS) (sub-type SIMPLE)))
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
@@ -56,6 +59,8 @@
 )
 
 (defrule goal-class-create-clear-cs-from-capless-carrier
+    "Assert a goal class for CLEAR-MPS goals that holds the precondition for formulation
+    in case a CC blocks a CS."
     (not (goal-class (class CLEAR-MPS) (id CLEAR-MPS-CS-CC) (sub-type SIMPLE)))
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
@@ -83,6 +88,8 @@
 )
 
 (defrule goal-class-create-clear-cs-from-finished-product
+    "Assert a goal class for CLEAR-MPS goals that holds the precondition for formulation
+    in case a finished product blocks a CS."
     (not (goal-class (class CLEAR-MPS) (id CLEAR-MPS-CS-WP) (sub-type SIMPLE)))
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
@@ -140,6 +147,7 @@
 )
 
 (defrule goal-class-create-discard-wp
+    "Create a goal-class for discarding workpieces."
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
 
@@ -175,6 +183,7 @@
 )
 
 (defrule goal-class-create-discard-cc
+    "Create a goal-class for discarding cap-carriers."
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
 
@@ -214,6 +223,7 @@
 ; PRODUCTION MAINTENANCE GOALS
 
 (defrule goal-class-create-get-from-bs-for-rs
+    "Create a goal-class for getting WPs from the BS to fill an RS with."
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
 
@@ -247,6 +257,7 @@
 )
 
 (defrule goal-class-create-get-from-shelf-for-rs
+    "Create a goal-class for getting CCs from the shelf to fill an RS with."
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
 
@@ -278,6 +289,7 @@
 )
 
 (defrule goal-class-create-fill-rs
+    "Create a goal-class for an RS to formulate FILL-RS goals to fill it with WPs."
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
     (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
@@ -314,6 +326,7 @@
 )
 
 (defrule goal-class-create-fill-rs-cc
+    "Create a goal-class for an RS to formulate FILL-RS goals to fill it with CCs."
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
     (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
@@ -349,6 +362,7 @@
 )
 
 (defrule goal-class-create-fill-cap
+    "Assert a FILL-CAP goal class for each CS based on its assigned cs-color."
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
     (wm-fact (key domain fact cs-color args? m ?cs col ?cap-color))
@@ -384,6 +398,8 @@
 ; MAINLINE PRODUCTION GOALS
 
 (defrule goal-class-create-mount-first-ring
+    "If there exists an order for a product of complexity C1, C2 or C3, assert the
+    MFR goal-class for this order and the mounting operation of the first ring."
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
 
@@ -448,6 +464,8 @@
 )
 
 (defrule goal-class-create-mount-next-ring2
+    "If there exists an order for a product of complexity C2 or C3, assert the MNR goal-class
+    for this order and the mounting operation of the second ring."
     (wm-fact (key refbox team-color) (value ?team-color))
     (wm-fact (key domain fact self args? r ?robot))
 
@@ -516,6 +534,8 @@
 )
 
 (defrule goal-class-create-mount-next-ring3
+    "If there exists an order for a product of complexity C3, assert the MNR goal-class
+    for this order and the mounting operation of the third ring."
     (wm-fact (key refbox team-color) (value ?team-color))
     (wm-fact (key domain fact self args? r ?robot))
 
@@ -583,8 +603,6 @@
         )
     )
 )
-
-
 
 (defrule goal-class-create-deliver
     "If there exists an order for a product of a certain configuration,
@@ -774,9 +792,11 @@
     )
 )
 
+
 ; ------------------------- ASSERT GOALS -----------------------------------
 
-; MPS INTERACTION GOALS
+; MPS INTERACTION GOALS - KEPT AT OLD STATE FOR NOW
+
 
 ; CLEANUP GOALS
 
@@ -845,6 +865,7 @@
 )
 
 (defrule goal-class-assert-goal-discard
+    "If the preconditions of a DISCARD-UNKNOWN goal class are satisfied, assert the goal."
     (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
     (goal (id ?parent) (class NO-PROGRESS) (mode FORMULATED))
     (goal (id ?urgent) (class URGENT) (mode FORMULATED))
@@ -876,6 +897,7 @@
 ; PRODUCTION MAINTENANCE GOALS
 
 (defrule goal-class-assert-goal-get-from-bs-for-rs
+    "If the preconditions of a get-base-to-fill-rs goal class is met assert the goal."
     (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
     (goal (id ?maintain-id) (class PREPARE-RINGS) (mode FORMULATED))
 
@@ -908,6 +930,7 @@
 )
 
 (defrule goal-class-assert-goal-get-from-shelf-for-rs
+    "If the preconditions of a get-shelf-to-fill-rs goal class is met assert the goal."
     (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
     (goal (id ?maintain-id) (class PREPARE-RINGS) (mode FORMULATED))
 
@@ -938,6 +961,8 @@
 )
 
 (defrule goal-class-assert-goal-fill-rs
+    "If the preconditions of a fill-rs goal class is met collect ring payment information
+    and assert the goal."
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (goal (id ?production-id) (class PREPARE-RINGS) (mode FORMULATED))
 
@@ -979,6 +1004,7 @@
 )
 
 (defrule goal-class-assert-goal-fill-cap
+    "If the preconditions of a fill-cap goal class is met assert the goal."
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (goal (id ?production-id) (class PREPARE-CAPS) (mode FORMULATED))
 
@@ -1019,6 +1045,9 @@
 ; MAINLINE PRODUCTION GOALS
 
 (defrule goal-class-assert-goal-mount-first-ring
+    "If the preconditions of a mount-first-ring goal class for an order is satisfied,
+    the complexity is allowed, and the keep-mps-side-free condition is met and there
+    is no such goal yet, collect the ring-payment information and assert the goal."
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (goal (id ?production-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
 
@@ -1077,6 +1106,9 @@
 )
 
 (defrule goal-class-assert-goal-mount-next-ring
+    "If the preconditions of a mount-next-ring goal class for an order is satisfied,
+    the complexity is allowed, and the keep-mps-side-free condition is met and there
+    is no such goal yet, collect the ring-payment information and assert the goal."
     (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
     (goal (id ?production-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
 
@@ -1090,9 +1122,8 @@
                                             subtrahend ?bases-needed
                                             difference ?bases-remain&ZERO|ONE|TWO|THREE))
     (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
-
-
     (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
+
     (not (wm-fact (key strategy keep-mps-side-free args? m ?rs side INPUT cause ~?wp)))
     (not (goal (class MOUNT-NEXT-RING) (parent ?maintain-id) (params robot ?robot $?
                                                                      wp ?wp $?
@@ -1129,6 +1160,8 @@
 )
 
 (defrule goal-class-assert-goal-deliver
+    "If the precondition for a DELIVER goal-class for an order has been met and there is
+    no such DELIVER goal yet, assert and formulate the goal."
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (goal (id ?production-id) (class DELIVER-PRODUCTS) (mode FORMULATED))
 
@@ -1251,11 +1284,15 @@
 )
 
 ; ------------------------- CLEAN UP GOAL CLASSES -----------------------------------
-
+; TODO retract goal classes that are order dependend when they have been fulfilled
+; and prevent reformulation to keep the fact base clean. This does not hurt performance
+; for now.
 
 ; ------------------------- META CHECKS FOR GOALS -----------------------------------
 
 (defrule goal-class-order-producible-C0
+    "Assert an order-producible fact for a product of complexity C0 when it has not been
+    fulfileld yet and the produce-ahead time has started."
     (wm-fact (key domain fact order-complexity args? ord ?order com C0))
     (wm-fact (key refbox team-color) (value ?team-color))
     (wm-fact (key refbox game-time) (values $?game-time))
@@ -1270,6 +1307,8 @@
 )
 
 (defrule goal-class-order-not-producible-C0
+    "Retract an order-producible fact for a product of complexity C0 when it has been
+    fulfilled or the produce-latest time has been reached ."
     (wm-fact (key domain fact order-complexity args? ord ?order com C0))
     (wm-fact (key refbox team-color) (value ?team-color))
     (wm-fact (key refbox game-time) (values $?game-time))
@@ -1286,6 +1325,8 @@
 )
 
 (defrule goal-class-order-producible-CX
+    "Assert an order-producible fact for a product of complexity C1, C2, or C3 when it has
+    not been fulfilled yet."
     (wm-fact (key domain fact order-complexity args? ord ?order com ~C0))
     (wm-fact (key refbox team-color) (value ?team-color))
     (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
@@ -1297,6 +1338,8 @@
 )
 
 (defrule goal-class-order-not-producible-CX
+    "Retract an order-producible fact for a product of complexity C1, C2, or C3 when it has
+    been fulfilled."
     (wm-fact (key refbox team-color) (value ?team-color))
     (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
     (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
@@ -1307,6 +1350,8 @@
 )
 
 (defrule goal-class-order-deliverable
+    "Assert an order-deliverable fact when it has not been fulfilled and delivery ahead
+    time has started."
     (wm-fact (key refbox team-color) (value ?team-color))
     (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
     (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
@@ -1320,6 +1365,7 @@
 )
 
 (defrule goal-class-order-not-deliverable
+    "Retract an order-deliverable fact when the order has been fulfilled."
     (wm-fact (key refbox team-color) (value ?team-color))
     (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
     (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
@@ -1330,6 +1376,8 @@
 )
 
 (defrule goal-class-failed-put-slide
+    "Assert an rs-failed-put-slide fact, if the robot failed putting a wp on a slide
+    for *MAX-RETRIES-PICK* attempts."
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key domain fact mps-type args? m ?rs t RS))
     ?t <- (wm-fact (key monitoring action-retried args? r ?robot a wp-put-slide-cc m ?rs wp ?wp)
@@ -1340,6 +1388,7 @@
 )
 
 (defrule goal-class-order-out-of-delivery
+    "Assert an order-out-of-delivery fact if the delivery time is over."
     (wm-fact (key refbox game-time) (values $?game-time))
     (wm-fact (key refbox order ?order delivery-end) (type UINT)
         (value ?end&:(< ?end (nth$ 1 ?game-time))))
