@@ -1115,6 +1115,7 @@ The workpiece remains in the output of the used ring station after
 	               )
 	)))
 	(goal-meta-assert ?goal nil ?order-id nil)
+	(return ?goal)
 )
 
 (deffunction goal-production-assert-pay-for-rings-with-cap-carrier-from-shelf

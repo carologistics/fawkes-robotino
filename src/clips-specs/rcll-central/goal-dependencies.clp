@@ -61,7 +61,7 @@
 	                            (class INSTRUCT-CS-BUFFER-CAP)))
 	=>
 	(printout t "Goal " ?goal-id
-	            "depends on class BUFFER-CAP " crlf)
+	            " depends on class BUFFER-CAP " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class BUFFER-CAP)
 	                               (wait-for FREE-SIDE)
@@ -282,6 +282,8 @@
 	      ; or the workpiece is already being held
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp))
 	)
+	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
+	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
 	=>
 	(printout t "Goal " ?goal-id " executable for " ?robot
 	            " depending on goal " ?dependency-goal-id crlf)
@@ -394,6 +396,8 @@
 	    ; or the workpiece is already being held
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp))
 	)
+	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
+	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
 	=>
 	(printout t "Goal " ?goal-id " executable for " ?robot
 	            " depending on goal " ?dependency-goal-id
@@ -463,6 +467,8 @@
 	                                       (class INSTRUCT-CS-MOUNT-CAP))
 
 	(not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
+	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
+	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
 	=>
 	(printout t "Goal " ?goal-id " executable for " ?robot
 	            " depending on goal " ?mount-goal-id
@@ -507,6 +513,7 @@
 	                                       (class INSTRUCT-CS-MOUNT-CAP))
 
 	(not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
+	(domain-fact (name zone-content) (param-values ?zz ?wp-loc))
 	=>
 	(printout t "Goal " ?goal-id " executable for " ?robot
 	            " depending on goal " ?mount-goal-id
@@ -541,6 +548,8 @@
 	      (class MOUNT-RING)
 	      (params  wp ?wp
 	               target-mps ?rs
+	               $?
+	               ring-color ?ring-color
 	               $?))
 	(or (goal (id ?mount-goal-id) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED))
 	    (and (goal (id ?mount-goal-id) (outcome COMPLETED))
@@ -549,18 +558,20 @@
 	)
 	(goal-meta (goal-id ?mount-goal-id) (order-id ?order-id) (ring-nr ?ring-nr))
 
-	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
 	(wm-fact (key domain fact order-complexity args?
-	                          ord ?order
+	                          ord ?order-id
 	                          com ?complexity&C1|C2|C3))
-	(wm-fact (key wp meta next-step args? wp ?wp)
-	         (value ?next-step&:(eq (sub-string 5 5 ?next-step)
-	                                (sub-string 2 2 ?complexity))))
+	(or (test (eq ?complexity C1))
+	    (and (test (eq ?complexity C2))
+	         (test (eq ?ring-nr TWO)))
+	    (and (test (eq ?complexity C3))
+	         (test (eq ?ring-nr THREE))))
 	?mount-da <- (dependency-assignment (goal-id ?goal-id) (class MOUNT-RING))
 
 	(wm-fact (key domain fact cs-buffered args? m ?cs col ?cap-color))
 
 	; get instruct mount-ring goal
+	(goal (id ?instruct-goal-id) (class INSTRUCT-RS-MOUNT-RING))
 	(goal-meta (goal-id ?instruct-goal-id) (order-id ?order-id) (ring-nr ?ring-nr))
 	?instruct-da <- (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-RS-MOUNT-RING))
 
@@ -610,8 +621,7 @@
 	         )
 	    )
 	)
-
-	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps)) ;for-future: include them from goal-production
+	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
 	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
 	=>
 	(printout t "Goal " ?goal-id " executable for " ?robot
@@ -650,7 +660,7 @@
 	                                   target-mps ?other-rs
 	                                   $?)
 	                          (is-executable FALSE))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (order-id ?order-id))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (order-id ?order-id) (ring-nr ?ring-nr))
 
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
@@ -661,18 +671,23 @@
 	      (class MOUNT-RING)
 	      (params  wp ?wp
 	               target-mps ?rs
+	               $?
+	               ring-color ?ring-color
 	               $?))
 	(or (goal (id ?mount-goal-id) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED))
 	    (and (goal (id ?mount-goal-id) (outcome COMPLETED))
 	         (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side INPUT))
 	    )
 	)
-	(goal-meta (goal-id ?mount-goal-id) (order-id ?order-id) (ring-nr ?ring-nr))
+	(goal-meta (goal-id ?mount-goal-id) (order-id ?order-id) (ring-nr ?mount-ring-nr))
+	(wm-fact (key domain fact rs-sub args? minuend ?ring-nr
+	                                       subtrahend ?mount-ring-nr
+	                                       difference ONE))
 	?mount-da <- (dependency-assignment (goal-id ?goal-id) (class MOUNT-RING))
 
 	; get instruct mount-ring goal
 	(goal (id ?instruct-goal-id) (class INSTRUCT-RS-MOUNT-RING))
-	(goal-meta (goal-id ?instruct-goal-id) (order-id ?order-id) (ring-nr ?ring-nr))
+	(goal-meta (goal-id ?instruct-goal-id) (order-id ?order-id) (ring-nr ?mount-ring-nr))
 	?instruct-da <- (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-RS-MOUNT-RING))
 
 	(not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
@@ -685,8 +700,8 @@
 	                          rn ?bases-needed))
 
 	(or ;filled >= needed payments
-	    (wm-fact (key domain fact rs-sub args? minuend ?bases-needed
-	                                           subtrahend ?bases-filled
+	    (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
+	                                           subtrahend ?bases-needed
 	                                           difference ?bases-missing&ZERO|ONE|TWO|THREE))
 	    ;or filled + depending fill goals >= needed payments
 	    (and (wm-fact (key domain fact rs-sub args? minuend ?bases-needed
@@ -722,6 +737,8 @@
 	         )
 	    )
 	)
+	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
+	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
 	=>
 	(printout t "Goal " ?goal-id " executable for " ?robot
 	            " depending on goal " ?mount-goal-id
@@ -784,6 +801,7 @@
 	(goal (id ?instruct-goal-id) (class INSTRUCT-CS-BUFFER-CAP))
 	(goal-meta (goal-id ?instruct-goal-id) (order-id ?order-id))
 	?instruct-da <- (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-CS-BUFFER-CAP))
+	(domain-fact (name zone-content) (param-values ?zz ?wp-loc))
 	=>
 	(printout t "Goal " ?goal-id " executable for " ?robot
 	            " depending on goal " ?buffer-goal-id
@@ -871,6 +889,8 @@
 	(goal-meta (goal-id ?instruct-goal-id) (order-id ?order-id))
 	?instruct-da <- (dependency-assignment (goal-id ?goal-id)
 	                                       (class INSTRUCT-CS-BUFFER-CAP))
+	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
+	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
 	=>
 	(printout t "Goal " ?goal-id " executable for " ?robot
 	            " depending on goal " ?buffer-goal-id
