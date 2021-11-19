@@ -48,6 +48,8 @@ OPTIONS:
    --mongodb         Start central mongodb instance
    --keep-tmpfiles   Do not delete tmp files on exit
    --asp             Run with ASP agent and global planner
+   --challenge       Start refbox challenge script instead of refbox
+   --refbox-args     Pass options to the refbox
 EOF
 }
 
@@ -57,6 +59,8 @@ EOF
 COMMAND=start
 CONF=
 HEADLESS=
+REFBOX=
+REFBOX_ARGS=
 ROS=
 ROS_LAUNCH_MAIN=
 ROS_LAUNCH_ROBOT=
@@ -130,7 +134,7 @@ echo "Using $TERMINAL"
 ROS_MASTER_PORT=${ROS_MASTER_URI##*:}
 ROS_MASTER_PORT=${ROS_MASTER_PORT%%/*}
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "debug,ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:,keep-tmpfiles" -- "$@")
+OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "debug,ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:,keep-tmpfiles,challenge,refbox-args:" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
@@ -211,6 +215,12 @@ while true; do
 	     ;;
      --mongodb)
          START_MONGODB=true
+         ;;
+     --challenge)
+         REFBOX=refbox-challenge
+         ;;
+     --refbox-args)
+         REFBOX_ARGS="$OPTARG"
          ;;
      --keep-tmpfiles)
          KEEP_TMPFILES=true
@@ -390,7 +400,7 @@ if [  $COMMAND  == start ]; then
     fi
 
     #start refbox
-    COMMANDS+=("bash -i -c \"$startup_script_location -x refbox $KEEP $@\"")
+    COMMANDS+=("bash -i -c \"$startup_script_location -x $REFBOX  $KEEP $@ -- $REFBOX_ARGS\"")
     #start refbox frontend
     COMMANDS+=("bash -i -c \"$startup_script_location -x refbox-frontend $KEEP $@\"")
 

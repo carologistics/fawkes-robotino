@@ -11,7 +11,7 @@ This script starts a specified program for simulation
 OPTIONS:
   COMMON:
    -h             Show this message
-   -x gzserver|gzclient|fawkes|comm|roscore|move_base|refbox|refbox-shell|refbox-frontend
+   -x gzserver|gzclient|fawkes|comm|roscore|move_base|refbox|refbox-challenge|refbox-shell|refbox-frontend
                   Start specified program
    -p arg         Specify ros port
 
@@ -237,7 +237,10 @@ case $COMMAND in
     refbox )
 	llsf-refbox $@
 	;;
-    refbox-shell )
+  refbox-challenge )
+	challenge_startup.bash $@
+	;;
+  refbox-shell )
         # wait some time such that the terminal has the final size
 	sleep 3
 	llsf-refbox-shell $@
