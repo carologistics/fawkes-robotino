@@ -41,6 +41,7 @@ tmpconfig=$(mktemp $FAWKES_DIR/cfg/conf.d/simtest-XXXXXX.yaml)
 specs_path=/clips-executive/specs/rcll-central/parameters
 testbed_path=$specs_path/simtest/enabled/testbed:
 echo "$specs_path/simtest/enabled: true" >> $tmpconfig
+ref_args=
 
 OPTS=$(getopt -o "ha" -l "enter-field,C0-production,C3-production,pick-and-place,exploration" -- "$@")
 
@@ -72,17 +73,30 @@ while true; do
 			;;
 		--C0-production)
 			echo "$testbed_path CO-PRODUCTION" >> $tmpconfig
+			ref_args="--challenge -refbox-args \"--production C0 --ground-truth\""
+			ref_args="--production c0"
+			shift
+			break
+			;;
+		--C3-production)
+			echo "$testbed_path C3-PRODUCTION" >> $tmpconfig
+			#ref_args="--challenge --refbox-args \"--production C3\" \"--ground-truth\""
+			ref_args="--production c3"
 			shift
 			break
 			;;
 		--pick-and-place)
 			echo "$testbed_path PICK-AND-PLACE" >> $tmpconfig
 			echo "$specs_path/rcll/pick-and-place-challenge: true" >> $tmpconfig
+			#ref_args="--challenge --refbox-args \"--grasping\""
+			ref_args="--grasping"
 			shift
 			break
 			;;
 		--exploration)
 			echo "$testbed_path EXPLORATION" >> $tmpconfig
+			#ref_args="--challenge --refbox-args \"--exploration\""
+			ref_args="--exploration"
 			shift
 			break
 			;;
@@ -96,11 +110,7 @@ while true; do
 		shift
 done
 
-#echo "/clips-executive/specs/rcll-central/parameters/simtest/enabled: true" >> $tmpconfig
-#echo "/clips-executive/specs/rcll-central/parameters/rcll/pick-and-place-challenge: true" > $tmpconfig
-#echo "$specs_path/enabled/testbed: ENTER-FIELD" >> $tmpconfig
-#echo "$specs_path/enabled/testbed: CO-PRODUCTION" >> $tmpconfig
-
+echo "Simtest: calling refbox with options: " $ref_args
 echo "/clips-executive/spec: rcll-central" >> $tmpconfig
 export FAWKES_DIR
 SCRIPT_PATH=$FAWKES_DIR/bin
@@ -119,6 +129,6 @@ stop_test () {
 
 trap stop_test $TRAP_SIGNALS
 ulimit -c 0
-$SCRIPT_PATH/gazsim.bash -o -r --mongodb -m m-skill-sim --central-agent m-central-clips-exec -n 1 --team-cyan Carologistics --start-game=PRODUCTION $@
+$SCRIPT_PATH/gazsim.bash -o -r --mongodb -m m-skill-sim --central-agent m-central-clips-exec -n 1 --team-cyan Carologistics --challenge --refbox-args $ref_args --start-game=PRODUCTION $@
 echo "Waiting for results..."
 $SCRIPT_PATH/cx-simtest-check.bash ./robot11_latest.log
