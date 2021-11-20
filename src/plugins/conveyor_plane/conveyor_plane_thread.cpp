@@ -154,7 +154,7 @@ ConveyorPlaneThread::init()
 	realsense_switch_ =
 	  blackboard->open_for_reading<SwitchInterface>(cfg_bb_realsense_switch_name_.c_str());
 
-	visualisation_ = new Visualisation(rosnode);
+	visualisation_ = new Visualisation(node_handle);
 }
 
 void

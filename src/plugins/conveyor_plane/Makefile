@@ -21,7 +21,7 @@ BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDSYSDIR)/pcl.mk
 include $(BUILDSYSDIR)/boost.mk
-include $(BUILDSYSDIR)/ros.mk
+include $(BUILDSYSDIR)/ros2.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 
 HAVE_BULLET_VERSION = $(if $(shell $(PKGCONFIG) --atleast-version=2.82 'bullet'; echo $${?/1/}),1,0)
@@ -30,7 +30,7 @@ REQUIRED_PCL_LIBS = sample_consensus segmentation filters surface features
 
 #The necessary libraries your plugin needs.
 LIBS_conveyor_plane = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
-                     fawkestf fawkesblackboard fawkesinterface fawkespcl_utils fawkesrosaspect \
+                     fawkestf fawkesblackboard fawkesinterface fawkespcl_utils fawkesros2aspect \
                      SwitchInterface Position3DInterface LaserLineInterface
 #binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
 OBJS_conveyor_plane = conveyor_plane_plugin.o conveyor_plane_thread.o
@@ -38,14 +38,14 @@ OBJS_conveyor_plane = conveyor_plane_plugin.o conveyor_plane_thread.o
 OBJS_all    = $(OBJS_conveyor_plane)
 PLUGINS_all = $(PLUGINDIR)/conveyor-plane.$(SOEXT)
 
-CFLAGS  += $(CFLAGS_TF) $(CFLAGS_PCL) $(CFLAGS_ROS) \
-           $(call pcl-libs-cflags,$(REQUIRED_PCL_LIBS))
-LDFLAGS += $(LDFLAGS_TF) $(LDFLAGS_PCL) $(LDFLAGS_ROS) \
-           $(call pcl-libs-ldflags,$(REQUIRED_PCL_LIBS))
+CFLAGS  += $(CFLAGS_TF) $(CFLAGS_PCL) $(CFLAGS_ROS2) \
+           $(call pcl-libs-cflags,$(REQUIRED_PCL_LIBS)) $(VISUALIZATION_MSGS_cflags) $(PCL_CONVERSIONS_cflags) $(GEOMETRY_MSGS_cflags)
+LDFLAGS += $(LDFLAGS_TF) $(LDFLAGS_PCL) $(LDFLAGS_ROS2) \
+           $(call pcl-libs-ldflags,$(REQUIRED_PCL_LIBS)) $(VISUALIZATION_MSGS_lflags) $(PCL_CONVERSIONS_lflags) $(GEOMETRY_MSGS_lflags)
 
 PRESUBDIRS = interfaces
 
-ifeq ($(HAVE_ROS)$(HAVE_TF)$(HAVE_PCL)$(call pcl-have-libs,$(REQUIRED_PCL_LIBS)),1111)
+ifeq ($(HAVE_ROS2)$(HAVE_TF)$(HAVE_PCL)$(call pcl-have-libs,$(REQUIRED_PCL_LIBS)),1111)
   ifeq ($(HAVE_BULLET_VERSION),1)
     PLUGINS_build = $(PLUGINS_all)
   else

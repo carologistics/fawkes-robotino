@@ -36,7 +36,7 @@
 #include <interfaces/Position3DInterface.h>
 #include <interfaces/SwitchInterface.h>
 #include <pcl_utils/compatibility.h>
-#include <plugins/ros/aspect/ros.h>
+#include <plugins/ros2/aspect/ros2.h>
 
 #include <map>
 #include <string>
@@ -52,7 +52,7 @@ class ConveyorPlaneThread : public fawkes::Thread,
                             public fawkes::ConfigurableAspect,
                             public fawkes::BlackBoardAspect,
                             public fawkes::PointCloudAspect,
-                            public fawkes::ROSAspect,
+                            public fawkes::ROS2Aspect,
                             public fawkes::TransformAspect
 {
 private:

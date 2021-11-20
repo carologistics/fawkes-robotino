@@ -72,7 +72,7 @@ class ConveyorPoseThread : public fawkes::Thread,
                            public fawkes::ConfigurationChangeHandler,
                            public fawkes::BlackBoardAspect,
                            public fawkes::PointCloudAspect,
-                           public fawkes::ROSAspect,
+                           public fawkes::ROS2Aspect,
                            public fawkes::TransformAspect,
                            public fawkes::SyncPointManagerAspect,
                            public fawkes::ClockAspect

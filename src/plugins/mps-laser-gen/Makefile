@@ -15,31 +15,31 @@
 
 BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
-include $(BUILDSYSDIR)/ros.mk
+include $(BUILDSYSDIR)/ros2.mk
 include $(BUILDSYSDIR)/eigen3.mk
 include $(BUILDCONFDIR)/navgraph/navgraph.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 
 LIBS_mps_laser_gen = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
-                     fawkesblackboard fawkesinterface fawkesrosaspect
+                     fawkesblackboard fawkesinterface fawkesros2aspect
 
 OBJS_mps_laser_gen = mps-laser-gen_plugin.o mps-laser-gen_thread.o
 
-CFLAGS +=  $(CFLAGS_TF) $(CFLAGS_NAVGRAPH) $(CFLAGS_EIGEN3) $(CFLAGS_ROS) \
-           $(call ros-pkg-cflags,visualization_msgs)
-LDFLAGS += $(LDFLAGS_TF) $(LDFLAGS_NAVGRAPH) $(LDFLAGS_EIGEN3) $(LDFLAGS_ROS) \
-           $(call ros-pkg-lflags,visualization_msgs)
+CFLAGS +=  $(CFLAGS_TF) $(CFLAGS_NAVGRAPH) $(CFLAGS_EIGEN3) $(CFLAGS_ROS2) \
+           $(VISUALIZATION_MSGS_cflags)
+LDFLAGS += $(LDFLAGS_TF) $(LDFLAGS_NAVGRAPH) $(LDFLAGS_EIGEN3) $(LDFLAGS_ROS2) \
+           $(VISUALIZATION_MSGS_lflags)
 
 OBJS_all    = $(OBJS_mps_laser_gen)
 PLUGINS_all = $(PLUGINDIR)/mps-laser-gen.$(SOEXT)
 
-ifeq ($(HAVE_ROS)$(call ros-have-pkg,visualization_msgs),11)
+ifeq ($(HAVE_ROS2),1)
   PLUGINS_build = $(PLUGINS_all)
 else
-  ifneq ($(HAVE_ROS),1)
+  ifneq ($(HAVE_ROS2),1)
     WARN_TARGETS += warning_ros
   endif
-  ifneq ($(call ros-have-pkg,visualization_msgs),1)
+  ifneq (1,1)
     WARN_TARGETS += warning_visualization_msgs
   endif
 endif

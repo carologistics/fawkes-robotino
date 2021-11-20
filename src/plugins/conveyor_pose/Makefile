@@ -21,7 +21,7 @@ BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDSYSDIR)/pcl.mk
 include $(BUILDSYSDIR)/boost.mk
-include $(BUILDSYSDIR)/ros.mk
+include $(BUILDSYSDIR)/ros2.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 
 HAVE_BULLET_VERSION = $(if $(shell $(PKGCONFIG) --atleast-version=2.82 'bullet'; echo $${?/1/}),1,0)
@@ -31,17 +31,17 @@ REQUIRED_PCL_LIBS = filters kdtree recognition
 PRESUBDIRS = interfaces
 
 LIBS_conveyor_pose = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
-                     fawkestf fawkesblackboard fawkesinterface fawkespcl_utils fawkesrosaspect \
+                     fawkestf fawkesblackboard fawkesinterface fawkespcl_utils fawkesros2aspect \
                      SwitchInterface ConveyorPoseInterface LaserLineInterface
 OBJS_conveyor_pose = conveyor_pose_plugin.o conveyor_pose_thread.o recognition_thread.o
 
 OBJS_all    = $(OBJS_conveyor_pose)
 PLUGINS_all = $(PLUGINDIR)/conveyor-pose.$(SOEXT)
 
-CFLAGS  += $(CFLAGS_TF) $(CFLAGS_PCL) $(CFLAGS_ROS) $(CFLAGS_conveyor_pose) $(call pcl-libs-cflags,$(REQUIRED_PCL_LIBS))
-LDFLAGS += $(LDFLAGS_TF) $(LDFLAGS_PCL) $(call pcl-libs-ldflags,$(REQUIRED_PCL_LIBS))
+CFLAGS  += $(CFLAGS_TF) $(CFLAGS_PCL) $(CFLAGS_ROS2) $(call pcl-libs-cflags,$(REQUIRED_PCL_LIBS)) $(PCL_CONVERSIONS_cflags) $(VISUALIZATION_MSGS_cflags) $(GEOMETRY_MSGS_cflags)
+LDFLAGS += $(LDFLAGS_TF) $(LDFLAGS_PCL) $(LDFLAGS_ROS2) $(call pcl-libs-ldflags,$(REQUIRED_PCL_LIBS)) $(PCL_CONVERSIONS_lflags) $(VISUALIZATION_MSGS_lflags) $(GEOMETRY_MSGS_lflags)
 
-ifeq ($(HAVE_ROS),1)
+ifeq ($(HAVE_ROS2),1)
   ifeq ($(HAVE_BULLET_VERSION),1)
     PLUGINS_build = $(PLUGINS_all)
   else

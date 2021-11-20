@@ -33,8 +33,11 @@
 #include <interfaces/Laser360Interface.h>
 #include <interfaces/LaserBoxFilterInterface.h>
 #include <navgraph/aspect/navgraph.h>
-#include <plugins/ros/aspect/ros.h>
-#include <ros/publisher.h>
+#include <plugins/ros2/aspect/ros2.h>
+#include <rclcpp/rclcpp.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
+
+
 
 #include <Eigen/Geometry>
 #include <string>
@@ -50,7 +53,7 @@ class MPSLaserGenThread : public fawkes::Thread,
                           public fawkes::ConfigurableAspect,
                           public fawkes::BlackBoardAspect,
                           public fawkes::NavGraphAspect,
-                          public fawkes::ROSAspect,
+                          public fawkes::ROS2Aspect,
                           public fawkes::TransformAspect
 {
 	/// @cond INTERNAL
@@ -90,7 +93,7 @@ protected:
 private:
 	fawkes::Laser360Interface *      laser_if_;
 	fawkes::LaserBoxFilterInterface *laser_box_filter_if_;
-	ros::Publisher                   vispub_;
+	rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr vispub_;
 	std::string                      mps_laser_gen_cfg_prefix;
 	std::map<std::string, MPS>       mpses;
 

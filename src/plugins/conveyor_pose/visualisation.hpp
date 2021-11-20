@@ -23,9 +23,10 @@
 #ifndef _VISUALISATION_
 #define _VISUALISATION_
 
-#include <ros/ros.h>
-#include <visualization_msgs/MarkerArray.h>
-#include <visualization_msgs/Marker.h>
+#include <rclcpp/rclcpp.hpp>
+#include <visualization_msgs/msg/marker_array.h>
+#include <visualization_msgs/msg/marker.hpp>
+#include <geometry_msgs/msg/point.hpp>
 
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
@@ -39,22 +40,22 @@
 class Visualisation
 {
 private:
-  ros::Publisher  pub_markers_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr  pub_markers_;
 
-  visualization_msgs::Marker draw_normal(pcl::PCLHeader header, fawkes::tf::Vector3 centroid, fawkes::tf::Quaternion rotation)
+  visualization_msgs::msg::Marker draw_normal(pcl::PCLHeader header, fawkes::tf::Vector3 centroid, fawkes::tf::Quaternion rotation)
   {
-    visualization_msgs::Marker arrow;
+    visualization_msgs::msg::Marker arrow;
     arrow.header = pcl_conversions::fromPCL( header );
     arrow.ns = "conveyor_normal";
-    arrow.action = visualization_msgs::Marker::ADD;
+    arrow.action = visualization_msgs::msg::Marker::ADD;
     arrow.id = 0;
-    arrow.type = visualization_msgs::Marker::ARROW;
+    arrow.type = visualization_msgs::msg::Marker::ARROW;
     arrow.scale.x = 0.005;
     arrow.scale.y = 0.005;
     arrow.scale.z = 0.005;
     arrow.color.g = 1.0f;
     arrow.color.a = 1.0;
-    geometry_msgs::Point start, end;
+    geometry_msgs::msg::Point start, end;
     start.x = centroid.x();
     start.y = centroid.y();
     start.z = centroid.z();
@@ -69,21 +70,21 @@ private:
     return arrow;
   }
 
-  visualization_msgs::Marker draw_plane(pcl::PCLHeader header, fawkes::tf::Vector3 centroid, fawkes::tf::Quaternion rotation)
+  visualization_msgs::msg::Marker draw_plane(pcl::PCLHeader header, fawkes::tf::Vector3 centroid, fawkes::tf::Quaternion rotation)
   {
-    visualization_msgs::Marker plane;
+    visualization_msgs::msg::Marker plane;
 
     plane.header = pcl_conversions::fromPCL(header);
     plane.ns = "conveyor_plane";
-    plane.action = visualization_msgs::Marker::ADD;
+    plane.action = visualization_msgs::msg::Marker::ADD;
     plane.id = 0;
     plane.scale.x = 1.;
     plane.scale.y = 1.;
     plane.scale.z = 1.;
     plane.color.r = 1.0f;
     plane.color.a = 1.0;
-    plane.type = visualization_msgs::Marker::TRIANGLE_LIST;
-    geometry_msgs::Point tl, tr, bl, br;
+    plane.type = visualization_msgs::msg::Marker::TRIANGLE_LIST;
+    geometry_msgs::msg::Point tl, tr, bl, br;
 
     // get plane version 2: conveyor size from centroid
     float t, b, l, r, dl, dr;
@@ -138,23 +139,23 @@ public:
   void marker_draw(pcl::PCLHeader header, fawkes::tf::Vector3 centroid, fawkes::tf::Quaternion rotation)
   {
     // just viz stuff from here
-    visualization_msgs::MarkerArray ma;
+    visualization_msgs::msg::MarkerArray ma;
     // add arrow normal
-    visualization_msgs::Marker arrow = draw_normal(header, centroid, rotation);
+    visualization_msgs::msg::Marker arrow = draw_normal(header, centroid, rotation);
     ma.markers.push_back(arrow);
     // add plane
-//    visualization_msgs::Marker plane = draw_plane(header, centroid, rotation);
+//    visualization_msgs::msg::Marker plane = draw_plane(header, centroid, rotation);
 //    ma.markers.push_back(plane);
-    pub_markers_.publish(ma);
+    pub_markers_->publish(ma);
   }
 
   /**
    * @brief Visualisation constructor
    * @param rosnode Node that should advertise the visualization marker array
    */
-  Visualisation(fawkes::LockPtr<ros::NodeHandle> rosnode)
+  Visualisation(rclcpp::Node::SharedPtr> rosnode)
   {
-    pub_markers_ = rosnode->advertise<visualization_msgs::MarkerArray>("/visualization_marker_array", 1);
+    pub_markers_ = node_handle->create_publisher<visualization_msgs::msg::MarkerArray>("visualization_marker_array", 1);
   }
 };
 
