@@ -10,6 +10,23 @@
 #
 # Read the full text in the LICENSE.GPL file in the doc directory.
 #
+usage()
+{
+cat << EOF
+usage: $0 <options>
+Options:
+   -h				Show this message
+
+   -a				Runs all tests, one after another
+
+Tests:				Runs the specified test
+   --enter-field
+   --C0-production
+   --C3-production
+   --pick-and-place
+   --exploration
+EOF
+}
 
 set -eu -o pipefail
 
@@ -19,14 +36,70 @@ if [ "$NAME" != "Fedora" ] ; then
   exit 0
 fi
 
-
 FAWKES_DIR=$(realpath $(dirname ${BASH_SOURCE[0]})/..)
 tmpconfig=$(mktemp $FAWKES_DIR/cfg/conf.d/simtest-XXXXXX.yaml)
+specs_path=/clips-executive/specs/rcll-central/parameters
+testbed_path=$specs_path/simtest/enabled/testbed:
+echo "$specs_path/simtest/enabled: true" >> $tmpconfig
 
-specs_path="/clips-executive/specs/rcll-central/parameters/simtest/"
-echo "/clips-executive/specs/rcll-central/parameters/simtest/enabled: true" > $tmpconfig
-#echo $specs_path +  "enabled/testbed: ENTER-FIELD" > $tmpconfig
-echo $specs_path +  "enabled/testbed: CO-PRODUCTION" > $tmpconfig
+OPTS=$(getopt -o "ha" -l "enter-field,C0-production,C3-production,pick-and-place,exploration" -- "$@")
+
+#if [ $? != 0 ]
+#then
+#	echo "Failed to parse parameters"
+#	usage
+#	exit 1
+#fi
+
+eval set -- "$OPTS"
+while true; do
+	OPTION=$1
+	case $OPTION in
+		-h)
+			usage
+			rm -f $tmpconfig
+			exit 1
+			;;
+		-a)
+			echo "TODO not implemented yet"
+			rm -f $tmpconfig
+			exit 1
+			;;
+		--enter-field)
+			echo "$testbed_path ENTER-FIELD" >> $tmpconfig
+			shift
+			break
+			;;
+		--C0-production)
+			echo "$testbed_path CO-PRODUCTION" >> $tmpconfig
+			shift
+			break
+			;;
+		--pick-and-place)
+			echo "$testbed_path PICK-AND-PLACE" >> $tmpconfig
+			echo "$specs_path/rcll/pick-and-place-challenge: true" >> $tmpconfig
+			shift
+			break
+			;;
+		--exploration)
+			echo "$testbed_path EXPLORATION" >> $tmpconfig
+			shift
+			break
+			;;
+		--)
+			#default value
+			echo "$testbed_path ENTER-FIELD" >> $tmpconfig
+			shift
+			break
+			;;
+		esac
+		shift
+done
+
+#echo "/clips-executive/specs/rcll-central/parameters/simtest/enabled: true" >> $tmpconfig
+#echo "/clips-executive/specs/rcll-central/parameters/rcll/pick-and-place-challenge: true" > $tmpconfig
+#echo "$specs_path/enabled/testbed: ENTER-FIELD" >> $tmpconfig
+#echo "$specs_path/enabled/testbed: CO-PRODUCTION" >> $tmpconfig
 
 echo "/clips-executive/spec: rcll-central" >> $tmpconfig
 export FAWKES_DIR
