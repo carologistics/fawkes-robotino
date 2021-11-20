@@ -1365,7 +1365,7 @@ The workpiece remains in the output of the used ring station after
 				;(goal-production-assert-discard UNKNOWN ?cs OUTPUT ?order-id)
 			)
 		)
-		(goal-tree-assert-central-run-parallel MOUNT-GOALS
+		(goal-tree-assert-central-run-parallel-flat MOUNT-GOALS
 			; Goal selection with run-one goals is broken, as a workaround simply
 			; remove alternative choices and switch to run-parallel
 			;(goal-tree-assert-central-run-one INTERACT-BS

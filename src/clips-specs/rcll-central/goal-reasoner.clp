@@ -173,6 +173,16 @@
 	(return ?goal)
 )
 
+(deffunction goal-tree-assert-central-run-parallel-flat (?class $?fact-addresses)
+	(bind ?id (sym-cat CENTRAL-RUN-PARALLEL- ?class - (gensym*)))
+	(bind ?goal
+    (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)))
+  )
+	(foreach ?f ?fact-addresses
+		(goal-tree-update-child ?f ?id 1)
+  )
+	(return ?goal)
+)
 
 
 ; ============================= Goal Selection ===============================
