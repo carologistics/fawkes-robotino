@@ -11,7 +11,7 @@ This script starts a specified program for simulation
 OPTIONS:
   COMMON:
    -h             Show this message
-   -x gzserver|gzclient|fawkes|comm|roscore|move_base|refbox|refbox-shell|refbox-frontend
+   -x gzserver|gzclient|fawkes|comm|roscore|move_base|refbox|refbox-challenge|refbox-shell|refbox-frontend
                   Start specified program
    -p arg         Specify ros port
 
@@ -37,7 +37,7 @@ OPTIONS:
    -e arg         Record Replay
 EOF
 }
- 
+
 #check options
 
 #default values
@@ -220,15 +220,15 @@ case $COMMAND in
 		read
 	fi
 	;;
-    roscore ) 
+    roscore )
 	export ROS_MASTER_URI=http://localhost:$PORT
 	roscore -p $PORT $@
 	;;
     roslaunch)
 	export ROS_MASTER_URI=http://localhost:$PORT
-	roslaunch $@ --wait ${ROS_LAUNCH%:*} ${ROS_LAUNCH##*:} 
+	roslaunch $@ --wait ${ROS_LAUNCH%:*} ${ROS_LAUNCH##*:}
 	;;
-    move_base ) 
+    move_base )
 	export ROS_MASTER_URI=http://localhost:$PORT
 	rosparam set /use_sim_time true
 	export ROS_PACKAGE_PATH=$FAWKES_DIR/cfg/move_base_robotino:$ROS_PACKAGE_PATH
@@ -237,7 +237,10 @@ case $COMMAND in
     refbox )
 	llsf-refbox $@
 	;;
-    refbox-shell )
+  refbox-challenge )
+	challenge_startup.bash $@
+	;;
+  refbox-shell )
         # wait some time such that the terminal has the final size
 	sleep 3
 	llsf-refbox-shell $@
