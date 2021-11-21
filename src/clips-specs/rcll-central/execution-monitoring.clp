@@ -287,7 +287,7 @@
 	(plan-action (id ?id) (plan-id ?plan-id) (goal-id ?goal-id)
 	   (state FORMULATED|PENDING)
 	   (param-values $? ?mps $?)
-	   (action-name ?an))
+	   (action-name ?an&~move&~go-wait&~wait))
 	(not (wm-fact (key monitoring fail-goal args? g ?goal-id)))
 	=>
 	(assert (wm-fact (key monitoring fail-goal args? g ?goal-id)))
