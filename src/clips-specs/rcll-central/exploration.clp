@@ -314,7 +314,7 @@
 
   (wm-fact (key exploration fact line-vis args? zone ?zn1) (value ?vh))
   (wm-fact (key exploration fact tag-vis args? zone ?zn1) (value ?tv))
-  (wm-fact (key domain fact zone-content args? z ?zn1 UNKNOWN))
+  (wm-fact (key domain fact zone-content args? z ?zn1 m UNKNOWN))
   (test (or (> ?tv 0) (> ?vh 0)))
 
   (not (and
