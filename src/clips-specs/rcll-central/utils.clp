@@ -73,6 +73,7 @@
 	(slot ring-nr (type SYMBOL)
 	              (allowed-values nil ONE TWO THREE)
 	              (default nil))
+  (slot root-for-order (type SYMBOL))
 )
 
 (deffunction tag-id-to-side (?tag-id)
