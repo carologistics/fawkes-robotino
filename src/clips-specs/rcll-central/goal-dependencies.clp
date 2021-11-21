@@ -25,6 +25,7 @@
 	(slot goal-id (type SYMBOL))
 
 	; goal class of dependency-goal
+	; in case of CLEAR-OUTPUT: DELIVER or DISCARD
 	(slot class (type SYMBOL))
 
 	; defines if goal waits for dependency before wp-get (wait-for-wp),
@@ -46,11 +47,13 @@
 )
 
 ; ---------------------------- Class Dependencies ----------------------------
-; A goal depends on a class of a dependency-goal if such a dependency-goal is
-; always required for executing this goal under dependencies
+; A goal depends on a class of a dependency-goal if such a dependency-goal can
+; be required for executing this goal
 
 (defrule goal-dependencies-mount-cap-buffer-cap
 " Every mount-cap goal depends on the buffer-cap class.
+  A Mount-cap goal can also depend on the deliver of discard
+  class to clear the output.
   Per default, no buffer-cap goal is grounded. "
 	; needs to be higher than SALIENCE-GOAL-EXECUTABLE-CHECK
 	(declare (salience (+ ?*SALIENCE-GOAL-EXECUTABLE-CHECK* 1)))
@@ -59,6 +62,8 @@
 	                            (class BUFFER-CAP)))
 	(not (dependency-assignment (goal-id ?goal-id)
 	                            (class INSTRUCT-CS-BUFFER-CAP)))
+	(not (dependency-assignment (goal-id ?goal-id)
+	                            (class CLEAR-OUTPUT)))
 	=>
 	(printout t "Goal " ?goal-id
 	            " depends on class BUFFER-CAP " crlf)
@@ -71,6 +76,11 @@
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class INSTRUCT-CS-BUFFER-CAP)
 	                               (wait-for FREE-SIDE)
+	                               (grounded-with nil)))
+	(printout t "Goal " ?goal-id
+	            " depends on class CLEAR-OUTPUT " crlf)
+	(assert (dependency-assignment (goal-id ?goal-id)
+	                               (class CLEAR-OUTPUT)
 	                               (grounded-with nil)))
 )
 
@@ -233,28 +243,23 @@
 	(not (wm-fact (key domain fact cs-buffered args? m ?target-mps col ?)))
 	(wm-fact (key domain fact mps-side-free args? m ?target-mps side OUTPUT))
 
-	; CS is not buffered, but with the following dependency,
-	;  we can assume it will soon
-	(and  ; A feasible (same parameter) buffer-cap or
-	      ; instruct-cs-buffer-cap goal is executing...
-	     (goal (id ?dependency-goal-id)
-	           (class ?dependency-class&BUFFER-CAP|INSTRUCT-CS-BUFFER-CAP)
-	           (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-	           (params target-mps ?target-mps $?))
-	     (goal-meta (goal-id ?dependency-goal-id) (order-id ?order-id))
-	       ; ... and it is not already grounded...
-	     (not (and   ; ... meaning there is another dependency... ;for future: wrong case: dependency-goal is instruct but buffer-cap is still running, ground both in every case
-	               (dependency-assignment (goal-id ?other-goal-id)
-	                                      (grounded-with ?dependency-goal-id))
-	                 ; ... and the other goal is already executing
-	               (goal (id ?other-goal-id)
-	                     (class MOUNT-CAP)
-	                     (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-	                     (params $? target-mps ?target-mps $?))
-	          )
-	     )
-	)
-	?da <- (dependency-assignment (goal-id ?goal-id) (class ?dependency-class))
+	; CS is not buffered, but with the following dependency, we can assume it
+	; will soon: A feasible (same parameter) buffer-cap or
+	; instruct-cs-buffer-cap goal is running...
+	(goal (id ?dependency-goal-id)
+	      (class ?dependency-class&BUFFER-CAP|INSTRUCT-CS-BUFFER-CAP)
+	      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	      (params target-mps ?target-mps $?))
+	(goal-meta (goal-id ?dependency-goal-id) (order-id ?order-id))
+
+	; depend on buffer-cap and instruct-buffer-cap goal:
+	(goal (id ?buffer-goal-id) (class BUFFER-CAP))
+	(goal-meta (goal-id ?buffer-goal-id) (order-id ?order-id))
+	?buffer-da <- (dependency-assignment (goal-id ?goal-id) (class BUFFER-CAP))
+
+	(goal (id ?instruct-goal-id) (class INSTRUCT-CS-BUFFER-CAP))
+	(goal-meta (goal-id ?instruct-goal-id) (order-id ?order-id))
+	?instruct-da <- (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-CS-BUFFER-CAP))
 
 	; WP CEs
 	(wm-fact (key wp meta next-step args? wp ?wp) (value CAP))
@@ -286,26 +291,11 @@
 	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
 	=>
 	(printout t "Goal " ?goal-id " executable for " ?robot
-	            " depending on goal " ?dependency-goal-id crlf)
+	            " depending on goal " ?buffer-goal-id
+	            " and " ?instruct-goal-id crlf)
 	(modify ?g (is-executable TRUE))
-	(modify ?da (grounded-with ?dependency-goal-id))
-
-	; If a buffer-cap goal is grounded with ?g, also ground its
-	; instruct-cs-buffer-cap goal to ?g
-	(if (eq ?dependency-class BUFFER-CAP)
-	 then (do-for-fact ((?instruct-goal goal)
-	                    (?instruct-da dependency-assignment)
-	                    (?instruct-goal-meta goal-meta))
-		      (and (eq ?instruct-goal-meta:goal-id ?instruct-goal:id)
-		           (eq ?instruct-goal-meta:order-id ?order-id)
-		           (eq ?instruct-goal:class INSTRUCT-CS-BUFFER-CAP)
-		           (eq ?instruct-da:goal-id ?goal-id)
-		           (eq ?instruct-da:class INSTRUCT-CS-BUFFER-CAP))
-		      (modify ?instruct-da (grounded-with ?instruct-goal:id))
-		  )
-		  (printout t "Goal " ?goal-id " executable for " ?robot
-		              " also depending on goal INSTRUCT-CS-BUFFER-CAP" crlf)
-	)
+	(modify ?buffer-da (grounded-with ?buffer-goal-id))
+	(modify ?instruct-da (grounded-with ?instruct-goal-id))
 )
 
 (defrule goal-dependencies-mount-cap-buffer-cap-output-blocked-executable
@@ -345,33 +335,29 @@
 	                          side OUTPUT))
 	; CS output is not free, but with this goal executing, we can assume it
 	; will soon
-	(goal (id ?deliver-id)
-	      (class DELIVER)
+	(goal (id ?clear-goal-id)
+	      (class ?clear-class&DELIVER|DISCARD)
 	      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	      (params  wp ?blocking-wp $?))
+	?clear-da <- (dependency-assignment (goal-id ?clear-goal-id) (class CLEAR-OUTPUT))
 
 	; CS is not buffered, but with the following dependency, we can assume it
-	; will soon
-	(and  ; A feasible (same parameter) buffer-cap or ;for future: no ands at the start
-	      ; instruct-cs-buffer-cap goal is executing...
-	     (goal (id ?dependency-goal-id)
-	           (class ?dependency-class&BUFFER-CAP|INSTRUCT-CS-BUFFER-CAP)
-	           (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-	           (params target-mps ?target-mps $?))
-	     (goal-meta (goal-id ?dependency-goal-id) (order-id ?order-id))
-	       ; ... and it is not already grounded...
-	     (not (and    ; ... meaning there is another dependency... ;for future: instruct and mount cap belong to same order, no need to check for this?
-	               (dependency-assignment (goal-id ?other-goal-id)
-	                                      (grounded-with ?dependency-goal-id))
-	                  ; ... and the other goal is already executing
-	               (goal (id ?other-goal-id)
-	                     (class MOUNT-CAP)
-	                     (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-	                     (params $? target-mps ?target-mps $?))
-	          )
-	     )
-	)
-	?da <- (dependency-assignment (goal-id ?goal-id) (class ?dependency-class))
+	; will soon: A feasible (same parameter) buffer-cap or
+	; instruct-cs-buffer-cap goal is running...
+	(goal (id ?dependency-goal-id)
+	      (class ?dependency-class&BUFFER-CAP|INSTRUCT-CS-BUFFER-CAP)
+	      (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	      (params target-mps ?target-mps $?))
+	(goal-meta (goal-id ?dependency-goal-id) (order-id ?order-id))
+
+	; depend on buffer-cap and instruct-buffer-cap goal:
+	(goal (id ?buffer-goal-id) (class BUFFER-CAP))
+	(goal-meta (goal-id ?buffer-goal-id) (order-id ?order-id))
+	?buffer-da <- (dependency-assignment (goal-id ?goal-id) (class BUFFER-CAP))
+
+	(goal (id ?instruct-goal-id) (class INSTRUCT-CS-BUFFER-CAP))
+	(goal-meta (goal-id ?instruct-goal-id) (order-id ?order-id))
+	?instruct-da <- (dependency-assignment (goal-id ?goal-id) (class INSTRUCT-CS-BUFFER-CAP))
 
 	; WP CEs
 	(wm-fact (key wp meta next-step args? wp ?wp) (value CAP))
@@ -400,26 +386,13 @@
 	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
 	=>
 	(printout t "Goal " ?goal-id " executable for " ?robot
-	            " depending on goal " ?dependency-goal-id
-	            " and relying on goal " ?deliver-id " to clear output" crlf)
+	            " depending on goal " ?buffer-goal-id
+	            ", " ?instruct-goal-id
+	            " and " ?clear-goal-id " to clear output" crlf)
 	(modify ?g (is-executable TRUE))
-	(modify ?da (grounded-with ?dependency-goal-id))
-
-	; If a buffer-cap goal is grounded with ?g, also ground its
-	; instruct-cs-buffer-cap goal to ?g
-	(if (eq ?dependency-class BUFFER-CAP)
-	 then (do-for-fact ((?instruct-goal goal)
-	                    (?instruct-da dependency-assignment)
-	                    (?instruct-goal-meta goal-meta))
-		      (and (eq ?instruct-goal-meta:goal-id ?instruct-goal:id)
-		           (eq ?instruct-goal-meta:order-id ?order-id)
-		           (eq ?instruct-goal:class INSTRUCT-CS-BUFFER-CAP)
-		           (eq ?instruct-da:goal-id ?goal-id)
-		           (eq ?instruct-da:class INSTRUCT-CS-BUFFER-CAP))
-		      (modify ?instruct-da (grounded-with ?instruct-goal:id)))
-		  (printout t "Goal " ?goal-id " executable for " ?robot
-		              " also depending on goal INSTRUCT-CS-BUFFER-CAP" crlf)
-	)
+	(modify ?buffer-da (grounded-with ?buffer-goal-id))
+	(modify ?instruct-da (grounded-with ?instruct-goal-id))
+	(modify ?clear-da (grounded-with ?clear-goal-id))
 )
 
 (defrule goal-dependencies-deliver-mount-cap-executable
