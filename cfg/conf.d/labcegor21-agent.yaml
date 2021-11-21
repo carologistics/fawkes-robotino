@@ -1,0 +1,88 @@
+%YAML 1.2
+---
+---
+clips-executive:
+  specs:
+    rcll-labcegor21:
+      init:
+        stage-1:
+          - name: pddl-parser
+          - name: motor-switch
+          - name: navgraph
+          - name: protobuf
+          - name: tf
+        stage-3:
+          - name: utils
+            file: rcll-labcegor21/utils.clp
+          - name: worldmodel
+            files:
+              - rcll-labcegor21/init.clp
+              - rcll-labcegor21/blackboard-init.clp
+              - rcll-labcegor21/game-worldmodel.clp
+          - name: communication
+            files:
+              - rcll-labcegor21/refbox-comm-init.clp
+              - rcll-labcegor21/refbox-worldmodel.clp
+          - name: domain
+            file: rcll-labcegor21/domain.clp
+          - name: goal-reasoner
+            files:
+              - goal-tree.clp
+              - rcll-labcegor21/goals/run-endless.clp
+              - rcll-labcegor21/goals/simple.clp
+              - rcll-labcegor21/goals/central-run-all.clp
+              - rcll-labcegor21/goals/central-run-one.clp
+              - rcll-labcegor21/goals/central-run-parallel.clp
+              - rcll-labcegor21/goal-reasoner.clp
+              - rcll-labcegor21/goal-production.clp
+              - rcll-labcegor21/production-strategy.clp
+          - name: goal-expander
+            file: rcll-labcegor21/fixed-sequence.clp
+          - name: action-selection
+            file: action-selection/sequential.clp
+          - name: action-execution
+            files:
+              - skills-actions.clp
+              - rcll-labcegor21/noop-actions.clp
+              - rcll-labcegor21/refbox-actions.clp
+              - rcll-labcegor21/wait-actions.clp
+          - name: execution-monitoring
+            file: rcll-labcegor21/execution-monitoring.clp
+          - name: simtest
+            file: rcll-labcegor21/simtest.clp
+
+      action-mapping:
+        enter-field: >
+          drive_into_field{team=?(team-color)S,
+                           wait=0.0}
+        explore-zone: explore_zone{zone=?(z)s}
+        move: goto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
+        go-wait: goto{place="?(to)Y"}
+        wp-get-shelf: get_product_from{place=?(m)S, shelf=?(spot)S}
+        wp-put: bring_product_to{place=?(m)S,
+                                 side=?(side|/INPUT/input/|/OUTPUT/output/)s}
+        wp-put-slide-cc: bring_product_to{place=?(m)S, slide="TRUE"}
+        wp-get: >
+          get_product_from{place=?(m)S,
+                           side=?(side|/INPUT/input/|/OUTPUT/output/)s}
+        wp-discard: discard{}
+      parameters:
+        simtest:
+          enabled: false
+          testbed: ENTER-FIELD
+        rcll:
+          peer-address: 172.26.255.255
+          peer-port: 4444
+          cyan-port: 4441
+          magenta-port: 4442
+
+          team-name: Carologistics
+          crypto-key: randomkey
+          cipher: "aes-128-cbc"
+
+      blackboard-preload:
+        - Position3DInterface
+        - NavGraphWithMPSGeneratorInterface
+        - NavGraphGeneratorInterface
+        - NavigatorInterface
+        - MotorInterface
