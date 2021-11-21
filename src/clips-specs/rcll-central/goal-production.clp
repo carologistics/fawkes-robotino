@@ -1401,8 +1401,9 @@ The workpiece remains in the output of the used ring station after
 )
 
 (defrule goal-production-create-wait-root
-	"Create the production root under which all production trees for the orders
-	are asserted"
+	"Create the WAIT root, which has low priority and dispatches WAIT goals if
+	 nothing else is executable.
+	"
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(domain-facts-loaded)
 	(not (goal (class WAIT-ROOT)))
