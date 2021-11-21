@@ -18,40 +18,6 @@
 ;
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
-; Goal reasoner for goals with sub-types. Goals without sub-types are NOT
-; handled.
-;
-; Basic functionalities:
-;  - Select MAINTAIN goals
-;  - Finish sub-goals of finished parent goals to ensure proper cleanup
-;  - Expand goals that are inner nodes of a goal tree
-;    (the other goals are expanded in the goal-expander)
-;  - Automatically evaluate all goals with low priority
-;    Special evaluation for specific goals with default priority
-;  - Clean up and remove executed goals
-;    Reject formulated inner production tree goals if no suitable sub-goal
-;    could be formulated
-;  - Reject formulated production tree goals once some leaf goal is dispatched
-;
-;
-; The intended goal life-cycle of the production tree (assuming no goal gets
-; rejected due to resource locks) can be summarized to:
-;  - Formulate inner tree nodes to expand the root
-;  - Formulate all currently achievable production goals
-;  - Reject all inner tree nodes that have no sub-goal
-;  - Recursively dispatch inner goals until a leaf goal is dispatched
-;  - Reject all tree nodes that are not dispatched
-;  - Once a leaf goal is finished and evaluated, the outcome is recursively
-;    handed back to the root
-;  - After the root is evaluated all other tree goals (by the time in mode
-;    RETRACTED) are deleted
-;  - The root gets reformulated and selected
-;
-; If a leaf goal has to be rejected, the parent goal dispatches another
-; leaf goal instead. If this is not possible then the parent is rejected and
-; recursively another goal is tried until either one leaf can be dispatched or
-; all goals are rejected (this should never happen, since we have WAIT goals),
-; leading the root to be rejected and reformulated.
 
 (defglobal
   ?*SALIENCE-GOAL-FORMULATE* = 500
@@ -88,35 +54,6 @@
 		(case QUIET then (return nil))
 	)
 	(return t)
-)
-
-(deffunction set-robot-to-waiting (?robot)
-" Sets a robot that was assigned in a goal meta to waiting.
-  If no robot was assigned nothing happens.
-
-  @param ?robot: robot1 robot2 robot3 central nil
-"
-	(if (neq ?robot nil) then
-		(do-for-fact ((?r wm-fact))
-			(and (wm-key-prefix ?r:key (create$ central agent robot))
-			     (eq ?robot (wm-key-arg ?r:key r)))
-			(assert (wm-fact (key central agent robot-waiting
-			                  args? r (wm-key-arg ?r:key r))))
-		)
-	)
-)
-
-(deffunction remove-robot-assignment-from-goal-meta (?goal)
-	(if (do-for-fact ((?f goal-meta))
-			(eq ?f:goal-id (fact-slot-value ?goal id))
-			(modify ?f (assigned-to nil))
-			(printout t ?f crlf))
-	 then
-		(printout t "Removed robot assignement from "
-		            (fact-slot-value ?goal id) crlf)
-	 else
-		(printout t "Cannot find a goal meta fact for the goal " ?goal crlf)
-	)
 )
 
 (deffunction goal-tree-assert-run-endless (?class ?frequency $?fact-addresses)
@@ -176,8 +113,6 @@
 	(return ?goal)
 )
 
-
-
 ; ============================= Goal Selection ===============================
 
 
@@ -192,10 +127,10 @@
   (modify ?g (mode SELECTED))
 )
 
-(defrule goal-reasoner-select-root-waiting-robot
-  "Select all executable root goals in order to propagate selection."
+(defrule goal-reasoner-select-simple-waiting-robot
+  "Select all executable simple goals in order to propagate selection."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  ?g <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
+  ?g <- (goal (type ACHIEVE) (sub-type SIMPLE)
       (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
 
   (wm-fact (key central agent robot-waiting args? r ?robot))
@@ -213,7 +148,7 @@
 )
 
 (defrule goal-reasoner-select-root-central-executable-simple-goal
-  "There is an exectuable simple goal assigned to central, propagate selection."
+  "There is an executable simple goal assigned to central, propagate selection."
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
   ?g <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
       (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
@@ -222,40 +157,6 @@
   =>
   (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
   (modify ?g (mode SELECTED))
-)
-
-(defrule goal-reasoner-propagate-executability
-  "There is an executable goal for a waiting robot or central, propagate until
-  we hit the root or a goal that is not FORMULATED."
-  (declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
-  (or
-    (and ?g <- (goal (id ?id) (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE)
-                (parent ?pid))
-         (goal-meta (goal-id ?id) (assigned-to central)))
-    (and
-      (wm-fact (key central agent robot-waiting args? r ?robot))
-      ?g <- (goal (id ?goal-id) (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE)
-                  (parent ?pid))
-      (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-    )
-  )
-  (test (neq ?pid nil))
-  =>
-  (bind ?propagate TRUE)
-  (bind ?parent-id ?pid)
-  (while (eq ?propagate TRUE)
-    (do-for-all-facts ((?parent goal)) (eq ?parent:id ?parent-id)
-      (if (eq ?parent:mode FORMULATED)
-        then
-        (modify ?parent (is-executable TRUE))
-        (bind ?parent-id ?parent:parent)
-      )
-
-      (if (or (eq ?parent:parent nil) (neq ?parent:mode FORMULATED))
-        then (bind ?propagate FALSE)
-      )
-    )
-  )
 )
 
 (defrule goal-reasoner-expand-goal-with-sub-type
@@ -270,38 +171,15 @@
   (modify ?p (mode EXPANDED))
 )
 
-(defrule goal-reasoner-select-from-dispatched-children
+(defrule goal-reasoner-select-run-in-parallel
   "Select the goal of highest priority of a run parallel if it is dispatched and
   is executable"
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
   (goal (id ?parent1) (mode DISPATCHED) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL) (priority ?p1))
   ?g <- (goal (id ?id) (parent ?parent1) (is-executable TRUE) (mode FORMULATED) (priority ?pc1))
-  (not (goal (id ?nid&~?id) (parent ?parent1) (mode FORMULATED) (is-executable TRUE) (priority ?pc2&:(> ?pc2 ?pc1))))
-
-  (not (and
-      (goal (id ?parent2&~?parent1) (mode DISPATCHED) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL) (priority ?p2&:(> ?p2 ?p1)))
-      (goal (id ?c1) (parent ?parent2) (mode FORMULATED) (is-executable TRUE))
-    )
-  )
-  (not (goal (mode SELECTED|EXPANDED|COMMITTED) (type ACHIEVE)))
   =>
   (modify ?g (mode SELECTED))
 )
-
-
-; ========================= Goal Dispatching =================================
-; Trigger execution of a plan. We may commit to multiple plans
-; (for different goals), e.g., one per robot, or for multiple
-; orders. It is then up to action selection and execution to determine
-; what to do when.
-
-
-; ========================= Goal Evaluation ==================================
-; A finished goal has to be evaluated.
-; In this step all necessary actions before removing the goal are executed,
-; such as unlocking resources or adapting the world model and strategy based on
-; goal outcomes or plan and action status.
-
 
 ; ----------------------- EVALUATE COMMON ------------------------------------
 
@@ -312,84 +190,12 @@
 	(declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
 	?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome)
 	            (verbosity ?v))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+	(goal-meta (goal-id ?goal-id))
 =>
-	(set-robot-to-waiting ?robot)
 	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" crlf)
 	(modify ?g (mode EVALUATED))
 )
 
-; ----------------------- EVALUATE SPECIFIC GOALS ---------------------------
-
-(defrule goal-reasoner-evaluate-move-out-of-way
-" Sets a finished move out of way goal independent of the outcome to formulated."
-  ?g <- (goal (id ?goal-id) (class MOVE-OUT-OF-WAY) (mode FINISHED)
-              (outcome ?outcome) (verbosity ?v))
-  (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-=>
-  (printout (log-debug ?v) "Evaluate move-out-of-way goal " ?goal-id crlf)
-  (set-robot-to-waiting ?robot)
-  (remove-robot-assignment-from-goal-meta ?g)
-
-  ; delete plans of the goal
-  (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
-    (delayed-do-for-all-facts ((?a plan-action))
-                              (and (eq ?a:plan-id ?p:id)
-                                   (eq ?a:goal-id ?goal-id))
-      (retract ?a))
-    (retract ?p)
-  )
-  (modify ?g (mode FORMULATED) (outcome UNKNOWN) (is-executable FALSE))
-  (printout (log-debug ?v) "Goal " ?goal-id " FORMULATED" crlf)
-)
-
-(defrule goal-reasoner-evaluate-failed-goto
-" Re-formulate a failed goal if the workpiece it processes is still usable
-"
-	?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED) (meta $?meta)
-	            (verbosity ?v))
-	(plan (id ?plan-id) (goal-id ?goal-id))
-	(plan-action (action-name ?action&move|go-wait)
-	             (goal-id ?goal-id) (plan-id ?plan-id) (state FAILED))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
-	=>
-	(set-robot-to-waiting ?robot)
-	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as only a move failed" crlf)
-	(modify ?g (mode FORMULATED) (outcome UNKNOWN))
-
-	(delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
-		(delayed-do-for-all-facts ((?a plan-action)) (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
-			(retract ?a)
-		)
-		(retract ?p)
-	)
-)
-
-(defrule goal-reasoner-evaluate-failed-workpiece-usable
-" Re-formulate a failed goal if the workpiece it processes is still usable
-"
-	?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED) (meta $?meta)
-	            (verbosity ?v))
-	(plan (id ?plan-id) (goal-id ?goal-id))
-	(plan-action (action-name ?action&wp-get|wp-put|wp-put-slide-cc|wp-get-shelf)
-	             (goal-id ?goal-id) (plan-id ?plan-id) (state FAILED)
-	             (param-values $? ?wp $?))
-	(or (wm-fact (key domain fact wp-usable args? wp ?wp))
-	    (wm-fact (key domain fact wp-on-shelf args? wp ?wp $?))
-	)
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
-	=>
-	(set-robot-to-waiting ?robot)
-	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as workpiece is still usable after failed " ?action crlf)
-	(modify ?g (mode FORMULATED) (outcome UNKNOWN))
-
-	(delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
-		(delayed-do-for-all-facts ((?a plan-action)) (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
-			(retract ?a)
-		)
-		(retract ?p)
-	)
-)
 
 ; ================================= Goal Clean up ============================
 
@@ -415,7 +221,6 @@
   ?g <- (goal (id ?goal-id) (verbosity ?v)
         (mode RETRACTED) (acquired-resources) (parent ?parent))
   (not (goal (parent ?goal-id)))
-  (goal (id ?parent) (type MAINTAIN))
 =>
   (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
     (delayed-do-for-all-facts ((?a plan-action)) (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
@@ -447,7 +252,7 @@
 	(retract ?g)
 )
 
-(deffunction is-goal-running (?mode)
-	(return (or (eq ?mode SELECTED) (eq ?mode EXPANDED)
-	            (eq ?mode COMMITTED) (eq ?mode DISPATCHED)))
-)
+;(deffunction is-goal-running (?mode)
+;	(return (or (eq ?mode SELECTED) (eq ?mode EXPANDED)
+;	            (eq ?mode COMMITTED) (eq ?mode DISPATCHED)))
+;)
