@@ -1,7 +1,7 @@
 #! /bin/bash
 #
-# cx-central-simtest.bash
-# Copyright (C) 2020 Till Hofmann <hofmann@kbsg.rwth-aachen.de>
+# cx-central-simtest-challenge-wrapper.bash
+# Copyright (C) 2021 Sonja Ginter <sonja.ginter@rwth-aachen.de>
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -16,8 +16,6 @@ cat << EOF
 usage: $0 <options>
 Options:
    -h				Show this message
-
-   -a				Runs all tests, one after another
 
 Tests:				Runs the specified test
    --enter-field
@@ -42,7 +40,7 @@ testbed_path=$specs_path/simtest/enabled/testbed:
 echo "$specs_path/simtest/enabled: true" >> $tmpconfig
 ref_args=
 
-OPTS=$(getopt -o "ha" -l "enter-field,C0-production,C3-production,pick-and-place" -- "$@")
+OPTS=$(getopt -o "h" -l "enter-field,C0-production,C3-production,pick-and-place" -- "$@")
 
 if [ $? != 0 ]
 then
@@ -57,11 +55,6 @@ while true; do
 	case $OPTION in
 		-h)
 			usage
-			rm -f $tmpconfig
-			exit 1
-			;;
-		-a)
-			echo "TODO not implemented yet"
 			rm -f $tmpconfig
 			exit 1
 			;;

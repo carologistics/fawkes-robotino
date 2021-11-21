@@ -82,11 +82,11 @@
 		(case "ENTER-FIELD" then
 			(assert (testcase (type ENTER-FIELD)))
 		)
-		(case "C0-PRODUCTION" then
-			(assert (testcase (type C0-PRODUCTION)))
+		(case "C0-PRODUCTION"|"C3-PRODUCTION" then
+			(assert (testcase (type ONE-PRODUCTION)))
 		)
 		(case "C3-PRODUCTION" then
-			(assert (testcase (type C3-PRODUCTION)))
+			(printout info "error c3-production simtest" crlf)
 		)
 		(case "PICK-AND-PLACE" then
 			(assert (testcase (type PICK-AND-PLACE)))
@@ -280,10 +280,10 @@
 	(modify ?testcase (state FAILED))
 )
 
-(defrule simtest-C0-production-success
+(defrule simtest-one-production-success
 " The C0 production was successful and the product is delivered "
-	?testcase <- (testcase (type C0-PRODUCTION) (state PENDING))
-	(wm-fact (key domain fact order-complexity args? ord ?ord com C0))
+	?testcase <- (testcase (type ONE-PRODUCTION) (state PENDING))
+	(wm-fact (key domain fact order-complexity args? ord ?ord com ?cx))
 	(or (goal (class DELIVER-RC21) (mode FINISHED) (outcome COMPLETED))
 	    (and (wm-fact (key domain fact mps-state args? m C-DS))
 	         (wm-fact (key domain fact quantity-delivered args?
@@ -292,55 +292,15 @@
 	                  (value ?delivered&:(> ?delivered 0)))))
 	=>
 	(modify ?testcase (state SUCCEEDED))
-)
-
-(defrule simtest-C0-production-failed
-" The C0 production failed; something is broken."
-	?testcase <- (testcase (type C0-PRODUCTION) (state PENDING))
-	(wm-fact (key domain fact order-complexity args? ord ?ord com C0))
-	(or (goal (class DELIVER-RC21) (mode FINISHED) (outcome ~COMPLETED))
-	    (and (wm-fact (key domain fact mps-state args? m C-DS))
-	         (wm-fact (key domain fact quantity-delivered args?
-	                       ord ?ord
-	                       team ?team-color&~nil)
-	                  (value ?delivered&:(= ?delivered 0)))))
-	=>
-	(modify ?testcase (state FAILED))
-)
-
-(defrule simtest-C3-production-success
-" The C3 production was successful and the product is delivered "
-	?testcase <- (testcase (type C3-PRODUCTION) (state PENDING))
-	(wm-fact (key domain fact order-complexity args? ord ?ord com C3))
-	(or (goal (class DELIVER-RC21) (mode FINISHED) (outcome COMPLETED))
-	    (and (wm-fact (key domain fact mps-state args? m C-DS))
-	         (wm-fact (key domain fact quantity-delivered args?
-	                       ord ?ord
-	                       team ?team-color&~nil)
-	                  (value ?delivered&:(> ?delivered 0)))))
-	=>
-	(modify ?testcase (state SUCCEEDED))
-)
-
-(defrule simtest-C3-production-failed
-" The C3 production failed; something is broken."
-	?testcase <- (testcase (type C3-PRODUCTION) (state PENDING))
-	(wm-fact (key domain fact order-complexity args? ord ?ord com C3))
-	(or (goal (class DELIVER-RC21) (mode FINISHED) (outcome ~COMPLETED))
-	    (and (wm-fact (key domain fact mps-state args? m C-DS))
-	         (wm-fact (key domain fact quantity-delivered args?
-	                       ord ?ord
-	                       team ?team-color&~nil)
-	                  (value ?delivered&:(= ?delivered 0)))))
-	=>
-	(modify ?testcase (state FAILED))
 )
 
 
 (defrule simtest-pick-and-place-success
 " The pick-and-place-challenge was successful and the product is delivered "
-;TODO!!!
 	?testcase <- (testcase (type PICK-AND-PLACE) (state PENDING))
+	(goal (class PRODUCTION-ROOT) (mode FINISHED|RETRACTED) (outcome COMPLETED)))
+	(goal (class (PICK-AND-PLACE) (subtype ENTRAL-RUN-SUBGOALS-IN-PARALLEL)
+	             (mode FINISHED|RETRACTED)(outcome COMPLETED)))
 	(wm-fact (key config rcll pick-and-place-challenge) (value TRUE))
 	(wm-fact (key domain fact mps-side-free args? m C-BS side OUTPUT))
 	(wm-fact (key domain fact mps-side-free args? m C-CS1 side OUTPUT))
@@ -355,23 +315,6 @@
 	(modify ?testcase (state SUCCEEDED))
 )
 
-(defrule simtest-pick-and-place-failed
-" The pick-and-place challenge failed; something is broken."
-	?testcase <- (testcase (type PICK-AND-PLACE) (state PENDING))
-	(wm-fact (key config rcll pick-and-place-challenge) (value TRUE))
-	(or (wm-fact (key domain fact mps-side-free args? m C-BS side INPUT))
-	    (wm-fact (key domain fact mps-side-free args? m C-CS1 side INPUT))
-	    (wm-fact (key domain fact mps-side-free args? m C-RS1 side INPUT))
-	    (wm-fact (key domain fact wp-at args? wp WP-ONE m C-BS side OUTPUT))
-	    (wm-fact (key domain fact wp-at args? wp WP-TWO m C-CS1 side OUTPUT))
-	    (wm-fact (key domain fact wp-at args? wp WP-THREE m C-RS1 side OUTPUT))
-	)
-	(wm-fact (key domain fact at args? r robot1 m ?C-BS side OUTPUT))
-	(wm-fact (key domain fact at args? r robot2 m ?C-CS1 side OUTPUT))
-	(wm-fact (key domain fact at args? r robot3 m ?C-RS1 side OUTPUT))
-	=>
-	(modify ?testcase (state FAILED))
-)
 
 (defrule simtest-exploration-challenge-success
 " The exploration challenge was successful, for all machines a zone is determined "
@@ -387,13 +330,6 @@
 	(modify ?testcase (state SUCCEEDED))
 )
 
-(defrule simtest-exploration-challenge-failed
-" The exploration challenge was successful, for all machines a zone is determined "
-	?testcase <- (testcase (type EXPLORATION-CHALLENGE) (state PENDING))
-	(goal (class EXPLORE-ZONE|EXPLORATION-CHALLENGE-MOVE) (mode FINISHED) (outcome FAILED))
-	=>
-	(modify ?testcase (state FAILED))
-)
 
 
 ; ============================================================================
