@@ -1560,7 +1560,7 @@ The workpiece remains in the output of the used ring station after
 )
 
 (defrule goal-production-wait-nothing-executable-executable
-	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	(declare (salience ?*SALIENCE-GOAL-REJECT*))
 	?g <- (goal (id ?g-id) (class WAIT-NOTHING-EXECUTABLE)
 	            (mode FORMULATED) (is-executable FALSE))
 	(goal-meta (goal-id ?g-id) (assigned-to ~nil&~central))
@@ -1733,10 +1733,11 @@ The workpiece remains in the output of the used ring station after
 " A exploration move that is not executable can be removed as the target can
   never be targeted again.
 "
+	(declare (salience ?*SALIENCE-GOAL-REJECT*))
 	?g <- (goal (id ?goal-id) (class EXPLORATION-MOVE) (mode FORMULATED) (is-executable FALSE))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	?gm <- (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	=>
-	(retract ?g)
+	(retract ?g ?gm)
 )
 
 (defrule goal-production-exploration-create-move-goal-lacking-choice

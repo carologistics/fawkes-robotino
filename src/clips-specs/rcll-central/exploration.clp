@@ -299,10 +299,11 @@
 )
 
 (defrule exp-explore-zone-retract-not-executable
+	(declare (salience ?*SALIENCE-GOAL-REJECT*))
 	?g <- (goal (id ?id) (class EXPLORE-ZONE) (params z ?zn) (mode FORMULATED) (is-executable FALSE))
-	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
+	?gm <- (goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
 	=>
-	(retract ?g)
+	(retract ?g ?gm)
 )
 
 (defrule exp-increase-search-limit
