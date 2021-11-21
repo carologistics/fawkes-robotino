@@ -311,6 +311,61 @@
   (modify ?g (mode SELECTED))
 )
 
+(defrule goal-reasoner-select-root-for-order
+  "Select the root of an order-production-tree if it has the highest priority
+  and is not interfering with currently selected goals."
+  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
+      (id ?any-goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
+  (goal-meta (goal-id ?any-goal-id) (root-for-order ?any-order))
+
+  ;at most two orders are active
+  (not (and
+    (goal (parent nil) (type ACHIEVE) (sub-type ~nil) (id ?goal-id2) (mode SELECTED|EXPANDED|DISPATCHED))
+    (goal-meta (goal-id ?goal-id2) (root-for-order ~nil))
+    (goal (parent nil) (type ACHIEVE) (sub-type ~nil) (id ?goal-id3&:(neq ?goal-id3 ?goal-id2)) (mode SELECTED|EXPANDED|DISPATCHED))
+    (goal-meta (goal-id ?goal-id3) (root-for-order ~nil))
+  ))
+  =>
+  ;find a suitable order for parallel fulfillment 
+  (bind ?target-priority 0)
+  (bind ?target-goal nil)
+  (do-for-all-facts ((?goal-fact goal) (?goal-meta-fact goal-meta))
+      (and (eq ?goal-fact:id ?goal-meta-fact:goal-id)
+           (neq ?goal-meta-fact:root-for-order nil)
+           (eq ?goal-fact:mode FORMULATED)
+      )
+  
+    ;check active order trees for conflicts
+    (bind ?existing-order-conflict FALSE)
+    (do-for-all-facts ((?existing-goal-fact goal) (?existing-goal-meta-fact goal-meta))
+        (and (eq ?existing-goal-fact:id ?existing-goal-meta-fact:goal-id)
+            (neq ?existing-goal-meta-fact:root-for-order nil)
+            (neq ?existing-goal-fact:mode FORMULATED)
+            (neq ?existing-goal-fact:mode FINISHED)
+        )
+        (if (goal-reasoner-compute-order-conflicts-payments ?existing-goal-meta-fact:root-for-order ?goal-meta-fact:root-for-order) then
+          (bind ?existing-order-conflict TRUE)
+        )
+    )
+
+    ;if the priority is higher than that of the current candidate and there is no 
+    ;conflict save this goal as new candidate
+    (if (and 
+          (> ?goal-fact:priority ?target-priority)
+          (not ?existing-order-conflict)
+        )
+      then
+      (bind ?target-priority ?goal-fact:priority)
+      (bind ?target-goal ?goal-fact)
+    )
+  )
+
+  (if (neq ?target-goal nil) then
+    (printout (log-debug ?v) "Goal " (fact-slot-value ?target-goal id) " SELECTED" crlf)
+    (modify ?target-goal (mode SELECTED))
+  )
+)
 ; ============================== Goal Expander ===============================
 
 (defrule goal-reasoner-expand-goal-with-sub-type
