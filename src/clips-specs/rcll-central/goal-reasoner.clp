@@ -366,6 +366,43 @@
     (modify ?target-goal (mode SELECTED))
   )
 )
+
+(defrule goal-reasoner-balance-payment-goals
+  "If there are multiple orders being fulfilled in parallel and one of them contains 
+  a DISCARD-CC goal, try to replace it with a payment goal instead."
+  (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
+      (id ?goal1) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED) (verbosity ?v1))
+  (goal-meta (goal-id ?goal1) (root-for-order ?order1))
+  (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
+      (id ?goal2) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED) (verbosity ?v2))
+  (goal-meta (goal-id ?goal2) (root-for-order ?order2))
+  (wm-fact (key domain fact order-complexity args? ord ?order1 comp C0))
+  (wm-fact (key domain fact order-complexity args? ord ?order2 comp C2|C3))
+  ?d <- (goal (id ?discard-goal) (class DISCARD) (mode FORMULATED) (params wp ?wp&~UNKNOWN wp-loc ?source-loc wp-side ?source-side))
+  ?p1 <- (goal (id ?payment-goal) (class PAY-FOR-RINGS-WITH-BASE) (mode FORMULATED) (parent ?pay-base-parent) (params $? target-mps ?target-loc target-side ?target-side))
+  ?p2 <- (goal (id ?payment-instruct) (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED) (parent ?pay-base-parent))
+  ?p3 <- (goal (id ?pay-base-parent) (class PAY-FOR-RING-GOAL) (mode FORMULATED) (parent ?payment-parent))
+  (test (is-parent-of ?goal1 ?discard-goal))
+  (test (is-parent-of ?goal2 ?payment-goal))
+  =>
+  (retract ?d)
+  (retract ?p1)
+  (retract ?p2)
+  (retract ?p3)
+  (assert 
+    (goal (class PAY-FOR-RINGS-WITH-CAP-CARRIER)
+      (id (sym-cat PAY-FOR-RINGS-WITH-CAP-CARRIER- (gensym*))) (sub-type SIMPLE)
+      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta) (parent ?payment-parent)
+      (params  wp ?wp
+                wp-loc ?source-loc
+                wp-side ?source-side
+                target-mps ?target-loc
+                target-side ?target-side
+      )
+	  )
+  )
+)
+
 ; ============================== Goal Expander ===============================
 
 (defrule goal-reasoner-expand-goal-with-sub-type
