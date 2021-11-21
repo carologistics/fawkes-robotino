@@ -34,7 +34,7 @@
 
 (defrule action-finish-execute-wait-action
   ?pa <- (plan-action (id ?action-id) (plan-id ?plan-id) (goal-id ?goal-id)
-                      (action-name wait) (state RUNNING) (executable TRUE))
+                      (action-name wait) (state RUNNING))
   (time $?now)
   ?timer <- (timer (name ?name &: (sym-cat ?goal-id - ?plan-id - ?action-id))
                    (time $?t&:(timeout ?now ?t ?*WAIT-DURATION*)))
