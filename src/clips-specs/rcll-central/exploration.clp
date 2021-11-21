@@ -27,8 +27,9 @@
 (defrule exp-enable
 " Exploration is needed as we received an mps-state already without knowing
   the zone."
-	(wm-fact (key domain fact mps-state args? m ?name $?))
-	(not (wm-fact (key domain fact zone-content args? z ? m ?name)))
+	(or (and (wm-fact (key domain fact mps-state args? m ?name $?))
+		       (not (wm-fact (key domain fact zone-content args? z ? m ?name))))
+	    (wm-fact (key refbox phase) (value EXPLORATION)))
 	(not (wm-fact (key exploration active) (type BOOL) (value TRUE)))
 	=>
 	(assert (wm-fact (key exploration active) (type BOOL) (value TRUE)))
@@ -36,7 +37,7 @@
 
 (defrule exp-disable-goals
 " Exploration is not needed anymore as all machines were found."
-	?g <-(goal (class EXPLORE-ZONE|EXPLORATION-CHALLENGE-MOVE) (mode FORMULATED))
+	?g <-(goal (class EXPLORE-ZONE|EXPLORATION-MOVE) (mode FORMULATED))
 	(wm-fact (key exploration active) (type BOOL) (value FALSE))
 	=>
 	(retract ?g)
@@ -44,7 +45,7 @@
 
 (defrule exp-fail-goals
 " Exploration is not needed anymore as all machines were found."
-	?g <-(goal (class EXPLORE-ZONE|EXPLORATION-CHALLENGE-MOVE) (mode DISPATCHED))
+	?g <-(goal (class EXPLORE-ZONE|EXPLORATION-MOVE) (mode DISPATCHED))
 	(wm-fact (key exploration active) (type BOOL) (value FALSE))
 	=>
 	(modify ?g (mode FINISHED) (outcome FAILED))
@@ -129,30 +130,30 @@
   (assert (timer (name send-machine-reports)))
 )
 
-; This did sometimes falsely label zones as free, where a machine was located.
-; Revisit this before enabling again.
-;(defrule exp-passed-through-quadrant
-;" If the robot drove through a zone slow enough and passed the middle of the zone with a certain margin
-;  we can conclude, that there is no machine in this zone
-;"
-;	(wm-fact (key central agent robot args? r ?r))
-;  (exp-navigator-vlow ?r ?max-velocity ?max-rotation)
-;  (MotorInterface (id ?motor-id &:(eq ?motor-id (remote-if-id ?r "Robotino")))
-;    (vx ?vx&:(< ?vx ?max-velocity)) (vy ?vy&:(< ?vy ?max-velocity)) (omega ?w&:(< ?w ?max-rotation))
-;  )
-;  (Position3DInterface (id ?pose-id&:(eq ?pose-id (remote-if-id ?r "Pose"))) (translation $?trans)
-;	                     (time $?timestamp) (visibility_history ?vh&:(>= ?vh 10)))
-;  ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn&:(eq ?zn (get-zone 0.15 ?trans))) (value ?time-searched))
-;  ?zm <- (domain-fact (name zone-content) (param-values ?zn UNKNOWN))
-;=>
-;  (bind ?zone (get-zone 0.07 ?trans))
-;  (if ?zone then
-;    (modify ?ze (value (+ 1 ?time-searched)))
-;    (modify ?zm (param-values ?zn NONE))
-;    (printout t "Passed through " ?zn crlf)
-;  )
-;)
-;
+(defrule exp-passed-through-quadrant
+" If the robot drove through a zone slow enough and passed the middle of the zone with a certain margin
+  we can conclude, that there is no machine in this zone
+"
+	(wm-fact (key central agent robot args? r ?r))
+	(exp-navigator-vlow ?r ?max-velocity ?max-rotation)
+	(MotorInterface (id ?motor-id &:(eq ?motor-id (remote-if-id ?r "Robotino")))
+	  (vx ?vx&:(< ?vx ?max-velocity)) (vy ?vy&:(< ?vy ?max-velocity)) (omega ?w&:(< ?w ?max-rotation))
+	)
+	; The visibility history corresponds to the confidence of how accurate the
+	; pose is
+	(Position3DInterface (id ?pose-id&:(eq ?pose-id (remote-if-id ?r "Pose"))) (translation $?trans)
+	                     (time $?timestamp) (visibility_history ?vh&:(>= ?vh 10)))
+	?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn&:(eq ?zn (get-zone 0.15 ?trans))) (value ?time-searched))
+	?zm <- (domain-fact (name zone-content) (param-values ?zn UNKNOWN))
+=>
+	(bind ?zone (get-zone 0.07 ?trans))
+	(if ?zone then
+		(modify ?ze (value (+ 1 ?time-searched)))
+		(modify ?zm (param-values ?zn NONE))
+		(printout t "Passed through " ?zn crlf)
+	)
+)
+
 
 (defrule exp-found-line
 " If a laserline was found, that lies inside a zone with a certain margin,
@@ -239,7 +240,7 @@
 " If there is a zone, where we suspect a machine, interrupt the EXPLORATION-PLAN and start exploring the zone
 "
 	(wm-fact (key central agent robot args? r ?r))
-  (goal (id ?parent) (class EXPLORATION-CHALLENGE-ROOT))
+  (goal (id ?parent) (class EXPLORATION-ROOT))
   (Position3DInterface (id ?pos-id&:(eq ?pos-id (remote-if-id ?r "Pose"))) (translation $?trans))
   ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn) (value ?ts&:(<= ?ts ?*EXP-SEARCH-LIMIT*)))
   (wm-fact (key domain fact zone-content args? z ?zn m UNKNOWN))
@@ -288,12 +289,20 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?id) (class EXPLORE-ZONE) (params z ?zn) (mode FORMULATED)
 	      (is-executable FALSE))
+	(wm-fact (key domain fact zone-content args? z ?zn m UNKNOWN))
 	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
 	(not (and (goal (id ?other-id) (class EXPLORE-ZONE) (params z ?zn) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED))
 	          (goal-meta (goal-id ?other-id) (assigned-to ?other-robot&:(neq ?other-robot ?robot))))
 	)
 	=>
 	(modify ?g (is-executable TRUE))
+)
+
+(defrule exp-explore-zone-retract-not-executable
+	?g <- (goal (id ?id) (class EXPLORE-ZONE) (params z ?zn) (mode FORMULATED) (is-executable FALSE))
+	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
+	=>
+	(retract ?g)
 )
 
 (defrule exp-increase-search-limit
@@ -397,6 +406,7 @@
 	          (not (domain-fact (name zone-content)
 	                            (param-values ?zz ?target-mps))
 	)))
+	(wm-fact (key refbox phase) (value PRODUCTION))
 	=>
 	(delayed-do-for-all-facts ((?exp wm-fact))
 		(wm-key-prefix ?exp:key (create$ exploration fact))

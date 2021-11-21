@@ -397,9 +397,9 @@
 )
 
 (:action wait
-	:parameters (?r - robot ?point - waitpoint)
-	:precondition (at ?r ?point WAIT)
-	:effect (at ?r ?point WAIT)
+	:parameters (?r - robot ?point - location ?side - mps-side)
+	:precondition (at ?r ?point ?side)
+	:effect (at ?r ?point ?side)
 )
 
 (:action wait-for-wp

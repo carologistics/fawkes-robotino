@@ -30,7 +30,9 @@
 	)
 	(if (eq ?robot nil) then (return ))
 	(if (not (do-for-fact ((?f goal-meta))
-			(eq ?f:goal-id (fact-slot-value ?goal id))
+			(and (eq ?f:goal-id (fact-slot-value ?goal id))
+			     (or (eq ?f:restricted-to ?robot)
+			         (eq ?f:restricted-to nil)))
 			(modify ?f (assigned-to ?robot))))
 	 then
 		(printout t "FAILED assign robot " ?robot " to goal "
@@ -42,10 +44,9 @@
 "Creates the goal-meta fact and assign the goal to the robot"
 	(if (neq ?robot nil) then
 		(assert (goal-meta (goal-id (fact-slot-value ?goal id))
-		                   (assigned-to ?robot)))
+		                   (restricted-to ?robot)))
 	)
 )
-
 
 (deffunction is-free (?target-pos)
 	(if (any-factp ((?at wm-fact))
@@ -169,16 +170,21 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 ;	"a simple unassigned goal"
 	(goal (id ?g-id) (sub-type SIMPLE) (mode FORMULATED) (is-executable FALSE))
-	(or (not (goal-meta (goal-id ?g-id)))
-	    (goal-meta (goal-id ?g-id) (assigned-to nil)))
+	(goal-meta (goal-id ?g-id) (assigned-to nil))
 	(wm-fact (key central agent robot args? r ?robot))
 	(not (goal-meta (assigned-to ?robot)))
 	(wm-fact (key central agent robot-waiting args? r ?robot))
-	;there exist no other robot with a smaller number and unassigned goals
-	(not (and (wm-fact (key central agent robot-waiting
-	                    args? r ?o-robot&:(> (str-compare ?robot ?o-robot) 0)))
-	          (not (goal-meta (assigned-to ?o-robot)))))
 	=>
+	(bind ?longest-waiting 0)
+	(bind ?longest-waiting-robot ?robot)
+	(delayed-do-for-all-facts ((?waiting wm-fact))
+	  (wm-key-prefix ?waiting:key (create$ central agent robot-waiting))
+	  (if (or (eq ?longest-waiting 0) (< (fact-index ?waiting) ?longest-waiting))
+	   then
+	    (bind ?longest-waiting-robot (wm-key-arg ?waiting:key r))
+	    (bind ?longest-waiting (fact-index ?waiting))
+	  )
+	)
 	(delayed-do-for-all-facts ((?g goal))
 		(and (eq ?g:is-executable FALSE)
 		     (eq ?g:sub-type SIMPLE) (eq ?g:mode FORMULATED)
@@ -189,6 +195,7 @@
 		                 (eq ?gm:assigned-to nil)))))
 		(goal-meta-assign-robot-to-goal ?g ?robot)
 	)
+	(modify ?longest-waiting)
 )
 
 (defrule goal-production-flush-executability
@@ -1390,7 +1397,22 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key domain fact mps-state args? m ?any-mps s IDLE))
 	=>
 	(bind ?g (goal-tree-assert-central-run-parallel PRODUCTION-ROOT))
-	(modify ?g (meta do-not-finish)(priority 1.0))
+	(modify ?g (meta do-not-finish) (priority 1.0))
+)
+
+(defrule goal-production-create-wait-root
+	"Create the WAIT root, which has low priority and dispatches WAIT goals if
+	 nothing else is executable.
+	"
+	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	(domain-facts-loaded)
+	(not (goal (class WAIT-ROOT)))
+	(wm-fact (key refbox phase) (value PRODUCTION))
+	(wm-fact (key game state) (value RUNNING))
+	(wm-fact (key refbox team-color) (value ?color))
+	=>
+	(bind ?g (goal-tree-assert-central-run-parallel WAIT-ROOT))
+	(modify ?g (meta do-not-finish) (priority 0))
 )
 
 (defrule goal-production-create-move-out-of-way
@@ -1527,24 +1549,27 @@ The workpiece remains in the output of the used ring station after
 
 (defrule goal-production-assert-wait-nothing-executable
   "When the robot is stuck, assert a new goal that keeps it waiting"
-  (declare (salience 0))
-  (goal (id ?p) (class PRODUCTION-ROOT))
-  (goal (id ?goal-id) (mode FORMULATED))
-  (not (goal (mode FORMULATED) (is-executable TRUE)))
-  (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~central&~nil))
+  (goal (id ?p) (class WAIT-ROOT))
+  (not (goal (parent ?p) (mode FORMULATED)))
   =>
   (bind ?goal (assert (goal (class WAIT-NOTHING-EXECUTABLE)
 	            (id (sym-cat WAIT-NOTHING-EXECUTABLE- (gensym*)))
-	            (sub-type SIMPLE)
-	            (verbosity NOISY) (is-executable TRUE)
+	            (sub-type SIMPLE) (parent ?p) (priority 0.0) (meta-template goal-meta)
+	            (verbosity NOISY)
   )))
-  (goal-meta-assert ?goal ?robot)
-  (modify ?goal (parent ?p))
+)
+
+(defrule goal-production-wait-nothing-executable-executable
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?g-id) (class WAIT-NOTHING-EXECUTABLE)
+	            (mode FORMULATED) (is-executable FALSE))
+	(goal-meta (goal-id ?g-id) (assigned-to ~nil&~central))
+	=>
+	(modify ?g (is-executable TRUE))
 )
 
 (defrule goal-production-remove-retracted-wait-nothing-executable
   "When a wait-nothing-executable goal is retracted, remove it to prevent spam"
-  (declare (salience 0))
   ?g <- (goal (class WAIT-NOTHING-EXECUTABLE) (mode RETRACTED))
   =>
   (retract ?g)
@@ -1589,7 +1614,7 @@ The workpiece remains in the output of the used ring station after
 
 	(bind ?goal (assert (goal (class NAVIGATION-CHALLENGE-MOVE)
 					(id (sym-cat NAVIGATION-CHALLENGE-MOVE- (gensym*)))
-					(sub-type SIMPLE)
+					(sub-type SIMPLE) (meta-template goal-meta)
 					(verbosity NOISY) (is-executable FALSE)
 					(params target (translate-location-map-to-grid ?location) location ?location)
 				)))
@@ -1631,10 +1656,22 @@ The workpiece remains in the output of the used ring station after
 ; EXPLORATION CHALLENGE ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;
+(defrule goal-production-exploration-challenge-remove-empty-targets
+" If no more target are available, remove the fact, this triggers the
+  creation of new targets.
+"
+	?targets <- (wm-fact (key exploration targets args? $?) (values))
+	=>
+	(retract ?targets)
+)
+
 
 (defrule goal-production-exploration-challenge-create-targets
+" Create exploration targets, a list of zones that is targeted in order."
 	(not (wm-fact (key exploration targets args? $?)))
 	(wm-fact (key exploration active) (value TRUE))
+	; start to explore the grid only if grid coordinates are available
+	(wm-fact (key navgraph waitzone generated) (type BOOL) (value TRUE))
 	=>
 	(assert (wm-fact (key exploration targets args?)
 	                 (is-list TRUE)
@@ -1649,14 +1686,14 @@ The workpiece remains in the output of the used ring station after
    are located"
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(domain-facts-loaded)
-	(not (goal (class EXPLORATION-CHALLENGE-ROOT)))
+	(not (goal (class EXPLORATION-ROOT)))
 	(wm-fact (key config rcll start-with-waiting-robots) (value TRUE))
 	(wm-fact (key refbox phase) (value EXPLORATION|PRODUCTION))
 	(wm-fact (key game state) (value RUNNING))
 	(wm-fact (key refbox team-color) (value ?color))
 	(wm-fact (key exploration active) (value TRUE))
 	=>
-	(bind ?g (goal-tree-assert-central-run-parallel EXPLORATION-CHALLENGE-ROOT))
+	(bind ?g (goal-tree-assert-central-run-parallel EXPLORATION-ROOT))
 	(modify ?g (meta do-not-finish))
 	(modify ?g (priority 0.0))
 )
@@ -1665,23 +1702,24 @@ The workpiece remains in the output of the used ring station after
 " Move to a navgraph node
 "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
-	?g <- (goal (id ?goal-id) (class EXPLORATION-CHALLENGE-MOVE)
+	?g <- (goal (id ?goal-id) (class EXPLORATION-MOVE)
 	                          (mode FORMULATED)
 	                          (params target ?target $?)
 	                          (is-executable FALSE))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(not (and (goal (id ?p) (class EXPLORE-ZONE))
 	          (goal-meta (goal-id ?p) (assigned-to ?robot))))
+	(navgraph-node (name ?str-target&:(eq ?str-target (str-cat ?target))))
 	=>
-	(printout t "Goal EXPLORATION-CHALLENGE-MOVE executable for " ?robot crlf)
+	(printout t "Goal EXPLORATION-MOVE executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
 )
 
 (deffunction goal-production-exploration-challenge-assert-move
 	(?location)
 
-	(bind ?goal (assert (goal (class EXPLORATION-CHALLENGE-MOVE)
-	        (id (sym-cat EXPLORATION-CHALLENGE-MOVE- (gensym*)))
+	(bind ?goal (assert (goal (class EXPLORATION-MOVE)
+	        (id (sym-cat EXPLORATION-MOVE- (gensym*)))
 	        (sub-type SIMPLE)
 	        (priority 1.0)
 	        (meta-template goal-meta)
@@ -1691,14 +1729,22 @@ The workpiece remains in the output of the used ring station after
 	(return ?goal)
 )
 
+(defrule goal-production-cleanup-exploration-move
+" A exploration move that is not executable can be removed as the target can
+  never be targeted again.
+"
+	?g <- (goal (id ?goal-id) (class EXPLORATION-MOVE) (mode FORMULATED) (is-executable FALSE))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	=>
+	(retract ?g)
+)
+
 (defrule goal-production-exploration-create-move-goal-lacking-choice
   "The robot has nothing it can do, move it across the map to explore"
-	(goal (id ?root-id) (class EXPLORATION-CHALLENGE-ROOT) (mode FORMULATED|DISPATCHED))
+	(goal (id ?root-id) (class EXPLORATION-ROOT) (mode FORMULATED|DISPATCHED))
 	(wm-fact (key central agent robot-waiting args? r ?robot))
 	?exp-targ <- (wm-fact (key exploration targets args?) (values ?location $?locations))
-	(not (and (goal (class EXPLORATION-CHALLENGE-MOVE) (mode FORMULATED) (id ?id1))
-	          (goal (class EXPLORATION-CHALLENGE-MOVE) (mode FORMULATED) (id ?id2&~?id1))))
-	;(wm-fact (key refbox field-ground-truth name args? m ?name) (value FALSE))
+	(not (goal (class EXPLORATION-MOVE) (mode FORMULATED)))
 	(wm-fact (key exploration active) (type BOOL) (value TRUE))
 	=>
 	(bind ?goal
@@ -1709,7 +1755,7 @@ The workpiece remains in the output of the used ring station after
 )
 
 (defrule goal-production-exploration-challenge-cleanup
-	?g <- (goal (class EXPLORATION-CHALLENGE-MOVE) (mode RETRACTED) (outcome FAILED|COMPLETED))
+	?g <- (goal (class EXPLORATION-MOVE) (mode RETRACTED) (outcome FAILED|COMPLETED))
 	=>
 	(retract ?g)
 )
