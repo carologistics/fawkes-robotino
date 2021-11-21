@@ -142,6 +142,7 @@
   )
   (return ?conflict)
 )
+
 (deffunction goal-tree-assert-run-endless (?class ?frequency $?fact-addresses)
         (bind ?id (sym-cat MAINTAIN- ?class - (gensym*)))
         (bind ?goal (assert (goal (id ?id) (class ?class) (type MAINTAIN)
@@ -210,52 +211,7 @@
 	(return ?goal)
 )
 
-
-; ============================= Goal Selection ===============================
-
-
-(defrule goal-reasoner-select-root-maintain
-"  Select all root maintain goals (having no parent) in order to expand them."
-  (declare (salience ?*SALIENCE-GOAL-SELECT*))
-  ?g <- (goal (parent nil) (type MAINTAIN) (sub-type ~nil) (id ?goal-id)
-        (mode FORMULATED) (verbosity ?v))
-  (not (goal (parent ?goal-id)))
-=>
-  (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
-  (modify ?g (mode SELECTED))
-)
-
-(defrule goal-reasoner-select-root-waiting-robot
-  "Select all executable root goals in order to propagate selection."
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  ?g <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
-      (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
-
-  (wm-fact (key central agent robot-waiting args? r ?robot))
-
-  (not (and (goal-meta (goal-id ?g-id) (assigned-to ?robot))
-            (goal (id ?g-id) (mode ~FORMULATED))))
-
-  (not (and (wm-fact (key central agent robot-waiting
-                      args? r ?o-robot&:(> (str-compare ?robot ?o-robot) 0)))
-       (goal-meta (assigned-to ?o-robot)))
-  )
-  =>
-  (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
-  (modify ?g (mode SELECTED))
-)
-
-(defrule goal-reasoner-select-root-central-executable-simple-goal
-  "There is an exectuable simple goal assigned to central, propagate selection."
-  (declare (salience ?*SALIENCE-GOAL-SELECT*))
-  ?g <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
-      (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
-  (goal (id ?id) (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE))
-  (goal-meta (goal-id ?id) (assigned-to central))
-  =>
-  (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
-  (modify ?g (mode SELECTED))
-)
+; =========================== Goal Executability =============================
 
 (defrule goal-reasoner-propagate-executability
   "There is an executable goal for a waiting robot or central, propagate until
@@ -291,16 +247,50 @@
   )
 )
 
-(defrule goal-reasoner-expand-goal-with-sub-type
-" Expand a goal with sub-type, if it has a child."
-  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
-  ?p <- (goal (id ?parent-id) (type ACHIEVE|MAINTAIN)
-              (sub-type ?sub-type&:(requires-subgoal ?sub-type)) (mode SELECTED)
-              (verbosity ?v))
-  ?g <- (goal (id ?goal-id) (parent ?parent-id) (mode FORMULATED))
+; ============================= Goal Selection ===============================
+
+
+(defrule goal-reasoner-select-root-maintain
+"  Select all root maintain goals (having no parent) in order to expand them."
+  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  ?g <- (goal (parent nil) (type MAINTAIN) (sub-type ~nil) (id ?goal-id)
+        (mode FORMULATED) (verbosity ?v))
+  (not (goal (parent ?goal-id)))
+=>
+  (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
+  (modify ?g (mode SELECTED))
+)
+
+(defrule goal-reasoner-select-root
+  "There is an exectuable simple goal assigned to central, propagate selection."
+  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  ?g <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
+      (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
+  (goal-meta (goal-id ?goal-id) (root-for-order nil))
+
+  (or
+    ;either there is an executable sub-goal assigned to central
+    ;this should use some reference to the root id such that only the right root
+    ;is selected
+    (and
+      (goal (id ?id) (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE))
+      (goal-meta (goal-id ?id) (assigned-to central))
+    )
+    ;or there is a robot that is waiting and not assigned to a subgoal that is waiting
+    (and
+      (wm-fact (key central agent robot-waiting args? r ?robot))
+
+      (not (and (goal-meta (goal-id ?g-id) (assigned-to ?robot))
+                (goal (id ?g-id) (mode ~FORMULATED))))
+
+      (not (and (wm-fact (key central agent robot-waiting
+                          args? r ?o-robot&:(> (str-compare ?robot ?o-robot) 0)))
+          (goal-meta (assigned-to ?o-robot))))
+    )
+  )
   =>
-  (printout (log-debug ?v) "Goal " ?goal-id " EXPANDED" crlf)
-  (modify ?p (mode EXPANDED))
+  (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
+  (modify ?g (mode SELECTED))
 )
 
 (defrule goal-reasoner-select-from-dispatched-children
