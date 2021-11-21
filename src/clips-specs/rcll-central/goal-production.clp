@@ -46,9 +46,9 @@
 	                   (assigned-to ?robot)
 	                   (order-id ?order-id)
 	                   (ring-nr ?ring-nr)))
-	(printout t "Created new goal-meta fact to assign " ?robot
-	            " to goal " (fact-slot-value ?goal id)
-	            " with ring-nr " ?ring-nr " for order " ?order-id crlf)
+	;(printout t "Created new goal-meta fact to assign " ?robot
+	;            " to goal " (fact-slot-value ?goal id)
+	;            " with ring-nr " ?ring-nr " for order " ?order-id crlf)
 )
 
 (deffunction goal-meta-assert-restricted (?goal ?robot)
