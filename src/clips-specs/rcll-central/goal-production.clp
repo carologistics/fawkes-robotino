@@ -1664,7 +1664,7 @@ The workpiece remains in the output of the used ring station after
 	(not (wm-fact (key exploration targets args? $?)))
 	(wm-fact (key exploration active) (value TRUE))
 	; start to explore the grid only if grid coordinates are available
-	(navgraph-node (name ?str-target&:(eq (sub-string 1 2 ?str-target) "G-")))
+	(wm-fact (key navgraph waitzone generated) (type BOOL) (value TRUE))
 	=>
 	(assert (wm-fact (key exploration targets args?)
 	                 (is-list TRUE)
