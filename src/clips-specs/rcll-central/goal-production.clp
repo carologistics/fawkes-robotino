@@ -44,7 +44,7 @@
 "Creates the goal-meta fact and assign the goal to the robot"
 	(if (neq ?robot nil) then
 		(assert (goal-meta (goal-id (fact-slot-value ?goal id))
-		                   (assigned-to ?robot) (restricted-to ?robot)))
+		                   (restricted-to ?robot)))
 	)
 )
 
