@@ -135,23 +135,23 @@
   we can conclude, that there is no machine in this zone
 "
 	(wm-fact (key central agent robot args? r ?r))
-  (exp-navigator-vlow ?r ?max-velocity ?max-rotation)
-  (MotorInterface (id ?motor-id &:(eq ?motor-id (remote-if-id ?r "Robotino")))
-    (vx ?vx&:(< ?vx ?max-velocity)) (vy ?vy&:(< ?vy ?max-velocity)) (omega ?w&:(< ?w ?max-rotation))
-  )
+	(exp-navigator-vlow ?r ?max-velocity ?max-rotation)
+	(MotorInterface (id ?motor-id &:(eq ?motor-id (remote-if-id ?r "Robotino")))
+	  (vx ?vx&:(< ?vx ?max-velocity)) (vy ?vy&:(< ?vy ?max-velocity)) (omega ?w&:(< ?w ?max-rotation))
+	)
 	; The visibility history corresponds to the confidence of how accurate the
 	; pose is
-  (Position3DInterface (id ?pose-id&:(eq ?pose-id (remote-if-id ?r "Pose"))) (translation $?trans)
+	(Position3DInterface (id ?pose-id&:(eq ?pose-id (remote-if-id ?r "Pose"))) (translation $?trans)
 	                     (time $?timestamp) (visibility_history ?vh&:(>= ?vh 10)))
-  ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn&:(eq ?zn (get-zone 0.15 ?trans))) (value ?time-searched))
-  ?zm <- (domain-fact (name zone-content) (param-values ?zn UNKNOWN))
+	?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn&:(eq ?zn (get-zone 0.15 ?trans))) (value ?time-searched))
+	?zm <- (domain-fact (name zone-content) (param-values ?zn UNKNOWN))
 =>
-  (bind ?zone (get-zone 0.07 ?trans))
-  (if ?zone then
-    (modify ?ze (value (+ 1 ?time-searched)))
-    (modify ?zm (param-values ?zn NONE))
-    (printout t "Passed through " ?zn crlf)
-  )
+	(bind ?zone (get-zone 0.07 ?trans))
+	(if ?zone then
+		(modify ?ze (value (+ 1 ?time-searched)))
+		(modify ?zm (param-values ?zn NONE))
+		(printout t "Passed through " ?zn crlf)
+	)
 )
 
 
