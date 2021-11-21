@@ -90,6 +90,21 @@
 	(return t)
 )
 
+(deffunction is-parent-of (?parent ?child)
+  (bind ?propagate TRUE)
+  (bind ?goal-id ?child)
+  (while ?propagate
+    (do-for-all-facts ((?goal goal)) (eq ?goal:id ?goal-id)
+      (if (or (eq ?goal:parent nil) (eq ?goal:parent ?parent)) then
+        (bind ?propagate FALSE)
+      )
+      (bind ?goal-id ?goal:parent)
+    )
+  )
+
+  (return (eq ?goal-id ?parent))
+)
+
 (deffunction set-robot-to-waiting (?robot)
 " Sets a robot that was assigned in a goal meta to waiting.
   If no robot was assigned nothing happens.
