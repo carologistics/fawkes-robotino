@@ -131,6 +131,17 @@
 	)
 )
 
+(deffunction goal-reasoner-compute-order-conflicts-payments (?order1 ?order2)
+  (bind ?conflict FALSE)
+  (printout t crlf crlf ?order1 " " ?order2 crlf crlf)
+  (do-for-all-facts ((?rs domain-fact)) (and (eq ?rs:name mps-type) (member$ RS ?rs:param-values))
+    (bind ?rs-name (nth$ 1 ?rs:param-values))
+    (if (> (+  (calculate-order-payments-sum ?order1 ?rs-name) (calculate-order-payments-sum ?order2 ?rs-name)) 3) then
+      (bind ?conflict TRUE)
+    )
+  )
+  (return ?conflict)
+)
 (deffunction goal-tree-assert-run-endless (?class ?frequency $?fact-addresses)
         (bind ?id (sym-cat MAINTAIN- ?class - (gensym*)))
         (bind ?goal (assert (goal (id ?id) (class ?class) (type MAINTAIN)
