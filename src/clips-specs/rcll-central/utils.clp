@@ -362,11 +362,16 @@
 )
 
 (deffunction navgraph-compute (?robot)
-    (bind ?interface (remote-if "NavGraphWithMPSGeneratorInterface" ?robot "navgraph-generator-mps"))
-    (bind ?msg (blackboard-create-msg ?interface "ComputeMessage"))
-    (blackboard-send-msg ?msg)
-    (printout t "Sent compute for " ?robot crlf)
+	(if ?robot then
+	 (bind ?interface (remote-if "NavGraphWithMPSGeneratorInterface" ?robot "navgraph-generator-mps"))
+	else
+	 (bind ?interface "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps")
+	)
+	(bind ?msg (blackboard-create-msg ?interface "ComputeMessage"))
+	(blackboard-send-msg ?msg)
+	(printout t "Sent compute for " ?robot crlf)
 )
+
 
 (deffunction wm-fact-to-navgraph-node (?key)
 	"Get the name of the navgraph node given a wm-fact key, where the machine has

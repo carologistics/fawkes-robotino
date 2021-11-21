@@ -99,7 +99,14 @@
   =>
   (navgraph-compute ?robot)
 )
-
+(defrule blackboard-init-compute-navgraph-central
+	(blackboard-interface (id "/navgraph-generator-mps")
+	                      (type "NavGraphWithMPSGeneratorInterface"))
+	(blackboard-interface (id "/navgraph-generator")
+	                      (type "NavGraphGeneratorInterface"))
+	=>
+	(navgraph-challenge-field FALSE)
+)
 
 (defrule blackboard-init-open-skiller-interface
   "Open the skiller interface for a remote robot."
