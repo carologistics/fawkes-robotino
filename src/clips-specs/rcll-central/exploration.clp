@@ -130,8 +130,6 @@
   (assert (timer (name send-machine-reports)))
 )
 
-; This did sometimes falsely label zones as free, where a machine was located.
-; Revisit this before enabling again.
 (defrule exp-passed-through-quadrant
 " If the robot drove through a zone slow enough and passed the middle of the zone with a certain margin
   we can conclude, that there is no machine in this zone
@@ -141,6 +139,8 @@
   (MotorInterface (id ?motor-id &:(eq ?motor-id (remote-if-id ?r "Robotino")))
     (vx ?vx&:(< ?vx ?max-velocity)) (vy ?vy&:(< ?vy ?max-velocity)) (omega ?w&:(< ?w ?max-rotation))
   )
+	; The visibility history corresponds to the confidence of how accurate the
+	; pose is
   (Position3DInterface (id ?pose-id&:(eq ?pose-id (remote-if-id ?r "Pose"))) (translation $?trans)
 	                     (time $?timestamp) (visibility_history ?vh&:(>= ?vh 10)))
   ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn&:(eq ?zn (get-zone 0.15 ?trans))) (value ?time-searched))
