@@ -46,9 +46,7 @@
 	                   (assigned-to ?robot)
 	                   (order-id ?order-id)
 	                   (ring-nr ?ring-nr)))
-	;(printout t "Created new goal-meta fact to assign " ?robot
-	;            " to goal " (fact-slot-value ?goal id)
-	;            " with ring-nr " ?ring-nr " for order " ?order-id crlf)
+	(return ?goal)
 )
 
 (deffunction goal-meta-assert-restricted (?goal ?robot)
@@ -1047,7 +1045,7 @@ The workpiece remains in the output of the used ring station after
 )
 
 (deffunction goal-production-assert-instruct-ds-deliver
-	(?wp)
+	(?wp ?order-id)
 
 	(bind ?goal (assert (goal (class INSTRUCT-DS-DELIVER)
 	  (id (sym-cat INSTRUCT-DS-DELIVER- (gensym*))) (sub-type SIMPLE)
@@ -1055,13 +1053,13 @@ The workpiece remains in the output of the used ring station after
 	  (params wp ?wp
 	          target-mps C-DS)
 	)))
-	(goal-meta-assert ?goal central)
+	(goal-meta-assert ?goal central ?order-id nil)
 	(return ?goal)
 )
 
 (deffunction goal-production-assert-deliver
 	"If there is a DS, do a normal delivery, otherwise do a RoboCup 2021 delivery. "
-	(?wp)
+	(?wp ?order-id)
 
 	(bind ?goal nil)
 	(if (any-factp ((?state domain-fact)) (and (eq ?state:name mps-state)
@@ -1069,17 +1067,17 @@ The workpiece remains in the output of the used ring station after
 	    )
 	then
 		(bind ?goal (goal-tree-assert-central-run-parallel DELIVER
-			(assert (goal (class DELIVER)
+			(goal-meta-assert (assert (goal (class DELIVER)
 				(id (sym-cat DELIVER- (gensym*))) (sub-type SIMPLE)
-				(verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+				(verbosity NOISY) (is-executable FALSE)
 				(params wp ?wp
 						target-mps C-DS
 						target-side INPUT)
-			))
-			(goal-production-assert-instruct-ds-deliver ?wp)
+			)) nil ?order-id nil)
+			(goal-production-assert-instruct-ds-deliver ?wp ?order-id)
 		))
 	else
-		(bind ?goal (goal-production-assert-deliver-rc21 ?wp))
+		(bind ?goal (goal-production-assert-deliver-rc21 ?wp ?order-id))
 	)
 
 	(return ?goal)
