@@ -299,8 +299,8 @@
 )
 
 (defrule exp-explore-zone-retract-not-executable
-	?g <- (goal (id ?id) (class EXPLORE-ZONE) (params z ?zn) (mode FORMULATED))
-	(wm-fact (key domain fact zone-content args? z ?zn m ~UNKNOWN))
+	?g <- (goal (id ?id) (class EXPLORE-ZONE) (params z ?zn) (mode FORMULATED) (is-executable FALSE))
+	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
 	=>
 	(retract ?g)
 )
