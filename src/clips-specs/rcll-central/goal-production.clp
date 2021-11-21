@@ -1709,8 +1709,6 @@ The workpiece remains in the output of the used ring station after
 	                          (params target ?target $?)
 	                          (is-executable FALSE))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	(not (and (goal (id ?p) (class EXPLORE-ZONE))
-	          (goal-meta (goal-id ?p) (assigned-to ?robot))))
 	(navgraph-node (name ?str-target&:(eq ?str-target (str-cat ?target))))
 	=>
 	(printout t "Goal EXPLORATION-MOVE executable for " ?robot crlf)
