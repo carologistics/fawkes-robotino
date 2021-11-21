@@ -74,6 +74,7 @@ while true; do
 		--C3-production)
 			echo "$testbed_path C3-PRODUCTION" >> $tmpconfig
 			ref_args="--production c3 --ground-truth"
+			n=3
 			shift
 			break
 			;;
