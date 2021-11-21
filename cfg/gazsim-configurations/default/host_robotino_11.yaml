@@ -74,6 +74,19 @@ clips-executive/specs/rcll-central/parameters/rcll:
   cyan-send-port: 4471
   magenta-send-port: 4481
 
+clips-executive/specs/rcll-labcegor21/parameters/rcll:
+
+  peer-address: 127.0.0.1
+  peer-port: 0
+  cyan-port: 0
+  magenta-port: 0
+  peer-recv-port: 4411
+  peer-send-port: 4421
+  cyan-recv-port: 4451
+  magenta-recv-port: 4461
+  cyan-send-port: 4471
+  magenta-send-port: 4481
+
 fawkes/bbsync:
   check_interval: 1000
   peers:
