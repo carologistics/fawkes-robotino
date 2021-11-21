@@ -1012,15 +1012,53 @@ The workpiece remains in the output of the used ring station after
 	(return ?goal)
 )
 
-(deffunction goal-production-assert-deliver
+(deffunction goal-production-assert-deliver-rc21
 	(?wp)
-	(bind ?goal (assert (goal (class DELIVER)
-	      (id (sym-cat DELIVER- (gensym*))) (sub-type SIMPLE)
+
+	(bind ?goal (assert (goal (class DELIVER-RC21)
+	      (id (sym-cat DELIVER-RC21- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
-	      (params wp ?wp
-	              target-mps C-DS
-	              target-side INPUT)
+	      (params wp ?wp)
 	)))
+	(return ?goal)
+)
+
+(deffunction goal-production-assert-instruct-ds-deliver
+	(?wp)
+
+	(bind ?goal (assert (goal (class INSTRUCT-DS-DELIVER)
+	  (id (sym-cat INSTRUCT-DS-DELIVER- (gensym*))) (sub-type SIMPLE)
+	  (verbosity NOISY) (is-executable FALSE)
+	  (params wp ?wp
+	          target-mps C-DS)
+	)))
+	(goal-meta-assert ?goal central)
+	(return ?goal)
+)
+
+(deffunction goal-production-assert-deliver
+	"If there is a DS, do a normal delivery, otherwise do a RoboCup 2021 delivery. "
+	(?wp)
+
+	(bind ?goal nil)
+	(if (any-factp ((?state domain-fact)) (and (eq ?state:name mps-state)
+	                                           (member$ C-DS ?state:param-values))
+	    )
+	then
+		(bind ?goal (goal-tree-assert-central-run-parallel DELIVER
+			(assert (goal (class DELIVER)
+				(id (sym-cat DELIVER- (gensym*))) (sub-type SIMPLE)
+				(verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+				(params wp ?wp
+						target-mps C-DS
+						target-side INPUT)
+			))
+			(goal-production-assert-instruct-ds-deliver ?wp)
+		))
+	else
+		(bind ?goal (goal-production-assert-deliver-rc21 ?wp))
+	)
+
 	(return ?goal)
 )
 
@@ -1052,17 +1090,6 @@ The workpiece remains in the output of the used ring station after
 	               target-side ?target-side
 	               )
 	)))
-)
-
-(deffunction goal-production-assert-deliver-rc21
-	(?wp)
-
-	(bind ?goal (assert (goal (class DELIVER-RC21)
-	      (id (sym-cat DELIVER-RC21- (gensym*))) (sub-type SIMPLE)
-	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
-	      (params wp ?wp)
-	)))
-	(return ?goal)
 )
 
 (deffunction goal-production-assert-pay-for-rings-with-cap-carrier-from-shelf
@@ -1102,19 +1129,6 @@ The workpiece remains in the output of the used ring station after
 	              target-mps C-BS
 	              target-side ?side
 	              base-color ?base-color)
-	)))
-	(goal-meta-assert ?goal central)
-	(return ?goal)
-)
-
-(deffunction goal-production-assert-instruct-ds-deliver
-	(?wp)
-
-	(bind ?goal (assert (goal (class INSTRUCT-DS-DELIVER)
-	  (id (sym-cat INSTRUCT-DS-DELIVER- (gensym*))) (sub-type SIMPLE)
-	  (verbosity NOISY) (is-executable FALSE)
-	  (params wp ?wp
-	          target-mps C-DS)
 	)))
 	(goal-meta-assert ?goal central)
 	(return ?goal)
@@ -1244,9 +1258,7 @@ The workpiece remains in the output of the used ring station after
 			)
 			(goal-production-assert-instruct-cs-mount-cap ?cs ?cap-col)
 		)
-		(goal-production-assert-deliver-rc21 ?wp-for-order)
-		;(goal-production-assert-deliver ?wp-for-order)
-		(goal-production-assert-instruct-ds-deliver ?wp-for-order)
+		(goal-production-assert-deliver ?wp-for-order)
 	)
   )
   (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (parent ?root-id))
@@ -1257,9 +1269,7 @@ The workpiece remains in the output of the used ring station after
 
   (bind ?goal
     (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-		(goal-production-assert-deliver-rc21 ?wp-for-order)
-		;(goal-production-assert-deliver ?wp-for-order)
-		;(goal-production-assert-instruct-ds-deliver ?wp-for-order)
+		(goal-production-assert-deliver ?wp-for-order)
 		(goal-tree-assert-central-run-parallel PREPARE-CS
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
 				(goal-production-assert-buffer-cap ?cs ?col-cap)
@@ -1294,9 +1304,7 @@ The workpiece remains in the output of the used ring station after
 
   (bind ?goal
     (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-		(goal-production-assert-deliver-rc21 ?wp-for-order)
-		;(goal-production-assert-deliver ?wp-for-order)
-		;(goal-production-assert-instruct-ds-deliver ?wp-for-order)
+		(goal-production-assert-deliver ?wp-for-order)
 		(goal-tree-assert-central-run-parallel PREPARE-CS
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
 				(goal-production-assert-buffer-cap ?cs ?col-cap)
@@ -1333,9 +1341,7 @@ The workpiece remains in the output of the used ring station after
 
   (bind ?goal
     (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-		(goal-production-assert-deliver-rc21 ?wp-for-order)
-		;(goal-production-assert-deliver ?wp-for-order)
-		;(goal-production-assert-instruct-ds-deliver ?wp-for-order)
+		(goal-production-assert-deliver ?wp-for-order)
 		(goal-tree-assert-central-run-parallel PREPARE-CS
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
 				(goal-production-assert-buffer-cap ?cs ?col-cap)
