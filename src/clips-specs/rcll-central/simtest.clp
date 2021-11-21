@@ -82,11 +82,11 @@
 		(case "ENTER-FIELD" then
 			(assert (testcase (type ENTER-FIELD)))
 		)
-		(case "C0-PRODUCTION"|"C3-PRODUCTION" then
+		(case "C0-PRODUCTION" then
 			(assert (testcase (type ONE-PRODUCTION)))
 		)
 		(case "C3-PRODUCTION" then
-			(printout info "error c3-production simtest" crlf)
+			(assert (testcase (type ONE-PRODUCTION)))
 		)
 		(case "PICK-AND-PLACE" then
 			(assert (testcase (type PICK-AND-PLACE)))
@@ -298,9 +298,9 @@
 (defrule simtest-pick-and-place-success
 " The pick-and-place-challenge was successful and the product is delivered "
 	?testcase <- (testcase (type PICK-AND-PLACE) (state PENDING))
-	(goal (class PRODUCTION-ROOT) (mode FINISHED|RETRACTED) (outcome COMPLETED)))
-	(goal (class (PICK-AND-PLACE) (subtype ENTRAL-RUN-SUBGOALS-IN-PARALLEL)
-	             (mode FINISHED|RETRACTED)(outcome COMPLETED)))
+	(goal (class PRODUCTION-ROOT) (mode FINISHED|RETRACTED) (outcome COMPLETED))
+	(goal (class PICK-AND-PLACE) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)
+	             (mode FINISHED|RETRACTED)(outcome COMPLETED))
 	(wm-fact (key config rcll pick-and-place-challenge) (value TRUE))
 	(wm-fact (key domain fact mps-side-free args? m C-BS side OUTPUT))
 	(wm-fact (key domain fact mps-side-free args? m C-CS1 side OUTPUT))

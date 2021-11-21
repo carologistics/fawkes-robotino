@@ -23,13 +23,6 @@ FAWKES_DIR=$(realpath $(dirname ${BASH_SOURCE[0]})/..)
 export FAWKES_DIR
 SCRIPT_PATH=$FAWKES_DIR/bin
 
-TRAP_SIGNALS="SIGINT SIGTERM SIGPIPE EXIT"
-stop_test () {
-  trap - $TRAP_SIGNALS
-  $SCRIPT_PATH/cx-central-simtest-challenge-wrapper.bash kill >/dev/null
-}
-
 echo "Starting with enter field test"
-trap stop_test $TRAP_SIGNALS
 ulimit -c 0
 $SCRIPT_PATH/cx-central-simtest-challenge-wrapper.bash --enter-field $@

@@ -36,9 +36,10 @@ fi
 FAWKES_DIR=$(realpath $(dirname ${BASH_SOURCE[0]})/..)
 tmpconfig=$(mktemp $FAWKES_DIR/cfg/conf.d/simtest-XXXXXX.yaml)
 specs_path=/clips-executive/specs/rcll-central/parameters
-testbed_path=$specs_path/simtest/enabled/testbed:
+testbed_path=$specs_path/simtest/testbed:
 echo "$specs_path/simtest/enabled: true" >> $tmpconfig
 ref_args=
+n=1
 
 OPTS=$(getopt -o "h" -l "enter-field,C0-production,C3-production,pick-and-place" -- "$@")
 
@@ -60,21 +61,19 @@ while true; do
 			;;
 		--enter-field)
 			echo "$testbed_path ENTER-FIELD" >> $tmpconfig
-			ref_args="--production c0"
+			ref_args="--production c0 --ground-truth"
 			shift
 			break
 			;;
 		--C0-production)
-			echo "$testbed_path CO-PRODUCTION" >> $tmpconfig
-			#ref_args="--challenge -refbox-args \"--production C0 --ground-truth\""
-			ref_args="--production c0"
+			echo "$testbed_path C0-PRODUCTION" >> $tmpconfig
+			ref_args="--production c0 --ground-truth"
 			shift
 			break
 			;;
 		--C3-production)
 			echo "$testbed_path C3-PRODUCTION" >> $tmpconfig
-			#ref_args="--challenge --refbox-args \"--production C3\" \"--ground-truth\""
-			ref_args="--production c3"
+			ref_args="--production c3 --ground-truth"
 			shift
 			break
 			;;
@@ -82,6 +81,7 @@ while true; do
 			echo "$testbed_path PICK-AND-PLACE" >> $tmpconfig
 			echo "$specs_path/rcll/pick-and-place-challenge: true" >> $tmpconfig
 			ref_args="--grasping -- --cfg-game game/default_game.yaml"
+			n=3
 			shift
 			break
 			;;
@@ -114,8 +114,9 @@ stop_test () {
   rm -f $tmpconfig
 }
 
+$FAWKES_DIR/bin/./gazsim.bash -x kill;
 trap stop_test $TRAP_SIGNALS
 ulimit -c 0
-$SCRIPT_PATH/gazsim.bash -o -r --mongodb -m m-skill-sim --central-agent m-central-clips-exec -n 1 --team-cyan Carologistics --challenge --refbox-args "--dump-cfg $ref_args" --start-game=PRODUCTION $@
+$SCRIPT_PATH/gazsim.bash -k -o -r --mongodb -m m-skill-sim --central-agent m-central-clips-exec -n $n --team-cyan Carologistics --challenge --refbox-args "--dump-cfg $ref_args" --start-game=PRODUCTION $@
 echo "Waiting for results..."
 $SCRIPT_PATH/cx-simtest-check.bash ./robot11_latest.log
