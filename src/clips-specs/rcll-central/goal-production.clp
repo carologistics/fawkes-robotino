@@ -1563,6 +1563,8 @@ The workpiece remains in the output of the used ring station after
 	(declare (salience ?*SALIENCE-GOAL-REJECT*))
 	?g <- (goal (id ?g-id) (class WAIT-NOTHING-EXECUTABLE)
 	            (mode FORMULATED) (is-executable FALSE))
+	(not (goal (class ~WAIT-NOTHING-EXECUTABLE)
+	            (mode FORMULATED) (is-executable TRUE)))
 	(goal-meta (goal-id ?g-id) (assigned-to ~nil&~central))
 	=>
 	(modify ?g (is-executable TRUE))
