@@ -240,15 +240,6 @@
 		(and (eq ?da:goal-id ?g:id) (neq ?da:grounded-with nil) (eq ?g:mode FORMULATED))
 		(modify ?da (grounded-with nil))
 	)
-	; deleting unused payment goal dependencies
-	(delayed-do-for-all-facts ((?da dependency-assignment))
-		(and (eq ?da:grounded-with nil)
-		     (or
-		         (eq ?da:class PAY-FOR-RINGS-WITH-BASE)
-		         (eq ?da:class PAY-FOR-RINGS-WITH-CAP-CARRIER)
-		         (eq ?da:class PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)))
-		(retract ?da)
-	)
 )
 
 (defrule goal-production-unassign-robot-from-finished-goals

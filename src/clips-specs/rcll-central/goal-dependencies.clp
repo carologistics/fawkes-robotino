@@ -46,7 +46,7 @@
 	;(slot priority (type float) (default 0.0))
 )
 
-; ---------------------------- Class Dependencies ----------------------------
+; ---------------------------- Create Dependencies ----------------------------
 ; A goal depends on a class of a dependency-goal if such a dependency-goal can
 ; be required for executing this goal
 
@@ -163,6 +163,8 @@
 
 (defrule goal-dependencies-mount-cap-mount-ring
 " Every mount-cap goal depends on the mount-ring class.
+  A Mount-cap goal can also depend on the deliver of discard
+  class to clear the output.
   Per default, no mount-ring goal is grounded. "
 	; needs to be higher than SALIENCE-GOAL-EXECUTABLE-CHECK
 	(declare (salience (+ ?*SALIENCE-GOAL-EXECUTABLE-CHECK* 1)))
@@ -171,6 +173,10 @@
 	                            (class MOUNT-RING)))
 	(not (dependency-assignment (goal-id ?goal-id)
 	                            (class INSTRUCT-RS-MOUNT-RING)))
+	(not (dependency-assignment (goal-id ?goal-id)
+	                            (class PAYMENT-1)))
+	(not (dependency-assignment (goal-id ?goal-id)
+	                            (class PAYMENT-2)))
 	=>
 	(printout t "Goal " ?goal-id
 	            " depends on class MOUNT-RING " crlf)
@@ -182,6 +188,18 @@
 	            " depends on class INSTRUCT-RS-MOUNT-RING " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class INSTRUCT-RS-MOUNT-RING)
+	                               (wait-for WP)
+	                               (grounded-with nil)))
+	(printout t "Goal " ?goal-id
+	            " depends on class PAYMENT-1 " crlf)
+	(assert (dependency-assignment (goal-id ?goal-id)
+	                               (class PAYMENT-1)
+	                               (wait-for WP)
+	                               (grounded-with nil)))
+	(printout t "Goal " ?goal-id
+	            " depends on class PAYMENT-2 " crlf)
+	(assert (dependency-assignment (goal-id ?goal-id)
+	                               (class PAYMENT-2)
 	                               (wait-for WP)
 	                               (grounded-with nil)))
 )
@@ -196,6 +214,10 @@
 	                            (class MOUNT-RING)))
 	(not (dependency-assignment (goal-id ?goal-id)
 	                            (class INSTRUCT-RS-MOUNT-RING)))
+	(not (dependency-assignment (goal-id ?goal-id)
+	                            (class PAYMENT-1)))
+	(not (dependency-assignment (goal-id ?goal-id)
+	                            (class PAYMENT-2)))
 	=>
 	(printout t "Goal " ?goal-id
 	            " depends on class MOUNT-RING " crlf)
@@ -207,6 +229,18 @@
 	            " depends on class INSTRUCT-RS-MOUNT-RING " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class INSTRUCT-RS-MOUNT-RING)
+	                               (wait-for WP)
+	                               (grounded-with nil)))
+	(printout t "Goal " ?goal-id
+	            " depends on class PAYMENT-1 " crlf)
+	(assert (dependency-assignment (goal-id ?goal-id)
+	                               (class PAYMENT-1)
+	                               (wait-for WP)
+	                               (grounded-with nil)))
+	(printout t "Goal " ?goal-id
+	            " depends on class PAYMENT-2 " crlf)
+	(assert (dependency-assignment (goal-id ?goal-id)
+	                               (class PAYMENT-2)
 	                               (wait-for WP)
 	                               (grounded-with nil)))
 )
@@ -556,16 +590,25 @@
 	                          m ?rs
 	                          r ?ring-color
 	                          rn ?bases-needed))
+
+	; forward declaration, bind to anything
+	(goal (id ?feed-id-1))
+	(goal (id ?feed-id-2))
+
 	(or ;filled >= needed payments
-	    (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
+	    (and (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
 	                                           subtrahend ?bases-needed
 	                                           difference ?bases-remaining&ZERO|ONE|TWO|THREE))
+	         ; forward declaration, bind ?bases-missing to ZERO
+	         (wm-fact (key domain fact rs-sub args? minuend ZERO
+	                                                subtrahend ZERO
+	                                                difference ?bases-missing)))
 	    ;or filled + depending fill goals >= needed payments
 	    (and (wm-fact (key domain fact rs-sub args? minuend ?bases-needed
 	                                                subtrahend ?bases-filled
 	                                                difference ?bases-missing&ZERO|ONE|TWO))
 	         (or (test (eq ?bases-missing ZERO))
-	             (and (test (eq ?bases-missing ONE))
+	             (and (test (> (sym-to-int ?bases-missing) 0))
 	                  (goal (id ?feed-id-1)
 	                        (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	                        (class PAY-FOR-RINGS-WITH-BASE|
@@ -573,15 +616,9 @@
 	                               PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
 	                        (params $? ?rs $?))
 	                  (goal-meta (goal-id ?feed-id-1) (order-id ?order-id))
-	             )
+	             ))
+	         (or (test (< (sym-to-int ?bases-missing) 2))
 	             (and (test (eq ?bases-missing TWO))
-	                  (goal (id ?feed-id-1)
-	                        (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-	                        (class PAY-FOR-RINGS-WITH-BASE|
-	                               PAY-FOR-RINGS-WITH-CAP-CARRIER|
-	                               PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
-	                        (params $? ?rs $?))
-	                  (goal-meta (goal-id ?feed-id-1) (order-id ?order-id))
 	                  (goal (id ?feed-id-2)
 	                        (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	                        (class PAY-FOR-RINGS-WITH-BASE|
@@ -600,27 +637,28 @@
 	(printout t "Goal " ?goal-id " executable for " ?robot
 	            " depending on goal " ?mount-goal-id
 	            " and goal " ?instruct-goal-id crlf)
-	; create dependency-assignments to all payment goals of dependency-goal
-	; mount-ring
-	(do-for-all-facts ((?pay goal) (?gm goal-meta))
-	    (and (is-goal-running ?pay:mode)
-	         (or
-	             (eq ?pay:class PAY-FOR-RINGS-WITH-BASE)
-	             (eq ?pay:class PAY-FOR-RINGS-WITH-CAP-CARRIER)
-	             (eq ?pay:class PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF))
-	         (eq (get-param-by-arg ?pay:params target-mps) ?rs)
-	         (eq ?gm:goal-id ?pay:id)
-	         (eq ?gm:order-id ?order-id))
-	    (assert (dependency-assignment (goal-id ?goal-id)  ;for future: change asserting to modify fixed dependency
-	                                   (class ?pay:class)
-	                                   (grounded-with ?pay:id)))
-	)
 	(modify ?g (is-executable TRUE))
 	(modify ?mount-da (params  wp ?wp
 	                           wp-loc ?rs
 	                           wp-side OUTPUT)
 	                  (grounded-with ?mount-goal-id))
 	(modify ?instruct-da (grounded-with ?instruct-goal-id))
+
+	(if (neq ?bases-missing ZERO) then
+		(if (> (sym-to-int ?bases-missing) 0) then
+			(do-for-fact ((?pay-da-1 dependency-assignment))
+			              (and (eq ?pay-da-1:class PAYMENT-1)
+			                   (eq ?pay-da-1:goal-id ?goal-id))
+			              (modify ?pay-da-1 (grounded-with ?feed-id-1)))
+			(printout t "Goal " ?goal-id " executable for " ?robot
+			            " also depending on goal " ?feed-id-1 crlf))
+		(if (eq ?bases-missing TWO) then
+			(do-for-fact ((?pay-da-1 dependency-assignment))
+			              (and (eq ?pay-da-1:class PAYMENT-1)
+			                   (eq ?pay-da-1:goal-id ?goal-id))
+			              (modify ?pay-da-1 (grounded-with ?feed-id-1)))
+			(printout t "Goal " ?goal-id " executable for " ?robot
+			            " also depending on goal " ?feed-id-2 crlf)))
 )
 
 (defrule goal-dependencies-mount-ring-mount-ring-executable
@@ -672,16 +710,24 @@
 	                          r ?ring-color
 	                          rn ?bases-needed))
 
+	; forward declaration, bind to anything
+	(goal (id ?feed-id-1))
+	(goal (id ?feed-id-2))
+
 	(or ;filled >= needed payments
-	    (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
+	    (and (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
 	                                           subtrahend ?bases-needed
-	                                           difference ?bases-missing&ZERO|ONE|TWO|THREE))
+	                                           difference ?bases-remaining&ZERO|ONE|TWO|THREE))
+	         ; forward declaration, bind ?bases-missing to ZERO
+	         (wm-fact (key domain fact rs-sub args? minuend ZERO
+	                                                subtrahend ZERO
+	                                                difference ?bases-missing)))
 	    ;or filled + depending fill goals >= needed payments
 	    (and (wm-fact (key domain fact rs-sub args? minuend ?bases-needed
 	                                                subtrahend ?bases-filled
 	                                                difference ?bases-missing&ZERO|ONE|TWO))
 	         (or (test (eq ?bases-missing ZERO))
-	             (and (test (eq ?bases-missing ONE))
+	             (and (test (> (sym-to-int ?bases-missing) 0))
 	                  (goal (id ?feed-id-1)
 	                        (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	                        (class PAY-FOR-RINGS-WITH-BASE|
@@ -689,15 +735,9 @@
 	                               PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
 	                        (params $? ?rs $?))
 	                  (goal-meta (goal-id ?feed-id-1) (order-id ?order-id))
-	             )
+	             ))
+	         (or (test (< (sym-to-int ?bases-missing) 2))
 	             (and (test (eq ?bases-missing TWO))
-	                  (goal (id ?feed-id-1)
-	                        (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-	                        (class PAY-FOR-RINGS-WITH-BASE|
-	                               PAY-FOR-RINGS-WITH-CAP-CARRIER|
-	                               PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
-	                        (params $? ?rs $?))
-	                  (goal-meta (goal-id ?feed-id-1) (order-id ?order-id))
 	                  (goal (id ?feed-id-2)
 	                        (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	                        (class PAY-FOR-RINGS-WITH-BASE|
@@ -716,27 +756,28 @@
 	(printout t "Goal " ?goal-id " executable for " ?robot
 	            " depending on goal " ?mount-goal-id
 	            " and goal " ?instruct-goal-id crlf)
-	; create dependency-assignments to all payment goals of dependency-goal
-	; mount-ring
-	(do-for-all-facts ((?pay goal) (?gm goal-meta))
-	    (and (is-goal-running ?pay:mode)
-	         (or
-	             (eq ?pay:class PAY-FOR-RINGS-WITH-BASE)
-	             (eq ?pay:class PAY-FOR-RINGS-WITH-CAP-CARRIER)
-	             (eq ?pay:class PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF))
-	         (eq (get-param-by-arg ?pay:params target-mps) ?rs)
-	         (eq ?gm:goal-id ?pay:id)
-	         (eq ?gm:order-id ?order-id))
-	    (assert (dependency-assignment (goal-id ?goal-id) ;for future: change asserting to modify fixed dependency
-	                                   (class ?pay:class)
-	                                   (grounded-with ?pay:id)))
-	)
 	(modify ?g (is-executable TRUE))
 	(modify ?mount-da (params  wp ?wp
 	                           wp-loc ?rs
 	                           wp-side OUTPUT)
 	                  (grounded-with ?mount-goal-id))
 	(modify ?instruct-da (grounded-with ?instruct-goal-id))
+
+	(if (neq ?bases-missing ZERO) then
+		(if (> (sym-to-int ?bases-missing) 0) then
+			(do-for-fact ((?pay-da-1 dependency-assignment))
+			              (and (eq ?pay-da-1:class PAYMENT-1)
+			                   (eq ?pay-da-1:goal-id ?goal-id))
+			              (modify ?pay-da-1 (grounded-with ?feed-id-1)))
+			(printout t "Goal " ?goal-id " executable for " ?robot
+			            " also depending on goal " ?feed-id-1 crlf))
+		(if (eq ?bases-missing TWO) then
+			(do-for-fact ((?pay-da-1 dependency-assignment))
+			              (and (eq ?pay-da-1:class PAYMENT-1)
+			                   (eq ?pay-da-1:goal-id ?goal-id))
+			              (modify ?pay-da-1 (grounded-with ?feed-id-1)))
+			(printout t "Goal " ?goal-id " executable for " ?robot
+			            " also depending on goal " ?feed-id-2 crlf)))
 )
 
 (defrule goal-dependencies-discard-buffer-cap-executable
