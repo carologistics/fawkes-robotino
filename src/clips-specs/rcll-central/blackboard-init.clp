@@ -95,10 +95,14 @@
   (wm-fact (key central agent robot args? r ?robot))
   (blackboard-interface (id ?id&:(str-index ?robot ?id))
                         (type "NavGraphWithMPSGeneratorInterface"))
+  (blackboard-interface (id ?id2&:(str-index ?robot ?id2))
+                        (type "NavGraphGeneratorInterface"))
   (wm-fact (key config rcll use-static-navgraph) (type BOOL) (value FALSE))
   =>
+  (navgraph-challenge-field ?robot)
   (navgraph-compute ?robot)
 )
+
 (defrule blackboard-init-compute-navgraph-central
 	(blackboard-interface (id "/navgraph-generator-mps")
 	                      (type "NavGraphWithMPSGeneratorInterface"))
@@ -106,6 +110,7 @@
 	                      (type "NavGraphGeneratorInterface"))
 	=>
 	(navgraph-challenge-field FALSE)
+	(navgraph-compute FALSE)
 )
 
 (defrule blackboard-init-open-skiller-interface
