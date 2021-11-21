@@ -57,10 +57,11 @@
 
 (defrule simple-goal-commit
   ?g <- (goal (id ?goal-id) (sub-type SIMPLE) (mode EXPANDED) (verbosity ?v))
+  (plan (id ?plan-id) (goal-id ?goal-id))
   (not (goal (parent ?goal-id)))
 =>
   (printout (simple-goal-log-debug ?v) "Goal " ?goal-id " COMMITTED (SIMPLE)" crlf)
-  (modify ?g (mode COMMITTED))
+  (modify ?g (mode COMMITTED) (committed-to ?plan-id))
 )
 
 
@@ -79,7 +80,7 @@
 
 (defrule simple-goal-dispatch
   ?g <- (goal (id ?goal-id) (type ACHIEVE) (sub-type SIMPLE) (mode COMMITTED)
-              (class ?type)  (committed-to nil) (required-resources $?req)
+              (class ?type) (required-resources $?req)
               (verbosity ?v)
               (acquired-resources $?acq&:(subsetp ?req ?acq)))
   (not (goal (parent ?goal-id)))

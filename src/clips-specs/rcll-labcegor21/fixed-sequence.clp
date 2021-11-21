@@ -28,7 +28,7 @@
 
 (deffunction plan-assert-sequential (?plan-name ?goal-id ?robot $?action-tuples)
 	(bind ?plan-id (sym-cat ?plan-name (gensym*)))
-	(assert (plan (id ?plan-id) (goal-id ?goal-id)))
+	(assert (plan (id ?plan-id) (goal-id ?goal-id) (type SEQUENTIAL)))
 	(bind ?actions (create$))
 	; action tuples might contain FALSE in some cases, filter them out
 	(foreach ?pa $?action-tuples
@@ -61,48 +61,6 @@
 	)
 )
 
-(deffunction plan-assert-safe-move-wait-for-wp (?robot
-                                                ?curr-location
-                                                ?curr-side
-                                                ?mps
-                                                ?mps-side
-                                                $?actions)
-	(return
-	  (create$
-	    (plan-assert-action go-wait
-	      ?robot ?curr-location ?curr-side (wait-pos ?mps ?mps-side))
-	    (plan-assert-action move
-	      ?robot (wait-pos ?mps ?mps-side) WAIT ?mps ?mps-side)
-	    (plan-assert-action wait-for-wp
-	      ?robot ?mps ?mps-side)
-	    $?actions
-	    (plan-assert-action go-wait
-	      ?robot ?mps ?mps-side (wait-pos ?mps ?mps-side))
-	  )
-	)
-)
-
-(deffunction plan-assert-safe-move-wait-for-free-side (?robot
-                                                       ?curr-location
-                                                       ?curr-side
-                                                       ?mps
-                                                       ?mps-side
-                                                       $?actions)
-	(return
-	  (create$
-	    (plan-assert-action go-wait
-	      ?robot ?curr-location ?curr-side (wait-pos ?mps ?mps-side))
-	    (plan-assert-action wait-for-free-side
-	      ?robot (wait-pos ?mps ?mps-side))
-	    (plan-assert-action move
-	      ?robot (wait-pos ?mps ?mps-side) WAIT ?mps ?mps-side)
-	    $?actions
-	    (plan-assert-action go-wait
-	      ?robot ?mps ?mps-side (wait-pos ?mps ?mps-side))
-	  )
-	)
-)
-
 (deffunction is-holding (?robot ?wp)
 	(if (any-factp ((?holding wm-fact))
 	           (and (wm-key-prefix ?holding:key (create$ domain fact holding))
@@ -115,18 +73,6 @@
 	)
 )
 
-(defrule goal-expander-explore-zone
-	?g <- (goal (id ?goal-id) (mode SELECTED) (class EXPLORE-ZONE)
-	            (params z ?zn))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?r&~nil))
-	(wm-fact (key refbox team-color) (value ?team-color))
-	=>
-	(plan-assert-sequential EXPLORE-ZONE ?goal-id ?r
-		(plan-assert-action explore-zone ?zn)
-	)
-	(modify ?g (mode EXPANDED))
-)
-
 (defrule goal-expander-send-beacon-signal
   ?p <- (goal (mode DISPATCHED) (id ?parent-id))
   ?g <- (goal (id ?goal-id) (class SEND-BEACON) (mode SELECTED)
@@ -134,23 +80,6 @@
 =>
 	(plan-assert-sequential BEACONPLAN ?goal-id central
 		(plan-assert-action send-beacon)
-	)
-  (modify ?g (mode EXPANDED))
-)
-
-(defrule goal-expander-refill-shelf
-  ?p <- (goal (mode DISPATCHED) (id ?parent-id))
-  ?g <- (goal (id ?goal-id) (class REFILL-SHELF) (mode SELECTED)
-              (params mps ?mps) (parent ?parent-id))
-  (wm-fact (key domain fact cs-color args? m ?mps col ?col))
-  =>
-	(plan-assert-sequential REFILL-PLAN ?goal-id central
-		(plan-assert-action refill-shelf
-		  ?mps LEFT (sym-cat CC- (random-id)) ?col)
-		(plan-assert-action refill-shelf
-		  ?mps MIDDLE (sym-cat CC- (random-id)) ?col)
-		(plan-assert-action refill-shelf
-		  ?mps RIGHT (sym-cat CC- (random-id)) ?col)
 	)
   (modify ?g (mode EXPANDED))
 )
@@ -166,64 +95,6 @@
 	(modify ?g (mode EXPANDED))
 )
 
-
-(defrule goal-expander-move-out-of-way
-	?g <- (goal (id ?goal-id) (mode SELECTED) (class MOVE-OUT-OF-WAY)
-	            (params target-pos ?target-pos
-	                    location ?loc))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	(wm-fact (key domain fact at args? r ?robot m ?curr-loc side ?curr-side))
-	=>
-	(plan-assert-sequential MOVE-OUT-OF-WAY-PLAN ?goal-id ?robot
-		(plan-assert-action go-wait ?robot ?curr-loc ?curr-side ?target-pos)
-		(plan-assert-action wait ?robot ?target-pos)
-	)
-	(modify ?g (mode EXPANDED))
-)
-
-(defrule goal-expander-pick-and-place
-" Picks a wp from the output of the given mps
-  feeds it into the input of the same mps
-  moves back to the output of the mps "
-	?g <- (goal (id ?goal-id) (class PICK-AND-PLACE) (mode SELECTED) (parent ?parent)
-	            (params target-mps ?mps ))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-	(or (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
-	    (wm-fact (key domain fact holding args? r ?robot wp ?wp))
-	)
-	=>
-	(plan-assert-sequential (sym-cat PICK-AND-PLACE-PLAN- (gensym*)) ?goal-id ?robot
-		(if (not (is-holding ?robot ?wp)) then
-			(create$
-			    (plan-assert-action move ?robot ?curr-location ?curr-side ?mps OUTPUT)
-			    (plan-assert-action wp-get ?robot ?wp ?mps OUTPUT)
-			    (plan-assert-action move ?robot ?mps OUTPUT ?mps INPUT)
-			)
-		 else
-			(create$
-			    (plan-assert-action move ?robot ?curr-location ?curr-side ?mps INPUT)
-			)
-		)
-
-		(plan-assert-action wp-put ?robot ?wp ?mps INPUT)
-		(plan-assert-action move-wp-input-output ?mps ?wp)
-	)
-	(modify ?g (mode EXPANDED))
-)
-
-(defrule goal-expander-move-robot-to-output
-" Moves the robot to the output of the given mps."
-	?g <- (goal (id ?goal-id) (class MOVE) (mode SELECTED) (parent ?parent)
-	            (params target-mps ?mps ))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	(wm-fact (key domain fact at args? r ?robot m ?curr-loc side ?curr-side))
-	=>
-	(plan-assert-sequential (sym-cat MOVE-PLAN- (gensym*)) ?goal-id ?robot
-		(plan-assert-action move ?robot ?curr-loc ?curr-side ?mps OUTPUT)
-	)
-	(modify ?g (mode EXPANDED))
-)
 
 (defrule goal-expander-buffer-cap
 " Feed a CS with a cap from its shelf so that afterwards
@@ -275,21 +146,11 @@
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
-	; used when wp-loc and wp-side is removed
-;	(if (not (do-for-fact ((?da dependency-assignment))
-;	             (and (neq ?da:grounded-with nil)
-;	                  (member$ wp ?da:params)
-;	                  (member$ wp-loc ?da:params)
-;	                  (member$ wp-side ?da:params)
-;	                  (eq ?da:goal-id ?goal-id))
-;	             (bind ?wp (multifield-key-value ?da:params wp))
-;	             (bind ?wp-loc (multifield-key-value ?da:params wp-loc))
-;	             (bind ?wp-side (multifield-key-value ?da:params wp-side)))))
 	(plan-assert-sequential (sym-cat DISCARD-PLAN- (gensym*)) ?goal-id ?robot
 		(if (not (is-holding ?robot ?wp))
 		 then
 			(create$ ; only last statement of if is returned
-				(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
+				(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
 					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
 				)
 			)
@@ -312,25 +173,15 @@
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
-	(if (and (not (do-for-fact ((?da dependency-assignment))
-	                  (and (neq ?da:grounded-with nil)
-	                       (member$ wp ?da:params)
-	                       (member$ wp-loc ?da:params)
-	                       (member$ wp-side ?da:params)
-	                       (eq ?da:goal-id ?goal-id))
-	                  (bind ?wp (multifield-key-value ?da:params wp))
-	                  (bind ?wp-loc (multifield-key-value ?da:params wp-loc))
-	                  (bind ?wp-side (multifield-key-value ?da:params wp-side))
-	              )
-	         )
-	         (not (do-for-fact ((?wp-at wm-fact))
-	              (and (wm-key-prefix ?wp-at:key (create$ domain fact wp-at))
-	                   (eq (wm-key-arg ?wp-at:key wp) ?wp))
-	              (bind ?wp-loc (wm-key-arg ?wp-at:key m))
-	              (bind ?wp-side (wm-key-arg ?wp-at:key side))
-	              )
+	(if
+	    (not (do-for-fact ((?wp-at wm-fact))
+	         (and (wm-key-prefix ?wp-at:key (create$ domain fact wp-at))
+	              (eq (wm-key-arg ?wp-at:key wp) ?wp))
+	         (bind ?wp-loc (wm-key-arg ?wp-at:key m))
+	         (bind ?wp-side (wm-key-arg ?wp-at:key side))
 	         )
 	    )
+
 	then
 		(bind ?wp-loc (multifield-key-value ?params wp-loc))
 		(bind ?wp-side (multifield-key-value ?params wp-side))
@@ -343,15 +194,15 @@
 				(if (not (is-holding ?robot ?wp))
 				then
 					(create$ ; only last statement of if is returned
-						(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
+						(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
 							(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
 						)
-						(plan-assert-safe-move-wait-for-free-side ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps ?target-side
+						(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps ?target-side
 							(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
 						)
 					)
 				else
-					(plan-assert-safe-move-wait-for-free-side ?robot ?curr-location ?curr-side ?target-mps ?target-side
+					(plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps ?target-side
 						(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
 					)
 				)
@@ -421,7 +272,7 @@
 		(if (not (is-holding ?robot ?wp))
 		 then
 			(create$ ; only last statement of if is returned
-				(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
+				(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
 					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
 				)
 				(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps ?target-side
@@ -572,21 +423,6 @@
 )
 
 
-(defrule goal-expander-navigation-challenge-move
-	?g <- (goal (id ?goal-id) (class NAVIGATION-CHALLENGE-MOVE) (mode SELECTED)
-				(params target ?target $?))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-	=>
-	(plan-assert-sequential NAVIGATION-CHALLENGE-MOVE-PLAN ?goal-id ?robot
-		(plan-assert-action go-wait
-			?robot ?curr-location ?curr-side ?target);target is a waitpoint
-		(plan-assert-action wait-for-reached
-			?robot ?target);wait there
-	)
-	(modify ?g (mode EXPANDED))
-)
-
 (defrule goal-expander-instruct-rs-mount-ring
 	?g <- (goal (id ?goal-id) (class INSTRUCT-RS-MOUNT-RING) (mode SELECTED)
 	            (params target-mps ?mps
@@ -617,61 +453,6 @@
 	(modify ?g (mode EXPANDED))
 )
 
-(defrule goal-expander-deliver-rc21
-	?g <- (goal (id ?goal-id) (class DELIVER-RC21)
-	                          (mode SELECTED) (parent ?parent)
-	                          (params  wp ?wp))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-	(wm-fact (key refbox team-color) (value ?team-color))
-	(wm-fact (key config rcll challenge-flip-insertion) (value ?flip))
-	=>
-	(bind ?dropzone M-ins-out)
-	(if (or (and (eq ?team-color CYAN) (neq ?flip TRUE))
-	        (and (eq ?team-color MAGENTA) (eq ?flip TRUE))) then
-		(bind ?dropzone C-ins-out)
-	)
-
-	(plan-assert-sequential (sym-cat DELIVER-RC21-PLAN- (gensym*)) ?goal-id ?robot
-		(if (not (is-holding ?robot ?wp))
-		then
-			(bind ?wp-loc nil)
-			(bind ?wp-side nil)
-
-			(if (not (do-for-fact ((?da dependency-assignment))
-			         (and (neq ?da:grounded-with nil)
-			              (member$ wp ?da:params)
-			              (member$ wp-loc ?da:params)
-			              (member$ wp-side ?da:params)
-			              (eq ?da:goal-id ?goal-id))
-			         (bind ?wp-loc (multifield-key-value ?da:params wp-loc))
-			         (bind ?wp-side (multifield-key-value ?da:params wp-side))))
-			then
-				(do-for-fact ((?wp-at wm-fact))
-			              (and (wm-key-prefix ?wp-at:key (create$ domain fact wp-at))
-			                   (eq (wm-key-arg ?wp-at:key wp) ?wp))
-			              (bind ?wp-loc (wm-key-arg ?wp-at:key m))
-			              (bind ?wp-side (wm-key-arg ?wp-at:key side)))
-			)
-
-			(create$
-				(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
-					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
-				)
-				(plan-assert-action go-wait
-					?robot (wait-pos ?wp-loc ?wp-side) WAIT ?dropzone)
-				(plan-assert-action wp-discard ?robot ?wp)
-			)
-		else
-			(create$
-				(plan-assert-action go-wait
-					?robot ?curr-location ?curr-side ?dropzone)
-				(plan-assert-action wp-discard ?robot ?wp)
-			)
-		)
-	)
-	(modify ?g (mode EXPANDED))
-)
 
 (defrule goal-expander-wait-nothing-executable
 	?g <- (goal (id ?goal-id) (class WAIT-NOTHING-EXECUTABLE) (mode SELECTED))
@@ -679,21 +460,8 @@
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
 	(plan-assert-sequential WAIT-NOTHING-EXECUTABLE- ?goal-id ?robot
-		(plan-assert-action wait ?robot ?curr-location)
+		(plan-assert-action wait ?robot ?curr-location ?curr-side)
 	)
 	(modify ?g (mode EXPANDED))
 )
 
-
-(defrule goal-expander-exploration-challenge-move
-	?g <- (goal (id ?goal-id) (class EXPLORATION-CHALLENGE-MOVE) (mode SELECTED)
-	            (params target ?target $?))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-	=>
-	(plan-assert-sequential EXPLORATION-CHALLENGE-MOVE-PLAN ?goal-id ?robot
-		(plan-assert-action go-wait
-			?robot ?curr-location ?curr-side ?target);target is a waitpoint
-	)
-	(modify ?g (mode EXPANDED))
-)

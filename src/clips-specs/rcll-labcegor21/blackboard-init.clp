@@ -36,47 +36,6 @@
   (blackboard-open "NavGraphGeneratorInterface" "/navgraph-generator")
 )
 
-(defrule blackboard-init-open-robot-exploration-interfaces
-  "Open the central Navgraph blackboard interfaces."
-  (domain-facts-loaded)
-  (ff-feature-loaded blackboard)
-  (wm-fact (key central agent robot args? r ?robot))
-  =>
-  (blackboard-open "MotorInterface"     (remote-if-id ?robot "Robotino"))
-  (blackboard-open "LaserLineInterface" (remote-if-id ?robot "Laser"))
-  (blackboard-open "TagVisionInterface" (remote-if-id ?robot "tag-vision/info"))
-  (blackboard-open "Position3DInterface"(remote-if-id ?robot "explore-zone/found-tag"))
-  (blackboard-open "Position3DInterface"(remote-if-id ?robot "Pose"))
-  (blackboard-open "TagVisionInterface" (remote-if-id ?robot "tag-vision/info"))
-  (blackboard-open "Position3DInterface"(remote-if-id ?robot "tag-vision/0/to_map"))
-  (blackboard-open "Position3DInterface"(remote-if-id ?robot "tag-vision/1/to_map"))
-  (blackboard-open "Position3DInterface"(remote-if-id ?robot "tag-vision/2/to_map"))
-  (blackboard-open "Position3DInterface"(remote-if-id ?robot "tag-vision/3/to_map"))
-  (blackboard-open "Position3DInterface"(remote-if-id ?robot "tag-vision/4/to_map"))
-  (blackboard-open "Position3DInterface"(remote-if-id ?robot "tag-vision/5/to_map"))
-  (blackboard-open "Position3DInterface"(remote-if-id ?robot "tag-vision/6/to_map"))
-  (blackboard-open "Position3DInterface"(remote-if-id ?robot "tag-vision/7/to_map"))
-  (blackboard-open "Position3DInterface"(remote-if-id ?robot "tag-vision/8/to_map"))
-  (blackboard-open "Position3DInterface"(remote-if-id ?robot "tag-vision/9/to_map"))
-  (blackboard-open "Position3DInterface"(remote-if-id ?robot "tag-vision/10/to_map"))
-  (blackboard-open "Position3DInterface"(remote-if-id ?robot "tag-vision/11/to_map"))
-  (blackboard-open "Position3DInterface"(remote-if-id ?robot "tag-vision/12/to_map"))
-  (blackboard-open "Position3DInterface"(remote-if-id ?robot "tag-vision/13/to_map"))
-  (blackboard-open "Position3DInterface"(remote-if-id ?robot "tag-vision/14/to_map"))
-  (blackboard-open "Position3DInterface"(remote-if-id ?robot "tag-vision/15/to_map"))
-  (blackboard-open "LaserLineInterface" (remote-if-id ?robot "laser-lines/1/to_map"))
-  (blackboard-open "LaserLineInterface" (remote-if-id ?robot "laser-lines/2/to_map"))
-  (blackboard-open "LaserLineInterface" (remote-if-id ?robot "laser-lines/3/to_map"))
-  (blackboard-open "LaserLineInterface" (remote-if-id ?robot "laser-lines/4/to_map"))
-  (blackboard-open "LaserLineInterface" (remote-if-id ?robot "laser-lines/5/to_map"))
-  (blackboard-open "LaserLineInterface" (remote-if-id ?robot "laser-lines/6/to_map"))
-  (blackboard-open "LaserLineInterface" (remote-if-id ?robot "laser-lines/7/to_map"))
-  (blackboard-open "LaserLineInterface" (remote-if-id ?robot "laser-lines/8/to_map"))
-  (blackboard-open "MotorInterface" (remote-if-id ?robot "Robotino"))
-  (blackboard-open "TagVisionInterface" (remote-if-id ?robot "tag-vision/info"))
-  (blackboard-open "ZoneInterface" (remote-if-id ?robot "explore-zone/info"))
-)
-
 (defrule blackboard-init-open-robot-navgraph-interfaces
   "Open the robot-specific Navgraph blackboard interfaces."
   (domain-facts-loaded)
@@ -89,6 +48,7 @@
                    (remote-if-id ?robot "navgraph-generator"))
   (blackboard-open "NavigatorInterface"
                    (remote-if-id ?robot "Navigator"))
+  (blackboard-open "Position3DInterface"(remote-if-id ?robot "Pose"))
 )
 
 (defrule blackboard-init-compute-navgraph

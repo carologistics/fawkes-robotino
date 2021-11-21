@@ -27,7 +27,7 @@
   (executive-init)
   (not (domain-loaded))
 =>
-  (parse-pddl-domain (path-resolve "rcll-central/domain.pddl"))
+  (parse-pddl-domain (path-resolve "rcll-labcegor21/domain.pddl"))
   (assert (domain-loaded))
 )
 
@@ -37,14 +37,14 @@
     That means, the truth value of these predicates can be changed not directly but by some external trigger
   "
   (domain-loaded)
-  ?p <- (domain-predicate (name mps-state|zone-content) (sensed FALSE))
+  ?p <- (domain-predicate (name mps-state) (sensed FALSE))
 =>
   (modify ?p (sensed TRUE))
 )
 
 
 (defrule domain-set-value-predicates
-  ?p <- (domain-predicate (name mps-state|zone-content) (value-predicate FALSE))
+  ?p <- (domain-predicate (name mps-state) (value-predicate FALSE))
 =>
   (modify ?p (value-predicate TRUE))
 )
@@ -53,7 +53,7 @@
 (defrule domain-nowait-actions
   " Mark some actions that have a sensed effect as non-waiting. That means the effect is applied without sensing for it "
   (domain-loaded)
-	?o <- (domain-operator (name wp-put|wp-get|prepare-bs|prepare-rs|prepare-ds|prepare-cs|location-unlock) (wait-sensed ~FALSE))
+	?o <- (domain-operator (name wp-put|wp-get|prepare-bs|prepare-rs|prepare-ds|prepare-cs) (wait-sensed ~FALSE))
 =>
 	(modify ?o (wait-sensed FALSE))
 )
