@@ -1397,7 +1397,21 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key domain fact mps-state args? m ?any-mps s IDLE))
 	=>
 	(bind ?g (goal-tree-assert-central-run-parallel PRODUCTION-ROOT))
-	(modify ?g (meta do-not-finish)(priority 1.0))
+	(modify ?g (meta do-not-finish) (priority 1.0))
+)
+
+(defrule goal-production-create-wait-root
+	"Create the production root under which all production trees for the orders
+	are asserted"
+	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	(domain-facts-loaded)
+	(not (goal (class WAIT-ROOT)))
+	(wm-fact (key refbox phase) (value PRODUCTION))
+	(wm-fact (key game state) (value RUNNING))
+	(wm-fact (key refbox team-color) (value ?color))
+	=>
+	(bind ?g (goal-tree-assert-central-run-parallel WAIT-ROOT))
+	(modify ?g (meta do-not-finish) (priority 0))
 )
 
 (defrule goal-production-create-move-out-of-way
@@ -1534,24 +1548,27 @@ The workpiece remains in the output of the used ring station after
 
 (defrule goal-production-assert-wait-nothing-executable
   "When the robot is stuck, assert a new goal that keeps it waiting"
-  (declare (salience 0))
-  (goal (id ?p) (class PRODUCTION-ROOT))
-  (goal (id ?goal-id) (mode FORMULATED))
-  (not (goal (mode FORMULATED) (is-executable TRUE)))
-  (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~central&~nil))
+  (goal (id ?p) (class WAIT-ROOT))
+  (not (goal (parent ?p) (mode FORMULATED)))
   =>
   (bind ?goal (assert (goal (class WAIT-NOTHING-EXECUTABLE)
 	            (id (sym-cat WAIT-NOTHING-EXECUTABLE- (gensym*)))
-	            (sub-type SIMPLE)
-	            (verbosity NOISY) (is-executable TRUE)
+	            (sub-type SIMPLE) (parent ?p) (priority 0.0) (meta-template goal-meta)
+	            (verbosity NOISY)
   )))
-  (goal-meta-assert ?goal ?robot)
-  (modify ?goal (parent ?p))
+)
+
+(defrule goal-production-wait-nothing-executable-executable
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?g-id) (class WAIT-NOTHING-EXECUTABLE)
+	            (mode FORMULATED) (is-executable FALSE))
+	(goal-meta (goal-id ?g-id) (assigned-to ~nil&~central))
+	=>
+	(modify ?g (is-executable TRUE))
 )
 
 (defrule goal-production-remove-retracted-wait-nothing-executable
   "When a wait-nothing-executable goal is retracted, remove it to prevent spam"
-  (declare (salience 0))
   ?g <- (goal (class WAIT-NOTHING-EXECUTABLE) (mode RETRACTED))
   =>
   (retract ?g)

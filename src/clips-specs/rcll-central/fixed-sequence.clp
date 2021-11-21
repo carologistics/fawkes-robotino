@@ -679,7 +679,7 @@
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
 	(plan-assert-sequential WAIT-NOTHING-EXECUTABLE- ?goal-id ?robot
-		(plan-assert-action wait ?robot ?curr-location)
+		(plan-assert-action wait ?robot ?curr-location ?curr-side)
 	)
 	(modify ?g (mode EXPANDED))
 )
