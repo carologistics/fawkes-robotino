@@ -809,7 +809,7 @@
         (goal (class CLEAR) (mode FORMULATED))
 
     )
-    (goal-class (class CLEAR-MPS) (id ?cid))
+    (goal-class (class ?class&CLEAR-MPS) (id ?cid) (sub-type ?subtype))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?team-color ?robot ?mps ?wp ?side))
@@ -851,8 +851,8 @@
         )
     )
 
-    (assert (goal (id (sym-cat CLEAR-MPS- (gensym*)))
-                    (class CLEAR-MPS) (sub-type SIMPLE)
+    (assert (goal (id (sym-cat ?class - (gensym*)))
+                    (class ?class) (sub-type ?subtype)
                     (priority ?priority)
                     (parent ?parent)
                     (params robot ?robot
@@ -870,20 +870,20 @@
     (goal (id ?parent) (class NO-PROGRESS) (mode FORMULATED))
     (goal (id ?urgent) (class URGENT) (mode FORMULATED))
 
-    (goal-class (class DISCARD-UNKNOWN) (id ?cid))
+    (goal-class (class ?class&DISCARD-UNKNOWN) (id ?cid) (sub-type ?subtype))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?robot ?wp ?rs))
 
-    (not (goal (class DISCARD-UNKNOWN) (params robot ?robot wp ?wp)))
+    (not (goal (class ?class) (params robot ?robot wp ?wp)))
     =>
     (do-for-fact ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ monitoring safety-discard))
         (bind ?parent ?urgent)
         (retract ?wm)
     )
-    (printout t "Goal " DISCARD-UNKNOWN " formulated from PDDL" crlf)
-    (assert (goal (id (sym-cat DISCARD-UNKNOWN- (gensym*)))
-                    (class DISCARD-UNKNOWN) (sub-type SIMPLE)
+    (printout t "Goal " ?class " formulated from PDDL" crlf)
+    (assert (goal (id (sym-cat ?class - (gensym*)))
+                    (class ?class) (sub-type ?subtype)
                     (priority ?*PRIORITY-DISCARD-UNKNOWN*)
                     (parent ?parent)
                     (params robot ?robot
@@ -901,23 +901,23 @@
     (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
     (goal (id ?maintain-id) (class PREPARE-RINGS) (mode FORMULATED))
 
-    (goal-class (class GET-BASE-TO-FILL-RS) (id ?cid))
+    (goal-class (class ?class&GET-BASE-TO-FILL-RS) (id ?cid) (sub-type ?subtype))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values  ?robot ?wp ?rs ?bs ?side))
 
-    (not (goal (class GET-BASE-TO-FILL-RS) (params robot ?robot
+    (not (goal (class ?class) (params robot ?robot
                                             bs ?bs
                                             bs-side ?side
                                             base-color ?any-base
                                             wp ?wp)))
     =>
-    (printout t "Goal " GET-BASE-TO-FILL-RS " formulated from PDDL" crlf)
+    (printout t "Goal " ?class " formulated from PDDL" crlf)
     (bind ?distance (node-distance (str-cat ?bs - (if (eq ?side INPUT) then I else O))))
-    (assert (goal (id (sym-cat GET-BASE-TO-FILL-RS- (gensym*)))
-                    (class GET-BASE-TO-FILL-RS)
+    (assert (goal (id (sym-cat ?class - (gensym*)))
+                    (class ?class)
                     (priority  (+ ?*PRIORITY-PREFILL-RS-WITH-FRESH-BASE* (goal-distance-prio ?distance)))
-                    (parent ?maintain-id) (sub-type SIMPLE)
+                    (parent ?maintain-id) (sub-type ?subtype)
                     (params robot ?robot
                             bs ?bs
                             bs-side ?side
@@ -934,22 +934,22 @@
     (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
     (goal (id ?maintain-id) (class PREPARE-RINGS) (mode FORMULATED))
 
-    (goal-class (class GET-SHELF-TO-FILL-RS) (id ?cid))
+    (goal-class (class ?class&GET-SHELF-TO-FILL-RS) (id ?cid) (sub-type ?subtype))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?robot ?rs ?cc ?cs ?spot))
 
-    (not (goal (class GET-SHELF-TO-FILL-RS) (parent ?maintain-id) (params robot ?robot
+    (not (goal (class ?class) (parent ?maintain-id) (params robot ?robot
                                                                           cs ?cs
                                                                           wp ?cc
                                                                           spot ?spot)))
     =>
-    (printout t "Goal " GET-SHELF-TO-FILL-RS " formulated from PDDL" crlf)
+    (printout t "Goal " ?class " formulated from PDDL" crlf)
     (bind ?distance (node-distance (str-cat ?rs -I)))
-    (assert (goal (id (sym-cat GET-SHELF-TO-FILL-RS- (gensym*)))
-                    (class GET-SHELF-TO-FILL-RS)
+    (assert (goal (id (sym-cat ?class - (gensym*)))
+                    (class ?class)
                     (priority (+ ?*PRIORITY-PREFILL-RS* (goal-distance-prio ?distance)))
-                    (parent ?maintain-id) (sub-type SIMPLE)
+                    (parent ?maintain-id) (sub-type ?subtype)
                     (params robot ?robot
                             cs ?cs
                             wp ?cc
@@ -966,7 +966,7 @@
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (goal (id ?production-id) (class PREPARE-RINGS) (mode FORMULATED))
 
-    (goal-class (class FILL-RS) (id ?cid))
+    (goal-class (class ?class&FILL-RS) (id ?cid) (sub-type ?subtype))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?wp ?robot ?rs ?filled))
@@ -988,9 +988,9 @@
         (bind ?priority-increase (- ?priority-increase 1))
     )
     (bind ?distance (node-distance (str-cat ?rs -I)))
-    (printout t "Goal " FILL-RS " formulated from PDDL" crlf)
-    (assert (goal (id (sym-cat FILL-RS- (gensym*)))
-                    (class FILL-RS) (sub-type SIMPLE)
+    (printout t "Goal " ?class " formulated from PDDL" crlf)
+    (assert (goal (id (sym-cat ?class - (gensym*)))
+                    (class ?class) (sub-type ?subtype)
                     (priority (+ ?*PRIORITY-PREFILL-RS* ?priority-increase (goal-distance-prio ?distance)))
                     (parent ?production-id)
                     (params robot ?robot
@@ -1008,7 +1008,7 @@
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (goal (id ?production-id) (class PREPARE-CAPS) (mode FORMULATED))
 
-    (goal-class (class FILL-CAP) (id ?cid))
+    (goal-class (class ?class&FILL-CAP) (id ?cid) (sub-type ?subtype))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?robot ?cs ?cc ?spot ?cap-color))
@@ -1024,13 +1024,13 @@
         )
     then
         (bind ?priority-increase 1)
-        (printout t "Goal " FILL-CAP " formulated from PDDL with higher priority" crlf)
+        (printout t "Goal " ?class " formulated from PDDL with higher priority" crlf)
     else
-        (printout t "Goal " FILL-CAP " formulated from PDDL" crlf)
+        (printout t "Goal " ?class " formulated from PDDL" crlf)
     )
     (bind ?distance (node-distance (str-cat ?cs -I)))
-    (assert (goal (id (sym-cat FILL-CAP- (gensym*)))
-                    (class FILL-CAP) (sub-type SIMPLE)
+    (assert (goal (id (sym-cat ?class - (gensym*)))
+                    (class ?class) (sub-type ?subtype)
                     (priority (+ ?priority-increase ?*PRIORITY-PREFILL-CS* (goal-distance-prio ?distance)))
                     (parent ?production-id)
                     (params robot ?robot
@@ -1051,7 +1051,7 @@
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (goal (id ?production-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
 
-    (goal-class (class MOUNT-FIRST-RING) (id ?cid) (meta order ?order))
+    (goal-class (class ?class&MOUNT-FIRST-RING) (id ?cid) (meta order ?order) (sub-type ?subtype))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?rs ?bases-needed ?other-color ?ring1-color ?bs ?wp ?side ?order ?robot ?base-color))
@@ -1068,7 +1068,7 @@
     (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
 
     (not (wm-fact (key strategy keep-mps-side-free args? m ?rs side INPUT cause ~?wp)))
-    (not (goal (class MOUNT-FIRST-RING) (parent ?production-id) (params robot ?robot $?
+    (not (goal (class ?class) (parent ?production-id) (params robot ?robot $?
                                                                               bs-side ?side $?
                                                                               order ?order
                                                                               wp ?wp)))
@@ -1079,14 +1079,14 @@
                 (neq FALSE (member$ (str-cat ?complexity) ?exclusive-complexities:values))))
         then
         (bind ?required-resources ?rs ?order ?wp PRODUCE-EXCLUSIVE-COMPLEXITY)
-        (printout t "Goal " MOUNT-FIRST-RING " formulated from PDDL for order " ?order ", it needs the PRODUCE-EXCLUSIVE-COMPLEXITY token" crlf)
+        (printout t "Goal " ?class " formulated from PDDL for order " ?order ", it needs the PRODUCE-EXCLUSIVE-COMPLEXITY token" crlf)
         else
-        (printout t "Goal " MOUNT-FIRST-RING " formulated from PDDL for order " ?order crlf)
+        (printout t "Goal " ?class " formulated from PDDL for order " ?order crlf)
     )
     (bind ?distance (node-distance (str-cat ?bs - (if (eq ?side INPUT) then I else O))))
 
-    (assert (goal (id (sym-cat MOUNT-FIRST-RING- (gensym*)))
-                    (class MOUNT-FIRST-RING) (sub-type SIMPLE)
+    (assert (goal (id (sym-cat ?class - (gensym*)))
+                    (class ?class) (sub-type ?subtype)
                     (priority (+ ?*PRIORITY-MOUNT-FIRST-RING* (goal-distance-prio ?distance)))
                     (parent ?production-id)
                     (params robot ?robot
@@ -1112,7 +1112,7 @@
     (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
     (goal (id ?production-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
 
-    (goal-class (class MOUNT-NEXT-RING) (id ?cid) (meta order ?order ring ?ring))
+    (goal-class (class ?class&MOUNT-NEXT-RING) (id ?cid) (meta order ?order ring ?ring) (sub-type ?subtype))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?order ?robot ?wp ?base-color ?ring1-color ?ring2-color ?ring3-color ?other-color ?rs ?prev-rs ?bases-needed))
@@ -1125,7 +1125,7 @@
     (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
 
     (not (wm-fact (key strategy keep-mps-side-free args? m ?rs side INPUT cause ~?wp)))
-    (not (goal (class MOUNT-NEXT-RING) (parent ?maintain-id) (params robot ?robot $?
+    (not (goal (class ?class) (parent ?maintain-id) (params robot ?robot $?
                                                                      wp ?wp $?
                                                                      order ?order)))
     =>
@@ -1136,10 +1136,10 @@
         (bind ?ring-pos 3)
     )
 
-    (printout t "Goal " MOUNT-NEXT-RING " formulated from PDDL for order " ?order " (Ring " ?ring-pos ") " crlf)
-    (assert (goal (id (sym-cat MOUNT-NEXT-RING- (gensym*)))
-                    (class MOUNT-NEXT-RING) (priority (+ ?ring-pos ?*PRIORITY-MOUNT-NEXT-RING*))
-                    (parent ?production-id) (sub-type SIMPLE)
+    (printout t "Goal " ?class " formulated from PDDL for order " ?order " (Ring " ?ring-pos ") " crlf)
+    (assert (goal (id (sym-cat ?class - (gensym*)))
+                    (class ?class) (priority (+ ?ring-pos ?*PRIORITY-MOUNT-NEXT-RING*))
+                    (parent ?production-id) (sub-type ?subtype)
                     (params robot ?robot
                             prev-rs ?prev-rs
                             prev-rs-side OUTPUT
@@ -1165,20 +1165,20 @@
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (goal (id ?production-id) (class DELIVER-PRODUCTS) (mode FORMULATED))
 
-    (goal-class (class DELIVER) (id ?cid) (meta order ?order))
+    (goal-class (class ?class&DELIVER) (id ?cid) (meta order ?order) (sub-type ?subtype))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?team-color ?robot ?ds ?mps ?wp ?base-color ?ring1-color ?ring2-color ?ring3-color ?cap-color ?order ?complexity ?gate))
 
-    (not (goal (class DELIVER) (params $? robot ?robot $?
+    (not (goal (class ?class) (params $? robot ?robot $?
                                           order ?order
                                           wp ?wp
                                           ds ?ds
                                           ds-gate ?gate $?)))
     =>
-    (printout t "Goal " DELIVER " formulated from PDDL for order " ?order crlf)
-    (assert (goal (id (sym-cat DELIVER- (gensym*)))
-                    (class DELIVER) (sub-type SIMPLE)
+    (printout t "Goal " ?class " formulated from PDDL for order " ?order crlf)
+    (assert (goal (id (sym-cat ?class - (gensym*)))
+                    (class ?class) (sub-type ?subtype)
                     (priority ?*PRIORITY-DELIVER*)
                     (parent ?production-id)
                     (params robot ?robot
@@ -1205,17 +1205,17 @@
     (goal (id ?production-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
     (goal (id ?urgent) (class URGENT) (mode FORMULATED))
 
-    (goal-class (class PRODUCE-C0) (id ?cid) (meta order ?order))
+    (goal-class (class ?class&PRODUCE-C0) (id ?cid) (meta order ?order) (sub-type ?subtype))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?team-color ?robot ?mps ?wp ?cap-color ?bs ?side ?order ?base-color))
 
-    (not (goal (class PRODUCE-C0) (params $? order ?order $?)))
+    (not (goal (class ?class) (params $? order ?order $?)))
 
     (wm-fact (key order meta competitive args? ord ?order) (value ?competitive))
     (wm-fact (key config rcll competitive-order-priority) (value ?comp-prio))
     =>
-    (printout t "Goal " PRODUCE-C0 " formulated from PDDL for order " ?order crlf)
+    (printout t "Goal " ?class " formulated from PDDL for order " ?order crlf)
     (bind ?distance (node-distance (str-cat ?bs - (if (eq ?side INPUT) then I else O))))
     (bind ?priority-decrease 0)
     (bind ?parent ?production-id)
@@ -1226,8 +1226,8 @@
     then
         (bind ?priority-decrease 1)
     )
-    (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
-                    (class PRODUCE-C0) (sub-type SIMPLE)
+    (assert (goal (id (sym-cat ?class - (gensym*)))
+                    (class ?class) (sub-type ?subtype)
                     (priority (+ (- ?*PRIORITY-PRODUCE-C0* ?priority-decrease) (goal-distance-prio ?distance)))
                     (parent ?parent)
                     (params robot ?robot
@@ -1251,13 +1251,13 @@
     (goal (id ?production-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
     (goal (id ?urgent) (class URGENT) (mode FORMULATED))
 
-    (goal-class (class PRODUCE-CX) (id ?cid) (meta order ?order))
+    (goal-class (class ?class&PRODUCE-CX) (id ?cid) (meta order ?order) (sub-type ?subtype))
     (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?team-color ?robot ?cs ?order ?base-color ?ring1-color ?ring2-color ?ring3-color ?cap-color ?wp ?rs))
 
-    (not (goal (class PRODUCE-CX)
+    (not (goal (class ?class)
                 (parent ?production-id)
                 (params robot ?robot
                         wp ?wp $?
@@ -1267,9 +1267,9 @@
     (bind ?prio ?*PRIORITY-PRODUCE-C1*)
     (if (eq ?com C2) then (bind ?prio ?*PRIORITY-PRODUCE-C2*))
     (if (eq ?com C3) then (bind ?prio ?*PRIORITY-PRODUCE-C3*))
-    (printout t "Goal " PRODUCE-CX " formulated from PDDL for order " ?order crlf)
-    (assert (goal (id (sym-cat PRODUCE-CX- (gensym*)))
-                    (class PRODUCE-CX) (sub-type SIMPLE)
+    (printout t "Goal " ?class " formulated from PDDL for order " ?order crlf)
+    (assert (goal (id (sym-cat ?class - (gensym*)))
+                    (class ?class) (sub-type ?subtype)
                     (priority ?prio)
                     (parent ?production-id)
                     (params robot ?robot
