@@ -48,7 +48,11 @@ clips-executive:
 
   # Agent name. On startup the clips-agent will try to resolve a file named
   # <agent name>.clp. It must be in the CLIPS path directories.
+<<<<<<< HEAD
   spec: rcll-labcegor21
+=======
+  spec: visitall
+>>>>>>> 3478f44fc307ec540eb106e61e75aa8d755c93df
 
   specs:
     rcll-central:
