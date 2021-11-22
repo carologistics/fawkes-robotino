@@ -9,9 +9,13 @@
 
 ; #  Goal Creation
 (defrule goal-reasoner-create
-	(not (goal (id TESTGOAL)))
-	(not (goal (id TESTGOAL2)))
-	(not (goal (id TESTGOAL3)))
+	(not (goal (id VISIT-BS)))
+	(not (goal (id VISIT-CS1)))
+	(not (goal (id VISIT-CS2)))
+	(not (goal (id VISIT-RS1)))
+	(not (goal (id VISIT-RS2)))
+	(not (goal (id VISIT-SS)))
+	(not (goal (id VISIT-DS)))
 	(not (goal-already-tried))
 	(wm-fact (key refbox phase) (value PRODUCTION))
 	(wm-fact (key game state) (value RUNNING))
@@ -19,9 +23,13 @@
 	(domain-facts-loaded)
 	(wm-fact (key navgraph waitzone generated) (value TRUE))
 	=>
-	(assert (goal (id TESTGOAL)))
-	(assert (goal (id TESTGOAL2)))	
-	(assert (goal (id TESTGOAL3)))
+	(assert (goal (id VISIT-BS) (params target-mps C-BS exec-robot ROB1)))
+	(assert (goal (id VISIT-CS1) (params target-mps C-CS1 exec-robot ROB1)))	
+	(assert (goal (id VISIT-CS2) (params target-mps C-CS2 exec-robot ROB1)))
+	(assert (goal (id VISIT-RS1) (params target-mps C-RS1 exec-robot ROB2)))	
+	(assert (goal (id VISIT-RS2) (params target-mps C-RS2 exec-robot ROB2)))
+	(assert (goal (id VISIT-SS) (params target-mps C-SS exec-robot ROB3)))	
+	(assert (goal (id VISIT-DS) (params target-mps C-DS exec-robot ROB3)))
 	; This is just to make sure we formulate the goal only once.
 	; In an actual domain this would be more sophisticated.
 	(assert(goal-already-tried))
@@ -46,6 +54,13 @@
 	(not (plan (id ?o-plan-id&:(neq ?o-plan-id ?plan-id)) (goal-id ?goal-id)))
 	=>
 	(modify ?g (mode COMMITTED) (committed-to ?plan-id))
+)
+
+(defrule goal-reasoner-commit-visit
+	?g <- (goal (id ?goal-id) (mode EXPANDED))
+	(not (goal (commited-to ?goal-id)))
+	=>
+	(modify ?g (mode COMMITTED) (committed-to ?goal-id))
 )
 
 ; #  Dispatch goal (action selection and execution now kick in)
