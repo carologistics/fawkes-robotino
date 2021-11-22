@@ -34,13 +34,21 @@
 ; a planner to determine the required steps.
 (defrule goal-reasoner-select
 	?g <- (goal (id ?goal-id) (mode FORMULATED) (parent nil))
+	
 	=>
 	(modify ?g (mode SELECTED))
 )
 
 (defrule goal-reasoner-commit-visit1
-    ?g <- (goal (id ?goal-id) (class VISIT) (mode EXPANDED))
+    ?g <- (goal (id ?goal-id) (class VISIT) (mode EXPANDED) (params machine ?m))
 	(not (goal (class VISIT) (committed-to VISIT-WITH1)))
+	(Position3DInterface (id "/robot1/Pose") (translation $?r-pos))
+	(navgraph-node (name ?node&:(eq ?node (str-cat ?m "-O"))) (pos $?m-pos))
+	(forall
+		(goal (class VISIT) (mode EXPANDED) (params machine ?m-other))
+		(navgraph-node (name ?node-other&:(eq ?node-other (str-cat ?m-other "-O"))) (pos $?m-other-pos))
+		(test (<= (distance-mf ?r-pos ?m-pos) (distance-mf ?r-pos ?m-other-pos)))
+		)	
 	=>
 	(modify ?g (mode COMMITTED) (committed-to VISIT-WITH1))
 )
