@@ -15,13 +15,36 @@
   (not (domain-facts-loaded))
 =>
   (parse-pddl-domain (path-resolve "visit-all/domain.pddl"))
-  (assert (domain-fact (name mps-team) (param-values C-BS CYAN))
-          (domain-fact (name team-color) (param-values CYAN))
-          (domain-fact (name mps-type) (param-values C-BS BS))
+  (assert (domain-fact (name team-color) (param-values CYAN))
+
           (domain-object (name C-BS) (type mps))
-          (domain-object (name INPUT) (type mps-side))
-          (domain-object (name OUTPUT) (type mps-side))
-          (domain-object (name CYAN) (type team-color))
+		  (domain-fact (name mps-team) (param-values C-BS CYAN))
+          (domain-fact (name mps-type) (param-values C-BS BS))
+
+		  (domain-object (name C-CS1) (type mps))
+		  (domain-fact (name mps-team) (param-values C-CS1 CYAN))
+          (domain-fact (name mps-type) (param-values C-CS1 CS))
+          
+		  (domain-object (name C-CS2) (type mps))
+		  (domain-fact (name mps-team) (param-values C-CS2 CYAN))
+          (domain-fact (name mps-type) (param-values C-CS2 CS))
+          
+		  (domain-object (name C-RS1) (type mps))
+		  (domain-fact (name mps-team) (param-values C-RS1 CYAN))
+          (domain-fact (name mps-type) (param-values C-RS1 RS))
+
+		  (domain-object (name C-RS2) (type mps))
+		  (domain-fact (name mps-team) (param-values C-RS2 CYAN))
+          (domain-fact (name mps-type) (param-values C-RS2 RS))
+          
+		  (domain-object (name C-SS) (type mps))
+		  (domain-fact (name mps-team) (param-values C-SS CYAN))
+          (domain-fact (name mps-type) (param-values C-SS SS))
+          
+		  (domain-object (name C-DS) (type mps))
+		  (domain-fact (name mps-team) (param-values C-DS CYAN))
+          (domain-fact (name mps-type) (param-values C-DS DS))
+
           (domain-fact (name mirror-orientation) (param-values 0 180))
           (domain-fact (name mirror-orientation) (param-values 45 135))
           (domain-fact (name mirror-orientation) (param-values 90 90))
