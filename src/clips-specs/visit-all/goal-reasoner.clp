@@ -56,13 +56,6 @@
 	(modify ?g (mode COMMITTED) (committed-to ?plan-id))
 )
 
-(defrule goal-reasoner-commit-visit
-	?g <- (goal (id ?goal-id) (mode EXPANDED))
-	(not (goal (commited-to ?goal-id)))
-	=>
-	(modify ?g (mode COMMITTED) (committed-to ?goal-id))
-)
-
 ; #  Dispatch goal (action selection and execution now kick in)
 ; Trigger execution of a plan. We may commit to multiple plans
 ; (for different goals), e.g., one per robot, or for multiple
