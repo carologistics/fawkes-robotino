@@ -33,15 +33,17 @@
     (not (goal-class (class CLEAR-MPS) (id CLEAR-MPS-RS) (sub-type SIMPLE)))
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
+    (wm-fact (key domain fact order-complexity args? ord ?order $?))
     =>
     (assert
         (goal-class (class CLEAR-MPS)
-                    (id CLEAR-MPS-RS)
+                    (id (sym-cat CLEAR-MPS-RS - ?order))
                     (type ACHIEVE)
                     (sub-type SIMPLE)
-                    (param-names     team-color  robot  rs  wp          side)
-                    (param-constants ?team-color ?robot nil nil         OUTPUT)
-                    (param-types     team-color  robot  rs  workpiece mps-side)
+                    (meta order ?order)
+                    (param-names     team-color  robot  rs  wp          side   order)
+                    (param-constants ?team-color ?robot nil nil         OUTPUT ?order)
+                    (param-types     team-color  robot  rs  workpiece mps-side order)
                     (param-quantified)
                     (preconditions "
                         (and
