@@ -30,7 +30,6 @@
 	(modify ?g3 (mode EXPANDED))
 )
 
-
 (defrule goal-expander-maintain-beacon
 	?p <- (goal (mode SELECTED) (id ?parent-id))
 	?g <- (goal (id ?goal-id) (class SEND-BEACON) (mode FORMULATED)
