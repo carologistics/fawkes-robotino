@@ -9,7 +9,6 @@
 
 ; #  Goal Creation
 (defrule goal-reasoner-create
-	(not (goal (id TESTGOAL)))
 	(not (goal-already-tried))
 	(wm-fact (key refbox phase) (value PRODUCTION))
 	(wm-fact (key game state) (value RUNNING))
@@ -17,7 +16,13 @@
 	(domain-facts-loaded)
 	(wm-fact (key navgraph waitzone generated) (value TRUE))
 	=>
-	(assert (goal (id TESTGOAL)))
+	(assert (goal (id VISIT-BS) (class VISIT) (params machine C-BS)))
+	(assert (goal (id VISIT-RS1) (class VISIT) (params machine C-RS1)))
+	(assert (goal (id VISIT-RS2) (class VISIT) (params machine C-RS2)))
+	(assert (goal (id VISIT-CS1) (class VISIT) (params machine C-CS1)))
+	(assert (goal (id VISIT-CS2) (class VISIT) (params machine C-CS2)))
+	(assert (goal (id VISIT-SS) (class VISIT) (params machine C-SS)))
+	(assert (goal (id VISIT-DS) (class VISIT) (params machine C-DS)))
 	; This is just to make sure we formulate the goal only once.
 	; In an actual domain this would be more sophisticated.
 	(assert (goal-already-tried))
@@ -31,6 +36,25 @@
 	?g <- (goal (id ?goal-id) (mode FORMULATED) (parent nil))
 	=>
 	(modify ?g (mode SELECTED))
+)
+
+(defrule goal-reasoner-commit-visit1
+    ?g <- (goal (id ?goal-id) (class VISIT) (mode EXPANDED))
+	(not (goal (class VISIT) (committed-to VISIT-WITH1)))
+	=>
+	(modify ?g (mode COMMITTED) (committed-to VISIT-WITH1))
+)
+(defrule goal-reasoner-commit-visit2
+    ?g <- (goal (id ?goal-id) (class VISIT) (mode EXPANDED))
+	(not (goal (class VISIT) (committed-to VISIT-WITH2)))
+	=>
+	(modify ?g (mode COMMITTED) (committed-to VISIT-WITH2))
+)
+(defrule goal-reasoner-commit-visit3
+    ?g <- (goal (id ?goal-id) (class VISIT) (mode EXPANDED))
+	(not (goal (class VISIT) (committed-to VISIT-WITH3)))
+	=>
+	(modify ?g (mode COMMITTED) (committed-to VISIT-WITH3))
 )
 
 ; #  Commit to goal (we "intend" it)

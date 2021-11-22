@@ -1,33 +1,27 @@
 
-(defrule goal-expander-create-sequence
-	?g <- (goal (mode SELECTED) (id TESTGOAL))
+(defrule goal-expander-create-visit
+	?g <- (goal (mode SELECTED) (id ?id) (class VISIT) (params machine ?m))
 	=>
 	(assert
-		(plan (id TESTGOAL-PLAN) (goal-id TESTGOAL)
+		(plan (id VISIT-WITH1) (goal-id ?id)
 	        (type SEQUENTIAL))
-		(plan-action (id 1) (plan-id TESTGOAL-PLAN) (goal-id TESTGOAL)
+		(plan-action (id 1) (plan-id VISIT-WITH1) (goal-id ?id)
 	             (action-name visit) (skiller "/robot1/Skiller")
-	             (param-values C-BS OUTPUT CYAN))
-		(plan-action (id 2) (plan-id TESTGOAL-PLAN) (goal-id TESTGOAL)
-	             (action-name visit) (skiller "/robot1/Skiller")
-	             (param-values C-CS1 OUTPUT CYAN))
-		(plan-action (id 3) (plan-id TESTGOAL-PLAN) (goal-id TESTGOAL)
-	             (action-name visit) (skiller "/robot1/Skiller")
-	             (param-values C-CS2 OUTPUT CYAN))
-		(plan-action (id 4) (plan-id TESTGOAL-PLAN) (goal-id TESTGOAL)
-	             (action-name visit) (skiller "/robot1/Skiller")
-	             (param-values C-RS1 OUTPUT CYAN))
-		(plan-action (id 5) (plan-id TESTGOAL-PLAN) (goal-id TESTGOAL)
-	             (action-name visit) (skiller "/robot1/Skiller")
-	             (param-values C-RS2 OUTPUT CYAN))
-		(plan-action (id 6) (plan-id TESTGOAL-PLAN) (goal-id TESTGOAL)
-	             (action-name visit) (skiller "/robot1/Skiller")
-	             (param-values C-SS OUTPUT CYAN))
-		(plan-action (id 7) (plan-id TESTGOAL-PLAN) (goal-id TESTGOAL)
-	             (action-name visit) (skiller "/robot1/Skiller")
-	             (param-values C-DS OUTPUT CYAN))
+	             (param-values ?m OUTPUT CYAN))
+
+		(plan (id VISIT-WITH2) (goal-id ?id)
+	        (type SEQUENTIAL))
+		(plan-action (id 1) (plan-id VISIT-WITH2) (goal-id ?id)
+	             (action-name visit) (skiller "/robot2/Skiller")
+	             (param-values ?m OUTPUT CYAN))
+
+		(plan (id VISIT-WITH3) (goal-id ?id)
+	        (type SEQUENTIAL))
+		(plan-action (id 1) (plan-id VISIT-WITH3) (goal-id ?id)
+	             (action-name visit) (skiller "/robot3/Skiller")
+	             (param-values ?m OUTPUT CYAN))
 		
-	 )
+	)
 	(modify ?g (mode EXPANDED))
 )
 
