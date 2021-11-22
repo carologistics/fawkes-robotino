@@ -39,6 +39,13 @@
 	(modify ?g (mode SELECTED))
 )
 
+(defrule goal-reasoner-commit-simtest
+	?g <- (goal (id ?goal-id) (class VISIT) (mode EXPANDED))
+	(not (Position3DInterface))
+	=>
+	(modify ?g (mode COMMITTED) (committed-to VISIT-WITH1))
+)
+
 (defrule goal-reasoner-commit-visit1
     ?g <- (goal (id ?goal-id) (class VISIT) (mode EXPANDED) (params machine ?m))
 	(not (goal (class VISIT) (committed-to VISIT-WITH1)))
