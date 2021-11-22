@@ -1,3 +1,4 @@
+;test
 (defrule robot-1-goal-expander-create-sequence
 	?g <- (goal (mode SELECTED) (id ?gid) (params target-mps ?m exec-robot ROB1))
 	=>
