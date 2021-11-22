@@ -853,7 +853,8 @@
         )
     )
 
-    (assert (goal (id (sym-cat ?class - (gensym*)))
+    (bind ?goal-id (sym-cat ?class - (gensym*)))
+    (assert (goal (id ?goal-id)
                     (class ?class) (sub-type ?subtype)
                     (priority ?priority)
                     (parent ?parent)
@@ -864,6 +865,20 @@
                     )
                     (required-resources (sym-cat ?mps - ?side) ?wp)
     ))
+
+    ;assert promises resulting from the plan-action of this goal
+    (assert
+        ;wp-get
+        (domain-promise (name wp-at) (param-values ?wp ?mps ?side) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+        (domain-promise (name holding) (param-values ?robot ?wp) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name can-hold) (param-values ?robot) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+        (domain-promise (name mps-state) (param-values ?mps READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+        (domain-promise (name mps-state) (param-values ?mps IDLE) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name mps-side-free) (param-values ?mps ?side) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        ;go-wait
+        (domain-promise (name at) (param-values ?robot ?mps ?side) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+        (domain-promise (name at) (param-values ?robot ?mps (wait-pos ?mps ?side)) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+    )
 )
 
 (defrule goal-class-assert-goal-discard
@@ -884,7 +899,8 @@
         (retract ?wm)
     )
     (printout t "Goal " ?class " formulated from PDDL" crlf)
-    (assert (goal (id (sym-cat ?class - (gensym*)))
+    (bind ?goal-id (sym-cat ?class - (gensym*)))
+    (assert (goal (id ?goal-id)
                     (class ?class) (sub-type ?subtype)
                     (priority ?*PRIORITY-DISCARD-UNKNOWN*)
                     (parent ?parent)
@@ -893,6 +909,13 @@
                     )
                     (required-resources ?wp)
     ))
+
+    ;assert promises resulting from the plan-action of this goal
+    (assert
+        ;wp-discard
+        (domain-promise (name holding) (param-values ?robot ?wp) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+        (domain-promise (name can-hold) (param-values ?robot) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+     )
 )
 
 
@@ -916,7 +939,8 @@
     =>
     (printout t "Goal " ?class " formulated from PDDL" crlf)
     (bind ?distance (node-distance (str-cat ?bs - (if (eq ?side INPUT) then I else O))))
-    (assert (goal (id (sym-cat ?class - (gensym*)))
+    (bind ?goal-id (sym-cat ?class - (gensym*)))
+    (assert (goal (id ?goal-id)
                     (class ?class)
                     (priority  (+ ?*PRIORITY-PREFILL-RS-WITH-FRESH-BASE* (goal-distance-prio ?distance)))
                     (parent ?maintain-id) (sub-type ?subtype)
@@ -928,6 +952,23 @@
                     )
                     (required-resources ?wp)
             )
+    )
+
+    ;assert promises resulting from the plan-action of this goal
+    (assert
+        ;bs-dispense-trash
+        (domain-promise (name wp-base-color) (param-values ?wp BASE_RED) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name wp-spawned-for) (param-values ?wp ?robot) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+        ;wp-get
+        (domain-promise (name wp-at) (param-values ?wp ?bs ?side) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+        (domain-promise (name holding) (param-values ?robot ?wp) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name can-hold) (param-values ?robot) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+        (domain-promise (name mps-state) (param-values ?bs READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+        (domain-promise (name mps-state) (param-values ?bs IDLE) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name mps-side-free) (param-values ?bs ?side) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        ;go-wait
+        (domain-promise (name at) (param-values ?robot (wait-pos ?bs ?side) WAIT) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name at) (param-values ?robot ?bs ?side) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
     )
 )
 
@@ -948,7 +989,8 @@
     =>
     (printout t "Goal " ?class " formulated from PDDL" crlf)
     (bind ?distance (node-distance (str-cat ?rs -I)))
-    (assert (goal (id (sym-cat ?class - (gensym*)))
+    (bind ?goal-id (sym-cat ?class - (gensym*)))
+    (assert (goal (id ?goal-id)
                     (class ?class)
                     (priority (+ ?*PRIORITY-PREFILL-RS* (goal-distance-prio ?distance)))
                     (parent ?maintain-id) (sub-type ?subtype)
@@ -959,6 +1001,18 @@
                     )
                     (required-resources ?cc)
             )
+    )
+    ;assert promises resulting from the plan-action of this goal
+    (assert
+        ;wp-get
+        (domain-promise (name holding) (param-values ?robot ?cc) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name can-hold) (param-values ?robot) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+        (domain-promise (name wp-on-shelf) (param-values ?cc ?cs ?spot) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+        (domain-promise (name wp-usable) (param-values ?cc) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name spot-free) (param-values ?cs ?spot) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        ;go-wait
+        (domain-promise (name at) (param-values ?robot (wait-pos ?cs INPUT) WAIT) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name at) (param-values ?robot ?cs INPUT) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
     )
 )
 
@@ -991,7 +1045,8 @@
     )
     (bind ?distance (node-distance (str-cat ?rs -I)))
     (printout t "Goal " ?class " formulated from PDDL" crlf)
-    (assert (goal (id (sym-cat ?class - (gensym*)))
+    (bind ?goal-id (sym-cat ?class - (gensym*)))
+    (assert (goal (id ?goal-id)
                     (class ?class) (sub-type ?subtype)
                     (priority (+ ?*PRIORITY-PREFILL-RS* ?priority-increase (goal-distance-prio ?distance)))
                     (parent ?production-id)
@@ -1003,6 +1058,18 @@
                     )
                     (required-resources ?rs ?wp)
     ))
+    ;assert promises resulting from the plan-action of this goal
+    (assert
+        ;wp-put-slide-cc
+        (domain-promise (name holding) (param-values ?robot ?wp) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+        (domain-promise (name can-hold) (param-values ?robot) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name wp-usable) (param-values ?wp) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+        (domain-promise (name rs-filled-with) (param-values ?rs ?after) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name rs-filled-with) (param-values ?rs ?filled) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+         ;go-wait
+        (domain-promise (name at) (param-values ?robot (wait-pos ?rs INPUT) WAIT) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name at) (param-values ?robot ?rs INPUT) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+    )
 )
 
 (defrule goal-class-assert-goal-fill-cap
@@ -1031,7 +1098,8 @@
         (printout t "Goal " ?class " formulated from PDDL" crlf)
     )
     (bind ?distance (node-distance (str-cat ?cs -I)))
-    (assert (goal (id (sym-cat ?class - (gensym*)))
+    (bind ?goal-id  (sym-cat ?class - (gensym*)))
+    (assert (goal (id ?goal-id)
                     (class ?class) (sub-type ?subtype)
                     (priority (+ ?priority-increase ?*PRIORITY-PREFILL-CS* (goal-distance-prio ?distance)))
                     (parent ?production-id)
@@ -1041,6 +1109,21 @@
                     )
                     (required-resources (sym-cat ?cs -INPUT) ?cc)
     ))
+    ;assert promises resulting from the plan-action of this goal
+    (assert
+        ;wp-get-shelf
+        (domain-promise (name wp-on-shelf) (param-values ?cc ?cs ?spot) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+        (domain-promise (name wp-usable) (param-values ?cc) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name spot-free) (param-values ?cs ?spot) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        ;wp-put
+        (domain-promise (name holding) (param-values ?robot ?cc) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+        (domain-promise (name can-hold) (param-values ?robot) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name wp-at) (param-values ?cc ?cs INPUT) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name mps-side-free) (param-values ?cs INPUT) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+        ;go-wait
+        (domain-promise (name at) (param-values ?robot (wait-pos ?cs INPUT) WAIT) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name at) (param-values ?robot ?cs INPUT) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+    )
 )
 
 
@@ -1087,7 +1170,8 @@
     )
     (bind ?distance (node-distance (str-cat ?bs - (if (eq ?side INPUT) then I else O))))
 
-    (assert (goal (id (sym-cat ?class - (gensym*)))
+    (bind ?goal-id (sym-cat ?class - (gensym*)))
+    (assert (goal (id ?goal-id)
                     (class ?class) (sub-type ?subtype)
                     (priority (+ ?*PRIORITY-MOUNT-FIRST-RING* (goal-distance-prio ?distance)))
                     (parent ?production-id)
@@ -1105,6 +1189,18 @@
                     )
                     (required-resources (sym-cat ?rs -INPUT) ?required-resources)
     ))
+    ;assert promises resulting from the plan-action of this goal
+    (assert
+        ;handle the case where we get the base from the BS
+        ;wp-put
+        (domain-promise (name holding) (param-values ?robot ?wp) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+        (domain-promise (name can-hold) (param-values ?robot) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name wp-at) (param-values ?wp ?rs INPUT) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name mps-side-free) (param-values ?rs INPUT) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+        ;go-wait
+        (domain-promise (name at) (param-values ?robot (wait-pos ?rs INPUT) WAIT) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name at) (param-values ?robot ?rs INPUT) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+    )
 )
 
 (defrule goal-class-assert-goal-mount-next-ring
@@ -1139,7 +1235,8 @@
     )
 
     (printout t "Goal " ?class " formulated from PDDL for order " ?order " (Ring " ?ring-pos ") " crlf)
-    (assert (goal (id (sym-cat ?class - (gensym*)))
+    (bind ?goal-id (sym-cat ?class - (gensym*)))
+    (assert (goal (id ?goal-id)
                     (class ?class) (priority (+ ?ring-pos ?*PRIORITY-MOUNT-NEXT-RING*))
                     (parent ?production-id) (sub-type ?subtype)
                     (params robot ?robot
@@ -1159,6 +1256,18 @@
                     )
                     (required-resources (sym-cat ?rs -INPUT) (sym-cat ?prev-rs -OUTPUT) ?wp)
     ))
+    ;assert promises resulting from the plan-action of this goal
+    (assert
+        ;handle the case where we get the wp from the RS
+        ;wp-put
+        (domain-promise (name holding) (param-values ?robot ?wp) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+        (domain-promise (name can-hold) (param-values ?robot) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name wp-at) (param-values ?wp ?rs INPUT) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name mps-side-free) (param-values ?rs INPUT) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+        ;go-wait
+        (domain-promise (name at) (param-values ?robot (wait-pos ?rs INPUT) WAIT) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name at) (param-values ?robot ?rs INPUT) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+    )
 )
 
 (defrule goal-class-assert-goal-deliver
@@ -1179,7 +1288,8 @@
                                           ds-gate ?gate $?)))
     =>
     (printout t "Goal " ?class " formulated from PDDL for order " ?order crlf)
-    (assert (goal (id (sym-cat ?class - (gensym*)))
+    (bind ?goal-id (sym-cat ?class - (gensym*)))
+    (assert (goal (id ?goal-id)
                     (class ?class) (sub-type ?subtype)
                     (priority ?*PRIORITY-DELIVER*)
                     (parent ?production-id)
@@ -1197,6 +1307,18 @@
                     )
                     (required-resources (sym-cat ?mps -OUTPUT) ?order ?wp (sym-cat ?ds -INPUT))
     ))
+    ;assert promises resulting from the plan-action of this goal
+    (assert
+        ;handle the case where we get the product from a machine
+        ;wp-put
+        (domain-promise (name holding) (param-values ?robot ?wp) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+        (domain-promise (name can-hold) (param-values ?robot) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name wp-at) (param-values ?wp ?ds INPUT) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name mps-side-free) (param-values ?ds INPUT) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+        ;go-wait
+        (domain-promise (name at) (param-values ?robot (wait-pos ?ds INPUT) WAIT) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name at) (param-values ?robot ?ds INPUT) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+    )
 )
 
 (defrule goal-class-assert-goal-produce-c0
@@ -1228,7 +1350,8 @@
     then
         (bind ?priority-decrease 1)
     )
-    (assert (goal (id (sym-cat ?class - (gensym*)))
+    (bind ?goal-id (sym-cat ?class - (gensym*)))
+    (assert (goal (id ?goal-id)
                     (class ?class) (sub-type ?subtype)
                     (priority (+ (- ?*PRIORITY-PRODUCE-C0* ?priority-decrease) (goal-distance-prio ?distance)))
                     (parent ?parent)
@@ -1243,6 +1366,18 @@
                     )
                     (required-resources (sym-cat ?mps -INPUT) ?order ?wp)
     ))
+    ;assert promises resulting from the plan-action of this goal
+    (assert
+        ;handle the case where we get the product from a machine
+        ;wp-put
+        (domain-promise (name holding) (param-values ?robot ?wp) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+        (domain-promise (name can-hold) (param-values ?robot) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name wp-at) (param-values ?wp ?mps INPUT) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name mps-side-free) (param-values ?mps INPUT) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+        ;go-wait
+        (domain-promise (name at) (param-values ?robot (wait-pos ?mps INPUT) WAIT) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name at) (param-values ?robot ?mps INPUT) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+    )
 )
 
 (defrule goal-class-assert-goal-produce-cx
@@ -1270,7 +1405,8 @@
     (if (eq ?com C2) then (bind ?prio ?*PRIORITY-PRODUCE-C2*))
     (if (eq ?com C3) then (bind ?prio ?*PRIORITY-PRODUCE-C3*))
     (printout t "Goal " ?class " formulated from PDDL for order " ?order crlf)
-    (assert (goal (id (sym-cat ?class - (gensym*)))
+    (bind ?goal-id (sym-cat ?class - (gensym*)))
+    (assert (goal (id ?goal-id)
                     (class ?class) (sub-type ?subtype)
                     (priority ?prio)
                     (parent ?production-id)
@@ -1283,6 +1419,18 @@
                     )
                     (required-resources (sym-cat ?cs -INPUT) (sym-cat ?rs -OUTPUT) ?wp)
     ))
+    ;assert promises resulting from the plan-action of this goal
+    (assert
+        ;handle the case where we get the product from a machine
+        ;wp-put
+        (domain-promise (name holding) (param-values ?robot ?wp) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+        (domain-promise (name can-hold) (param-values ?robot) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name wp-at) (param-values ?wp ?cs INPUT) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name mps-side-free) (param-values ?cs INPUT) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+        ;go-wait
+        (domain-promise (name at) (param-values ?robot (wait-pos ?cs INPUT) WAIT) (promising-goal ?goal-id) (valid-at 0) (negated FALSE))
+        (domain-promise (name at) (param-values ?robot ?cs INPUT) (promising-goal ?goal-id) (valid-at 0) (negated TRUE))
+    )
 )
 
 ; ------------------------- CLEAN UP GOAL CLASSES -----------------------------------
