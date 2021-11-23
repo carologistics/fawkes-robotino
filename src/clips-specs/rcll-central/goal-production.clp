@@ -1176,7 +1176,7 @@ The workpiece remains in the output of the used ring station after
 )
 
 (deffunction goal-production-assert-payment-goals
-	(?rs ?cols-ring ?cs ?order-id)
+	(?rs ?cols-ring ?cs ?order-id ?prio)
 	(bind ?goals (create$))
 
 	(bind ?found-payment FALSE)
@@ -1205,7 +1205,7 @@ The workpiece remains in the output of the used ring station after
 			)
 			(bind ?goals
 				(insert$ ?goals (+ (length$ ?goals) 1)
-					(goal-tree-assert-central-run-parallel PAY-FOR-RING-GOAL
+					(goal-tree-assert-central-run-parallel-prio PAY-FOR-RING-GOAL ?prio
 						(goal-production-assert-pay-for-rings-with-base ?wp-base-pay C-BS INPUT (nth$ ?index ?rs) INPUT ?order-id)
 						(goal-production-assert-instruct-bs-dispense-base ?wp-base-pay BASE_RED INPUT ?order-id)
 					)
@@ -1250,55 +1250,46 @@ The workpiece remains in the output of the used ring station after
   (?root-id ?order-id ?wp-for-order ?cs ?cap-col ?base-col)
 
   (bind ?goal
-    (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-		(goal-tree-assert-central-run-parallel PREPARE-CS
-			(goal-tree-assert-central-run-parallel BUFFER-GOALS
+    (goal-tree-assert-central-run-parallel-prio PRODUCE-ORDER 50
+		(goal-tree-assert-central-run-parallel-prio PREPARE-CS 50
+			(goal-tree-assert-central-run-parallel-prio BUFFER-GOALS 50
 				(goal-production-assert-buffer-cap ?cs ?cap-col ?order-id)
 				(goal-production-assert-instruct-cs-buffer-cap ?cs ?cap-col ?order-id)
 				(goal-production-assert-discard UNKNOWN ?cs OUTPUT ?order-id)
 			)
 		)
-		(goal-tree-assert-central-run-parallel MOUNT-GOALS
-			; Goal selection with run-one goals is broken, as a workaround simply
-			; remove alternative choices and switch to run-parallel
-			;(goal-tree-assert-central-run-one INTERACT-BS
-			(goal-tree-assert-central-run-parallel INTERACT-BS
-				(goal-tree-assert-central-run-parallel OUTPUT-BS
+		(goal-tree-assert-central-run-parallel-prio MOUNT-GOALS 50
+			(goal-tree-assert-central-run-parallel-prio INTERACT-BS 50
+				(goal-tree-assert-central-run-parallel-prio OUTPUT-BS 50
 					(goal-production-assert-mount-cap ?wp-for-order ?cs C-BS OUTPUT ?order-id)
 					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?base-col OUTPUT ?order-id)
 				)
-				;(goal-tree-assert-central-run-parallel INPUT-BS
-				;	(goal-production-assert-mount-cap ?wp-for-order ?cs C-BS INPUT ?order-id)
-				;	(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?base-col INPUT ?order-id)
-				;)
 			)
 			(goal-production-assert-instruct-cs-mount-cap ?cs ?cap-col ?order-id)
 		)
 		(goal-production-assert-deliver ?wp-for-order ?order-id)
 	)
   )
-  (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (parent ?root-id))
+  (bind ?goal-id (fact-slot-value ?goal id))
+  (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (priority 30))
+  (assert (goal-meta (goal-id ?goal-id) (root-for-order ?order-id)))
 )
 
 (deffunction goal-production-assert-c1
   (?root-id ?order-id ?wp-for-order ?cs ?rs ?col-cap ?col-base ?col-ring1)
 
   (bind ?goal
-    (goal-tree-assert-central-run-parallel PRODUCE-ORDER
+    (goal-tree-assert-central-run-parallel-prio PRODUCE-ORDER 40
 		(goal-production-assert-deliver ?wp-for-order ?order-id)
-		(goal-tree-assert-central-run-parallel PREPARE-CS
-			(goal-tree-assert-central-run-parallel BUFFER-GOALS
+		(goal-tree-assert-central-run-parallel-prio PREPARE-CS 40
+			(goal-tree-assert-central-run-parallel-prio BUFFER-GOALS 40
 				(goal-production-assert-buffer-cap ?cs ?col-cap ?order-id)
 				(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap ?order-id)
-				;(goal-production-assert-discard UNKNOWN ?cs OUTPUT ?order-id)
 			)
 		)
-		(goal-tree-assert-central-run-parallel MOUNT-GOALS
-			; Goal selection with run-one goals is broken, as a workaround simply
-			; remove alternative choices and switch to run-parallel
-			;(goal-tree-assert-central-run-one INTERACT-BS
-			(goal-tree-assert-central-run-parallel INTERACT-BS
-				(goal-tree-assert-central-run-parallel OUTPUT-BS
+		(goal-tree-assert-central-run-parallel-prio MOUNT-GOALS 40
+			(goal-tree-assert-central-run-parallel-prio INTERACT-BS 40
+				(goal-tree-assert-central-run-parallel-prio OUTPUT-BS 40
 					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs OUTPUT ?order-id)
 					(goal-production-assert-mount-ring ?wp-for-order ?rs C-BS OUTPUT ?col-ring1 ?order-id ONE)
 					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id)
@@ -1307,33 +1298,31 @@ The workpiece remains in the output of the used ring station after
 			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
 			(goal-production-assert-instruct-rs-mount-ring ?rs ?col-ring1 ?order-id ONE)
 		)
-		(goal-tree-assert-central-run-parallel PAYMENT-GOALS
-			(goal-production-assert-payment-goals (create$ ?rs) (create$ ?col-ring1) ?cs ?order-id)
+		(goal-tree-assert-central-run-parallel-prio PAYMENT-GOALS 40
+			(goal-production-assert-payment-goals (create$ ?rs) (create$ ?col-ring1) ?cs ?order-id 40)
 		)
 	)
   )
-  (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (parent ?root-id))
+  (bind ?goal-id (fact-slot-value ?goal id))
+  (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (priority 40))
+  (assert (goal-meta (goal-id ?goal-id) (root-for-order ?order-id)))
 )
 
 (deffunction goal-production-assert-c2
   (?root-id ?order-id ?wp-for-order ?cs ?rs1 ?rs2 ?col-cap ?col-base ?col-ring1 ?col-ring2)
 
   (bind ?goal
-    (goal-tree-assert-central-run-parallel PRODUCE-ORDER
+    (goal-tree-assert-central-run-parallel-prio PRODUCE-ORDER 50
 		(goal-production-assert-deliver ?wp-for-order ?order-id)
-		(goal-tree-assert-central-run-parallel PREPARE-CS
-			(goal-tree-assert-central-run-parallel BUFFER-GOALS
+		(goal-tree-assert-central-run-parallel-prio PREPARE-CS 50
+			(goal-tree-assert-central-run-parallel-prio BUFFER-GOALS 50
 				(goal-production-assert-buffer-cap ?cs ?col-cap ?order-id)
 				(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap ?order-id)
-				;(goal-production-assert-discard UNKNOWN ?cs OUTPUT ?order-id)
 			)
 		)
-		(goal-tree-assert-central-run-parallel MOUNT-GOALS
-			; Goal selection with run-one goals is broken, as a workaround simply
-			; remove alternative choices and switch to run-parallel
-			;(goal-tree-assert-central-run-one INTERACT-BS
-			(goal-tree-assert-central-run-parallel INTERACT-BS
-				(goal-tree-assert-central-run-parallel OUTPUT-BS
+		(goal-tree-assert-central-run-parallel-prio MOUNT-GOALS 50
+			(goal-tree-assert-central-run-parallel-prio INTERACT-BS 50
+				(goal-tree-assert-central-run-parallel-prio OUTPUT-BS 50
 					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs2 OUTPUT ?order-id)
 					(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT ?col-ring2 ?order-id TWO)
 					(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS OUTPUT ?col-ring1 ?order-id ONE)
@@ -1344,33 +1333,31 @@ The workpiece remains in the output of the used ring station after
 			(goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
 			(goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2 ?order-id TWO)
 		)
-		(goal-tree-assert-central-run-parallel PAYMENT-GOALS
-			(goal-production-assert-payment-goals (create$ ?rs1 ?rs2) (create$ ?col-ring1 ?col-ring2) ?cs ?order-id)
+		(goal-tree-assert-central-run-parallel-prio PAYMENT-GOALS 50
+			(goal-production-assert-payment-goals (create$ ?rs1 ?rs2) (create$ ?col-ring1 ?col-ring2) ?cs ?order-id 50)
 		)
 	)
   )
-  (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (parent ?root-id))
+  (bind ?goal-id (fact-slot-value ?goal id))
+  (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (priority 50))
+  (assert (goal-meta (goal-id ?goal-id) (root-for-order ?order-id)))
 )
 
 (deffunction goal-production-assert-c3
   (?root-id ?order-id ?wp-for-order ?cs ?rs1 ?rs2 ?rs3 ?col-cap ?col-base ?col-ring1 ?col-ring2 ?col-ring3)
 
   (bind ?goal
-    (goal-tree-assert-central-run-parallel PRODUCE-ORDER
+    (goal-tree-assert-central-run-parallel-prio PRODUCE-ORDER 60
 		(goal-production-assert-deliver ?wp-for-order ?order-id)
-		(goal-tree-assert-central-run-parallel PREPARE-CS
-			(goal-tree-assert-central-run-parallel BUFFER-GOALS
+		(goal-tree-assert-central-run-parallel-prio PREPARE-CS 60
+			(goal-tree-assert-central-run-parallel-prio BUFFER-GOALS 60
 				(goal-production-assert-buffer-cap ?cs ?col-cap ?order-id)
 				(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap ?order-id)
-				;(goal-production-assert-discard UNKNOWN ?cs OUTPUT ?order-id)
 			)
 		)
-		(goal-tree-assert-central-run-parallel-flat MOUNT-GOALS
-			; Goal selection with run-one goals is broken, as a workaround simply
-			; remove alternative choices and switch to run-parallel
-			;(goal-tree-assert-central-run-one INTERACT-BS
-			(goal-tree-assert-central-run-parallel INTERACT-BS
-				(goal-tree-assert-central-run-parallel OUTPUT-BS
+		(goal-tree-assert-central-run-parallel-prio MOUNT-GOALS 60
+			(goal-tree-assert-central-run-parallel-prio INTERACT-BS 60
+				(goal-tree-assert-central-run-parallel-prio OUTPUT-BS 60
 					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs3 OUTPUT ?order-id)
 					(goal-production-assert-mount-ring ?wp-for-order ?rs3 ?rs2 OUTPUT ?col-ring3 ?order-id THREE)
 					(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT ?col-ring2 ?order-id TWO)
@@ -1383,12 +1370,14 @@ The workpiece remains in the output of the used ring station after
 			(goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2 ?order-id TWO)
 			(goal-production-assert-instruct-rs-mount-ring ?rs3 ?col-ring3 ?order-id THREE)
 		)
-		(goal-tree-assert-central-run-parallel PAYMENT-GOALS
-			(goal-production-assert-payment-goals (create$ ?rs1 ?rs2 ?rs3) (create$ ?col-ring1 ?col-ring2 ?col-ring3) ?cs ?order-id)
+		(goal-tree-assert-central-run-parallel-prio PAYMENT-GOALS 60
+			(goal-production-assert-payment-goals (create$ ?rs1 ?rs2 ?rs3) (create$ ?col-ring1 ?col-ring2 ?col-ring3) ?cs ?order-id 60)
 		)
 	)
   )
-  (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (parent ?root-id))
+  (bind ?goal-id (fact-slot-value ?goal id))
+  (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (priority 60))
+  (assert (goal-meta (goal-id ?goal-id) (root-for-order ?order-id)))
 )
 
 (defrule goal-production-create-production-root

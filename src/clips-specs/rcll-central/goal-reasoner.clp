@@ -211,6 +211,16 @@
 	(return ?goal)
 )
 
+(deffunction goal-tree-assert-central-run-parallel-prio (?class $?fact-addresses ?prio)
+	(bind ?id (sym-cat CENTRAL-RUN-PARALLEL- ?class - (gensym*)))
+	(bind ?goal
+    (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)))
+  )
+	(foreach ?f ?fact-addresses
+		(goal-tree-update-child ?f ?id ?prio)
+  )
+	(return ?goal)
+)
 ; =========================== Goal Executability =============================
 
 (defrule goal-reasoner-propagate-executability
