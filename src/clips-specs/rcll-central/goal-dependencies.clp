@@ -627,8 +627,7 @@
 	                               PAY-FOR-RINGS-WITH-CAP-CARRIER|
 	                               PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
 	                        (params $? ?rs $?))
-	                  (goal-meta (goal-id ?feed-id-2) (order-id ?order-id))
-	                  (neq ?feed-id-1 ?feed-id-2)
+	                  (goal-meta (goal-id ?feed-id-2&:(neq ?feed-id-2 ?feed-id-1)) (order-id ?order-id))
 	             )
 	         )
 	    )
@@ -646,21 +645,20 @@
 	                  (grounded-with ?mount-goal-id))
 	(modify ?instruct-da (grounded-with ?instruct-goal-id))
 
-	(if (neq ?bases-missing ZERO) then
-		(if (> (sym-to-int ?bases-missing) 0) then
-			(do-for-fact ((?pay-da-1 dependency-assignment))
-			              (and (eq ?pay-da-1:class PAYMENT-1)
-			                   (eq ?pay-da-1:goal-id ?goal-id))
-			              (modify ?pay-da-1 (grounded-with ?feed-id-1)))
-			(printout t "Goal " ?goal-id " executable for " ?robot
-			            " also depending on goal " ?feed-id-1 crlf))
-		(if (eq ?bases-missing TWO) then
-			(do-for-fact ((?pay-da-1 dependency-assignment))
-			              (and (eq ?pay-da-1:class PAYMENT-1)
-			                   (eq ?pay-da-1:goal-id ?goal-id))
-			              (modify ?pay-da-1 (grounded-with ?feed-id-1)))
-			(printout t "Goal " ?goal-id " executable for " ?robot
-			            " also depending on goal " ?feed-id-2 crlf)))
+	(if (> (sym-to-int ?bases-missing) 0) then
+		(do-for-fact ((?pay-da-1 dependency-assignment))
+		              (and (eq ?pay-da-1:class PAYMENT-1)
+		                   (eq ?pay-da-1:goal-id ?goal-id))
+		              (modify ?pay-da-1 (grounded-with ?feed-id-1)))
+		(printout t "Goal " ?goal-id " executable for " ?robot
+		            " also depending on goal " ?feed-id-1 crlf))
+	(if (eq ?bases-missing TWO) then
+		(do-for-fact ((?pay-da-1 dependency-assignment))
+		              (and (eq ?pay-da-1:class PAYMENT-1)
+		                   (eq ?pay-da-1:goal-id ?goal-id))
+		              (modify ?pay-da-1 (grounded-with ?feed-id-1)))
+		(printout t "Goal " ?goal-id " executable for " ?robot
+		            " also depending on goal " ?feed-id-2 crlf))
 )
 
 (defrule goal-dependencies-mount-ring-mount-ring-executable
@@ -746,8 +744,7 @@
 	                               PAY-FOR-RINGS-WITH-CAP-CARRIER|
 	                               PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
 	                        (params $? ?rs $?))
-	                  (goal-meta (goal-id ?feed-id-2) (order-id ?order-id))
-	                  (neq ?feed-id-1 ?feed-id-2)
+	                  (goal-meta (goal-id ?feed-id-2&:(neq ?feed-id-2 ?feed-id-1)) (order-id ?order-id))
 	             )
 	         )
 	    )
@@ -765,21 +762,20 @@
 	                  (grounded-with ?mount-goal-id))
 	(modify ?instruct-da (grounded-with ?instruct-goal-id))
 
-	(if (neq ?bases-missing ZERO) then
-		(if (> (sym-to-int ?bases-missing) 0) then
-			(do-for-fact ((?pay-da-1 dependency-assignment))
-			              (and (eq ?pay-da-1:class PAYMENT-1)
-			                   (eq ?pay-da-1:goal-id ?goal-id))
-			              (modify ?pay-da-1 (grounded-with ?feed-id-1)))
-			(printout t "Goal " ?goal-id " executable for " ?robot
-			            " also depending on goal " ?feed-id-1 crlf))
-		(if (eq ?bases-missing TWO) then
-			(do-for-fact ((?pay-da-1 dependency-assignment))
-			              (and (eq ?pay-da-1:class PAYMENT-1)
-			                   (eq ?pay-da-1:goal-id ?goal-id))
-			              (modify ?pay-da-1 (grounded-with ?feed-id-1)))
-			(printout t "Goal " ?goal-id " executable for " ?robot
-			            " also depending on goal " ?feed-id-2 crlf)))
+	(if (> (sym-to-int ?bases-missing) 0) then
+		(do-for-fact ((?pay-da-1 dependency-assignment))
+		              (and (eq ?pay-da-1:class PAYMENT-1)
+		                   (eq ?pay-da-1:goal-id ?goal-id))
+		              (modify ?pay-da-1 (grounded-with ?feed-id-1)))
+		(printout t "Goal " ?goal-id " executable for " ?robot
+		            " also depending on goal " ?feed-id-1 crlf))
+	(if (eq ?bases-missing TWO) then
+		(do-for-fact ((?pay-da-1 dependency-assignment))
+		              (and (eq ?pay-da-1:class PAYMENT-1)
+		                   (eq ?pay-da-1:goal-id ?goal-id))
+		              (modify ?pay-da-1 (grounded-with ?feed-id-1)))
+		(printout t "Goal " ?goal-id " executable for " ?robot
+		            " also depending on goal " ?feed-id-2 crlf))
 )
 
 (defrule goal-dependencies-discard-buffer-cap-executable
