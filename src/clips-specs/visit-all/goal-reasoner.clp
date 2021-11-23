@@ -26,10 +26,10 @@
 	(assert (goal (id VISIT-BS) (params target-mps C-BS exec-robot ROB1)))
 	(assert (goal (id VISIT-CS1) (params target-mps C-CS1 exec-robot ROB1)))	
 	(assert (goal (id VISIT-CS2) (params target-mps C-CS2 exec-robot ROB1)))
-	(assert (goal (id VISIT-RS1) (params target-mps C-RS1 exec-robot ROB1)))	
-	(assert (goal (id VISIT-RS2) (params target-mps C-RS2 exec-robot ROB1)))
-	(assert (goal (id VISIT-SS) (params target-mps C-SS exec-robot ROB1)))	
-	(assert (goal (id VISIT-DS) (params target-mps C-DS exec-robot ROB1)))
+	(assert (goal (id VISIT-RS1) (params target-mps C-RS1 exec-robot ROB2)))	
+	(assert (goal (id VISIT-RS2) (params target-mps C-RS2 exec-robot ROB2)))
+	(assert (goal (id VISIT-SS) (params target-mps C-SS exec-robot ROB3)))	
+	(assert (goal (id VISIT-DS) (params target-mps C-DS exec-robot ROB3)))
 	; This is just to make sure we formulate the goal only once.
 	; In an actual domain this would be more sophisticated.
 	(assert(goal-already-tried))
