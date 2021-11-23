@@ -593,6 +593,7 @@
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 	=>
 	(set-robot-to-waiting ?robot)
+	(remove-robot-assignment-from-goal-meta ?g)
 	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED and reformulated as only a discard failed" crlf)
 	(modify ?g (mode FORMULATED) (outcome UNKNOWN))
 	(delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
