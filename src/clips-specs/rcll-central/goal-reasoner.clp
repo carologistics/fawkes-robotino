@@ -354,6 +354,7 @@
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 	=>
 	(set-robot-to-waiting ?robot)
+	(remove-robot-assignment-from-goal-meta ?g)
 	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as only a move failed" crlf)
 	(modify ?g (mode FORMULATED) (outcome UNKNOWN))
 
@@ -380,6 +381,7 @@
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 	=>
 	(set-robot-to-waiting ?robot)
+	(remove-robot-assignment-from-goal-meta ?g)
 	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as workpiece is still usable after failed " ?action crlf)
 	(modify ?g (mode FORMULATED) (outcome UNKNOWN))
 
