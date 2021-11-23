@@ -176,7 +176,7 @@
 	=>
 	(plan-assert-sequential MOVE-OUT-OF-WAY-PLAN ?goal-id ?robot
 		(plan-assert-action go-wait ?robot ?curr-loc ?curr-side ?target-pos)
-		(plan-assert-action wait ?robot ?target-pos)
+		(plan-assert-action wait ?robot ?target-pos WAIT)
 	)
 	(modify ?g (mode EXPANDED))
 )

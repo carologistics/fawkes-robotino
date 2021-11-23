@@ -299,10 +299,11 @@
 )
 
 (defrule exp-explore-zone-retract-not-executable
+	(declare (salience ?*SALIENCE-GOAL-REJECT*))
 	?g <- (goal (id ?id) (class EXPLORE-ZONE) (params z ?zn) (mode FORMULATED) (is-executable FALSE))
-	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
+	?gm <- (goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
 	=>
-	(retract ?g)
+	(retract ?g ?gm)
 )
 
 (defrule exp-increase-search-limit
@@ -313,7 +314,7 @@
 
   (wm-fact (key exploration fact line-vis args? zone ?zn1) (value ?vh))
   (wm-fact (key exploration fact tag-vis args? zone ?zn1) (value ?tv))
-  (wm-fact (key domain fact zone-content args? z ?zn1 UNKNOWN))
+  (wm-fact (key domain fact zone-content args? z ?zn1 m UNKNOWN))
   (test (or (> ?tv 0) (> ?vh 0)))
 
   (not (and

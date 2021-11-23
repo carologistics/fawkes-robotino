@@ -107,14 +107,11 @@
 )
 
 (deffunction remove-robot-assignment-from-goal-meta (?goal)
-	(if (do-for-fact ((?f goal-meta))
+	(if (not (do-for-fact ((?f goal-meta))
 			(eq ?f:goal-id (fact-slot-value ?goal id))
 			(modify ?f (assigned-to nil))
-			(printout t ?f crlf))
+			))
 	 then
-		(printout t "Removed robot assignement from "
-		            (fact-slot-value ?goal id) crlf)
-	 else
 		(printout t "Cannot find a goal meta fact for the goal " ?goal crlf)
 	)
 )

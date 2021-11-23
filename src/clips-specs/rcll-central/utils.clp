@@ -40,6 +40,11 @@
   ?*TIME-RETRIEVE-CAP* = 60
   ?*TIME-FILL-RS* = 20
 
+  ?*CHALLENGE_FIELD_BB_X_1* = -5
+  ?*CHALLENGE_FIELD_BB_Y_1* = 0
+  ?*CHALLENGE_FIELD_BB_X_2* = 5
+  ?*CHALLENGE_FIELD_BB_Y_2* = 5
+
 ; Maximum distance between two points on the field
   ?*MAX-DISTANCE* = 16.124
 
@@ -362,11 +367,16 @@
 )
 
 (deffunction navgraph-compute (?robot)
-    (bind ?interface (remote-if "NavGraphWithMPSGeneratorInterface" ?robot "navgraph-generator-mps"))
-    (bind ?msg (blackboard-create-msg ?interface "ComputeMessage"))
-    (blackboard-send-msg ?msg)
-    (printout t "Sent compute for " ?robot crlf)
+	(if ?robot then
+	 (bind ?interface (remote-if "NavGraphWithMPSGeneratorInterface" ?robot "navgraph-generator-mps"))
+	else
+	 (bind ?interface "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps")
+	)
+	(bind ?msg (blackboard-create-msg ?interface "ComputeMessage"))
+	(blackboard-send-msg ?msg)
+	(printout t "Sent compute for " ?robot crlf)
 )
+
 
 (deffunction wm-fact-to-navgraph-node (?key)
 	"Get the name of the navgraph node given a wm-fact key, where the machine has
@@ -672,6 +682,22 @@
   else
     (return CYAN)
   )
+)
+
+
+(deffunction navgraph-challenge-field (?robot)
+	"Uses the NavGraphInterface to reduce the field size to challenges"
+	(if ?robot then
+	 (bind ?interface (remote-if "NavGraphGeneratorInterface" ?robot "navgraph-generator"))
+	else
+	 (bind ?interface "NavGraphGeneratorInterface::/navgraph-generator")
+	)
+	(bind ?msg (blackboard-create-msg ?interface "SetBoundingBoxMessage"))
+	(blackboard-set-msg-field ?msg "p1_x" ?*CHALLENGE_FIELD_BB_X_1*)
+	(blackboard-set-msg-field ?msg "p1_y" ?*CHALLENGE_FIELD_BB_Y_1*)
+	(blackboard-set-msg-field ?msg "p2_x" ?*CHALLENGE_FIELD_BB_X_2*)
+	(blackboard-set-msg-field ?msg "p2_y" ?*CHALLENGE_FIELD_BB_Y_2*)
+	(blackboard-send-msg ?msg)
 )
 
 

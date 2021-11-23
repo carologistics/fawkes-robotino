@@ -69,6 +69,7 @@ fawkes/bbsync:
         tag15: Position3DInterface::/tag-vision/15/to_map=/robot1/tag-vision/15/to_map
         foundtag: Position3DInterface::/explore-zone/found-tag=/robot1/explore-zone/found-tag
         navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/robot1/navgraph-generator-mps
+        navgraph-generator: NavGraphGeneratorInterface::/navgraph-generator=/robot1/navgraph-generator
         navigator: NavigatorInterface::Navigator=/robot1/Navigator
         robotino: MotorInterface::Robotino=/robot1/Robotino
         laser: LaserLineInterface::Laser=/robot1/Laser
@@ -109,6 +110,7 @@ fawkes/bbsync:
         tag15: Position3DInterface::/tag-vision/15/to_map=/robot2/tag-vision/15/to_map
         foundtag: Position3DInterface::/explore-zone/found-tag=/robot2/explore-zone/found-tag
         navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/robot2/navgraph-generator-mps
+        navgraph-generator: NavGraphGeneratorInterface::/navgraph-generator=/robot2/navgraph-generator
         navigator: NavigatorInterface::Navigator=/robot2/Navigator
         robotino: MotorInterface::Robotino=/robot2/Robotino
         laser: LaserLineInterface::Laser=/robot2/Laser
@@ -149,6 +151,7 @@ fawkes/bbsync:
         pose: Position3DInterface::Pose=/robot3/Pose
         foundtag: Position3DInterface::/explore-zone/found-tag=/robot3/explore-zone/found-tag
         navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/robot3/navgraph-generator-mps
+        navgraph-generator: NavGraphGeneratorInterface::/navgraph-generator=/robot3/navgraph-generator
         navigator: NavigatorInterface::Navigator=/robot3/Navigator
         robotino: MotorInterface::Robotino=/robot3/Robotino
         laser: LaserLineInterface::Laser=/robot3/Laser
