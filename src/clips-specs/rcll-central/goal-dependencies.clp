@@ -174,6 +174,8 @@
 	(not (dependency-assignment (goal-id ?goal-id)
 	                            (class INSTRUCT-RS-MOUNT-RING)))
 	(not (dependency-assignment (goal-id ?goal-id)
+	                            (class CLEAR-OUTPUT)))
+	(not (dependency-assignment (goal-id ?goal-id)
 	                            (class PAYMENT-1)))
 	(not (dependency-assignment (goal-id ?goal-id)
 	                            (class PAYMENT-2)))
@@ -188,6 +190,12 @@
 	            " depends on class INSTRUCT-RS-MOUNT-RING " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class INSTRUCT-RS-MOUNT-RING)
+	                               (wait-for WP)
+	                               (grounded-with nil)))
+	(printout t "Goal " ?goal-id
+	            " depends on class CLEAR-OUTPUT " crlf)
+	(assert (dependency-assignment (goal-id ?goal-id)
+	                               (class CLEAR-OUTPUT)
 	                               (wait-for WP)
 	                               (grounded-with nil)))
 	(printout t "Goal " ?goal-id
@@ -268,13 +276,10 @@
 	; MPS-CS CEs
 	(wm-fact (key domain fact mps-type args? m ?target-mps t CS))
 	(wm-fact (key domain fact mps-state args? m ?target-mps s ~BROKEN))
-	(not (wm-fact (key domain fact wp-at args?
-	                               wp ?any-wp
-	                               m ?target-mps
-	                               side INPUT)))
 	(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
 
 	(not (wm-fact (key domain fact cs-buffered args? m ?target-mps col ?)))
+	(wm-fact (key domain fact mps-side-free args? m ?target-mps side INPUT))
 	(wm-fact (key domain fact mps-side-free args? m ?target-mps side OUTPUT))
 
 	; CS is not buffered, but with the following dependency, we can assume it
@@ -353,10 +358,7 @@
 	; MPS-CS CEs
 	(wm-fact (key domain fact mps-type args? m ?target-mps t CS))
 	(wm-fact (key domain fact mps-state args? m ?target-mps s ~BROKEN))
-	(not (wm-fact (key domain fact wp-at args?
-	                               wp ?any-wp
-	                               m ?target-mps
-	                               side INPUT)))
+	(wm-fact (key domain fact mps-side-free args? m ?target-mps side INPUT))
 	(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
 
 	(not (wm-fact (key domain fact cs-buffered args?
@@ -402,7 +404,7 @@
 	(or (and ; Either the workpiece needs to be picked up...
 	         (not (wm-fact (key domain fact holding args?
 	                                        r ?robot
-	                                        wp ?any-wp)))
+	                                        wp ?)))
 	         ; ... and it is a fresh base located in a base station
 	         (or (and (wm-fact (key domain fact mps-type args? m ?wp-loc t BS))
 	                  (wm-fact (key domain fact wp-unused args? wp ?wp))
