@@ -39,7 +39,7 @@
           (domain-object (name C-DS) (type mps))
           (domain-object (name INPUT) (type mps-side))
           (domain-object (name OUTPUT) (type mps-side))
-          (domain-object (name CYAN) (type team-colo))
+          (domain-object (name CYAN) (type team-color))
 	  (domain-object (name ROB1) (type robot))
 	  (domain-object (name ROB2) (type robot))
 	  (domain-object (name ROB3) (type robot))

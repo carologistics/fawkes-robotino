@@ -61,7 +61,7 @@ plugins/execution-time-estimator:
   navgraph:
     # misc options
     priority: 1
-    speed: 0.5
+    speed: 2
 
     # global whitelist options
     target: place

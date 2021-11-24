@@ -35,6 +35,7 @@
 	(assert(goal-already-tried))
 )
 
+
 ; #  Goal Selection
 ; We can choose one or more goals for expansion, e.g., calling
 ; a planner to determine the required steps.

@@ -41,6 +41,6 @@ stop_test () {
 
 trap stop_test $TRAP_SIGNALS
 ulimit -c 0
-$SCRIPT_PATH/gazsim.bash -o -r --mongodb -m m-skill-sim --central-agent m-central-clips-exec -n 1 --team-cyan Carologistics --start-game=PRODUCTION $@
+$SCRIPT_PATH/gazsim.bash -o -r --mongodb -m m-skill-sim --central-agent m-central-clips-exec -n 3 --team-cyan Carologistics --start-game=PRODUCTION $@
 echo "Waiting for results..."
 $SCRIPT_PATH/cx-simtest-check.bash ./robot11_latest.log
