@@ -52,8 +52,6 @@
 
 (defrule goal-dependencies-mount-cap-buffer-cap
 " Every mount-cap goal depends on the buffer-cap class.
-  A Mount-cap goal can also depend on the deliver of discard
-  class to clear the output.
   Per default, no buffer-cap goal is grounded. "
 	; needs to be higher than SALIENCE-GOAL-EXECUTABLE-CHECK
 	(declare (salience (+ ?*SALIENCE-GOAL-EXECUTABLE-CHECK* 1)))
@@ -62,8 +60,6 @@
 	                            (class BUFFER-CAP)))
 	(not (dependency-assignment (goal-id ?goal-id)
 	                            (class INSTRUCT-CS-BUFFER-CAP)))
-	(not (dependency-assignment (goal-id ?goal-id)
-	                            (class CLEAR-OUTPUT)))
 	=>
 	(printout t "Goal " ?goal-id
 	            " depends on class BUFFER-CAP " crlf)
@@ -77,6 +73,18 @@
 	                               (class INSTRUCT-CS-BUFFER-CAP)
 	                               (wait-for FREE-SIDE)
 	                               (grounded-with nil)))
+)
+
+(defrule goal-dependencies-mount-cap-clear-output
+" A Mount-cap goal can also depend on the deliver of discard
+  class to clear the output.
+  Per default, no buffer-cap goal is grounded. "
+	; needs to be higher than SALIENCE-GOAL-EXECUTABLE-CHECK
+	(declare (salience (+ ?*SALIENCE-GOAL-EXECUTABLE-CHECK* 1)))
+	?g <- (goal (id ?goal-id) (class MOUNT-CAP) (mode FORMULATED))
+	(not (dependency-assignment (goal-id ?goal-id)
+	                            (class CLEAR-OUTPUT)))
+	=>
 	(printout t "Goal " ?goal-id
 	            " depends on class CLEAR-OUTPUT " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
@@ -163,8 +171,6 @@
 
 (defrule goal-dependencies-mount-cap-mount-ring
 " Every mount-cap goal depends on the mount-ring class.
-  A Mount-cap goal can also depend on the deliver of discard
-  class to clear the output.
   Per default, no mount-ring goal is grounded. "
 	; needs to be higher than SALIENCE-GOAL-EXECUTABLE-CHECK
 	(declare (salience (+ ?*SALIENCE-GOAL-EXECUTABLE-CHECK* 1)))
@@ -173,8 +179,6 @@
 	                            (class MOUNT-RING)))
 	(not (dependency-assignment (goal-id ?goal-id)
 	                            (class INSTRUCT-RS-MOUNT-RING)))
-	(not (dependency-assignment (goal-id ?goal-id)
-	                            (class CLEAR-OUTPUT)))
 	(not (dependency-assignment (goal-id ?goal-id)
 	                            (class PAYMENT-1)))
 	(not (dependency-assignment (goal-id ?goal-id)
@@ -190,12 +194,6 @@
 	            " depends on class INSTRUCT-RS-MOUNT-RING " crlf)
 	(assert (dependency-assignment (goal-id ?goal-id)
 	                               (class INSTRUCT-RS-MOUNT-RING)
-	                               (wait-for WP)
-	                               (grounded-with nil)))
-	(printout t "Goal " ?goal-id
-	            " depends on class CLEAR-OUTPUT " crlf)
-	(assert (dependency-assignment (goal-id ?goal-id)
-	                               (class CLEAR-OUTPUT)
 	                               (wait-for WP)
 	                               (grounded-with nil)))
 	(printout t "Goal " ?goal-id
