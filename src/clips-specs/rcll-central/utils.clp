@@ -63,10 +63,16 @@
 
 (deftemplate goal-meta
 	(slot goal-id (type SYMBOL))
-	(slot assigned-to (type SYMBOL) (allowed-values nil robot1 robot2 robot3
-	                                                central) (default nil))
-	(slot restricted-to (type SYMBOL) (allowed-values nil robot1 robot2 robot3
-	                                                  central) (default nil))
+	(slot assigned-to (type SYMBOL)
+	                  (allowed-values nil robot1 robot2 robot3 central)
+	                  (default nil))
+	(slot restricted-to (type SYMBOL)
+	                    (allowed-values nil robot1 robot2 robot3 central)
+	                    (default nil))
+	(slot order-id (type SYMBOL))
+	(slot ring-nr (type SYMBOL)
+	              (allowed-values nil ONE TWO THREE)
+	              (default nil))
 )
 
 (deffunction tag-id-to-side (?tag-id)
