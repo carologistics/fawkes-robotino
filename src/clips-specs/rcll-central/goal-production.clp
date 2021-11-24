@@ -859,7 +859,7 @@ The workpiece remains in the output of the used ring station after
 	                    target-side ?side
 	                    base-color ?base-color)
 	            (is-executable FALSE))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (order-id ?oid))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; MPS CEs
 	(wm-fact (key domain fact mps-type args? m ?mps t BS))
@@ -874,6 +874,7 @@ The workpiece remains in the output of the used ring station after
 	             (precondition ?precondition-id))
 	(grounded-pddl-formula (formula-id ?formula-id) (grounding ?precondition-id) (is-satisfied FALSE))
 	(pddl-formula (id ?formula-id) (part-of wp-get))
+	(goal-meta (goal-id ?g-id) (order-id ?oid))
 	(not (goal (class INSTRUCT-BS-DISPENSE-BASE) (mode SELECTED|DISPATCHED|COMMITTED|EXPANDED)))
 	=>
 	(printout t "Goal INSTRUCT-BS-DISPENSE executable" crlf)
