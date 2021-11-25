@@ -131,6 +131,12 @@
 	)
 )
 
+(deffunction goal-tree-update-meta-run-all-order (?f ?ordering)
+  (do-for-fact ((?goal-meta goal-meta)) (eq ?goal-meta:goal-id (fact-slot-value ?f id))
+    (modify ?goal-meta (run-all-ordering ?ordering))
+  )
+)
+
 (deffunction goal-reasoner-compute-order-conflicts-payments (?order1 ?order2)
   (bind ?conflict FALSE)
   (printout t crlf crlf ?order1 " " ?order2 crlf crlf)
@@ -190,6 +196,19 @@
   (assert (goal-meta (goal-id ?id)))
 	(foreach ?f ?fact-addresses
 		(goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
+	(return ?goal)
+)
+
+(deffunction goal-tree-assert-central-run-all-prio (?class ?prio $?fact-addresses)
+	(bind ?id (sym-cat CENTRAL-RUN-ALL- ?class - (gensym*)))
+	(bind ?goal
+    (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)))
+  )
+  (assert (goal-meta (goal-id ?id)))
+	(foreach ?f ?fact-addresses
+    (goal-tree-update-meta-run-all-order ?f (+ 1 (- (length$ ?fact-addresses) ?f-index)))
+		(goal-tree-update-child ?f ?id ?prio)
+  )
 	(return ?goal)
 )
 
