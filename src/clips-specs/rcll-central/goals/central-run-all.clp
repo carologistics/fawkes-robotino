@@ -100,5 +100,6 @@
 	=>
 	(modify ?gf (mode FINISHED) (outcome FAILED)
 	            (error SUB-GOAL-FAILED ?sg)
-	            (message (str-cat "Sub-goal '" ?sg "' of CENTRAL-RUN-ALL goal '" ?id "' has failed")))
+	            (message (str-cat "Sub-goal '" (fact-slot-value ?sg id) "' of CENTRAL-RUN-ALL goal '" ?id "' has failed")))
+)
 )
