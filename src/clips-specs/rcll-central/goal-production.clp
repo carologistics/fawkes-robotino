@@ -1445,16 +1445,16 @@ The workpiece remains in the output of the used ring station after
 (defrule goal-production-create-move-out-of-way
 	"Creates a move out of way goal. As soon as it is completed it's reset"
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-	(goal (id ?root-id) (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+	(goal (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+	(goal (id ?root-id) (class WAIT-ROOT))
 	(not (goal (class MOVE-OUT-OF-WAY)))
 	(not (wm-fact (key config rcll pick-and-place-challenge) (value TRUE)))
-	(goal (class DELIVER-RC21))
 	=>
 	(bind ?g (goal-tree-assert-central-run-parallel MOVE-OUT-OF-WAY
 	        (goal-production-assert-move-out-of-way M_Z41)
 	        (goal-production-assert-move-out-of-way M_Z31))
 	)
-	(modify ?g (parent ?root-id) (priority -1.0))
+	(modify ?g (parent ?root-id) (priority 1.0))
 )
 
 (defrule goal-production-change-priority-move-out-of-way
