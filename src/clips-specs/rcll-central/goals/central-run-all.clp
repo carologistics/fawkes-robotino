@@ -102,4 +102,12 @@
 	            (error SUB-GOAL-FAILED ?sg)
 	            (message (str-cat "Sub-goal '" (fact-slot-value ?sg id) "' of CENTRAL-RUN-ALL goal '" ?id "' has failed")))
 )
+
+(defrule central-run-all-goal-finish-all-subgoals-finished-completed
+	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
+	             (mode DISPATCHED) (meta $?meta&:(not (member$ do-not-finish ?meta))))
+	(not (goal (parent ?id) (type ACHIEVE) (mode RETRACTED|FINISHED) (outcome ~COMPLETED)))
+	(not (goal (parent ?id) (type ACHIEVE) (mode ~FINISHED&~RETRACTED)))
+	=>
+	(modify ?gf (mode FINISHED) (outcome COMPLETED))
 )
