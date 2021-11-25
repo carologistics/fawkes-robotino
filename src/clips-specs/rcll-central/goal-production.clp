@@ -1252,21 +1252,21 @@ The workpiece remains in the output of the used ring station after
   (?root-id ?order-id ?wp-for-order ?cs ?cap-col ?base-col)
 
   (bind ?goal
-    (goal-tree-assert-central-run-parallel-prio PRODUCE-ORDER 50
-		(goal-tree-assert-central-run-parallel-prio PREPARE-CS 50
-			(goal-tree-assert-central-run-parallel-prio BUFFER-GOALS 50
+    (goal-tree-assert-central-run-parallel-prio PRODUCE-ORDER 30
+		(goal-tree-assert-central-run-parallel-prio PREPARE-CS 30
+			(goal-tree-assert-central-run-parallel-prio BUFFER-GOALS 30
 				(goal-production-assert-buffer-cap ?cs ?cap-col ?order-id)
 				(goal-production-assert-instruct-cs-buffer-cap ?cs ?cap-col ?order-id)
 				(goal-production-assert-discard UNKNOWN ?cs OUTPUT ?order-id)
 			)
 		)
-		(goal-tree-assert-central-run-parallel-prio MOUNT-GOALS 50
-			(goal-tree-assert-central-run-parallel-prio INTERACT-BS 50
-				(goal-tree-assert-central-run-parallel-prio OUTPUT-BS 50
+		(goal-tree-assert-central-run-parallel-prio MOUNT-GOALS 30
+			(goal-tree-assert-central-run-parallel-prio INTERACT-BS 30
+				(goal-tree-assert-central-run-all-prio OUTPUT-BS 30
 					(goal-production-assert-mount-cap ?wp-for-order ?cs C-BS OUTPUT ?order-id)
-					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?base-col OUTPUT ?order-id)
 				)
 			)
+			(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?base-col OUTPUT ?order-id)
 			(goal-production-assert-instruct-cs-mount-cap ?cs ?cap-col ?order-id)
 		)
 		(goal-production-assert-deliver ?wp-for-order ?order-id)
@@ -1293,12 +1293,12 @@ The workpiece remains in the output of the used ring station after
 		)
 		(goal-tree-assert-central-run-parallel-prio MOUNT-GOALS 40
 			(goal-tree-assert-central-run-parallel-prio INTERACT-BS 40
-				(goal-tree-assert-central-run-parallel-prio OUTPUT-BS 40
+				(goal-tree-assert-central-run-all-prio OUTPUT-BS 40
 					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs OUTPUT ?order-id)
 					(goal-production-assert-mount-ring ?wp-for-order ?rs C-BS OUTPUT ?col-ring1 ?order-id ONE)
-					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id)
 				)
 			)
+			(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id)
 			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
 			(goal-production-assert-instruct-rs-mount-ring ?rs ?col-ring1 ?order-id ONE)
 		)
@@ -1328,13 +1328,13 @@ The workpiece remains in the output of the used ring station after
 		)
 		(goal-tree-assert-central-run-parallel-prio MOUNT-GOALS 50
 			(goal-tree-assert-central-run-parallel-prio INTERACT-BS 50
-				(goal-tree-assert-central-run-parallel-prio OUTPUT-BS 50
+				(goal-tree-assert-central-run-all-prio OUTPUT-BS 50
 					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs2 OUTPUT ?order-id)
 					(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT ?col-ring2 ?order-id TWO)
 					(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS OUTPUT ?col-ring1 ?order-id ONE)
-					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id)
 				)
 			)
+			(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id)
 			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
 			(goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
 			(goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2 ?order-id TWO)
@@ -1365,14 +1365,14 @@ The workpiece remains in the output of the used ring station after
 		)
 		(goal-tree-assert-central-run-parallel-prio MOUNT-GOALS 60
 			(goal-tree-assert-central-run-parallel-prio INTERACT-BS 60
-				(goal-tree-assert-central-run-parallel-prio OUTPUT-BS 60
+				(goal-tree-assert-central-run-all-prio OUTPUT-BS 60
 					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs3 OUTPUT ?order-id)
 					(goal-production-assert-mount-ring ?wp-for-order ?rs3 ?rs2 OUTPUT ?col-ring3 ?order-id THREE)
 					(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT ?col-ring2 ?order-id TWO)
 					(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS OUTPUT ?col-ring1 ?order-id ONE)
-					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id)
 				)
 			)
+			(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id)
 			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
 			(goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
 			(goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2 ?order-id TWO)
