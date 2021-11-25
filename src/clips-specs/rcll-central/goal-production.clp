@@ -1249,69 +1249,70 @@ The workpiece remains in the output of the used ring station after
 )
 
 (deffunction goal-production-assert-c0
-  (?root-id ?order-id ?wp-for-order ?cs ?cap-col ?base-col)
+  (?root-id ?order-id ?wp-for-order ?cs ?col-cap ?col-base)
 
   (bind ?goal
     (goal-tree-assert-central-run-parallel-prio PRODUCE-ORDER 30
 		(goal-tree-assert-central-run-parallel-prio PREPARE-CS 30
-			(goal-tree-assert-central-run-parallel-prio BUFFER-GOALS 30
-				(goal-production-assert-buffer-cap ?cs ?cap-col ?order-id)
-				(goal-production-assert-instruct-cs-buffer-cap ?cs ?cap-col ?order-id)
-				(goal-production-assert-discard UNKNOWN ?cs OUTPUT ?order-id)
-			)
+			(goal-production-assert-buffer-cap ?cs ?col-cap ?order-id)
+			(goal-production-assert-discard UNKNOWN ?cs OUTPUT ?order-id)
 		)
-		(goal-tree-assert-central-run-parallel-prio MOUNT-GOALS 30
-			(goal-tree-assert-central-run-parallel-prio INTERACT-BS 30
-				(goal-tree-assert-central-run-all-prio OUTPUT-BS 30
-					(goal-production-assert-mount-cap ?wp-for-order ?cs C-BS OUTPUT ?order-id)
-				)
-			)
-			(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?base-col OUTPUT ?order-id)
-			(goal-production-assert-instruct-cs-mount-cap ?cs ?cap-col ?order-id)
+		(goal-tree-assert-central-run-all-prio MOUNT-GOALS 30
+			(goal-production-assert-mount-cap ?wp-for-order ?cs C-BS OUTPUT ?order-id)
 		)
 		(goal-production-assert-deliver ?wp-for-order ?order-id)
 	)
   )
   (bind ?goal-id (fact-slot-value ?goal id))
   (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (priority 30))
-  (do-for-fact ((?goal-meta goal)) (eq ?goal-meta:goal-id ?goal-id)
+  (do-for-fact ((?goal-meta goal-meta)) (eq ?goal-meta:goal-id ?goal-id)
 	(modify ?goal-meta (root-for-order ?order-id))
   )
+
+  (bind ?instruction-goals
+	(goal-tree-assert-central-run-parallel-prio INSTRUCT-ORDER 30
+		(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id)
+		(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap ?order-id)
+		(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
+	)
+  )
+  (printout t crlf crlf (fact-slot-value ?instruction-goals id) crlf crlf)
+  (modify ?instruction-goals (priority 30) (parent ?root-id))
 )
 
 (deffunction goal-production-assert-c1
-  (?root-id ?order-id ?wp-for-order ?cs ?rs ?col-cap ?col-base ?col-ring1)
+  (?root-id ?order-id ?wp-for-order ?cs ?rs1 ?col-cap ?col-base ?col-ring1)
 
   (bind ?goal
     (goal-tree-assert-central-run-parallel-prio PRODUCE-ORDER 40
 		(goal-production-assert-deliver ?wp-for-order ?order-id)
 		(goal-tree-assert-central-run-parallel-prio PREPARE-CS 40
-			(goal-tree-assert-central-run-parallel-prio BUFFER-GOALS 40
-				(goal-production-assert-buffer-cap ?cs ?col-cap ?order-id)
-				(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap ?order-id)
-			)
+			(goal-production-assert-buffer-cap ?cs ?col-cap ?order-id)
 		)
-		(goal-tree-assert-central-run-parallel-prio MOUNT-GOALS 40
-			(goal-tree-assert-central-run-parallel-prio INTERACT-BS 40
-				(goal-tree-assert-central-run-all-prio OUTPUT-BS 40
-					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs OUTPUT ?order-id)
-					(goal-production-assert-mount-ring ?wp-for-order ?rs C-BS OUTPUT ?col-ring1 ?order-id ONE)
-				)
-			)
-			(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id)
-			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
-			(goal-production-assert-instruct-rs-mount-ring ?rs ?col-ring1 ?order-id ONE)
+		(goal-tree-assert-central-run-all-prio MOUNT-GOALS 40
+			(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs1 OUTPUT ?order-id)
+			(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS OUTPUT ?col-ring1 ?order-id ONE)
 		)
 		(goal-tree-assert-central-run-parallel-prio PAYMENT-GOALS 40
-			(goal-production-assert-payment-goals (create$ ?rs) (create$ ?col-ring1) ?cs ?order-id 40)
+			(goal-production-assert-payment-goals (create$ ?rs1) (create$ ?col-ring1) ?cs ?order-id 40)
 		)
 	)
   )
   (bind ?goal-id (fact-slot-value ?goal id))
   (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (priority 40))
-  (do-for-fact ((?goal-meta goal)) (eq ?goal-meta:goal-id ?goal-id)
+  (do-for-fact ((?goal-meta goal-meta)) (eq ?goal-meta:goal-id ?goal-id)
 	(modify ?goal-meta (root-for-order ?order-id))
   )
+
+  (bind ?instruction-goals
+	(goal-tree-assert-central-run-parallel-prio INSTRUCT-ORDER 40
+		(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id)
+		(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap ?order-id)
+		(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
+		(goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
+	)
+  )
+  (modify ?instruction-goals (priority 40) (parent ?root-id))
 )
 
 (deffunction goal-production-assert-c2
@@ -1321,23 +1322,12 @@ The workpiece remains in the output of the used ring station after
     (goal-tree-assert-central-run-parallel-prio PRODUCE-ORDER 50
 		(goal-production-assert-deliver ?wp-for-order ?order-id)
 		(goal-tree-assert-central-run-parallel-prio PREPARE-CS 50
-			(goal-tree-assert-central-run-parallel-prio BUFFER-GOALS 50
-				(goal-production-assert-buffer-cap ?cs ?col-cap ?order-id)
-				(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap ?order-id)
-			)
+			(goal-production-assert-buffer-cap ?cs ?col-cap ?order-id)
 		)
-		(goal-tree-assert-central-run-parallel-prio MOUNT-GOALS 50
-			(goal-tree-assert-central-run-parallel-prio INTERACT-BS 50
-				(goal-tree-assert-central-run-all-prio OUTPUT-BS 50
-					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs2 OUTPUT ?order-id)
-					(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT ?col-ring2 ?order-id TWO)
-					(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS OUTPUT ?col-ring1 ?order-id ONE)
-				)
-			)
-			(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id)
-			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
-			(goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
-			(goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2 ?order-id TWO)
+		(goal-tree-assert-central-run-all-prio MOUNT-GOALS 50
+			(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs2 OUTPUT ?order-id)
+			(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT ?col-ring2 ?order-id TWO)
+			(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS OUTPUT ?col-ring1 ?order-id ONE)
 		)
 		(goal-tree-assert-central-run-parallel-prio PAYMENT-GOALS 50
 			(goal-production-assert-payment-goals (create$ ?rs1 ?rs2) (create$ ?col-ring1 ?col-ring2) ?cs ?order-id 50)
@@ -1346,9 +1336,20 @@ The workpiece remains in the output of the used ring station after
   )
   (bind ?goal-id (fact-slot-value ?goal id))
   (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (priority 50))
-  (do-for-fact ((?goal-meta goal)) (eq ?goal-meta:goal-id ?goal-id)
+  (do-for-fact ((?goal-meta goal-meta)) (eq ?goal-meta:goal-id ?goal-id)
 	(modify ?goal-meta (root-for-order ?order-id))
   )
+
+  (bind ?instruction-goals
+	(goal-tree-assert-central-run-parallel-prio INSTRUCT-ORDER 50
+		(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id)
+		(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap ?order-id)
+		(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
+		(goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
+		(goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2 ?order-id TWO)
+	)
+  )
+  (modify ?instruction-goals (priority 50) (parent ?root-id))
 )
 
 (deffunction goal-production-assert-c3
@@ -1358,25 +1359,13 @@ The workpiece remains in the output of the used ring station after
     (goal-tree-assert-central-run-parallel-prio PRODUCE-ORDER 60
 		(goal-production-assert-deliver ?wp-for-order ?order-id)
 		(goal-tree-assert-central-run-parallel-prio PREPARE-CS 60
-			(goal-tree-assert-central-run-parallel-prio BUFFER-GOALS 60
-				(goal-production-assert-buffer-cap ?cs ?col-cap ?order-id)
-				(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap ?order-id)
-			)
+			(goal-production-assert-buffer-cap ?cs ?col-cap ?order-id)
 		)
-		(goal-tree-assert-central-run-parallel-prio MOUNT-GOALS 60
-			(goal-tree-assert-central-run-parallel-prio INTERACT-BS 60
-				(goal-tree-assert-central-run-all-prio OUTPUT-BS 60
-					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs3 OUTPUT ?order-id)
-					(goal-production-assert-mount-ring ?wp-for-order ?rs3 ?rs2 OUTPUT ?col-ring3 ?order-id THREE)
-					(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT ?col-ring2 ?order-id TWO)
-					(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS OUTPUT ?col-ring1 ?order-id ONE)
-				)
-			)
-			(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id)
-			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
-			(goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
-			(goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2 ?order-id TWO)
-			(goal-production-assert-instruct-rs-mount-ring ?rs3 ?col-ring3 ?order-id THREE)
+		(goal-tree-assert-central-run-all-prio MOUNT-GOALS 60
+			(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs3 OUTPUT ?order-id)
+			(goal-production-assert-mount-ring ?wp-for-order ?rs3 ?rs2 OUTPUT ?col-ring3 ?order-id THREE)
+			(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT ?col-ring2 ?order-id TWO)
+			(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS OUTPUT ?col-ring1 ?order-id ONE)
 		)
 		(goal-tree-assert-central-run-parallel-prio PAYMENT-GOALS 60
 			(goal-production-assert-payment-goals (create$ ?rs1 ?rs2 ?rs3) (create$ ?col-ring1 ?col-ring2 ?col-ring3) ?cs ?order-id 60)
@@ -1385,17 +1374,47 @@ The workpiece remains in the output of the used ring station after
   )
   (bind ?goal-id (fact-slot-value ?goal id))
   (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (priority 60))
-  (do-for-fact ((?goal-meta goal)) (eq ?goal-meta:goal-id ?goal-id)
+  (do-for-fact ((?goal-meta goal-meta)) (eq ?goal-meta:goal-id ?goal-id)
 	(modify ?goal-meta (root-for-order ?order-id))
   )
+
+  (bind ?instruction-goals
+	(goal-tree-assert-central-run-parallel-prio INSTRUCT-ORDER 60
+		(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id)
+		(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap ?order-id)
+		(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
+		(goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
+		(goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2 ?order-id TWO)
+		(goal-production-assert-instruct-rs-mount-ring ?rs3 ?col-ring3 ?order-id THREE)
+	)
+  )
+  (modify ?instruction-goals (priority 60) (parent ?root-id))
 )
 
-(defrule goal-production-create-production-root
-	"Create the production root under which all production trees for the orders
+; (defrule goal-production-create-production-root
+; 	"Create the production root under which all production trees for the orders
+; 	are asserted"
+; 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+; 	(domain-facts-loaded)
+; 	(not (goal (class PRODUCTION-ROOT)))
+; 	(wm-fact (key refbox phase) (value PRODUCTION))
+; 	(wm-fact (key game state) (value RUNNING))
+; 	(wm-fact (key refbox team-color) (value ?color))
+; 	(not (wm-fact (key domain fact rs-ring-spec args? $? rn NA)))
+; 	; Ensure that a MachineInfo was received already.
+; 	; So if there are ring stations with specs, then those specs are registered.
+; 	(wm-fact (key domain fact mps-state args? m ?any-mps s IDLE))
+; 	=>
+; 	(bind ?g (goal-tree-assert-central-run-parallel PRODUCTION-ROOT))
+; 	(modify ?g (meta do-not-finish) (priority 1.0))
+; )
+
+(defrule goal-production-create-instruction-root
+	"Create the production root under which all instruction goal trees for the orders
 	are asserted"
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(domain-facts-loaded)
-	(not (goal (class PRODUCTION-ROOT)))
+	(not (goal (class INSTRUCTION-ROOT)))
 	(wm-fact (key refbox phase) (value PRODUCTION))
 	(wm-fact (key game state) (value RUNNING))
 	(wm-fact (key refbox team-color) (value ?color))
@@ -1404,7 +1423,7 @@ The workpiece remains in the output of the used ring station after
 	; So if there are ring stations with specs, then those specs are registered.
 	(wm-fact (key domain fact mps-state args? m ?any-mps s IDLE))
 	=>
-	(bind ?g (goal-tree-assert-central-run-parallel PRODUCTION-ROOT))
+	(bind ?g (goal-tree-assert-central-run-parallel INSTRUCTION-ROOT))
 	(modify ?g (meta do-not-finish) (priority 1.0))
 )
 
@@ -1426,7 +1445,7 @@ The workpiece remains in the output of the used ring station after
 (defrule goal-production-create-move-out-of-way
 	"Creates a move out of way goal. As soon as it is completed it's reset"
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+	(goal (id ?root-id) (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
 	(not (goal (class MOVE-OUT-OF-WAY)))
 	(not (wm-fact (key config rcll pick-and-place-challenge) (value TRUE)))
 	(goal (class DELIVER-RC21))
@@ -1453,7 +1472,7 @@ The workpiece remains in the output of the used ring station after
 	"If there is a mismatch between machines and orders, produce output"
 	(wm-fact (key domain fact order-cap-color args? ord ?order-id col ?col))
 	(not (wm-fact (key domain fact cs-color args? m ?cs col ?col)))
-	(goal (id ?root-id) (class PRODUCTION-ROOT))
+	(goal (id ?root-id) (class INSTRUCTION-ROOT))
 	=>
 	(printout error "Can not build order " ?order-id " with cap color " ?col " because there is no capstation for it" crlf)
 )
@@ -1462,7 +1481,7 @@ The workpiece remains in the output of the used ring station after
 	"If there is a mismatch between machines and orders, produce output"
 	(wm-fact (key domain fact order-ring1-color args? ord ?order-id col ?col&~RING_NONE))
 	(not (wm-fact (key domain fact rs-ring-spec args? $? r ?col $?)))
-	(goal (id ?root-id) (class PRODUCTION-ROOT))
+	(goal (id ?root-id) (class INSTRUCTION-ROOT))
 	=>
 	(printout error "Can not build order " ?order-id " with ring-1 color " ?col " because there is no ringstation for it" crlf)
 )
@@ -1471,7 +1490,7 @@ The workpiece remains in the output of the used ring station after
 	"If there is a mismatch between machines and orders, produce output"
 	(wm-fact (key domain fact order-ring2-color args? ord ?order-id col ?col-ring&~RING_NONE))
 	(not (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?col-ring $?)))
-	(goal (id ?root-id) (class PRODUCTION-ROOT))
+	(goal (id ?root-id) (class INSTRUCTION-ROOT))
 	=>
 	(printout error "Can not build order " ?order-id " with ring-2 color " ?col-ring " because there is no ringstation for it" crlf)
 )
@@ -1480,7 +1499,7 @@ The workpiece remains in the output of the used ring station after
 	"If there is a mismatch between machines and orders, produce output"
 	(wm-fact (key domain fact order-ring3-color args? ord ?order-id col ?col-ring&~RING_NONE))
 	(not (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?col-ring $?)))
-	(goal (id ?root-id) (class PRODUCTION-ROOT))
+	(goal (id ?root-id) (class INSTRUCTION-ROOT))
 	=>
 	(printout error "Can not build order " ?order-id " with ring-3 color " ?col-ring " because there is no ringstation for it" crlf)
 )
@@ -1489,7 +1508,7 @@ The workpiece remains in the output of the used ring station after
 (defrule goal-production-create-produce-for-order
 	"Create for each incoming order a grounded production tree with the"
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+	(goal (id ?root-id) (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
 	(wm-fact (key config rcll pick-and-place-challenge) (value FALSE))
 	(wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
 	(wm-fact (key domain fact order-base-color args? ord ?order-id col ?col-base))
