@@ -26,6 +26,27 @@
   ?*HOLDING-MONITORING* = 60
 )
 
+(defrule execution-monitoring-stop-dependency-waits
+" If a move action is stuck because another robot waits on that position,
+  that robot should stop waiting there. "
+	(declare (salience ?*MONITORING-SALIENCE*))
+	(plan-action (plan-id ?waiting-plan) (goal-id ?waiting-goal)
+	    (action-name move)
+	    (state PENDING) (is-executable FALSE)
+	    (param-values $?r ?from ?from-side ?to ?to-side))
+	(plan (id ?waiting-plan) (goal-id ?waiting-goal))
+	(goal (id ?waiting-goal) (mode DISPATCHED))
+	?pa <- (plan-action (plan-id ?blocking-plan) (goal-id ?blocking-goal)
+	    (action-name wait-for-wp|wait-for-free-side)
+	    (state RUNNING))
+	(plan (id ?blocking-plan) (goal-id ?blocking-goal))
+	(goal (id ?blocking-goal) (mode DISPATCHED))
+	(goal-meta (goal-id ?blocking-goal) (assigned-to ?blocking-robot))
+	(wm-fact (key-domain-fact at args? r ?blocking-robot m ?to side ?to-side))
+	=>
+	(modify ?pa (state FAILED))
+)
+
 ;
 ; =============================== Timeouts ===============================
 ;
