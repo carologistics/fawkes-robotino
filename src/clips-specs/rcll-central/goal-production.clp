@@ -1274,7 +1274,9 @@ The workpiece remains in the output of the used ring station after
   )
   (bind ?goal-id (fact-slot-value ?goal id))
   (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (priority 30))
-  (assert (goal-meta (goal-id ?goal-id) (root-for-order ?order-id)))
+  (do-for-fact ((?goal-meta goal)) (eq ?goal-meta:goal-id ?goal-id)
+	(modify ?goal-meta (root-for-order ?order-id))
+  )
 )
 
 (deffunction goal-production-assert-c1
@@ -1307,7 +1309,9 @@ The workpiece remains in the output of the used ring station after
   )
   (bind ?goal-id (fact-slot-value ?goal id))
   (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (priority 40))
-  (assert (goal-meta (goal-id ?goal-id) (root-for-order ?order-id)))
+  (do-for-fact ((?goal-meta goal)) (eq ?goal-meta:goal-id ?goal-id)
+	(modify ?goal-meta (root-for-order ?order-id))
+  )
 )
 
 (deffunction goal-production-assert-c2
@@ -1342,7 +1346,9 @@ The workpiece remains in the output of the used ring station after
   )
   (bind ?goal-id (fact-slot-value ?goal id))
   (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (priority 50))
-  (assert (goal-meta (goal-id ?goal-id) (root-for-order ?order-id)))
+  (do-for-fact ((?goal-meta goal)) (eq ?goal-meta:goal-id ?goal-id)
+	(modify ?goal-meta (root-for-order ?order-id))
+  )
 )
 
 (deffunction goal-production-assert-c3
@@ -1379,7 +1385,9 @@ The workpiece remains in the output of the used ring station after
   )
   (bind ?goal-id (fact-slot-value ?goal id))
   (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (priority 60))
-  (assert (goal-meta (goal-id ?goal-id) (root-for-order ?order-id)))
+  (do-for-fact ((?goal-meta goal)) (eq ?goal-meta:goal-id ?goal-id)
+	(modify ?goal-meta (root-for-order ?order-id))
+  )
 )
 
 (defrule goal-production-create-production-root
