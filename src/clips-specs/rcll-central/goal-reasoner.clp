@@ -329,18 +329,61 @@
 )
 
 (defrule goal-reasoner-select-from-dispatched-children
-  "Select the goal of highest priority of a run parallel if it is dispatched and
-  is executable"
+  "Select the candidate child goal of highest priority amongst the run-parallel and
+  run-all goals. Depending on the parent type enforce two different policies to find a candidate:
+  - if the parent is a RUN-ALL goal, then there must be no other goal under the same parent
+    that has a smaller ordering and has not been start yet.
+  - if the parent is a RUN-PARALLEL goal, there the candidate must have the highest priority."
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
-  (goal (id ?parent1) (mode DISPATCHED) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL) (priority ?p1))
-  ?g <- (goal (id ?id) (parent ?parent1) (is-executable TRUE) (mode FORMULATED) (priority ?pc1))
-  (not (goal (id ?nid&~?id) (parent ?parent1) (mode FORMULATED) (is-executable TRUE) (priority ?pc2&:(> ?pc2 ?pc1))))
+  ?g <- (goal (id ?candidate-id) (parent ?candidate-parent) (is-executable TRUE) (mode FORMULATED) (priority ?candidate-priority))
+  (goal-meta (goal-id ?candidate-id) (run-all-ordering ?candidate-ordering))
+  (goal (id ?candidate-parent) (mode DISPATCHED) (sub-type ?candidate-parent-type&CENTRAL-RUN-ALL-OF-SUBGOALS|CENTRAL-RUN-SUBGOALS-IN-PARALLEL))
 
-  (not (and
-      (goal (id ?parent2&~?parent1) (mode DISPATCHED) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL) (priority ?p2&:(> ?p2 ?p1)))
-      (goal (id ?c1) (parent ?parent2) (mode FORMULATED) (is-executable TRUE))
+  ;it is the correct goal to choose within the subtree
+  (or
+    ;parent is a run-parallel goal (there is no formulated goal with a higher priority)
+    (and
+      (test (eq ?candidate-parent-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL))
+      (not (goal (id ~?candidate-id) (parent ?candidate-parent) (is-executable TRUE) (mode FORMULATED) (priority ?other-priority&:(> ?other-priority ?candidate-priority))))
+    )
+    ;parent is a run-all goal (there is no formulated goal with a smaller ordering number)
+    (and
+      (test (eq ?candidate-parent-type CENTRAL-RUN-ALL-OF-SUBGOALS))
+      (not
+        (and
+          (goal (id ?other-id&~?candidate-id) (parent ?candidate-parent) (mode FORMULATED))
+          (goal-meta (goal-id ?other-id) (run-all-ordering ?other-ordering&:(> ?candidate-ordering ?other-ordering)))
+        )
+      )
     )
   )
+
+  ;it is the correct goal within the entire tree to choose from (there is no goal that fulfills the same requirements with a higher priority)
+  (not
+    (and
+      (goal (id ?alternative-id&~?candidate-id) (parent ?alternative-parent) (is-executable TRUE) (mode FORMULATED) (priority ?alternative-priority&:(> ?alternative-priority ?candidate-priority)))
+      (goal-meta (goal-id ?alternative-id) (run-all-ordering ?alternative-ordering))
+      (goal (id ?alternative-parent) (mode DISPATCHED) (sub-type ?alternative-parent-type&CENTRAL-RUN-ALL-OF-SUBGOALS|CENTRAL-RUN-SUBGOALS-IN-PARALLEL))
+
+      (or
+        (and
+          (test (eq ?alternative-parent-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL))
+          (not (goal (id ~?alternative-id&~?candidate-id) (parent ?alternative-parent) (is-executable TRUE) (mode FORMULATED) (priority ?other-priority&:(> ?other-priority ?alternative-priority))))
+        )
+        (and
+          (test (eq ?alternative-parent-type CENTRAL-RUN-ALL-OF-SUBGOALS))
+          (not
+            (and
+              (goal (id ?other-id&~?alternative-id&~?candidate-id) (parent ?alternative-parent) (mode FORMULATED))
+              (goal-meta (goal-id ?other-id) (run-all-ordering ?other-ordering&:(> ?alternative-ordering ?other-ordering)))
+            )
+          )
+        )
+      )
+    )
+  )
+
+  ;there is no other acheive goal currently selected, expanded, or committed
   (not (goal (mode SELECTED|EXPANDED|COMMITTED) (type ACHIEVE)))
   =>
   (modify ?g (mode SELECTED))
