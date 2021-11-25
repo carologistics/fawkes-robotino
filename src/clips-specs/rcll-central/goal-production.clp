@@ -908,12 +908,12 @@ The workpiece remains in the output of the used ring station after
 " Instruct ring station to mount a ring on the product. "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (class INSTRUCT-RS-MOUNT-RING) (sub-type SIMPLE)
-	            (mode FORMULATED)
+	            (mode FORMULATED) (id ?g-id)
 	            (params target-mps ?mps
 	                    ring-color ?ring-color
 	             )
 	             (is-executable FALSE))
-
+	(goal-meta (goal-id ?g-id) (ring-nr ?ring-num))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; MPS CEs
 	(wm-fact (key domain fact mps-type args? m ?mps t RS))
@@ -929,7 +929,8 @@ The workpiece remains in the output of the used ring station after
 
 	; WP CEs
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
-	(wm-fact (key wp meta next-step args? wp ?wp) (value ?ring))
+	(wm-fact (key wp meta next-step args? wp ?wp)
+	         (value ?ring&:(eq (sub-string 5 5 ?ring) (str-cat (sym-to-int ?rin-num)))))
 	(wm-fact (key domain fact ?wp-ring-color&:(eq ?wp-ring-color
 	         (sym-cat wp-ring (sub-string 5 5 ?ring) -color))
 	          args? wp ?wp col RING_NONE ))
@@ -1695,8 +1696,7 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key exploration active) (value TRUE))
 	=>
 	(bind ?g (goal-tree-assert-central-run-parallel EXPLORATION-ROOT))
-	(modify ?g (meta do-not-finish))
-	(modify ?g (priority 0.0))
+	(modify ?g (meta do-not-finish) (priority 0.0))
 )
 
 (defrule goal-production-exploration-challenge-move-executable
