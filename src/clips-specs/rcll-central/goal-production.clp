@@ -930,7 +930,7 @@ The workpiece remains in the output of the used ring station after
 	; WP CEs
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
 	(wm-fact (key wp meta next-step args? wp ?wp)
-	         (value ?ring&:(eq (sub-string 5 5 ?ring) (str-cat (sym-to-int ?rin-num)))))
+	         (value ?ring&:(eq (sub-string 5 5 ?ring) (str-cat (sym-to-int ?ring-num)))))
 	(wm-fact (key domain fact ?wp-ring-color&:(eq ?wp-ring-color
 	         (sym-cat wp-ring (sub-string 5 5 ?ring) -color))
 	          args? wp ?wp col RING_NONE ))
