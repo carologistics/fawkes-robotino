@@ -513,13 +513,13 @@
 	?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED) (meta $?meta)
 	            (verbosity ?v))
 	(plan (id ?plan-id) (goal-id ?goal-id))
-	(plan-action (action-name ?action&move|go-wait)
+	(plan-action (action-name ?action&move|go-wait|wait-for-wp|wait-for-free-side)
 	             (goal-id ?goal-id) (plan-id ?plan-id) (state FAILED))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 	=>
 	(set-robot-to-waiting ?robot)
 	(remove-robot-assignment-from-goal-meta ?g)
-	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as only a move failed" crlf)
+	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as only a " ?action " action failed" crlf)
 	(modify ?g (mode FORMULATED) (outcome UNKNOWN))
 
 	(delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
