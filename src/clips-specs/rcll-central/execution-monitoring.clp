@@ -32,7 +32,7 @@
 	(declare (salience ?*MONITORING-SALIENCE*))
 	(plan-action (plan-id ?waiting-plan) (goal-id ?waiting-goal)
 	    (action-name move)
-	    (state PENDING) (is-executable FALSE)
+	    (state PENDING) (executable FALSE)
 	    (param-values $?r ?from ?from-side ?to ?to-side))
 	(plan (id ?waiting-plan) (goal-id ?waiting-goal))
 	(goal (id ?waiting-goal) (mode DISPATCHED))
@@ -42,7 +42,7 @@
 	(plan (id ?blocking-plan) (goal-id ?blocking-goal))
 	(goal (id ?blocking-goal) (mode DISPATCHED))
 	(goal-meta (goal-id ?blocking-goal) (assigned-to ?blocking-robot))
-	(wm-fact (key-domain-fact at args? r ?blocking-robot m ?to side ?to-side))
+	(wm-fact (key domain fact at args? r ?blocking-robot m ?to side ?to-side))
 	=>
 	(modify ?pa (state FAILED))
 )
