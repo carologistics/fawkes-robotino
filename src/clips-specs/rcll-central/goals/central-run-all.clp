@@ -95,7 +95,7 @@
 (defrule central-run-all-goal-subgoal-failed
 	"Fail the goal if any of the child goals fail to propagate error handling."
 	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
-	             (mode ~FINISHED))
+	             (mode DISPATCHED))
 	?sg <- (goal (parent ?id) (type ACHIEVE) (mode FINISHED) (outcome FAILED))
 	=>
 	(modify ?gf (mode FINISHED) (outcome FAILED)
