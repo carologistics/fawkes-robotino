@@ -164,6 +164,7 @@
 	(bind ?goal
     (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ONE-OF-SUBGOALS)))
   )
+  (assert (goal-meta (goal-id ?id)))
 	(foreach ?f ?fact-addresses
 		(goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
 	(return ?goal)
@@ -174,6 +175,7 @@
 	(bind ?goal
     (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)))
   )
+  (assert (goal-meta (goal-id ?id)))
 	(foreach ?f ?fact-addresses
 		(goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
 	(return ?goal)
@@ -185,6 +187,7 @@
     (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
                   (meta sequence-mode)))
   )
+  (assert (goal-meta (goal-id ?id)))
 	(foreach ?f ?fact-addresses
 		(goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
 	(return ?goal)
@@ -195,6 +198,7 @@
 	(bind ?goal
     (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)))
   )
+  (assert (goal-meta (goal-id ?id)))
 	(foreach ?f ?fact-addresses
 		(goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
 	(return ?goal)
@@ -205,6 +209,7 @@
 	(bind ?goal
     (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)))
   )
+  (assert (goal-meta (goal-id ?id)))
 	(foreach ?f ?fact-addresses
 		(goal-tree-update-child ?f ?id 1)
   )
@@ -216,6 +221,7 @@
 	(bind ?goal
     (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)))
   )
+  (assert (goal-meta (goal-id ?id)))
 	(foreach ?f ?fact-addresses
 		(goal-tree-update-child ?f ?id ?prio)
   )
