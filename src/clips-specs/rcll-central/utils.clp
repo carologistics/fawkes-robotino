@@ -74,6 +74,7 @@
 	              (allowed-values nil ONE TWO THREE)
 	              (default nil))
   (slot root-for-order (type SYMBOL))
+  (slot run-all-ordering (default 1))
 )
 
 (deffunction tag-id-to-side (?tag-id)
