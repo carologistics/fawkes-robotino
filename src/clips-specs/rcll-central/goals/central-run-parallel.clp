@@ -34,7 +34,7 @@
 ; - Automatic: expand goal (since goal trees are static, simple swtich)
 ; - Automatic: if no sub-goal formulated -> FAIL
 ; - Automatic: if all sub-goals rejected -> REJECT
-; - User: handle sub-goal selection, expansion, committing, dispatching, 
+; - User: handle sub-goal selection, expansion, committing, dispatching,
 ;         evaluating
 ; - Automatic: when sub-goal is EVALUATED, outcome determines parent goal:
 ;   * REJECTED or FAILED: Reject formulated sub-goals
@@ -50,6 +50,13 @@
 ; - User: EVALUATE goal
 ; - User: RETRACT goal
 
+(defrule central-run-parallel-set-to-expanded
+	"when a central-run-parall goal is selected it is automatically expanded"
+	?gf <- (goal (id ?id) (type ACHIEVE)
+                 (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL) (mode SELECTED))
+	=>
+	(modify ?gf (mode EXPANDED))
+)
 
 (defrule central-run-parallel-goal-expand-failed
 	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)
@@ -120,12 +127,3 @@
 	=>
 	(modify ?gf (mode FINISHED) (outcome COMPLETED))
 )
-
-(defrule central-run-parallel-set-to-expanded
-	"when a central-run-parall goal is selected it is automatically expanded"
-	?gf <- (goal (id ?id) (type ACHIEVE) 
-                 (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL) (mode SELECTED))
-	=>
-	(modify ?gf (mode EXPANDED))
-)
-
