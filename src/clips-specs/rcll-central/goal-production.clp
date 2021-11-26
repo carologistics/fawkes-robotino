@@ -1627,9 +1627,7 @@ The workpiece remains in the output of the used ring station after
 (defrule goal-production-remove-enter-field
   "Enter the field (drive outside of the starting box)."
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-	?gf <- (goal (id ?some-goal-id) (class ENTER-FIELD))
-	?gm <- (goal-meta (goal-id ?some-goal-id) (assigned-to ?robot))
-	(wm-fact (key domain fact entered-field args? r ?robot))
+	?gf <- (goal (id ?some-goal-id) (class ENTER-FIELD) (mode RETRACTED))
 	=>
 	(printout t "Goal " ENTER-FIELD " removed after entering" crlf)
 	(retract ?gf ?gm)
