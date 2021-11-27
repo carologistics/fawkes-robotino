@@ -462,6 +462,7 @@
 	      (params wp ?wp
 	              target-mps ?mps
 	              $?))
+	(goal-meta (goal-id ?mount-goal-id) (order-id ?order-id))
 	?mount-da <- (dependency-assignment (goal-id ?goal-id) (class MOUNT-CAP))
 
 	(wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))

@@ -433,7 +433,7 @@
 	                                   target-side ?target-side
 	                                   $?)
 	                          (is-executable FALSE))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (order-id ?order))
 
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
@@ -453,6 +453,7 @@
 	(or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
 	         (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side)))
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
 	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
 	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
 	=>
@@ -592,7 +593,9 @@
 	                                   target-side ?target-side
 	                                   $?)
 	                          (is-executable FALSE))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (order-id ?order))
+	(goal (id ?buffer-goal-id) (class BUFFER-CAP) (mode ~FORMULATED))
+	(goal-meta (goal-id ?buffer-goal-id) (order-id ?order))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	;MPS-RS CEs (a cap carrier can be used to fill a RS later)
 	(wm-fact (key domain fact mps-type args? m ?target-mps t RS))
@@ -800,12 +803,18 @@ The workpiece remains in the output of the used ring station after
 " Instruct cap station to buffer a cap. "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (class INSTRUCT-CS-BUFFER-CAP) (sub-type SIMPLE)
-	             (mode FORMULATED)
+	            (mode FORMULATED)
+	            (id ?goal-id)
 	            (params target-mps ?mps
 	                    cap-color ?cap-color
 	             )
 	             (is-executable FALSE))
+	(goal-meta (goal-id ?goal-id) (order-id ?order-id))
 	(not (goal (class INSTRUCT-CS-BUFFER-CAP) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
+
+	(goal (id ?buffer-goal-id) (class BUFFER-CAP) (sub-type SIMPLE) (mode ~FORMULATED))
+	(goal-meta (goal-id ?buffer-goal-id) (order-id ?order-id))
+
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; MPS CEs
 	(wm-fact (key domain fact mps-type args? m ?mps t CS))
@@ -826,11 +835,15 @@ The workpiece remains in the output of the used ring station after
 " Instruct cap station to buffer a cap. "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (class INSTRUCT-CS-MOUNT-CAP) (sub-type SIMPLE)
-	             (mode FORMULATED)
+	            (id ?goal-id)
+	            (mode FORMULATED)
 	            (params target-mps ?mps
 	                    cap-color ?cap-color
 	             )
 	             (is-executable FALSE))
+	(goal-meta (goal-id ?goal-id) (order-id ?order-id))
+	(goal (id ?mount-goal-id) (class MOUNT-CAP) (sub-type SIMPLE) (mode ~FORMULATED))
+	(goal-meta (goal-id ?mount-goal-id) (order-id ?order-id))
 
 	(not (goal (class INSTRUCT-CS-MOUNT-CAP) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -859,7 +872,7 @@ The workpiece remains in the output of the used ring station after
 	                    target-side ?side
 	                    base-color ?base-color)
 	            (is-executable FALSE))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (order-id ?oid))
+	(goal-meta (goal-id ?goal-id) (assigned-to ~nil) (order-id ?oid))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; MPS CEs
 	(wm-fact (key domain fact mps-type args? m ?mps t BS))
@@ -869,11 +882,9 @@ The workpiece remains in the output of the used ring station after
 	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps $?)))
 	(wm-fact (key domain fact wp-unused args? wp ?wp))
 	; wait until a robot actually needs the base before proceeding
-	(plan-action (action-name wp-get) (param-values ? ?wp ?mps ?side)
-	             (goal-id ?g-id) (plan-id ?p-id) (state PENDING)
+	(plan-action (action-name wait-for-wp) (param-values ?robot ?mps ?side)
+	             (goal-id ?g-id) (plan-id ?p-id) (state PENDING|RUNNING)
 	             (precondition ?precondition-id))
-	(grounded-pddl-formula (formula-id ?formula-id) (grounding ?precondition-id) (is-satisfied FALSE))
-	(pddl-formula (id ?formula-id) (part-of wp-get))
 	(goal-meta (goal-id ?g-id) (order-id ?oid))
 	(not (goal (class INSTRUCT-BS-DISPENSE-BASE) (mode SELECTED|DISPATCHED|COMMITTED|EXPANDED)))
 	=>
@@ -1573,6 +1584,9 @@ The workpiece remains in the output of the used ring station after
 	"Fill in missing workpiece information into the discard goals"
 	?g <- (goal (id ?goal-id) (class DISCARD) (mode FORMULATED) (parent ?parent)
 	            (params wp UNKNOWN wp-loc ?mps wp-side ?mps-side))
+	(goal-meta (goal-id ?goal-id) (order-id ?order-id))
+	(goal (id ?buffer-goal-id) (class BUFFER-CAP) (mode ~FORMULATED))
+	(goal-meta (goal-id ?buffer-goal-id) (order-id ?order-id))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?mps-side))
 	(not (wm-fact (key order meta wp-for-order args? wp ?wp $?)))
 	(goal (parent ?parent) (class INSTRUCT-CS-BUFFER-CAP) (mode DISPATCHED|FINISHED|RETRACTED))
