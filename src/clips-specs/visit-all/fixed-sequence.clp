@@ -1,15 +1,33 @@
-
 (defrule goal-expander-create-sequence
-	?g <- (goal (mode SELECTED) (id TESTGOAL))
+	?g1 <- (goal (mode SELECTED) (id TESTGOAL1))
+	?g2 <- (goal (mode SELECTED) (id TESTGOAL2))
+	?g3 <- (goal (mode SELECTED) (id TESTGOAL3))
 	=>
 	(assert
-	  (plan (id TESTGOAL-PLAN) (goal-id TESTGOAL)
+	  (plan (id TESTGOAL-PLAN1) (goal-id TESTGOAL1)
 	        (type SEQUENTIAL))
-	(plan-action (id 1) (plan-id TESTGOAL-PLAN) (goal-id TESTGOAL)
-	             (action-name visit) (skiller "/robot1/Skiller")
-	             (param-values C-BS OUTPUT CYAN))
-	 )
-	(modify ?g (mode EXPANDED))
+	  (plan (id TESTGOAL-PLAN2) (goal-id TESTGOAL2)
+	        (type SEQUENTIAL))
+	  (plan (id TESTGOAL-PLAN3) (goal-id TESTGOAL3)
+	        (type SEQUENTIAL))
+	)
+
+	(bind ?i 1)
+	(bind ?rnum 0)
+	;(bind ?r "/robot1/Skiller")
+	(do-for-all-facts ((?m domain-fact)) (eq ?m:name mps-type) 
+		(bind ?rnum (+ (mod ?rnum 3) 1))
+		(bind ?r (str-cat (str-cat "/robot" ?rnum) "/Skiller"))
+		(printout t ?r crlf)
+		(assert (plan-action (id ?i) (plan-id (sym-cat TESTGOAL-PLAN ?rnum)) (goal-id (sym-cat TESTGOAL ?rnum))
+
+							(action-name visit) (skiller ?r)
+						(param-values (nth$ 1 ?m:param-values) OUTPUT CYAN)))
+		(bind ?i (+ ?i 1))
+	)
+	(modify ?g1 (mode EXPANDED))
+	(modify ?g2 (mode EXPANDED))
+	(modify ?g3 (mode EXPANDED))
 )
 
 (defrule goal-expander-maintain-beacon
