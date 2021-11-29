@@ -14,7 +14,6 @@
 
 	(bind ?i 1)
 	(bind ?rnum 0)
-	;(bind ?r "/robot1/Skiller")
 	(do-for-all-facts ((?m domain-fact)) (eq ?m:name mps-type) 
 		(bind ?rnum (+ (mod ?rnum 3) 1))
 		(bind ?r (str-cat (str-cat "/robot" ?rnum) "/Skiller"))
