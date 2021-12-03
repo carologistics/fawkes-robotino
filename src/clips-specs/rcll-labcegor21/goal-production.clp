@@ -150,6 +150,52 @@
 	(modify ?g (is-executable TRUE))
 )
 
+(defrule goal-production-mount-cap-executable
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?id) (class MOUNT-CAP) (sub-type SIMPLE)
+	            (mode FORMULATED)
+	            (params target-mps ?mps
+	                    cap-color ?cap-color
+	            )
+	            (is-executable FALSE))
+	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
+	(wm-fact (key refbox team-color) (value ?team-color))
+	; Robot CEs
+	(wm-fact (key central agent robot args? r ?robot))
+	; MPS CEs
+	(wm-fact (key domain fact mps-type args? m ?mps t CS))
+	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+	(wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
+	;(not (wm-fact (key domain fact wp-at args? wp ?wp-a m ?mps side INPUT)))
+	=>
+	(printout t "Goal MOUNT-CAP executable for " ?robot crlf)
+	(modify ?g (is-executable TRUE))
+)
+
+(defrule goal-production-dispense-base-executable
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?id) (class DISPENSE-BASE) (sub-type SIMPLE)
+	            (mode FORMULATED)
+	            (params target-mps ?mps
+	                    base-color ?base-color
+	            )
+	            (is-executable FALSE))
+	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
+	(wm-fact (key refbox team-color) (value ?team-color))
+	; Robot CEs
+	(wm-fact (key central agent robot args? r ?robot))
+	; MPS CEs
+	(wm-fact (key domain fact mps-type args? m ?mps t BS))
+	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+	(wm-fact (key domain fact bs-can-perform args? m ?mps op DISPENSE_BASE))
+	;(not (wm-fact (key domain fact wp-at args? wp ?wp-a m ?mps side INPUT)))
+	=>
+	(printout t "Goal DISPENSE-BASE executable for " ?robot crlf)
+	(modify ?g (is-executable TRUE))
+)
+
 ; ----------------------- MPS Instruction GOALS -------------------------------
 
 (defrule goal-production-instruct-cs-buffer-cap-executable
@@ -176,6 +222,105 @@
 	=>
 	(printout t "Goal INSTRUCT-CS-BUFFER-CAP executable" crlf)
 	(modify ?g (is-executable TRUE))
+)
+
+(defrule goal-production-instruct-cs-mount-cap-executable
+" Instruct cap station to mount a cap. "
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (class INSTRUCT-CS-MOUNT-CAP) (sub-type SIMPLE)
+	             (mode FORMULATED)
+	            (params target-mps ?mps
+	                    cap-color ?cap-color
+	             )
+	             (is-executable FALSE))
+	(not (goal (class INSTRUCT-CS-MOUNT-CAP) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
+	(wm-fact (key refbox team-color) (value ?team-color))
+	; MPS CEs
+	(wm-fact (key domain fact mps-type args? m ?mps t CS))
+	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+	(wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
+	; WP CEs
+	(wm-fact (key domain fact wp-at args? wp ?cc m ?mps side INPUT))
+	(wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+	;(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side OUTPUT)))
+	=>
+	(printout t "Goal INSTRUCT-CS-MOUNT-CAP executable" crlf)
+	(modify ?g (is-executable TRUE))
+)
+
+(defrule goal-production-instruct-bs-dispense-base-executable
+" Instruct base station to dispense a base. "
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (class INSTRUCT-BS-DISPENSE-BASE) (sub-type SIMPLE)
+	             (mode FORMULATED)
+	            (params target-mps ?mps
+	                    base-color ?base-color
+	             )
+	             (is-executable FALSE))
+	(not (goal (class INSTRUCT-BS-DISPENSE-BASE) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
+	(wm-fact (key refbox team-color) (value ?team-color))
+	; MPS CEs
+	(wm-fact (key domain fact mps-type args? m ?mps t BS))
+	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+	(wm-fact (key domain fact bs-can-perform args? m ?mps op DISPENSE_BASE))
+	; WP CEs
+	(wm-fact (key domain fact wp-at args? wp ?bc m ?mps side INPUT))
+	(wm-fact (key domain fact wp-base-color args? wp ?bc col ?base-color))
+	;(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side OUTPUT)))
+	=>
+	(printout t "Goal INSTRUCT-BS-DISPENSE-BASE executable" crlf)
+	(modify ?g (is-executable TRUE))
+)
+
+(deffunction goal-production-assert-dispense-base
+	(?mps ?base-color)
+	
+	(bind ?goal (assert (goal (class DISPENSE-BASE)
+		(id (sym-cat DISPENSE-BASE- (gensym*))) (sub-type SIMPLE)
+		(verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+		(params target-mps ?mps
+			base-color ?base-color)
+	)))
+	(return ?goal)
+)
+
+
+(deffunction goal-production-assert-instruct-bs-dispense-base
+	(?mps ?base-color)
+	
+	(bind ?goal (assert (goal (class INSTRUCT-BS-DISPENSE-BASE)
+		(id (sym-cat DISPENSE-BASE- (gensym*))) (sub-type SIMPLE)
+		(verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+		(params target-mps ?mps
+			base-color ?base-color)
+	)))
+	(return ?goal)
+)
+
+(deffunction goal-production-assert-mount-cap
+	(?mps ?cap-color)
+	
+	(bind ?goal (assert (goal (class MOUNT-CAP)
+		(id (sym-cat MOUNT-CAP- (gensym*))) (sub-type SIMPLE)
+		(verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+		(params target-mps ?mps
+			cap-color ?cap-color)
+	)))
+	(return ?goal)
+)
+
+(deffunction goal-production-assert-instruct-cs-mount-cap
+	(?mps ?cap-color)
+	
+	(bind ?goal (assert (goal (class INSTRUCT-CS-MOUNT-CAP)
+		(id (sym-cat MOUNT-CAP (gensym*))) (sub-type SIMPLE)
+		(verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+		(params target-mps ?mps
+			cap-color ?cap-color)
+	)))
+	(return ?goal)
 )
 
 (deffunction goal-production-assert-buffer-cap
@@ -230,10 +375,25 @@
 	; So if there are ring stations with specs, then those specs are registered.
 	(wm-fact (key domain fact mps-state args? m ?any-mps s IDLE))
 	(wm-fact (key domain fact entered-field args? r robot1))
+	
+	(wm-fact (key domain fact order-complexity args? ord ?order com C0))
+	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+	(wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
 	=>
-	(bind ?g (goal-tree-assert-central-run-parallel PRODUCTION-ROOT
+	;(bind ?g (goal-tree-assert-central-run-parallel PRODUCTION-ROOT
 		(goal-meta-assert (goal-production-assert-buffer-cap C-CS1 CAP_GREY) robot1)
 		(goal-meta-assert (goal-production-assert-instruct-cs-buffer-cap C-CS1 CAP_GREY) central)
+		)
+	)
+	(printout t "Cap color: " ?cap-color crlf)
+	(printout t "Base color: " ?base-color crlf)
+	(bind ?g (goal-tree-assert-central-run-all-sequence PRODUCTION-ROOT
+		(goal-meta-assert (goal-production-assert-buffer-cap C-CS1 ?cap-color) robot1)
+		(goal-meta-assert (goal-production-assert-instruct-cs-buffer-cap C-CS1 ?cap-color) central)
+		(goal-meta-assert (goal-production-assert-dispense-base C-BS ?base-color) robot1)
+		(goal-meta-assert (goal-production-assert-instruct-bs-dispense-base C-BS ?base-color) central)
+		(goal-meta-assert (goal-production-assert-mount-cap C-CS1 ?cap-color) robot1)
+		(goal-meta-assert (goal-production-assert-instruct-cs-mount-cap C-CS1 ?cap-color) central)
 		)
 	)
 	(modify ?g (meta do-not-finish) (priority 1.0))
