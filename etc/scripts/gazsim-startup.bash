@@ -238,7 +238,7 @@ case $COMMAND in
 	llsf-refbox $@
 	;;
   refbox-challenge )
-	challenge_startup.bash $@
+	rcll_challenge_startup.bash $@
 	;;
   refbox-shell )
         # wait some time such that the terminal has the final size
@@ -261,4 +261,3 @@ if [[ "$KEEP" == "yes" ]]; then
 	echo -n "Press ENTER to exit..."
 	read
 fi
-
