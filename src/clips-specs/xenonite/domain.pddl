@@ -18,7 +18,7 @@
 ;  Read the full text in the LICENSE.GPL file in the doc directory.
 
 (define (domain promises-test)
-	(:requirements :strips :typing)
+	(:requirements :strips :typing :durative-actions)
 
 	(:types
 		robot - object
@@ -58,69 +58,154 @@
 		(storage-is-full)
 	)
 
-	(:action collect-regolith
+	(:durative-action collect-regolith
 		:parameters (?r - robot ?mine - location ?c - container)
-		:precondition (and (location-is-mine ?mine) (robot-at ?r ?mine) (robot-carries ?r ?c) (container-can-be-filled ?c))
-		:effect (and (not (container-can-be-filled ?c)) (container-filled ?c REGOLITH))
+		:duration (= ?duration 1)
+		:condition (and
+		              (at start (location-is-mine ?mine))
+		              (at start (robot-at ?r ?mine))
+		              (at start (robot-carries ?r ?c))
+		              (at start (container-can-be-filled ?c)))
+		:effect (and
+		           (at end (not (container-can-be-filled ?c)))
+		           (at end (container-filled ?c REGOLITH)))
 	)
 
-	(:action put-regolith
+	(:durative-action put-regolith
 		:parameters (?r - robot ?side - location ?machine - machine ?c - container)
-		:precondition (and (location-part-of-machine ?side ?machine) (location-is-machine-input ?side) (machine-in-state ?machine IDLE) (robot-at ?r ?side) (robot-carries ?r ?c) (container-filled ?c REGOLITH) (machine-for-material ?machine REGOLITH))
-		:effect (and (not (container-filled ?c REGOLITH)) (container-can-be-filled ?c) (machine-in-state ?machine FILLED) (not (machine-in-state ?machine IDLE)))
+		:duration (= ?duration 1)
+		:condition (and
+		             (at start (location-part-of-machine ?side ?machine))
+		             (at start (location-is-machine-input ?side))
+		             (at start (machine-in-state ?machine IDLE))
+		             (at start (robot-at ?r ?side))
+		             (at start (robot-carries ?r ?c))
+		             (at start (container-filled ?c REGOLITH))
+		             (at start (machine-for-material ?machine REGOLITH)))
+		:effect (and
+		          (at end (not (container-filled ?c REGOLITH)))
+		          (at end (container-can-be-filled ?c))
+		          (at end (machine-in-state ?machine FILLED))
+		          (at end (not (machine-in-state ?machine IDLE))))
 	)
 
-	(:action pick-container
+	(:durative-action pick-container
 		:parameters (?r - robot ?c - container)
-		:precondition (and (robot-at ?r CONTAINER-DEPOT) (robot-can-carry ?r) (container-at ?c CONTAINER-DEPOT))
-		:effect (and (not (robot-can-carry ?r)) (robot-carries ?r ?c) (not (container-at ?c CONTAINER-DEPOT)))
+		:duration (= ?duration 1)
+		:condition (and
+		             (at start (robot-at ?r CONTAINER-DEPOT))
+		             (at start (robot-can-carry ?r))
+		             (at start (container-at ?c CONTAINER-DEPOT)))
+		:effect (and
+		          (at end (not (robot-can-carry ?r)))
+		          (at end (robot-carries ?r ?c))
+		          (at end (not (container-at ?c CONTAINER-DEPOT))))
 	)
 
-	(:action put-container
+	(:durative-action put-container
 		:parameters (?r - robot ?c - container ?side - location)
-		:precondition (and (robot-at ?r ?side) (robot-carries ?r ?c))
-		:effect (and (not (robot-carries ?r ?c)) (container-at ?c ?side))
+		:duration (= ?duration 1)
+		:condition (and
+		             (at start (robot-at ?r ?side))
+		             (at start (robot-carries ?r ?c)))
+		:effect (and
+		          (at end (not (robot-carries ?r ?c)))
+		          (at end (container-at ?c ?side)))
 	)
 
-	(:action move
+	(:durative-action move
 		:parameters (?r - robot ?l1 - location ?l2 - location)
-		:precondition (and (robot-at ?r ?l1) (location-is-free ?l2))
-		:effect (and (not (robot-at ?r ?l1)) (not (location-is-free ?l2)) (robot-at ?r ?l2) (location-is-free ?l1))
+		:duration (= ?duration 1)
+		:condition (and
+		             (at start (robot-at ?r ?l1))
+		             (at start (location-is-free ?l2)))
+		:effect (and
+		          (at end (not (robot-at ?r ?l1)))
+		          (at end (not (location-is-free ?l2)))
+		          (at end (robot-at ?r ?l2))
+		          (at end (location-is-free ?l1)))
 	)
 
-	(:action move-plaza
+	(:durative-action move-plaza
 		:parameters (?r - robot ?l1 - location ?l2 - location)
-		:precondition (and (robot-at ?r ?l1))
-		:effect (and (not (robot-at ?r ?l1)) (robot-at ?r ?l2) (location-is-free ?l1))
+		:duration (= ?duration 1)
+		:condition (and
+		             (at start (robot-at ?r ?l1)))
+		:effect (and
+		          (at end (not (robot-at ?r ?l1)))
+		          (at end (robot-at ?r ?l2))
+		          (at end (location-is-free ?l1)))
 	)
 
-	(:action move-plaza-plaza
+	(:durative-action move-plaza-plaza
 		:parameters (?r - robot ?l1 - location ?l2 - location)
-		:precondition (and (robot-at ?r ?l1))
-		:effect (and (not (robot-at ?r ?l1)) (robot-at ?r ?l2))
+		:duration (= ?duration 1)
+		:condition (and
+		             (at start (robot-at ?r ?l1)))
+		:effect (and
+		          (at end (not (robot-at ?r ?l1)))
+		          (at end (robot-at ?r ?l2)))
 	)
 
-	(:action start-machine
+	(:durative-action start-machine
 		:parameters (?m - machine)
-		:precondition (and (machine-in-state ?m FILLED))
-		:effect (and (machine-in-state ?m OPERATING) (not (machine-in-state ?m FILLED)))
+		:duration (= ?duration 1)
+		:condition (and
+		             (at start (machine-in-state ?m FILLED)))
+		:effect (and
+		          (at end (machine-in-state ?m OPERATING))
+		          (at end (not (machine-in-state ?m FILLED))))
 	)
 
-	(:action collect-processite
+	(:durative-action collect-processite
 		:parameters (?r - robot ?machine - machine ?output - location ?c - container)
-		:precondition (and (location-is-machine-output ?output) (machine-in-state ?machine READY) (robot-at ?r ?output) (robot-carries ?r ?c) (container-can-be-filled ?c) (machine-makes-material ?machine PROCESSITE))
-		:effect (and (not (container-can-be-filled ?c)) (container-filled ?c PROCESSITE) (not (machine-in-state ?machine READY)) (machine-in-state ?machine IDLE))
+		:duration (= ?duration 1)
+		:condition (and
+		             (at start (location-is-machine-output ?output))
+		             (at start (machine-in-state ?machine READY))
+		             (at start (robot-at ?r ?output))
+		             (at start (robot-carries ?r ?c))
+		             (at start (container-can-be-filled ?c))
+		             (at start (machine-makes-material ?machine PROCESSITE)))
+		:effect (and
+		          (at end (not (container-can-be-filled ?c)))
+		          (at end (container-filled ?c PROCESSITE))
+		          (at end (not (machine-in-state ?machine READY)))
+		          (at end (machine-in-state ?machine IDLE)))
 	)
 
-	(:action put-processite
+	(:durative-action put-processite
 		:parameters (?r - robot ?side - location ?machine - machine ?c - container)
-		:precondition (and (location-part-of-machine ?side ?machine) (location-is-machine-input ?side) (machine-in-state ?machine IDLE) (robot-at ?r ?side) (robot-carries ?r ?c) (container-filled ?c PROCESSITE) (machine-for-material ?machine PROCESSITE))
-		:effect (and (not (container-filled ?c PROCESSITE)) (container-can-be-filled ?c) (machine-in-state ?machine FILLED) (not (machine-in-state ?machine IDLE)))
+		:duration (= ?duration 1)
+		:condition (and
+		             (at start (location-part-of-machine ?side ?machine))
+		             (at start (location-is-machine-input ?side))
+		             (at start (machine-in-state ?machine IDLE))
+		             (at start (robot-at ?r ?side))
+		             (at start (robot-carries ?r ?c))
+		             (at start (container-filled ?c PROCESSITE))
+		             (at start (machine-for-material ?machine PROCESSITE)))
+		:effect (and
+		          (at end (not (container-filled ?c PROCESSITE)))
+		          (at end (container-can-be-filled ?c))
+		          (at end (machine-in-state ?machine FILLED))
+		          (at end (not (machine-in-state ?machine IDLE))))
 	)
 
-	(:action collect-xenonite
+	(:durative-action collect-xenonite
 		:parameters (?r - robot ?machine - machine ?output - location ?c - container)
-		:precondition (and (location-is-machine-output ?output) (machine-in-state ?machine READY) (robot-at ?r ?output) (robot-carries ?r ?c) (container-can-be-filled ?c) (machine-makes-material ?machine XENONITE))
-		:effect (and (not (container-can-be-filled ?c)) (container-filled ?c XENONITE) (not (machine-in-state ?machine READY)) (machine-in-state ?machine IDLE))
+		:duration (= ?duration 1)
+		:condition (and
+		             (at start (location-is-machine-output ?output))
+		             (at start (machine-in-state ?machine READY))
+		             (at start (robot-at ?r ?output))
+		             (at start (robot-carries ?r ?c))
+		             (at start (container-can-be-filled ?c))
+		             (at start (machine-makes-material ?machine XENONITE)))
+		:effect (and
+		          (at end (not (container-can-be-filled ?c)))
+		          (at end (container-filled ?c XENONITE))
+		          (at end (not (machine-in-state ?machine READY)))
+		          (at end (machine-in-state ?machine IDLE)))
 	)
 )
