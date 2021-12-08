@@ -517,6 +517,7 @@
 		(plan-assert-action prepare-cs ?mps MOUNT_CAP)
 		(plan-assert-action cs-mount-cap ?mps ?wp ?cap-color)
 	)
+	(printout t "IT WORKS" crlf) ;here are the goals connected to the domain
 	(modify ?g (mode EXPANDED))
 )
 

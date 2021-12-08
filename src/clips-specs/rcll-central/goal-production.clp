@@ -353,7 +353,7 @@
 	(not (wm-fact (key domain fact cs-buffered args? m ?mps col ?any-cap-color)))
 	(not (wm-fact (key domain fact wp-at args? wp ?wp-a m ?mps side INPUT)))
 	; Capcarrier CEs
-	(or (and
+	(or   (and
 	        (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
 	        (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
 	        (not (plan-action (action-name wp-get-shelf) (param-values $? ?wp $?)))
@@ -381,7 +381,9 @@
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
 	                                   $?)
-	                          (is-executable FALSE))
+	                          (is-executable FALSE)
+						 							  ;(precondition ?precon&~nil)
+														)
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
@@ -426,8 +428,8 @@
 " Bring a product to the delivery station.
 "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
-	?g <- (goal (id ?goal-id) (class DELIVER)
 	                          (mode FORMULATED)
+														?g <- (goal (id ?goal-id) (class DELIVER)
 	                          (params  wp ?wp
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
@@ -830,7 +832,9 @@ The workpiece remains in the output of the used ring station after
 	            (params target-mps ?mps
 	                    cap-color ?cap-color
 	             )
-	             (is-executable FALSE))
+	             (is-executable FALSE)
+							 (precondition ?precon&~nil)
+							 )
 
 	(not (goal (class INSTRUCT-CS-MOUNT-CAP) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -989,6 +993,9 @@ The workpiece remains in the output of the used ring station after
 	              target-side INPUT
 	              wp-loc ?wp-loc
 	              wp-side ?wp-side)
+				;(param-names wp target-mps target-side wp-loc wp-side)
+				;(param-values ?wp ?mps INPUT ?wp-loc ?wp-side)
+				;(goal-action goal-mount-cap)
 	)))
 	(goal-meta-assert ?goal nil ?order-id nil)
 	(return ?goal)
@@ -1157,6 +1164,9 @@ The workpiece remains in the output of the used ring station after
 	      (verbosity NOISY) (is-executable FALSE)
 	      (params target-mps ?mps
 	              cap-color ?cap-color)
+				(goal-action goal-instruct-cs-mount-cap)
+				(param-names mps cap-color)
+				(param-values ?mps ?cap-color)
 	)))
 	(goal-meta-assert ?goal central ?order-id nil)
 	(return ?goal)

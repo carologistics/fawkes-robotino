@@ -28,6 +28,7 @@
   (not (domain-loaded))
 =>
   (parse-pddl-domain (path-resolve "rcll-central/domain.pddl"))
+  (parse-pddl-goal-domain (path-resolve "rcll-central/goal-domain.pddl"))
   (assert (domain-loaded))
 )
 
@@ -341,4 +342,3 @@
 	=>
 	(assert (wm-fact (key central agent robot-waiting args? r ?robot)))
 )
-
