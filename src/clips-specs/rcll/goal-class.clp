@@ -828,12 +828,14 @@
         (goal (class CLEAR) (mode FORMULATED))
 
     )
-    (goal-class (class ?class&CLEAR-MPS) (id ?cid) (sub-type ?subtype))
+    (goal-class (class ?class&CLEAR-MPS) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
-    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?team-color ?robot ?mps ?wp ?side))
 
     (wm-fact (key domain fact mps-type args? m ?mps t ?mps-type))
+    (promise-time (usecs ?game-time))
+    (test (sat-or-promised ?sat ?game-time ?from ?lt))
     =>
     (printout t "Goal " CLEAR-MPS " ("?mps") formulated from PDDL" crlf)
 
@@ -904,12 +906,14 @@
     (goal (id ?parent) (class NO-PROGRESS) (mode FORMULATED))
     (goal (id ?urgent) (class URGENT) (mode FORMULATED))
 
-    (goal-class (class ?class&DISCARD-UNKNOWN) (id ?cid) (sub-type ?subtype))
+    (goal-class (class ?class&DISCARD-UNKNOWN) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
-    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?robot ?wp ?rs))
 
     (not (goal (class ?class) (params robot ?robot wp ?wp)))
+    (promise-time (usecs ?game-time))
+    (test (sat-or-promised ?sat ?game-time ?from ?lt))
     =>
     (do-for-fact ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ monitoring safety-discard))
         (bind ?parent ?urgent)
@@ -943,9 +947,9 @@
     (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
     (goal (id ?maintain-id) (class PREPARE-RINGS) (mode FORMULATED))
 
-    (goal-class (class ?class&GET-BASE-TO-FILL-RS) (id ?cid) (sub-type ?subtype))
+    (goal-class (class ?class&GET-BASE-TO-FILL-RS) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
-    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values  ?robot ?wp ?rs ?bs ?side))
 
     (not (goal (class ?class) (params robot ?robot
@@ -953,6 +957,8 @@
                                             bs-side ?side
                                             base-color ?any-base
                                             wp ?wp)))
+    (promise-time (usecs ?game-time))
+    (test (sat-or-promised ?sat ?game-time ?from ?lt))
     =>
     (printout t "Goal " ?class " formulated from PDDL" crlf)
     (bind ?distance (node-distance (str-cat ?bs - (if (eq ?side INPUT) then I else O))))
@@ -994,15 +1000,17 @@
     (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
     (goal (id ?maintain-id) (class PREPARE-RINGS) (mode FORMULATED))
 
-    (goal-class (class ?class&GET-SHELF-TO-FILL-RS) (id ?cid) (sub-type ?subtype))
+    (goal-class (class ?class&GET-SHELF-TO-FILL-RS) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
-    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?robot ?rs ?cc ?cs ?spot))
 
     (not (goal (class ?class) (parent ?maintain-id) (params robot ?robot
                                                                           cs ?cs
                                                                           wp ?cc
                                                                           spot ?spot)))
+    (promise-time (usecs ?game-time))
+    (test (sat-or-promised ?sat ?game-time ?from ?lt))
     =>
     (printout t "Goal " ?class " formulated from PDDL" crlf)
     (bind ?distance (node-distance (str-cat ?rs -I)))
@@ -1039,13 +1047,15 @@
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (goal (id ?production-id) (class PREPARE-RINGS) (mode FORMULATED))
 
-    (goal-class (class ?class&FILL-RS) (id ?cid) (sub-type ?subtype))
+    (goal-class (class ?class&FILL-RS) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
-    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?wp ?robot ?rs ?filled))
 
     (wm-fact (key domain fact mps-state args? m ?rs s ?state))
     (wm-fact (key domain fact rs-inc args? summand ?filled sum ?after))
+    (promise-time (usecs ?game-time))
+    (test (sat-or-promised ?sat ?game-time ?from ?lt))
     =>
     ;Check if this ring station should be filled with increased priority.
     (bind ?priority-increase 0)
@@ -1094,10 +1104,12 @@
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (goal (id ?production-id) (class PREPARE-CAPS) (mode FORMULATED))
 
-    (goal-class (class ?class&FILL-CAP) (id ?cid) (sub-type ?subtype))
+    (goal-class (class ?class&FILL-CAP) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
-    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?robot ?cs ?cc ?spot ?cap-color))
+    (promise-time (usecs ?game-time))
+    (test (sat-or-promised ?sat ?game-time ?from ?lt))
     =>
     (bind ?priority-increase 0)
     ;increase priority if there is a product being produced that requires this cap-color
@@ -1153,9 +1165,9 @@
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (goal (id ?production-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
 
-    (goal-class (class ?class&MOUNT-FIRST-RING) (id ?cid) (meta order ?order) (sub-type ?subtype))
+    (goal-class (class ?class&MOUNT-FIRST-RING) (id ?cid) (meta order ?order) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
-    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?rs ?bases-needed ?other-color ?ring1-color ?bs ?wp ?side ?order ?robot ?base-color))
 
     (wm-fact (key domain fact rs-filled-with args? m ?rs n ?bases-filled))
@@ -1174,6 +1186,8 @@
                                                                               bs-side ?side $?
                                                                               order ?order
                                                                               wp ?wp)))
+    (promise-time (usecs ?game-time))
+    (test (sat-or-promised ?sat ?game-time ?from ?lt))
     =>
     (bind ?required-resources ?order ?wp)
     (if (any-factp ((?exclusive-complexities wm-fact))
@@ -1227,9 +1241,9 @@
     (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
     (goal (id ?production-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
 
-    (goal-class (class ?class&MOUNT-NEXT-RING) (id ?cid) (meta order ?order ring ?ring) (sub-type ?subtype))
+    (goal-class (class ?class&MOUNT-NEXT-RING) (id ?cid) (meta order ?order ring ?ring) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
-    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?order ?robot ?wp ?base-color ?ring1-color ?ring2-color ?ring3-color ?other-color ?rs ?prev-rs ?bases-needed))
 
     (wm-fact (key domain fact rs-filled-with args? m ?rs n ?bases-filled))
@@ -1243,6 +1257,8 @@
     (not (goal (class ?class) (parent ?maintain-id) (params robot ?robot $?
                                                                      wp ?wp $?
                                                                      order ?order)))
+    (promise-time (usecs ?game-time))
+    (test (sat-or-promised ?sat ?game-time ?from ?lt))
     =>
     (bind ?curr-ring-color ?ring2-color)
     (bind ?ring-pos 2)
@@ -1293,9 +1309,9 @@
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (goal (id ?production-id) (class DELIVER-PRODUCTS) (mode FORMULATED))
 
-    (goal-class (class ?class&DELIVER) (id ?cid) (meta order ?order) (sub-type ?subtype))
+    (goal-class (class ?class&DELIVER) (id ?cid) (meta order ?order) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
-    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?team-color ?robot ?ds ?mps ?wp ?base-color ?ring1-color ?ring2-color ?ring3-color ?cap-color ?order ?complexity ?gate))
 
     (not (goal (class ?class) (params $? robot ?robot $?
@@ -1303,6 +1319,8 @@
                                           wp ?wp
                                           ds ?ds
                                           ds-gate ?gate $?)))
+    (promise-time (usecs ?game-time))
+    (test (sat-or-promised ?sat ?game-time ?from ?lt))
     =>
     (printout t "Goal " ?class " formulated from PDDL for order " ?order crlf)
     (bind ?goal-id (sym-cat ?class - (gensym*)))
@@ -1346,15 +1364,17 @@
     (goal (id ?production-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
     (goal (id ?urgent) (class URGENT) (mode FORMULATED))
 
-    (goal-class (class ?class&PRODUCE-C0) (id ?cid) (meta order ?order) (sub-type ?subtype))
+    (goal-class (class ?class&PRODUCE-C0) (id ?cid) (meta order ?order) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
-    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?team-color ?robot ?mps ?wp ?cap-color ?bs ?side ?order ?base-color))
 
     (not (goal (class ?class) (params $? order ?order $?)))
 
     (wm-fact (key order meta competitive args? ord ?order) (value ?competitive))
     (wm-fact (key config rcll competitive-order-priority) (value ?comp-prio))
+    (promise-time (usecs ?game-time))
+    (test (sat-or-promised ?sat ?game-time ?from ?lt))
     =>
     (printout t "Goal " ?class " formulated from PDDL for order " ?order crlf)
     (bind ?distance (node-distance (str-cat ?bs - (if (eq ?side INPUT) then I else O))))
@@ -1405,10 +1425,10 @@
     (goal (id ?production-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
     (goal (id ?urgent) (class URGENT) (mode FORMULATED))
 
-    (goal-class (class ?class&PRODUCE-CX) (id ?cid) (meta order ?order) (sub-type ?subtype))
+    (goal-class (class ?class&PRODUCE-CX) (id ?cid) (meta order ?order) (sub-type ?subtype) (lookahead-time ?lt))
     (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
     (pddl-formula (part-of ?cid) (id ?formula-id))
-    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied TRUE) (grounding ?grounding-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?team-color ?robot ?cs ?order ?base-color ?ring1-color ?ring2-color ?ring3-color ?cap-color ?wp ?rs))
 
     (not (goal (class ?class)
@@ -1417,6 +1437,8 @@
                         wp ?wp $?
                         mps ?cs $?
                         order ?order)))
+    (promise-time (usecs ?game-time))
+    (test (sat-or-promised ?sat ?game-time ?from ?lt))
     =>
     (bind ?prio ?*PRIORITY-PRODUCE-C1*)
     (if (eq ?com C2) then (bind ?prio ?*PRIORITY-PRODUCE-C2*))
