@@ -266,6 +266,8 @@ clips-executive:
             file: rcll/execution-monitoring.clp
           - name: simtest
             file: rcll/simtest.clp
+          - name: local-promises
+            file: rcll/promises.clp
 
       action-mapping:
         enter-field: >
