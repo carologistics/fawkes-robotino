@@ -45,6 +45,7 @@
                     (param-constants ?team-color ?robot nil nil         OUTPUT ?order)
                     (param-types     team-color  robot  rs  workpiece mps-side order)
                     (param-quantified)
+                    (lookahead-time 0)
                     (preconditions "
                         (and
                             (can-hold ?robot)
@@ -76,6 +77,7 @@
                     (param-constants ?team-color ?robot nil nil         OUTPUT)
                     (param-types     team-color  robot  cs  cap-carrier mps-side)
                     (param-quantified)
+                    (lookahead-time 0)
                     (preconditions "
                         (and
                             (can-hold ?robot)
@@ -105,6 +107,7 @@
                     (param-constants ?team-color ?robot nil nil       OUTPUT)
                     (param-types     team-color  robot  cs  workpiece mps-side)
                     (param-quantified)
+                    (lookahead-time 0)
                     (preconditions "
                         (and
                             (can-hold ?robot)
@@ -135,6 +138,7 @@
                     (param-constants ?team-color ?robot nil nil       nil)
                     (param-types     team-color  robot  bs  workpiece mps-side)
                     (param-quantified)
+                    (lookahead-time 0)
                     (preconditions "
                         (and
                             (can-hold ?robot)
@@ -164,6 +168,7 @@
                     (param-constants ?robot nil       nil)
                     (param-types     robot  workpiece rs)
                     (param-quantified )
+                    (lookahead-time 0)
                     (preconditions "
                         (and
                             (holding ?robot ?wp)
@@ -200,6 +205,7 @@
                     (param-constants ?robot nil       nil)
                     (param-types     robot  cap-carrier rs)
                     (param-quantified )
+                    (lookahead-time 0)
                     (preconditions "
                         (and
                             (holding ?robot ?wp)
@@ -240,6 +246,7 @@
                     (param-constants ?robot nil       nil nil nil)
                     (param-types     robot  workpiece rs  bs  mps-side)
                     (param-quantified )
+                    (lookahead-time 0)
                     (preconditions "
                         (and
                             (can-hold ?robot)
@@ -274,6 +281,7 @@
                     (param-constants ?robot nil nil         nil nil)
                     (param-types     robot  rs  cap-carrier cs  shelf-spot)
                     (param-quantified )
+                    (lookahead-time 0)
                     (preconditions "
                         (and
                             (can-hold ?robot)
@@ -309,6 +317,7 @@
                     (param-constants nil       ?robot ?rs nil)
                     (param-types     workpiece robot  rs  ring-num)
                     (param-quantified )
+                    (lookahead-time 0)
                     (preconditions "
                         (and
                             (wp-usable ?wp)
@@ -346,6 +355,7 @@
                     (param-constants nil       ?robot ?rs nil)
                     (param-types     cap-carrier robot  rs  ring-num)
                     (param-quantified )
+                    (lookahead-time 0)
                     (preconditions "
                         (and
                             (wp-usable ?wp)
@@ -381,6 +391,7 @@
                     (param-constants ?robot ?cs nil         nil        ?cap-color)
                     (param-types     robot  cs  cap-carrier shelf-spot cap-color)
                     (param-quantified )
+                    (lookahead-time 0)
                     (preconditions "
                         (and
                             (can-hold ?robot)
@@ -428,6 +439,7 @@
                     (param-constants ?rs ?bases-needed ?other-color ?ring1-color nil nil       nil      ?order ?robot ?base-color)
                     (param-types     rs  ring-num      ring-color   ring-color   bs  workpiece mps-side order  robot  base-color)
                     (param-quantified )
+                    (lookahead-time 0)
                     (preconditions "
                         (and
                             (not (mps-state ?rs BROKEN))
@@ -498,6 +510,7 @@
                     (param-constants ?order ?robot nil       ?base-color ?ring1-color ?ring2-color ?ring3-color ?other-color ?rs ?prev-rs ?bases-needed)
                     (param-types     order  robot  workpiece base-color  ring-color   ring-color   ring-color   ring-color   rs  rs       ring-num)
                     (param-quantified )
+                    (lookahead-time 0)
                     (preconditions "
                         (and
                             (order-producible ?order)
@@ -569,6 +582,7 @@
                     (param-constants ?order ?robot nil       ?base-color ?ring1-color ?ring2-color ?ring3-color ?other-color ?rs ?prev-rs ?bases-needed)
                     (param-types     order  robot  workpiece base-color  ring-color   ring-color   ring-color   ring-color   rs  rs       ring-num)
                     (param-quantified )
+                    (lookahead-time 0)
                     (preconditions "
                         (and
                             (order-producible ?order)
@@ -632,6 +646,7 @@
                     (param-constants ?team-color ?robot nil nil nil       ?base-color ?ring1-color ?ring2-color ?ring3-color ?cap-color ?order ?comp                  ?gate)
                     (param-types     team-color  robot  ds  fs  workpiece base-color  ring-color   ring-color   ring-color   cap-color  order  order-complexity-value ds-gate)
                     (param-quantified )
+                    (lookahead-time 0)
                     (preconditions "
                         (and
                             ;mps CEs
@@ -688,6 +703,7 @@
                     (param-constants ?team-color ?robot ?cs nil       ?cap-color nil nil      ?order ?base-color)
                     (param-types     team-color  robot  cs  workpiece cap-color  bs  mps-side order  base-color)
                     (param-quantified)
+                    (lookahead-time 0)
                     (preconditions "
                         (and
                             ;cs CEs
@@ -764,6 +780,7 @@
                     (param-constants ?team-color ?robot ?cs ?order ?base-color ?ring1-color ?ring2-color ?ring3-color ?cap-color nil       ?rs)
                     (param-types     team-color  robot  cs  order  base-color  ring-color   ring-color   ring-color   cap-color  workpiece rs)
                     (param-quantified)
+                    (lookahead-time 0)
                     (preconditions "
                         (and
                             ;cs CEs
