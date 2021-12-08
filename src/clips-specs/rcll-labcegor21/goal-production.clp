@@ -152,6 +152,37 @@
 
 ; ----------------------- MPS Instruction GOALS -------------------------------
 
+(defrule goal-production-instruct-bs-dispense-base-executable
+" Instruct base station to dispense a base. "
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class INSTRUCT-BS-DISPENSE-BASE) (sub-type SIMPLE)
+	            (mode FORMULATED)
+	            (params wp ?wp
+	                    target-mps ?mps
+	                    target-side ?side
+	                    base-color ?base-color)
+	            (is-executable FALSE))
+	(not (goal (class INSTRUCT-BS-DISPENSE-BASE) (mode SELECTED|DISPATCHED|COMMITTED|EXPANDED)))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(wm-fact (key refbox team-color) (value ?team-color))
+	; MPS CEs
+	(wm-fact (key domain fact mps-type args? m ?mps t BS))
+	(wm-fact (key domain fact mps-state args? m ?mps s IDLE))
+	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+	; WP CEs
+	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps $?)))
+	(wm-fact (key domain fact wp-unused args? wp ?wp))
+	; wait until a robot actually needs the base before proceeding
+	;(plan-action (action-name wp-get) (param-values ? ?wp ?mps ?side)
+	;             (goal-id ?g-id) (plan-id ?p-id) (state PENDING)
+	;             (precondition ?precondition-id))
+	;(grounded-pddl-formula (formula-id ?formula-id) (grounding ?precondition-id) (is-satisfied FALSE))
+	;(pddl-formula (id ?formula-id) (part-of wp-get))
+	=>
+	(printout t "Goal INSTRUCT-BS-DISPENSE executable" crlf)
+	(modify ?g (is-executable TRUE))
+)
+
 (defrule goal-production-instruct-cs-buffer-cap-executable
 " Instruct cap station to buffer a cap. "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
@@ -178,6 +209,8 @@
 	(modify ?g (is-executable TRUE))
 )
 
+; ----------------------- Goal creation functions -------------------------------
+
 (deffunction goal-production-assert-buffer-cap
 	(?mps ?cap-color)
 
@@ -187,6 +220,22 @@
 	      (params target-mps ?mps
 	              cap-color ?cap-color)
 	)))
+	(return ?goal)
+)
+
+(deffunction goal-production-assert-instruct-bs-dispense-base
+	(?wp ?base-color ?side)
+
+	(bind ?goal (assert (goal (class INSTRUCT-BS-DISPENSE-BASE)
+	  (id (sym-cat INSTRUCT-BS-DISPENSE-BASE- (gensym*))) (sub-type SIMPLE)
+	  (verbosity NOISY) (is-executable FALSE)
+	      (params wp ?wp
+	              target-mps C-BS
+	              target-side ?side
+	              base-color ?base-color)
+	)))
+	(goal-meta-assert ?goal central)
+	(printout t "Goal INSTRUCT-BS-DISPENSE formulated" crlf)
 	(return ?goal)
 )
 
@@ -231,9 +280,21 @@
 	(wm-fact (key domain fact mps-state args? m ?any-mps s IDLE))
 	(wm-fact (key domain fact entered-field args? r robot1))
 	=>
+	(bind ?wp-for-order wp-1)
+	(assert (domain-object (name ?wp-for-order) (type workpiece))
+		  (domain-fact (name wp-unused) (param-values ?wp-for-order))
+		  (wm-fact (key domain fact wp-base-color args? wp ?wp-for-order col BASE_NONE) (type BOOL) (value TRUE))
+		  (wm-fact (key domain fact wp-cap-color args? wp ?wp-for-order col CAP_NONE) (type BOOL) (value TRUE))
+		  (wm-fact (key domain fact wp-ring1-color args? wp ?wp-for-order col RING_NONE) (type BOOL) (value TRUE))
+		  (wm-fact (key domain fact wp-ring2-color args? wp ?wp-for-order col RING_NONE) (type BOOL) (value TRUE))
+		  (wm-fact (key domain fact wp-ring3-color args? wp ?wp-for-order col RING_NONE) (type BOOL) (value TRUE))
+		  (wm-fact (key order meta wp-for-order args? wp ?wp-for-order ord O1))
+	)
 	(bind ?g (goal-tree-assert-central-run-parallel PRODUCTION-ROOT
+		;(goal-production-assert-instruct-bs-dispense-base ?wp-for-order BASE_RED OUTPUT)
 		(goal-meta-assert (goal-production-assert-buffer-cap C-CS1 CAP_GREY) robot1)
 		(goal-meta-assert (goal-production-assert-instruct-cs-buffer-cap C-CS1 CAP_GREY) central)
+
 		)
 	)
 	(modify ?g (meta do-not-finish) (priority 1.0))
