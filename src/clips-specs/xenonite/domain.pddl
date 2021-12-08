@@ -51,6 +51,7 @@
 		(machine-makes-material ?m - machine ?mat - material)
 		(location-is-mine ?location - location)
 		(location-part-of-machine ?location - location ?machine - machine)
+		(location-is-machine ?location - location)
 		(location-is-machine-input ?location - location)
 		(location-is-machine-output ?location - location)
 		(location-is-free ?location - location)
