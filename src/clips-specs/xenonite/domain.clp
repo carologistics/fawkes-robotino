@@ -89,6 +89,7 @@
     (domain-fact (name location-is-free) (param-values MACHINE2-INPUT))
     (domain-fact (name location-is-free) (param-values MACHINE2-OUTPUT))
     (domain-fact (name location-is-free) (param-values STORAGE-INPUT))
+    (domain-fact (name location-is-free) (param-values CONTAINER-DEPOT))
     (domain-fact (name location-part-of-machine) (param-values MACHINE1-INPUT MACHINE1))
     (domain-fact (name location-part-of-machine) (param-values MACHINE1-OUTPUT MACHINE1))
     (domain-fact (name location-part-of-machine) (param-values MACHINE2-INPUT MACHINE2))
