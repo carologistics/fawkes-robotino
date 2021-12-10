@@ -16,7 +16,7 @@ plugins/execution-time-estimator:
   # Reads skill execution times from this config
   # Does not work with empty whitelist
   static:
-    priority: -1
+    priority: 2
     speed: 1
 
     # global whitelist options
@@ -55,6 +55,10 @@ plugins/execution-time-estimator:
       99-default-put:
         name: bring_prodcut_to
         exec-time: 19.24
+      # default drive
+      movement:
+        name: goto
+        exec-time: 3
 
   # Estimates exec times of driving skills by taking distances from NavGraph
   # as reference.
