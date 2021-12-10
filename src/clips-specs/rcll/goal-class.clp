@@ -48,7 +48,7 @@
                     (param-constants ?team-color ?robot nil nil         OUTPUT ?order)
                     (param-types     team-color  robot  rs  workpiece mps-side order)
                     (param-quantified)
-                    (lookahead-time 0)
+                    (lookahead-time 8)
                     (preconditions "
                         (and
                             (can-hold ?robot)
@@ -112,7 +112,7 @@
                     (param-constants ?team-color ?robot nil nil         OUTPUT)
                     (param-types     team-color  robot  cs  cap-carrier mps-side)
                     (param-quantified)
-                    (lookahead-time 0)
+                    (lookahead-time 8)
                     (preconditions "
                         (and
                             (can-hold ?robot)
@@ -134,7 +134,7 @@
                     (param-constants ?team-color ?robot nil nil         OUTPUT   ?rs)
                     (param-types     team-color  robot  cs  cap-carrier mps-side rs)
                     (param-quantified)
-                    (lookahead-time 0)
+                    (lookahead-time 8)
                     (preconditions "
                         (and
                             (can-hold ?robot)
@@ -171,7 +171,7 @@
                     (param-constants ?team-color ?robot nil nil       nil)
                     (param-types     team-color  robot  bs  workpiece mps-side)
                     (param-quantified)
-                    (lookahead-time 0)
+                    (lookahead-time 8)
                     (preconditions "
                         (and
                             (can-hold ?robot)
@@ -304,7 +304,7 @@
                     (param-constants ?robot nil       ?rs nil nil)
                     (param-types     robot  workpiece rs  bs  mps-side)
                     (param-quantified )
-                    (lookahead-time 0)
+                    (lookahead-time 16)
                     (preconditions "
                         (and
                             (can-hold ?robot)
@@ -337,7 +337,7 @@
                     (param-constants ?robot ?rs nil         nil nil)
                     (param-types     robot  rs  cap-carrier cs  shelf-spot)
                     (param-quantified )
-                    (lookahead-time 0)
+                    (lookahead-time 10)
                     (preconditions "
                         (and
                             (can-hold ?robot)
@@ -371,7 +371,7 @@
                     (param-constants nil       ?robot ?rs)
                     (param-types     workpiece robot  rs)
                     (param-quantified )
-                    (lookahead-time 0)
+                    (lookahead-time 10)
                     (preconditions "
                         (and
                             (wp-usable ?wp)
@@ -404,7 +404,7 @@
                     (param-constants nil       ?robot ?rs nil)
                     (param-types     cap-carrier robot  rs  ring-num)
                     (param-quantified )
-                    (lookahead-time 0)
+                    (lookahead-time 10)
                     (preconditions "
                         (and
                             (wp-usable ?wp)
@@ -440,7 +440,7 @@
                     (param-constants ?robot ?cs nil         nil        ?cap-color)
                     (param-types     robot  cs  cap-carrier shelf-spot cap-color)
                     (param-quantified )
-                    (lookahead-time 0)
+                    (lookahead-time 15)
                     (preconditions "
                         (and
                             (can-hold ?robot)
@@ -490,7 +490,7 @@
                     (param-constants ?rs ?other-rs ?bases-needed ?other-color ?ring1-color nil nil       nil      ?order ?robot ?base-color)
                     (param-types     rs  rs        ring-num      ring-color   ring-color   bs  workpiece mps-side order  robot  base-color)
                     (param-quantified )
-                    (lookahead-time 0)
+                    (lookahead-time 16)
                     (preconditions "
                         (and
                             (not (mps-state ?rs BROKEN))
@@ -566,7 +566,7 @@
                     (param-constants ?order ?robot nil       ?base-color ?ring1-color ?ring2-color ?ring3-color ?other-color ?rs ?prev-rs ?bases-needed)
                     (param-types     order  robot  workpiece base-color  ring-color   ring-color   ring-color   ring-color   rs  rs       ring-num)
                     (param-quantified )
-                    (lookahead-time 0)
+                    (lookahead-time 10)
                     (preconditions "
                         (and
                             (order-producible ?order)
@@ -638,7 +638,7 @@
                     (param-constants ?order ?robot nil       ?base-color ?ring1-color ?ring2-color ?ring3-color ?other-color ?rs ?prev-rs ?bases-needed)
                     (param-types     order  robot  workpiece base-color  ring-color   ring-color   ring-color   ring-color   rs  rs       ring-num)
                     (param-quantified )
-                    (lookahead-time 0)
+                    (lookahead-time 10)
                     (preconditions "
                         (and
                             (order-producible ?order)
@@ -702,7 +702,7 @@
                     (param-constants ?team-color ?robot nil nil nil       ?base-color ?ring1-color ?ring2-color ?ring3-color ?cap-color ?order ?comp                  ?gate)
                     (param-types     team-color  robot  ds  fs  workpiece base-color  ring-color   ring-color   ring-color   cap-color  order  order-complexity-value ds-gate)
                     (param-quantified )
-                    (lookahead-time 0)
+                    (lookahead-time 12)
                     (preconditions "
                         (and
                             ;mps CEs
@@ -759,7 +759,7 @@
                     (param-constants ?team-color ?robot ?cs nil       ?cap-color nil nil      ?order ?base-color)
                     (param-types     team-color  robot  cs  workpiece cap-color  bs  mps-side order  base-color)
                     (param-quantified)
-                    (lookahead-time 0)
+                    (lookahead-time 16)
                     (preconditions "
                         (and
                             ;cs CEs
@@ -836,7 +836,7 @@
                     (param-constants ?team-color ?robot ?cs ?order ?base-color ?ring1-color ?ring2-color ?ring3-color ?cap-color nil       ?rs)
                     (param-types     team-color  robot  cs  order  base-color  ring-color   ring-color   ring-color   cap-color  workpiece rs)
                     (param-quantified)
-                    (lookahead-time 0)
+                    (lookahead-time 12)
                     (preconditions "
                         (and
                             ;cs CEs
@@ -984,6 +984,9 @@
     (test (sat-or-promised ?sat ?game-time ?from ?lt))
     =>
     (printout t "Goal " CLEAR-MPS " ("?mps") formulated from PDDL" crlf)
+    (if (neq ?sat TRUE) then
+        (printout t "Goal formulated from promise" crlf)
+    )
 
     (bind ?parent nil)
     (bind ?priority nil)
@@ -1069,6 +1072,10 @@
         (retract ?wm) ; TODO: this seems dangeorus, the goal is not even dispatched, yet the monitoring fact is removed
     )
     (printout t "Goal " ?class " formulated from PDDL" crlf)
+    (if (neq ?sat TRUE) then
+        (printout t "Goal formulated from promise" crlf)
+    )
+
     (bind ?goal-id (sym-cat ?class - (gensym*)))
     (assert (goal (id ?goal-id)
                     (class ?class) (sub-type ?subtype)
@@ -1112,6 +1119,10 @@
     (test (sat-or-promised ?sat ?game-time ?from ?lt))
     =>
     (printout t "Goal " ?class " formulated from PDDL" crlf)
+    (if (neq ?sat TRUE) then
+        (printout t "Goal formulated from promise" crlf)
+    )
+
     (bind ?distance (node-distance (str-cat ?bs - (if (eq ?side INPUT) then I else O))))
     (bind ?goal-id (sym-cat ?class - (gensym*)))
     (assert (goal (id ?goal-id)
@@ -1180,6 +1191,10 @@
     (test (sat-or-promised ?sat ?game-time ?from ?lt))
     =>
     (printout t "Goal " ?class " formulated from PDDL" crlf)
+    (if (neq ?sat TRUE) then
+        (printout t "Goal formulated from promise" crlf)
+    )
+
     (bind ?distance (node-distance (str-cat ?rs -I)))
     (bind ?goal-id (sym-cat ?class - (gensym*)))
     (assert (goal (id ?goal-id)
@@ -1242,6 +1257,10 @@
     )
     (bind ?distance (node-distance (str-cat ?rs -I)))
     (printout t "Goal " ?class " formulated from PDDL" crlf)
+    (if (neq ?sat TRUE) then
+        (printout t "Goal formulated from promise" crlf)
+    )
+
     (bind ?goal-id (sym-cat ?class - (gensym*)))
     (assert (goal (id ?goal-id)
                     (class ?class) (sub-type ?subtype)
@@ -1297,6 +1316,10 @@
     else
         (printout t "Goal " ?class " formulated from PDDL" crlf)
     )
+    (if (neq ?sat TRUE) then
+        (printout t "Goal formulated from promise" crlf)
+    )
+
     (bind ?distance (node-distance (str-cat ?cs -I)))
     (bind ?goal-id  (sym-cat ?class - (gensym*)))
     (assert (goal (id ?goal-id)
@@ -1371,6 +1394,10 @@
         else
         (printout t "Goal " ?class " formulated from PDDL for order " ?order crlf)
     )
+    (if (neq ?sat TRUE) then
+        (printout t "Goal formulated from promise" crlf)
+    )
+
     (bind ?distance (node-distance (str-cat ?bs - (if (eq ?side INPUT) then I else O))))
 
     (bind ?goal-id (sym-cat ?class - (gensym*)))
@@ -1472,6 +1499,10 @@
     )
 
     (printout t "Goal " ?class " formulated from PDDL for order " ?order " (Ring " ?ring-pos ") " crlf)
+    (if (neq ?sat TRUE) then
+        (printout t "Goal formulated from promise" crlf)
+    )
+
     (bind ?goal-id (sym-cat ?class - (gensym*)))
     (assert (goal (id ?goal-id)
                     (class ?class) (priority (+ ?ring-pos ?*PRIORITY-MOUNT-NEXT-RING*))
@@ -1542,6 +1573,10 @@
     (test (sat-or-promised ?sat ?game-time ?from ?lt))
     =>
     (printout t "Goal " ?class " formulated from PDDL for order " ?order crlf)
+    (if (neq ?sat TRUE) then
+        (printout t "Goal formulated from promise" crlf)
+    )
+
     (bind ?goal-id (sym-cat ?class - (gensym*)))
     (assert (goal (id ?goal-id)
                     (class ?class) (sub-type ?subtype)
@@ -1611,6 +1646,10 @@
     (test (sat-or-promised ?sat ?game-time ?from ?lt))
     =>
     (printout t "Goal " ?class " formulated from PDDL for order " ?order crlf)
+    (if (neq ?sat TRUE) then
+        (printout t "Goal formulated from promise" crlf)
+    )
+
     (bind ?distance (node-distance (str-cat ?bs - (if (eq ?side INPUT) then I else O))))
     (bind ?priority-decrease 0)
     (bind ?parent ?production-id)
@@ -1709,6 +1748,10 @@
     (if (eq ?com C2) then (bind ?prio ?*PRIORITY-PRODUCE-C2*))
     (if (eq ?com C3) then (bind ?prio ?*PRIORITY-PRODUCE-C3*))
     (printout t "Goal " ?class " formulated from PDDL for order " ?order crlf)
+    (if (neq ?sat TRUE) then
+        (printout t "Goal formulated from promise" crlf)
+    )
+
     (bind ?goal-id (sym-cat ?class - (gensym*)))
     (assert (goal (id ?goal-id)
                     (class ?class) (sub-type ?subtype)
