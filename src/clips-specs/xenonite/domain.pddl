@@ -63,11 +63,11 @@
 		:duration (= ?duration 1)
 		:condition (and
 		              (at start (location-is-mine ?mine))
-		              (at start (robot-at ?r ?mine))
+		              (over all (robot-at ?r ?mine))
 		              (at start (robot-carries ?r ?c))
 		              (at start (container-can-be-filled ?c)))
 		:effect (and
-		           (at end (not (container-can-be-filled ?c)))
+		           (at start (not (container-can-be-filled ?c)))
 		           (at end (container-filled ?c REGOLITH)))
 	)
 
@@ -78,38 +78,38 @@
 		             (at start (location-part-of-machine ?side ?machine))
 		             (at start (location-is-machine-input ?side))
 		             (at start (machine-in-state ?machine IDLE))
-		             (at start (robot-at ?r ?side))
+		             (over all (robot-at ?r ?side))
 		             (at start (robot-carries ?r ?c))
 		             (at start (container-filled ?c REGOLITH))
 		             (at start (machine-for-material ?machine REGOLITH)))
 		:effect (and
-		          (at end (not (container-filled ?c REGOLITH)))
+		          (at start (not (container-filled ?c REGOLITH)))
 		          (at end (container-can-be-filled ?c))
 		          (at end (machine-in-state ?machine FILLED))
-		          (at end (not (machine-in-state ?machine IDLE))))
+		          (at start (not (machine-in-state ?machine IDLE))))
 	)
 
 	(:durative-action pick-container
 		:parameters (?r - robot ?c - container)
 		:duration (= ?duration 1)
 		:condition (and
-		             (at start (robot-at ?r CONTAINER-DEPOT))
+		             (over all (robot-at ?r CONTAINER-DEPOT))
 		             (at start (robot-can-carry ?r))
 		             (at start (container-at ?c CONTAINER-DEPOT)))
 		:effect (and
-		          (at end (not (robot-can-carry ?r)))
+		          (at start (not (robot-can-carry ?r)))
 		          (at end (robot-carries ?r ?c))
-		          (at end (not (container-at ?c CONTAINER-DEPOT))))
+		          (at start (not (container-at ?c CONTAINER-DEPOT))))
 	)
 
 	(:durative-action put-container
 		:parameters (?r - robot ?c - container ?side - location)
 		:duration (= ?duration 1)
 		:condition (and
-		             (at start (robot-at ?r ?side))
+		             (over all (robot-at ?r ?side))
 		             (at start (robot-carries ?r ?c)))
 		:effect (and
-		          (at end (not (robot-carries ?r ?c)))
+		          (at start (not (robot-carries ?r ?c)))
 		          (at end (container-at ?c ?side)))
 	)
 
@@ -120,8 +120,8 @@
 		             (at start (robot-at ?r ?l1))
 		             (at start (location-is-free ?l2)))
 		:effect (and
-		          (at end (not (robot-at ?r ?l1)))
-		          (at end (not (location-is-free ?l2)))
+		          (at start (not (robot-at ?r ?l1)))
+		          (at start (not (location-is-free ?l2)))
 		          (at end (robot-at ?r ?l2))
 		          (at end (location-is-free ?l1)))
 	)
@@ -132,7 +132,7 @@
 		:condition (and
 		             (at start (robot-at ?r ?l1)))
 		:effect (and
-		          (at end (not (robot-at ?r ?l1)))
+		          (at start (not (robot-at ?r ?l1)))
 		          (at end (robot-at ?r ?l2))
 		          (at end (location-is-free ?l1)))
 	)
@@ -154,7 +154,7 @@
 		             (at start (machine-in-state ?m FILLED)))
 		:effect (and
 		          (at end (machine-in-state ?m OPERATING))
-		          (at end (not (machine-in-state ?m FILLED))))
+		          (at start (not (machine-in-state ?m FILLED))))
 	)
 
 	(:durative-action collect-processite
@@ -163,14 +163,14 @@
 		:condition (and
 		             (at start (location-is-machine-output ?output))
 		             (at start (machine-in-state ?machine READY))
-		             (at start (robot-at ?r ?output))
+		             (over all (robot-at ?r ?output))
 		             (at start (robot-carries ?r ?c))
 		             (at start (container-can-be-filled ?c))
 		             (at start (machine-makes-material ?machine PROCESSITE)))
 		:effect (and
-		          (at end (not (container-can-be-filled ?c)))
+		          (at start (not (container-can-be-filled ?c)))
 		          (at end (container-filled ?c PROCESSITE))
-		          (at end (not (machine-in-state ?machine READY)))
+		          (at start (not (machine-in-state ?machine READY)))
 		          (at end (machine-in-state ?machine IDLE)))
 	)
 
@@ -181,15 +181,15 @@
 		             (at start (location-part-of-machine ?side ?machine))
 		             (at start (location-is-machine-input ?side))
 		             (at start (machine-in-state ?machine IDLE))
-		             (at start (robot-at ?r ?side))
+		             (over all (robot-at ?r ?side))
 		             (at start (robot-carries ?r ?c))
 		             (at start (container-filled ?c PROCESSITE))
 		             (at start (machine-for-material ?machine PROCESSITE)))
 		:effect (and
-		          (at end (not (container-filled ?c PROCESSITE)))
+		          (at start (not (container-filled ?c PROCESSITE)))
 		          (at end (container-can-be-filled ?c))
 		          (at end (machine-in-state ?machine FILLED))
-		          (at end (not (machine-in-state ?machine IDLE))))
+		          (at start (not (machine-in-state ?machine IDLE))))
 	)
 
 	(:durative-action collect-xenonite
@@ -198,14 +198,14 @@
 		:condition (and
 		             (at start (location-is-machine-output ?output))
 		             (at start (machine-in-state ?machine READY))
-		             (at start (robot-at ?r ?output))
+		             (over all (robot-at ?r ?output))
 		             (at start (robot-carries ?r ?c))
 		             (at start (container-can-be-filled ?c))
 		             (at start (machine-makes-material ?machine XENONITE)))
 		:effect (and
-		          (at end (not (container-can-be-filled ?c)))
+		          (at start (not (container-can-be-filled ?c)))
 		          (at end (container-filled ?c XENONITE))
-		          (at end (not (machine-in-state ?machine READY)))
+		          (at start (not (machine-in-state ?machine READY)))
 		          (at end (machine-in-state ?machine IDLE)))
 	)
 )
