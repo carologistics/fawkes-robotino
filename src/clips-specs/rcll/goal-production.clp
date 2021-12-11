@@ -24,7 +24,8 @@
   ?*PRIORITY-FIND-MISSING-MPS* = 110
   ?*PRIORITY-DELIVER* = 100
   ?*PRIORITY-RESET* = 98
-  ?*PRIORITY-CLEAR-BS* = 97
+  ?*PRIORITY-CLEAR-BS* = 96
+  ?*PRIORITY-FILL-RS-CLEAR-BS* = 97
   ?*PRIORITY-PRODUCE-C3* = 96
   ?*PRIORITY-PRODUCE-C2* = 95
   ?*PRIORITY-PRODUCE-C1* = 94
@@ -34,12 +35,14 @@
   ?*PRIORITY-CLEAR-CS* = 70
   ?*PRIORITY-CLEAR-CS-NEEDED* = 91
   ?*PRIORITY-CLEAR-RS* = 55
+  ?*PRIORITY-FILL-RS-CLEAR-CS* = 73
+  ?*PRIORITY-FILL-RS-CLEAR-RS* = 58
   ?*PRIORITY-PREFILL-CS* = 50 ;This priority can be increased by +1
   ?*PRIORITY-WAIT-MPS-PROCESS* = 45
   ?*PRIORITY-PREFILL-RS-WITH-FRESH-BASE* = 40
   ?*PRIORITY-PREFILL-RS* = 30 ;This priority can be increased by up to +4
   ?*PRIORITY-ADD-ADDITIONAL-RING-WAITING* = 20
-  ?*PRIORITY-DISCARD-UNKNOWN* = 10
+  ?*PRIORITY-DISCARD* = 10
   ?*PRIORITY-WAIT* = 2
   ?*PRIORITY-GO-WAIT* = 1
   ?*PRIORITY-NOTHING-TO-DO* = -1
@@ -356,36 +359,6 @@
                 )
                 (required-resources ?mps)
   ))
-)
-
-(defrule goal-production-wait-for-mps-processing
-" If a mps is ready to process (IDLE and not wp at input) drive to output
-  and wait for this mps
-"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class WAIT-FOR-PROCESS) (mode FORMULATED))
-
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?)))
-
-  (wm-fact (key domain fact self args? r ?robot))
-  (or (and (wm-fact (key domain fact at args? r ?robot m ?mps side WAIT))
-           (domain-object (type waitpoint) (name ?waitpoint&:(and (eq ?mps ?waitpoint) (eq (str-length (str-cat ?waitpoint)) 10)))))
-      (and (domain-object (type waitpoint) (name ?waitpoint&:(eq (str-length (str-cat ?waitpoint)) 10)))
-           (wm-fact (key domain fact at args? r ?robot m ?mps side ?side))
-           (not (domain-object (type waitpoint) (name ?w2&:(and (eq ?w2 ?mps) (eq (str-length (str-cat ?w2)) 10))))))
-  )
-  =>
-  (assert
-    (goal (id (sym-cat WAIT-FOR-MPS-PROCESS- (gensym*)))
-          (class WAIT-FOR-MPS-PROCESS)
-          (sub-type SIMPLE)
-          (parent ?production-id)
-          (priority ?*PRIORITY-WAIT-MPS-PROCESS*)
-          (params robot ?robot
-                  pos ?waitpoint)
-          (required-resources WAIT-PROCESS ?waitpoint)
-    )
-  )
 )
 
 
