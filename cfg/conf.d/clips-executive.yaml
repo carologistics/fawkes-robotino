@@ -54,7 +54,7 @@ clips-executive:
 
   # Agent name. On startup the clips-agent will try to resolve a file named
   # <agent name>.clp. It must be in the CLIPS path directories.
-  spec: rcll-central
+  spec: xenonite
 
   specs:
     rcll-central:
