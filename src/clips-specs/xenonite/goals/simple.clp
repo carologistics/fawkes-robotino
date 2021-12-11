@@ -46,9 +46,11 @@
 
 (defrule simple-goal-commit
   ?g <- (goal (id ?goal-id) (sub-type SIMPLE) (mode EXPANDED))
+  ; Commit to any existing plan
+  (plan (id ?plan-id) (goal-id ?goal-id))
   (not (goal (parent ?goal-id)))
 =>
-  (modify ?g (mode COMMITTED))
+  (modify ?g (mode COMMITTED) (committed-to ?plan-id))
 )
 
 
