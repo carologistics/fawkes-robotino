@@ -1,0 +1,42 @@
+---
+clips-executive/specs/xenonite:
+  init:
+    stage-1:
+      - name: pddl-parser
+      - name: robmem-wait
+        feature-request: false
+        files: ["BATCH|robmem-wait-init.clp"]
+        wait-for: robmem-initialized
+      - name: robot_memory
+    stage-3:
+      - name: pddl-planner
+        feature-request: false
+        files: ["pddl-init.clp"]
+        wait-for: pddl-planner-initialized
+      - name: domain
+        file: xenonite/domain.clp
+      - name: goal-reasoner
+        files:
+          - goals/retry.clp
+          - goals/run-all.clp
+          - goals/run-one.clp
+          - goals/timeout.clp
+          - goals/try-all.clp
+          - goal-tree.clp
+          - xenonite/goals/run-endless.clp
+          - xenonite/goals/simple.clp
+          - xenonite/goal-reasoner.clp
+          - xenonite/goal-class.clp
+      - name: goal-expander
+        file: xenonite/fixed-sequence.clp
+      - name: action-selection
+        file: action-selection/sequential.clp
+      - name: action-execution
+        files:
+          - skills-actions.clp
+          - robot-memory-sync.clp
+          - xenonite/noop-actions.clp
+      - name: debug-info
+        file: xenonite/debug.clp
+      - name: local-promises
+        file: xenonite/promises.clp
