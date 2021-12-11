@@ -91,6 +91,9 @@ clips-executive/specs/rcll/parameters/rcll:
   cyan-send-port: 4471
   magenta-send-port: 4481
 
+clips-executive/specs/xenonite/parameters/xenonite:
+  agent/name: WallE
+
 plugins/mongodb:
   clients:
     default/enabled: true

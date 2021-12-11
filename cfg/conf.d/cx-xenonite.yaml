@@ -13,6 +13,10 @@ clips-executive/specs/xenonite:
         feature-request: false
         files: ["pddl-init.clp"]
         wait-for: pddl-planner-initialized
+      - name: worldmodel
+        files:
+          - wm-robmem-sync.clp
+          - xenonite/init-worldmodel.clp
       - name: domain
         file: xenonite/domain.clp
       - name: goal-reasoner

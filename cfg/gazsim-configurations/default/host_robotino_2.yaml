@@ -91,6 +91,9 @@ clips-executive/specs/rcll/parameters/rcll:
   cyan-send-port: 4472
   magenta-send-port: 4482
 
+clips-executive/specs/xenonite/parameters/xenonite:
+  agent/name: Eve
+
 plugins/mongodb:
   clients:
     default/enabled: true

@@ -91,6 +91,9 @@ clips-executive/specs/rcll/parameters/rcll:
   cyan-send-port: 4473
   magenta-send-port: 4483
 
+clips-executive/specs/xenonite/parameters/xenonite:
+  agent/name: R2D2
+
 plugins/mongodb:
   clients:
     default/enabled: true
