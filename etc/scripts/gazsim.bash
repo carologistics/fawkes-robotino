@@ -49,6 +49,7 @@ OPTIONS:
    --keep-tmpfiles   Do not delete tmp files on exit
    --asp             Run with ASP agent and global planner
    --challenge       Start refbox challenge script instead of refbox
+   --no-refbox       Do not start the refbox
    --refbox-args     Pass options to the refbox
 EOF
 }
@@ -134,7 +135,7 @@ echo "Using $TERMINAL"
 ROS_MASTER_PORT=${ROS_MASTER_URI##*:}
 ROS_MASTER_PORT=${ROS_MASTER_PORT%%/*}
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "debug,ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:,keep-tmpfiles,challenge,refbox-args:" -- "$@")
+OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "debug,ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:,keep-tmpfiles,challenge,refbox-args:,no-refbox" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
@@ -221,6 +222,9 @@ while true; do
          ;;
      --refbox-args)
          REFBOX_ARGS="$OPTARG"
+         ;;
+     --no-refbox)
+         REFBOX=""
          ;;
      --keep-tmpfiles)
          KEEP_TMPFILES=true
@@ -398,10 +402,12 @@ if [  $COMMAND  == start ]; then
 	fi
     	done
     fi
-    #start refbox
-    COMMANDS+=("bash -i -c \"$startup_script_location -x $REFBOX  $KEEP $@ -- $REFBOX_ARGS\"")
-    #start refbox frontend
-    COMMANDS+=("bash -i -c \"$startup_script_location -x refbox-frontend $KEEP $@\"")
+    if [ "$REFBOX" != "" ] ; then
+        #start refbox
+        COMMANDS+=("bash -i -c \"$startup_script_location -x $REFBOX  $KEEP $@ -- $REFBOX_ARGS\"")
+        #start refbox frontend
+        COMMANDS+=("bash -i -c \"$startup_script_location -x refbox-frontend $KEEP $@\"")
+    fi
 
     # start mongodb central instance
     if $START_MONGODB ; then
