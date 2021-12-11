@@ -139,3 +139,15 @@ fawkes/meta_plugins:
     - clips-agent
     - asp
     - asp-planner
+  m-promises:
+    - clips
+    - clips-pddl-parser
+    - mongodb
+    - robot-memory
+    - clips_robot_memory
+    - pddl-robot-memory
+    - pddl-planner
+    - clips-executive
+    - webview
+    - clips-rest-api
+    - clips-executive-rest-api
