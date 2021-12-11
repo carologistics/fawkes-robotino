@@ -32,7 +32,7 @@
 	(:constants
 		BASE MACHINE1-INPUT MACHINE1-OUTPUT MACHINE2-INPUT MACHINE2-OUTPUT REGOLITH-MINE1 REGOLITH-MINE2 STORAGE-INPUT CONTAINER-DEPOT - location
 		MACHINE1 MACHINE2 - machine
-		C1 C2 C3 C4 - container
+		;C1 C2 C3 C4 - container
 		IDLE FILLED OPERATING READY - machine-state
 		REGOLITH XENONITE PROCESSITE BYPRODUCT - material
 	)
@@ -45,7 +45,7 @@
 		(container-at ?c - container ?l - location)
 		(container-filled ?c - container ?m - material)
 		(container-can-be-filled ?c - container)
-		(container-for-robot ?c -container ?r -robot)
+		(container-for-robot ?c - container ?r -robot)
 		(machine-in-state ?m - machine ?s - machine-state)
 		(machine-for-material ?m - machine ?mat - material)
 		(machine-makes-material ?m - machine ?mat - material)

@@ -5,6 +5,20 @@
 ;  Copyright  2021 Daniel Swoboda <swoboda@kbsg.rwth-aachen.de>
 ;****************************************************************************
 
+(defrule debug-create-scenario-check-formula
+  (not (pddl-formula (id SCENARIO-CHECK1)))
+  (domain-object (type container))
+  =>
+  (parse-pddl-formula (str-cat
+    "(forall (?c - container) "
+             "(and (container-at ?c STORAGE-INPUT)
+                   (container-filled ?c XENONITE)))")
+    "SCENARIO-CHECK")
+  (assert (pddl-grounding (id GROUNDING-SCENARIO-CHECK)
+                          (formula-root SCENARIO-CHECK)
+                          (param-names c)
+                          (param-values nil)))
+)
 
 (defrule debug-print-container-at
     (domain-fact (name container-at) (param-values ?c ?l))
@@ -38,26 +52,16 @@
     (assert (scenario-timer ?now))
 )
 
-(defrule debug-assert-stop-condition-storage-full
-    (domain-fact (name container-at) (param-values ?c STORAGE-INPUT))
-    (not (domain-fact (name storage-is-full)))
-    (time ?now ?mills)
-    ?st <- (scenario-timer ?start)
-    =>
-    (bind ?dcounter 0)
-    (do-for-all-facts ((?df domain-fact)) (eq ?df:name container-at)
-        (bind ?dcounter (+ ?dcounter 1))
-    )
-    (bind ?ccounter 0)
-    (do-for-all-facts ((?dc domain-constant)) (eq ?dc:type container)
-        (bind ?ccounter (+ ?ccounter 1))
-    )
-    (if (eq ?dcounter ?ccounter) then
-        (assert (domain-fact (name storage-is-full)))
-        (do-for-all-facts ((?g goal))
-            (retract ?g)
-        )
-        (printout t "DEBUG: Scenario fulfilled in " (- ?now ?start) "s!" crlf)
-        (retract ?st)
-    )
+(defrule debug-scenario-fulfilled
+  (grounded-pddl-formula (formula-id SCENARIO-CHECK1) (is-satisfied TRUE))
+  (not (domain-fact (name storage-is-full)))
+  (time ?now ?mills)
+  ?st <- (scenario-timer ?start)
+  =>
+  (assert (domain-fact (name storage-is-full)))
+  (do-for-all-facts ((?g goal))
+      (retract ?g)
+  )
+  (printout t "DEBUG: Scenario fulfilled in " (- ?now ?start) "s!" crlf)
+  (retract ?st)
 )
