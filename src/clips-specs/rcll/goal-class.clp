@@ -27,17 +27,22 @@
 
 ; CLEANUP GOALS
 
-(defrule goal-class-create-clear-rs-from-expired-product
-    "Assert a goal class for CLEAR-MPS goals that holds the precondition for formulation
+(defrule goal-class-create-discard-rs-from-expired-product
+    "Assert a goal class for GET-AND-DISCARD and FILL-RS goals that holds the precondition for formulation
     in case an expired product blocks a RS."
-    (not (goal-class (class CLEAR-MPS) (id CLEAR-MPS-RS) (sub-type SIMPLE)))
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
     (wm-fact (key domain fact order-complexity args? ord ?order $?))
+    (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
+    (wm-fact (key domain fact mps-type args? m ?rs t RS))
+    (not (goal-class (class FILL-RS)
+                     (id ?goal-id&:(eq ?goal-id (sym-cat FILL-RS- ?rs - ?order)))
+                     (meta order ?order target-rs ?rs)
+                     (sub-type SIMPLE)))
     =>
     (assert
-        (goal-class (class CLEAR-MPS)
-                    (id (sym-cat CLEAR-MPS-RS - ?order))
+        (goal-class (class GET-AND-DISCARD)
+                    (id (sym-cat GET-AND-DISCARD-RS - ?order))
                     (type ACHIEVE)
                     (sub-type SIMPLE)
                     (meta order ?order)
@@ -53,7 +58,34 @@
                             (wp-at ?wp ?rs OUTPUT)
                             (wp-cap-color ?wp CAP_NONE)
                             (wp-for-order ?wp ?order)
+                            (not (payments-needed))
                             (order-out-of-delivery ?order)
+                        )
+                    ")
+                    (effects "")
+        )
+    )
+    (assert
+        (goal-class (class GET-AND-FILL-RS)
+                    (id (sym-cat FILL-RS- ?rs - ?order))
+                    (type ACHIEVE)
+                    (sub-type SIMPLE)
+                    (meta order ?order target-rs ?rs)
+                    (param-names     team-color  robot  rs  wp          side   target-rs order)
+                    (param-constants ?team-color ?robot nil nil         OUTPUT ?rs       ?order)
+                    (param-types     team-color  robot  rs  workpiece mps-side rs        order)
+                    (param-quantified)
+                    (lookahead-time 0)
+                    (preconditions "
+                        (and
+                            (can-hold ?robot)
+                            (not (mps-state ?rs BROKEN))
+                            (wp-at ?wp ?rs OUTPUT)
+                            (wp-cap-color ?wp CAP_NONE)
+                            (wp-for-order ?wp ?order)
+                            (order-out-of-delivery ?order)
+                            (not (mps-state ?target-rs BROKEN))
+                            (rs-needs-payment ?target-rs)
                         )
                     ")
                     (effects "")
@@ -62,15 +94,20 @@
 )
 
 (defrule goal-class-create-clear-cs-from-capless-carrier
-    "Assert a goal class for CLEAR-MPS goals that holds the precondition for formulation
+    "Assert a goal class for GET-AND-DISCARD and FILL-RS goals that holds the precondition for formulation
     in case a CC blocks a CS."
-    (not (goal-class (class CLEAR-MPS) (id CLEAR-MPS-CS-CC) (sub-type SIMPLE)))
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
+    (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
+    (wm-fact (key domain fact mps-type args? m ?rs t RS))
+    (not (goal-class (class FILL-RS) (sub-type SIMPLE)
+                     (id ?goal-id&:(eq ?goal-id (sym-cat FILL-RS-CS-CC- ?rs)))
+         )
+    )
     =>
     (assert
-        (goal-class (class CLEAR-MPS)
-                    (id CLEAR-MPS-CS-CC)
+        (goal-class (class GET-AND-DISCARD)
+                    (id GET-AND-DISCARD-CS-CC)
                     (type ACHIEVE)
                     (sub-type SIMPLE)
                     (param-names     team-color  robot  cs  cc          side)
@@ -84,37 +121,30 @@
                             (not (mps-state ?cs BROKEN))
                             (wp-at ?cc ?cs OUTPUT)
                             (wp-cap-color ?cc CAP_NONE)
+                            (not (payments-needed))
                         )
                     ")
                     (effects "")
         )
     )
-)
-
-(defrule goal-class-create-clear-cs-from-finished-product
-    "Assert a goal class for CLEAR-MPS goals that holds the precondition for formulation
-    in case a finished product blocks a CS."
-    (not (goal-class (class CLEAR-MPS) (id CLEAR-MPS-CS-WP) (sub-type SIMPLE)))
-    (wm-fact (key domain fact self args? r ?robot))
-    (wm-fact (key refbox team-color) (value ?team-color))
-    =>
     (assert
-        (goal-class (class CLEAR-MPS)
-                    (id CLEAR-MPS-CS-WP)
+        (goal-class (class GET-AND-FILL-RS)
+                    (id (sym-cat FILL-RS-CS-CC- ?rs))
                     (type ACHIEVE)
                     (sub-type SIMPLE)
-                    (param-names     team-color  robot  cs  wp        side)
-                    (param-constants ?team-color ?robot nil nil       OUTPUT)
-                    (param-types     team-color  robot  cs  workpiece mps-side)
+                    (param-names     team-color  robot  cs  cc          side    target-rs)
+                    (param-constants ?team-color ?robot nil nil         OUTPUT   ?rs)
+                    (param-types     team-color  robot  cs  cap-carrier mps-side rs)
                     (param-quantified)
                     (lookahead-time 0)
                     (preconditions "
                         (and
                             (can-hold ?robot)
-                            (not (mps-side-free ?cs INPUT))
                             (not (mps-state ?cs BROKEN))
-                            (wp-at ?wp ?cs OUTPUT)
-                            (not (wp-cap-color ?wp CAP_NONE))
+                            (wp-at ?cc ?cs OUTPUT)
+                            (wp-cap-color ?cc CAP_NONE)
+                            (not (mps-state ?target-rs BROKEN))
+                            (rs-needs-payment ?target-rs)
                         )
                     ")
                     (effects "")
@@ -123,15 +153,20 @@
 )
 
 (defrule goal-class-create-clear-bs
-    "Assert a goal class for CLEAR-MPS goals that holds the precondition for formulation
+    "Assert a goal class for GET-AND-DISCARD and FILL-RS goals that holds the precondition for formulation
     of potential BS clear goals."
-    (not (goal-class (class CLEAR-MPS) (id CLEAR-MPS-BS) (sub-type SIMPLE)))
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
+    (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
+    (wm-fact (key domain fact mps-type args? m ?rs t RS))
+    (not (goal-class (class FILL-RS) (sub-type SIMPLE)
+                     (id ?goal-id&:(eq ?goal-id (sym-cat FILL-RS-CS-CC- ?rs)))
+         )
+    )
     =>
     (assert
-        (goal-class (class CLEAR-MPS)
-                    (id CLEAR-MPS-BS)
+        (goal-class (class GET-AND-DISCARD)
+                    (id GET-AND-DISCARD-BS)
                     (type ACHIEVE)
                     (sub-type SIMPLE)
                     (param-names     team-color  robot  bs  wp        side)
@@ -145,6 +180,30 @@
                             (mps-team ?bs ?team-color)
                             (not (mps-state ?bs BROKEN))
                             (wp-at ?wp ?bs ?side)
+                            (not (payments-needed))
+                        )
+                    ")
+                    (effects "")
+        )
+    )
+    (assert
+        (goal-class (class GET-AND-FILL-RS)
+                    (id (sym-cat FILL-RS-BS- ?rs))
+                    (type ACHIEVE)
+                    (sub-type SIMPLE)
+                    (param-names     team-color  robot  bs  wp        side     target-rs)
+                    (param-constants ?team-color ?robot nil nil       nil      ?rs)
+                    (param-types     team-color  robot  bs  workpiece mps-side rs)
+                    (param-quantified)
+                    (lookahead-time 0)
+                    (preconditions "
+                        (and
+                            (can-hold ?robot)
+                            (mps-team ?bs ?team-color)
+                            (not (mps-state ?bs BROKEN))
+                            (wp-at ?wp ?bs ?side)
+                            (not (mps-state ?target-rs BROKEN))
+                            (rs-needs-payment ?target-rs)
                         )
                     ")
                     (effects "")
@@ -157,11 +216,11 @@
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
 
-    (not (goal-class (class DISCARD-UNKNOWN) (id DISCARD-UNKNOWN-WP)))
+    (not (goal-class (class DISCARD) (id DISCARD-WP)))
     =>
     (assert
-        (goal-class (class DISCARD-UNKNOWN)
-                    (id DISCARD-UNKNOWN-WP)
+        (goal-class (class DISCARD)
+                    (id DISCARD-WP)
                     (type ACHIEVE)
                     (sub-type SIMPLE)
                     (param-names     robot  wp        rs)
@@ -194,11 +253,11 @@
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
 
-    (not (goal-class (class DISCARD-UNKNOWN) (id DISCARD-UNKNOWN-CC)))
+    (not (goal-class (class DISCARD) (id DISCARD-CC)))
     =>
     (assert
-        (goal-class (class DISCARD-UNKNOWN)
-                    (id DISCARD-UNKNOWN-CC)
+        (goal-class (class DISCARD)
+                    (id DISCARD-CC)
                     (type ACHIEVE)
                     (sub-type SIMPLE)
                     (param-names     robot  wp        rs)
@@ -229,21 +288,22 @@
 
 
 ; PRODUCTION MAINTENANCE GOALS
-
 (defrule goal-class-create-get-from-bs-for-rs
     "Create a goal-class for getting WPs from the BS to fill an RS with."
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
 
-    (not (goal-class (class GET-BASE-TO-FILL-RS)))
+    (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
+    (wm-fact (key domain fact mps-type args? m ?rs t RS))
+    (not (goal-class (class GET-BASE-AND-FILL-RS) (id ?id&:(eq ?id (sym-cat GET-BASE-AND-FILL-RS- ?rs)))))
     =>
     (assert
-        (goal-class (class GET-BASE-TO-FILL-RS)
-                    (id GET-BASE-TO-FILL-RS)
+        (goal-class (class GET-BASE-AND-FILL-RS)
+                    (id (sym-cat GET-BASE-AND-FILL-RS- ?rs))
                     (type ACHIEVE)
                     (sub-type SIMPLE)
                     (param-names     robot  wp        rs  bs  side)
-                    (param-constants ?robot nil       nil nil nil)
+                    (param-constants ?robot nil       ?rs nil nil)
                     (param-types     robot  workpiece rs  bs  mps-side)
                     (param-quantified )
                     (lookahead-time 0)
@@ -251,11 +311,7 @@
                         (and
                             (can-hold ?robot)
                             (wp-spawned-for ?wp ?robot)
-                            (or
-                                (rs-filled-with ?rs ZERO)
-                                (rs-filled-with ?rs ONE)
-                                (rs-filled-with ?rs TWO)
-                            )
+                            (rs-needs-payment ?rs)
                             (not (mps-state ?bs BROKEN))
                             (not (mps-state ?bs DOWN))
                             (mps-has-side ?bs ?side)
@@ -265,20 +321,22 @@
     )
 )
 
-(defrule goal-class-create-get-from-shelf-for-rs
+(defrule goal-class-create-get-from-shelf-and-fill-rs
     "Create a goal-class for getting CCs from the shelf to fill an RS with."
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
 
-    (not (goal-class (class GET-SHELF-TO-FILL-RS)))
+    (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
+    (wm-fact (key domain fact mps-type args? m ?rs t RS))
+    (not (goal-class (class GET-SHELF-AND-FILL-RS) (id ?id&:(eq ?id (sym-cat GET-SHELF-AND-FILL-RS- ?rs)))))
     =>
     (assert
-        (goal-class (class GET-SHELF-TO-FILL-RS)
-                    (id GET-SHELF-TO-FILL-RS)
+        (goal-class (class GET-SHELF-AND-FILL-RS)
+                    (id GET-SHELF-AND-FILL-RS)
                     (type ACHIEVE)
                     (sub-type SIMPLE)
                     (param-names     robot  rs  cc          cs  spot)
-                    (param-constants ?robot nil nil         nil nil)
+                    (param-constants ?robot ?rs nil         nil nil)
                     (param-types     robot  rs  cap-carrier cs  shelf-spot)
                     (param-quantified )
                     (lookahead-time 0)
@@ -286,17 +344,15 @@
                         (and
                             (can-hold ?robot)
                             (not (mps-state ?rs BROKEN))
-                            (or
-                                (rs-filled-with ?rs ZERO)
-                                (rs-filled-with ?rs ONE)
-                                (rs-filled-with ?rs TWO)
-                            )
+                            (payments-needed)
                             (wp-on-shelf ?cc ?cs ?spot)
                         )
                     ")
         )
     )
 )
+
+
 
 (defrule goal-class-create-fill-rs
     "Create a goal-class for an RS to formulate FILL-RS goals to fill it with WPs."
@@ -313,9 +369,9 @@
                     (meta rs ?rs cc FALSE)
                     (type ACHIEVE)
                     (sub-type SIMPLE)
-                    (param-names     wp        robot  rs  filled)
-                    (param-constants nil       ?robot ?rs nil)
-                    (param-types     workpiece robot  rs  ring-num)
+                    (param-names     wp        robot  rs)
+                    (param-constants nil       ?robot ?rs)
+                    (param-types     workpiece robot  rs)
                     (param-quantified )
                     (lookahead-time 0)
                     (preconditions "
@@ -324,12 +380,7 @@
                             (holding ?robot ?wp)
                             (not (wp-has-order ?wp))
                             (not (mps-state ?rs BROKEN))
-                            (rs-filled-with ?rs ?filled)
-                            (or
-                                (rs-filled-with ?rs ZERO)
-                                (rs-filled-with ?rs ONE)
-                                (rs-filled-with ?rs TWO)
-                            )
+                            (rs-needs-payment ?rs)
                         )
                     ")
         )
@@ -819,19 +870,104 @@
 
 ; CLEANUP GOALS
 
-(defrule goal-class-assert-goal-clear-mps
-    "If the precondition of a goal-class for a CLEAR-MPS type is fulfilled, assert
+(defrule goal-class-assert-goal-get-and-fill-rs
+    "If the precondition of a goal-class for a get-and-fill-rs type is fulfilled, assert
     the goal fact and thus formulate the goal. "
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (or
         (goal (class URGENT) (mode FORMULATED))
         (goal (class CLEAR) (mode FORMULATED))
-
     )
-    (goal-class (class ?class&CLEAR-MPS) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
+    (goal-class (class ?class&GET-AND-FILL-RS) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
-    (pddl-grounding (id ?grounding-id) (param-values ?team-color ?robot ?mps ?wp ?side))
+    (pddl-grounding (id ?grounding-id) (param-values ?team-color ?robot ?mps ?wp ?side ?target-rs $?optional-order))
+
+    (wm-fact (key domain fact mps-type args? m ?mps t ?mps-type))
+    (wm-fact (key domain fact rs-filled-with args? m ?target-rs n ?filled))
+    (wm-fact (key domain fact rs-inc args? summand ?filled sum ?after))
+    (promise-time (usecs ?game-time))
+    (test (sat-or-promised ?sat ?game-time ?from ?lt))
+    =>
+    (printout t "Goal " CLEAR-MPS " ("?mps") formulated from PDDL" crlf)
+
+    (bind ?parent nil)
+    (bind ?priority nil)
+
+    (if (eq ?mps-type CS)
+        then
+        (do-for-fact ((?goal goal)) (and (eq ?goal:class CLEAR) (eq ?goal:mode FORMULATED))
+            (bind ?parent ?goal:id)
+            (bind ?priority ?*PRIORITY-FILL-RS-CLEAR-CS*)
+            (if (and (any-factp ((?wm wm-fact)) (and (wm-key-prefix ?wm:key (create$ domain fact wp-at))
+                                                (eq (wm-key-arg ?wm:key m) ?mps)
+                                                (eq (wm-key-arg ?wm:key side) INPUT)))
+                     (or (eq ?cid FILL-RS-CS-CC)
+                         (eq ?cid DISCARD-CS-CC)
+                     )
+                )
+                then
+                (bind ?priority (+ 1 ?priority))
+                (printout warn "Enhance CLEAR-MPS priority, since there is a product at the input already" crlf)
+            )
+        )
+        else
+        (if (eq ?mps-type BS) then
+            (do-for-fact ((?goal goal)) (and (eq ?goal:class URGENT) (eq ?goal:mode FORMULATED))
+                (bind ?parent ?goal:id)
+                (bind ?priority ?*PRIORITY-FILL-RS-CLEAR-BS*)
+            )
+            else
+            (if (eq ?mps-type RS) then
+                (do-for-fact ((?goal goal)) (and (eq ?goal:class CLEAR) (eq ?goal:mode FORMULATED))
+                    (bind ?parent ?goal:id)
+                    (bind ?priority ?*PRIORITY-FILL-RS-CLEAR-RS*)
+                )
+            )
+        )
+    )
+
+    (bind ?goal-id (sym-cat ?class - (gensym*)))
+    (assert (goal (id ?goal-id)
+                    (class ?class) (sub-type ?subtype)
+                    (priority ?priority)
+                    (parent ?parent)
+                    (params robot ?robot
+                            mps ?target-rs
+                            wp ?wp
+                            rs-before ?filled
+                            rs-after ?after
+                    )
+                    (required-resources (sym-cat ?mps - ?side) ?target-rs ?wp)
+    ))
+
+    ;assert promises resulting from the plan-action of this goal
+    (assert
+        ;wp-get
+        (domain-promise (name wp-at) (param-values ?wp ?mps ?side) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
+        (domain-promise (name holding) (param-values ?robot ?wp) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
+        (domain-promise (name can-hold) (param-values ?robot) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
+        (domain-promise (name mps-state) (param-values ?mps READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
+        (domain-promise (name mps-state) (param-values ?mps IDLE) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
+        (domain-promise (name mps-side-free) (param-values ?mps ?side) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
+        ;go-wait
+        (domain-promise (name at) (param-values ?robot ?mps ?side) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
+        (domain-promise (name at) (param-values ?robot ?mps (wait-pos ?mps ?side)) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
+    )
+)
+
+(defrule goal-class-assert-goal-get-and-discard
+    "If the precondition of a goal-class for a get-and-discard type is fulfilled, assert
+    the goal fact and thus formulate the goal. "
+    (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+    (or
+        (goal (class URGENT) (mode FORMULATED))
+        (goal (class CLEAR) (mode FORMULATED))
+    )
+    (goal-class (class ?class&GET-AND-DISCARD) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
+    (pddl-formula (part-of ?cid) (id ?formula-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
+    (pddl-grounding (id ?grounding-id) (param-values ?team-color ?robot ?mps ?wp ?side $?optional-order))
 
     (wm-fact (key domain fact mps-type args? m ?mps t ?mps-type))
     (promise-time (usecs ?game-time))
@@ -850,7 +986,10 @@
             (if (and (any-factp ((?wm wm-fact)) (and (wm-key-prefix ?wm:key (create$ domain fact wp-at))
                                                 (eq (wm-key-arg ?wm:key m) ?mps)
                                                 (eq (wm-key-arg ?wm:key side) INPUT)))
-                (eq ?cid CLEAR-MPS-CS-CC))
+                     (or (eq ?cid FILL-RS-CS-CC)
+                         (eq ?cid DISCARD-CS-CC)
+                     )
+                )
                 then
                 (bind ?priority (+ 1 ?priority))
                 (printout warn "Enhance CLEAR-MPS priority, since there is a product at the input already" crlf)
@@ -878,8 +1017,8 @@
                     (priority ?priority)
                     (parent ?parent)
                     (params robot ?robot
-                            mps ?mps
                             wp ?wp
+                            mps ?mps
                             side ?side
                     )
                     (required-resources (sym-cat ?mps - ?side) ?wp)
@@ -901,12 +1040,12 @@
 )
 
 (defrule goal-class-assert-goal-discard
-    "If the preconditions of a DISCARD-UNKNOWN goal class are satisfied, assert the goal."
+    "If the preconditions of a DISCARD goal class are satisfied, assert the goal."
     (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
     (goal (id ?parent) (class NO-PROGRESS) (mode FORMULATED))
     (goal (id ?urgent) (class URGENT) (mode FORMULATED))
 
-    (goal-class (class ?class&DISCARD-UNKNOWN) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
+    (goal-class (class ?class&DISCARD) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?robot ?wp ?rs))
@@ -917,13 +1056,13 @@
     =>
     (do-for-fact ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ monitoring safety-discard))
         (bind ?parent ?urgent)
-        (retract ?wm)
+        (retract ?wm) ; TODO: this seems dangeorus, the goal is not even dispatched, yet the monitoring fact is removed
     )
     (printout t "Goal " ?class " formulated from PDDL" crlf)
     (bind ?goal-id (sym-cat ?class - (gensym*)))
     (assert (goal (id ?goal-id)
                     (class ?class) (sub-type ?subtype)
-                    (priority ?*PRIORITY-DISCARD-UNKNOWN*)
+                    (priority ?*PRIORITY-DISCARD*)
                     (parent ?parent)
                     (params robot ?robot
                             wp ?wp
@@ -947,10 +1086,12 @@
     (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
     (goal (id ?maintain-id) (class PREPARE-RINGS) (mode FORMULATED))
 
-    (goal-class (class ?class&GET-BASE-TO-FILL-RS) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
+    (goal-class (class ?class&GET-BASE-AND-FILL-RS) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values  ?robot ?wp ?rs ?bs ?side))
+    (wm-fact (key domain fact rs-filled-with args? m ?rs n ?filled))
+    (wm-fact (key domain fact rs-inc args? summand ?filled sum ?after))
 
     (not (goal (class ?class) (params robot ?robot
                                             bs ?bs
@@ -972,8 +1113,12 @@
                             bs-side ?side
                             base-color BASE_RED
                             wp ?wp
+                            rs ?rs
+                            rs-before ?filled
+                            rs-after ?after
+
                     )
-                    (required-resources ?wp)
+                    (required-resources ?rs ?wp)
             )
     )
 
@@ -995,15 +1140,17 @@
     )
 )
 
-(defrule goal-class-assert-goal-get-from-shelf-for-rs
+(defrule goal-class-assert-goal-get-from-shelf-and-fill-rs
     "If the preconditions of a get-shelf-to-fill-rs goal class is met assert the goal."
     (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
     (goal (id ?maintain-id) (class PREPARE-RINGS) (mode FORMULATED))
 
-    (goal-class (class ?class&GET-SHELF-TO-FILL-RS) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
+    (goal-class (class ?class&GET-SHELF-AND-FILL-RS) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?robot ?rs ?cc ?cs ?spot))
+    (wm-fact (key domain fact rs-filled-with args? m ?rs n ?filled))
+    (wm-fact (key domain fact rs-inc args? summand ?filled sum ?after))
 
     (not (goal (class ?class) (parent ?maintain-id) (params robot ?robot
                                                                           cs ?cs
@@ -1021,10 +1168,13 @@
                     (parent ?maintain-id) (sub-type ?subtype)
                     (params robot ?robot
                             cs ?cs
+                            rs ?rs
                             wp ?cc
                             spot ?spot
+                            rs-before ?filled
+                            rs-after ?after
                     )
-                    (required-resources ?cc)
+                    (required-resources ?rs ?cc)
             )
     )
     ;assert promises resulting from the plan-action of this goal
