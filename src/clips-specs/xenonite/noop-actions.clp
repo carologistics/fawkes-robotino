@@ -46,7 +46,7 @@
   (not (action-timer (plan-id ?plan-id) (action-id ?id)))
   (time ?now ?mills)
   =>
-  (printout t "Starting action " ?op "(" ?id ") of plan " ?plan-id crlf)
+  (printout t "Starting action (" ?op " " ?r " " ?start " " ?end ") (" ?id ") of plan " ?plan-id crlf)
   (assert
     (action-timer (plan-id ?plan-id) (action-id ?id) (start-time ?now) (duration ?*MOVE-EXEC-DURATION*))
   )
@@ -54,11 +54,11 @@
 )
 
 (defrule action-timer-noop-run
-  ?p <- (plan-action (plan-id ?plan-id) (id ?id) (goal-id ?goal-id) (action-name ?op&~move) (state PENDING))
+  ?p <- (plan-action (plan-id ?plan-id) (id ?id) (goal-id ?goal-id) (action-name ?op&~move) (param-values $?params) (state PENDING))
   (not (action-timer (plan-id ?plan-id) (action-id ?id)))
   (time ?now ?mills)
   =>
-  (printout t "Starting action " ?op "(" ?id ") of plan " ?plan-id crlf)
+  (printout t "Starting action (" ?op " " $?params ") (" ?id ") of plan " ?plan-id crlf)
   (assert
     (action-timer (plan-id ?plan-id) (action-id ?id) (start-time ?now) (duration ?*EXEC-DURATION*))
   )
