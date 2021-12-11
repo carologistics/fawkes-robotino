@@ -90,6 +90,7 @@ TEAM_MAGENTA=
 START_CENTRAL_AGENT=false
 START_ASP_PLANER=false
 START_MONGODB=false
+START_REFBOX_COMM=true
 
 if [ -z $TERMINAL ] ; then
     if [[ -n $TMUX ]] ; then
@@ -135,7 +136,7 @@ echo "Using $TERMINAL"
 ROS_MASTER_PORT=${ROS_MASTER_URI##*:}
 ROS_MASTER_PORT=${ROS_MASTER_PORT%%/*}
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "debug,ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:,keep-tmpfiles,challenge,refbox-args:,no-refbox" -- "$@")
+OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "debug,ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:,keep-tmpfiles,challenge,refbox-args:,no-refbox,no-refbox-comm" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
@@ -225,6 +226,9 @@ while true; do
          ;;
      --no-refbox)
          REFBOX=""
+         ;;
+     --no-refbox-comm)
+         START_REFBOX_COMM=false
          ;;
      --keep-tmpfiles)
          KEEP_TMPFILES=true
@@ -447,12 +451,14 @@ if [  $COMMAND  == start ]; then
     fi
 
     #start fawkes for communication, llsfrbcomm and eventually statistics
-    if $START_GAZEBO ; then
-        comm_plugin=comm
-    else
-        comm_plugin=comm-no-gazebo
+    if $START_REFBOX_COMM ; then
+        if $START_GAZEBO ; then
+            comm_plugin=comm
+        else
+            comm_plugin=comm-no-gazebo
+        fi
+	    COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 0; $startup_script_location -x $comm_plugin $DEBUG $KEEP $SHUTDOWN $@\"")
     fi
-	COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 0; $startup_script_location -x $comm_plugin $DEBUG $KEEP $SHUTDOWN $@\"")
 
     PREFIXED_COMMANDS=("${COMMANDS[@]/#/${SUBTERM_PREFIX}}")
     SUFFIXED_COMMANDS=("${PREFIXED_COMMANDS[@]/%/${SUBTERM_SUFFIX}}")
