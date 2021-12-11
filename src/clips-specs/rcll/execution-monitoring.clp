@@ -32,6 +32,30 @@
   (return FALSE)
 )
 
+(defrule execution-monitoring-update-mount-ring-params
+  ?pa <- (plan-action (id 1) (plan-id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id)
+           (action-name ?an&:(str-index "rs-mount-ring" (str-cat ?an)))
+           (state PENDING)
+           (param-names $?param-names)
+           (param-values $?param-values))
+  (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&:(and
+      (member$ rs-before ?param-names)
+      (neq ?rs-before (nth$ (member$ rs-before ?param-names) ?param-values))
+     )))
+  =>
+  (bind ?rs-before-pos (member$ rs-before ?param-names))
+  (bind ?new-rs-after (int-to-sym
+    (- (sym-to-int ?rs-before)
+       (sym-to-int (nth$ (+ ?rs-before-pos 2) ?param-values)))))
+  (bind ?new-param-values (replace$ ?param-values
+                                    ?rs-before-pos
+                                    (+ ?rs-before-pos 1)
+                                    (create$ ?rs-before ?new-rs-after)))
+
+
+  (modify ?pa (param-values ?new-param-values))
+)
+
 ;
 ; ============================== MPS State Monitoring ==============================
 ;
