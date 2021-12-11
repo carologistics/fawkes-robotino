@@ -352,6 +352,151 @@
     (assert (domain-object (name ?mps) (type fs)))
 )
 
+(deffunction ring-needs-more-payment-at-rs (?ring-col ?ring1-col ?ring2-col ?ring1-num ?ring2-num ?rs-before)
+  (if (eq ?ring-col ?ring1-col) then
+    (return (< (sym-to-int ?rs-before) (sym-to-int ?ring1-num)))
+  )
+  (if (eq ?ring-col ?ring2-col) then
+    (return (< (sym-to-int ?rs-before) (sym-to-int ?ring2-num)))
+  )
+  (return false)
+)
+(defrule domain-assert-rs-needs-no-more-payments
+" No more ring payments are needed if no order needs a payment.
+  Specifically, no started order and no first ring of a posted order requires
+  more payments.
+"
+  ?rs-needs-payment <- (domain-fact (name rs-needs-payment) (param-values ?mps))
+  ;MPS CEs
+  (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before))
+  ; These rules tend to loop if rs-filled-with is synced over and the worldmodel
+  ; gets inconsistent for a short time span because of it
+  (not (wm-fact (key domain fact rs-filled-with args? m ?mps n ~?rs-before)))
+  ;The MPS can mount a ring which needs more bases than currently available.
+  (wm-fact (key domain fact rs-ring-spec
+            args? m ?mps r ?ring1-color&~RING_NONE rn ?ring1-num))
+  (wm-fact (key domain fact rs-ring-spec
+            args? m ?mps r ?ring2-color&:(and (neq ?ring2-color ?ring1-color)
+                                              (neq ?ring2-color RING_NONE))
+                  rn ?ring2-num&:(<= (sym-to-int ?ring1-num) (sym-to-int ?ring2-num))))
+  (or
+     ; The most expensive ring is already payed for
+     (test (eq ?ring2-num ?rs-before))
+     ; No order needs a payment on this RS, in particular:
+     (and
+        ; It is not the case that a posted order has a first ring that needs
+        ; a payment
+        (not (and
+          (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring-color))
+          (test (ring-needs-more-payment-at-rs ?ring-color ?ring1-color ?ring2-color ?ring1-num ?ring2-num ?rs-before))
+          (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+          (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
+                   (value ?qd&:(> ?qr ?qd)))
+          (not (wm-fact (key domain fact wp-for-order args? wp ? ord ?order)))
+        ))
+        ; It is not the case that a started order needs a ring that is not
+        ; payed for
+        (not (and
+          (wm-fact (key domain fact wp-for-order args? wp ?order-wp ord ?order))
+          ;The order requires this ring and the started workpiece does not
+          ;have it mounted yet.
+          (or (and (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring-color))
+                   (test (ring-needs-more-payment-at-rs ?ring-color ?ring1-color ?ring2-color ?ring1-num ?ring2-num ?rs-before))
+                   (wm-fact (key domain fact wp-ring1-color args? wp ?order-wp col RING_NONE))
+              )
+              (and (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring-color))
+                   (test (ring-needs-more-payment-at-rs ?ring-color ?ring1-color ?ring2-color ?ring1-num ?ring2-num ?rs-before))
+                   (wm-fact (key domain fact wp-ring2-color args? wp ?order-wp col RING_NONE))
+              )
+              (and (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring-color))
+                   (test (ring-needs-more-payment-at-rs ?ring-color ?ring1-color ?ring2-color ?ring1-num ?ring2-num ?rs-before))
+                   (wm-fact (key domain fact wp-ring3-color args? wp ?order-wp col RING_NONE))
+              )
+          )
+        ))
+      )
+  )
+  =>
+  (retract ?rs-needs-payment)
+)
+
+(defrule domain-assert-rs-needs-payment-unstarted-order
+" Allow paying at a ring station such that an available order
+  (that was not started yet) can use them for the first ring.
+"
+  ;MPS CEs
+  (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
+  ; These rules tend to loop if rs-filled-with is synced over and the worldmodel
+  ; gets inconsistent for a short time span because of it
+  (not (wm-fact (key domain fact rs-filled-with args? m ?mps n ~?rs-before)))
+  ;The MPS can mount a ring which needs more bases than currently available.
+  (wm-fact (key domain fact rs-ring-spec
+            args? m ?mps r ?ring1-color&~RING_NONE rn ?ring-num))
+  (wm-fact (key domain fact rs-sub args? minuend ?ring-num subtrahend ?rs-before difference ~ZERO))
+
+  (not (domain-fact (name rs-needs-payment) (param-values ?mps)))
+
+  ;Order CEs
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&:(neq ?complexity C0)))
+  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
+  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+  (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
+           (value ?qd&:(> ?qr ?qd)))
+  (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
+  =>
+  (assert (domain-fact (name rs-needs-payment) (param-values ?mps)))
+)
+
+(defrule domain-assert-rs-needs-payment-started-order
+" Allow paying at a ring station such that a started order
+  can use them for any ring.
+"
+  ;MPS CEs
+  (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
+  ; These rules tend to loop if rs-filled-with is synced over and the worldmodel
+  ; gets inconsistent for a short time span because of it
+  (not (wm-fact (key domain fact rs-filled-with args? m ?mps n ~?rs-before)))
+  ;The MPS can mount a ring which needs more bases than currently available.
+  (wm-fact (key domain fact rs-ring-spec
+            args? m ?mps r ?ring-color&~RING_NONE
+                  rn ?ring-num&:(neq ?rs-before ?ring-num)))
+  (wm-fact (key domain fact rs-sub args? minuend ?ring-num subtrahend ?rs-before difference ?rs-diff))
+
+  (not (domain-fact (name rs-needs-payment) (param-values ?mps)))
+
+  (wm-fact (key domain fact wp-for-order args? wp ?order-wp ord ?order))
+  ;Order CEs
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&:(neq ?complexity C0)))
+  ;The order requires this ring and the started workpiece does not
+  ;have it mounted yet.
+  (or (and (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring-color))
+           (wm-fact (key domain fact wp-ring1-color args? wp ?order-wp col RING_NONE))
+      )
+      (and (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring-color))
+           (wm-fact (key domain fact wp-ring2-color args? wp ?order-wp col RING_NONE))
+      )
+      (and (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring-color))
+           (wm-fact (key domain fact wp-ring3-color args? wp ?order-wp col RING_NONE))
+      )
+  )
+  =>
+  (assert (domain-fact (name rs-needs-payment) (param-values ?mps)))
+)
+
+(defrule domain-assert-payments-needed
+  (domain-fact (name rs-needs-payment))
+  (not (domain-fact (name payments-needed)))
+  =>
+  (assert (domain-fact (name payments-needed)))
+)
+
+(defrule domain-retract-payments-needed
+  ?df <- (domain-fact (name payments-needed))
+  (not (domain-fact (name rs-needs-payment)))
+  =>
+  (retract ?df)
+)
+
 (defrule domain-assert-order-has-wp
   (domain-fact (name wp-for-order) (param-values ?wp ?order))
   (not (domain-fact (name order-has-wp) (param-values ?order)))
