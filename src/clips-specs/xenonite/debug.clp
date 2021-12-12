@@ -54,11 +54,12 @@
 
 (defrule debug-scenario-fulfilled
   (grounded-pddl-formula (formula-id SCENARIO-CHECK1) (is-satisfied TRUE))
-  (not (domain-fact (name storage-is-full)))
+  (not (scenario-fulfilled))
   (time ?now ?mills)
   ?st <- (scenario-timer ?start)
   =>
   (assert (domain-fact (name storage-is-full)))
+  (assert (scenario-fulfilled))
   (do-for-all-facts ((?g goal))
       (retract ?g)
   )
