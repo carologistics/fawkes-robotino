@@ -119,9 +119,14 @@
 (defrule run-endless-goal-fail-all-subgoals-rejected
   ?pg <- (goal (id ?pg-id) (type MAINTAIN) (sub-type RUN-ENDLESS)
                (mode EXPANDED|COMMITTED|DISPATCHED))
+  (goal (parent ?pg-id) (outcome REJECTED))
   (not (goal (parent ?pg-id) (outcome ~REJECTED)))
 =>
   (modify ?pg (mode FINISHED) (outcome FAILED))
+  (do-for-all-facts ((?sg goal))
+      (and (eq ?sg:parent ?pg-id) (neq ?sg:mode EVALUATED) (neq ?sg:mode RETRACTED))
+    (modify ?sg (mode FINISHED))
+  )
 )
 
 
