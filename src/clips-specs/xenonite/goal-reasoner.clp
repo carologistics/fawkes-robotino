@@ -41,6 +41,7 @@
 
 (deffunction requires-subgoal (?goal-type)
   (return (or (eq ?goal-type RUN-ONE-OF-SUBGOALS)
+              (eq ?goal-type TRY-ALL-OF-SUBGOALS)
               (eq ?goal-type RUN-ENDLESS)))
 )
 
@@ -65,8 +66,8 @@
 )
 
 (deffunction goal-tree-assert-run-one-test (?class ?host $?fact-addresses)
-	(bind ?id (sym-cat RUN-ONE- ?class - (gensym*)))
-	(bind ?goal (assert (goal (id ?id) (class ?class) (sub-type RUN-ONE-OF-SUBGOALS) (meta host ?host))))
+	(bind ?id (sym-cat TRY-ALL- ?class - (gensym*)))
+	(bind ?goal (assert (goal (id ?id) (class ?class) (sub-type TRY-ALL-OF-SUBGOALS) (meta host ?host))))
 	(foreach ?f ?fact-addresses
 		(goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
 	(return ?goal)
@@ -172,20 +173,20 @@
   (not (goal (parent ?id) (mode FORMULATED|SELECTED|EXPANDED|DISPATCHED)))
   (selecting ?host ?)
   =>
-  (bind ?g (goal-tree-assert-run-one-test PRODUCTION-RUN-ONE ?host))
+  (bind ?g (goal-tree-assert-run-one-test PRODUCTION-TRY-ALL ?host))
   (modify ?g (parent ?id))
 )
 
-(defrule goal-reasoner-selection-retract-run-one-subtree-no-child
-  (domain-object (name ?host) (type robot))
-  ?p <- (goal (id ?grandparent) (class PRODUCTION-MAINTAIN))
-  ?g <- (goal (id ?parent) (parent ?grandparent) (class PRODUCTION-RUN-ONE) (meta host ?host))
-  (not (goal (parent ?parent)))
-  (not (selecting ?host ?))
-  =>
-  (retract ?g)
-  (modify ?p (mode FORMULATED))
-)
+;(defrule goal-reasoner-selection-retract-run-one-subtree-no-child
+;  (domain-object (name ?host) (type robot))
+;  ?p <- (goal (id ?grandparent) (class PRODUCTION-MAINTAIN))
+;  ?g <- (goal (id ?parent) (parent ?grandparent) (class PRODUCTION-TRY-ALL) (meta host ?host))
+;  (not (goal (parent ?parent)))
+;  (not (selecting ?host ?))
+;  =>
+;  (retract ?g)
+;  (modify ?p (mode FORMULATED))
+;)
 
 
 (defrule goal-reasoner-expand-goal-with-sub-type
@@ -215,23 +216,27 @@
    fails."
   ?g <- (goal (id ?goal-id) (class PRODUCTION-MAINTAIN) (parent nil)
               (mode FINISHED) (outcome ?outcome))
+  (not (goal (parent ?goal-id) (mode ~EVALUATED&~FORMULATED)))
   =>
   (printout t "Goal '" ?goal-id "' has been " ?outcome ", evaluating" crlf)
   (do-for-all-facts ((?prio wm-fact)) (wm-key-prefix ?prio:key (create$ evaluated fact rs-fill-priority))
    (retract ?prio))
+  (do-for-all-facts ((?sg goal)) (eq ?sg:parent ?goal-id)
+    (modify ?sg (mode RETRACTED))
+  )
   (modify ?g (mode EVALUATED))
 )
 
 
 ; ================================= Goal Clean up ============================
 
-(defrule goal-reasoner-remove-simple-goals-one-selected
-  (goal (id ?parent) (class PRODUCTION-RUN-ONE))
-  (goal (parent ?parent) (mode ~FORMULATED))
-  ?g <- (goal (type ACHIEVE) (mode FORMULATED) (parent ?parent))
-  =>
-  (retract ?g)
-)
+;(defrule goal-reasoner-remove-simple-goals-one-selected
+;  (goal (id ?parent) (class PRODUCTION-TRY-ALL))
+;  (goal (parent ?parent) (mode ~FORMULATED))
+;  ?g <- (goal (type ACHIEVE) (mode FORMULATED) (parent ?parent))
+;  =>
+;  (retract ?g)
+;)
 
 
 (defrule goal-reasoner-remove-retracted-goal-common

@@ -47,7 +47,7 @@
 (defrule debug-assert-start-session-timer
     (time ?now ?mills)
     (not (scenario-timer ?))
-    (goal (class PRODUCTION-RUN-ONE))
+    (goal (class PRODUCTION-TRY-ALL))
     =>
     (assert (scenario-timer ?now))
 )
