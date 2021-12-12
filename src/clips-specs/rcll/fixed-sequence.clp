@@ -302,6 +302,7 @@
              ))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   =>
+  (bind ?offset 0)
   (bind ?plan-id GET-AND-DISCARD-PLAN)
   (assert
     (plan (id ?plan-id) (goal-id ?goal-id)))
@@ -340,8 +341,6 @@
               (action-name go-wait)
               (param-names r from from-side to)
               (param-values ?robot ?wp-loc ?wp-side (wait-pos ?wp-loc ?wp-side))))
-     else
-      (bind ?offset 0)
   )
   (assert
     (plan-action (id (+ ?offset 1)) (plan-id ?plan-id) (goal-id ?goal-id)
@@ -367,6 +366,7 @@
        )
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   =>
+  (bind ?offset 1)
   (bind ?plan-id (sym-cat ?class -PLAN))
   (assert
     (plan (id ?plan-id) (goal-id ?goal-id)))
@@ -405,7 +405,6 @@
               (param-names r from from-side to)
               (param-values ?robot ?cs INPUT (wait-pos ?rs INPUT))))
      else
-      (bind ?offset 1)
       (assert
         (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
               (action-name go-wait)
@@ -452,6 +451,8 @@
   (bind ?plan-id (sym-cat ?class -PLAN))
   (assert
     (plan (id ?plan-id) (goal-id ?goal-id)))
+
+  (bind ?offset 1)
   (if (not (any-factp ((?holding wm-fact))
                  (and (wm-key-prefix ?holding:key (create$ domain fact holding))
                       (eq (wm-key-arg ?holding:key r) ?robot)
@@ -494,7 +495,6 @@
               (param-values ?robot ?wp-loc ?wp-side (wait-pos ?mps INPUT))))
       )
      else
-      (bind ?offset 1)
       (assert
         (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
               (action-name go-wait)
@@ -655,6 +655,7 @@
                                                       ))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
+  (bind ?offset 1)
   (if (not (any-factp ((?holding wm-fact))
                  (and (wm-key-prefix ?holding:key (create$ domain fact holding))
                       (eq (wm-key-arg ?holding:key r) ?robot)
@@ -697,7 +698,6 @@
               (param-names r from from-side to)
               (param-values ?robot ?bs ?bs-side (wait-pos ?mps INPUT))))
     else
-      (bind ?offset 1)
       (assert
         (plan-action (id 1) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
               (action-name go-wait)
@@ -749,6 +749,7 @@
              ))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
+  (bind ?offset 1)
   (if (not (any-factp ((?holding wm-fact))
                  (and (wm-key-prefix ?holding:key (create$ domain fact holding))
                       (eq (wm-key-arg ?holding:key r) ?robot)
@@ -792,7 +793,6 @@
               (param-names r from from-side to)
               (param-values ?robot ?bs ?bs-side (wait-pos ?mps INPUT))))
     else
-      (bind ?offset 1)
       (assert
         (plan-action (id 1) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id)
               (action-name go-wait)
@@ -850,6 +850,7 @@
                                                       ))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
+  (bind ?offset 1)
   (if (not (any-factp ((?holding wm-fact))
                  (and (wm-key-prefix ?holding:key (create$ domain fact holding))
                       (eq (wm-key-arg ?holding:key r) ?robot)
@@ -880,7 +881,6 @@
             (param-names r from from-side to)
             (param-values ?robot ?prev-rs ?prev-rs-side (wait-pos ?rs INPUT))))
     else
-      (bind ?offset 1)
       (assert
         (plan-action (id 1) (plan-id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id)
               (action-name go-wait)
@@ -928,6 +928,7 @@
                                                         ))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
+  (bind ?offset 1)
   (if (not (any-factp ((?holding wm-fact))
                  (and (wm-key-prefix ?holding:key (create$ domain fact holding))
                       (eq (wm-key-arg ?holding:key r) ?robot)
@@ -964,7 +965,6 @@
               (param-names r from from-side to)
               (param-values ?robot ?rs OUTPUT (wait-pos ?mps INPUT))))
     else
-      (bind ?offset 1)
       (assert
         (plan-action (id 1) (plan-id PRODUCE-CX-PLAN) (goal-id ?goal-id)
               (action-name go-wait)
@@ -1035,6 +1035,7 @@
  (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?ord))
  (wm-fact (key domain fact order-complexity args? ord ?ord com ?complexity))
  =>
+  (bind ?offset 1)
   (if (not (any-factp ((?holding wm-fact))
                  (and (wm-key-prefix ?holding:key (create$ domain fact holding))
                       (eq (wm-key-arg ?holding:key r) ?robot)
@@ -1069,7 +1070,6 @@
               (param-names r from from-side to)
               (param-values ?robot ?mps OUTPUT (wait-pos ?ds INPUT))))
     else
-      (bind ?offset 1)
       (assert
         (plan-action (id 1) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
               (action-name go-wait)
