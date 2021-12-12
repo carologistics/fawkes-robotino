@@ -13,6 +13,10 @@ clips-executive/specs/xenonite:
         feature-request: false
         files: ["pddl-init.clp"]
         wait-for: pddl-planner-initialized
+      - name: coordination
+        files:
+          - coordination-mutex.clp
+          - resource-locks.clp
       - name: worldmodel
         files:
           - wm-robmem-sync.clp
