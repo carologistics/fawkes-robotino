@@ -184,24 +184,19 @@
 (defrule goal-class-assert-get-container-and-fill
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (domain-fact (name self) (param-values ?r))
-    (goal (class PRODUCTION-RUN-ONE) (id ?parent) (meta $? host ?r))
+    (goal (class PRODUCTION-RUN-ONE) (id ?parent) (meta $? host ?r) (mode SELECTED))
     (goal-class (class ?class&FILL-CONTAINER) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?r ?base ?mine ?c))
-
-    (not (goal (sub-type ?subtype) (parent ?parent) (mode ~FORMULATED)))
-    (not (goal (class ?class) (params robot ~?r $? mine ?mine $?)))
-
     (promise-time (usecs ?now))
     (test (sat-or-promised ?sat ?now ?from ?lt))
     =>
-    (printout t "Goal " ?class " formulated from PDDL" crlf)
+    (bind ?goal-id (sym-cat ?class - (gensym*)))
+    (printout t "Goal " ?goal-id " (class " ?class ") formulated from PDDL" crlf)
     (if (neq ?sat TRUE) then
         (printout t "Debug: Goal formulated from promise" crlf)
     )
-
-    (bind ?goal-id (sym-cat ?class - (gensym*)))
     (assert (goal (id ?goal-id)
                     (class ?class) (sub-type ?subtype)
                     (parent ?parent)
@@ -223,15 +218,11 @@
 (defrule goal-class-assert-deliver-to-machine
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (domain-fact (name self) (param-values ?r))
-    (goal (class PRODUCTION-RUN-ONE) (id ?parent) (meta $? host ?r))
+    (goal (class PRODUCTION-RUN-ONE) (id ?parent) (meta $? host ?r) (mode SELECTED))
     (goal-class (class ?class&DELIVER) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?r ?side ?machine ?c ?mat))
-
-    (not (goal (sub-type ?subtype) (parent ?parent) (mode ~FORMULATED)))
-    (not (goal (class ?class) (params robot ~?r side ?side machine ?machine $?)))
-
     (domain-fact (name robot-at) (param-values ?r ?start))
 
     (promise-time (usecs ?now))
@@ -267,15 +258,11 @@
 (defrule goal-class-assert-start-machine
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (domain-fact (name self) (param-values ?r))
-    (goal (class PRODUCTION-RUN-ONE) (id ?parent) (meta $? host ?r))
+    (goal (class PRODUCTION-RUN-ONE) (id ?parent) (meta $? host ?r) (mode SELECTED))
     (goal-class (class ?class&START-MACHINE) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?r ?side ?machine))
-
-    (not (goal (sub-type ?subtype) (parent ?parent) (mode ~FORMULATED)))
-    (not (goal (class ?class) (params robot ~?r side ?side machine ?machine)))
-
     (promise-time (usecs ?now))
     (test (sat-or-promised ?sat ?now ?from ?lt))
     =>
@@ -307,15 +294,11 @@
 (defrule goal-class-assert-clean-machine
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (domain-fact (name self) (param-values ?r))
-    (goal (class PRODUCTION-RUN-ONE) (id ?parent) (meta $? host ?r))
+    (goal (class PRODUCTION-RUN-ONE) (id ?parent) (meta $? host ?r) (mode SELECTED))
     (goal-class (class ?class&CLEAN-MACHINE) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?r ?side ?machine ?c ?mat))
-
-    (not (goal (sub-type ?subtype) (parent ?parent) (mode ~FORMULATED)))
-    (not (goal (class ?class) (params robot ~?r side ?side machine ?machine $?)))
-
     (domain-fact (name robot-at) (param-values ?r ?start))
 
     (promise-time (usecs ?now))
@@ -351,15 +334,11 @@
 (defrule goal-class-assert-deliver-xenonite
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (domain-fact (name self) (param-values ?r))
-    (goal (class PRODUCTION-RUN-ONE) (id ?parent) (meta $? host ?r))
+    (goal (class PRODUCTION-RUN-ONE) (id ?parent) (meta $? host ?r) (mode SELECTED))
     (goal-class (class ?class&DELIVER-XENONITE) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?r ?c))
-
-    (not (goal (sub-type ?subtype) (parent ?parent) (mode ~FORMULATED)))
-    (not (goal (class ?class) (params robot ~?r $?)))
-
     (promise-time (usecs ?now))
     (test (sat-or-promised ?sat ?now ?from ?lt))
     =>
@@ -380,4 +359,12 @@
     ))
 
     ;no promises for this goal
+)
+
+(defrule goal-class-production-run-one-is-expanded
+  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+  ?goal <- (goal (class PRODUCTION-RUN-ONE) (id ?parent) (mode SELECTED))
+  (goal (parent ?parent) (mode FORMULATED))
+  =>
+  (modify ?goal (mode EXPANDED))
 )
