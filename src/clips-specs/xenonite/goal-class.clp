@@ -26,8 +26,6 @@
 (defrule goal-class-create-get-container-and-fill
     (domain-constant (type location) (value ?mine))
     (domain-fact (name location-is-mine) (param-values ?mine))
-
-    (not (goal-class (class FILL-CONTAINER) (sub-type SIMPLE) (meta mine ?mine)))
     =>
     (assert
         (goal-class (class FILL-CONTAINER)
@@ -60,8 +58,6 @@
     (domain-constant (type location) (value ?side))
     (domain-fact (name location-part-of-machine) (param-values ?side ?machine))
     (domain-fact (name location-is-machine-input) (param-values ?side))
-
-    (not (goal-class (class DELIVER) (sub-type SIMPLE) (meta machine ?machine)))
     =>
     (assert
         (goal-class (class DELIVER)
@@ -93,7 +89,6 @@
 
 (defrule goal-class-create-start-machine
     (domain-constant (type machine) (value ?machine))
-    (not (goal-class (class START-MACHINE) (meta machine ?machine)))
     =>
     (assert
         (goal-class (class START-MACHINE)
@@ -124,7 +119,6 @@
     (domain-constant (type location) (value ?side))
     (domain-fact (name location-part-of-machine) (param-values ?side ?machine))
     (domain-fact (name location-is-machine-output) (param-values ?side))
-    (not (goal-class (class CLEAN-MACHINE) (meta machine ?machine)))
     =>
     (assert
         (goal-class (class CLEAN-MACHINE)
@@ -155,7 +149,6 @@
 )
 
 (defrule goal-class-create-deliver-xenonite
-    (not (goal-class (class DELIVER-XENONITE)))
     =>
     (assert
         (goal-class (class DELIVER-XENONITE)
