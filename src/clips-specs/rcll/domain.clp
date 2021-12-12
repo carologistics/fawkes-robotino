@@ -388,6 +388,8 @@
         ; a payment
         (not (and
           (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring-color))
+          (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&:(neq ?complexity C0)))
+          (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
           (test (ring-needs-more-payment-at-rs ?ring-color ?ring1-color ?ring2-color ?ring1-num ?ring2-num ?rs-before))
           (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
           (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
