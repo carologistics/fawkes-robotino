@@ -99,79 +99,14 @@
   (modify ?g (mode SELECTED))
 )
 
-(defrule goal-reasoner-selection-assert-waiting
-  ;there is a robot that is not yet waiting
-  (domain-object (name ?r) (type robot))
-  (not (waiting ?r))
 
-  ;there is an executable goal for the robot
-  (goal-class (class ?class) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
-  (pddl-formula (part-of ?cid) (id ?formula-id))
-  (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (grounding ?grounding-id))
-  (pddl-grounding (id ?grounding-id) (param-values $? ?r $?))
 
-  (time ?now ?mills)
-  (test (sat-or-promised ?sat ?now ?from ?lt))
 
-  ;there is not a production goal strand
-  (not (goal (class PRODUCTION-RUN-ONE) (meta $? host ?r $?)))
-  =>
-  (assert (waiting ?r))
-)
 
-(defrule goal-reasoner-selection-assert-select
-  (waiting ?r)
-  (not (selecting ? ?))
-  (not (tried ?r))
-  (time ?now ?mills)
-  =>
-  (assert (selecting ?r ?now))
-)
-
-(defrule goal-reasoner-selection-retract-select
-  ?s <- (selecting ?r ?time)
-  (time ?now ?mills)
-  (test (> ?now ?time))
-  =>
-  (retract ?s)
-  (assert (tried ?r))
-)
-
-(defrule goal-reasoner-selection-retract-waiting-subgoal-selected
-  ?w <- (waiting ?r)
-  (goal (class PRODUCTION-RUN-ONE) (mode DISPATCHED) (meta $? host ?r $?))
-  =>
-  (retract ?w)
-)
-
-(defrule goal-rasoner-selection-retract-select-subgoal-selected
-  ?s <- (selecting ?r ?)
-  (goal (class PRODUCTION-RUN-ONE) (mode DISPATCHED) (meta $? host ?r $?))
-  =>
-  (retract ?s)
-)
-
-(defrule goal-reasoner-selection-restart-selection
-  (not
-    (and
-      (waiting ?r)
-      (not (tried ?r))
-    )
-  )
-  (not (selecting ?r ?))
-  =>
-  (do-for-all-facts ((?t tried)) TRUE
-    (retract ?t)
-  )
-  (do-for-all-facts ((?w waiting)) TRUE
-    (retract ?w)
-  )
-)
 
 (defrule goal-reasoner-selection-assert-run-one-subetree
   (goal (class PRODUCTION-MAINTAIN) (mode SELECTED) (meta $? host ?host) (id ?id))
   (not (goal (parent ?id) (mode FORMULATED|SELECTED|EXPANDED|DISPATCHED)))
-  (selecting ?host ?)
   =>
   (bind ?g (goal-tree-assert-run-one-test PRODUCTION-TRY-ALL ?host))
   (modify ?g (parent ?id))
