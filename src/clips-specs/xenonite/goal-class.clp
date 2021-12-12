@@ -183,7 +183,7 @@
 
 (defrule goal-class-assert-get-container-and-fill
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-    (wm-fact (key cx identity) (value ?r))
+    (domain-fact (name self) (param-values ?r))
     (goal (class PRODUCTION-RUN-ONE) (id ?parent) (meta $? host ?r))
     (goal-class (class ?class&FILL-CONTAINER) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
@@ -222,7 +222,7 @@
 
 (defrule goal-class-assert-deliver-to-machine
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-    (wm-fact (key cx identity) (value ?r))
+    (domain-fact (name self) (param-values ?r))
     (goal (class PRODUCTION-RUN-ONE) (id ?parent) (meta $? host ?r))
     (goal-class (class ?class&DELIVER) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
@@ -266,7 +266,7 @@
 
 (defrule goal-class-assert-start-machine
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-    (wm-fact (key cx identity) (value ?r))
+    (domain-fact (name self) (param-values ?r))
     (goal (class PRODUCTION-RUN-ONE) (id ?parent) (meta $? host ?r))
     (goal-class (class ?class&START-MACHINE) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
@@ -306,7 +306,7 @@
 
 (defrule goal-class-assert-clean-machine
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-    (wm-fact (key cx identity) (value ?r))
+    (domain-fact (name self) (param-values ?r))
     (goal (class PRODUCTION-RUN-ONE) (id ?parent) (meta $? host ?r))
     (goal-class (class ?class&CLEAN-MACHINE) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
@@ -350,7 +350,7 @@
 
 (defrule goal-class-assert-deliver-xenonite
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-    (wm-fact (key cx identity) (value ?r))
+    (domain-fact (name self) (param-values ?r))
     (goal (class PRODUCTION-RUN-ONE) (id ?parent) (meta $? host ?r))
     (goal-class (class ?class&DELIVER-XENONITE) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))

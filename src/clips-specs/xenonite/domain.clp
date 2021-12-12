@@ -35,8 +35,6 @@
   (printout info "Initializing domain" crlf)
 
   (assert
-    (domain-fact (name self) (param-values Eve))
-
     (domain-object (name WallE) (type robot))
     (domain-object (name Eve) (type robot))
     (domain-object (name R2D2) (type robot))

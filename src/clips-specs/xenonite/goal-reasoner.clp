@@ -85,11 +85,9 @@
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (domain-facts-loaded)
+  (domain-fact (name self) (param-values ?r))
   =>
-  (goal-tree-assert-run-endless PRODUCTION-MAINTAIN PRODUCTION-MAINTAIN-WallE WallE)
-  (goal-tree-assert-run-endless PRODUCTION-MAINTAIN PRODUCTION-MAINTAIN-Eve Eve)
-  (goal-tree-assert-run-endless PRODUCTION-MAINTAIN PRODUCTION-MAINTAIN-R2D2 R2D2)
-  (goal-tree-assert-run-endless PRODUCTION-MAINTAIN PRODUCTION-MAINTAIN-Arnie Arnie)
+  (goal-tree-assert-run-endless PRODUCTION-MAINTAIN PRODUCTION-MAINTAIN ?r)
 )
 
 (defrule goal-reasoner-select-root
