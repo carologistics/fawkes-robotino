@@ -899,7 +899,7 @@
     (promise-time (usecs ?game-time))
     (test (sat-or-promised ?sat ?game-time ?from ?lt))
     =>
-    (printout t "Goal " CLEAR-MPS " ("?mps") formulated from PDDL" crlf)
+    (printout t "Goal " ?class " ("?mps") formulated from PDDL" crlf)
 
     (bind ?parent nil)
     (bind ?priority nil)
@@ -953,16 +953,27 @@
 
     ;assert promises resulting from the plan-action of this goal
     (assert
+        ;go-wait -> dc
+        ;location-lock -> dc
+        ;move -> dc
+        ;lock -> dc
         ;wp-get
-        (domain-promise (name wp-at) (param-values ?wp ?mps ?side) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-        (domain-promise (name holding) (param-values ?robot ?wp) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name can-hold) (param-values ?robot) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-        (domain-promise (name mps-state) (param-values ?mps READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-        (domain-promise (name mps-state) (param-values ?mps IDLE) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name mps-side-free) (param-values ?mps ?side) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        ;go-wait
-        (domain-promise (name at) (param-values ?robot ?mps ?side) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-        (domain-promise (name at) (param-values ?robot ?mps (wait-pos ?mps ?side)) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
+        (domain-promise (name wp-at) (param-values ?wp ?mps ?side) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated TRUE))
+        (domain-promise (name mps-state) (param-values ?mps READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated TRUE))
+        (domain-promise (name mps-state) (param-values ?mps IDLE) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated FALSE))
+        (domain-promise (name mps-side-free) (param-values ?mps ?side) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated FALSE))
+        ;unlock -> dc
+        ;location-unlock -> dc
+        ;go-wait -> dc
+        ;location-lock -> dc
+        ;move -> dc
+        ;wp-put-slide-cc
+        (domain-promise (name wp-usable) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 69 ?game-time)) (negated TRUE))
+        (domain-promise (name rs-filled-with) (param-values ?target-rs ?filled) (promising-goal ?goal-id) (valid-at (+ 69 ?game-time)) (negated TRUE))
+        (domain-promise (name rs-filled-with) (param-values ?target-rs ?after) (promising-goal ?goal-id) (valid-at (+ 69 ?game-time)) (negated FALSE))
+        (domain-promise (name rs-paid-for) (param-values ?target-rs ?after) (promising-goal ?goal-id) (valid-at (+ 69 ?game-time)) (negated FALSE))
+        ;location-unlock -> dc
+        ;go-wait -> dc
     )
 )
 
@@ -983,7 +994,7 @@
     (promise-time (usecs ?game-time))
     (test (sat-or-promised ?sat ?game-time ?from ?lt))
     =>
-    (printout t "Goal " CLEAR-MPS " ("?mps") formulated from PDDL" crlf)
+    (printout t "Goal " ?class " ("?mps") formulated from PDDL" crlf)
     (if (neq ?sat TRUE) then
         (printout t "Goal formulated from promise" crlf)
     )
@@ -1043,12 +1054,15 @@
         ;move -> dc
         ;locks -> dc
         ;wp-get
-        (domain-promise (name wp-at) (param-values ?wp ?mps ?side) (promising-goal ?goal-id) (valid-at (+ 24 ?game-time)) (negated TRUE))
-        (domain-promise (name mps-state) (param-values ?mps READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 24 ?game-time)) (negated TRUE))
-        (domain-promise (name mps-state) (param-values ?mps IDLE) (promising-goal ?goal-id) (valid-at (+ 24 ?game-time)) (negated FALSE))
-        (domain-promise (name mps-side-free) (param-values ?mps ?side) (promising-goal ?goal-id) (valid-at (+ 24 ?game-time)) (negated FALSE))
+        (domain-promise (name wp-at) (param-values ?wp ?mps ?side) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated TRUE))
+        (domain-promise (name mps-state) (param-values ?mps READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated TRUE))
+        (domain-promise (name mps-state) (param-values ?mps IDLE) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated FALSE))
+        (domain-promise (name mps-side-free) (param-values ?mps ?side) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated FALSE))
         ;unlocks -> dc
         ;go-wait -> dc
+        ;wp-discard
+        (domain-promise (name wp-unused) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 49 ?game-time)) (negated FALSE))
+        (domain-promise (name wp-usable) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 49 ?game-time)) (negated TRUE))
     )
 )
 
@@ -1168,6 +1182,15 @@
         (domain-promise (name mps-side-free) (param-values ?bs OUTPUT) (promising-goal ?goal-id) (valid-at (+ 38 ?game-time)) (negated FALSE))
         ;unlocks -> dc
         ;go-wait -> dc
+        ;location-lock -> dc
+        ;move -> dc
+        ;wp-put-slide-cc
+        (domain-promise (name wp-usable) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 73 ?game-time)) (negated TRUE))
+        (domain-promise (name rs-filled-with) (param-values ?rs ?filled) (promising-goal ?goal-id) (valid-at (+ 73 ?game-time)) (negated TRUE))
+        (domain-promise (name rs-filled-with) (param-values ?rs ?after) (promising-goal ?goal-id) (valid-at (+ 73 ?game-time)) (negated FALSE))
+        (domain-promise (name rs-paid-for) (param-values ?rs ?after) (promising-goal ?goal-id) (valid-at (+ 73 ?game-time)) (negated FALSE))
+        ;location-unlock -> dc
+        ;go-wait -> dc
     )
 )
 
@@ -1222,6 +1245,15 @@
         (domain-promise (name wp-usable) (param-values ?cc) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated FALSE))
         (domain-promise (name spot-free) (param-values ?cs ?spot) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated FALSE))
         ;unlocks -> dc
+        ;go-wait -> dc
+        ;location-lock -> dc
+        ;move -> dc
+        ;wp-put-slide-cc
+        (domain-promise (name wp-usable) (param-values ?cc) (promising-goal ?goal-id) (valid-at (+ 73 ?game-time)) (negated TRUE))
+        (domain-promise (name rs-filled-with) (param-values ?rs ?filled) (promising-goal ?goal-id) (valid-at (+ 73 ?game-time)) (negated TRUE))
+        (domain-promise (name rs-filled-with) (param-values ?rs ?after) (promising-goal ?goal-id) (valid-at (+ 73 ?game-time)) (negated FALSE))
+        (domain-promise (name rs-paid-for) (param-values ?rs ?after) (promising-goal ?goal-id) (valid-at (+ 73 ?game-time)) (negated FALSE))
+        ;location-unlock -> dc
         ;go-wait -> dc
     )
 )
