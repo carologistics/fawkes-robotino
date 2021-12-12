@@ -199,7 +199,7 @@
                             start ?base
                             mine ?mine
                     )
-                    (required-resources )
+                    (required-resources ?c ?mine)
     ))
 
     ;assert promises resulting from the plan-action of this goal
@@ -237,7 +237,7 @@
                             container ?c
                             material ?mat
                     )
-                    (required-resources )
+                    (required-resources ?machine ?c)
     ))
 
     ;assert promises resulting from the plan-action of this goal
@@ -273,7 +273,7 @@
                             side ?side
                             machine ?machine
                     )
-                    (required-resources )
+                    (required-resources ?machine)
     ))
 
     ;assert promises resulting from the plan-action of this goal
@@ -313,7 +313,7 @@
                             container ?c
                             material ?mat
                     )
-                    (required-resources )
+                    (required-resources ?machine ?c)
     ))
 
     ;assert promises resulting from the plan-action of this goal
@@ -348,7 +348,7 @@
                     (params robot ?r
                             container ?c
                     )
-                    (required-resources )
+                    (required-resources ?c)
     ))
 
     ;no promises for this goal
