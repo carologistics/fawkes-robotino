@@ -477,7 +477,16 @@
               (mode FINISHED) (outcome ?outcome)
         )
   (wm-fact (key domain fact mps-type args? m ?ds t DS))
-  (wm-fact (key domain fact wp-at args? wp ?wp m ?ds side INPUT))
+  (wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
+  ?od <- (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color) (value ?val))
+  ?odd <- (domain-fact (name refbox-order-quantity-delivered) (param-values ?order ?df-val))
+  (plan-action (goal-id ?goal-id) (action-name ?an&:(str-index "fulfill-order" ?an)) (state FINAL))
+  =>
+  (if (eq ?outcome COMPLETED)
+    then
+      (modify ?od (value (+ ?val 1)))
+      (modify ?odd (param-values ?order (+ ?df-val 1)))
+  )
   =>
   (do-for-all-facts ((?wait wm-fact))
     (and (wm-key-prefix ?wait:key (create$ wp meta wait-for-delivery))
