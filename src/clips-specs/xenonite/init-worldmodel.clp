@@ -30,6 +30,7 @@
 (defrule init-worldmodel-sync
   (executive-init)
   (wm-fact (key cx identity))
+  (wm-robmem-sync-initialized)
   =>
   ;(wm-robmem-sync-enable "/domain/objects-by-type/workpiece")
   ;(wm-robmem-sync-enable "/domain/objects-by-type/cap-carrier")
