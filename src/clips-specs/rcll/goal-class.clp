@@ -1500,10 +1500,10 @@
             ;locks -> dc
             ;prepare-bs
             ;prepare-bs
-            (domain-promise (name mps-sate) (param-values ?bs READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 12 ?game-time)) (negated FALSE))
-            (domain-promise (name mps-state) (param-values ?bs IDLE) (promising-goal ?goal-id) (valid-at (+ 12 ?game-time)) (negated TRUE))
-            (domain-promise (name bs-prepared-side) (param-values ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 12 ?game-time)) (negated FALSE))
-            (domain-promise (name bs-prepared-color) (param-values ?bs ?base-color) (promising-goal ?goal-id) (valid-at (+ 12 ?game-time)) (negated FALSE))
+            ; (domain-promise (name mps-sate) (param-values ?bs READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 12 ?game-time)) (negated FALSE))
+            ; (domain-promise (name mps-state) (param-values ?bs IDLE) (promising-goal ?goal-id) (valid-at (+ 12 ?game-time)) (negated TRUE))
+            ; (domain-promise (name bs-prepared-side) (param-values ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 12 ?game-time)) (negated FALSE))
+            ; (domain-promise (name bs-prepared-color) (param-values ?bs ?base-color) (promising-goal ?goal-id) (valid-at (+ 12 ?game-time)) (negated FALSE))
             ;bs-dispense-for-product
             (domain-promise (name wp-base-color) (param-values ?wp BASE_NONE) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated TRUE))
             (domain-promise (name wp-base-color) (param-values ?base-color) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
@@ -1513,13 +1513,13 @@
             (domain-promise (name wp-for-order) (param-values ?wp ?order) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
             (domain-promise (name wp-has-order) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
             (domain-promise (name order-has-wp) (param-values ?order) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
-            (domain-promise (name wp-at) (param-values ?wp ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
-            (domain-promise (name mps-side-free) (param-values ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated TRUE))
+            ; (domain-promise (name wp-at) (param-values ?wp ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
+            ; (domain-promise (name mps-side-free) (param-values ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated TRUE))
             ;wp-get
-            (domain-promise (name wp-at) (param-values ?wp ?bs OUTPUT) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated TRUE))
-            (domain-promise (name mps-state) (param-values ?bs READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated TRUE))
-            (domain-promise (name mps-state) (param-values ?bs IDLE) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated FALSE))
-            (domain-promise (name mps-side-free) (param-values ?bs OUTPUT) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated FALSE))
+            ; (domain-promise (name wp-at) (param-values ?wp ?bs OUTPUT) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated TRUE))
+            ; (domain-promise (name mps-state) (param-values ?bs READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated TRUE))
+            ; (domain-promise (name mps-state) (param-values ?bs IDLE) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated FALSE))
+            ; (domain-promise (name mps-side-free) (param-values ?bs OUTPUT) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated FALSE))
             ;unlocks -> dc
             ;go-wait -> dc
         )
@@ -1824,10 +1824,10 @@
             ;move -> dc
             ;locks -> dc
             ;prepare-bs
-            (domain-promise (name mps-sate) (param-values ?bs READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 12 ?game-time)) (negated FALSE))
-            (domain-promise (name mps-state) (param-values ?bs IDLE) (promising-goal ?goal-id) (valid-at (+ 12 ?game-time)) (negated TRUE))
-            (domain-promise (name bs-prepared-side) (param-values ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 12 ?game-time)) (negated FALSE))
-            (domain-promise (name bs-prepared-color) (param-values ?bs ?base-color) (promising-goal ?goal-id) (valid-at (+ 12 ?game-time)) (negated FALSE))
+            ; (domain-promise (name mps-sate) (param-values ?bs READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 12 ?game-time)) (negated FALSE))
+            ; (domain-promise (name mps-state) (param-values ?bs IDLE) (promising-goal ?goal-id) (valid-at (+ 12 ?game-time)) (negated TRUE))
+            ; (domain-promise (name bs-prepared-side) (param-values ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 12 ?game-time)) (negated FALSE))
+            ; (domain-promise (name bs-prepared-color) (param-values ?bs ?base-color) (promising-goal ?goal-id) (valid-at (+ 12 ?game-time)) (negated FALSE))
             ;bs-dispense-for-product
             (domain-promise (name wp-base-color) (param-values ?wp BASE_NONE) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated TRUE))
             (domain-promise (name wp-base-color) (param-values ?base-color) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
@@ -1837,13 +1837,13 @@
             (domain-promise (name wp-for-order) (param-values ?wp ?order) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
             (domain-promise (name wp-has-order) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
             (domain-promise (name order-has-wp) (param-values ?order) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
-            (domain-promise (name wp-at) (param-values ?wp ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
-            (domain-promise (name mps-side-free) (param-values ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated TRUE))
+            ; (domain-promise (name wp-at) (param-values ?wp ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
+            ; (domain-promise (name mps-side-free) (param-values ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated TRUE))
             ;wp-get
-            (domain-promise (name wp-at) (param-values ?wp ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated TRUE))
-            (domain-promise (name mps-state) (param-values ?bs READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated TRUE))
-            (domain-promise (name mps-state) (param-values ?bs IDLE) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated FALSE))
-            (domain-promise (name mps-side-free) (param-values ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated FALSE))
+            ; (domain-promise (name wp-at) (param-values ?wp ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated TRUE))
+            ; (domain-promise (name mps-state) (param-values ?bs READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated TRUE))
+            ; (domain-promise (name mps-state) (param-values ?bs IDLE) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated FALSE))
+            ; (domain-promise (name mps-side-free) (param-values ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated FALSE))
             ;unlocks -> dc
             ;go-wait -> dc
         )
