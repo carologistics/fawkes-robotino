@@ -65,6 +65,7 @@
 		:parameters (?r - robot ?mine - location ?c - container)
 		:duration (= ?duration 1)
 		:condition (and
+		              (at start (self ?r))
 		              (at start (location-is-mine ?mine))
 		              (over all (robot-at ?r ?mine))
 		              (at start (robot-carries ?r ?c))
@@ -78,6 +79,7 @@
 		:parameters (?r - robot ?side - location ?machine - machine ?c - container)
 		:duration (= ?duration 1)
 		:condition (and
+		             (at start (self ?r))
 		             (at start (location-part-of-machine ?side ?machine))
 		             (at start (location-is-machine-input ?side))
 		             (at start (machine-in-state ?machine IDLE))
@@ -96,6 +98,7 @@
 		:parameters (?r - robot ?c - container)
 		:duration (= ?duration 1)
 		:condition (and
+		             (at start (self ?r))
 		             (over all (robot-at ?r CONTAINER-DEPOT))
 		             (at start (robot-can-carry ?r))
 		             (at start (container-at ?c CONTAINER-DEPOT)))
@@ -109,6 +112,7 @@
 		:parameters (?r - robot ?c - container ?side - location)
 		:duration (= ?duration 1)
 		:condition (and
+		             (at start (self ?r))
 		             (over all (robot-at ?r ?side))
 		             (at start (robot-carries ?r ?c)))
 		:effect (and
@@ -119,7 +123,8 @@
 	(:durative-action move
 		:parameters (?r - robot ?l1 - location ?l2 - location)
 		:duration (= ?duration 1)
-		:condition (and (at start (self ?r))
+		:condition (and
+		             (at start (self ?r))
 		             (at start (location-is-small ?l1))
 		             (at start (location-is-small ?l2))
 		             (at start (robot-at ?r ?l1))
@@ -135,6 +140,7 @@
 		:parameters (?r - robot ?l1 - location ?l2 - location)
 		:duration (= ?duration 1)
 		:condition (and
+		             (at start (self ?r))
 		             (at start (location-is-small ?l1))
 		             (at start (location-is-spacious ?l2))
 		             (at start (robot-at ?r ?l1)))
@@ -148,6 +154,7 @@
 		:parameters (?r - robot ?l1 - location ?l2 - location)
 		:duration (= ?duration 1)
 		:condition (and
+		             (at start (self ?r))
 		             (at start (location-is-spacious ?l1))
 		             (at start (location-is-small ?l2))
 		             (at start (robot-at ?r ?l1))
@@ -161,6 +168,7 @@
 		:parameters (?r - robot ?l1 - location ?l2 - location)
 		:duration (= ?duration 1)
 		:condition (and
+		             (at start (self ?r))
 		             (at start (location-is-spacious ?l1))
 		             (at start (location-is-spacious ?l2))
 		             (at start (robot-at ?r ?l1)))
@@ -183,6 +191,7 @@
 		:parameters (?r - robot ?machine - machine ?output - location ?c - container)
 		:duration (= ?duration 1)
 		:condition (and
+		             (at start (self ?r))
 		             (at start (location-is-machine-output ?output))
 		             (at start (machine-in-state ?machine READY))
 		             (over all (robot-at ?r ?output))
@@ -200,6 +209,7 @@
 		:parameters (?r - robot ?side - location ?machine - machine ?c - container)
 		:duration (= ?duration 1)
 		:condition (and
+		             (at start (self ?r))
 		             (at start (location-part-of-machine ?side ?machine))
 		             (at start (location-is-machine-input ?side))
 		             (at start (machine-in-state ?machine IDLE))
@@ -218,6 +228,7 @@
 		:parameters (?r - robot ?machine - machine ?output - location ?c - container)
 		:duration (= ?duration 1)
 		:condition (and
+		             (at start (self ?r))
 		             (at start (location-is-machine-output ?output))
 		             (at start (machine-in-state ?machine READY))
 		             (over all (robot-at ?r ?output))
