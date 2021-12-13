@@ -195,6 +195,23 @@
                                     (action-name wp-put)
                                     (param-names r wp m)
                                     (param-values ?robot ?cc ?mps))
+   )
+
+  (bind ?offset 1)
+  (if (any-factp ((?at-output wm-fact))
+                 (and (wm-key-prefix ?at-output:key (create$ domain fact wp-at))
+                      (eq (wm-key-arg ?at-output:key m) ?mps)
+                      (eq (wm-key-arg ?at-output:key side) OUTPUT)
+                 ))
+    then
+      (assert
+        (plan-action (id 6) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
+                     (action-name request-cs-retrieve-cap)
+                     (param-values ?robot ?mps ?cc ?cap-color))
+      )
+    else
+      (bind ?offset 4)
+      (assert
         (plan-action (id 6) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
               (action-name lock) (param-values ?mps))
         (plan-action (id 7) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
@@ -206,15 +223,18 @@
         (plan-action (id 9) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
                      (action-name unlock)
                      (param-values ?mps))
-        (plan-action (id 10) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
-                                    (action-name location-unlock)
-                                    (param-values ?mps INPUT))
-        (plan-action (id 11) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
-                                    (action-name go-wait)
-                                    (param-names r from from-side to)
-                                    (param-values ?robot ?mps INPUT (wait-pos ?mps INPUT)))
-    )
-    (modify ?g (mode EXPANDED))
+      )
+  )
+  (assert
+      (plan-action (id (+ ?offset 6)) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
+                   (action-name location-unlock)
+                   (param-values ?mps INPUT))
+      (plan-action (id (+ ?offset 7)) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
+                   (action-name go-wait)
+                   (param-names r from from-side to)
+                   (param-values ?robot ?mps INPUT (wait-pos ?mps INPUT)))
+  )
+  (modify ?g (mode EXPANDED))
 )
 
 (defrule goal-remove-workpiece-from-mps
@@ -725,6 +745,22 @@
         (action-name wp-put)
         (param-names r wp m)
         (param-values ?robot ?spawned-wp ?mps))
+  )
+
+  (if (any-factp ((?at-output wm-fact))
+                 (and (wm-key-prefix ?at-output:key (create$ domain fact wp-at))
+                      (eq (wm-key-arg ?at-output:key m) ?mps)
+                      (eq (wm-key-arg ?at-output:key side) OUTPUT)
+                 ))
+    then
+      (assert
+   (plan-action (id (+ ?offset 4)) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
+         (action-name request-cs-mount-cap)
+         (param-values ?robot ?mps ?spawned-wp ?cap-color))
+      )
+      (bind ?offset (+ ?offset 1))
+    else
+      (assert
    (plan-action (id (+ ?offset 4)) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
                 (action-name lock) (param-values ?mps))
    (plan-action (id (+ ?offset 5)) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
@@ -736,10 +772,14 @@
    (plan-action (id (+ ?offset 7)) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
                 (action-name unlock)
                 (param-values ?mps))
-  (plan-action (id (+ ?offset 8)) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
+      )
+      (bind ?offset (+ ?offset 4))
+  )
+  (assert
+  (plan-action (id (+ ?offset 4)) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
         (action-name location-unlock)
         (param-values ?mps INPUT))
-  (plan-action (id (+ ?offset 9)) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
+  (plan-action (id (+ ?offset 5)) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
         (action-name go-wait)
         (param-names r from from-side to)
         (param-values ?robot ?mps INPUT (wait-pos ?mps INPUT)))
@@ -829,8 +869,26 @@
         (action-name wp-put)
         (param-names r wp m)
         (param-values ?robot ?spawned-wp ?mps))
+  )
+  (if (any-factp ((?at-output wm-fact))
+                 (and (wm-key-prefix ?at-output:key (create$ domain fact wp-at))
+                      (eq (wm-key-arg ?at-output:key m) ?mps)
+                      (eq (wm-key-arg ?at-output:key side) OUTPUT)
+                 ))
+    then
+  (assert
+   (plan-action (id (+ ?offset 4)) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id)
+         (action-name request-rs-mount-ring)
+         (param-values ?robot ?mps ?spawned-wp ONE ?ring-color
+                        RING_NONE RING_NONE RING_NONE
+                        ?rs-req))
+  )
+  (bind ?offset (+ ?offset 1))
+    else
+  (assert
   (plan-action (id (+ ?offset 4)) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id)
         (action-name lock) (param-values ?mps))
+
   (plan-action (id (+ ?offset 5)) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id)
                (action-name prepare-rs)
                (param-values ?mps ?ring-color ?rs-before ?rs-after ?rs-req))
@@ -840,10 +898,14 @@
   (plan-action (id (+ ?offset 7)) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id)
                (action-name unlock)
                (param-values ?mps))
-  (plan-action (id (+ ?offset 8)) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id)
+  )
+  (bind ?offset (+ ?offset 4))
+  )
+  (assert
+  (plan-action (id (+ ?offset 4)) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id)
         (action-name location-unlock)
         (param-values ?mps INPUT))
-  (plan-action (id (+ ?offset 9)) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id)
+  (plan-action (id (+ ?offset 5)) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id)
         (action-name go-wait)
         (param-names r from from-side to)
         (param-values ?robot ?mps INPUT (wait-pos ?mps INPUT)))
@@ -933,6 +995,23 @@
             (action-name wp-put)
             (param-names r wp m)
             (param-values ?robot ?wp ?rs))
+    )
+
+  (if (any-factp ((?at-output wm-fact))
+                 (and (wm-key-prefix ?at-output:key (create$ domain fact wp-at))
+                      (eq (wm-key-arg ?at-output:key m) ?rs)
+                      (eq (wm-key-arg ?at-output:key side) OUTPUT)
+                 ))
+    then
+  (assert
+     (plan-action (id (+ ?offset 4)) (plan-id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id)
+           (action-name request-rs-mount-ring)
+           (param-values ?robot ?rs ?wp ?ring-pos ?curr-ring-color
+                             ?ring1-color ?ring2-color ?ring3-color ?rs-req))
+  )
+  (bind ?offset (+ ?offset 1))
+    else
+  (assert
   (plan-action (id (+ ?offset 4)) (plan-id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id)
         (action-name lock) (param-values ?rs))
   (plan-action (id (+ ?offset 5)) (plan-id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id)
@@ -944,10 +1023,14 @@
   (plan-action (id (+ ?offset 7)) (plan-id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id)
                (action-name unlock)
                (param-values ?rs))
-      (plan-action (id (+ ?offset 8)) (plan-id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id)
+  )
+  (bind ?offset (+ ?offset 4))
+  )
+  (assert
+      (plan-action (id (+ ?offset 4)) (plan-id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id)
             (action-name location-unlock)
             (param-values ?rs INPUT))
-      (plan-action (id (+ ?offset 9)) (plan-id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id)
+      (plan-action (id (+ ?offset 5)) (plan-id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id)
             (action-name go-wait)
             (param-names r from from-side to)
             (param-values ?robot ?rs INPUT (wait-pos ?rs INPUT)))
@@ -1024,6 +1107,21 @@
           (action-name wp-put)
           (param-names r wp m)
           (param-values ?robot ?wp ?mps))
+  )
+  (if (any-factp ((?at-output wm-fact))
+                 (and (wm-key-prefix ?at-output:key (create$ domain fact wp-at))
+                      (eq (wm-key-arg ?at-output:key m) ?mps)
+                      (eq (wm-key-arg ?at-output:key side) OUTPUT)
+                 ))
+    then
+  (assert
+     (plan-action (id (+ ?offset 4)) (plan-id PRODUCE-CX-PLAN) (goal-id ?goal-id)
+           (action-name request-cs-mount-cap)
+           (param-values ?robot ?mps ?wp ?cap-color))
+  )
+  (bind ?offset (+ ?offset 1))
+    else
+  (assert
      (plan-action (id (+ ?offset 4)) (plan-id PRODUCE-CX-PLAN) (goal-id ?goal-id)
                   (action-name lock) (param-values ?mps))
      (plan-action (id (+ ?offset 5)) (plan-id PRODUCE-CX-PLAN) (goal-id ?goal-id)
@@ -1035,10 +1133,14 @@
      (plan-action (id (+ ?offset 7)) (plan-id PRODUCE-CX-PLAN) (goal-id ?goal-id)
                   (action-name unlock)
                   (param-values ?mps))
-    (plan-action (id (+ ?offset 8)) (plan-id PRODUCE-CX-PLAN) (goal-id ?goal-id)
+  )
+  (bind ?offset (+ ?offset 4))
+  )
+  (assert
+    (plan-action (id (+ ?offset 4)) (plan-id PRODUCE-CX-PLAN) (goal-id ?goal-id)
           (action-name location-unlock)
           (param-values ?mps INPUT))
-    (plan-action (id (+ ?offset 9)) (plan-id PRODUCE-CX-PLAN) (goal-id ?goal-id)
+    (plan-action (id (+ ?offset 5)) (plan-id PRODUCE-CX-PLAN) (goal-id ?goal-id)
           (action-name go-wait)
           (param-names r from from-side to)
           (param-values ?robot ?mps INPUT (wait-pos ?mps INPUT)))
