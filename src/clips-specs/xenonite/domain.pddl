@@ -39,6 +39,7 @@
 
 	(:predicates
 		(self ?r - robot)
+		(ready ?r - robot)
 		(robot-at ?r - robot ?l - location)
 		(robot-carries ?r - robot ?c - container)
 		(robot-can-carry ?r - robot)

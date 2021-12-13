@@ -28,11 +28,66 @@
   (assert (domain-loaded))
 )
 
-(defrule domain-load-initial-facts
-" Load all initial domain facts on startup of the game "
+(defrule domain-load-start
+  (domain-fact (name self) (param-values ?self&WALL-E))
   (domain-loaded)
   =>
-  (printout info "Initializing domain" crlf)
+  (assert (wm-fact (key domain initialization) (type STRING) (value "STARTED")))
+)
+
+
+(defrule domain-load-local-facts
+  "Load local facts only relevant for this robot."
+  (domain-loaded)
+  (wm-fact (key domain initialization) (type STRING) (value "STARTED"))
+  (domain-fact (name self) (param-values ?self))
+  =>
+  (printout info "Initializing local domain facts" crlf)
+  (assert
+    (domain-fact (name robot-can-carry) (param-values ?self))
+    (domain-fact (name location-part-of-machine) (param-values MACHINE1-INPUT MACHINE1))
+    (domain-fact (name location-part-of-machine) (param-values MACHINE1-OUTPUT MACHINE1))
+    (domain-fact (name location-part-of-machine) (param-values MACHINE2-INPUT MACHINE2))
+    (domain-fact (name location-part-of-machine) (param-values MACHINE2-OUTPUT MACHINE2))
+
+    (domain-fact (name location-is-spacious) (param-values CONTAINER-DEPOT))
+    (domain-fact (name location-is-spacious) (param-values BASE))
+    (domain-fact (name location-is-small) (param-values MACHINE1-INPUT))
+    (domain-fact (name location-is-small) (param-values MACHINE2-INPUT))
+    (domain-fact (name location-is-small) (param-values MACHINE1-OUTPUT))
+    (domain-fact (name location-is-small) (param-values MACHINE2-OUTPUT))
+    (domain-fact (name location-is-small) (param-values REGOLITH-MINE1))
+    (domain-fact (name location-is-small) (param-values REGOLITH-MINE2))
+    (domain-fact (name location-is-small) (param-values STORAGE-INPUT))
+    (domain-fact (name location-is-mine) (param-values REGOLITH-MINE1))
+    (domain-fact (name location-is-mine) (param-values REGOLITH-MINE2))
+    (domain-fact (name location-is-machine) (param-values MACHINE1-INPUT))
+    (domain-fact (name location-is-machine) (param-values MACHINE1-OUTPUT))
+    (domain-fact (name location-is-machine) (param-values MACHINE2-INPUT))
+    (domain-fact (name location-is-machine) (param-values MACHINE2-OUTPUT))
+    (domain-fact (name location-is-machine-input) (param-values MACHINE1-INPUT))
+    (domain-fact (name location-is-machine-output) (param-values MACHINE1-OUTPUT))
+    (domain-fact (name location-is-machine-input) (param-values MACHINE2-INPUT))
+    (domain-fact (name location-is-machine-output) (param-values MACHINE2-OUTPUT))
+    (domain-fact (name machine-for-material) (param-values MACHINE1 REGOLITH))
+    (domain-fact (name machine-for-material) (param-values MACHINE2 PROCESSITE))
+    (domain-fact (name machine-makes-material) (param-values MACHINE1 PROCESSITE))
+    (domain-fact (name machine-makes-material) (param-values MACHINE2 XENONITE))
+
+    (wm-fact (key robot-ready ?self) (type BOOL) (value TRUE))
+  )
+)
+
+(defrule domain-load-global-facts
+  "Load global facts shared by all robots."
+  (domain-fact (name self) (param-values ?self&WALL-E))
+  ?init <- (wm-fact (key domain initialization) (type STRING) (value "STARTED"))
+  (wm-fact (key robot-ready WALL-E) (value TRUE))
+  (wm-fact (key robot-ready EVE) (value TRUE))
+  (wm-fact (key robot-ready R2D2) (value TRUE))
+  (domain-loaded)
+  =>
+  (printout info "Initializing global domain facts" crlf)
 
   (assert
     (domain-object (name WALL-E) (type robot))
@@ -47,10 +102,6 @@
     (domain-fact (name robot-at) (param-values EVE BASE))
     (domain-fact (name robot-at) (param-values R2D2 BASE))
     ;(domain-fact (name robot-at) (param-values ARNIE BASE))
-    (domain-fact (name robot-can-carry) (param-values WALL-E))
-    (domain-fact (name robot-can-carry) (param-values EVE))
-    (domain-fact (name robot-can-carry) (param-values R2D2))
-    ;(domain-fact (name robot-can-carry) (param-values ARNIE))
 
     (domain-fact (name container-can-be-filled) (param-values C1))
     (domain-fact (name container-can-be-filled) (param-values C2))
@@ -67,21 +118,7 @@
 
     (domain-fact (name machine-in-state) (param-values MACHINE1 IDLE))
     (domain-fact (name machine-in-state) (param-values MACHINE2 IDLE))
-    (domain-fact (name machine-for-material) (param-values MACHINE1 REGOLITH))
-    (domain-fact (name machine-for-material) (param-values MACHINE2 PROCESSITE))
-    (domain-fact (name machine-makes-material) (param-values MACHINE1 PROCESSITE))
-    (domain-fact (name machine-makes-material) (param-values MACHINE2 XENONITE))
 
-    (domain-fact (name location-is-mine) (param-values REGOLITH-MINE1))
-    (domain-fact (name location-is-mine) (param-values REGOLITH-MINE2))
-    (domain-fact (name location-is-machine) (param-values MACHINE1-INPUT))
-    (domain-fact (name location-is-machine) (param-values MACHINE1-OUTPUT))
-    (domain-fact (name location-is-machine) (param-values MACHINE2-INPUT))
-    (domain-fact (name location-is-machine) (param-values MACHINE2-OUTPUT))
-    (domain-fact (name location-is-machine-input) (param-values MACHINE1-INPUT))
-    (domain-fact (name location-is-machine-output) (param-values MACHINE1-OUTPUT))
-    (domain-fact (name location-is-machine-input) (param-values MACHINE2-INPUT))
-    (domain-fact (name location-is-machine-output) (param-values MACHINE2-OUTPUT))
     (domain-fact (name location-is-free) (param-values REGOLITH-MINE1))
     (domain-fact (name location-is-free) (param-values REGOLITH-MINE2))
     (domain-fact (name location-is-free) (param-values MACHINE1-INPUT))
@@ -90,22 +127,16 @@
     (domain-fact (name location-is-free) (param-values MACHINE2-OUTPUT))
     (domain-fact (name location-is-free) (param-values STORAGE-INPUT))
     (domain-fact (name location-is-free) (param-values CONTAINER-DEPOT))
-    (domain-fact (name location-part-of-machine) (param-values MACHINE1-INPUT MACHINE1))
-    (domain-fact (name location-part-of-machine) (param-values MACHINE1-OUTPUT MACHINE1))
-    (domain-fact (name location-part-of-machine) (param-values MACHINE2-INPUT MACHINE2))
-    (domain-fact (name location-part-of-machine) (param-values MACHINE2-OUTPUT MACHINE2))
-
-    (domain-fact (name location-is-spacious) (param-values CONTAINER-DEPOT))
-    (domain-fact (name location-is-spacious) (param-values BASE))
-    (domain-fact (name location-is-small) (param-values MACHINE1-INPUT))
-    (domain-fact (name location-is-small) (param-values MACHINE2-INPUT))
-    (domain-fact (name location-is-small) (param-values MACHINE1-OUTPUT))
-    (domain-fact (name location-is-small) (param-values MACHINE2-OUTPUT))
-    (domain-fact (name location-is-small) (param-values REGOLITH-MINE1))
-    (domain-fact (name location-is-small) (param-values REGOLITH-MINE2))
-    (domain-fact (name location-is-small) (param-values STORAGE-INPUT))
+    (wm-fact (key domain initialized) (type BOOL) (value TRUE))
   )
 
+  (modify ?init (value "FINISHED"))
+)
+
+(defrule domain-initialization-complete
+  (wm-fact (key domain initialization) (type STRING) (value "FINISHED"))
+  =>
+  (printout t "Domain initialization complete!" crlf)
   (assert (domain-facts-loaded))
 )
 
