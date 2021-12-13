@@ -92,7 +92,7 @@ clips-executive/specs/rcll/parameters/rcll:
   magenta-send-port: 4482
 
 clips-executive/specs/xenonite/parameters/xenonite:
-  agent/name: Eve
+  agent/name: EVE
 
 plugins/mongodb:
   clients:

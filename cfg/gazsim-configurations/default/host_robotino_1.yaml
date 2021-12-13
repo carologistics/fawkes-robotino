@@ -92,7 +92,7 @@ clips-executive/specs/rcll/parameters/rcll:
   magenta-send-port: 4481
 
 clips-executive/specs/xenonite/parameters/xenonite:
-  agent/name: WallE
+  agent/name: WALL-E
 
 plugins/mongodb:
   clients:
