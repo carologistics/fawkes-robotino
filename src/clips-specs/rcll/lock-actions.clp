@@ -32,6 +32,32 @@
                       (state PENDING) (executable TRUE)
                       (param-names $?param-names)
                       (param-values $?param-values))
+  (not
+    (or
+      (plan-action (plan-id ~?plan-id) (goal-id ~?goal-id)
+                   (action-name ?action)
+                   (state RUNNING)
+                   (param-names $?param-names)
+                   (param-values $?param-values))
+      (and
+        (test (or (eq ?action lock) (eq ?action one-time-lock)))
+        (lock-info (plan-id ~?plan-id) (goal-id ~?goal-id)
+                   (name ?lock-info-name))
+        (test (eq ?lock-info-name (plan-action-arg name ?param-names ?param-values)))
+      )
+      (and
+        (test (eq ?action lcoation-ock))
+        (lock-info (plan-id ~?plan-id) (goal-id ~?goal-id)
+                   (name ?lock-info-name))
+        (test (eq ?lock-info-name (sym-cat
+                                    (plan-action-arg location ?param-names ?param-values)
+                                    -
+                                    (plan-action-arg side ?param-names ?param-values)
+                                  )
+        ))
+      )
+    )
+  )
   (time $?now)
 	=>
   (if (or (eq ?action lock) (eq ?action one-time-lock))  then
