@@ -45,4 +45,10 @@ $SCRIPT_PATH/gazsim.bash -x start -k -n 3 -k -o --no-refbox --no-refbox-comm --m
 sleep 10
 echo "Waiting for results..."
 timeout -k 300 240 $SCRIPT_PATH/cx-xenonite-check.bash ./robot1_latest.log ./robot2_latest.log ./robot3_latest.log
-exit $?
+res=$?
+if [ "$res" -eq 0 ] ; then
+  echo "Test succeeded."
+else
+  echo "Test failed."
+fi
+exit $res
