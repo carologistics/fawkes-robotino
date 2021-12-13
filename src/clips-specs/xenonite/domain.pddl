@@ -18,7 +18,7 @@
 ;  Read the full text in the LICENSE.GPL file in the doc directory.
 
 (define (domain xenonite)
-	(:requirements :strips :typing :durative-actions)
+	(:requirements :strips :typing :durative-actions :timed-initial-literals)
 
 	(:types
 		robot - object
