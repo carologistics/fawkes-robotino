@@ -1,5 +1,5 @@
 ;****************************************************************************
-;  domain.pddl: Test domain for the promises
+;  domain.pddl: Produce xenonite with multiple robots
 ;
 ;  Created: Thu Dec 2 2021
 ;  Copyright  2021 Daniel Swoboda <swoboda@kbsg.rwth-aachen.de>
@@ -17,7 +17,7 @@
 ;
 ;  Read the full text in the LICENSE.GPL file in the doc directory.
 
-(define (domain promises-test)
+(define (domain xenonite)
 	(:requirements :strips :typing :durative-actions)
 
 	(:types

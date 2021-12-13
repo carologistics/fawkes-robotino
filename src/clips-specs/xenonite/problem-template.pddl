@@ -1,5 +1,5 @@
 ;---------------------------------------------------------------------------
-;  problem.pddl - A simple Hello World problem
+;  problem.pddl - Xenonite Problem
 ;
 ;  Created: Thu 30 Nov 2017 10:31:32 CET
 ;  Copyright  2017  Till Hofmann <hofmann@kbsg.rwth-aachen.de>
@@ -19,8 +19,8 @@
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
 
-(define (problem hello-world-problem)
-  (:domain hello-world)
+(define (problem xenonite-problem)
+  (:domain xenonite)
   (:objects
     <<#DOMAINOBJECTS|{"relation": "domain-object"}>>
     <<name>> - <<type>><</DOMAINOBJECTS>>
