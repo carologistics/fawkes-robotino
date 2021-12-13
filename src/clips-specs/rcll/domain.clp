@@ -199,6 +199,8 @@
     (domain-object (name ?rs1) (type rs))
     (domain-object (name ?rs2) (type rs))
     (domain-object (name ?ss) (type ss))
+    (domain-object (name (sym-cat ?cs1 -SHELF))
+    (domain-object (name (sym-cat ?cs2 -SHELF)))
     (domain-object (name INPUT) (type mps-side))
     (domain-object (name OUTPUT) (type mps-side))
     (domain-object (name WAIT) (type mps-side))
