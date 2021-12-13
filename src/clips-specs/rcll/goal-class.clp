@@ -1583,6 +1583,13 @@
         (printout t "Goal formulated from promise" crlf)
     )
 
+    ;handle ressources for promises
+    (bind ?prev-rs-output (sym-cat ?prev-rs -OUTPUT))
+    (if (neq ?sat TRUE)
+    then
+        (bind ?prev-rs-output (sym-cat PROMISE- ?prev-rs -OUTPUT))
+    )
+
     (bind ?goal-id (sym-cat ?class - (gensym*)))
     (assert (goal (id ?goal-id)
                     (class ?class) (priority (+ ?ring-pos ?*PRIORITY-MOUNT-NEXT-RING*))
@@ -1602,7 +1609,7 @@
                             rs-req ?bases-needed
                             order ?order
                     )
-                    (required-resources (sym-cat ?rs -INPUT) (sym-cat ?prev-rs -OUTPUT) ?wp)
+                    (required-resources (sym-cat ?rs -INPUT) ?prev-rs-output ?wp)
     ))
     ;assert promises resulting from the plan-action of this goal
     (bind ?offset 3)
@@ -1680,6 +1687,13 @@
         (printout t "Goal formulated from promise" crlf)
     )
 
+    ;handle ressources for promises
+    (bind ?mps-output (sym-cat ?mps -OUTPUT))
+    (if (neq ?sat TRUE)
+    then
+        (bind ?mps-output (sym-cat PROMISE- ?mps -OUTPUT))
+    )
+
     (bind ?goal-id (sym-cat ?class - (gensym*)))
     (assert (goal (id ?goal-id)
                     (class ?class) (sub-type ?subtype)
@@ -1697,7 +1711,7 @@
                             ring3-color ?ring3-color
                             cap-color ?cap-color
                     )
-                    (required-resources (sym-cat ?mps -OUTPUT) ?order ?wp (sym-cat ?ds -INPUT))
+                    (required-resources ?mps-output ?order ?wp (sym-cat ?ds -INPUT))
     ))
     ;assert promises resulting from the plan-action of this goal
     (bind ?offset 3)
@@ -1877,6 +1891,13 @@
         (printout t "Goal formulated from promise" crlf)
     )
 
+    ;handle ressources for promises
+    (bind ?rs-output (sym-cat ?rs -OUTPUT))
+    (if (neq ?sat TRUE)
+    then
+        (bind ?rs-output (sym-cat PROMISE- ?rs -OUTPUT))
+    )
+
     (bind ?goal-id (sym-cat ?class - (gensym*)))
     (assert (goal (id ?goal-id)
                     (class ?class) (sub-type ?subtype)
@@ -1889,7 +1910,7 @@
                             cs-color ?cap-color
                             order ?order
                     )
-                    (required-resources (sym-cat ?cs -INPUT) (sym-cat ?rs -OUTPUT) ?wp)
+                    (required-resources (sym-cat ?cs -INPUT) ?rs-output ?wp)
     ))
     ;assert promises resulting from the plan-action of this goal
     (bind ?offset 3)
