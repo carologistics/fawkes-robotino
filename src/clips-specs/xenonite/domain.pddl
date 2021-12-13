@@ -55,6 +55,8 @@
 		(location-is-machine-input ?location - location)
 		(location-is-machine-output ?location - location)
 		(location-is-free ?location - location)
+		(location-is-spacious ?location - location)
+		(location-is-small ?location - location)
 		(storage-is-full)
 	)
 
@@ -116,7 +118,9 @@
 	(:durative-action move
 		:parameters (?r - robot ?l1 - location ?l2 - location)
 		:duration (= ?duration 1)
-		:condition (and
+		:condition (and (at start (self ?r))
+		             (at start (location-is-small ?l1))
+		             (at start (location-is-small ?l2))
 		             (at start (robot-at ?r ?l1))
 		             (at start (location-is-free ?l2)))
 		:effect (and
@@ -126,10 +130,12 @@
 		          (at end (location-is-free ?l1)))
 	)
 
-	(:durative-action move-plaza
+	(:durative-action move-to-plaza
 		:parameters (?r - robot ?l1 - location ?l2 - location)
 		:duration (= ?duration 1)
 		:condition (and
+		             (at start (location-is-small ?l1))
+		             (at start (location-is-spacious ?l2))
 		             (at start (robot-at ?r ?l1)))
 		:effect (and
 		          (at start (not (robot-at ?r ?l1)))
@@ -137,13 +143,28 @@
 		          (at end (location-is-free ?l1)))
 	)
 
+	(:durative-action move-from-plaza
+		:parameters (?r - robot ?l1 - location ?l2 - location)
+		:duration (= ?duration 1)
+		:condition (and
+		             (at start (location-is-spacious ?l1))
+		             (at start (location-is-small ?l2))
+		             (at start (robot-at ?r ?l1))
+		             (at start (location-is-free ?l2)))
+		:effect (and
+		          (at start (not (robot-at ?r ?l1)))
+		          (at end (robot-at ?r ?l2)))
+	)
+
 	(:durative-action move-plaza-plaza
 		:parameters (?r - robot ?l1 - location ?l2 - location)
 		:duration (= ?duration 1)
 		:condition (and
+		             (at start (location-is-spacious ?l1))
+		             (at start (location-is-spacious ?l2))
 		             (at start (robot-at ?r ?l1)))
 		:effect (and
-		          (at end (not (robot-at ?r ?l1)))
+		          (at start (not (robot-at ?r ?l1)))
 		          (at end (robot-at ?r ?l2)))
 	)
 

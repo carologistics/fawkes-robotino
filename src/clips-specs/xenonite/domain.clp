@@ -94,6 +94,16 @@
     (domain-fact (name location-part-of-machine) (param-values MACHINE1-OUTPUT MACHINE1))
     (domain-fact (name location-part-of-machine) (param-values MACHINE2-INPUT MACHINE2))
     (domain-fact (name location-part-of-machine) (param-values MACHINE2-OUTPUT MACHINE2))
+
+    (domain-fact (name location-is-spacious) (param-values CONTAINER-DEPOT))
+    (domain-fact (name location-is-spacious) (param-values BASE))
+    (domain-fact (name location-is-small) (param-values MACHINE1-INPUT))
+    (domain-fact (name location-is-small) (param-values MACHINE2-INPUT))
+    (domain-fact (name location-is-small) (param-values MACHINE1-OUTPUT))
+    (domain-fact (name location-is-small) (param-values MACHINE2-OUTPUT))
+    (domain-fact (name location-is-small) (param-values REGOLITH-MINE1))
+    (domain-fact (name location-is-small) (param-values REGOLITH-MINE2))
+    (domain-fact (name location-is-small) (param-values STORAGE-INPUT))
   )
 
   (assert (domain-facts-loaded))
