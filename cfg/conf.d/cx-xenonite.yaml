@@ -36,7 +36,7 @@ clips-executive/specs/xenonite:
           - xenonite/goal-reasoner.clp
           - xenonite/goal-class.clp
       - name: goal-expander
-        file: xenonite/fixed-sequence.clp
+        file: xenonite/goal-expansion-pddl.clp
       - name: action-selection
         file: action-selection/sequential.clp
       - name: action-execution

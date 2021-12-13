@@ -25,6 +25,7 @@
   ?g <- (goal (id ?goal-id) (class FILL-CONTAINER) (mode SELECTED)
               (params robot ?r container ?c start ?start mine ?mine) (parent ?parent-id))
   =>
+  (printout info "Expanding " ?goal-id crlf)
   (pddl-call ?goal-id (str-cat "(and (robot-at " ?r " " ?mine ") "
                                     "(robot-carries " ?r " " ?c ") "
                                     "(container-filled " ?c " REGOLITH))"))
@@ -37,9 +38,10 @@
               (params robot ?r side ?side machine ?machine container ?c material ?mat) (parent ?parent-id))
   (domain-fact (name robot-at) (param-values ?r ?start))
   =>
+  (printout info "Expanding " ?goal-id crlf)
   (pddl-call ?goal-id (str-cat "(and (robot-at " ?r " " BASE ") "
-                                    "(machine-in-state " ?machine " FILLED) "
-                                    "(container-filled " ?c " " ?mat "))"))
+                                    "(machine-in-state " ?machine " FILLED))"))
+                                    ;"(container-filled " ?c " " ?mat "))"))
 )
 
 
@@ -50,6 +52,7 @@
   =>
   ;(pddl-call ?goal-id (str-cat "(machine-in-state " ?m " OPERATING)"))
 
+  (printout info "Expanding " ?goal-id crlf)
   (bind ?plan-id (sym-cat START-MACHINE-PLAN (gensym*)))
   (assert
     (plan (id ?plan-id) (goal-id ?goal-id) (type SEQUENTIAL))
@@ -66,6 +69,7 @@
               (params robot ?r side ?s machine ?m container ?c material ?mat) (parent ?parent-id))
   (domain-fact (name robot-at) (param-values ?r ?start))
   =>
+  (printout info "Expanding " ?goal-id crlf)
   (pddl-call ?goal-id (str-cat "(and (robot-carries " ?r " " ?c ") "
                                     "(container-filled " ?c " " ?mat ") "
                                     "(robot-at " ?r " BASE)"
@@ -78,6 +82,7 @@
               (params robot ?r container ?c) (parent ?parent-id))
   (domain-fact (name robot-at) (param-values ?r ?start))
   =>
+  (printout info "Expanding " ?goal-id crlf)
   (pddl-call ?goal-id (str-cat "(and (container-at " ?c " STORAGE-INPUT) "
                                     "(robot-at " ?r " BASE) "
                                ")"))
