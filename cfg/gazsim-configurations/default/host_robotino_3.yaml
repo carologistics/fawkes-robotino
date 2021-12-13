@@ -94,6 +94,9 @@ clips-executive/specs/rcll/parameters/rcll:
 clips-executive/specs/xenonite/parameters/xenonite:
   agent/name: R2D2
 
+plugins/pddl-robot-memory/output-problem-description: clips-specs/xenonite/problem-R2D2.pddl
+plugins/pddl-planner/problem-description: problem-R2D2.pddl
+
 plugins/mongodb:
   clients:
     default/enabled: true

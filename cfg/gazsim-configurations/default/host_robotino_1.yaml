@@ -94,6 +94,9 @@ clips-executive/specs/rcll/parameters/rcll:
 clips-executive/specs/xenonite/parameters/xenonite:
   agent/name: WALL-E
 
+plugins/pddl-robot-memory/output-problem-description: clips-specs/xenonite/problem-WALL-E.pddl
+plugins/pddl-planner/problem-description: problem-WALL-E.pddl
+
 plugins/mongodb:
   clients:
     default/enabled: true

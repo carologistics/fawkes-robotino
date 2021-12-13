@@ -94,6 +94,9 @@ clips-executive/specs/rcll/parameters/rcll:
 clips-executive/specs/xenonite/parameters/xenonite:
   agent/name: EVE
 
+plugins/pddl-robot-memory/output-problem-description: clips-specs/xenonite/problem-EVE.pddl
+plugins/pddl-planner/problem-description: problem-EVE.pddl
+
 plugins/mongodb:
   clients:
     default/enabled: true
