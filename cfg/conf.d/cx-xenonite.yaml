@@ -48,3 +48,5 @@ clips-executive/specs/xenonite:
         file: xenonite/debug.clp
       - name: local-promises
         file: xenonite/promises.clp
+  parameters:
+    use-promises: true
