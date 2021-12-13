@@ -21,27 +21,43 @@
 )
 
 (defrule debug-print-container-at
-    (domain-fact (name container-at) (param-values ?c ?l))
+    (domain-fact (name container-at))
     =>
-    (printout t "DEBUG: Container " ?c " is now at " ?l crlf)
+    (printout t "DEBUG: Container positions:")
+    (do-for-all-facts ((?loc domain-fact)) (eq ?loc:name container-at)
+      (printout t "    "(nth$ 1 ?loc:param-values) ": " (nth$ 2 ?loc:param-values))
+    )
+    (printout t crlf)
 )
 
 (defrule debug-print-robot-at
-    (domain-fact (name robot-at) (param-values ?r ?l))
+    (domain-fact (name robot-at))
     =>
-    (printout t "DEBUG: Robot " ?r " is now at " ?l crlf)
+    (printout t "DEBUG: Robot positions:")
+    (do-for-all-facts ((?loc domain-fact)) (eq ?loc:name robot-at)
+      (printout t "    "(nth$ 1 ?loc:param-values) ": " (nth$ 2 ?loc:param-values))
+    )
+    (printout t crlf)
 )
 
 (defrule debug-print-machine-in-state
-    (domain-fact (name machine-in-state) (param-values ?m ?s))
+    (domain-fact (name machine-in-state))
     =>
-    (printout t "DEBUG: Machine " ?m " is now in state " ?s crlf)
+    (printout t "DEBUG: Machine states:")
+    (do-for-all-facts ((?loc domain-fact)) (eq ?loc:name machine-in-state)
+      (printout t "    "(nth$ 1 ?loc:param-values) ": " (nth$ 2 ?loc:param-values))
+    )
+    (printout t crlf)
 )
 
 (defrule debug-print-container-filled-with
-    (domain-fact (name container-filled) (param-values ?c ?mat))
+    (domain-fact (name container-filled))
     =>
-    (printout t "DEBUG: Container " ?c " is now filled with " ?mat crlf)
+    (printout t "DEBUG: Containers filled with:")
+    (do-for-all-facts ((?loc domain-fact)) (eq ?loc:name container-filled)
+      (printout t "    "(nth$ 1 ?loc:param-values) ": " (nth$ 2 ?loc:param-values))
+    )
+    (printout t crlf)
 )
 
 (defrule debug-assert-start-session-timer
