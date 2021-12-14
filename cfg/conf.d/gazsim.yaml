@@ -216,3 +216,6 @@ gazsim:
       - M-SS
 
     nav-gen-if-name: "/navgraph-generator-mps"
+
+  object-tracking:
+    if-name: "object-tracking"

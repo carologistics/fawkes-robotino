@@ -28,9 +28,15 @@
 #include <aspect/clock.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
+#include <aspect/tf.h>
+#include <blackboard/interface_listener.h>
 #include <core/threading/thread.h>
+#include <interfaces/ObjectTrackingInterface.h>
 #include <plugins/gazebo/aspect/gazebo.h>
+#include <tf/types.h>
+#include <utils/time/time.h>
 
+#include <cmath>
 #include <string.h>
 
 //from Gazebo
@@ -40,19 +46,23 @@
 
 namespace fawkes {
 class Position3DInterface;
-}
+class ObjectTrackingInterface;
+} // namespace fawkes
 
 class ObjectTrackingThread : public fawkes::Thread,
                              public fawkes::ClockAspect,
                              public fawkes::LoggingAspect,
                              public fawkes::ConfigurableAspect,
+                             public fawkes::BlackBoardAspect,
                              public fawkes::BlockedTimingAspect,
-                             public fawkes::GazeboAspect
+                             public fawkes::GazeboAspect,
+                             public fawkes::TransformAspect
 {
 public:
 	ObjectTrackingThread();
 
 	virtual void init();
+	virtual void loop();
 
 private:
 	//Subscriber to receive localization data from gazebo
@@ -60,6 +70,10 @@ private:
 	std::string                      gps_topic_;
 	gazebo::transport::SubscriberPtr factory_sub_;
 	std::string                      factory_topic_;
+
+	//ObjectTrackingInterface to receive messeges and update target frames
+	fawkes::ObjectTrackingInterface *object_tracking_if_;
+	std::string                      object_tracking_if_name_;
 
 	//handler function for incoming localization data messages
 	void on_localization_msg(ConstPosePtr &msg);
@@ -112,24 +126,25 @@ private:
 	double base_offset_;
 
 	//called from skill
-	void start_tracking(bool grab, std::string mps_name, std::string mps_side);
+	void start_tracking(fawkes::ObjectTrackingInterface::StartTrackingMessage &msg);
 
 	//tracking variables
-	//grab indicates type of action
-	bool grab_;
+	fawkes::ObjectTrackingInterface::TARGET_OBJECT_TYPE current_object_type_;
+	fawkes::ObjectTrackingInterface::EXPECTED_MPS       current_expected_mps_;
+	fawkes::ObjectTrackingInterface::EXPECTED_SIDE      current_expected_side_;
+	bool                                                mps_found;
 
 	//tracked MPS:
 	double mps_x_;
 	double mps_y_;
 	double mps_ori_;
 
-	//middle point:
-	//if grab == false, this is the tracked point
+	//tracked middle point:
 	double middle_x_;
 	double middle_y_;
 	double middle_z_;
 
-	//if grab == true, this is the index of the tracked WP
+	//if workpiece is tracked, this is the index of the tracked WP
 	int closest_puck_ind_;
 
 	//helper functions for calculating target frame
@@ -138,8 +153,12 @@ private:
 	double distance_middle_to_puck(int puck_ind);
 
 	//updating tracker
-	double last_sent_time_;
-	bool   tracking_;
+	fawkes::Time last_sent_time_;
+	bool         tracking_;
+	int          msgid_;
+
+	//compute and update target frames frequently
+	void send_target_frames();
 };
 
 #endif
