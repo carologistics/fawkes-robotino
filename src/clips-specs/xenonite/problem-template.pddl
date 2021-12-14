@@ -28,9 +28,19 @@
   (:init
     <<#DOMAINFACTS|{"relation": "domain-fact"}>>(<<name>> <<param_values>>)
     <</DOMAINFACTS>>
-    <<#POSDOMAINPROMISES|{"relation": "domain-promise", "negated": "FALSE"}>>(at 1 (<<name>> <<param_values>>))
+    <<#POSDOMAINPROMISES||
+      [ {"$match": {"relation": "domain-promise", "negated": "FALSE"}},
+        {"$project": { "name": 1, "param_values": 1,
+                       "diff": { "$subtract": ["$valid_at", %START_TIME% ] }}}  ]
+    >>
+    (at <<valid_at>> <<diff>> (<<name>> <<param_values>>))
     <</POSDOMAINPROMISES>>
-    <<#NEGDOMAINPROMISES|{"relation": "domain-promise", "negated": "TRUE"}>>(at 1 (not  (<<name>> <<param_values>>)))
+    <<#NEGDOMAINPROMISES||
+      [ {"$match": {"relation": "domain-promise", "negated": "TRUE"}},
+        {"$project": { "name": 1, "param_values": 1,
+                       "diff": { "$subtract": ["$valid_at", %START_TIME% ] }}}  ]
+    >>
+    (at <<valid_at>> <<diff>> (not (<<name>> <<param_values>>)))
     <</NEGDOMAINPROMISES>>
   )
   (:goal
