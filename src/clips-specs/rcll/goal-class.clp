@@ -421,6 +421,8 @@
     (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
     (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring1-color rn ?bases-needed))
     (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?other-color rn ?other-bases))
+    (wm-fact (key domain fact mps-type args? m ?rs t RS))
+    (wm-fact (key domain fact mps-type args? m ?other-rs&:(neq ?rs ?other-rs) t RS))
 
     (test (not (eq ?ring1-color ?other-color)))
     (test (not (eq ?ring1-color RING_NONE)))
@@ -435,9 +437,9 @@
                     (meta order ?order)
                     (type ACHIEVE)
                     (sub-type SIMPLE)
-                    (param-names     rs  bases-needed  other-color  ring1-color  bs  wp        side     order  robot  base-color)
-                    (param-constants ?rs ?bases-needed ?other-color ?ring1-color nil nil       nil      ?order ?robot ?base-color)
-                    (param-types     rs  ring-num      ring-color   ring-color   bs  workpiece mps-side order  robot  base-color)
+                    (param-names     rs  other-rs  bases-needed  other-color  ring1-color  bs  wp        side     order  robot  base-color)
+                    (param-constants ?rs ?other-rs ?bases-needed ?other-color ?ring1-color nil nil       nil      ?order ?robot ?base-color)
+                    (param-types     rs  rs        ring-num      ring-color   ring-color   bs  workpiece mps-side order  robot  base-color)
                     (param-quantified )
                     (lookahead-time 0)
                     (preconditions "
@@ -445,6 +447,11 @@
                             (not (mps-state ?rs BROKEN))
                             (rs-paid-for ?rs ?bases-needed)
                             (mps-side-free ?rs INPUT)
+                            (or
+                                (mps-side-free ?rs OUTPUT)
+                                (mps-side-free ?other-rs INPUT)
+                                (mps-side-free ?other-rs OUTPUT)
+                            )
                             (not
                                 (or
                                     (rs-prepared-color ?rs ?other-color)
@@ -1168,7 +1175,7 @@
     (goal-class (class ?class&MOUNT-FIRST-RING) (id ?cid) (meta order ?order) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
-    (pddl-grounding (id ?grounding-id) (param-values ?rs ?bases-needed ?other-color ?ring1-color ?bs ?wp ?side ?order ?robot ?base-color))
+    (pddl-grounding (id ?grounding-id) (param-values ?rs ?other-rs ?bases-needed ?other-color ?ring1-color ?bs ?wp ?side ?order ?robot ?base-color))
 
     (wm-fact (key domain fact rs-filled-with args? m ?rs n ?bases-filled))
     (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
