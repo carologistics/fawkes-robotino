@@ -467,10 +467,10 @@ if [  $COMMAND  == start ]; then
 				if [ "$(command -v rcll-refbox-instruct)" == "" ]; then
 						echo "rcll-refbox-instruct not found, not built or old version?"
 				else
-						rcll-refbox-instruct -w
+						rcll-refbox-instruct -w30
 						echo "Starting game (Phase: $START_GAME ${TEAM_CYAN:+Cyan: ${TEAM_CYAN}}${TEAM_MAGENTA:+ Magenta: ${TEAM_MAGENTA}})"
 						rcll-refbox-instruct -p SETUP -s RUNNING ${TEAM_CYAN:+-c ${TEAM_CYAN}}${TEAM_MAGENTA:+-m ${TEAM_MAGENTA}}
-						rcll-refbox-instruct -n $NUM_ROBOTINOS -W60 || (stop_simulation; exit 1)
+						rcll-refbox-instruct -n $NUM_ROBOTINOS -W100 || (stop_simulation; exit 1)
 						rcll-refbox-instruct -p $START_GAME -s RUNNING
 				fi
 		fi
