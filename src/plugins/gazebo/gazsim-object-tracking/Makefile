@@ -21,9 +21,11 @@ include $(BASEDIR)/fawkes/src/plugins/gazebo/gazebo.mk
 include $(BUILDSYSDIR)/protobuf.mk
 #include $(BASEDIR)src/plugins/gazebo/protobuf.mk
 
+PRESUBDIRS = interfaces
+
 LIBS_gazsim_object_tracking = fawkescore fawkesutils fawkesaspects fvutils \
 	       fawkestf fawkesinterface fawkesblackboard \
-	       Position3DInterface \
+	       Position3DInterface ObjectTrackingInterface\
 	       fawkesgazeboaspect
 OBJS_gazsim_object_tracking = gazsim_object_tracking_plugin.o gazsim_object_tracking_thread.o
 
