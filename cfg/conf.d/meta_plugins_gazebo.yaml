@@ -108,6 +108,7 @@ fawkes/meta_plugins:
   m-distributed-skill-sim-clips-exec:
     - m-skill-sim-clips-exec
     - m-distributed-clips-executive
+    - execution-time-estimator-lookup
 
   m-central-clips-exec:
     - bbsync
