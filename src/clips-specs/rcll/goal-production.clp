@@ -191,7 +191,7 @@
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (not (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot)))
-  (wm-fact (key refbox game-time) (type UINT) (values ?now&:(> ?now 60) ?))
+  (wm-fact (key refbox game-time) (type UINT) (values ?now&:(> ?now 120) ?))
   =>
   (assert (goal (id (sym-cat REFILL-SHELF- (gensym*)))
                 (class REFILL-SHELF) (sub-type SIMPLE)
