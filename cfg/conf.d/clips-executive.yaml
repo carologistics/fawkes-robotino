@@ -301,6 +301,7 @@ clips-executive:
         - RobotinoLightInterface
 
       parameters:
+        use-promises: true
         simtest:
           enabled: false
           # FAST checks only first minute of a game
