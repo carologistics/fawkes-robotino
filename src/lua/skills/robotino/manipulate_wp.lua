@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "manipulate_wp"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {}
+depends_skills     = {"goto"}
 depends_interfaces = {
    {v = "object_tracking_if", type = "ObjectTrackingInterface", id="object-tracking"},
 }
@@ -42,16 +42,26 @@ Parameters:
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
+function found_object()
+  return false
+end
 
-fsm:define_states{ export_to=_M, closure={},
+fsm:define_states{ export_to=_M, closure={found_object=found_object},
    {"INIT",                  JumpState},
+   {"SEARCH",                SkillJumpState, skills={{goto}},          final_to="MOVE_BASE_AND_GRIPPER", fail_to="FAILED"},
+   {"MOVE_BASE_AND_GRIPPER",     JumpState},
 }
 
 fsm:add_transitions{
-   {"INIT", "FINAL", cond=true},
+   {"INIT", "SEARCH", cond=true},
+   {"MOVE_BASE_AND_GRIPPER", "FINAL", cond="found_object()", desc="navgraph not available"},
 }
 
 function INIT:init()
   local msg = object_tracking_if.StartTrackingMessage:new(object_tracking_if.WORKPIECE, object_tracking_if.C_CS1, object_tracking_if.SHELF_LEFT)
   object_tracking_if:msgq_enqueue_copy(msg)
+end
+
+function SEARCH:init()
+  self.args["goto"] = {x = 0.925032, y = 2.875027, ori = 4.711593, end_early = true}
 end
