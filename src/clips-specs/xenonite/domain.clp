@@ -110,11 +110,6 @@
     (domain-fact (name container-at) (param-values C1 CONTAINER-DEPOT))
     (domain-fact (name container-at) (param-values C2 CONTAINER-DEPOT))
     (domain-fact (name container-at) (param-values C3 CONTAINER-DEPOT))
-    ;(domain-fact (name container-at) (param-values C4 CONTAINER-DEPOT))
-    (domain-fact (name container-for-robot) (param-values C1 WALL-E))
-    (domain-fact (name container-for-robot) (param-values C2 EVE))
-    (domain-fact (name container-for-robot) (param-values C3 R2D2))
-    ;(domain-fact (name container-for-robot) (param-values C4 ARNIE))
 
     (domain-fact (name machine-in-state) (param-values MACHINE1 IDLE))
     (domain-fact (name machine-in-state) (param-values MACHINE2 IDLE))

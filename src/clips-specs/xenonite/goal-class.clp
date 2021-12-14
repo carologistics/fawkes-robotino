@@ -42,7 +42,6 @@
                         (and
                             (robot-at ?r ?base)
                             (robot-can-carry ?r)
-                            (container-for-robot ?c ?r)
                             (container-at ?c CONTAINER-DEPOT)
                             (location-is-free ?mine)
                             (not (storage-is-full))

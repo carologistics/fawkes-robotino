@@ -44,7 +44,6 @@
   (wm-robmem-sync-enable "/domain/fact/container-at")
   (wm-robmem-sync-enable "/domain/fact/container-filled")
   (wm-robmem-sync-enable "/domain/fact/container-can-be-filled")
-  (wm-robmem-sync-enable "/domain/fact/container-for-robot")
   (wm-robmem-sync-enable "/domain/fact/machine-in-state")
   ;(wm-robmem-sync-enable "/domain/fact/machine-for-material")
   ;(wm-robmem-sync-enable "/domain/fact/machine-makes-material")

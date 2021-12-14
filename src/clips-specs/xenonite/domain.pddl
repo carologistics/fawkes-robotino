@@ -46,7 +46,6 @@
 		(container-at ?c - container ?l - location)
 		(container-filled ?c - container ?m - material)
 		(container-can-be-filled ?c - container)
-		(container-for-robot ?c - container ?r -robot)
 		(machine-in-state ?m - machine ?s - machine-state)
 		(machine-for-material ?m - machine ?mat - material)
 		(machine-makes-material ?m - machine ?mat - material)
