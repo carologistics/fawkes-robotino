@@ -25,71 +25,71 @@
 
 ; CLEANUP GOALS
 
-(defrule goal-class-create-discard-rs-from-expired-product
-    "Assert a goal class for GET-AND-DISCARD and FILL-RS goals that holds the precondition for formulation
-    in case an expired product blocks a RS."
-    (wm-fact (key domain fact self args? r ?robot))
-    (wm-fact (key refbox team-color) (value ?team-color))
-    (wm-fact (key domain fact order-complexity args? ord ?order $?))
-    (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
-    (wm-fact (key domain fact mps-type args? m ?rs t RS))
-    (not (goal-class (class FILL-RS)
-                     (id ?goal-id&:(eq ?goal-id (sym-cat FILL-RS- ?rs - ?order)))
-                     (meta order ?order target-rs ?rs)
-                     (sub-type SIMPLE)))
-    =>
-    (assert
-        (goal-class (class GET-AND-DISCARD)
-                    (id (sym-cat GET-AND-DISCARD-RS - ?order))
-                    (type ACHIEVE)
-                    (sub-type SIMPLE)
-                    (meta order ?order)
-                    (param-names     team-color  robot  rs  wp          side   order)
-                    (param-constants ?team-color ?robot nil nil         OUTPUT ?order)
-                    (param-types     team-color  robot  rs  workpiece mps-side order)
-                    (param-quantified)
-                    (lookahead-time 8)
-                    (preconditions "
-                        (and
-                            (can-hold ?robot)
-                            (not (mps-state ?rs BROKEN))
-                            (wp-at ?wp ?rs OUTPUT)
-                            (wp-cap-color ?wp CAP_NONE)
-                            (wp-for-order ?wp ?order)
-                            (not (payments-needed))
-                            (order-out-of-delivery ?order)
-                        )
-                    ")
-                    (effects "")
-        )
-    )
-    (assert
-        (goal-class (class GET-AND-FILL-RS)
-                    (id (sym-cat FILL-RS- ?rs - ?order))
-                    (type ACHIEVE)
-                    (sub-type SIMPLE)
-                    (meta order ?order target-rs ?rs)
-                    (param-names     team-color  robot  rs  wp          side   target-rs order)
-                    (param-constants ?team-color ?robot nil nil         OUTPUT ?rs       ?order)
-                    (param-types     team-color  robot  rs  workpiece mps-side rs        order)
-                    (param-quantified)
-                    (lookahead-time 0)
-                    (preconditions "
-                        (and
-                            (can-hold ?robot)
-                            (not (mps-state ?rs BROKEN))
-                            (wp-at ?wp ?rs OUTPUT)
-                            (wp-cap-color ?wp CAP_NONE)
-                            (wp-for-order ?wp ?order)
-                            (order-out-of-delivery ?order)
-                            (not (mps-state ?target-rs BROKEN))
-                            (rs-needs-payment ?target-rs)
-                        )
-                    ")
-                    (effects "")
-        )
-    )
-)
+; (defrule goal-class-create-discard-rs-from-expired-product
+;     "Assert a goal class for GET-AND-DISCARD and FILL-RS goals that holds the precondition for formulation
+;     in case an expired product blocks a RS."
+;     (wm-fact (key domain fact self args? r ?robot))
+;     (wm-fact (key refbox team-color) (value ?team-color))
+;     (wm-fact (key domain fact order-complexity args? ord ?order $?))
+;     (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
+;     (wm-fact (key domain fact mps-type args? m ?rs t RS))
+;     (not (goal-class (class FILL-RS)
+;                      (id ?goal-id&:(eq ?goal-id (sym-cat FILL-RS- ?rs - ?order)))
+;                      (meta order ?order target-rs ?rs)
+;                      (sub-type SIMPLE)))
+;     =>
+;     (assert
+;         (goal-class (class GET-AND-DISCARD)
+;                     (id (sym-cat GET-AND-DISCARD-RS - ?order))
+;                     (type ACHIEVE)
+;                     (sub-type SIMPLE)
+;                     (meta order ?order)
+;                     (param-names     team-color  robot  rs  wp          side   order)
+;                     (param-constants ?team-color ?robot nil nil         OUTPUT ?order)
+;                     (param-types     team-color  robot  rs  workpiece mps-side order)
+;                     (param-quantified)
+;                     (lookahead-time 8)
+;                     (preconditions "
+;                         (and
+;                             (can-hold ?robot)
+;                             (not (mps-state ?rs BROKEN))
+;                             (wp-at ?wp ?rs OUTPUT)
+;                             (wp-cap-color ?wp CAP_NONE)
+;                             (wp-for-order ?wp ?order)
+;                             (not (payments-needed))
+;                             (order-out-of-delivery ?order)
+;                         )
+;                     ")
+;                     (effects "")
+;         )
+;     )
+;     (assert
+;         (goal-class (class GET-AND-FILL-RS)
+;                     (id (sym-cat FILL-RS- ?rs - ?order))
+;                     (type ACHIEVE)
+;                     (sub-type SIMPLE)
+;                     (meta order ?order target-rs ?rs)
+;                     (param-names     team-color  robot  rs  wp          side   target-rs order)
+;                     (param-constants ?team-color ?robot nil nil         OUTPUT ?rs       ?order)
+;                     (param-types     team-color  robot  rs  workpiece mps-side rs        order)
+;                     (param-quantified)
+;                     (lookahead-time 0)
+;                     (preconditions "
+;                         (and
+;                             (can-hold ?robot)
+;                             (not (mps-state ?rs BROKEN))
+;                             (wp-at ?wp ?rs OUTPUT)
+;                             (wp-cap-color ?wp CAP_NONE)
+;                             (wp-for-order ?wp ?order)
+;                             (order-out-of-delivery ?order)
+;                             (not (mps-state ?target-rs BROKEN))
+;                             (rs-needs-payment ?target-rs)
+;                         )
+;                     ")
+;                     (effects "")
+;         )
+;     )
+; )
 
 (defrule goal-class-create-clear-cs-from-capless-carrier
     "Assert a goal class for GET-AND-DISCARD and FILL-RS goals that holds the precondition for formulation
