@@ -163,7 +163,7 @@
 
 	(:action prepare-ds
 		:parameters (?m - mps ?ord - order)
-		:precondition (and (mps-type ?m DS) (mps-state ?m IDLE) (locked ?m))
+		:precondition (and (mps-type ?m DS) (mps-state ?m IDLE) (locked ?m) (order-deliverable ?ord))
 		:effect (and (not (mps-state ?m IDLE)) (mps-state ?m PREPARED)
                  (ds-prepared-order ?m ?ord))
 	)
