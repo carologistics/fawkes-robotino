@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "manipulate_wp"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"goto"}
+depends_skills     = {"goto","motor_move"}
 depends_interfaces = {
    {v = "object_tracking_if", type = "ObjectTrackingInterface", id="object-tracking"},
 }
@@ -49,12 +49,13 @@ end
 fsm:define_states{ export_to=_M, closure={found_object=found_object},
    {"INIT",                  JumpState},
    {"SEARCH",                SkillJumpState, skills={{goto}},          final_to="MOVE_BASE_AND_GRIPPER", fail_to="FAILED"},
-   {"MOVE_BASE_AND_GRIPPER",     JumpState},
+   {"MOVE_BASE_AND_GRIPPER", SkillJumpState, skills={{motor_move}},    final_to="FINE_TUNE_GRIPPER", fail_to="SEARCH"},
+   {"FINE_TUNE_GRIPPER",     JumpState},
 }
 
 fsm:add_transitions{
    {"INIT", "SEARCH", cond=true},
-   {"MOVE_BASE_AND_GRIPPER", "FINAL", cond="found_object()", desc="navgraph not available"},
+   {"FINE_TUNE_GRIPPER", "FINAL", cond="found_object()", desc="navgraph not available"},
 }
 
 function INIT:init()
@@ -64,4 +65,12 @@ end
 
 function SEARCH:init()
   self.args["goto"] = {x = 0.925032, y = 2.875027, ori = 4.711593, end_early = true}
+end
+
+function MOVE_BASE_AND_GRIPPER:init()
+  self.args["motor_move"] = {x = object_tracking_if:base_frame(0),
+                             y = object_tracking_if:base_frame(1),
+                             ori = object_tracking_if:base_frame(5),
+                             frame = "map",
+                             visual_servoing = true}
 end

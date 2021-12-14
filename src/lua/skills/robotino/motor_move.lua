@@ -43,7 +43,8 @@ depends_interfaces = {
    {v = "tag_13", type = "Position3DInterface", id="/tag-vision/13"},
    {v = "tag_14", type = "Position3DInterface", id="/tag-vision/14"},
    {v = "tag_15", type = "Position3DInterface", id="/tag-vision/15"},
-   {v = "if_front_dist", type = "Position3DInterface", id="front_dist"}
+   {v = "if_front_dist", type = "Position3DInterface", id="front_dist"},
+   {v = "object_tracking_if", type = "ObjectTrackingInterface", id="object-tracking"},
 }
 
 documentation      = [==[Move on a (kind of) straight line to the given coordinates.
@@ -53,6 +54,7 @@ documentation      = [==[Move on a (kind of) straight line to the given coordina
 @param frame (Optional) Reference frame for input coordinates. Defaults to base_link.
 @param vel_trans (Optional) Translational top-speed. Upper limit: hardcoded tunable in skill module.
 @param vel_rot (Optional) Rotational top-speed. Upper limit: dito.
+@param visual_servoing (Optional) Updates the target coordinates based on object tracking data.
 ]==]
 
 -- Tunables
@@ -60,6 +62,7 @@ local V_MAX =         { x=0.35, y=0.35, ori=1.4 }    -- ultimate limit
 local V_MAX_CAM =     { x=0.06, y=0.06, ori=0.3 }
 local V_MIN =         { x=0.006, y=0.006, ori=0.02 }   -- below the motor won't even start
 local TOLERANCE =     { x=0.02, y=0.02, ori=0.025 } -- accuracy
+local TOLERANCE_VS = { x=0.005, y=0.0015, ori=0.01 }
 local TOLERANCE_CAM = { x=0.005, y=0.0015, ori=0.01 }
 local D_DECEL =       { x=0.035, y=0.035, ori=0.15 }    -- deceleration distance
 local ACCEL =         { x=0.06, y=0.06, ori=0.21 }   -- accelerate by this factor every loop
@@ -68,6 +71,7 @@ local STUCK_MAX       = 120  -- STUCK timeout: Fail after being stuck for this m
 local STUCK_THRESHOLD = 0.6  -- STUCK threshold: Consider ourselves stuck if we moved less than
                              --                  this factor times V_MIN speed during the
                              --                  last MONITOR_LEN loops
+local MISSING_MAX     = 3    -- limit for missing object detections in a row
 
 -- Initialize as skill module
 skillenv.skill_module(_M )
@@ -223,7 +227,7 @@ end
 
 fsm:define_states{ export_to=_M,
    closure={motor=motor, navigator=navigator, pos3d_iface=pos3d_iface, cam_frame_visible=cam_frame_visible,
-      STUCK_MAX=STUCK_MAX},
+      STUCK_MAX=STUCK_MAX, MISSING_MAX=MISSING_MAX},
    {"INIT", JumpState},
    {"DRIVE", JumpState},
    {"DRIVE_CAM", JumpState},
@@ -246,6 +250,7 @@ fsm:add_transitions{
    {"DRIVE", "FAILED", cond="not motor:has_writer()", desc="No writer for motor"},
    {"DRIVE", "FAILED", cond="vars.tf_failed", desc="dist TF failed"},
    {"DRIVE", "FAILED", cond="vars.stuck_count > STUCK_MAX", desc="STUCK"},
+   {"DRIVE", "FAILED", cond="vars.missing_detections > MISSING_MAX", desc="Object cannot be found"},
    {"DRIVE", "FINAL", cond=drive_done},
 
    {"DRIVE_CAM", "FALLBACK_TO_ODOM", cond="not cam_frame_visible(vars.frame)", desc="Lost frame"},
@@ -261,6 +266,9 @@ fsm:add_transitions{
 }
 
 function INIT:init()
+   self.fsm.vars.msgid = 0
+   self.fsm.vars.missing_detections = 0
+
    self.fsm.vars.tags = { tag_0, tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7,
       tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15 }
 
@@ -350,13 +358,21 @@ function DRIVE:init()
       ori = math.min(V_MAX.ori, self.fsm.vars.vel_rot or V_MAX.ori)
    }
 
-   self.fsm.vars.tolerance = self.fsm.vars.tolerance or {}
-   self.fsm.vars.tolerance_arg = {
-      x = self.fsm.vars.tolerance.x or TOLERANCE.x,
-      y = self.fsm.vars.tolerance.y or TOLERANCE.y,
-      ori = self.fsm.vars.tolerance.ori or TOLERANCE.ori
-   }
-
+   if self.fsm.vars.visual_servoing then
+      self.fsm.vars.tolerance = self.fsm.vars.tolerance or {}
+      self.fsm.vars.tolerance_arg = {
+         x = self.fsm.vars.tolerance.x or TOLERANCE_VS.x,
+         y = self.fsm.vars.tolerance.y or TOLERANCE_VS.y,
+         ori = self.fsm.vars.tolerance.ori or TOLERANCE_VS.ori
+      }
+   else
+      self.fsm.vars.tolerance = self.fsm.vars.tolerance or {}
+      self.fsm.vars.tolerance_arg = {
+         x = self.fsm.vars.tolerance.x or TOLERANCE.x,
+         y = self.fsm.vars.tolerance.y or TOLERANCE.y,
+         ori = self.fsm.vars.tolerance.ori or TOLERANCE.ori
+      }
+   end
    print_info("motor_move tolerance x: %f, y: %f, ori: %f",
       self.fsm.vars.tolerance_arg.x,
       self.fsm.vars.tolerance_arg.y,
@@ -371,6 +387,22 @@ function DRIVE:init()
 end
 
 function DRIVE:loop()
+   if self.fsm.vars.visual_servoing then
+      --TODO: set max speed
+
+      if self.fsm.vars.msgid ~= object_tracking_if:msgid() then
+         self.fsm.vars.msgid = object_tracking_if:msgid()
+         if object_tracking_if:is_detected() then
+            self.fsm.vars.missing_detections = 0
+         else
+            self.fsm.vars.missing_detections = self.fsm.vars.missing_detections + 1
+         end
+      end
+
+      self.fsm.vars.target.x = object_tracking_if:base_frame(0)
+      self.fsm.vars.target.y = object_tracking_if:base_frame(1)
+      self.fsm.vars.target.ori = fawkes.tf.create_quaternion_from_yaw(object_tracking_if:base_frame(5))
+   end
    set_speed(self)
 end
 
