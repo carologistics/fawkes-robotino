@@ -99,7 +99,6 @@
 (defrule goal-expander-buffer-cap
 " Feed a CS with a cap from its shelf so that afterwards
    it can directly put the cap on a product."
-	;?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class BUFFER-CAP) (mode SELECTED) (parent ?parent)
 	            (params target-mps ?mps
 	                    cap-color ?cap-color
@@ -132,7 +131,9 @@
 				    (plan-assert-action wp-get-shelf ?robot ?cc ?mps ?shelf-spot)
 				)
 			)
+			(plan-assert-action prepare-cs ?mps RETRIEVE_CAP)
 			(plan-assert-action wp-put ?robot ?cc ?mps INPUT)
+			(plan-assert-action cs-retrieve-cap ?mps ?cc ?cap-color)
 		)
 	)
 	(modify ?g (mode EXPANDED))
@@ -343,21 +344,6 @@
 
 
 ; ----------------------- MPS Instruction GOALS -------------------------------
-
-(defrule goal-expander-instruct-cs-buffer-cap
-	;?p <- (goal (mode DISPATCHED) (id ?parent))
-	?g <- (goal (id ?goal-id) (class INSTRUCT-CS-BUFFER-CAP) (mode SELECTED)
-	            (params target-mps ?mps cap-color ?cap-color))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	(wm-fact (key domain fact wp-at args? wp ?cap-carrier m ?mps side INPUT))
-	=>
-	(plan-assert-sequential INSTRUCT-TO-BUFFER-CAP-PLAN ?goal-id ?robot
-		(plan-assert-action prepare-cs ?mps RETRIEVE_CAP)
-		(plan-assert-action cs-retrieve-cap ?mps ?cap-carrier ?cap-color)
-	)
-	(modify ?g (mode EXPANDED))
-)
-
 (defrule goal-expander-instruct-cs-mount-cap
 	?g <- (goal (id ?goal-id) (class INSTRUCT-CS-MOUNT-CAP) (mode SELECTED)
 	            (params target-mps ?mps cap-color ?cap-color))
