@@ -116,6 +116,7 @@
 		             (at start (robot-carries ?r ?c)))
 		:effect (and
 		          (at start (not (robot-carries ?r ?c)))
+              (at end (robot-can-carry ?r))
 		          (at end (container-at ?c ?side)))
 	)
 
