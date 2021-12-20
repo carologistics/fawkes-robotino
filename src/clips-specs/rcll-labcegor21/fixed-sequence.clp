@@ -127,6 +127,7 @@
 
 	(plan-assert-sequential (sym-cat BUFFER-CAP-PLAN- (gensym*)) ?goal-id ?robot
 		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?mps INPUT
+			;(plan-assert-action move ?robot ?curr-location ?curr-side ?mps INPUT)
 			(if (not (is-holding ?robot ?cc)) then
 				(create$
 				    (plan-assert-action wp-get-shelf ?robot ?cc ?mps ?shelf-spot)
@@ -465,3 +466,25 @@
 	(modify ?g (mode EXPANDED))
 )
 
+;my stuff labcegor21
+
+(defrule goal-expander-construct-c0
+	?g <- (goal (id ?goal-id) (class CONSTRUCT-C0) (mode SELECTED) (parent ?parent)
+	 			(params order ?order-id
+				  		wp ?wp-for-order 
+						target-mps ?cs 
+						cap-color ?col-cap
+						base-color ?col-base
+				))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	=>
+	(plan-assert-sequential (sym-cat CONSTRUCT-C0-PLAN- (gensym*)) ?goal-id ?robot
+		(create$
+		    (plan-assert-action move ?robot ?curr-location ?curr-side C-BS OUTPUT)
+		    (plan-assert-action wp-get ?robot ?wp-for-order C-BS OUTPUT)
+		    (plan-assert-action move ?robot C-BS OUTPUT ?cs INPUT)
+		)
+	)
+	(modify ?g (mode EXPANDED))
+)
