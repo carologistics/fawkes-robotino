@@ -121,7 +121,7 @@
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
   ?g <- (goal (parent nil) (type MAINTAIN) (sub-type ~nil) (id ?goal-id)
         (mode FORMULATED) (verbosity ?v))
-  (not (goal (parent ?goal-id)))
+  ; (not (goal (parent ?goal-id)))
 =>
   (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
   (modify ?g (mode SELECTED))
