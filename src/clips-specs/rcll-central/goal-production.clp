@@ -340,7 +340,9 @@
 	            (params target-mps ?mps
 	                    cap-color ?cap-color
 	            )
-	            (is-executable FALSE))
+	            (is-executable FALSE)
+							(precondition ?precon&~nil)
+							)
 	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; Robot CEs
@@ -377,12 +379,15 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class MOUNT-CAP)
 	                          (mode FORMULATED)
-	                          (params  wp ?wp
-	                                   target-mps ?target-mps
-	                                   target-side ?target-side
-	                                   $?)
+														(params wp ?wp
+											              target-mps ?mps
+											              target-side ?target-side
+											              wp-loc ?wp-loc
+											              wp-side ?wp-side
+																		robot ?rob
+																		)
 	                          (is-executable FALSE)
-						 							  ;(precondition ?precon&~nil)
+						 							  (precondition ?precon&~nil)
 														)
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	; Robot CEs
@@ -497,7 +502,9 @@
 	?g <- (goal (id ?goal-id) (class DISCARD)
 	                          (mode FORMULATED)
 	                          (params  wp ?wp&~UNKNOWN wp-loc ?wp-loc wp-side ?wp-side)
-	                          (is-executable FALSE))
+	                          (is-executable FALSE)
+														(precondition ?precon&~nil)
+														)
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 
 	; Robot CEs
@@ -806,7 +813,9 @@ The workpiece remains in the output of the used ring station after
 	            (params target-mps ?mps
 	                    cap-color ?cap-color
 	             )
-	             (is-executable FALSE))
+	             (is-executable FALSE)
+							 (precondition ?precon&~nil)
+							 )
 	(not (goal (class INSTRUCT-CS-BUFFER-CAP) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; MPS CEs
@@ -829,7 +838,7 @@ The workpiece remains in the output of the used ring station after
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (class INSTRUCT-CS-MOUNT-CAP) (sub-type SIMPLE)
 	             (mode FORMULATED)
-	            (params target-mps ?mps
+	             (params target-mps ?mps
 	                    cap-color ?cap-color
 	             )
 	             (is-executable FALSE)
@@ -862,7 +871,9 @@ The workpiece remains in the output of the used ring station after
 	                    target-mps ?mps
 	                    target-side ?side
 	                    base-color ?base-color)
-	            (is-executable FALSE))
+	            (is-executable FALSE)
+							(precondition ?precon&~nil)
+							)
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; MPS CEs
@@ -890,7 +901,9 @@ The workpiece remains in the output of the used ring station after
 	?g <- (goal (id ?goal-id) (class INSTRUCT-DS-DELIVER)
 	            (mode FORMULATED)
 	            (params wp ?wp target-mps ?mps)
-	            (is-executable FALSE))
+	            (is-executable FALSE)
+							(precondition ?precon&~nil)
+							)
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(not (goal (class INSTRUCT-DS-DELIVER) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -955,6 +968,9 @@ The workpiece remains in the output of the used ring station after
 	      (verbosity NOISY) (is-executable FALSE)
 	      (params target-mps ?mps
 	              cap-color ?cap-color)
+				(param-names target-mps cap-color)
+				(param-values ?mps ?cap-color)
+				(goal-action goal-buffer-cap)
 	)))
 	(goal-meta-assert ?goal nil ?order-id nil)
 	(return ?goal)
@@ -983,7 +999,7 @@ The workpiece remains in the output of the used ring station after
 )
 
 (deffunction goal-production-assert-mount-cap
-	(?wp ?mps ?wp-loc ?wp-side ?order-id)
+	(?wp ?mps ?wp-loc ?wp-side ?order-id ?rob)
 
 	(bind ?goal (assert (goal (class MOUNT-CAP)
 	      (id (sym-cat MOUNT-CAP- (gensym*))) (sub-type SIMPLE)
@@ -992,10 +1008,12 @@ The workpiece remains in the output of the used ring station after
 	              target-mps ?mps
 	              target-side INPUT
 	              wp-loc ?wp-loc
-	              wp-side ?wp-side)
-				;(param-names wp target-mps target-side wp-loc wp-side)
-				;(param-values ?wp ?mps INPUT ?wp-loc ?wp-side)
-				;(goal-action goal-mount-cap)
+	              wp-side ?wp-side
+								robot ?rob
+								)
+				(param-names wp target-mps target-side wp-loc wp-side robot)
+				(param-values ?wp ?mps INPUT ?wp-loc ?wp-side ?rob)
+				(goal-action goal-mount-cap)
 	)))
 	(goal-meta-assert ?goal nil ?order-id nil)
 	(return ?goal)
@@ -1025,6 +1043,9 @@ The workpiece remains in the output of the used ring station after
 	      (id (sym-cat DISCARD- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE)
 	      (params wp ?wp wp-loc ?cs wp-side ?side)
+				(param-names wp wp-loc wp-side)
+				(param-values ?wp ?cs ?side)
+				(goal-action goal-discard)
 	)))
 	(goal-meta-assert ?goal nil ?order-id nil)
 	(return ?goal)
@@ -1071,6 +1092,9 @@ The workpiece remains in the output of the used ring station after
 				(params wp ?wp
 						target-mps C-DS
 						target-side INPUT)
+				(param-names wp target-mps target-side)
+				(param-values ?wp C-DS INPUT)
+				(goal-action goal-deliver)
 			)) nil ?order-id nil)
 			(goal-production-assert-instruct-ds-deliver ?wp ?order-id)
 		))
@@ -1137,6 +1161,9 @@ The workpiece remains in the output of the used ring station after
 	      (verbosity NOISY) (is-executable FALSE)
 	      (params target-mps ?mps
 	              cap-color ?cap-color)
+				(param-names target-mps cap-color)
+				(param-values ?mps ?cap-color)
+				(goal-action goal-instruct-cs-buffer-cap)
 	)))
 	(goal-meta-assert ?goal central ?order-id nil)
 	(return ?goal)
@@ -1152,6 +1179,9 @@ The workpiece remains in the output of the used ring station after
 	              target-mps C-BS
 	              target-side ?side
 	              base-color ?base-color)
+				(param-names wp target-mps target-side base-color)
+				(param-values ?wp C-BS ?side ?base-color)
+				(goal-action goal-instruct-bs-dispense-base)
 	)))
 	(goal-meta-assert ?goal central ?order-id nil)
 	(return ?goal)
@@ -1257,7 +1287,7 @@ The workpiece remains in the output of the used ring station after
 )
 
 (deffunction goal-production-assert-c0
-  (?root-id ?order-id ?wp-for-order ?cs ?cap-col ?base-col)
+  (?root-id ?order-id ?wp-for-order ?cs ?cap-col ?base-col ?rob)
 
   (bind ?goal
     (goal-tree-assert-central-run-parallel PRODUCE-ORDER
@@ -1274,7 +1304,7 @@ The workpiece remains in the output of the used ring station after
 			;(goal-tree-assert-central-run-one INTERACT-BS
 			(goal-tree-assert-central-run-parallel INTERACT-BS
 				(goal-tree-assert-central-run-parallel OUTPUT-BS
-					(goal-production-assert-mount-cap ?wp-for-order ?cs C-BS OUTPUT ?order-id)
+					(goal-production-assert-mount-cap ?wp-for-order ?cs C-BS OUTPUT ?order-id ?rob)
 					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?base-col OUTPUT ?order-id)
 				)
 				;(goal-tree-assert-central-run-parallel INPUT-BS
@@ -1291,7 +1321,7 @@ The workpiece remains in the output of the used ring station after
 )
 
 (deffunction goal-production-assert-c1
-  (?root-id ?order-id ?wp-for-order ?cs ?rs ?col-cap ?col-base ?col-ring1)
+  (?root-id ?order-id ?wp-for-order ?cs ?rs ?col-cap ?col-base ?col-ring1 ?rob)
 
   (bind ?goal
     (goal-tree-assert-central-run-parallel PRODUCE-ORDER
@@ -1309,7 +1339,7 @@ The workpiece remains in the output of the used ring station after
 			;(goal-tree-assert-central-run-one INTERACT-BS
 			(goal-tree-assert-central-run-parallel INTERACT-BS
 				(goal-tree-assert-central-run-parallel OUTPUT-BS
-					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs OUTPUT ?order-id)
+					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs OUTPUT ?order-id ?rob)
 					(goal-production-assert-mount-ring ?wp-for-order ?rs C-BS OUTPUT ?col-ring1 ?order-id ONE)
 					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id)
 				)
@@ -1326,7 +1356,7 @@ The workpiece remains in the output of the used ring station after
 )
 
 (deffunction goal-production-assert-c2
-  (?root-id ?order-id ?wp-for-order ?cs ?rs1 ?rs2 ?col-cap ?col-base ?col-ring1 ?col-ring2)
+  (?root-id ?order-id ?wp-for-order ?cs ?rs1 ?rs2 ?col-cap ?col-base ?col-ring1 ?col-ring2 ?rob)
 
   (bind ?goal
     (goal-tree-assert-central-run-parallel PRODUCE-ORDER
@@ -1344,7 +1374,7 @@ The workpiece remains in the output of the used ring station after
 			;(goal-tree-assert-central-run-one INTERACT-BS
 			(goal-tree-assert-central-run-parallel INTERACT-BS
 				(goal-tree-assert-central-run-parallel OUTPUT-BS
-					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs2 OUTPUT ?order-id)
+					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs2 OUTPUT ?order-id ?rob)
 					(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT ?col-ring2 ?order-id TWO)
 					(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS OUTPUT ?col-ring1 ?order-id ONE)
 					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id)
@@ -1363,7 +1393,7 @@ The workpiece remains in the output of the used ring station after
 )
 
 (deffunction goal-production-assert-c3
-  (?root-id ?order-id ?wp-for-order ?cs ?rs1 ?rs2 ?rs3 ?col-cap ?col-base ?col-ring1 ?col-ring2 ?col-ring3)
+  (?root-id ?order-id ?wp-for-order ?cs ?rs1 ?rs2 ?rs3 ?col-cap ?col-base ?col-ring1 ?col-ring2 ?col-ring3 ?rob)
 
   (bind ?goal
     (goal-tree-assert-central-run-parallel PRODUCE-ORDER
@@ -1381,7 +1411,7 @@ The workpiece remains in the output of the used ring station after
 			;(goal-tree-assert-central-run-one INTERACT-BS
 			(goal-tree-assert-central-run-parallel INTERACT-BS
 				(goal-tree-assert-central-run-parallel OUTPUT-BS
-					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs3 OUTPUT ?order-id)
+					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs3 OUTPUT ?order-id ?rob)
 					(goal-production-assert-mount-ring ?wp-for-order ?rs3 ?rs2 OUTPUT ?col-ring3 ?order-id THREE)
 					(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT ?col-ring2 ?order-id TWO)
 					(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS OUTPUT ?col-ring1 ?order-id ONE)
@@ -1536,21 +1566,21 @@ The workpiece remains in the output of the used ring station after
 	)
 	(if (eq ?comp C0)
 		then
-		(goal-production-assert-c0 ?root-id ?order-id ?wp-for-order ?cs ?col-cap ?col-base)
+		(goal-production-assert-c0 ?root-id ?order-id ?wp-for-order ?cs ?col-cap ?col-base UNKNOWN_ROBOT)
 	)
 	(if (and (eq ?comp C1) ?rs1)
 		then
-		(goal-production-assert-c1 ?root-id ?order-id ?wp-for-order ?cs ?rs1 ?col-cap ?col-base ?col-ring1)
+		(goal-production-assert-c1 ?root-id ?order-id ?wp-for-order ?cs ?rs1 ?col-cap ?col-base ?col-ring1 UNKNOWN_ROBOT)
 	)
 	(if (and (eq ?comp C2) ?rs1 ?rs2)
 		then
 		(goal-production-assert-c2 ?root-id ?order-id ?wp-for-order ?cs
-	              ?rs1 ?rs2 ?col-cap ?col-base ?col-ring1 ?col-ring2)
+	              ?rs1 ?rs2 ?col-cap ?col-base ?col-ring1 ?col-ring2 UNKNOWN_ROBOT)
 	)
 	(if (and (eq ?comp C3) ?rs1 ?rs2 ?rs3)
 		then
 		(goal-production-assert-c3 ?root-id ?order-id ?wp-for-order ?cs
-	              ?rs1 ?rs2 ?rs3 ?col-cap ?col-base ?col-ring1 ?col-ring2 ?col-ring3)
+	              ?rs1 ?rs2 ?rs3 ?col-cap ?col-base ?col-ring1 ?col-ring2 ?col-ring3 UNKNOWN_ROBOT)
 	)
 
 )

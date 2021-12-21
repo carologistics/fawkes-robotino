@@ -56,6 +56,7 @@
 (:constants
 	START - location
 	UNKNOWN NONE - obstacle
+	UNKNOWN_ROBOT - robot
 	BS CS DS RS SS - mps-typename
 	IDLE BROKEN PREPARED PROCESSING PROCESSED WAIT-IDLE READY-AT-OUTPUT DOWN - mps-statename
 	INPUT OUTPUT WAIT - mps-side
