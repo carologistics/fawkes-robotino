@@ -141,7 +141,6 @@
 
 (defrule goal-expander-discard
 " Pick up a product and discard it."
-	;?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class DISCARD) (mode SELECTED) (parent ?parent)
 	            (params wp ?wp wp-loc ?wp-loc wp-side ?wp-side))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
@@ -161,11 +160,81 @@
 	(modify ?g (mode EXPANDED))
 )
 
+(defrule goal-expander-mount-cap-base
+" Retrieve a base and mount a cap on it."
+	?g <- (goal (id ?goal-id) (class MOUNT-CAP-BASE) (mode SELECTED) (parent ?parent)
+	            (params wp ?wp base-mps ?base-mps base-color ?base-color cap-mps ?cap-mps cap-color ?cap-color))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	=>
+	(plan-assert-sequential (sym-cat MOUNT-CAP-BASE-PLAN- (gensym*)) ?goal-id ?robot
+		(if (not (is-holding ?robot ?wp))
+		 then
+			(create$ ; only last statement of if is returned
+				(plan-assert-safe-move ?robot ?curr-location ?curr-side ?base-mps OUTPUT
+					(plan-assert-action prepare-bs ?base-mps OUTPUT ?base-color)
+					(plan-assert-action bs-dispense ?base-mps OUTPUT ?wp ?base-color)
+					(plan-assert-action wp-get ?robot ?wp ?base-mps OUTPUT)
+				)
+				(plan-assert-safe-move ?robot (wait-pos ?base-mps OUTPUT) WAIT ?cap-mps INPUT
+					(plan-assert-action prepare-cs ?cap-mps MOUNT_CAP)
+					(plan-assert-action wp-put ?robot ?wp ?cap-mps INPUT)
+					(plan-assert-action cs-mount-cap ?cap-mps ?wp ?cap-color)
+				)
+			)
+		)
+	)
+	(modify ?g (mode EXPANDED))
+)
+
+(defrule goal-expander-deliver
+	?g <- (goal (id ?goal-id) (class DELIVER) (mode SELECTED)
+	            (params wp ?wp mps ?mps))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	; WP-CES
+	(wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+	(wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
+	(wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
+	(wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
+	(wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?wp-mps side ?wp-side))
+	; Order-CEs
+	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+	(wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
+	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+	(wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
+	(wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
+	(wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
+	(wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+	(wm-fact (key domain fact order-gate args? ord ?order gate ?gate))
+	=>
+	(bind ?params (create$))
+	(switch ?complexity
+		(case C0 then
+		    (bind ?params (create$ ?order ?wp ?mps ?gate ?base-color ?cap-color)))
+		(case C1 then
+		    (bind ?params (create$ ?order ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color)))
+		(case C2 then
+		    (bind ?params (create$ ?order ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color ?ring2-color)))
+		(case C3 then
+		    (bind ?params (create$ ?order ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color ?ring2-color ?ring3-color)))
+ 	)
+	(plan-assert-sequential DELIVER-PLAN ?goal-id ?robot
+		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-mps ?wp-side
+			(plan-assert-action wp-get ?robot ?wp ?wp-mps ?wp-side)
+		)
+		(plan-assert-safe-move ?robot (wait-pos ?wp-mps ?wp-side) WAIT ?mps INPUT
+			(plan-assert-action prepare-ds ?mps ?order)
+			(plan-assert-action wp-put ?robot ?wp ?mps INPUT)
+			(plan-assert-action (sym-cat fulfill-order- (lowcase ?complexity)) ?params)
+		)
+	)
+	(modify ?g (mode EXPANDED))
+)
+
 (defrule goal-expander-transport-goals
-	;?p <- (goal (mode DISPATCHED) (id ?parent))
-	?g <- (goal (id ?goal-id) (class ?class&MOUNT-CAP|
-	                                       MOUNT-RING|
-	                                       DELIVER)
+	?g <- (goal (id ?goal-id) (class ?class&MOUNT-RING|DELIVER)
 	                          (mode SELECTED) (parent ?parent)
 	                          (params  wp ?wp
 	                                   target-mps ?target-mps

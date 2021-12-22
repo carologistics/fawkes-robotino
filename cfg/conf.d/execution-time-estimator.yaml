@@ -17,7 +17,7 @@ plugins/execution-time-estimator:
   # Does not work with empty whitelist
   static:
     priority: -1
-    speed: 1
+    speed: 3
 
     # global whitelist options
     exec-time: 5
