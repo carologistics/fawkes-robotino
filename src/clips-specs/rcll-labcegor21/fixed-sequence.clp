@@ -142,11 +142,14 @@
 (defrule goal-expander-discard
 " Pick up a product and discard it."
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
-	?g <- (goal (id ?goal-id) (class DISCARD) (mode SELECTED) (parent ?parent)
-	            (params wp ?wp wp-loc ?wp-loc wp-side ?wp-side))
+	?g <- (goal (id ?goal-id) (class DISCARD) (mode SELECTED)
+	            (params mps ?wp-loc
+						mps-side ?wp-side))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side))
 	=>
+	(printout t "Debug output" crlf)
 	(plan-assert-sequential (sym-cat DISCARD-PLAN- (gensym*)) ?goal-id ?robot
 		(if (not (is-holding ?robot ?wp))
 		 then
@@ -375,7 +378,7 @@
 (defrule goal-expander-instruct-bs-dispense-base
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class INSTRUCT-BS-DISPENSE-BASE) (mode SELECTED)
-	            (params wp ?wp target-mps ?mps  target-side ?side base-color ?base-color))
+	            (params wp ?wp target-mps ?mps target-side ?side base-color ?base-color))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	=>
 	(plan-assert-sequential INSTRUCT-BS-DISPENSE-BASE-PLAN ?goal-id ?robot
@@ -480,11 +483,63 @@
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
 	(plan-assert-sequential (sym-cat CONSTRUCT-C0-PLAN- (gensym*)) ?goal-id ?robot
-		(create$
+		;(create$
 		    (plan-assert-action move ?robot ?curr-location ?curr-side C-BS OUTPUT)
 		    (plan-assert-action wp-get ?robot ?wp-for-order C-BS OUTPUT)
-		    (plan-assert-action move ?robot C-BS OUTPUT ?cs INPUT)
-		)
+			;(plan-assert-safe-move ?robot C-BS OUTPUT ?cs INPUT
+			;	(plan-assert-action wp-put ?robot ?wp-for-order ?cs INPUT)
+			;)
+		    ;(plan-assert-action move ?robot C-BS OUTPUT ?cs INPUT)
+			;(plan-assert-action wp-put ?robot ?wp-for-order ?cs INPUT)
+		;)
+	)
+	(modify ?g (mode EXPANDED))
+)
+
+(defrule goal-expander-mount-cap
+	?g <- (goal (id ?goal-id) (class MOUNT) (mode SELECTED) (parent ?parent)
+	 			(params wp ?wp-for-order 
+						target-mps ?cs
+				))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	=>
+	(plan-assert-sequential (sym-cat MOUNT-PLAN- (gensym*)) ?goal-id ?robot
+		    (plan-assert-safe-move ?robot ?curr-location ?curr-side ?cs INPUT
+				(plan-assert-action wp-put ?robot ?wp-for-order ?cs INPUT)
+			)
+	)
+	(modify ?g (mode EXPANDED))
+)
+
+(defrule goal-expander-get-deliver
+	?g <- (goal (id ?goal-id) (class GET-DELIVER) (mode SELECTED) (parent ?parent)
+	 			(params wp ?wp-for-order
+						target-mps ?cs
+				))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	=>
+	(plan-assert-sequential (sym-cat GET-DELIVER-PLAN- (gensym*)) ?goal-id ?robot
+		    (plan-assert-safe-move ?robot ?curr-location ?curr-side ?cs OUTPUT
+				(plan-assert-action wp-get ?robot ?wp-for-order ?cs OUTPUT)
+			)
+	)
+	(modify ?g (mode EXPANDED))
+)
+
+(defrule goal-expander-deliver
+	?g <- (goal (id ?goal-id) (class DELIVER) (mode SELECTED) (parent ?parent)
+	 			(params wp ?wp-for-order
+						target-mps ?ds
+				))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	=>
+	(plan-assert-sequential (sym-cat DELIVER-PLAN- (gensym*)) ?goal-id ?robot
+		    (plan-assert-safe-move ?robot ?curr-location ?curr-side ?ds INPUT
+				(plan-assert-action wp-put ?robot ?wp-for-order ?ds INPUT)
+			)
 	)
 	(modify ?g (mode EXPANDED))
 )

@@ -130,7 +130,7 @@
 (defrule goal-reasoner-select-simple-waiting-robot
   "Select all executable simple goals in order to propagate selection."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  ?g <- (goal (type ACHIEVE) (sub-type SIMPLE)
+  ?g <- (goal (type ACHIEVE) (sub-type SIMPLE) (class ?c&:(neq ?c SEND-BEACON))
       (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
 
   (wm-fact (key central agent robot-waiting args? r ?robot))

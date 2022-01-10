@@ -259,8 +259,10 @@
 	(wm-fact (key domain fact mps-type args? m ?mps t BS))
 	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
 	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-	; Only execute, when cap is prepared
-	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side&:(eq ?curr-side WAIT)))
+	; Only execute, when cap is prepared and CS output is empty
+	(wm-fact (key domain fact cs-buffered args? m ?wp-loc col ?col-cap))
+	(wm-fact (key domain fact mps-side-free args? m ?cs side OUTPUT))
+	;(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side&:(eq ?curr-side WAIT)))
 	=>
 	(printout t "Goal CONSTRUCT-C0 executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
@@ -300,6 +302,8 @@
 	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
 	; WP CEs
 	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps $?)))
+	; Wait till robot is ready to pick up wp
+	;(wm-fact (key domain fact at r ?robot m ?mps side ?side))
 	=>
 	(modify ?g (is-executable TRUE))
 )
@@ -314,6 +318,208 @@
 	              target-mps C-BS
 	              target-side ?side
 	              base-color ?base-color)
+	)))
+	(return ?goal)
+)
+
+(defrule goal-production-discard-base-executable
+" Discard workpiece at given mps "
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (class DISCARD) (sub-type SIMPLE)
+	             (mode FORMULATED)
+	             (params mps ?wp-loc
+						 mps-side ?wp-side
+	             )
+	             (is-executable FALSE))
+	(not (goal (class DISCARD) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
+	(wm-fact (key refbox team-color) (value ?team-color))
+	; MPS CEs
+	(wm-fact (key domain fact mps-state args? m ?wp-loc s ~BROKEN))
+	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
+	(wm-fact (key domain fact cs-buffered args? m ?wp-loc col ?any-cap-color))
+	; WP CEs
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side))
+	=>
+	(printout t "Goal DISCARD-BASE executable" crlf)
+	(modify ?g (is-executable TRUE))
+)
+
+(deffunction goal-production-assert-discard-base
+	(?wp-loc ?wp-side)
+
+	(bind ?goal (assert (goal (class DISCARD)
+	  (id (sym-cat DISCARD-BASE- (gensym*))) (sub-type SIMPLE)
+	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+	      (params mps ?wp-loc
+	              mps-side ?wp-side)
+	)))
+	(return ?goal)
+)
+
+(defrule goal-production-mount-executable
+" Bring wp to cs "
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?id) (class MOUNT) (sub-type SIMPLE)
+	            (mode FORMULATED)
+	            (params wp ?wp-for-order
+				  		target-mps ?cs
+	            )
+	            (is-executable FALSE))
+	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
+	(wm-fact (key refbox team-color) (value ?team-color))
+	; MPS CEs
+	(wm-fact (key domain fact mps-type args? m ?cs t CS))
+	(wm-fact (key domain fact mps-state args? m ?cs s ~BROKEN))
+	(wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
+	; Only execute, when holding workpiece
+	(wm-fact (key domain fact holding args? r ?robot wp ?wp-for-order))
+	=>
+	(printout t "Goal MOUNT executable for " ?robot crlf)
+	(modify ?g (is-executable TRUE))
+)
+
+(deffunction goal-production-assert-mount
+	(?wp-for-order ?cs)
+
+	(bind ?goal (assert (goal (class MOUNT)
+	  (id (sym-cat MOUNT- (gensym*))) (sub-type SIMPLE)
+	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+	      (params wp ?wp-for-order
+	              target-mps ?cs)
+	)))
+	(return ?goal)
+)
+
+(defrule goal-production-instruct-cs-mount-cap-executable
+" Mount cap "
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (class INSTRUCT-CS-MOUNT-CAP) (sub-type SIMPLE)
+	             (mode FORMULATED)
+	            (params target-mps ?mps
+						cap-color ?cap-color
+	             )
+	             (is-executable FALSE))
+	(not (goal (class INSTRUCT-CS-MOUNT-CAP) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
+	(wm-fact (key refbox team-color) (value ?team-color))
+	; MPS CEs
+	(wm-fact (key domain fact mps-type args? m ?mps t CS))
+	(wm-fact (key domain fact mps-state args? m ?mps s IDLE))
+	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+	; WP at input and cap buffered
+	(wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side INPUT))
+	(wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
+	=>
+	(modify ?g (is-executable TRUE))
+)
+
+(deffunction goal-production-assert-instruct-cs-mount-cap
+	(?mps ?cap-color)
+
+	(bind ?goal (assert (goal (class INSTRUCT-CS-MOUNT-CAP)
+	  (id (sym-cat INSTRUCT-CS-MOUNT-CAP- (gensym*))) (sub-type SIMPLE)
+	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+	      (params target-mps ?mps
+	              cap-color ?cap-color)
+	)))
+	(return ?goal)
+)
+
+(defrule goal-production-instruct-ds-deliver-executable
+" Mount cap "
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (class INSTRUCT-DS-DELIVER) (sub-type SIMPLE)
+	             (mode FORMULATED)
+	            (params wp ?wp
+						target-mps ?mps
+	             )
+	             (is-executable FALSE))
+	(not (goal (class INSTRUCT-DS-DELIVER) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
+	(wm-fact (key refbox team-color) (value ?team-color))
+	; MPS CEs
+	(wm-fact (key domain fact mps-type args? m ?mps t DS))
+	(wm-fact (key domain fact mps-state args? m ?mps s IDLE))
+	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+	; WP at input
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
+	=>
+	(modify ?g (is-executable TRUE))
+)
+
+(deffunction goal-production-assert-instruct-ds-deliver
+	(?wp ?mps)
+
+	(bind ?goal (assert (goal (class INSTRUCT-DS-DELIVER)
+	  (id (sym-cat INSTRUCT-DS-DELIVER- (gensym*))) (sub-type SIMPLE)
+	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+	      (params wp ?wp
+		  		  target-mps ?mps)
+	)))
+	(return ?goal)
+)
+
+(defrule goal-production-get-deliver-executable
+" Bring get wp to deliver it later "
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?id) (class GET-DELIVER) (sub-type SIMPLE)
+	            (mode FORMULATED)
+	            (params wp ?wp-for-order
+						target-mps ?cs
+	            )
+	            (is-executable FALSE))
+	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
+	(wm-fact (key refbox team-color) (value ?team-color))
+	; MPS CEs
+	(wm-fact (key domain fact mps-type args? m ?cs t CS))
+	(wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
+	; Only execute, when cap is mounted
+	(wm-fact (key domain fact wp-at args? wp ?wp-for-order m ?cs side OUTPUT))
+	=>
+	(printout t "Goal GET-DELIVER executable for " ?robot crlf)
+	(modify ?g (is-executable TRUE))
+)
+
+(deffunction goal-production-assert-get-deliver
+	(?wp-for-order ?cs)
+
+	(bind ?goal (assert (goal (class GET-DELIVER)
+	  (id (sym-cat GET-DELIVER- (gensym*))) (sub-type SIMPLE)
+	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+	      (params wp ?wp-for-order
+		  		  target-mps ?cs)
+	)))
+	(return ?goal)
+)
+
+(defrule goal-production-deliver-executable
+" Bring wp to ds "
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?id) (class DELIVER) (sub-type SIMPLE)
+	            (mode FORMULATED)
+	            (params wp ?wp-for-order
+						target-mps ?ds
+	            )
+	            (is-executable FALSE))
+	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
+	(wm-fact (key refbox team-color) (value ?team-color))
+	; MPS CEs
+	(wm-fact (key domain fact mps-type args? m ?ds t DS))
+	(wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
+	; Only execute, when cap is mounted
+	(wm-fact (key domain fact holding args? r ?robot wp ?wp-for-order))
+	(wm-fact (key domain fact wp-cap-color args? wp ?wp-for-order col ?cap-col&~CAP_NONE))
+	=>
+	(printout t "Goal DELIVER executable for " ?robot crlf)
+	(modify ?g (is-executable TRUE))
+)
+
+(deffunction goal-production-assert-deliver
+	(?wp-for-order ?ds)
+
+	(bind ?goal (assert (goal (class DELIVER)
+	  (id (sym-cat DELIVER- (gensym*))) (sub-type SIMPLE)
+	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+	      (params wp ?wp-for-order
+		  		  target-mps ?ds)
 	)))
 	(return ?goal)
 )
@@ -345,11 +551,17 @@
 			(goal-tree-assert-central-run-parallel CONSTRUCT-C0
 				(goal-tree-assert-central-run-parallel GET-BASE-AND-BUILD
 					(goal-meta-assert (goal-production-assert-instruct-bs-dispense-base ?wp-for-order OUTPUT ?col-base) central)
-					(goal-meta-assert (goal-production-assert-construct-c0 ?order-id ?wp-for-order ?cs ?col-cap ?col-base) robot1)			
+					(goal-meta-assert (goal-production-assert-construct-c0 ?order-id ?wp-for-order ?cs ?col-cap ?col-base) robot1)
+					(goal-meta-assert (goal-production-assert-mount ?wp-for-order ?cs) robot1)
+					(goal-meta-assert (goal-production-assert-get-deliver ?wp-for-order ?cs) robot1)
+					(goal-meta-assert (goal-production-assert-deliver ?wp-for-order C-DS) robot1)
 				)
 				;(goal-tree-assert-central-run-parallel PREPARATIONS
 					(goal-meta-assert (goal-production-assert-buffer-cap ?cs ?col-cap) robot1)
 					(goal-meta-assert (goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap) central)
+					(goal-meta-assert (goal-production-assert-discard-base ?cs OUTPUT) robot1)
+					(goal-meta-assert (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap) central)
+					(goal-meta-assert (goal-production-assert-instruct-ds-deliver ?wp-for-order C-DS) central)
 				;)
 			)
 		)
