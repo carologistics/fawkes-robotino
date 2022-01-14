@@ -41,7 +41,7 @@ if place is set, this will be used and x, y and ori will be ignored
 @param x              x we want to drive to
 @param y              y we want to drive to
 @param ori            ori we want to drive to
-@param end_early      (Optional) Set true, if skill should final if object is detected
+@param end_early      (Optional) Set true, if skill should final after object is detected
                       and close enough. Used to switch to visual servoing afterwards.
 ]==]
 
@@ -55,6 +55,16 @@ if config:exists("/skills/goto/distance_to_travel") then
 else
   distance_to_travel = 0.5
 end
+if config:exists("/skills/goto/end_early_distance") then
+  end_early_distance = config:get_float("/skills/goto/end_early_distance")
+else
+  end_early_distance = 0.5
+end
+if config:exists("/skills/goto/end_early_ori_difference") then
+  end_early_ori_difference = config:get_float("/skills/goto/end_early_ori_difference")
+else
+  end_early_ori_difference = 0.5
+end
 
 -- Tunables
 --local REGION_TRANS=0.2
@@ -64,7 +74,10 @@ function check_navgraph(self)
 end
 
 function target_reached()
-  return navigator:is_final()
+   if navigator:is_final() and navigator:error_code() ~= 0 then
+      return false
+   end
+   return navigator:is_final()
 end
 
 function close_enough(self)
@@ -76,16 +89,19 @@ function close_enough(self)
     local distance_to_target = math.sqrt(x + y)
     local current_ori = self.fsm.vars.cur_ori % (2*math.pi)
     if current_ori < 0 then
-      current_ori = current_ori + math.pi
+      current_ori = current_ori + 2*math.pi
     end
     local target_ori = self.fsm.vars.ori % (2*math.pi)
     if target_ori < 0 then
-      target_ori = target_ori + math.pi
+      target_ori = target_ori + 2*math.pi
     end
     local ori_difference = math.abs(current_ori - target_ori)
-    print_info("distance_to_target: %f", distance_to_target)
-    print_info("ori_difference: %f", ori_difference)
-    return distance_to_target < 1.5 and ori_difference < 0.5
+    if ori_difference > math.pi then
+      ori_difference = 2*math.pi - ori_difference
+    end
+    --print_info("distance_to_target: %f", distance_to_target)
+    --print_info("ori_difference: %f", ori_difference)
+    return distance_to_target < end_early_distance and ori_difference < end_early_ori_difference
   end
   return false
 end
@@ -118,6 +134,16 @@ function travelled_distance(self)
   end
 end
 
+function object_tracker_inactive(self)
+  return self.fsm.vars.end_early and
+    (not object_tracking_if:has_writer() or object_tracking_if:msgid() == 0)
+end
+
+function early_endable(self)
+  return self.fsm.vars.end_early and close_enough(self)
+    and self.fsm.vars.consecutive_detections > 2
+end
+
 fsm:define_states{ export_to=_M,
   closure={check_navgraph=check_navgraph, has_navigator=has_navigator,
            travelled_distance=travelled_distance, close_enough=close_enough,
@@ -127,10 +153,12 @@ fsm:define_states{ export_to=_M,
   {"INIT",          JumpState},
   {"MOVING",        JumpState},
   {"TIMEOUT",       JumpState},
+  {"WAIT_VS",       JumpState},
 }
 
 fsm:add_transitions{
   {"CHECK_INPUT", "FAILED",   cond="not has_navigator()", desc="Navigator not running"},
+  {"CHECK_INPUT", "FAILED",   cond=object_tracker_inactive, desc="Object tracker inactive"},
   {"CHECK_INPUT", "INIT",     cond=can_navigate},
   {"CHECK_INPUT", "WAIT_TF",  cond=true},
   {"WAIT_TF", "INIT",         cond=can_navigate},
@@ -139,15 +167,18 @@ fsm:add_transitions{
   {"INIT",  "MOVING",         cond=true},
   {"MOVING", "TIMEOUT",       timeout=2}, -- Give the interface some time to update
   {"TIMEOUT", "FINAL",        cond="vars.waiting_pos and travelled_distance(self)", desc="Going to waiting position"},
-  {"TIMEOUT", "FINAL",        cond="vars.end_early and close_enough(self) and vars.consecutive_detections > 2", desc="Target close enough and object detected"},
-  {"TIMEOUT", "FAILED",       cond="target_reached() and vars.end_early", desc="Target reached without detecting object"},
+  {"TIMEOUT", "FINAL",        cond=early_endable, desc="Target close enough and object detected"},
+  {"TIMEOUT", "WAIT_VS",      cond="target_reached() and vars.end_early", desc="Target reached without detecting object"},
   {"TIMEOUT", "FINAL",        cond=target_reached, desc="Target reached"},
   {"TIMEOUT", "FAILED",       cond=target_unreachable, desc="Target unreachable"},
+  {"WAIT_VS", "FINAL",        cond=early_endable, desc="Target close enough and object detected"},
+  {"WAIT_VS", "FAILED",       timeout=0.5, desc="Object not detected"},
 }
 
 
 function INIT:init()
   self.fsm.vars.msgid = 0
+  self.fsm.vars.tracking_msgid = 0
   self.fsm.vars.consecutive_detections = 0
   self.fsm.vars.target_valid = true
   self.fsm.vars.waiting_pos = false
@@ -259,14 +290,25 @@ function TIMEOUT:loop()
       end
     end
   end
-  if fsm.vars.end_early then
-    if self.fsm.vars.msgid ~= object_tracking_if:msgid() then
-      self.fsm.vars.msgid = object_tracking_if:msgid()
+  if self.fsm.vars.end_early then
+    if self.fsm.vars.tracking_msgid ~= object_tracking_if:msgid() then
+      self.fsm.vars.tracking_msgid = object_tracking_if:msgid()
       if object_tracking_if:is_detected() then
         self.fsm.vars.consecutive_detections = self.fsm.vars.consecutive_detections + 1
       else
         self.fsm.vars.consecutive_detections = 0
       end
+    end
+  end
+end
+
+function WAIT_VS:loop()
+  if self.fsm.vars.tracking_msgid ~= object_tracking_if:msgid() then
+    self.fsm.vars.tracking_msgid = object_tracking_if:msgid()
+    if object_tracking_if:is_detected() then
+      self.fsm.vars.consecutive_detections = self.fsm.vars.consecutive_detections + 1
+    else
+      self.fsm.vars.consecutive_detections = 0
     end
   end
 end

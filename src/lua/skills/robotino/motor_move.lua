@@ -54,6 +54,7 @@ documentation      = [==[Move on a (kind of) straight line to the given coordina
 @param frame (Optional) Reference frame for input coordinates. Defaults to base_link.
 @param vel_trans (Optional) Translational top-speed. Upper limit: hardcoded tunable in skill module.
 @param vel_rot (Optional) Rotational top-speed. Upper limit: dito.
+@param end_early (Optional) Set true, if skill should final after object is close and detected.
 @param visual_servoing (Optional) Updates the target coordinates based on object tracking data.
 ]==]
 
@@ -62,7 +63,7 @@ local V_MAX =         { x=0.35, y=0.35, ori=1.4 }    -- ultimate limit
 local V_MAX_CAM =     { x=0.06, y=0.06, ori=0.3 }
 local V_MIN =         { x=0.006, y=0.006, ori=0.02 }   -- below the motor won't even start
 local TOLERANCE =     { x=0.02, y=0.02, ori=0.025 } -- accuracy
-local TOLERANCE_VS = { x=0.005, y=0.0015, ori=0.01 }
+local TOLERANCE_VS =  { x=0.01, y=0.005, ori=0.01 }
 local TOLERANCE_CAM = { x=0.005, y=0.0015, ori=0.01 }
 local D_DECEL =       { x=0.035, y=0.035, ori=0.15 }    -- deceleration distance
 local ACCEL =         { x=0.06, y=0.06, ori=0.21 }   -- accelerate by this factor every loop
@@ -117,7 +118,7 @@ function set_speed(self)
       self.fsm.vars.tf_failed = true
       v = { x=0, y=0, ori=0 }
    else
-      local d_ori = fawkes.tf.get_yaw(dist_target.ori)
+      --local d_ori = fawkes.tf.get_yaw(dist_target.ori)
       --[[ if self.fsm.vars.ori > math.pi and d_ori < -self.fsm.vars.tolerance_arg.ori then
          d_ori = 2*math.pi + d_ori
          dist_target.ori = fawkes.tf.Quaternion:new(0, d_ori, 0)
@@ -191,9 +192,8 @@ function set_speed(self)
       end
    end
 
-   
    self.fsm.vars.cycle = self.fsm.vars.cycle + 1
-   
+
    if self.fsm.vars.stuck_count > 0 then
       print_debug("motor_move: dist_target=(%f, %f, %f) V=(%f, %f, %f)", v.x, v.y, v.ori, dist_target.x, dist_target.y,
          scalar(dist_target.ori))
@@ -202,10 +202,24 @@ function set_speed(self)
    self.fsm.vars.speed = v
 end
 
-function drive_done()
-   return fsm.vars.speed.x == 0
-      and fsm.vars.speed.y == 0
-      and fsm.vars.speed.ori == 0
+function drive_done(self)
+   return self.fsm.vars.speed.x == 0
+      and self.fsm.vars.speed.y == 0
+      and self.fsm.vars.speed.ori == 0
+end
+
+function close_enough(self)
+   local dist_target = tfm.transform6D(
+      self.fsm.vars.target,
+      self.fsm.vars.target_frame, "/base_link")
+   return math.abs(dist_target.x) < self.fsm.vars.tolerance_arg.x
+      and math.abs(dist_target.y) < self.fsm.vars.tolerance_arg.y
+      and math.abs(scalar(dist_target.ori)) < self.fsm.vars.tolerance_arg.ori
+end
+
+function early_endable(self)
+  return self.fsm.vars.end_early and close_enough(self)
+    and self.fsm.vars.consecutive_detections > 2
 end
 
 function pos3d_iface(frame)
@@ -225,12 +239,20 @@ function cam_frame_visible(frame)
    return pos_iface and pos_iface:visibility_history() > 0
 end
 
+function object_tracker_inactive()
+   return (fsm.vars.end_early or fsm.vars.visual_servoing) and
+      (not object_tracking_if:has_writer() or object_tracking_if:msgid() == 0)
+end
+
 fsm:define_states{ export_to=_M,
    closure={motor=motor, navigator=navigator, pos3d_iface=pos3d_iface, cam_frame_visible=cam_frame_visible,
-      STUCK_MAX=STUCK_MAX, MISSING_MAX=MISSING_MAX},
+      STUCK_MAX=STUCK_MAX, MISSING_MAX=MISSING_MAX, object_tracker_inactive=object_tracker_inactive,
+      early_endable=early_endable, drive_done=drive_done},
    {"INIT", JumpState},
    {"DRIVE", JumpState},
+   {"DRIVE_VS", JumpState},
    {"DRIVE_CAM", JumpState},
+   {"WAIT_TRACKING", JumpState},
    {"STOP_NAVIGATOR", JumpState},
    {"FALLBACK_TO_ODOM", JumpState},
    {"RECOVER_TO_FRAME", JumpState},
@@ -242,16 +264,28 @@ fsm:add_transitions{
    {"INIT", "FAILED", cond="not vars.target", desc="target TF failed"},
    {"INIT", "FAILED", cond="vars.stop_attempts > 5", desc="Navigator won't stop"},
    {"INIT", "STOP_NAVIGATOR", cond="navigator:has_writer() and not navigator:is_final()"},
+   {"INIT", "FAILED", cond=object_tracker_inactive, desc="Object tracker inactive"},
+   {"INIT", "DRIVE_VS", cond="vars.visual_servoing"},
    {"INIT", "DRIVE_CAM", cond="pos3d_iface(vars.frame)"},
    {"INIT", "DRIVE", cond=true},
 
    {"STOP_NAVIGATOR", "INIT", cond="navigator:is_final()"},
-   
+
    {"DRIVE", "FAILED", cond="not motor:has_writer()", desc="No writer for motor"},
    {"DRIVE", "FAILED", cond="vars.tf_failed", desc="dist TF failed"},
    {"DRIVE", "FAILED", cond="vars.stuck_count > STUCK_MAX", desc="STUCK"},
-   {"DRIVE", "FAILED", cond="vars.missing_detections > MISSING_MAX", desc="Object cannot be found"},
+   {"DRIVE", "FINAL", cond="vars.end_early and early_endable(self)"},
+   {"DRIVE", "WAIT_TRACKING", cond="vars.end_early and drive_done(self)"},
    {"DRIVE", "FINAL", cond=drive_done},
+
+   {"WAIT_TRACKING", "FINAL", cond=early_endable, desc="Target close enough and object detected"},
+   {"WAIT_TRACKING", "FAILED", timeout=0.5},
+
+   {"DRIVE_VS", "FAILED", cond="not motor:has_writer()", desc="No writer for motor"},
+   {"DRIVE_VS", "FAILED", cond="vars.tf_failed", desc="dist TF failed"},
+   {"DRIVE_VS", "FAILED", cond="vars.stuck_count > STUCK_MAX", desc="STUCK"},
+   {"DRIVE_VS", "FAILED", cond="vars.missing_detections > MISSING_MAX", desc="Object cannot be found"},
+   {"DRIVE_VS", "FINAL", cond=drive_done},
 
    {"DRIVE_CAM", "FALLBACK_TO_ODOM", cond="not cam_frame_visible(vars.frame)", desc="Lost frame"},
    {"DRIVE_CAM", "FALLBACK_TO_ODOM", cond="vars.tf_failed", desc="dist TF failed"},
@@ -267,6 +301,7 @@ fsm:add_transitions{
 
 function INIT:init()
    self.fsm.vars.msgid = 0
+   self.fsm.vars.consecutive_detections = 0
    self.fsm.vars.missing_detections = 0
 
    self.fsm.vars.tags = { tag_0, tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7,
@@ -358,55 +393,101 @@ function DRIVE:init()
       ori = math.min(V_MAX.ori, self.fsm.vars.vel_rot or V_MAX.ori)
    }
 
-   if self.fsm.vars.visual_servoing then
-      self.fsm.vars.tolerance = self.fsm.vars.tolerance or {}
-      self.fsm.vars.tolerance_arg = {
-         x = self.fsm.vars.tolerance.x or TOLERANCE_VS.x,
-         y = self.fsm.vars.tolerance.y or TOLERANCE_VS.y,
-         ori = self.fsm.vars.tolerance.ori or TOLERANCE_VS.ori
-      }
-   else
-      self.fsm.vars.tolerance = self.fsm.vars.tolerance or {}
-      self.fsm.vars.tolerance_arg = {
-         x = self.fsm.vars.tolerance.x or TOLERANCE.x,
-         y = self.fsm.vars.tolerance.y or TOLERANCE.y,
-         ori = self.fsm.vars.tolerance.ori or TOLERANCE.ori
-      }
-   end
+   self.fsm.vars.tolerance = self.fsm.vars.tolerance or {}
+   self.fsm.vars.tolerance_arg = {
+      x = self.fsm.vars.tolerance.x or TOLERANCE.x,
+      y = self.fsm.vars.tolerance.y or TOLERANCE.y,
+      ori = self.fsm.vars.tolerance.ori or TOLERANCE.ori
+   }
+
    print_info("motor_move tolerance x: %f, y: %f, ori: %f",
       self.fsm.vars.tolerance_arg.x,
       self.fsm.vars.tolerance_arg.y,
       self.fsm.vars.tolerance_arg.ori
    )
-   
+
    -- "Magic", i.e. heuristic multiplier that determines how much we brake
    -- when approaching target. Important to avoid overshooting.
    self.fsm.vars.decel_factor = 5
-   
+
    set_speed(self)
 end
 
 function DRIVE:loop()
-   if self.fsm.vars.visual_servoing then
-      --TODO: set max speed
-
+   if fsm.vars.end_early then
       if self.fsm.vars.msgid ~= object_tracking_if:msgid() then
          self.fsm.vars.msgid = object_tracking_if:msgid()
          if object_tracking_if:is_detected() then
-            self.fsm.vars.missing_detections = 0
+            self.fsm.vars.consecutive_detections = self.fsm.vars.consecutive_detections + 1
          else
-            self.fsm.vars.missing_detections = self.fsm.vars.missing_detections + 1
+            self.fsm.vars.consecutive_detections = 0
          end
       end
-
-      self.fsm.vars.target.x = object_tracking_if:base_frame(0)
-      self.fsm.vars.target.y = object_tracking_if:base_frame(1)
-      self.fsm.vars.target.ori = fawkes.tf.create_quaternion_from_yaw(object_tracking_if:base_frame(5))
    end
    set_speed(self)
 end
 
 function DRIVE:exit()
+   send_transrot(0, 0, 0)
+end
+
+function WAIT_TRACKING:loop()
+   if self.fsm.vars.msgid ~= object_tracking_if:msgid() then
+      self.fsm.vars.msgid = object_tracking_if:msgid()
+      if object_tracking_if:is_detected() then
+         self.fsm.vars.consecutive_detections = self.fsm.vars.consecutive_detections + 1
+       else
+          self.fsm.vars.consecutive_detections = 0
+      end
+   end
+end
+
+function DRIVE_VS:init()
+	self.fsm.vars.vmax_arg = {
+	   x = math.min(V_MAX.x, self.fsm.vars.vel_trans or V_MAX.x),
+	   y = math.min(V_MAX.y, self.fsm.vars.vel_trans or V_MAX.y),
+	   ori = math.min(V_MAX.ori, self.fsm.vars.vel_rot or V_MAX.ori)
+	}
+ 
+	self.fsm.vars.tolerance = self.fsm.vars.tolerance or {}
+	self.fsm.vars.tolerance_arg = {
+	   x = self.fsm.vars.tolerance.x or TOLERANCE_VS.x,
+	   y = self.fsm.vars.tolerance.y or TOLERANCE_VS.y,
+	   ori = self.fsm.vars.tolerance.ori or TOLERANCE_VS.ori
+	}
+ 
+	print_info("motor_move tolerance x: %f, y: %f, ori: %f",
+	   self.fsm.vars.tolerance_arg.x,
+	   self.fsm.vars.tolerance_arg.y,
+	   self.fsm.vars.tolerance_arg.ori
+	)
+	
+	-- "Magic", i.e. heuristic multiplier that determines how much we brake
+	-- when approaching target. Important to avoid overshooting.
+	self.fsm.vars.decel_factor = 5
+	
+	set_speed(self)
+end
+
+function DRIVE_VS:loop()
+   --TODO: set max speed
+
+   if self.fsm.vars.msgid ~= object_tracking_if:msgid() then
+      self.fsm.vars.msgid = object_tracking_if:msgid()
+      if object_tracking_if:is_detected() then
+         self.fsm.vars.missing_detections = 0
+      else
+         self.fsm.vars.missing_detections = self.fsm.vars.missing_detections + 1
+      end
+   end
+
+   self.fsm.vars.target.x = object_tracking_if:base_frame(0)
+   self.fsm.vars.target.y = object_tracking_if:base_frame(1)
+   self.fsm.vars.target.ori = fawkes.tf.create_quaternion_from_yaw(object_tracking_if:base_frame(5))
+   set_speed(self)
+end
+
+function DRIVE_VS:exit()
    send_transrot(0, 0, 0)
 end
 
