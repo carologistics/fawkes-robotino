@@ -67,22 +67,27 @@ public:
 private:
 	//Subscriber to receive localization data from gazebo
 	gazebo::transport::SubscriberPtr localization_sub_;
+	gazebo::transport::SubscriberPtr puck_pose_sub_;
 	std::string                      gps_topic_;
 	gazebo::transport::SubscriberPtr factory_sub_;
 	std::string                      factory_topic_;
 
-	//ObjectTrackingInterface to receive messeges and update target frames
+	//ObjectTrackingInterface to receive messages and update target frames
 	fawkes::ObjectTrackingInterface *object_tracking_if_;
 	std::string                      object_tracking_if_name_;
 
 	//handler function for incoming localization data messages
 	void on_localization_msg(ConstPosePtr &msg);
+	void on_puck_pose_msg(ConstPosePtr &msg);
 	void on_factory_msg(ConstFactoryPtr &msg);
 
 	//puck tracking data
 	int         tracked_pucks_;
 	std::string puck_names_[50];
-	double      puck_positions_[50][3];
+
+	//robotino tracking data
+	double robotino_position_[3];
+	double puck_positions_[50][3];
 
 	//MPS tracking data
 	std::string mps_names_[14] = {"M-BS",
@@ -122,7 +127,8 @@ private:
 	double shelf_height_;
 
 	//target frame offsets:
-	double gripper_offset_;
+	double gripper_offset_pick_;
+	double gripper_offset_put_;
 	double base_offset_;
 
 	//called from skill
@@ -148,9 +154,10 @@ private:
 	int closest_puck_ind_;
 
 	//helper functions for calculating target frame
-	double compute_middle_x(double x_offset);
-	double compute_middle_y(double y_offset);
-	double distance_middle_to_puck(int puck_ind);
+	double                     compute_middle_x(double x_offset);
+	double                     compute_middle_y(double y_offset);
+	double                     distance_middle_to_puck(int puck_ind);
+	std::tuple<double, double> transform_to_base_frame(double wp_x, double wp_y);
 
 	//updating tracker
 	fawkes::Time last_sent_time_;

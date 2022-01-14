@@ -49,7 +49,7 @@
     The last target frames computed by the object-tracking plugin.
     </comment>
     <field type="uint32" name="msgid">
-      Last processed message ID.
+      Last processed message ID. 0 if not tracking.
     </field>
     <field type="bool" name="detected">
       Shows if target object was detected.
