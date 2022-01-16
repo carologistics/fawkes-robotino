@@ -230,13 +230,103 @@
 	; So if there are ring stations with specs, then those specs are registered.
 	(wm-fact (key domain fact mps-state args? m ?any-mps s IDLE))
 	(wm-fact (key domain fact entered-field args? r robot1))
+
+	;cap
+	;(wm-fact (key domain fact order-cap-color args? ord ?order-id col ?cap-color))
+	;(wm-fact (key domain fact cs-color args? m ?cs col ?cap-color))
 	=>
-	(bind ?g (goal-tree-assert-central-run-parallel PRODUCTION-ROOT
-		(goal-meta-assert (goal-production-assert-buffer-cap C-CS1 CAP_GREY) robot1)
-		(goal-meta-assert (goal-production-assert-instruct-cs-buffer-cap C-CS1 CAP_GREY) central)
+	(bind ?g (goal-tree-assert-central-run-parallel PRODUCTION-ROOT))
+	(modify ?g (meta do-not-finish) (priority 1.0))
+)
+
+(deffunction goal-production-assert-instruct-ds-deliver
+	(?wp)
+
+	(bind ?goal (assert (goal (class INSTRUCT-DS-DELIVER)
+	  (id (sym-cat INSTRUCT-DS-DELIVER- (gensym*))) (sub-type SIMPLE)
+	  (verbosity NOISY) (is-executable FALSE)
+	  (params wp ?wp
+	          target-mps C-DS)
+	)))
+	(goal-meta-assert ?goal central)
+	(return ?goal)
+)
+
+(deffunction goal-production-assert-deliver
+	"If there is a DS, do a normal delivery, otherwise do a RoboCup 2021 delivery. "
+	(?wp)
+
+	(bind ?goal nil)
+	(bind ?goal (goal-tree-assert-central-run-parallel DELIVER
+		(assert (goal (class DELIVER)
+			(id (sym-cat DELIVER- (gensym*))) (sub-type SIMPLE)
+			(verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+			(params wp ?wp
+					target-mps C-DS
+					target-side INPUT)
+		))
+		(goal-production-assert-instruct-ds-deliver ?wp)
+	))
+
+	(return ?goal)
+)
+
+(deffunction goal-production-assert-instruct-cs-mount-cap
+	(?mps ?cap-color)
+	(bind ?goal (assert (goal (class INSTRUCT-CS-MOUNT-CAP)
+	      (id (sym-cat INSTRUCT-CS-MOUNT-CAP- (gensym*))) (sub-type SIMPLE)
+	      (verbosity NOISY) (is-executable FALSE)
+	      (params target-mps ?mps
+	              cap-color ?cap-color)
+	)))
+	(goal-meta-assert ?goal central)
+	(return ?goal)
+)
+
+(defrule  do-c0-prof
+	(not (do-c0))
+	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+
+	;base
+	(wm-fact (key domain fact order-base-color args? ord ?order-id col ?base-color))
+
+	;cap
+	(wm-fact (key domain fact order-cap-color args? ord ?order-id col ?cap-color))
+	(wm-fact (key domain fact cs-color args? m ?cs col ?cap-color))
+	=>
+	(assert (do-c0))
+
+	(bind ?wp-order (sym-cat wp- ?order-id))
+	(assert (domain-object (name ?wp-order) (type workpiece))
+			(domain-fact (name wp-unused) (param-values ?wp-order))
+			(wm-fact (key domain fact wp-cap-color args? wp ?wp-order col CAP_NONE) (type BOOL) (value TRUE))
+	)
+
+	(bind ?goal
+		(goal-tree-assert-central-run-parallel PRODUCE-ORDER
+			(goal-tree-assert-central-run-parallel PREPARE-CS
+				(goal-tree-assert-central-run-parallel BUFFER-GOALS
+					(goal-meta-assert (goal-production-assert-buffer-cap ?cs ?cap-color) robot1)
+					(goal-meta-assert (goal-production-assert-instruct-cs-buffer-cap ?cs ?cap-color) central)
+					;(goal-production-assert-discard UNKNOWN ?cs OUTPUT)
+					(goal-meta-assert (goal-production-assert-instruct-cs-mount-cap ?cs ?cap-color) robot1)
+				)
+			)
+			;(goal-production-assert-deliver ?wp-order)
 		)
 	)
-	(modify ?g (meta do-not-finish) (priority 1.0))
+	(modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (parent ?root-id))
+)
+
+(deffunction goal-production-assert-discard
+	(?wp ?cs ?side)
+
+	(bind ?goal (assert (goal (class DISCARD)
+	      (id (sym-cat DISCARD- (gensym*))) (sub-type SIMPLE)
+	      (verbosity NOISY) (is-executable FALSE)
+	      (params wp ?wp wp-loc ?cs wp-side ?side) (meta-template goal-meta)
+	)))
+	(return ?goal)
 )
 
 
