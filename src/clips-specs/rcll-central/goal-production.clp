@@ -194,6 +194,7 @@
 	    (bind ?longest-waiting (fact-index ?waiting))
 	  )
 	)
+	;Das hier anschauen
 	(delayed-do-for-all-facts ((?g goal))
 		(and (eq ?g:is-executable FALSE)
 		     (eq ?g:sub-type SIMPLE) (eq ?g:mode FORMULATED)
@@ -203,7 +204,25 @@
 		            (and (eq ?gm:goal-id ?g:id)
 		                 (eq ?gm:assigned-to nil)))))
 		(goal-meta-assign-robot-to-goal ?g ?robot)
+		;reground ?g with ?robot replacing UNKNOWN in case such a placeholder exists
+		(bind ?temp (member$ UNKNOWN_ROBOT ?g:param-values))
+		(if (neq ?temp FALSE)
+			then
+			(bind ?new-params (create$))
+			(foreach ?param ?g:param-values
+				(if (eq ?param UNKNOWN_ROBOT)
+					then
+						(bind ?new-params (create$ ?new-params ?robot))
+					else
+						(bind ?new-params (create$ ?new-params ?param))
+				)
+			)
+			;(printout t "Contains UNKNOWN_ROBOT" ?new-params crlf)
+			;(printout t "goal: " ?g:goal-action crlf)
+			(modify ?g (param-values ?new-params) (precondition nil))
+		)
 	)
+
 	(modify ?longest-waiting)
 )
 
@@ -379,6 +398,8 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class MOUNT-CAP)
 	                          (mode FORMULATED)
+														(param-names wp target-mps target-side wp-loc wp-side robot)
+														(param-values ?wp ?mps ?target-side ?wp-loc ?wp-side ?rob&:(neq UNKNOWN_ROBOT ?rob))
 														(params wp ?wp
 											              target-mps ?mps
 											              target-side ?target-side
