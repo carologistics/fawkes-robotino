@@ -444,7 +444,7 @@
 	(return ?rs)
 )
 
-(deffunction initialize-wp (?wp ?order-id)
+(deffunction initialize-wp (?wp)
 	"Initialize facts for a workpiece."
 	(assert
 		  (domain-object (name ?wp) (type workpiece))
@@ -454,7 +454,7 @@
 		  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col RING_NONE) (type BOOL) (value TRUE))
 		  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col RING_NONE) (type BOOL) (value TRUE))
 		  (wm-fact (key domain fact wp-ring3-color args? wp ?wp col RING_NONE) (type BOOL) (value TRUE))
-		  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
+		  
 	)
 )
 
@@ -469,7 +469,8 @@
 	(wm-fact (key domain fact order-ring1-color args? ord ?order-id col ?ring1-color))
 	=>
 	(bind ?wp-for-order (sym-cat wp- ?order-id))
-	(initialize-wp ?wp-for-order ?order-id)
+	(initialize-wp ?wp-for-order)
+	(assert (wm-fact (key order meta wp-for-order args? wp ?wp-for-order ord ?order-id)))
 	(if (eq ?com C0) then
 		(bind ?goal (goal-tree-assert-central-run-parallel PRODUCE-ORDER
 			(goal-meta-assert (goal-production-assert-buffer-cap C-CS1 ?cap-color) robot1)
@@ -479,13 +480,10 @@
 		))
 	)
 	(if (eq ?com C1) then
-		(bind ?wp-pay (sym-cat wp-pay- ?order-id))
-		(initialize-wp ?wp-pay ?order-id)
 		(bind ?ring1-mps (goal-production-get-machine-for-color ?ring1-color))
 		(bind ?goal (goal-tree-assert-central-run-parallel PRODUCE-ORDER
 			(goal-meta-assert (goal-production-assert-buffer-cap C-CS1 ?cap-color) robot1)
-			(goal-meta-assert (goal-production-assert-pay-ring UNKNOWN C-CS1 ?ring1-mps) robot1)
-			(goal-meta-assert (goal-production-assert-pay-ring ?wp-pay C-BS ?ring1-mps) robot1)
+			(goal-meta-assert (goal-production-assert-discard UNKNOWN C-CS1 OUTPUT) robot1)
 			(goal-meta-assert (goal-production-assert-mount-ring ?wp-for-order C-BS ?ring1-mps ?ring1-color 1) robot1)
 			(goal-meta-assert (goal-production-assert-mount-cap ?wp-for-order ?ring1-mps C-CS1 ?cap-color) robot1)
 			(goal-meta-assert (goal-production-assert-deliver ?wp-for-order C-DS) robot1)
@@ -493,6 +491,31 @@
 	)
   	(modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (parent ?root-id))
 	(printout t "Goal PRODUCE-ORDER formulated for " ?order-id crlf)
+)
+
+(defrule goal-production-create-payment
+" Create a new goal for paying the ring station whenever there isn't one."
+	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+	; Whenever we want to mount a ring,
+	(goal (class MOUNT-RING) (mode FORMULATED)
+	            (params wp ?wp src-mps ?src-mps
+						ring-mps ?ring-mps ring-color ?ring-color ring-nr ?ring-nr))
+	; don't have a payment goal already,
+	(not (goal (class PAY-RING) (params wp ?wp src-mps ?src-mps	ring-mps ?ring-mps)))
+	; and we don't have enough bases,
+	(wm-fact (key domain fact rs-ring-spec args? m ?ring-mps r ?ring-color rn ?bases-needed))
+	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled))
+	(not (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
+                                         subtrahend ?bases-needed
+                                         difference ?bases-remain&ZERO|ONE|TWO|THREE)))
+	=>
+	; then we fill it up.
+	(bind ?wp-pay (sym-cat wp-pay1- (gensym*)))
+	(initialize-wp ?wp-pay)
+	(bind ?goal
+		(goal-meta-assert (goal-production-assert-pay-ring ?wp-pay C-BS ?ring-mps) robot1))
+  	(modify ?goal (parent ?root-id))
 )
 
 (defrule goal-production-create-production-root
@@ -513,7 +536,6 @@
 	(bind ?g (goal-tree-assert-central-run-parallel PRODUCTION-ROOT))
 	(modify ?g (meta do-not-finish) (priority 1.0))
 )
-
 
 (defrule goal-production-create-enter-field
   "Enter the field (drive outside of the starting box)."
