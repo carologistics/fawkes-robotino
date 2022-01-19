@@ -178,7 +178,7 @@
   that should get a new goal assigned to it next. "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 ;	"a simple unassigned goal"
-	(goal (id ?g-id) (sub-type SIMPLE) (mode FORMULATED) (is-executable FALSE))
+	(goal (id ?g-id) (sub-type SIMPLE) (mode FORMULATED)); (is-executable FALSE))
 	(goal-meta (goal-id ?g-id) (assigned-to nil))
 	(wm-fact (key central agent robot args? r ?robot))
 	(not (goal-meta (assigned-to ?robot)))
@@ -196,7 +196,7 @@
 	)
 	;Das hier anschauen
 	(delayed-do-for-all-facts ((?g goal))
-		(and (eq ?g:is-executable FALSE)
+		(and ;(eq ?g:is-executable FALSE)
 		     (eq ?g:sub-type SIMPLE) (eq ?g:mode FORMULATED)
 		     (or (not (any-factp ((?gm  goal-meta))
 		                        (eq ?gm:goal-id ?g:id)))
@@ -204,12 +204,22 @@
 		            (and (eq ?gm:goal-id ?g:id)
 		                 (eq ?gm:assigned-to nil)))))
 		(goal-meta-assign-robot-to-goal ?g ?robot)
+		(printout t "REASSIGN ROBOT: " ?g:goal-action crlf)
 		;reground ?g with ?robot replacing UNKNOWN in case such a placeholder exists
 		(bind ?temp (member$ UNKNOWN_ROBOT ?g:param-values))
 		(if (neq ?temp FALSE)
 			then
+			(bind ?new-param-values (create$))
+			(foreach ?param-v ?g:param-values
+				(if (eq ?param-v UNKNOWN_ROBOT)
+					then
+						(bind ?new-param-values (create$ ?new-param-values ?robot))
+					else
+						(bind ?new-param-values (create$ ?new-param-values ?param-v))
+				)
+			)
 			(bind ?new-params (create$))
-			(foreach ?param ?g:param-values
+			(foreach ?param ?g:params
 				(if (eq ?param UNKNOWN_ROBOT)
 					then
 						(bind ?new-params (create$ ?new-params ?robot))
@@ -217,9 +227,10 @@
 						(bind ?new-params (create$ ?new-params ?param))
 				)
 			)
-			;(printout t "Contains UNKNOWN_ROBOT" ?new-params crlf)
-			;(printout t "goal: " ?g:goal-action crlf)
-			(modify ?g (param-values ?new-params) (precondition nil))
+			(printout t "Contains UNKNOWN_ROBOT" ?new-param-values crlf)
+			(printout t "goal: " ?g:goal-action crlf)
+			(modify ?g (param-values ?new-param-values) (params ?new-params) (precondition nil))
+			;(modify ?g (precondition nil))
 		)
 	)
 
@@ -247,6 +258,33 @@
 			                (and (eq ?gm:goal-id ?g:id)
 			                     (eq ?gm:assigned-to ?robot))))
 			(remove-robot-assignment-from-goal-meta ?g)
+			;replace the the robot with UNKNOWN_ROBOT again
+			(bind ?temp (member$ ?robot ?g:param-values))
+			(if (neq ?temp FALSE)
+				then
+				(bind ?new-param-values (create$))
+				(foreach ?param-v ?g:param-values
+					(if (eq ?param-v ?robot)
+						then
+							(bind ?new-param-values (create$ ?new-param-values UNKNOWN_ROBOT))
+						else
+							(bind ?new-param-values (create$ ?new-param-values ?param-v))
+					)
+				)
+				(bind ?new-params (create$))
+				(foreach ?param ?g:params
+					(if (eq ?param ?robot)
+						then
+							(bind ?new-params (create$ ?new-params UNKNOWN_ROBOT))
+						else
+							(bind ?new-params (create$ ?new-params ?param))
+					)
+				)
+				(printout t "REMOVED ROBOT" ?new-param-values crlf)
+				(printout t "REMOVED ROBOT" ?new-params crlf)
+				(printout t "goal: " ?g:goal-action crlf)
+				(modify ?g (param-values ?new-param-values) (params ?new-params) (precondition nil))
+			)
 		)
 		(do-for-fact ((?waiting wm-fact))
 			(and (wm-key-prefix ?waiting:key (create$ central agent robot-waiting))
@@ -387,67 +425,68 @@
 	    )
 	)
 	(domain-fact (name zone-content) (param-values ?zz ?mps))
+	(IAMNOTEXECUTABLE)
 	=>
 	(printout t "Goal BUFFER-CAP executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
 )
 
-(defrule goal-production-mount-cap-executable
-" Bring a product to a cap station to mount a cap on it.
-"
-	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
-	?g <- (goal (id ?goal-id) (class MOUNT-CAP)
-	                          (mode FORMULATED)
-														(param-names wp target-mps target-side wp-loc wp-side robot)
-														(param-values ?wp ?mps ?target-side ?wp-loc ?wp-side ?rob&:(neq UNKNOWN_ROBOT ?rob))
-														(params wp ?wp
-											              target-mps ?mps
-											              target-side ?target-side
-											              wp-loc ?wp-loc
-											              wp-side ?wp-side
-																		robot ?rob
-																		)
-	                          (is-executable FALSE)
-						 							  (precondition ?precon&~nil)
-														)
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	; Robot CEs
-	(wm-fact (key central agent robot args? r ?robot))
-	(wm-fact (key refbox team-color) (value ?team-color))
-
-	; MPS-CS CEs
-	(wm-fact (key domain fact mps-type args? m ?target-mps t CS))
-	(wm-fact (key domain fact mps-state args? m ?target-mps s ~BROKEN))
-	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?target-mps side INPUT)))
-	(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
-	(wm-fact (key domain fact cs-buffered args? m ?target-mps col ?cap-color))
-	(wm-fact (key domain fact cs-can-perform args? m ?target-mps op MOUNT_CAP))
-	; WP CEs
-	(wm-fact (key wp meta next-step args? wp ?wp) (value CAP))
-	; MPS-Source CEs
-	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
-	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
-
-	(or (and ; Either the workpiece needs to picked up...
-	         (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-	             ; ... and it is a fresh base located in a base station
-	         (or (and (wm-fact (key domain fact mps-type args? m ?wp-loc t BS))
-	                  (wm-fact (key domain fact wp-unused args? wp ?wp))
-	                  (wm-fact (key domain fact wp-base-color
-	                            args? wp ?wp col BASE_NONE)))
-	             ; ... or is already at some machine
-	             (wm-fact (key domain fact wp-at
-	                       args? wp ?wp m ?wp-loc side ?wp-side))
-	         )
-	    )
-	    ; or the workpiece is already being held
-	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
-	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
-	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
-	=>
-	(printout t "Goal MOUNT-CAP executable for " ?robot crlf)
-	(modify ?g (is-executable TRUE))
-)
+;(defrule goal-production-mount-cap-executable
+;" Bring a product to a cap station to mount a cap on it.
+;"
+;	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+;	?g <- (goal (id ?goal-id) (class MOUNT-CAP)
+;	                          (mode FORMULATED)
+;														(param-names wp target-mps target-side wp-loc wp-side robot)
+;														(param-values ?wp ?mps ?target-side ?wp-loc ?wp-side ?rob)
+;														(params wp ?wp
+;											              target-mps ?mps
+;											              target-side ?target-side
+;											              wp-loc ?wp-loc
+;											              wp-side ?wp-side
+;																		robot ?rob
+;																		)
+;	                          (is-executable FALSE)
+;						 							  (precondition ?precon&~nil)
+;														)
+;	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+;	; Robot CEs
+;	(wm-fact (key central agent robot args? r ?robot))
+;	(wm-fact (key refbox team-color) (value ?team-color))
+;
+;	; MPS-CS CEs
+;	(wm-fact (key domain fact mps-type args? m ?target-mps t CS))
+;	(wm-fact (key domain fact mps-state args? m ?target-mps s ~BROKEN))
+;	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?target-mps side INPUT)))
+;	(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
+;	(wm-fact (key domain fact cs-buffered args? m ?target-mps col ?cap-color))
+;	(wm-fact (key domain fact cs-can-perform args? m ?target-mps op MOUNT_CAP))
+;	; WP CEs
+;	(wm-fact (key wp meta next-step args? wp ?wp) (value CAP))
+;	; MPS-Source CEs
+;	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
+;	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
+;
+;	(or (and ; Either the workpiece needs to picked up...
+;	         (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+;	             ; ... and it is a fresh base located in a base station
+;	         (or (and (wm-fact (key domain fact mps-type args? m ?wp-loc t BS))
+;	                  (wm-fact (key domain fact wp-unused args? wp ?wp))
+;	                  (wm-fact (key domain fact wp-base-color
+;	                            args? wp ?wp col BASE_NONE)))
+;	             ; ... or is already at some machine
+;	             (wm-fact (key domain fact wp-at
+;	                       args? wp ?wp m ?wp-loc side ?wp-side))
+;	         )
+;	    )
+;	    ; or the workpiece is already being held
+;	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+;	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
+;	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
+;	=>
+;	(printout t "Goal MOUNT-CAP executable for " ?robot crlf)
+;	(modify ?g (is-executable TRUE))
+;)
 
 
 (defrule goal-production-deliver-executable
@@ -522,7 +561,7 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class DISCARD)
 	                          (mode FORMULATED)
-	                          (params  wp ?wp&~UNKNOWN wp-loc ?wp-loc wp-side ?wp-side)
+	                          (params wp ?wp&~UNKNOWN wp-loc ?wp-loc wp-side ?wp-side)
 	                          (is-executable FALSE)
 														(precondition ?precon&~nil)
 														)
@@ -540,6 +579,7 @@
 	         (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side)))
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
 	(domain-fact (name zone-content) (param-values ?zz ?wp-loc))
+	;(IAMNOTEXECUTABLE)
 	=>
 	(printout t "Goal DISCARD executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
@@ -935,6 +975,7 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key refbox game-time) (values $?game-time))
 	(wm-fact (key refbox order ?order delivery-begin) (type UINT)
 	         (value ?begin&:(< ?begin (nth$ 1 ?game-time))))
+	(IAMNOTEXECUTABLE)
 	=>
 	(printout t "Goal INSTRUCT-DS-DELIVER executable" crlf)
 	(modify ?g (is-executable TRUE))

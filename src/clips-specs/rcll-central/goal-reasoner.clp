@@ -228,12 +228,16 @@
   (or
     (and ?g <- (goal (id ?id) (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE)
                 (parent ?pid))
-         (goal-meta (goal-id ?id) (assigned-to central)))
+         (goal-meta (goal-id ?id)
+         ;(assigned-to central)
+         ))
     (and
-      (wm-fact (key central agent robot-waiting args? r ?robot))
+      ;(wm-fact (key central agent robot-waiting args? r ?robot))
       ?g <- (goal (id ?goal-id) (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE)
                   (parent ?pid))
-      (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+      (goal-meta (goal-id ?goal-id)
+      ;(assigned-to ?robot&~nil)
+      )
     )
   )
   (test (neq ?pid nil))
@@ -269,7 +273,7 @@
 
 (defrule goal-reasoner-select-from-dispatched-children
   "Select the goal of highest priority of a run parallel if it is dispatched and
-  is executable"
+  is executable. In case it is assigned to a robot or central"
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
   (goal (id ?parent1) (mode DISPATCHED) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL) (priority ?p1))
   ?g <- (goal (id ?id) (parent ?parent1) (is-executable TRUE) (mode FORMULATED) (priority ?pc1))
@@ -281,6 +285,17 @@
     )
   )
   (not (goal (mode SELECTED|EXPANDED|COMMITTED) (type ACHIEVE)))
+
+  (or
+    (and (goal-meta (goal-id ?id) (assigned-to central)))
+    (and
+      (wm-fact (key central agent robot-waiting args? r ?robot))
+      (goal-meta (goal-id ?id)
+      (assigned-to ?robot&~nil)
+      )
+    )
+    (goal (id ?id) (sub-type ?type&~SIMPLE))
+  )
   =>
   (modify ?g (mode SELECTED))
 )

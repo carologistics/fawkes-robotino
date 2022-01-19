@@ -180,7 +180,7 @@
 										 (cs-can-perform ?target-mps MOUNT_CAP)
 										 ;(mps-team ?wp-loc ?team-color)
 										 (or (and
-														 ;(can-hold ?robot)
+														 (can-hold ?robot)
 														 (or (and (mps-type ?wp-loc BS)
 														          (wp-unused ?wp)
 																			(wp-base-color ?wp BASE_NONE)
@@ -193,8 +193,6 @@
 						 )
 	:effect (mps-state ?target-mps READY-AT-OUTPUT)
 )
-
-;grounding-goal-mount-cap1-gen440
 
 ; Capcarrier CEs
 ;(or   (and
@@ -246,9 +244,9 @@
 												 (mps-type ?wp-loc RS)
 												 (mps-type ?wp-loc SS))
 										 ;(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
-										 ;(or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-									 	 ;        (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side)))
-									 	 ;   (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+										 ;(or (and (can-hold ?robot)
+									 	 ;         (wp-at ?wp ?wp-loc ?wp-side))
+									 	 ;    (holding ?robot ?wp))
 							  )
 	:effect (mps-type ?wp-loc CS)
 )
