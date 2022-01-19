@@ -60,7 +60,8 @@ COMMAND=start
 CONF=
 HEADLESS=
 REFBOX=refbox
-REFBOX_ARGS=
+# Default to gazebo simulation.
+REFBOX_ARGS="--cfg-simulation simulation/gazebo_simulation.yaml"
 ROS=
 ROS_LAUNCH_MAIN=
 ROS_LAUNCH_ROBOT=
