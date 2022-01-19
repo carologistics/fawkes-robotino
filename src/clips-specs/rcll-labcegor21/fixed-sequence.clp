@@ -179,9 +179,17 @@
 	            (params wp ?wp src-mps ?src-mps cap-mps ?cap-mps cap-color ?cap-color))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	(wm-fact (key domain fact mps-type args? m ?src-mps t ?src-type))
+	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
 	=>
 	(plan-assert-sequential (sym-cat MOUNT-CAP-PLAN- (gensym*)) ?goal-id ?robot
 		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?src-mps OUTPUT
+			(if (eq ?src-type BS) then
+				(create$ (plan-assert-action prepare-bs ?src-mps OUTPUT ?base-color)
+						 (plan-assert-action bs-dispense ?src-mps OUTPUT ?wp ?base-color)
+				)
+			)
 			(plan-assert-action wp-get ?robot ?wp ?src-mps OUTPUT)
 		)
 		(plan-assert-safe-move ?robot (wait-pos ?src-mps OUTPUT) WAIT ?cap-mps INPUT
@@ -203,6 +211,9 @@
 	(wm-fact (key domain fact rs-ring-spec args? m ?ring-mps r ?ring-color rn ?req))
 	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?rs-before))
 	(wm-fact (key domain fact rs-sub args? minuend ?rs-before subtrahend ?req difference ?rs-after))
+	(wm-fact (key domain fact mps-type args? m ?src-mps t ?src-type))
+	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
 	=>
 	(bind ?prev-rings (create$ ))
 	(loop-for-count (?count 1 (- ?ring-nr 1))
@@ -213,6 +224,11 @@
 	))
 	(plan-assert-sequential (sym-cat MOUNT-RING-PLAN- (gensym*)) ?goal-id ?robot
 		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?src-mps OUTPUT
+			(if (eq ?src-type BS) then
+				(create$ (plan-assert-action prepare-bs ?src-mps OUTPUT ?base-color)
+						 (plan-assert-action bs-dispense ?src-mps OUTPUT ?wp ?base-color)
+				)
+			)
 			(plan-assert-action wp-get ?robot ?wp ?src-mps OUTPUT)
 		)
 		(plan-assert-safe-move ?robot (wait-pos ?src-mps OUTPUT) WAIT ?ring-mps INPUT
@@ -233,9 +249,15 @@
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	(wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
 	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?rs-before))
+	(wm-fact (key domain fact mps-type args? m ?src-mps t ?src-type))
 	=>
 	(plan-assert-sequential (sym-cat PAY-RING-PLAN- (gensym*)) ?goal-id ?robot
 		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?src-mps OUTPUT
+			(if (eq ?src-type BS) then
+				(create$ (plan-assert-action prepare-bs ?src-mps OUTPUT BASE_RED)
+						 (plan-assert-action bs-dispense ?src-mps OUTPUT ?wp BASE_RED)
+				)
+			)
 			(plan-assert-action wp-get ?robot ?wp ?src-mps OUTPUT)
 		)
 		(plan-assert-safe-move ?robot (wait-pos ?src-mps OUTPUT) WAIT ?ring-mps INPUT

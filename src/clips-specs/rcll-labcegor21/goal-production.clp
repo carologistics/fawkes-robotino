@@ -122,7 +122,7 @@
 	?g <- (goal (id ?goal-id) (class PAY-RING) (mode FORMULATED) (parent ?parent)
 	            (params wp UNKNOWN src-mps ?src-mps ring-mps ?ring-mps))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps side OUTPUT))
-	; (not (wm-fact (key order meta wp-for-order args? wp ?wp $?)))
+	(not (wm-fact (key order meta wp-for-order args? wp ?wp $?)))
 	=>
 	(printout t "Unknown workpiece filled in to " ?wp crlf)
 	(modify ?g (params wp ?wp src-mps ?src-mps ring-mps ?ring-mps))
@@ -186,7 +186,13 @@
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; src MPS CEs
-	(wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps $?))
+	(or (wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps $?))
+		(and (wm-fact (key domain fact mps-type args? m ?src-mps t BS))
+			 (wm-fact (key domain fact mps-state args? m ?src-mps s IDLE))
+			 (wm-fact (key domain fact mps-team args? m ?src-mps col ?team-color))
+			 (not (wm-fact (key domain fact wp-at args? wp ?any-base-wp m ?src-mps $?)))
+		)
+	)
 	; cap MPS CEs
 	(wm-fact (key domain fact mps-type args? m ?cap-mps t CS))
 	(wm-fact (key domain fact mps-state args? m ?cap-mps s ~BROKEN))
@@ -211,7 +217,13 @@
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; src MPS CEs
-	(wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps $?))
+	(or (wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps $?))
+		(and (wm-fact (key domain fact mps-type args? m ?src-mps t BS))
+			 (wm-fact (key domain fact mps-state args? m ?src-mps s IDLE))
+			 (wm-fact (key domain fact mps-team args? m ?src-mps col ?team-color))
+			 (not (wm-fact (key domain fact wp-at args? wp ?any-base-wp m ?src-mps $?)))
+		)
+	)
 	; ring MPS CEs
 	(wm-fact (key domain fact mps-type args? m ?ring-mps t RS))
 	(wm-fact (key domain fact mps-state args? m ?ring-mps s ~BROKEN))
@@ -236,7 +248,13 @@
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; src MPS CEs
-	(wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps $?))
+	(or (wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps $?))
+		(and (wm-fact (key domain fact mps-type args? m ?src-mps t BS))
+			 (wm-fact (key domain fact mps-state args? m ?src-mps s IDLE))
+			 (wm-fact (key domain fact mps-team args? m ?src-mps col ?team-color))
+			 (not (wm-fact (key domain fact wp-at args? wp ?any-base-wp m ?src-mps $?)))
+		)
+	)
 	; ring MPS CEs
 	(wm-fact (key domain fact mps-type args? m ?ring-mps t RS))
 	(wm-fact (key domain fact mps-state args? m ?ring-mps s ~BROKEN))
@@ -426,6 +444,20 @@
 	(return ?rs)
 )
 
+(deffunction initialize-wp (?wp ?order-id)
+	"Initialize facts for a workpiece."
+	(assert
+		  (domain-object (name ?wp) (type workpiece))
+		  (domain-fact (name wp-unused) (param-values ?wp))
+		  (wm-fact (key domain fact wp-base-color args? wp ?wp col BASE_NONE) (type BOOL) (value TRUE))
+		  (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE) (type BOOL) (value TRUE))
+		  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col RING_NONE) (type BOOL) (value TRUE))
+		  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col RING_NONE) (type BOOL) (value TRUE))
+		  (wm-fact (key domain fact wp-ring3-color args? wp ?wp col RING_NONE) (type BOOL) (value TRUE))
+		  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
+	)
+)
+
 (defrule goal-production-order
 	"Create the goals for an order."
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
@@ -437,32 +469,23 @@
 	(wm-fact (key domain fact order-ring1-color args? ord ?order-id col ?ring1-color))
 	=>
 	(bind ?wp-for-order (sym-cat wp- ?order-id))
-	(assert (domain-object (name ?wp-for-order) (type workpiece))
-		  (domain-fact (name wp-unused) (param-values ?wp-for-order))
-		  (wm-fact (key domain fact wp-base-color args? wp ?wp-for-order col BASE_NONE) (type BOOL) (value TRUE))
-		  (wm-fact (key domain fact wp-cap-color args? wp ?wp-for-order col CAP_NONE) (type BOOL) (value TRUE))
-		  (wm-fact (key domain fact wp-ring1-color args? wp ?wp-for-order col RING_NONE) (type BOOL) (value TRUE))
-		  (wm-fact (key domain fact wp-ring2-color args? wp ?wp-for-order col RING_NONE) (type BOOL) (value TRUE))
-		  (wm-fact (key domain fact wp-ring3-color args? wp ?wp-for-order col RING_NONE) (type BOOL) (value TRUE))
-		  (wm-fact (key order meta wp-for-order args? wp ?wp-for-order ord ?order-id))
-	)
+	(initialize-wp ?wp-for-order ?order-id)
 	(if (eq ?com C0) then
 		(bind ?goal (goal-tree-assert-central-run-parallel PRODUCE-ORDER
 			(goal-meta-assert (goal-production-assert-buffer-cap C-CS1 ?cap-color) robot1)
 			(goal-meta-assert (goal-production-assert-discard UNKNOWN C-CS1 OUTPUT) robot1)
-			(goal-meta-assert (goal-production-assert-dispense-base ?wp-for-order C-BS ?base-color) central)
 			(goal-meta-assert (goal-production-assert-mount-cap ?wp-for-order C-BS C-CS1 ?cap-color) robot1)
 			(goal-meta-assert (goal-production-assert-deliver ?wp-for-order C-DS) robot1)
 		))
 	)
 	(if (eq ?com C1) then
+		(bind ?wp-pay (sym-cat wp-pay- ?order-id))
+		(initialize-wp ?wp-pay ?order-id)
 		(bind ?ring1-mps (goal-production-get-machine-for-color ?ring1-color))
 		(bind ?goal (goal-tree-assert-central-run-parallel PRODUCE-ORDER
 			(goal-meta-assert (goal-production-assert-buffer-cap C-CS1 ?cap-color) robot1)
-			(goal-meta-assert (goal-production-assert-dispense-base ?wp-for-order C-BS ?base-color) central)
-			(goal-meta-assert (goal-production-assert-dispense-base ?wp-for-order C-BS ?base-color) central)
 			(goal-meta-assert (goal-production-assert-pay-ring UNKNOWN C-CS1 ?ring1-mps) robot1)
-			(goal-meta-assert (goal-production-assert-pay-ring UNKNOWN C-BS ?ring1-mps) robot1)
+			(goal-meta-assert (goal-production-assert-pay-ring ?wp-pay C-BS ?ring1-mps) robot1)
 			(goal-meta-assert (goal-production-assert-mount-ring ?wp-for-order C-BS ?ring1-mps ?ring1-color 1) robot1)
 			(goal-meta-assert (goal-production-assert-mount-cap ?wp-for-order ?ring1-mps C-CS1 ?cap-color) robot1)
 			(goal-meta-assert (goal-production-assert-deliver ?wp-for-order C-DS) robot1)
