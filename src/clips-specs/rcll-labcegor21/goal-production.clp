@@ -193,6 +193,8 @@
 			 (not (wm-fact (key domain fact wp-at args? wp ?any-base-wp m ?src-mps $?)))
 		)
 	)
+	; WP-CES
+	(wm-fact (key wp meta next-step args? wp ?wp) (value CAP))
 	; cap MPS CEs
 	(wm-fact (key domain fact mps-type args? m ?cap-mps t CS))
 	(wm-fact (key domain fact mps-state args? m ?cap-mps s ~BROKEN))
@@ -224,6 +226,8 @@
 			 (not (wm-fact (key domain fact wp-at args? wp ?any-base-wp m ?src-mps $?)))
 		)
 	)
+	; WP-CES
+	(wm-fact (key wp meta next-step args? wp ?wp) (value ?step&:(eq ?step (sym-cat RING ?ring-nr))))
 	; ring MPS CEs
 	(wm-fact (key domain fact mps-type args? m ?ring-mps t RS))
 	(wm-fact (key domain fact mps-state args? m ?ring-mps s ~BROKEN))
@@ -428,7 +432,7 @@
 	(return ?goal)
 )
 
-(deffunction goal-production-get-machine-for-color
+(deffunction goal-production-get-ring-machine-for-color
 	(?col-ring)
 
 	(bind ?rs FALSE)
@@ -444,7 +448,7 @@
 	(return ?rs)
 )
 
-(deffunction initialize-wp (?wp)
+(deffunction goal-production-initialize-wp (?wp)
 	"Initialize facts for a workpiece."
 	(assert
 		  (domain-object (name ?wp) (type workpiece))
@@ -463,29 +467,67 @@
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
 	(not (goal (id ?other-goal) (class PRODUCE-ORDER) (mode FORMULATED)))
-	(wm-fact (key domain fact order-complexity args? ord ?order-id com ?com&C1))
+	(wm-fact (key domain fact order-complexity args? ord ?order-id com ?com))
 	(wm-fact (key domain fact order-base-color args? ord ?order-id col ?base-color))
 	(wm-fact (key domain fact order-cap-color  args? ord ?order-id col ?cap-color))
 	(wm-fact (key domain fact order-ring1-color args? ord ?order-id col ?ring1-color))
+	(wm-fact (key domain fact order-ring2-color args? ord ?order-id col ?ring2-color))
+	(wm-fact (key domain fact order-ring3-color args? ord ?order-id col ?ring3-color))
+	(wm-fact (key domain fact cs-color args? m ?cap-mps col ?cap-color))
 	=>
 	(bind ?wp-for-order (sym-cat wp- ?order-id))
-	(initialize-wp ?wp-for-order)
+	(goal-production-initialize-wp ?wp-for-order)
 	(assert (wm-fact (key order meta wp-for-order args? wp ?wp-for-order ord ?order-id)))
 	(if (eq ?com C0) then
 		(bind ?goal (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-			(goal-meta-assert (goal-production-assert-buffer-cap C-CS1 ?cap-color) robot1)
+			(goal-meta-assert (goal-production-assert-buffer-cap ?cap-mps ?cap-color) robot1)
 			(goal-meta-assert (goal-production-assert-discard UNKNOWN C-CS1 OUTPUT) robot1)
-			(goal-meta-assert (goal-production-assert-mount-cap ?wp-for-order C-BS C-CS1 ?cap-color) robot1)
+			(goal-meta-assert (goal-production-assert-mount-cap ?wp-for-order C-BS C-?cap-mps ?cap-color) robot1)
 			(goal-meta-assert (goal-production-assert-deliver ?wp-for-order C-DS) robot1)
 		))
 	)
 	(if (eq ?com C1) then
-		(bind ?ring1-mps (goal-production-get-machine-for-color ?ring1-color))
+		(bind ?ring1-mps (goal-production-get-ring-machine-for-color ?ring1-color))
 		(bind ?goal (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-			(goal-meta-assert (goal-production-assert-buffer-cap C-CS1 ?cap-color) robot1)
+			(goal-meta-assert (goal-production-assert-buffer-cap ?cap-mps ?cap-color) robot1)
 			(goal-meta-assert (goal-production-assert-discard UNKNOWN C-CS1 OUTPUT) robot1)
-			(goal-meta-assert (goal-production-assert-mount-ring ?wp-for-order C-BS ?ring1-mps ?ring1-color 1) robot1)
-			(goal-meta-assert (goal-production-assert-mount-cap ?wp-for-order ?ring1-mps C-CS1 ?cap-color) robot1)
+			(goal-meta-assert (goal-production-assert-mount-ring ?wp-for-order C-BS
+									?ring1-mps ?ring1-color 1) robot1)
+			(goal-meta-assert (goal-production-assert-mount-cap ?wp-for-order ?ring1-mps
+									?cap-mps ?cap-color) robot1)
+			(goal-meta-assert (goal-production-assert-deliver ?wp-for-order C-DS) robot1)
+		))
+	)
+	(if (eq ?com C2) then
+		(bind ?ring1-mps (goal-production-get-ring-machine-for-color ?ring1-color))
+		(bind ?ring2-mps (goal-production-get-ring-machine-for-color ?ring2-color))
+		(bind ?goal (goal-tree-assert-central-run-parallel PRODUCE-ORDER
+			(goal-meta-assert (goal-production-assert-buffer-cap ?cap-mps ?cap-color) robot1)
+			(goal-meta-assert (goal-production-assert-discard UNKNOWN C-CS1 OUTPUT) robot1)
+			(goal-meta-assert (goal-production-assert-mount-ring ?wp-for-order C-BS
+									?ring1-mps ?ring1-color 1) robot1)
+			(goal-meta-assert (goal-production-assert-mount-ring ?wp-for-order ?ring1-mps
+									?ring2-mps ?ring2-color 2) robot1)
+			(goal-meta-assert (goal-production-assert-mount-cap ?wp-for-order ?ring2-mps
+									?cap-mps ?cap-color) robot1)
+			(goal-meta-assert (goal-production-assert-deliver ?wp-for-order C-DS) robot1)
+		))
+	)
+	(if (eq ?com C3) then
+		(bind ?ring1-mps (goal-production-get-ring-machine-for-color ?ring1-color))
+		(bind ?ring2-mps (goal-production-get-ring-machine-for-color ?ring2-color))
+		(bind ?ring3-mps (goal-production-get-ring-machine-for-color ?ring3-color))
+		(bind ?goal (goal-tree-assert-central-run-parallel PRODUCE-ORDER
+			(goal-meta-assert (goal-production-assert-buffer-cap ?cap-mps ?cap-color) robot1)
+			(goal-meta-assert (goal-production-assert-discard UNKNOWN C-CS1 OUTPUT) robot1)
+			(goal-meta-assert (goal-production-assert-mount-ring ?wp-for-order C-BS
+									?ring1-mps ?ring1-color 1) robot1)
+			(goal-meta-assert (goal-production-assert-mount-ring ?wp-for-order ?ring1-mps
+									?ring2-mps ?ring2-color 2) robot1)
+			(goal-meta-assert (goal-production-assert-mount-ring ?wp-for-order ?ring2-mps
+									?ring3-mps ?ring3-color 3) robot1)
+			(goal-meta-assert (goal-production-assert-mount-cap ?wp-for-order ?ring3-mps
+									?cap-mps ?cap-color) robot1)
 			(goal-meta-assert (goal-production-assert-deliver ?wp-for-order C-DS) robot1)
 		))
 	)
@@ -500,7 +542,8 @@
 	; Whenever we want to mount a ring,
 	(goal (class MOUNT-RING) (mode FORMULATED)
 	            (params wp ?wp src-mps ?src-mps
-						ring-mps ?ring-mps ring-color ?ring-color ring-nr ?ring-nr))
+						ring-mps ?ring-mps ring-color ?ring-color ring-nr ?ring-nr)
+				(is-executable FALSE))
 	; don't have a payment goal already,
 	(not (goal (class PAY-RING) (params wp ?wp src-mps ?src-mps	ring-mps ?ring-mps)))
 	; and we don't have enough bases,
@@ -512,7 +555,7 @@
 	=>
 	; then we fill it up.
 	(bind ?wp-pay (sym-cat wp-pay1- (gensym*)))
-	(initialize-wp ?wp-pay)
+	(goal-production-initialize-wp ?wp-pay)
 	(bind ?goal
 		(goal-meta-assert (goal-production-assert-pay-ring ?wp-pay C-BS ?ring-mps) robot1))
   	(modify ?goal (parent ?root-id))
