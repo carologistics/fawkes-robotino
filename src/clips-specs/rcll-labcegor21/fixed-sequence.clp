@@ -220,16 +220,16 @@
 (defrule goal-expander-pay-for-rings-with-base
 	?g <- (goal (id ?goal-id) (class ?class&PAY-FOR-RINGS-WITH-BASE)
 	                          (mode SELECTED) (parent ?parent)
-	                          (params  wp ?wp
-	                                   wp-loc ?wp-loc
+	                          (params  wp-loc ?wp-loc
 	                                   wp-side ?wp-side
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
-	                                   $?))
+	                                   ))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	(wm-fact (key domain fact rs-inc args? summand ?rs-before
 	                                  sum ?rs-after))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side))
 	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before))
 	(or (wm-fact (key domain fact holding args? r ?robot wp ?wp))
 	    (wm-fact (key domain fact mps-state args? m ?wp-loc s ~BROKEN))
@@ -429,7 +429,8 @@
 
 (defrule goal-expander-instruct-rs-mount-ring
 	?g <- (goal (id ?goal-id) (class INSTRUCT-RS-MOUNT-RING) (mode SELECTED)
-	            (params target-mps ?mps
+	            (params id ?order-id
+						target-mps ?mps
 	                    ring-color ?ring-color))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
@@ -471,8 +472,8 @@
 
 ;my stuff labcegor21
 
-(defrule goal-expander-construct-c0
-	?g <- (goal (id ?goal-id) (class CONSTRUCT-C0) (mode SELECTED) (parent ?parent)
+(defrule goal-expander-get-base
+	?g <- (goal (id ?goal-id) (class GET-BASE) (mode SELECTED) (parent ?parent)
 	 			(params order ?order-id
 				  		wp ?wp-for-order 
 						target-mps ?cs 
@@ -482,7 +483,7 @@
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
-	(plan-assert-sequential (sym-cat CONSTRUCT-C0-PLAN- (gensym*)) ?goal-id ?robot
+	(plan-assert-sequential (sym-cat GET-BASE-PLAN- (gensym*)) ?goal-id ?robot
 		;(create$
 		    (plan-assert-action move ?robot ?curr-location ?curr-side C-BS OUTPUT)
 		    (plan-assert-action wp-get ?robot ?wp-for-order C-BS OUTPUT)
@@ -498,7 +499,8 @@
 
 (defrule goal-expander-mount-cap
 	?g <- (goal (id ?goal-id) (class MOUNT) (mode SELECTED) (parent ?parent)
-	 			(params wp ?wp-for-order 
+	 			(params id ?order-id
+				 		wp ?wp-for-order 
 						target-mps ?cs
 				))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
@@ -539,6 +541,25 @@
 	(plan-assert-sequential (sym-cat DELIVER-PLAN- (gensym*)) ?goal-id ?robot
 		    (plan-assert-safe-move ?robot ?curr-location ?curr-side ?ds INPUT
 				(plan-assert-action wp-put ?robot ?wp-for-order ?ds INPUT)
+			)
+	)
+	(modify ?g (mode EXPANDED))
+)
+
+(defrule goal-expander-mount-ring-on-base
+	?g <- (goal (id ?goal-id) (class MOUNT-RING-ON-BASE) (mode SELECTED) (parent ?parent)
+	 			(params wp ?wp
+						target-mps ?target-mps
+				))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	=>
+	(plan-assert-sequential (sym-cat MOUNT-RING-ON-BASE- (gensym*)) ?goal-id ?robot
+		    (plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps INPUT
+				(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
+			)
+			(plan-assert-safe-move ?robot ?target-mps INPUT ?target-mps OUTPUT
+				(plan-assert-action wp-get ?robot ?wp ?target-mps OUTPUT)
 			)
 	)
 	(modify ?g (mode EXPANDED))

@@ -239,10 +239,10 @@
 	(modify ?g (meta do-not-finish) (priority 1.0))
 )
 
-(defrule goal-production-construct-c0-executable
+(defrule goal-production-get-base-executable
 " Go and get a base for your order "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
-	?g <- (goal (id ?id) (class CONSTRUCT-C0) (sub-type SIMPLE)
+	?g <- (goal (id ?id) (class GET-BASE) (sub-type SIMPLE)
 	            (mode FORMULATED)
 	            (params order ?order-id
 	              		wp ?wp-for-order
@@ -259,20 +259,18 @@
 	(wm-fact (key domain fact mps-type args? m ?mps t BS))
 	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
 	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-	; Only execute, when cap is prepared and CS output is empty
-	(wm-fact (key domain fact cs-buffered args? m ?wp-loc col ?col-cap))
-	(wm-fact (key domain fact mps-side-free args? m ?cs side OUTPUT))
-	;(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side&:(eq ?curr-side WAIT)))
+	; Only execute, when base is dispensed
+	(wm-fact (key domain fact wp-at args? wp ?wp-for-order m C-BS side OUTPUT))
 	=>
-	(printout t "Goal CONSTRUCT-C0 executable for " ?robot crlf)
+	(printout t "Goal GET-BASE executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
 )
 
-(deffunction goal-production-assert-construct-c0
+(deffunction goal-production-assert-get-base
 	(?order-id ?wp-for-order ?cs ?col-cap ?col-base)
 
-	(bind ?goal (assert (goal (class CONSTRUCT-C0)
-	      (id (sym-cat CONSTRUCT-C0- (gensym*))) (sub-type SIMPLE)
+	(bind ?goal (assert (goal (class GET-BASE)
+	      (id (sym-cat GET-BASE- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
 	      (params order ?order-id
 	              wp ?wp-for-order
@@ -361,8 +359,9 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?id) (class MOUNT) (sub-type SIMPLE)
 	            (mode FORMULATED)
-	            (params wp ?wp-for-order
-				  		target-mps ?cs
+	            (params id ?order-id
+		  		  		wp ?wp-for-order
+	              		target-mps ?cs
 	            )
 	            (is-executable FALSE))
 	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
@@ -371,20 +370,44 @@
 	(wm-fact (key domain fact mps-type args? m ?cs t CS))
 	(wm-fact (key domain fact mps-state args? m ?cs s ~BROKEN))
 	(wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
-	; Only execute, when holding workpiece
+	; Only execute, when holding workpiece and all neccessary rings are mounted
 	(wm-fact (key domain fact holding args? r ?robot wp ?wp-for-order))
+	(or (and 
+			(wm-fact (key domain fact order-ring1-color args? ord ?order-id col ?ring1-col&:(eq ?ring1-col RING_NONE)))
+		)
+		(and 
+			(wm-fact (key domain fact order-ring1-color args? ord ?order-id col ?ring1-col&:(neq ?ring1-col RING_NONE)))
+			(wm-fact (key domain fact wp-ring1-color args? wp ?wp-for-order col ?ring1-col))
+		)
+		(and 
+			(wm-fact (key domain fact order-ring1-color args? ord ?order-id col ?ring1-col&:(neq ?ring1-col RING_NONE)))
+			(wm-fact (key domain fact wp-ring1-color args? wp ?wp-for-order col ?ring1-col))
+			(wm-fact (key domain fact order-ring2-color args? ord ?order-id col ?ring2-col&:(neq ?ring2-col RING_NONE)))
+			(wm-fact (key domain fact wp-ring1-color args? wp ?wp-for-order col ?ring2-col))
+		)
+		(and 
+			(wm-fact (key domain fact order-ring1-color args? ord ?order-id col ?ring1-col&:(neq ?ring1-col RING_NONE)))
+			(wm-fact (key domain fact wp-ring1-color args? wp ?wp-for-order col ?ring1-col))
+			(wm-fact (key domain fact order-ring2-color args? ord ?order-id col ?ring2-col&:(neq ?ring2-col RING_NONE)))
+			(wm-fact (key domain fact wp-ring1-color args? wp ?wp-for-order col ?ring2-col))
+			(wm-fact (key domain fact order-ring3-color args? ord ?order-id col ?ring3-col&:(neq ?ring3-col RING_NONE)))
+			(wm-fact (key domain fact wp-ring1-color args? wp ?wp-for-order col ?ring3-col))
+		)
+	
+	)
 	=>
 	(printout t "Goal MOUNT executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
 )
 
 (deffunction goal-production-assert-mount
-	(?wp-for-order ?cs)
+	(?order-id ?wp-for-order ?cs)
 
 	(bind ?goal (assert (goal (class MOUNT)
 	  (id (sym-cat MOUNT- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
-	      (params wp ?wp-for-order
+	      (params id ?order-id
+		  		  wp ?wp-for-order
 	              target-mps ?cs)
 	)))
 	(return ?goal)
@@ -524,15 +547,363 @@
 	(return ?goal)
 )
 
+(defrule goal-production-pay-for-rings-with-base
+" Bring a wp to a rs to pay for rings "
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?id) (class PAY-FOR-RINGS-WITH-BASE) (sub-type SIMPLE)
+	            (mode FORMULATED)
+	            (params wp-loc ?wp-loc
+	              		wp-side ?wp-side
+	              		target-mps ?target-mps
+	              		target-side ?target-side
+	            )
+	            (is-executable FALSE))
+	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
+	(wm-fact (key refbox team-color) (value ?team-color))
+	; MPS CEs
+	(wm-fact (key domain fact mps-type args? m ?target-mps t RS))
+	(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
+	; Execute once a workpiece is available to use as payment
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side))
+	(wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE)) 
+	=>
+	(printout t "Goal PAY-FOR-RINGS-WITH-BASE executable for " ?robot crlf)
+	(modify ?g (is-executable TRUE))
+)
+
+(deffunction goal-production-assert-pay-for-rings-with-base
+	(?wp-loc ?wp-side ?target-mps ?target-side)
+
+	(bind ?goal (assert (goal (class PAY-FOR-RINGS-WITH-BASE)
+	  (id (sym-cat PAY-FOR-RINGS-WITH-BASE- (gensym*))) (sub-type SIMPLE)
+	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+	      (params wp-loc ?wp-loc
+	              wp-side ?wp-side
+	              target-mps ?target-mps
+	              target-side ?target-side)
+	)))
+	(return ?goal)
+)
+
+(defrule goal-production-instruct-rs-mount-ring
+" Bring a wp to a rs to pay for rings "
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?id) (class INSTRUCT-RS-MOUNT-RING) (sub-type SIMPLE)
+	            (mode FORMULATED)
+	            (params id ?order-id
+						target-mps ?mps
+	              		ring-color ?ring-color
+	            )
+	            (is-executable FALSE))
+	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
+	(wm-fact (key refbox team-color) (value ?team-color))
+	; MPS CEs
+	(wm-fact (key domain fact mps-type args? m ?target-mps t RS))
+	(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
+	; Execute once a workpiece is available to mount on and the color corresponds to the next needed cap
+	(wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side INPUT))
+	(or
+		(and 
+			(wm-fact (key domain fact order-ring1-color args? ord ?order-id col ?ring-color))
+		)
+		(and
+			(wm-fact (key domain fact order-ring2-color args? ord ?order-id col ?ring-color))
+			(wm-fact (key domain fact wp-ring1-color args? wp ?any-wp col ?ring1-col&:(neq ?ring1-col RING_NONE)))
+		)
+		(and
+			(wm-fact (key domain fact order-ring3-color args? ord ?order-id col ?ring-color))
+			(wm-fact (key domain fact wp-ring1-color args? wp ?any-wp col ?ring1-col&:(neq ?ring1-col RING_NONE)))
+			(wm-fact (key domain fact wp-ring2-color args? wp ?any-wp col ?ring2-col&:(neq ?ring2-col RING_NONE)))
+		)
+	)
+	=>
+	(printout t "Goal INSTRUCT-RS-MOUNT-RING executable for " ?robot crlf)
+	(modify ?g (is-executable TRUE))
+)
+
+(deffunction goal-production-assert-instruct-rs-mount-ring
+	(?order-id ?mps ?ring-color)
+
+	(bind ?goal (assert (goal (class INSTRUCT-RS-MOUNT-RING)
+	  (id (sym-cat INSTRUCT-RS-MOUNT-RING- (gensym*))) (sub-type SIMPLE)
+	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+	      (params id ?order-id
+		  		  target-mps ?mps
+	              ring-color ?ring-color)
+	)))
+	(return ?goal)
+)
+
+(defrule goal-production-mount-ring-on-base
+" Bring a wp to a rs to mount a ring "
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?id) (class MOUNT-RING-ON-BASE) (sub-type SIMPLE)
+	            (mode FORMULATED)
+	            (params wp ?wp
+	              		target-mps ?target-mps
+	            )
+	            (is-executable FALSE))
+	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
+	(wm-fact (key refbox team-color) (value ?team-color))
+	; MPS CEs
+	(wm-fact (key domain fact mps-type args? m ?target-mps t RS))
+	(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
+	; Execute once robot holds desired workpiece
+	(wm-fact (key domain fact holding args? r ?robot wp ?wp)) 
+	=>
+	(printout t "Goal MOUNT-RING-ON-BASE executable for " ?robot crlf)
+	(modify ?g (is-executable TRUE))
+)
+
+(deffunction goal-production-assert-mount-ring-on-base
+	(?wp ?target-mps)
+
+	(bind ?goal (assert (goal (class MOUNT-RING-ON-BASE)
+	  (id (sym-cat MOUNT-RING-ON-BASE- (gensym*))) (sub-type SIMPLE)
+	  (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+	  (params wp ?wp 
+	  		  target-mps ?target-mps)
+	)))
+	(return ?goal)
+)
+
+(deffunction create-base-as-payment
+	()
+	(bind ?wp-payment (sym-cat PAYMENT- (gensym*)))
+			(assert (domain-object (name ?wp-payment) (type workpiece))
+					(domain-fact (name wp-unused) (param-values ?wp-payment))
+					(wm-fact (key domain fact wp-base-color args? wp ?wp-payment col BASE_NONE) (type BOOL) (value TRUE))
+					(wm-fact (key domain fact wp-cap-color args? wp ?wp-payment col CAP_NONE) (type BOOL) (value TRUE))
+			)
+	(return ?wp-payment)
+)
+
+(deffunction goal-production-construct-c0
+	(?root-id ?order-id ?wp-for-order ?col-cap ?col-base ?cs)
+
+	(bind ?goal
+			(goal-tree-assert-central-run-parallel CONSTRUCT-C0
+				(goal-tree-assert-central-run-parallel GET-BASE-AND-BUILD
+					(goal-meta-assert (goal-production-assert-instruct-bs-dispense-base ?wp-for-order OUTPUT ?col-base) central)
+					(goal-meta-assert (goal-production-assert-get-base ?order-id ?wp-for-order ?cs ?col-cap ?col-base) robot2)
+					(goal-meta-assert (goal-production-assert-mount ?order-id ?wp-for-order ?cs) robot2)
+					(goal-meta-assert (goal-production-assert-get-deliver ?wp-for-order ?cs) robot1)
+					(goal-meta-assert (goal-production-assert-deliver ?wp-for-order C-DS) robot1)
+				)
+				;(goal-tree-assert-central-run-parallel PREPARATIONS
+					(goal-meta-assert (goal-production-assert-buffer-cap ?cs ?col-cap) robot1)
+					(goal-meta-assert (goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap) central)
+					(goal-meta-assert (goal-production-assert-discard-base ?cs OUTPUT) robot1)
+					(goal-meta-assert (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap) central)
+					(goal-meta-assert (goal-production-assert-instruct-ds-deliver ?wp-for-order C-DS) central)
+				;)
+			)
+		)
+		(modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (parent ?root-id))
+		(printout t "Asserted construction goal for C0 product" crlf)
+)
+
+(deffunction goal-production-construct-c1
+	(?root-id ?order-id ?wp-for-order ?col-cap ?col-base ?cs ?rs-col1 ?col-ring1 ?ring1-num)
+
+	(bind ?goal
+			(goal-tree-assert-central-run-parallel CONSTRUCT-C1
+				(goal-tree-assert-central-run-parallel GET-BASE-AND-BUILD
+					(goal-meta-assert (goal-production-assert-instruct-bs-dispense-base ?wp-for-order OUTPUT ?col-base) central)
+					(goal-meta-assert (goal-production-assert-get-base ?order-id ?wp-for-order ?cs ?col-cap ?col-base) robot2)
+					(goal-meta-assert (goal-production-assert-mount-ring-on-base ?wp-for-order ?rs-col1) robot2)
+					(goal-meta-assert (goal-production-assert-instruct-rs-mount-ring ?order-id  ?rs-col1 ?col-ring1) central)
+					(goal-meta-assert (goal-production-assert-mount ?order-id ?wp-for-order ?cs) robot2)
+					(goal-meta-assert (goal-production-assert-get-deliver ?wp-for-order ?cs) robot1)
+					(goal-meta-assert (goal-production-assert-deliver ?wp-for-order C-DS) robot1)
+				)
+				(goal-tree-assert-central-run-parallel PREPARATIONS
+					(goal-meta-assert (goal-production-assert-buffer-cap ?cs ?col-cap) robot1)
+					(goal-meta-assert (goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap) central)
+					(if (eq ?ring1-num ZERO)
+						then
+							(goal-meta-assert (goal-production-assert-discard-base ?cs OUTPUT) robot1)
+					)
+					(if (eq ?ring1-num ONE)
+						then
+							(goal-meta-assert (goal-production-assert-pay-for-rings-with-base ?cs OUTPUT ?rs-col1 INPUT) robot1)
+					)
+					(if (eq ?ring1-num TWO)
+						then
+							(goal-meta-assert (goal-production-assert-pay-for-rings-with-base ?cs OUTPUT ?rs-col1 INPUT) robot1)
+							(goal-meta-assert (goal-production-assert-instruct-bs-dispense-base (create-base-as-payment) OUTPUT ?col-base) central)
+							(goal-meta-assert (goal-production-assert-pay-for-rings-with-base C-BS OUTPUT ?rs-col1 INPUT) robot2)
+					)
+					(goal-meta-assert (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap) central)
+					(goal-meta-assert (goal-production-assert-instruct-ds-deliver ?wp-for-order C-DS) central)
+				)
+			)
+		)
+		(modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (parent ?root-id))
+		(printout t "Asserted construction goal for C1 product" crlf)
+)
+
+(deffunction goal-production-construct-c2
+	(?root-id ?order-id ?wp-for-order ?col-cap ?col-base ?cs ?rs-col1 ?col-ring1 ?ring1-num ?rs-col2 ?col-ring2 ?ring2-num)
+
+	(bind ?goal
+			(goal-tree-assert-central-run-parallel CONSTRUCT-C2
+				(goal-tree-assert-central-run-parallel GET-BASE-AND-BUILD
+					(goal-meta-assert (goal-production-assert-instruct-bs-dispense-base ?wp-for-order OUTPUT ?col-base) central)
+					(goal-meta-assert (goal-production-assert-get-base ?order-id ?wp-for-order ?cs ?col-cap ?col-base) robot2)
+					; First ring
+					(goal-meta-assert (goal-production-assert-mount-ring-on-base ?wp-for-order ?rs-col1) robot2)
+					(goal-meta-assert (goal-production-assert-instruct-rs-mount-ring ?order-id ?rs-col1 ?col-ring1) central)
+					; Second ring
+					(goal-meta-assert (goal-production-assert-mount-ring-on-base ?wp-for-order ?rs-col2) robot2)
+					(goal-meta-assert (goal-production-assert-instruct-rs-mount-ring ?order-id ?rs-col2 ?col-ring2) central)
+					(goal-meta-assert (goal-production-assert-mount ?order-id ?wp-for-order ?cs) robot2)
+					(goal-meta-assert (goal-production-assert-get-deliver ?wp-for-order ?cs) robot1)
+					(goal-meta-assert (goal-production-assert-deliver ?wp-for-order C-DS) robot1)
+				)
+				(goal-tree-assert-central-run-parallel PREPARATIONS
+					(goal-meta-assert (goal-production-assert-buffer-cap ?cs ?col-cap) robot1)
+					(goal-meta-assert (goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap) central)
+					; Ring 1 choices
+					(if (eq ?ring1-num ZERO)
+						then
+							(goal-meta-assert (goal-production-assert-discard-base ?cs OUTPUT) robot1)
+					)
+					(if (eq ?ring1-num ONE)
+						then
+							(goal-meta-assert (goal-production-assert-pay-for-rings-with-base ?cs OUTPUT ?rs-col1 INPUT) robot1)
+					)
+					(if (eq ?ring1-num TWO)
+						then
+							(goal-meta-assert (goal-production-assert-pay-for-rings-with-base ?cs OUTPUT ?rs-col1 INPUT) robot1)
+							(goal-meta-assert (goal-production-assert-instruct-bs-dispense-base (create-base-as-payment) OUTPUT ?col-base) central)
+							(goal-meta-assert (goal-production-assert-pay-for-rings-with-base C-BS OUTPUT ?rs-col1 INPUT) robot2)
+					)
+					; Ring 2 choices
+					(if (eq ?ring2-num ZERO)
+						then
+							;(goal-meta-assert (goal-production-assert-discard-base ?cs OUTPUT) robot1)
+					)
+					(if (eq ?ring2-num ONE)
+						then
+							(goal-meta-assert (goal-production-assert-instruct-bs-dispense-base (create-base-as-payment) OUTPUT ?col-base) central)
+							(goal-meta-assert (goal-production-assert-pay-for-rings-with-base C-BS OUTPUT ?rs-col2 INPUT) robot2)
+					)
+					(if (eq ?ring2-num TWO)
+						then
+							(goal-meta-assert (goal-production-assert-instruct-bs-dispense-base (create-base-as-payment) OUTPUT ?col-base) central)
+							(goal-meta-assert (goal-production-assert-pay-for-rings-with-base C-BS OUTPUT ?rs-col2 INPUT) robot2)
+							(goal-meta-assert (goal-production-assert-instruct-bs-dispense-base (create-base-as-payment) OUTPUT ?col-base) central)
+							(goal-meta-assert (goal-production-assert-pay-for-rings-with-base C-BS OUTPUT ?rs-col2 INPUT) robot2)
+					)
+					(goal-meta-assert (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap) central)
+					(goal-meta-assert (goal-production-assert-instruct-ds-deliver ?wp-for-order C-DS) central)
+				)
+			)
+		)
+		(modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (parent ?root-id))
+		(printout t "Asserted construction goal for C2 product" crlf)
+)
+
+(deffunction goal-production-construct-c3
+	(?root-id ?order-id ?wp-for-order ?col-cap ?col-base ?cs ?rs-col1 ?col-ring1 ?ring1-num ?rs-col2 ?col-ring2 ?ring2-num ?rs-col3 ?col-ring3 ?ring3-num)
+
+	(bind ?goal
+			(goal-tree-assert-central-run-parallel CONSTRUCT-C3
+				(goal-tree-assert-central-run-parallel GET-BASE-AND-BUILD
+					(goal-meta-assert (goal-production-assert-instruct-bs-dispense-base ?wp-for-order OUTPUT ?col-base) central)
+					(goal-meta-assert (goal-production-assert-get-base ?order-id ?wp-for-order ?cs ?col-cap ?col-base) robot2)
+					; First ring
+					(goal-meta-assert (goal-production-assert-mount-ring-on-base ?wp-for-order ?rs-col1) robot2)
+					(goal-meta-assert (goal-production-assert-instruct-rs-mount-ring ?order-id ?rs-col1 ?col-ring1) central)
+					; Second ring
+					(goal-meta-assert (goal-production-assert-mount-ring-on-base ?wp-for-order ?rs-col2) robot2)
+					(goal-meta-assert (goal-production-assert-instruct-rs-mount-ring ?order-id ?rs-col2 ?col-ring2) central)
+					; Third ring
+					(goal-meta-assert (goal-production-assert-mount-ring-on-base ?wp-for-order ?rs-col3) robot2)
+					(goal-meta-assert (goal-production-assert-instruct-rs-mount-ring ?order-id ?rs-col3 ?col-ring3) central)
+					(goal-meta-assert (goal-production-assert-mount ?order-id ?wp-for-order ?cs) robot2)
+					(goal-meta-assert (goal-production-assert-get-deliver ?wp-for-order ?cs) robot1)
+					(goal-meta-assert (goal-production-assert-deliver ?wp-for-order C-DS) robot1)
+				)
+				(goal-tree-assert-central-run-parallel PREPARATIONS
+					(goal-meta-assert (goal-production-assert-buffer-cap ?cs ?col-cap) robot1)
+					(goal-meta-assert (goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap) central)
+					; Ring 1 choices
+					(if (eq ?ring1-num ZERO)
+						then
+							(goal-meta-assert (goal-production-assert-discard-base ?cs OUTPUT) robot1)
+					)
+					(if (eq ?ring1-num ONE)
+						then
+							(goal-meta-assert (goal-production-assert-pay-for-rings-with-base ?cs OUTPUT ?rs-col1 INPUT) robot1)
+					)
+					(if (eq ?ring1-num TWO)
+						then
+							(goal-meta-assert (goal-production-assert-pay-for-rings-with-base ?cs OUTPUT ?rs-col1 INPUT) robot1)
+							(goal-meta-assert (goal-production-assert-instruct-bs-dispense-base (create-base-as-payment) OUTPUT ?col-base) central)
+							(goal-meta-assert (goal-production-assert-pay-for-rings-with-base C-BS OUTPUT ?rs-col1 INPUT) robot2)
+					)
+					; Ring 2 choices
+					(if (eq ?ring2-num ZERO)
+						then
+							;(goal-meta-assert (goal-production-assert-discard-base ?cs OUTPUT) robot1)
+					)
+					(if (eq ?ring2-num ONE)
+						then
+							(goal-meta-assert (goal-production-assert-instruct-bs-dispense-base (create-base-as-payment) OUTPUT ?col-base) central)
+							(goal-meta-assert (goal-production-assert-pay-for-rings-with-base C-BS OUTPUT ?rs-col2 INPUT) robot2)
+					)
+					(if (eq ?ring2-num TWO)
+						then
+							(goal-meta-assert (goal-production-assert-instruct-bs-dispense-base (create-base-as-payment) OUTPUT ?col-base) central)
+							(goal-meta-assert (goal-production-assert-pay-for-rings-with-base C-BS OUTPUT ?rs-col2 INPUT) robot2)
+							(goal-meta-assert (goal-production-assert-instruct-bs-dispense-base (create-base-as-payment) OUTPUT ?col-base) central)
+							(goal-meta-assert (goal-production-assert-pay-for-rings-with-base C-BS OUTPUT ?rs-col2 INPUT) robot2)
+					)
+					; Ring 3 choices
+					(if (eq ?ring3-num ZERO)
+						then
+							;(goal-meta-assert (goal-production-assert-discard-base ?cs OUTPUT) robot1)
+					)
+					(if (eq ?ring3-num ONE)
+						then
+							
+							(goal-meta-assert (goal-production-assert-instruct-bs-dispense-base (create-base-as-payment) OUTPUT ?col-base) central)
+							(goal-meta-assert (goal-production-assert-pay-for-rings-with-base C-BS OUTPUT ?rs-col3 INPUT) robot2)
+					)
+					(if (eq ?ring3-num TWO)
+						then
+							
+							(goal-meta-assert (goal-production-assert-instruct-bs-dispense-base (create-base-as-payment) OUTPUT ?col-base) central)
+							(goal-meta-assert (goal-production-assert-pay-for-rings-with-base C-BS OUTPUT ?rs-col3 INPUT) robot2)
+							(goal-meta-assert (goal-production-assert-instruct-bs-dispense-base (create-base-as-payment) OUTPUT ?col-base) central)
+							(goal-meta-assert (goal-production-assert-pay-for-rings-with-base C-BS OUTPUT ?rs-col3 INPUT) robot2)
+					)
+					(goal-meta-assert (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap) central)
+					(goal-meta-assert (goal-production-assert-instruct-ds-deliver ?wp-for-order C-DS) central)
+				)
+			)
+		)
+		(modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (parent ?root-id))
+		(printout t "Asserted construction goal for C3 product" crlf)
+)
+
 (defrule goal-production-get-order-from-refbox
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
-	(wm-fact (key domain fact order-complexity args? ord ?order-id&:(eq ?order-id O1) com ?comp))
+	(wm-fact (key domain fact order-complexity args? ord ?order-id&:(eq ?order-id O2) com ?comp))
 	(wm-fact (key domain fact order-base-color args? ord ?order-id col ?col-base))
-	(wm-fact (key domain fact order-cap-color  args? ord ?order-id col ?col-cap))
+	(wm-fact (key domain fact order-cap-color args? ord ?order-id col ?col-cap))
+	(wm-fact (key domain fact order-ring1-color args? ord ?order-id col ?col-ring1))
+	(wm-fact (key domain fact order-ring2-color args? ord ?order-id col ?col-ring2))
+	(wm-fact (key domain fact order-ring3-color args? ord ?order-id col ?col-ring3))
+	(wm-fact (key domain fact rs-ring-spec args? m ?rs-col1 r ?col-ring1 rn ?ring1-num))
+	(wm-fact (key domain fact rs-ring-spec args? m ?rs-col2 r ?col-ring2 rn ?ring2-num))
+	(wm-fact (key domain fact rs-ring-spec args? m ?rs-col3 r ?col-ring3 rn ?ring3-num))
 	(wm-fact (key domain fact cs-color args? m ?cs col ?col-cap))
 	(wm-fact (key domain fact mps-type args? m ?cs t CS))
-	(not (wm-fact (key order meta wp-for-order args? wp ?something ord O1)))
+	(not (wm-fact (key order meta wp-for-order args? wp ?any ord ?order-id)))
 	=>
 	;assert a new workpiece
 	(bind ?wp-for-order (sym-cat wp- ?order-id))
@@ -547,26 +918,19 @@
 	)
 	(if (eq ?comp C0)
 		then
-		(bind ?goal
-			(goal-tree-assert-central-run-parallel CONSTRUCT-C0
-				(goal-tree-assert-central-run-parallel GET-BASE-AND-BUILD
-					(goal-meta-assert (goal-production-assert-instruct-bs-dispense-base ?wp-for-order OUTPUT ?col-base) central)
-					(goal-meta-assert (goal-production-assert-construct-c0 ?order-id ?wp-for-order ?cs ?col-cap ?col-base) robot1)
-					(goal-meta-assert (goal-production-assert-mount ?wp-for-order ?cs) robot1)
-					(goal-meta-assert (goal-production-assert-get-deliver ?wp-for-order ?cs) robot1)
-					(goal-meta-assert (goal-production-assert-deliver ?wp-for-order C-DS) robot1)
-				)
-				;(goal-tree-assert-central-run-parallel PREPARATIONS
-					(goal-meta-assert (goal-production-assert-buffer-cap ?cs ?col-cap) robot1)
-					(goal-meta-assert (goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap) central)
-					(goal-meta-assert (goal-production-assert-discard-base ?cs OUTPUT) robot1)
-					(goal-meta-assert (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap) central)
-					(goal-meta-assert (goal-production-assert-instruct-ds-deliver ?wp-for-order C-DS) central)
-				;)
-			)
-		)
-		(modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (parent ?root-id))
-		(printout t "Asserted construction goal" crlf)
+		(goal-production-construct-c0 ?root-id ?order-id ?wp-for-order ?col-cap ?col-base ?cs)
+	)
+	(if (eq ?comp C1)
+		then
+		(goal-production-construct-c1 ?root-id ?order-id ?wp-for-order ?col-cap ?col-base ?cs ?rs-col1 ?col-ring1 ?ring1-num)
+	)
+	(if (eq ?comp C2)
+		then 
+		(goal-production-construct-c2 ?root-id ?order-id ?wp-for-order ?col-cap ?col-base ?cs ?rs-col1 ?col-ring1 ?ring1-num ?rs-col2 ?col-ring2 ?ring2-num)
+	)
+	(if (eq ?comp C3)
+		then 
+		(goal-production-construct-c3 ?root-id ?order-id ?wp-for-order ?col-cap ?col-base ?cs ?rs-col1 ?col-ring1 ?ring1-num ?rs-col2 ?col-ring2 ?ring2-num ?rs-col3 ?col-ring3 ?ring3-num)
 	)
 )
 
