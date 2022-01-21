@@ -32,7 +32,6 @@
 #include <aspect/tf.h>
 #include <blackboard/interface_listener.h>
 #include <core/threading/thread.h>
-#include <interfaces/DynamixelServoInterface.h>
 #include <plugins/gazebo/aspect/gazebo.h>
 #include <tf/types.h>
 #include <utils/time/time.h>
@@ -41,6 +40,8 @@
 #include <memory>
 
 // from Gazebo
+#include "../msgs/GripperCommand.pb.h"
+
 #include <gazebo/msgs/MessageTypes.hh>
 #include <gazebo/transport/TransportTypes.hh>
 #include <gazebo/transport/transport.hh>
@@ -101,15 +102,20 @@ private:
 
 	void load_config();
 
-	float cur_x_;
-	float cur_y_;
-	float cur_z_;
+	// Subscriber to get msgs from gazebo
+	gazebo::transport::SubscriberPtr gripper_pose_sub_;
+	gazebo::transport::SubscriberPtr gripper_final_sub_;
+	gazebo::transport::SubscriberPtr gripper_closed_sub_;
 
 	// Publisher to sent msgs to gazebo
 	gazebo::transport::PublisherPtr set_gripper_pub_;
-	gazebo::transport::PublisherPtr set_conveyor_pub_;
 
 	void send_gripper_msg(int value);
+	void send_move_msg(float x, float y, float z);
+	void on_gripper_pose_msg(ConstPosePtr &msg);
+	void on_gripper_final_msg(ConstIntPtr &msg);
+	void on_gripper_closed_msg(ConstIntPtr &msg);
+	void update_transfrom();
 
 protected:
 	/** Mutex to protect data_. Lock whenever accessing it. */

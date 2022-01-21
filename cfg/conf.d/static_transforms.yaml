@@ -61,6 +61,15 @@ plugins/static-transforms:
       trans_y: 0.0
       trans_z: 0.1808
 
+    # Pose of the end effector (middle point of a grabbed workpiece) when the
+    # gripper is at gripper_home
+    end_effector_home:
+      frame: !frame gripper_home
+      child_frame: !frame end_effector_home
+      trans_x: 0.1518
+      trans_y: 0
+      trans_z: -0.0558
+
     # Move the gripper to (0,0,0) in this frame to calibrate conveyor_pose
     conveyor_calib:
       frame: !frame gripper_home

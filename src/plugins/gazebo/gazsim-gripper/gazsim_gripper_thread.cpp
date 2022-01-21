@@ -28,7 +28,6 @@
 #include <core/threading/read_write_lock.h>
 #include <core/threading/wait_condition.h>
 #include <interfaces/ArduinoInterface.h>
-#include <interfaces/RobotinoSensorInterface.h>
 #include <utils/math/angle.h>
 
 #include <boost/lexical_cast.hpp>
@@ -84,9 +83,17 @@ GazsimGripperThread::init()
 	logger->log_debug(name(), "Initializing Simulation of gripper Plugin");
 
 	load_config();
-	cur_x_ = 0.0;
-	cur_y_ = 0.0;
-	cur_z_ = 0.0;
+
+	//-- initialize subscriber objects
+	gripper_pose_sub_   = gazebonode->Subscribe(config->get_string("/gazsim/topics/gripper-pose"),
+                                            &GazsimGripperThread::on_gripper_pose_msg,
+                                            this);
+	gripper_final_sub_  = gazebonode->Subscribe(config->get_string("/gazsim/topics/gripper-final"),
+                                             &GazsimGripperThread::on_gripper_final_msg,
+                                             this);
+	gripper_closed_sub_ = gazebonode->Subscribe(config->get_string("/gazsim/topics/gripper-closed"),
+	                                            &GazsimGripperThread::on_gripper_closed_msg,
+	                                            this);
 
 	//-- initialize publisher objects
 	tf_add_publisher(cfg_gripper_dyn_x_frame_id_.c_str());
@@ -98,15 +105,14 @@ GazsimGripperThread::init()
 	tf_add_publisher(cfg_gripper_dyn_z_frame_id_.c_str());
 	dyn_z_pub = tf_publishers[cfg_gripper_dyn_z_frame_id_];
 
-	set_gripper_pub_ = gazebonode->Advertise<msgs::Int>(config->get_string("/gazsim/topics/gripper"));
-	set_conveyor_pub_ =
-	  gazebonode->Advertise<msgs::Int>(config->get_string("/gazsim/topics/conveyor"));
+	set_gripper_pub_ = gazebonode->Advertise<gazsim_msgs::GripperCommand>(
+	  config->get_string("/gazsim/topics/set-gripper"));
 
 	//open ArduinoInterface for writing
 	arduino_if_ = blackboard->open_for_writing<ArduinoInterface>(arduino_if_name_.c_str());
 	arduino_if_->set_x_position(0);
-	arduino_if_->set_y_position(arduino_if_->y_max() / 2.);
 	arduino_if_->set_y_position(0);
+	arduino_if_->set_z_position(0);
 	arduino_if_->set_x_max(cfg_x_max_);
 	arduino_if_->set_y_max(cfg_y_max_);
 	arduino_if_->set_z_max(cfg_z_max_);
@@ -126,26 +132,12 @@ GazsimGripperThread::loop()
 	while (!arduino_if_->msgq_empty()) {
 		if (arduino_if_->msgq_first_is<ArduinoInterface::MoveXYZAbsMessage>()) {
 			ArduinoInterface::MoveXYZAbsMessage *msg = arduino_if_->msgq_first(msg);
-			arduino_if_->set_x_position(msg->x());
-			arduino_if_->set_y_position(msg->y());
-			arduino_if_->set_z_position(msg->z());
+			send_move_msg(msg->x(), msg->y(), msg->z());
 		} else if (arduino_if_->msgq_first_is<ArduinoInterface::MoveXYZRelMessage>()) {
 			ArduinoInterface::MoveXYZRelMessage *msg = arduino_if_->msgq_first(msg);
-			arduino_if_->set_x_position(arduino_if_->x_position() + msg->x());
-			arduino_if_->set_y_position(arduino_if_->y_position() + msg->y());
-			arduino_if_->set_z_position(arduino_if_->z_position() + msg->z());
-
-			//msgs::Int s;
-			//s.set_data(arduino_if_->z_position() + msg->z());
-			//set_conveyor_pub_->Publish(s);
-			//    } else if (
-			//    arduino_if_->msgq_first_is<ArduinoInterface::MoveUpwardsMessage>() )
-			//    {
-			//      ArduinoInterface::MoveUpwardsMessage *msg =
-			//      arduino_if_->msgq_first(msg); arduino_if_->set_z_position(
-			//      arduino_if_->z_position() - msg->num_mm() ); msgs::Int s;
-			//      s.set_data( - msg->num_mm() );
-			//      set_conveyor_pub_->Publish( s );
+			send_move_msg(arduino_if_->x_position() + msg->x(),
+			              arduino_if_->y_position() + msg->y(),
+			              arduino_if_->z_position() + msg->z());
 		} else if (arduino_if_->msgq_first_is<ArduinoInterface::MoveGripperAbsMessage>()) {
 			logger->log_warn(name(),
 			                 "%s is not implemented in the simulation.",
@@ -159,9 +151,7 @@ GazsimGripperThread::loop()
 			                 "%s is not implemented in the simulation.",
 			                 arduino_if_->msgq_first()->type());
 		} else if (arduino_if_->msgq_first_is<ArduinoInterface::CalibrateMessage>()) {
-			arduino_if_->set_x_position(0);
-			arduino_if_->set_y_position(0);
-			arduino_if_->set_z_position(0);
+			send_move_msg(0, 0, 0);
 		} else if (arduino_if_->msgq_first_is<ArduinoInterface::CloseGripperMessage>()) {
 			send_gripper_msg(0);
 		} else if (arduino_if_->msgq_first_is<ArduinoInterface::OpenGripperMessage>()) {
@@ -174,20 +164,67 @@ GazsimGripperThread::loop()
 			logger->log_warn(name(), "Unknown Arduino message received");
 		}
 		arduino_if_->msgq_pop();
-		arduino_if_->write();
 	}
+	update_transfrom();
+}
 
+void
+GazsimGripperThread::send_gripper_msg(int value)
+{
+	// send message to gazebo
+	// 0 means close and 1 open
+	gazsim_msgs::GripperCommand msg;
+	msg.set_command(value);
+	set_gripper_pub_->Publish(msg);
+}
+
+void
+GazsimGripperThread::send_move_msg(float x, float y, float z)
+{
+	// send message to gazebo
+	// 2 means move
+	gazsim_msgs::GripperCommand msg;
+	msg.set_command(2);
+	// position is relative to gripper_home frame
+	msg.set_x(x);
+	msg.set_y(y);
+	msg.set_z(z);
+	set_gripper_pub_->Publish(msg);
+}
+
+void
+GazsimGripperThread::on_gripper_pose_msg(ConstPosePtr &msg)
+{
+	arduino_if_->set_x_position(msg->position().x());
+	arduino_if_->set_y_position(msg->position().y());
+	arduino_if_->set_z_position(msg->position().z());
+	arduino_if_->write();
+}
+
+void
+GazsimGripperThread::on_gripper_final_msg(ConstIntPtr &msg)
+{
+	arduino_if_->set_final(msg->data());
+	arduino_if_->write();
+}
+
+void
+GazsimGripperThread::on_gripper_closed_msg(ConstIntPtr &msg)
+{
+	arduino_if_->set_gripper_closed(msg->data());
+	arduino_if_->write();
+}
+
+void
+GazsimGripperThread::update_transfrom()
+{
 	boost::mutex::scoped_lock lock(data_mutex_);
 	fawkes::Time              now(clock);
 
 	tf::Quaternion q(0.0, 0.0, 0.0);
-
-	tf::Vector3 v_x(cur_x_, 0.0, 0.0);
-
-	//tf::Vector3 v_y(0.0, (cur_y_ - cfg_y_max_ / 2.), 0.0);
-	tf::Vector3 v_y(0.0, cur_y_, 0.0);
-
-	tf::Vector3 v_z(0.0, 0.0, cur_z_);
+	tf::Vector3    v_x(arduino_if_->x_position(), 0.0, 0.0);
+	tf::Vector3    v_y(0.0, arduino_if_->y_position(), 0.0);
+	tf::Vector3    v_z(0.0, 0.0, arduino_if_->z_position());
 
 	tf::Transform tf_pose_gripper_x(q, v_x);
 	tf::Transform tf_pose_gripper_y(q, v_y);
@@ -208,14 +245,4 @@ GazsimGripperThread::loop()
 	dyn_x_pub->send_transform(stamped_transform_x);
 	dyn_y_pub->send_transform(stamped_transform_y);
 	dyn_z_pub->send_transform(stamped_transform_z);
-}
-
-void
-GazsimGripperThread::send_gripper_msg(int value)
-{
-	// send message to gazebo
-	// 0 means close and 1 open
-	msgs::Int msg;
-	msg.set_data(value);
-	set_gripper_pub_->Publish(msg);
 }
