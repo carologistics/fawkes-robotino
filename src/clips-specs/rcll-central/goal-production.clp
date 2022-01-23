@@ -229,10 +229,11 @@
 			)
 			(printout t "Contains UNKNOWN_ROBOT" ?new-param-values crlf)
 			(printout t "goal: " ?g:goal-action crlf)
-			(modify ?g (param-values ?new-param-values) (params ?new-params) (precondition nil))
+			(modify ?g (param-values ?new-param-values) (params ?new-params))
 			;(modify ?g (precondition nil))
 		)
 	)
+	(domain-retract-goal-grounding)
 
 	(modify ?longest-waiting)
 )
@@ -283,7 +284,7 @@
 				(printout t "REMOVED ROBOT" ?new-param-values crlf)
 				(printout t "REMOVED ROBOT" ?new-params crlf)
 				(printout t "goal: " ?g:goal-action crlf)
-				(modify ?g (param-values ?new-param-values) (params ?new-params) (precondition nil))
+				(modify ?g (param-values ?new-param-values) (params ?new-params))
 			)
 		)
 		(do-for-fact ((?waiting wm-fact))
@@ -292,6 +293,7 @@
 			(retract ?waiting)
 		)
 	)
+	(domain-retract-goal-grounding)
 	; cleaning goal dependencies by flushing grounded-with for formulated goals
 	(delayed-do-for-all-facts ((?da dependency-assignment) (?g goal))
 		(and (eq ?da:goal-id ?g:id) (neq ?da:grounded-with nil) (eq ?g:mode FORMULATED))
@@ -397,6 +399,8 @@
 	            (params target-mps ?mps
 	                    cap-color ?cap-color
 	            )
+							(param-names target-mps cap-color)
+							(param-values ?mps ?cap-color)
 	            (is-executable FALSE)
 							(precondition ?precon&~nil)
 							)
