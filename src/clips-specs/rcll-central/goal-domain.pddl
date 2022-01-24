@@ -237,16 +237,16 @@
 )
 
 (:action goal-discard
-	:parameters (?wp - workpiece ?wp-loc - mps ?wp-side - mps-side)
+	:parameters (?wp - workpiece ?wp-loc - mps ?wp-side - mps-side ?robot - robot)
 	:precondition (and (or (mps-type ?wp-loc CS)
 												 (mps-type ?wp-loc BS)
 												 (mps-type ?wp-loc DS)
 												 (mps-type ?wp-loc RS)
 												 (mps-type ?wp-loc SS))
 										 ;(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
-										 ;(or (and (can-hold ?robot)
-									 	 ;         (wp-at ?wp ?wp-loc ?wp-side))
-									 	 ;    (holding ?robot ?wp))
+										 (or (and (can-hold ?robot)
+									 	          (wp-at ?wp ?wp-loc ?wp-side))
+									 	    (holding ?robot ?wp))
 							  )
 	:effect (mps-type ?wp-loc CS)
 )
@@ -269,6 +269,22 @@
 	:precondition (and (mps-type ?target-mps DS)
 										 (mps-state ?target-mps IDLE)
 										 (wp-at ?wp ?target-mps INPUT)
+							  )
+	:effect (mps-state ?target-mps READY-AT-OUTPUT)
+)
+
+(:action goal-deliver-rc21
+	:parameters (?wp - workpiece ?target-mps - mps)
+	:precondition (and (mps-type ?target-mps DS)
+										 (mps-state ?target-mps IDLE)
+										 (wp-at ?wp ?target-mps INPUT)
+
+										 ;(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
+										 ;(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
+
+										 ;(or (can-hold ?robot)
+										 ;	 (holding ?robot ?wp)
+										 ;)
 							  )
 	:effect (mps-state ?target-mps READY-AT-OUTPUT)
 )

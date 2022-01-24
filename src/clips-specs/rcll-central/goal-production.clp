@@ -565,7 +565,7 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class DISCARD)
 	                          (mode FORMULATED)
-	                          (params wp ?wp&~UNKNOWN wp-loc ?wp-loc wp-side ?wp-side)
+	                          (params wp ?wp&~UNKNOWN wp-loc ?wp-loc wp-side ?wp-side robot ?rob)
 	                          (is-executable FALSE)
 														(precondition ?precon&~nil)
 														)
@@ -583,9 +583,10 @@
 	         (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side)))
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
 	(domain-fact (name zone-content) (param-values ?zz ?wp-loc))
-	;(IAMNOTEXECUTABLE)
+	(IAMNOTEXECUTABLE)
 	=>
 	(printout t "Goal DISCARD executable for " ?robot crlf)
+	(printout t "My name is Rob:" ?rob crlf)
 	(modify ?g (is-executable TRUE))
 )
 
@@ -893,6 +894,7 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key domain fact wp-at args? wp ?cc m ?mps side INPUT))
 	(wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
 	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side OUTPUT)))
+	(IAMNOTEXECUTABLE)
 	=>
 	(printout t "Goal INSTRUCT-CS-BUFFER-CAP executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -922,6 +924,7 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
 	(wm-fact (key wp meta next-step args? wp ?wp) (value CAP))
 	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side OUTPUT)))
+	(IAMNOTEXECUTABLE)
 	=>
 	(printout t "Goal INSTRUCT-CS-MOUNT-CAP executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -955,6 +958,7 @@ The workpiece remains in the output of the used ring station after
 	(grounded-pddl-formula (formula-id ?formula-id) (grounding ?precondition-id) (is-satisfied FALSE))
 	(pddl-formula (id ?formula-id) (part-of wp-get))
 	(not (goal (class INSTRUCT-BS-DISPENSE-BASE) (mode SELECTED|DISPATCHED|COMMITTED|EXPANDED)))
+	(IAMNOTEXECUTABLE)
 	=>
 	(printout t "Goal INSTRUCT-BS-DISPENSE executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -1103,14 +1107,14 @@ The workpiece remains in the output of the used ring station after
 )
 
 (deffunction goal-production-assert-discard
-	(?wp ?cs ?side ?order-id)
+	(?wp ?cs ?side ?order-id ?rob)
 
 	(bind ?goal (assert (goal (class DISCARD)
 	      (id (sym-cat DISCARD- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE)
-	      (params wp ?wp wp-loc ?cs wp-side ?side)
-				(param-names wp wp-loc wp-side)
-				(param-values ?wp ?cs ?side)
+	      (params wp ?wp wp-loc ?cs wp-side ?side robot ?rob)
+				(param-names wp wp-loc wp-side robot)
+				(param-values ?wp ?cs ?side ?rob)
 				(goal-action goal-discard)
 	)))
 	(goal-meta-assert ?goal nil ?order-id nil)
@@ -1361,7 +1365,7 @@ The workpiece remains in the output of the used ring station after
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
 				(goal-production-assert-buffer-cap ?cs ?cap-col ?order-id)
 				(goal-production-assert-instruct-cs-buffer-cap ?cs ?cap-col ?order-id)
-				(goal-production-assert-discard UNKNOWN ?cs OUTPUT ?order-id)
+				(goal-production-assert-discard UNKNOWN ?cs OUTPUT ?order-id ?rob)
 			)
 		)
 		(goal-tree-assert-central-run-parallel MOUNT-GOALS
@@ -1654,12 +1658,12 @@ The workpiece remains in the output of the used ring station after
 (defrule goal-production-fill-in-unknown-wp-discard
 	"Fill in missing workpiece information into the discard goals"
 	?g <- (goal (id ?goal-id) (class DISCARD) (mode FORMULATED) (parent ?parent)
-	            (params wp UNKNOWN wp-loc ?mps wp-side ?mps-side))
+	            (params wp UNKNOWN wp-loc ?mps wp-side ?mps-side robot ?rob))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?mps-side))
 	(not (wm-fact (key order meta wp-for-order args? wp ?wp $?)))
 	(goal (parent ?parent) (class INSTRUCT-CS-BUFFER-CAP) (mode DISPATCHED|FINISHED|RETRACTED))
 	=>
-	(modify ?g (params wp ?wp wp-loc ?mps wp-side ?mps-side))
+	(modify ?g (params wp ?wp wp-loc ?mps wp-side ?mps-side robot ?rob) (param-values ?wp ?mps ?mps-side ?rob))
 )
 
 (defrule goal-production-assert-wait-nothing-executable

@@ -271,7 +271,7 @@
 " Pick up a product and discard it."
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class DISCARD) (mode SELECTED) (parent ?parent)
-	            (params wp ?wp wp-loc ?wp-loc wp-side ?wp-side))
+	            (params wp ?wp wp-loc ?wp-loc wp-side ?wp-side robot ?rob))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
