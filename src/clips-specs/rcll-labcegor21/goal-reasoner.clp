@@ -131,7 +131,10 @@
   "Select all executable simple goals in order to propagate selection."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ?g <- (goal (type ACHIEVE) (sub-type SIMPLE)
-      (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
+              (id ?goal-id) (parent ?parent-id)
+              (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
+  ; We must not select children of RUN-ENDLESS.
+  (not (goal (id ?parent-id) (sub-type RUN-ENDLESS)))
 
   (wm-fact (key central agent robot-waiting args? r ?robot))
 
