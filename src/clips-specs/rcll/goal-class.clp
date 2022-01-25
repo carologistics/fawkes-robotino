@@ -22,99 +22,127 @@
 
 ; ------------------------- ASSERT GOAL CLASSES -----------------------------------
 
-; MPS INTERACTION GOALS ARE KEPT AT OLD STATE FORE NOW
-
 
 ; CLEANUP GOALS
 
-(defrule goal-class-create-clear-rs-from-expired-product
-    "Assert a goal class for CLEAR-MPS goals that holds the precondition for formulation
-    in case an expired product blocks a RS."
-    (not (goal-class (class CLEAR-MPS) (id CLEAR-MPS-RS) (sub-type SIMPLE)))
-    (wm-fact (key domain fact self args? r ?robot))
-    (wm-fact (key refbox team-color) (value ?team-color))
-    (wm-fact (key domain fact order-complexity args? ord ?order $?))
-    =>
-    (assert
-        (goal-class (class CLEAR-MPS)
-                    (id (sym-cat CLEAR-MPS-RS - ?order))
-                    (type ACHIEVE)
-                    (sub-type SIMPLE)
-                    (meta order ?order)
-                    (param-names     team-color  robot  rs  wp          side   order)
-                    (param-constants ?team-color ?robot nil nil         OUTPUT ?order)
-                    (param-types     team-color  robot  rs  workpiece mps-side order)
-                    (param-quantified)
-                    (lookahead-time 0)
-                    (preconditions "
-                        (and
-                            (can-hold ?robot)
-                            (not (mps-state ?rs BROKEN))
-                            (wp-at ?wp ?rs OUTPUT)
-                            (wp-cap-color ?wp CAP_NONE)
-                            (wp-for-order ?wp ?order)
-                            (order-out-of-delivery ?order)
-                        )
-                    ")
-                    (effects "")
-        )
-    )
-)
+; (defrule goal-class-create-discard-rs-from-expired-product
+;     "Assert a goal class for GET-AND-DISCARD and FILL-RS goals that holds the precondition for formulation
+;     in case an expired product blocks a RS."
+;     (wm-fact (key domain fact self args? r ?robot))
+;     (wm-fact (key refbox team-color) (value ?team-color))
+;     (wm-fact (key domain fact order-complexity args? ord ?order $?))
+;     (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
+;     (wm-fact (key domain fact mps-type args? m ?rs t RS))
+;     (not (goal-class (class FILL-RS)
+;                      (id ?goal-id&:(eq ?goal-id (sym-cat FILL-RS- ?rs - ?order)))
+;                      (meta order ?order target-rs ?rs)
+;                      (sub-type SIMPLE)))
+;     =>
+;     (assert
+;         (goal-class (class GET-AND-DISCARD)
+;                     (id (sym-cat GET-AND-DISCARD-RS - ?order))
+;                     (type ACHIEVE)
+;                     (sub-type SIMPLE)
+;                     (meta order ?order)
+;                     (param-names     team-color  robot  rs  wp          side   order)
+;                     (param-constants ?team-color ?robot nil nil         OUTPUT ?order)
+;                     (param-types     team-color  robot  rs  workpiece mps-side order)
+;                     (param-quantified)
+;                     (lookahead-time 8)
+;                     (preconditions "
+;                         (and
+;                             (can-hold ?robot)
+;                             (not (mps-state ?rs BROKEN))
+;                             (wp-at ?wp ?rs OUTPUT)
+;                             (wp-cap-color ?wp CAP_NONE)
+;                             (wp-for-order ?wp ?order)
+;                             (not (payments-needed))
+;                             (order-out-of-delivery ?order)
+;                         )
+;                     ")
+;                     (effects "")
+;         )
+;     )
+;     (assert
+;         (goal-class (class GET-AND-FILL-RS)
+;                     (id (sym-cat FILL-RS- ?rs - ?order))
+;                     (type ACHIEVE)
+;                     (sub-type SIMPLE)
+;                     (meta order ?order target-rs ?rs)
+;                     (param-names     team-color  robot  rs  wp          side   target-rs order)
+;                     (param-constants ?team-color ?robot nil nil         OUTPUT ?rs       ?order)
+;                     (param-types     team-color  robot  rs  workpiece mps-side rs        order)
+;                     (param-quantified)
+;                     (lookahead-time 0)
+;                     (preconditions "
+;                         (and
+;                             (can-hold ?robot)
+;                             (not (mps-state ?rs BROKEN))
+;                             (wp-at ?wp ?rs OUTPUT)
+;                             (wp-cap-color ?wp CAP_NONE)
+;                             (wp-for-order ?wp ?order)
+;                             (order-out-of-delivery ?order)
+;                             (not (mps-state ?target-rs BROKEN))
+;                             (rs-needs-payment ?target-rs)
+;                         )
+;                     ")
+;                     (effects "")
+;         )
+;     )
+; )
 
 (defrule goal-class-create-clear-cs-from-capless-carrier
-    "Assert a goal class for CLEAR-MPS goals that holds the precondition for formulation
+    "Assert a goal class for GET-AND-DISCARD and FILL-RS goals that holds the precondition for formulation
     in case a CC blocks a CS."
-    (not (goal-class (class CLEAR-MPS) (id CLEAR-MPS-CS-CC) (sub-type SIMPLE)))
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
+    (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
+    (wm-fact (key domain fact mps-type args? m ?rs t RS))
+    (not (goal-class (class FILL-RS) (sub-type SIMPLE)
+                     (id ?goal-id&:(eq ?goal-id (sym-cat FILL-RS-CS-CC- ?rs)))
+         )
+    )
     =>
     (assert
-        (goal-class (class CLEAR-MPS)
-                    (id CLEAR-MPS-CS-CC)
+        (goal-class (class GET-AND-DISCARD)
+                    (id GET-AND-DISCARD-CS-CC)
                     (type ACHIEVE)
                     (sub-type SIMPLE)
                     (param-names     team-color  robot  cs  cc          side)
                     (param-constants ?team-color ?robot nil nil         OUTPUT)
                     (param-types     team-color  robot  cs  cap-carrier mps-side)
                     (param-quantified)
-                    (lookahead-time 0)
+                    (lookahead-time 60);8)
                     (preconditions "
                         (and
                             (can-hold ?robot)
                             (not (mps-state ?cs BROKEN))
                             (wp-at ?cc ?cs OUTPUT)
                             (wp-cap-color ?cc CAP_NONE)
+                            (not (payments-needed))
                         )
                     ")
                     (effects "")
         )
     )
-)
-
-(defrule goal-class-create-clear-cs-from-finished-product
-    "Assert a goal class for CLEAR-MPS goals that holds the precondition for formulation
-    in case a finished product blocks a CS."
-    (not (goal-class (class CLEAR-MPS) (id CLEAR-MPS-CS-WP) (sub-type SIMPLE)))
-    (wm-fact (key domain fact self args? r ?robot))
-    (wm-fact (key refbox team-color) (value ?team-color))
-    =>
     (assert
-        (goal-class (class CLEAR-MPS)
-                    (id CLEAR-MPS-CS-WP)
+        (goal-class (class GET-AND-FILL-RS)
+                    (id (sym-cat FILL-RS-CS-CC- ?rs))
                     (type ACHIEVE)
                     (sub-type SIMPLE)
-                    (param-names     team-color  robot  cs  wp        side)
-                    (param-constants ?team-color ?robot nil nil       OUTPUT)
-                    (param-types     team-color  robot  cs  workpiece mps-side)
+                    (param-names     team-color  robot  cs  cc          side    target-rs)
+                    (param-constants ?team-color ?robot nil nil         OUTPUT   ?rs)
+                    (param-types     team-color  robot  cs  cap-carrier mps-side rs)
                     (param-quantified)
-                    (lookahead-time 0)
+                    (lookahead-time 60);8)
                     (preconditions "
                         (and
                             (can-hold ?robot)
-                            (not (mps-side-free ?cs INPUT))
                             (not (mps-state ?cs BROKEN))
-                            (wp-at ?wp ?cs OUTPUT)
-                            (not (wp-cap-color ?wp CAP_NONE))
+                            (wp-at ?cc ?cs OUTPUT)
+                            (wp-cap-color ?cc CAP_NONE)
+                            (not (mps-state ?target-rs BROKEN))
+                            (rs-needs-payment ?target-rs)
                         )
                     ")
                     (effects "")
@@ -123,20 +151,47 @@
 )
 
 (defrule goal-class-create-clear-bs
-    "Assert a goal class for CLEAR-MPS goals that holds the precondition for formulation
+    "Assert a goal class for GET-AND-DISCARD and FILL-RS goals that holds the precondition for formulation
     of potential BS clear goals."
-    (not (goal-class (class CLEAR-MPS) (id CLEAR-MPS-BS) (sub-type SIMPLE)))
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
+    (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
+    (wm-fact (key domain fact mps-type args? m ?rs t RS))
+    (not (goal-class (class FILL-RS) (sub-type SIMPLE)
+                     (id ?goal-id&:(eq ?goal-id (sym-cat FILL-RS-CS-CC- ?rs)))
+         )
+    )
     =>
     (assert
-        (goal-class (class CLEAR-MPS)
-                    (id CLEAR-MPS-BS)
+        (goal-class (class GET-AND-DISCARD)
+                    (id GET-AND-DISCARD-BS)
                     (type ACHIEVE)
                     (sub-type SIMPLE)
                     (param-names     team-color  robot  bs  wp        side)
                     (param-constants ?team-color ?robot nil nil       nil)
                     (param-types     team-color  robot  bs  workpiece mps-side)
+                    (param-quantified)
+                    (lookahead-time 8)
+                    (preconditions "
+                        (and
+                            (can-hold ?robot)
+                            (mps-team ?bs ?team-color)
+                            (not (mps-state ?bs BROKEN))
+                            (wp-at ?wp ?bs ?side)
+                            (not (payments-needed))
+                        )
+                    ")
+                    (effects "")
+        )
+    )
+    (assert
+        (goal-class (class GET-AND-FILL-RS)
+                    (id (sym-cat FILL-RS-BS- ?rs))
+                    (type ACHIEVE)
+                    (sub-type SIMPLE)
+                    (param-names     team-color  robot  bs  wp        side     target-rs)
+                    (param-constants ?team-color ?robot nil nil       nil      ?rs)
+                    (param-types     team-color  robot  bs  workpiece mps-side rs)
                     (param-quantified)
                     (lookahead-time 0)
                     (preconditions "
@@ -145,6 +200,8 @@
                             (mps-team ?bs ?team-color)
                             (not (mps-state ?bs BROKEN))
                             (wp-at ?wp ?bs ?side)
+                            (not (mps-state ?target-rs BROKEN))
+                            (rs-needs-payment ?target-rs)
                         )
                     ")
                     (effects "")
@@ -157,11 +214,11 @@
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
 
-    (not (goal-class (class DISCARD-UNKNOWN) (id DISCARD-UNKNOWN-WP)))
+    (not (goal-class (class DISCARD) (id DISCARD-WP)))
     =>
     (assert
-        (goal-class (class DISCARD-UNKNOWN)
-                    (id DISCARD-UNKNOWN-WP)
+        (goal-class (class DISCARD)
+                    (id DISCARD-WP)
                     (type ACHIEVE)
                     (sub-type SIMPLE)
                     (param-names     robot  wp        rs)
@@ -194,11 +251,11 @@
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
 
-    (not (goal-class (class DISCARD-UNKNOWN) (id DISCARD-UNKNOWN-CC)))
+    (not (goal-class (class DISCARD) (id DISCARD-CC)))
     =>
     (assert
-        (goal-class (class DISCARD-UNKNOWN)
-                    (id DISCARD-UNKNOWN-CC)
+        (goal-class (class DISCARD)
+                    (id DISCARD-CC)
                     (type ACHIEVE)
                     (sub-type SIMPLE)
                     (param-names     robot  wp        rs)
@@ -229,33 +286,30 @@
 
 
 ; PRODUCTION MAINTENANCE GOALS
-
 (defrule goal-class-create-get-from-bs-for-rs
     "Create a goal-class for getting WPs from the BS to fill an RS with."
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
 
-    (not (goal-class (class GET-BASE-TO-FILL-RS)))
+    (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
+    (wm-fact (key domain fact mps-type args? m ?rs t RS))
+    (not (goal-class (class GET-BASE-AND-FILL-RS) (id ?id&:(eq ?id (sym-cat GET-BASE-AND-FILL-RS- ?rs)))))
     =>
     (assert
-        (goal-class (class GET-BASE-TO-FILL-RS)
-                    (id GET-BASE-TO-FILL-RS)
+        (goal-class (class GET-BASE-AND-FILL-RS)
+                    (id (sym-cat GET-BASE-AND-FILL-RS- ?rs))
                     (type ACHIEVE)
                     (sub-type SIMPLE)
                     (param-names     robot  wp        rs  bs  side)
-                    (param-constants ?robot nil       nil nil nil)
+                    (param-constants ?robot nil       ?rs nil nil)
                     (param-types     robot  workpiece rs  bs  mps-side)
                     (param-quantified )
-                    (lookahead-time 0)
+                    (lookahead-time 16)
                     (preconditions "
                         (and
                             (can-hold ?robot)
                             (wp-spawned-for ?wp ?robot)
-                            (or
-                                (rs-filled-with ?rs ZERO)
-                                (rs-filled-with ?rs ONE)
-                                (rs-filled-with ?rs TWO)
-                            )
+                            (rs-needs-payment ?rs)
                             (not (mps-state ?bs BROKEN))
                             (not (mps-state ?bs DOWN))
                             (mps-has-side ?bs ?side)
@@ -265,38 +319,38 @@
     )
 )
 
-(defrule goal-class-create-get-from-shelf-for-rs
+(defrule goal-class-create-get-from-shelf-and-fill-rs
     "Create a goal-class for getting CCs from the shelf to fill an RS with."
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key refbox team-color) (value ?team-color))
 
-    (not (goal-class (class GET-SHELF-TO-FILL-RS)))
+    (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
+    (wm-fact (key domain fact mps-type args? m ?rs t RS))
+    (not (goal-class (class GET-SHELF-AND-FILL-RS) (id ?id&:(eq ?id (sym-cat GET-SHELF-AND-FILL-RS- ?rs)))))
     =>
     (assert
-        (goal-class (class GET-SHELF-TO-FILL-RS)
-                    (id GET-SHELF-TO-FILL-RS)
+        (goal-class (class GET-SHELF-AND-FILL-RS)
+                    (id GET-SHELF-AND-FILL-RS)
                     (type ACHIEVE)
                     (sub-type SIMPLE)
                     (param-names     robot  rs  cc          cs  spot)
-                    (param-constants ?robot nil nil         nil nil)
+                    (param-constants ?robot ?rs nil         nil nil)
                     (param-types     robot  rs  cap-carrier cs  shelf-spot)
                     (param-quantified )
-                    (lookahead-time 0)
+                    (lookahead-time 10)
                     (preconditions "
                         (and
                             (can-hold ?robot)
                             (not (mps-state ?rs BROKEN))
-                            (or
-                                (rs-filled-with ?rs ZERO)
-                                (rs-filled-with ?rs ONE)
-                                (rs-filled-with ?rs TWO)
-                            )
+                            (payments-needed)
                             (wp-on-shelf ?cc ?cs ?spot)
                         )
                     ")
         )
     )
 )
+
+
 
 (defrule goal-class-create-fill-rs
     "Create a goal-class for an RS to formulate FILL-RS goals to fill it with WPs."
@@ -313,23 +367,18 @@
                     (meta rs ?rs cc FALSE)
                     (type ACHIEVE)
                     (sub-type SIMPLE)
-                    (param-names     wp        robot  rs  filled)
-                    (param-constants nil       ?robot ?rs nil)
-                    (param-types     workpiece robot  rs  ring-num)
+                    (param-names     wp        robot  rs)
+                    (param-constants nil       ?robot ?rs)
+                    (param-types     workpiece robot  rs)
                     (param-quantified )
-                    (lookahead-time 0)
+                    (lookahead-time 10)
                     (preconditions "
                         (and
                             (wp-usable ?wp)
                             (holding ?robot ?wp)
                             (not (wp-has-order ?wp))
                             (not (mps-state ?rs BROKEN))
-                            (rs-filled-with ?rs ?filled)
-                            (or
-                                (rs-filled-with ?rs ZERO)
-                                (rs-filled-with ?rs ONE)
-                                (rs-filled-with ?rs TWO)
-                            )
+                            (rs-needs-payment ?rs)
                         )
                     ")
         )
@@ -355,7 +404,7 @@
                     (param-constants nil       ?robot ?rs nil)
                     (param-types     cap-carrier robot  rs  ring-num)
                     (param-quantified )
-                    (lookahead-time 0)
+                    (lookahead-time 10)
                     (preconditions "
                         (and
                             (wp-usable ?wp)
@@ -391,7 +440,7 @@
                     (param-constants ?robot ?cs nil         nil        ?cap-color)
                     (param-types     robot  cs  cap-carrier shelf-spot cap-color)
                     (param-quantified )
-                    (lookahead-time 0)
+                    (lookahead-time 60)
                     (preconditions "
                         (and
                             (can-hold ?robot)
@@ -421,6 +470,8 @@
     (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
     (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring1-color rn ?bases-needed))
     (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?other-color rn ?other-bases))
+    (wm-fact (key domain fact mps-type args? m ?rs t RS))
+    (wm-fact (key domain fact mps-type args? m ?other-rs&:(neq ?rs ?other-rs) t RS))
 
     (test (not (eq ?ring1-color ?other-color)))
     (test (not (eq ?ring1-color RING_NONE)))
@@ -435,16 +486,21 @@
                     (meta order ?order)
                     (type ACHIEVE)
                     (sub-type SIMPLE)
-                    (param-names     rs  bases-needed  other-color  ring1-color  bs  wp        side     order  robot  base-color)
-                    (param-constants ?rs ?bases-needed ?other-color ?ring1-color nil nil       nil      ?order ?robot ?base-color)
-                    (param-types     rs  ring-num      ring-color   ring-color   bs  workpiece mps-side order  robot  base-color)
+                    (param-names     rs  other-rs  bases-needed  other-color  ring1-color  bs  wp        side     order  robot  base-color)
+                    (param-constants ?rs ?other-rs ?bases-needed ?other-color ?ring1-color nil nil       nil      ?order ?robot ?base-color)
+                    (param-types     rs  rs        ring-num      ring-color   ring-color   bs  workpiece mps-side order  robot  base-color)
                     (param-quantified )
-                    (lookahead-time 0)
+                    (lookahead-time 60);16)
                     (preconditions "
                         (and
                             (not (mps-state ?rs BROKEN))
                             (rs-paid-for ?rs ?bases-needed)
                             (mps-side-free ?rs INPUT)
+                            (or
+                                (mps-side-free ?rs OUTPUT)
+                                (mps-side-free ?other-rs INPUT)
+                                (mps-side-free ?other-rs OUTPUT)
+                            )
                             (not
                                 (or
                                     (rs-prepared-color ?rs ?other-color)
@@ -510,7 +566,7 @@
                     (param-constants ?order ?robot nil       ?base-color ?ring1-color ?ring2-color ?ring3-color ?other-color ?rs ?prev-rs ?bases-needed)
                     (param-types     order  robot  workpiece base-color  ring-color   ring-color   ring-color   ring-color   rs  rs       ring-num)
                     (param-quantified )
-                    (lookahead-time 0)
+                    (lookahead-time 60);10)
                     (preconditions "
                         (and
                             (order-producible ?order)
@@ -582,7 +638,7 @@
                     (param-constants ?order ?robot nil       ?base-color ?ring1-color ?ring2-color ?ring3-color ?other-color ?rs ?prev-rs ?bases-needed)
                     (param-types     order  robot  workpiece base-color  ring-color   ring-color   ring-color   ring-color   rs  rs       ring-num)
                     (param-quantified )
-                    (lookahead-time 0)
+                    (lookahead-time 60);10)
                     (preconditions "
                         (and
                             (order-producible ?order)
@@ -646,7 +702,7 @@
                     (param-constants ?team-color ?robot nil nil nil       ?base-color ?ring1-color ?ring2-color ?ring3-color ?cap-color ?order ?comp                  ?gate)
                     (param-types     team-color  robot  ds  fs  workpiece base-color  ring-color   ring-color   ring-color   cap-color  order  order-complexity-value ds-gate)
                     (param-quantified )
-                    (lookahead-time 0)
+                    (lookahead-time 50);12)
                     (preconditions "
                         (and
                             ;mps CEs
@@ -703,7 +759,7 @@
                     (param-constants ?team-color ?robot ?cs nil       ?cap-color nil nil      ?order ?base-color)
                     (param-types     team-color  robot  cs  workpiece cap-color  bs  mps-side order  base-color)
                     (param-quantified)
-                    (lookahead-time 0)
+                    (lookahead-time 16)
                     (preconditions "
                         (and
                             ;cs CEs
@@ -780,7 +836,7 @@
                     (param-constants ?team-color ?robot ?cs ?order ?base-color ?ring1-color ?ring2-color ?ring3-color ?cap-color nil       ?rs)
                     (param-types     team-color  robot  cs  order  base-color  ring-color   ring-color   ring-color   cap-color  workpiece rs)
                     (param-quantified)
-                    (lookahead-time 0)
+                    (lookahead-time 12)
                     (preconditions "
                         (and
                             ;cs CEs
@@ -814,30 +870,141 @@
 
 ; ------------------------- ASSERT GOALS -----------------------------------
 
-; MPS INTERACTION GOALS - KEPT AT OLD STATE FOR NOW
+; HELPER FUNCTIONS
+(deffunction robot-holds-wp (?robot ?wp)
+    (return (any-factp ((?p domain-fact)) (and (eq ?p:name holding)
+                                               (member$ ?robot ?p:param-values)
+                                               (member$ ?wp ?p:param-values)))
+    )
+)
 
+(deffunction output-side-free (?mps)
+    (return (any-factp ((?p domain-fact)) (and (eq ?p:name mps-side-free)
+                                               (member$ ?mps ?p:param-values)
+                                               (member$ OUTPUT ?p:param-values)))
+    )
+)
 
 ; CLEANUP GOALS
 
-(defrule goal-class-assert-goal-clear-mps
-    "If the precondition of a goal-class for a CLEAR-MPS type is fulfilled, assert
+(defrule goal-class-assert-goal-get-and-fill-rs
+    "If the precondition of a goal-class for a get-and-fill-rs type is fulfilled, assert
     the goal fact and thus formulate the goal. "
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (or
         (goal (class URGENT) (mode FORMULATED))
         (goal (class CLEAR) (mode FORMULATED))
-
     )
-    (goal-class (class ?class&CLEAR-MPS) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
+    (goal-class (class ?class&GET-AND-FILL-RS) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
-    (pddl-grounding (id ?grounding-id) (param-values ?team-color ?robot ?mps ?wp ?side))
+    (pddl-grounding (id ?grounding-id) (param-values ?team-color ?robot ?mps ?wp ?side ?target-rs $?optional-order))
+
+    (wm-fact (key domain fact mps-type args? m ?mps t ?mps-type))
+    (wm-fact (key domain fact rs-filled-with args? m ?target-rs n ?filled))
+    (wm-fact (key domain fact rs-inc args? summand ?filled sum ?after))
+    (promise-time (usecs ?game-time))
+    (test (sat-or-promised ?sat ?game-time ?from ?lt))
+    =>
+    (printout t "Goal " ?class " ("?mps") formulated from PDDL" crlf)
+
+    (bind ?parent nil)
+    (bind ?priority nil)
+
+    (if (eq ?mps-type CS)
+        then
+        (do-for-fact ((?goal goal)) (and (eq ?goal:class CLEAR) (eq ?goal:mode FORMULATED))
+            (bind ?parent ?goal:id)
+            (bind ?priority ?*PRIORITY-FILL-RS-CLEAR-CS*)
+            (if (and (any-factp ((?wm wm-fact)) (and (wm-key-prefix ?wm:key (create$ domain fact wp-at))
+                                                (eq (wm-key-arg ?wm:key m) ?mps)
+                                                (eq (wm-key-arg ?wm:key side) INPUT)))
+                     (or (eq ?cid FILL-RS-CS-CC)
+                         (eq ?cid DISCARD-CS-CC)
+                     )
+                )
+                then
+                (bind ?priority (+ 1 ?priority))
+                (printout warn "Enhance CLEAR-MPS priority, since there is a product at the input already" crlf)
+            )
+        )
+        else
+        (if (eq ?mps-type BS) then
+            (do-for-fact ((?goal goal)) (and (eq ?goal:class URGENT) (eq ?goal:mode FORMULATED))
+                (bind ?parent ?goal:id)
+                (bind ?priority ?*PRIORITY-FILL-RS-CLEAR-BS*)
+            )
+            else
+            (if (eq ?mps-type RS) then
+                (do-for-fact ((?goal goal)) (and (eq ?goal:class CLEAR) (eq ?goal:mode FORMULATED))
+                    (bind ?parent ?goal:id)
+                    (bind ?priority ?*PRIORITY-FILL-RS-CLEAR-RS*)
+                )
+            )
+        )
+    )
+
+    (bind ?goal-id (sym-cat ?class - (gensym*)))
+    (assert (goal (id ?goal-id)
+                    (class ?class) (sub-type ?subtype)
+                    (priority ?priority)
+                    (parent ?parent)
+                    (params robot ?robot
+                            mps ?target-rs
+                            wp ?wp
+                            rs-before ?filled
+                            rs-after ?after
+                    )
+                    (required-resources (sym-cat ?mps - ?side) ?target-rs ?wp)
+    ))
+
+    ;assert promises resulting from the plan-action of this goal
+    (assert
+        ;go-wait -> dc
+        ;location-lock -> dc
+        ;move -> dc
+        ;lock -> dc
+        ;wp-get
+        (domain-promise (name wp-at) (param-values ?wp ?mps ?side) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated TRUE))
+        ;(domain-promise (name mps-state) (param-values ?mps READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated TRUE))
+        ;(domain-promise (name mps-state) (param-values ?mps IDLE) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated FALSE))
+        (domain-promise (name mps-side-free) (param-values ?mps ?side) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated FALSE))
+        ;unlock -> dc
+        ;location-unlock -> dc
+        ;go-wait -> dc
+        ;location-lock -> dc
+        ;move -> dc
+        ;wp-put-slide-cc
+        (domain-promise (name wp-usable) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 69 ?game-time)) (negated TRUE))
+        (domain-promise (name rs-filled-with) (param-values ?target-rs ?filled) (promising-goal ?goal-id) (valid-at (+ 69 ?game-time)) (negated TRUE))
+        (domain-promise (name rs-filled-with) (param-values ?target-rs ?after) (promising-goal ?goal-id) (valid-at (+ 69 ?game-time)) (negated FALSE))
+        (domain-promise (name rs-paid-for) (param-values ?target-rs ?after) (promising-goal ?goal-id) (valid-at (+ 69 ?game-time)) (negated FALSE))
+        ;location-unlock -> dc
+        ;go-wait -> dc
+    )
+)
+
+(defrule goal-class-assert-goal-get-and-discard
+    "If the precondition of a goal-class for a get-and-discard type is fulfilled, assert
+    the goal fact and thus formulate the goal. "
+    (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+    (or
+        (goal (class URGENT) (mode FORMULATED))
+        (goal (class CLEAR) (mode FORMULATED))
+    )
+    (goal-class (class ?class&GET-AND-DISCARD) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
+    (pddl-formula (part-of ?cid) (id ?formula-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
+    (pddl-grounding (id ?grounding-id) (param-values ?team-color ?robot ?mps ?wp ?side $?optional-order))
 
     (wm-fact (key domain fact mps-type args? m ?mps t ?mps-type))
     (promise-time (usecs ?game-time))
     (test (sat-or-promised ?sat ?game-time ?from ?lt))
     =>
-    (printout t "Goal " CLEAR-MPS " ("?mps") formulated from PDDL" crlf)
+    (printout t "Goal " ?class " ("?mps") formulated from PDDL" crlf)
+    (if (neq ?sat TRUE) then
+        (printout t "Goal formulated from promise" crlf)
+    )
 
     (bind ?parent nil)
     (bind ?priority nil)
@@ -850,7 +1017,10 @@
             (if (and (any-factp ((?wm wm-fact)) (and (wm-key-prefix ?wm:key (create$ domain fact wp-at))
                                                 (eq (wm-key-arg ?wm:key m) ?mps)
                                                 (eq (wm-key-arg ?wm:key side) INPUT)))
-                (eq ?cid CLEAR-MPS-CS-CC))
+                     (or (eq ?cid FILL-RS-CS-CC)
+                         (eq ?cid DISCARD-CS-CC)
+                     )
+                )
                 then
                 (bind ?priority (+ 1 ?priority))
                 (printout warn "Enhance CLEAR-MPS priority, since there is a product at the input already" crlf)
@@ -878,8 +1048,8 @@
                     (priority ?priority)
                     (parent ?parent)
                     (params robot ?robot
-                            mps ?mps
                             wp ?wp
+                            mps ?mps
                             side ?side
                     )
                     (required-resources (sym-cat ?mps - ?side) ?wp)
@@ -887,26 +1057,29 @@
 
     ;assert promises resulting from the plan-action of this goal
     (assert
+        ;go-wait -> dc
+        ;move -> dc
+        ;locks -> dc
         ;wp-get
-        (domain-promise (name wp-at) (param-values ?wp ?mps ?side) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-        (domain-promise (name holding) (param-values ?robot ?wp) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name can-hold) (param-values ?robot) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-        (domain-promise (name mps-state) (param-values ?mps READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-        (domain-promise (name mps-state) (param-values ?mps IDLE) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name mps-side-free) (param-values ?mps ?side) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        ;go-wait
-        (domain-promise (name at) (param-values ?robot ?mps ?side) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-        (domain-promise (name at) (param-values ?robot ?mps (wait-pos ?mps ?side)) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
+        (domain-promise (name wp-at) (param-values ?wp ?mps ?side) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated TRUE))
+        ; (domain-promise (name mps-state) (param-values ?mps READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated TRUE))
+        ; (domain-promise (name mps-state) (param-values ?mps IDLE) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated FALSE))
+        (domain-promise (name mps-side-free) (param-values ?mps ?side) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated FALSE))
+        ;unlocks -> dc
+        ;go-wait -> dc
+        ;wp-discard
+        (domain-promise (name wp-unused) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 49 ?game-time)) (negated FALSE))
+        (domain-promise (name wp-usable) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 49 ?game-time)) (negated TRUE))
     )
 )
 
 (defrule goal-class-assert-goal-discard
-    "If the preconditions of a DISCARD-UNKNOWN goal class are satisfied, assert the goal."
+    "If the preconditions of a DISCARD goal class are satisfied, assert the goal."
     (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
     (goal (id ?parent) (class NO-PROGRESS) (mode FORMULATED))
     (goal (id ?urgent) (class URGENT) (mode FORMULATED))
 
-    (goal-class (class ?class&DISCARD-UNKNOWN) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
+    (goal-class (class ?class&DISCARD) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?robot ?wp ?rs))
@@ -917,13 +1090,17 @@
     =>
     (do-for-fact ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ monitoring safety-discard))
         (bind ?parent ?urgent)
-        (retract ?wm)
+        (retract ?wm) ; TODO: this seems dangeorus, the goal is not even dispatched, yet the monitoring fact is removed
     )
     (printout t "Goal " ?class " formulated from PDDL" crlf)
+    (if (neq ?sat TRUE) then
+        (printout t "Goal formulated from promise" crlf)
+    )
+
     (bind ?goal-id (sym-cat ?class - (gensym*)))
     (assert (goal (id ?goal-id)
                     (class ?class) (sub-type ?subtype)
-                    (priority ?*PRIORITY-DISCARD-UNKNOWN*)
+                    (priority ?*PRIORITY-DISCARD*)
                     (parent ?parent)
                     (params robot ?robot
                             wp ?wp
@@ -934,9 +1111,9 @@
     ;assert promises resulting from the plan-action of this goal
     (assert
         ;wp-discard
-        (domain-promise (name holding) (param-values ?robot ?wp) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-        (domain-promise (name can-hold) (param-values ?robot) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-     )
+        (domain-promise (name wp-unused) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 8 ?game-time)) (negated FALSE))
+        (domain-promise (name wp-usable) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 8 ?game-time)) (negated TRUE))
+    )
 )
 
 
@@ -947,10 +1124,12 @@
     (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
     (goal (id ?maintain-id) (class PREPARE-RINGS) (mode FORMULATED))
 
-    (goal-class (class ?class&GET-BASE-TO-FILL-RS) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
+    (goal-class (class ?class&GET-BASE-AND-FILL-RS) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values  ?robot ?wp ?rs ?bs ?side))
+    (wm-fact (key domain fact rs-filled-with args? m ?rs n ?filled))
+    (wm-fact (key domain fact rs-inc args? summand ?filled sum ?after))
 
     (not (goal (class ?class) (params robot ?robot
                                             bs ?bs
@@ -961,6 +1140,10 @@
     (test (sat-or-promised ?sat ?game-time ?from ?lt))
     =>
     (printout t "Goal " ?class " formulated from PDDL" crlf)
+    (if (neq ?sat TRUE) then
+        (printout t "Goal formulated from promise" crlf)
+    )
+
     (bind ?distance (node-distance (str-cat ?bs - (if (eq ?side INPUT) then I else O))))
     (bind ?goal-id (sym-cat ?class - (gensym*)))
     (assert (goal (id ?goal-id)
@@ -972,38 +1155,63 @@
                             bs-side ?side
                             base-color BASE_RED
                             wp ?wp
+                            rs ?rs
+                            rs-before ?filled
+                            rs-after ?after
+
                     )
-                    (required-resources ?wp)
+                    (required-resources ?rs ?wp)
             )
     )
 
     ;assert promises resulting from the plan-action of this goal
     (assert
+        ;go-wait -> dc
+        ;move -> dc
+        ;locks -> dc
+        ;prepare-bs
+        ; (domain-promise (name mps-state) (param-values ?bs READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 12 ?game-time)) (negated FALSE))
+        ; (domain-promise (name mps-state) (param-values ?bs IDLE) (promising-goal ?goal-id) (valid-at (+ 12 ?game-time)) (negated TRUE))
+        ; (domain-promise (name bs-prepared-side) (param-values ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 12 ?game-time)) (negated FALSE))
+        ; (domain-promise (name bs-prepared-color) (param-values ?bs BASE_RED) (promising-goal ?goal-id) (valid-at (+ 12 ?game-time)) (negated FALSE))
         ;bs-dispense-trash
-        (domain-promise (name wp-base-color) (param-values ?wp BASE_RED) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name wp-spawned-for) (param-values ?wp ?robot) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
+        (domain-promise (name wp-base-color) (param-values ?wp BASE_NONE) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated TRUE))
+        (domain-promise (name wp-base-color) (param-values BASE_RED) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
+        (domain-promise (name wp-unused) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated TRUE))
+        (domain-promise (name wp-usable) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
+        (domain-promise (name wp-spawned-for) (param-values ?wp ?robot) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
+        ; (domain-promise (name wp-at) (param-values ?wp ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
+        ; (domain-promise (name mps-side-free) (param-values ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated TRUE))
         ;wp-get
-        (domain-promise (name wp-at) (param-values ?wp ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-        (domain-promise (name holding) (param-values ?robot ?wp) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name can-hold) (param-values ?robot) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-        (domain-promise (name mps-state) (param-values ?bs READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-        (domain-promise (name mps-state) (param-values ?bs IDLE) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name mps-side-free) (param-values ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        ;go-wait
-        (domain-promise (name at) (param-values ?robot (wait-pos ?bs ?side) WAIT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name at) (param-values ?robot ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
+        ; (domain-promise (name wp-at) (param-values ?wp ?bs OUTPUT) (promising-goal ?goal-id) (valid-at (+ 38 ?game-time)) (negated TRUE))
+        ; (domain-promise (name mps-state) (param-values ?bs READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 38 ?game-time)) (negated TRUE))
+        ; (domain-promise (name mps-state) (param-values ?bs IDLE) (promising-goal ?goal-id) (valid-at (+ 38 ?game-time)) (negated FALSE))
+        ; (domain-promise (name mps-side-free) (param-values ?bs OUTPUT) (promising-goal ?goal-id) (valid-at (+ 38 ?game-time)) (negated FALSE))
+        ;unlocks -> dc
+        ;go-wait -> dc
+        ;location-lock -> dc
+        ;move -> dc
+        ;wp-put-slide-cc
+        (domain-promise (name wp-usable) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 73 ?game-time)) (negated TRUE))
+        (domain-promise (name rs-filled-with) (param-values ?rs ?filled) (promising-goal ?goal-id) (valid-at (+ 73 ?game-time)) (negated TRUE))
+        (domain-promise (name rs-filled-with) (param-values ?rs ?after) (promising-goal ?goal-id) (valid-at (+ 73 ?game-time)) (negated FALSE))
+        (domain-promise (name rs-paid-for) (param-values ?rs ?after) (promising-goal ?goal-id) (valid-at (+ 73 ?game-time)) (negated FALSE))
+        ;location-unlock -> dc
+        ;go-wait -> dc
     )
 )
 
-(defrule goal-class-assert-goal-get-from-shelf-for-rs
+(defrule goal-class-assert-goal-get-from-shelf-and-fill-rs
     "If the preconditions of a get-shelf-to-fill-rs goal class is met assert the goal."
     (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
     (goal (id ?maintain-id) (class PREPARE-RINGS) (mode FORMULATED))
 
-    (goal-class (class ?class&GET-SHELF-TO-FILL-RS) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
+    (goal-class (class ?class&GET-SHELF-AND-FILL-RS) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?robot ?rs ?cc ?cs ?spot))
+    (wm-fact (key domain fact rs-filled-with args? m ?rs n ?filled))
+    (wm-fact (key domain fact rs-inc args? summand ?filled sum ?after))
 
     (not (goal (class ?class) (parent ?maintain-id) (params robot ?robot
                                                                           cs ?cs
@@ -1013,6 +1221,10 @@
     (test (sat-or-promised ?sat ?game-time ?from ?lt))
     =>
     (printout t "Goal " ?class " formulated from PDDL" crlf)
+    (if (neq ?sat TRUE) then
+        (printout t "Goal formulated from promise" crlf)
+    )
+
     (bind ?distance (node-distance (str-cat ?rs -I)))
     (bind ?goal-id (sym-cat ?class - (gensym*)))
     (assert (goal (id ?goal-id)
@@ -1021,23 +1233,35 @@
                     (parent ?maintain-id) (sub-type ?subtype)
                     (params robot ?robot
                             cs ?cs
+                            rs ?rs
                             wp ?cc
                             spot ?spot
+                            rs-before ?filled
+                            rs-after ?after
                     )
-                    (required-resources ?cc)
+                    (required-resources ?rs ?cc)
             )
     )
     ;assert promises resulting from the plan-action of this goal
     (assert
-        ;wp-get
-        (domain-promise (name holding) (param-values ?robot ?cc) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name can-hold) (param-values ?robot) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-        (domain-promise (name wp-on-shelf) (param-values ?cc ?cs ?spot) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-        (domain-promise (name wp-usable) (param-values ?cc) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name spot-free) (param-values ?cs ?spot) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        ;go-wait
-        (domain-promise (name at) (param-values ?robot (wait-pos ?cs INPUT) WAIT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name at) (param-values ?robot ?cs INPUT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
+        ;go-wait -> dc
+        ;move -> dc
+        ;locks -> dc
+        ;wp-get-shelf
+        (domain-promise (name wp-on-shelf) (param-values ?cc ?cs ?spot) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated TRUE))
+        (domain-promise (name wp-usable) (param-values ?cc) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated FALSE))
+        (domain-promise (name spot-free) (param-values ?cs ?spot) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated FALSE))
+        ;unlocks -> dc
+        ;go-wait -> dc
+        ;location-lock -> dc
+        ;move -> dc
+        ;wp-put-slide-cc
+        (domain-promise (name wp-usable) (param-values ?cc) (promising-goal ?goal-id) (valid-at (+ 73 ?game-time)) (negated TRUE))
+        (domain-promise (name rs-filled-with) (param-values ?rs ?filled) (promising-goal ?goal-id) (valid-at (+ 73 ?game-time)) (negated TRUE))
+        (domain-promise (name rs-filled-with) (param-values ?rs ?after) (promising-goal ?goal-id) (valid-at (+ 73 ?game-time)) (negated FALSE))
+        (domain-promise (name rs-paid-for) (param-values ?rs ?after) (promising-goal ?goal-id) (valid-at (+ 73 ?game-time)) (negated FALSE))
+        ;location-unlock -> dc
+        ;go-wait -> dc
     )
 )
 
@@ -1072,6 +1296,10 @@
     )
     (bind ?distance (node-distance (str-cat ?rs -I)))
     (printout t "Goal " ?class " formulated from PDDL" crlf)
+    (if (neq ?sat TRUE) then
+        (printout t "Goal formulated from promise" crlf)
+    )
+
     (bind ?goal-id (sym-cat ?class - (gensym*)))
     (assert (goal (id ?goal-id)
                     (class ?class) (sub-type ?subtype)
@@ -1087,15 +1315,16 @@
     ))
     ;assert promises resulting from the plan-action of this goal
     (assert
+        ;go-wait -> dc
+        ;move -> dc
+        ;locks -> dc
         ;wp-put-slide-cc
-        (domain-promise (name holding) (param-values ?robot ?wp) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-        (domain-promise (name can-hold) (param-values ?robot) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name wp-usable) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-        (domain-promise (name rs-filled-with) (param-values ?rs ?after) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name rs-filled-with) (param-values ?rs ?filled) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-         ;go-wait
-        (domain-promise (name at) (param-values ?robot (wait-pos ?rs INPUT) WAIT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name at) (param-values ?robot ?rs INPUT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
+        (domain-promise (name wp-usable) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated TRUE))
+        (domain-promise (name rs-filled-with) (param-values ?rs ?filled) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated TRUE))
+        (domain-promise (name rs-filled-with) (param-values ?rs ?after) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated FALSE))
+        (domain-promise (name rs-paid-for) (param-values ?rs ?after) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated FALSE))
+        ;unlocks -> dc
+        ;go-wait -> dc
     )
 )
 
@@ -1126,6 +1355,15 @@
     else
         (printout t "Goal " ?class " formulated from PDDL" crlf)
     )
+    (if (neq ?sat TRUE) then
+        (printout t "Goal formulated from promise" crlf)
+    )
+
+    (bind ?resources (create$  (sym-cat ?cs -INPUT) ?cc))
+    (if (output-side-free ?cs) then
+        (bind ?resources (create$  (sym-cat ?cs -INPUT) ?cc ?cs (sym-cat ?cs -OUTPUT)))
+    )
+
     (bind ?distance (node-distance (str-cat ?cs -I)))
     (bind ?goal-id  (sym-cat ?class - (gensym*)))
     (assert (goal (id ?goal-id)
@@ -1136,22 +1374,44 @@
                             mps ?cs
                             cc ?cc
                     )
-                    (required-resources (sym-cat ?cs -INPUT) ?cc)
+                    (required-resources ?resources)
     ))
     ;assert promises resulting from the plan-action of this goal
     (assert
+        ;go-wait -> dc
+        ;move -> dc
+        ;locks -> dc
         ;wp-get-shelf
-        (domain-promise (name wp-on-shelf) (param-values ?cc ?cs ?spot) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-        (domain-promise (name wp-usable) (param-values ?cc) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name spot-free) (param-values ?cs ?spot) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
+        (domain-promise (name wp-on-shelf) (param-values ?cc ?cs ?spot) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated TRUE))
+        (domain-promise (name wp-usable) (param-values ?cc) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated FALSE))
+        (domain-promise (name spot-free) (param-values ?cs ?spot) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated FALSE))
         ;wp-put
-        (domain-promise (name holding) (param-values ?robot ?cc) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-        (domain-promise (name can-hold) (param-values ?robot) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name wp-at) (param-values ?cc ?cs INPUT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name mps-side-free) (param-values ?cs INPUT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-        ;go-wait
-        (domain-promise (name at) (param-values ?robot (wait-pos ?cs INPUT) WAIT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name at) (param-values ?robot ?cs INPUT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
+        (domain-promise (name wp-at) (param-values ?cc ?cs INPUT) (promising-goal ?goal-id) (valid-at (+ 53 ?game-time)) (negated FALSE))
+        (domain-promise (name mps-side-free) (param-values ?cs INPUT) (promising-goal ?goal-id) (valid-at (+ 53  ?game-time)) (negated TRUE))
+        ;request-cs-retrieve-cap -> this kicks off a separate goal
+        ;unlocks -> dc
+        ;go-wait -> dc
+    )
+    ;assert the promises for the connected machine interaction if the output side is free
+    (if (output-side-free ?cs) then
+        (assert
+            ;prepare-cs RETRIEVE_CAP
+            ;(domain-promise (name mps-state) (param-values ?cs READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 54 2 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+            ;(domain-promise (name cs-prepared-for) (param-values ?cs RETRIEVE_CAP) (promising-goal ?goal-id) (valid-at (+ 54 2 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+            ;(domain-promise (name mps-state) (param-values ?cs IDLE) (promising-goal ?goal-id) (valid-at (+ 54 2 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+            (domain-promise (name cs-can-perform) (param-values ?cs RETRIEVE_CAP) (promising-goal ?goal-id) (valid-at (+ 54 2 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+
+            ;cs-retrieve-cap
+            (domain-promise (name wp-at) (param-values ?cc ?cs OUTPUT) (promising-goal ?goal-id) (valid-at (+ 54 21 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+            (domain-promise (name wp-at) (param-values ?cc ?cs INPUT) (promising-goal ?goal-id) (valid-at (+ 54 21 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+            (domain-promise (name mps-side-free) (param-values ?cs INPUT) (promising-goal ?goal-id) (valid-at (+ 54 21 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+            (domain-promise (name mps-side-free) (param-values ?cs OUTPUT) (promising-goal ?goal-id) (valid-at (+ 54 21 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+            (domain-promise (name wp-cap-color) (param-values ?cc CAP_NONE) (promising-goal ?goal-id) (valid-at (+ 54 21 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+            (domain-promise (name wp-cap-color) (param-values ?cc ?cap-color) (promising-goal ?goal-id) (valid-at (+ 54 21 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+            (domain-promise (name cs-can-perform) (param-values ?cs MOUNT_CAP) (promising-goal ?goal-id) (valid-at (+ 54 21 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+            ;(domain-promise (name cs-prepared-for) (param-values ?cs RETRIEVE_CAP) (promising-goal ?goal-id) (valid-at (+ 54 21 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+            (domain-promise (name cs-buffered) (param-values ?cs ?cap-color) (promising-goal ?goal-id) (valid-at (+ 54 21 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+        )
     )
 )
 
@@ -1168,7 +1428,7 @@
     (goal-class (class ?class&MOUNT-FIRST-RING) (id ?cid) (meta order ?order) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
     (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
-    (pddl-grounding (id ?grounding-id) (param-values ?rs ?bases-needed ?other-color ?ring1-color ?bs ?wp ?side ?order ?robot ?base-color))
+    (pddl-grounding (id ?grounding-id) (param-values ?rs ?other-rs ?bases-needed ?other-color ?ring1-color ?bs ?wp ?side ?order ?robot ?base-color))
 
     (wm-fact (key domain fact rs-filled-with args? m ?rs n ?bases-filled))
     (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
@@ -1199,7 +1459,17 @@
         else
         (printout t "Goal " ?class " formulated from PDDL for order " ?order crlf)
     )
+    (if (neq ?sat TRUE) then
+        (printout t "Goal formulated from promise" crlf)
+    )
+
     (bind ?distance (node-distance (str-cat ?bs - (if (eq ?side INPUT) then I else O))))
+
+
+    (bind ?resources (create$ (sym-cat ?rs -INPUT) ?required-resources))
+    (if (output-side-free ?rs) then
+        (bind ?resources (create$ (sym-cat ?rs -INPUT) ?required-resources  ?rs (sym-cat ?rs -OUTPUT)))
+    )
 
     (bind ?goal-id (sym-cat ?class - (gensym*)))
     (assert (goal (id ?goal-id)
@@ -1218,19 +1488,70 @@
                             order ?order
                             wp ?wp
                     )
-                    (required-resources (sym-cat ?rs -INPUT) ?required-resources)
+                    (required-resources ?resources)
     ))
     ;assert promises resulting from the plan-action of this goal
+    (bind ?offset 3)
+    (if (not (robot-holds-wp ?robot ?wp)) then
+        (bind ?offset 45)
+        (assert
+            ;go-wait -> dc
+            ;move -> dc
+            ;locks -> dc
+            ;prepare-bs
+            ; (domain-promise (name mps-state) (param-values ?bs READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 12 ?game-time)) (negated FALSE))
+            ; (domain-promise (name mps-state) (param-values ?bs IDLE) (promising-goal ?goal-id) (valid-at (+ 12 ?game-time)) (negated TRUE))
+            ; (domain-promise (name bs-prepared-side) (param-values ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 12 ?game-time)) (negated FALSE))
+            ; (domain-promise (name bs-prepared-color) (param-values ?bs ?base-color) (promising-goal ?goal-id) (valid-at (+ 12 ?game-time)) (negated FALSE))
+            ;bs-dispense-for-product
+            (domain-promise (name wp-base-color) (param-values ?wp BASE_NONE) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated TRUE))
+            (domain-promise (name wp-base-color) (param-values ?base-color) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
+            (domain-promise (name wp-unused) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated TRUE))
+            (domain-promise (name wp-usable) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
+            (domain-promise (name wp-spawned-for) (param-values ?wp ?robot) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
+            (domain-promise (name wp-for-order) (param-values ?wp ?order) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
+            (domain-promise (name wp-has-order) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
+            (domain-promise (name order-has-wp) (param-values ?order) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
+            ; (domain-promise (name wp-at) (param-values ?wp ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
+            ; (domain-promise (name mps-side-free) (param-values ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated TRUE))
+            ;wp-get
+            ; (domain-promise (name wp-at) (param-values ?wp ?bs OUTPUT) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated TRUE))
+            ; (domain-promise (name mps-state) (param-values ?bs READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated TRUE))
+            ; (domain-promise (name mps-state) (param-values ?bs IDLE) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated FALSE))
+            ; (domain-promise (name mps-side-free) (param-values ?bs OUTPUT) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated FALSE))
+            ;unlocks -> dc
+            ;go-wait -> dc
+        )
+    )
     (assert
-        ;handle the case where we get the base from the BS
+        ;move -> dc
+        ;lock -> dc
         ;wp-put
-        (domain-promise (name holding) (param-values ?robot ?wp) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-        (domain-promise (name can-hold) (param-values ?robot) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name wp-at) (param-values ?wp ?rs INPUT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name mps-side-free) (param-values ?rs INPUT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-        ;go-wait
-        (domain-promise (name at) (param-values ?robot (wait-pos ?rs INPUT) WAIT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name at) (param-values ?robot ?rs INPUT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
+        (domain-promise (name wp-at) (param-values ?wp ?rs INPUT) (promising-goal ?goal-id) (valid-at (+ ?offset 25 ?game-time)) (negated FALSE))
+        (domain-promise (name mps-side-free) (param-values ?rs INPUT) (promising-goal ?goal-id) (valid-at (+ ?offset 25 ?game-time)) (negated TRUE))
+        ;request-rs-mount-ring -> this kicks off a separate goal
+        ;unlocks -> dc
+        ;go-wait -> dc
+    )
+    (if (output-side-free ?rs) then
+        (bind ?ring-fact wp-ring1-color)
+        (assert
+            ;prepare-rs
+            ;(domain-promise (name mps-state) (param-values ?rs IDLE) (promising-goal ?goal-id) (valid-at (+ 2 ?offset 25 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+            ;(domain-promise (name mps-state) (param-values ?rs READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 2 ?offset 25 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+            ;(domain-promise (name rs-prepared-color) (param-values ?rs ?ring1-color) (promising-goal ?goal-id) (valid-at (+ 2 ?offset 25 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+
+            ;mount-ring1
+            ;(domain-promise (name rs-prepared-color) (param-values ?rs ?ring1-color) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 25 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+            (domain-promise (name wp-at) (param-values ?wp ?rs INPUT) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 25 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+            (domain-promise (name mps-side-free) (param-values ?rs INPUT) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 25 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+            (domain-promise (name wp-at) (param-values ?wp ?rs OUTPUT) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 25 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+            (domain-promise (name mps-side-free) (param-values ?wp ?rs OUTPUT) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 25 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+            (domain-promise (name ?ring-fact) (param-values ?wp RING_NONE) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 25 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+            (domain-promise (name ?ring-fact) (param-values ?wp ?ring1-color) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 25 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+            (domain-promise (name rs-filled-with) (param-values ?rs ?bases-filled) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 25 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+            (domain-promise (name rs-filled-with) (param-values ?rs ?bases-remain) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 25 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+        )
     )
 )
 
@@ -1268,6 +1589,22 @@
     )
 
     (printout t "Goal " ?class " formulated from PDDL for order " ?order " (Ring " ?ring-pos ") " crlf)
+    (if (neq ?sat TRUE) then
+        (printout t "Goal formulated from promise" crlf)
+    )
+
+    ;handle ressources for promises
+    (bind ?prev-rs-output (sym-cat ?prev-rs -OUTPUT))
+    (if (neq ?sat TRUE)
+    then
+        (bind ?prev-rs-output (sym-cat PROMISE- ?prev-rs -OUTPUT))
+    )
+
+    (bind ?resources (create$ (sym-cat ?rs -INPUT) ?prev-rs-output ?wp))
+    (if (output-side-free ?rs) then
+        (bind ?resources (create$ (sym-cat ?rs -INPUT) ?prev-rs-output ?wp ?rs (sym-cat ?rs -OUTPUT)))
+    )
+
     (bind ?goal-id (sym-cat ?class - (gensym*)))
     (assert (goal (id ?goal-id)
                     (class ?class) (priority (+ ?ring-pos ?*PRIORITY-MOUNT-NEXT-RING*))
@@ -1287,19 +1624,57 @@
                             rs-req ?bases-needed
                             order ?order
                     )
-                    (required-resources (sym-cat ?rs -INPUT) (sym-cat ?prev-rs -OUTPUT) ?wp)
+                    (required-resources ?resources)
     ))
     ;assert promises resulting from the plan-action of this goal
+    (bind ?offset 3)
+    (if (not (robot-holds-wp ?robot ?wp)) then
+        (bind ?offset 37)
+        (assert
+            ;go-wait -> dc
+            ;move -> dc
+            ;locks -> dc
+            ;wp-get
+            (domain-promise (name wp-at) (param-values ?wp ?prev-rs OUTPUT) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated TRUE))
+            ;(domain-promise (name mps-state) (param-values ?prev-rs READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated TRUE))
+            ;(domain-promise (name mps-state) (param-values ?prev-rs IDLE) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated FALSE))
+            (domain-promise (name mps-side-free) (param-values ?prev-rs OUTPUT) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated FALSE))
+            ;unlocks -> dc
+            ;go-wait -> dc
+        )
+    )
     (assert
-        ;handle the case where we get the wp from the RS
+        ;move -> dc
+        ;lock -> dc
         ;wp-put
-        (domain-promise (name holding) (param-values ?robot ?wp) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-        (domain-promise (name can-hold) (param-values ?robot) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name wp-at) (param-values ?wp ?rs INPUT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name mps-side-free) (param-values ?rs INPUT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-        ;go-wait
-        (domain-promise (name at) (param-values ?robot (wait-pos ?rs INPUT) WAIT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name at) (param-values ?robot ?rs INPUT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
+        (domain-promise (name wp-at) (param-values ?wp ?rs INPUT) (promising-goal ?goal-id) (valid-at (+ ?offset 25 ?game-time)) (negated FALSE))
+        (domain-promise (name mps-side-free) (param-values ?rs INPUT) (promising-goal ?goal-id) (valid-at (+ ?offset 25 ?game-time)) (negated TRUE))
+        ;request-rs-mount-ring -> this kicks off a separate goal
+        ;unlocks -> dc
+        ;go-wait -> dc
+    )
+    (if (output-side-free ?rs) then
+        (bind ?ring-fact wp-ring2-color)
+        (if (eq (int-to-sym ?ring-pos) THREE) then
+            (bind ?ring-fact wp-ring3-color)
+        )
+        (assert
+            ;prepare-rs
+            ;(domain-promise (name mps-state) (param-values ?rs IDLE) (promising-goal ?goal-id) (valid-at (+ 2 ?offset 25 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+            ;(domain-promise (name mps-state) (param-values ?rs READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 2 ?offset 25 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+            ;(domain-promise (name rs-prepared-color) (param-values ?rs ?curr-ring-color) (promising-goal ?goal-id) (valid-at (+ 2 ?offset 25 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+
+            ;mount-ring1
+            ;(domain-promise (name rs-prepared-color) (param-values ?rs ?curr-ring-color) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 25 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+            (domain-promise (name wp-at) (param-values ?wp ?rs INPUT) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 25 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+            (domain-promise (name mps-side-free) (param-values ?rs INPUT) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 25 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+            (domain-promise (name wp-at) (param-values ?wp ?rs OUTPUT) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 25 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+            (domain-promise (name mps-side-free) (param-values ?wp ?rs OUTPUT) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 25 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+            (domain-promise (name ?ring-fact) (param-values ?wp RING_NONE) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 25 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+            (domain-promise (name ?ring-fact) (param-values ?wp ?curr-ring-color) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 25 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+            (domain-promise (name rs-filled-with) (param-values ?rs ?bases-filled) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 25 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+            (domain-promise (name rs-filled-with) (param-values ?rs ?bases-remain) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 25 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+        )
     )
 )
 
@@ -1323,6 +1698,17 @@
     (test (sat-or-promised ?sat ?game-time ?from ?lt))
     =>
     (printout t "Goal " ?class " formulated from PDDL for order " ?order crlf)
+    (if (neq ?sat TRUE) then
+        (printout t "Goal formulated from promise" crlf)
+    )
+
+    ;handle ressources for promises
+    (bind ?mps-output (sym-cat ?mps -OUTPUT))
+    (if (neq ?sat TRUE)
+    then
+        (bind ?mps-output (sym-cat PROMISE- ?mps -OUTPUT))
+    )
+
     (bind ?goal-id (sym-cat ?class - (gensym*)))
     (assert (goal (id ?goal-id)
                     (class ?class) (sub-type ?subtype)
@@ -1340,20 +1726,35 @@
                             ring3-color ?ring3-color
                             cap-color ?cap-color
                     )
-                    (required-resources (sym-cat ?mps -OUTPUT) ?order ?wp (sym-cat ?ds -INPUT))
+                    (required-resources ?mps-output ?order ?wp (sym-cat ?ds -INPUT))
     ))
     ;assert promises resulting from the plan-action of this goal
-    (assert
-        ;handle the case where we get the product from a machine
-        ;wp-put
-        (domain-promise (name holding) (param-values ?robot ?wp) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-        (domain-promise (name can-hold) (param-values ?robot) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name wp-at) (param-values ?wp ?ds INPUT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name mps-side-free) (param-values ?ds INPUT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-        ;go-wait
-        (domain-promise (name at) (param-values ?robot (wait-pos ?ds INPUT) WAIT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name at) (param-values ?robot ?ds INPUT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
+    (bind ?offset 3)
+    (if (not (robot-holds-wp ?robot ?wp)) then
+        (bind ?offset 42)
+        (assert
+            ;go-wait -> dc
+            ;move -> dc
+            ;locks -> dc
+            ;wp-get
+            (domain-promise (name wp-at) (param-values ?wp ?mps OUTPUT) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated TRUE))
+            ;(domain-promise (name mps-state) (param-values ?mps READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated TRUE))
+            ;(domain-promise (name mps-state) (param-values ?mps IDLE) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated FALSE))
+            (domain-promise (name mps-side-free) (param-values ?mps OUTPUT) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated FALSE))
+            ;unlocks -> dc
+            ;go-wait -> dc
+        )
     )
+    ;(assert
+        ;move -> dc
+        ;lock -> dc
+        ;wp-put
+        ;(domain-promise (name wp-at) (param-values ?wp ?ds INPUT) (promising-goal ?goal-id) (valid-at (+ ?offset 27 ?game-time)) (negated FALSE))
+        ;(domain-promise (name mps-side-free) (param-values ?ds INPUT) (promising-goal ?goal-id) (valid-at (+ ?offset 27 ?game-time)) (negated TRUE))
+        ;request-ds-fulfill-order -> this kicks off a separate goal
+        ;unlocks -> dc
+        ;go-wait -> dc
+    ;)
 )
 
 (defrule goal-class-assert-goal-produce-c0
@@ -1375,8 +1776,13 @@
     (wm-fact (key config rcll competitive-order-priority) (value ?comp-prio))
     (promise-time (usecs ?game-time))
     (test (sat-or-promised ?sat ?game-time ?from ?lt))
+    (wm-fact (key refbox order ?order delivery-begin) (type UINT) (value ?begin))
     =>
     (printout t "Goal " ?class " formulated from PDDL for order " ?order crlf)
+    (if (neq ?sat TRUE) then
+        (printout t "Goal formulated from promise" crlf)
+    )
+
     (bind ?distance (node-distance (str-cat ?bs - (if (eq ?side INPUT) then I else O))))
     (bind ?priority-decrease 0)
     (bind ?parent ?production-id)
@@ -1387,6 +1793,12 @@
     then
         (bind ?priority-decrease 1)
     )
+
+    (bind ?resources (create$ (sym-cat ?mps -INPUT) ?order ?wp))
+    (if (output-side-free ?mps) then
+        (bind ?resources (create$ (sym-cat ?mps -INPUT) ?order ?wp ?mps (sym-cat ?mps -OUTPUT)))
+    )
+
     (bind ?goal-id (sym-cat ?class - (gensym*)))
     (assert (goal (id ?goal-id)
                     (class ?class) (sub-type ?subtype)
@@ -1401,20 +1813,74 @@
                             order ?order
                             wp ?wp
                     )
-                    (required-resources (sym-cat ?mps -INPUT) ?order ?wp)
+                    (required-resources ?resources)
     ))
     ;assert promises resulting from the plan-action of this goal
-    (assert
-        ;handle the case where we get the product from a machine
-        ;wp-put
-        (domain-promise (name holding) (param-values ?robot ?wp) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-        (domain-promise (name can-hold) (param-values ?robot) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name wp-at) (param-values ?wp ?mps INPUT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name mps-side-free) (param-values ?mps INPUT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-        ;go-wait
-        (domain-promise (name at) (param-values ?robot (wait-pos ?mps INPUT) WAIT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name at) (param-values ?robot ?mps INPUT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
+    (bind ?offset 3)
+    (if (not (robot-holds-wp ?robot ?wp)) then
+        (bind ?offset 45)
+        (assert
+            ;go-wait -> dc
+            ;move -> dc
+            ;locks -> dc
+            ;prepare-bs
+            ; (domain-promise (name mps-state) (param-values ?bs READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 12 ?game-time)) (negated FALSE))
+            ; (domain-promise (name mps-state) (param-values ?bs IDLE) (promising-goal ?goal-id) (valid-at (+ 12 ?game-time)) (negated TRUE))
+            ; (domain-promise (name bs-prepared-side) (param-values ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 12 ?game-time)) (negated FALSE))
+            ; (domain-promise (name bs-prepared-color) (param-values ?bs ?base-color) (promising-goal ?goal-id) (valid-at (+ 12 ?game-time)) (negated FALSE))
+            ;bs-dispense-for-product
+            (domain-promise (name wp-base-color) (param-values ?wp BASE_NONE) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated TRUE))
+            (domain-promise (name wp-base-color) (param-values ?base-color) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
+            (domain-promise (name wp-unused) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated TRUE))
+            (domain-promise (name wp-usable) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
+            (domain-promise (name wp-spawned-for) (param-values ?wp ?robot) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
+            (domain-promise (name wp-for-order) (param-values ?wp ?order) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
+            (domain-promise (name wp-has-order) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
+            (domain-promise (name order-has-wp) (param-values ?order) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
+            ; (domain-promise (name wp-at) (param-values ?wp ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated FALSE))
+            ; (domain-promise (name mps-side-free) (param-values ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 14 ?game-time)) (negated TRUE))
+            ;wp-get
+            ; (domain-promise (name wp-at) (param-values ?wp ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated TRUE))
+            ; (domain-promise (name mps-state) (param-values ?bs READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated TRUE))
+            ; (domain-promise (name mps-state) (param-values ?bs IDLE) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated FALSE))
+            ; (domain-promise (name mps-side-free) (param-values ?bs ?side) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated FALSE))
+            ;unlocks -> dc
+            ;go-wait -> dc
+        )
     )
+    (assert
+        ;move -> dc
+        ;lock -> dc
+        ;wp-put
+        (domain-promise (name wp-at) (param-values ?wp ?mps INPUT) (promising-goal ?goal-id) (valid-at (+ ?offset 24 ?game-time)) (negated FALSE))
+        (domain-promise (name mps-side-free) (param-values ?mps INPUT) (promising-goal ?goal-id) (valid-at (+ ?offset 24 ?game-time)) (negated TRUE))
+        ;request-cs-mount-cap -> this kicks off a separate goal
+        ;unlocks -> dc
+        ;go-wait -> dc
+    )
+
+    (if (output-side-free ?mps) then
+        (assert
+            ;prepare-cs MOUNT_CAP
+            ;(domain-promise (name mps-state) (param-values ?mps READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 2 ?offset 24 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+            ;(domain-promise (name cs-prepared-for) (param-values ?mps MOUNT_CAP) (promising-goal ?goal-id) (valid-at (+ 2 ?offset 24 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+            ;(domain-promise (name mps-state) (param-values ?mps IDLE) (promising-goal ?goal-id) (valid-at (+ 2 ?offset 24 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+            ;(domain-promise (name cs-can-perform) (param-values ?mps MOUNT_CAP) (promising-goal ?goal-id) (valid-at (+ 2 ?offset 24 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+
+            ;cs-mount-cap
+            (domain-promise (name wp-at) (param-values ?wp ?mps OUTPUT) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 24 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+            (domain-promise (name wp-at) (param-values ?wp ?mps INPUT) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 24 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+            (domain-promise (name mps-side-free) (param-values ?mps INPUT) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 24 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+            (domain-promise (name mps-side-free) (param-values ?mps OUTPUT) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 24 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+            (domain-promise (name wp-cap-color) (param-values ?wp ?cap-color) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 24 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+            (domain-promise (name wp-cap-color) (param-values ?wp CAP_NONE) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 24 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+            (domain-promise (name cs-can-perform) (param-values ?mps RETRIEVE_CAP) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 24 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+            (domain-promise (name cs-can-perform) (param-values ?mps MOUNT_CAP) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 24 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+            ;(domain-promise (name cs-prepared-for) (param-values ?mps MOUNT_CAP) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 24 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+            (domain-promise (name cs-buffered) (param-values ?mps ?cap-color) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 24 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+        )
+    )
+    (assert (domain-promise (name order-deliverable) (param-values ?order) (promising-goal ?goal-id) (valid-at ?begin) (negated FALSE) (do-not-invalidate TRUE)))
 )
 
 (defrule goal-class-assert-goal-produce-cx
@@ -1439,11 +1905,29 @@
                         order ?order)))
     (promise-time (usecs ?game-time))
     (test (sat-or-promised ?sat ?game-time ?from ?lt))
+
+    (wm-fact (key refbox order ?order delivery-begin) (type UINT) (value ?begin))
     =>
     (bind ?prio ?*PRIORITY-PRODUCE-C1*)
     (if (eq ?com C2) then (bind ?prio ?*PRIORITY-PRODUCE-C2*))
     (if (eq ?com C3) then (bind ?prio ?*PRIORITY-PRODUCE-C3*))
     (printout t "Goal " ?class " formulated from PDDL for order " ?order crlf)
+    (if (neq ?sat TRUE) then
+        (printout t "Goal formulated from promise" crlf)
+    )
+
+    ;handle ressources for promises
+    (bind ?rs-output (sym-cat ?rs -OUTPUT))
+    (if (neq ?sat TRUE)
+    then
+        (bind ?rs-output (sym-cat PROMISE- ?rs -OUTPUT))
+    )
+
+    (bind ?resources (create$ (sym-cat ?cs -INPUT) ?rs-output ?wp))
+    (if (output-side-free ?cs) then
+        (bind ?resources (create$ (sym-cat ?cs -INPUT) ?rs-output ?wp ?cs (sym-cat ?cs -OUTPUT)))
+    )
+
     (bind ?goal-id (sym-cat ?class - (gensym*)))
     (assert (goal (id ?goal-id)
                     (class ?class) (sub-type ?subtype)
@@ -1456,20 +1940,57 @@
                             cs-color ?cap-color
                             order ?order
                     )
-                    (required-resources (sym-cat ?cs -INPUT) (sym-cat ?rs -OUTPUT) ?wp)
+                    (required-resources ?resources)
     ))
     ;assert promises resulting from the plan-action of this goal
-    (assert
-        ;handle the case where we get the product from a machine
-        ;wp-put
-        (domain-promise (name holding) (param-values ?robot ?wp) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-        (domain-promise (name can-hold) (param-values ?robot) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name wp-at) (param-values ?wp ?cs INPUT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name mps-side-free) (param-values ?cs INPUT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
-        ;go-wait
-        (domain-promise (name at) (param-values ?robot (wait-pos ?cs INPUT) WAIT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated FALSE))
-        (domain-promise (name at) (param-values ?robot ?cs INPUT) (promising-goal ?goal-id) (valid-at (+ 30 ?game-time)) (negated TRUE))
+    (bind ?offset 3)
+    (if (not (robot-holds-wp ?robot ?wp)) then
+    (bind ?offset 41)
+        (assert
+            ;go-wait -> dc
+            ;move -> dc
+            ;locks -> dc
+            ;wp-get
+            (domain-promise (name wp-at) (param-values ?wp ?rs OUTPUT) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated TRUE))
+            ; (domain-promise (name mps-state) (param-values ?rs READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated TRUE))
+            ; (domain-promise (name mps-state) (param-values ?rs IDLE) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated FALSE))
+            (domain-promise (name mps-side-free) (param-values ?rs OUTPUT) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated FALSE))
+            ;unlocks -> dc
+            ;go-wait -> dc
+        )
     )
+    (assert
+        ;move -> dc
+        ;lock -> dc
+        ;wp-put
+        (domain-promise (name wp-at) (param-values ?wp ?cs INPUT) (promising-goal ?goal-id) (valid-at (+ ?offset 24 ?game-time)) (negated FALSE))
+        (domain-promise (name mps-side-free) (param-values ?cs INPUT) (promising-goal ?goal-id) (valid-at (+ ?offset 24 ?game-time)) (negated TRUE))
+        ;request-cs-mount-cap -> this kicks off a separate goal
+        ;unlocks -> dc
+        ;go-wait -> dc
+    )
+    (if (output-side-free ?cs) then
+        (assert
+            ;prepare-cs MOUNT_CAP
+            ; (domain-promise (name mps-state) (param-values ?cs READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 2 ?offset 24 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+            ;(domain-promise (name cs-prepared-for) (param-values ?cs MOUNT_CAP) (promising-goal ?goal-id) (valid-at (+ 2 ?offset 24 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+            ; (domain-promise (name mps-state) (param-values ?cs IDLE) (promising-goal ?goal-id) (valid-at (+ 2 ?offset 24 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+            ;(domain-promise (name cs-can-perform) (param-values ?cs MOUNT_CAP) (promising-goal ?goal-id) (valid-at (+ 2 ?offset 24 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+
+            ;cs-mount-cap
+            (domain-promise (name wp-at) (param-values ?wp ?cs OUTPUT) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 24 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+            (domain-promise (name wp-at) (param-values ?wp ?cs INPUT) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 24 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+            (domain-promise (name mps-side-free) (param-values ?cs INPUT) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 24 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+            (domain-promise (name mps-side-free) (param-values ?cs OUTPUT) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 24 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+            (domain-promise (name wp-cap-color) (param-values ?wp ?cap-color) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 24 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+            (domain-promise (name wp-cap-color) (param-values ?wp CAP_NONE) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 24 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+            (domain-promise (name cs-can-perform) (param-values ?cs RETRIEVE_CAP) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 24 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
+            (domain-promise (name cs-can-perform) (param-values ?cs MOUNT_CAP) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 24 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+            ;(domain-promise (name cs-prepared-for) (param-values ?cs MOUNT_CAP) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 24 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+            (domain-promise (name cs-buffered) (param-values ?cs ?cap-color) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 24 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
+        )
+    )
+    (assert (domain-promise (name order-deliverable) (param-values ?order) (promising-goal ?goal-id) (valid-at ?begin) (negated FALSE) (do-not-invalidate TRUE)))
 )
 
 ; ------------------------- CLEAN UP GOAL CLASSES -----------------------------------

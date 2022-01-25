@@ -48,7 +48,7 @@ clips-executive:
 
   # Agent name. On startup the clips-agent will try to resolve a file named
   # <agent name>.clp. It must be in the CLIPS path directories.
-  spec: rcll-central
+  spec: rcll
 
   specs:
     rcll-central:
@@ -301,6 +301,7 @@ clips-executive:
         - RobotinoLightInterface
 
       parameters:
+        use-promises: true
         simtest:
           enabled: false
           # FAST checks only first minute of a game
@@ -356,7 +357,7 @@ clips-executive:
           max-rotation: 1.0
           master: Upsilan
 
-          allowed-complexities: ["C0", "C2", "C3"]
+          allowed-complexities: ["C0", "C2", "C3", "C1"]
           exclusive-complexities: []
 
           # If true, robots will not start big products after a certain time

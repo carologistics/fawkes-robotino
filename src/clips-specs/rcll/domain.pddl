@@ -98,6 +98,8 @@
 		(rs-ring-spec ?m - mps ?r - ring-color ?rn - ring-num)
 		(rs-filled-with ?m - mps ?n - ring-num)
 		(rs-paid-for ?rs - mps ?n - ring-num)
+		(rs-needs-payment ?rs - mps)
+		(payments-needed)
 		(rs-failed-put-slide ?rs - mps ?robot - robot ?wp - workpiece)
 		;rs-sub and rs-inc are static predicates stating the legal ring-num operations
 		(rs-sub ?minuend - ring-num ?subtrahend - ring-num ?difference - ring-num)
@@ -161,7 +163,7 @@
 
 	(:action prepare-ds
 		:parameters (?m - mps ?ord - order)
-		:precondition (and (mps-type ?m DS) (mps-state ?m IDLE) (locked ?m))
+		:precondition (and (mps-type ?m DS) (mps-state ?m IDLE) (locked ?m) (order-deliverable ?ord))
 		:effect (and (not (mps-state ?m IDLE)) (mps-state ?m PREPARED)
                  (ds-prepared-order ?m ?ord))
 	)

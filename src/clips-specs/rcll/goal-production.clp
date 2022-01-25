@@ -24,7 +24,8 @@
   ?*PRIORITY-FIND-MISSING-MPS* = 110
   ?*PRIORITY-DELIVER* = 100
   ?*PRIORITY-RESET* = 98
-  ?*PRIORITY-CLEAR-BS* = 97
+  ?*PRIORITY-CLEAR-BS* = 96
+  ?*PRIORITY-FILL-RS-CLEAR-BS* = 97
   ?*PRIORITY-PRODUCE-C3* = 96
   ?*PRIORITY-PRODUCE-C2* = 95
   ?*PRIORITY-PRODUCE-C1* = 94
@@ -34,12 +35,14 @@
   ?*PRIORITY-CLEAR-CS* = 70
   ?*PRIORITY-CLEAR-CS-NEEDED* = 91
   ?*PRIORITY-CLEAR-RS* = 55
+  ?*PRIORITY-FILL-RS-CLEAR-CS* = 73
+  ?*PRIORITY-FILL-RS-CLEAR-RS* = 58
   ?*PRIORITY-PREFILL-CS* = 50 ;This priority can be increased by +1
   ?*PRIORITY-WAIT-MPS-PROCESS* = 45
   ?*PRIORITY-PREFILL-RS-WITH-FRESH-BASE* = 40
   ?*PRIORITY-PREFILL-RS* = 30 ;This priority can be increased by up to +4
   ?*PRIORITY-ADD-ADDITIONAL-RING-WAITING* = 20
-  ?*PRIORITY-DISCARD-UNKNOWN* = 10
+  ?*PRIORITY-DISCARD* = 10
   ?*PRIORITY-WAIT* = 2
   ?*PRIORITY-GO-WAIT* = 1
   ?*PRIORITY-NOTHING-TO-DO* = -1
@@ -54,7 +57,7 @@
   ?*PRODUCE-CAP-AHEAD-TIME* = 90
   ?*PRODUCE-RING-AHEAD-TIME* = 120
 
-  ?*DELIVER-AHEAD-TIME* = 60
+  ?*DELIVER-AHEAD-TIME* = 0
   ?*DELIVER-LATEST-TIME* = 10
   ?*DELIVER-ABORT-TIMEOUT* = 30
 
@@ -188,6 +191,7 @@
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (not (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot)))
+  (wm-fact (key refbox game-time) (type UINT) (values ?now&:(> ?now 120) ?))
   =>
   (assert (goal (id (sym-cat REFILL-SHELF- (gensym*)))
                 (class REFILL-SHELF) (sub-type SIMPLE)
@@ -337,106 +341,6 @@
   (modify ?g (parent ?urgent))
 )
 
-(defrule goal-production-increase-priority-to-prefill-rs-for-started-order
-" Add a priority increase of +2 for goals that pre-fill a ring station which
-  requires additional bases such that the production of a started product
-  can be continued.
-"
-  ;Compute the priorities before goals get formulated.
-  (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
-  (goal (class PRODUCTION-MAINTAIN) (id ?maintain-id) (mode SELECTED))
-  (not (goal (class FILL-RS) (mode FORMULATED)))
-  ;MPS CEs
-  (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
-  (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
-  ;The MPS can mount a ring which needs more bases than currently available.
-  (wm-fact (key domain fact rs-ring-spec
-            args? m ?mps r ?ring-color&~RING_NONE
-                  rn ?ring-num&:(neq ?rs-before ?ring-num)))
-  (wm-fact (key domain fact rs-sub args? minuend ?ring-num subtrahend ?rs-before difference ?rs-diff))
-
-  ;(TODO: make the mps-state  a precond of the put-slide to save traviling time)
-
-  (wm-fact (key domain fact wp-for-order args? wp ?order-wp ord ?order))
-  ;Order CEs
-  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&:(neq ?complexity C0)))
-  ;The order requires this ring and the started workpiece does not
-  ;have it mounted yet.
-  (or (and (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring-color))
-           (wm-fact (key domain fact wp-ring1-color args? wp ?order-wp col RING_NONE))
-      )
-      (and (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring-color))
-           (wm-fact (key domain fact wp-ring1-color args? wp ?order-wp col ~RING_NONE))
-           (wm-fact (key domain fact wp-ring2-color args? wp ?order-wp col RING_NONE))
-      )
-      (and (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring-color))
-           (wm-fact (key domain fact wp-ring1-color args? wp ?order-wp col ~RING_NONE))
-           (wm-fact (key domain fact wp-ring2-color args? wp ?order-wp col ~RING_NONE))
-           (wm-fact (key domain fact wp-ring3-color args? wp ?order-wp col RING_NONE))
-      )
-  )
-  ;This is unnecessary as the order was already started.
-  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
-  (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
-    (value ?qd&:(> ?qr ?qd)))
-  (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
-
-  ;TODO: add time considerations to only add a higher priority if it makes sense
-  =>
-  (printout debug "RS " ?mps " needs an additional base for " ?order " given " ?order-wp " (prio +2)" crlf)
-  (if (not (do-for-fact
-            ((?wmf wm-fact))
-            (eq ?wmf:key (create$ evaluated fact rs-fill-priority args? m ?mps))
-            (modify ?wmf (value 2))))
-    then
-      (assert
-        (wm-fact (key evaluated fact rs-fill-priority args? m ?mps) (value 4)))
-  )
-)
-
-
-(defrule goal-production-increase-priority-to-prefill-rs-for-unstarted-order
-" Add a priority increase of +1 for goals that pre-fill a ring station which
-  requires additional bases such that an available order (that was not started
-  yet) can use them for the first ring.
-  The second and third rings of available orders are not considered as
-  priority increases for those can be computed once the order is started.
-"
-  ;compute the priorities before goals get formulated.
-  (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
-
-  (goal (id ?maintain-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
-  (not (goal (class FILL-RS) (mode FORMULATED)))
-  ;MPS CEs
-  (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
-  (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
-  ;The MPS can mount a ring which needs more bases than currently available.
-  (wm-fact (key domain fact rs-ring-spec
-            args? m ?mps r ?ring1-color&~RING_NONE rn ?ring-num))
-  (wm-fact (key domain fact rs-sub args? minuend ?ring-num subtrahend ?rs-before difference ?rs-diff))
-
- ;(TODO: make the mps-state  a precond of the put-slide to save traviling time)
-
-  ;Order CEs
-  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&:(neq ?complexity C0)))
-  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
-  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
-  (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
-           (value ?qd&:(> ?qr ?qd)))
-  (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
-  (not (wm-fact (key evaluated fact rs-fill-priority args? m ?mps) (value 2)))
-  ;TODO: add time considerations to only add a higher priority if it makes sense
-  =>
-  (printout debug "RS " ?mps " needs an additional base for " ?order " (prio +1)" crlf)
-  (if (not (do-for-fact
-            ((?wmf wm-fact))
-            (eq ?wmf:key (create$ evaluated fact rs-fill-priority args? m ?mps))
-      (modify ?wmf (value 1))))
-    then
-      (assert
-        (wm-fact (key evaluated fact rs-fill-priority args? m ?mps) (value 2)))
-  )
-)
 
 (defrule goal-production-create-reset-mps
 " Reset an mps to restore a consistent world model after getting a workpiece
@@ -456,36 +360,6 @@
                 )
                 (required-resources ?mps)
   ))
-)
-
-(defrule goal-production-wait-for-mps-processing
-" If a mps is ready to process (IDLE and not wp at input) drive to output
-  and wait for this mps
-"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class WAIT-FOR-PROCESS) (mode FORMULATED))
-
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?)))
-
-  (wm-fact (key domain fact self args? r ?robot))
-  (or (and (wm-fact (key domain fact at args? r ?robot m ?mps side WAIT))
-           (domain-object (type waitpoint) (name ?waitpoint&:(and (eq ?mps ?waitpoint) (eq (str-length (str-cat ?waitpoint)) 10)))))
-      (and (domain-object (type waitpoint) (name ?waitpoint&:(eq (str-length (str-cat ?waitpoint)) 10)))
-           (wm-fact (key domain fact at args? r ?robot m ?mps side ?side))
-           (not (domain-object (type waitpoint) (name ?w2&:(and (eq ?w2 ?mps) (eq (str-length (str-cat ?w2)) 10))))))
-  )
-  =>
-  (assert
-    (goal (id (sym-cat WAIT-FOR-MPS-PROCESS- (gensym*)))
-          (class WAIT-FOR-MPS-PROCESS)
-          (sub-type SIMPLE)
-          (parent ?production-id)
-          (priority ?*PRIORITY-WAIT-MPS-PROCESS*)
-          (params robot ?robot
-                  pos ?waitpoint)
-          (required-resources WAIT-PROCESS ?waitpoint)
-    )
-  )
 )
 
 
