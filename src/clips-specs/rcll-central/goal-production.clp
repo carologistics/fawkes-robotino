@@ -233,7 +233,7 @@
 			;(modify ?g (precondition nil))
 		)
 	)
-	(domain-retract-goal-grounding)
+	;(domain-retract-goal-grounding)
 
 	(modify ?longest-waiting)
 )
@@ -293,7 +293,7 @@
 			(retract ?waiting)
 		)
 	)
-	(domain-retract-goal-grounding)
+	;(domain-retract-goal-grounding)
 	; cleaning goal dependencies by flushing grounded-with for formulated goals
 	(delayed-do-for-all-facts ((?da dependency-assignment) (?g goal))
 		(and (eq ?da:goal-id ?g:id) (neq ?da:grounded-with nil) (eq ?g:mode FORMULATED))

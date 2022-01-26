@@ -16,6 +16,13 @@
     (printout t "Selected next action " ?action-name ?param-values crlf)
   )
 	(modify ?pa (state PENDING))
+	;als eigene Regel machen
+	(if (eq ?action-name wp-get)
+		then
+		(bind ?wp-get-params (create$ (nth$ 2 $?param-values) (nth$ 3 $?param-values) (nth$ 4 $?param-values)))
+		(assert (domain-fact (name wp-get-pending) (param-values ?wp-get-params)))
+		(printout t "WP-GET DETECTED" $?param-values crlf)
+	)
 )
 
 (defrule action-selection-done
