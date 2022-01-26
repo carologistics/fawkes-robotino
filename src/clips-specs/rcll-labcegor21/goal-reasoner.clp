@@ -141,10 +141,9 @@
   (not (and (goal-meta (goal-id ?g-id) (assigned-to ?robot))
             (goal (id ?g-id) (mode ~FORMULATED))))
 
-  (not (and (wm-fact (key central agent robot-waiting
-                      args? r ?o-robot&:(> (str-compare ?robot ?o-robot) 0)))
-       (goal-meta (assigned-to ?o-robot)))
-  )
+  ;(not (and (wm-fact (key central agent robot-waiting
+  ;                    args? r ?o-robot&:(> (str-compare ?robot ?o-robot) 0)))
+  ;     (goal-meta (assigned-to ?o-robot))))
   =>
   (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
   (modify ?g (mode SELECTED))

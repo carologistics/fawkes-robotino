@@ -141,7 +141,9 @@
 	
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
-	(not (and (goal (id ?other-goal) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED))
+	(not (and (goal (id ?other-goal)
+					(mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+					(is-executable TRUE))
 		      (goal-meta (goal-id ?other-goal) (assigned-to ?robot))))
 
 	; MPS-Source CEs
@@ -169,7 +171,9 @@
 	
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
-	(not (and (goal (id ?other-goal) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED))
+	(not (and (goal (id ?other-goal)
+					(mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+					(is-executable TRUE))
 		      (goal-meta (goal-id ?other-goal) (assigned-to ?robot))))
 
 	; src MPS CEs
@@ -212,7 +216,9 @@
 	
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
-	(not (and (goal (id ?other-goal) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED))
+	(not (and (goal (id ?other-goal)
+					(mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+					(is-executable TRUE))
 		      (goal-meta (goal-id ?other-goal) (assigned-to ?robot))))
 
 	; src MPS CEs
@@ -254,7 +260,9 @@
 	
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
-	(not (and (goal (id ?other-goal) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED))
+	(not (and (goal (id ?other-goal)
+					(mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+					(is-executable TRUE))
 		      (goal-meta (goal-id ?other-goal) (assigned-to ?robot))))
 
 	; src MPS CEs
@@ -272,7 +280,7 @@
 	(wm-fact (key domain fact mps-team args? m ?ring-mps col ?team-color))
 	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?rs-before&ZERO|ONE|TWO))
 	=>
-	(printout t "Goal PAY-RING executable" crlf)
+	(printout t "Goal PAY-RING executable for " ?robot crlf)
 	(modify ?assignment (assigned-to ?robot))
 	(modify ?g (is-executable TRUE))
 )
@@ -283,16 +291,16 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class BUFFER-CAP) (sub-type SIMPLE)
 	            (mode FORMULATED)
-	            (params target-mps ?mps
-	                    cap-color ?cap-color
-	            )
+	            (params target-mps ?mps cap-color ?cap-color)
 	            (is-executable FALSE))
 	(not (goal (class BUFFER-CAP) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 	?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
 	
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
-	(not (and (goal (id ?other-goal) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED))
+	(not (and (goal (id ?other-goal)
+					(mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+					(is-executable TRUE))
 		      (goal-meta (goal-id ?other-goal) (assigned-to ?robot))))
 
 	; MPS CEs
@@ -335,7 +343,9 @@
 	
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
-	(not (and (goal (id ?other-goal) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED))
+	(not (and (goal (id ?other-goal)
+					(mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+					(is-executable TRUE))
 		      (goal-meta (goal-id ?other-goal) (assigned-to ?robot))))
 
 	; MPS-CES
@@ -495,13 +505,14 @@
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
 	(not (goal (id ?other-goal) (class PRODUCE-ORDER) (mode FORMULATED)))
-	(wm-fact (key domain fact order-complexity args? ord ?order-id com ?com&C1))
+	(wm-fact (key domain fact order-complexity args? ord ?order-id com ?com))
 	(wm-fact (key domain fact order-base-color args? ord ?order-id col ?base-color))
 	(wm-fact (key domain fact order-cap-color  args? ord ?order-id col ?cap-color))
 	(wm-fact (key domain fact order-ring1-color args? ord ?order-id col ?ring1-color))
 	(wm-fact (key domain fact order-ring2-color args? ord ?order-id col ?ring2-color))
 	(wm-fact (key domain fact order-ring3-color args? ord ?order-id col ?ring3-color))
 	(wm-fact (key domain fact cs-color args? m ?cap-mps col ?cap-color))
+	(not (wm-fact (key domain fact order-fulfilled args? ord ?order-id)))
 	=>
 	(bind ?wp-for-order (sym-cat wp- ?order-id))
 	(goal-production-initialize-wp ?wp-for-order)
@@ -574,7 +585,8 @@
 						ring-mps ?ring-mps ring-color ?ring-color ring-nr ?ring-nr)
 				(is-executable FALSE))
 	; don't have a payment goal already,
-	(not (goal (class PAY-RING) (params wp ?wp src-mps ?src-mps	ring-mps ?ring-mps)))
+	;(not (goal (class PAY-RING) (params wp ?wp src-mps ?src-mps ring-mps ?ring-mps)))
+	(not (goal (class PAY-RING)))
 	; and we don't have enough bases,
 	(wm-fact (key domain fact rs-ring-spec args? m ?ring-mps r ?ring-color rn ?bases-needed))
 	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled))
@@ -603,6 +615,8 @@
 	; So if there are ring stations with specs, then those specs are registered.
 	(wm-fact (key domain fact mps-state args? m ?any-mps s IDLE))
 	(wm-fact (key domain fact entered-field args? r robot1))
+	(wm-fact (key domain fact entered-field args? r robot2))
+	(wm-fact (key domain fact entered-field args? r robot3))
 	=>
 	(bind ?g (goal-tree-assert-central-run-parallel PRODUCTION-ROOT))
 	(modify ?g (meta do-not-finish) (priority 1.0))
@@ -619,5 +633,5 @@
 	(wm-fact (key refbox team-color) (value ?team-color))
 	=>
 	(printout t "Goal " ENTER-FIELD " formulated" crlf)
-	(goal-meta-assert (goal-production-assert-enter-field ?team-color) robot1)
+	(goal-meta-assert (goal-production-assert-enter-field ?team-color) ?robot)
 )
