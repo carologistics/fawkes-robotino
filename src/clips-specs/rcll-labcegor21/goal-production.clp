@@ -330,9 +330,9 @@
 	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
 	(wm-fact (key wp meta next-step args? wp ?wp) (value DELIVER))
 	; Game time
-	(wm-fact (key refbox game-time) (values $?game-time))
-	(wm-fact (key refbox order ?order delivery-begin) (type UINT)
-	         (value ?begin&:(< ?begin (nth$ 1 ?game-time))))
+	;(wm-fact (key refbox game-time) (values $?game-time))
+	;(wm-fact (key refbox order ?order delivery-begin) (type UINT)
+	;         (value ?begin&:(< ?begin (nth$ 1 ?game-time))))
 	=>
 	(printout t "Goal DELIVER executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -462,6 +462,14 @@
 	)
 )
 
+(defrule goal-production-finish-order
+	"Remove a PRODUCE-ORDER goal when finished."
+	?g <- (goal (id ?goal-id) (class PRODUCE-ORDER) (mode FORMULATED))
+	(not (goal (id ?child-goal) (parent ?goal-id)))
+	=>
+  	(modify ?g (mode FINISHED) (outcome FINISHED))
+)
+
 (defrule goal-production-order
 	"Create the goals for an order."
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
@@ -481,7 +489,7 @@
 	(if (eq ?com C0) then
 		(bind ?goal (goal-tree-assert-central-run-parallel PRODUCE-ORDER
 			(goal-meta-assert (goal-production-assert-buffer-cap ?cap-mps ?cap-color) robot1)
-			(goal-meta-assert (goal-production-assert-discard UNKNOWN C-CS1 OUTPUT) robot1)
+			(goal-meta-assert (goal-production-assert-discard UNKNOWN ?cap-mps OUTPUT) robot1)
 			(goal-meta-assert (goal-production-assert-mount-cap ?wp-for-order C-BS C-?cap-mps ?cap-color) robot1)
 			(goal-meta-assert (goal-production-assert-deliver ?wp-for-order C-DS) robot1)
 		))
@@ -490,7 +498,7 @@
 		(bind ?ring1-mps (goal-production-get-ring-machine-for-color ?ring1-color))
 		(bind ?goal (goal-tree-assert-central-run-parallel PRODUCE-ORDER
 			(goal-meta-assert (goal-production-assert-buffer-cap ?cap-mps ?cap-color) robot1)
-			(goal-meta-assert (goal-production-assert-discard UNKNOWN C-CS1 OUTPUT) robot1)
+			(goal-meta-assert (goal-production-assert-discard UNKNOWN ?cap-mps OUTPUT) robot1)
 			(goal-meta-assert (goal-production-assert-mount-ring ?wp-for-order C-BS
 									?ring1-mps ?ring1-color 1) robot1)
 			(goal-meta-assert (goal-production-assert-mount-cap ?wp-for-order ?ring1-mps
@@ -503,7 +511,7 @@
 		(bind ?ring2-mps (goal-production-get-ring-machine-for-color ?ring2-color))
 		(bind ?goal (goal-tree-assert-central-run-parallel PRODUCE-ORDER
 			(goal-meta-assert (goal-production-assert-buffer-cap ?cap-mps ?cap-color) robot1)
-			(goal-meta-assert (goal-production-assert-discard UNKNOWN C-CS1 OUTPUT) robot1)
+			(goal-meta-assert (goal-production-assert-discard UNKNOWN ?cap-mps OUTPUT) robot1)
 			(goal-meta-assert (goal-production-assert-mount-ring ?wp-for-order C-BS
 									?ring1-mps ?ring1-color 1) robot1)
 			(goal-meta-assert (goal-production-assert-mount-ring ?wp-for-order ?ring1-mps
@@ -519,7 +527,7 @@
 		(bind ?ring3-mps (goal-production-get-ring-machine-for-color ?ring3-color))
 		(bind ?goal (goal-tree-assert-central-run-parallel PRODUCE-ORDER
 			(goal-meta-assert (goal-production-assert-buffer-cap ?cap-mps ?cap-color) robot1)
-			(goal-meta-assert (goal-production-assert-discard UNKNOWN C-CS1 OUTPUT) robot1)
+			(goal-meta-assert (goal-production-assert-discard UNKNOWN ?cap-mps OUTPUT) robot1)
 			(goal-meta-assert (goal-production-assert-mount-ring ?wp-for-order C-BS
 									?ring1-mps ?ring1-color 1) robot1)
 			(goal-meta-assert (goal-production-assert-mount-ring ?wp-for-order ?ring1-mps
