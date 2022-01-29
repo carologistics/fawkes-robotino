@@ -220,7 +220,8 @@
 (defrule goal-expander-pay-for-rings-with-base
 	?g <- (goal (id ?goal-id) (class ?class&PAY-FOR-RINGS-WITH-BASE)
 	                          (mode SELECTED) (parent ?parent)
-	                          (params  wp-loc ?wp-loc
+	                          (params  wp ?wp
+							  		   wp-loc ?wp-loc
 	                                   wp-side ?wp-side
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
@@ -229,7 +230,6 @@
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	(wm-fact (key domain fact rs-inc args? summand ?rs-before
 	                                  sum ?rs-after))
-	(wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side))
 	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before))
 	(or (wm-fact (key domain fact holding args? r ?robot wp ?wp))
 	    (wm-fact (key domain fact mps-state args? m ?wp-loc s ~BROKEN))
@@ -259,15 +259,15 @@
 
 
 (defrule goal-expander-get-cap-carrier-to-fill-rs
-	?g <- (goal (id ?goal-id) (class ?class&PAY-FOR-RINGS-WITH-CAP-CARRIER)
+	?g <- (goal (id ?goal-id) (class ?class&PAY-FOR-RINGS-WITH-CC)
 	                          (mode SELECTED) (parent ?parent)
-	                          (params  wp ?wp
-	                                   wp-loc ?wp-loc
+	                          (params  wp-loc ?wp-loc
 	                                   wp-side ?wp-side
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
 	                                   $?))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	(wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
 	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before))
@@ -500,16 +500,34 @@
 (defrule goal-expander-mount-cap
 	?g <- (goal (id ?goal-id) (class MOUNT) (mode SELECTED) (parent ?parent)
 	 			(params id ?order-id
-				 		wp ?wp-for-order 
+				 		wp ?wp-for-order
+						wp-loc ?wp-loc
+						wp-side ?wp-side
 						target-mps ?cs
 				))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	(or (wm-fact (key domain fact wp-at args? wp ?wp-for-order m ?wp-loc side ?wp-side))
+		(wm-fact (key domain fact holding args? r ?robot wp ?wp-for-order))
+	)
 	=>
 	(plan-assert-sequential (sym-cat MOUNT-PLAN- (gensym*)) ?goal-id ?robot
-		    (plan-assert-safe-move ?robot ?curr-location ?curr-side ?cs INPUT
-				(plan-assert-action wp-put ?robot ?wp-for-order ?cs INPUT)
+		    (if (not (is-holding ?robot ?wp-for-order))
+				then
+					(create$ 
+					(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
+						(plan-assert-action wp-get ?robot ?wp-for-order ?wp-loc ?wp-side)
+					)
+					(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?cs INPUT
+						(plan-assert-action wp-put ?robot ?wp-for-order ?cs INPUT)
+					)
+					)
+				else
+					(plan-assert-safe-move ?robot ?curr-location ?curr-side ?cs INPUT
+						(plan-assert-action wp-put ?robot ?wp-for-order ?cs INPUT)
+					)
 			)
+			
 	)
 	(modify ?g (mode EXPANDED))
 )
@@ -549,18 +567,36 @@
 (defrule goal-expander-mount-ring-on-base
 	?g <- (goal (id ?goal-id) (class MOUNT-RING-ON-BASE) (mode SELECTED) (parent ?parent)
 	 			(params wp ?wp
+				 		wp-loc ?wp-loc
+						wp-side ?wp-side
 						target-mps ?target-mps
+						ring-col ?col-ring
 				))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	(or (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side))
+		(wm-fact (key domain fact holding args? r ?robot wp ?wp))
+	)
 	=>
 	(plan-assert-sequential (sym-cat MOUNT-RING-ON-BASE- (gensym*)) ?goal-id ?robot
-		    (plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps INPUT
-				(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
+		    (if (not (is-holding ?robot ?wp))
+				then
+					(create$
+						(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
+							(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
+						)
+						(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps INPUT
+							(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
+						)
+					)
+				else
+					(plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps INPUT
+						(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
+					)
 			)
-			(plan-assert-safe-move ?robot ?target-mps INPUT ?target-mps OUTPUT
-				(plan-assert-action wp-get ?robot ?wp ?target-mps OUTPUT)
-			)
+			;(plan-assert-safe-move ?robot (wait-pos ?target-mps INPUT) WAIT ?target-mps OUTPUT
+			;	(plan-assert-action wp-get ?robot ?wp ?target-mps OUTPUT)
+			;)
 	)
 	(modify ?g (mode EXPANDED))
 )
