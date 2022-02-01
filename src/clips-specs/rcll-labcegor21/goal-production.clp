@@ -138,6 +138,92 @@
 	(modify ?g (is-executable TRUE))
 )
 
+(defrule goal-production-pay-ring-executable
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class PAY-RING) (sub-type SIMPLE)
+	            (mode FORMULATED)
+	            (params wp ?wp src-mps ?src-mps	ring-mps ?ring-mps)
+	            (is-executable FALSE))
+	?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
+	
+	; Robot CEs
+	(wm-fact (key central agent robot args? r ?robot))
+	(not (and (goal (id ?other-goal)
+					(mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+					(is-executable TRUE))
+		      (goal-meta (goal-id ?other-goal) (assigned-to ?robot))))
+
+	; src MPS CEs
+	(wm-fact (key refbox team-color) (value ?team-color))
+	(or (wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps $?))
+		(and (wm-fact (key domain fact mps-type args? m ?src-mps t BS))
+			 (wm-fact (key domain fact mps-state args? m ?src-mps s IDLE))
+			 (wm-fact (key domain fact mps-team args? m ?src-mps col ?team-color))
+			 (not (wm-fact (key domain fact wp-at args? wp ?any-base-wp m ?src-mps $?)))
+		)
+	)
+	; ring MPS CEs
+	(wm-fact (key domain fact mps-type args? m ?ring-mps t RS))
+	(wm-fact (key domain fact mps-state args? m ?ring-mps s ~BROKEN))
+	(wm-fact (key domain fact mps-team args? m ?ring-mps col ?team-color))
+	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?rs-before&ZERO|ONE|TWO))
+	=>
+	(printout t "Goal PAY-RING executable for " ?robot crlf)
+	(modify ?assignment (assigned-to ?robot))
+	(modify ?g (is-executable TRUE))
+)
+
+(defrule goal-production-buffer-cap-executable
+" Bring a cap-carrier from a cap stations shelf to the corresponding mps input
+  to buffer its cap. "
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class BUFFER-CAP) (sub-type SIMPLE)
+	            (mode FORMULATED)
+	            (params target-mps ?mps cap-color ?cap-color)
+	            (is-executable FALSE))
+	(not (goal (class BUFFER-CAP) (params target-mps ?mps $?)
+			   (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
+	(not (goal (class MOUNT-CAP) (params $? cap-mps ?mps $?)
+			   (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
+	?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
+	
+	; Robot CEs
+	(wm-fact (key central agent robot args? r ?robot))
+	(not (and (goal (id ?other-goal)
+					(mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+					(is-executable TRUE))
+		      (goal-meta (goal-id ?other-goal) (assigned-to ?robot))))
+
+	; MPS CEs
+	(wm-fact (key refbox team-color) (value ?team-color))
+	(wm-fact (key domain fact mps-type args? m ?mps t CS))
+	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+	(wm-fact (key domain fact mps-side-free args? m ?mps side INPUT))
+	(wm-fact (key domain fact mps-side-free args? m ?mps side OUTPUT))
+	(wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP))
+	(not (wm-fact (key domain fact cs-buffered args? m ?mps col ?any-cap-color)))
+	(not (wm-fact (key domain fact wp-at args? wp ?wp-a m ?mps side INPUT)))
+
+	; Capcarrier CEs
+	(or (and
+	        (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
+	        (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
+	        (not (plan-action (action-name wp-get-shelf) (param-values $? ?wp $?)))
+	        (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+	    )
+	    (and
+	        (wm-fact (key domain fact holding args? r ?robot wp ?cc))
+	        (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+	        (domain-object (name ?cc) (type cap-carrier))
+	    )
+	)
+	=>
+	(printout t "Goal BUFFER-CAP executable for " ?robot crlf)
+	(modify ?assignment (assigned-to ?robot))
+	(modify ?g (is-executable TRUE))
+)
+
 (defrule goal-production-mount-cap-executable
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class MOUNT-CAP) (sub-type SIMPLE)
@@ -145,9 +231,9 @@
 	            (params wp ?wp src-mps ?src-mps cap-mps ?cap-mps cap-color ?cap-color)
 	            (is-executable FALSE))
 	?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
-	(not (goal (id ?other-goal&~?goal-id) (class BUFFER-CAP) (params target-mps ?cap-mps $?)
+	(not (goal (class BUFFER-CAP) (params target-mps ?cap-mps $?)
 			   (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
-	(not (goal (id ?other-goal&~?goal-id) (class MOUNT-CAP) (params $? cap-mps ?cap-mps $?)
+	(not (goal (class MOUNT-CAP) (params $? cap-mps ?cap-mps $?)
 			   (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
 	
 	; Robot CEs
@@ -194,7 +280,7 @@
 	            (params wp ?wp src-mps ?src-mps
 						ring-mps ?ring-mps ring-color ?ring-color ring-nr ?ring-nr)
 	            (is-executable FALSE))
-	(not (goal (id ?other-goal&~?goal-id) (class MOUNT-RING) (params $? ring-mps ?ring-mps $?)
+	(not (goal (class MOUNT-RING) (params $? ring-mps ?ring-mps $?)
 			   (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
 	?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
 	
@@ -236,99 +322,13 @@
 	(modify ?g (is-executable TRUE))
 )
 
-(defrule goal-production-pay-ring-executable
-	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
-	?g <- (goal (id ?goal-id) (class PAY-RING) (sub-type SIMPLE)
-	            (mode FORMULATED)
-	            (params wp ?wp src-mps ?src-mps	ring-mps ?ring-mps)
-	            (is-executable FALSE))
-	?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
-	
-	; Robot CEs
-	(wm-fact (key central agent robot args? r ?robot))
-	(not (and (goal (id ?other-goal)
-					(mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-					(is-executable TRUE))
-		      (goal-meta (goal-id ?other-goal) (assigned-to ?robot))))
-
-	; src MPS CEs
-	(wm-fact (key refbox team-color) (value ?team-color))
-	(or (wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps $?))
-		(and (wm-fact (key domain fact mps-type args? m ?src-mps t BS))
-			 (wm-fact (key domain fact mps-state args? m ?src-mps s IDLE))
-			 (wm-fact (key domain fact mps-team args? m ?src-mps col ?team-color))
-			 (not (wm-fact (key domain fact wp-at args? wp ?any-base-wp m ?src-mps $?)))
-		)
-	)
-	; ring MPS CEs
-	(wm-fact (key domain fact mps-type args? m ?ring-mps t RS))
-	(wm-fact (key domain fact mps-state args? m ?ring-mps s ~BROKEN))
-	(wm-fact (key domain fact mps-team args? m ?ring-mps col ?team-color))
-	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?rs-before&ZERO|ONE|TWO))
-	=>
-	(printout t "Goal PAY-RING executable for " ?robot crlf)
-	(modify ?assignment (assigned-to ?robot))
-	(modify ?g (is-executable TRUE))
-)
-
-(defrule goal-production-buffer-cap-executable
-" Bring a cap-carrier from a cap stations shelf to the corresponding mps input
-  to buffer its cap. "
-	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
-	?g <- (goal (id ?goal-id) (class BUFFER-CAP) (sub-type SIMPLE)
-	            (mode FORMULATED)
-	            (params target-mps ?mps cap-color ?cap-color)
-	            (is-executable FALSE))
-	(not (goal (id ?other-goal&~?goal-id) (class BUFFER-CAP) (params target-mps ?mps $?)
-			   (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
-	(not (goal (id ?other-goal&~?goal-id) (class MOUNT-CAP) (params $? cap-mps ?mps $?)
-			   (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
-	?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
-	
-	; Robot CEs
-	(wm-fact (key central agent robot args? r ?robot))
-	(not (and (goal (id ?other-goal)
-					(mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-					(is-executable TRUE))
-		      (goal-meta (goal-id ?other-goal) (assigned-to ?robot))))
-
-	; MPS CEs
-	(wm-fact (key refbox team-color) (value ?team-color))
-	(wm-fact (key domain fact mps-type args? m ?mps t CS))
-	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
-	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-	(wm-fact (key domain fact mps-side-free args? m ?mps side INPUT))
-	(wm-fact (key domain fact mps-side-free args? m ?mps side OUTPUT))
-	(wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP))
-	(not (wm-fact (key domain fact cs-buffered args? m ?mps col ?any-cap-color)))
-	(not (wm-fact (key domain fact wp-at args? wp ?wp-a m ?mps side INPUT)))
-
-	; Capcarrier CEs
-	(or (and
-	        (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
-	        (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
-	        (not (plan-action (action-name wp-get-shelf) (param-values $? ?wp $?)))
-	        (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-	    )
-	    (and
-	        (wm-fact (key domain fact holding args? r ?robot wp ?cc))
-	        (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-	        (domain-object (name ?cc) (type cap-carrier))
-	    )
-	)
-	=>
-	(printout t "Goal BUFFER-CAP executable for " ?robot crlf)
-	(modify ?assignment (assigned-to ?robot))
-	(modify ?g (is-executable TRUE))
-)
-
-
 (defrule goal-production-deliver-executable
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class DELIVER)
 	            (mode FORMULATED)
 	            (params wp ?wp mps ?mps)
 	            (is-executable FALSE))
+	(not (goal (class DELIVER) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
 	?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
 	
 	; Robot CEs

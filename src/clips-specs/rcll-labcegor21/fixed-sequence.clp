@@ -112,8 +112,6 @@
 		)
 	)
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-	; Ensure no other robot is doing that before expanding.
-	(not (plan-action (action-name prepare-cs) (param-values ?mps $?) (state FORMULATED|RUNNING)))
 	=>
 	(bind ?shelf-spot nil)
 	(if (not (is-holding ?robot ?cc))
@@ -174,7 +172,6 @@
 	(or (test (neq ?src-type BS))
 		(not (plan-action (action-name prepare-bs) (state FORMULATED|RUNNING)))
 	)
-	(not (plan-action (action-name prepare-cs) (param-values ?cap-mps $?) (state FORMULATED|RUNNING)))
 	=>
 	(plan-assert-sequential (sym-cat MOUNT-CAP-PLAN- (gensym*)) ?goal-id ?robot
 		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?src-mps OUTPUT
@@ -211,7 +208,6 @@
 	(or (test (neq ?src-type BS))
 		(not (plan-action (action-name prepare-bs) (state FORMULATED|RUNNING)))
 	)
-	(not (plan-action (action-name prepare-rs) (param-values ?ring-mps $?) (state FORMULATED|RUNNING)))
 	=>
 	(bind ?prev-rings (create$ ))
 	(loop-for-count (?count 1 (- ?ring-nr 1))
@@ -239,19 +235,27 @@
 	(modify ?g (mode EXPANDED))
 )
 
-(defrule update-mount-ring-count
-	"Ensure the prepare-rs and mount-ring action always has the correct counts."
-	?prepare-action <- (plan-action (action-name prepare-rs)
+(defrule update-prepare-rs-count
+	"Ensure the prepare-rs action always has the correct counts"
+	?action <- (plan-action (action-name prepare-rs)
 							(param-values ?mps ?color ?before ?after ?req)
 							(state FORMULATED))
-	?mount-action <- (plan-action (action-name rs-mount-ring1|rs-mount-ring2|rs-mount-ring3)
+	(wm-fact (key domain fact rs-filled-with args? m ?mps n ?actual-before&~?before))
+	(wm-fact (key domain fact rs-sub args? minuend ?actual-before subtrahend ?req difference ?actual-after))
+	=>
+	(modify ?action (param-values ?mps ?color ?actual-before ?actual-after ?req))
+	(printout t "Update ring count for prepare-rs" crlf)
+)
+
+(defrule update-mount-ring-count
+	"Ensure the  rs-mount-ring action always has the correct counts."
+	?action <- (plan-action (action-name rs-mount-ring1|rs-mount-ring2|rs-mount-ring3)
 							(param-values ?mps ?wp ?color $?prev-rings ?before ?after ?req))
 	(wm-fact (key domain fact rs-filled-with args? m ?mps n ?actual-before&~?before))
 	(wm-fact (key domain fact rs-sub args? minuend ?actual-before subtrahend ?req difference ?actual-after))
 	=>
-	(modify ?prepare-action (param-values ?mps ?color ?actual-before ?actual-after ?req))
-	(modify ?mount-action (param-values ?mps ?wp ?color $?prev-rings ?actual-before ?actual-after ?req))
-	(printout t "Update ring count for mount" crlf)
+	(modify ?action (param-values ?mps ?wp ?color $?prev-rings ?actual-before ?actual-after ?req))
+	(printout t "Update ring count for rs-mount-ring" crlf)
 )
 
 (defrule goal-expander-pay-ring
@@ -316,8 +320,6 @@
 	(wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
 	(wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
 	(wm-fact (key domain fact order-gate args? ord ?order gate ?gate))
-	; Ensure no other robot is doing that before expanding.
-	(not (plan-action (action-name prepare-ds) (state FORMULATED|RUNNING)))
 	=>
 	(bind ?params (create$))
 	(switch ?complexity
