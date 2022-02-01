@@ -95,7 +95,6 @@
 	(modify ?g (mode EXPANDED))
 )
 
-
 (defrule goal-expander-buffer-cap
 " Feed a CS with a cap from its shelf so that afterwards
    it can directly put the cap on a product."
@@ -240,6 +239,21 @@
 	(modify ?g (mode EXPANDED))
 )
 
+(defrule update-mount-ring-count
+	"Ensure the prepare-rs and mount-ring action always has the correct counts."
+	?prepare-action <- (plan-action (action-name prepare-rs)
+							(param-values ?mps ?color ?before ?after ?req)
+							(state FORMULATED))
+	?mount-action <- (plan-action (action-name rs-mount-ring1|rs-mount-ring2|rs-mount-ring3)
+							(param-values ?mps ?wp ?color $?prev-rings ?before ?after ?req))
+	(wm-fact (key domain fact rs-filled-with args? m ?mps n ?actual-before&~?before))
+	(wm-fact (key domain fact rs-sub args? minuend ?actual-before subtrahend ?req difference ?actual-after))
+	=>
+	(modify ?prepare-action (param-values ?mps ?color ?actual-before ?actual-after ?req))
+	(modify ?mount-action (param-values ?mps ?wp ?color $?prev-rings ?actual-before ?actual-after ?req))
+	(printout t "Update ring count for mount" crlf)
+)
+
 (defrule goal-expander-pay-ring
 " Retrieve a workpiece and use it to pay for a ring."
 	?g <- (goal (id ?goal-id) (class PAY-RING) (mode SELECTED) (parent ?parent)
@@ -268,6 +282,17 @@
 		)
 	)
 	(modify ?g (mode EXPANDED))
+)
+
+(defrule update-put-slide-cc-count
+	"Ensure the wp-put-slide-cc action always has the correct counts."
+	?action <- (plan-action (action-name wp-put-slide-cc) (param-values ?robot ?wp ?mps ?before ?after)
+							(state FORMULATED))
+	(wm-fact (key domain fact rs-filled-with args? m ?mps n ?actual-before&~?before))
+	(wm-fact (key domain fact rs-inc args? summand ?actual-before sum ?actual-after))
+	=>
+	(modify ?action (param-values ?robot ?wp ?mps ?actual-before ?actual-after))
+	(printout t "Update ring count for payment" crlf)
 )
 
 (defrule goal-expander-deliver
@@ -313,95 +338,6 @@
 			(plan-assert-action prepare-ds ?mps ?order)
 			(plan-assert-action wp-put ?robot ?wp ?mps INPUT)
 			(plan-assert-action (sym-cat fulfill-order- (lowcase ?complexity)) ?params)
-		)
-	)
-	(modify ?g (mode EXPANDED))
-)
-
-(defrule goal-expander-transport-goals
-	?g <- (goal (id ?goal-id) (class ?class&MOUNT-RING|DELIVER)
-	                          (mode SELECTED) (parent ?parent)
-	                          (params  wp ?wp
-	                                   target-mps ?target-mps
-	                                   target-side ?target-side
-	                                   $?params))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-	=>
-	(if
-	    (not (do-for-fact ((?wp-at wm-fact))
-	         (and (wm-key-prefix ?wp-at:key (create$ domain fact wp-at))
-	              (eq (wm-key-arg ?wp-at:key wp) ?wp))
-	         (bind ?wp-loc (wm-key-arg ?wp-at:key m))
-	         (bind ?wp-side (wm-key-arg ?wp-at:key side))
-	         )
-	    )
-
-	then
-		(bind ?wp-loc (multifield-key-value ?params wp-loc))
-		(bind ?wp-side (multifield-key-value ?params wp-side))
-	)
-	(if (eq ?wp-loc nil)
-		then
-			(printout error "The fields wp-loc and wp-side must either be set manually or there must be a wp-at fact!" crlf)
-		else
-			(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
-				(if (not (is-holding ?robot ?wp))
-				then
-					(create$ ; only last statement of if is returned
-						(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
-							(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
-						)
-						(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps ?target-side
-							(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
-						)
-					)
-				else
-					(plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps ?target-side
-						(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
-					)
-				)
-			)
-			(modify ?g (mode EXPANDED)
-		)
-	)
-)
-
-(defrule goal-expander-pay-for-rings-with-base
-	?g <- (goal (id ?goal-id) (class ?class&PAY-FOR-RINGS-WITH-BASE)
-	                          (mode SELECTED) (parent ?parent)
-	                          (params  wp ?wp
-	                                   wp-loc ?wp-loc
-	                                   wp-side ?wp-side
-	                                   target-mps ?target-mps
-	                                   target-side ?target-side
-	                                   $?))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-	(wm-fact (key domain fact rs-inc args? summand ?rs-before
-	                                  sum ?rs-after))
-	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before))
-	(or (wm-fact (key domain fact holding args? r ?robot wp ?wp))
-	    (wm-fact (key domain fact mps-state args? m ?wp-loc s ~BROKEN))
-	)
-	=>
-	(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
-		(if (not (is-holding ?robot ?wp))
-		 then
-			(create$ ; only last statement of if is returned
-				(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
-					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
-				)
-				(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side)
-					 WAIT ?target-mps ?target-side
-					(plan-assert-action wp-put-slide-cc ?robot
-					 ?wp ?target-mps ?rs-before ?rs-after)
-				)
-			)
-		 else
-			(plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps ?target-side
-				(plan-assert-action wp-put-slide-cc ?robot ?wp ?target-mps ?rs-before ?rs-after)
-			)
 		)
 	)
 	(modify ?g (mode EXPANDED))

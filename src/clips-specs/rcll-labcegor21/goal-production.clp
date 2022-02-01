@@ -166,6 +166,10 @@
 	            (params wp ?wp src-mps ?src-mps cap-mps ?cap-mps cap-color ?cap-color)
 	            (is-executable FALSE))
 	?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
+	(not (goal (id ?other-goal&~?goal-id) (class BUFFER-CAP) (params target-mps ?cap-mps $?)
+			   (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
+	(not (goal (id ?other-goal&~?goal-id) (class MOUNT-CAP) (params $? cap-mps ?cap-mps $?)
+			   (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
 	
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
@@ -192,6 +196,8 @@
 	(wm-fact (key domain fact mps-type args? m ?cap-mps t CS))
 	(wm-fact (key domain fact mps-state args? m ?cap-mps s ~BROKEN))
 	(wm-fact (key domain fact mps-team args? m ?cap-mps col ?team-color))
+	(wm-fact (key domain fact mps-side-free args? m ?cap-mps side INPUT))
+	(wm-fact (key domain fact mps-side-free args? m ?cap-mps side OUTPUT))
 	(not (wm-fact (key domain fact wp-at args? wp ?any-cap-in-wp m ?cap-mps side INPUT)))
 	(not (wm-fact (key domain fact wp-at args? wp ?any-cap-o-wp m ?cap-mps side OUTPUT)))
 	(wm-fact (key domain fact cs-buffered args? m ?cap-mps col ?cap-color))
@@ -209,6 +215,8 @@
 	            (params wp ?wp src-mps ?src-mps
 						ring-mps ?ring-mps ring-color ?ring-color ring-nr ?ring-nr)
 	            (is-executable FALSE))
+	(not (goal (id ?other-goal&~?goal-id) (class MOUNT-RING) (params $? ring-mps ?ring-mps $?)
+			   (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
 	?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
 	
 	; Robot CEs
@@ -235,6 +243,8 @@
 	(wm-fact (key domain fact mps-type args? m ?ring-mps t RS))
 	(wm-fact (key domain fact mps-state args? m ?ring-mps s ~BROKEN))
 	(wm-fact (key domain fact mps-team args? m ?ring-mps col ?team-color))
+	(wm-fact (key domain fact mps-side-free args? m ?ring-mps side INPUT))
+	(wm-fact (key domain fact mps-side-free args? m ?ring-mps side OUTPUT))
 	(wm-fact (key domain fact rs-ring-spec args? m ?ring-mps r ?ring-color rn ?bases-needed))
 	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled))
 	(wm-fact (key domain fact rs-sub args? minuend ?bases-filled
@@ -289,6 +299,10 @@
 	            (mode FORMULATED)
 	            (params target-mps ?mps cap-color ?cap-color)
 	            (is-executable FALSE))
+	(not (goal (id ?other-goal&~?goal-id) (class BUFFER-CAP) (params target-mps ?mps $?)
+			   (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
+	(not (goal (id ?other-goal&~?goal-id) (class MOUNT-CAP) (params $? cap-mps ?mps $?)
+			   (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
 	?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
 	
 	; Robot CEs
@@ -303,6 +317,8 @@
 	(wm-fact (key domain fact mps-type args? m ?mps t CS))
 	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
 	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+	(wm-fact (key domain fact mps-side-free args? m ?mps side INPUT))
+	(wm-fact (key domain fact mps-side-free args? m ?mps side OUTPUT))
 	(wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP))
 	(not (wm-fact (key domain fact cs-buffered args? m ?mps col ?any-cap-color)))
 	(not (wm-fact (key domain fact wp-at args? wp ?wp-a m ?mps side INPUT)))
@@ -579,7 +595,7 @@
 						ring-mps ?ring-mps ring-color ?ring-color ring-nr ?ring-nr)
 				(is-executable FALSE))
 	; don't have a payment goal already,
-	(not (goal (class PAY-RING) (params wp ?wp src-mps ?src-mps ring-mps ?ring-mps)))
+	(not (goal (class PAY-RING) (params wp ?other-wp src-mps ?src-mps ring-mps ?ring-mps $?)))
 	; and we don't have enough bases,
 	(wm-fact (key domain fact rs-ring-spec args? m ?ring-mps r ?ring-color rn ?bases-needed))
 	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled))
