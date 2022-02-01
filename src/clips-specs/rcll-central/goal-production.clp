@@ -554,6 +554,7 @@
 	         (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side)))
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
 	(domain-fact (name zone-content) (param-values ?zz ?wp-loc))
+	(IAMNOTEXECUTABLE)
 	=>
 	(printout t "Goal DELIVER-RC212 executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
@@ -1027,6 +1028,7 @@ The workpiece remains in the output of the used ring station after
 	(not (goal (class INSTRUCT-RS-MOUNT-RING) (mode EXPANDED|SELECTED|DISPATCHED|COMMITTED)))
 	=>
 	(printout t "Goal INSTRUCT-RS-MOUNT-RING executable" crlf)
+	(printout t "RING_5" ?ring crlf)
 	(modify ?g (is-executable TRUE))
 )
 
@@ -1122,12 +1124,15 @@ The workpiece remains in the output of the used ring station after
 )
 
 (deffunction goal-production-assert-deliver-rc21
-	(?wp ?order-id)
+	(?wp ?order-id ?rob)
 
 	(bind ?goal (assert (goal (class DELIVER-RC21)
 	      (id (sym-cat DELIVER-RC21- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE)
-	      (params wp ?wp)
+	      (params wp ?wp target-mps C-DS ord ?order-id robot ?rob)
+				(param-names wp target-mps ord robot)
+				(param-values ?wp C-DS ?order-id ?rob)
+				(goal-action goal-deliver-rc21)
 	)))
 	(goal-meta-assert ?goal nil ?order-id nil)
 	(return ?goal)
@@ -1148,7 +1153,7 @@ The workpiece remains in the output of the used ring station after
 
 (deffunction goal-production-assert-deliver
 	"If there is a DS, do a normal delivery, otherwise do a RoboCup 2021 delivery. "
-	(?wp ?order-id)
+	(?wp ?order-id ?rob)
 
 	(bind ?goal nil)
 	(if (any-factp ((?state domain-fact)) (and (eq ?state:name mps-state)
@@ -1169,7 +1174,7 @@ The workpiece remains in the output of the used ring station after
 			(goal-production-assert-instruct-ds-deliver ?wp ?order-id)
 		))
 	else
-		(bind ?goal (goal-production-assert-deliver-rc21 ?wp ?order-id))
+		(bind ?goal (goal-production-assert-deliver-rc21 ?wp ?order-id ?rob))
 	)
 
 	(return ?goal)
@@ -1258,15 +1263,16 @@ The workpiece remains in the output of the used ring station after
 )
 
 (deffunction goal-production-assert-instruct-cs-mount-cap
-	(?mps ?cap-color ?order-id)
+	(?mps ?cap-color ?order-id ?wp)
 	(bind ?goal (assert (goal (class INSTRUCT-CS-MOUNT-CAP)
 	      (id (sym-cat INSTRUCT-CS-MOUNT-CAP- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE)
 	      (params target-mps ?mps
-	              cap-color ?cap-color)
+	              cap-color ?cap-color
+								wp ?wp)
 				(goal-action goal-instruct-cs-mount-cap)
-				(param-names mps cap-color)
-				(param-values ?mps ?cap-color)
+				(param-names mps cap-color wp)
+				(param-values ?mps ?cap-color ?wp)
 	)))
 	(goal-meta-assert ?goal central ?order-id nil)
 	(return ?goal)
@@ -1382,9 +1388,9 @@ The workpiece remains in the output of the used ring station after
 				;	(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?base-col INPUT ?order-id)
 				;)
 			)
-			(goal-production-assert-instruct-cs-mount-cap ?cs ?cap-col ?order-id)
+			(goal-production-assert-instruct-cs-mount-cap ?cs ?cap-col ?order-id ?wp-for-order)
 		)
-		(goal-production-assert-deliver ?wp-for-order ?order-id)
+		(goal-production-assert-deliver ?wp-for-order ?order-id ?rob)
 	)
   )
   (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (parent ?root-id))
@@ -1395,7 +1401,7 @@ The workpiece remains in the output of the used ring station after
 
   (bind ?goal
     (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-		(goal-production-assert-deliver ?wp-for-order ?order-id)
+		(goal-production-assert-deliver ?wp-for-order ?order-id ?rob)
 		(goal-tree-assert-central-run-parallel PREPARE-CS
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
 				(goal-production-assert-buffer-cap ?cs ?col-cap ?order-id)
@@ -1414,7 +1420,7 @@ The workpiece remains in the output of the used ring station after
 					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id)
 				)
 			)
-			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
+			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id ?wp-for-order)
 			(goal-production-assert-instruct-rs-mount-ring ?rs ?col-ring1 ?order-id ONE)
 		)
 		(goal-tree-assert-central-run-parallel PAYMENT-GOALS
@@ -1430,7 +1436,7 @@ The workpiece remains in the output of the used ring station after
 
   (bind ?goal
     (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-		(goal-production-assert-deliver ?wp-for-order ?order-id)
+		(goal-production-assert-deliver ?wp-for-order ?order-id ?rob)
 		(goal-tree-assert-central-run-parallel PREPARE-CS
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
 				(goal-production-assert-buffer-cap ?cs ?col-cap ?order-id)
@@ -1450,7 +1456,7 @@ The workpiece remains in the output of the used ring station after
 					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id)
 				)
 			)
-			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
+			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id ?wp-for-order)
 			(goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
 			(goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2 ?order-id TWO)
 		)
@@ -1467,7 +1473,7 @@ The workpiece remains in the output of the used ring station after
 
   (bind ?goal
     (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-		(goal-production-assert-deliver ?wp-for-order ?order-id)
+		(goal-production-assert-deliver ?wp-for-order ?order-id ?rob)
 		(goal-tree-assert-central-run-parallel PREPARE-CS
 			(goal-tree-assert-central-run-parallel BUFFER-GOALS
 				(goal-production-assert-buffer-cap ?cs ?col-cap ?order-id)
@@ -1488,7 +1494,7 @@ The workpiece remains in the output of the used ring station after
 					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id)
 				)
 			)
-			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
+			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id ?wp-for-order)
 			(goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
 			(goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2 ?order-id TWO)
 			(goal-production-assert-instruct-rs-mount-ring ?rs3 ?col-ring3 ?order-id THREE)

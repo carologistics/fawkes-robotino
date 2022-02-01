@@ -151,10 +151,11 @@
 	              ?slot - ss-slot ?base-col - base-color
 	              ?ring1-col - ring-color ?ring2-col - ring-color
 	              ?ring3-col - ring-color ?cap-col - cap-color)
+	(order-matches-wp ?wp - workpiece ?ord - order)
 )
 
 (:action goal-instruct-cs-mount-cap
-	:parameters (?mps - mps ?cap-color - cap-color)
+	:parameters (?mps - mps ?cap-color - cap-color ?wp - workpiece)
 	:precondition (and
 			(not (mps-state ?mps BROKEN))
 			(mps-type ?mps CS)
@@ -165,7 +166,19 @@
 			(mps-side-free ?mps OUTPUT)
 			(not (mps-side-free ?mps INPUT))
 		)
-	:effect (mps-state ?mps READY-AT-OUTPUT)
+	:effect (and
+			(not (mps-state ?mps IDLE))
+	    (mps-state ?mps READY-AT-OUTPUT)
+			(not (wp-at ?wp ?mps INPUT))
+			(mps-side-free ?mps INPUT)
+			(wp-at ?wp ?mps OUTPUT)
+			(not (mps-side-free ?mps OUTPUT))
+			(not (wp-cap-color ?wp CAP_NONE))
+			(wp-cap-color ?wp ?cap-color)
+			(cs-can-perform ?mps RETRIEVE_CAP)
+			(not (cs-can-perform ?mps MOUNT_CAP))
+			(not (cs-buffered ?mps ?cap-color))
+    )
 )
 
 (:action goal-mount-cap
@@ -263,7 +276,14 @@
 									 	 (wp-unused ?wp)
 										 (wp-get-pending ?wp ?target-mps ?target-side)
 								)
-	:effect (mps-state ?target-mps READY-AT-OUTPUT)
+	:effect (and (wp-at ?wp ?target-mps ?target-side)
+	             (not (mps-side-free ?target-mps ?target-side))
+	             (not (wp-base-color ?wp BASE_NONE))
+	             (wp-base-color ?wp ?base-color)
+	             (not (wp-unused ?wp))
+		     			 (wp-usable ?wp)
+	             (mps-state ?target-mps READY-AT-OUTPUT)
+	        )
 )
 
 (:action goal-deliver
@@ -276,17 +296,18 @@
 )
 
 (:action goal-deliver-rc21
-	:parameters (?wp - workpiece ?target-mps - mps)
-	:precondition (and (mps-type ?target-mps DS)
-										 (mps-state ?target-mps IDLE)
-										 (wp-at ?wp ?target-mps INPUT)
+	:parameters (?wp - workpiece ?target-mps - mps ?ord - order ?robot - robot)
+	:precondition (and ;(mps-type ?target-mps DS)
+										 ;(mps-state ?target-mps IDLE)
+										 ;(wp-at ?wp ?target-mps INPUT)
 
 										 ;(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
 										 ;(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
 
-										 ;(or (can-hold ?robot)
-										 ;	 (holding ?robot ?wp)
-										 ;)
+										 (or (can-hold ?robot)
+										 	 (holding ?robot ?wp)
+										 )
+										 (order-matches-wp ?wp ?ord)
 							  )
 	:effect (mps-state ?target-mps READY-AT-OUTPUT)
 )
@@ -315,10 +336,40 @@
 )
 
 ;Similar difficulties to mount-ring
-;(:action goal-instruct-rs-mount-ring
-;	:parameters ()
-;	:precondition ()
-;	:effect ()
-;)
+(:action goal-instruct-rs-mount-ring
+	:parameters (?target-mps - mps ?ring-color - ring-color)
+	:precondition (and
+		; MPS CEs
+		(mps-type ?target-mps RS)
+		(not (mps-state ?target-mps BROKEN))
+		;STILL NEED THIS FACT
+		;(wm-fact (key domain fact rs-filled-with args? m ?mps n ?bases-filled))
+		; Ring Cost
+		;(wm-fact (key domain fact rs-ring-spec
+	  ;          args? m ?mps r ?ring-color&~RING_NONE rn ?bases-needed))
+		;(wm-fact (key domain fact rs-sub args? minuend ?bases-filled
+	  ;                                       subtrahend ?bases-needed
+	  ;                                       difference ?bases-remain&ZERO|ONE|TWO|THREE))
+
+		; WP CEs
+		;(wp-at ?wp ?target-mps INPUT)
+		;a new meta fact
+		;(wm-fact (key wp meta next-step args? wp ?wp) (value ?ring))
+
+		;(wm-fact (key domain fact ?wp-ring-color&:(eq ?wp-ring-color
+		;         (sym-cat wp-ring (sub-string 5 5 ?ring) -color))
+		;          args? wp ?wp col RING_NONE ))
+		;(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+		;(wm-fact (key domain fact ?order-ring-color&:(eq ?order-ring-color
+		;         (sym-cat order-ring (sub-string 5 5 ?ring) -color))
+		;          args? ord ?order col ?ring-color ))
+
+		(mps-side-free ?target-mps OUTPUT)
+		;THERE IS NO OTHER GOAL CURRENTLY INSTRUCTING TO MOUNT A RING?
+		;(not (goal (class INSTRUCT-RS-MOUNT-RING) (mode EXPANDED|SELECTED|DISPATCHED|COMMITTED)))
+
+		)
+	:effect (mps-state ?target-mps READY-AT-OUTPUT)
+)
 
 )

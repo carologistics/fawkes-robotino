@@ -509,7 +509,7 @@
 
 (defrule goal-expander-instruct-cs-mount-cap
 	?g <- (goal (id ?goal-id) (class INSTRUCT-CS-MOUNT-CAP) (mode SELECTED)
-	            (params target-mps ?mps cap-color ?cap-color))
+	            (params target-mps ?mps cap-color ?cap-color wp ?wp))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
 	=>
@@ -517,7 +517,6 @@
 		(plan-assert-action prepare-cs ?mps MOUNT_CAP)
 		(plan-assert-action cs-mount-cap ?mps ?wp ?cap-color)
 	)
-	(printout t "IT WORKS" crlf) ;here are the goals connected to the domain
 	(modify ?g (mode EXPANDED))
 )
 
@@ -621,7 +620,7 @@
 (defrule goal-expander-deliver-rc21
 	?g <- (goal (id ?goal-id) (class DELIVER-RC21)
 	                          (mode SELECTED) (parent ?parent)
-	                          (params  wp ?wp))
+	                          (params  wp ?wp target-mps ?mps ord ?order-id robot ?rob))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	(wm-fact (key refbox team-color) (value ?team-color))
