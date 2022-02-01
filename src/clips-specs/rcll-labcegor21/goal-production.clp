@@ -223,7 +223,8 @@
 	(wm-fact (key domain fact mps-state args? m ?ring-mps s ~BROKEN))
 	(wm-fact (key domain fact mps-team args? m ?ring-mps col ?team-color))
 	(wm-fact (key domain fact mps-side-free args? m ?ring-mps side INPUT))
-	(wm-fact (key domain fact mps-side-free args? m ?ring-mps side OUTPUT))
+	(or (wm-fact (key domain fact mps-side-free args? m ?ring-mps side OUTPUT))
+		(test (eq ?ring-mps ?src-mps)))
 	(wm-fact (key domain fact rs-ring-spec args? m ?ring-mps r ?ring-color rn ?bases-needed))
 	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled))
 	(wm-fact (key domain fact rs-sub args? minuend ?bases-filled
