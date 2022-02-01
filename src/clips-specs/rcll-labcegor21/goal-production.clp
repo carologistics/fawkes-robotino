@@ -107,27 +107,6 @@
 	(modify ?g (mode DISPATCHED) (outcome UNKNOWN))
 )
 
-(defrule goal-production-fill-in-unknown-wp-discard
-	"Fill in missing workpiece information into the discard goals"
-	?g <- (goal (id ?goal-id) (class DISCARD) (mode FORMULATED) (parent ?parent)
-	            (params wp UNKNOWN wp-loc ?mps wp-side ?mps-side))
-	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?mps-side))
-	(not (wm-fact (key order meta wp-for-order args? wp ?wp $?)))
-	=>
-	(printout t "Unknown workpiece filled in to " ?wp crlf)
-	(modify ?g (params wp ?wp wp-loc ?mps wp-side ?mps-side))
-)
-(defrule goal-production-fill-in-unknown-wp-pay
-	"Fill in missing workpiece information into the payment goals"
-	?g <- (goal (id ?goal-id) (class PAY-RING) (mode FORMULATED) (parent ?parent)
-	            (params wp UNKNOWN src-mps ?src-mps ring-mps ?ring-mps))
-	(wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps side OUTPUT))
-	(not (wm-fact (key order meta wp-for-order args? wp ?wp $?)))
-	=>
-	(printout t "Unknown workpiece filled in to " ?wp crlf)
-	(modify ?g (params wp ?wp src-mps ?src-mps ring-mps ?ring-mps))
-)
-
 (defrule goal-production-discard-executable
 " Discard output from a station.
 "
@@ -530,7 +509,6 @@
 	(if (eq ?com C0) then
 		(bind ?goal (goal-tree-assert-central-run-parallel PRODUCE-ORDER
 			(goal-production-assert-buffer-cap ?cap-mps ?cap-color)
-			(goal-production-assert-discard UNKNOWN ?cap-mps OUTPUT)
 			(goal-production-assert-mount-cap ?wp-for-order C-BS ?cap-mps ?cap-color)
 			(goal-production-assert-deliver ?wp-for-order C-DS)
 		))
@@ -539,7 +517,6 @@
 		(bind ?ring1-mps (goal-production-get-ring-machine-for-color ?ring1-color))
 		(bind ?goal (goal-tree-assert-central-run-parallel PRODUCE-ORDER
 			(goal-production-assert-buffer-cap ?cap-mps ?cap-color)
-			(goal-production-assert-discard UNKNOWN ?cap-mps OUTPUT)
 			(goal-production-assert-mount-ring ?wp-for-order C-BS
 									?ring1-mps ?ring1-color 1)
 			(goal-production-assert-mount-cap ?wp-for-order ?ring1-mps
@@ -552,7 +529,6 @@
 		(bind ?ring2-mps (goal-production-get-ring-machine-for-color ?ring2-color))
 		(bind ?goal (goal-tree-assert-central-run-parallel PRODUCE-ORDER
 			(goal-production-assert-buffer-cap ?cap-mps ?cap-color)
-			(goal-production-assert-discard UNKNOWN ?cap-mps OUTPUT)
 			(goal-production-assert-mount-ring ?wp-for-order C-BS
 									?ring1-mps ?ring1-color 1)
 			(goal-production-assert-mount-ring ?wp-for-order ?ring1-mps
@@ -568,7 +544,6 @@
 		(bind ?ring3-mps (goal-production-get-ring-machine-for-color ?ring3-color))
 		(bind ?goal (goal-tree-assert-central-run-parallel PRODUCE-ORDER
 			(goal-production-assert-buffer-cap ?cap-mps ?cap-color)
-			(goal-production-assert-discard UNKNOWN ?cap-mps OUTPUT)
 			(goal-production-assert-mount-ring ?wp-for-order C-BS
 									?ring1-mps ?ring1-color 1)
 			(goal-production-assert-mount-ring ?wp-for-order ?ring1-mps
@@ -608,6 +583,22 @@
 	(goal-production-initialize-wp ?wp-pay)
 	(bind ?goal (goal-production-assert-pay-ring ?wp-pay C-BS ?ring-mps))
   	(modify ?goal (parent ?root-id))
+)
+
+(defrule goal-production-create-discard
+	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+	; Whenever there is a workpiece in the cap station output,
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+	(wm-fact (key domain fact mps-type args? m ?mps t CS))
+	; that workpiece is not needed for an order,
+	(not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?)))
+	; and we don't have a discard goal.
+	(not (goal (class DISCARD) (params  wp ?wp wp-loc ?mps wp-side OUTPUT)))
+	=>
+	; Discard it.
+	(bind ?goal (goal-production-assert-discard ?wp ?mps OUTPUT))
+	(modify ?goal (parent ?root-id))
 )
 
 (defrule goal-production-create-production-root
