@@ -136,7 +136,6 @@
 	                          (mode FORMULATED)
 	                          (params  wp ?wp&~UNKNOWN wp-loc ?wp-loc wp-side ?wp-side)
 	                          (is-executable FALSE))
-	(not (goal (class DISCARD) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 	?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
 	
 	; Robot CEs
@@ -166,7 +165,6 @@
 	            (mode FORMULATED)
 	            (params wp ?wp src-mps ?src-mps cap-mps ?cap-mps cap-color ?cap-color)
 	            (is-executable FALSE))
-	(not (goal (class MOUNT-CAP) (mode SELECTED|DISPATCHED|COMMITTED|EXPANDED)))
 	?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
 	
 	; Robot CEs
@@ -211,7 +209,6 @@
 	            (params wp ?wp src-mps ?src-mps
 						ring-mps ?ring-mps ring-color ?ring-color ring-nr ?ring-nr)
 	            (is-executable FALSE))
-	(not (goal (class MOUNT-RING) (mode SELECTED|DISPATCHED|COMMITTED|EXPANDED)))
 	?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
 	
 	; Robot CEs
@@ -255,7 +252,6 @@
 	            (mode FORMULATED)
 	            (params wp ?wp src-mps ?src-mps	ring-mps ?ring-mps)
 	            (is-executable FALSE))
-	(not (goal (class PAY-RING) (mode SELECTED|DISPATCHED|COMMITTED|EXPANDED)))
 	?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
 	
 	; Robot CEs
@@ -293,7 +289,6 @@
 	            (mode FORMULATED)
 	            (params target-mps ?mps cap-color ?cap-color)
 	            (is-executable FALSE))
-	(not (goal (class BUFFER-CAP) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 	?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
 	
 	; Robot CEs
@@ -338,7 +333,6 @@
 	            (mode FORMULATED)
 	            (params wp ?wp mps ?mps)
 	            (is-executable FALSE))
-	(not (goal (class DELIVER) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 	?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
 	
 	; Robot CEs
@@ -504,7 +498,7 @@
 	"Create the goals for an order."
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
-	(not (goal (id ?other-goal) (class PRODUCE-ORDER) (mode FORMULATED)))
+	;(not (goal (id ?other-goal) (class PRODUCE-ORDER) (mode FORMULATED)))
 	(wm-fact (key domain fact order-complexity args? ord ?order-id com ?com))
 	(wm-fact (key domain fact order-base-color args? ord ?order-id col ?base-color))
 	(wm-fact (key domain fact order-cap-color  args? ord ?order-id col ?cap-color))
@@ -585,8 +579,7 @@
 						ring-mps ?ring-mps ring-color ?ring-color ring-nr ?ring-nr)
 				(is-executable FALSE))
 	; don't have a payment goal already,
-	;(not (goal (class PAY-RING) (params wp ?wp src-mps ?src-mps ring-mps ?ring-mps)))
-	(not (goal (class PAY-RING)))
+	(not (goal (class PAY-RING) (params wp ?wp src-mps ?src-mps ring-mps ?ring-mps)))
 	; and we don't have enough bases,
 	(wm-fact (key domain fact rs-ring-spec args? m ?ring-mps r ?ring-color rn ?bases-needed))
 	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled))
