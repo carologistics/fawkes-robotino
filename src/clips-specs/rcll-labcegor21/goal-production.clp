@@ -162,6 +162,7 @@
 	             )
 	             (is-executable FALSE))
 	(not (goal (class INSTRUCT-CS-BUFFER-CAP) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
+	(not (goal (class INSTRUCT-CS-BUFFER-CAP) (is-executable TRUE)))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; MPS CEs
 	(wm-fact (key domain fact mps-type args? m ?mps t CS))
@@ -434,6 +435,7 @@
 	             )
 	             (is-executable FALSE))
 	(not (goal (class INSTRUCT-CS-MOUNT-CAP) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
+	(not (goal (class INSTRUCT-CS-MOUNT-CAP) (is-executable TRUE)))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; MPS CEs
 	(wm-fact (key domain fact mps-type args? m ?mps t CS))
@@ -468,6 +470,7 @@
 	             )
 	             (is-executable FALSE))
 	(not (goal (class INSTRUCT-DS-DELIVER) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
+	(not (goal (class INSTRUCT-DS-DELIVER) (is-executable TRUE)))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; MPS CEs
 	(wm-fact (key domain fact mps-type args? m ?mps t DS))
@@ -774,6 +777,16 @@
 	)
 )
 
+(deffunction goal-production-assert-do-nothing
+	()
+
+	(bind ?goal (assert (goal (class DO-NOTHING)
+	  (id (sym-cat DO-NOTHING- (gensym*))) (sub-type SIMPLE)
+	  (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
+	)))
+	(return ?goal)
+)
+
 (deffunction goal-production-construct-c0
 	(?root-id ?order-id ?wp-for-order ?col-cap ?col-base ?cs)
 
@@ -856,6 +869,7 @@
 					; Second ring
 					(goal-meta-assert (goal-production-assert-mount-ring-on-base ?wp-for-order ?rs-col1 OUTPUT ?rs-col2 ?col-ring2) robot2)
 					(goal-meta-assert (goal-production-assert-instruct-rs-mount-ring ?order-id ?rs-col2 ?col-ring2) central)
+					; Mount and deliver
 					(goal-meta-assert (goal-production-assert-mount ?order-id ?wp-for-order ?rs-col2 OUTPUT ?cs) robot2)
 					(goal-meta-assert (goal-production-assert-get-deliver ?wp-for-order ?cs) robot1)
 					(goal-meta-assert (goal-production-assert-deliver ?wp-for-order C-DS) robot1)
@@ -882,15 +896,20 @@
 							)
 					)					
 					; Ring 2 choices
-					(if (eq ?ring2-num ONE)
+					(if (eq ?ring2-num ZERO)
 						then
-							(goal-production-assert-payment-goal ?rs-col2 ?col-base)
+							(goal-meta-assert (goal-production-assert-do-nothing) central)
 						else
-							(if (eq ?ring2-num TWO)
+							(if (eq ?ring2-num ONE)
 								then
-									(create$
-										(goal-production-assert-payment-goal ?rs-col2 ?col-base)
-										(goal-production-assert-payment-goal ?rs-col2 ?col-base)
+									(goal-production-assert-payment-goal ?rs-col2 ?col-base)
+								else
+									(if (eq ?ring2-num TWO)
+										then
+											(create$
+												(goal-production-assert-payment-goal ?rs-col2 ?col-base)
+												(goal-production-assert-payment-goal ?rs-col2 ?col-base)
+											)
 									)
 							)
 					)
@@ -919,6 +938,7 @@
 					; Third ring
 					(goal-meta-assert (goal-production-assert-mount-ring-on-base ?wp-for-order ?rs-col2 OUTPUT ?rs-col3 ?col-ring3) robot2)
 					(goal-meta-assert (goal-production-assert-instruct-rs-mount-ring ?order-id ?rs-col3 ?col-ring3) central)
+					; Mount and deliver
 					(goal-meta-assert (goal-production-assert-mount ?order-id ?wp-for-order ?rs-col3 OUTPUT ?cs) robot2)
 					(goal-meta-assert (goal-production-assert-get-deliver ?wp-for-order ?cs) robot1)
 					(goal-meta-assert (goal-production-assert-deliver ?wp-for-order C-DS) robot1)
@@ -945,28 +965,39 @@
 							)
 					)
 					; Ring 2 choices
-					(if (eq ?ring2-num ONE)
+					(if (eq ?ring2-num ZERO)
 						then
-							(goal-production-assert-payment-goal ?rs-col2 ?col-base)
+							(goal-meta-assert (goal-production-assert-do-nothing) central)
 						else
-							(if (eq ?ring2-num TWO)
+							(if (eq ?ring2-num ONE)
 								then
-									(create$
-										(goal-production-assert-payment-goal ?rs-col2 ?col-base)
-										(goal-production-assert-payment-goal ?rs-col2 ?col-base)
+									(goal-production-assert-payment-goal ?rs-col2 ?col-base)
+								else
+									(if (eq ?ring2-num TWO)
+										then
+											(create$
+												(goal-production-assert-payment-goal ?rs-col2 ?col-base)
+												(goal-production-assert-payment-goal ?rs-col2 ?col-base)
+											)
 									)
 							)
 					)
+					
 					; Ring 3 choices
-					(if (eq ?ring3-num ONE)
+					(if (eq ?ring3-num ZERO)
 						then
-							(goal-production-assert-payment-goal ?rs-col3 ?col-base)
+							(goal-meta-assert (goal-production-assert-do-nothing) central)
 						else
-							(if (eq ?ring3-num TWO)
+							(if (eq ?ring3-num ONE)
 								then
-									(create$
-										(goal-production-assert-payment-goal ?rs-col3 ?col-base)
-										(goal-production-assert-payment-goal ?rs-col3 ?col-base)
+									(goal-production-assert-payment-goal ?rs-col3 ?col-base)
+								else
+									(if (eq ?ring3-num TWO)
+										then
+											(create$
+												(goal-production-assert-payment-goal ?rs-col3 ?col-base)
+												(goal-production-assert-payment-goal ?rs-col3 ?col-base)
+											)
 									)
 							)
 					)
@@ -982,7 +1013,7 @@
 (defrule goal-production-get-order-from-refbox
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
-	(wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp&:(eq ?comp C3)))
+	(wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
 	(wm-fact (key domain fact order-base-color args? ord ?order-id col ?col-base))
 	(wm-fact (key domain fact order-cap-color args? ord ?order-id col ?col-cap))
 	(wm-fact (key domain fact order-ring1-color args? ord ?order-id col ?col-ring1))
