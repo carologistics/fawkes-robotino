@@ -342,3 +342,62 @@
 	=>
 	(assert (wm-fact (key central agent robot-waiting args? r ?robot)))
 )
+
+;Rules for fixing goal-domain issues
+(defrule domain-goal-fix-assert-wp-get-pending
+  ?pa <- (plan-action (plan-id ?plan-id)
+                       (state PENDING)
+                       (action-name wp-get)
+                       (param-values $?param-values))
+  =>
+  (bind ?wp-get-params (create$ (nth$ 2 $?param-values) (nth$ 3 $?param-values) (nth$ 4 $?param-values)))
+  (assert (domain-fact (name wp-get-pending) (param-values ?wp-get-params)))
+  (printout t "WP-GET DETECTED" $?param-values crlf)
+)
+
+(defrule domain-goal-fix-retract-wp-get-pending
+(declare (salience 1000))
+  ?pa <- (plan-action (plan-id ?plan-id)
+                       (state ?state&~PENDING)
+                       (action-name wp-get)
+                       (param-values $?param-values))
+  ?df <- (domain-fact (name wp-get-pending) (param-values $?wp-get-params))
+  =>
+  (if (eq $?wp-get-params (create$ (nth$ 2 $?param-values) (nth$ 3 $?param-values) (nth$ 4 $?param-values)))
+    then
+    (retract ?df)
+  )
+)
+
+(defrule domain-goal-fix-assert-wp-and-order-matching
+  "Asserts a domain predicate once a workpiece matches its order"
+  ;Order-Facts
+  (domain-fact (name order-ring1-color) (param-values ?ord ?ring1))
+  (domain-fact (name order-ring2-color) (param-values ?ord ?ring2))
+  (domain-fact (name order-ring3-color) (param-values ?ord ?ring3))
+  (domain-fact (name order-base-color) (param-values ?ord ?base))
+  (domain-fact (name order-cap-color) (param-values ?ord ?cap))
+  ;WP-Facts
+  (domain-fact (name wp-ring1-color) (param-values ?wp ?ring1))
+  (domain-fact (name wp-ring2-color) (param-values ?wp ?ring2))
+  (domain-fact (name wp-ring3-color) (param-values ?wp ?ring3))
+  (domain-fact (name wp-base-color) (param-values ?wp ?base))
+  (domain-fact (name wp-cap-color) (param-values ?wp ?cap))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?ord))
+  =>
+  (assert (domain-fact (name order-matches-wp) (param-values ?wp ?ord)))
+)
+
+(defrule domain-goal-fix-assert-instruct-rs-mount-ring-running
+  (goal (class INSTRUCT-RS-MOUNT-RING) (mode EXPANDED|SELECTED|DISPATCHED|COMMITTED))
+  =>
+  (assert (domain-fact (name instruct-rs-mount-ring-running) (param-values)))
+)
+
+
+(defrule domain-goal-fix-retract-instruct-rs-mount-ring-running
+  (not (goal (class INSTRUCT-RS-MOUNT-RING) (mode EXPANDED|SELECTED|DISPATCHED|COMMITTED)))
+  ?df <- (domain-fact (name instruct-rs-mount-ring-running) (param-values))
+  =>
+  (retract ?df)
+)

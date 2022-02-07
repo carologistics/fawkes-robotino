@@ -205,7 +205,18 @@
 												 (holding ?robot ?wp)
 										 )
 						 )
-	:effect (mps-state ?target-mps READY-AT-OUTPUT)
+	;effect is wrong revisit
+	:effect (and (not (wp-at ?wp ?target-mps INPUT))
+	             (mps-side-free ?target-mps INPUT)
+	             (wp-at ?wp ?target-mps OUTPUT)
+	             (not (mps-side-free ?target-mps OUTPUT))
+	             (not (wp-cap-color ?wp CAP_NONE))
+	             ;(wp-cap-color ?wp ?capcol)
+	             (cs-can-perform ?target-mps RETRIEVE_CAP)
+	             (not (cs-can-perform ?target-mps MOUNT_CAP))
+	             (not (cs-prepared-for ?target-mps MOUNT_CAP))
+	             ;(not (cs-buffered ?m ?capcol))
+	        )
 )
 
 ; Capcarrier CEs
@@ -231,7 +242,12 @@
 										 )
 										 (mps-side-free ?target-mps INPUT)
 							  )
-	:effect (mps-state ?target-mps READY-AT-OUTPUT)
+	:effect (and
+						(not (mps-side-free ?target-mps INPUT))
+						;(wp-at ?wp ?target-mps INPUT)
+						;(can-hold ?robot)
+						;(not (holding ?r ?wp))
+					)
 )
 
 ;(wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
@@ -247,7 +263,17 @@
 										 (not (mps-side-free ?target-mps INPUT))
 										 (mps-side-free ?target-mps OUTPUT)
 								)
-	:effect (mps-state ?target-mps READY-AT-OUTPUT)
+	:effect (and
+						;(not (wp-at ?cc INPUT))
+						;(mps-side-free ?target-mps INPUT)
+						;(wp-at ?cc ?target-mps OUTPUT)
+						(not (mps-side-free ?target-mps OUTPUT))
+						;(not (wp-cap-color ?cc ?cap-color))
+						;(wp-cap-color ?cc CAP_NONE)
+						(cs-buffered ?target-mps ?cap-color)
+						(cs-can-perform ?target-mps MOUNT_CAP)
+						(not (cs-prepared-for ?target-mps RETRIEVE_CAP))
+					)
 )
 
 (:action goal-discard
