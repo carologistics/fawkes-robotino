@@ -21,10 +21,11 @@ SUBDIRS	= clips-motor-switch \
 	  ax12_gripper \
 	  arduino \
 		tag_vision \
-      navgraph_broker \
+	  navgraph_broker \
 	  navgraph-generator-mps \
 	  conveyor_pose \
 	  conveyor_plane \
+	  object-tracking \
 	  gazebo \
 	  marker_writer \
 		laser_front_dist \
