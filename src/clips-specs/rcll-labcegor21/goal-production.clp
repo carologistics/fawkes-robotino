@@ -349,9 +349,9 @@
 	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
 	(wm-fact (key wp meta next-step args? wp ?wp) (value DELIVER))
 	; Game time
-	;(wm-fact (key refbox game-time) (values $?game-time))
-	;(wm-fact (key refbox order ?order delivery-begin) (type UINT)
-	;         (value ?begin&:(< ?begin (nth$ 1 ?game-time))))
+	(wm-fact (key refbox game-time) (values $?game-time))
+	(wm-fact (key refbox order ?order delivery-begin) (type UINT)
+	         (value ?begin&:(< ?begin (nth$ 1 ?game-time))))
 	=>
 	(printout t "Goal DELIVER executable" crlf)
 	(modify ?assignment (assigned-to ?robot))
@@ -506,7 +506,6 @@
 	"Create the goals for an order."
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
-	;(not (goal (id ?other-goal) (class PRODUCE-ORDER) (mode FORMULATED)))
 	(wm-fact (key domain fact order-complexity args? ord ?order-id com ?com))
 	(wm-fact (key domain fact order-base-color args? ord ?order-id col ?base-color))
 	(wm-fact (key domain fact order-cap-color  args? ord ?order-id col ?cap-color))
@@ -515,6 +514,23 @@
 	(wm-fact (key domain fact order-ring3-color args? ord ?order-id col ?ring3-color))
 	(wm-fact (key domain fact cs-color args? m ?cap-mps col ?cap-color))
 	(not (wm-fact (key domain fact order-fulfilled args? ord ?order-id)))
+	
+	(wm-fact (key refbox game-time) (values $?game-time))
+	(wm-fact (key refbox order ?order-id delivery-begin) (value ?order-begin))
+	(or
+		; Wait until the order delivery window starts in 30 seconds.
+		(test (< ?order-begin (+ (nth$ 1 ?game-time) 30)))
+		; or if we don't have any goals and no other order can be delivered earlier.
+		(and (not (goal (class PRODUCE-ORDER) (mode FORMULATED)))
+			 (not (and  (wm-fact (key refbox order ?other-order-id delivery-begin)
+	         		  	   		(value ?other-begin&:(< ?other-begin ?order-begin)))
+					    (not (wm-fact (key domain fact order-fulfilled args? ord ?other-order-id)))
+				  ))
+		)
+	)
+
+	; Don't create a goal twice.
+	(not (goal (class PRODUCE-ORDER) (params order ?order-id) (mode FORMULATED)))
 	=>
 	(bind ?wp-for-order (sym-cat wp- ?order-id))
 	(goal-production-initialize-wp ?wp-for-order)
