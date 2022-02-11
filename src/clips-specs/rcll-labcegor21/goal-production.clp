@@ -490,6 +490,18 @@
   	(modify ?g (mode FINISHED) (outcome COMPLETED))
 )
 
+(defrule goal-production-fill-shelf-cs
+	"Add a new cap carrier when there isn't one on spot RIGHT."
+	(wm-fact (key domain fact cs-color args? m ?cap-mps col ?cap-color))
+	(not (wm-fact (key domain fact wp-on-shelf args? wp ? m ?cap-mps spot LEFT)))
+	=>
+	(bind ?wp (sym-cat wp-cap-carrier- (gensym*)))
+	(assert (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color) (type BOOL) (value TRUE))
+			(wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?cap-mps spot LEFT) (type BOOL) (value TRUE))
+			)
+	(printout t "Filled " ?cap-mps " with workpiece " ?wp crlf)
+)
+
 (defrule goal-production-order
 	"Create the goals for an order."
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
