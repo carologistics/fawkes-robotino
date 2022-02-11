@@ -107,6 +107,33 @@
 	(modify ?g (mode DISPATCHED) (outcome UNKNOWN))
 )
 
+(defrule goal-production-transport-executable
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class TRANSPORT)
+	                          (mode FORMULATED)
+	                          (params src-mps ?src-mps src-side ?src-side
+	                    			  dst-mps ?dst-mps dst-side ?dst-side
+	            			  )
+	                          (is-executable FALSE))
+	?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
+	
+	; Robot CEs
+	(wm-fact (key central agent robot args? r ?robot))
+	(not (and (goal (id ?other-goal)
+					(mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+					(is-executable TRUE))
+		      (goal-meta (goal-id ?other-goal) (assigned-to ?robot))))
+
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps side ?src-side))
+	(not (wm-fact (key domain fact wp-at args? wp ?other-wp m ?dst-mps side ?dst-side)))
+
+	=>
+
+	(printout t "Goal TRANSPORT executable for " ?robot crlf)
+	(modify ?assignment (assigned-to ?robot))
+	(modify ?g (is-executable TRUE))
+)
+
 (defrule goal-production-discard-executable
 " Discard output from a station.
 "
@@ -345,7 +372,7 @@
 	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
 	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side INPUT)))
 	; WP-CES
-	(wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps side OUTPUT))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps side ?src-side))
 	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
 	(wm-fact (key wp meta next-step args? wp ?wp) (value DELIVER))
 	; Game time
@@ -521,7 +548,8 @@
 		; Wait until the order delivery window starts in 30 seconds.
 		(test (< ?order-begin (+ (nth$ 1 ?game-time) 30)))
 		; or if we don't have any goals and no other order can be delivered earlier.
-		(and (not (goal (class PRODUCE-ORDER) (mode FORMULATED)))
+		(and (not (and  (goal (id ?other-produce-goal) (class PRODUCE-ORDER) (mode FORMULATED))
+						(goal (parent ?other-produce-goal) (class ?c&~DELIVER))))
 			 (not (and  (wm-fact (key refbox order ?other-order-id delivery-begin)
 	         		  	   		(value ?other-begin&:(< ?other-begin ?order-begin)))
 					    (not (wm-fact (key domain fact order-fulfilled args? ord ?other-order-id)))
@@ -608,6 +636,37 @@
 	(goal-production-initialize-wp ?wp-pay)
 	(bind ?goal (goal-production-assert-pay-ring ?wp-pay C-BS ?ring-mps))
   	(modify ?goal (parent ?root-id))
+)
+
+(defrule goal-production-buffer-finished-product
+	"Buffer a finished work product that can't be delivered."
+	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+
+	; Whenever we have a finished product we can't yet deliver.
+	(wm-fact (key wp meta next-step args? wp ?wp) (value DELIVER))
+	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps side OUTPUT))
+	(wm-fact (key refbox game-time) (values $?game-time))
+	(wm-fact (key refbox order ?order delivery-begin)
+	         	  (value ?begin&:(> ?begin (nth$ 1 ?game-time))))
+
+	; and we have space in the storage station.
+	(wm-fact (key domain fact mps-side-free args? m C-SS side ?side))
+	(not (wm-fact (key domain fact wp-at args? wp ? m C-SS side ?side)))
+
+	; and we don't have a transport goal yet.
+	(not (goal (class TRANSPORT) (params src-mps ?src-mps src-side OUTPUT
+										 dst-mps C-SS dst-side ?)))
+	=>
+
+	; We put into the storage station.
+	(assert (goal (class TRANSPORT)
+	      (id (sym-cat TRANSPORT- (gensym*))) (parent ?root-id) (sub-type SIMPLE)
+	      (verbosity NOISY) (is-executable FALSE)
+	      (params src-mps ?src-mps src-side OUTPUT
+				  dst-mps C-SS dst-side ?side)
+		  (meta-template goal-meta)))
 )
 
 (defrule goal-production-create-discard

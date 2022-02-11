@@ -95,6 +95,27 @@
 	(modify ?g (mode EXPANDED))
 )
 
+(defrule goal-expander-transport
+	?g <- (goal (id ?goal-id) (class TRANSPORT) (mode SELECTED) (parent ?parent)
+	            (params src-mps ?src-mps src-side ?src-side
+	                    dst-mps ?dst-mps dst-side ?dst-side
+	            ))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps side ?src-side))
+	(not (wm-fact (key domain fact wp-at args? wp ? m ?dst-mps side ?dst-side)))
+	=>
+	(plan-assert-sequential (sym-cat TRANSPORT-PLAN- (gensym*)) ?goal-id ?robot
+		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?src-mps OUTPUT
+			(plan-assert-action wp-get ?robot ?wp ?src-mps ?src-side)
+		)
+		(plan-assert-safe-move ?robot (wait-pos ?src-mps OUTPUT) WAIT ?dst-mps ?dst-side
+			(plan-assert-action wp-put ?robot ?wp ?dst-mps ?dst-side)
+		)
+	)
+	(modify ?g (mode EXPANDED))
+)
+
 (defrule goal-expander-buffer-cap
 " Feed a CS with a cap from its shelf so that afterwards
    it can directly put the cap on a product."
