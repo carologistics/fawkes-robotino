@@ -303,6 +303,12 @@ ObjectTrackingThread::loop()
 	//cur_object_pos is set to expected position if no bounding box was close
 	// enough and is used the same in the following
 
+	fawkes::Time after_projection(clock);
+	logger->log_info("load image time ", std::to_string(before_detect - &start_time).c_str());
+	logger->log_info("detection time  ", std::to_string(after_detect - &before_detect).c_str());
+	logger->log_info("box time        ", std::to_string(after_projection - &after_detect).c_str());
+	logger->log_info("overall time    ", std::to_string(after_projection - &start_time).c_str());
+
 	logger->log_info("cur_object_pos[0]: ", std::to_string(cur_object_pos[0]).c_str());
 	logger->log_info("cur_object_pos[1]: ", std::to_string(cur_object_pos[1]).c_str());
 	logger->log_info("cur_object_pos[2]: ", std::to_string(cur_object_pos[2]).c_str());
@@ -471,7 +477,7 @@ ObjectTrackingThread::detect_objects(Mat image, std::vector<Rect> &out_boxes)
 	if (outs.empty())
 		return;
 
-	logger->log_info(name(), "detected something");
+	// logger->log_info(name(), "detected something");
 
 	//pointer to access outs' data
 	float *data = (float *)outs[0].data;
@@ -482,12 +488,12 @@ ObjectTrackingThread::detect_objects(Mat image, std::vector<Rect> &out_boxes)
 		float confidence = data[4 + (int)current_object_type_];
 		//logger->log_info("confidence: ", std::to_string(confidence).c_str());
 		if (confidence > confThreshold_) {
-			logger->log_info(name(), "found something");
-			logger->log_info("confidence: ", std::to_string(confidence).c_str());
-			logger->log_info("pos[0]: ", std::to_string(data[0]).c_str());
-			logger->log_info("pos[1]: ", std::to_string(data[1]).c_str());
-			logger->log_info("pos[2]: ", std::to_string(data[2]).c_str());
-			logger->log_info("pos[2]: ", std::to_string(data[3]).c_str());
+			// logger->log_info(name(), "found something");
+			// logger->log_info("confidence: ", std::to_string(confidence).c_str());
+			// logger->log_info("pos[0]: ", std::to_string(data[0]).c_str());
+			// logger->log_info("pos[1]: ", std::to_string(data[1]).c_str());
+			// logger->log_info("pos[2]: ", std::to_string(data[2]).c_str());
+			// logger->log_info("pos[2]: ", std::to_string(data[3]).c_str());
 
 			//TODO: also store the original values and use them for the direct 3d point computation, since they are more precise
 			//float bb_left = data[0] - data[2]/2;
@@ -520,7 +526,7 @@ ObjectTrackingThread::closest_position(std::vector<Rect> bounding_boxes,
                                        float             exp_pos[3],
                                        float             closest_pos[3])
 {
-	logger->log_info("bounding_boxes.size(): ", std::to_string(bounding_boxes.size()).c_str());
+	// logger->log_info("bounding_boxes.size(): ", std::to_string(bounding_boxes.size()).c_str());
 	float max_acceptable_dist = std::numeric_limits<float>::max();
 
 	float min_dist = max_acceptable_dist;
@@ -531,10 +537,10 @@ ObjectTrackingThread::closest_position(std::vector<Rect> bounding_boxes,
 		float dist = sqrt((pos[0] - exp_pos[0]) * (pos[0] - exp_pos[0])
 		                  + (pos[1] - exp_pos[1]) * (pos[1] - exp_pos[1])
 		                  + (pos[2] - exp_pos[2]) * (pos[2] - exp_pos[2]));
-		logger->log_warn(name(), std::to_string(dist).c_str());
-		logger->log_info("pos[0]: ", std::to_string(pos[0]).c_str());
-		logger->log_info("pos[1]: ", std::to_string(pos[1]).c_str());
-		logger->log_info("pos[2]: ", std::to_string(pos[2]).c_str());
+		// logger->log_warn(name(), std::to_string(dist).c_str());
+		// logger->log_info("pos[0]: ", std::to_string(pos[0]).c_str());
+		// logger->log_info("pos[1]: ", std::to_string(pos[1]).c_str());
+		// logger->log_info("pos[2]: ", std::to_string(pos[2]).c_str());
 		if (dist < min_dist) {
 			min_dist       = dist;
 			closest_pos[0] = pos[0];
@@ -544,7 +550,7 @@ ObjectTrackingThread::closest_position(std::vector<Rect> bounding_boxes,
 	}
 
 	if (min_dist == max_acceptable_dist) {
-		logger->log_warn(name(), "No detection close enough!");
+		// logger->log_warn(name(), "No detection close enough!");
 		//continue with expected position
 		closest_pos[0] = exp_x_;
 		closest_pos[1] = exp_y_;
