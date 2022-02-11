@@ -117,10 +117,20 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?id) (class BUFFER-CAP) (sub-type SIMPLE)
 	            (mode FORMULATED)
-	            (params target-mps ?mps
+	            (params id ?order-id
+						target-mps ?mps
 	                    cap-color ?cap-color
 	            )
 	            (is-executable FALSE))
+	; the conditions ensure that the while using static assignement, only one task is assigned to the robot at the time
+	; ensure no other buffer-cap goal is running
+	(not (goal (class BUFFER-CAP) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
+	;(not (goal (class BUFFER-CAP) (params target-mps ?mps $?) (is-executable TRUE)))
+	(not (goal (class BUFFER-CAP) (is-executable TRUE)))
+	; check that there is nothing to discard First
+	(or (not (goal (class DISCARD-BASE) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
+		(not (goal (class DISCARD-BASE) (is-executable TRUE)))
+	)
 	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; Robot CEs
@@ -180,12 +190,13 @@
 )
 
 (deffunction goal-production-assert-buffer-cap
-	(?mps ?cap-color)
+	(?order-id ?mps ?cap-color)
 
 	(bind ?goal (assert (goal (class BUFFER-CAP)
 	      (id (sym-cat BUFFER-CAP- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
-	      (params target-mps ?mps
+	      (params id ?order-id
+		  		  target-mps ?mps
 	              cap-color ?cap-color)
 	)))
 	(return ?goal)
@@ -237,6 +248,7 @@
 				;(goal-meta-assert (goal-production-assert-instruct-cs-buffer-cap C-CS1 CAP_GREY) central)
 			 )
 	)
+	;(assert (wm-fact (key central agent robot-waiting args? r robot2)))
 	(modify ?g (meta do-not-finish) (priority 1.0))
 )
 
@@ -331,11 +343,18 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (class DISCARD) (sub-type SIMPLE)
 	             (mode FORMULATED)
-	             (params mps ?wp-loc
+	             (params id ?order-id
+				 		 mps ?wp-loc
 						 mps-side ?wp-side
 	             )
 	             (is-executable FALSE))
 	(not (goal (class DISCARD) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
+	; Only execute cc-payment goal, if buffer task for this order is finished
+	(and (not (goal (class BUFFER-CAP) (params id ?order-id $?) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
+		 (not (goal (class BUFFER-CAP) (params id ?order-id $?) (is-executable TRUE)))
+	)
+	; Only discard if no other workpiece sits at the same positions that is needed as payment
+	(not (goal (class PAY-FOR-RINGS-WITH-CC) (params wp-loc ?wp-loc wp-side ?wp-side $?) (is-executable TRUE)))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; MPS CEs
 	(wm-fact (key domain fact mps-state args? m ?wp-loc s ~BROKEN))
@@ -349,12 +368,13 @@
 )
 
 (deffunction goal-production-assert-discard-base
-	(?wp-loc ?wp-side)
+	(?order-id ?wp-loc ?wp-side)
 
 	(bind ?goal (assert (goal (class DISCARD)
 	  (id (sym-cat DISCARD-BASE- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
-	      (params mps ?wp-loc
+	      (params id ?order-id
+		  		  mps ?wp-loc
 	              mps-side ?wp-side)
 	)))
 	(return ?goal)
@@ -430,7 +450,8 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (class INSTRUCT-CS-MOUNT-CAP) (sub-type SIMPLE)
 	             (mode FORMULATED)
-	            (params target-mps ?mps
+	            (params wp ?wp
+						target-mps ?mps
 						cap-color ?cap-color
 	             )
 	             (is-executable FALSE))
@@ -442,19 +463,20 @@
 	(wm-fact (key domain fact mps-state args? m ?mps s IDLE))
 	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
 	; WP at input and cap buffered
-	(wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side INPUT))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
 	(wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
 	=>
 	(modify ?g (is-executable TRUE))
 )
 
 (deffunction goal-production-assert-instruct-cs-mount-cap
-	(?mps ?cap-color)
+	(?wp ?mps ?cap-color)
 
 	(bind ?goal (assert (goal (class INSTRUCT-CS-MOUNT-CAP)
 	  (id (sym-cat INSTRUCT-CS-MOUNT-CAP- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
-	      (params target-mps ?mps
+	      (params wp ?wp
+		  		  target-mps ?mps
 	              cap-color ?cap-color)
 	)))
 	(return ?goal)
@@ -610,12 +632,17 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?id) (class PAY-FOR-RINGS-WITH-CC) (sub-type SIMPLE)
 	            (mode FORMULATED)
-	            (params wp-loc ?wp-loc
+	            (params id ?order-id
+						wp-loc ?wp-loc
 	              		wp-side ?wp-side
 	              		target-mps ?target-mps
 	              		target-side ?target-side
 	            )
 	            (is-executable FALSE))
+	; Only execute cc-payment goal, if buffer task for this order is finished
+	(and (not (goal (class BUFFER-CAP) (params id ?order-id $?) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
+		 (not (goal (class BUFFER-CAP) (params id ?order-id $?) (is-executable TRUE)))
+	)
 	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; MPS CEs
@@ -631,12 +658,13 @@
 )
 
 (deffunction goal-production-assert-pay-for-rings-with-cc
-	(?wp-loc ?wp-side ?target-mps ?target-side)
+	(?order-id ?wp-loc ?wp-side ?target-mps ?target-side)
 
 	(bind ?goal (assert (goal (class PAY-FOR-RINGS-WITH-CC)
 	  (id (sym-cat PAY-FOR-RINGS-WITH-CC- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
-	      (params wp-loc ?wp-loc
+	      (params id ?order-id
+		  		  wp-loc ?wp-loc
 	              wp-side ?wp-side
 	              target-mps ?target-mps
 	              target-side ?target-side)
@@ -800,10 +828,10 @@
 					(goal-meta-assert (goal-production-assert-deliver ?wp-for-order C-DS) robot1)
 				)
 				;(goal-tree-assert-central-run-parallel PREPARATIONS
-					(goal-meta-assert (goal-production-assert-buffer-cap ?cs ?col-cap) robot1)
+					(goal-meta-assert (goal-production-assert-buffer-cap ?order-id ?cs ?col-cap) robot1)
 					(goal-meta-assert (goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap) central)
-					(goal-meta-assert (goal-production-assert-discard-base ?cs OUTPUT) robot1)
-					(goal-meta-assert (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap) central)
+					(goal-meta-assert (goal-production-assert-discard-base ?order-id ?cs OUTPUT) robot1)
+					(goal-meta-assert (goal-production-assert-instruct-cs-mount-cap ?wp-for-order ?cs ?col-cap) central)
 					(goal-meta-assert (goal-production-assert-instruct-ds-deliver ?wp-for-order C-DS) central)
 				;)
 			)
@@ -827,26 +855,26 @@
 					(goal-meta-assert (goal-production-assert-deliver ?wp-for-order C-DS) robot1)
 				)
 				(goal-tree-assert-central-run-parallel PREPARATIONS
-					(goal-meta-assert (goal-production-assert-buffer-cap ?cs ?col-cap) robot1)
+					(goal-meta-assert (goal-production-assert-buffer-cap ?order-id ?cs ?col-cap) robot1)
 					(goal-meta-assert (goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap) central)
 					(if (eq ?ring1-num ZERO)
 						then
-							(goal-meta-assert (goal-production-assert-discard-base ?cs OUTPUT) robot1)
+							(goal-meta-assert (goal-production-assert-discard-base ?order-id ?cs OUTPUT) robot1)
 						else
 						(if (eq ?ring1-num ONE)
 						then
-							(goal-meta-assert (goal-production-assert-pay-for-rings-with-cc ?cs OUTPUT ?rs-col1 INPUT) robot1)
+							(goal-meta-assert (goal-production-assert-pay-for-rings-with-cc ?order-id ?cs OUTPUT ?rs-col1 INPUT) robot1)
 						else
 							(if (eq ?ring1-num TWO)
 								then
 								(create$
-									(goal-meta-assert (goal-production-assert-pay-for-rings-with-cc ?cs OUTPUT ?rs-col1 INPUT) robot1)
+									(goal-meta-assert (goal-production-assert-pay-for-rings-with-cc ?order-id ?cs OUTPUT ?rs-col1 INPUT) robot1)
 									(goal-production-assert-payment-goal ?rs-col1 ?col-base)
 								)
 							)
 						)
 					)
-					(goal-meta-assert (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap) central)
+					(goal-meta-assert (goal-production-assert-instruct-cs-mount-cap ?wp-for-order ?cs ?col-cap) central)
 					(goal-meta-assert (goal-production-assert-instruct-ds-deliver ?wp-for-order C-DS) central)
 				)
 			)
@@ -875,21 +903,21 @@
 					(goal-meta-assert (goal-production-assert-deliver ?wp-for-order C-DS) robot1)
 				)
 				(goal-tree-assert-central-run-parallel PREPARATIONS
-					(goal-meta-assert (goal-production-assert-buffer-cap ?cs ?col-cap) robot1)
+					(goal-meta-assert (goal-production-assert-buffer-cap ?order-id ?cs ?col-cap) robot1)
 					(goal-meta-assert (goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap) central)
 					; Ring 1 choices
 					(if (eq ?ring1-num ZERO)
 						then
-							(goal-meta-assert (goal-production-assert-discard-base ?cs OUTPUT) robot1)
+							(goal-meta-assert (goal-production-assert-discard-base ?order-id ?cs OUTPUT) robot1)
 						else
 							(if (eq ?ring1-num ONE)
 								then
-									(goal-meta-assert (goal-production-assert-pay-for-rings-with-cc ?cs OUTPUT ?rs-col1 INPUT) robot1)
+									(goal-meta-assert (goal-production-assert-pay-for-rings-with-cc ?order-id ?cs OUTPUT ?rs-col1 INPUT) robot1)
 								else
 									(if (eq ?ring1-num TWO)
 										then
 											(create$ 
-												(goal-meta-assert (goal-production-assert-pay-for-rings-with-cc ?cs OUTPUT ?rs-col1 INPUT) robot1)
+												(goal-meta-assert (goal-production-assert-pay-for-rings-with-cc ?order-id ?cs OUTPUT ?rs-col1 INPUT) robot1)
 												(goal-production-assert-payment-goal ?rs-col1 ?col-base)
 											)
 									)
@@ -913,7 +941,7 @@
 									)
 							)
 					)
-					(goal-meta-assert (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap) central)
+					(goal-meta-assert (goal-production-assert-instruct-cs-mount-cap ?wp-for-order ?cs ?col-cap) central)
 					(goal-meta-assert (goal-production-assert-instruct-ds-deliver ?wp-for-order C-DS) central)
 				)
 			)
@@ -944,21 +972,21 @@
 					(goal-meta-assert (goal-production-assert-deliver ?wp-for-order C-DS) robot1)
 				)
 				(goal-tree-assert-central-run-parallel PREPARATIONS
-					(goal-meta-assert (goal-production-assert-buffer-cap ?cs ?col-cap) robot1)
+					(goal-meta-assert (goal-production-assert-buffer-cap ?order-id ?cs ?col-cap) robot1)
 					(goal-meta-assert (goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap) central)
 					; Ring 1 choices
 					(if (eq ?ring1-num ZERO)
 						then
-							(goal-meta-assert (goal-production-assert-discard-base ?cs OUTPUT) robot1)
+							(goal-meta-assert (goal-production-assert-discard-base ?order-id ?cs OUTPUT) robot1)
 						else
 							(if (eq ?ring1-num ONE)
 								then
-									(goal-meta-assert (goal-production-assert-pay-for-rings-with-cc ?cs OUTPUT ?rs-col1 INPUT) robot1)
+									(goal-meta-assert (goal-production-assert-pay-for-rings-with-cc ?order-id ?cs OUTPUT ?rs-col1 INPUT) robot1)
 								else		
 									(if (eq ?ring1-num TWO)
 										then
 											(create$
-												(goal-meta-assert (goal-production-assert-pay-for-rings-with-cc ?cs OUTPUT ?rs-col1 INPUT) robot1)
+												(goal-meta-assert (goal-production-assert-pay-for-rings-with-cc ?order-id ?cs OUTPUT ?rs-col1 INPUT) robot1)
 												(goal-production-assert-payment-goal ?rs-col1 ?col-base)
 											)
 									)
@@ -1001,7 +1029,7 @@
 									)
 							)
 					)
-					(goal-meta-assert (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap) central)
+					(goal-meta-assert (goal-production-assert-instruct-cs-mount-cap ?wp-for-order ?cs ?col-cap) central)
 					(goal-meta-assert (goal-production-assert-instruct-ds-deliver ?wp-for-order C-DS) central)
 				)
 			)
@@ -1013,7 +1041,7 @@
 (defrule goal-production-get-order-from-refbox
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
-	(wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
+	(wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp&:(or (eq ?comp C1) (eq ?comp C0))))
 	(wm-fact (key domain fact order-base-color args? ord ?order-id col ?col-base))
 	(wm-fact (key domain fact order-cap-color args? ord ?order-id col ?col-cap))
 	(wm-fact (key domain fact order-ring1-color args? ord ?order-id col ?col-ring1))
@@ -1067,4 +1095,7 @@
 	=>
 	(printout t "Goal " ENTER-FIELD " formulated" crlf)
 	(goal-meta-assert (goal-production-assert-enter-field ?team-color) robot1)
+	; Add goals for other robots
+	(goal-meta-assert (goal-production-assert-enter-field ?team-color) robot2)
+	(goal-meta-assert (goal-production-assert-enter-field ?team-color) robot3)
 )

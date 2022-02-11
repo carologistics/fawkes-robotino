@@ -150,7 +150,7 @@
 (defrule goal-reasoner-select-root-central-executable-simple-goal
   "There is an executable simple goal assigned to central, propagate selection."
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
-  ?g <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
+  ?g <- (goal (parent ~nil) (type ACHIEVE) (sub-type ~nil) (class ?c&:(neq ?c SEND-BEACON))
       (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
   (goal (id ?id) (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE))
   (goal-meta (goal-id ?id) (assigned-to central))

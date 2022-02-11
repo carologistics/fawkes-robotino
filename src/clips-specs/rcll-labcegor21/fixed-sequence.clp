@@ -101,7 +101,8 @@
    it can directly put the cap on a product."
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class BUFFER-CAP) (mode SELECTED) (parent ?parent)
-	            (params target-mps ?mps
+	            (params id ?order-id 
+						target-mps ?mps
 	                    cap-color ?cap-color
 	            ))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
@@ -143,7 +144,8 @@
 " Pick up a product and discard it."
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class DISCARD) (mode SELECTED)
-	            (params mps ?wp-loc
+	            (params id ?order-id
+						mps ?wp-loc
 						mps-side ?wp-side))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
@@ -261,7 +263,8 @@
 (defrule goal-expander-get-cap-carrier-to-fill-rs
 	?g <- (goal (id ?goal-id) (class ?class&PAY-FOR-RINGS-WITH-CC)
 	                          (mode SELECTED) (parent ?parent)
-	                          (params  wp-loc ?wp-loc
+	                          (params  id ?order-id
+							  		   wp-loc ?wp-loc
 	                                   wp-side ?wp-side
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
@@ -364,7 +367,7 @@
 
 (defrule goal-expander-instruct-cs-mount-cap
 	?g <- (goal (id ?goal-id) (class INSTRUCT-CS-MOUNT-CAP) (mode SELECTED)
-	            (params target-mps ?mps cap-color ?cap-color))
+	            (params wp ?wp target-mps ?mps cap-color ?cap-color))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
 	=>
