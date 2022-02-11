@@ -521,7 +521,6 @@
 	(assert (wm-fact (key order meta wp-for-order args? wp ?wp-for-order ord ?order-id)))
 	(if (eq ?com C0) then
 		(bind ?goal (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-			(goal-production-assert-buffer-cap ?cap-mps ?cap-color)
 			(goal-production-assert-mount-cap ?wp-for-order C-BS ?cap-mps ?cap-color)
 			(goal-production-assert-deliver ?wp-for-order C-DS)
 		))
@@ -529,7 +528,6 @@
 	(if (eq ?com C1) then
 		(bind ?ring1-mps (goal-production-get-ring-machine-for-color ?ring1-color))
 		(bind ?goal (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-			(goal-production-assert-buffer-cap ?cap-mps ?cap-color)
 			(goal-production-assert-mount-ring ?wp-for-order C-BS
 									?ring1-mps ?ring1-color 1)
 			(goal-production-assert-mount-cap ?wp-for-order ?ring1-mps
@@ -541,7 +539,6 @@
 		(bind ?ring1-mps (goal-production-get-ring-machine-for-color ?ring1-color))
 		(bind ?ring2-mps (goal-production-get-ring-machine-for-color ?ring2-color))
 		(bind ?goal (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-			(goal-production-assert-buffer-cap ?cap-mps ?cap-color)
 			(goal-production-assert-mount-ring ?wp-for-order C-BS
 									?ring1-mps ?ring1-color 1)
 			(goal-production-assert-mount-ring ?wp-for-order ?ring1-mps
@@ -556,7 +553,6 @@
 		(bind ?ring2-mps (goal-production-get-ring-machine-for-color ?ring2-color))
 		(bind ?ring3-mps (goal-production-get-ring-machine-for-color ?ring3-color))
 		(bind ?goal (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-			(goal-production-assert-buffer-cap ?cap-mps ?cap-color)
 			(goal-production-assert-mount-ring ?wp-for-order C-BS
 									?ring1-mps ?ring1-color 1)
 			(goal-production-assert-mount-ring ?wp-for-order ?ring1-mps
@@ -611,6 +607,20 @@
 	=>
 	; Discard it.
 	(bind ?goal (goal-production-assert-discard ?wp ?mps OUTPUT))
+	(modify ?goal (parent ?root-id))
+)
+
+(defrule goal-production-create-buffer-cap
+	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+	; Whenever there is a cap station without a cap buffered.
+	(wm-fact (key domain fact cs-color args? m ?cap-mps col ?cap-color))
+	(not (wm-fact (key domain fact cs-buffered args? m ?cap-mps col ?cap-color)))
+	; and we don't have a buffer cap goal for that machine.
+	(not (goal (class BUFFER-CAP) (params target-mps ?cap-mps cap-color ?cap-color)))
+	=>
+	; Buffer a cap.
+	(bind ?goal (goal-production-assert-buffer-cap ?cap-mps ?cap-color))
 	(modify ?goal (parent ?root-id))
 )
 
