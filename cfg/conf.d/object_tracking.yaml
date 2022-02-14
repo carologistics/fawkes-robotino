@@ -69,5 +69,5 @@ plugins/object_tracking:
     image_path: "/home/mtschesche/Pictures/realsense2_1m.jpg"
 
   buffer:
-    shm_image_id: "rgb_id"
+    shm_image_id: "realsense_rgb"
     frame: "cam_conveyor"
