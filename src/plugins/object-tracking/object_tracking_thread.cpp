@@ -168,10 +168,8 @@ ObjectTrackingThread::init()
 	// Image Buffer ID
 	shm_id_ = config->get_string("plugins/object_tracking/buffer/shm_image_id");
 
-	shm_buffer_ = new firevision::SharedMemoryImageBuffer(shm_id_.c_str(),
-	                                                      firevision::RGB,
-	                                                      camera_width_,
-	                                                      camera_height_);
+	//read only
+	shm_buffer_ = new firevision::SharedMemoryImageBuffer(shm_id_.c_str(), true);
 	if (!shm_buffer_->is_valid()) {
 		throw fawkes::Exception("Shared memory segment not valid");
 	}
