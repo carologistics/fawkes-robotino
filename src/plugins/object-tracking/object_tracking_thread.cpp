@@ -166,21 +166,13 @@ ObjectTrackingThread::init()
 	//shared memory buffer--------------------
 
 	// Image Buffer ID
-	shm_id_ = config->get_string("plugins/object_tracking/buffer/shm_image_id");
-
-	//read only
-	shm_buffer_ = new firevision::SharedMemoryImageBuffer(shm_id_.c_str(), true);
-	if (!shm_buffer_->is_valid()) {
-		throw fawkes::Exception("Shared memory segment not valid");
-	}
-	std::string frame = this->config->get_string("plugins/object_tracking/buffer/frame");
-	shm_buffer_->set_frame_id(frame.c_str());
-
-	image_buffer_ = shm_buffer_->buffer();
+	shm_id_  = config->get_string("plugins/object_tracking/buffer/shm_image_id");
+	frame_id = this->config->get_string("plugins/object_tracking/buffer/frame");
 
 	//--------------------------------------
-	loop_once_ = true;
-	tracking_  = false;
+	loop_once_  = true;
+	tracking_   = false;
+	shm_active_ = false;
 }
 
 void
@@ -199,6 +191,9 @@ ObjectTrackingThread::loop()
 
 			compute_expected_position();
 			//logger->log_info("past_responses_[0][0]: ", std::to_string(past_responses_[0][0]).c_str());
+
+			if (!shm_active_)
+				set_shm();
 
 			//start interface
 			tracking_ = true;
@@ -461,6 +456,20 @@ ObjectTrackingThread::compute_middle_y(float y_offset)
 }
 
 void
+ObjectTrackingThread::set_shm()
+{
+	//read only
+	shm_buffer_ = new firevision::SharedMemoryImageBuffer(shm_id_.c_str(), true);
+	if (!shm_buffer_->is_valid()) {
+		throw fawkes::Exception("Shared memory segment not valid");
+	} else {
+		shm_active_ = true;
+	}
+	shm_buffer_->set_frame_id(frame_id.c_str());
+	image_buffer_ = shm_buffer_->buffer();
+}
+
+void
 ObjectTrackingThread::detect_objects(Mat image, std::vector<Rect> &out_boxes)
 {
 	std::vector<float> confidences;
@@ -475,7 +484,7 @@ ObjectTrackingThread::detect_objects(Mat image, std::vector<Rect> &out_boxes)
 	if (outs.empty())
 		return;
 
-	// logger->log_info(name(), "detected something");
+	logger->log_info(name(), "detected something");
 
 	//pointer to access outs' data
 	float *data = (float *)outs[0].data;
@@ -486,7 +495,7 @@ ObjectTrackingThread::detect_objects(Mat image, std::vector<Rect> &out_boxes)
 		float confidence = data[4 + (int)current_object_type_];
 		//logger->log_info("confidence: ", std::to_string(confidence).c_str());
 		if (confidence > confThreshold_) {
-			// logger->log_info(name(), "found something");
+			logger->log_info(name(), "found something");
 			// logger->log_info("confidence: ", std::to_string(confidence).c_str());
 			// logger->log_info("pos[0]: ", std::to_string(data[0]).c_str());
 			// logger->log_info("pos[1]: ", std::to_string(data[1]).c_str());

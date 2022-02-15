@@ -147,8 +147,10 @@ private:
 
 	//shared memory buffer
 	std::string                          shm_id_;
+	std::string                          frame_id;
 	firevision::SharedMemoryImageBuffer *shm_buffer_;
 	unsigned char *                      image_buffer_;
+	bool                                 shm_active_;
 
 	//expected object point:
 	float exp_x_;
@@ -171,6 +173,9 @@ private:
 	void  compute_expected_position();
 	float compute_middle_x(float x_offset);
 	float compute_middle_y(float y_offset);
+
+	//set shared memory buffer to read only
+	void set_shm();
 
 	//use yolo to detect objects
 	void detect_objects(cv::Mat image, std::vector<cv::Rect> &out_boxes);
