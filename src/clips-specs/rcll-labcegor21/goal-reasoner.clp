@@ -153,7 +153,7 @@
   "Select goals needed to produce an order."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ?g <- (goal (id ?goal-id) (parent ?parent-id) (mode FORMULATED) (is-executable TRUE))
-  (goal (id ?parent-id) (class PRODUCE-ORDER))
+  (goal (id ?parent-id) (class PRODUCE-ORDER) (params order ?order-id))
   ?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
 
   ; We have a robot that isn't doing anything.
@@ -162,6 +162,13 @@
 					        (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED))
 		        (goal-meta (goal-id ?other-goal) (assigned-to ?robot))))
 
+  ; We don't want to handle it if there is another order with earlier delivery end.
+  (wm-fact (key refbox order ?order-id delivery-end) (value ?order-end))
+  (not (and (goal (parent ?other-parent-id) (mode FORMULATED) (is-executable TRUE))
+            (goal (id ?other-parent-id) (class PRODUCE-ORDER) (params order ?other-order-id))
+            (wm-fact (key refbox order ?other-order-id delivery-end) (value ?other-order-end))
+            (test (< ?other-order-end ?order-end))
+  ))
   =>
   (printout t "Production goal " ?goal-id " SELECTED and assigned to " ?robot crlf)
   (modify ?assignment (assigned-to ?robot))
