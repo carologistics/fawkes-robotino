@@ -488,8 +488,9 @@
 						(goal (parent ?other-produce-goal) (class ?c&~DELIVER))))
 			 (not (and  (wm-fact (key refbox order ?other-order-id delivery-begin)
 	         		  	   		(value ?other-begin&:(< ?other-begin ?order-begin)))
-					    (not (wm-fact (key domain fact order-fulfilled args? ord ?other-order-id)))
-				  ))
+					    (not (goal (class PRODUCE-ORDER) (params order ?other-order-id)))
+				   )
+			  )
 		)
 	)
 
