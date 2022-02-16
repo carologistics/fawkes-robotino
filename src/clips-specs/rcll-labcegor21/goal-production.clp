@@ -112,44 +112,22 @@
 	?g <- (goal (id ?goal-id) (class TRANSPORT)
 	                          (mode FORMULATED)
 	                          (params src-mps ?src-mps src-side ?src-side
-	                    			  dst-mps ?dst-mps dst-side ?dst-side
-	            			  )
+	                    			  dst-mps ?dst-mps dst-side ?dst-side)
 	                          (is-executable FALSE))
-	?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
-	
-	; Robot CEs
-	(wm-fact (key central agent robot args? r ?robot))
-	(not (and (goal (id ?other-goal)
-					(mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-					(is-executable TRUE))
-		      (goal-meta (goal-id ?other-goal) (assigned-to ?robot))))
-
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps side ?src-side))
 	(not (wm-fact (key domain fact wp-at args? wp ?other-wp m ?dst-mps side ?dst-side)))
-
 	=>
-
-	(printout t "Goal TRANSPORT executable for " ?robot crlf)
-	(modify ?assignment (assigned-to ?robot))
+	(printout t "Goal TRANSPORT executable" crlf)
 	(modify ?g (is-executable TRUE))
 )
 
 (defrule goal-production-discard-executable
-" Discard output from a station.
-"
+" Discard output from a station."
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class DISCARD)
 	                          (mode FORMULATED)
 	                          (params  wp ?wp&~UNKNOWN wp-loc ?wp-loc wp-side ?wp-side)
 	                          (is-executable FALSE))
-	?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
-	
-	; Robot CEs
-	(wm-fact (key central agent robot args? r ?robot))
-	(not (and (goal (id ?other-goal)
-					(mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-					(is-executable TRUE))
-		      (goal-meta (goal-id ?other-goal) (assigned-to ?robot))))
 
 	; MPS-Source CEs
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -160,8 +138,7 @@
 	         (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side)))
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
 	=>
-	(printout t "Goal DISCARD executable for " ?robot crlf)
-	(modify ?assignment (assigned-to ?robot))
+	(printout t "Goal DISCARD executable" crlf)
 	(modify ?g (is-executable TRUE))
 )
 
@@ -171,14 +148,6 @@
 	            (mode FORMULATED)
 	            (params wp ?wp src-mps ?src-mps	ring-mps ?ring-mps)
 	            (is-executable FALSE))
-	?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
-	
-	; Robot CEs
-	(wm-fact (key central agent robot args? r ?robot))
-	(not (and (goal (id ?other-goal)
-					(mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-					(is-executable TRUE))
-		      (goal-meta (goal-id ?other-goal) (assigned-to ?robot))))
 
 	; src MPS CEs
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -195,8 +164,7 @@
 	(wm-fact (key domain fact mps-team args? m ?ring-mps col ?team-color))
 	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?rs-before&ZERO|ONE|TWO))
 	=>
-	(printout t "Goal PAY-RING executable for " ?robot crlf)
-	(modify ?assignment (assigned-to ?robot))
+	(printout t "Goal PAY-RING executable" crlf)
 	(modify ?g (is-executable TRUE))
 )
 
@@ -212,14 +180,6 @@
 			   (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
 	(not (goal (class MOUNT-CAP) (params $? cap-mps ?mps $?)
 			   (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
-	?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
-	
-	; Robot CEs
-	(wm-fact (key central agent robot args? r ?robot))
-	(not (and (goal (id ?other-goal)
-					(mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-					(is-executable TRUE))
-		      (goal-meta (goal-id ?other-goal) (assigned-to ?robot))))
 
 	; MPS CEs
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -246,8 +206,7 @@
 	    )
 	)
 	=>
-	(printout t "Goal BUFFER-CAP executable for " ?robot crlf)
-	(modify ?assignment (assigned-to ?robot))
+	(printout t "Goal BUFFER-CAP executable" crlf)
 	(modify ?g (is-executable TRUE))
 )
 
@@ -257,19 +216,11 @@
 	            (mode FORMULATED)
 	            (params wp ?wp src-mps ?src-mps cap-mps ?cap-mps cap-color ?cap-color)
 	            (is-executable FALSE))
-	?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
 	(not (goal (class BUFFER-CAP) (params target-mps ?cap-mps $?)
 			   (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
 	(not (goal (class MOUNT-CAP) (params $? cap-mps ?cap-mps $?)
 			   (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
 	
-	; Robot CEs
-	(wm-fact (key central agent robot args? r ?robot))
-	(not (and (goal (id ?other-goal)
-					(mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-					(is-executable TRUE))
-		      (goal-meta (goal-id ?other-goal) (assigned-to ?robot))))
-
 	; src MPS CEs
 	(wm-fact (key refbox team-color) (value ?team-color))
 	(or (wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps $?))
@@ -296,7 +247,6 @@
 	(wm-fact (key domain fact cs-can-perform args? m ?cap-mps op MOUNT_CAP))
 	=>
 	(printout t "Goal MOUNT-CAP executable" crlf)
-	(modify ?assignment (assigned-to ?robot))
 	(modify ?g (is-executable TRUE))
 )
 
@@ -309,15 +259,7 @@
 	            (is-executable FALSE))
 	(not (goal (class MOUNT-RING) (params $? ring-mps ?ring-mps $?)
 			   (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
-	?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
 	
-	; Robot CEs
-	(wm-fact (key central agent robot args? r ?robot))
-	(not (and (goal (id ?other-goal)
-					(mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-					(is-executable TRUE))
-		      (goal-meta (goal-id ?other-goal) (assigned-to ?robot))))
-
 	; src MPS CEs
 	(wm-fact (key refbox team-color) (value ?team-color))
 	(or (wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps $?))
@@ -345,7 +287,6 @@
                                          difference ?bases-remain&ZERO|ONE|TWO|THREE))
 	=>
 	(printout t "Goal MOUNT-RING executable" crlf)
-	(modify ?assignment (assigned-to ?robot))
 	(modify ?g (is-executable TRUE))
 )
 
@@ -358,17 +299,8 @@
 	(not (goal (class DELIVER) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
 	(not (and  (goal (class TRANSPORT) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 			   		 (params src-mps ?src-mps src-side ?src-side
-	                    dst-mps ?dst-mps dst-side ?dst-side
-	            	  ))
+	                    dst-mps ?dst-mps dst-side ?dst-side))
 				(wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps side ?src-side))))
-	?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
-	
-	; Robot CEs
-	(wm-fact (key central agent robot args? r ?robot))
-	(not (and (goal (id ?other-goal)
-					(mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-					(is-executable TRUE))
-		      (goal-meta (goal-id ?other-goal) (assigned-to ?robot))))
 
 	; MPS-CES
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -386,7 +318,6 @@
 	         (value ?begin&:(< ?begin (nth$ 1 ?game-time))))
 	=>
 	(printout t "Goal DELIVER executable" crlf)
-	(modify ?assignment (assigned-to ?robot))
 	(modify ?g (is-executable TRUE))
 )
 

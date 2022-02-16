@@ -127,6 +127,47 @@
   (modify ?g (mode SELECTED))
 )
 
+(defrule goal-reasoner-select-order-helper-goals
+  "Select buffer/pay/discard goal if nothing else is executable."
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ?g <- (goal (id ?goal-id) (parent ?parent-id) (class ~PRODUCE-ORDER) (mode FORMULATED) (is-executable TRUE))
+  (goal (id ?parent-id) (class PRODUCTION-ROOT))
+  ?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
+
+   ; We have a robot that isn't doing anything.
+	(wm-fact (key central agent robot args? r ?robot))
+	(not (and (goal (id ?other-goal) (is-executable TRUE)
+					        (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED))
+		        (goal-meta (goal-id ?other-goal) (assigned-to ?robot))))
+
+  ; And we don't have an executable production goal.
+  (not (and (goal (parent ?other-parent-id) (mode FORMULATED) (is-executable TRUE))
+            (goal (id ?other-parent-id) (class PRODUCE-ORDER))))
+  =>
+  (printout t "Production helper goal " ?goal-id " SELECTED and assigned to " ?robot crlf)
+  (modify ?assignment (assigned-to ?robot))
+  (modify ?g (mode SELECTED))
+)
+
+(defrule goal-reasoner-select-produce-order-goal
+  "Select goals needed to produce an order."
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ?g <- (goal (id ?goal-id) (parent ?parent-id) (mode FORMULATED) (is-executable TRUE))
+  (goal (id ?parent-id) (class PRODUCE-ORDER))
+  ?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
+
+  ; We have a robot that isn't doing anything.
+	(wm-fact (key central agent robot args? r ?robot))
+	(not (and (goal (id ?other-goal) (is-executable TRUE)
+					        (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED))
+		        (goal-meta (goal-id ?other-goal) (assigned-to ?robot))))
+
+  =>
+  (printout t "Production goal " ?goal-id " SELECTED and assigned to " ?robot crlf)
+  (modify ?assignment (assigned-to ?robot))
+  (modify ?g (mode SELECTED))
+)
+
 (defrule goal-reasoner-select-simple-waiting-robot
   "Select all executable simple goals in order to propagate selection."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
@@ -135,6 +176,8 @@
               (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
   ; We must not select children of RUN-ENDLESS.
   (not (goal (id ?parent-id) (sub-type RUN-ENDLESS)))
+  ; We want to handle goals of our production nodes separately.
+  (not (goal (id ?parent-id) (class PRODUCTION-ROOT|PRODUCE-ORDER)))
 
   (wm-fact (key central agent robot-waiting args? r ?robot))
 
