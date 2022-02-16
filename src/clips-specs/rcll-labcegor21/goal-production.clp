@@ -115,6 +115,7 @@
 	                    			  dst-mps ?dst-mps dst-side ?dst-side)
 	                          (is-executable FALSE))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps side ?src-side))
+	(wm-fact (key domain fact mps-side-free args? m ?dst-mps side ?dst-side))
 	(not (wm-fact (key domain fact wp-at args? wp ?other-wp m ?dst-mps side ?dst-side)))
 	=>
 	(printout t "Goal TRANSPORT executable" crlf)
@@ -629,7 +630,7 @@
 
 	; and we don't have a transport goal yet.
 	(not (goal (class TRANSPORT) (params src-mps ?src-mps src-side OUTPUT
-										 dst-mps C-SS dst-side ?)))
+										 dst-mps C-SS dst-side ?side)))
 	=>
 
 	; We put into the storage station.
