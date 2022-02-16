@@ -486,7 +486,11 @@
 		(test (< ?order-begin (+ (nth$ 1 ?game-time) 30)))
 		; or if we don't have any goals and no other order can be delivered earlier.
 		(and (not (and  (goal (id ?other-produce-goal) (class PRODUCE-ORDER) (mode FORMULATED))
-						(goal (parent ?other-produce-goal) (class ?c&~DELIVER))))
+						(goal (parent ?other-produce-goal) (class ?c&~DELIVER))
+						(goal (id ?other-produce-goal2) (class PRODUCE-ORDER) (mode FORMULATED))
+						(goal (parent ?other-produce-goal2) (class ?c2&~DELIVER))
+						(test (neq ?other-produce-goal ?other-produce-goal2))
+						))
 			 (not (and  (wm-fact (key refbox order ?other-order-id delivery-begin)
 	         		  	   		(value ?other-begin&:(< ?other-begin ?order-begin)))
 					    (not (goal (class PRODUCE-ORDER) (params order ?other-order-id)))
