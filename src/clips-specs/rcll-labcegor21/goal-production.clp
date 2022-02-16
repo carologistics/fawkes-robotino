@@ -553,25 +553,60 @@
 " Create a new goal for paying the ring station whenever there isn't one."
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
-	; Whenever we want to mount a ring,
-	(goal (class MOUNT-RING) (mode FORMULATED)
-	            (params wp ?wp src-mps ?src-mps
-						ring-mps ?ring-mps ring-color ?ring-color ring-nr ?ring-nr)
-				(is-executable FALSE))
-	; don't have a payment goal already,
+
+	; We have space in the ring station.
+	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled&ZERO|ONE|TWO))
+
+	; We don't have something we can discard.
+	(not (and (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+		 	  (wm-fact (key domain fact mps-type args? m ?mps t CS))
+		 	  (not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?)))))
+
+	; And we don't have another payment goal.
 	(not (goal (class PAY-RING) (params wp ?other-wp src-mps ?src-mps ring-mps ?ring-mps $?)))
-	; and we don't have enough bases,
-	(wm-fact (key domain fact rs-ring-spec args? m ?ring-mps r ?ring-color rn ?bases-needed))
-	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled))
-	(not (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
-                                         subtrahend ?bases-needed
-                                         difference ?bases-remain&ZERO|ONE|TWO|THREE)))
 	=>
-	; then we fill it up.
 	(bind ?wp-pay (sym-cat wp-pay1- (gensym*)))
 	(goal-production-initialize-wp ?wp-pay)
 	(bind ?goal (goal-production-assert-pay-ring ?wp-pay C-BS ?ring-mps))
   	(modify ?goal (parent ?root-id))
+)
+
+(defrule goal-production-create-payment-cap-carrier
+"Create a new goal for paying the ring station with a cap carrier."
+	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+
+	; Whenever there is a workpiece in the cap station output,
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+	(wm-fact (key domain fact mps-type args? m ?mps t CS))
+	; that workpiece is not needed for an order,
+	(not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?)))
+	; we have space in the ring station,
+	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled&ZERO|ONE|TWO))
+	; and no payment goal, nor discard goal.
+	(not (goal (class PAY-RING) (params wp ?other-wp src-mps ?src-mps ring-mps ?ring-mps $?)))
+	(not (goal (class DISCARD)  (params wp ?wp wp-loc ?mps wp-side OUTPUT)))
+	=>
+	(bind ?goal (goal-production-assert-pay-ring ?wp ?mps ?ring-mps))
+  	(modify ?goal (parent ?root-id))
+)
+
+(defrule goal-production-create-discard
+	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+
+	; Whenever there is a workpiece in the cap station output,
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+	(wm-fact (key domain fact mps-type args? m ?mps t CS))
+	; that workpiece is not needed for an order,
+	(not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?)))
+	; we don't have space in any ring station.
+	(not (wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled&ZERO|ONE|TWO)))
+	; and we don't have a discard goal.
+	(not (goal (class DISCARD) (params  wp ?wp wp-loc ?mps wp-side OUTPUT)))
+	=>
+	(bind ?goal (goal-production-assert-discard ?wp ?mps OUTPUT))
+	(modify ?goal (parent ?root-id))
 )
 
 (defrule goal-production-buffer-finished-product
@@ -603,22 +638,6 @@
 	      (params src-mps ?src-mps src-side OUTPUT
 				  dst-mps C-SS dst-side ?side)
 		  (meta-template goal-meta)))
-)
-
-(defrule goal-production-create-discard
-	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
-	; Whenever there is a workpiece in the cap station output,
-	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
-	(wm-fact (key domain fact mps-type args? m ?mps t CS))
-	; that workpiece is not needed for an order,
-	(not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?)))
-	; and we don't have a discard goal.
-	(not (goal (class DISCARD) (params  wp ?wp wp-loc ?mps wp-side OUTPUT)))
-	=>
-	; Discard it.
-	(bind ?goal (goal-production-assert-discard ?wp ?mps OUTPUT))
-	(modify ?goal (parent ?root-id))
 )
 
 (defrule goal-production-create-buffer-cap
