@@ -17,51 +17,51 @@ plugins/execution-time-estimator:
   # Does not work with empty whitelist
   static:
     priority: -1
-    speed: 3
+    speed: 12
 
     # global whitelist options
-    exec-time: 5
+    exec-time: 1.25
 
     # whitelist and blacklist
     # values taken from 2019 study of avg execution times across the season
     whitelist:
       explore:
         name: explore_zone
-        exec-time: 14.68
+        exec-time: 7.68
 
       enter-field:
         name: drive_into_field
-        exec-time: 12.68
+        exec-time: 3
 
       discard:
         name: discard
-        exec-time: 8.25
+        exec-time: 2
 
       # shelf picks
       01-get-shelf:
         name: get_product_from
         args: ["shelf=.*"]
-        exec-time: 24.19
+        exec-time: 6
       # shelf picks
       02-put-slide:
         name: bring_product_to
         args: ["slide=TRUE"]
-        exec-time: 23.49
+        exec-time: 6
       # default pick
       99-default-pick:
         name: get_product_from
-        exec-time: 20.94
+        exec-time: 5
       # default put
       99-default-put:
         name: bring_prodcut_to
-        exec-time: 19.24
+        exec-time: 5
 
   # Estimates exec times of driving skills by taking distances from NavGraph
   # as reference.
   navgraph:
     # misc options
     priority: 1
-    speed: 0.5
+    speed: 2
 
     # global whitelist options
     target: place
@@ -76,7 +76,7 @@ plugins/execution-time-estimator:
   lookup:
     # misc options
     priority: 0
-    speed: 1.0
+    speed: 4.0
     database: "skills"
     collection: "exec_times"
 
