@@ -356,6 +356,11 @@
 	            (params wp ?wp mps ?mps)
 	            (is-executable FALSE))
 	(not (goal (class DELIVER) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
+	(not (and  (goal (class TRANSPORT) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+			   		 (params src-mps ?src-mps src-side ?src-side
+	                    dst-mps ?dst-mps dst-side ?dst-side
+	            	  ))
+				(wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps side ?src-side))))
 	?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
 	
 	; Robot CEs
