@@ -116,6 +116,8 @@ private:
 	bool                                                use_saved_;
 	fawkes::ObjectTrackingInterface::TARGET_OBJECT_TYPE saved_object_type_;
 	std::string                                         image_path_;
+	std::vector<cv::String>                             filenames_;
+	unsigned int                                        name_it_;
 
 	//NN params
 	std::string  weights_path_;
@@ -139,7 +141,7 @@ private:
 	rs2_intrinsics intrinsics_;
 
 	std::vector<float> object_widths_;
-	bool               loop_once_;
+	bool               rotate_image_;
 
 	//ObjectTrackingInterface to receive messages and update target frames
 	std::string                      object_tracking_if_name_;

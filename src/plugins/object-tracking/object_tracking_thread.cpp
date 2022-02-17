@@ -28,6 +28,7 @@
 #include <tf/types.h>
 #include <utils/math/angle.h>
 
+#include <boost/algorithm/string/predicate.hpp>
 #include <math.h>
 #include <opencv2/core/types.hpp>
 #include <opencv2/dnn.hpp>
@@ -103,6 +104,8 @@ ObjectTrackingThread::init()
 	saved_object_type_ = static_cast<ObjectTrackingInterface::TARGET_OBJECT_TYPE>(
 	  config->get_int("plugins/object_tracking/saved/saved_object_type"));
 
+	rotate_image_ = config->get_bool("plugins/object_tracking/rotate_image");
+
 	//needed for realsense 3d projection
 	intrinsics_.width     = camera_width_;
 	intrinsics_.height    = camera_height_;
@@ -170,7 +173,7 @@ ObjectTrackingThread::init()
 	frame_id = this->config->get_string("plugins/object_tracking/buffer/frame");
 
 	//--------------------------------------
-	loop_once_  = true;
+	name_it_    = 0;
 	tracking_   = false;
 	shm_active_ = false;
 }
@@ -219,8 +222,12 @@ ObjectTrackingThread::loop()
 		object_tracking_if_->msgq_pop();
 	}
 
-	if ((use_saved_ && !loop_once_) || (!use_saved_ && !tracking_))
+	if (!use_saved_ && !tracking_)
 		return;
+
+	//get all filenames in the given directory or the filename of the image path
+	if (use_saved_ && filenames_.empty())
+		glob(image_path_ + "*", filenames_);
 
 	fawkes::Time start_time(clock);
 
@@ -229,20 +236,32 @@ ObjectTrackingThread::loop()
 	if (use_saved_) {
 		current_object_type_ = saved_object_type_;
 
-		//TODO: initialize responses?
-		// for (int i = 0; i < filter_size_; i++) {
-		// 	std::array<float,3> exp_pos = {exp_x_, exp_y_, exp_z_};
-		// 	past_responses_.push_front(exp_pos);
-		// }
+		bool found_image = false;
+		if (name_it_ >= filenames_.size())
+			return;
 
-		//commented out for testing:
-		image      = imread(image_path_);
-		loop_once_ = false; //TODO: create possibility to go through all images in a folder
-		                    //firevision::CvMatAdapter::convert_image_bgr(image_buffer_, image);
+		while (name_it_ < filenames_.size() and !found_image) {
+			if (boost::algorithm::ends_with(filenames_[name_it_], ".png")
+			    || //TODO: catch more image file types
+			    boost::algorithm::ends_with(filenames_[name_it_], ".jpg")) {
+				image       = imread(filenames_[name_it_]);
+				found_image = true;
+			} else if (name_it_ + 1 >= filenames_.size()) {
+				name_it_++;
+				return;
+			}
+			name_it_++;
+		}
 	} else {
-		//read from sharedMemoryBuffer instead and convert into Mat
-		firevision::CvMatAdapter::convert_image_bgr(image_buffer_, image);
+		//read from sharedMemoryBuffer and convert into Mat
+		unsigned char tmp[camera_width_ * camera_height_ * 3];
+		firevision::convert(
+		  firevision::BGR, firevision::BGR, shm_buffer_->buffer(), tmp, camera_width_, camera_height_);
+		image = Mat(camera_width_, camera_height_, CV_8UC3, tmp);
 	}
+
+	if (rotate_image_)
+		rotate(image, image, ROTATE_180);
 
 	//detect objects
 	std::vector<Rect> out_boxes;
@@ -465,7 +484,7 @@ ObjectTrackingThread::set_shm()
 	} else {
 		shm_active_ = true;
 	}
-	shm_buffer_->set_frame_id(frame_id.c_str());
+	//shm_buffer_->set_frame_id(frame_id.c_str());
 	image_buffer_ = shm_buffer_->buffer();
 }
 
