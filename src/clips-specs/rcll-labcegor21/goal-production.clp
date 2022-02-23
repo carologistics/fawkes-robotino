@@ -591,7 +591,7 @@
 	; we have space in the ring station,
 	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled&ZERO|ONE|TWO))
 	; and no payment goal, nor discard goal.
-	(not (goal (class PAY-RING) (params wp ?other-wp src-mps ?mps ring-mps ?ring-mps $?)))
+	(not (goal (class PAY-RING) (params wp ?wp src-mps ?mps $?)))
 	(not (goal (class DISCARD)  (params wp ?wp wp-loc ?mps wp-side OUTPUT)))
 	=>
 	(bind ?goal (goal-production-assert-pay-ring ?wp ?mps ?ring-mps))
@@ -611,6 +611,7 @@
 	(not (wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled&ZERO|ONE|TWO)))
 	; and we don't have a discard goal.
 	(not (goal (class DISCARD) (params  wp ?wp wp-loc ?mps wp-side OUTPUT)))
+	(not (goal (class PAY-RING) (params wp ?wp src-mps ?mps $?)))
 	=>
 	(bind ?goal (goal-production-assert-discard ?wp ?mps OUTPUT))
 	(modify ?goal (parent ?root-id))
