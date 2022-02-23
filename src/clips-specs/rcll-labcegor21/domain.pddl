@@ -107,6 +107,7 @@
 	(mps-team ?m - mps ?col - team-color)
 	(mps-side-free ?m - mps ?side - mps-side)
 	(mps-side-approachable ?m - location ?side - mps-side)
+	(mps-locked ?m - mps)
 	(bs-prepared-color ?m - mps ?col - base-color)
 	(bs-prepared-side ?m - mps ?side - mps-side)
 	(bs-color ?m - mps ?col - base-color)
@@ -162,6 +163,18 @@
 	:parameters (?m - mps)
 	:precondition (or (mps-state ?m BROKEN) (not (mps-state ?m BROKEN)))
 	:effect (mps-state ?m BROKEN)
+)
+
+(:action lock-mps
+	:parameters (?m - mps)
+	:precondition (not (mps-locked ?m))
+	:effect (mps-locked ?m)
+)
+
+(:action unlock-mps
+	:parameters (?m - mps)
+	:precondition (or (mps-locked ?m) (not (mps-locked ?m)))
+	:effect (not (mps-locked ?m))
 )
 
 (:action prepare-bs

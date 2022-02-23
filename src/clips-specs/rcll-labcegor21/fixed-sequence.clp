@@ -189,19 +189,19 @@
 	(wm-fact (key domain fact mps-type args? m ?src-mps t ?src-type))
 	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
 	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-	; Ensure no other robot is doing that before expanding.
-	(or (test (neq ?src-type BS))
-		(not (plan-action (action-name prepare-bs) (state FORMULATED|RUNNING)))
-	)
 	=>
 	(plan-assert-sequential (sym-cat MOUNT-CAP-PLAN- (gensym*)) ?goal-id ?robot
 		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?src-mps OUTPUT
 			(if (eq ?src-type BS) then
-				(create$ (plan-assert-action prepare-bs ?src-mps OUTPUT ?base-color)
+				(create$ (plan-assert-action lock-mps ?src-mps)
+				         (plan-assert-action prepare-bs ?src-mps OUTPUT ?base-color)
 						 (plan-assert-action bs-dispense ?src-mps OUTPUT ?wp ?base-color)
 				)
 			)
 			(plan-assert-action wp-get ?robot ?wp ?src-mps OUTPUT)
+			(if (eq ?src-type BS) then
+				(plan-assert-action unlock-mps ?src-mps)
+			)
 		)
 		(plan-assert-safe-move ?robot (wait-pos ?src-mps OUTPUT) WAIT ?cap-mps INPUT
 			(plan-assert-action prepare-cs ?cap-mps MOUNT_CAP)
@@ -225,10 +225,6 @@
 	(wm-fact (key domain fact mps-type args? m ?src-mps t ?src-type))
 	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
 	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-	; Ensure no other robot is doing that before expanding.
-	(or (test (neq ?src-type BS))
-		(not (plan-action (action-name prepare-bs) (state FORMULATED|RUNNING)))
-	)
 	=>
 	(bind ?prev-rings (create$ ))
 	(loop-for-count (?count 1 (- ?ring-nr 1))
@@ -240,11 +236,15 @@
 	(plan-assert-sequential (sym-cat MOUNT-RING-PLAN- (gensym*)) ?goal-id ?robot
 		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?src-mps OUTPUT
 			(if (eq ?src-type BS) then
-				(create$ (plan-assert-action prepare-bs ?src-mps OUTPUT ?base-color)
+				(create$ (plan-assert-action lock-mps ?src-mps)
+				         (plan-assert-action prepare-bs ?src-mps OUTPUT ?base-color)
 						 (plan-assert-action bs-dispense ?src-mps OUTPUT ?wp ?base-color)
 				)
 			)
 			(plan-assert-action wp-get ?robot ?wp ?src-mps OUTPUT)
+			(if (eq ?src-type BS) then
+				(plan-assert-action unlock-mps ?src-mps)
+			)
 		)
 		(plan-assert-safe-move ?robot (wait-pos ?src-mps OUTPUT) WAIT ?ring-mps INPUT
 			(plan-assert-action prepare-rs ?ring-mps ?ring-color ?rs-before ?rs-after ?req)
@@ -288,19 +288,19 @@
 	(wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
 	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?rs-before))
 	(wm-fact (key domain fact mps-type args? m ?src-mps t ?src-type))
-	; Ensure no other robot is doing that before expanding.
-	(or (test (neq ?src-type BS))
-		(not (plan-action (action-name prepare-bs) (state FORMULATED|RUNNING)))
-	)
 	=>
 	(plan-assert-sequential (sym-cat PAY-RING-PLAN- (gensym*)) ?goal-id ?robot
 		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?src-mps OUTPUT
 			(if (eq ?src-type BS) then
-				(create$ (plan-assert-action prepare-bs ?src-mps OUTPUT BASE_RED)
+				(create$ (plan-assert-action lock-mps ?src-mps)
+				         (plan-assert-action prepare-bs ?src-mps OUTPUT BASE_RED)
 						 (plan-assert-action bs-dispense ?src-mps OUTPUT ?wp BASE_RED)
 				)
 			)
 			(plan-assert-action wp-get ?robot ?wp ?src-mps OUTPUT)
+			(if (eq ?src-type BS) then
+				(plan-assert-action unlock-mps ?src-mps)
+			)
 		)
 		(plan-assert-safe-move ?robot (wait-pos ?src-mps OUTPUT) WAIT ?ring-mps INPUT
 			(plan-assert-action wp-put-slide-cc ?robot ?wp ?ring-mps ?rs-before ?rs-after)
