@@ -298,6 +298,7 @@
 	            (params wp ?wp mps ?mps)
 	            (is-executable FALSE))
 	(not (goal (class DELIVER) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
+
 	(not (and  (goal (class TRANSPORT) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 			   		 (params src-mps ?src-mps src-side ?src-side
 	                    dst-mps ?dst-mps dst-side ?dst-side))
@@ -632,9 +633,10 @@
 	(wm-fact (key domain fact mps-side-free args? m C-SS side ?side))
 	(not (wm-fact (key domain fact wp-at args? wp ? m C-SS side ?side)))
 
-	; and we don't have a transport goal yet.
+	; and we don't have a transport goal or delivery goal yet.
 	(not (goal (class TRANSPORT) (params src-mps ?src-mps src-side OUTPUT
 										 dst-mps C-SS dst-side ?side)))
+	(not (goal (class DELIVER) (params wp ?wp mps ?)))	
 	=>
 
 	; We put into the storage station.
