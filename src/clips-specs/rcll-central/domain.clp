@@ -401,3 +401,119 @@
   =>
   (retract ?df)
 )
+
+(defrule domain-goal-fix-payment-fillable
+  (wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before&ZERO|ONE|TWO))
+  ;check that not to many robots try to fill the rs at the same time
+  (or (not (goal (class PAY-FOR-RINGS-WITH-BASE| PAY-FOR-RINGS-WITH-CAP-CARRIER|
+                        PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
+                 (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+                 (params $? target-mps ?target-mps $?)))
+      (and (goal (class PAY-FOR-RINGS-WITH-BASE| PAY-FOR-RINGS-WITH-CAP-CARRIER|
+                        PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
+                 (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+                 (params $? target-mps ?target-mps $?))
+           (test (< (+ (length$ (find-all-facts ((?other-goal goal))
+                           (and (or (eq ?other-goal:class PAY-FOR-RINGS-WITH-BASE)
+                                    (eq ?other-goal:class PAY-FOR-RINGS-WITH-CAP-CARRIER)
+                                    (eq ?other-goal:class PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF))
+                                ;(is-goal-running ?other-goal:mode)
+                                (or (eq ?other-goal:mode SELECTED) (eq ?other-goal:mode EXPANDED)
+                      	            (eq ?other-goal:mode COMMITTED) (eq ?other-goal:mode DISPATCHED))
+                                (member$ ?target-mps ?other-goal:params))))
+                       (sym-to-int ?rs-before)) 3))
+     )
+  )
+  =>
+  (assert (domain-fact (name rs-payment-fillable) (param-values ?target-mps)))
+)
+
+(defrule domain-goal-fix-retract-payment-fillable
+  (domain-fact (name rs-filled-with) (param-values ?target-mps THREE))
+  ?df <- (domain-fact (name rs-payment-fillable) (param-values ?target-mps))
+  =>
+  (retract ?df)
+)
+
+(defrule domain-goal-fix-next-ring-mountable
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  (domain-fact (name rs-ring-spec) (param-values ?mps ?ring-color&~RING_NONE ?bases-needed))
+  (domain-fact (name sufficient-payment-for) (param-values ?mps ?ring-color))
+  (or
+    (and
+      (domain-fact (name order-ring1-color) (param-values ?order ?ord-ring1-color&:(eq ?ord-ring1-color ?ring-color)))
+      (domain-fact (name wp-ring1-color) (param-values ?wp ?wp-ring1-color&:(eq ?wp-ring1-color RING_NONE)))
+    )
+    (and
+      (domain-fact (name order-ring1-color) (param-values ?order ?ord-ring1-color))
+      (domain-fact (name order-ring2-color) (param-values ?order ?ord-ring2-color&:(eq ?ord-ring2-color ?ring-color)))
+      (domain-fact (name wp-ring1-color) (param-values ?wp ?wp-ring1-color&:(eq ?wp-ring1-color ?ord-ring1-color)))
+      (domain-fact (name wp-ring2-color) (param-values ?wp ?wp-ring2-color&:(eq ?wp-ring2-color RING_NONE)))
+    )
+    (and
+        (domain-fact (name order-ring1-color) (param-values ?order ?ord-ring1-color))
+        (domain-fact (name order-ring2-color) (param-values ?order ?ord-ring2-color))
+        (domain-fact (name order-ring3-color) (param-values ?order ?ord-ring3-color&:(eq ?ord-ring3-color ?ring-color)))
+        (domain-fact (name wp-ring1-color) (param-values ?wp ?wp-ring1-color&:(eq ?wp-ring1-color ?ord-ring1-color)))
+        (domain-fact (name wp-ring2-color) (param-values ?wp ?wp-ring2-color&:(eq ?wp-ring2-color ?ord-ring2-color)))
+        (domain-fact (name wp-ring3-color) (param-values ?wp ?wp-ring3-color&:(eq ?wp-ring3-color RING_NONE)))
+    )
+  )
+  =>
+  (assert (domain-fact (name next-ring-mountable) (param-values ?mps ?order ?wp ?ring-color)))
+)
+
+;Formalismus ausdenken
+;(defrule domain-goal-fix-retract-next-ring-mountable
+;  ?df <- (domain-fact (name next-ring-mountable) (param-values ?mps ?order ?wp ?ring-color))
+;  (or
+;    (not (domain-fact (name sufficient-payment-for) (param-values ?mps ?ring-color)))
+;    (not (name rs-ring-spec) (param-values ?mps ?ring-color&~RING_NONE ?bases-needed))
+;    (not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order)))
+;     (not
+;      (or
+;        (and
+;          (domain-fact (name order-ring1-color) (param-values ?order ?ord-ring1-color&:(eq ?ord-ring1-color ?ring-color)))
+;          (domain-fact (name wp-ring1-color) (param-values ?wp ?wp-ring1-color&:(eq ?wp-ring1-color RING_NONE)))
+;        )
+;        (and
+;          (domain-fact (name order-ring1-color) (param-values ?order ?ord-ring1-color))
+;          (domain-fact (name order-ring2-color) (param-values ?order ?ord-ring2-color&:(eq ?ord-ring2-color ?ring-color)))
+;          (domain-fact (name wp-ring1-color) (param-values ?wp ?wp-ring1-color&:(eq ?wp-ring1-color ?ord-ring1-color)))
+;          (domain-fact (name wp-ring2-color) (param-values ?wp ?wp-ring2-color&:(eq ?wp-ring2-color RING_NONE)))
+;        )
+;        (and
+;            (domain-fact (name order-ring1-color) (param-values ?order ?ord-ring1-color))
+;            (domain-fact (name order-ring2-color) (param-values ?order ?ord-ring2-color))
+;            (domain-fact (name order-ring3-color) (param-values ?order ?ord-ring3-color&:(eq ?ord-ring3-color ?ring-color)))
+;            (domain-fact (name wp-ring1-color) (param-values ?wp ?wp-ring1-color&:(eq ?wp-ring1-color ?ord-ring1-color)))
+;            (domain-fact (name wp-ring2-color) (param-values ?wp ?wp-ring2-color&:(eq ?wp-ring2-color ?ord-ring2-color)))
+;            (domain-fact (name wp-ring3-color) (param-values ?wp ?wp-ring3-color&:(eq ?wp-ring3-color RING_NONE)))
+;        )
+;      )
+;    )
+;  )
+;  =>
+;  (retract ?df)
+;)
+
+;(defrule domain-goal-fix-sufficient-payment
+;  (wm-fact (key domain fact rs-filled-with args? m ?mps n ?bases-filled))
+;  (wm-fact (key domain fact rs-ring-spec
+;            args? m ?mps r ?ring-color&~RING_NONE rn ?bases-needed))
+;  (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
+;                                         subtrahend ?bases-needed
+;                                         difference ?bases-remain&ZERO|ONE|TWO|THREE))
+;  =>
+;  (assert (domain-fact (name sufficient-payment-for) (param-values ?mps ?ring-color)))
+;)
+
+;(defrule derived-predicate
+;  (order-matching-wp ?wp)
+;  (forall (wp-for-order ?wp ?ord)
+;    (forall (order-ring-color ?ord ?ring1 ONE) (not (wp-ring-color ?wp ?ring1 ONE))
+;    )
+;  )
+;  =>
+;
+;)
