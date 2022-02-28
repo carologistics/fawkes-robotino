@@ -602,7 +602,10 @@
 	                                   wp-side ?wp-side
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
+																		 robot ?rob
 	                                   $?)
+														;(param-names wp wp-loc wp-side target-mps target-side robot)
+ 														;(param-values ?wp ?wp-loc ?wp-side ?target-mps ?target-side ?rob)
 	                          (is-executable FALSE))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -651,6 +654,7 @@
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
 	(domain-fact (name zone-content) (param-values ?zz1 ?wp-loc))
 	(domain-fact (name zone-content) (param-values ?zz2 ?target-mps))
+	(IAMNOTEXECUTABLE)
 	=>
 	(printout t "Goal " PAY-FOR-RINGS-WITH-BASE " executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -1181,7 +1185,7 @@ The workpiece remains in the output of the used ring station after
 )
 
 (deffunction goal-production-assert-pay-for-rings-with-base
-	(?wp ?wp-loc ?wp-side ?target-mps ?target-side ?order-id)
+	(?wp ?wp-loc ?wp-side ?target-mps ?target-side ?order-id ?rob)
 	(bind ?goal (assert (goal (class PAY-FOR-RINGS-WITH-BASE)
 	      (id (sym-cat PAY-FOR-RINGS-WITH-BASE- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE)
@@ -1190,7 +1194,11 @@ The workpiece remains in the output of the used ring station after
 	               wp-side ?wp-side
 	               target-mps ?target-mps
 	               target-side ?target-side
-	               )
+								 robot ?rob
+								 )
+				(param-names wp wp-loc wp-side target-mps target-side robot)
+				(param-values ?wp ?wp-loc ?wp-side ?target-mps ?target-side ?rob)
+				(goal-action goal-get-base-to-fill-rs)
 	)))
 	(goal-meta-assert ?goal nil ?order-id nil)
 	(return ?goal)
@@ -1292,7 +1300,7 @@ The workpiece remains in the output of the used ring station after
 )
 
 (deffunction goal-production-assert-payment-goals
-	(?rs ?cols-ring ?cs ?order-id)
+	(?rs ?cols-ring ?cs ?order-id ?rob)
 	(bind ?goals (create$))
 
 	(bind ?found-payment FALSE)
@@ -1322,7 +1330,7 @@ The workpiece remains in the output of the used ring station after
 			(bind ?goals
 				(insert$ ?goals (+ (length$ ?goals) 1)
 					(goal-tree-assert-central-run-parallel PAY-FOR-RING-GOAL
-						(goal-production-assert-pay-for-rings-with-base ?wp-base-pay C-BS INPUT (nth$ ?index ?rs) INPUT ?order-id)
+						(goal-production-assert-pay-for-rings-with-base ?wp-base-pay C-BS INPUT (nth$ ?index ?rs) INPUT ?order-id ?rob)
 						(goal-production-assert-instruct-bs-dispense-base ?wp-base-pay BASE_RED INPUT ?order-id)
 					)
 				)
@@ -1424,7 +1432,7 @@ The workpiece remains in the output of the used ring station after
 			(goal-production-assert-instruct-rs-mount-ring ?rs ?col-ring1 ?order-id ONE)
 		)
 		(goal-tree-assert-central-run-parallel PAYMENT-GOALS
-			(goal-production-assert-payment-goals (create$ ?rs) (create$ ?col-ring1) ?cs ?order-id)
+			(goal-production-assert-payment-goals (create$ ?rs) (create$ ?col-ring1) ?cs ?order-id ?rob)
 		)
 	)
   )
@@ -1461,7 +1469,7 @@ The workpiece remains in the output of the used ring station after
 			(goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2 ?order-id TWO)
 		)
 		(goal-tree-assert-central-run-parallel PAYMENT-GOALS
-			(goal-production-assert-payment-goals (create$ ?rs1 ?rs2) (create$ ?col-ring1 ?col-ring2) ?cs ?order-id)
+			(goal-production-assert-payment-goals (create$ ?rs1 ?rs2) (create$ ?col-ring1 ?col-ring2) ?cs ?order-id ?rob)
 		)
 	)
   )
@@ -1500,7 +1508,7 @@ The workpiece remains in the output of the used ring station after
 			(goal-production-assert-instruct-rs-mount-ring ?rs3 ?col-ring3 ?order-id THREE)
 		)
 		(goal-tree-assert-central-run-parallel PAYMENT-GOALS
-			(goal-production-assert-payment-goals (create$ ?rs1 ?rs2 ?rs3) (create$ ?col-ring1 ?col-ring2 ?col-ring3) ?cs ?order-id)
+			(goal-production-assert-payment-goals (create$ ?rs1 ?rs2 ?rs3) (create$ ?col-ring1 ?col-ring2 ?col-ring3) ?cs ?order-id ?rob)
 		)
 	)
   )

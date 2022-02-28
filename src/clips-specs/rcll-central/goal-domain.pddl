@@ -152,6 +152,7 @@
 	              ?ring1-col - ring-color ?ring2-col - ring-color
 	              ?ring3-col - ring-color ?cap-col - cap-color)
 	(order-matches-wp ?wp - workpiece ?ord - order)
+	(rs-payment-fillable ?mps - mps)
 )
 
 (:action goal-instruct-cs-mount-cap
@@ -339,7 +340,7 @@
 )
 
 (:action goal-get-base-to-fill-rs
-	:parameters (?wp - workpiece ?wp-loc - mps ?wp-side - mps-side ?target-mps - mps ?target-side - mps-side)
+	:parameters (?wp - workpiece ?wp-loc - mps ?wp-side - mps-side ?target-mps - mps ?target-side - mps-side ?robot - robot)
 	:precondition (and
 										;(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 										;(wm-fact (key refbox team-color) (value ?team-color))
