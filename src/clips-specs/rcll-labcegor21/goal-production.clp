@@ -111,11 +111,26 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class TRANSPORT)
 	                          (mode FORMULATED)
-	                          (params wp ?wp dst-mps ?dst-mps dst-side ?dst-side)
+	                          (params wp ?wp wp-next-step ?wp-step dst-mps ?dst-mps dst-side ?dst-side)
 	                          (is-executable FALSE))
-	(wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps side ?src-side))
-	(wm-fact (key domain fact mps-side-free args? m ?dst-mps side ?dst-side))
+	
+	; The destination needs to be free.
 	(not (wm-fact (key domain fact wp-at args? wp ?other-wp m ?dst-mps side ?dst-side)))
+
+	; If the state is not create, we need to have a workpiece somewhere.
+	(or (test (eq ?wp-step CREATE))
+		(and (wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps side ?src-side))
+			 (wm-fact (key wp meta next-step args? wp ?wp) (value ?wp-step))
+		))
+
+	; Prevent another transport goal with the same destination.
+	(not (goal (class TRANSPORT) (params wp ? wp-next-step ? dst-mps ?dst-mps dst-side ?dst-side)
+		 (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
+
+	; If it's mounting a cap, the cap station needs to have something buffered already.
+	(or (test (neq ?wp-step CAP))
+		(and (wm-fact (key domain fact cs-buffered args? m ?cap-mps col ?))
+			 (wm-fact (key domain fact cs-can-perform args? m ?cap-mps op MOUNT_CAP))))
 	=>
 	(printout t "Goal TRANSPORT executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -173,10 +188,6 @@
 	            (mode FORMULATED)
 	            (params target-mps ?mps cap-color ?cap-color)
 	            (is-executable FALSE))
-	(not (goal (class BUFFER-CAP) (params target-mps ?mps $?)
-			   (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
-	(not (goal (class MOUNT-CAP) (params $? cap-mps ?mps $?)
-			   (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
 
 	; MPS CEs
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -211,35 +222,14 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class MOUNT-CAP) (sub-type SIMPLE)
 	            (mode FORMULATED)
-	            (params wp ?wp src-mps ?src-mps cap-mps ?cap-mps cap-color ?cap-color)
+	            (params wp ?wp cap-mps ?cap-mps cap-color ?cap-color)
 	            (is-executable FALSE))
-	(not (goal (class BUFFER-CAP) (params target-mps ?cap-mps $?)
-			   (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
-	(not (goal (class MOUNT-CAP) (params $? cap-mps ?cap-mps $?)
-			   (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
-	
-	; src MPS CEs
-	(wm-fact (key refbox team-color) (value ?team-color))
-	(or (wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps $?))
-		(and (wm-fact (key domain fact mps-type args? m ?src-mps t BS))
-			 (wm-fact (key domain fact mps-state args? m ?src-mps s IDLE))
-			 (wm-fact (key domain fact mps-team args? m ?src-mps col ?team-color))
-			 (not (wm-fact (key domain fact wp-at args? wp ?any-base-wp m ?src-mps $?)))
-		)
-	)
-
-	; WP-CES
-	(or (wm-fact (key domain fact wp-unused args? wp ?wp))
-		(wm-fact (key wp meta next-step args? wp ?wp) (value CAP)))
 
 	; cap MPS CEs
 	(wm-fact (key domain fact mps-type args? m ?cap-mps t CS))
 	(wm-fact (key domain fact mps-state args? m ?cap-mps s ~BROKEN))
-	(wm-fact (key domain fact mps-team args? m ?cap-mps col ?team-color))
-	(wm-fact (key domain fact mps-side-free args? m ?cap-mps side INPUT))
-	(wm-fact (key domain fact mps-side-free args? m ?cap-mps side OUTPUT))
-	(not (wm-fact (key domain fact wp-at args? wp ?any-cap-in-wp m ?cap-mps side INPUT)))
-	(not (wm-fact (key domain fact wp-at args? wp ?any-cap-o-wp m ?cap-mps side OUTPUT)))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?cap-mps side INPUT))
+	(not (wm-fact (key domain fact wp-at args? wp ? m ?cap-mps side OUTPUT)))
 	(wm-fact (key domain fact cs-buffered args? m ?cap-mps col ?cap-color))
 	(wm-fact (key domain fact cs-can-perform args? m ?cap-mps op MOUNT_CAP))
 	=>
@@ -251,32 +241,15 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class MOUNT-RING) (sub-type SIMPLE)
 	            (mode FORMULATED)
-	            (params wp ?wp src-mps ?src-mps
-						ring-mps ?ring-mps ring-color ?ring-color ring-nr ?ring-nr)
+	            (params wp ?wp ring-mps ?ring-mps ring-color ?ring-color ring-nr ?ring-nr)
 	            (is-executable FALSE))
-	(not (goal (class MOUNT-RING) (params $? ring-mps ?ring-mps $?)
-			   (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
-	
-	; src MPS CEs
-	(wm-fact (key refbox team-color) (value ?team-color))
-	(or (wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps $?))
-		(and (wm-fact (key domain fact mps-type args? m ?src-mps t BS))
-			 (wm-fact (key domain fact mps-state args? m ?src-mps s IDLE))
-			 (wm-fact (key domain fact mps-team args? m ?src-mps col ?team-color))
-			 (not (wm-fact (key domain fact wp-at args? wp ?any-base-wp m ?src-mps $?)))
-		)
-	)
 
-	; WP-CES
-	(wm-fact (key wp meta next-step args? wp ?wp) (value ?step&:(eq ?step (sym-cat RING ?ring-nr))))
-	
 	; ring MPS CEs
 	(wm-fact (key domain fact mps-type args? m ?ring-mps t RS))
 	(wm-fact (key domain fact mps-state args? m ?ring-mps s ~BROKEN))
 	(wm-fact (key domain fact mps-team args? m ?ring-mps col ?team-color))
-	(wm-fact (key domain fact mps-side-free args? m ?ring-mps side INPUT))
-	(or (wm-fact (key domain fact mps-side-free args? m ?ring-mps side OUTPUT))
-		(test (eq ?ring-mps ?src-mps)))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?ring-mps side INPUT))
+	(not (wm-fact (key domain fact wp-at args? wp ? m ?ring-mps side OUTPUT)))
 	(wm-fact (key domain fact rs-ring-spec args? m ?ring-mps r ?ring-color rn ?bases-needed))
 	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled))
 	(wm-fact (key domain fact rs-sub args? minuend ?bases-filled
@@ -293,23 +266,13 @@
 	            (mode FORMULATED)
 	            (params wp ?wp mps ?mps)
 	            (is-executable FALSE))
-	(not (goal (class DELIVER) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
-
-	(not (and  (goal (class TRANSPORT) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-			   		 (params src-mps ?src-mps src-side ?src-side
-	                    dst-mps ?dst-mps dst-side ?dst-side))
-				(wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps side ?src-side))))
 
 	; MPS-CES
 	(wm-fact (key refbox team-color) (value ?team-color))
 	(wm-fact (key domain fact mps-type args? m ?mps t DS))
 	(wm-fact (key domain fact mps-state args? m ?mps s IDLE))
 	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side INPUT)))
-	; WP-CES
-	(wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps side ?src-side))
-	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
-	(wm-fact (key wp meta next-step args? wp ?wp) (value DELIVER))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
 	; Game time
 	(wm-fact (key refbox game-time) (values $?game-time))
 	(wm-fact (key refbox order ?order delivery-begin) (type UINT)
@@ -332,6 +295,18 @@
 	(return ?goal)
 )
 
+
+(deffunction goal-production-assert-transport
+	(?wp ?step ?dst-mps ?dst-side)
+
+	(bind ?goal (assert (goal (class TRANSPORT)
+	      (id (sym-cat TRANSPORT- (gensym*))) (sub-type SIMPLE)
+	      (verbosity NOISY) (is-executable FALSE)
+	      (params wp ?wp wp-next-step ?step dst-mps ?dst-mps dst-side ?dst-side) (meta-template goal-meta)
+	)))
+	(return ?goal)
+)
+
 (deffunction goal-production-assert-buffer-cap
 	(?mps ?cap-color)
 
@@ -344,25 +319,15 @@
 	(return ?goal)
 )
 
-(deffunction goal-production-assert-dispense-base
-	(?wp ?base-mps ?base-color)
-
-	(bind ?goal (assert (goal (class DISPENSE-BASE)
-	      (id (sym-cat DISPENSE-BASE- (gensym*))) (sub-type SIMPLE)
-	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
-	      (params wp ?wp base-mps ?base-mps base-color ?base-color)
-	)))
-	(return ?goal)
-)
-
 (deffunction goal-production-assert-mount-cap
-	(?wp ?src-mps ?cap-mps ?cap-color)
+	(?wp ?cap-mps ?cap-color)
 
 	(bind ?goal (assert (goal (class MOUNT-CAP)
 	      (id (sym-cat MOUNT-CAP- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
-	      (params wp ?wp src-mps ?src-mps cap-mps ?cap-mps cap-color ?cap-color)
+	      (params wp ?wp cap-mps ?cap-mps cap-color ?cap-color)
 	)))
+	(goal-meta-assert ?goal central)
 	(return ?goal)
 )
 
@@ -378,14 +343,14 @@
 )
 
 (deffunction goal-production-assert-mount-ring
-	(?wp ?src-mps ?ring-mps ?ring-color ?ring-nr)
+	(?wp ?ring-mps ?ring-color ?ring-nr)
 
 	(bind ?goal (assert (goal (class MOUNT-RING)
 	      (id (sym-cat MOUNT-RING- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta)
-	      (params wp ?wp src-mps ?src-mps
-		  		  ring-mps ?ring-mps ring-color ?ring-color ring-nr ?ring-nr)
+	      (params wp ?wp ring-mps ?ring-mps ring-color ?ring-color ring-nr ?ring-nr)
 	)))
+	(goal-meta-assert ?goal central)
 	(return ?goal)
 )
 
@@ -397,6 +362,7 @@
 	      (verbosity NOISY) (is-executable FALSE)
 	      (params wp ?wp mps ?mps) (meta-template goal-meta)
 	)))
+	(goal-meta-assert ?goal central)
 	(return ?goal)
 )
 
@@ -504,17 +470,20 @@
 	(assert (wm-fact (key order meta wp-for-order args? wp ?wp-for-order ord ?order-id)))
 	(if (eq ?com C0) then
 		(bind ?goal (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-			(goal-production-assert-mount-cap ?wp-for-order C-BS ?cap-mps ?cap-color)
+			(goal-production-assert-transport ?wp-for-order CREATE ?cap-mps INPUT)
+			(goal-production-assert-mount-cap ?wp-for-order ?cap-mps ?cap-color)
+			(goal-production-assert-transport ?wp-for-order DELIVER C-DS INPUT)
 			(goal-production-assert-deliver ?wp-for-order C-DS)
 		))
 	)
 	(if (eq ?com C1) then
 		(bind ?ring1-mps (goal-production-get-ring-machine-for-color ?ring1-color))
 		(bind ?goal (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-			(goal-production-assert-mount-ring ?wp-for-order C-BS
-									?ring1-mps ?ring1-color 1)
-			(goal-production-assert-mount-cap ?wp-for-order ?ring1-mps
-									?cap-mps ?cap-color)
+			(goal-production-assert-transport ?wp-for-order CREATE ?ring1-mps INPUT)
+			(goal-production-assert-mount-ring ?wp-for-order ?ring1-mps ?ring1-color 1)
+			(goal-production-assert-transport ?wp-for-order CAP ?cap-mps INPUT)
+			(goal-production-assert-mount-cap ?wp-for-order ?cap-mps ?cap-color)
+			(goal-production-assert-transport ?wp-for-order DELIVER C-DS INPUT)
 			(goal-production-assert-deliver ?wp-for-order C-DS)
 		))
 	)
@@ -522,12 +491,13 @@
 		(bind ?ring1-mps (goal-production-get-ring-machine-for-color ?ring1-color))
 		(bind ?ring2-mps (goal-production-get-ring-machine-for-color ?ring2-color))
 		(bind ?goal (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-			(goal-production-assert-mount-ring ?wp-for-order C-BS
-									?ring1-mps ?ring1-color 1)
-			(goal-production-assert-mount-ring ?wp-for-order ?ring1-mps
-									?ring2-mps ?ring2-color 2)
-			(goal-production-assert-mount-cap ?wp-for-order ?ring2-mps
-									?cap-mps ?cap-color)
+			(goal-production-assert-transport ?wp-for-order CREATE ?ring1-mps INPUT)
+			(goal-production-assert-mount-ring ?wp-for-order ?ring1-mps ?ring1-color 1)
+			(goal-production-assert-transport ?wp-for-order RING2 ?ring2-mps INPUT)
+			(goal-production-assert-mount-ring ?wp-for-order ?ring2-mps ?ring2-color 2)
+			(goal-production-assert-transport ?wp-for-order CAP ?cap-mps INPUT)
+			(goal-production-assert-mount-cap ?wp-for-order ?cap-mps ?cap-color)
+			(goal-production-assert-transport ?wp-for-order DELIVER C-DS INPUT)
 			(goal-production-assert-deliver ?wp-for-order C-DS)
 		))
 	)
@@ -536,14 +506,15 @@
 		(bind ?ring2-mps (goal-production-get-ring-machine-for-color ?ring2-color))
 		(bind ?ring3-mps (goal-production-get-ring-machine-for-color ?ring3-color))
 		(bind ?goal (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-			(goal-production-assert-mount-ring ?wp-for-order C-BS
-									?ring1-mps ?ring1-color 1)
-			(goal-production-assert-mount-ring ?wp-for-order ?ring1-mps
-									?ring2-mps ?ring2-color 2)
-			(goal-production-assert-mount-ring ?wp-for-order ?ring2-mps
-									?ring3-mps ?ring3-color 3)
-			(goal-production-assert-mount-cap ?wp-for-order ?ring3-mps
-									?cap-mps ?cap-color)
+			(goal-production-assert-transport ?wp-for-order CREATE ?ring1-mps INPUT)
+			(goal-production-assert-mount-ring ?wp-for-order ?ring1-mps ?ring1-color 1)
+			(goal-production-assert-transport ?wp-for-order RING2 ?ring2-mps INPUT)
+			(goal-production-assert-mount-ring ?wp-for-order ?ring2-mps ?ring2-color 2)
+			(goal-production-assert-transport ?wp-for-order RING3 ?ring3-mps INPUT)
+			(goal-production-assert-mount-ring ?wp-for-order ?ring3-mps ?ring3-color 3)
+			(goal-production-assert-transport ?wp-for-order CAP ?cap-mps INPUT)
+			(goal-production-assert-mount-cap ?wp-for-order ?cap-mps ?cap-color)
+			(goal-production-assert-transport ?wp-for-order DELIVER C-DS INPUT)
 			(goal-production-assert-deliver ?wp-for-order C-DS)
 		))
 	)
@@ -633,17 +604,11 @@
 	(not (wm-fact (key domain fact wp-at args? wp ? m C-SS side ?side)))
 
 	; and we don't have a transport goal or delivery goal yet.
-	(not (goal (class TRANSPORT) (params wp ?wp dst-mps C-SS dst-side ?side)))
+	(not (goal (class TRANSPORT) (params wp ?wp wp-next-step DELIVER dst-mps C-SS dst-side ?side)))
 	(not (goal (class DELIVER)   (params wp ?wp mps ?)))	
 	=>
-
 	; We put into the storage station.
-	(assert (goal (class TRANSPORT)
-	      (id (sym-cat TRANSPORT- (gensym*))) (parent ?root-id) (sub-type SIMPLE)
-	      (verbosity NOISY) (is-executable FALSE)
-	      (params src-mps ?src-mps src-side OUTPUT
-				  dst-mps C-SS dst-side ?side)
-		  (meta-template goal-meta)))
+	(goal-production-assert-transport ?wp DELIVER C-SS ?side)
 )
 
 (defrule goal-production-create-buffer-cap

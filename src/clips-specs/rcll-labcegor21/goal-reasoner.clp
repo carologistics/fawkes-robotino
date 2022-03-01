@@ -175,6 +175,16 @@
   (modify ?g (mode SELECTED))
 )
 
+(defrule goal-reasoner-select-produce-order-central-goal
+  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  ?g <- (goal (id ?goal-id) (parent ?parent-id) (mode FORMULATED) (is-executable TRUE))
+  (goal (id ?parent-id) (class PRODUCE-ORDER) (params order ?order-id))
+  (goal-meta (goal-id ?goal-id) (assigned-to central))
+  =>
+  (printout t "Production goal " ?goal-id " SELECTED for central" crlf)
+  (modify ?g (mode SELECTED))
+)
+
 (defrule goal-reasoner-select-simple-waiting-robot
   "Select all executable simple goals in order to propagate selection."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))

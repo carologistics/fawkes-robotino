@@ -97,10 +97,11 @@
 
 (defrule goal-expander-transport
 	?g <- (goal (id ?goal-id) (class TRANSPORT) (mode SELECTED) (parent ?parent)
-	            (params wp ?wp dst-mps ?dst-mps dst-side ?dst-side))
+	            (params wp ?wp wp-next-step ?wp-step&~CREATE dst-mps ?dst-mps dst-side ?dst-side))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps side ?src-side))
+	(wm-fact (key wp meta next-step args? wp ?wp) (value ?wp-step))
 	(not (wm-fact (key domain fact wp-at args? wp ? m ?dst-mps side ?dst-side)))
 	=>
 	(plan-assert-sequential (sym-cat TRANSPORT-PLAN- (gensym*)) ?goal-id ?robot
@@ -114,39 +115,51 @@
 	(modify ?g (mode EXPANDED))
 )
 
+(defrule goal-expander-transport-create
+	?g <- (goal (id ?goal-id) (class TRANSPORT) (mode SELECTED) (parent ?parent)
+	            (params wp ?wp wp-next-step CREATE dst-mps ?dst-mps dst-side ?dst-side))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	(wm-fact (key wp meta next-step args? wp ?wp) (value ?wp-step))
+	(not (wm-fact (key domain fact wp-at args? wp ? m ?dst-mps side ?dst-side)))
+	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+	=>
+	(plan-assert-sequential (sym-cat TRANSPORT- (gensym*)) ?goal-id ?robot
+		(plan-assert-safe-move ?robot ?curr-location ?curr-side C-BS OUTPUT
+			(plan-assert-action lock-mps C-BS)
+			(plan-assert-action prepare-bs C-BS OUTPUT ?base-color)
+			(plan-assert-action bs-dispense C-BS OUTPUT ?wp ?base-color)
+			(plan-assert-action wp-get ?robot ?wp C-BS OUTPUT)
+			(plan-assert-action unlock-mps C-BS)
+		)
+		(plan-assert-safe-move ?robot (wait-pos C-BS OUTPUT) WAIT ?dst-mps ?dst-side
+			(plan-assert-action wp-put ?robot ?wp ?dst-mps ?dst-side)
+		)
+	)
+	(modify ?g (mode EXPANDED))
+)
+
 (defrule goal-expander-buffer-cap
 " Feed a CS with a cap from its shelf so that afterwards
    it can directly put the cap on a product."
 	?g <- (goal (id ?goal-id) (class BUFFER-CAP) (mode SELECTED) (parent ?parent)
 	            (params target-mps ?mps cap-color ?cap-color ))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	(or
-		(and (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps $?))
-		     (not (wm-fact (key domain fact holding args? r ?robot $?)))
-		)
-		(and (wm-fact (key domain fact holding args? r ?robot wp ?cc))
-		     (not (wm-fact (key domain fact wp-on-shelf args? wp ?cc $?)))
-		)
-	)
+	(wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps $?))
+	(not (wm-fact (key domain fact holding args? r ?robot $?)))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
 	(bind ?shelf-spot nil)
-	(if (not (is-holding ?robot ?cc))
-		then
-		(do-for-fact ((?wp-on-shelf wm-fact)) (and (wm-key-prefix ?wp-on-shelf:key (create$ domain fact wp-on-shelf))
+	(do-for-fact ((?wp-on-shelf wm-fact)) (and (wm-key-prefix ?wp-on-shelf:key (create$ domain fact wp-on-shelf))
 		                                      (eq (wm-key-arg ?wp-on-shelf:key wp) ?cc)
 		                                      (eq (wm-key-arg ?wp-on-shelf:key m) ?mps))
 			(bind ?shelf-spot (wm-key-arg ?wp-on-shelf:key spot))
-		)
 	)
 
 	(plan-assert-sequential (sym-cat BUFFER-CAP-PLAN- (gensym*)) ?goal-id ?robot
 		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?mps INPUT
-			(if (not (is-holding ?robot ?cc)) then
-				(create$
-				    (plan-assert-action wp-get-shelf ?robot ?cc ?mps ?shelf-spot)
-				)
-			)
+			(plan-assert-action wp-get-shelf ?robot ?cc ?mps ?shelf-spot)
 			(plan-assert-action wp-put ?robot ?cc ?mps INPUT)
 			(plan-assert-action prepare-cs ?mps RETRIEVE_CAP)
 			(plan-assert-action cs-retrieve-cap ?mps ?cc ?cap-color)
@@ -163,13 +176,8 @@
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side))
 	=>
 	(plan-assert-sequential (sym-cat DISCARD-PLAN- (gensym*)) ?goal-id ?robot
-		(if (not (is-holding ?robot ?wp))
-		 then
-			(create$ ; only last statement of if is returned
-				(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
-					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
-				)
-			)
+		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
+			(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
 		)
 		(plan-assert-action wp-discard ?robot ?wp)
 	)
@@ -177,50 +185,24 @@
 )
 
 (defrule goal-expander-mount-cap
-" Retrieve a workpiece and mount a cap on it."
 	?g <- (goal (id ?goal-id) (class MOUNT-CAP) (mode SELECTED) (parent ?parent)
-	            (params wp ?wp src-mps ?src-mps cap-mps ?cap-mps cap-color ?cap-color))
+	            (params wp ?wp cap-mps ?cap-mps cap-color ?cap-color))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-	(wm-fact (key domain fact mps-type args? m ?src-mps t ?src-type))
-	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
-	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
 	=>
 	(plan-assert-sequential (sym-cat MOUNT-CAP-PLAN- (gensym*)) ?goal-id ?robot
-		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?src-mps OUTPUT
-			(if (eq ?src-type BS) then
-				(create$ (plan-assert-action lock-mps ?src-mps)
-				         (plan-assert-action prepare-bs ?src-mps OUTPUT ?base-color)
-						 (plan-assert-action bs-dispense ?src-mps OUTPUT ?wp ?base-color)
-				)
-			)
-			(plan-assert-action wp-get ?robot ?wp ?src-mps OUTPUT)
-			(if (eq ?src-type BS) then
-				(plan-assert-action unlock-mps ?src-mps)
-			)
-		)
-		(plan-assert-safe-move ?robot (wait-pos ?src-mps OUTPUT) WAIT ?cap-mps INPUT
-			(plan-assert-action wp-put ?robot ?wp ?cap-mps INPUT)
-			(plan-assert-action prepare-cs ?cap-mps MOUNT_CAP)
-			(plan-assert-action cs-mount-cap ?cap-mps ?wp ?cap-color)
-		)
+		(plan-assert-action prepare-cs ?cap-mps MOUNT_CAP)
+		(plan-assert-action cs-mount-cap ?cap-mps ?wp ?cap-color)
 	)
 	(modify ?g (mode EXPANDED))
 )
 
 (defrule goal-expander-mount-ring
-" Retrieve a workpiece and mount a ring on it."
 	?g <- (goal (id ?goal-id) (class MOUNT-RING) (mode SELECTED) (parent ?parent)
-	            (params wp ?wp src-mps ?src-mps
-						ring-mps ?ring-mps ring-color ?ring-color ring-nr ?ring-nr))
+	            (params wp ?wp ring-mps ?ring-mps ring-color ?ring-color ring-nr ?ring-nr))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	(wm-fact (key domain fact rs-ring-spec args? m ?ring-mps r ?ring-color rn ?req))
 	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?rs-before))
 	(wm-fact (key domain fact rs-sub args? minuend ?rs-before subtrahend ?req difference ?rs-after))
-	(wm-fact (key domain fact mps-type args? m ?src-mps t ?src-type))
-	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
-	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
 	=>
 	(bind ?prev-rings (create$ ))
 	(loop-for-count (?count 1 (- ?ring-nr 1))
@@ -230,24 +212,9 @@
 	      (bind ?prev-rings (append$ ?prev-rings (wm-key-arg ?ring:key col)))
 	))
 	(plan-assert-sequential (sym-cat MOUNT-RING-PLAN- (gensym*)) ?goal-id ?robot
-		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?src-mps OUTPUT
-			(if (eq ?src-type BS) then
-				(create$ (plan-assert-action lock-mps ?src-mps)
-				         (plan-assert-action prepare-bs ?src-mps OUTPUT ?base-color)
-						 (plan-assert-action bs-dispense ?src-mps OUTPUT ?wp ?base-color)
-				)
-			)
-			(plan-assert-action wp-get ?robot ?wp ?src-mps OUTPUT)
-			(if (eq ?src-type BS) then
-				(plan-assert-action unlock-mps ?src-mps)
-			)
-		)
-		(plan-assert-safe-move ?robot (wait-pos ?src-mps OUTPUT) WAIT ?ring-mps INPUT
-			(plan-assert-action wp-put ?robot ?wp ?ring-mps INPUT)
-			(plan-assert-action prepare-rs ?ring-mps ?ring-color ?rs-before ?rs-after ?req)
-			(plan-assert-action (sym-cat rs-mount-ring ?ring-nr)
+		(plan-assert-action prepare-rs ?ring-mps ?ring-color ?rs-before ?rs-after ?req)
+		(plan-assert-action (sym-cat rs-mount-ring ?ring-nr)
 		      ?ring-mps ?wp ?ring-color ?prev-rings ?rs-before ?rs-after ?req )
-		)
 	)
 	(modify ?g (mode EXPANDED))
 )
@@ -320,7 +287,6 @@
 	?g <- (goal (id ?goal-id) (class DELIVER) (mode SELECTED)
 	            (params wp ?wp mps ?mps))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	; WP-CES
 	(wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
 	(wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
@@ -350,26 +316,10 @@
 		    (bind ?params (create$ ?order ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color ?ring2-color ?ring3-color)))
  	)
 	(plan-assert-sequential DELIVER-PLAN ?goal-id ?robot
-		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?wp-mps ?wp-side
-			(plan-assert-action wp-get ?robot ?wp ?wp-mps ?wp-side)
-		)
-		(plan-assert-safe-move ?robot (wait-pos ?wp-mps ?wp-side) WAIT ?mps INPUT
-			(plan-assert-action wp-put ?robot ?wp ?mps INPUT)
-			(plan-assert-action prepare-ds ?mps ?order)
-			(plan-assert-action (sym-cat fulfill-order- (lowcase ?complexity)) ?params)
-		)
+		(plan-assert-action prepare-ds ?mps ?order)
+		(plan-assert-action (sym-cat fulfill-order- (lowcase ?complexity)) ?params)
 	)
 	(modify ?g (mode EXPANDED))
 )
 
-(defrule goal-expander-wait-nothing-executable
-	?g <- (goal (id ?goal-id) (class WAIT-NOTHING-EXECUTABLE) (mode SELECTED))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-	=>
-	(plan-assert-sequential WAIT-NOTHING-EXECUTABLE- ?goal-id ?robot
-		(plan-assert-action wait ?robot ?curr-location ?curr-side)
-	)
-	(modify ?g (mode EXPANDED))
-)
 
