@@ -97,9 +97,7 @@
 
 (defrule goal-expander-transport
 	?g <- (goal (id ?goal-id) (class TRANSPORT) (mode SELECTED) (parent ?parent)
-	            (params src-mps ?src-mps src-side ?src-side
-	                    dst-mps ?dst-mps dst-side ?dst-side
-	            ))
+	            (params wp ?wp dst-mps ?dst-mps dst-side ?dst-side))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps side ?src-side))
@@ -120,9 +118,7 @@
 " Feed a CS with a cap from its shelf so that afterwards
    it can directly put the cap on a product."
 	?g <- (goal (id ?goal-id) (class BUFFER-CAP) (mode SELECTED) (parent ?parent)
-	            (params target-mps ?mps
-	                    cap-color ?cap-color
-	            ))
+	            (params target-mps ?mps cap-color ?cap-color ))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(or
 		(and (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps $?))
@@ -161,10 +157,10 @@
 
 (defrule goal-expander-discard
 " Pick up a product and discard it."
-	?g <- (goal (id ?goal-id) (class DISCARD) (mode SELECTED) (parent ?parent)
-	            (params wp ?wp wp-loc ?wp-loc wp-side ?wp-side))
+	?g <- (goal (id ?goal-id) (class DISCARD) (mode SELECTED) (parent ?parent) (params wp ?wp))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side))
 	=>
 	(plan-assert-sequential (sym-cat DISCARD-PLAN- (gensym*)) ?goal-id ?robot
 		(if (not (is-holding ?robot ?wp))
