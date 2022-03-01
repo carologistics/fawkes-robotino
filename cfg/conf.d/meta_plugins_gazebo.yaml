@@ -90,6 +90,7 @@ fawkes/meta_plugins:
     - gologpp
 
   m-skill-sim:
+    - mongodb
     - execution-time-estimator
     - skiller-simulator
     - ros
@@ -97,7 +98,7 @@ fawkes/meta_plugins:
     - navgraph-generator
     - navgraph-generator-mps
     - execution-time-estimator-navgraph
-    # - execution-time-estimator-lookup
+    - execution-time-estimator-lookup
     - webview
 
   m-skill-sim-clips-exec:
