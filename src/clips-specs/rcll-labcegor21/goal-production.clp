@@ -111,8 +111,7 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class TRANSPORT)
 	                          (mode FORMULATED)
-	                          (params src-mps ?src-mps src-side ?src-side
-	                    			  dst-mps ?dst-mps dst-side ?dst-side)
+	                          (params wp ?wp dst-mps ?dst-mps dst-side ?dst-side)
 	                          (is-executable FALSE))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps side ?src-side))
 	(wm-fact (key domain fact mps-side-free args? m ?dst-mps side ?dst-side))
@@ -127,17 +126,14 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class DISCARD)
 	                          (mode FORMULATED)
-	                          (params  wp ?wp&~UNKNOWN wp-loc ?wp-loc wp-side ?wp-side)
+	                          (params  wp ?wp&~UNKNOWN )
 	                          (is-executable FALSE))
 
 	; MPS-Source CEs
 	(wm-fact (key refbox team-color) (value ?team-color))
 	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
 	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
-
-	(or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-	         (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side)))
-	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side))
 	=>
 	(printout t "Goal DISCARD executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -326,12 +322,12 @@
 ; ----------------------- Goal creation functions -------------------------------
 
 (deffunction goal-production-assert-discard
-	(?wp ?cs ?side)
+	(?wp)
 
 	(bind ?goal (assert (goal (class DISCARD)
 	      (id (sym-cat DISCARD- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE)
-	      (params wp ?wp wp-loc ?cs wp-side ?side) (meta-template goal-meta)
+	      (params wp ?wp) (meta-template goal-meta)
 	)))
 	(return ?goal)
 )
@@ -592,7 +588,7 @@
 	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled&ZERO|ONE|TWO))
 	; and no payment goal, nor discard goal, using the same workpiece.
 	(not (goal (class PAY-RING) (params wp ?wp wp-loc ?mps $?)))
-	(not (goal (class DISCARD)  (params wp ?wp wp-loc ?mps wp-side OUTPUT)))
+	(not (goal (class DISCARD)  (params wp ?wp)))
 	; and no payment goal for the same ring station.
 	(not (goal (class PAY-RING) (params $? ring-mps ?ring-mps)))
 	=>
@@ -612,10 +608,10 @@
 	; we don't have space in any ring station.
 	(not (wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled&ZERO|ONE|TWO)))
 	; and we don't have a discard goal.
-	(not (goal (class DISCARD) (params  wp ?wp wp-loc ?mps wp-side OUTPUT)))
+	(not (goal (class DISCARD)  (params wp ?wp)))
 	(not (goal (class PAY-RING) (params wp ?wp src-mps ?mps $?)))
 	=>
-	(bind ?goal (goal-production-assert-discard ?wp ?mps OUTPUT))
+	(bind ?goal (goal-production-assert-discard ?wp))
 	(modify ?goal (parent ?root-id))
 )
 
@@ -637,9 +633,8 @@
 	(not (wm-fact (key domain fact wp-at args? wp ? m C-SS side ?side)))
 
 	; and we don't have a transport goal or delivery goal yet.
-	(not (goal (class TRANSPORT) (params src-mps ?src-mps src-side OUTPUT
-										 dst-mps C-SS dst-side ?side)))
-	(not (goal (class DELIVER) (params wp ?wp mps ?)))	
+	(not (goal (class TRANSPORT) (params wp ?wp dst-mps C-SS dst-side ?side)))
+	(not (goal (class DELIVER)   (params wp ?wp mps ?)))	
 	=>
 
 	; We put into the storage station.
