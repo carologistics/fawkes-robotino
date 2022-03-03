@@ -29,6 +29,7 @@
 #include <utils/math/angle.h>
 
 #include <boost/algorithm/string/predicate.hpp>
+#include <iostream>
 #include <math.h>
 #include <opencv2/core/types.hpp>
 #include <opencv2/dnn.hpp>
@@ -240,7 +241,7 @@ ObjectTrackingThread::loop()
 		if (name_it_ >= filenames_.size())
 			return;
 
-		while (name_it_ < filenames_.size() and !found_image) {
+		while (name_it_ < filenames_.size() && !found_image) {
 			if (boost::algorithm::ends_with(filenames_[name_it_], ".png")
 			    || //TODO: catch more image file types
 			    boost::algorithm::ends_with(filenames_[name_it_], ".jpg")) {
@@ -254,10 +255,7 @@ ObjectTrackingThread::loop()
 		}
 	} else {
 		//read from sharedMemoryBuffer and convert into Mat
-		unsigned char tmp[camera_width_ * camera_height_ * 3];
-		firevision::convert(
-		  firevision::BGR, firevision::BGR, shm_buffer_->buffer(), tmp, camera_width_, camera_height_);
-		image = Mat(camera_width_, camera_height_, CV_8UC3, tmp);
+		image = Mat(camera_width_, camera_height_, CV_8UC3, shm_buffer_->buffer());
 	}
 
 	if (rotate_image_)

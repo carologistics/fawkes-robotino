@@ -44,10 +44,6 @@
 #include <string.h>
 
 // firevision camera
-#include <fvcams/camera.h>
-#include <fvclassifiers/simple.h>
-#include <fvutils/adapters/cvmatadapter.h>
-#include <fvutils/base/roi.h>
 #include <fvutils/color/conversions.h>
 #include <fvutils/ipc/shm_image.h>
 
