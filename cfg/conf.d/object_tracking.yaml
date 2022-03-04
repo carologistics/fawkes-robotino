@@ -73,3 +73,4 @@ plugins/object_tracking:
   buffer:
     shm_image_id: "realsense_rgb"
     frame: "cam_conveyor"
+    shm_image_id_res: "object_tracking"
