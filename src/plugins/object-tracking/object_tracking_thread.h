@@ -150,6 +150,9 @@ private:
 	unsigned char *                      image_buffer_;
 	bool                                 shm_active_;
 
+	std::string                          shm_id_res_;
+	firevision::SharedMemoryImageBuffer *shm_buffer_results_;
+
 	//expected object point:
 	float exp_x_;
 	float exp_y_;
@@ -179,8 +182,10 @@ private:
 	void detect_objects(cv::Mat image, std::vector<cv::Rect> &out_boxes);
 
 	//project bounding boxes into 3d points and take closest to expectation
-	bool
-	closest_position(std::vector<cv::Rect> bounding_boxes, float exp_pos[3], float closest_pos[3]);
+	bool closest_position(std::vector<cv::Rect> bounding_boxes,
+	                      float                 exp_pos[3],
+	                      float                 closest_pos[3],
+	                      cv::Rect              closest_box);
 	void compute_3d_point(cv::Rect bounding_box, float point[3]);
 	void compute_3d_point_direct(cv::Rect bounding_box, float angle, float point[3]);
 	void converge_delta_ibc(float dx_start, float dy_start, float dx, float dy);

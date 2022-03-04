@@ -29,12 +29,14 @@
 #include <utils/math/angle.h>
 
 #include <boost/algorithm/string/predicate.hpp>
+#include <iomanip>
 #include <iostream>
 #include <math.h>
 #include <opencv2/core/types.hpp>
 #include <opencv2/dnn.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
+#include <sstream>
 #include <stdio.h>
 
 using namespace fawkes;
@@ -173,6 +175,12 @@ ObjectTrackingThread::init()
 	shm_id_  = config->get_string("plugins/object_tracking/buffer/shm_image_id");
 	frame_id = this->config->get_string("plugins/object_tracking/buffer/frame");
 
+	shm_id_res_         = config->get_string("plugins/object_tracking/buffer/shm_image_id_res");
+	shm_buffer_results_ = new firevision::SharedMemoryImageBuffer(shm_id_res_.c_str(),
+	                                                              firevision::RGB,
+	                                                              camera_width_,
+	                                                              camera_height_);
+
 	//--------------------------------------
 	name_it_    = 0;
 	tracking_   = false;
@@ -293,7 +301,35 @@ ObjectTrackingThread::loop()
 			//logger->log_info("x (right): ", std::to_string(pos[0]).c_str());
 			//logger->log_info("y (up)   : ", std::to_string(pos[1]).c_str());
 			//logger->log_info("z (depth): ", std::to_string(pos[2]).c_str());
+
+			//draw bounding box on the image
+			rectangle(image, out_boxes[i], Scalar(0, 0, 255), 2);
+
+			//write 3d position under it
+			std::stringstream sx;
+			std::stringstream sy;
+			std::stringstream sz;
+			sx << std::fixed << std::setprecision(3) << pos[0];
+			sy << std::fixed << std::setprecision(3) << pos[1];
+			sz << std::fixed << std::setprecision(3) << pos[2];
+			std::string pos_str = sx.str() + " " + sy.str() + " " + sz.str();
+			cv::putText(image,
+			            pos_str,
+			            cv::Point(out_boxes[i].x, out_boxes[i].y + out_boxes[i].height + 23),
+			            cv::FONT_HERSHEY_SIMPLEX,
+			            0.85,
+			            cv::Scalar(0, 0, 255),
+			            2.5,
+			            true);
 		}
+		//set resulting image in shared memory buffer
+		firevision::convert(firevision::BGR,
+		                    firevision::RGB,
+		                    image.data,
+		                    shm_buffer_results_->buffer(),
+		                    camera_width_,
+		                    camera_height_);
+
 		fawkes::Time after_projection(clock);
 		logger->log_info("load image time ", std::to_string(before_detect - &start_time).c_str());
 		logger->log_info("detection time  ", std::to_string(after_detect - &before_detect).c_str());
@@ -309,9 +345,43 @@ ObjectTrackingThread::loop()
 	//TODO: transform exp_pos to base_frame and only use exp_pos[i] instead of the others from here on
 
 	float cur_object_pos[3];
-	bool  detected = closest_position(out_boxes, exp_pos, cur_object_pos);
+	Rect  closest_box;
+	bool  detected = closest_position(out_boxes, exp_pos, cur_object_pos, closest_box);
 	//cur_object_pos is set to expected position if no bounding box was close
 	// enough and is used the same in the following
+
+	std::string pos_str;
+	if (detected) {
+		//draw bounding box
+		rectangle(image, closest_box, Scalar(0, 255, 0));
+
+		//write 3d position in camera frame on the image
+		std::stringstream sx;
+		std::stringstream sy;
+		std::stringstream sz;
+		sx << std::fixed << std::setprecision(3) << cur_object_pos[0];
+		sy << std::fixed << std::setprecision(3) << cur_object_pos[1];
+		sz << std::fixed << std::setprecision(3) << cur_object_pos[2];
+		pos_str = sx.str() + " " + sy.str() + " " + sz.str();
+	} else {
+		pos_str = "X.XXX X.XXX X.XXX";
+	}
+	cv::putText(image,
+	            pos_str,
+	            cv::Point(10, 470),
+	            cv::FONT_HERSHEY_SIMPLEX,
+	            1.5,
+	            cv::Scalar(0, 255, 0),
+	            3.5,
+	            true);
+
+	//set resulting image in shared memory buffer
+	firevision::convert(firevision::BGR,
+	                    firevision::RGB,
+	                    image.data,
+	                    shm_buffer_results_->buffer(),
+	                    camera_width_,
+	                    camera_height_);
 
 	fawkes::Time after_projection(clock);
 	logger->log_info("load image time ", std::to_string(before_detect - &start_time).c_str());
@@ -548,12 +618,13 @@ ObjectTrackingThread::detect_objects(Mat image, std::vector<Rect> &out_boxes)
 bool
 ObjectTrackingThread::closest_position(std::vector<Rect> bounding_boxes,
                                        float             exp_pos[3],
-                                       float             closest_pos[3])
+                                       float             closest_pos[3],
+                                       Rect              closest_box)
 {
 	// logger->log_info("bounding_boxes.size(): ", std::to_string(bounding_boxes.size()).c_str());
 	float max_acceptable_dist = std::numeric_limits<float>::max();
+	float min_dist            = max_acceptable_dist;
 
-	float min_dist = max_acceptable_dist;
 	for (size_t i = 0; i < bounding_boxes.size(); ++i) {
 		float pos[3];
 		//compute_3d_point(bounding_boxes[i], pos);
@@ -570,6 +641,7 @@ ObjectTrackingThread::closest_position(std::vector<Rect> bounding_boxes,
 			closest_pos[0] = pos[0];
 			closest_pos[1] = pos[1];
 			closest_pos[2] = pos[2];
+			closest_box    = bounding_boxes[i];
 		}
 	}
 
@@ -581,7 +653,6 @@ ObjectTrackingThread::closest_position(std::vector<Rect> bounding_boxes,
 		closest_pos[2] = exp_z_;
 		return false;
 	}
-	//TODO: draw closest bounding box on image
 	return true;
 }
 
