@@ -61,7 +61,7 @@ class ObjectTrackingThread : public fawkes::Thread,
                              public fawkes::ConfigurableAspect,
                              public fawkes::BlackBoardAspect,
                              public fawkes::BlockedTimingAspect,
-                             //public fawkes::NavGraphAspect,
+                             public fawkes::NavGraphAspect,
                              public fawkes::TransformAspect
 {
 public:
@@ -179,15 +179,17 @@ private:
 	void set_shm();
 
 	//use yolo to detect objects
-	void detect_objects(cv::Mat image, std::vector<cv::Rect> &out_boxes);
+	void detect_objects(cv::Mat image, std::vector<std::array<float, 4>> &yolo_boxes);
+	void convert_bb_yolo2rect(std::array<float, 4> yolo_bbox, cv::Rect &rect_bbox);
 
 	//project bounding boxes into 3d points and take closest to expectation
-	bool closest_position(std::vector<cv::Rect> bounding_boxes,
-	                      float                 exp_pos[3],
-	                      float                 closest_pos[3],
-	                      cv::Rect              closest_box);
+	bool closest_position(std::vector<std::array<float, 4>> bounding_boxes,
+	                      float                             exp_pos[3],
+	                      float                             closest_pos[3],
+	                      cv::Rect &                        closest_box);
 	void compute_3d_point(cv::Rect bounding_box, float point[3]);
 	void compute_3d_point_direct(cv::Rect bounding_box, float angle, float point[3]);
+	void compute_3d_point_direct_yolo(std::array<float, 4> bounding_box, float angle, float point[3]);
 	void converge_delta_ibc(float dx_start, float dy_start, float dx, float dy);
 
 	//compute base and gripper target frame
