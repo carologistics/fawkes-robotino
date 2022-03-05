@@ -128,8 +128,9 @@ function gripper_aligned()
      ori=fawkes.tf.create_quaternion_from_yaw(0)},
     "base_link", "end_effector_home")
 
-  if (fsm.vars.target == "WORKPIECE" and not arduino:is_gripper_closed()) or
-     (fsm.vars.target ~= "WORKPIECE" and arduino:is_gripper_closed()) then
+  if arduino:is_final() and
+     ((fsm.vars.target == "WORKPIECE" and not arduino:is_gripper_closed()) or
+     (fsm.vars.target ~= "WORKPIECE" and arduino:is_gripper_closed())) then
     return math.abs(gripper_target.x -
       GRIPPER_X_SAFETY_DISTANCE - arduino:x_position()) < GRIPPER_TOLERANCE.x
       and math.abs(gripper_target.y - arduino:y_position()) < GRIPPER_TOLERANCE.y
@@ -160,10 +161,26 @@ function set_gripper(x, y, z)
     print("Gripper cannot reache z-value: " .. z .. " ! Clipped to " .. z_clipped)
   end
 
+  if math.abs(fsm.vars.gripper_target_pos_x - x_clipped) > GRIPPER_TOLERANCE.x or
+     math.abs(fsm.vars.gripper_target_pos_y - y_clipped) > GRIPPER_TOLERANCE.y or
+     math.abs(fsm.vars.gripper_target_pos_z - z_clipped) > GRIPPER_TOLERANCE.z then
+    fsm.vars.gripper_target_pos_x = x_clipped
+    fsm.vars.gripper_target_pos_y = y_clipped
+    fsm.vars.gripper_target_pos_z = z_clipped
+  end
+
+  if not arduino:is_final() then
+    return
+  end
+
+  local next_step_x = arduino:x_position() + (fsm.vars.gripper_target_pos_x - arduino:x_position()) / 2
+  local next_step_y = arduino:y_position() + (fsm.vars.gripper_target_pos_y - arduino:y_position()) / 2
+  local next_step_z = arduino:z_position() + (fsm.vars.gripper_target_pos_z - arduino:z_position()) / 2
+
   move_abs_message = arduino.MoveXYZAbsMessage:new()
-  move_abs_message:set_x(x_clipped)
-  move_abs_message:set_y(y_clipped)
-  move_abs_message:set_z(z_clipped)
+  move_abs_message:set_x(next_step_x)
+  move_abs_message:set_y(next_step_y)
+  move_abs_message:set_z(next_step_z)
   arduino:msgq_enqueue_copy(move_abs_message)
 end
 
@@ -337,6 +354,10 @@ function INIT:init()
   fsm.vars.target_object_type = TARGET_NAMES[fsm.vars.target]
   fsm.vars.expected_mps = MPS_NAMES[fsm.vars.mps]
   fsm.vars.expected_side = SIDE_NAMES[fsm.vars.side]
+
+  fsm.vars.gripper_target_pos_x = 0
+  fsm.vars.gripper_target_pos_y = 0
+  fsm.vars.gripper_target_pos_z = 0
 end
 
 function START_TRACKING:init()
@@ -409,6 +430,10 @@ function MOVE_BASE_AND_GRIPPER:init()
     "base_link", "end_effector_home")
 
   set_gripper(gripper_target.x - GRIPPER_X_SAFETY_DISTANCE, 0, gripper_target.z)
+end
+
+function MOVE_BASE_AND_GRIPPER:loop()
+  set_gripper(fsm.vars.gripper_target_pos_x, fsm.vars.gripper_target_pos_y, fsm.vars.gripper_target_pos_z)
 end
 
 function FINE_TUNE_GRIPPER:init()
