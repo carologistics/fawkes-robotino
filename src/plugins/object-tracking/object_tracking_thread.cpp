@@ -60,6 +60,7 @@ void
 ObjectTrackingThread::init()
 {
 	logger->log_info(name(), "Initializing Object Tracker");
+	std::cout << "OpenCV version : " << CV_VERSION << std::endl;
 
 	//read config values for computing expected position and target frames
 	puck_size_   = config->get_float("plugins/object_tracking/puck_values/puck_size");
@@ -270,22 +271,11 @@ ObjectTrackingThread::loop()
 		rotate(image, image, ROTATE_180);
 
 	//detect objects
-	std::vector<Rect> out_boxes;
-	fawkes::Time      before_detect(clock);
+	std::vector<std::array<float, 4>> out_boxes;
+	fawkes::Time                      before_detect(clock);
 	detect_objects(image, out_boxes);
 	fawkes::Time after_detect(clock);
 	//logger->log_info("boxes found: ", std::to_string(out_boxes.size()).c_str());
-
-	//draw bounding boxes
-	//for (Rect box : out_boxes) {
-	//	rectangle(image, box, Scalar(0, 255, 0));
-	//}
-
-	//display results
-	//std::string windowName = "Results";
-	//imshow(windowName, image);
-	//waitKey(0);
-	//destroyWindow(windowName);
 
 	//save results
 	//std::string new_img_name = image_path_.insert(image_path_.find("."), "_results");
@@ -297,13 +287,15 @@ ObjectTrackingThread::loop()
 			//logger->log_info("box: ", std::to_string(i).c_str());
 			float pos[3];
 			//compute_3d_point(out_boxes[i], pos);
-			compute_3d_point_direct(out_boxes[i], 0.0, pos);
+			compute_3d_point_direct_yolo(out_boxes[i], 0.0, pos);
 			//logger->log_info("x (right): ", std::to_string(pos[0]).c_str());
 			//logger->log_info("y (up)   : ", std::to_string(pos[1]).c_str());
 			//logger->log_info("z (depth): ", std::to_string(pos[2]).c_str());
 
 			//draw bounding box on the image
-			rectangle(image, out_boxes[i], Scalar(0, 0, 255), 2);
+			cv::Rect rect_bb;
+			convert_bb_yolo2rect(out_boxes[i], rect_bb);
+			rectangle(image, rect_bb, Scalar(0, 0, 255), 2);
 
 			//write 3d position under it
 			std::stringstream sx;
@@ -315,7 +307,7 @@ ObjectTrackingThread::loop()
 			std::string pos_str = sx.str() + " " + sy.str() + " " + sz.str();
 			cv::putText(image,
 			            pos_str,
-			            cv::Point(out_boxes[i].x, out_boxes[i].y + out_boxes[i].height + 23),
+			            cv::Point(rect_bb.x, rect_bb.y + rect_bb.height + 23),
 			            cv::FONT_HERSHEY_SIMPLEX,
 			            0.85,
 			            cv::Scalar(0, 0, 255),
@@ -459,20 +451,21 @@ ObjectTrackingThread::compute_expected_position()
 	std::string mps_name = object_tracking_if_->enum_tostring("EXPECTED_MPS", current_expected_mps_);
 	mps_name             = mps_name.replace(1, 1, "-");
 
-	//fawkes::NavGraphNode node = navgraph->node(mps_name); //TODO: if empty give error
-	float node[3] = {0, 0, 0};
+	fawkes::NavGraphNode node = navgraph->node(mps_name); //TODO: if empty give error
+	//float node[3] = {0, 0, 0};
 
-	//TODO: get navgraph to work
-
-	// mps_x_ = node.x();
-	// mps_y_ = node.y();
-	// mps_ori_ = 0;
-	// if (node.has_property("orientation")) {
-	// 	mps_ori_ = node.property_as_float("orientation");
-	// }
-	mps_x_   = node[0];
-	mps_y_   = node[1];
-	mps_ori_ = node[2];
+	mps_x_   = node.x();
+	mps_y_   = node.y();
+	mps_ori_ = 0;
+	if (node.has_property("orientation")) {
+		mps_ori_ = node.property_as_float("orientation");
+	}
+	logger->log_info("mps_x_: ", std::to_string(mps_x_).c_str());
+	logger->log_info("mps_y_: ", std::to_string(mps_y_).c_str());
+	logger->log_info("mps_ori_: ", std::to_string(mps_ori_).c_str());
+	// mps_x_   = node[0];
+	// mps_y_   = node[1];
+	// mps_ori_ = node[2];
 
 	//find expected object position as middle point
 	switch (current_expected_side_) {
@@ -557,11 +550,12 @@ ObjectTrackingThread::set_shm()
 }
 
 void
-ObjectTrackingThread::detect_objects(Mat image, std::vector<Rect> &out_boxes)
+ObjectTrackingThread::detect_objects(Mat image, std::vector<std::array<float, 4>> &out_boxes)
 {
-	std::vector<float> confidences;
-	std::vector<Rect>  boxes;
-	std::vector<Mat>   outs;
+	std::vector<float>                confidences;
+	std::vector<Rect>                 boxes;
+	std::vector<Mat>                  outs;
+	std::vector<std::array<float, 4>> yolo_bbs;
 
 	Mat blob = blobFromImage(image, 1.0f, Size(inpWidth_, inpHeight_), Scalar(), swapRB_);
 	net_.setInput(blob, "", scale_, Scalar());
@@ -590,19 +584,14 @@ ObjectTrackingThread::detect_objects(Mat image, std::vector<Rect> &out_boxes)
 			// logger->log_info("pos[2]: ", std::to_string(data[3]).c_str());
 
 			//TODO: also store the original values and use them for the direct 3d point computation, since they are more precise
-			//float bb_left = data[0] - data[2]/2;
-			//float bb_right = data[0] + data[2]/2;
-			//float bb_centerY = data[1];
+			std::array<float, 4> yolo_bb = {data[0], data[1], data[2], data[3]};
+			yolo_bbs.push_back(yolo_bb);
 
-			int centerX = (int)(data[0] * image.cols);
-			int centerY = (int)(data[1] * image.rows);
-			int width   = (int)(data[2] * image.cols);
-			int height  = (int)(data[3] * image.rows);
-			int left    = centerX - width / 2;
-			int top     = centerY - height / 2;
+			Rect rect_bb;
+			convert_bb_yolo2rect(yolo_bb, rect_bb);
+			boxes.push_back(rect_bb);
 
 			confidences.push_back(confidence);
-			boxes.push_back(Rect(left, top, width, height));
 		}
 	}
 
@@ -610,25 +599,37 @@ ObjectTrackingThread::detect_objects(Mat image, std::vector<Rect> &out_boxes)
 	std::vector<int> indices;
 	NMSBoxes(boxes, confidences, confThreshold_, nmsThreshold_, indices);
 	for (size_t i = 0; i < indices.size(); ++i) {
-		int idx = indices[i];
-		out_boxes.push_back(boxes[idx]);
+		out_boxes.push_back(yolo_bbs[indices[i]]);
 	}
 }
 
+void
+ObjectTrackingThread::convert_bb_yolo2rect(std::array<float, 4> yolo_bbox, Rect &rect_bbox)
+{
+	int centerX = (int)(yolo_bbox[0] * camera_width_);
+	int centerY = (int)(yolo_bbox[1] * camera_height_);
+	int width   = (int)(yolo_bbox[2] * camera_width_);
+	int height  = (int)(yolo_bbox[3] * camera_height_);
+	int left    = centerX - width / 2;
+	int top     = centerY - height / 2;
+	rect_bbox   = Rect(left, top, width, height);
+}
+
 bool
-ObjectTrackingThread::closest_position(std::vector<Rect> bounding_boxes,
-                                       float             exp_pos[3],
-                                       float             closest_pos[3],
-                                       Rect              closest_box)
+ObjectTrackingThread::closest_position(std::vector<std::array<float, 4>> bounding_boxes,
+                                       float                             exp_pos[3],
+                                       float                             closest_pos[3],
+                                       Rect &                            closest_box)
 {
 	// logger->log_info("bounding_boxes.size(): ", std::to_string(bounding_boxes.size()).c_str());
-	float max_acceptable_dist = std::numeric_limits<float>::max();
-	float min_dist            = max_acceptable_dist;
+	float  max_acceptable_dist = std::numeric_limits<float>::max();
+	float  min_dist            = max_acceptable_dist;
+	size_t box_id;
 
 	for (size_t i = 0; i < bounding_boxes.size(); ++i) {
 		float pos[3];
 		//compute_3d_point(bounding_boxes[i], pos);
-		compute_3d_point_direct(bounding_boxes[i], 0.0, pos);
+		compute_3d_point_direct_yolo(bounding_boxes[i], 0.0, pos);
 		float dist = sqrt((pos[0] - exp_pos[0]) * (pos[0] - exp_pos[0])
 		                  + (pos[1] - exp_pos[1]) * (pos[1] - exp_pos[1])
 		                  + (pos[2] - exp_pos[2]) * (pos[2] - exp_pos[2]));
@@ -641,7 +642,7 @@ ObjectTrackingThread::closest_position(std::vector<Rect> bounding_boxes,
 			closest_pos[0] = pos[0];
 			closest_pos[1] = pos[1];
 			closest_pos[2] = pos[2];
-			closest_box    = bounding_boxes[i];
+			box_id         = i;
 		}
 	}
 
@@ -653,6 +654,10 @@ ObjectTrackingThread::closest_position(std::vector<Rect> bounding_boxes,
 		closest_pos[2] = exp_z_;
 		return false;
 	}
+
+	//convert closest bounding box into Rect to draw it on images
+	convert_bb_yolo2rect(bounding_boxes[box_id], closest_box);
+
 	return true;
 }
 
@@ -683,6 +688,51 @@ ObjectTrackingThread::compute_3d_point_direct(Rect bounding_box, float angle, fl
 	// float cx_1 = x_1;
 	// float cx_2 = x_2;
 	// float cy = y;
+
+	if (camera_model_ == 2) { //Inverse Brown-Conrady distortion
+		//compute delta_x_1 and delta_y considering distortion
+		converge_delta_ibc(dx_1, dy, dx_1, dy);
+
+		//compute delta_x_2 and delta_y considering distortion
+		converge_delta_ibc(dx_2, dy, dx_2, dy);
+	}
+
+	if (dx_1 == dx_2) {
+		logger->log_error(name(), "Width of 0: Cannot project into 3D space!");
+		point[0] = 0;
+		point[1] = 0;
+		point[2] = 0;
+		return;
+	}
+
+	//percieved object width from angle
+	float object_width = cos(angle) * object_widths_[(int)current_object_type_];
+
+	//distance towards this perception + additional adjustments through angle
+	float dist =
+	  object_width / (dx_2 - dx_1) + sin(abs(angle)) * object_widths_[(int)current_object_type_] / 2;
+
+	//compute middle point with deltas and distance
+	point[0] = (dx_1 + dx_2) * dist / 2;
+	point[1] = dy * dist;
+	point[2] = dist;
+}
+
+void
+ObjectTrackingThread::compute_3d_point_direct_yolo(std::array<float, 4> bounding_box,
+                                                   float                angle,
+                                                   float                point[3])
+{
+	//adjusted from rs2_deproject_pixel_to_point at
+	// https://github.com/IntelRealSense/librealsense/blob/master/src/rs.cpp#L3598
+
+	float bb_left    = bounding_box[0] - bounding_box[2] / 2;
+	float bb_right   = bounding_box[0] + bounding_box[2] / 2;
+	float bb_centerY = bounding_box[1];
+	//delta values (correct if no distortion):
+	float dx_1 = (bb_left * camera_width_ - camera_ppx_) / camera_fx_;
+	float dx_2 = (bb_right * camera_width_ - camera_ppx_) / camera_fx_;
+	float dy   = (bb_centerY * camera_height_ - camera_ppy_) / camera_fy_;
 
 	if (camera_model_ == 2) { //Inverse Brown-Conrady distortion
 		//compute delta_x_1 and delta_y considering distortion
