@@ -14,21 +14,21 @@ gauss_params=$(${gauss_fit}  \
 	--csv "${data_dir}/wp-put.csv" ${gauss_fit_options} )
 
 ${sample_script} -dc ${skillsim_options} -s bring_product_to \
-	-a place ${gauss_params} -l 10 -u 45 > /dev/null 2>&1
+	-a place ${gauss_params} -l 10 -u 45 --inject-failure "0.05" "Product Dropped" > /dev/null 2>&1
 
 echo -e "wp-put-slide-cc"
 gauss_params=$(${gauss_fit} \
 	--csv "${data_dir}/wp-put-slide-cc.csv" ${gauss_fit_options} )
 
 ${sample_script} ${skillsim_options} -s bring_product_to \
-	-a place -a slide TRUE ${gauss_params} -l 10 -u 45 > /dev/null 2>&1
+	-a place -a slide TRUE ${gauss_params} -l 10 -u 45 --inject-failure "0.05" "Product Dropped" > /dev/null 2>&1
 
 echo -e "wp-get"
 gauss_params=$(${gauss_fit} \
 	--csv "${data_dir}/wp-get.csv" ${gauss_fit_options} )
 
 ${sample_script} ${skillsim_options} -s get_product_from \
-	-a place -a side ${gauss_params} -l 10 -u 45 > /dev/null 2>&1
+	-a place -a side ${gauss_params} -l 10 -u 45 --inject-failure "0.05" "Product Dropped" > /dev/null 2>&1
 
 echo -e "wp-get-shelf"
 
@@ -36,7 +36,7 @@ gauss_params=$(${gauss_fit} \
 	--csv "${data_dir}/wp-get-shelf.csv" ${gauss_fit_options} )
 
 ${sample_script} ${skillsim_options} -s get_product_from \
-	-a place -a shelf ${gauss_params} -l 10 -u 45 > /dev/null 2>&1
+	-a place -a shelf ${gauss_params} -l 10 -u 45 --inject-failure "0.05" "Product Dropped" > /dev/null 2>&1
 
 echo -e "wp-discard"
 
