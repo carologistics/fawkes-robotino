@@ -9,8 +9,14 @@ function start_simulation {
   cd $1/logdump
   current_game=$(sed -r "s/load-from-report.*/load-from-report: \"$2\"/g;s/store-to-report.*/store-to-report: \"$3\"/g" $LLSF_REFBOX_DIR/cfg/game/load_game.yaml)
   echo "$current_game" > game_generated.yaml
-  echo "$pwd/$1/logdump"
-  $FAWKES_DIR/bin/./gazsim.bash -x kill; $FAWKES_DIR/bin/./gazsim.bash -o -r -k --mongodb -m m-skill-sim --central-agent m-central-clips-exec --refbox-args "--cfg-mps mps/mockup_mps.yaml --cfg-mongodb mongodb/enable_mongodb.yaml --cfg-game $pwd/$1/logdump/game_generated.yaml --cfg-simulation simulation/fast_simulation.yaml --dump-cfg"
+  $FAWKES_DIR/bin/./gazsim.bash -x kill; \
+  $FAWKES_DIR/bin/./gazsim.bash -o -r -k --mongodb -m m-skill-sim \
+    --central-agent m-central-clips-exec \
+    --refbox-args "--cfg-mps mps/mockup_mps.yaml \
+       --cfg-mongodb mongodb/enable_mongodb.yaml \
+       --cfg-game $pwd/$1/logdump/game_generated.yaml \
+       --cfg-simulation simulation/fast_simulation.yaml \
+       --dump-cfg"
   cd $pwd
 }
 
@@ -146,6 +152,7 @@ echo "========================================================================"
 
 #count the number of results
 results=$(ls -l $args_target_dir/ | grep -c ^d)
+python $LLSF_REFBOX_DIR/etc/scripts/extract_game_report_data.py --report-names $reports_list --boxplots --boxplot-tables --accumulated-bar-diagrams
 
 #run overall evaluation
 #if [[ $results -gt 2 ]]
