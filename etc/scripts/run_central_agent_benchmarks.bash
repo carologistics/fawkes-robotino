@@ -96,6 +96,8 @@ if [ "$3" != "" ]; then
   echo "Starting at $3"
 fi
 
+reports_list=""
+
 while [ $arg_runs -gt $count ]
 do
   #create game params
@@ -116,27 +118,25 @@ do
   #copy log files
   copy_logs $arg_target_dir $dirname $gamereport
 
-  # We need a proper parser fo this
-  count=$((count + 1 ))
-  retries=0
-#  #parse the logs
-#  echo "Parse results"
-#  outcome=$(python parser.py $arg_target_dir/$dirname/)
-#  echo "$outcome"
-#
-#  if [ "$outcome" = "Successful" ]; then
-#    count=$((count + 1 ))
-#    retries=0
-#  else
-#    if [ $retries -gt 10 ]; then
-#      echo "Max number of retries reached, stopping!"
-#      count=$((count + arg_runs))
-#    else
-#      echo "Retrying!"
-#      retries=$((retries + 1))
-#      rm -r $arg_target_dir/$dirname
-#    fi
-#  fi
+  #quick-check produced data
+  echo "Verify Game Length"
+  outcome=$(python $LLSF_REFBOX_DIR/etc/scripts/extract_game_report_data.py --report-names "$dirname" --skip-short)
+  echo "python $LLSF_REFBOX_DIR/etc/scripts/extract_game_report_data.py --report-names $dirname --skip-short)"
+  if [[ $outcome == *"'Carologistics': 1"* ]]; then
+    echo "... Okay"
+    reports_list="$reports_list $dirname"
+    count=$((count + 1 ))
+    retries=0
+  else
+    if [ $retries -gt 10 ]; then
+      echo "Max number of retries reached, stopping!"
+      count=$((count + arg_runs))
+    else
+      echo "... Game is too short. Retrying!"
+      retries=$((retries + 1))
+      rm -r $arg_target_dir/$dirname
+    fi
+  fi
 
   #cleanup and restoring the previous refbox settings
   delete_tmp_files $arg_target_dir
