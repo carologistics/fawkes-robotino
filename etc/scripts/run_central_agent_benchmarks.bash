@@ -64,7 +64,7 @@ function copy_logs() {
   cp $1/logdump/refbox_latest.log ${path}_refbox.log
   cp $1/logdump/refbox-debug_latest.log ${path}_refbox-debug.log
   touch $1/$2/$3
-  sleep 10
+  sleep 2
 }
 
 function delete_tmp_files() {
