@@ -77,8 +77,6 @@ function delete_tmp_files() {
 arg_target_dir=$1
 arg_runs=$(( $2 + 1 ))
 
-echo $3
-
 #create the directory if it doesn't exist
 if [ -d "$arg_target_dir" ]; then
   echo "Given directory exists"
@@ -96,6 +94,8 @@ fi
 #perform test arg_runs-times
 count=1
 retries=0
+failed_runs=0
+failed_benchmark=""
 
 if [ "$3" != "" ]; then
   count=$3
@@ -129,37 +129,39 @@ do
   outcome=$(python $LLSF_REFBOX_DIR/etc/scripts/extract_game_report_data.py --report-names "$dirname" --skip-short)
   echo "python $LLSF_REFBOX_DIR/etc/scripts/extract_game_report_data.py --report-names $dirname --skip-short)"
   if [[ $outcome == *"'Carologistics': 1"* ]]; then
-    echo "... Okay"
+    echo "Game length matches"
     reports_list="$reports_list $dirname"
     count=$((count + 1 ))
     retries=0
   else
-    if [ $retries -gt 10 ]; then
+    if [ $retries -ge 10 ]; then
       echo "Max number of retries reached, stopping!"
+      failed_benchmark="benchmark_$count"
       count=$((count + arg_runs))
     else
-      echo "... Game is too short. Retrying!"
+      echo "Retrying!"
+      failed_runs=$((failed_runs + 1 ))
       retries=$((retries + 1))
       rm -r $arg_target_dir/$dirname
     fi
   fi
-
   #cleanup and restoring the previous refbox settings
   delete_tmp_files $arg_target_dir
 done
 
 echo "========================================================================"
 
+successful_benchmarks=$(echo "$reports_list" | tr -cd ' \t' | wc -c)
 #count the number of results
-results=$(ls -l $args_target_dir/ | grep -c ^d)
-python $LLSF_REFBOX_DIR/etc/scripts/extract_game_report_data.py --report-names $reports_list --boxplots --boxplot-tables --accumulated-bar-diagrams
+echo "Evaluate Results ($successful_benchmarks successful, $failed_runs retries)"
 
-#run overall evaluation
-#if [[ $results -gt 2 ]]
-#then
-#  echo "Parsing overall resuls"
-#  python ~/eval-tools/overview.py $arg_target_dir
-#else
-#  echo "Not enough results ($results) to parse!"
-#fi
-
+if [[ $failed_benchmark != "" ]]; then
+echo "Failed at $failed_benchmark"
+fi
+if [[ $successful_benchmarks -gt 0 ]]; then
+  echo "The following reports are used: $reports_list"
+  pwd=$(pwd)
+  cd $arg_target_dir
+  python $LLSF_REFBOX_DIR/etc/scripts/extract_game_report_data.py --report-names $reports_list --boxplots --boxplot-tables --accumulated-bar-diagrams --export-csv
+  cd $pwd
+fi
