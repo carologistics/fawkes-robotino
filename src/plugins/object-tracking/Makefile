@@ -27,7 +27,7 @@ LIBS     += $(VISION_LIBS)
 
 LIBS_object_tracking = m fawkescore fawkesutils fawkesaspects \
     fawkesinterface fawkesblackboard ObjectTrackingInterface \
-    fvutils
+    fvutils fawkestf
 OBJS_object_tracking = object_tracking_plugin.o object_tracking_thread.o
 
 OBJS_all    = $(OBJS_object_tracking)
