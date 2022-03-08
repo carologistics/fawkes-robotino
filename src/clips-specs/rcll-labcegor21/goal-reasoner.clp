@@ -164,11 +164,19 @@
 
   ; We don't want to handle it if there is another order with earlier delivery end.
   (wm-fact (key refbox order ?order-id delivery-end) (value ?order-end))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?order-com))
   (not (and (goal (id ?other-goal-id) (parent ?other-parent-id) (mode FORMULATED) (is-executable TRUE))
             (goal (id ?other-parent-id) (class PRODUCE-ORDER) (params order ?other-order-id))
             (not (goal-meta (goal-id ?other-goal-id) (assigned-to central)))
             (wm-fact (key refbox order ?other-order-id delivery-end) (value ?other-order-end))
-            (test (< ?other-order-end ?order-end))
+            (wm-fact (key domain fact order-complexity args? ord ?other-order-id com ?other-order-com))
+            (or
+              (and (test (= (str-compare ?other-order-com ?order-com) 0))
+                   (test (< ?other-order-end ?order-end))
+              ) 
+              (test (> (str-compare ?other-order-com ?order-com) 0))
+            )
+            
   ))
   =>
   (printout t "Production goal " ?goal-id " SELECTED and assigned to " ?robot crlf)
