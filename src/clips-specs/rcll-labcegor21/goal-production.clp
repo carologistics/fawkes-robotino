@@ -454,7 +454,7 @@
 	; We still want it. We subtract it everytime we create a goal.
 	?requested <-(wm-fact (key refbox order ?order-id quantity-requested) (value ?qr&:(> ?qr 0)))
 	=>
-	(bind ?wp-for-order (sym-cat wp- ?order-id))
+	(bind ?wp-for-order (sym-cat wp- ?order-id - (gensym*)))
 	(goal-production-initialize-wp ?wp-for-order)
 	(assert (wm-fact (key order meta wp-for-order args? wp ?wp-for-order ord ?order-id)))
 	(if (eq ?com C0) then
