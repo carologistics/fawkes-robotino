@@ -113,24 +113,24 @@ private:
 	fawkes::ObjectTrackingInterface::TARGET_OBJECT_TYPE saved_object_type_;
 	std::string                                         image_path_;
 	std::vector<cv::String>                             filenames_;
-	unsigned int                                        name_it_;
+	size_t                                              name_it_;
 
 	//NN params
-	std::string  weights_path_;
-	std::string  config_path_;
-	float        confThreshold_;
-	float        nmsThreshold_;
-	int          inpWidth_;
-	int          inpHeight_;
-	float        scale_;
-	bool         swapRB_;
-	cv::dnn::Net net_;
-	std::string  outName_;
+	std::string              weights_path_;
+	std::string              config_path_;
+	float                    confThreshold_;
+	float                    nmsThreshold_;
+	int                      inpWidth_;
+	int                      inpHeight_;
+	float                    scale_;
+	bool                     swapRB_;
+	cv::dnn::Net             net_;
+	std::vector<std::string> outName_;
 
 	//weighted average filter
-	float                            filter_weights_[6];
-	int                              filter_size_;
-	std::deque<std::array<float, 3>> past_responses_;
+	float                                              filter_weights_[6];
+	size_t                                             filter_size_;
+	std::deque<fawkes::tf::Stamped<fawkes::tf::Point>> past_responses_;
 
 	//camera params
 	float          focal_length_;
@@ -138,6 +138,7 @@ private:
 
 	std::vector<float> object_widths_;
 	bool               rotate_image_;
+	std::string        target_frame_;
 
 	//ObjectTrackingInterface to receive messages and update target frames
 	std::string                      object_tracking_if_name_;
@@ -145,18 +146,11 @@ private:
 
 	//shared memory buffer
 	std::string                          shm_id_;
-	std::string                          frame_id;
 	firevision::SharedMemoryImageBuffer *shm_buffer_;
-	unsigned char *                      image_buffer_;
 	bool                                 shm_active_;
 
 	std::string                          shm_id_res_;
 	firevision::SharedMemoryImageBuffer *shm_buffer_results_;
-
-	//expected object point:
-	float exp_x_;
-	float exp_y_;
-	float exp_z_;
 
 	//MPS navgraph position:
 	float mps_x_;
@@ -171,7 +165,7 @@ private:
 	int                                                 msgid_;
 
 	//compute expected position and start tracking
-	void  compute_expected_position();
+	void  compute_expected_position(fawkes::tf::Stamped<fawkes::tf::Point> &exp_pos);
 	float compute_middle_x(float x_offset);
 	float compute_middle_y(float y_offset);
 
@@ -183,10 +177,11 @@ private:
 	void convert_bb_yolo2rect(std::array<float, 4> yolo_bbox, cv::Rect &rect_bbox);
 
 	//project bounding boxes into 3d points and take closest to expectation
-	bool closest_position(std::vector<std::array<float, 4>> bounding_boxes,
-	                      float                             exp_pos[3],
-	                      float                             closest_pos[3],
-	                      cv::Rect &                        closest_box);
+	bool closest_position(std::vector<std::array<float, 4>>      bounding_boxes,
+	                      fawkes::tf::Stamped<fawkes::tf::Point> exp_pos,
+	                      float                                  mps_angle,
+	                      float                                  closest_pos[3],
+	                      cv::Rect &                             closest_box);
 	void compute_3d_point(cv::Rect bounding_box, float point[3]);
 	void compute_3d_point_direct(cv::Rect bounding_box, float angle, float point[3]);
 	void compute_3d_point_direct_yolo(std::array<float, 4> bounding_box, float angle, float point[3]);

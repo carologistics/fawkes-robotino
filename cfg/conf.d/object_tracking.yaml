@@ -54,7 +54,10 @@ plugins/object_tracking:
     p2: 0
     k3: 0
 
-  rotate_image: true
+  rotate_image: false
+
+  #frame to use for the weighted average and the target frames
+  target_frame: "/odom"
 
   yolo:
     weights_path: "../cfg/yolo/yolov4-tiny.weights"
@@ -68,9 +71,9 @@ plugins/object_tracking:
   saved:
     use_saved: true
     saved_object_type: 1
-    image_path: "/home/mtschesche/Pictures/realsense2_1m.jpg"
+    image_path: "/home/mtschesche/Pictures/realsense_sequence_3/"
 
   buffer:
     shm_image_id: "realsense_rgb"
-    frame: "cam_conveyor"
     shm_image_id_res: "object_tracking"
+    frame: "cam_gripper"
