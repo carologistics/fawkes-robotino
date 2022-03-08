@@ -446,10 +446,9 @@
 	(wm-fact (key domain fact order-ring2-color args? ord ?order-id col ?ring2-color))
 	(wm-fact (key domain fact order-ring3-color args? ord ?order-id col ?ring3-color))
 	(wm-fact (key domain fact cs-color args? m ?cap-mps col ?cap-color))
-	(not (wm-fact (key domain fact order-fulfilled args? ord ?order-id)))
 
-	; Don't create a goal twice.
-	(not (goal (class PRODUCE-ORDER) (params order ?order-id) (mode FORMULATED)))
+	; We still want it. We subtract it everytime we create a goal.
+	?requested <-(wm-fact (key refbox order ?order-id quantity-requested) (value ?qr&:(> ?qr 0)))
 	=>
 	(bind ?wp-for-order (sym-cat wp- ?order-id))
 	(goal-production-initialize-wp ?wp-for-order)
@@ -506,6 +505,7 @@
 	)
   	(modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id)
 	  			  (parent ?root-id) (params order ?order-id))
+	(modify ?requested (value (- ?qr 1)))
 	(printout t "Goal PRODUCE-ORDER formulated for " ?order-id crlf)
 )
 
