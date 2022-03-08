@@ -120,8 +120,11 @@
 	; The workpiece has the desired step.
 	(wm-fact (key wp meta next-step args? wp ?wp) (value ?wp-step))
 
-	; Prevent another transport goal with the same destination.
+	; Prevent another transport goal with the same destination,
 	(not (goal (class TRANSPORT) (params wp ? wp-next-step ? dst-mps ?dst-mps dst-side ?dst-side)
+		 (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
+	; or with the same workpiece.
+	(not (goal (class TRANSPORT) (params wp ?wp wp-next-step ? dst-mps ? dst-side ?)
 		 (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
 
 	; If it's mounting a cap, the cap station needs to have something buffered already.
@@ -590,7 +593,8 @@
 	(not (goal (class TRANSPORT) (params wp ?wp wp-next-step DELIVER dst-mps C-SS dst-side ?)))
 	=>
 	; We put into the storage station.
-	(goal-production-assert-transport ?wp DELIVER C-SS ?side)
+	(bind ?goal (goal-production-assert-transport ?wp DELIVER C-SS ?side))
+	(modify ?goal (parent ?root-id))
 )
 
 (defrule goal-production-create-buffer-cap
