@@ -217,9 +217,6 @@
 	:parameters (?m - mps ?side - mps-side ?wp - workpiece
 	             ?basecol - base-color)
 	:precondition (and (mps-type ?m BS)
-	                   (or (mps-state ?m PROCESSING)
-	                       (mps-state ?m READY-AT-OUTPUT)
-	                   )
 	                   (bs-prepared-color ?m ?basecol)
 	                   (bs-prepared-side ?m ?side)
 	                   (wp-base-color ?wp BASE_NONE)
