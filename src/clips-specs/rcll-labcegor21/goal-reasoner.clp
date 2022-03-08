@@ -164,8 +164,9 @@
 
   ; We don't want to handle it if there is another order with earlier delivery end.
   (wm-fact (key refbox order ?order-id delivery-end) (value ?order-end))
-  (not (and (goal (parent ?other-parent-id) (mode FORMULATED) (is-executable TRUE))
+  (not (and (goal (id ?other-goal-id) (parent ?other-parent-id) (mode FORMULATED) (is-executable TRUE))
             (goal (id ?other-parent-id) (class PRODUCE-ORDER) (params order ?other-order-id))
+            (not (goal-meta (goal-id ?other-goal-id) (assigned-to central)))
             (wm-fact (key refbox order ?other-order-id delivery-end) (value ?other-order-end))
             (test (< ?other-order-end ?order-end))
   ))
@@ -175,10 +176,10 @@
   (modify ?g (mode SELECTED))
 )
 
-(defrule goal-reasoner-select-produce-order-central-goal
+(defrule goal-reasoner-select-central-proudction-goal
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
   ?g <- (goal (id ?goal-id) (parent ?parent-id) (mode FORMULATED) (is-executable TRUE))
-  (goal (id ?parent-id) (class PRODUCE-ORDER) (params order ?order-id))
+  (goal (id ?parent-id) (class PRODUCE-ORDER|PRODUCTION-ROOT))
   (goal-meta (goal-id ?goal-id) (assigned-to central))
   =>
   (printout t "Production goal " ?goal-id " SELECTED for central" crlf)
