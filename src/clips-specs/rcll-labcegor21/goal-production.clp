@@ -127,7 +127,16 @@
 	; If it's mounting a cap, the cap station needs to have something buffered already.
 	(or (test (neq ?wp-step CAP))
 		(and  (wm-fact (key domain fact cs-buffered args? m ?dst-mps col ?))
-			  (wm-fact (key domain fact cs-can-perform args? m ?dst-mps op MOUNT_CAP))))
+			  (wm-fact (key domain fact cs-can-perform args? m ?dst-mps op MOUNT_CAP))
+	))
+	
+	; If it's delivering the workstation, the delivery window needs to have started already.
+	(or (test (neq ?wp-step DELIVER))
+		(and (wm-fact (key refbox game-time) (values $?game-time))
+			 (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+			 (wm-fact (key refbox order ?order delivery-begin) (type UINT)
+					  (value ?begin&:(< ?begin (nth$ 1 ?game-time))))
+	))
 	=>
 	(printout t "Goal TRANSPORT executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -271,10 +280,6 @@
 	(wm-fact (key domain fact mps-state args? m ?mps s IDLE))
 	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
-	; Game time
-	(wm-fact (key refbox game-time) (values $?game-time))
-	(wm-fact (key refbox order ?order delivery-begin) (type UINT)
-	         (value ?begin&:(< ?begin (nth$ 1 ?game-time))))
 	=>
 	(printout t "Goal DELIVER executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -439,26 +444,6 @@
 	(wm-fact (key domain fact order-ring3-color args? ord ?order-id col ?ring3-color))
 	(wm-fact (key domain fact cs-color args? m ?cap-mps col ?cap-color))
 	(not (wm-fact (key domain fact order-fulfilled args? ord ?order-id)))
-	
-	(wm-fact (key refbox game-time) (values $?game-time))
-	(wm-fact (key refbox order ?order-id delivery-begin) (value ?order-begin))
-	(or
-		; Wait until the order delivery window starts in 30 seconds.
-		(test (< ?order-begin (+ (nth$ 1 ?game-time) 30)))
-		; or if we don't have any goals and no other order can be delivered earlier.
-		(and (not (and  (goal (id ?other-produce-goal) (class PRODUCE-ORDER) (mode FORMULATED))
-						(goal (parent ?other-produce-goal) (class ?c&~DELIVER))
-						(goal (id ?other-produce-goal2) (class PRODUCE-ORDER) (mode FORMULATED))
-						(goal (parent ?other-produce-goal2) (class ?c2&~DELIVER))
-						(test (neq ?other-produce-goal ?other-produce-goal2))
-						))
-			 (not (and  (wm-fact (key refbox order ?other-order-id delivery-begin)
-	         		  	   		(value ?other-begin&:(< ?other-begin ?order-begin)))
-					    (not (goal (class PRODUCE-ORDER) (params order ?other-order-id)))
-				   )
-			  )
-		)
-	)
 
 	; Don't create a goal twice.
 	(not (goal (class PRODUCE-ORDER) (params order ?order-id) (mode FORMULATED)))
@@ -601,9 +586,8 @@
 	(wm-fact (key domain fact mps-side-free args? m C-SS side ?side))
 	(not (wm-fact (key domain fact wp-at args? wp ? m C-SS side ?side)))
 
-	; and we don't have a transport goal or delivery goal yet.
-	(not (goal (class TRANSPORT) (params wp ?wp wp-next-step DELIVER dst-mps C-SS dst-side ?side)))
-	(not (goal (class DELIVER)   (params wp ?wp mps ?)))	
+	; and we don't have a transport goal to the storage station yet.
+	(not (goal (class TRANSPORT) (params wp ?wp wp-next-step DELIVER dst-mps C-SS dst-side ?)))
 	=>
 	; We put into the storage station.
 	(goal-production-assert-transport ?wp DELIVER C-SS ?side)
