@@ -97,11 +97,13 @@
 
 (defrule goal-expander-transport
 	?g <- (goal (id ?goal-id) (class TRANSPORT) (mode SELECTED) (parent ?parent)
-	            (params wp ?wp wp-next-step ?wp-step&~CREATE dst-mps ?dst-mps dst-side ?dst-side))
+	            (params wp ?wp wp-next-step ?wp-step dst-mps ?dst-mps dst-side ?dst-side))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps side ?src-side))
 	(wm-fact (key wp meta next-step args? wp ?wp) (value ?wp-step))
+	
 	(not (wm-fact (key domain fact wp-at args? wp ? m ?dst-mps side ?dst-side)))
 	=>
 	(plan-assert-sequential (sym-cat TRANSPORT-PLAN- (gensym*)) ?goal-id ?robot
@@ -117,11 +119,15 @@
 
 (defrule goal-expander-transport-create
 	?g <- (goal (id ?goal-id) (class TRANSPORT) (mode SELECTED) (parent ?parent)
-	            (params wp ?wp wp-next-step CREATE dst-mps ?dst-mps dst-side ?dst-side))
+	            (params wp ?wp wp-next-step ?wp-step dst-mps ?dst-mps dst-side ?dst-side))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	
+	(wm-fact (key domain fact wp-base-color args? wp ?wp col BASE_NONE))
 	(wm-fact (key wp meta next-step args? wp ?wp) (value ?wp-step))
+	
 	(not (wm-fact (key domain fact wp-at args? wp ? m ?dst-mps side ?dst-side)))
+
 	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
 	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
 	=>

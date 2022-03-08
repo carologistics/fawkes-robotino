@@ -115,13 +115,10 @@
 	                          (is-executable FALSE))
 	
 	; The destination needs to be free.
-	(not (wm-fact (key domain fact wp-at args? wp ?other-wp m ?dst-mps side ?dst-side)))
+	(not (wm-fact (key domain fact wp-at args? wp ? m ?dst-mps side ?dst-side)))
 
-	; If the state is not create, we need to have a workpiece somewhere.
-	(or (test (eq ?wp-step CREATE))
-		(and (wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps side ?src-side))
-			 (wm-fact (key wp meta next-step args? wp ?wp) (value ?wp-step))
-		))
+	; The workpiece has the desired step.
+	(wm-fact (key wp meta next-step args? wp ?wp) (value ?wp-step))
 
 	; Prevent another transport goal with the same destination.
 	(not (goal (class TRANSPORT) (params wp ? wp-next-step ? dst-mps ?dst-mps dst-side ?dst-side)
@@ -129,8 +126,8 @@
 
 	; If it's mounting a cap, the cap station needs to have something buffered already.
 	(or (test (neq ?wp-step CAP))
-		(and (wm-fact (key domain fact cs-buffered args? m ?dst-mps col ?))
-			 (wm-fact (key domain fact cs-can-perform args? m ?dst-mps op MOUNT_CAP))))
+		(and  (wm-fact (key domain fact cs-buffered args? m ?dst-mps col ?))
+			  (wm-fact (key domain fact cs-can-perform args? m ?dst-mps op MOUNT_CAP))))
 	=>
 	(printout t "Goal TRANSPORT executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -471,7 +468,7 @@
 	(assert (wm-fact (key order meta wp-for-order args? wp ?wp-for-order ord ?order-id)))
 	(if (eq ?com C0) then
 		(bind ?goal (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-			(goal-production-assert-transport ?wp-for-order CREATE ?cap-mps INPUT)
+			(goal-production-assert-transport ?wp-for-order CAP ?cap-mps INPUT)
 			(goal-production-assert-mount-cap ?wp-for-order ?cap-mps ?cap-color)
 			(goal-production-assert-transport ?wp-for-order DELIVER C-DS INPUT)
 			(goal-production-assert-deliver ?wp-for-order C-DS)
@@ -480,7 +477,7 @@
 	(if (eq ?com C1) then
 		(bind ?ring1-mps (goal-production-get-ring-machine-for-color ?ring1-color))
 		(bind ?goal (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-			(goal-production-assert-transport ?wp-for-order CREATE ?ring1-mps INPUT)
+			(goal-production-assert-transport ?wp-for-order RING1 ?ring1-mps INPUT)
 			(goal-production-assert-mount-ring ?wp-for-order ?ring1-mps ?ring1-color 1)
 			(goal-production-assert-transport ?wp-for-order CAP ?cap-mps INPUT)
 			(goal-production-assert-mount-cap ?wp-for-order ?cap-mps ?cap-color)
@@ -492,7 +489,7 @@
 		(bind ?ring1-mps (goal-production-get-ring-machine-for-color ?ring1-color))
 		(bind ?ring2-mps (goal-production-get-ring-machine-for-color ?ring2-color))
 		(bind ?goal (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-			(goal-production-assert-transport ?wp-for-order CREATE ?ring1-mps INPUT)
+			(goal-production-assert-transport ?wp-for-order RING1 ?ring1-mps INPUT)
 			(goal-production-assert-mount-ring ?wp-for-order ?ring1-mps ?ring1-color 1)
 			(goal-production-assert-transport ?wp-for-order RING2 ?ring2-mps INPUT)
 			(goal-production-assert-mount-ring ?wp-for-order ?ring2-mps ?ring2-color 2)
@@ -507,7 +504,7 @@
 		(bind ?ring2-mps (goal-production-get-ring-machine-for-color ?ring2-color))
 		(bind ?ring3-mps (goal-production-get-ring-machine-for-color ?ring3-color))
 		(bind ?goal (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-			(goal-production-assert-transport ?wp-for-order CREATE ?ring1-mps INPUT)
+			(goal-production-assert-transport ?wp-for-order RING1 ?ring1-mps INPUT)
 			(goal-production-assert-mount-ring ?wp-for-order ?ring1-mps ?ring1-color 1)
 			(goal-production-assert-transport ?wp-for-order RING2 ?ring2-mps INPUT)
 			(goal-production-assert-mount-ring ?wp-for-order ?ring2-mps ?ring2-color 2)
