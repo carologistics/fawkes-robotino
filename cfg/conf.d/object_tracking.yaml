@@ -56,7 +56,7 @@ plugins/object_tracking:
 
   rotate_image: false
 
-  #frame to use for the weighted average and the target frames
+  # frame to use for the weighted average and the target frames
   target_frame: "/odom"
 
   yolo:

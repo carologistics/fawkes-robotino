@@ -391,9 +391,19 @@ ObjectTrackingThread::loop()
 	logger->log_info("exp_pos[1]: ", std::to_string(exp_pos.getY()).c_str());
 	logger->log_info("exp_pos[2]: ", std::to_string(exp_pos.getZ()).c_str());
 
-	//TODO: get mps angle through laser-lines
-	//TODO: get mps angle through navgraph (mps_ori-robot_ori) if too far away from mps
-	float mps_angle = 0;
+	//get yaw difference between robot and mps
+	//TODO: get mps angle through laser-lines?
+	fawkes::tf::Quaternion mps_q = fawkes::tf::create_quaternion_from_yaw(double(mps_ori_));
+	tf::Point              mps_pos(mps_x_, mps_y_, 0.0);
+	fawkes::tf::Pose       mps_pose(mps_q, mps_pos);
+	fawkes::tf::Stamped<fawkes::tf::Pose> mps_pose_map(mps_pose, fawkes::Time(0, 0), "map");
+	fawkes::tf::Stamped<fawkes::tf::Pose> mps_pose_odom;
+	tf_listener_->transform_pose("odom/", mps_pose_map, mps_pose_odom);
+
+	float mps_angle = fawkes::tf::get_yaw(mps_pose_odom.getRotation());
+	if (current_expected_side_ == ObjectTrackingInterface::OUTPUT_CONVEYOR) {
+		mps_angle += M_PI;
+	}
 
 	float cur_object_pos[3];
 	Rect  closest_box;
