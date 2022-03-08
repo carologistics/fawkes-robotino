@@ -129,8 +129,8 @@
 
 	; If it's mounting a cap, the cap station needs to have something buffered already.
 	(or (test (neq ?wp-step CAP))
-		(and (wm-fact (key domain fact cs-buffered args? m ?cap-mps col ?))
-			 (wm-fact (key domain fact cs-can-perform args? m ?cap-mps op MOUNT_CAP))))
+		(and (wm-fact (key domain fact cs-buffered args? m ?dst-mps col ?))
+			 (wm-fact (key domain fact cs-can-perform args? m ?dst-mps op MOUNT_CAP))))
 	=>
 	(printout t "Goal TRANSPORT executable" crlf)
 	(modify ?g (is-executable TRUE))
