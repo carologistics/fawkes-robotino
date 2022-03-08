@@ -222,6 +222,10 @@
 	        (domain-object (name ?cc) (type cap-carrier))
 	    )
 	)
+
+	; Prevent another BUFFER-CAP goal.
+	(not (goal (class BUFFER-CAP) (params target-mps ?mps cap-color ?)
+		 (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
 	=>
 	(printout t "Goal BUFFER-CAP executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -457,6 +461,7 @@
 		(bind ?goal (goal-tree-assert-central-run-parallel PRODUCE-ORDER
 			(goal-production-assert-transport ?wp-for-order CAP ?cap-mps INPUT)
 			(goal-production-assert-mount-cap ?wp-for-order ?cap-mps ?cap-color)
+			(goal-production-assert-buffer-cap ?cap-mps ?cap-color)
 			(goal-production-assert-transport ?wp-for-order DELIVER C-DS INPUT)
 			(goal-production-assert-deliver ?wp-for-order C-DS)
 		))
@@ -468,6 +473,7 @@
 			(goal-production-assert-mount-ring ?wp-for-order ?ring1-mps ?ring1-color 1)
 			(goal-production-assert-transport ?wp-for-order CAP ?cap-mps INPUT)
 			(goal-production-assert-mount-cap ?wp-for-order ?cap-mps ?cap-color)
+			(goal-production-assert-buffer-cap ?cap-mps ?cap-color)
 			(goal-production-assert-transport ?wp-for-order DELIVER C-DS INPUT)
 			(goal-production-assert-deliver ?wp-for-order C-DS)
 		))
@@ -482,6 +488,7 @@
 			(goal-production-assert-mount-ring ?wp-for-order ?ring2-mps ?ring2-color 2)
 			(goal-production-assert-transport ?wp-for-order CAP ?cap-mps INPUT)
 			(goal-production-assert-mount-cap ?wp-for-order ?cap-mps ?cap-color)
+			(goal-production-assert-buffer-cap ?cap-mps ?cap-color)
 			(goal-production-assert-transport ?wp-for-order DELIVER C-DS INPUT)
 			(goal-production-assert-deliver ?wp-for-order C-DS)
 		))
@@ -498,6 +505,7 @@
 			(goal-production-assert-transport ?wp-for-order RING3 ?ring3-mps INPUT)
 			(goal-production-assert-mount-ring ?wp-for-order ?ring3-mps ?ring3-color 3)
 			(goal-production-assert-transport ?wp-for-order CAP ?cap-mps INPUT)
+			(goal-production-assert-buffer-cap ?cap-mps ?cap-color)
 			(goal-production-assert-mount-cap ?wp-for-order ?cap-mps ?cap-color)
 			(goal-production-assert-transport ?wp-for-order DELIVER C-DS INPUT)
 			(goal-production-assert-deliver ?wp-for-order C-DS)
@@ -512,45 +520,25 @@
 (defrule goal-production-create-payment
 " Create a new goal for paying the ring station whenever there isn't one."
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+	(goal (id ?parent) (class PRODUCE-ORDER) (params order ?order-id) (mode FORMULATED))
+	(goal (parent ?parent) (class MOUNT-RING) (mode FORMULATED)
+		  (params wp ?wp ring-mps ?ring-mps $?) (is-executable FALSE))
+
+	; The parent must have the earliest delivery window.
+	(wm-fact (key refbox order ?order-id delivery-end) (value ?order-end))
+	(not (and (wm-fact (key refbox order ?other-order-id delivery-end) (value ?other-order-end))
+              (test (< ?other-order-end ?order-end))))
 
 	; We have space in the ring station.
 	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled&ZERO|ONE|TWO))
 
-	; We don't have something we can discard.
-	(not (and (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
-		 	  (wm-fact (key domain fact mps-type args? m ?mps t CS))
-		 	  (not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?)))))
-
 	; And we don't have another payment goal.
-	(not (goal (class PAY-RING) (params wp ?other-wp src-mps ?src-mps ring-mps ?ring-mps $?)))
+	(not (goal (class PAY-RING) (params wp ? src-mps ? ring-mps ?ring-mps)))
 	=>
 	(bind ?wp-pay (sym-cat wp-pay1- (gensym*)))
 	(goal-production-initialize-wp ?wp-pay)
 	(bind ?goal (goal-production-assert-pay-ring ?wp-pay C-BS ?ring-mps))
-  	(modify ?goal (parent ?root-id))
-)
-
-(defrule goal-production-create-payment-cap-carrier
-"Create a new goal for paying the ring station with a cap carrier."
-	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
-
-	; Whenever there is a workpiece in the cap station output,
-	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
-	(wm-fact (key domain fact mps-type args? m ?mps t CS))
-	; that workpiece is not needed for an order,
-	(not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?)))
-	; we have space in the ring station,
-	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled&ZERO|ONE|TWO))
-	; and no payment goal, nor discard goal, using the same workpiece.
-	(not (goal (class PAY-RING) (params wp ?wp src-mps ?mps $?)))
-	(not (goal (class DISCARD)  (params wp ?wp)))
-	; and no payment goal for the same ring station.
-	(not (goal (class PAY-RING) (params $? ring-mps ?ring-mps)))
-	=>
-	(bind ?goal (goal-production-assert-pay-ring ?wp ?mps ?ring-mps))
-  	(modify ?goal (parent ?root-id))
+  	(modify ?goal (parent ?parent))
 )
 
 (defrule goal-production-create-discard
@@ -562,11 +550,8 @@
 	(wm-fact (key domain fact mps-type args? m ?mps t CS))
 	; that workpiece is not needed for an order,
 	(not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?)))
-	; we don't have space in any ring station.
-	(not (wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled&ZERO|ONE|TWO)))
 	; and we don't have a discard goal.
 	(not (goal (class DISCARD)  (params wp ?wp)))
-	(not (goal (class PAY-RING) (params wp ?wp src-mps ?mps $?)))
 	=>
 	(bind ?goal (goal-production-assert-discard ?wp))
 	(modify ?goal (parent ?root-id))
@@ -594,20 +579,6 @@
 	=>
 	; We put into the storage station.
 	(bind ?goal (goal-production-assert-transport ?wp DELIVER C-SS ?side))
-	(modify ?goal (parent ?root-id))
-)
-
-(defrule goal-production-create-buffer-cap
-	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
-	; Whenever there is a cap station without a cap buffered.
-	(wm-fact (key domain fact cs-color args? m ?cap-mps col ?cap-color))
-	(not (wm-fact (key domain fact cs-buffered args? m ?cap-mps col ?cap-color)))
-	; and we don't have a buffer cap goal for that machine.
-	(not (goal (class BUFFER-CAP) (params target-mps ?cap-mps cap-color ?cap-color)))
-	=>
-	; Buffer a cap.
-	(bind ?goal (goal-production-assert-buffer-cap ?cap-mps ?cap-color))
 	(modify ?goal (parent ?root-id))
 )
 
