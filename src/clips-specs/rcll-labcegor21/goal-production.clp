@@ -249,6 +249,7 @@
 	(wm-fact (key domain fact mps-state args? m ?ring-mps s ~BROKEN))
 	(wm-fact (key domain fact mps-team args? m ?ring-mps col ?team-color))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?ring-mps side INPUT))
+	(wm-fact (key wp meta next-step args? wp ?wp) (value ?wp-step&:(eq ?wp-step (sym-cat RING ?ring-nr))))
 	(not (wm-fact (key domain fact wp-at args? wp ? m ?ring-mps side OUTPUT)))
 	(wm-fact (key domain fact rs-ring-spec args? m ?ring-mps r ?ring-color rn ?bases-needed))
 	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled))
