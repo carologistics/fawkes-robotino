@@ -558,7 +558,7 @@
 	; we have space in the ring station,
 	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled&ZERO|ONE|TWO))
 	; and no payment goal, nor discard goal, using the same workpiece.
-	(not (goal (class PAY-RING) (params wp ?wp wp-loc ?mps $?)))
+	(not (goal (class PAY-RING) (params wp ?wp src-mps ?mps $?)))
 	(not (goal (class DISCARD)  (params wp ?wp)))
 	; and no payment goal for the same ring station.
 	(not (goal (class PAY-RING) (params $? ring-mps ?ring-mps)))
