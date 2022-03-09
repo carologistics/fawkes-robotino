@@ -305,7 +305,8 @@ ObjectTrackingThread::loop()
 		}
 	} else {
 		//read from sharedMemoryBuffer and convert into Mat
-		image = Mat(camera_width_, camera_height_, CV_8UC3, shm_buffer_->buffer());
+		image = Mat(camera_height_, camera_width_, CV_8UC3, shm_buffer_->buffer()).clone();
+		cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
 	}
 
 	if (rotate_image_)
@@ -398,7 +399,7 @@ ObjectTrackingThread::loop()
 	fawkes::tf::Pose       mps_pose(mps_q, mps_pos);
 	fawkes::tf::Stamped<fawkes::tf::Pose> mps_pose_map(mps_pose, fawkes::Time(0, 0), "map");
 	fawkes::tf::Stamped<fawkes::tf::Pose> mps_pose_odom;
-	tf_listener_->transform_pose("odom/", mps_pose_map, mps_pose_odom);
+	tf_listener->transform_pose("odom/", mps_pose_map, mps_pose_odom);
 
 	float mps_angle = fawkes::tf::get_yaw(mps_pose_odom.getRotation());
 	if (current_expected_side_ == ObjectTrackingInterface::OUTPUT_CONVEYOR) {
@@ -825,7 +826,7 @@ ObjectTrackingThread::compute_3d_point_direct(Rect bounding_box, float mps_angle
 	depth_point[1] = -dy * dist;
 	depth_point[2] = dist;
 
-	if (!rotate_image_) {
+	if (!use_saved_ && !rotate_image_) {
 		depth_point[0] = -depth_point[0];
 		depth_point[1] = -depth_point[1];
 	}
@@ -881,7 +882,7 @@ ObjectTrackingThread::compute_3d_point_direct_yolo(std::array<float, 4> bounding
 	depth_point[1] = -dy * dist;
 	depth_point[2] = dist;
 
-	if (!rotate_image_) {
+	if (!use_saved_ && !rotate_image_) {
 		depth_point[0] = -depth_point[0];
 		depth_point[1] = -depth_point[1];
 	}
