@@ -136,7 +136,10 @@ plugins/static-transforms:
       child_frame: !frame cam_gripper
       trans_x: 0.065
       trans_y: 0.021
-      trans_z: 0.0009
+      trans_z: 0.0014
+      rot_yaw: 0.0
+      rot_pitch: -0.135
+      rot_roll: 0.0
 
     # This frame can be used by the conveyor_pose plugin
     # to align the recorded model using the gripper fingers
