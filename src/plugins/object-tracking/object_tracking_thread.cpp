@@ -398,10 +398,10 @@ ObjectTrackingThread::loop()
 	tf::Point              mps_pos(mps_x_, mps_y_, 0.0);
 	fawkes::tf::Pose       mps_pose(mps_q, mps_pos);
 	fawkes::tf::Stamped<fawkes::tf::Pose> mps_pose_map(mps_pose, fawkes::Time(0, 0), "map");
-	fawkes::tf::Stamped<fawkes::tf::Pose> mps_pose_odom;
-	tf_listener->transform_pose("odom/", mps_pose_map, mps_pose_odom);
+	fawkes::tf::Stamped<fawkes::tf::Pose> mps_pose_base;
+	tf_listener->transform_pose("base_link", mps_pose_map, mps_pose_base);
 
-	float mps_angle = fawkes::tf::get_yaw(mps_pose_odom.getRotation());
+	float mps_angle = fawkes::tf::get_yaw(mps_pose_base.getRotation());
 	if (current_expected_side_ == ObjectTrackingInterface::OUTPUT_CONVEYOR) {
 		mps_angle += M_PI;
 	}
@@ -479,7 +479,7 @@ ObjectTrackingThread::loop()
 	                 std::to_string(cur_object_pos_target.getZ()).c_str());
 
 	//use weighted average to improve robustness of object position
-	float weighted_object_pos[3];
+	double weighted_object_pos_target[3];
 
 	if (past_responses_.empty()) {
 		//transform from cam_gripper to odom (depends on target_frame in object_tracking.yaml)
@@ -491,34 +491,56 @@ ObjectTrackingThread::loop()
 		}
 	}
 
-	weighted_object_pos[0] += filter_weights_[0] * cur_object_pos_target.getX();
-	weighted_object_pos[1] += filter_weights_[0] * cur_object_pos_target.getY();
-	weighted_object_pos[2] += filter_weights_[0] * cur_object_pos_target.getZ();
+	weighted_object_pos_target[0] = filter_weights_[0] * cur_object_pos_target.getX();
+	weighted_object_pos_target[1] = filter_weights_[0] * cur_object_pos_target.getY();
+	weighted_object_pos_target[2] = filter_weights_[0] * cur_object_pos_target.getZ();
 
 	for (size_t i = 0; i < past_responses_.size(); i++) {
 		fawkes::tf::Stamped<fawkes::tf::Point> response_target;
 		tf_listener->transform_point(target_frame_, past_responses_[i], response_target);
-		weighted_object_pos[0] += filter_weights_[1 + i] * response_target.getX();
-		weighted_object_pos[1] += filter_weights_[1 + i] * response_target.getY();
-		weighted_object_pos[2] += filter_weights_[1 + i] * response_target.getZ();
+		weighted_object_pos_target[0] += filter_weights_[1 + i] * response_target.getX();
+		weighted_object_pos_target[1] += filter_weights_[1 + i] * response_target.getY();
+		weighted_object_pos_target[2] += filter_weights_[1 + i] * response_target.getZ();
 	}
 	past_responses_.push_front(cur_object_pos_target);
 	past_responses_.pop_back();
 
 	logger->log_info("weighted pos", "frame: odom");
-	logger->log_info("weighted_object_pos[0]: ", std::to_string(weighted_object_pos[0]).c_str());
-	logger->log_info("weighted_object_pos[1]: ", std::to_string(weighted_object_pos[1]).c_str());
-	logger->log_info("weighted_object_pos[2]: ", std::to_string(weighted_object_pos[2]).c_str());
+	logger->log_info("weighted_object_pos_target[0]: ",
+	                 std::to_string(weighted_object_pos_target[0]).c_str());
+	logger->log_info("weighted_object_pos_target[1]: ",
+	                 std::to_string(weighted_object_pos_target[1]).c_str());
+	logger->log_info("weighted_object_pos_target[2]: ",
+	                 std::to_string(weighted_object_pos_target[2]).c_str());
 
+	//transform weighted average into base_link
+	fawkes::tf::Stamped<fawkes::tf::Point> weighted_object_pos_target_tf;
+	fawkes::tf::Stamped<fawkes::tf::Point> weighted_object_pos_base;
+	weighted_object_pos_target_tf.stamp    = fawkes::Time(0.0);
+	weighted_object_pos_target_tf.frame_id = target_frame_;
+	weighted_object_pos_target_tf.setX(weighted_object_pos_target[0]);
+	weighted_object_pos_target_tf.setY(weighted_object_pos_target[1]);
+	weighted_object_pos_target_tf.setZ(weighted_object_pos_target[2]);
+	tf_listener->transform_point("base_link",
+	                             weighted_object_pos_target_tf,
+	                             weighted_object_pos_base);
 	//-------------------------------------------------------------------------
 
 	//compute target frames
 	//-------------------------------------------------------------------------
 
-	float gripper_target[3];
-	float base_target[3];
+	double weighted_object_pos[3] = {weighted_object_pos_base.getX(),
+	                                 weighted_object_pos_base.getY(),
+	                                 weighted_object_pos_base.getZ()};
+	logger->log_info("weighted pos", "frame: base_link");
+	logger->log_info("weighted_object_pos[0]: ", std::to_string(weighted_object_pos[0]).c_str());
+	logger->log_info("weighted_object_pos[1]: ", std::to_string(weighted_object_pos[1]).c_str());
+	logger->log_info("weighted_object_pos[2]: ", std::to_string(weighted_object_pos[2]).c_str());
+
+	double gripper_target[3];
+	double base_target[3];
 	compute_target_frames(weighted_object_pos, mps_angle, gripper_target, base_target);
-	logger->log_info("target frames", "frame: odom");
+	logger->log_info("target frames", "frame: base_link");
 	logger->log_info("gripper_target[0]: ", std::to_string(gripper_target[0]).c_str());
 	logger->log_info("gripper_target[1]: ", std::to_string(gripper_target[1]).c_str());
 	logger->log_info("gripper_target[2]: ", std::to_string(gripper_target[2]).c_str());
@@ -813,6 +835,11 @@ ObjectTrackingThread::compute_3d_point_direct(Rect bounding_box, float mps_angle
 		return;
 	}
 
+	//workpieces have an equal width from all angles
+	if (current_object_type_ == ObjectTrackingInterface::WORKPIECE) {
+		mps_angle = 0;
+	}
+
 	//percieved object width from angle
 	float object_width = cos(mps_angle) * object_widths_[(int)current_object_type_];
 
@@ -869,6 +896,11 @@ ObjectTrackingThread::compute_3d_point_direct_yolo(std::array<float, 4> bounding
 		return;
 	}
 
+	//workpieces have an equal width from all angles
+	if (current_object_type_ == ObjectTrackingInterface::WORKPIECE) {
+		mps_angle = 0;
+	}
+
 	//percieved object width from angle
 	float object_width = cos(mps_angle) * object_widths_[(int)current_object_type_];
 
@@ -915,10 +947,10 @@ ObjectTrackingThread::converge_delta_ibc(float dx_start, float dy_start, float d
 }
 
 void
-ObjectTrackingThread::compute_target_frames(float object_pos[3],
-                                            float mps_angle,
-                                            float gripper_target[3],
-                                            float base_target[3])
+ObjectTrackingThread::compute_target_frames(double object_pos[3],
+                                            float  mps_angle,
+                                            double gripper_target[3],
+                                            double base_target[3])
 {
 	//compute target gripper frame first
 	switch (current_object_type_) {

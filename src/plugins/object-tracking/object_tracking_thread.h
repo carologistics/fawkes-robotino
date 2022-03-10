@@ -128,7 +128,7 @@ private:
 	std::vector<std::string> outName_;
 
 	//weighted average filter
-	float                                              filter_weights_[6];
+	double                                             filter_weights_[6];
 	size_t                                             filter_size_;
 	std::deque<fawkes::tf::Stamped<fawkes::tf::Point>> past_responses_;
 
@@ -188,11 +188,10 @@ private:
 	void converge_delta_ibc(float dx_start, float dy_start, float dx, float dy);
 
 	//compute base and gripper target frame
-	void compute_target_frames(float object_pos[3],
-	                           float mps_angle,
-	                           float gripper_target[3],
-	                           float base_target[3]);
-	void transform_to_base_frame(float object_pos[3], float object_pos_base[3]);
+	void compute_target_frames(double object_pos[3],
+	                           float  mps_angle,
+	                           double gripper_target[3],
+	                           double base_target[3]);
 };
 
 #endif
