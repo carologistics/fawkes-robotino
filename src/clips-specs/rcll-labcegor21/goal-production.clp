@@ -526,7 +526,8 @@
 
 	; The parent must have the earliest delivery window.
 	(wm-fact (key refbox order ?order-id delivery-end) (value ?order-end))
-	(not (and (wm-fact (key refbox order ?other-order-id delivery-end) (value ?other-order-end))
+	(not (and (goal (class PRODUCE-ORDER) (mode FORMULATED) (params order ?other-order-id))
+			  (wm-fact (key refbox order ?other-order-id delivery-end) (value ?other-order-end))
               (test (< ?other-order-end ?order-end))))
 
 	; We have space in the ring station.
