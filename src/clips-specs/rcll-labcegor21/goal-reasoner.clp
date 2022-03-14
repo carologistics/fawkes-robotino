@@ -179,7 +179,12 @@
             
   ))
   =>
-  (printout t "Production goal " ?goal-id " SELECTED and assigned to " ?robot crlf)
+  (printout t "Production goal " ?goal-id " for order " ?order-id " SELECTED and assigned to " ?robot crlf)
+  (do-for-all-facts ((?og goal)) (and (eq ?og:is-executable TRUE) (eq ?og:mode FORMULATED) (neq ?og:id ?goal-id))
+    (do-for-all-facts ((?op goal)) (and (eq ?op:id ?og:parent) (eq ?op:class PRODUCE-ORDER))
+      (printout t "Did not select " ?og:id " " ?op:params crlf)
+    )
+	)
   (modify ?assignment (assigned-to ?robot))
   (modify ?g (mode SELECTED))
 )
