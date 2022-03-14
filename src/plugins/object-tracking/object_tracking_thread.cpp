@@ -223,7 +223,7 @@ ObjectTrackingThread::loop()
 			current_expected_mps_  = msg->expected_mps_to_set();
 			current_expected_side_ = msg->expected_side_to_set();
 
-			//initialize responses with expected position
+			//compute expected object position based on navgraph
 			compute_expected_position();
 
 			//transform from map to target (depends on target_frame in object_tracking.yaml)
@@ -234,7 +234,13 @@ ObjectTrackingThread::loop()
 			for (size_t i = 0; i < filter_size_; i++) {
 				past_responses_.push_front(exp_pos_target);
 			}
-			//logger->log_info("past_responses_[0][0]: ", std::to_string(past_responses_[0][0]).c_str());
+
+			//initialize weighted average as expected position
+			weighted_object_pos_target_.stamp    = fawkes::Time(0.0);
+			weighted_object_pos_target_.frame_id = target_frame_;
+			weighted_object_pos_target_.setX(exp_pos_target.getX());
+			weighted_object_pos_target_.setY(exp_pos_target.getY());
+			weighted_object_pos_target_.setZ(exp_pos_target.getZ());
 
 			//activate shared memory buffer
 			if (!shm_active_)
@@ -600,7 +606,7 @@ ObjectTrackingThread::compute_expected_position()
 	mps_y_   = node.y();
 	mps_ori_ = 0;
 	if (node.has_property("orientation")) {
-		mps_ori_ = node.property_as_float("orientation") + 1.57;
+		mps_ori_ = node.property_as_float("orientation");
 	}
 	logger->log_info("mps_x_: ", std::to_string(mps_x_).c_str());
 	logger->log_info("mps_y_: ", std::to_string(mps_y_).c_str());
@@ -615,9 +621,9 @@ ObjectTrackingThread::compute_expected_position()
 		break;
 	case ObjectTrackingInterface::OUTPUT_CONVEYOR:
 		exp_pos_map[0] =
-		  mps_x_ + belt_offset_side_ * cos(mps_ori_) + (belt_lenght_ / 2) * sin(mps_ori_);
+		  mps_x_ - belt_offset_side_ * sin(mps_ori_) + (belt_lenght_ / 2) * cos(mps_ori_);
 		exp_pos_map[1] =
-		  mps_y_ + belt_offset_side_ * sin(mps_ori_) - (belt_lenght_ / 2) * cos(mps_ori_);
+		  mps_y_ + belt_offset_side_ * cos(mps_ori_) - (belt_lenght_ / 2) * sin(mps_ori_);
 		exp_pos_map[2] = belt_height_;
 		break;
 	case ObjectTrackingInterface::SLIDE:
@@ -649,11 +655,11 @@ ObjectTrackingThread::compute_expected_position()
 	if (current_object_type_ == ObjectTrackingInterface::WORKPIECE) {
 		exp_pos_map[2] += puck_height_ / 2;
 		if (current_expected_side_ == ObjectTrackingInterface::OUTPUT_CONVEYOR) {
-			exp_pos_map[0] -= puck_size_ * sin(mps_ori_);
-			exp_pos_map[1] += puck_size_ * cos(mps_ori_);
+			exp_pos_map[0] -= puck_size_ * cos(mps_ori_);
+			exp_pos_map[1] += puck_size_ * sin(mps_ori_);
 		} else {
-			exp_pos_map[0] += puck_size_ * sin(mps_ori_);
-			exp_pos_map[1] -= puck_size_ * cos(mps_ori_);
+			exp_pos_map[0] += puck_size_ * cos(mps_ori_);
+			exp_pos_map[1] -= puck_size_ * sin(mps_ori_);
 		}
 	}
 
@@ -668,13 +674,13 @@ ObjectTrackingThread::compute_expected_position()
 float
 ObjectTrackingThread::compute_middle_x(float x_offset)
 {
-	return mps_x_ + x_offset * cos(mps_ori_) - (belt_lenght_ / 2) * sin(mps_ori_);
+	return mps_x_ - x_offset * sin(mps_ori_) - (belt_lenght_ / 2) * cos(mps_ori_);
 }
 
 float
 ObjectTrackingThread::compute_middle_y(float y_offset)
 {
-	return mps_y_ + y_offset * sin(mps_ori_) + (belt_lenght_ / 2) * cos(mps_ori_);
+	return mps_y_ + y_offset * cos(mps_ori_) + (belt_lenght_ / 2) * sin(mps_ori_);
 }
 
 void
@@ -963,13 +969,9 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 		gripper_target[2] = object_pos.getZ() + gripper_offset_pick_;
 		break;
 	case ObjectTrackingInterface::CONVEYOR_BELT_FRONT:
-		gripper_target[0] = object_pos.getX() - cos(mps_angle) * puck_size_ * 2;
-		gripper_target[1] = object_pos.getY() - sin(mps_angle) * puck_size_ * 2;
 		gripper_target[2] = object_pos.getZ() + gripper_offset_put_ + belt_size_ / 2 + puck_height_ / 2;
 		break;
 	case ObjectTrackingInterface::SLIDE_FRONT:
-		gripper_target[0] = object_pos.getX() - cos(mps_angle) * puck_size_ * 2;
-		gripper_target[1] = object_pos.getY() - sin(mps_angle) * puck_size_ * 2;
 		gripper_target[2] = object_pos.getZ() + gripper_offset_put_ + puck_height_ / 2;
 		break;
 	default:
@@ -979,8 +981,24 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 		return;
 	}
 
+	if (current_object_type_ == ObjectTrackingInterface::CONVEYOR_BELT_FRONT
+	    || current_object_type_ == ObjectTrackingInterface::SLIDE_FRONT) {
+		if (current_expected_side_ == ObjectTrackingInterface::OUTPUT_CONVEYOR) {
+			gripper_target[0] = object_pos.getX() - cos(mps_angle) * puck_size_ * 2;
+			gripper_target[1] = object_pos.getY() + sin(mps_angle) * puck_size_ * 2;
+		} else {
+			gripper_target[0] = object_pos.getX() + cos(mps_angle) * puck_size_ * 2;
+			gripper_target[1] = object_pos.getY() - sin(mps_angle) * puck_size_ * 2;
+		}
+	}
+
 	//compute target base frame
-	base_target[0] = gripper_target[0] - cos(mps_angle) * base_offset_;
-	base_target[1] = gripper_target[1] - sin(mps_angle) * base_offset_;
+	if (current_expected_side_ == ObjectTrackingInterface::OUTPUT_CONVEYOR) {
+		base_target[0] = gripper_target[0] + cos(mps_angle) * base_offset_;
+		base_target[1] = gripper_target[1] - sin(mps_angle) * base_offset_;
+	} else {
+		base_target[0] = gripper_target[0] - cos(mps_angle) * base_offset_;
+		base_target[1] = gripper_target[1] + sin(mps_angle) * base_offset_;
+	}
 	base_target[2] = mps_angle;
 }
