@@ -59,6 +59,10 @@ plugins/object_tracking:
   # frame to use for the weighted average and the target frames
   target_frame: "/odom"
 
+  # maximal distance between yolo response and last weighted average to accept
+  #  as target object
+  max_acceptable_dist: 0.5
+
   yolo:
     weights_path: "../cfg/yolo/yolov4-tiny.weights"
     config_path: "../cfg/yolo/yolov4-tiny.cfg"

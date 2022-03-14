@@ -138,7 +138,7 @@ plugins/static-transforms:
       trans_y: 0.0
       trans_z: 0.014
       rot_yaw: 0.0
-      rot_pitch: -0.135
+      rot_pitch: -0.12
       rot_roll: 0.0
 
     # This frame can be used by the conveyor_pose plugin
