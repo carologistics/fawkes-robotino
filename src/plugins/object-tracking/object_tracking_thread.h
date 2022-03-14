@@ -128,7 +128,7 @@ private:
 	std::vector<std::string> outName_;
 
 	//weighted average filter
-	double                                             filter_weights_[6];
+	double                                             filter_weights_[12];
 	size_t                                             filter_size_;
 	std::deque<fawkes::tf::Stamped<fawkes::tf::Point>> past_responses_;
 
@@ -139,6 +139,7 @@ private:
 	std::vector<float> object_widths_;
 	bool               rotate_image_;
 	std::string        target_frame_;
+	float              max_acceptable_dist_;
 
 	//ObjectTrackingInterface to receive messages and update target frames
 	std::string                      object_tracking_if_name_;
@@ -157,15 +158,19 @@ private:
 	float mps_y_;
 	float mps_ori_;
 
+	//expected object position based on navgraph
+	fawkes::tf::Stamped<fawkes::tf::Point> exp_pos_;
+
 	//tracking values
 	fawkes::ObjectTrackingInterface::TARGET_OBJECT_TYPE current_object_type_;
 	fawkes::ObjectTrackingInterface::EXPECTED_MPS       current_expected_mps_;
 	fawkes::ObjectTrackingInterface::EXPECTED_SIDE      current_expected_side_;
 	bool                                                tracking_;
 	int                                                 msgid_;
+	fawkes::tf::Stamped<fawkes::tf::Point>              weighted_object_pos_target_;
 
 	//compute expected position and start tracking
-	void  compute_expected_position(fawkes::tf::Stamped<fawkes::tf::Point> &exp_pos);
+	void  compute_expected_position();
 	float compute_middle_x(float x_offset);
 	float compute_middle_y(float y_offset);
 
@@ -188,10 +193,10 @@ private:
 	void converge_delta_ibc(float dx_start, float dy_start, float dx, float dy);
 
 	//compute base and gripper target frame
-	void compute_target_frames(double object_pos[3],
-	                           float  mps_angle,
-	                           double gripper_target[3],
-	                           double base_target[3]);
+	void compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Point> object_pos,
+	                           float                                  mps_angle,
+	                           double                                 gripper_target[3],
+	                           double                                 base_target[3]);
 };
 
 #endif
