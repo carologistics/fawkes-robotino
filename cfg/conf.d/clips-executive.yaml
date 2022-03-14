@@ -277,6 +277,7 @@ clips-executive:
               - rcll/refbox-actions.clp
               - rcll/lock-actions.clp
               - rcll/wait-actions.clp
+              - rcll/action-resources.clp
           - name: execution-monitoring
             file: rcll/execution-monitoring.clp
           - name: simtest
