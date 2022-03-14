@@ -122,10 +122,10 @@
 
 	; Prevent another transport goal with the same destination,
 	(not (goal (class TRANSPORT) (params wp ? wp-next-step ? dst-mps ?dst-mps dst-side ?dst-side)
-		 (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
+		 (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
 	; or with the same workpiece.
 	(not (goal (class TRANSPORT) (params wp ?wp wp-next-step ? dst-mps ? dst-side ?)
-		 (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
+		 (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
 
 	; If it's mounting a cap, the cap station needs to have something buffered already.
 	(or (test (neq ?wp-step CAP))
@@ -143,6 +143,24 @@
 	=>
 	(printout t "Goal TRANSPORT executable" crlf)
 	(modify ?g (is-executable TRUE))
+)
+
+(defrule goal-production-transport-monitoring
+" If an already executable transport goal becomes not-executable, set it to false."
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class TRANSPORT)
+	                          (mode FORMULATED)
+	                          (params wp ?wp wp-next-step ? dst-mps ?dst-mps dst-side ?dst-side)
+	                          (is-executable TRUE))
+	
+	(or (wm-fact (key domain fact wp-at args? wp ? m ?dst-mps side ?dst-side))
+		(goal (class TRANSPORT) (params wp ? wp-next-step ? dst-mps ?dst-mps dst-side ?dst-side)
+			  (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE))
+	    (goal (class TRANSPORT) (params wp ?wp wp-next-step ? dst-mps ? dst-side ?)
+			  (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
+	=>
+	(printout t "Goal TRANSPORT no longer executable" crlf)
+	(modify ?g (is-executable FALSE))
 )
 
 (defrule goal-production-discard-executable
@@ -526,9 +544,20 @@
 
 	; The parent must have the earliest delivery window.
 	(wm-fact (key refbox order ?order-id delivery-end) (value ?order-end))
-	(not (and (goal (class PRODUCE-ORDER) (mode FORMULATED) (params order ?other-order-id))
-			  (wm-fact (key refbox order ?other-order-id delivery-end) (value ?other-order-end))
-              (test (< ?other-order-end ?order-end))))
+	(wm-fact (key domain fact order-complexity args? ord ?order-id com ?order-com))
+	(not (and
+            (goal (id ?other-parent) (class PRODUCE-ORDER) (params order ?other-order-id))
+			(goal (parent ?other-parent) (class MOUNT-RING) (mode FORMULATED)
+				  (params wp ? ring-mps ?ring-mps $?) (is-executable FALSE))
+            (wm-fact (key refbox order ?other-order-id delivery-end) (value ?other-order-end))
+            (wm-fact (key domain fact order-complexity args? ord ?other-order-id com ?other-order-com))
+            (or
+              (and (test (= (str-compare (str-cat ?other-order-com) (str-cat ?order-com)) 0))
+                   (test (< ?other-order-end ?order-end))
+              ) 
+              (test (> (str-compare (str-cat ?other-order-com) (str-cat ?order-com)) 0))
+            )        
+  	))
 
 	; We have space in the ring station.
 	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled&ZERO|ONE|TWO))

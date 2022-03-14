@@ -171,10 +171,10 @@
             (wm-fact (key refbox order ?other-order-id delivery-end) (value ?other-order-end))
             (wm-fact (key domain fact order-complexity args? ord ?other-order-id com ?other-order-com))
             (or
-              (and (test (= (str-compare ?other-order-com ?order-com) 0))
+              (and (test (= (str-compare (str-cat ?other-order-com) (str-cat ?order-com)) 0))
                    (test (< ?other-order-end ?order-end))
               ) 
-              (test (> (str-compare ?other-order-com ?order-com) 0))
+              (test (> (str-compare (str-cat ?other-order-com) (str-cat ?order-com)) 0))
             )
             
   ))
