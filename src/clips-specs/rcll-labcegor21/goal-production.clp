@@ -323,6 +323,16 @@
 	(return ?goal)
 )
 
+(deffunction goal-production-assert-pay-with-cc
+	(?wp ?mps ?mps-side ?ring-mps)
+
+	(bind ?goal (assert (goal (class PAY-WITH-CC)
+	      (id (sym-cat PAY-WITH-CC- (gensym*))) (sub-type SIMPLE)
+	      (verbosity NOISY) (is-executable FALSE)
+	      (params wp ?wp mps ?mps side ?mps-side ring-mps ?ring-mps) (meta-template goal-meta)
+	)))
+	(return ?goal)
+)
 
 (deffunction goal-production-assert-transport
 	(?wp ?step ?dst-mps ?dst-side)
@@ -556,7 +566,7 @@
                    (test (< ?other-order-end ?order-end))
               ) 
               (test (> (str-compare (str-cat ?other-order-com) (str-cat ?order-com)) 0))
-            )        
+            )
   	))
 
 	; We have space in the ring station.
@@ -564,6 +574,12 @@
 
 	; And we don't have another payment goal.
 	(not (goal (class PAY-RING) (params wp ? src-mps ? ring-mps ?ring-mps)))
+
+	;Do not create goal while there is a capcarrier avaiable for payment
+	(not 
+		(and  (wm-fact (key domain fact wp-at args? wp ?any-wp m ?cs side OUTPUT))
+			  (wm-fact (key domain fact mps-type args? m ?cs t CS))
+			  (not (wm-fact (key order meta wp-for-order args? 
 	=>
 	(bind ?wp-pay (sym-cat wp-pay1- (gensym*)))
 	(goal-production-initialize-wp ?wp-pay)
@@ -580,11 +596,53 @@
 	(wm-fact (key domain fact mps-type args? m ?mps t CS))
 	; that workpiece is not needed for an order,
 	(not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?)))
-	; and we don't have a discard goal.
+	; we don't have a discard goal.
 	(not (goal (class DISCARD)  (params wp ?wp)))
+	; and both ring-stations are full
+	(wm-fact (key domain fact rs-filled-with args? m C-RS1 n THREE))
+	(wm-fact (key domain fact rs-filled-with args? m C-RS2 n THREE))
 	=>
 	(bind ?goal (goal-production-assert-discard ?wp))
 	(modify ?goal (parent ?root-id))
+)
+
+(defrule goal-production-create-pay-with-cc
+	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	(goal (id ?parent) (class PRODUCE-ORDER) (params order ?order-id) (mode FORMULATED))
+	(goal (parent ?parent) (class MOUNT-RING) (mode FORMULATED)
+		  (params wp ? ring-mps ?ring-mps $?) (is-executable FALSE))
+
+	; The parent must have the earliest delivery window.
+	(wm-fact (key refbox order ?order-id delivery-end) (value ?order-end))
+	(wm-fact (key domain fact order-complexity args? ord ?order-id com ?order-com))
+	(not (and
+            (goal (id ?other-parent) (class PRODUCE-ORDER) (params order ?other-order-id))
+			(goal (parent ?other-parent) (class MOUNT-RING) (mode FORMULATED)
+				  (params wp ? ring-mps ?ring-mps $?) (is-executable FALSE))
+            (wm-fact (key refbox order ?other-order-id delivery-end) (value ?other-order-end))
+            (wm-fact (key domain fact order-complexity args? ord ?other-order-id com ?other-order-com))
+            (or
+              (and (test (= (str-compare (str-cat ?other-order-com) (str-cat ?order-com)) 0))
+                   (test (< ?other-order-end ?order-end))
+              ) 
+              (test (> (str-compare (str-cat ?other-order-com) (str-cat ?order-com)) 0))
+            )
+  	))
+
+	; We have space in the ring station.
+	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled&ZERO|ONE|TWO))
+
+	; And we don't have another payment goal.
+	(not (goal (class PAY-RING) (params wp ? src-mps ? ring-mps ?ring-mps)))
+
+	; And there is a workpiece in the cap station output,
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+	(wm-fact (key domain fact mps-type args? m ?mps t CS))
+	; that workpiece is not needed for an order.
+	(not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?)))
+	=>
+	(bind ?goal (goal-production-assert-pay-ring ?wp ?mps ?ring-mps))
+  	(modify ?goal (parent ?parent))
 )
 
 (defrule goal-production-buffer-finished-product
