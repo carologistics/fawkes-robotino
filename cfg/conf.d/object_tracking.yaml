@@ -6,6 +6,8 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/webview
 plugins/object_tracking:
   if_name: "object-tracking"
 
+  for_gazebo: false
+
   puck_values:
     puck_size: 0.02
     puck_height: 0.0225
@@ -28,7 +30,7 @@ plugins/object_tracking:
   target_frame_offsets:
     gripper_offset_pick: 0.035
     gripper_offset_put: 0.005
-    base_offset: 0.24
+    base_offset: 0.35
 
   camera_intrinsics:
     # image size
