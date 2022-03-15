@@ -556,22 +556,55 @@
 	(not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?)))
 	; we don't have a discard goal.
 	(not (goal (class DISCARD)  (params wp ?wp)))
-	; and both ring-stations are full
-	(wm-fact (key domain fact rs-filled-with args? m C-RS1 n THREE))
-	(wm-fact (key domain fact rs-filled-with args? m C-RS2 n THREE))
+
+	; But only if we don't need that workpiece.
+	(not (goal (class MOUNT-RING) (mode FORMULATED)
+		 	   (params wp ? ring-mps ?ring-mps ring-color ?ring-color ring-nr ?) (is-executable FALSE))
+		 (wm-fact (key domain fact rs-ring-spec args? m ?ring-mps r ?ring-color rn ?bases-needed))
+		 (wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled))
+		 (not (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
+                                         subtrahend ?bases-needed
+                                         difference ?bases-remain&ZERO|ONE|TWO|THREE)))
+	)
 	=>
 	(bind ?goal (goal-production-assert-discard ?wp))
 	(modify ?goal (parent ?root-id))
 )
 
+(defrule goal-production-create-pay-with-cc
+	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	
+	; We need more rings.
+	(goal (class MOUNT-RING) (mode FORMULATED) (parent ?parent)
+		  (params wp ? ring-mps ?ring-mps ring-color ?ring-color ring-nr ?) (is-executable FALSE))
+	(wm-fact (key domain fact rs-ring-spec args? m ?ring-mps r ?ring-color rn ?bases-needed))
+	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled))
+	(not (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
+                                         subtrahend ?bases-needed
+                                         difference ?bases-remain&ZERO|ONE|TWO|THREE)))
+
+	; And we don't have another payment goal.
+	(not (goal (class PAY-RING) (params wp ? src-mps ? ring-mps ?ring-mps)))
+	(not (goal (class PAY-RING) (params wp ?wp src-mps ? ring-mps ?)))
+	(not (goal (class DISCARD)  (params wp ?wp)))
+
+	; And there is a workpiece in the cap station output,
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+	(wm-fact (key domain fact mps-type args? m ?mps t CS))
+	; that workpiece is not needed for an order.
+	(not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?)))
+	=>
+	(bind ?goal (goal-production-assert-pay-ring ?wp ?mps ?ring-mps))
+  	(modify ?goal (parent ?parent))
+)
+
 (defrule goal-production-create-payment
 " Create a new goal for paying the ring station whenever there isn't one."
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-	(goal (id ?parent) (class PRODUCE-ORDER) (params order ?order-id) (mode FORMULATED))
-	(goal (parent ?parent) (class MOUNT-RING) (mode FORMULATED)
-		  (params wp ?wp ring-mps ?ring-mps ring-color ?ring-color ring-nr ?) (is-executable FALSE))
 
 	; We need more rings.
+	(goal (class MOUNT-RING) (mode FORMULATED)  (parent ?parent)
+		  (params wp ?wp ring-mps ?ring-mps ring-color ?ring-color ring-nr ?) (is-executable FALSE))
 	(wm-fact (key domain fact rs-ring-spec args? m ?ring-mps r ?ring-color rn ?bases-needed))
 	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled))
 	(not (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
@@ -586,55 +619,12 @@
 	; Do not create goal while there is a capcarrier avaiable for payment
 	(not (and (wm-fact (key domain fact wp-at args? wp ?any-wp m ?cs side OUTPUT))
 			  (wm-fact (key domain fact mps-type args? m ?cs t CS))
-			  (not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?)))
+			  (not (wm-fact (key order meta wp-for-order args? wp ?any-wp ord ?)))
 	))
 	=>
 	(bind ?wp-pay (sym-cat wp-pay1- (gensym*)))
 	(goal-production-initialize-wp ?wp-pay)
 	(bind ?goal (goal-production-assert-pay-ring ?wp-pay C-BS ?ring-mps))
-  	(modify ?goal (parent ?parent))
-)
-
-(defrule goal-production-create-pay-with-cc
-	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-	(goal (id ?parent) (class PRODUCE-ORDER) (params order ?order-id) (mode FORMULATED))
-	(goal (parent ?parent) (class MOUNT-RING) (mode FORMULATED)
-		  (params wp ?wp ring-mps ?ring-mps ring-color ?ring-color ring-nr ?) (is-executable FALSE))
-
-	; The parent must have the earliest delivery window.
-	(wm-fact (key refbox order ?order-id delivery-end) (value ?order-end))
-	(wm-fact (key domain fact order-complexity args? ord ?order-id com ?order-com))
-	(not (and
-            (goal (id ?other-parent) (class PRODUCE-ORDER) (params order ?other-order-id))
-			(goal (parent ?other-parent) (class MOUNT-RING) (mode FORMULATED)
-				  (params wp ? ring-mps ?ring-mps $?) (is-executable FALSE))
-            (wm-fact (key refbox order ?other-order-id delivery-end) (value ?other-order-end))
-            (wm-fact (key domain fact order-complexity args? ord ?other-order-id com ?other-order-com))
-            (or
-              (and (test (= (str-compare (str-cat ?other-order-com) (str-cat ?order-com)) 0))
-                   (test (< ?other-order-end ?order-end))
-              ) 
-              (test (> (str-compare (str-cat ?other-order-com) (str-cat ?order-com)) 0))
-            )
-  	))
-	
-	; We need more rings.
-	(wm-fact (key domain fact rs-ring-spec args? m ?ring-mps r ?ring-color rn ?bases-needed))
-	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled))
-	(not (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
-                                         subtrahend ?bases-needed
-                                         difference ?bases-remain&ZERO|ONE|TWO|THREE)))
-
-	; And we don't have another payment goal.
-	(not (goal (class PAY-RING) (params wp ? src-mps ? ring-mps ?ring-mps)))
-
-	; And there is a workpiece in the cap station output,
-	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
-	(wm-fact (key domain fact mps-type args? m ?mps t CS))
-	; that workpiece is not needed for an order.
-	(not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?)))
-	=>
-	(bind ?goal (goal-production-assert-pay-ring ?wp ?mps ?ring-mps))
   	(modify ?goal (parent ?parent))
 )
 
