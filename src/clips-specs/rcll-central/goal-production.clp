@@ -1239,6 +1239,9 @@ The workpiece remains in the output of the used ring station after
 	(if (eq ?found-payment TRUE) then
 		(bind ?goals (insert$ ?goals 1 (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN ?cs UNKNOWN ?first-rs INPUT ?order-id)))
 	)
+	(if (eq ?found-payment FALSE) then
+		(bind ?goals (insert$ ?goals 1 (goal-production-assert-discard UNKNOWN ?cs OUTPUT ?order-id)))
+	)
 
 	(return ?goals)
 )
