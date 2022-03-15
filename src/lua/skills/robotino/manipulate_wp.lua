@@ -40,7 +40,7 @@ Parameters:
       @param side    the side of the mps: (INPUT | OUTPUT | SHELF-LEFT | SHELF-MIDDLE | SHELF-RIGHT | SLIDE)
 ]==]
 
-local EXPECTED_BASE_OFFSET       = 0.3 -- distance between robotino middle point and workpiece
+local EXPECTED_BASE_OFFSET       = 0.4 -- distance between robotino middle point and workpiece
                                        -- used as initial target position while searching
 local GRIPPER_X_SAFETY_DISTANCE  = 0.0015 -- used to create more distance between gripper and workpiece
 local GRIPPER_TOLERANCE          = {x=0.005, y=0.003, z=0.01} -- accuracy
@@ -55,6 +55,7 @@ skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
 
 -- Load config
+local for_gazebo = false
 local x_max = 0.115
 local y_max = 0.075
 local z_max = 0.057
@@ -72,6 +73,11 @@ local slide_height      = 0.92
 local left_shelf_offset_side   = -0.075
 local middle_shelf_offset_side = -0.175
 local right_shelf_offset_side  = -0.275
+
+-- check if gazebo is used
+if config:exists("plugins/object_tracking/for_gazebo") then
+  for_gazebo = config:get_bool("plugins/object_tracking/for_gazebo")
+end
 
 -- read gripper config
 if config:exists("/arduino/x_max") then
@@ -193,13 +199,21 @@ function move_gripper_default_pose()
 end
 
 function compute_expected_pos_x(x_offset)
-  return fsm.vars.mps_x + x_offset * math.cos(fsm.vars.mps_ori) -
-         (belt_lenght/2 - puck_size + EXPECTED_BASE_OFFSET) * math.sin(fsm.vars.mps_ori)
+  if for_gazebo then
+    return fsm.vars.mps_x + x_offset * math.cos(fsm.vars.mps_ori) -
+           (belt_lenght/2 - puck_size + EXPECTED_BASE_OFFSET) * math.sin(fsm.vars.mps_ori)
+  else
+    return fsm.vars.mps_x - x_offset * math.sin(fsm.vars.mps_ori) -
+           (belt_lenght/2 - puck_size + EXPECTED_BASE_OFFSET) * math.cos(fsm.vars.mps_ori)
 end
 
 function compute_expected_pos_y(y_offset)
-  return fsm.vars.mps_y + y_offset * math.sin(fsm.vars.mps_ori) +
-         (belt_lenght/2 - puck_size + EXPECTED_BASE_OFFSET) * math.cos(fsm.vars.mps_ori)
+  if for_gazebo then
+    return fsm.vars.mps_y + y_offset * math.sin(fsm.vars.mps_ori) +
+           (belt_lenght/2 - puck_size + EXPECTED_BASE_OFFSET) * math.cos(fsm.vars.mps_ori)
+  else
+    return fsm.vars.mps_y + y_offset * math.cos(fsm.vars.mps_ori) +
+           (belt_lenght/2 - puck_size + EXPECTED_BASE_OFFSET) * math.sin(fsm.vars.mps_ori)
 end
 
 -- compute the expected target object position
@@ -208,10 +222,16 @@ function get_pos_for_side(side)
     return {x = compute_expected_pos_x(belt_offset_side),
             y = compute_expected_pos_y(belt_offset_side)}
   elseif side == "OUTPUT" then
-    return {x = fsm.vars.mps_x + belt_offset_side * math.cos(fsm.vars.mps_ori) +
-                (belt_lenght/2 - puck_size + EXPECTED_BASE_OFFSET) * math.sin(fsm.vars.mps_ori),
-            y = fsm.vars.mps_y + belt_offset_side * math.sin(fsm.vars.mps_ori) -
-                (belt_lenght/2 - puck_size + EXPECTED_BASE_OFFSET) * math.cos(fsm.vars.mps_ori)}
+    if for_gazebo then
+      return {x = fsm.vars.mps_x + belt_offset_side * math.cos(fsm.vars.mps_ori) +
+                  (belt_lenght/2 - puck_size + EXPECTED_BASE_OFFSET) * math.sin(fsm.vars.mps_ori),
+              y = fsm.vars.mps_y + belt_offset_side * math.sin(fsm.vars.mps_ori) -
+                  (belt_lenght/2 - puck_size + EXPECTED_BASE_OFFSET) * math.cos(fsm.vars.mps_ori)}
+    else
+      return {x = fsm.vars.mps_x - belt_offset_side * math.sin(fsm.vars.mps_ori) +
+                  (belt_lenght/2 - puck_size + EXPECTED_BASE_OFFSET) * math.cos(fsm.vars.mps_ori),
+              y = fsm.vars.mps_y + belt_offset_side * math.cos(fsm.vars.mps_ori) -
+                  (belt_lenght/2 - puck_size + EXPECTED_BASE_OFFSET) * math.sin(fsm.vars.mps_ori)}
   elseif side == "SLIDE" then
     return {x = compute_expected_pos_x(slide_offset_side),
             y = compute_expected_pos_y(slide_offset_side)}
@@ -295,18 +315,19 @@ function input_invalid()
 end
 
 function object_tracker_active()
-  return object_tracking_if:has_writer() and object_tracking_if:msgid() > 0 and false
+  return object_tracking_if:has_writer() and object_tracking_if:msgid() > 0
 end
 
 fsm:define_states{ export_to=_M, closure={MISSING_MAX=MISSING_MAX},
    {"INIT",                  JumpState},
    {"START_TRACKING",        JumpState},
    {"TRACKING_ACTIVE",       JumpState},
-   {"SEARCH",                SkillJumpState, skills={{goto}},            final_to="MOVE_BASE_AND_GRIPPER", fail_to="FAILED"},
-   {"CLOSE_TARGET",          SkillJumpState, skills={{motor_move}},      final_to="MOVE_BASE_AND_GRIPPER", fail_to="SEARCH"},
+   {"SEARCH",                SkillJumpState, skills={{goto}},            final_to="WAIT", fail_to="FAILED"},
+   {"CLOSE_TARGET",          SkillJumpState, skills={{motor_move}},      final_to="WAIT", fail_to="SEARCH"},
    {"MOVE_BASE_AND_GRIPPER", SkillJumpState, skills={{motor_move}},      final_to="FINE_TUNE_GRIPPER",     fail_to="SEARCH"},
    {"FINE_TUNE_GRIPPER",     JumpState},
    {"GRIPPER_ROUTINE",       SkillJumpState, skills={{gripper_routine}}, final_to="FINAL", fail_to="FINE_TUNE_GRIPPER"},
+   {"WAIT",                  Jumpstate}
 }
 
 fsm:add_transitions{
@@ -319,6 +340,7 @@ fsm:add_transitions{
    {"FINE_TUNE_GRIPPER", "GRIPPER_ROUTINE",       cond=gripper_aligned, desc="Gripper aligned"},
    {"FINE_TUNE_GRIPPER", "MOVE_BASE_AND_GRIPPER", cond="vars.out_of_reach", desc="Gripper out of reach"},
    {"FINE_TUNE_GRIPPER", "SEARCH",                cond="vars.missing_detections > MISSING_MAX", desc="Tracking lost target"},
+   {"WAIT", "FAILED",                             timeout=6000, desc="Waited"},
 }
 
 function INIT:init()
@@ -376,9 +398,15 @@ function START_TRACKING:init()
   fsm.vars.expected_pos_y = expected_pos.y
 
   if fsm.vars.side == "OUTPUT" then
-    fsm.vars.expected_pos_ori = fsm.vars.mps_ori + 1.57
+    if for_gazebo then
+      fsm.vars.expected_pos_ori = fsm.vars.mps_ori + 1.57
+    else
+      fsm.vars.expected_pos_ori = fsm.vars.mps_ori + math.pi
   else
-    fsm.vars.expected_pos_ori = fsm.vars.mps_ori + 1.57 + math.pi
+    if for_gazebo then
+      fsm.vars.expected_pos_ori = fsm.vars.mps_ori + 1.57 + math.pi
+    else
+      fsm.vars.expected_pos_ori = fsm.vars.mps_ori
   end
 end
 
