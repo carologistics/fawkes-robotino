@@ -1598,7 +1598,8 @@ The workpiece remains in the output of the used ring station after
 	(goal-meta (goal-id ?buffer-goal-id) (order-id ?order-id))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?mps-side))
 	(not (wm-fact (key order meta wp-for-order args? wp ?wp $?)))
-	(goal (parent ?parent) (class INSTRUCT-CS-BUFFER-CAP) (mode DISPATCHED|FINISHED|RETRACTED))
+	(goal (id ?instruct-goal) (class INSTRUCT-CS-BUFFER-CAP) (mode DISPATCHED|FINISHED|RETRACTED))
+	(goal-meta (goal-id ?instruct-goal) (order-id ?order-id))
 	=>
 	(modify ?g (params wp ?wp wp-loc ?mps wp-side ?mps-side))
 )
