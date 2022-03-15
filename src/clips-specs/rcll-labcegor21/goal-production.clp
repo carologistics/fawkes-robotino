@@ -545,48 +545,6 @@
 	(printout t "Goal PRODUCE-ORDER formulated for " ?order-id crlf)
 )
 
-(defrule goal-production-create-payment
-" Create a new goal for paying the ring station whenever there isn't one."
-	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-	(goal (id ?parent) (class PRODUCE-ORDER) (params order ?order-id) (mode FORMULATED))
-	(goal (parent ?parent) (class MOUNT-RING) (mode FORMULATED)
-		  (params wp ?wp ring-mps ?ring-mps $?) (is-executable FALSE))
-
-	; The parent must have the earliest delivery window.
-	(wm-fact (key refbox order ?order-id delivery-end) (value ?order-end))
-	(wm-fact (key domain fact order-complexity args? ord ?order-id com ?order-com))
-	(not (and
-            (goal (id ?other-parent) (class PRODUCE-ORDER) (params order ?other-order-id))
-			(goal (parent ?other-parent) (class MOUNT-RING) (mode FORMULATED)
-				  (params wp ? ring-mps ?ring-mps $?) (is-executable FALSE))
-            (wm-fact (key refbox order ?other-order-id delivery-end) (value ?other-order-end))
-            (wm-fact (key domain fact order-complexity args? ord ?other-order-id com ?other-order-com))
-            (or
-              (and (test (= (str-compare (str-cat ?other-order-com) (str-cat ?order-com)) 0))
-                   (test (< ?other-order-end ?order-end))
-              ) 
-              (test (> (str-compare (str-cat ?other-order-com) (str-cat ?order-com)) 0))
-            )
-  	))
-
-	; We have space in the ring station.
-	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled&ZERO|ONE|TWO))
-
-	; And we don't have another payment goal.
-	(not (goal (class PAY-RING) (params wp ? src-mps ? ring-mps ?ring-mps)))
-
-	;Do not create goal while there is a capcarrier avaiable for payment
-	(not 
-		(and  (wm-fact (key domain fact wp-at args? wp ?any-wp m ?cs side OUTPUT))
-			  (wm-fact (key domain fact mps-type args? m ?cs t CS))
-			  (not (wm-fact (key order meta wp-for-order args? 
-	=>
-	(bind ?wp-pay (sym-cat wp-pay1- (gensym*)))
-	(goal-production-initialize-wp ?wp-pay)
-	(bind ?goal (goal-production-assert-pay-ring ?wp-pay C-BS ?ring-mps))
-  	(modify ?goal (parent ?parent))
-)
-
 (defrule goal-production-create-discard
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
@@ -606,11 +564,42 @@
 	(modify ?goal (parent ?root-id))
 )
 
+(defrule goal-production-create-payment
+" Create a new goal for paying the ring station whenever there isn't one."
+	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	(goal (id ?parent) (class PRODUCE-ORDER) (params order ?order-id) (mode FORMULATED))
+	(goal (parent ?parent) (class MOUNT-RING) (mode FORMULATED)
+		  (params wp ?wp ring-mps ?ring-mps ring-color ?ring-color ring-nr ?) (is-executable FALSE))
+
+	; We need more rings.
+	(wm-fact (key domain fact rs-ring-spec args? m ?ring-mps r ?ring-color rn ?bases-needed))
+	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled))
+	(not (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
+                                         subtrahend ?bases-needed
+                                         difference ?bases-remain&ZERO|ONE|TWO|THREE)))
+	; The workpiece is already there.
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?ring-mps side INPUT))
+
+	; And we don't have another payment goal.
+	(not (goal (class PAY-RING) (params wp ? src-mps ? ring-mps ?ring-mps)))
+
+	; Do not create goal while there is a capcarrier avaiable for payment
+	(not (and (wm-fact (key domain fact wp-at args? wp ?any-wp m ?cs side OUTPUT))
+			  (wm-fact (key domain fact mps-type args? m ?cs t CS))
+			  (not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?)))
+	))
+	=>
+	(bind ?wp-pay (sym-cat wp-pay1- (gensym*)))
+	(goal-production-initialize-wp ?wp-pay)
+	(bind ?goal (goal-production-assert-pay-ring ?wp-pay C-BS ?ring-mps))
+  	(modify ?goal (parent ?parent))
+)
+
 (defrule goal-production-create-pay-with-cc
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(goal (id ?parent) (class PRODUCE-ORDER) (params order ?order-id) (mode FORMULATED))
 	(goal (parent ?parent) (class MOUNT-RING) (mode FORMULATED)
-		  (params wp ? ring-mps ?ring-mps $?) (is-executable FALSE))
+		  (params wp ?wp ring-mps ?ring-mps ring-color ?ring-color ring-nr ?) (is-executable FALSE))
 
 	; The parent must have the earliest delivery window.
 	(wm-fact (key refbox order ?order-id delivery-end) (value ?order-end))
@@ -628,9 +617,13 @@
               (test (> (str-compare (str-cat ?other-order-com) (str-cat ?order-com)) 0))
             )
   	))
-
-	; We have space in the ring station.
-	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled&ZERO|ONE|TWO))
+	
+	; We need more rings.
+	(wm-fact (key domain fact rs-ring-spec args? m ?ring-mps r ?ring-color rn ?bases-needed))
+	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled))
+	(not (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
+                                         subtrahend ?bases-needed
+                                         difference ?bases-remain&ZERO|ONE|TWO|THREE)))
 
 	; And we don't have another payment goal.
 	(not (goal (class PAY-RING) (params wp ? src-mps ? ring-mps ?ring-mps)))
