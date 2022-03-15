@@ -139,10 +139,6 @@
 	(not (and (goal (id ?other-goal) (is-executable TRUE)
 					        (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED))
 		        (goal-meta (goal-id ?other-goal) (assigned-to ?robot))))
-
-  ; And we don't have an executable production goal.
-  (not (and (goal (parent ?other-parent-id) (mode FORMULATED) (is-executable TRUE))
-            (goal (id ?other-parent-id) (class PRODUCE-ORDER))))
   =>
   (printout t "Production helper goal " ?goal-id " SELECTED and assigned to " ?robot crlf)
   (modify ?assignment (assigned-to ?robot))
@@ -178,6 +174,10 @@
             )
             
   ))
+
+  ; And we don't have an executable production helper goal.
+  (not (and (goal (parent ?other-parent-id) (mode FORMULATED) (is-executable TRUE))
+            (goal (id ?other-parent-id) (class PRODUCTION-ROOT))))
   =>
   (printout t "Production goal " ?goal-id " for order " ?order-id " SELECTED and assigned to " ?robot crlf)
   (do-for-all-facts ((?og goal)) (and (eq ?og:is-executable TRUE) (eq ?og:mode FORMULATED) (neq ?og:id ?goal-id))

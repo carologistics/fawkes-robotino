@@ -555,16 +555,18 @@
 	; that workpiece is not needed for an order,
 	(not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?)))
 	; we don't have a discard goal.
-	(not (goal (class DISCARD)  (params wp ?wp)))
+	(not (goal (class DISCARD)  (params wp ?wp) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 
-	; But only if we don't need that workpiece.
-	(not (goal (class MOUNT-RING) (mode FORMULATED)
-		 	   (params wp ? ring-mps ?ring-mps ring-color ?ring-color ring-nr ?) (is-executable FALSE))
-		 (wm-fact (key domain fact rs-ring-spec args? m ?ring-mps r ?ring-color rn ?bases-needed))
-		 (wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled))
-		 (not (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
-                                         subtrahend ?bases-needed
-                                         difference ?bases-remain&ZERO|ONE|TWO|THREE)))
+	; But only if we don't need that workpiece, or if we already have something in the input.
+	(or (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
+		(not (and (goal (class MOUNT-RING) (mode FORMULATED)
+		 	   			(params wp ? ring-mps ?ring-mps ring-color ?ring-color ring-nr ?) (is-executable FALSE))
+		     	  (wm-fact (key domain fact rs-ring-spec args? m ?ring-mps r ?ring-color rn ?bases-needed))
+		     	  (wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled))
+			 	  (not (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
+												subtrahend ?bases-needed
+												difference ?bases-remain&ZERO|ONE|TWO|THREE)))
+		))
 	)
 	=>
 	(bind ?goal (goal-production-assert-discard ?wp))
@@ -584,9 +586,9 @@
                                          difference ?bases-remain&ZERO|ONE|TWO|THREE)))
 
 	; And we don't have another payment goal.
-	(not (goal (class PAY-RING) (params wp ? src-mps ? ring-mps ?ring-mps)))
-	(not (goal (class PAY-RING) (params wp ?wp src-mps ? ring-mps ?)))
-	(not (goal (class DISCARD)  (params wp ?wp)))
+	(not (goal (class PAY-RING) (params wp ? src-mps ? ring-mps ?ring-mps) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
+	(not (goal (class PAY-RING) (params wp ?wp src-mps ? ring-mps ?) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
+	(not (goal (class DISCARD)  (params wp ?wp) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 
 	; And there is a workpiece in the cap station output,
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
@@ -602,19 +604,13 @@
 " Create a new goal for paying the ring station whenever there isn't one."
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 
-	; We need more rings.
+	; We have a ring goal, which is not executable, but the workpiece is already there.
 	(goal (class MOUNT-RING) (mode FORMULATED)  (parent ?parent)
 		  (params wp ?wp ring-mps ?ring-mps ring-color ?ring-color ring-nr ?) (is-executable FALSE))
-	(wm-fact (key domain fact rs-ring-spec args? m ?ring-mps r ?ring-color rn ?bases-needed))
-	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled))
-	(not (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
-                                         subtrahend ?bases-needed
-                                         difference ?bases-remain&ZERO|ONE|TWO|THREE)))
-	; The workpiece is already there.
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?ring-mps side INPUT))
 
 	; And we don't have another payment goal.
-	(not (goal (class PAY-RING) (params wp ? src-mps ? ring-mps ?ring-mps)))
+	(not (goal (class PAY-RING) (params wp ? src-mps ? ring-mps ?ring-mps) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 
 	; Do not create goal while there is a capcarrier avaiable for payment
 	(not (and (wm-fact (key domain fact wp-at args? wp ?any-wp m ?cs side OUTPUT))
