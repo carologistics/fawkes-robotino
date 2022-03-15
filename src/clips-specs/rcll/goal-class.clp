@@ -885,6 +885,49 @@
     )
 )
 
+(deffunction compute-required-resources (?required-resources ?promised-from-goals ?disable-delay)
+" Given a list of resources, the ones that are requested upon goal committment
+  are returned.
+  Goals that are not based on a promise request each resource '<res>' along
+  with a duplicate 'PROMISE-<res>', the latter is freed directly after being
+  acquired.
+  Goals that are acting based on promises from goals will not be able to lock
+  a resource '<res>' that is also acquired by a goal that emitted the promise.
+  In that case, only the 'PROMISE-<res>' resource is requested upon goal
+  commitment and is traded for the actual '<res>' during execution.
+
+  @param: ?required-resources list of resources
+  @param: ?promised-from-goals list of '<goal-id>@<agent>' entries of goals
+          that emitted promises relevant for the required resources that are
+          being computed
+  @param: ?disable-delay if TRUE, then the content of ?promised-from-goals
+          has no effect on the result
+  @return: list of required resources and PROMISE-resources
+"
+  (bind ?delayed-resources (create$))
+  (progn$ (?goal-agent ?promised-from-goals)
+     (bind ?str-goal-agent (str-cat ?goal-agent))
+     (bind ?sep (str-index "@" ?str-goal-agent))
+     (bind ?promising-goal (sym-cat (sub-string 1 (- ?sep 1) ?str-goal-agent)))
+     (bind ?promising-agent (sym-cat (sub-string (+ ?sep 1) (length$ ?str-goal-agent) ?str-goal-agent)))
+     (do-for-fact ((?resource-promise domain-promise))
+                  (and (eq ?resource-promise:name RESOURCES)
+                       (eq ?resource-promise:promising-goal ?promising-goal)
+                       (eq ?resource-promise:promising-agent ?promising-agent)
+                  )
+                  (bind ?delayed-resources (append$ ?delayed-resources ?resource-promise:param-values))
+     )
+  )
+  (bind ?final-resources (create$))
+  (progn$ (?res ?required-resources)
+    (bind ?final-resources (append$ ?final-resources (sym-cat PROMISE- ?res)))
+    (if (or (eq ?disable-delay TRUE) (not (member$ ?res ?delayed-resources))) then
+        (bind ?final-resources (append$ ?final-resources ?res))
+    )
+  )
+  (return ?final-resources)
+)
+
 ; CLEANUP GOALS
 
 (defrule goal-class-assert-goal-get-and-fill-rs
@@ -897,7 +940,7 @@
     )
     (goal-class (class ?class&GET-AND-FILL-RS) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
-    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-from-goals $?promised-from-goals) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?team-color ?robot ?mps ?wp ?side ?target-rs $?optional-order))
 
     (wm-fact (key domain fact mps-type args? m ?mps t ?mps-type))
@@ -907,6 +950,9 @@
     (test (sat-or-promised ?sat ?game-time ?from ?lt))
     =>
     (printout t "Goal " ?class " ("?mps") formulated from PDDL" crlf)
+    (if (neq ?sat TRUE) then
+        (printout t "Goal formulated from promise" crlf)
+    )
 
     (bind ?parent nil)
     (bind ?priority nil)
@@ -945,6 +991,7 @@
     )
 
     (bind ?goal-id (sym-cat ?class - (gensym*)))
+    (bind ?resources (create$ (sym-cat ?mps - ?side) ?target-rs ?wp))
     (assert (goal (id ?goal-id)
                     (class ?class) (sub-type ?subtype)
                     (priority ?priority)
@@ -955,7 +1002,7 @@
                             rs-before ?filled
                             rs-after ?after
                     )
-                    (required-resources (sym-cat ?mps - ?side) ?target-rs ?wp)
+                    (required-resources (compute-required-resources ?resources ?promised-from-goals ?sat))
     ))
 
     ;assert promises resulting from the plan-action of this goal
@@ -979,6 +1026,7 @@
         (domain-promise (name rs-filled-with) (param-values ?target-rs ?filled) (promising-goal ?goal-id) (valid-at (+ 69 ?game-time)) (negated TRUE))
         (domain-promise (name rs-filled-with) (param-values ?target-rs ?after) (promising-goal ?goal-id) (valid-at (+ 69 ?game-time)) (negated FALSE))
         (domain-promise (name rs-paid-for) (param-values ?target-rs ?after) (promising-goal ?goal-id) (valid-at (+ 69 ?game-time)) (negated FALSE))
+        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?game-time) (negated FALSE))
         ;location-unlock -> dc
         ;go-wait -> dc
     )
@@ -994,7 +1042,7 @@
     )
     (goal-class (class ?class&GET-AND-DISCARD) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
-    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-from-goals $?promised-from-goals) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?team-color ?robot ?mps ?wp ?side $?optional-order))
 
     (wm-fact (key domain fact mps-type args? m ?mps t ?mps-type))
@@ -1043,6 +1091,7 @@
     )
 
     (bind ?goal-id (sym-cat ?class - (gensym*)))
+    (bind ?resources (create$ (sym-cat ?mps - ?side) ?wp))
     (assert (goal (id ?goal-id)
                     (class ?class) (sub-type ?subtype)
                     (priority ?priority)
@@ -1052,7 +1101,7 @@
                             mps ?mps
                             side ?side
                     )
-                    (required-resources (sym-cat ?mps - ?side) ?wp)
+                    (required-resources (compute-required-resources ?resources ?promised-from-goals ?sat))
     ))
 
     ;assert promises resulting from the plan-action of this goal
@@ -1070,6 +1119,7 @@
         ;wp-discard
         (domain-promise (name wp-unused) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 49 ?game-time)) (negated FALSE))
         (domain-promise (name wp-usable) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 49 ?game-time)) (negated TRUE))
+        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?game-time) (negated FALSE))
     )
 )
 
@@ -1081,7 +1131,7 @@
 
     (goal-class (class ?class&DISCARD) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
-    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-from-goals $?promised-from-goals) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?robot ?wp ?rs))
 
     (not (goal (class ?class) (params robot ?robot wp ?wp)))
@@ -1098,6 +1148,7 @@
     )
 
     (bind ?goal-id (sym-cat ?class - (gensym*)))
+    (bind ?resources (create$ ?wp))
     (assert (goal (id ?goal-id)
                     (class ?class) (sub-type ?subtype)
                     (priority ?*PRIORITY-DISCARD*)
@@ -1105,7 +1156,7 @@
                     (params robot ?robot
                             wp ?wp
                     )
-                    (required-resources ?wp)
+                    (required-resources (compute-required-resources ?resources ?promised-from-goals ?sat))
     ))
 
     ;assert promises resulting from the plan-action of this goal
@@ -1113,6 +1164,7 @@
         ;wp-discard
         (domain-promise (name wp-unused) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 8 ?game-time)) (negated FALSE))
         (domain-promise (name wp-usable) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 8 ?game-time)) (negated TRUE))
+        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?game-time) (negated FALSE))
     )
 )
 
@@ -1126,7 +1178,7 @@
 
     (goal-class (class ?class&GET-BASE-AND-FILL-RS) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
-    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-from-goals $?promised-from-goals) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values  ?robot ?wp ?rs ?bs ?side))
     (wm-fact (key domain fact rs-filled-with args? m ?rs n ?filled))
     (wm-fact (key domain fact rs-inc args? summand ?filled sum ?after))
@@ -1146,6 +1198,7 @@
 
     (bind ?distance (node-distance (str-cat ?bs - (if (eq ?side INPUT) then I else O))))
     (bind ?goal-id (sym-cat ?class - (gensym*)))
+    (bind ?resources (create$ ?rs ?wp))
     (assert (goal (id ?goal-id)
                     (class ?class)
                     (priority  (+ ?*PRIORITY-PREFILL-RS-WITH-FRESH-BASE* (goal-distance-prio ?distance)))
@@ -1160,7 +1213,7 @@
                             rs-after ?after
 
                     )
-                    (required-resources ?rs ?wp)
+                    (required-resources (compute-required-resources ?resources ?promised-from-goals ?sat))
             )
     )
 
@@ -1196,6 +1249,7 @@
         (domain-promise (name rs-filled-with) (param-values ?rs ?filled) (promising-goal ?goal-id) (valid-at (+ 73 ?game-time)) (negated TRUE))
         (domain-promise (name rs-filled-with) (param-values ?rs ?after) (promising-goal ?goal-id) (valid-at (+ 73 ?game-time)) (negated FALSE))
         (domain-promise (name rs-paid-for) (param-values ?rs ?after) (promising-goal ?goal-id) (valid-at (+ 73 ?game-time)) (negated FALSE))
+        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?game-time) (negated FALSE))
         ;location-unlock -> dc
         ;go-wait -> dc
     )
@@ -1208,7 +1262,7 @@
 
     (goal-class (class ?class&GET-SHELF-AND-FILL-RS) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
-    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-from-goals $?promised-from-goals) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?robot ?rs ?cc ?cs ?spot))
     (wm-fact (key domain fact rs-filled-with args? m ?rs n ?filled))
     (wm-fact (key domain fact rs-inc args? summand ?filled sum ?after))
@@ -1227,6 +1281,7 @@
 
     (bind ?distance (node-distance (str-cat ?rs -I)))
     (bind ?goal-id (sym-cat ?class - (gensym*)))
+    (bind ?resources (create$ ?rs ?cc))
     (assert (goal (id ?goal-id)
                     (class ?class)
                     (priority (+ ?*PRIORITY-PREFILL-RS* (goal-distance-prio ?distance)))
@@ -1239,7 +1294,7 @@
                             rs-before ?filled
                             rs-after ?after
                     )
-                    (required-resources ?rs ?cc)
+                    (required-resources (compute-required-resources ?resources ?promised-from-goals ?sat))
             )
     )
     ;assert promises resulting from the plan-action of this goal
@@ -1260,6 +1315,7 @@
         (domain-promise (name rs-filled-with) (param-values ?rs ?filled) (promising-goal ?goal-id) (valid-at (+ 73 ?game-time)) (negated TRUE))
         (domain-promise (name rs-filled-with) (param-values ?rs ?after) (promising-goal ?goal-id) (valid-at (+ 73 ?game-time)) (negated FALSE))
         (domain-promise (name rs-paid-for) (param-values ?rs ?after) (promising-goal ?goal-id) (valid-at (+ 73 ?game-time)) (negated FALSE))
+        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?game-time) (negated FALSE))
         ;location-unlock -> dc
         ;go-wait -> dc
     )
@@ -1273,7 +1329,7 @@
 
     (goal-class (class ?class&FILL-RS) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
-    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-from-goals $?promised-from-goals) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?wp ?robot ?rs ?filled))
 
     (wm-fact (key domain fact mps-state args? m ?rs s ?state))
@@ -1299,6 +1355,7 @@
     (if (neq ?sat TRUE) then
         (printout t "Goal formulated from promise" crlf)
     )
+    (bind ?resources (create$ ?rs ?wp))
 
     (bind ?goal-id (sym-cat ?class - (gensym*)))
     (assert (goal (id ?goal-id)
@@ -1311,7 +1368,7 @@
                             rs-before ?filled
                             rs-after ?after
                     )
-                    (required-resources ?rs ?wp)
+                    (required-resources (compute-required-resources ?resources ?promised-from-goals ?sat))
     ))
     ;assert promises resulting from the plan-action of this goal
     (assert
@@ -1323,6 +1380,7 @@
         (domain-promise (name rs-filled-with) (param-values ?rs ?filled) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated TRUE))
         (domain-promise (name rs-filled-with) (param-values ?rs ?after) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated FALSE))
         (domain-promise (name rs-paid-for) (param-values ?rs ?after) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated FALSE))
+        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?game-time) (negated FALSE))
         ;unlocks -> dc
         ;go-wait -> dc
     )
@@ -1335,7 +1393,7 @@
 
     (goal-class (class ?class&FILL-CAP) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
-    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-from-goals $?promised-from-goals) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?robot ?cs ?cc ?spot ?cap-color))
     (promise-time (usecs ?game-time))
     (test (sat-or-promised ?sat ?game-time ?from ?lt))
@@ -1359,9 +1417,11 @@
         (printout t "Goal formulated from promise" crlf)
     )
 
-    (bind ?resources (create$  (sym-cat ?cs -INPUT) ?cc))
+    (bind ?resource-cc ?cc)
+    (bind ?resource-cs-input (sym-cat ?cs -INPUT))
+    (bind ?resources (create$  ?resource-cs-input ?resource-cc))
     (if (output-side-free ?cs) then
-        (bind ?resources (create$  (sym-cat ?cs -INPUT) ?cc ?cs (sym-cat ?cs -OUTPUT)))
+        (bind ?resources (create$  ?resource-cs-input ?resource-cc ?cs (sym-cat ?cs -OUTPUT)))
     )
 
     (bind ?distance (node-distance (str-cat ?cs -I)))
@@ -1374,7 +1434,7 @@
                             mps ?cs
                             cc ?cc
                     )
-                    (required-resources ?resources)
+                    (required-resources (compute-required-resources ?resources ?promised-from-goals ?sat))
     ))
     ;assert promises resulting from the plan-action of this goal
     (assert
@@ -1388,6 +1448,7 @@
         ;wp-put
         (domain-promise (name wp-at) (param-values ?cc ?cs INPUT) (promising-goal ?goal-id) (valid-at (+ 53 ?game-time)) (negated FALSE))
         (domain-promise (name mps-side-free) (param-values ?cs INPUT) (promising-goal ?goal-id) (valid-at (+ 53  ?game-time)) (negated TRUE))
+        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?game-time) (negated FALSE))
         ;request-cs-retrieve-cap -> this kicks off a separate goal
         ;unlocks -> dc
         ;go-wait -> dc
@@ -1427,7 +1488,7 @@
 
     (goal-class (class ?class&MOUNT-FIRST-RING) (id ?cid) (meta order ?order) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
-    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-from-goals $?promised-from-goals) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?rs ?other-rs ?bases-needed ?other-color ?ring1-color ?bs ?wp ?side ?order ?robot ?base-color))
 
     (wm-fact (key domain fact rs-filled-with args? m ?rs n ?bases-filled))
@@ -1449,12 +1510,13 @@
     (promise-time (usecs ?game-time))
     (test (sat-or-promised ?sat ?game-time ?from ?lt))
     =>
-    (bind ?required-resources ?order ?wp)
+    (bind ?resource-wp ?wp)
+    (bind ?required-resources ?order ?resource-wp)
     (if (any-factp ((?exclusive-complexities wm-fact))
             (and (wm-key-prefix ?exclusive-complexities:key (create$ config rcll exclusive-complexities))
                 (neq FALSE (member$ (str-cat ?complexity) ?exclusive-complexities:values))))
         then
-        (bind ?required-resources ?rs ?order ?wp PRODUCE-EXCLUSIVE-COMPLEXITY)
+        (bind ?required-resources ?order ?resource-wp PRODUCE-EXCLUSIVE-COMPLEXITY)
         (printout t "Goal " ?class " formulated from PDDL for order " ?order ", it needs the PRODUCE-EXCLUSIVE-COMPLEXITY token" crlf)
         else
         (printout t "Goal " ?class " formulated from PDDL for order " ?order crlf)
@@ -1488,7 +1550,7 @@
                             order ?order
                             wp ?wp
                     )
-                    (required-resources ?resources)
+                    (required-resources (compute-required-resources ?resources ?promised-from-goals ?sat))
     ))
     ;assert promises resulting from the plan-action of this goal
     (bind ?offset 3)
@@ -1529,6 +1591,7 @@
         ;wp-put
         (domain-promise (name wp-at) (param-values ?wp ?rs INPUT) (promising-goal ?goal-id) (valid-at (+ ?offset 25 ?game-time)) (negated FALSE))
         (domain-promise (name mps-side-free) (param-values ?rs INPUT) (promising-goal ?goal-id) (valid-at (+ ?offset 25 ?game-time)) (negated TRUE))
+        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?game-time) (negated FALSE))
         ;request-rs-mount-ring -> this kicks off a separate goal
         ;unlocks -> dc
         ;go-wait -> dc
@@ -1564,7 +1627,7 @@
 
     (goal-class (class ?class&MOUNT-NEXT-RING) (id ?cid) (meta order ?order ring ?ring) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
-    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-from-goals $?promised-from-goals) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?order ?robot ?wp ?base-color ?ring1-color ?ring2-color ?ring3-color ?other-color ?rs ?prev-rs ?bases-needed))
 
     (wm-fact (key domain fact rs-filled-with args? m ?rs n ?bases-filled))
@@ -1595,14 +1658,11 @@
 
     ;handle ressources for promises
     (bind ?prev-rs-output (sym-cat ?prev-rs -OUTPUT))
-    (if (neq ?sat TRUE)
-    then
-        (bind ?prev-rs-output (sym-cat PROMISE- ?prev-rs -OUTPUT))
-    )
+    (bind ?resource-wp ?wp)
 
-    (bind ?resources (create$ (sym-cat ?rs -INPUT) ?prev-rs-output ?wp))
+    (bind ?resources (create$ (sym-cat ?rs -INPUT) ?prev-rs-output ?resource-wp))
     (if (output-side-free ?rs) then
-        (bind ?resources (create$ (sym-cat ?rs -INPUT) ?prev-rs-output ?wp ?rs (sym-cat ?rs -OUTPUT)))
+        (bind ?resources (create$ (sym-cat ?rs -INPUT) ?prev-rs-output ?resource-wp ?rs (sym-cat ?rs -OUTPUT)))
     )
 
     (bind ?goal-id (sym-cat ?class - (gensym*)))
@@ -1624,7 +1684,7 @@
                             rs-req ?bases-needed
                             order ?order
                     )
-                    (required-resources ?resources)
+                    (required-resources (compute-required-resources ?resources ?promised-from-goals ?sat))
     ))
     ;assert promises resulting from the plan-action of this goal
     (bind ?offset 3)
@@ -1649,6 +1709,7 @@
         ;wp-put
         (domain-promise (name wp-at) (param-values ?wp ?rs INPUT) (promising-goal ?goal-id) (valid-at (+ ?offset 25 ?game-time)) (negated FALSE))
         (domain-promise (name mps-side-free) (param-values ?rs INPUT) (promising-goal ?goal-id) (valid-at (+ ?offset 25 ?game-time)) (negated TRUE))
+        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?game-time) (negated FALSE))
         ;request-rs-mount-ring -> this kicks off a separate goal
         ;unlocks -> dc
         ;go-wait -> dc
@@ -1686,7 +1747,7 @@
 
     (goal-class (class ?class&DELIVER) (id ?cid) (meta order ?order) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
-    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-from-goals $?promised-from-goals) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?team-color ?robot ?ds ?mps ?wp ?base-color ?ring1-color ?ring2-color ?ring3-color ?cap-color ?order ?complexity ?gate))
 
     (not (goal (class ?class) (params $? robot ?robot $?
@@ -1704,10 +1765,8 @@
 
     ;handle ressources for promises
     (bind ?mps-output (sym-cat ?mps -OUTPUT))
-    (if (neq ?sat TRUE)
-    then
-        (bind ?mps-output (sym-cat PROMISE- ?mps -OUTPUT))
-    )
+    (bind ?promise-wp ?wp)
+    (bind ?resources (create$ ?mps-output ?order ?promise-wp (sym-cat ?ds -INPUT)))
 
     (bind ?goal-id (sym-cat ?class - (gensym*)))
     (assert (goal (id ?goal-id)
@@ -1726,7 +1785,7 @@
                             ring3-color ?ring3-color
                             cap-color ?cap-color
                     )
-                    (required-resources ?mps-output ?order ?wp (sym-cat ?ds -INPUT))
+                    (required-resources (compute-required-resources ?resources ?promised-from-goals ?sat))
     ))
     ;assert promises resulting from the plan-action of this goal
     (bind ?offset 3)
@@ -1738,6 +1797,7 @@
             ;locks -> dc
             ;wp-get
             (domain-promise (name wp-at) (param-values ?wp ?mps OUTPUT) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated TRUE))
+            (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?game-time) (negated FALSE))
             ;(domain-promise (name mps-state) (param-values ?mps READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated TRUE))
             ;(domain-promise (name mps-state) (param-values ?mps IDLE) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated FALSE))
             (domain-promise (name mps-side-free) (param-values ?mps OUTPUT) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated FALSE))
@@ -1767,7 +1827,7 @@
 
     (goal-class (class ?class&PRODUCE-C0) (id ?cid) (meta order ?order) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
-    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-from-goals $?promised-from-goals) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?team-color ?robot ?mps ?wp ?cap-color ?bs ?side ?order ?base-color))
 
     (not (goal (class ?class) (params $? order ?order $?)))
@@ -1813,7 +1873,7 @@
                             order ?order
                             wp ?wp
                     )
-                    (required-resources ?resources)
+                    (required-resources (compute-required-resources ?resources ?promised-from-goals ?sat))
     ))
     ;assert promises resulting from the plan-action of this goal
     (bind ?offset 3)
@@ -1854,6 +1914,7 @@
         ;wp-put
         (domain-promise (name wp-at) (param-values ?wp ?mps INPUT) (promising-goal ?goal-id) (valid-at (+ ?offset 24 ?game-time)) (negated FALSE))
         (domain-promise (name mps-side-free) (param-values ?mps INPUT) (promising-goal ?goal-id) (valid-at (+ ?offset 24 ?game-time)) (negated TRUE))
+        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?game-time) (negated FALSE))
         ;request-cs-mount-cap -> this kicks off a separate goal
         ;unlocks -> dc
         ;go-wait -> dc
@@ -1894,7 +1955,7 @@
     (goal-class (class ?class&PRODUCE-CX) (id ?cid) (meta order ?order) (sub-type ?subtype) (lookahead-time ?lt))
     (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
     (pddl-formula (part-of ?cid) (id ?formula-id))
-    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-until ?until) (grounding ?grounding-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (promised-from-goals $?promised-from-goals) (grounding ?grounding-id))
     (pddl-grounding (id ?grounding-id) (param-values ?team-color ?robot ?cs ?order ?base-color ?ring1-color ?ring2-color ?ring3-color ?cap-color ?wp ?rs))
 
     (not (goal (class ?class)
@@ -1918,10 +1979,6 @@
 
     ;handle ressources for promises
     (bind ?rs-output (sym-cat ?rs -OUTPUT))
-    (if (neq ?sat TRUE)
-    then
-        (bind ?rs-output (sym-cat PROMISE- ?rs -OUTPUT))
-    )
 
     (bind ?resources (create$ (sym-cat ?cs -INPUT) ?rs-output ?wp))
     (if (output-side-free ?cs) then
@@ -1940,7 +1997,7 @@
                             cs-color ?cap-color
                             order ?order
                     )
-                    (required-resources ?resources)
+                    (required-resources (compute-required-resources ?resources ?promised-from-goals ?sat))
     ))
     ;assert promises resulting from the plan-action of this goal
     (bind ?offset 3)
@@ -1965,6 +2022,7 @@
         ;wp-put
         (domain-promise (name wp-at) (param-values ?wp ?cs INPUT) (promising-goal ?goal-id) (valid-at (+ ?offset 24 ?game-time)) (negated FALSE))
         (domain-promise (name mps-side-free) (param-values ?cs INPUT) (promising-goal ?goal-id) (valid-at (+ ?offset 24 ?game-time)) (negated TRUE))
+        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?game-time) (negated FALSE))
         ;request-cs-mount-cap -> this kicks off a separate goal
         ;unlocks -> dc
         ;go-wait -> dc
