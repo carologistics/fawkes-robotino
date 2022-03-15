@@ -426,7 +426,8 @@ ObjectTrackingThread::loop()
 	bool detected =
 	  closest_position(out_boxes, weighted_object_pos_cam, mps_angle, cur_object_pos, closest_box);
 
-	std::string pos_str;
+	std::string                            pos_str;
+	fawkes::tf::Stamped<fawkes::tf::Point> cur_object_pos_target;
 	if (detected) {
 		//draw bounding box
 		rectangle(image, closest_box, Scalar(0, 255, 0));
@@ -439,17 +440,26 @@ ObjectTrackingThread::loop()
 		sy << std::fixed << std::setprecision(3) << cur_object_pos[1];
 		sz << std::fixed << std::setprecision(3) << cur_object_pos[2];
 		pos_str = sx.str() + " " + sy.str() + " " + sz.str();
+
+		logger->log_info("cur obj", "frame: cam_gripper");
+		logger->log_info("cur_object_pos[0]: ", std::to_string(cur_object_pos[0]).c_str());
+		logger->log_info("cur_object_pos[1]: ", std::to_string(cur_object_pos[1]).c_str());
+		logger->log_info("cur_object_pos[2]: ", std::to_string(cur_object_pos[2]).c_str());
+
+		//transform current response into target frame
+		fawkes::tf::Stamped<fawkes::tf::Point> cur_object_pos_cam;
+		cur_object_pos_cam.stamp    = fawkes::Time(0.0);
+		cur_object_pos_cam.frame_id = "cam_gripper";
+		cur_object_pos_cam.setX(cur_object_pos[0]);
+		cur_object_pos_cam.setY(cur_object_pos[1]);
+		cur_object_pos_cam.setZ(cur_object_pos[2]);
+		tf_listener->transform_point(target_frame_, cur_object_pos_cam, cur_object_pos_target);
 	} else {
 		//if object is not detected, use expected position instead
 		pos_str = "X.XXX X.XXX X.XXX";
 
 		//transform from map to target
-		fawkes::tf::Stamped<fawkes::tf::Point> exp_pos_target;
-		tf_listener->transform_point(target_frame_, exp_pos_, exp_pos_target);
-
-		cur_object_pos[0] = exp_pos_target.getX();
-		cur_object_pos[1] = exp_pos_target.getY();
-		cur_object_pos[2] = exp_pos_target.getZ();
+		tf_listener->transform_point(target_frame_, exp_pos_, cur_object_pos_target);
 	}
 	cv::putText(image,
 	            pos_str,
@@ -473,23 +483,9 @@ ObjectTrackingThread::loop()
 	//logger->log_info("detection time  ", std::to_string(after_detect - &before_detect).c_str());
 	//logger->log_info("box time        ", std::to_string(after_projection - &after_detect).c_str());
 	//logger->log_info("overall time    ", std::to_string(after_projection - &start_time).c_str());
-	logger->log_info("cur obj", "frame: cam_gripper");
-	logger->log_info("cur_object_pos[0]: ", std::to_string(cur_object_pos[0]).c_str());
-	logger->log_info("cur_object_pos[1]: ", std::to_string(cur_object_pos[1]).c_str());
-	logger->log_info("cur_object_pos[2]: ", std::to_string(cur_object_pos[2]).c_str());
 
 	//compute weighted average
 	//-------------------------------------------------------------------------
-
-	//transform current response into target frame
-	fawkes::tf::Stamped<fawkes::tf::Point> cur_object_pos_cam;
-	fawkes::tf::Stamped<fawkes::tf::Point> cur_object_pos_target;
-	cur_object_pos_cam.stamp    = fawkes::Time(0.0);
-	cur_object_pos_cam.frame_id = "cam_gripper";
-	cur_object_pos_cam.setX(cur_object_pos[0]);
-	cur_object_pos_cam.setY(cur_object_pos[1]);
-	cur_object_pos_cam.setZ(cur_object_pos[2]);
-	tf_listener->transform_point(target_frame_, cur_object_pos_cam, cur_object_pos_target);
 
 	logger->log_info("cur pos", "frame: odom");
 	logger->log_info("cur_object_pos_target[0]: ",
