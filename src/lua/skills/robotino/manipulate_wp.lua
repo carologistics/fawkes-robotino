@@ -205,6 +205,7 @@ function compute_expected_pos_x(x_offset)
   else
     return fsm.vars.mps_x - x_offset * math.sin(fsm.vars.mps_ori) -
            (belt_lenght/2 - puck_size + EXPECTED_BASE_OFFSET) * math.cos(fsm.vars.mps_ori)
+  end
 end
 
 function compute_expected_pos_y(y_offset)
@@ -214,6 +215,7 @@ function compute_expected_pos_y(y_offset)
   else
     return fsm.vars.mps_y + y_offset * math.cos(fsm.vars.mps_ori) +
            (belt_lenght/2 - puck_size + EXPECTED_BASE_OFFSET) * math.sin(fsm.vars.mps_ori)
+  end
 end
 
 -- compute the expected target object position
@@ -232,6 +234,7 @@ function get_pos_for_side(side)
                   (belt_lenght/2 - puck_size + EXPECTED_BASE_OFFSET) * math.cos(fsm.vars.mps_ori),
               y = fsm.vars.mps_y + belt_offset_side * math.cos(fsm.vars.mps_ori) -
                   (belt_lenght/2 - puck_size + EXPECTED_BASE_OFFSET) * math.sin(fsm.vars.mps_ori)}
+    end
   elseif side == "SLIDE" then
     return {x = compute_expected_pos_x(slide_offset_side),
             y = compute_expected_pos_y(slide_offset_side)}
@@ -402,11 +405,13 @@ function START_TRACKING:init()
       fsm.vars.expected_pos_ori = fsm.vars.mps_ori + 1.57
     else
       fsm.vars.expected_pos_ori = fsm.vars.mps_ori + math.pi
+    end
   else
     if for_gazebo then
       fsm.vars.expected_pos_ori = fsm.vars.mps_ori + 1.57 + math.pi
     else
       fsm.vars.expected_pos_ori = fsm.vars.mps_ori
+    end
   end
 end
 
