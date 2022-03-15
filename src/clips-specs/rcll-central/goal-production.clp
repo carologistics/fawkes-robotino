@@ -382,7 +382,7 @@
 	                                   target-side ?target-side
 	                                   $?)
 	                          (is-executable FALSE))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (order-id ?order))
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -394,8 +394,6 @@
 	(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
 	(wm-fact (key domain fact cs-buffered args? m ?target-mps col ?cap-color))
 	(wm-fact (key domain fact cs-can-perform args? m ?target-mps op MOUNT_CAP))
-	; WP CEs
-	(wm-fact (key wp meta next-step args? wp ?wp) (value CAP))
 	; MPS-Source CEs
 	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
 	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
@@ -416,6 +414,14 @@
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
 	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
 	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
+
+	; prevent other goals from interfering (goal takeover, etc.)
+	(wm-fact (key wp meta next-step args? wp ?wp) (value CAP))
+	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+	(not (and 
+		(goal (class MOUNT-CAP) (id ?oid&~?goal-id) (mode ~FORMULATED) (params $? target-mps ?target-mps $?))
+		(goal-meta (goal-id ?oid) (assigned-to ~nil))
+	))
 	=>
 	(printout t "Goal MOUNT-CAP executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))

@@ -633,6 +633,12 @@
 	)
 	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
 	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
+
+
+	(not (and 
+		(goal (class MOUNT-CAP) (id ?oid&~?goal-id) (mode ~FORMULATED) (params $? target-mps ?target-mps $?))
+		(goal-meta (goal-id ?oid) (assigned-to ~nil))
+	))
 	=>
 	(printout t "Goal " ?goal-id " executable for " ?robot
 	            " depending on goal " ?mount-goal-id
