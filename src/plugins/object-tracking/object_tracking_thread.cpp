@@ -617,9 +617,9 @@ ObjectTrackingThread::compute_expected_position()
 		break;
 	case ObjectTrackingInterface::OUTPUT_CONVEYOR:
 		exp_pos_map[0] =
-		  mps_x_ - belt_offset_side_ * sin(mps_ori_) + (belt_lenght_ / 2) * cos(mps_ori_);
+		  mps_x_ - belt_offset_side_ * sin(mps_ori_) - (belt_lenght_ / 2) * cos(mps_ori_);
 		exp_pos_map[1] =
-		  mps_y_ + belt_offset_side_ * cos(mps_ori_) - (belt_lenght_ / 2) * sin(mps_ori_);
+		  mps_y_ - belt_offset_side_ * cos(mps_ori_) + (belt_lenght_ / 2) * sin(mps_ori_);
 		exp_pos_map[2] = belt_height_;
 		break;
 	case ObjectTrackingInterface::SLIDE:
@@ -670,13 +670,13 @@ ObjectTrackingThread::compute_expected_position()
 float
 ObjectTrackingThread::compute_middle_x(float x_offset)
 {
-	return mps_x_ - x_offset * sin(mps_ori_) - (belt_lenght_ / 2) * cos(mps_ori_);
+	return mps_x_ - x_offset * sin(mps_ori_) + (belt_lenght_ / 2) * cos(mps_ori_);
 }
 
 float
 ObjectTrackingThread::compute_middle_y(float y_offset)
 {
-	return mps_y_ + y_offset * cos(mps_ori_) + (belt_lenght_ / 2) * sin(mps_ori_);
+	return mps_y_ - y_offset * cos(mps_ori_) - (belt_lenght_ / 2) * sin(mps_ori_);
 }
 
 void
