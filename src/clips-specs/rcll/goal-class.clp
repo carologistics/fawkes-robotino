@@ -18,7 +18,12 @@
 ;
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
-
+(defglobal
+  ; Value used to promise facts that will effectively never come true.
+  ; Hacky way to synchronize resources of goals that are tied to the
+  ; lifetime of the promising goal.
+  ?*PROMISES-MAX-FUTURE* = 9999
+)
 
 ; ------------------------- ASSERT GOAL CLASSES -----------------------------------
 
@@ -1026,7 +1031,7 @@
         (domain-promise (name rs-filled-with) (param-values ?target-rs ?filled) (promising-goal ?goal-id) (valid-at (+ 69 ?game-time)) (negated TRUE))
         (domain-promise (name rs-filled-with) (param-values ?target-rs ?after) (promising-goal ?goal-id) (valid-at (+ 69 ?game-time)) (negated FALSE))
         (domain-promise (name rs-paid-for) (param-values ?target-rs ?after) (promising-goal ?goal-id) (valid-at (+ 69 ?game-time)) (negated FALSE))
-        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?game-time) (negated FALSE))
+        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE))
         ;location-unlock -> dc
         ;go-wait -> dc
     )
@@ -1119,7 +1124,7 @@
         ;wp-discard
         (domain-promise (name wp-unused) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 49 ?game-time)) (negated FALSE))
         (domain-promise (name wp-usable) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 49 ?game-time)) (negated TRUE))
-        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?game-time) (negated FALSE))
+        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE))
     )
 )
 
@@ -1164,7 +1169,7 @@
         ;wp-discard
         (domain-promise (name wp-unused) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 8 ?game-time)) (negated FALSE))
         (domain-promise (name wp-usable) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 8 ?game-time)) (negated TRUE))
-        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?game-time) (negated FALSE))
+        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE))
     )
 )
 
@@ -1249,7 +1254,7 @@
         (domain-promise (name rs-filled-with) (param-values ?rs ?filled) (promising-goal ?goal-id) (valid-at (+ 73 ?game-time)) (negated TRUE))
         (domain-promise (name rs-filled-with) (param-values ?rs ?after) (promising-goal ?goal-id) (valid-at (+ 73 ?game-time)) (negated FALSE))
         (domain-promise (name rs-paid-for) (param-values ?rs ?after) (promising-goal ?goal-id) (valid-at (+ 73 ?game-time)) (negated FALSE))
-        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?game-time) (negated FALSE))
+        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE))
         ;location-unlock -> dc
         ;go-wait -> dc
     )
@@ -1315,7 +1320,7 @@
         (domain-promise (name rs-filled-with) (param-values ?rs ?filled) (promising-goal ?goal-id) (valid-at (+ 73 ?game-time)) (negated TRUE))
         (domain-promise (name rs-filled-with) (param-values ?rs ?after) (promising-goal ?goal-id) (valid-at (+ 73 ?game-time)) (negated FALSE))
         (domain-promise (name rs-paid-for) (param-values ?rs ?after) (promising-goal ?goal-id) (valid-at (+ 73 ?game-time)) (negated FALSE))
-        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?game-time) (negated FALSE))
+        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE))
         ;location-unlock -> dc
         ;go-wait -> dc
     )
@@ -1380,7 +1385,7 @@
         (domain-promise (name rs-filled-with) (param-values ?rs ?filled) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated TRUE))
         (domain-promise (name rs-filled-with) (param-values ?rs ?after) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated FALSE))
         (domain-promise (name rs-paid-for) (param-values ?rs ?after) (promising-goal ?goal-id) (valid-at (+ 32 ?game-time)) (negated FALSE))
-        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?game-time) (negated FALSE))
+        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE))
         ;unlocks -> dc
         ;go-wait -> dc
     )
@@ -1448,7 +1453,7 @@
         ;wp-put
         (domain-promise (name wp-at) (param-values ?cc ?cs INPUT) (promising-goal ?goal-id) (valid-at (+ 53 ?game-time)) (negated FALSE))
         (domain-promise (name mps-side-free) (param-values ?cs INPUT) (promising-goal ?goal-id) (valid-at (+ 53  ?game-time)) (negated TRUE))
-        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?game-time) (negated FALSE))
+        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE))
         ;request-cs-retrieve-cap -> this kicks off a separate goal
         ;unlocks -> dc
         ;go-wait -> dc
@@ -1591,7 +1596,7 @@
         ;wp-put
         (domain-promise (name wp-at) (param-values ?wp ?rs INPUT) (promising-goal ?goal-id) (valid-at (+ ?offset 25 ?game-time)) (negated FALSE))
         (domain-promise (name mps-side-free) (param-values ?rs INPUT) (promising-goal ?goal-id) (valid-at (+ ?offset 25 ?game-time)) (negated TRUE))
-        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?game-time) (negated FALSE))
+        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE))
         ;request-rs-mount-ring -> this kicks off a separate goal
         ;unlocks -> dc
         ;go-wait -> dc
@@ -1709,7 +1714,7 @@
         ;wp-put
         (domain-promise (name wp-at) (param-values ?wp ?rs INPUT) (promising-goal ?goal-id) (valid-at (+ ?offset 25 ?game-time)) (negated FALSE))
         (domain-promise (name mps-side-free) (param-values ?rs INPUT) (promising-goal ?goal-id) (valid-at (+ ?offset 25 ?game-time)) (negated TRUE))
-        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?game-time) (negated FALSE))
+        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE))
         ;request-rs-mount-ring -> this kicks off a separate goal
         ;unlocks -> dc
         ;go-wait -> dc
@@ -1797,7 +1802,7 @@
             ;locks -> dc
             ;wp-get
             (domain-promise (name wp-at) (param-values ?wp ?mps OUTPUT) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated TRUE))
-            (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?game-time) (negated FALSE))
+            (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE))
             ;(domain-promise (name mps-state) (param-values ?mps READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated TRUE))
             ;(domain-promise (name mps-state) (param-values ?mps IDLE) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated FALSE))
             (domain-promise (name mps-side-free) (param-values ?mps OUTPUT) (promising-goal ?goal-id) (valid-at (+ 34 ?game-time)) (negated FALSE))
@@ -1914,7 +1919,7 @@
         ;wp-put
         (domain-promise (name wp-at) (param-values ?wp ?mps INPUT) (promising-goal ?goal-id) (valid-at (+ ?offset 24 ?game-time)) (negated FALSE))
         (domain-promise (name mps-side-free) (param-values ?mps INPUT) (promising-goal ?goal-id) (valid-at (+ ?offset 24 ?game-time)) (negated TRUE))
-        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?game-time) (negated FALSE))
+        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE))
         ;request-cs-mount-cap -> this kicks off a separate goal
         ;unlocks -> dc
         ;go-wait -> dc
@@ -2022,7 +2027,7 @@
         ;wp-put
         (domain-promise (name wp-at) (param-values ?wp ?cs INPUT) (promising-goal ?goal-id) (valid-at (+ ?offset 24 ?game-time)) (negated FALSE))
         (domain-promise (name mps-side-free) (param-values ?cs INPUT) (promising-goal ?goal-id) (valid-at (+ ?offset 24 ?game-time)) (negated TRUE))
-        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?game-time) (negated FALSE))
+        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE))
         ;request-cs-mount-cap -> this kicks off a separate goal
         ;unlocks -> dc
         ;go-wait -> dc
