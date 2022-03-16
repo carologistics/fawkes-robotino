@@ -187,6 +187,7 @@ function set_gripper(x, y, z)
   move_abs_message:set_x(next_step_x)
   move_abs_message:set_y(next_step_y)
   move_abs_message:set_z(next_step_z)
+  move_abs_message:set_target_frame("gripper_home")
   arduino:msgq_enqueue_copy(move_abs_message)
 end
 
@@ -195,6 +196,7 @@ function move_gripper_default_pose()
   move_abs_message:set_x(0)
   move_abs_message:set_y(0)
   move_abs_message:set_z(z_max)
+  move_abs_message:set_target_frame("gripper_home")
   arduino:msgq_enqueue_copy(move_abs_message)
 end
 
@@ -203,7 +205,7 @@ function compute_expected_pos_x(x_offset)
     return fsm.vars.mps_x + x_offset * math.cos(fsm.vars.mps_ori) -
            (belt_lenght/2 - puck_size + EXPECTED_BASE_OFFSET) * math.sin(fsm.vars.mps_ori)
   else
-    return fsm.vars.mps_x - x_offset * math.sin(fsm.vars.mps_ori) -
+    return fsm.vars.mps_x - x_offset * math.sin(fsm.vars.mps_ori) +
            (belt_lenght/2 - puck_size + EXPECTED_BASE_OFFSET) * math.cos(fsm.vars.mps_ori)
   end
 end
@@ -213,7 +215,7 @@ function compute_expected_pos_y(y_offset)
     return fsm.vars.mps_y + y_offset * math.sin(fsm.vars.mps_ori) +
            (belt_lenght/2 - puck_size + EXPECTED_BASE_OFFSET) * math.cos(fsm.vars.mps_ori)
   else
-    return fsm.vars.mps_y + y_offset * math.cos(fsm.vars.mps_ori) +
+    return fsm.vars.mps_y - y_offset * math.cos(fsm.vars.mps_ori) -
            (belt_lenght/2 - puck_size + EXPECTED_BASE_OFFSET) * math.sin(fsm.vars.mps_ori)
   end
 end
@@ -230,9 +232,9 @@ function get_pos_for_side(side)
               y = fsm.vars.mps_y + belt_offset_side * math.sin(fsm.vars.mps_ori) -
                   (belt_lenght/2 - puck_size + EXPECTED_BASE_OFFSET) * math.cos(fsm.vars.mps_ori)}
     else
-      return {x = fsm.vars.mps_x - belt_offset_side * math.sin(fsm.vars.mps_ori) +
+      return {x = fsm.vars.mps_x - belt_offset_side * math.sin(fsm.vars.mps_ori) -
                   (belt_lenght/2 - puck_size + EXPECTED_BASE_OFFSET) * math.cos(fsm.vars.mps_ori),
-              y = fsm.vars.mps_y + belt_offset_side * math.cos(fsm.vars.mps_ori) -
+              y = fsm.vars.mps_y - belt_offset_side * math.cos(fsm.vars.mps_ori) +
                   (belt_lenght/2 - puck_size + EXPECTED_BASE_OFFSET) * math.sin(fsm.vars.mps_ori)}
     end
   elseif side == "SLIDE" then
@@ -330,7 +332,7 @@ fsm:define_states{ export_to=_M, closure={MISSING_MAX=MISSING_MAX},
    {"MOVE_BASE_AND_GRIPPER", SkillJumpState, skills={{motor_move}},      final_to="FINE_TUNE_GRIPPER",     fail_to="SEARCH"},
    {"FINE_TUNE_GRIPPER",     JumpState},
    {"GRIPPER_ROUTINE",       SkillJumpState, skills={{gripper_routine}}, final_to="FINAL", fail_to="FINE_TUNE_GRIPPER"},
-   {"WAIT",                  Jumpstate}
+   {"WAIT",                  JumpState},
 }
 
 fsm:add_transitions{
