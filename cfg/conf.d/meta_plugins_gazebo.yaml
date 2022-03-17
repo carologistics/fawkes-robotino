@@ -114,7 +114,7 @@ fawkes/meta_plugins:
     - navgraph
     - navgraph-generator
     - navgraph-generator-mps
-    - m-clips-executive
+    - m-clips-executive-pddl
     - webview
 
   rcll-sim-2016:

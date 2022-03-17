@@ -665,7 +665,7 @@
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class PAY-FOR-RINGS-WITH-CAP-CARRIER)
 	                          (mode FORMULATED)
-	                          (params  wp ?preset-wp
+	                          (params  wp ?wp
 	                                   wp-loc ?wp-loc
 	                                   wp-side ?wp-side
 	                                   target-mps ?target-mps
@@ -710,10 +710,11 @@
 	         (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side OUTPUT))
 	    )
 	    ; or the workpiece is already being held
-	    (wm-fact (key domain fact holding args? r ?robot wp ?wp&:(eq ?wp ?preset-wp)))
+	    (wm-fact (key domain fact holding args? r ?robot wp ?wp))
 	)
 	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
 	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
+	(IAMNOTEXECUTABLE)
 	=>
 	(bind ?wp-side nil)
 	(do-for-fact ((?wp-at wm-fact))
@@ -722,12 +723,14 @@
 	             (bind ?wp-side (wm-key-arg ?wp-at:key side))
 	)
 	(printout t "Goal "  PAY-FOR-RINGS-WITH-CAP-CARRIER " executable" crlf)
-	(modify ?g (is-executable TRUE)(params wp ?wp
-	                                       wp-loc ?wp-loc
-	                                       wp-side ?wp-side
-	                                       target-mps ?target-mps
-	                                       target-side ?target-side)
+	(modify ?g (is-executable TRUE);(params wp ?wp
+	                               ;        wp-loc ?wp-loc
+	                               ;        wp-side ?wp-side
+	                               ;        target-mps ?target-mps
+	                               ;        target-side ?target-side)
 	)
+	(printout t "Workpiece_" ?wp crlf)
+	;(printout t "Workpiece_" ?preset-wp crlf)
 )
 
 (defrule goal-production-pay-ring-with-carrier-from-shelf-executable
@@ -1205,7 +1208,7 @@ The workpiece remains in the output of the used ring station after
 )
 
 (deffunction goal-production-assert-pay-for-rings-with-cap-carrier
-	(?wp ?wp-loc ?wp-side ?target-mps ?target-side ?order-id)
+	(?wp ?wp-loc ?wp-side ?target-mps ?target-side ?order-id ?rob)
 
 	(bind ?goal (assert (goal (class PAY-FOR-RINGS-WITH-CAP-CARRIER)
 	      (id (sym-cat PAY-FOR-RINGS-WITH-CAP-CARRIER- (gensym*))) (sub-type SIMPLE)
@@ -1215,14 +1218,18 @@ The workpiece remains in the output of the used ring station after
 	               wp-side ?wp-side
 	               target-mps ?target-mps
 	               target-side ?target-side
+								 robot ?rob
 	               )
+				(param-names wp wp-loc wp-side target-mps target-side robot)
+				(param-values ?wp ?wp-loc ?wp-side ?target-mps ?target-side ?rob)
+				(goal-action goal-get-cap-carrier-to-fill-rs)
 	)))
 	(goal-meta-assert ?goal nil ?order-id nil)
 	(return ?goal)
 )
 
 (deffunction goal-production-assert-pay-for-rings-with-cap-carrier-from-shelf
-	(?wp-loc ?target-mps ?target-side ?order-id)
+	(?wp-loc ?target-mps ?target-side ?order-id ?rob)
 
 	(bind ?goal (assert (goal (class PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
 	      (id (sym-cat PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF- (gensym*))) (sub-type SIMPLE)
@@ -1230,7 +1237,11 @@ The workpiece remains in the output of the used ring station after
 	      (params  wp-loc ?wp-loc
 	               target-mps ?target-mps
 	               target-side ?target-side
+								 robot ?rob
 	               )
+				(param-names wp-loc target-mps target-side robot)
+				(param-values ?wp-loc ?target-mps ?target-side ?rob)
+				;(goal-action goal-pay-ring-with-carrier-from-shelf)
 	)))
 	(goal-meta-assert ?goal nil ?order-id nil)
 	(return ?goal)
@@ -1339,7 +1350,7 @@ The workpiece remains in the output of the used ring station after
 		(bind ?index (+ ?index 1))
 	)
 	(if (eq ?found-payment TRUE) then
-		(bind ?goals (insert$ ?goals 1 (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN ?cs UNKNOWN ?first-rs INPUT ?order-id)))
+		(bind ?goals (insert$ ?goals 1 (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN ?cs UNKNOWN ?first-rs INPUT ?order-id ?rob)))
 	)
 
 	(return ?goals)
@@ -1442,38 +1453,106 @@ The workpiece remains in the output of the used ring station after
 (deffunction goal-production-assert-c2
   (?root-id ?order-id ?wp-for-order ?cs ?rs1 ?rs2 ?col-cap ?col-base ?col-ring1 ?col-ring2 ?rob)
 
-  (bind ?goal
-    (goal-tree-assert-central-run-parallel PRODUCE-ORDER
-		(goal-production-assert-deliver ?wp-for-order ?order-id ?rob)
-		(goal-tree-assert-central-run-parallel PREPARE-CS
-			(goal-tree-assert-central-run-parallel BUFFER-GOALS
-				(goal-production-assert-buffer-cap ?cs ?col-cap ?order-id)
-				(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap ?order-id)
-				;(goal-production-assert-discard UNKNOWN ?cs OUTPUT ?order-id)
+	(printout t "goal-production-assert-cs" ?order-id crlf)
+	(printout t "WP-FOR-ORDER: " ?wp-for-order crlf)
+	(assert (wait-for-fact-sync-before-planning ?root-id ?order-id ?wp-for-order ?cs ?rs1 ?rs2 ?col-cap ?col-base ?col-ring1 ?col-ring2 ?rob))
+  ;(bind ?goal
+  ;  (goal-tree-assert-central-run-parallel PRODUCE-ORDER
+	;	(goal-production-assert-deliver ?wp-for-order ?order-id ?rob)
+	;	(goal-tree-assert-central-run-parallel PREPARE-CS
+	;		(goal-tree-assert-central-run-parallel BUFFER-GOALS
+	;			(goal-production-assert-buffer-cap ?cs ?col-cap ?order-id)
+	;			(goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap ?order-id)
+	;			;(goal-production-assert-discard UNKNOWN ?cs OUTPUT ?order-id)
+	;		)
+	;	)
+	;	(goal-tree-assert-central-run-parallel MOUNT-GOALS
+	;		; Goal selection with run-one goals is broken, as a workaround simply
+	;		; remove alternative choices and switch to run-parallel
+	;		;(goal-tree-assert-central-run-one INTERACT-BS
+	;		(goal-tree-assert-central-run-parallel INTERACT-BS
+	;			(goal-tree-assert-central-run-parallel OUTPUT-BS
+	;				(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs2 OUTPUT ?order-id ?rob)
+	;				(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT ?col-ring2 ?order-id TWO)
+	;				(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS OUTPUT ?col-ring1 ?order-id ONE)
+	;				(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id)
+	;			)
+	;		)
+	;		(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id ?wp-for-order)
+	;		(goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
+	;		(goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2 ?order-id TWO)
+	;	)
+	;	(goal-tree-assert-central-run-parallel PAYMENT-GOALS
+	;		(goal-production-assert-payment-goals (create$ ?rs1 ?rs2) (create$ ?col-ring1 ?col-ring2) ?cs ?order-id ?rob)
+	;	)
+	;)
+  ;)
+  ;(modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (parent ?root-id))
+	;(printout	t "goal-prod-assert-c2" ?goal crlf)
+)
+
+(defrule goal-production-plan-c2
+	?df <- (wait-for-fact-sync-before-planning ?root-id ?order-id ?wp-for-order ?cs ?rs1 ?rs2 ?col-cap ?col-base ?col-ring1 ?col-ring2 ?rob)
+	=>
+	(pddl-goal-call ?root-id (str-cat "(deliverd " ?order-id ")") ?order-id)
+	(retract ?df)
+)
+
+(defrule pddl-goal-expand-objective
+  "Fetch the resulting plan from robot memory and expand the objective."
+  ?g <- (goal (id ?goal-id) (mode FORMULATED))
+  ?t <- (robmem-trigger (name "new-plan") (ptr ?obj))
+  ?p <- (pddl-goal-plan
+          (status PLANNED)
+          (goal-plan-id ?goal-id)
+          (plan-id ?plan-id&
+            :(eq ?plan-id (bson-get (bson-get ?obj "fullDocument") "msg_id")))
+					(order ?order-id)
+        )
+  (test (eq (bson-get (bson-get ?obj "fullDocument") "plan") 1))
+  =>
+	(bind ?prod-root (goal-tree-assert-central-run-parallel PRODUCE-ORDER))
+  (printout t "Fetched a new plan!" crlf)
+  (printout t "PLAN DEBUG" ?p crlf)
+  (progn$ (?action (bson-get-array (bson-get ?obj "fullDocument") "actions"))
+    (bind ?action-name (sym-cat (bson-get ?action "name")))
+    ; FF sometimes returns the pseudo-action REACH-GOAL. Filter it out.
+    (if (neq ?action-name REACH-GOAL) then
+      (bind ?param-values (bson-get-array ?action "args"))
+      ; Convert all parameters to upper-case symbols
+      (progn$ (?param ?param-values)
+        (bind ?param-values
+              (replace$
+                ?param-values
+                ?param-index ?param-index
+                (sym-cat (upcase ?param))
+              )
+        )
+      )
+			(if (eq ?action-name goal-buffer-cap) then
+				goal-production-assert-buffer-cap
+				(?mps ?cap-color ?order-id)
 			)
-		)
-		(goal-tree-assert-central-run-parallel MOUNT-GOALS
-			; Goal selection with run-one goals is broken, as a workaround simply
-			; remove alternative choices and switch to run-parallel
-			;(goal-tree-assert-central-run-one INTERACT-BS
-			(goal-tree-assert-central-run-parallel INTERACT-BS
-				(goal-tree-assert-central-run-parallel OUTPUT-BS
-					(goal-production-assert-mount-cap ?wp-for-order ?cs ?rs2 OUTPUT ?order-id ?rob)
-					(goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT ?col-ring2 ?order-id TWO)
-					(goal-production-assert-mount-ring ?wp-for-order ?rs1 C-BS OUTPUT ?col-ring1 ?order-id ONE)
-					(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id)
-				)
-			)
-			(goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id ?wp-for-order)
-			(goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
-			(goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2 ?order-id TWO)
-		)
-		(goal-tree-assert-central-run-parallel PAYMENT-GOALS
-			(goal-production-assert-payment-goals (create$ ?rs1 ?rs2) (create$ ?col-ring1 ?col-ring2) ?cs ?order-id ?rob)
-		)
-	)
+      (printout t "plan id" ?plan-id crlf)
+      (printout t "plan-action id" ?action-index crlf)
+      (printout t "goal-id" ?goal-id crlf)
+      (printout t "action name" ?action-name crlf)
+      (printout t "param-values" ?param-values crlf)
+      ;(assert
+      ;  (plan (id ?plan-id) (goal-id ?goal-id))
+      ;  (plan-action
+      ;    (id ?action-index)
+      ;    (goal-id ?goal-id)
+      ;    (plan-id ?plan-id)
+      ;    (action-name ?action-name)
+      ;    (param-values ?param-values)
+      ;  )
+      ;)
+    )
   )
-  (modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (parent ?root-id))
+  ;(modify ?g (mode EXPANDED))
+	(modify ?prod-root (meta (fact-slot-value ?prod-root meta) for-order ?order-id) (parent ?goal-id))
+  (retract ?p)
 )
 
 (deffunction goal-production-assert-c3
@@ -1641,6 +1720,7 @@ The workpiece remains in the output of the used ring station after
 	(bind ?wp-for-order (sym-cat wp- ?order-id))
 	(assert (domain-object (name ?wp-for-order) (type workpiece))
 		  (domain-fact (name wp-unused) (param-values ?wp-for-order))
+			(domain-fact (name wp-for-order) (param-values ?wp-for-order ?order-id))
 		  (wm-fact (key domain fact wp-base-color args? wp ?wp-for-order col BASE_NONE) (type BOOL) (value TRUE))
 		  (wm-fact (key domain fact wp-cap-color args? wp ?wp-for-order col CAP_NONE) (type BOOL) (value TRUE))
 		  (wm-fact (key domain fact wp-ring1-color args? wp ?wp-for-order col RING_NONE) (type BOOL) (value TRUE))

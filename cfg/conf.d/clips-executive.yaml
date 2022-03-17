@@ -59,7 +59,16 @@ clips-executive:
           - name: navgraph
           - name: protobuf
           - name: tf
+          - name: robmem-wait
+            feature-request: false
+            files: ["BATCH|robmem-wait-init.clp"]
+            wait-for: robmem-initialized
+          - name: robot_memory
         stage-3:
+          - name: pddl-planner
+            feature-request: false
+            files: ["pddl-init.clp"]
+            wait-for: pddl-planner-initialized
           - name: utils
             file: rcll-central/utils.clp
           - name: worldmodel
@@ -99,6 +108,7 @@ clips-executive:
           - name: action-execution
             files:
               - skills-actions.clp
+              - robot-memory-sync.clp
               - rcll-central/noop-actions.clp
               - rcll-central/refbox-actions.clp
               - rcll-central/wait-actions.clp

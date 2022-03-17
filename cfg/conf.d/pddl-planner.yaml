@@ -7,12 +7,12 @@ plugins/pddl-planner:
 
   # PDDL planner to be used
   # Possible values: ff, fd
-  planner: ff
+  planner: popf
 
   # Domain and problem description and location
   # Folder path needs a trailing /
-  description-folder: "@BASEDIR@/src/agents/clips-executive/rcll2017/"
-  domain-description: domain.pddl
+  description-folder: "@BASEDIR@/src/clips-specs/rcll-central/"
+  domain-description: goal_domain_with_sides.pddl
   problem-description: problem.pddl
   # File for intermediate results from planners
   result-file: results.txt

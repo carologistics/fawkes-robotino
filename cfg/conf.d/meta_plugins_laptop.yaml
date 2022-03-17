@@ -33,6 +33,16 @@ fawkes/meta_plugins:
     - clips-pddl-parser
     - clips-executive
     - clips-executive-rest-api
+  m-clips-executive-pddl:
+    - m-clips
+    - mongodb
+    - robot-memory
+    - clips_robot_memory
+    - pddl-robot-memory
+    - pddl-planner
+    - clips-pddl-parser
+    - clips-executive
+    - clips-executive-rest-api
   m-skiller:
     - ros
     - m-fv-vision

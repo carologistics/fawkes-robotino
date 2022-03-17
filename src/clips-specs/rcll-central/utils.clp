@@ -640,19 +640,26 @@
 
   @return orientation of the given mps on the other half of the field
   "
+  (printout t "MIRROR_ORIENTATION_STUFF" crlf)
   (bind ?zn (str-cat ?zone))
   (bind ?t (sub-string 1 1 ?zn))
   (if (want-mirrored-rotation ?mtype ?zone)
    then
     (if (eq ?t "C")
      then
-      (do-for-fact ((?mo domain-fact)) (and (eq (nth$ 1 ?mo:param-values) ?ori) (eq ?mo:name mirror-orientation))
-        (bind ?m-ori (nth$ 2 ?mo:param-values))
+      (do-for-fact ((?so wm-fact)) (and (eq (nth$ 1 ?so:values) ?ori) (eq (nth$ 3 ?so:key) mirror-orientation))
+        (bind ?m-ori (nth$ 2 ?so:values))
       )
+      ;(do-for-fact ((?mo domain-fact)) (and (eq (nth$ 1 ?mo:param-values) ?ori) (eq ?mo:name mirror-orientation))
+      ;  (bind ?m-ori (nth$ 2 ?mo:param-values))
+      ;)
      else
-      (do-for-fact ((?mo domain-fact)) (and (eq (nth$ 2 ?mo:param-values) ?ori) (eq ?mo:name mirror-orientation))
-        (bind ?m-ori (nth$ 1 ?mo:param-values))
-      )
+       (do-for-fact ((?so wm-fact)) (and (eq (nth$ 2 ?so:values) ?ori) (eq (nth$ 3 ?so:key) mirror-orientation))
+         (bind ?m-ori (nth$ 1 ?so:values))
+       )
+      ;(do-for-fact ((?mo domain-fact)) (and (eq (nth$ 2 ?mo:param-values) ?ori) (eq ?mo:name mirror-orientation))
+      ;  (bind ?m-ori (nth$ 1 ?mo:param-values))
+      ;)
     )
     (return ?m-ori)
    else

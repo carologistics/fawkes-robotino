@@ -153,6 +153,8 @@
 	              ?ring3-col - ring-color ?cap-col - cap-color)
 	(order-matches-wp ?wp - workpiece ?ord - order)
 	(rs-payment-fillable ?mps - mps)
+	(wp-get-shelf-active-for ?wp - workpiece)
+	(pay-for-rings-with-carrier-from-shelf-active ?robot - robot ?wp-loc - mps ?wp - workpiece)
 )
 
 (:action goal-instruct-cs-mount-cap
@@ -381,8 +383,117 @@
 										;(domain-fact (name zone-content) (param-values ?zz1 ?wp-loc))
 										;(domain-fact (name zone-content) (param-values ?zz2 ?target-mps))
 								)
-	:effect (mps-state ?target-mps READY-AT-OUTPUT)
+	:effect (and
+				(not (wp-at ?wp ?wp-loc ?wp-side))
+	      (not (mps-state ?wp-loc READY-AT-OUTPUT))
+        (mps-state ?wp-loc IDLE)
+      	(mps-side-free ?wp-loc ?wp-side)
+				(not (wp-usable ?wp))
+        (not (holding ?robot ?wp))
+  			(can-hold ?robot)
+      	(not (rs-payment-fillable ?target-mps))
+		)
 )
+
+(:action goal-get-cap-carrier-to-fill-rs
+	:parameters (?wp - workpiece ?wp-loc - mps ?wp-side - mps-side ?target-mps - mps ?target-side - mps-side ?robot - robot)
+	:precondition (and
+										;(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+										;(wm-fact (key refbox team-color) (value ?team-color))
+										;MPS-RS CEs (a cap carrier can be used to fill a RS later)
+										(mps-type ?target-mps RS)
+										(not (mps-state ?target-mps BROKEN))
+										;(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
+										;check ring payment - prevention of overfilling rs()
+										;(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before&ZERO|ONE|TWO))
+
+										(rs-payment-fillable ?target-mps)
+										; MPS-Source CEs()
+										(mps-type ?wp-loc CS)
+										;(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
+
+										;check wp has no cap and is at the output of the CS()
+										(wp-cap-color ?wp CAP_NONE)
+										(or (and ; Either the workpiece needs to picked up...
+														 ;(not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+														 (can-hold ?robot)
+														 (wp-at ?wp ?wp-loc OUTPUT)
+												)
+												; or the workpiece is already being held()
+												;(wm-fact (key domain fact holding args? r ?robot wp ?wp&:(eq ?wp ?preset-wp)))
+												(holding ?robot ?wp)
+										)
+										;(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
+										;(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
+								)
+	:effect (and
+				(not (wp-at ?wp ?wp-loc ?wp-side))
+	      (not (mps-state ?wp-loc READY-AT-OUTPUT))
+        (mps-state ?wp-loc IDLE)
+      	(mps-side-free ?wp-loc ?wp-side)
+				(not (wp-usable ?wp))
+        (not (holding ?robot ?wp))
+  			(can-hold ?robot)
+      	(not (rs-payment-fillable ?target-mps))
+		)
+)
+
+;incomplete since it is not used in any creation of a C0 to a C3 and therefore not
+;testable for me at the moment
+(:action goal-pay-ring-with-carrier-from-shelf
+	:parameters (?wp - workpiece ?wp-loc - mps ?wp-side - mps-side ?target-mps - mps ?target-side - mps-side ?robot - robot)
+	:precondition (and
+										;(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+										;(wm-fact (key refbox team-color) (value ?team-color))
+										;MPS-RS CEs (a cap carrier can be used to fill a RS later)
+										(mps-type ?target-mps RS)
+										(not (mps-state ?target-mps BROKEN))
+										;(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
+										;check ring payment - prevention of overfilling rs()
+										;(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before&ZERO|ONE|TWO))
+
+										(rs-payment-fillable ?target-mps)
+
+										;MPS-CS CEs()
+										;(wm-fact (key domain fact mps-type args? m ?wp-loc t CS))
+										(mps-type ?wp-loc CS)
+										;(wm-fact (key domain fact mps-state args? m ?wp-loc s ~BROKEN))
+										(not (mps-state ?wp-loc BROKEN))
+										;(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
+
+										;either there is a wp on the shelf and we don't hold any or we hold one and it is()
+										;a CC (e.g. if the goal fails after pick-up)
+										(or (and ;(wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?wp-loc spot ?spot))
+													 ;(wp-on-shelf ?wp ?wp-loc ?spot)
+													 ;(not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+													 (can-hold ?robot)
+													 (not (wp-get-shelf-active-for ?wp))
+											)
+											(and ;(domain-object (name ?wp) (type cap-carrier))
+													 ;(wm-fact (key domain fact holding args? r ?robot wp ?wp))
+													 (holding ?robot ?wp)
+											)
+										)
+
+										; Formulate the goal only if it is not already formulated (prevents doubling)
+										; the goals due to matching with RS-1 and RS-2)
+										;(not (goal (class  PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF) (parent goal-id)
+										;		 (params robot ?robot cs ?wp-loc wp ?wp $?)))
+										(not (pay-for-rings-with-carrier-from-shelf-active ?robot ?wp-loc ?wp))
+										;(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
+										;(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
+								)
+	:effect (and
+			;(not (wp-on-shelf ?wp ?wp-loc ?spot))
+			;(wp-usable ?cc)
+			;(spot-free ?mps ?spot)
+			;(not (wp-usable ?wp))
+      ;(not (holding ?robot ?wp))
+      ;(can-hold ?robot)
+			(not (rs-payment-fillable ?target-mps))
+		)
+)
+
 (:action goal-mount-ring
 	:parameters (?wp - workpiece ?target-mps - mps ?target-side - mps-side
 				?wp-loc - mps ?wp-side - mps-side ?ring-color - ring-color)

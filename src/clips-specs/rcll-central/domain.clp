@@ -93,7 +93,7 @@
         (bind ?ss M-SS)
   )
 	(assert
-    (domain-fact (name self) (param-values ?self))
+    ;(domain-fact (name self) (param-values ?self))
     (domain-fact (name at) (param-values robot1 START INPUT))
     (domain-fact (name at) (param-values robot2 START INPUT))
     (domain-fact (name at) (param-values robot3 START INPUT))
@@ -137,44 +137,45 @@
     (domain-fact (name rs-inc) (param-values TWO THREE))
     (domain-fact (name cs-color) (param-values ?cs1 CAP_GREY))
     (domain-fact (name cs-color) (param-values ?cs2 CAP_BLACK))
-    (domain-fact (name tag-matching) (param-values C-BS INPUT CYAN 65))
-    (domain-fact (name tag-matching) (param-values C-CS1 INPUT CYAN 1))
-    (domain-fact (name tag-matching) (param-values C-CS2 INPUT CYAN 17))
-    (domain-fact (name tag-matching) (param-values C-RS1 INPUT CYAN 33))
-    (domain-fact (name tag-matching) (param-values C-RS2 INPUT CYAN 177))
-    (domain-fact (name tag-matching) (param-values C-DS INPUT CYAN 81))
-    (domain-fact (name tag-matching) (param-values C-SS INPUT CYAN 193))
-    (domain-fact (name tag-matching) (param-values C-BS OUTPUT CYAN 66))
-    (domain-fact (name tag-matching) (param-values C-CS1 OUTPUT CYAN 2))
-    (domain-fact (name tag-matching) (param-values C-CS2 OUTPUT CYAN 18))
-    (domain-fact (name tag-matching) (param-values C-RS1 OUTPUT CYAN 34))
-    (domain-fact (name tag-matching) (param-values C-RS2 OUTPUT CYAN 178))
-    (domain-fact (name tag-matching) (param-values C-DS OUTPUT CYAN 82))
-    (domain-fact (name tag-matching) (param-values C-SS OUTPUT CYAN 194))
+    ;(domain-fact (name tag-matching) (param-values C-BS INPUT CYAN 65))
+    ;(domain-fact (name tag-matching) (param-values C-CS1 INPUT CYAN 1))
+    ;(domain-fact (name tag-matching) (param-values C-CS2 INPUT CYAN 17))
+    ;(domain-fact (name tag-matching) (param-values C-RS1 INPUT CYAN 33))
+    ;(domain-fact (name tag-matching) (param-values C-RS2 INPUT CYAN 177))
+    ;(domain-fact (name tag-matching) (param-values C-DS INPUT CYAN 81))
+    ;(domain-fact (name tag-matching) (param-values C-SS INPUT CYAN 193))
+    ;(domain-fact (name tag-matching) (param-values C-BS OUTPUT CYAN 66))
+    ;(domain-fact (name tag-matching) (param-values C-CS1 OUTPUT CYAN 2))
+    ;(domain-fact (name tag-matching) (param-values C-CS2 OUTPUT CYAN 18))
+    ;(domain-fact (name tag-matching) (param-values C-RS1 OUTPUT CYAN 34))
+    ;(domain-fact (name tag-matching) (param-values C-RS2 OUTPUT CYAN 178))
+    ;(domain-fact (name tag-matching) (param-values C-DS OUTPUT CYAN 82))
+    ;(domain-fact (name tag-matching) (param-values C-SS OUTPUT CYAN 194))
 
-    (domain-fact (name tag-matching) (param-values M-BS INPUT MAGENTA 161))
-    (domain-fact (name tag-matching) (param-values M-CS1 INPUT MAGENTA 97))
-    (domain-fact (name tag-matching) (param-values M-CS2 INPUT MAGENTA 113))
-    (domain-fact (name tag-matching) (param-values M-RS1 INPUT MAGENTA 129))
-    (domain-fact (name tag-matching) (param-values M-RS2 INPUT MAGENTA 145))
-    (domain-fact (name tag-matching) (param-values M-DS INPUT MAGENTA 49))
-    (domain-fact (name tag-matching) (param-values M-SS INPUT MAGENTA 209))
-    (domain-fact (name tag-matching) (param-values M-BS OUTPUT MAGENTA 162))
-    (domain-fact (name tag-matching) (param-values M-CS1 OUTPUT MAGENTA 98))
-    (domain-fact (name tag-matching) (param-values M-CS2 OUTPUT MAGENTA 114))
-    (domain-fact (name tag-matching) (param-values M-RS1 OUTPUT MAGENTA 130))
-    (domain-fact (name tag-matching) (param-values M-RS2 OUTPUT MAGENTA 146))
-    (domain-fact (name tag-matching) (param-values M-DS OUTPUT MAGENTA 50))
-    (domain-fact (name tag-matching) (param-values M-SS OUTPUT MAGENTA 210))
+    ;(domain-fact (name tag-matching) (param-values M-BS INPUT MAGENTA 161))
+    ;(domain-fact (name tag-matching) (param-values M-CS1 INPUT MAGENTA 97))
+    ;(domain-fact (name tag-matching) (param-values M-CS2 INPUT MAGENTA 113))
+    ;(domain-fact (name tag-matching) (param-values M-RS1 INPUT MAGENTA 129))
+    ;(domain-fact (name tag-matching) (param-values M-RS2 INPUT MAGENTA 145))
+    ;(domain-fact (name tag-matching) (param-values M-DS INPUT MAGENTA 49))
+    ;(domain-fact (name tag-matching) (param-values M-SS INPUT MAGENTA 209))
+    ;(domain-fact (name tag-matching) (param-values M-BS OUTPUT MAGENTA 162))
+    ;(domain-fact (name tag-matching) (param-values M-CS1 OUTPUT MAGENTA 98))
+    ;(domain-fact (name tag-matching) (param-values M-CS2 OUTPUT MAGENTA 114))
+    ;(domain-fact (name tag-matching) (param-values M-RS1 OUTPUT MAGENTA 130))
+    ;(domain-fact (name tag-matching) (param-values M-RS2 OUTPUT MAGENTA 146))
+    ;(domain-fact (name tag-matching) (param-values M-DS OUTPUT MAGENTA 50))
+    ;(domain-fact (name tag-matching) (param-values M-SS OUTPUT MAGENTA 210))
 
-    (domain-fact (name mirror-orientation) (param-values 0 180))
-    (domain-fact (name mirror-orientation) (param-values 45 135))
-    (domain-fact (name mirror-orientation) (param-values 90 90))
-    (domain-fact (name mirror-orientation) (param-values 135 45))
-    (domain-fact (name mirror-orientation) (param-values 180 0))
-    (domain-fact (name mirror-orientation) (param-values 225 315))
-    (domain-fact (name mirror-orientation) (param-values 270 270))
-    (domain-fact (name mirror-orientation) (param-values 315 225))
+    ;changed to wm-facts in "domain-load-converted-mirror-orientation-domain-facts" to allow for planning
+    ;(domain-fact (name mirror-orientation) (param-values 0 180))
+    ;(domain-fact (name mirror-orientation) (param-values 45 135))
+    ;(domain-fact (name mirror-orientation) (param-values 90 90))
+    ;(domain-fact (name mirror-orientation) (param-values 135 45))
+    ;(domain-fact (name mirror-orientation) (param-values 180 0))
+    ;(domain-fact (name mirror-orientation) (param-values 225 315))
+    ;(domain-fact (name mirror-orientation) (param-values 270 270))
+    ;(domain-fact (name mirror-orientation) (param-values 315 225))
 
     (domain-object (name CCB1) (type cap-carrier))
     (domain-object (name CCB2) (type cap-carrier))
@@ -202,6 +203,14 @@
     (domain-object (name O7) (type order))
     (domain-object (name O8) (type order))
     (domain-object (name O9) (type order))
+    (domain-object (name WAIT-C-RS2-O) (type waitpoint))
+    (domain-object (name WAIT-C-RS2-I) (type waitpoint))
+    (domain-object (name WAIT-C-RS1-O) (type waitpoint))
+    (domain-object (name WAIT-C-RS1-I) (type waitpoint))
+    (domain-object (name WAIT-C-CS1-O) (type waitpoint))
+    (domain-object (name WAIT-C-CS1-I) (type waitpoint))
+    (domain-object (name WAIT-C-BS-O) (type waitpoint))
+    (domain-object (name WAIT-C-BS-I) (type waitpoint))
     (domain-fact (name rs-ring-spec) (param-values ?rs1 RING_NONE ZERO))
     (domain-fact (name rs-ring-spec) (param-values ?rs2 RING_NONE ZERO))
 	)
@@ -239,8 +248,8 @@
   (assert
     (domain-fact (name cs-can-perform) (param-values ?cs1 RETRIEVE_CAP))
     (domain-fact (name cs-can-perform) (param-values ?cs2 RETRIEVE_CAP))
-    (domain-fact (name cs-free) (param-values ?cs1))
-    (domain-fact (name cs-free) (param-values ?cs2))
+    ;(domain-fact (name cs-free) (param-values ?cs1))
+    ;(domain-fact (name cs-free) (param-values ?cs2))
     (domain-fact (name cs-color) (param-values ?cs1 CAP_GREY))
     (domain-fact (name cs-color) (param-values ?cs2 CAP_BLACK))
     (domain-fact (name at) (param-values robot1 START INPUT))
@@ -300,8 +309,28 @@
 
     (domain-fact (name rs-filled-with) (param-values ?rs1 ZERO))
     (domain-fact (name rs-filled-with) (param-values ?rs2 ZERO))
-  )
 
+    (domain-fact (name cs-buffered) (param-values ?cs1 CAP_NONE))
+    (domain-fact (name cs-buffered) (param-values ?cs2 CAP_NONE))
+  )
+  (assert (load-converted-facts))
+)
+
+(defrule domain-load-converted-mirror-orientation-domain-facts
+  (load-converted-facts)
+  (not (domain-facts-loaded))
+  =>
+  ;args one-eight was needed to create distinct world model facts that don't erase each other
+  (assert
+    (wm-fact (key central agent mirror-orientation args? one) (values 0 180))
+    (wm-fact (key central agent mirror-orientation args? two) (values 45 135))
+    (wm-fact (key central agent mirror-orientation args? three) (values 90 90))
+    (wm-fact (key central agent mirror-orientation args? four) (values 135 45))
+    (wm-fact (key central agent mirror-orientation args? five) (values 180 0))
+    (wm-fact (key central agent mirror-orientation args? six) (values 225 315))
+    (wm-fact (key central agent mirror-orientation args? seven) (values 270 270))
+    (wm-fact (key central agent mirror-orientation args? eight) (values 315 225))
+  )
   (assert (domain-facts-loaded))
 )
 
@@ -368,6 +397,172 @@
     (retract ?df)
   )
 )
+;------------ Goal domain derived predicates
+(defrule domain-goal-fix-assert-ZERO-rings-mounted
+  (domain-fact (name wp-ring1-color) (param-values ?wp RING_NONE))
+  (domain-fact (name wp-ring2-color) (param-values ?wp RING_NONE))
+  (domain-fact (name wp-ring3-color) (param-values ?wp RING_NONE))
+  =>
+  (assert (domain-fact (name rings-mounted) (param-values ?wp ZERO)))
+)
+
+(defrule domain-goal-fix-assert-ONE-rings-mounted
+  (not (domain-fact (name wp-ring1-color) (param-values ?wp RING_NONE)))
+  (domain-fact (name wp-ring2-color) (param-values ?wp RING_NONE))
+  (domain-fact (name wp-ring3-color) (param-values ?wp RING_NONE))
+  =>
+  (assert (domain-fact (name rings-mounted) (param-values ?wp ONE)))
+)
+
+(defrule domain-goal-fix-assert-TWO-rings-mounted
+  (not (domain-fact (name wp-ring1-color) (param-values ?wp RING_NONE)))
+  (not (domain-fact (name wp-ring2-color) (param-values ?wp RING_NONE)))
+  (domain-fact (name wp-ring3-color) (param-values ?wp RING_NONE))
+  =>
+  (assert (domain-fact (name rings-mounted) (param-values ?wp TWO)))
+)
+
+(defrule domain-goal-fix-assert-THREE-rings-mounted
+  (domain-fact (name wp-ring1-color) (param-values ?wp ?ring-color&:(or (eq ?ring-color RING_BLUE)
+                                                                        (eq ?ring-color RING_GREEN)
+                                                                        (eq ?ring-color RING_ORANGE)
+                                                                        (eq ?ring-color RING_YELLOW))))
+  (not (domain-fact (name wp-ring2-color) (param-values ?wp RING_NONE)))
+  (not (domain-fact (name wp-ring3-color) (param-values ?wp RING_NONE)))
+  =>
+  (assert (domain-fact (name rings-mounted) (param-values ?wp THREE)))
+)
+
+(defrule domain-goal-fix-retract-rings-mounted
+  ?df <- (domain-fact (name rings-mounted) (param-values ?wp ?num))
+  (domain-fact (name rings-mounted) (param-values ?wp ?num-inc))
+  (domain-fact (name rs-inc) (param-values ?num ?num-inc))
+  =>
+  (retract ?df)
+)
+
+(defrule domain-goal-fix-assert-wp-complexity-ZERO
+  (declare (salience 100))
+  (domain-fact (name order-complexity) (param-values ?ord C0))
+  (domain-fact (name wp-for-order) (param-values ?wp ?ord))
+  =>
+  (assert (domain-fact (name wp-complexity) (param-values ?wp ZERO)))
+)
+
+(defrule domain-goal-fix-assert-wp-complexity-ONE
+  (declare (salience 100))
+  (domain-fact (name order-complexity) (param-values ?ord C1))
+  (domain-fact (name wp-for-order) (param-values ?wp ?ord))
+  =>
+  (assert (domain-fact (name wp-complexity) (param-values ?wp ONE)))
+)
+
+(defrule domain-goal-fix-assert-wp-complexity-TWO
+  (declare (salience 100))
+  (domain-fact (name order-complexity) (param-values ?ord C2))
+  (domain-fact (name wp-for-order) (param-values ?wp ?ord))
+  =>
+  (assert (domain-fact (name wp-complexity) (param-values ?wp TWO)))
+)
+
+(defrule domain-goal-fix-assert-wp-complexity-THREE
+  (declare (salience 100))
+  (domain-fact (name order-complexity) (param-values ?ord C3))
+  (domain-fact (name wp-for-order) (param-values ?wp ?ord))
+  =>
+  (assert (domain-fact (name wp-complexity) (param-values ?wp THREE)))
+)
+
+(defrule domain-goal-fix-assert-wp-reachable
+  (or
+    (domain-fact (name holding) (param-values ?r ?wp))
+    (and
+      (domain-fact (name can-hold) (param-values ?r))
+      (domain-fact (name wp-at) (param-values ?wp ?mps ?side))
+    )
+    (and
+      (domain-fact (name can-hold) (param-values ?r))
+      (domain-fact (name wp-on-shelf) (param-values ?wp ?mps ?spot))
+    )
+  )
+  =>
+  (assert (domain-fact (name wp-reachable) (param-values ?wp ?r)))
+)
+
+(defrule domain-goal-fix-retract-wp-reachable
+  ?df <- (domain-fact (name wp-reachable) (param-values ?wp ?r))
+  (and
+    (not (domain-fact (name holding) (param-values ?r ?wp)))
+    (or
+      (not (domain-fact (name can-hold) (param-values ?r)))
+      (not (domain-fact (name wp-at) (param-values ?wp ?mps ?side)))
+    )
+    (or
+      (not (domain-fact (name can-hold) (param-values ?r)))
+      (not (domain-fact (name wp-on-shelf) (param-values ?wp ?mps ?spot)))
+    )
+  )
+  =>
+  (retract ?df)
+)
+
+(defrule domain-goal-fix-assert-wp-ring-color-ONE
+  (domain-fact (name wp-ring1-color) (param-values ?wp ?color))
+  =>
+  (assert (domain-fact (name wp-ring-color) (param-values ?wp ?color ONE)))
+)
+
+(defrule domain-goal-fix-assert-wp-ring-color-TWO
+  (domain-fact (name wp-ring2-color) (param-values ?wp ?color))
+  =>
+  (assert (domain-fact (name wp-ring-color) (param-values ?wp ?color TWO)))
+)
+
+(defrule domain-goal-fix-assert-wp-ring-color-THREE
+  (domain-fact (name wp-ring3-color) (param-values ?wp ?color))
+  =>
+  (assert (domain-fact (name wp-ring-color) (param-values ?wp ?color THREE)))
+)
+
+(defrule domain-goal-fix-retract-wp-ring-color-ONE
+  ?df <- (domain-fact (name wp-ring-color) (param-values ?wp ?color ONE))
+  (domain-fact (name wp-ring1-color) (param-values ?wp ?curr-color&:(neq ?color ?curr-color)))
+  =>
+  (retract ?df)
+)
+
+(defrule domain-goal-fix-retract-wp-ring-color-TWO
+  ?df <- (domain-fact (name wp-ring-color) (param-values ?wp ?color TWO))
+  (domain-fact (name wp-ring2-color) (param-values ?wp ?curr-color&:(neq ?color ?curr-color)))
+  =>
+  (retract ?df)
+)
+
+(defrule domain-goal-fix-retract-wp-ring-color-THREE
+  ?df <- (domain-fact (name wp-ring-color) (param-values ?wp ?color THREE))
+  (domain-fact (name wp-ring3-color) (param-values ?wp ?curr-color&:(neq ?color ?curr-color)))
+  =>
+  (retract ?df)
+)
+
+(defrule domain-goal-fix-assert-order-ring-color-ONE
+  (domain-fact (name order-ring1-color) (param-values ?ord ?color))
+  =>
+  (assert (domain-fact (name order-ring-color) (param-values ?ord ?color ONE)))
+)
+
+(defrule domain-goal-fix-assert-order-ring-color-TWO
+  (domain-fact (name order-ring2-color) (param-values ?ord ?color))
+  =>
+  (assert (domain-fact (name order-ring-color) (param-values ?ord ?color TWO)))
+)
+
+(defrule domain-goal-fix-assert-order-ring-color-THREE
+  (domain-fact (name order-ring3-color) (param-values ?ord ?color))
+  =>
+  (assert (domain-fact (name order-ring-color) (param-values ?ord ?color THREE)))
+)
+;------------
 
 (defrule domain-goal-fix-assert-wp-and-order-matching
   "Asserts a domain predicate once a workpiece matches its order"
@@ -384,12 +579,14 @@
   (domain-fact (name wp-base-color) (param-values ?wp ?base))
   (domain-fact (name wp-cap-color) (param-values ?wp ?cap))
   (wm-fact (key order meta wp-for-order args? wp ?wp ord ?ord))
+  (IAMNOTEXECUTABLE)
   =>
   (assert (domain-fact (name order-matches-wp) (param-values ?wp ?ord)))
 )
 
 (defrule domain-goal-fix-assert-instruct-rs-mount-ring-running
   (goal (class INSTRUCT-RS-MOUNT-RING) (mode EXPANDED|SELECTED|DISPATCHED|COMMITTED))
+  (IAMNOTEXECUTABLE)
   =>
   (assert (domain-fact (name instruct-rs-mount-ring-running) (param-values)))
 )
@@ -398,6 +595,7 @@
 (defrule domain-goal-fix-retract-instruct-rs-mount-ring-running
   (not (goal (class INSTRUCT-RS-MOUNT-RING) (mode EXPANDED|SELECTED|DISPATCHED|COMMITTED)))
   ?df <- (domain-fact (name instruct-rs-mount-ring-running) (param-values))
+  (IAMNOTEXECUTABLE)
   =>
   (retract ?df)
 )
@@ -424,6 +622,7 @@
                        (sym-to-int ?rs-before)) 3))
      )
   )
+  (IAMNOTEXECUTABLE)
   =>
   (assert (domain-fact (name rs-payment-fillable) (param-values ?target-mps)))
 )
@@ -431,6 +630,136 @@
 (defrule domain-goal-fix-retract-payment-fillable
   (domain-fact (name rs-filled-with) (param-values ?target-mps THREE))
   ?df <- (domain-fact (name rs-payment-fillable) (param-values ?target-mps))
+  (IAMNOTEXECUTABLE)
+  =>
+  (retract ?df)
+)
+
+(defrule domain-goal-fix-wp-get-plan-action-active
+  (plan-action (action-name wp-get-shelf) (param-values ?robot ?cc ?mps ?shelf-spot))
+  (IAMNOTEXECUTABLE)
+  =>
+  (assert (domain-fact (name wp-get-shelf-active-for) (param-values ?cc)))
+)
+
+(defrule domain-goal-fix-retract-wp-get-plan-action-active
+  ?df <- (domain-fact (name wp-get-shelf-active-for) (param-values ?wp))
+  (not (plan-action (action-name wp-get-shelf) (param-values $? ?wp $?)))
+  (IAMNOTEXECUTABLE)
+  =>
+  (retract ?df)
+)
+
+(defrule domain-goal-fix-PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF-goal-active
+  (goal (class  PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
+       (params robot ?robot cs ?wp-loc wp ?wp $?))
+       (IAMNOTEXECUTABLE)
+  =>
+  (assert (domain-fact (name pay-for-rings-with-carrier-from-shelf-active) (param-values ?robot ?wp-loc ?wp)))
+)
+
+(defrule domain-goal-fix-retract-PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF-goal-active
+  ?df <- (domain-fact (name pay-for-rings-with-carrier-from-shelf-active) (param-values ?robot ?wp-loc ?wp))
+  (not (goal (class  PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
+       (params robot ?robot cs ?wp-loc wp ?wp $?)))
+       (IAMNOTEXECUTABLE)
+  =>
+  (retract ?df)
+)
+
+(defrule domain-goal-fix-update-wp-for-pay-with-cap-carrier-goal
+  ?g <- (goal (id ?goal-id) (class PAY-FOR-RINGS-WITH-CAP-CARRIER)
+                            (mode FORMULATED)
+                            (params  wp ?preset-wp&:(eq ?preset-wp UNKNOWN)
+                                     wp-loc ?wp-loc
+                                     wp-side ?wp-side
+                                     target-mps ?target-mps
+                                     target-side ?target-side
+                                     robot ?rob)
+                            (is-executable FALSE))
+  ;check wp has no cap and is at the output of the CS
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+  (or (and ; Either the workpiece needs to picked up...
+           (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+           (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side OUTPUT))
+      )
+      ; or the workpiece is already being held
+      (wm-fact (key domain fact holding args? r ?robot wp ?wp&:(eq ?wp ?preset-wp)))
+  )
+  (IAMNOTEXECUTABLE)
+  =>
+  (bind ?wp-side nil)
+  (do-for-fact ((?wp-at wm-fact))
+               (and (wm-key-prefix ?wp-at:key (create$ domain fact wp-at))
+                    (eq (wm-key-arg ?wp-at:key wp) ?wp))
+               (bind ?wp-side (wm-key-arg ?wp-at:key side))
+  )
+  (printout t "Assigned " ?wp " to Goal "  PAY-FOR-RINGS-WITH-CAP-CARRIER crlf)
+  (modify ?g (params wp ?wp
+                     wp-loc ?wp-loc
+                     wp-side ?wp-side
+                     target-mps ?target-mps
+                     target-side ?target-side
+                     robot ?rob)
+              (param-names wp wp-loc wp-side target-mps target-side robot)
+              (param-values ?wp ?wp-loc ?wp-side ?target-mps ?target-side ?rob)
+  )
+)
+
+(defrule ring-num-two-mountable
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?ord))
+  (domain-fact (name wp-ring1-color) (param-values ?wp ?ring1))
+  (domain-fact (name wp-ring2-color) (param-values ?wp RING_NONE))
+  (domain-fact (name order-ring1-color) (param-values ?ord ?ring1))
+  (domain-fact (name order-ring2-color) (param-values ?ord ?ring2))
+  (IAMNOTEXECUTABLE)
+  =>
+  (assert (domain-fact (name ring-num-two-mountable) (param-values ?wp)))
+)
+
+(defrule retract-ring-num-two-mountable
+  ?df <- (domain-fact (name ring-num-two-mountable) (param-values ?wp))
+  ;(not (and (domain-object (name ?ord) (type order))
+  ;     (not (and
+  ;        (or
+  ;          (not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?ord)))
+  ;          (not (and (domain-object (name ?ring1) (type ring-color))
+  ;            (not (and
+  ;              (or
+  ;                (not (domain-fact (name wp-ring1-color) (param-values ?wp ?ring1)))
+  ;                (not (domain-fact (name wp-ring2-color) (param-values ?wp RING_NONE)))
+  ;                (not (domain-fact (name order-ring1-color) (param-values ?ord ?ring1)))
+  ;
+  ;                (not (and (domain-object (name ?ring2) (type ring-color))
+  ;                  (not (and
+  ;                    (not (domain-fact (name order-ring2-color) (param-values ?ord ?ring2)))
+  ;                  ))
+  ;                ))
+  ;
+  ;              )
+  ;            ))
+  ;          ))
+  ;        )
+  ;     ))
+  ;))
+
+  ;(forall (domain-object (name ?ord) (type order))
+    ;(or
+      ;(not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?ord)))
+      ;(forall (domain-object (name ?ring1) (type ring-color))
+      ;  (or
+      ;    (not (domain-fact (name wp-ring1-color) (param-values ?wp ?ring1)))
+      ;    (not (domain-fact (name wp-ring2-color) (param-values ?wp RING_NONE)))
+          ; (not (domain-fact (name order-ring1-color) (param-values ?ord ?ring1)))
+          ;(forall (domain-object (name ?ring2) (type ring-color))
+          ;  (not (domain-fact (name order-ring2-color) (param-values ?ord ?ring2)))
+          ;   (not (domain-fact (name wp-ring1-color) (param-values ?wp ?ring1)))
+          ;)
+      ;  )
+      ;)
+    ;)
+  ;)
+  (IAMNOTEXECUTABLE)
   =>
   (retract ?df)
 )
@@ -459,9 +788,12 @@
         (domain-fact (name wp-ring3-color) (param-values ?wp ?wp-ring3-color&:(eq ?wp-ring3-color RING_NONE)))
     )
   )
+  (IAMNOTEXECUTABLE)
   =>
   (assert (domain-fact (name next-ring-mountable) (param-values ?mps ?order ?wp ?ring-color)))
 )
+
+
 
 ;Formalismus ausdenken
 ;(defrule domain-goal-fix-retract-next-ring-mountable
