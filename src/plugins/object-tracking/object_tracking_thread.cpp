@@ -331,7 +331,6 @@ ObjectTrackingThread::loop()
 	fawkes::Time                      before_detect(clock);
 	detect_objects(image, out_boxes);
 	fawkes::Time after_detect(clock);
-	//logger->log_info("boxes found: ", std::to_string(out_boxes.size()).c_str());
 
 	//save results
 	//std::string new_img_name = image_path_.insert(image_path_.find("."), "_results");
@@ -339,15 +338,9 @@ ObjectTrackingThread::loop()
 
 	//update results for saved images in webview
 	if (use_saved_) {
-		//logger->log_info("bounding boxes: ", std::to_string(out_boxes.size()).c_str());
 		for (size_t i = 0; i < out_boxes.size(); ++i) {
-			//logger->log_info("box: ", std::to_string(i).c_str());
 			float pos[3];
-			//compute_3d_point(out_boxes[i], pos);
 			compute_3d_point_direct_yolo(out_boxes[i], 0.0, pos);
-			//logger->log_info("x (right): ", std::to_string(pos[0]).c_str());
-			//logger->log_info("y (up)   : ", std::to_string(pos[1]).c_str());
-			//logger->log_info("z (depth): ", std::to_string(pos[2]).c_str());
 
 			//draw bounding box on the image
 			cv::Rect rect_bb;
@@ -394,16 +387,10 @@ ObjectTrackingThread::loop()
 		return;
 	}
 
-	//project bounding boxes into 3d points and take closest to expectation
-	//current_expected_mps_  = static_cast<ObjectTrackingInterface::EXPECTED_MPS>(8); //testing
-	//current_expected_side_ = static_cast<ObjectTrackingInterface::EXPECTED_SIDE>(1); //testing
-	//fawkes::tf::Stamped<fawkes::tf::Point> exp_pos;
-	//compute_expected_position(exp_pos);
-
-	logger->log_info("expected pos", "frame: map");
-	logger->log_info("exp_pos_[0]: ", std::to_string(exp_pos_.getX()).c_str());
-	logger->log_info("exp_pos_[1]: ", std::to_string(exp_pos_.getY()).c_str());
-	logger->log_info("exp_pos_[2]: ", std::to_string(exp_pos_.getZ()).c_str());
+	// logger->log_info("expected pos", "frame: map");
+	// logger->log_info("exp_pos_[0]: ", std::to_string(exp_pos_.getX()).c_str());
+	// logger->log_info("exp_pos_[1]: ", std::to_string(exp_pos_.getY()).c_str());
+	// logger->log_info("exp_pos_[2]: ", std::to_string(exp_pos_.getZ()).c_str());
 
 	//get yaw difference between robot and mps
 	//TODO: get mps angle through laser-lines?
@@ -442,10 +429,10 @@ ObjectTrackingThread::loop()
 		sz << std::fixed << std::setprecision(3) << cur_object_pos[2];
 		pos_str = sx.str() + " " + sy.str() + " " + sz.str();
 
-		logger->log_info("cur obj", "frame: cam_gripper");
-		logger->log_info("cur_object_pos[0]: ", std::to_string(cur_object_pos[0]).c_str());
-		logger->log_info("cur_object_pos[1]: ", std::to_string(cur_object_pos[1]).c_str());
-		logger->log_info("cur_object_pos[2]: ", std::to_string(cur_object_pos[2]).c_str());
+		// logger->log_info("cur obj", "frame: cam_gripper");
+		// logger->log_info("cur_object_pos[0]: ", std::to_string(cur_object_pos[0]).c_str());
+		// logger->log_info("cur_object_pos[1]: ", std::to_string(cur_object_pos[1]).c_str());
+		// logger->log_info("cur_object_pos[2]: ", std::to_string(cur_object_pos[2]).c_str());
 
 		//transform current response into target frame
 		fawkes::tf::Stamped<fawkes::tf::Point> cur_object_pos_cam;
@@ -488,26 +475,16 @@ ObjectTrackingThread::loop()
 	//compute weighted average
 	//-------------------------------------------------------------------------
 
-	logger->log_info("cur pos", "frame: odom");
-	logger->log_info("cur_object_pos_target[0]: ",
-	                 std::to_string(cur_object_pos_target.getX()).c_str());
-	logger->log_info("cur_object_pos_target[1]: ",
-	                 std::to_string(cur_object_pos_target.getY()).c_str());
-	logger->log_info("cur_object_pos_target[2]: ",
-	                 std::to_string(cur_object_pos_target.getZ()).c_str());
+	// logger->log_info("cur pos", "frame: odom");
+	// logger->log_info("cur_object_pos_target[0]: ",
+	//                  std::to_string(cur_object_pos_target.getX()).c_str());
+	// logger->log_info("cur_object_pos_target[1]: ",
+	//                  std::to_string(cur_object_pos_target.getY()).c_str());
+	// logger->log_info("cur_object_pos_target[2]: ",
+	//                  std::to_string(cur_object_pos_target.getZ()).c_str());
 
 	//use weighted average to improve robustness of object position
 	double weighted_object_pos[3];
-
-	// if (past_responses_.empty()) {
-	// 	//transform from cam_gripper to odom (depends on target_frame in object_tracking.yaml)
-	// 	fawkes::tf::Stamped<fawkes::tf::Point> exp_pos_target;
-	// 	tf_listener->transform_point(target_frame_, exp_pos_, exp_pos_target);
-	// 	//initialize past responses for weighted average using expected positions
-	// 	for (size_t i = 0; i < filter_size_; i++) {
-	// 		past_responses_.push_front(exp_pos_target);
-	// 	}
-	// }
 
 	weighted_object_pos[0] = filter_weights_[0] * cur_object_pos_target.getX();
 	weighted_object_pos[1] = filter_weights_[0] * cur_object_pos_target.getY();
@@ -523,10 +500,10 @@ ObjectTrackingThread::loop()
 	past_responses_.push_front(cur_object_pos_target);
 	past_responses_.pop_back();
 
-	logger->log_info("weighted pos", "frame: odom");
-	logger->log_info("weighted_object_pos[0]: ", std::to_string(weighted_object_pos[0]).c_str());
-	logger->log_info("weighted_object_pos[1]: ", std::to_string(weighted_object_pos[1]).c_str());
-	logger->log_info("weighted_object_pos[2]: ", std::to_string(weighted_object_pos[2]).c_str());
+	// logger->log_info("weighted pos", "frame: odom");
+	// logger->log_info("weighted_object_pos[0]: ", std::to_string(weighted_object_pos[0]).c_str());
+	// logger->log_info("weighted_object_pos[1]: ", std::to_string(weighted_object_pos[1]).c_str());
+	// logger->log_info("weighted_object_pos[2]: ", std::to_string(weighted_object_pos[2]).c_str());
 
 	//transform weighted average into base_link
 	fawkes::tf::Stamped<fawkes::tf::Point> weighted_object_pos_base;
@@ -540,24 +517,24 @@ ObjectTrackingThread::loop()
 
 	//compute target frames
 	//-------------------------------------------------------------------------
-	logger->log_info("weighted pos", "frame: base_link");
-	logger->log_info("weighted_object_pos_base[0]: ",
-	                 std::to_string(weighted_object_pos_base.getX()).c_str());
-	logger->log_info("weighted_object_pos_base[1]: ",
-	                 std::to_string(weighted_object_pos_base.getY()).c_str());
-	logger->log_info("weighted_object_pos_base[2]: ",
-	                 std::to_string(weighted_object_pos_base.getZ()).c_str());
+	// logger->log_info("weighted pos", "frame: base_link");
+	// logger->log_info("weighted_object_pos_base[0]: ",
+	//                  std::to_string(weighted_object_pos_base.getX()).c_str());
+	// logger->log_info("weighted_object_pos_base[1]: ",
+	//                  std::to_string(weighted_object_pos_base.getY()).c_str());
+	// logger->log_info("weighted_object_pos_base[2]: ",
+	//                  std::to_string(weighted_object_pos_base.getZ()).c_str());
 
 	double gripper_target[3];
 	double base_target[3];
 	compute_target_frames(weighted_object_pos_base, mps_angle, gripper_target, base_target);
-	logger->log_info("target frames", "frame: base_link");
-	logger->log_info("gripper_target[0]: ", std::to_string(gripper_target[0]).c_str());
-	logger->log_info("gripper_target[1]: ", std::to_string(gripper_target[1]).c_str());
-	logger->log_info("gripper_target[2]: ", std::to_string(gripper_target[2]).c_str());
-	logger->log_info("base_target[0]: ", std::to_string(base_target[0]).c_str());
-	logger->log_info("base_target[1]: ", std::to_string(base_target[1]).c_str());
-	logger->log_info("base_target[2]: ", std::to_string(base_target[2]).c_str());
+	// logger->log_info("target frames", "frame: base_link");
+	// logger->log_info("gripper_target[0]: ", std::to_string(gripper_target[0]).c_str());
+	// logger->log_info("gripper_target[1]: ", std::to_string(gripper_target[1]).c_str());
+	// logger->log_info("gripper_target[2]: ", std::to_string(gripper_target[2]).c_str());
+	// logger->log_info("base_target[0]: ", std::to_string(base_target[0]).c_str());
+	// logger->log_info("base_target[1]: ", std::to_string(base_target[1]).c_str());
+	// logger->log_info("base_target[2]: ", std::to_string(base_target[2]).c_str());
 
 	//update interface
 	object_tracking_if_->set_gripper_frame(0, gripper_target[0]);
@@ -705,8 +682,6 @@ ObjectTrackingThread::detect_objects(Mat image, std::vector<std::array<float, 4>
 	net_.forward(results, outName_);
 	//results: L x N x (5 + #classes): 3 x 5808(in last layer) x [center_x, center_y, width, height, background_class, WORKPIECE, CONVEYOR, SLIDE]
 
-	logger->log_info(name(), "detected something");
-
 	//check each yolo-layer output
 	for (size_t l = 0; l < outName_.size(); l++) {
 		//pointer to access results' data
@@ -716,15 +691,7 @@ ObjectTrackingThread::detect_objects(Mat image, std::vector<std::array<float, 4>
 		for (int j = 0; j < results[l].rows; ++j, data += results[l].cols) {
 			//take confidence for target class - filter other classes
 			float confidence = data[4 + (int)current_object_type_];
-			//logger->log_info("confidence: ", std::to_string(confidence).c_str());
 			if (confidence > confThreshold_) {
-				//logger->log_info(name(), "found something");
-				// logger->log_info("confidence: ", std::to_string(confidence).c_str());
-				// logger->log_info("pos[0]: ", std::to_string(data[0]).c_str());
-				// logger->log_info("pos[1]: ", std::to_string(data[1]).c_str());
-				// logger->log_info("pos[2]: ", std::to_string(data[2]).c_str());
-				// logger->log_info("pos[2]: ", std::to_string(data[3]).c_str());
-
 				std::array<float, 4> yolo_bb = {data[0], data[1], data[2], data[3]};
 				yolo_bbs.push_back(yolo_bb);
 
