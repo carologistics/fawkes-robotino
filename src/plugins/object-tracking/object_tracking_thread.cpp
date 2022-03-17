@@ -231,6 +231,7 @@ ObjectTrackingThread::loop()
 			tf_listener->transform_point(target_frame_, exp_pos_, exp_pos_target);
 
 			//initialize past responses for weighted average using expected positions
+			past_responses_.clear();
 			for (size_t i = 0; i < filter_size_; i++) {
 				past_responses_.push_front(exp_pos_target);
 			}

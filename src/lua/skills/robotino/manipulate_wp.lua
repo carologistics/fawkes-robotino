@@ -43,7 +43,8 @@ Parameters:
 local EXPECTED_BASE_OFFSET       = 0.4 -- distance between robotino middle point and workpiece
                                        -- used as initial target position while searching
 local GRIPPER_X_SAFETY_DISTANCE  = 0.0015 -- used to create more distance between gripper and workpiece
-local GRIPPER_TOLERANCE          = {x=0.005, y=0.003, z=0.01} -- accuracy
+local GRIPPER_TOLERANCE          = {x=0.005, y=0.003, z=0.008} -- accuracy
+local GRIPPER_MIN_STEP           = {x=0.02, y=0.012, z=0.017} -- min distance to move gripper
 local CLOSE_TARGET_ORI_TOLERANCE = 0.5 -- threshold to declare a target close
 local CLOSE_TARGET_X_TOLERANCE   = {min=-0.35, max=0.2}
 local CLOSE_TARGET_Y_TOLERANCE   = {min=-0.45, max=0.45}
@@ -163,32 +164,67 @@ function set_gripper(x, y, z)
     return
   end
   if z_clipped ~= z then
-    fsm.vars.out_of_reach = true
     print("Gripper cannot reache z-value: " .. z .. " ! Clipped to " .. z_clipped)
   end
 
-  if math.abs(fsm.vars.gripper_target_pos_x - x_clipped) > GRIPPER_TOLERANCE.x or
-     math.abs(fsm.vars.gripper_target_pos_y - y_clipped) > GRIPPER_TOLERANCE.y or
-     math.abs(fsm.vars.gripper_target_pos_z - z_clipped) > GRIPPER_TOLERANCE.z then
-    fsm.vars.gripper_target_pos_x = x_clipped
-    fsm.vars.gripper_target_pos_y = y_clipped
-    fsm.vars.gripper_target_pos_z = z_clipped
-  end
+  --if math.abs(fsm.vars.gripper_target_pos_x - x_clipped) > GRIPPER_TOLERANCE.x or
+  --   math.abs(fsm.vars.gripper_target_pos_y - y_clipped) > GRIPPER_TOLERANCE.y or
+  --   math.abs(fsm.vars.gripper_target_pos_z - z_clipped) > GRIPPER_TOLERANCE.z then
+  --  fsm.vars.gripper_target_pos_x = x_clipped
+  --  fsm.vars.gripper_target_pos_y = y_clipped
+  --  fsm.vars.gripper_target_pos_z = z_clipped
+  --end
 
   if not arduino:is_final() then
     return
   end
 
-  local next_step_x = arduino:x_position() + (fsm.vars.gripper_target_pos_x - arduino:x_position()) / 2
-  local next_step_y = arduino:y_position() + (fsm.vars.gripper_target_pos_y - arduino:y_position()) / 2
-  local next_step_z = arduino:z_position() + (fsm.vars.gripper_target_pos_z - arduino:z_position()) / 2
-
+  local use_gripper = false
   move_abs_message = arduino.MoveXYZAbsMessage:new()
-  move_abs_message:set_x(next_step_x)
-  move_abs_message:set_y(next_step_y)
-  move_abs_message:set_z(next_step_z)
-  move_abs_message:set_target_frame("gripper_home")
-  arduino:msgq_enqueue_copy(move_abs_message)
+
+  if math.abs(x_clipped - arduino:x_position()) < GRIPPER_TOLERANCE.x then
+    break
+  else if math.abs(x_clipped - arduino:x_position()) < GRIPPER_MIN_STEP.x then
+    use_gripper = true
+    print_error("last step x:" .. x_clipped)
+    move_abs_message:set_x(x_clipped)
+  else
+    local next_step_x = arduino:x_position() + (x_clipped - arduino:x_position()) / 2
+    use_gripper = true
+    print_error("next step x:" .. next_step_x)
+    move_abs_message:set_x(next_step_x)
+  end
+
+  if math.abs(y_clipped - arduino:y_position()) < GRIPPER_TOLERANCE.y then
+    break
+  else if math.abs(y_clipped - arduino:y_position()) < GRIPPER_MIN_STEP.y then
+    use_gripper = true
+    print_error("last step y:" .. y_clipped)
+    move_abs_message:set_y(y_clipped)
+  else
+    local next_step_y = arduino:y_position() + (y_clipped - arduino:y_position()) / 2
+    use_gripper = true
+    print_error("next step y:" .. next_step_y)
+    move_abs_message:set_y(next_step_y)
+  end
+
+  if math.abs(z_clipped - arduino:z_position()) < GRIPPER_TOLERANCE.z then
+    break
+  else if math.abs(z_clipped - arduino:z_position()) < GRIPPER_MIN_STEP.z then
+    use_gripper = true
+    print_error("last step z:" .. z_clipped)
+    move_abs_message:set_z(z_clipped)
+  else
+    local next_step_z = arduino:z_position() + (z_clipped - arduino:z_position()) / 2
+    use_gripper = true
+    print_error("next step z:" .. next_step_z)
+    move_abs_message:set_z(next_step_z)
+  end
+
+  if use_gripper then
+    move_abs_message:set_target_frame("gripper_home")
+    arduino:msgq_enqueue_copy(move_abs_message)
+  end
 end
 
 function move_gripper_default_pose()
@@ -327,8 +363,8 @@ fsm:define_states{ export_to=_M, closure={MISSING_MAX=MISSING_MAX},
    {"INIT",                  JumpState},
    {"START_TRACKING",        JumpState},
    {"TRACKING_ACTIVE",       JumpState},
-   {"SEARCH",                SkillJumpState, skills={{goto}},            final_to="WAIT", fail_to="FAILED"},
-   {"CLOSE_TARGET",          SkillJumpState, skills={{motor_move}},      final_to="WAIT", fail_to="SEARCH"},
+   {"SEARCH",                SkillJumpState, skills={{goto}},            final_to="MOVE_BASE_AND_GRIPPER", fail_to="FAILED"},
+   {"CLOSE_TARGET",          SkillJumpState, skills={{motor_move}},      final_to="MOVE_BASE_AND_GRIPPER", fail_to="SEARCH"},
    {"MOVE_BASE_AND_GRIPPER", SkillJumpState, skills={{motor_move}},      final_to="FINE_TUNE_GRIPPER",     fail_to="SEARCH"},
    {"FINE_TUNE_GRIPPER",     JumpState},
    {"GRIPPER_ROUTINE",       SkillJumpState, skills={{gripper_routine}}, final_to="FINAL", fail_to="FINE_TUNE_GRIPPER"},
@@ -342,7 +378,7 @@ fsm:add_transitions{
    {"START_TRACKING", "TRACKING_ACTIVE",          cond=object_tracker_active},
    {"TRACKING_ACTIVE", "CLOSE_TARGET",            cond=target_close, desc="Target is close"},
    {"TRACKING_ACTIVE", "SEARCH",                  cond=true},
-   {"FINE_TUNE_GRIPPER", "GRIPPER_ROUTINE",       cond=gripper_aligned, desc="Gripper aligned"},
+   {"FINE_TUNE_GRIPPER", "WAIT",       cond=gripper_aligned, desc="Gripper aligned"},
    {"FINE_TUNE_GRIPPER", "MOVE_BASE_AND_GRIPPER", cond="vars.out_of_reach", desc="Gripper out of reach"},
    {"FINE_TUNE_GRIPPER", "SEARCH",                cond="vars.missing_detections > MISSING_MAX", desc="Tracking lost target"},
    {"WAIT", "FAILED",                             timeout=6000, desc="Waited"},
@@ -406,7 +442,7 @@ function START_TRACKING:init()
     if for_gazebo then
       fsm.vars.expected_pos_ori = fsm.vars.mps_ori + 1.57
     else
-      fsm.vars.expected_pos_ori = fsm.vars.mps_ori + math.pi
+      fsm.vars.expected_pos_ori = fsm.vars.mps_ori
     end
   else
     if for_gazebo then
@@ -441,7 +477,7 @@ function MOVE_BASE_AND_GRIPPER:init()
                              frame = "base_link",
                              visual_servoing = true}
   -- meanwhile open gripper
-  if fsm.vars.target == "WORKPIECE" then
+  if fsm.vars.target == "WORKPIECE" and not arduino:is_gripper_closed() then
     local open_msg = arduino.OpenGripperMessage:new()
     arduino:msgq_enqueue(open_msg)
   end
