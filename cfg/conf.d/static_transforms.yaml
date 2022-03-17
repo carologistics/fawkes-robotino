@@ -117,7 +117,7 @@ plugins/static-transforms:
     cam_base:
       frame: !frame gripper_y_dyn
       child_frame: !frame cam_base
-      trans_x: 0.065
+      trans_x: 0.067
       trans_y: 0.021
       trans_z: 0.0009
       rot_yaw: 1.57
