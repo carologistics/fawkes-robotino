@@ -28,7 +28,7 @@
   (not (domain-loaded))
 =>
   (parse-pddl-domain (path-resolve "rcll-central/domain.pddl"))
-  (parse-pddl-goal-domain (path-resolve "rcll-central/goal-domain.pddl"))
+  (parse-pddl-goal-domain (path-resolve "rcll-central/goal_domain_with_sides.pddl"))
   (assert (domain-loaded))
 )
 

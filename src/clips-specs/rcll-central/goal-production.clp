@@ -1055,6 +1055,26 @@ The workpiece remains in the output of the used ring station after
 	(return ?goal)
 )
 
+(deffunction goal-production-assert-buffer-cap-planning
+	(?order-id $?param-values)
+
+	(bind ?goal (assert (goal (class BUFFER-CAP)
+	      (id (sym-cat BUFFER-CAP- (gensym*))) (sub-type SIMPLE)
+	      (verbosity NOISY) (is-executable FALSE)
+	      (params target-mps (nth$ 1 ?param-values)
+								wp (nth$ 2 ?param-values)
+								robot UNKNOWN_ROBOT;(nth$ 3 ?param-values)
+								wp-loc (nth$ 4 ?param-values)
+								ss (nth$ 5 ?param-values))
+				(param-names target-mps wp robot wp-loc ss);
+				(param-values (nth$ 1 ?param-values) (nth$ 2 ?param-values) UNKNOWN_ROBOT (nth$ 4 ?param-values) (nth$ 5 ?param-values));
+				(goal-action goal-buffer-cap)
+	)))
+	(goal-meta-assert ?goal nil ?order-id nil)
+	(return ?goal)
+)
+
+
 (deffunction goal-production-assert-pick-and-place
 	(?mps ?robot)
 	(bind ?goal (assert (goal (class PICK-AND-PLACE)
@@ -1495,6 +1515,8 @@ The workpiece remains in the output of the used ring station after
 	?df <- (wait-for-fact-sync-before-planning ?root-id ?order-id ?wp-for-order ?cs ?rs1 ?rs2 ?col-cap ?col-base ?col-ring1 ?col-ring2 ?rob)
 	=>
 	(pddl-goal-call ?root-id (str-cat "(deliverd " ?order-id ")") ?order-id)
+	;(bind ?plan-goal (goal-production-assert-buffer-cap-planning ?order-id))
+	;(bind ?plan-goal (goal-production-assert-buffer-cap ?cs ?col-cap ?order-id))
 	(retract ?df)
 )
 
@@ -1530,11 +1552,14 @@ The workpiece remains in the output of the used ring station after
         )
       )
 			(if (eq ?action-name goal-buffer-cap) then
-				goal-production-assert-buffer-cap
-				(?mps ?cap-color ?order-id)
+			 (bind ?plan-goal (goal-production-assert-buffer-cap-planning ?order-id $?param-values))
+			 ;(printout t "plan-goal: " ?plan-goal crlf)
+			 (printout t "prod-root: " ?prod-root crlf)
+			 (goal-tree-update-child ?plan-goal (fact-slot-value ?prod-root id) ?action-index)
+
 			)
-      (printout t "plan id" ?plan-id crlf)
-      (printout t "plan-action id" ?action-index crlf)
+			(printout t "plan id" ?plan-id crlf)
+			(printout t "plan-action id" ?action-index crlf)
       (printout t "goal-id" ?goal-id crlf)
       (printout t "action name" ?action-name crlf)
       (printout t "param-values" ?param-values crlf)

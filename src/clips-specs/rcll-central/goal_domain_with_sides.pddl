@@ -527,6 +527,24 @@
   ;    )
   ;)
 
+  (:action goal-get-base-to-fill-rs-wp-on-shelf
+  :parameters (?wp - workpiece ?wp-loc - mps ?spot - shelf-spot ?target-mps - mps ?robot - robot ?bases-filled - ring-num ?bases-inc - ring-num)
+  :precondition (and
+                    (mps-type ?target-mps RS)
+
+                    (wp-reachable ?wp ?robot)
+                    (wp-on-shelf ?wp ?wp-loc ?spot)
+                    (rs-filled-with ?target-mps ?bases-filled)
+                    (rs-inc ?bases-filled ?bases-inc)
+                    ;(wp-cap-color ?wp CAP_NONE)
+                )
+  :effect (and
+        (not (wp-on-shelf ?wp ?wp-loc ?spot))
+        (not (wp-reachable ?wp ?robot))
+        (not (rs-filled-with ?target-mps ?bases-filled))
+        (rs-filled-with ?target-mps ?bases-inc)
+    )
+)
 
   (:action goal-get-base-to-fill-rs-wp-at-mps
     :parameters (?wp - workpiece ?wp-loc - mps ?wp-side - mps-side ?target-mps - mps ?robot - robot ?bases-filled - ring-num ?bases-inc - ring-num)
@@ -548,24 +566,7 @@
       )
   )
 
-  (:action goal-get-base-to-fill-rs-wp-on-shelf
-  :parameters (?wp - workpiece ?wp-loc - mps ?spot - shelf-spot ?target-mps - mps ?robot - robot ?bases-filled - ring-num ?bases-inc - ring-num)
-  :precondition (and
-                    (mps-type ?target-mps RS)
 
-                    (wp-reachable ?wp ?robot)
-                    (wp-on-shelf ?wp ?wp-loc ?spot)
-                    (rs-filled-with ?target-mps ?bases-filled)
-                    (rs-inc ?bases-filled ?bases-inc)
-                    ;(wp-cap-color ?wp CAP_NONE)
-                )
-  :effect (and
-        (not (wp-on-shelf ?wp ?wp-loc ?spot))
-        (not (wp-reachable ?wp ?robot))
-        (not (rs-filled-with ?target-mps ?bases-filled))
-        (rs-filled-with ?target-mps ?bases-inc)
-    )
-)
 
   (:action goal-discard-from-mps
     :parameters (?wp - workpiece ?mps - mps ?robot - robot ?wp-side - mps-side)
