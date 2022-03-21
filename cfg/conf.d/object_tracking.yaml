@@ -10,27 +10,29 @@ plugins/object_tracking:
 
   puck_values:
     puck_size: 0.02
-    puck_height: 0.0225
+    puck_height: 0.025
 
   belt_values:
-    belt_height: 0.92
+    belt_height: 0.895
     belt_lenght: 0.35
     belt_offset_side: 0.025
+    # height/size of the belt itself
+    belt_size: 0.045
 
   slide_values:
-    slide_offset_side: -0.225
-    slide_height: 0.92
+    slide_offset_side: -0.25
+    slide_height: 0.91
 
   shelf_values:
     left_shelf_offset_side: -0.075
     middle_shelf_offset_side: -0.175
     right_shelf_offset_side: -0.275
-    shelf_height: 0.925
+    shelf_height: 0.89
 
   target_frame_offsets:
-    gripper_offset_pick: 0.03
-    gripper_offset_put: 0.005
-    base_offset: 0.265
+    gripper_offset_pick: 0.035
+    gripper_offset_put: 0.015
+    base_offset: 0.27
 
   camera_intrinsics:
     # image size
@@ -63,7 +65,7 @@ plugins/object_tracking:
 
   # maximal distance between yolo response and last weighted average to accept
   #  as target object
-  max_acceptable_dist: 0.5
+  max_acceptable_dist: 0.15
 
   yolo:
     weights_path: "../cfg/yolo/yolov4-tiny.weights"

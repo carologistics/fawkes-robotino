@@ -14,7 +14,7 @@ skills:
   # waiting position
   goto:
     distance_to_travel: 0.5
-    end_early_distance: 0.3
+    end_early_distance: 0.15
     end_early_ori_difference: 0.1
   shelf_pick:
     left_slot_y_offset: 0.0

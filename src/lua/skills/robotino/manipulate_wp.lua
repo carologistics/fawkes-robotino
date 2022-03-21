@@ -40,7 +40,7 @@ Parameters:
       @param side    the side of the mps: (INPUT | OUTPUT | SHELF-LEFT | SHELF-MIDDLE | SHELF-RIGHT | SLIDE)
 ]==]
 
-local EXPECTED_BASE_OFFSET       = 0.4 -- distance between robotino middle point and workpiece
+local EXPECTED_BASE_OFFSET       = 0.5 -- distance between robotino middle point and workpiece
                                        -- used as initial target position while searching
 local GRIPPER_X_SAFETY_DISTANCE  = 0.03 -- used to create more distance between gripper and workpiece
 local GRIPPER_TOLERANCE          = {x=0.005, y=0.003, z=0.008} -- accuracy
@@ -135,11 +135,10 @@ function gripper_aligned()
      ori=fawkes.tf.create_quaternion_from_yaw(0)},
     "base_link", "end_effector_home")
 
-  if arduino:is_final() and
+  if arduino:is_final() and fsm.vars.gripper_wait > 68 and
      ((fsm.vars.target == "WORKPIECE" and not arduino:is_gripper_closed()) or
      (fsm.vars.target ~= "WORKPIECE" and arduino:is_gripper_closed())) then
-    return math.abs(gripper_target.x -
-      GRIPPER_X_SAFETY_DISTANCE - arduino:x_position()) < GRIPPER_TOLERANCE.x
+    return math.abs(gripper_target.x - arduino:x_position()) < GRIPPER_TOLERANCE.x
       and math.abs(gripper_target.y - (arduino:y_position() - y_max/2)) < GRIPPER_TOLERANCE.y
       and math.abs(gripper_target.z - arduino:z_position()) < GRIPPER_TOLERANCE.z
   else
@@ -235,9 +234,9 @@ function get_pos_for_side(side)
               y = fsm.vars.mps_y + belt_offset_side * math.sin(fsm.vars.mps_ori) -
                   (belt_lenght/2 - puck_size + EXPECTED_BASE_OFFSET) * math.cos(fsm.vars.mps_ori)}
     else
-      return {x = fsm.vars.mps_x - belt_offset_side * math.sin(fsm.vars.mps_ori) -
+      return {x = fsm.vars.mps_x + belt_offset_side * math.sin(fsm.vars.mps_ori) +
                   (belt_lenght/2 - puck_size + EXPECTED_BASE_OFFSET) * math.cos(fsm.vars.mps_ori),
-              y = fsm.vars.mps_y - belt_offset_side * math.cos(fsm.vars.mps_ori) +
+              y = fsm.vars.mps_y + belt_offset_side * math.cos(fsm.vars.mps_ori) -
                   (belt_lenght/2 - puck_size + EXPECTED_BASE_OFFSET) * math.sin(fsm.vars.mps_ori)}
     end
   elseif side == "SLIDE" then
@@ -416,7 +415,7 @@ function START_TRACKING:init()
     if for_gazebo then
       fsm.vars.expected_pos_ori = fsm.vars.mps_ori + 1.57 + math.pi
     else
-      fsm.vars.expected_pos_ori = fsm.vars.mps_ori
+      fsm.vars.expected_pos_ori = fsm.vars.mps_ori + math.pi
     end
   end
 end
@@ -500,7 +499,7 @@ function FINE_TUNE_GRIPPER:loop()
      ori=fawkes.tf.create_quaternion_from_yaw(0)},
     "base_link", "end_effector_home")
 
-  set_gripper(gripper_target.x - GRIPPER_X_SAFETY_DISTANCE,
+  set_gripper(gripper_target.x,
               gripper_target.y,
               gripper_target.z)
 end
