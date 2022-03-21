@@ -428,6 +428,13 @@ ArduinoComThread::loop()
 		arduino_if_->write();
 
 		send_one_message();
+	}
+
+	if (tf_thread_->get_moving() && (expected_finish_time_ - fawkes::time() < 0)) {
+		//TODO: check if it works with 0, else use like 10 and 0 for read_packet
+		s = read_packet(100); // read
+		logger->log_debug(name(), "Read status: %s", s.c_str());
+		tf_thread_->set_moving(false);
 
 		movement_pending_ = current_arduino_status_ != 'I';
 
@@ -598,7 +605,7 @@ ArduinoComThread::send_one_message()
 	if (messages_.size() > 0) {
 		ArduinoComMessage *cur_msg = messages_.front();
 		messages_.pop();
-		msecs_to_wait_ = cur_msg->get_msecs();
+		expected_finish_time_ = fawkes::Time() + cur_msg->get_msecs(); //TODO: make it work
 		send_message(*cur_msg);
 
 		delete cur_msg;
@@ -606,9 +613,6 @@ ArduinoComThread::send_one_message()
 		std::string s = read_packet(1000); // read receipt
 		logger->log_debug(name(), "Read receipt: %s", s.c_str());
 		tf_thread_->set_moving(true);
-		s = read_packet(msecs_to_wait_); // read
-		logger->log_debug(name(), "Read status: %s", s.c_str());
-		tf_thread_->set_moving(false);
 
 		return true;
 	} else {
