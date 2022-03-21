@@ -559,14 +559,9 @@
 
 	; But only if we don't need that workpiece, or if we already have something in the input.
 	(or (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
-		(not (and (goal (class MOUNT-RING) (mode FORMULATED)
-		 	   			(params wp ? ring-mps ?ring-mps ring-color ?ring-color ring-nr ?) (is-executable FALSE))
-		     	  (wm-fact (key domain fact rs-ring-spec args? m ?ring-mps r ?ring-color rn ?bases-needed))
-		     	  (wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled))
-			 	  (not (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
-												subtrahend ?bases-needed
-												difference ?bases-remain&ZERO|ONE|TWO|THREE)))
-		))
+		; We might need the workpiece if there is a ring station that still has capacity.
+		; If we do need it, pay-with-cc will pick it up. Otherwise, the other condition will trigger.
+		(not (wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled&ZERO|ONE|TWO)))
 	)
 	=>
 	(bind ?goal (goal-production-assert-discard ?wp))
@@ -575,29 +570,37 @@
 
 (defrule goal-production-create-pay-with-cc
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+
+	; There is a workpiece in the cap station output,
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+	(wm-fact (key domain fact mps-type args? m ?mps t CS))
+	; that workpiece is not needed for an order.
+	(not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?)))
 	
-	; We need more rings.
-	(goal (class MOUNT-RING) (mode FORMULATED) (parent ?parent)
-		  (params wp ? ring-mps ?ring-mps ring-color ?ring-color ring-nr ?) (is-executable FALSE))
-	(wm-fact (key domain fact rs-ring-spec args? m ?ring-mps r ?ring-color rn ?bases-needed))
-	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled))
-	(not (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
-                                         subtrahend ?bases-needed
-                                         difference ?bases-remain&ZERO|ONE|TWO|THREE)))
+	; We have a goal that requires more rings,
+	(or (and (goal (class MOUNT-RING) (mode FORMULATED)
+		  	 	   (params wp ? ring-mps ?ring-mps ring-color ?ring-color ring-nr ?) (is-executable FALSE))
+			 (wm-fact (key domain fact rs-ring-spec args? m ?ring-mps r ?ring-color rn ?bases-needed))
+			 (wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled))
+			 (not (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
+                                        				 subtrahend ?bases-needed
+                                         				 difference ?bases-remain&ZERO|ONE|TWO|THREE)))
+		)
+		; or we have a ring station that isn't full, but which requires rings.
+		(and (wm-fact (key domain fact mps-type args? m ?ring-mps t RS))
+			 (wm-fact (key domain fact rs-ring-spec args? m ?ring-mps r ? rn ?bases-needed&ONE|TWO|THREE))
+			 (wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled&ZERO|ONE|TWO))
+		)
+	)
 
 	; And we don't have another payment goal.
 	(not (goal (class PAY-RING) (params wp ? src-mps ? ring-mps ?ring-mps) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 	(not (goal (class PAY-RING) (params wp ?wp src-mps ? ring-mps ?) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 	(not (goal (class DISCARD)  (params wp ?wp) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
-
-	; And there is a workpiece in the cap station output,
-	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
-	(wm-fact (key domain fact mps-type args? m ?mps t CS))
-	; that workpiece is not needed for an order.
-	(not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?)))
 	=>
 	(bind ?goal (goal-production-assert-pay-ring ?wp ?mps ?ring-mps))
-  	(modify ?goal (parent ?parent))
+  	(modify ?goal (parent ?root-id))
 )
 
 (defrule goal-production-create-payment
