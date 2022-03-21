@@ -161,6 +161,12 @@ ArduinoTFThread::set_moving(bool moving)
 	moving_ = moving;
 }
 
+bool
+ArduinoTFThread::get_moving()
+{
+	return moving_;
+}
+
 void
 ArduinoTFThread::load_config()
 {
