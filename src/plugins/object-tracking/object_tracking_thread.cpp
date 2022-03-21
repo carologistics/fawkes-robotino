@@ -636,10 +636,7 @@ ObjectTrackingThread::compute_expected_position()
 			exp_pos_map[0] -= (puck_size_ / 2) * cos(mps_ori_);
 			exp_pos_map[1] += (puck_size_ / 2) * sin(mps_ori_);
 		}
-	} else if {
-		current_object_type_ == ObjectTrackingInterface::CONVEYOR_BELT_FRONT
-	}
-	{
+	} else if (current_object_type_ == ObjectTrackingInterface::CONVEYOR_BELT_FRONT) {
 		exp_pos_map[2] -= belt_size_ / 2;
 	}
 
@@ -953,22 +950,12 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 
 	if (current_object_type_ == ObjectTrackingInterface::CONVEYOR_BELT_FRONT
 	    || current_object_type_ == ObjectTrackingInterface::SLIDE_FRONT) {
-		if (current_expected_side_ == ObjectTrackingInterface::OUTPUT_CONVEYOR) {
-			gripper_target[0] = object_pos.getX() - cos(mps_angle) * puck_size_;
-			gripper_target[1] = object_pos.getY() + sin(mps_angle) * puck_size_;
-		} else {
-			gripper_target[0] = object_pos.getX() + cos(mps_angle) * puck_size_;
-			gripper_target[1] = object_pos.getY() - sin(mps_angle) * puck_size_;
-		}
+		gripper_target[0] = object_pos.getX() + cos(mps_angle) * puck_size_;
+		gripper_target[1] = object_pos.getY() - sin(mps_angle) * puck_size_;
 	}
 
 	//compute target base frame
-	if (current_expected_side_ == ObjectTrackingInterface::OUTPUT_CONVEYOR) {
-		base_target[0] = gripper_target[0] + cos(mps_angle) * base_offset_;
-		base_target[1] = gripper_target[1] - sin(mps_angle) * base_offset_;
-	} else {
-		base_target[0] = gripper_target[0] - cos(mps_angle) * base_offset_;
-		base_target[1] = gripper_target[1] + sin(mps_angle) * base_offset_;
-	}
+	base_target[0] = gripper_target[0] - cos(mps_angle) * base_offset_;
+	base_target[1] = gripper_target[1] + sin(mps_angle) * base_offset_;
 	base_target[2] = mps_angle;
 }
