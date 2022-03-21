@@ -609,12 +609,17 @@
 " Create a new goal for paying the ring station whenever there isn't one."
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 
-	; We have a ring goal, which is not executable, but the workpiece is already there.
+	; We have a ring goal, which is not executable as we're missing payment, but the workpiece is already at the desired step.
 	(goal (class MOUNT-RING) (mode FORMULATED)  (parent ?parent)
-		  (params wp ?wp ring-mps ?ring-mps ring-color ?ring-color ring-nr ?) (is-executable FALSE))
-	(wm-fact (key domain fact wp-at args? wp ?wp m ?ring-mps side INPUT))
+		  (params wp ?wp ring-mps ?ring-mps ring-color ?ring-color ring-nr ?ring-nr) (is-executable FALSE))
+	(wm-fact (key domain fact rs-ring-spec args? m ?ring-mps r ?ring-color rn ?bases-needed))
+	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled))
+	(not (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
+												subtrahend ?bases-needed
+												difference ?bases-remain&ZERO|ONE|TWO|THREE)))
+	(wm-fact (key wp meta next-step args? wp ?wp) (value ?wp-step&:(eq ?wp-step (sym-cat RING ?ring-nr))))
 
-	; And we don't have another payment goal.
+	; And we don't have another payment goal for that station.
 	(not (goal (class PAY-RING) (params wp ? src-mps ? ring-mps ?ring-mps) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 
 	; Do not create goal while there is a capcarrier avaiable for payment
