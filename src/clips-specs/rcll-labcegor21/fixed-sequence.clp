@@ -107,10 +107,10 @@
 	(not (wm-fact (key domain fact wp-at args? wp ? m ?dst-mps side ?dst-side)))
 	=>
 	(plan-assert-sequential (sym-cat TRANSPORT-PLAN- (gensym*)) ?goal-id ?robot
-		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?src-mps OUTPUT
+		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?src-mps ?src-side
 			(plan-assert-action wp-get ?robot ?wp ?src-mps ?src-side)
 		)
-		(plan-assert-safe-move ?robot (wait-pos ?src-mps OUTPUT) WAIT ?dst-mps ?dst-side
+		(plan-assert-safe-move ?robot (wait-pos ?src-mps ?src-side) WAIT ?dst-mps ?dst-side
 			(plan-assert-action wp-put ?robot ?wp ?dst-mps ?dst-side)
 		)
 	)

@@ -133,12 +133,14 @@
 			  (wm-fact (key domain fact cs-can-perform args? m ?dst-mps op MOUNT_CAP))
 	))
 	
-	; If it's delivering the workstation, the delivery window needs to have started already.
+	; If it's delivering the workpiece, the delivery window needs to have started already, and we must not have a buffer goal.
 	(or (test (neq ?wp-step DELIVER))
 		(and (wm-fact (key refbox game-time) (values $?game-time))
 			 (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
 			 (wm-fact (key refbox order ?order delivery-begin) (type UINT)
 					  (value ?begin&:(< ?begin (nth$ 1 ?game-time))))
+			 (not (goal (class TRANSPORT) (params wp ?wp wp-next-step DELIVER dst-mps C-SS dst-side ?)
+			 			(mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 	))
 	=>
 	(printout t "Goal TRANSPORT executable" crlf)
@@ -635,10 +637,11 @@
 	; Whenever we have a finished product we can't yet deliver.
 	(wm-fact (key wp meta next-step args? wp ?wp) (value DELIVER))
 	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
-	(wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps side OUTPUT))
 	(wm-fact (key refbox game-time) (values $?game-time))
 	(wm-fact (key refbox order ?order delivery-begin)
 	         	  (value ?begin&:(> ?begin (nth$ 1 ?game-time))))
+	; but which isn't already at the storage station.
+	(not (wm-fact (key domain fact wp-at args? wp ?wp m C-SS side ?)))
 
 	; and we have space in the storage station.
 	(wm-fact (key domain fact mps-side-free args? m C-SS side ?side))
@@ -649,7 +652,8 @@
 	=>
 	; We put into the storage station.
 	(bind ?goal (goal-production-assert-transport ?wp DELIVER C-SS ?side))
-	(modify ?goal (parent ?root-id))
+	; We immediately mark it as executable, as the conditions are checked above.
+	(modify ?goal (parent ?root-id) (is-executable TRUE))
 )
 
 (defrule goal-production-create-production-root
