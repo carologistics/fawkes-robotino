@@ -88,6 +88,7 @@ public:
    * @param moving New moving state
    */
 	void set_moving(bool moving);
+	bool get_moving();
 
 private:
 	std::string cfg_gripper_frame_id_;
