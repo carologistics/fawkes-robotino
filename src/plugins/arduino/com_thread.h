@@ -189,6 +189,8 @@ private:
 	float inline round_to_2nd_dec(float f);
 	void pose_publish_tf();
 
+	void gripper_update();
+
 protected:
 	/** Mutex to protect data_. Lock whenever accessing it. */
 	fawkes::Mutex *data_mutex_;
