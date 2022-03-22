@@ -174,6 +174,10 @@ ArduinoComThread::loop()
 {
 	logger->log_info("Opened?", std::to_string(opened_).c_str());
 	if (opened_) {
+		if (calibrated_ && !arduino_if_->is_final()) {
+			logger->log_info(name(), "Wait for update...");
+			gripper_update();
+		}
 		arduino_if_->read();
 
 		logger->log_info("Calibrated?", std::to_string(calibrated_).c_str());
@@ -426,7 +430,6 @@ ArduinoComThread::loop()
 			                        cfg_a_toggle_steps_,
 			                        1000);
 		}
-
 	} else {
 		try {
 			open_device();
@@ -449,7 +452,34 @@ ArduinoComThread::loop()
 		arduino_if_->write();
 
 		send_message_from_queue();
-		gripper_update();
+
+		movement_pending_ = current_arduino_status_ != 'I';
+
+		if (movement_pending_ == false) {
+			// Update gripper pose in iface
+
+			arduino_if_->set_status(ArduinoInterface::IDLE);
+			arduino_if_->write();
+
+			if (calibrated_ == false) {
+				arduino_if_->set_x_max(cfg_x_max_);
+				arduino_if_->set_y_max(cfg_y_max_);
+				arduino_if_->set_z_max(cfg_z_max_);
+				calibrated_ = true;
+				if (home_pending_ == true) {
+					wakeup();
+				}
+			}
+		}
+		arduino_if_->set_x_position(gripper_pose_[X] / cfg_steps_per_mm_[X] / 1000.);
+		arduino_if_->set_y_position(gripper_pose_[Y] / cfg_steps_per_mm_[Y] / 1000.);
+		arduino_if_->set_z_position(gripper_pose_[Z] / cfg_steps_per_mm_[Z] / 1000.);
+		arduino_if_->set_final(!movement_pending_);
+		arduino_if_->write();
+
+		tf_thread_->set_position(arduino_if_->x_position(),
+		                         arduino_if_->y_position(),
+		                         arduino_if_->z_position());
 	}
 
 	if (new_msg_) {
@@ -459,10 +489,6 @@ ArduinoComThread::loop()
 
 		logger->log_info(name(), "Send Message");
 		send_one_message();
-	}
-
-	if (!arduino_if_->is_final()) {
-		gripper_update();
 	}
 }
 
@@ -592,6 +618,45 @@ ArduinoComThread::flush_device()
 			// ignore, just assume done, if there really is an error we'll
 			// catch it later on
 		}
+	}
+}
+
+void
+ArduinoComThread::send_message(ArduinoComMessage &msg)
+{
+	try {
+		boost::asio::write(serial_, boost::asio::const_buffers_1(msg.buffer()));
+	} catch (boost::system::system_error &e) {
+		logger->log_error(name(), "ERROR on send message! %s", e.what());
+	}
+}
+
+bool
+ArduinoComThread::sync_with_arduino()
+{
+	std::string  s;
+	std::size_t  found;
+	fawkes::Time start_time;
+	fawkes::Time now;
+
+	logger->log_debug(name(), "sync with arduino");
+	do {
+		s = read_packet(6000);
+		logger->log_debug(name(), "Read '%s'", s.c_str());
+		found = s.find("AT HELLO");
+		now   = fawkes::Time();
+	} while (found == std::string::npos && (now - start_time < 3.));
+
+	if (now - start_time >= 3.) {
+		logger->log_error(name(), "Timeout reached trying to sync with arduino");
+		return false;
+	}
+	if (found == std::string::npos) {
+		logger->log_error(name(), "Synchronization with Arduino failed, HELLO-Package not located");
+		return false;
+	} else {
+		logger->log_info(name(), "Synchronization with Arduino successful");
+		return true;
 	}
 }
 
