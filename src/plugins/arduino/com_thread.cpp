@@ -117,6 +117,22 @@ ArduinoComThread::finalize()
 }
 
 void
+ArduinoComThread::append_message_to_queue(ArduinoComMessage::command_id_t cmd,
+                                          unsigned int                    value,
+                                          unsigned int                    timeout)
+{
+	ArduinoComMessage *msg = new ArduinoComMessage(cmd, value);
+	msg->set_msecs_if_lower(timeout);
+	append_message_to_queue(msg);
+}
+
+void
+ArduinoComThread::append_message_to_queue(ArduinoComMessage *msg)
+{
+	messages_.push(msg);
+}
+
+void
 ArduinoComThread::set_message(ArduinoComMessage::command_id_t cmd,
                               unsigned int                    value,
                               unsigned int                    timeout)
@@ -385,18 +401,26 @@ ArduinoComThread::loop()
 		} else {
 			logger->log_warn(name(), "Calibrate pending");
 			// before calibration set all speeds and accs
-			set_message(ArduinoComMessage::command_id_t::CMD_X_NEW_ACC, cfg_accs_[X], 1000);
-			set_message(ArduinoComMessage::command_id_t::CMD_Y_NEW_ACC, cfg_accs_[Y], 1000);
-			set_message(ArduinoComMessage::command_id_t::CMD_Z_NEW_ACC, cfg_accs_[Z], 1000);
-			set_message(ArduinoComMessage::command_id_t::CMD_A_NEW_ACC, cfg_accs_[A], 1000);
-			set_message(ArduinoComMessage::command_id_t::CMD_X_NEW_SPEED, cfg_speeds_[X], 1000);
-			set_message(ArduinoComMessage::command_id_t::CMD_Y_NEW_SPEED, cfg_speeds_[Y], 1000);
-			set_message(ArduinoComMessage::command_id_t::CMD_Z_NEW_SPEED, cfg_speeds_[Z], 1000);
-			set_message(ArduinoComMessage::command_id_t::CMD_A_NEW_SPEED, cfg_speeds_[A], 1000);
-			set_message(ArduinoComMessage::command_id_t::CMD_CALIBRATE, 0, 50000);
-			set_message(ArduinoComMessage::command_id_t::CMD_SET_A_TOGGLE_STEPS,
-			            cfg_a_toggle_steps_,
-			            1000);
+			append_message_to_queue(ArduinoComMessage::command_id_t::CMD_X_NEW_ACC, cfg_accs_[X], 1000);
+			append_message_to_queue(ArduinoComMessage::command_id_t::CMD_Y_NEW_ACC, cfg_accs_[Y], 1000);
+			append_message_to_queue(ArduinoComMessage::command_id_t::CMD_Z_NEW_ACC, cfg_accs_[Z], 1000);
+			append_message_to_queue(ArduinoComMessage::command_id_t::CMD_A_NEW_ACC, cfg_accs_[A], 1000);
+			append_message_to_queue(ArduinoComMessage::command_id_t::CMD_X_NEW_SPEED,
+			                        cfg_speeds_[X],
+			                        1000);
+			append_message_to_queue(ArduinoComMessage::command_id_t::CMD_Y_NEW_SPEED,
+			                        cfg_speeds_[Y],
+			                        1000);
+			append_message_to_queue(ArduinoComMessage::command_id_t::CMD_Z_NEW_SPEED,
+			                        cfg_speeds_[Z],
+			                        1000);
+			append_message_to_queue(ArduinoComMessage::command_id_t::CMD_A_NEW_SPEED,
+			                        cfg_speeds_[A],
+			                        1000);
+			append_message_to_queue(ArduinoComMessage::command_id_t::CMD_CALIBRATE, 0, 50000);
+			append_message_to_queue(ArduinoComMessage::command_id_t::CMD_SET_A_TOGGLE_STEPS,
+			                        cfg_a_toggle_steps_,
+			                        1000);
 		}
 
 	} else {
@@ -413,6 +437,42 @@ ArduinoComThread::loop()
 				open_tries_ = 0;
 			}
 		}
+	}
+
+	while (messages_.size() > 0) {
+		arduino_if_->set_final(false);
+		arduino_if_->set_status(ArduinoInterface::MOVING);
+		arduino_if_->write();
+
+		send_message_from_queue();
+
+		movement_pending_ = current_arduino_status_ != 'I';
+
+		if (movement_pending_ == false) {
+			// Update gripper pose in iface
+
+			arduino_if_->set_status(ArduinoInterface::IDLE);
+			arduino_if_->write();
+
+			if (calibrated_ == false) {
+				arduino_if_->set_x_max(cfg_x_max_);
+				arduino_if_->set_y_max(cfg_y_max_);
+				arduino_if_->set_z_max(cfg_z_max_);
+				calibrated_ = true;
+				if (home_pending_ == true) {
+					wakeup();
+				}
+			}
+		}
+		arduino_if_->set_x_position(gripper_pose_[X] / cfg_steps_per_mm_[X] / 1000.);
+		arduino_if_->set_y_position(gripper_pose_[Y] / cfg_steps_per_mm_[Y] / 1000.);
+		arduino_if_->set_z_position(gripper_pose_[Z] / cfg_steps_per_mm_[Z] / 1000.);
+		arduino_if_->set_final(!movement_pending_);
+		arduino_if_->write();
+
+		tf_thread_->set_position(arduino_if_->x_position(),
+		                         arduino_if_->y_position(),
+		                         arduino_if_->z_position());
 	}
 
 	if (new_msg_) {
@@ -589,6 +649,31 @@ ArduinoComThread::sync_with_arduino()
 	} else {
 		logger->log_info(name(), "Synchronization with Arduino successful");
 		return true;
+	}
+}
+
+bool
+ArduinoComThread::send_message_from_queue()
+{
+	boost::mutex::scoped_lock lock(io_mutex_);
+	if (messages_.size() > 0) {
+		ArduinoComMessage *cur_msg = messages_.front();
+		messages_.pop();
+		msecs_to_wait_ = cur_msg->get_msecs();
+		send_message(*cur_msg);
+
+		delete cur_msg;
+
+		std::string s = read_packet(1000); // read receipt
+		logger->log_debug(name(), "Read receipt: %s", s.c_str());
+		tf_thread_->set_moving(true);
+		s = read_packet(msecs_to_wait_); // read
+		logger->log_debug(name(), "Read status: %s", s.c_str());
+		tf_thread_->set_moving(false);
+
+		return true;
+	} else {
+		return false;
 	}
 }
 
