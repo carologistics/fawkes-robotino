@@ -122,25 +122,23 @@
 
 	; Prevent another transport goal with the same destination,
 	(not (goal (class TRANSPORT) (params wp ? wp-next-step ? dst-mps ?dst-mps dst-side ?dst-side)
-		 (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
+		 (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 	; or with the same workpiece.
 	(not (goal (class TRANSPORT) (params wp ?wp wp-next-step ? dst-mps ? dst-side ?)
-		 (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
+		 (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 
 	; If it's mounting a cap, the cap station needs to have something buffered already.
-	(or (test (neq ?wp-step CAP))
+	(or (not (wm-fact (key domain fact mps-type args? m ?dst-mps t CS)))
 		(and  (wm-fact (key domain fact cs-buffered args? m ?dst-mps col ?))
 			  (wm-fact (key domain fact cs-can-perform args? m ?dst-mps op MOUNT_CAP))
 	))
 	
-	; If it's delivering the workpiece, the delivery window needs to have started already, and we must not have a buffer goal.
-	(or (test (neq ?wp-step DELIVER))
+	; If it's delivering the workpiece, the delivery window needs to have started already.
+	(or (not (wm-fact (key domain fact mps-type args? m ?dst-mps t DS)))
 		(and (wm-fact (key refbox game-time) (values $?game-time))
 			 (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
 			 (wm-fact (key refbox order ?order delivery-begin) (type UINT)
 					  (value ?begin&:(< ?begin (nth$ 1 ?game-time))))
-			 (not (goal (class TRANSPORT) (params wp ?wp wp-next-step DELIVER dst-mps C-SS dst-side ?)
-			 			(mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 	))
 	=>
 	(printout t "Goal TRANSPORT executable" crlf)
@@ -651,14 +649,45 @@
 	; and we have space in the storage station.
 	(wm-fact (key domain fact mps-side-free args? m C-SS side ?side))
 	(not (wm-fact (key domain fact wp-at args? wp ? m C-SS side ?side)))
-
 	; and we don't have a transport goal to the storage station yet.
 	(not (goal (class TRANSPORT) (params wp ?wp wp-next-step DELIVER dst-mps C-SS dst-side ?)))
 	=>
 	; We put into the storage station.
 	(bind ?goal (goal-production-assert-transport ?wp DELIVER C-SS ?side))
-	; We immediately mark it as executable, as the conditions are checked above.
-	(modify ?goal (parent ?root-id) (is-executable TRUE))
+	(modify ?goal (parent ?root-id))
+)
+
+(defrule goal-production-buffer-transport-cycle
+	"Buffer a product if it can't be transported"
+	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+
+	; Whenever we have a transport goal that isn't executable,
+	(goal (id ?goal-id) (class TRANSPORT) (mode FORMULATED)
+		  (params wp ?wp wp-next-step ?wp-step dst-mps ?dst-mps dst-side ?dst-side)
+	      (is-executable FALSE))
+	; but the workpiece already has the desired step,
+	(wm-fact (key wp meta next-step args? wp ?wp) (value ?wp-step))
+
+	; If it is not executable, as its is blocked,
+	; i.e. if both src and dst stations are full.
+	(wm-fact (key domain fact wp-at args? wp ?   m ?src-mps side INPUT))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps side OUTPUT))
+	(wm-fact (key domain fact wp-at args? wp ?   m ?dst-mps side INPUT))
+	(wm-fact (key domain fact wp-at args? wp ?   m ?dst-mps side OUPUT))
+	; (ignoring the storage station).
+	(not (wm-fact (key domain fact mps-type args? m ?src-mps t SS)))
+	(not (wm-fact (key domain fact mps-type args? m ?dst-mps t SS)))
+
+	; And we have space in the storage station.
+	(wm-fact (key domain fact mps-side-free args? m C-SS side ?side))
+	(not (wm-fact (key domain fact wp-at args? wp ? m C-SS side ?side)))
+	; and we don't have a transport goal to the storage station yet.
+	(not (goal (class TRANSPORT) (params wp ?wp wp-next-step ?wp-step dst-mps C-SS dst-side ?)))
+	=>
+	; We want to buffer the workpiece into the storage station.
+	(bind ?goal (goal-production-assert-transport ?wp ?wp-step C-SS ?side))
+	(modify ?goal (parent ?root-id))
 )
 
 (defrule goal-production-create-production-root

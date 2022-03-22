@@ -240,7 +240,8 @@
 (defrule update-mount-ring-count
 	"Ensure the  rs-mount-ring action always has the correct counts."
 	?action <- (plan-action (action-name rs-mount-ring1|rs-mount-ring2|rs-mount-ring3)
-							(param-values ?mps ?wp ?color $?prev-rings ?before ?after ?req))
+							(param-values ?mps ?wp ?color $?prev-rings ?before ?after ?req)
+							(state FORMULATED))
 	(wm-fact (key domain fact rs-filled-with args? m ?mps n ?actual-before&~?before))
 	(wm-fact (key domain fact rs-sub args? minuend ?actual-before subtrahend ?req difference ?actual-after))
 	=>
@@ -302,11 +303,12 @@
 	"Ensure the wp-put-slide-cc action always has the correct counts."
 	?action <- (plan-action (action-name wp-put-slide-cc) (param-values ?robot ?wp ?mps ?before ?after)
 							(state FORMULATED))
-	(wm-fact (key domain fact rs-filled-with args? m ?mps n ?actual-before&~?before))
+	(wm-fact (key domain fact rs-filled-with args? m ?mps n ?actual-before))
 	(wm-fact (key domain fact rs-inc args? summand ?actual-before sum ?actual-after))
+	(test (neq ?actual-before ?before))
 	=>
 	(modify ?action (param-values ?robot ?wp ?mps ?actual-before ?actual-after))
-	(printout t "Update ring count for payment" crlf)
+	(printout t "Update ring count for payment " ?before " -> " ?actual-before crlf)
 )
 
 (defrule goal-expander-deliver
