@@ -66,6 +66,10 @@
       The current base utilizes only the 2D translation vector and rotation around Z axis (yaw) from the
       reference frame's origin to target base frame, represented as (x, y, 0, 0, 0, yaw).
     </field>
+    <field type="float" length="1" name="additional_height">
+      The distance between the workpiece's top and its base middle point. 0 for conveyor and slide.
+      Used by the gripper routine to adjust to the workpiece's height.
+    </field>
     <field type="TARGET_OBJECT_TYPE" name="current_object_type">
       The current target object type to detect.
     </field>
