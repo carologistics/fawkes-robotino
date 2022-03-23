@@ -186,10 +186,14 @@ private:
 	                      fawkes::tf::Stamped<fawkes::tf::Point> exp_pos,
 	                      float                                  mps_angle,
 	                      float                                  closest_pos[3],
-	                      cv::Rect &                             closest_box);
+	                      cv::Rect &                             closest_box,
+	                      float                                  additional_height);
 	void compute_3d_point(cv::Rect bounding_box, float point[3]);
 	void compute_3d_point_direct(cv::Rect bounding_box, float angle, float point[3]);
-	void compute_3d_point_direct_yolo(std::array<float, 4> bounding_box, float angle, float point[3]);
+	void compute_3d_point_direct_yolo(std::array<float, 4> bounding_box,
+	                                  float                angle,
+	                                  float                point[3],
+	                                  float                wp_additional_height);
 	void converge_delta_ibc(float dx_start, float dy_start, float dx, float dy);
 
 	//compute base and gripper target frame

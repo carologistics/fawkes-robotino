@@ -341,7 +341,8 @@ ObjectTrackingThread::loop()
 	if (use_saved_) {
 		for (size_t i = 0; i < out_boxes.size(); ++i) {
 			float pos[3];
-			compute_3d_point_direct_yolo(out_boxes[i], 0.0, pos);
+			float wp_additional_height = 0;
+			compute_3d_point_direct_yolo(out_boxes[i], 0.0, pos, wp_additional_height);
 
 			//draw bounding box on the image
 			cv::Rect rect_bb;
@@ -409,12 +410,13 @@ ObjectTrackingThread::loop()
 
 	float cur_object_pos[3];
 	Rect  closest_box;
+	float additional_height = 0;
 	//get 3d position of closest bounding box to last weighted average in cam_gripper frame
 	fawkes::tf::Stamped<fawkes::tf::Point> weighted_object_pos_cam;
 	tf_listener->transform_point("cam_gripper", weighted_object_pos_target_, weighted_object_pos_cam);
-	bool detected =
-	  closest_position(out_boxes, weighted_object_pos_cam, mps_angle, cur_object_pos, closest_box);
-
+	bool detected = closest_position(
+	  out_boxes, weighted_object_pos_cam, mps_angle, cur_object_pos, closest_box, additional_height);
+	logger->log_info("additional_height ", std::to_string(additional_height).c_str());
 	std::string                            pos_str;
 	fawkes::tf::Stamped<fawkes::tf::Point> cur_object_pos_target;
 	if (detected) {
@@ -548,6 +550,7 @@ ObjectTrackingThread::loop()
 	msgid_++;
 	object_tracking_if_->set_msgid(msgid_);
 	object_tracking_if_->set_detected(detected);
+	object_tracking_if_->set_additional_height(0, additional_height);
 	object_tracking_if_->write();
 }
 
@@ -732,14 +735,16 @@ ObjectTrackingThread::closest_position(std::vector<std::array<float, 4>>      bo
                                        fawkes::tf::Stamped<fawkes::tf::Point> ref_pos,
                                        float                                  mps_angle,
                                        float                                  closest_pos[3],
-                                       Rect &                                 closest_box)
+                                       Rect &                                 closest_box,
+                                       float                                  additional_height)
 {
 	float  min_dist = max_acceptable_dist_;
 	size_t box_id;
 
 	for (size_t i = 0; i < bounding_boxes.size(); ++i) {
 		float pos[3];
-		compute_3d_point_direct_yolo(bounding_boxes[i], mps_angle, pos);
+		float wp_additional_height = 0;
+		compute_3d_point_direct_yolo(bounding_boxes[i], mps_angle, pos, wp_additional_height);
 		float dist = sqrt((pos[0] - ref_pos.getX()) * (pos[0] - ref_pos.getX())
 		                  + (pos[1] - ref_pos.getY()) * (pos[1] - ref_pos.getY())
 		                  + (pos[2] - ref_pos.getZ()) * (pos[2] - ref_pos.getZ()));
@@ -748,11 +753,12 @@ ObjectTrackingThread::closest_position(std::vector<std::array<float, 4>>      bo
 		// logger->log_info("pos[1]: ", std::to_string(pos[1]).c_str());
 		// logger->log_info("pos[2]: ", std::to_string(pos[2]).c_str());
 		if (dist < min_dist) {
-			min_dist       = dist;
-			closest_pos[0] = pos[0];
-			closest_pos[1] = pos[1];
-			closest_pos[2] = pos[2];
-			box_id         = i;
+			min_dist          = dist;
+			closest_pos[0]    = pos[0];
+			closest_pos[1]    = pos[1];
+			closest_pos[2]    = pos[2];
+			box_id            = i;
+			additional_height = wp_additional_height;
 		}
 	}
 
@@ -843,28 +849,23 @@ ObjectTrackingThread::compute_3d_point_direct(Rect bounding_box, float mps_angle
 void
 ObjectTrackingThread::compute_3d_point_direct_yolo(std::array<float, 4> bounding_box,
                                                    float                mps_angle,
-                                                   float                point[3])
+                                                   float                point[3],
+                                                   float                wp_additional_height)
 {
-	//adjusted from rs2_deproject_pixel_to_point at
-	// https://github.com/IntelRealSense/librealsense/blob/master/src/rs.cpp#L3598
-
 	float bb_left    = bounding_box[0] - bounding_box[2] / 2;
 	float bb_right   = bounding_box[0] + bounding_box[2] / 2;
-	float bb_centerY = bounding_box[1];
+	float bb_centerX = bounding_box[0];
+	float bb_bottom  = bounding_box[1] + bounding_box[3] / 2;
+	float bb_top     = bounding_box[1] - bounding_box[3] / 2;
+
 	//delta values (correct if no distortion):
-	float dx_1 = (bb_left * camera_width_ - camera_ppx_) / camera_fx_;
-	float dx_2 = (bb_right * camera_width_ - camera_ppx_) / camera_fx_;
-	float dy   = (bb_centerY * camera_height_ - camera_ppy_) / camera_fy_;
+	float dx_left   = (bb_left * camera_width_ - camera_ppx_) / camera_fx_;
+	float dx_right  = (bb_right * camera_width_ - camera_ppx_) / camera_fx_;
+	float dx_center = (bb_centerX * camera_width_ - camera_ppx_) / camera_fx_;
+	float dy_bottom = (bb_bottom * camera_height_ - camera_ppy_) / camera_fy_;
+	float dy_top    = (bb_top * camera_height_ - camera_ppy_) / camera_fy_;
 
-	if (camera_model_ == 2) { //Inverse Brown-Conrady distortion
-		//compute delta_x_1 and delta_y considering distortion
-		converge_delta_ibc(dx_1, dy, dx_1, dy);
-
-		//compute delta_x_2 and delta_y considering distortion
-		converge_delta_ibc(dx_2, dy, dx_2, dy);
-	}
-
-	if (dx_1 == dx_2) {
+	if (dx_left == dx_right) {
 		logger->log_error(name(), "Width of 0: Cannot project into 3D space!");
 		point[0] = 0;
 		point[1] = 0;
@@ -872,33 +873,33 @@ ObjectTrackingThread::compute_3d_point_direct_yolo(std::array<float, 4> bounding
 		return;
 	}
 
-	//workpieces have an equal width from all angles
 	if (current_object_type_ == ObjectTrackingInterface::WORKPIECE) {
-		mps_angle = 0;
+		//workpieces have an equal width from all angles
+		//distance towards this perception + additional adjustments through angle
+		float dist = object_widths_[(int)current_object_type_] / (dy_bottom - dy_top);
+
+		//compute base middle point with deltas and distance
+		// using the bottom point + wp_height/2
+		point[0] = dist;
+		point[1] = -(dy_top + dy_bottom) * dist / 2;
+		point[2] = -dx_right * dist + puck_height_ / 2;
+
+		wp_additional_height = max(puck_height_ / 2, -dx_left - point[2]);
+	} else {
+		//percieved object width from angle
+		float object_width = cos(mps_angle) * object_widths_[(int)current_object_type_];
+
+		//distance towards this perception + additional adjustments through angle
+		float dist = object_width / (dy_bottom - dy_top)
+		             + sin(abs(mps_angle)) * object_widths_[(int)current_object_type_] / 2;
+
+		//compute middle point with deltas and distance
+		point[0] = dist;
+		point[1] = -(dy_top + dy_bottom) * dist / 2;
+		point[2] = -dx_center * dist;
+
+		wp_additional_height = 0;
 	}
-
-	//percieved object width from angle
-	float object_width = cos(mps_angle) * object_widths_[(int)current_object_type_];
-
-	//distance towards this perception + additional adjustments through angle
-	float dist = object_width / (dx_2 - dx_1)
-	             + sin(abs(mps_angle)) * object_widths_[(int)current_object_type_] / 2;
-
-	//compute middle point with deltas and distance
-	float depth_point[3];
-	depth_point[0] = (dx_1 + dx_2) * dist / 2;
-	depth_point[1] = -dy * dist;
-	depth_point[2] = dist;
-
-	if (!use_saved_ && !rotate_image_) {
-		depth_point[0] = -depth_point[0];
-		depth_point[1] = -depth_point[1];
-	}
-
-	//adjust for cam_gripper frame
-	point[0] = depth_point[2];
-	point[1] = -depth_point[0];
-	point[2] = depth_point[1];
 }
 
 void
