@@ -189,7 +189,26 @@
   (modify ?g (mode SELECTED))
 )
 
-(defrule goal-reasoner-select-central-proudction-goal
+(defrule goal-reasoner-select-transport-delivery-goal
+  "Immediately select a goal that brings something to the delivery station."
+  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  ?g <- (goal (id ?goal-id) (class TRANSPORT) (mode FORMULATED) (is-executable TRUE)
+              (params wp ?wp wp-next-step DELIVER dst-mps ?dst-mps dst-side INPUT))
+  (wm-fact (key domain fact mps-type args? m ?dst-mps t DS))
+  ?assignment <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
+
+  ; We have a robot that isn't doing anything.
+	(wm-fact (key central agent robot args? r ?robot))
+	(not (and (goal (id ?other-goal) (is-executable TRUE)
+					        (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED))
+		        (goal-meta (goal-id ?other-goal) (assigned-to ?robot))))
+  =>
+  (printout t "Production transport delivery goal " ?goal-id " SELECTED and assigned to " ?robot crlf)
+  (modify ?assignment (assigned-to ?robot))
+  (modify ?g (mode SELECTED))
+)
+
+(defrule goal-reasoner-select-central-production-goal
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
   ?g <- (goal (id ?goal-id) (parent ?parent-id) (mode FORMULATED) (is-executable TRUE))
   (goal (id ?parent-id) (class PRODUCE-ORDER|PRODUCTION-ROOT))
