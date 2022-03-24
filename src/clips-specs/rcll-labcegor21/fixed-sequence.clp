@@ -130,16 +130,20 @@
 
 	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
 	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+
+	(wm-fact (key refbox team-color) (value ?team-color))
+	(wm-fact (key domain fact mps-type args? m ?base-mps t BS))
+	(wm-fact (key domain fact mps-team args? m ?base-mps col ?team-color))
 	=>
 	(plan-assert-sequential (sym-cat TRANSPORT- (gensym*)) ?goal-id ?robot
-		(plan-assert-safe-move ?robot ?curr-location ?curr-side C-BS OUTPUT
-			(plan-assert-action lock-mps C-BS)
-			(plan-assert-action prepare-bs C-BS OUTPUT ?base-color)
-			(plan-assert-action bs-dispense C-BS OUTPUT ?wp ?base-color)
-			(plan-assert-action wp-get ?robot ?wp C-BS OUTPUT)
-			(plan-assert-action unlock-mps C-BS)
+		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?base-mps OUTPUT
+			(plan-assert-action lock-mps ?base-mps)
+			(plan-assert-action prepare-bs ?base-mps OUTPUT ?base-color)
+			(plan-assert-action bs-dispense ?base-mps OUTPUT ?wp ?base-color)
+			(plan-assert-action wp-get ?robot ?wp ?base-mps OUTPUT)
+			(plan-assert-action unlock-mps ?base-mps)
 		)
-		(plan-assert-safe-move ?robot (wait-pos C-BS OUTPUT) WAIT ?dst-mps ?dst-side
+		(plan-assert-safe-move ?robot (wait-pos ?base-mps OUTPUT) WAIT ?dst-mps ?dst-side
 			(plan-assert-action wp-put ?robot ?wp ?dst-mps ?dst-side)
 		)
 	)

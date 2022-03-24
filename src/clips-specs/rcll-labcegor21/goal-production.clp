@@ -483,7 +483,13 @@
 	(wm-fact (key domain fact order-ring1-color args? ord ?order-id col ?ring1-color))
 	(wm-fact (key domain fact order-ring2-color args? ord ?order-id col ?ring2-color))
 	(wm-fact (key domain fact order-ring3-color args? ord ?order-id col ?ring3-color))
+	
+	; Obtain stations.
+	(wm-fact (key refbox team-color) (value ?team-color))
 	(wm-fact (key domain fact cs-color args? m ?cap-mps col ?cap-color))
+	(wm-fact (key domain fact mps-team args? m ?cap-mps col ?team-color))
+	(wm-fact (key domain fact mps-type args? m ?delivery-mps t DS))
+	(wm-fact (key domain fact mps-team args? m ?delivery-mps col ?team-color))
 
 	; We still want it. We subtract it everytime we create a goal.
 	?requested <-(wm-fact (key refbox order ?order-id quantity-requested) (value ?qr&:(> ?qr 0)))
@@ -496,8 +502,8 @@
 			(goal-production-assert-transport ?wp-for-order CAP ?cap-mps INPUT)
 			(goal-production-assert-mount-cap ?wp-for-order ?cap-mps ?cap-color)
 			(goal-production-assert-buffer-cap ?cap-mps ?cap-color)
-			(goal-production-assert-transport ?wp-for-order DELIVER C-DS INPUT)
-			(goal-production-assert-deliver ?wp-for-order C-DS)
+			(goal-production-assert-transport ?wp-for-order DELIVER ?delivery-mps INPUT)
+			(goal-production-assert-deliver ?wp-for-order ?delivery-mps)
 		))
 	)
 	(if (eq ?com C1) then
@@ -508,8 +514,8 @@
 			(goal-production-assert-transport ?wp-for-order CAP ?cap-mps INPUT)
 			(goal-production-assert-mount-cap ?wp-for-order ?cap-mps ?cap-color)
 			(goal-production-assert-buffer-cap ?cap-mps ?cap-color)
-			(goal-production-assert-transport ?wp-for-order DELIVER C-DS INPUT)
-			(goal-production-assert-deliver ?wp-for-order C-DS)
+			(goal-production-assert-transport ?wp-for-order DELIVER ?delivery-mps INPUT)
+			(goal-production-assert-deliver ?wp-for-order ?delivery-mps)
 		))
 	)
 	(if (eq ?com C2) then
@@ -523,8 +529,8 @@
 			(goal-production-assert-transport ?wp-for-order CAP ?cap-mps INPUT)
 			(goal-production-assert-mount-cap ?wp-for-order ?cap-mps ?cap-color)
 			(goal-production-assert-buffer-cap ?cap-mps ?cap-color)
-			(goal-production-assert-transport ?wp-for-order DELIVER C-DS INPUT)
-			(goal-production-assert-deliver ?wp-for-order C-DS)
+			(goal-production-assert-transport ?wp-for-order DELIVER ?delivery-mps INPUT)
+			(goal-production-assert-deliver ?wp-for-order ?delivery-mps)
 		))
 	)
 	(if (eq ?com C3) then
@@ -541,8 +547,8 @@
 			(goal-production-assert-transport ?wp-for-order CAP ?cap-mps INPUT)
 			(goal-production-assert-buffer-cap ?cap-mps ?cap-color)
 			(goal-production-assert-mount-cap ?wp-for-order ?cap-mps ?cap-color)
-			(goal-production-assert-transport ?wp-for-order DELIVER C-DS INPUT)
-			(goal-production-assert-deliver ?wp-for-order C-DS)
+			(goal-production-assert-transport ?wp-for-order DELIVER ?delivery-mps INPUT)
+			(goal-production-assert-deliver ?wp-for-order ?delivery-mps)
 		))
 	)
   	(modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id)
@@ -631,15 +637,20 @@
 	; And we don't have another payment goal for that station.
 	(not (goal (class PAY-RING) (params wp ? src-mps ? ring-mps ?ring-mps) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 
-	; Do not create goal while there is a capcarrier avaiable for PAY-RINGpayment
+	; Do not create goal while there is a capcarrier avaiable for payment
 	(not (and (wm-fact (key domain fact wp-at args? wp ?any-wp m ?cs side OUTPUT))
 			  (wm-fact (key domain fact mps-type args? m ?cs t CS))
 			  (not (wm-fact (key order meta wp-for-order args? wp ?any-wp ord ?)))
 	))
+
+	; Get base station.
+	(wm-fact (key refbox team-color) (value ?team-color))
+	(wm-fact (key domain fact mps-type args? m ?base-mps t BS))
+	(wm-fact (key domain fact mps-team args? m ?base-mps col ?team-color))
 	=>
 	(bind ?wp-pay (sym-cat wp-pay1- (gensym*)))
 	(goal-production-initialize-wp ?wp-pay)
-	(bind ?goal (goal-production-assert-pay-ring ?wp-pay C-BS ?ring-mps))
+	(bind ?goal (goal-production-assert-pay-ring ?wp-pay ?base-mps ?ring-mps))
   	(modify ?goal (parent ?parent))
 )
 
@@ -648,6 +659,11 @@
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
 
+	; Get storage station.
+	(wm-fact (key refbox team-color) (value ?team-color))
+	(wm-fact (key domain fact mps-type args? m ?storage-mps t SS))
+	(wm-fact (key domain fact mps-team args? m ?storage-mps col ?team-color))
+
 	; Whenever we have a finished product we can't yet deliver in the next 45 seconds.
 	(wm-fact (key wp meta next-step args? wp ?wp) (value DELIVER))
 	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
@@ -655,16 +671,16 @@
 	(wm-fact (key refbox order ?order delivery-begin)
 	         	  (value ?begin&:(> (- ?begin 45) (nth$ 1 ?game-time))))
 	; but which isn't already at the storage station.
-	(not (wm-fact (key domain fact wp-at args? wp ?wp m C-SS side ?)))
+	(not (wm-fact (key domain fact wp-at args? wp ?wp m ?storage-mps side ?)))
 
 	; and we have space in the storage station.
-	(wm-fact (key domain fact mps-side-free args? m C-SS side ?side))
-	(not (wm-fact (key domain fact wp-at args? wp ? m C-SS side ?side)))
+	(wm-fact (key domain fact mps-side-free args? m ?storage-mps side ?side))
+	(not (wm-fact (key domain fact wp-at args? wp ? m ?storage-mps side ?side)))
 	; and we don't have a transport goal to the storage station yet.
-	(not (goal (class TRANSPORT) (params wp ?wp wp-next-step DELIVER dst-mps C-SS dst-side ?)))
+	(not (goal (class TRANSPORT) (params wp ?wp wp-next-step DELIVER dst-mps ?storage-mps dst-side ?)))
 	=>
 	; We put into the storage station.
-	(bind ?goal (goal-production-assert-transport ?wp DELIVER C-SS ?side))
+	(bind ?goal (goal-production-assert-transport ?wp DELIVER ?storage-mps ?side))
 	(modify ?goal (parent ?root-id))
 )
 
@@ -672,6 +688,11 @@
 	"Buffer a product if it can't be transported"
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+
+	; Get storage station.
+	(wm-fact (key refbox team-color) (value ?team-color))
+	(wm-fact (key domain fact mps-type args? m ?storage-mps t SS))
+	(wm-fact (key domain fact mps-team args? m ?storage-mps col ?team-color))
 
 	; Whenever we have a transport goal that isn't executable,
 	(goal (id ?goal-id) (class TRANSPORT) (mode FORMULATED)
@@ -691,13 +712,13 @@
 	(not (wm-fact (key domain fact mps-type args? m ?dst-mps t SS)))
 
 	; And we have space in the storage station.
-	(wm-fact (key domain fact mps-side-free args? m C-SS side ?side))
-	(not (wm-fact (key domain fact wp-at args? wp ? m C-SS side ?side)))
+	(wm-fact (key domain fact mps-side-free args? m ?storage-mps side ?side))
+	(not (wm-fact (key domain fact wp-at args? wp ? m ?storage-mps side ?side)))
 	; and we don't have a transport goal to the storage station yet.
-	(not (goal (class TRANSPORT) (params wp ?wp wp-next-step ?wp-step dst-mps C-SS dst-side ?)))
+	(not (goal (class TRANSPORT) (params wp ?wp wp-next-step ?wp-step dst-mps ?storage-mps dst-side ?)))
 	=>
 	; We want to buffer the workpiece into the storage station.
-	(bind ?goal (goal-production-assert-transport ?wp ?wp-step C-SS ?side))
+	(bind ?goal (goal-production-assert-transport ?wp ?wp-step ?storage-mps ?side))
 	(modify ?goal (parent ?root-id))
 )
 
