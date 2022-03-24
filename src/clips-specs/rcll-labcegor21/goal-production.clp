@@ -593,9 +593,14 @@
                                         				 subtrahend ?bases-needed
                                          				 difference ?bases-remain&ZERO|ONE|TWO|THREE)))
 		)
-		; or we have a ring station that isn't full, but which requires rings.
-		(and (wm-fact (key domain fact mps-type args? m ?ring-mps t RS))
-			 (wm-fact (key domain fact rs-ring-spec args? m ?ring-mps r ? rn ?bases-needed&ONE|TWO|THREE))
+		; or the ring station that requires two rings has space.
+		(and (wm-fact (key domain fact rs-ring-spec args? m ?ring-mps r ? rn TWO))
+			 (wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled&ZERO|ONE|TWO))
+		)
+		; or the other ring station has space.
+		(and (wm-fact (key domain fact rs-ring-spec args? m ?ring-two-mps r ? rn TWO))
+			 (wm-fact (key domain fact rs-filled-with args? m ?ring-two-mps n THREE))
+			 (wm-fact (key domain fact rs-ring-spec args? m ?ring-mps r ? rn ?bases-needed&ONE|TWO))
 			 (wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?bases-filled&ZERO|ONE|TWO))
 		)
 	)
@@ -626,7 +631,7 @@
 	; And we don't have another payment goal for that station.
 	(not (goal (class PAY-RING) (params wp ? src-mps ? ring-mps ?ring-mps) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 
-	; Do not create goal while there is a capcarrier avaiable for payment
+	; Do not create goal while there is a capcarrier avaiable for PAY-RINGpayment
 	(not (and (wm-fact (key domain fact wp-at args? wp ?any-wp m ?cs side OUTPUT))
 			  (wm-fact (key domain fact mps-type args? m ?cs t CS))
 			  (not (wm-fact (key order meta wp-for-order args? wp ?any-wp ord ?)))
