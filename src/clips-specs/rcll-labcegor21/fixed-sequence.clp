@@ -279,26 +279,6 @@
 	(modify ?g (mode EXPANDED))
 )
 
-(defrule goal-expander-pay-with-cc
-" Retrieve a capcarrier and use it to pay for a ring."
-	?g <- (goal (id ?goal-id) (class PAY-WITH-CC) (mode SELECTED) (parent ?parent)
-	            (params wp ?wp mps ?mps side ?mps-side ring-mps ?ring-mps))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-	(wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
-	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?rs-before))
-	=>
-	(plan-assert-sequential (sym-cat PAY-WITH-CC-PLAN- (gensym*)) ?goal-id ?robot
-		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?mps OUTPUT
-			(plan-assert-action wp-get ?robot ?wp ?mps OUTPUT)
-		)
-		(plan-assert-safe-move ?robot (wait-pos ?mps OUTPUT) WAIT ?ring-mps INPUT
-			(plan-assert-action wp-put-slide-cc ?robot ?wp ?ring-mps ?rs-before ?rs-after)
-		)
-	)
-	(modify ?g (mode EXPANDED))
-)
-
 (defrule update-put-slide-cc-count
 	"Ensure the wp-put-slide-cc action always has the correct counts."
 	?action <- (plan-action (action-name wp-put-slide-cc) (param-values ?robot ?wp ?mps ?before ?after)
