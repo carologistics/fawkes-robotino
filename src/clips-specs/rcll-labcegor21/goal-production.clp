@@ -133,12 +133,12 @@
 			  (wm-fact (key domain fact cs-can-perform args? m ?dst-mps op MOUNT_CAP))
 	))
 	
-	; If it's delivering the workpiece, the delivery window needs to have started already.
+	; If it's delivering the workpiece, the delivery window needs to start in at most 25 seconds.
 	(or (not (wm-fact (key domain fact mps-type args? m ?dst-mps t DS)))
 		(and (wm-fact (key refbox game-time) (values $?game-time))
 			 (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
 			 (wm-fact (key refbox order ?order delivery-begin) (type UINT)
-					  (value ?begin&:(< ?begin (nth$ 1 ?game-time))))
+					  (value ?begin&:(< (- ?begin 25) (nth$ 1 ?game-time))))
 	))
 	=>
 	(printout t "Goal TRANSPORT executable" crlf)
@@ -305,6 +305,12 @@
 	(wm-fact (key domain fact mps-state args? m ?mps s IDLE))
 	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
+
+	; Delivery window needs to have started already.
+	(wm-fact (key refbox game-time) (values $?game-time))
+	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+	(wm-fact (key refbox order ?order delivery-begin) (type UINT)
+	 		 (value ?begin&:(< ?begin (nth$ 1 ?game-time))))
 	=>
 	(printout t "Goal DELIVER executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -637,12 +643,12 @@
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
 
-	; Whenever we have a finished product we can't yet deliver.
+	; Whenever we have a finished product we can't yet deliver in the next 45 seconds.
 	(wm-fact (key wp meta next-step args? wp ?wp) (value DELIVER))
 	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
 	(wm-fact (key refbox game-time) (values $?game-time))
 	(wm-fact (key refbox order ?order delivery-begin)
-	         	  (value ?begin&:(> ?begin (nth$ 1 ?game-time))))
+	         	  (value ?begin&:(> (- ?begin 45) (nth$ 1 ?game-time))))
 	; but which isn't already at the storage station.
 	(not (wm-fact (key domain fact wp-at args? wp ?wp m C-SS side ?)))
 
