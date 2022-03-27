@@ -234,7 +234,7 @@ ObjectTrackingThread::loop()
 
 			//initialize past responses for weighted average using expected positions
 			past_responses_.clear();
-			for (size_t i = 0; i < filter_size_; i++) {
+			for (size_t i = 0; i < filter_size_ - 1; i++) {
 				past_responses_.push_front(exp_pos_target);
 			}
 
@@ -287,7 +287,8 @@ ObjectTrackingThread::loop()
 
 	fawkes::Time start_time(clock);
 
-	Mat image;
+	Mat          image;
+	fawkes::Time capture_time;
 
 	if (use_saved_) {
 		current_object_type_ = saved_object_type_;
@@ -322,6 +323,7 @@ ObjectTrackingThread::loop()
 		//read from sharedMemoryBuffer and convert into Mat
 		image = Mat(camera_height_, camera_width_, CV_8UC3, shm_buffer_->buffer()).clone();
 		cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
+		capture_time = shm_buffer_->capture_time();
 	}
 
 	if (rotate_image_)
@@ -400,7 +402,7 @@ ObjectTrackingThread::loop()
 	fawkes::tf::Quaternion mps_q = fawkes::tf::create_quaternion_from_yaw(double(mps_ori_));
 	tf::Point              mps_pos(mps_x_, mps_y_, 0.0);
 	fawkes::tf::Pose       mps_pose(mps_q, mps_pos);
-	fawkes::tf::Stamped<fawkes::tf::Pose> mps_pose_map(mps_pose, fawkes::Time(0, 0), "map");
+	fawkes::tf::Stamped<fawkes::tf::Pose> mps_pose_map(mps_pose, capture_time, "map");
 	fawkes::tf::Stamped<fawkes::tf::Pose> mps_pose_base;
 	tf_listener->transform_pose("base_link", mps_pose_map, mps_pose_base);
 
@@ -440,7 +442,7 @@ ObjectTrackingThread::loop()
 
 		//transform current response into target frame
 		fawkes::tf::Stamped<fawkes::tf::Point> cur_object_pos_cam;
-		cur_object_pos_cam.stamp    = fawkes::Time(0.0);
+		cur_object_pos_cam.stamp    = capture_time;
 		cur_object_pos_cam.frame_id = cam_frame_;
 		cur_object_pos_cam.setX(cur_object_pos[0]);
 		cur_object_pos_cam.setY(cur_object_pos[1]);
@@ -479,13 +481,14 @@ ObjectTrackingThread::loop()
 	//compute weighted average
 	//-------------------------------------------------------------------------
 
-	// logger->log_info("cur pos", "frame: odom");
-	// logger->log_info("cur_object_pos_target[0]: ",
-	//                  std::to_string(cur_object_pos_target.getX()).c_str());
-	// logger->log_info("cur_object_pos_target[1]: ",
-	//                  std::to_string(cur_object_pos_target.getY()).c_str());
-	// logger->log_info("cur_object_pos_target[2]: ",
-	//                  std::to_string(cur_object_pos_target.getZ()).c_str());
+	logger->log_info("cur pos", "frame: odom");
+	logger->log_info("filter_weight: ", std::to_string(filter_weights_[0]).c_str());
+	logger->log_info("cur_object_pos_target[0]: ",
+	                 std::to_string(cur_object_pos_target.getX()).c_str());
+	logger->log_info("cur_object_pos_target[1]: ",
+	                 std::to_string(cur_object_pos_target.getY()).c_str());
+	logger->log_info("cur_object_pos_target[2]: ",
+	                 std::to_string(cur_object_pos_target.getZ()).c_str());
 
 	//use weighted average to improve robustness of object position
 	double weighted_object_pos[3];
@@ -495,11 +498,16 @@ ObjectTrackingThread::loop()
 	weighted_object_pos[2] = filter_weights_[0] * cur_object_pos_target.getZ();
 
 	for (size_t i = 0; i < past_responses_.size(); i++) {
-		fawkes::tf::Stamped<fawkes::tf::Point> response_target;
-		tf_listener->transform_point(target_frame_, past_responses_[i], response_target);
-		weighted_object_pos[0] += filter_weights_[1 + i] * response_target.getX();
-		weighted_object_pos[1] += filter_weights_[1 + i] * response_target.getY();
-		weighted_object_pos[2] += filter_weights_[1 + i] * response_target.getZ();
+		logger->log_info("past response", std::to_string(i).c_str());
+		logger->log_info("filter_weight: ", std::to_string(filter_weights_[1 + i]).c_str());
+		logger->log_info("past_responses_[0]: ", std::to_string(past_responses_[i].getX()).c_str());
+		logger->log_info("past_responses_[1]: ", std::to_string(past_responses_[i].getY()).c_str());
+		logger->log_info("past_responses_[2]: ", std::to_string(past_responses_[i].getZ()).c_str());
+		//fawkes::tf::Stamped<fawkes::tf::Point> response_target;
+		//tf_listener->transform_point(target_frame_, past_responses_[i], response_target);
+		weighted_object_pos[0] += filter_weights_[1 + i] * past_responses_[i].getX();
+		weighted_object_pos[1] += filter_weights_[1 + i] * past_responses_[i].getY();
+		weighted_object_pos[2] += filter_weights_[1 + i] * past_responses_[i].getZ();
 	}
 	past_responses_.push_front(cur_object_pos_target);
 	past_responses_.pop_back();
@@ -862,10 +870,10 @@ ObjectTrackingThread::compute_3d_point_direct_yolo(std::array<float, 4> bounding
 	float bb_centerY = bounding_box[1];
 
 	//delta values (correct if no distortion):
-	float dx_left    = (bb_left * camera_width_ - camera_ppx_) / camera_fx_;
-	float dx_right   = (bb_right * camera_width_ - camera_ppx_) / camera_fx_;
-	float dy_bottom  = (bb_bottom * camera_height_ - camera_ppy_) / camera_fy_;
-	float dy_top     = (bb_top * camera_height_ - camera_ppy_) / camera_fy_;
+	float dx_left   = (bb_left * camera_width_ - camera_ppx_) / camera_fx_;
+	float dx_right  = (bb_right * camera_width_ - camera_ppx_) / camera_fx_;
+	float dy_bottom = (bb_bottom * camera_height_ - camera_ppy_) / camera_fy_;
+	float dy_top    = (bb_top * camera_height_ - camera_ppy_) / camera_fy_;
 	float dy_center = (bb_centerY * camera_height_ - camera_ppy_) / camera_fy_;
 
 	if (dx_left == dx_right) {
