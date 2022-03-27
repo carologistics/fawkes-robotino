@@ -48,6 +48,7 @@ ArduinoComThread::ArduinoComThread(std::string &    cfg_name,
                                    ArduinoTFThread *tf_thread)
 : Thread("ArduinoComThread", Thread::OPMODE_WAITFORWAKEUP),
   BlackBoardInterfaceListener("ArduinoThread(%s)", cfg_prefix.c_str()),
+  BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PREPARE),
   fawkes::TransformAspect(),
   ConfigurationChangeHandler(cfg_prefix.c_str()),
   serial_(io_service_),
@@ -57,7 +58,6 @@ ArduinoComThread::ArduinoComThread(std::string &    cfg_name,
 	data_mutex_ = new Mutex();
 	cfg_prefix_ = cfg_prefix;
 	cfg_name_   = cfg_name;
-	set_coalesce_wakeups(false);
 }
 
 /** Destructor. */
@@ -172,15 +172,12 @@ ArduinoComThread::add_command_to_message(ArduinoComMessage *             msg,
 void
 ArduinoComThread::loop()
 {
-	logger->log_info("Opened?", std::to_string(opened_).c_str());
 	if (opened_) {
 		if (calibrated_ && !arduino_if_->is_final()) {
-			logger->log_info(name(), "Wait for update...");
 			gripper_update();
 		}
 		arduino_if_->read();
 
-		logger->log_info("Calibrated?", std::to_string(calibrated_).c_str());
 		while (!arduino_if_->msgq_empty() && calibrated_) {
 			if (arduino_if_->msgq_first_is<ArduinoInterface::MoveXYZAbsMessage>()) {
 				ArduinoInterface::MoveXYZAbsMessage *msg = arduino_if_->msgq_first(msg);
@@ -495,7 +492,7 @@ ArduinoComThread::loop()
 void
 ArduinoComThread::gripper_update()
 {
-	std::string s = read_packet(2000);
+	std::string s = read_packet(7000);
 	logger->log_debug(name(), "Read status: %s", s.c_str());
 	movement_pending_ = current_arduino_status_ != 'I';
 
