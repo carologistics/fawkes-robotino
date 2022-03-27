@@ -32,7 +32,7 @@ plugins/object_tracking:
   target_frame_offsets:
     gripper_offset_pick: 0.035
     gripper_offset_put: 0.015
-    base_offset: 0.27
+    base_offset: 0.28
 
   camera_intrinsics:
     # image size
@@ -62,6 +62,7 @@ plugins/object_tracking:
 
   # frame to use for the weighted average and the target frames
   target_frame: "/odom"
+  camera_frame: "cam_gripper"
 
   # maximal distance between yolo response and last weighted average to accept
   #  as target object
@@ -77,9 +78,9 @@ plugins/object_tracking:
     height: 352
 
   saved:
-    use_saved: true
+    use_saved: false
     saved_object_type: 1
-    image_path: "/home/mtschesche/Pictures/realsense_sequence_3/"
+    image_path: "../cfg/yolo/realsense2.jpg"
 
   buffer:
     shm_image_id: "realsense_rgb"

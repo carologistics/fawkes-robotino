@@ -139,6 +139,7 @@ private:
 	std::vector<float> object_widths_;
 	bool               rotate_image_;
 	std::string        target_frame_;
+	std::string        cam_frame_;
 	float              max_acceptable_dist_;
 
 	//ObjectTrackingInterface to receive messages and update target frames
@@ -187,13 +188,13 @@ private:
 	                      float                                  mps_angle,
 	                      float                                  closest_pos[3],
 	                      cv::Rect &                             closest_box,
-	                      float                                  additional_height);
+	                      float &                                additional_height);
 	void compute_3d_point(cv::Rect bounding_box, float point[3]);
 	void compute_3d_point_direct(cv::Rect bounding_box, float angle, float point[3]);
 	void compute_3d_point_direct_yolo(std::array<float, 4> bounding_box,
 	                                  float                angle,
 	                                  float                point[3],
-	                                  float                wp_additional_height);
+	                                  float &              wp_additional_height);
 	void converge_delta_ibc(float dx_start, float dy_start, float dx, float dy);
 
 	//compute base and gripper target frame
