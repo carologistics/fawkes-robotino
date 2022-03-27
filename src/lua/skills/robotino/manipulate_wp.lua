@@ -254,27 +254,6 @@ function get_pos_for_side(side)
   end
 end
 
-function target_close()
-  fsm.vars.rel_expected_pos = tfm.transform6D(
-    {x = fsm.vars.expected_pos_x,
-     y = fsm.vars.expected_pos_y,
-     z = 0,
-     ori = fawkes.tf.create_quaternion_from_yaw(fsm.vars.expected_pos_ori)},
-     "map", "base_link")
-  fsm.vars.rel_expected_pos.ori =
-    fawkes.tf.get_yaw(fsm.vars.rel_expected_pos.ori)
-
-  if math.abs(fsm.vars.rel_expected_pos.ori) < CLOSE_TARGET_ORI_TOLERANCE and
-     fsm.vars.rel_expected_pos.x > CLOSE_TARGET_X_TOLERANCE.min and
-     fsm.vars.rel_expected_pos.x < CLOSE_TARGET_X_TOLERANCE.max and
-     fsm.vars.rel_expected_pos.y > CLOSE_TARGET_Y_TOLERANCE.min and
-     fsm.vars.rel_expected_pos.y < CLOSE_TARGET_Y_TOLERANCE.max then
-    return true
-  else
-    return false
-  end
-end
-
 function input_invalid()
   if fsm.vars.target_object_type == nil then
     print_error("That is not a valid target!")
@@ -325,7 +304,6 @@ end
 fsm:define_states{ export_to=_M, closure={MISSING_MAX=MISSING_MAX},
    {"INIT",                  JumpState},
    {"START_TRACKING",        JumpState},
-   {"TRACKING_ACTIVE",       JumpState},
    {"SEARCH",                SkillJumpState, skills={{goto}},            final_to="MOVE_BASE_AND_GRIPPER", fail_to="FAILED"},
    {"CLOSE_TARGET",          SkillJumpState, skills={{motor_move}},      final_to="MOVE_BASE_AND_GRIPPER", fail_to="SEARCH"},
    {"MOVE_BASE_AND_GRIPPER", SkillJumpState, skills={{motor_move}},      final_to="FINE_TUNE_GRIPPER",     fail_to="SEARCH"},
@@ -338,10 +316,8 @@ fsm:add_transitions{
    {"INIT", "FAILED",                             cond=input_invalid, desc="Invalid Input"},
    {"INIT", "START_TRACKING",                     cond=true, desc="Valid Input"},
    {"START_TRACKING", "FAILED",                   timeout=6000, desc="Object tracker is not starting"},
-   {"START_TRACKING", "TRACKING_ACTIVE",          cond=object_tracker_active},
-   {"TRACKING_ACTIVE", "CLOSE_TARGET",            cond=target_close, desc="Target is close"},
-   {"TRACKING_ACTIVE", "SEARCH",                  cond=true},
-   {"FINE_TUNE_GRIPPER", "WAIT",       cond=gripper_aligned, desc="Gripper aligned"},
+   {"START_TRACKING", "SEARCH",                   cond=object_tracker_active},
+   {"FINE_TUNE_GRIPPER", "FINAL",                 cond=gripper_aligned, desc="Gripper aligned"},
    {"FINE_TUNE_GRIPPER", "MOVE_BASE_AND_GRIPPER", cond="vars.out_of_reach", desc="Gripper out of reach"},
    {"FINE_TUNE_GRIPPER", "SEARCH",                cond="vars.missing_detections > MISSING_MAX", desc="Tracking lost target"},
    {"WAIT", "FINAL",                              timeout=6000, desc="Waited"},
@@ -428,14 +404,6 @@ function SEARCH:init()
                        y = fsm.vars.expected_pos_y,
                        ori = fsm.vars.expected_pos_ori,
                        end_early = true}
-end
-
-function CLOSE_TARGET:init()
-  move_gripper_default_pose()
-  self.args["motor_move"] = {x = fsm.vars.rel_expected_pos.x,
-                             y = fsm.vars.rel_expected_pos.y,
-                             ori = fsm.vars.rel_expected_pos.ori,
-                             end_early = true}
 end
 
 function MOVE_BASE_AND_GRIPPER:init()
