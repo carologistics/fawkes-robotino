@@ -128,7 +128,9 @@ bool open_gripper = false;
 
 int cur_status = STATUS_IDLE;
 
-unsigned int last_update_time_;
+long cur_x_ = 0;
+long cur_y_ = 0;
+long cur_z_ = 0;
 
 #define BUFFER_SIZE 128
 char buffer_[BUFFER_SIZE];
@@ -157,6 +159,9 @@ void send_status() {
   if(cur_status == STATUS_ERROR){
     Serial.print(errormessage);
   } else { // send all the information while moving and while idle
+    cur_x_ = motor_X.currentPosition();
+    cur_y_ = motor_Y.currentPosition();
+    cur_z_ = motor_Z.currentPosition();
     Serial.print(-motor_X.currentPosition());
     Serial.print(" ");
     Serial.print(-motor_Y.currentPosition());
@@ -593,12 +598,13 @@ void loop() {
     movement_done_flag = false;
     set_status(STATUS_IDLE);
   }
+  read_package();
   if(cur_status == STATUS_MOVING &&
-     CUR_TIME - last_update_time_ > 100) {
-    last_update_time_ = CUR_TIME;
+    (abs(cur_x_ - motor_X.currentPosition()) > 300 ||
+    abs(cur_y_ - motor_Y.currentPosition()) > 300 ||
+    abs(cur_z_ - motor_Z.currentPosition()) > 300)) {
     send_status();
   }
-  read_package();
 }
 
 volatile byte step_bits_xyz = 0;

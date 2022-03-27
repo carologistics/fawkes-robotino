@@ -61,6 +61,7 @@ class ArduinoComThread : public fawkes::Thread,
                          public fawkes::ClockAspect,
                          public fawkes::BlackBoardAspect,
                          public fawkes::BlackBoardInterfaceListener,
+                         public fawkes::BlockedTimingAspect,
                          public fawkes::TransformAspect,
                          public fawkes::ConfigurationChangeHandler
 {
