@@ -51,7 +51,6 @@ class ArduinoInterface;
 class ArduinoTFThread : public fawkes::Thread,
                         public fawkes::LoggingAspect,
                         public fawkes::ConfigurableAspect,
-                        public fawkes::BlockedTimingAspect,
                         public fawkes::BlackBoardAspect,
                         public fawkes::ClockAspect,
                         public fawkes::TransformAspect
