@@ -108,6 +108,12 @@ private:
 	int   camera_model_;
 	float camera_coeffs_[5];
 
+	std::string object_pos_frame_;
+	std::string weighted_object_pos_frame_;
+
+	fawkes::tf::TransformPublisher *object_pos_pub;
+	fawkes::tf::TransformPublisher *weighted_object_pos_pub;
+
 	//use saved images
 	bool                                                use_saved_;
 	fawkes::ObjectTrackingInterface::TARGET_OBJECT_TYPE saved_object_type_;
@@ -128,7 +134,7 @@ private:
 	std::vector<std::string> outName_;
 
 	//weighted average filter
-	double                                             filter_weights_[12];
+	double                                             filter_weights_[5];
 	size_t                                             filter_size_;
 	std::deque<fawkes::tf::Stamped<fawkes::tf::Point>> past_responses_;
 
