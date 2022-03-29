@@ -52,7 +52,9 @@ using namespace dnn;
 ObjectTrackingThread::ObjectTrackingThread()
 : Thread("ObjectTrackingThread", Thread::OPMODE_WAITFORWAKEUP),
   BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PROCESS),
-  fawkes::TransformAspect(fawkes::TransformAspect::BOTH, "object_tracking")
+  fawkes::TransformAspect(fawkes::TransformAspect::BOTH, "object_tracking"),
+  object_pos_pub(nullptr),
+  weighted_object_pos_pub(nullptr)
 {
 }
 
@@ -153,18 +155,11 @@ ObjectTrackingThread::init()
 
 	//set up weighted average filter
 	//-------------------------------------------------------------------------
-	filter_weights_[0]  = 12; //current response
-	filter_weights_[1]  = 11; //last response
-	filter_weights_[2]  = 10; //2. last response
-	filter_weights_[3]  = 9;  //3. last response
-	filter_weights_[4]  = 8;  //4. last response
-	filter_weights_[5]  = 7;  //5. last response
-	filter_weights_[6]  = 6;  //6. last response
-	filter_weights_[7]  = 5;  //7. last response
-	filter_weights_[8]  = 4;  //8. last response
-	filter_weights_[9]  = 3;  //9. last response
-	filter_weights_[10] = 2;  //10. last response
-	filter_weights_[11] = 1;  //11. last response
+	filter_weights_[0] = 0.4;  // current response
+	filter_weights_[1] = 0.3;  // last response
+	filter_weights_[2] = 0.15; // 2. last response
+	filter_weights_[3] = 0.1;  // 3. last response
+	filter_weights_[4] = 0.05; // 4. last response
 	//-------------------------------------------------------------------------
 
 	filter_size_ = sizeof(filter_weights_) / sizeof(filter_weights_[0]);
@@ -204,7 +199,18 @@ ObjectTrackingThread::init()
 	std::string frame_id = this->config->get_string("plugins/object_tracking/buffer/frame");
 	shm_buffer_results_->set_frame_id(frame_id.c_str());
 
+	//initialize publisher objects----------
+	object_pos_frame_ = this->config->get_string("plugins/object_tracking/tf/object_pos_frame");
+	object_pos_frame_ =
+	  this->config->get_string("plugins/object_tracking/tf/weighted_object_pos_frame");
+
+	tf_add_publisher(object_pos_frame_.c_str());
+	object_pos_pub = tf_publishers[object_pos_frame_];
+
+	tf_add_publisher(weighted_object_pos_frame_.c_str());
+	weighted_object_pos_pub = tf_publishers[weighted_object_pos_frame_];
 	//--------------------------------------
+
 	name_it_    = 0;
 	tracking_   = false;
 	shm_active_ = false;
@@ -448,6 +454,13 @@ ObjectTrackingThread::loop()
 		cur_object_pos_cam.setY(cur_object_pos[1]);
 		cur_object_pos_cam.setZ(cur_object_pos[2]);
 		tf_listener->transform_point(target_frame_, cur_object_pos_cam, cur_object_pos_target);
+
+		//update object pos transform
+		tf::Quaternion       q(0.0, 0.0, 0.0);
+		tf::Vector3          v(cur_object_pos[0], cur_object_pos[1], cur_object_pos[2]);
+		tf::Transform        tf_object_pos(q, v);
+		tf::StampedTransform stf_object_pos(tf_object_pos, capture_time, cam_frame_, object_pos_frame_);
+		object_pos_pub->send_transform(stf_object_pos);
 	} else {
 		//if object is not detected, use expected position instead
 		pos_str = "X.XXX X.XXX X.XXX";
@@ -511,6 +524,16 @@ ObjectTrackingThread::loop()
 	}
 	past_responses_.push_front(cur_object_pos_target);
 	past_responses_.pop_back();
+
+	//update weighted object pos transform
+	tf::Quaternion       q(0.0, 0.0, 0.0);
+	tf::Vector3          v(weighted_object_pos[0], weighted_object_pos[1], weighted_object_pos[2]);
+	tf::Transform        tf_weighted_object_pos(q, v);
+	tf::StampedTransform stf_weighted_object_pos(tf_weighted_object_pos,
+	                                             fawkes::Time(0.0),
+	                                             target_frame_,
+	                                             weighted_object_pos_frame_);
+	weighted_object_pos_pub->send_transform(stf_weighted_object_pos);
 
 	// logger->log_info("weighted pos", "frame: odom");
 	// logger->log_info("weighted_object_pos[0]: ", std::to_string(weighted_object_pos[0]).c_str());
