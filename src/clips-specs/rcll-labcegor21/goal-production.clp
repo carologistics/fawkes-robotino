@@ -146,7 +146,7 @@
 )
 
 (defrule goal-production-transport-monitoring
-" If an already executable transport goal becomes not-executable, set it to false."
+	"If an already executable transport goal becomes not-executable, set it to false."
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class TRANSPORT)
 	                          (mode FORMULATED)
@@ -164,17 +164,13 @@
 )
 
 (defrule goal-production-discard-executable
-" Discard output from a station."
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class DISCARD)
 	                          (mode FORMULATED)
 	                          (params  wp ?wp&~UNKNOWN )
 	                          (is-executable FALSE))
 
-	; MPS-Source CEs
-	(wm-fact (key refbox team-color) (value ?team-color))
-	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
-	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
+	; The workpiece must exist at a location.
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side))
 	=>
 	(printout t "Goal DISCARD executable" crlf)
@@ -188,19 +184,16 @@
 	            (params wp ?wp src-mps ?src-mps	ring-mps ?ring-mps)
 	            (is-executable FALSE))
 
-	; src MPS CEs
-	(wm-fact (key refbox team-color) (value ?team-color))
+	; Either we have an existing workpiece or an idle base station.
 	(or (wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps $?))
 		(and (wm-fact (key domain fact mps-type args? m ?src-mps t BS))
 			 (wm-fact (key domain fact mps-state args? m ?src-mps s IDLE))
-			 (wm-fact (key domain fact mps-team args? m ?src-mps col ?team-color))
 			 (not (wm-fact (key domain fact wp-at args? wp ?any-base-wp m ?src-mps $?)))
 		)
 	)
-	; ring MPS CEs
+	; The ring station must not be broken.
 	(wm-fact (key domain fact mps-type args? m ?ring-mps t RS))
 	(wm-fact (key domain fact mps-state args? m ?ring-mps s ~BROKEN))
-	(wm-fact (key domain fact mps-team args? m ?ring-mps col ?team-color))
 	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?rs-before&ZERO|ONE|TWO))
 	=>
 	(printout t "Goal PAY-RING executable" crlf)
@@ -208,39 +201,26 @@
 )
 
 (defrule goal-production-buffer-cap-executable
-" Bring a cap-carrier from a cap stations shelf to the corresponding mps input
-  to buffer its cap. "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class BUFFER-CAP) (sub-type SIMPLE)
 	            (mode FORMULATED)
 	            (params target-mps ?mps cap-color ?cap-color)
 	            (is-executable FALSE))
 
-	; MPS CEs
-	(wm-fact (key refbox team-color) (value ?team-color))
+	; The cap station must not be broken.
 	(wm-fact (key domain fact mps-type args? m ?mps t CS))
 	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
-	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
 	(wm-fact (key domain fact mps-side-free args? m ?mps side INPUT))
 	(wm-fact (key domain fact mps-side-free args? m ?mps side OUTPUT))
 	(wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP))
 	(not (wm-fact (key domain fact cs-buffered args? m ?mps col ?any-cap-color)))
-	(not (wm-fact (key domain fact wp-at args? wp ?wp-a m ?mps side INPUT)))
+	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side INPUT)))
 
-	; Capcarrier CEs
-	(or (and
-	        (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
-	        (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
-	        (not (plan-action (action-name wp-get-shelf) (param-values $? ?wp $?)))
-	        (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-	    )
-	    (and
-	        (wm-fact (key domain fact holding args? r ?robot wp ?cc))
-	        (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-	        (domain-object (name ?cc) (type cap-carrier))
-	    )
-	)
-
+	; We need an unused cap carrier.
+	(wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
+	(not (plan-action (action-name wp-get-shelf) (param-values $? ?cc $?)))
+	(wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+	
 	; Prevent another BUFFER-CAP goal.
 	(not (goal (class BUFFER-CAP) (params target-mps ?mps cap-color ?)
 		 (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED) (is-executable TRUE)))
@@ -256,7 +236,7 @@
 	            (params wp ?wp cap-mps ?cap-mps cap-color ?cap-color)
 	            (is-executable FALSE))
 
-	; cap MPS CEs
+	; the cap station must not be broken.
 	(wm-fact (key domain fact mps-type args? m ?cap-mps t CS))
 	(wm-fact (key domain fact mps-state args? m ?cap-mps s ~BROKEN))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?cap-mps side INPUT))
@@ -275,10 +255,9 @@
 	            (params wp ?wp ring-mps ?ring-mps ring-color ?ring-color ring-nr ?ring-nr)
 	            (is-executable FALSE))
 
-	; ring MPS CEs
+	; The ring station must not be broken and the ring already payed for.
 	(wm-fact (key domain fact mps-type args? m ?ring-mps t RS))
 	(wm-fact (key domain fact mps-state args? m ?ring-mps s ~BROKEN))
-	(wm-fact (key domain fact mps-team args? m ?ring-mps col ?team-color))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?ring-mps side INPUT))
 	(wm-fact (key wp meta next-step args? wp ?wp) (value ?wp-step&:(eq ?wp-step (sym-cat RING ?ring-nr))))
 	(not (wm-fact (key domain fact wp-at args? wp ? m ?ring-mps side OUTPUT)))
@@ -299,11 +278,9 @@
 	            (params wp ?wp mps ?mps)
 	            (is-executable FALSE))
 
-	; MPS-CES
-	(wm-fact (key refbox team-color) (value ?team-color))
+	; The delivery station must not be broken.
 	(wm-fact (key domain fact mps-type args? m ?mps t DS))
 	(wm-fact (key domain fact mps-state args? m ?mps s IDLE))
-	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
 
 	; Delivery window needs to have started already.
@@ -325,17 +302,6 @@
 	      (id (sym-cat DISCARD- (gensym*))) (sub-type SIMPLE)
 	      (verbosity NOISY) (is-executable FALSE)
 	      (params wp ?wp) (meta-template goal-meta)
-	)))
-	(return ?goal)
-)
-
-(deffunction goal-production-assert-pay-with-cc
-	(?wp ?mps ?mps-side ?ring-mps)
-
-	(bind ?goal (assert (goal (class PAY-WITH-CC)
-	      (id (sym-cat PAY-WITH-CC- (gensym*))) (sub-type SIMPLE)
-	      (verbosity NOISY) (is-executable FALSE)
-	      (params wp ?wp mps ?mps side ?mps-side ring-mps ?ring-mps) (meta-template goal-meta)
 	)))
 	(return ?goal)
 )
@@ -492,7 +458,7 @@
 	(wm-fact (key domain fact mps-team args? m ?delivery-mps col ?team-color))
 
 	; We still want it. We subtract it everytime we create a goal.
-	?requested <-(wm-fact (key refbox order ?order-id quantity-requested) (value ?qr&:(> ?qr 0)))
+	?requested <- (wm-fact (key refbox order ?order-id quantity-requested) (value ?qr&:(> ?qr 0)))
 	=>
 	(bind ?wp-for-order (sym-cat wp- ?order-id - (gensym*)))
 	(goal-production-initialize-wp ?wp-for-order)
@@ -558,6 +524,7 @@
 )
 
 (defrule goal-production-create-discard
+	"Discard a cap-less cap carrier, if necessary."
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
 
@@ -581,6 +548,7 @@
 )
 
 (defrule goal-production-create-pay-with-cc
+	"Pay with a cap-less cap carrier."
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(goal (id ?root-id) (class PRODUCTION-ROOT) (mode FORMULATED|DISPATCHED))
 
@@ -621,7 +589,7 @@
 )
 
 (defrule goal-production-create-payment
-" Create a new goal for paying the ring station whenever there isn't one."
+	"Create a new goal for paying the ring station whenever there isn't one."
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 
 	; We have a ring goal, which is not executable as we're missing payment, but the workpiece is already at the desired step.
@@ -723,8 +691,7 @@
 )
 
 (defrule goal-production-create-production-root
-	"Create the production root under which all production trees for the orders
-	are asserted"
+	"Create the production root under which all production trees for the orders	are asserted"
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(domain-facts-loaded)
 	(not (goal (class PRODUCTION-ROOT)))
@@ -744,7 +711,7 @@
 )
 
 (defrule goal-production-create-enter-field
-  "Enter the field (drive outside of the starting box)."
+  	"Enter the field (drive outside of the starting box)."
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(wm-fact (key central agent robot args? r ?robot))
 	(not (wm-fact (key domain fact entered-field args? r ?robot)))

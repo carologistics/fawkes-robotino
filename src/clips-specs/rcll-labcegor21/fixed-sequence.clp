@@ -61,18 +61,6 @@
 	)
 )
 
-(deffunction is-holding (?robot ?wp)
-	(if (any-factp ((?holding wm-fact))
-	           (and (wm-key-prefix ?holding:key (create$ domain fact holding))
-	                (eq (wm-key-arg ?holding:key r) ?robot)
-	                (eq (wm-key-arg ?holding:key wp) ?wp)))
-	 then
-		(return TRUE)
-	 else
-		(return FALSE)
-	)
-)
-
 (defrule goal-expander-send-beacon-signal
   ?p <- (goal (mode DISPATCHED) (id ?parent-id))
   ?g <- (goal (id ?goal-id) (class SEND-BEACON) (mode SELECTED)
@@ -96,15 +84,17 @@
 )
 
 (defrule goal-expander-transport
+	"Transport an existing workpiece to a destination."
 	?g <- (goal (id ?goal-id) (class TRANSPORT) (mode SELECTED) (parent ?parent)
 	            (params wp ?wp wp-next-step ?wp-step dst-mps ?dst-mps dst-side ?dst-side))
+
+	; Get robot location.
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-	
+
+	; Get workpiece location.
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?src-mps side ?src-side))
 	(wm-fact (key wp meta next-step args? wp ?wp) (value ?wp-step))
-	
-	(not (wm-fact (key domain fact wp-at args? wp ? m ?dst-mps side ?dst-side)))
 	=>
 	(plan-assert-sequential (sym-cat TRANSPORT-PLAN- (gensym*)) ?goal-id ?robot
 		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?src-mps ?src-side
@@ -118,19 +108,23 @@
 )
 
 (defrule goal-expander-transport-create
+	"Create a new workpiece and bring it to a destination."
 	?g <- (goal (id ?goal-id) (class TRANSPORT) (mode SELECTED) (parent ?parent)
 	            (params wp ?wp wp-next-step ?wp-step dst-mps ?dst-mps dst-side ?dst-side))
+
+	; Get robot location.
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	
+	; Ensure that the workpiece doesn't exist yet.
 	(wm-fact (key domain fact wp-base-color args? wp ?wp col BASE_NONE))
 	(wm-fact (key wp meta next-step args? wp ?wp) (value ?wp-step))
-	
-	(not (wm-fact (key domain fact wp-at args? wp ? m ?dst-mps side ?dst-side)))
 
+	; Get color of the base we want.
 	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
 	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
 
+	; Get base station.
 	(wm-fact (key refbox team-color) (value ?team-color))
 	(wm-fact (key domain fact mps-type args? m ?base-mps t BS))
 	(wm-fact (key domain fact mps-team args? m ?base-mps col ?team-color))
@@ -151,14 +145,16 @@
 )
 
 (defrule goal-expander-buffer-cap
-" Feed a CS with a cap from its shelf so that afterwards
-   it can directly put the cap on a product."
+	"Feed a CS with a cap from its shelf so that afterwards it can directly put the cap on a product."
 	?g <- (goal (id ?goal-id) (class BUFFER-CAP) (mode SELECTED) (parent ?parent)
 	            (params target-mps ?mps cap-color ?cap-color ))
+	
+	; Get robot location.
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	(wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps $?))
-	(not (wm-fact (key domain fact holding args? r ?robot $?)))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	
+	; Get workpiece from shelf.
+	(wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps $?))
 	=>
 	(bind ?shelf-spot nil)
 	(do-for-fact ((?wp-on-shelf wm-fact)) (and (wm-key-prefix ?wp-on-shelf:key (create$ domain fact wp-on-shelf))
@@ -179,10 +175,14 @@
 )
 
 (defrule goal-expander-discard
-" Pick up a product and discard it."
+    "Pick up a product and discard it."
 	?g <- (goal (id ?goal-id) (class DISCARD) (mode SELECTED) (parent ?parent) (params wp ?wp))
+	
+	; Get robot location.
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	
+	; Get workpiece location.
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side))
 	=>
 	(plan-assert-sequential (sym-cat DISCARD-PLAN- (gensym*)) ?goal-id ?robot
@@ -195,11 +195,11 @@
 )
 
 (defrule goal-expander-mount-cap
+	"Instruct a cap station to mount a cap."
 	?g <- (goal (id ?goal-id) (class MOUNT-CAP) (mode SELECTED) (parent ?parent)
 	            (params wp ?wp cap-mps ?cap-mps cap-color ?cap-color))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	=>
-	(plan-assert-sequential (sym-cat MOUNT-CAP-PLAN- (gensym*)) ?goal-id ?robot
+	(plan-assert-sequential (sym-cat MOUNT-CAP-PLAN- (gensym*)) ?goal-id central
 		(plan-assert-action prepare-cs ?cap-mps MOUNT_CAP)
 		(plan-assert-action cs-mount-cap ?cap-mps ?wp ?cap-color)
 	)
@@ -207,13 +207,16 @@
 )
 
 (defrule goal-expander-mount-ring
+	"Instruct a ring station to mount a ring."
 	?g <- (goal (id ?goal-id) (class MOUNT-RING) (mode SELECTED) (parent ?parent)
 	            (params wp ?wp ring-mps ?ring-mps ring-color ?ring-color ring-nr ?ring-nr))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	
+	; Get base counts before and after.
 	(wm-fact (key domain fact rs-ring-spec args? m ?ring-mps r ?ring-color rn ?req))
 	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?rs-before))
 	(wm-fact (key domain fact rs-sub args? minuend ?rs-before subtrahend ?req difference ?rs-after))
 	=>
+	; Figure out the existing rings.
 	(bind ?prev-rings (create$ ))
 	(loop-for-count (?count 1 (- ?ring-nr 1))
 	   (do-for-fact ((?ring wm-fact))
@@ -221,7 +224,8 @@
 	           (eq (wm-key-arg ?ring:key wp) ?wp))
 	      (bind ?prev-rings (append$ ?prev-rings (wm-key-arg ?ring:key col)))
 	))
-	(plan-assert-sequential (sym-cat MOUNT-RING-PLAN- (gensym*)) ?goal-id ?robot
+
+	(plan-assert-sequential (sym-cat MOUNT-RING-PLAN- (gensym*)) ?goal-id central
 		(plan-assert-action prepare-rs ?ring-mps ?ring-color ?rs-before ?rs-after ?req)
 		(plan-assert-action (sym-cat rs-mount-ring ?ring-nr)
 		      ?ring-mps ?wp ?ring-color ?prev-rings ?rs-before ?rs-after ?req )
@@ -242,7 +246,7 @@
 )
 
 (defrule update-mount-ring-count
-	"Ensure the  rs-mount-ring action always has the correct counts."
+	"Ensure the rs-mount-ring action always has the correct counts."
 	?action <- (plan-action (action-name rs-mount-ring1|rs-mount-ring2|rs-mount-ring3)
 							(param-values ?mps ?wp ?color $?prev-rings ?before ?after ?req)
 							(state FORMULATED))
@@ -254,13 +258,19 @@
 )
 
 (defrule goal-expander-pay-ring
-" Retrieve a workpiece and use it to pay for a ring."
+	"Retrieve a workpiece and use it to pay for a ring."
 	?g <- (goal (id ?goal-id) (class PAY-RING) (mode SELECTED) (parent ?parent)
 	            (params wp ?wp src-mps ?src-mps ring-mps ?ring-mps))
+	
+	; Get robot location.
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+
+	; Get base counts before and after.
 	(wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
 	(wm-fact (key domain fact rs-filled-with args? m ?ring-mps n ?rs-before))
+
+	; Needed to figure out whether we should create a new one or move an existing one.
 	(wm-fact (key domain fact mps-type args? m ?src-mps t ?src-type))
 	=>
 	(plan-assert-sequential (sym-cat PAY-RING-PLAN- (gensym*)) ?goal-id ?robot
@@ -296,17 +306,19 @@
 )
 
 (defrule goal-expander-deliver
+	"Instruct a delivery station to deliver a workpiece."
 	?g <- (goal (id ?goal-id) (class DELIVER) (mode SELECTED)
 	            (params wp ?wp mps ?mps))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	; WP-CES
+
+	; Get workpiece colors.
 	(wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
 	(wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
 	(wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
 	(wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
 	(wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?wp-mps side ?wp-side))
-	; Order-CEs
+
+	; Get order facts.
 	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
 	(wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
 	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
@@ -327,7 +339,7 @@
 		(case C3 then
 		    (bind ?params (create$ ?order ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color ?ring2-color ?ring3-color)))
  	)
-	(plan-assert-sequential DELIVER-PLAN ?goal-id ?robot
+	(plan-assert-sequential DELIVER-PLAN ?goal-id central
 		(plan-assert-action prepare-ds ?mps ?order)
 		(plan-assert-action (sym-cat fulfill-order- (lowcase ?complexity)) ?params)
 	)

@@ -128,7 +128,7 @@
 )
 
 (defrule goal-reasoner-select-order-helper-goals
-  "Select buffer/pay/discard goal if nothing else is executable."
+  "Select buffer/pay/discard goals wehn we have a robot."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ?g <- (goal (id ?goal-id) (parent ?parent-id) (class ~PRODUCE-ORDER) (mode FORMULATED) (is-executable TRUE))
   (goal (id ?parent-id) (class PRODUCTION-ROOT))
@@ -175,7 +175,7 @@
             
   ))
 
-  ; And we don't have an executable production helper goal.
+  ; And we don't want to handle it if we have an executable production helper goal.
   (not (and (goal (parent ?other-parent-id) (mode FORMULATED) (is-executable TRUE))
             (goal (id ?other-parent-id) (class PRODUCTION-ROOT))))
   =>
@@ -209,6 +209,7 @@
 )
 
 (defrule goal-reasoner-select-central-production-goal
+  "Select goals that are assigned to the central robot."
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
   ?g <- (goal (id ?goal-id) (parent ?parent-id) (mode FORMULATED) (is-executable TRUE))
   (goal (id ?parent-id) (class PRODUCE-ORDER|PRODUCTION-ROOT))
