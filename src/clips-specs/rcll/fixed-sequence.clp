@@ -495,7 +495,13 @@
                       (eq (wm-key-arg ?wp-at:key wp) ?wp))
       (bind ?offset 8)
       (bind ?wp-loc (wm-key-arg ?wp-at:key m))
-      (bind ?wp-side (wm-key-arg ?wp-at:key side))
+      (bind ?wp-side OUTPUT)
+      (if (any-factp ((?p domain-fact)) (and (eq ?p:name mps-type)
+                                             (member$ BS ?p:param-values)
+                                             (member$ ?wp-loc ?p:param-values))
+          ) then
+            (bind ?wp-side (wm-key-arg ?wp-at:key side))
+      )
       (assert
         (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
               (action-name go-wait)
