@@ -169,7 +169,9 @@
                 (params robot ?robot
                         mps ?mps
                         cc ?cc
-                ))
+                )
+                (meta promised ?promised)
+            )
     (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
     (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
     (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?shelf-spot))
@@ -198,11 +200,13 @@
    )
 
   (bind ?offset 1)
-  (if (any-factp ((?at-output wm-fact))
+  (if (or (any-factp ((?at-output wm-fact))
                  (and (wm-key-prefix ?at-output:key (create$ domain fact wp-at))
                       (eq (wm-key-arg ?at-output:key m) ?mps)
                       (eq (wm-key-arg ?at-output:key side) OUTPUT)
                  ))
+          (eq ?promised TRUE)
+      )
     then
       (assert
         (plan-action (id 6) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
