@@ -672,7 +672,7 @@
 (defrule goal-produce-c0
  ?p <- (goal (mode DISPATCHED) (id ?parent))
  ?g <- (goal (id ?goal-id) (class PRODUCE-C0) (mode SELECTED) (parent ?parent)
-                                             (params robot ?robot
+                                              (params robot ?robot
                                                       bs ?bs
                                                       bs-side ?bs-side
                                                       bs-color ?base-color
@@ -680,7 +680,8 @@
                                                       cs-color ?cap-color
                                                       order ?order
                                                       wp ?spawned-wp
-                                                      ))
+                                                      )
+                                              (meta promised ?promised))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
   (bind ?offset 1)
@@ -747,11 +748,14 @@
         (param-values ?robot ?spawned-wp ?mps))
   )
 
-  (if (any-factp ((?at-output wm-fact))
+  (if (or (any-factp ((?at-output wm-fact))
                  (and (wm-key-prefix ?at-output:key (create$ domain fact wp-at))
                       (eq (wm-key-arg ?at-output:key m) ?mps)
                       (eq (wm-key-arg ?at-output:key side) OUTPUT)
-                 ))
+                 )
+          )
+          (eq ?promised TRUE)
+      )
     then
       (assert
    (plan-action (id (+ ?offset 4)) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
@@ -802,7 +806,8 @@
                       rs-req ?rs-req
                       order ?order
                       wp ?spawned-wp
-             ))
+             )
+             (meta promised ?promised))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
   (bind ?offset 1)
@@ -870,11 +875,14 @@
         (param-names r wp m)
         (param-values ?robot ?spawned-wp ?mps))
   )
-  (if (any-factp ((?at-output wm-fact))
+  (if (or (any-factp ((?at-output wm-fact))
                  (and (wm-key-prefix ?at-output:key (create$ domain fact wp-at))
                       (eq (wm-key-arg ?at-output:key m) ?mps)
                       (eq (wm-key-arg ?at-output:key side) OUTPUT)
-                 ))
+                 )
+          )
+          (eq ?promised TRUE)
+      )
     then
   (assert
    (plan-action (id (+ ?offset 4)) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id)
@@ -932,7 +940,8 @@
                                                       rs-after ?rs-after
                                                       rs-req ?rs-req
                                                       order ?order
-                                                      ))
+                                                      )
+             (meta promised ?promised))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
   (bind ?offset 1)
@@ -997,11 +1006,14 @@
             (param-values ?robot ?wp ?rs))
     )
 
-  (if (any-factp ((?at-output wm-fact))
+  (if (or (any-factp ((?at-output wm-fact))
                  (and (wm-key-prefix ?at-output:key (create$ domain fact wp-at))
                       (eq (wm-key-arg ?at-output:key m) ?rs)
                       (eq (wm-key-arg ?at-output:key side) OUTPUT)
-                 ))
+                 )
+          )
+          (eq ?promised TRUE)
+      )
     then
   (assert
      (plan-action (id (+ ?offset 4)) (plan-id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id)
@@ -1048,7 +1060,8 @@
                                                         mps ?mps
                                                         cs-color ?cap-color
                                                         order ?order
-                                                        ))
+                                                        )
+                                              (meta promised ?promised))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
   (bind ?offset 1)
@@ -1108,11 +1121,14 @@
           (param-names r wp m)
           (param-values ?robot ?wp ?mps))
   )
-  (if (any-factp ((?at-output wm-fact))
+  (if (or (any-factp ((?at-output wm-fact))
                  (and (wm-key-prefix ?at-output:key (create$ domain fact wp-at))
                       (eq (wm-key-arg ?at-output:key m) ?mps)
                       (eq (wm-key-arg ?at-output:key side) OUTPUT)
-                 ))
+                 )
+          )
+          (eq ?promised TRUE)
+      )
     then
   (assert
      (plan-action (id (+ ?offset 4)) (plan-id PRODUCE-CX-PLAN) (goal-id ?goal-id)
@@ -1179,8 +1195,8 @@
                           ring1-color ?ring1-color
                           ring2-color ?ring2-color
                           ring3-color ?ring3-color
-                          cap-color ?cap-color
-       ))
+                          cap-color ?cap-color)
+             (meta promised ?promised))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))

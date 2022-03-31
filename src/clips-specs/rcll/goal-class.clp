@@ -955,7 +955,9 @@
     (test (sat-or-promised ?sat ?game-time ?from ?lt))
     =>
     (printout t "Goal " ?class " ("?mps") formulated from PDDL" crlf)
+    (bind ?promised FALSE)
     (if (neq ?sat TRUE) then
+        (bind ?promised TRUE)
         (printout t "Goal formulated from promise" crlf)
     )
 
@@ -1007,6 +1009,7 @@
                             rs-before ?filled
                             rs-after ?after
                     )
+                    (meta promised ?promised)
                     (required-resources (compute-required-resources ?resources ?promised-from-goals ?sat))
     ))
 
@@ -1055,7 +1058,9 @@
     (test (sat-or-promised ?sat ?game-time ?from ?lt))
     =>
     (printout t "Goal " ?class " ("?mps") formulated from PDDL" crlf)
+    (bind ?promised FALSE)
     (if (neq ?sat TRUE) then
+        (bind ?promised TRUE)
         (printout t "Goal formulated from promise" crlf)
     )
 
@@ -1106,6 +1111,7 @@
                             mps ?mps
                             side ?side
                     )
+                    (meta promised ?promised)
                     (required-resources (compute-required-resources ?resources ?promised-from-goals ?sat))
     ))
 
@@ -1148,7 +1154,9 @@
         (retract ?wm) ; TODO: this seems dangeorus, the goal is not even dispatched, yet the monitoring fact is removed
     )
     (printout t "Goal " ?class " formulated from PDDL" crlf)
+    (bind ?promised FALSE)
     (if (neq ?sat TRUE) then
+        (bind ?promised TRUE)
         (printout t "Goal formulated from promise" crlf)
     )
 
@@ -1161,6 +1169,7 @@
                     (params robot ?robot
                             wp ?wp
                     )
+                    (meta promised ?promised)
                     (required-resources (compute-required-resources ?resources ?promised-from-goals ?sat))
     ))
 
@@ -1197,7 +1206,9 @@
     (test (sat-or-promised ?sat ?game-time ?from ?lt))
     =>
     (printout t "Goal " ?class " formulated from PDDL" crlf)
+    (bind ?promised FALSE)
     (if (neq ?sat TRUE) then
+        (bind ?promised TRUE)
         (printout t "Goal formulated from promise" crlf)
     )
 
@@ -1218,6 +1229,7 @@
                             rs-after ?after
 
                     )
+                    (meta promised ?promised)
                     (required-resources (compute-required-resources ?resources ?promised-from-goals ?sat))
             )
     )
@@ -1280,7 +1292,9 @@
     (test (sat-or-promised ?sat ?game-time ?from ?lt))
     =>
     (printout t "Goal " ?class " formulated from PDDL" crlf)
+    (bind ?promised FALSE)
     (if (neq ?sat TRUE) then
+        (bind ?promised TRUE)
         (printout t "Goal formulated from promise" crlf)
     )
 
@@ -1299,6 +1313,7 @@
                             rs-before ?filled
                             rs-after ?after
                     )
+                    (meta promised ?promised)
                     (required-resources (compute-required-resources ?resources ?promised-from-goals ?sat))
             )
     )
@@ -1357,7 +1372,9 @@
     )
     (bind ?distance (node-distance (str-cat ?rs -I)))
     (printout t "Goal " ?class " formulated from PDDL" crlf)
+    (bind ?promised FALSE)
     (if (neq ?sat TRUE) then
+        (bind ?promised TRUE)
         (printout t "Goal formulated from promise" crlf)
     )
     (bind ?resources (create$ ?rs ?wp))
@@ -1373,6 +1390,7 @@
                             rs-before ?filled
                             rs-after ?after
                     )
+                    (meta promised ?promised)
                     (required-resources (compute-required-resources ?resources ?promised-from-goals ?sat))
     ))
     ;assert promises resulting from the plan-action of this goal
@@ -1418,7 +1436,9 @@
     else
         (printout t "Goal " ?class " formulated from PDDL" crlf)
     )
+    (bind ?promised FALSE)
     (if (neq ?sat TRUE) then
+        (bind ?promised TRUE)
         (printout t "Goal formulated from promise" crlf)
     )
 
@@ -1439,6 +1459,7 @@
                             mps ?cs
                             cc ?cc
                     )
+                    (meta promised ?promised)
                     (required-resources (compute-required-resources ?resources ?promised-from-goals ?sat))
     ))
     ;assert promises resulting from the plan-action of this goal
@@ -1526,7 +1547,9 @@
         else
         (printout t "Goal " ?class " formulated from PDDL for order " ?order crlf)
     )
+    (bind ?promised FALSE)
     (if (neq ?sat TRUE) then
+        (bind ?promised TRUE)
         (printout t "Goal formulated from promise" crlf)
     )
 
@@ -1555,6 +1578,7 @@
                             order ?order
                             wp ?wp
                     )
+                    (meta promised ?promised)
                     (required-resources (compute-required-resources ?resources ?promised-from-goals ?sat))
     ))
     ;assert promises resulting from the plan-action of this goal
@@ -1657,7 +1681,9 @@
     )
 
     (printout t "Goal " ?class " formulated from PDDL for order " ?order " (Ring " ?ring-pos ") " crlf)
+    (bind ?promised FALSE)
     (if (neq ?sat TRUE) then
+        (bind ?promised TRUE)
         (printout t "Goal formulated from promise" crlf)
     )
 
@@ -1689,6 +1715,7 @@
                             rs-req ?bases-needed
                             order ?order
                     )
+                    (meta promised ?promised)
                     (required-resources (compute-required-resources ?resources ?promised-from-goals ?sat))
     ))
     ;assert promises resulting from the plan-action of this goal
@@ -1764,7 +1791,9 @@
     (test (sat-or-promised ?sat ?game-time ?from ?lt))
     =>
     (printout t "Goal " ?class " formulated from PDDL for order " ?order crlf)
+    (bind ?promised FALSE)
     (if (neq ?sat TRUE) then
+        (bind ?promised TRUE)
         (printout t "Goal formulated from promise" crlf)
     )
 
@@ -1790,6 +1819,7 @@
                             ring3-color ?ring3-color
                             cap-color ?cap-color
                     )
+                    (meta promised ?promised)
                     (required-resources (compute-required-resources ?resources ?promised-from-goals ?sat))
     ))
     ;assert promises resulting from the plan-action of this goal
@@ -1844,7 +1874,9 @@
     (wm-fact (key refbox order ?order delivery-begin) (type UINT) (value ?begin))
     =>
     (printout t "Goal " ?class " formulated from PDDL for order " ?order crlf)
+    (bind ?promised FALSE)
     (if (neq ?sat TRUE) then
+        (bind ?promised TRUE)
         (printout t "Goal formulated from promise" crlf)
     )
 
@@ -1878,6 +1910,7 @@
                             order ?order
                             wp ?wp
                     )
+                    (meta promised ?promised)
                     (required-resources (compute-required-resources ?resources ?promised-from-goals ?sat))
     ))
     ;assert promises resulting from the plan-action of this goal
@@ -1978,7 +2011,9 @@
     (if (eq ?com C2) then (bind ?prio ?*PRIORITY-PRODUCE-C2*))
     (if (eq ?com C3) then (bind ?prio ?*PRIORITY-PRODUCE-C3*))
     (printout t "Goal " ?class " formulated from PDDL for order " ?order crlf)
+    (bind ?promised FALSE)
     (if (neq ?sat TRUE) then
+        (bind ?promised TRUE)
         (printout t "Goal formulated from promise" crlf)
     )
 
@@ -2002,6 +2037,7 @@
                             cs-color ?cap-color
                             order ?order
                     )
+                    (meta promised ?promised)
                     (required-resources (compute-required-resources ?resources ?promised-from-goals ?sat))
     ))
     ;assert promises resulting from the plan-action of this goal
