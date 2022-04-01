@@ -1191,6 +1191,12 @@
   )
   (modify ?g (mode EXPANDED))
 )
+(defrule goal-reject-no-plan
+  (declare (salience -1))
+ ?g <- (goal (id ?goal-id) (sub-type SIMPLE) (mode SELECTED))
+  =>
+  (modify ?g (mode FINISHED) (outcome REJECTED) (message "Could not be selected"))
+)
 
 (defrule goal-deliver
  ?p <- (goal (mode DISPATCHED) (id ?parent))
