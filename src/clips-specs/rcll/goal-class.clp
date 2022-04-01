@@ -1480,7 +1480,7 @@
         ;go-wait -> dc
     )
     ;assert the promises for the connected machine interaction if the output side is free
-    (if (output-side-free ?cs) then
+    (if (and (not ?promised) (output-side-free ?cs)) then
         (assert
             ;prepare-cs RETRIEVE_CAP
             ;(domain-promise (name mps-state) (param-values ?cs READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 54 2 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
@@ -1557,7 +1557,7 @@
 
 
     (bind ?resources (create$ (sym-cat ?rs -INPUT) ?required-resources))
-    (if (output-side-free ?rs) then
+    (if (and (not ?promised) (output-side-free ?rs)) then
         (bind ?resources (create$ (sym-cat ?rs -INPUT) ?required-resources  ?rs (sym-cat ?rs -OUTPUT)))
     )
 
@@ -1625,7 +1625,7 @@
         ;unlocks -> dc
         ;go-wait -> dc
     )
-    (if (output-side-free ?rs) then
+    (if (and (not ?promised) (output-side-free ?rs)) then
         (bind ?ring-fact wp-ring1-color)
         (assert
             ;prepare-rs
@@ -1746,7 +1746,7 @@
         ;unlocks -> dc
         ;go-wait -> dc
     )
-    (if (output-side-free ?rs) then
+    (if (and (not ?promised) (output-side-free ?rs)) then
         (bind ?ring-fact wp-ring2-color)
         (if (eq (int-to-sym ?ring-pos) THREE) then
             (bind ?ring-fact wp-ring3-color)
@@ -1958,7 +1958,7 @@
         ;go-wait -> dc
     )
 
-    (if (output-side-free ?mps) then
+    (if (and (not ?promised) (output-side-free ?mps)) then
         (assert
             ;prepare-cs MOUNT_CAP
             ;(domain-promise (name mps-state) (param-values ?mps READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 2 ?offset 24 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
@@ -2068,7 +2068,7 @@
         ;unlocks -> dc
         ;go-wait -> dc
     )
-    (if (output-side-free ?cs) then
+    (if (and (not ?promised) (output-side-free ?cs)) then
         (assert
             ;prepare-cs MOUNT_CAP
             ; (domain-promise (name mps-state) (param-values ?cs READY-AT-OUTPUT) (promising-goal ?goal-id) (valid-at (+ 2 ?offset 24 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
