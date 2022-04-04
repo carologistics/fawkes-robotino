@@ -41,13 +41,13 @@ skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
 
 -- Constant
-local gripper_down_z_pick = -0.019  -- distance to move gripper down after driving over product TODO: get through object tracking yaml
-local gripper_down_z_put = -0.005  -- distance to move gripper down after driving over product
+local gripper_down_z_pick = -0.05  -- distance to move gripper down after driving over product TODO: get through object tracking yaml
+local gripper_down_z_put = -0.028  -- distance to move gripper down after driving over product
 
-local gripper_up_z_pick = 0.005   -- distance to move gripper up after closing gripper
-local gripper_up_z_put = 0.019   -- distance to move gripper up after opening gripper
+local gripper_up_z_pick = 0.01   -- distance to move gripper up after closing gripper
+local gripper_up_z_put = 0.045   -- distance to move gripper up after opening gripper
 
-local drive_back_x = -0.1
+local drive_back_x = -0.2
 
 local gripper_default_pose_x = 0.00   -- conveyor pose offset in x direction
 local gripper_default_pose_y = 0.00   -- conveyor_pose offset in y direction
@@ -56,13 +56,15 @@ local gripper_default_pose_z = 0.056  -- conveyor_pose offset in z direction
 
 fsm:define_states{ export_to=_M, closure={},
    {"INIT",              JumpState},
-   {"MOVE_GRIPPER_DOWN", SkillJumpState, skills={{gripper_commands}}, final_to="CHOOSE_ACTION",fail_to="FAILED"},
+   {"MOVE_GRIPPER_DOWN", SkillJumpState, skills={{gripper_commands}}, final_to="CHOOSE_ACTION" ,fail_to="FAILED"},
    {"CHOOSE_ACTION",     JumpState},
    {"CLOSE_GRIPPER",     SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_GRIPPER_UP", fail_to="FAILED"},
    {"OPEN_GRIPPER",      SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_GRIPPER_UP", fail_to="FAILED"},
    {"MOVE_GRIPPER_UP",   SkillJumpState, skills={{gripper_commands}}, final_to="GRIPPER_DEFAULT", fail_to="FAILED"},
    {"GRIPPER_DEFAULT",   SkillJumpState, skills={{gripper_commands}}, final_to="DRIVE_BACK", fail_to="FAILED"},
-   {"DRIVE_BACK",        SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
+   {"DRIVE_BACK",        SkillJumpState, skills={{motor_move}}, final_to="DECIDE_CLOSE", fail_to="FAILED"},
+   {"DECIDE_CLOSE",      JumpState},
+   {"CLOSE_DEFAULT",     SkillJumpState, skills={{gripper_commands}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
@@ -70,6 +72,8 @@ fsm:add_transitions{
    {"CHOOSE_ACTION", "CLOSE_GRIPPER", cond="vars.pick_wp", desc="Picking Up Workpiece"},
    {"CHOOSE_ACTION", "OPEN_GRIPPER",  cond="not vars.pick_wp", desc="Putting Down Workpiece"},
    {"CHOOSE_ACTION", "FAILED",        true, desc="Instructions Unclear"},
+   {"DECIDE_CLOSE", "CLOSE_DEFAULT",  cond="not vars.pick_wp", desc="Close Gripper"},
+   {"DECIDE_CLOSE", "FINAL",          true},
 }
 
 function MOVE_GRIPPER_DOWN:init()
@@ -112,4 +116,8 @@ end
 
 function DRIVE_BACK:init()
   self.args["motor_move"].x = drive_back_x
+end
+
+function CLOSE_DEFAULT:init()
+  self.args["gripper_commands"].command= "CLOSE"
 end
