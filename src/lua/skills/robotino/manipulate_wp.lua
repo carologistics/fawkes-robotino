@@ -42,11 +42,7 @@ Parameters:
 
 local EXPECTED_BASE_OFFSET       = 0.5 -- distance between robotino middle point and workpiece
                                        -- used as initial target position while searching
-local GRIPPER_X_SAFETY_DISTANCE  = 0.02 -- used to create more distance between gripper and workpiece
-local GRIPPER_TOLERANCE          = {x=0.005, y=0.003, z=0.003} -- accuracy
-local CLOSE_TARGET_ORI_TOLERANCE = 0.5 -- threshold to declare a target close
-local CLOSE_TARGET_X_TOLERANCE   = {min=-0.35, max=0.2}
-local CLOSE_TARGET_Y_TOLERANCE   = {min=-0.45, max=0.45}
+local GRIPPER_TOLERANCE          = {x=0.005, y=0.001, z=0.001} -- accuracy
 local MISSING_MAX                = 2 -- limit for missing object detections in a row while fine-tuning gripper
 
 -- Initialize as skill module
@@ -127,12 +123,7 @@ if config:exists("plugins/object_tracking/puck_values/right_shelf_offset_side") 
 end
 
 function gripper_aligned()
-  if not arduino:is_final() then
-    return false
-  end
-
-  if fsm.vars.gripper_wait < 15 then
-    fsm.vars.gripper_wait = fsm.vars.gripper_wait + 1
+  if fsm.vars.gripper_wait < 9 then
     return false
   end
 
@@ -149,6 +140,12 @@ function gripper_aligned()
 end
 
 function set_gripper(x, y, z)
+  if not arduino:is_final() then
+    fsm.vars.gripper_wait = 0
+  elseif fsm.vars.gripper_wait < 10 then
+     fsm.vars.gripper_wait = fsm.vars.gripper_wait + 1
+  end
+
   -- Clip to axis limits
   x_clipped = math.max(0, math.min(x, x_max))
   y_clipped = math.max(-y_max/2, math.min(y, y_max/2))
@@ -169,13 +166,14 @@ function set_gripper(x, y, z)
   end
 
   if (not arduino:is_final() and (
-     math.abs(fsm.vars.gripper_target_pos_x - x_clipped) > GRIPPER_TOLERANCE.x * 3 or
-     math.abs(fsm.vars.gripper_target_pos_y - y_clipped) > GRIPPER_TOLERANCE.y * 3 or
-     math.abs(fsm.vars.gripper_target_pos_z - z_clipped) > GRIPPER_TOLERANCE.z * 3)) or
+     math.abs(fsm.vars.gripper_target_pos_x - x_clipped) > GRIPPER_TOLERANCE.x * 2 or
+     math.abs(fsm.vars.gripper_target_pos_y - y_clipped) > GRIPPER_TOLERANCE.y * 2 or
+     math.abs(fsm.vars.gripper_target_pos_z - z_clipped) > GRIPPER_TOLERANCE.z * 2)) or
      (arduino:is_final() and (
      math.abs(fsm.vars.gripper_target_pos_x - x_clipped) > GRIPPER_TOLERANCE.x or
      math.abs(fsm.vars.gripper_target_pos_y - y_clipped) > GRIPPER_TOLERANCE.y or
      math.abs(fsm.vars.gripper_target_pos_z - z_clipped) > GRIPPER_TOLERANCE.z)) then
+    fsm.vars.gripper_wait = 0
     fsm.vars.gripper_target_pos_x = x_clipped
     fsm.vars.gripper_target_pos_y = y_clipped
     fsm.vars.gripper_target_pos_z = z_clipped
@@ -360,6 +358,7 @@ function INIT:init()
   fsm.vars.gripper_target_pos_x = 0
   fsm.vars.gripper_target_pos_y = 0
   fsm.vars.gripper_target_pos_z = 0
+  fsm.vars.gripper_wait       = 0
 end
 
 function START_TRACKING:init()
@@ -432,12 +431,14 @@ function MOVE_BASE_AND_GRIPPER:init()
      ori=fawkes.tf.create_quaternion_from_yaw(0)},
     "base_link", "end_effector_home")
 
-  set_gripper(gripper_target.x - GRIPPER_X_SAFETY_DISTANCE, 0, gripper_target.z)
+  fsm.vars.gripper_wait = 10
+  set_gripper(gripper_target.x, 0, gripper_target.z)
 end
 
 function FINE_TUNE_GRIPPER:init()
   fsm.vars.missing_detections = 0
   fsm.vars.out_of_reach       = false
+  fsm.vars.gripper_wait       = 10
 end
 
 function FINE_TUNE_GRIPPER:loop()
