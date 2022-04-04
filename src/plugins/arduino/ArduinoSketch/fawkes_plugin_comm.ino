@@ -132,6 +132,8 @@ long cur_x_ = 0;
 long cur_y_ = 0;
 long cur_z_ = 0;
 
+int loop_nr = 0;
+
 #define BUFFER_SIZE 128
 char buffer_[BUFFER_SIZE];
 byte buf_i_ = 0;
@@ -598,12 +600,19 @@ void loop() {
     movement_done_flag = false;
     set_status(STATUS_IDLE);
   }
+
   read_package();
-  if(cur_status == STATUS_MOVING &&
-    (abs(cur_x_ - motor_X.currentPosition()) > 300 ||
-    abs(cur_y_ - motor_Y.currentPosition()) > 300 ||
-    abs(cur_z_ - motor_Z.currentPosition()) > 300)) {
+
+  if(cur_status != STATUS_MOVING){
+    loop_nr = 0;
+    return;
+  }
+
+  if(loop_nr > 1000) {
     send_status();
+    loop_nr = 0;
+  } else {
+    loop_nr++;
   }
 }
 
