@@ -51,10 +51,8 @@ using namespace dnn;
 /** Constructor. */
 ObjectTrackingThread::ObjectTrackingThread()
 : Thread("ObjectTrackingThread", Thread::OPMODE_WAITFORWAKEUP),
-  BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PROCESS),
-  fawkes::TransformAspect(fawkes::TransformAspect::BOTH, "object_tracking"),
-  object_pos_pub(nullptr),
-  weighted_object_pos_pub(nullptr)
+  BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_POST_LOOP),
+  fawkes::TransformAspect(fawkes::TransformAspect::BOTH_DEFER_PUBLISHER)
 {
 }
 
@@ -201,7 +199,7 @@ ObjectTrackingThread::init()
 
 	//initialize publisher objects----------
 	object_pos_frame_ = this->config->get_string("plugins/object_tracking/tf/object_pos_frame");
-	object_pos_frame_ =
+	weighted_object_pos_frame_ =
 	  this->config->get_string("plugins/object_tracking/tf/weighted_object_pos_frame");
 
 	tf_add_publisher(object_pos_frame_.c_str());
@@ -366,7 +364,7 @@ ObjectTrackingThread::loop()
 			sy << std::fixed << std::setprecision(3) << pos[1];
 			sz << std::fixed << std::setprecision(3) << pos[2];
 			std::string pos_str = sx.str() + " " + sy.str() + " " + sz.str();
-			logger->log_info("cam_gripper: ", pos_str.c_str());
+			//logger->log_info("cam_gripper: ", pos_str.c_str());
 
 			cv::putText(image,
 			            pos_str,
@@ -413,6 +411,7 @@ ObjectTrackingThread::loop()
 	tf_listener->transform_pose("base_link", mps_pose_map, mps_pose_base);
 
 	float mps_angle = fawkes::tf::get_yaw(mps_pose_base.getRotation());
+	//logger->log_info("mps_yaw: ", std::to_string(mps_angle).c_str());
 	if (current_expected_side_ == ObjectTrackingInterface::OUTPUT_CONVEYOR) {
 		mps_angle += M_PI;
 	}
@@ -421,11 +420,10 @@ ObjectTrackingThread::loop()
 	Rect  closest_box;
 	float additional_height = 0;
 	//get 3d position of closest bounding box to last weighted average in cam_gripper frame
-	fawkes::tf::Stamped<fawkes::tf::Point> weighted_object_pos_cam;
-	tf_listener->transform_point(cam_frame_, weighted_object_pos_target_, weighted_object_pos_cam);
+	fawkes::tf::Stamped<fawkes::tf::Point> expected_pos_cam;
+	tf_listener->transform_point(cam_frame_, exp_pos_, expected_pos_cam);
 	bool detected = closest_position(
-	  out_boxes, weighted_object_pos_cam, mps_angle, cur_object_pos, closest_box, additional_height);
-	logger->log_info("additional_height ", std::to_string(additional_height).c_str());
+	  out_boxes, expected_pos_cam, mps_angle, cur_object_pos, closest_box, additional_height);
 	std::string                            pos_str;
 	fawkes::tf::Stamped<fawkes::tf::Point> cur_object_pos_target;
 	if (detected) {
@@ -494,14 +492,14 @@ ObjectTrackingThread::loop()
 	//compute weighted average
 	//-------------------------------------------------------------------------
 
-	logger->log_info("cur pos", "frame: odom");
-	logger->log_info("filter_weight: ", std::to_string(filter_weights_[0]).c_str());
-	logger->log_info("cur_object_pos_target[0]: ",
-	                 std::to_string(cur_object_pos_target.getX()).c_str());
-	logger->log_info("cur_object_pos_target[1]: ",
-	                 std::to_string(cur_object_pos_target.getY()).c_str());
-	logger->log_info("cur_object_pos_target[2]: ",
-	                 std::to_string(cur_object_pos_target.getZ()).c_str());
+	//logger->log_info("cur pos", "frame: odom");
+	//logger->log_info("filter_weight: ", std::to_string(filter_weights_[0]).c_str());
+	//logger->log_info("cur_object_pos_target[0]: ",
+	//                 std::to_string(cur_object_pos_target.getX()).c_str());
+	//logger->log_info("cur_object_pos_target[1]: ",
+	//                 std::to_string(cur_object_pos_target.getY()).c_str());
+	//logger->log_info("cur_object_pos_target[2]: ",
+	//                 std::to_string(cur_object_pos_target.getZ()).c_str());
 
 	//use weighted average to improve robustness of object position
 	double weighted_object_pos[3];
@@ -511,11 +509,11 @@ ObjectTrackingThread::loop()
 	weighted_object_pos[2] = filter_weights_[0] * cur_object_pos_target.getZ();
 
 	for (size_t i = 0; i < past_responses_.size(); i++) {
-		logger->log_info("past response", std::to_string(i).c_str());
-		logger->log_info("filter_weight: ", std::to_string(filter_weights_[1 + i]).c_str());
-		logger->log_info("past_responses_[0]: ", std::to_string(past_responses_[i].getX()).c_str());
-		logger->log_info("past_responses_[1]: ", std::to_string(past_responses_[i].getY()).c_str());
-		logger->log_info("past_responses_[2]: ", std::to_string(past_responses_[i].getZ()).c_str());
+		//logger->log_info("past response", std::to_string(i).c_str());
+		//logger->log_info("filter_weight: ", std::to_string(filter_weights_[1 + i]).c_str());
+		//logger->log_info("past_responses_[0]: ", std::to_string(past_responses_[i].getX()).c_str());
+		//logger->log_info("past_responses_[1]: ", std::to_string(past_responses_[i].getY()).c_str());
+		//logger->log_info("past_responses_[2]: ", std::to_string(past_responses_[i].getZ()).c_str());
 		//fawkes::tf::Stamped<fawkes::tf::Point> response_target;
 		//tf_listener->transform_point(target_frame_, past_responses_[i], response_target);
 		weighted_object_pos[0] += filter_weights_[1 + i] * past_responses_[i].getX();
@@ -530,7 +528,7 @@ ObjectTrackingThread::loop()
 	tf::Vector3          v(weighted_object_pos[0], weighted_object_pos[1], weighted_object_pos[2]);
 	tf::Transform        tf_weighted_object_pos(q, v);
 	tf::StampedTransform stf_weighted_object_pos(tf_weighted_object_pos,
-	                                             fawkes::Time(0.0),
+	                                             capture_time,
 	                                             target_frame_,
 	                                             weighted_object_pos_frame_);
 	weighted_object_pos_pub->send_transform(stf_weighted_object_pos);
@@ -552,13 +550,13 @@ ObjectTrackingThread::loop()
 
 	//compute target frames
 	//-------------------------------------------------------------------------
-	// logger->log_info("weighted pos", "frame: base_link");
-	// logger->log_info("weighted_object_pos_base[0]: ",
-	//                  std::to_string(weighted_object_pos_base.getX()).c_str());
-	// logger->log_info("weighted_object_pos_base[1]: ",
-	//                  std::to_string(weighted_object_pos_base.getY()).c_str());
-	// logger->log_info("weighted_object_pos_base[2]: ",
-	//                  std::to_string(weighted_object_pos_base.getZ()).c_str());
+	//logger->log_info("weighted pos", "frame: base_link");
+	//logger->log_info("weighted_object_pos_base[0]: ",
+	//                 std::to_string(weighted_object_pos_base.getX()).c_str());
+	//logger->log_info("weighted_object_pos_base[1]: ",
+	//                 std::to_string(weighted_object_pos_base.getY()).c_str());
+	//logger->log_info("weighted_object_pos_base[2]: ",
+	//                 std::to_string(weighted_object_pos_base.getZ()).c_str());
 
 	double gripper_target[3];
 	double base_target[3];
@@ -677,6 +675,9 @@ ObjectTrackingThread::compute_expected_position()
 		exp_pos_map[2] -= belt_size_ / 2;
 	}
 
+	logger->log_info("exp_pos_map[0]: ", std::to_string(exp_pos_map[0]).c_str());
+	logger->log_info("exp_pos_map[1]: ", std::to_string(exp_pos_map[1]).c_str());
+	logger->log_info("exp_pos_map[2]: ", std::to_string(exp_pos_map[2]).c_str());
 	//transform into stamped point
 	exp_pos_.stamp    = fawkes::Time(0.0);
 	exp_pos_.frame_id = "map";
@@ -782,10 +783,13 @@ ObjectTrackingThread::closest_position(std::vector<std::array<float, 4>>      bo
 		float dist = sqrt((pos[0] - ref_pos.getX()) * (pos[0] - ref_pos.getX())
 		                  + (pos[1] - ref_pos.getY()) * (pos[1] - ref_pos.getY())
 		                  + (pos[2] - ref_pos.getZ()) * (pos[2] - ref_pos.getZ()));
-		// logger->log_warn(name(), std::to_string(dist).c_str());
-		// logger->log_info("pos[0]: ", std::to_string(pos[0]).c_str());
-		// logger->log_info("pos[1]: ", std::to_string(pos[1]).c_str());
-		// logger->log_info("pos[2]: ", std::to_string(pos[2]).c_str());
+		//logger->log_warn(name(), std::to_string(dist).c_str());
+		//logger->log_info("pos[0]: ", std::to_string(pos[0]).c_str());
+		//logger->log_info("pos[1]: ", std::to_string(pos[1]).c_str());
+		//logger->log_info("pos[2]: ", std::to_string(pos[2]).c_str());
+		//logger->log_info("ref[0]: ", std::to_string(ref_pos.getX()).c_str());
+		//logger->log_info("ref[1]: ", std::to_string(ref_pos.getY()).c_str());
+		//logger->log_info("ref[2]: ", std::to_string(ref_pos.getZ()).c_str());
 		if (dist < min_dist) {
 			min_dist          = dist;
 			closest_pos[0]    = pos[0];
@@ -811,8 +815,6 @@ void
 ObjectTrackingThread::compute_3d_point(Rect bounding_box, float point[3])
 {
 	//get distance using triangle similarity
-	logger->log_info(name(), "computing 3d point");
-	logger->log_info("width: ", std::to_string(bounding_box.width).c_str());
 	float dist     = focal_length_ * object_widths_[(int)current_object_type_] / bounding_box.width;
 	float pixel[2] = {(float)bounding_box.x + bounding_box.width / 2,
 	                  (float)bounding_box.y + bounding_box.height / 2};
@@ -919,7 +921,6 @@ ObjectTrackingThread::compute_3d_point_direct_yolo(std::array<float, 4> bounding
 		point[2] = dy_top * dist + puck_height_ / 2;
 
 		wp_additional_height = max(puck_height_ / 2, dy_bottom * dist - point[2]);
-		logger->log_error("wp_additional_height", std::to_string(wp_additional_height).c_str());
 	} else {
 		//percieved object width from angle
 		float object_width = cos(mps_angle) * object_widths_[(int)current_object_type_];
