@@ -526,7 +526,7 @@
   (wm-fact (key domain fact ?orc&:(eq ?orc
                                       (sym-cat order-ring
                                       (sub-string 5 5 (str-cat ?ns))
-                                     -color))
+                                      -color))
             args? ord ?order col ?ring-col))
   (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring-col $?))
 =>
@@ -543,6 +543,30 @@
   (wm-fact (key domain fact mps-type args? m ?rs t RS))
   (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
   (not (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT)))
+=>
+  (retract ?strat)
+)
+
+(defrule production-strategy-retract-keep-rs-side-free-outdated-next-step
+" The next step of the workpiece has changed to require a ring on a different
+  rs than the one that is currently kept free. Hence the keep-mps-side-free
+  information is outdated and needs to be removed.
+"
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact mps-type args? m ?rs t RS))
+  (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT))
+  (wm-fact (key wp meta next-step args? wp ?wp) (value ?ns&RING1|RING2|RING3))
+  (wm-fact (key domain fact ?orc&:(eq ?orc
+                                      (sym-cat order-ring
+                                      (sub-string 5 5 (str-cat ?ns))
+                                      -color))
+            args? ord ?order col ?ring-col))
+  (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key domain fact rs-ring-spec args? m ?other-rs&:(neq ?other-rs ?rs) r ?ring-col $?))
+  ?strat <- (wm-fact (key strategy keep-mps-side-free
+                      args? m ?rs side INPUT cause ?wp))
 =>
   (retract ?strat)
 )
