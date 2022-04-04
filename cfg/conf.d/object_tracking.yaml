@@ -64,9 +64,13 @@ plugins/object_tracking:
   target_frame: "/odom"
   camera_frame: "cam_gripper"
 
+  tf:
+    object_pos_frame: "object_pos"
+    weighted_object_pos_frame: "weighted_object_pos"
+
   # maximal distance between yolo response and last weighted average to accept
   #  as target object
-  max_acceptable_dist: 0.15
+  max_acceptable_dist: 0.4
 
   yolo:
     weights_path: "../cfg/yolo/yolov4-tiny.weights"
