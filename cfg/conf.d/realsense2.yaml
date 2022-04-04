@@ -10,6 +10,9 @@ realsense2:
   # ID of the PointCloud
   pcl_id: "/camera/depth/points"
 
+  # If true, all images captured by the camera are saved to rgb_path
+  save_images: false
+
   # Path to save images to
   rgb_path: "/tmp/realsense_images/"
 
