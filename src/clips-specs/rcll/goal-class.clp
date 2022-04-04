@@ -1800,7 +1800,7 @@
     ;handle ressources for promises
     (bind ?mps-output (sym-cat ?mps -OUTPUT))
     (bind ?promise-wp ?wp)
-    (bind ?resources (create$ ?mps-output ?order ?promise-wp (sym-cat ?ds -INPUT)))
+    (bind ?resources (create$ ?mps-output ?order ?promise-wp))
 
     (bind ?goal-id (sym-cat ?class - (gensym*)))
     (assert (goal (id ?goal-id)
