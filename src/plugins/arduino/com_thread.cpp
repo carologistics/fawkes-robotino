@@ -181,7 +181,6 @@ ArduinoComThread::loop()
 			while (!arduino_if_->msgq_empty() && calibrated_) {
 				if (arduino_if_->msgq_first_is<ArduinoInterface::MoveXYZAbsMessage>()) {
 					ArduinoInterface::MoveXYZAbsMessage *msg = arduino_if_->msgq_first(msg);
-					logger->log_info(name(), "MoveAbsMsg received");
 
 					ArduinoComMessage *arduino_msg = new ArduinoComMessage();
 
@@ -273,7 +272,6 @@ ArduinoComThread::loop()
 					}
 
 					if (msg_has_data == true) {
-						logger->log_info(name(), "Before set MSG");
 						set_message(arduino_msg);
 					} else {
 						delete arduino_msg;
@@ -361,15 +359,15 @@ ArduinoComThread::loop()
 				} else if (arduino_if_->msgq_first_is<ArduinoInterface::CloseGripperMessage>()) {
 					ArduinoInterface::CloseGripperMessage *msg = arduino_if_->msgq_first(msg);
 					logger->log_debug(name(), "Close Gripper");
-					set_message(ArduinoComMessage::command_id_t::CMD_CLOSE, 0, 10000);
+					append_message_to_queue(ArduinoComMessage::command_id_t::CMD_CLOSE, 0, 10000);
 				} else if (arduino_if_->msgq_first_is<ArduinoInterface::OpenGripperMessage>()) {
 					ArduinoInterface::OpenGripperMessage *msg = arduino_if_->msgq_first(msg);
 					logger->log_debug(name(), "Open Gripper");
-					set_message(ArduinoComMessage::command_id_t::CMD_OPEN, 0, 10000);
+					append_message_to_queue(ArduinoComMessage::command_id_t::CMD_OPEN, 0, 10000);
 				} else if (arduino_if_->msgq_first_is<ArduinoInterface::StatusUpdateMessage>()) {
 					ArduinoInterface::StatusUpdateMessage *msg = arduino_if_->msgq_first(msg);
 					logger->log_debug(name(), "Request Status");
-					set_message(ArduinoComMessage::command_id_t::CMD_STATUS_REQ, 0, 10000);
+					append_message_to_queue(ArduinoComMessage::command_id_t::CMD_STATUS_REQ, 0, 10000);
 				}
 
 				arduino_if_->msgq_pop();
@@ -487,7 +485,7 @@ ArduinoComThread::loop()
 			arduino_if_->set_status(ArduinoInterface::MOVING);
 			arduino_if_->write();
 
-			logger->log_info(name(), "Send Message");
+			logger->log_debug(name(), "Send Message");
 			send_one_message();
 		}
 	} while (!arduino_if_->is_final());
@@ -503,16 +501,6 @@ ArduinoComThread::gripper_update()
 	if (current_arduino_status_ == 'I') {
 		// Update gripper pose in iface
 		arduino_if_->set_status(ArduinoInterface::IDLE);
-
-		if (calibrated_ == false) {
-			arduino_if_->set_x_max(cfg_x_max_);
-			arduino_if_->set_y_max(cfg_y_max_);
-			arduino_if_->set_z_max(cfg_z_max_);
-			calibrated_ = true;
-			if (home_pending_ == true) {
-				wakeup();
-			}
-		}
 	} else if (current_arduino_status_ == 'M') {
 		arduino_if_->set_status(ArduinoInterface::MOVING);
 	} else {
@@ -691,9 +679,8 @@ ArduinoComThread::send_one_message()
 	if (new_msg_) {
 		send_message(*next_msg_);
 
-		logger->log_info(name(), "After send message");
 		std::string s = read_packet(1000); // read receipt
-		logger->log_info(name(), "Read receipt: %s", s.c_str());
+		logger->log_debug(name(), "Read receipt: %s", s.c_str());
 
 		new_msg_ = false;
 		return true;
@@ -776,7 +763,7 @@ ArduinoComThread::read_packet(unsigned int timeout)
 	}
 	if (current_arduino_status_ == 'E') {
 		logger->log_error(name(), "Arduino error: %s", s.substr(4).c_str());
-	} else if (current_arduino_status_ == 'I') {
+	} else if (current_arduino_status_ == 'I' || current_arduino_status_ == 'M') {
 		// TODO: setup absolute pose reporting!
 
 		std::stringstream ss(s.substr(4));
