@@ -46,6 +46,7 @@ using namespace fawkes;
 /** Constructor. */
 ArduinoTFThread::ArduinoTFThread(std::string &cfg_name, std::string &cfg_prefix)
 : Thread("ArduinoTFThread", Thread::OPMODE_WAITFORWAKEUP),
+  BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PREPARE),
   TransformAspect(TransformAspect::DEFER_PUBLISHER),
   dyn_x_pub(nullptr),
   dyn_y_pub(nullptr),
@@ -87,6 +88,13 @@ ArduinoTFThread::init()
 void
 ArduinoTFThread::finalize()
 {
+}
+
+void
+ArduinoTFThread::loop()
+{
+	boost::mutex::scoped_lock lock(data_mutex_);
+	update();
 }
 
 void
