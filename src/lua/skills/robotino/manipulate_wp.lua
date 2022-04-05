@@ -40,7 +40,7 @@ Parameters:
       @param side    the side of the mps: (INPUT | OUTPUT | SHELF-LEFT | SHELF-MIDDLE | SHELF-RIGHT | SLIDE)
 ]==]
 
-local EXPECTED_BASE_OFFSET       = 0.5 -- distance between robotino middle point and workpiece
+local EXPECTED_BASE_OFFSET       = 0.75 -- distance between robotino middle point and workpiece
                                        -- used as initial target position while searching
 local GRIPPER_TOLERANCE          = {x=0.005, y=0.001, z=0.001} -- accuracy
 local MISSING_MAX                = 2 -- limit for missing object detections in a row while fine-tuning gripper
@@ -123,7 +123,7 @@ if config:exists("plugins/object_tracking/puck_values/right_shelf_offset_side") 
 end
 
 function gripper_aligned()
-  if fsm.vars.gripper_wait < 9 then
+  if fsm.vars.gripper_wait < 1 then
     return false
   end
 
@@ -167,8 +167,8 @@ function set_gripper(x, y, z)
 
   if (not arduino:is_final() and (
      math.abs(fsm.vars.gripper_target_pos_x - x_clipped) > GRIPPER_TOLERANCE.x * 2 or
-     math.abs(fsm.vars.gripper_target_pos_y - y_clipped) > GRIPPER_TOLERANCE.y * 2 or
-     math.abs(fsm.vars.gripper_target_pos_z - z_clipped) > GRIPPER_TOLERANCE.z * 2)) or
+     math.abs(fsm.vars.gripper_target_pos_y - y_clipped) > GRIPPER_TOLERANCE.y * 1 or
+     math.abs(fsm.vars.gripper_target_pos_z - z_clipped) > GRIPPER_TOLERANCE.z * 1.5)) or
      (arduino:is_final() and (
      math.abs(fsm.vars.gripper_target_pos_x - x_clipped) > GRIPPER_TOLERANCE.x or
      math.abs(fsm.vars.gripper_target_pos_y - y_clipped) > GRIPPER_TOLERANCE.y or
@@ -307,7 +307,6 @@ fsm:define_states{ export_to=_M, closure={MISSING_MAX=MISSING_MAX},
    {"MOVE_BASE_AND_GRIPPER", SkillJumpState, skills={{motor_move}},      final_to="FINE_TUNE_GRIPPER",     fail_to="SEARCH"},
    {"FINE_TUNE_GRIPPER",     JumpState},
    {"GRIPPER_ROUTINE",       SkillJumpState, skills={{gripper_routine}}, final_to="FINAL", fail_to="FINE_TUNE_GRIPPER"},
-   {"WAIT",                  JumpState},
 }
 
 fsm:add_transitions{
@@ -315,10 +314,9 @@ fsm:add_transitions{
    {"INIT", "START_TRACKING",                     cond=true, desc="Valid Input"},
    {"START_TRACKING", "FAILED",                   timeout=6000, desc="Object tracker is not starting"},
    {"START_TRACKING", "SEARCH",                   cond=object_tracker_active},
-   {"FINE_TUNE_GRIPPER", "FINAL",                 cond=gripper_aligned, desc="Gripper aligned"},
+   {"FINE_TUNE_GRIPPER", "GRIPPER_ROUTINE",       cond=gripper_aligned, desc="Gripper aligned"},
    {"FINE_TUNE_GRIPPER", "MOVE_BASE_AND_GRIPPER", cond="vars.out_of_reach", desc="Gripper out of reach"},
    {"FINE_TUNE_GRIPPER", "SEARCH",                cond="vars.missing_detections > MISSING_MAX", desc="Tracking lost target"},
-   {"WAIT", "FINAL",                              timeout=6000, desc="Waited"},
 }
 
 function INIT:init()
