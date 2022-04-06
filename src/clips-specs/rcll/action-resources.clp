@@ -21,8 +21,12 @@
 	)
 	(bind ?action-res (create$))
 	(foreach ?r ?req-res
-		(if (member$ ?r ?params) then
-			(bind ?action-res (append$ ?action-res ?r))
+		(bind ?actual-r ?r)
+		(if (str-index "PROMISE-" (str-cat ?r)) then
+			(bind ?actual-r (sym-cat (sub-string 9 (length$ ?r) (str-cat ?r))))
+		)
+		(if (member$ ?actual-r ?params) then
+			(bind ?action-res (append$ ?action-res ?actual-r))
 		)
 	)
 	; Check if we can construct an MPS side resource (e.g., C-CS1-INPUT) from the
