@@ -453,7 +453,7 @@
 "
   (declare (salience ?*MONITORING-SALIENCE*))
   (plan (id ?plan-id) (goal-id ?goal-id))
-  (goal (id ?goal-id) (mode DISPATCHED))
+  (goal (id ?goal-id) (mode DISPATCHED) (meta promised FALSE))
   (plan-action
         (plan-id ?plan-id)
         (action-name ?an&wp-get)
