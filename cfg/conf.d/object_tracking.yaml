@@ -20,13 +20,13 @@ plugins/object_tracking:
     belt_size: 0.045
 
   slide_values:
-    slide_offset_side: -0.25
+    slide_offset_side: -0.28
     slide_height: 0.91
 
   shelf_values:
-    left_shelf_offset_side: -0.075
-    middle_shelf_offset_side: -0.175
-    right_shelf_offset_side: -0.275
+    left_shelf_offset_side: -0.1
+    middle_shelf_offset_side: -0.2
+    right_shelf_offset_side: -0.3
     shelf_height: 0.89
 
   target_frame_offsets:
