@@ -49,5 +49,6 @@
   ;(wm-robmem-sync-enable "/domain/fact/machine-makes-material")
   (wm-robmem-sync-enable "/domain/fact/location-is-free")
   (wm-robmem-sync-enable "/domain/fact/storage-is-full")
+  (wm-robmem-sync-enable "/domain/promise")
   (wm-robmem-sync-restore)
 )
