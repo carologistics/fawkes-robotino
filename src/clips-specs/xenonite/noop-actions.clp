@@ -54,25 +54,13 @@
 )
 
 (defrule action-timer-noop-run
-  ?p <- (plan-action (plan-id ?plan-id) (id ?id) (goal-id ?goal-id) (action-name ?op&~move&~wait-machine) (param-values $?params) (state PENDING))
+  ?p <- (plan-action (plan-id ?plan-id) (id ?id) (goal-id ?goal-id) (action-name ?op&~move) (param-values $?params) (state PENDING))
   (not (action-timer (plan-id ?plan-id) (action-id ?id)))
   (time ?now ?mills)
   =>
   (printout t "Starting action (" ?op " " $?params ") (" ?id ") of plan " ?plan-id crlf)
   (assert
     (action-timer (plan-id ?plan-id) (action-id ?id) (start-time ?now) (duration ?*EXEC-DURATION*))
-  )
-  (modify ?p (state RUNNING))
-)
-
-(defrule action-timer-noop-run-wait-machine
-  ?p <- (plan-action (plan-id ?plan-id) (id ?id) (goal-id ?goal-id) (action-name ?op&wait-machine) (param-values $?params) (state PENDING))
-  (not (action-timer (plan-id ?plan-id) (action-id ?id)))
-  (time ?now ?mills)
-  =>
-  (printout t "Starting action (" ?op " " $?params ") (" ?id ") of plan " ?plan-id crlf)
-  (assert
-    (action-timer (plan-id ?plan-id) (action-id ?id) (start-time ?now) (duration ?*MACHINE-EXEC-DURATION*))
   )
   (modify ?p (state RUNNING))
 )
@@ -88,24 +76,24 @@
   (modify ?p (state EXECUTION-SUCCEEDED))
 )
 
-; (defrule action-start-machine-operation
-;   (domain-fact (name machine-in-state) (param-values ?machine OPERATING))
-;   (not (machine-timer (machine ?machine)))
-;   (time ?now ?mills)
-;   =>
-;   (printout t "Starting machine operation of " ?machine crlf)
-;   (assert
-;     (machine-timer (machine ?machine) (start-time ?now) (duration ?*MACHINE-EXEC-DURATION*))
-;   )
-; )
+(defrule action-start-machine-operation
+  (domain-fact (name machine-in-state) (param-values ?machine OPERATING))
+  (not (machine-timer (machine ?machine)))
+  (time ?now ?mills)
+  =>
+  (printout t "Starting machine operation of " ?machine crlf)
+  (assert
+    (machine-timer (machine ?machine) (start-time ?now) (duration ?*MACHINE-EXEC-DURATION*))
+  )
+)
 
-; (defrule action-stop-machine-operation
-;   ?df <- (domain-fact (name machine-in-state) (param-values ?machine OPERATING))
-;   ?mt <- (machine-timer (machine ?machine) (start-time ?time) (duration ?duration))
-;   (time ?now ?mills)
-;   (test (> ?now (+ ?duration ?time)))
-;   =>
-;   (printout t "Stopping machine operation of " ?machine crlf)
-;   (retract ?mt)
-;   (modify ?df (param-values ?machine READY))
-; )
+(defrule action-stop-machine-operation
+  ?df <- (domain-fact (name machine-in-state) (param-values ?machine OPERATING))
+  ?mt <- (machine-timer (machine ?machine) (start-time ?time) (duration ?duration))
+  (time ?now ?mills)
+  (test (> ?now (+ ?duration ?time)))
+  =>
+  (printout t "Stopping machine operation of " ?machine crlf)
+  (retract ?mt)
+  (modify ?df (param-values ?machine READY))
+)

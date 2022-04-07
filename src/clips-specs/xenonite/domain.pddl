@@ -187,16 +187,6 @@
 		          (at start (not (machine-in-state ?m FILLED))))
 	)
 
-	(:durative-action wait-machine
-		:parameters (?m - machine)
-		:duration (= ?duration 1)
-		:condition (and
-		             (at start (machine-in-state ?m OPERATING)))
-		:effect (and
-		          (at end (machine-in-state ?m READY))
-		          (at start (not (machine-in-state ?m OPERATING))))
-	)
-
 	(:durative-action collect-processite
 		:parameters (?r - robot ?machine - machine ?output - location ?c - container)
 		:duration (= ?duration 1)

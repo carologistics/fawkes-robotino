@@ -58,8 +58,6 @@
     (plan (id ?plan-id) (goal-id ?goal-id) (type SEQUENTIAL))
     (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
                  (action-name start-machine) (param-values ?m))
-    (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
-                 (action-name wait-machine) (param-values ?m))
   )
   (modify ?g (mode EXPANDED) (committed-to ?plan-id))
 )
