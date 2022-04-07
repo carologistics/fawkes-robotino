@@ -378,13 +378,13 @@ function START_TRACKING:init()
     if for_gazebo then
       fsm.vars.expected_pos_ori = fsm.vars.mps_ori + 1.57
     else
-      fsm.vars.expected_pos_ori = fsm.vars.mps_ori + math.pi
+      fsm.vars.expected_pos_ori = fsm.vars.mps_ori
     end
   else
     if for_gazebo then
       fsm.vars.expected_pos_ori = fsm.vars.mps_ori + 1.57 + math.pi
     else
-      fsm.vars.expected_pos_ori = fsm.vars.mps_ori
+      fsm.vars.expected_pos_ori = fsm.vars.mps_ori + math.pi
     end
   end
 
