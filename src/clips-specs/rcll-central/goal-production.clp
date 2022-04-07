@@ -1271,9 +1271,9 @@ The workpiece remains in the output of the used ring station after
 	(return ?goal)
 )
 
-(deffunction goal-production-assign-cx-order-meta (?goal ?order-id)
+(deffunction goal-production-assign-cx-order-meta (?goal ?order-id ?prio)
 	(bind ?goal-id (fact-slot-value ?goal id))
-	(modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (priority 40))
+	(modify ?goal (meta (fact-slot-value ?goal meta) for-order ?order-id) (priority ?prio))
 	(do-for-fact ((?goal-meta goal-meta)) (eq ?goal-meta:goal-id ?goal-id)
 		(modify ?goal-meta (root-for-order ?order-id))
 	)
@@ -1307,7 +1307,7 @@ The workpiece remains in the output of the used ring station after
 		)
 	)
 
-	(goal-production-assign-cx-order-meta ?goal ?order-id)
+	(goal-production-assign-cx-order-meta ?goal ?order-id 30)
 )
 
 (deffunction goal-production-assert-c1
@@ -1342,7 +1342,7 @@ The workpiece remains in the output of the used ring station after
 		)
 	)
 
-	(goal-production-assign-cx-order-meta ?goal ?order-id)
+	(goal-production-assign-cx-order-meta ?goal ?order-id 40)
 )
 
 (deffunction goal-production-assert-c2
@@ -1377,7 +1377,7 @@ The workpiece remains in the output of the used ring station after
 		)
 	)
 
-	(goal-production-assign-cx-order-meta ?goal ?order-id)
+	(goal-production-assign-cx-order-meta ?goal ?order-id 50)
 )
 
 (deffunction goal-production-assert-c3
@@ -1414,7 +1414,7 @@ The workpiece remains in the output of the used ring station after
 		)
 	)
 
-	(goal-production-assign-cx-order-meta ?goal ?order-id)
+	(goal-production-assign-cx-order-meta ?goal ?order-id 60)
 )
 
 ; (defrule goal-production-create-production-root
