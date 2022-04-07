@@ -20,10 +20,8 @@
 ;
 
 (defglobal
-  ; Value used to promise facts that will effectively never come true.
-  ; Hacky way to synchronize resources of goals that are tied to the
-  ; lifetime of the promising goal.
-  ?*PROMISES-MAX-FUTURE* = 9999
+  ; Set it to a negative value so the promise never times out.
+  ?*PROMISES-MAX-FUTURE* = -1
 )
 
 (deffunction compute-required-resources (?required-resources ?promised-from-goals ?disable-delay)
