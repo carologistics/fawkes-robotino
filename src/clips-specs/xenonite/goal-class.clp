@@ -19,6 +19,55 @@
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
 
+(defglobal
+  ; Value used to promise facts that will effectively never come true.
+  ; Hacky way to synchronize resources of goals that are tied to the
+  ; lifetime of the promising goal.
+  ?*PROMISES-MAX-FUTURE* = 9999
+)
+
+(deffunction compute-required-resources (?required-resources ?promised-from-goals ?disable-delay)
+" Given a list of resources, the ones that are requested upon goal committment
+  are returned.
+  Goals that are not based on a promise request each resource '<res>' along
+  with a duplicate 'PROMISE-<res>', the latter is freed directly after being
+  acquired.
+  Goals that are acting based on promises from goals will not be able to lock
+  a resource '<res>' that is also acquired by a goal that emitted the promise.
+  In that case, only the 'PROMISE-<res>' resource is requested upon goal
+  commitment and is traded for the actual '<res>' during execution.
+
+  @param: ?required-resources list of resources
+  @param: ?promised-from-goals list of '<goal-id>@<agent>' entries of goals
+          that emitted promises relevant for the required resources that are
+          being computed
+  @param: ?disable-delay if TRUE, then the content of ?promised-from-goals
+          has no effect on the result
+  @return: list of required resources and PROMISE-resources
+"
+  (bind ?delayed-resources (create$))
+  (progn$ (?goal-agent ?promised-from-goals)
+     (bind ?str-goal-agent (str-cat ?goal-agent))
+     (bind ?sep (str-index "@" ?str-goal-agent))
+     (bind ?promising-goal (sym-cat (sub-string 1 (- ?sep 1) ?str-goal-agent)))
+     (bind ?promising-agent (sym-cat (sub-string (+ ?sep 1) (length$ ?str-goal-agent) ?str-goal-agent)))
+     (do-for-fact ((?resource-promise domain-promise))
+                  (and (eq ?resource-promise:name RESOURCES)
+                       (eq ?resource-promise:promising-goal ?promising-goal)
+                       (eq ?resource-promise:promising-agent ?promising-agent)
+                  )
+                  (bind ?delayed-resources (append$ ?delayed-resources ?resource-promise:param-values))
+     )
+  )
+  (bind ?final-resources (create$))
+  (progn$ (?res ?required-resources)
+    (bind ?final-resources (append$ ?final-resources (sym-cat PROMISE- ?res)))
+    (if (or (eq ?disable-delay TRUE) (not (member$ ?res ?delayed-resources))) then
+        (bind ?final-resources (append$ ?final-resources ?res))
+    )
+  )
+  (return ?final-resources)
+)
 
 ; ------------------------- ASSERT GOAL CLASSES -----------------------------------
 
@@ -179,7 +228,8 @@
     (goal (class PRODUCTION-TRY-ALL) (id ?parent) (meta $? host ?r) (mode SELECTED))
     (goal-class (class ?class&FILL-CONTAINER) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
-    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (grounding ?grounding-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (grounding ?grounding-id)
+      (promised-from ?from) (promised-from-goals $?promised-from-goals))
     (pddl-grounding (id ?grounding-id) (param-values ?r ?base ?mine ?c))
     (promise-time (usecs ?now))
     (test (sat-or-promised ?sat ?now ?from ?lt))
@@ -189,6 +239,7 @@
     (if (neq ?sat TRUE) then
         (printout t "Debug: Goal formulated from promise" crlf)
     )
+    (bind ?resources (create$ ?c))
     (assert (goal (id ?goal-id)
                     (class ?class) (sub-type ?subtype)
                     (parent ?parent)
@@ -198,12 +249,14 @@
                             start ?base
                             mine ?mine
                     )
-                    (required-resources ?c)
+                    (required-resources
+                      (compute-required-resources ?resources ?promised-from-goals ?sat))
     ))
 
     ;assert promises resulting from the plan-action of this goal
     (assert
         (domain-promise (name location-is-free) (param-values ?mine) (promising-goal ?goal-id) (valid-at (+ 22 ?now)) (negated TRUE))
+        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE))
     )
 )
 
@@ -213,7 +266,8 @@
     (goal (class PRODUCTION-TRY-ALL) (id ?parent) (meta $? host ?r) (mode SELECTED))
     (goal-class (class ?class&DELIVER) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
-    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (grounding ?grounding-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (grounding ?grounding-id)
+      (promised-from ?from) (promised-from-goals $?promised-from-goals))
     (pddl-grounding (id ?grounding-id) (param-values ?r ?side ?machine ?c ?mat))
     (domain-fact (name robot-at) (param-values ?r ?start))
 
@@ -226,6 +280,7 @@
     )
 
     (bind ?goal-id (sym-cat ?class - (gensym*)))
+    (bind ?resources (create$ ?machine ?side ?c))
     (assert (goal (id ?goal-id)
                     (class ?class) (sub-type ?subtype)
                     (parent ?parent)
@@ -236,7 +291,8 @@
                             container ?c
                             material ?mat
                     )
-                    (required-resources ?machine ?side ?c)
+                    (required-resources
+                      (compute-required-resources ?resources ?promised-from-goals ?sat))
     ))
 
     ;assert promises resulting from the plan-action of this goal
@@ -244,6 +300,7 @@
         (domain-promise (name location-is-free) (param-values ?start) (promising-goal ?goal-id) (valid-at (+ 10 ?now)) (negated FALSE))
         (domain-promise (name machine-in-state) (param-values ?machine FILLED) (promising-goal ?goal-id) (valid-at (+ 12 ?now)) (negated FALSE))
         (domain-promise (name machine-in-state) (param-values ?machine IDLE) (promising-goal ?goal-id) (valid-at (+ 12 ?now)) (negated TRUE))
+        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE))
     )
 )
 
@@ -253,7 +310,8 @@
     (goal (class PRODUCTION-TRY-ALL) (id ?parent) (meta $? host ?r) (mode SELECTED))
     (goal-class (class ?class&START-MACHINE) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
-    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (grounding ?grounding-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (grounding ?grounding-id)
+      (promised-from ?from) (promised-from-goals $?promised-from-goals))
     (pddl-grounding (id ?grounding-id) (param-values ?r ?side ?machine))
     (promise-time (usecs ?now))
     (test (sat-or-promised ?sat ?now ?from ?lt))
@@ -264,6 +322,7 @@
     )
 
     (bind ?goal-id (sym-cat ?class - (gensym*)))
+    (bind ?resources (create$ ?machine))
     (assert (goal (id ?goal-id)
                     (class ?class) (sub-type ?subtype)
                     (parent ?parent)
@@ -272,7 +331,8 @@
                             side ?side
                             machine ?machine
                     )
-                    (required-resources ?machine)
+                    (required-resources
+                      (compute-required-resources ?resources ?promised-from-goals ?sat))
     ))
 
     ;assert promises resulting from the plan-action of this goal
@@ -280,6 +340,7 @@
         (domain-promise (name machine-in-state) (param-values ?machine READY) (promising-goal ?goal-id) (valid-at (+ 20 ?now)) (negated FALSE) (do-not-invalidate TRUE))
         (domain-promise (name machine-in-state) (param-values ?machine FILLED) (promising-goal ?goal-id) (valid-at (+ 5 ?now)) (negated TRUE) (do-not-invalidate TRUE))
         (domain-promise (name machine-in-state) (param-values ?machine OPERATING) (promising-goal ?goal-id) (valid-at (+ 5 ?now)) (negated TRUE) (do-not-invalidate TRUE))
+        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE))
     )
 )
 
@@ -289,7 +350,8 @@
     (goal (class PRODUCTION-TRY-ALL) (id ?parent) (meta $? host ?r) (mode SELECTED))
     (goal-class (class ?class&CLEAN-MACHINE) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
-    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (grounding ?grounding-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (grounding ?grounding-id)
+      (promised-from ?from) (promised-from-goals $?promised-from-goals))
     (pddl-grounding (id ?grounding-id) (param-values ?r ?side ?machine ?c ?mat))
     (domain-fact (name robot-at) (param-values ?r ?start))
 
@@ -302,6 +364,7 @@
     )
 
     (bind ?goal-id (sym-cat ?class - (gensym*)))
+    (bind ?resources (create$ ?side ?c))
     (assert (goal (id ?goal-id)
                     (class ?class) (sub-type ?subtype)
                     (parent ?parent)
@@ -312,7 +375,8 @@
                             container ?c
                             material ?mat
                     )
-                    (required-resources ?side ?c)
+                    (required-resources
+                      (compute-required-resources ?resources ?promised-from-goals ?sat))
     ))
 
     ;assert promises resulting from the plan-action of this goal
@@ -320,6 +384,7 @@
         (domain-promise (name location-is-free) (param-values ?start) (promising-goal ?goal-id) (valid-at (+ 10 ?now)) (negated FALSE))
         (domain-promise (name machine-in-state) (param-values ?machine READY) (promising-goal ?goal-id) (valid-at (+ 12 ?now)) (negated TRUE))
         (domain-promise (name machine-in-state) (param-values ?machine IDLE) (promising-goal ?goal-id) (valid-at (+ 12 ?now)) (negated FALSE))
+        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE))
     )
 )
 
@@ -329,7 +394,8 @@
     (goal (class PRODUCTION-TRY-ALL) (id ?parent) (meta $? host ?r) (mode SELECTED))
     (goal-class (class ?class&DELIVER-XENONITE) (id ?cid) (sub-type ?subtype) (lookahead-time ?lt))
     (pddl-formula (part-of ?cid) (id ?formula-id))
-    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (promised-from ?from) (grounding ?grounding-id))
+    (grounded-pddl-formula (formula-id ?formula-id) (is-satisfied ?sat) (grounding ?grounding-id)
+      (promised-from ?from) (promised-from-goals $?promised-from-goals))
     (pddl-grounding (id ?grounding-id) (param-values ?r ?c))
     (promise-time (usecs ?now))
     (test (sat-or-promised ?sat ?now ?from ?lt))
@@ -340,6 +406,7 @@
     )
 
     (bind ?goal-id (sym-cat ?class - (gensym*)))
+    (bind ?resources (create$ ?c))
     (assert (goal (id ?goal-id)
                     (class ?class) (sub-type ?subtype)
                     (parent ?parent)
@@ -347,10 +414,13 @@
                     (params robot ?r
                             container ?c
                     )
-                    (required-resources ?c)
+                    (required-resources
+                      (compute-required-resources ?resources ?promised-from-goals ?sat))
     ))
 
-    ;no promises for this goal
+    (assert
+        (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE))
+    )
 )
 
 (defrule goal-class-production-run-one-is-expanded
