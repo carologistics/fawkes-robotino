@@ -66,10 +66,9 @@ ObjectTrackingThread::init()
 	puck_size_   = config->get_float("plugins/object_tracking/puck_values/puck_size");
 	puck_height_ = config->get_float("plugins/object_tracking/puck_values/puck_height");
 
-	belt_height_      = config->get_float("plugins/object_tracking/belt_values/belt_height");
-	belt_lenght_      = config->get_float("plugins/object_tracking/belt_values/belt_lenght");
-	belt_offset_side_ = config->get_float("plugins/object_tracking/belt_values/belt_offset_side");
-	belt_size_        = config->get_float("plugins/object_tracking/belt_values/belt_size");
+	belt_height_ = config->get_float("plugins/object_tracking/belt_values/belt_height");
+	belt_lenght_ = config->get_float("plugins/object_tracking/belt_values/belt_lenght");
+	belt_size_   = config->get_float("plugins/object_tracking/belt_values/belt_size");
 
 	slide_offset_side_ = config->get_float("plugins/object_tracking/slide_values/slide_offset_side");
 	slide_height_      = config->get_float("plugins/object_tracking/slide_values/slide_height");
@@ -412,7 +411,7 @@ ObjectTrackingThread::loop()
 
 	float mps_angle = fawkes::tf::get_yaw(mps_pose_base.getRotation());
 	//logger->log_info("mps_yaw: ", std::to_string(mps_angle).c_str());
-	if (current_expected_side_ == ObjectTrackingInterface::OUTPUT_CONVEYOR) {
+	if (current_expected_side_ == ObjectTrackingInterface::INPUT_CONVEYOR) {
 		mps_angle += M_PI;
 	}
 
@@ -625,15 +624,13 @@ ObjectTrackingThread::compute_expected_position()
 	//find expected object position as middle point
 	switch (current_expected_side_) {
 	case ObjectTrackingInterface::INPUT_CONVEYOR:
-		exp_pos_map[0] = compute_middle_x(belt_offset_side_);
-		exp_pos_map[1] = compute_middle_y(belt_offset_side_);
+		exp_pos_map[0] = compute_middle_x(0);
+		exp_pos_map[1] = compute_middle_y(0);
 		exp_pos_map[2] = belt_height_;
 		break;
 	case ObjectTrackingInterface::OUTPUT_CONVEYOR:
-		exp_pos_map[0] =
-		  mps_x_ - belt_offset_side_ * sin(mps_ori_) - (belt_lenght_ / 2) * cos(mps_ori_);
-		exp_pos_map[1] =
-		  mps_y_ - belt_offset_side_ * cos(mps_ori_) + (belt_lenght_ / 2) * sin(mps_ori_);
+		exp_pos_map[0] = mps_x_ + (belt_lenght_ / 2) * cos(mps_ori_);
+		exp_pos_map[1] = mps_y_ - (belt_lenght_ / 2) * sin(mps_ori_);
 		exp_pos_map[2] = belt_height_;
 		break;
 	case ObjectTrackingInterface::SLIDE:
@@ -665,11 +662,11 @@ ObjectTrackingThread::compute_expected_position()
 	if (current_object_type_ == ObjectTrackingInterface::WORKPIECE) {
 		exp_pos_map[2] += puck_height_ / 2;
 		if (current_expected_side_ == ObjectTrackingInterface::OUTPUT_CONVEYOR) {
-			exp_pos_map[0] += (puck_size_ / 2) * cos(mps_ori_);
-			exp_pos_map[1] -= (puck_size_ / 2) * sin(mps_ori_);
-		} else {
 			exp_pos_map[0] -= (puck_size_ / 2) * cos(mps_ori_);
 			exp_pos_map[1] += (puck_size_ / 2) * sin(mps_ori_);
+		} else {
+			exp_pos_map[0] += (puck_size_ / 2) * cos(mps_ori_);
+			exp_pos_map[1] -= (puck_size_ / 2) * sin(mps_ori_);
 		}
 	} else if (current_object_type_ == ObjectTrackingInterface::CONVEYOR_BELT_FRONT) {
 		exp_pos_map[2] -= belt_size_ / 2;
@@ -689,13 +686,13 @@ ObjectTrackingThread::compute_expected_position()
 float
 ObjectTrackingThread::compute_middle_x(float x_offset)
 {
-	return mps_x_ - x_offset * sin(mps_ori_) + (belt_lenght_ / 2) * cos(mps_ori_);
+	return mps_x_ + x_offset * sin(mps_ori_) - (belt_lenght_ / 2) * cos(mps_ori_);
 }
 
 float
 ObjectTrackingThread::compute_middle_y(float y_offset)
 {
-	return mps_y_ - y_offset * cos(mps_ori_) - (belt_lenght_ / 2) * sin(mps_ori_);
+	return mps_y_ + y_offset * cos(mps_ori_) + (belt_lenght_ / 2) * sin(mps_ori_);
 }
 
 void
