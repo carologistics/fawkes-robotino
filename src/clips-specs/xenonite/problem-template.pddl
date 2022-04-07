@@ -29,14 +29,14 @@
     <<#DOMAINFACTS|{"relation": "domain-fact"}>>(<<name>> <<param_values>>)
     <</DOMAINFACTS>>
     <<#POSDOMAINPROMISES||
-      [ {"$match": {"relation": "domain-promise", "negated": "FALSE"}},
+      [ {"$match": {"relation": "domain-promise", "name": { "$ne": "RESOURCES" }, "negated": "FALSE"}},
         {"$project": { "name": 1, "param_values": 1,
                        "diff": { "$subtract": ["$valid_at", %START_TIME% ] }}}  ]
     >>
     (at <<valid_at>> <<diff>> (<<name>> <<param_values>>))
     <</POSDOMAINPROMISES>>
     <<#NEGDOMAINPROMISES||
-      [ {"$match": {"relation": "domain-promise", "negated": "TRUE"}},
+      [ {"$match": {"relation": "domain-promise", "name": { "$ne": "RESOURCES" }, "negated": "TRUE"}},
         {"$project": { "name": 1, "param_values": 1,
                        "diff": { "$subtract": ["$valid_at", %START_TIME% ] }}}  ]
     >>
