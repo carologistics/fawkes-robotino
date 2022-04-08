@@ -52,12 +52,12 @@ local startpoints = {{x = -1.0, y = 4.0, ori = 3.14},
                      {x = -0.75, y = 0.75, ori = 1.57}}
 
 local target_outputs = {{target = "WORKPIECE", mps = "C-CS1", side = "SHELF-LEFT"},
-                        {target = "WORKPIECE", mps = "C-CS1", side = "SHELF-MIDDLE"},
-                        {target = "WORKPIECE", mps = "C-CS1", side = "SHELF-RIGHT"},
-                        {target = "WORKPIECE", mps = "C-CS1", side = "OUTPUT"},
                         {target = "WORKPIECE", mps = "C-RS1", side = "OUTPUT"},
                         {target = "WORKPIECE", mps = "C-BS", side = "INPUT"},
-                        {target = "WORKPIECE", mps = "C-BS", side = "OUTPUT"}}
+                        {target = "WORKPIECE", mps = "C-CS1", side = "SHELF-MIDDLE"},
+                        {target = "WORKPIECE", mps = "C-BS", side = "OUTPUT"},
+                        {target = "WORKPIECE", mps = "C-CS1", side = "SHELF-RIGHT"},
+                        {target = "WORKPIECE", mps = "C-CS1", side = "OUTPUT"}}
 
 local target_inputs = {{target = "CONVEYOR", mps = "C-CS1", side = "INPUT"},
                        {target = "CONVEYOR", mps = "C-RS1", side = "INPUT"},
@@ -78,7 +78,7 @@ end
 
 fsm:define_states{ export_to=_M, closure={},
    {"INIT",          JumpState},
-   {"GOTO_START",    SkillJumpState, skills={{goto}}, final_to="CHOOSE_ACTION" ,fail_to="FAILED"},
+   {"GOTO_START",    SkillJumpState, skills={{goto}}, final_to="CHOOSE_ACTION" ,fail_to="CHOOSE_ACTION"},
    {"CHOOSE_ACTION", JumpState},
    {"PICK",          SkillJumpState, skills={{manipulate_wp}}, final_to="PUT_POSSIBLE" ,fail_to="GOTO_START"},
    {"PUT",           SkillJumpState, skills={{manipulate_wp}}, final_to="GOTO_START" ,fail_to="GOTO_START"},
@@ -89,8 +89,8 @@ fsm:add_transitions{
    {"INIT", "GOTO_START",         cond=startpoint_valid, desc="Go to startpoint"},
    {"INIT", "FAILED",             true, desc="Startpoint is invalid"},
    {"CHOOSE_ACTION", "FINAL",     cond=finished, desc="All scenarios tested"},
-   {"CHOOSE_ACTION", "PICK",      cond="vars.pick_wp", desc="Start picking up workpiece"},
    {"CHOOSE_ACTION", "PUT",       cond="not vars.pick_wp and not vars.input_done", desc="Start putting down workpiece"},
+   {"CHOOSE_ACTION", "PICK",      true, desc="Start picking up workpiece"},
    {"PUT_POSSIBLE", "GOTO_START", timeout=2, desc="Evaluating grasp"},
 }
 
@@ -162,7 +162,13 @@ function PICK:exit()
 end
 
 function PUT:init()
+  self.time_start = fawkes.Time:new():in_msec()
   fsm.vars.next_target_input = target_inputs[fsm.vars.next_input_id]
+  print_info("Evaluating input " .. fsm.vars.next_input_id)
+  print_info("input target: " .. fsm.vars.next_target_input.target)
+  print_info("input mps: " .. fsm.vars.next_target_input.mps)
+  print_info("input side: " .. fsm.vars.next_target_input.side)
+
   self.args["manipulate_wp"] = {target = fsm.vars.next_target_input.target,
                                 mps = fsm.vars.next_target_input.mps,
                                 side = fsm.vars.next_target_input.side}
@@ -177,6 +183,11 @@ function PUT:init()
 
   -- pick afterwards
   fsm.vars.pick_wp = true
+end
+
+function PUT:exit()
+  local now = fawkes.Time:new():in_msec()
+  print_info("Execution time for input " .. fsm.vars.next_input_id .. ": " .. now - self.time_start)
 end
 
 function PUT_POSSIBLE:init()
