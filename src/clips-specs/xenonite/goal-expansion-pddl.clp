@@ -87,3 +87,10 @@
                                     "(robot-at " ?r " BASE) "
                                ")"))
 )
+
+(defrule goal-expander-prune-start-machine-action
+  ?p <- (plan-action (goal-id ?gid) (action-name start-machine))
+  (goal (id ?gid) (class ~START-MACHINE))
+  =>
+  (retract ?p)
+)
