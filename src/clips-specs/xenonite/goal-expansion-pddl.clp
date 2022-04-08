@@ -40,8 +40,8 @@
   =>
   (printout info "Expanding " ?goal-id crlf)
   (pddl-call ?goal-id (str-cat "(and (robot-at " ?r " " BASE ") "
-                                    "(machine-in-state " ?machine " FILLED))"))
-                                    ;"(container-filled " ?c " " ?mat "))"))
+                                    "(machine-in-state " ?machine " FILLED)"
+                                    "(container-can-be-filled " ?c "))"))
 )
 
 
