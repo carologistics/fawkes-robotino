@@ -96,6 +96,10 @@ fsm:add_transitions{
 
 function INIT:init()
   fsm.vars.startpoint = startpoints[fsm.vars.startpoint_id]
+  print_info("Evaluating starting point " .. fsm.vars.startpoint_id)
+  print_info("starting x value: " .. fsm.vars.startpoint.x)
+  print_info("starting y value: " .. fsm.vars.startpoint.y)
+  print_info("starting orientation: " .. fsm.vars.startpoint.ori)
   fsm.vars.output_done = false
   fsm.vars.input_done = false
 
@@ -130,7 +134,13 @@ function GOTO_START:init()
 end
 
 function PICK:init()
+  self.time_start = fawkes.Time:new():in_msec()
   fsm.vars.next_target_output = target_outputs[fsm.vars.next_output_id]
+  print_info("Evaluating output " .. fsm.vars.next_output_id)
+  print_info("output target: " .. fsm.vars.next_target_output.target)
+  print_info("output mps: " .. fsm.vars.next_target_output.mps)
+  print_info("output side: " .. fsm.vars.next_target_output.side)
+
   self.args["manipulate_wp"] = {target = fsm.vars.next_target_output.target,
                                 mps = fsm.vars.next_target_output.mps,
                                 side = fsm.vars.next_target_output.side}
@@ -144,6 +154,11 @@ function PICK:init()
     fsm.vars.output_done = true
     fsm.vars.next_output_id = 1
   end
+end
+
+function PICK:exit()
+  local now = fawkes.Time:new():in_msec()
+  print_info("Execution time for output " .. fsm.vars.next_output_id .. ": " .. now - self.time_start)
 end
 
 function PUT:init()
