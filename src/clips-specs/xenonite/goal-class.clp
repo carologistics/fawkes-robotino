@@ -115,7 +115,7 @@
                     (param-constants nil   ?side    ?machine nil       nil)
                     (param-types     robot location machine  container material)
                     (param-quantified)
-                    (lookahead-time 10)
+                    (lookahead-time 15)
                     (preconditions "
                         (and
                             (robot-carries ?r ?c)
@@ -176,7 +176,7 @@
                     (param-constants nil   ?side    ?machine nil       nil)
                     (param-types     robot location machine  container material)
                     (param-quantified)
-                    (lookahead-time 20)
+                    (lookahead-time 25)
                     (preconditions "
                         (and
                             (robot-carries ?r ?c)
@@ -205,7 +205,7 @@
                     (param-constants nil   nil)
                     (param-types     robot container)
                     (param-quantified)
-                    (lookahead-time 20)
+                    (lookahead-time 25)
                     (preconditions "
                         (and
                             (robot-carries ?r ?c)

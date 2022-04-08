@@ -62,7 +62,7 @@
 
 	(:durative-action collect-regolith
 		:parameters (?r - robot ?mine - location ?c - container)
-		:duration (= ?duration 1)
+		:duration (= ?duration 2)
 		:condition (and
 		              (at start (self ?r))
 		              (at start (location-is-mine ?mine))
@@ -76,7 +76,7 @@
 
 	(:durative-action put-regolith
 		:parameters (?r - robot ?side - location ?machine - machine ?c - container)
-		:duration (= ?duration 1)
+		:duration (= ?duration 2)
 		:condition (and
 		             (at start (self ?r))
 		             (at start (location-part-of-machine ?side ?machine))
@@ -95,7 +95,7 @@
 
 	(:durative-action pick-container
 		:parameters (?r - robot ?c - container)
-		:duration (= ?duration 1)
+		:duration (= ?duration 2)
 		:condition (and
 		             (at start (self ?r))
 		             (over all (robot-at ?r CONTAINER-DEPOT))
@@ -109,7 +109,7 @@
 
 	(:durative-action put-container
 		:parameters (?r - robot ?c - container ?side - location)
-		:duration (= ?duration 1)
+		:duration (= ?duration 2)
 		:condition (and
 		             (at start (self ?r))
 		             (over all (robot-at ?r ?side))
@@ -122,7 +122,7 @@
 
 	(:durative-action move
 		:parameters (?r - robot ?l1 - location ?l2 - location)
-		:duration (= ?duration 1)
+		:duration (= ?duration 20)
 		:condition (and
 		             (at start (self ?r))
 		             (at start (location-is-small ?l1))
@@ -138,7 +138,7 @@
 
 	(:durative-action move-to-plaza
 		:parameters (?r - robot ?l1 - location ?l2 - location)
-		:duration (= ?duration 1)
+		:duration (= ?duration 20)
 		:condition (and
 		             (at start (self ?r))
 		             (at start (location-is-small ?l1))
@@ -152,7 +152,7 @@
 
 	(:durative-action move-from-plaza
 		:parameters (?r - robot ?l1 - location ?l2 - location)
-		:duration (= ?duration 1)
+		:duration (= ?duration 20)
 		:condition (and
 		             (at start (self ?r))
 		             (at start (location-is-spacious ?l1))
@@ -166,7 +166,7 @@
 
 	(:durative-action move-plaza-plaza
 		:parameters (?r - robot ?l1 - location ?l2 - location)
-		:duration (= ?duration 1)
+		:duration (= ?duration 20)
 		:condition (and
 		             (at start (self ?r))
 		             (at start (location-is-spacious ?l1))
@@ -179,7 +179,7 @@
 
 	(:durative-action start-machine
 		:parameters (?m - machine)
-		:duration (= ?duration 1)
+		:duration (= ?duration 15)
 		:condition (and
 		             (at start (machine-in-state ?m FILLED)))
 		:effect (and
@@ -189,7 +189,7 @@
 
 	(:durative-action collect-processite
 		:parameters (?r - robot ?machine - machine ?output - location ?c - container)
-		:duration (= ?duration 1)
+		:duration (= ?duration 2)
 		:condition (and
 		             (at start (self ?r))
 		             (at start (location-is-machine-output ?output))
@@ -207,7 +207,7 @@
 
 	(:durative-action put-processite
 		:parameters (?r - robot ?side - location ?machine - machine ?c - container)
-		:duration (= ?duration 1)
+		:duration (= ?duration 2)
 		:condition (and
 		             (at start (self ?r))
 		             (at start (location-part-of-machine ?side ?machine))
@@ -226,7 +226,7 @@
 
 	(:durative-action collect-xenonite
 		:parameters (?r - robot ?machine - machine ?output - location ?c - container)
-		:duration (= ?duration 1)
+		:duration (= ?duration 2)
 		:condition (and
 		             (at start (self ?r))
 		             (at start (location-is-machine-output ?output))
