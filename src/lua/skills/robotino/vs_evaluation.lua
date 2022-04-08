@@ -40,7 +40,7 @@ Parameters:
 ]==]
 
 
-local startpoints = {{x = -0.5, y = 4.5, ori = 3.14},
+local startpoints = {{x = -1.0, y = 4.0, ori = 3.14},
                      {x = -0.5, y = 4.5, ori = -1.57},
                      {x = -3.5, y = 3.5, ori = 3.14},
                      {x = -3.5, y = 3.5, ori = 0.0},
@@ -48,8 +48,8 @@ local startpoints = {{x = -0.5, y = 4.5, ori = 3.14},
                      {x = -2.5, y = 1.5, ori = 1.57},
                      {x = -2.5, y = 1.5, ori = 0.0},
                      {x = -2.5, y = 1.5, ori = -1.57},
-                     {x = -0.5, y = 0.5, ori = 3.14},
-                     {x = -0.5, y = 0.5, ori = 1.57}}
+                     {x = -0.75, y = 0.75, ori = 3.14},
+                     {x = -0.75, y = 0.75, ori = 1.57}}
 
 local target_outputs = {{target = "WORKPIECE", mps = "C-CS1", side = "SHELF-LEFT"},
                         {target = "WORKPIECE", mps = "C-CS1", side = "SHELF-MIDDLE"},
@@ -69,7 +69,7 @@ local tfm = require("fawkes.tfutils")
 
 
 function startpoint_valid()
-  return fsm.vars.startpoint != nil
+  return fsm.vars.startpoint ~= nil
 end
 
 function finished()
@@ -90,7 +90,7 @@ fsm:add_transitions{
    {"INIT", "FAILED",             true, desc="Startpoint is invalid"},
    {"CHOOSE_ACTION", "FINAL",     cond=finished, desc="All scenarios tested"},
    {"CHOOSE_ACTION", "PICK",      cond="vars.pick_wp", desc="Start picking up workpiece"},
-   {"CHOOSE_ACTION", "PUT",       cond="not vars.pick_wp", desc="Start putting down workpiece"},
+   {"CHOOSE_ACTION", "PUT",       cond="not vars.pick_wp and not vars.input_done", desc="Start putting down workpiece"},
    {"PUT_POSSIBLE", "GOTO_START", timeout=2, desc="Evaluating grasp"},
 }
 
@@ -130,6 +130,7 @@ function GOTO_START:init()
 end
 
 function PICK:init()
+  fsm.vars.next_target_output = target_outputs[fsm.vars.next_output_id]
   self.args["manipulate_wp"] = {target = fsm.vars.next_target_output.target,
                                 mps = fsm.vars.next_target_output.mps,
                                 side = fsm.vars.next_target_output.side}
@@ -143,11 +144,10 @@ function PICK:init()
     fsm.vars.output_done = true
     fsm.vars.next_output_id = 1
   end
-
-  fsm.vars.next_target_output = target_outputs[fsm.vars.next_output_id]
 end
 
 function PUT:init()
+  fsm.vars.next_target_input = target_inputs[fsm.vars.next_input_id]
   self.args["manipulate_wp"] = {target = fsm.vars.next_target_input.target,
                                 mps = fsm.vars.next_target_input.mps,
                                 side = fsm.vars.next_target_input.side}
@@ -159,8 +159,6 @@ function PUT:init()
   if fsm.vars.next_input_id > 3 then
     fsm.vars.input_done = true
   end
-
-  fsm.vars.next_target_input = target_inputs[fsm.vars.next_input_id]
 
   -- pick afterwards
   fsm.vars.pick_wp = true
