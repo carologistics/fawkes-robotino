@@ -183,7 +183,7 @@
 		:condition (and
 		             (at start (machine-in-state ?m FILLED)))
 		:effect (and
-		          (at end (machine-in-state ?m OPERATING))
+		          (at end (machine-in-state ?m READY))
 		          (at start (not (machine-in-state ?m FILLED))))
 	)
 
