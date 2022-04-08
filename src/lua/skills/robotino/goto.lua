@@ -115,7 +115,8 @@ function can_navigate(self)
 end
 
 function target_unreachable()
-  if navigator:is_final() and navigator:error_code() ~= 0 then
+  if navigator:is_final() and navigator:error_code() ~= 0 and not self.fsm.vars.end_early then
+    print_info("error_code: %f", navigator:error_code())
     return true
   end
   return false
@@ -172,7 +173,7 @@ fsm:add_transitions{
   {"TIMEOUT", "FINAL",        cond=target_reached, desc="Target reached"},
   {"TIMEOUT", "FAILED",       cond=target_unreachable, desc="Target unreachable"},
   {"WAIT_VS", "FINAL",        cond=early_endable, desc="Target close enough and object detected"},
-  {"WAIT_VS", "FAILED",       timeout=0.5, desc="Object not detected"},
+  {"WAIT_VS", "FAILED",       timeout=15, desc="Object not detected"},
 }
 
 

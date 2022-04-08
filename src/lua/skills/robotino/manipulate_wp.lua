@@ -40,7 +40,7 @@ Parameters:
       @param side    the side of the mps: (INPUT | OUTPUT | SHELF-LEFT | SHELF-MIDDLE | SHELF-RIGHT | SLIDE)
 ]==]
 
-local EXPECTED_BASE_OFFSET       = 0.75 -- distance between robotino middle point and workpiece
+local EXPECTED_BASE_OFFSET       = 0.5 -- distance between robotino middle point and workpiece
                                        -- used as initial target position while searching
 local GRIPPER_TOLERANCE          = {x=0.005, y=0.001, z=0.001} -- accuracy
 local MISSING_MAX                = 2 -- limit for missing object detections in a row while fine-tuning gripper
@@ -404,6 +404,7 @@ function SEARCH:init()
 end
 
 function MOVE_BASE_AND_GRIPPER:init()
+  fsm.vars.time_start = fawkes.Time:new():in_msec()
   -- move base to target pose using visual servoing
   self.args["motor_move"] = {x = object_tracking_if:base_frame(0),
                              y = object_tracking_if:base_frame(1),
@@ -476,6 +477,8 @@ end
 function FINAL:init()
   local msg = object_tracking_if.StopTrackingMessage:new()
   object_tracking_if:msgq_enqueue_copy(msg)
+  local now = fawkes.Time:new():in_msec()
+  print_info("Visual Servoing took " .. now - fsm.vars.time_start .. " milliseconds")
 end
 
 function FAILED:init()
