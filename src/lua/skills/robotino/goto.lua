@@ -74,7 +74,7 @@ function check_navgraph(self)
 end
 
 function target_reached()
-   if navigator:is_final() and navigator:error_code() ~= 0 then
+   if navigator:is_final() and navigator:error_code() ~= 0 and not self.fsm.vars.end_early then
       return false
    end
    return navigator:is_final()
