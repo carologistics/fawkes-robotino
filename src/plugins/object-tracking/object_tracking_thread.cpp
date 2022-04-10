@@ -253,8 +253,10 @@ ObjectTrackingThread::loop()
 				set_shm();
 
 			//start interface
-			tracking_ = true;
-			msgid_    = 0;
+			tracking_      = true;
+			msgid_         = 0;
+			starting_time_ = fawkes::Time(clock);
+			loop_count_    = 0;
 			object_tracking_if_->set_current_object_type(current_object_type_);
 			object_tracking_if_->set_current_expected_mps(current_expected_mps_);
 			object_tracking_if_->set_current_expected_side(current_expected_side_);
@@ -483,10 +485,6 @@ ObjectTrackingThread::loop()
 	                    camera_height_);
 
 	fawkes::Time after_projection(clock);
-	//logger->log_info("load image time ", std::to_string(before_detect - &start_time).c_str());
-	//logger->log_info("detection time  ", std::to_string(after_detect - &before_detect).c_str());
-	//logger->log_info("box time        ", std::to_string(after_projection - &after_detect).c_str());
-	//logger->log_info("overall time    ", std::to_string(after_projection - &start_time).c_str());
 
 	//compute weighted average
 	//-------------------------------------------------------------------------
@@ -583,6 +581,18 @@ ObjectTrackingThread::loop()
 		object_tracking_if_->set_additional_height(0, additional_height);
 	}
 	object_tracking_if_->write();
+
+	fawkes::Time after_interface_update(clock);
+	loop_count_++;
+	long average_loop = starting_time_.get_usec() / loop_count_;
+
+	//logger->log_info("load image time ", std::to_string(before_detect - &start_time).c_str());
+	//logger->log_info("detection time  ", std::to_string(after_detect - &before_detect).c_str());
+	//logger->log_info("box time        ", std::to_string(after_projection - &after_detect).c_str());
+	//logger->log_info("interface time  ", std::to_string(after_interface_update - &after_projection).c_str());
+	//logger->log_info("overall time    ", std::to_string(after_interface_update - &start_time).c_str());
+	//logger->log_info("loop count      ", std::to_string(loop_count_).c_str());
+	//logger->log_info("average loop    ", std::to_string(average_loop).c_str());
 }
 
 void
