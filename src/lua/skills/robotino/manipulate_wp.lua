@@ -303,7 +303,6 @@ fsm:define_states{ export_to=_M, closure={MISSING_MAX=MISSING_MAX},
    {"INIT",                  JumpState},
    {"START_TRACKING",        JumpState},
    {"SEARCH",                SkillJumpState, skills={{goto}},            final_to="MOVE_BASE_AND_GRIPPER", fail_to="FAILED"},
-   {"CLOSE_TARGET",          SkillJumpState, skills={{motor_move}},      final_to="MOVE_BASE_AND_GRIPPER", fail_to="SEARCH"},
    {"MOVE_BASE_AND_GRIPPER", SkillJumpState, skills={{motor_move}},      final_to="FINE_TUNE_GRIPPER",     fail_to="SEARCH"},
    {"FINE_TUNE_GRIPPER",     JumpState},
    {"GRIPPER_ROUTINE",       SkillJumpState, skills={{gripper_routine}}, final_to="FINAL", fail_to="FINE_TUNE_GRIPPER"},
@@ -312,7 +311,7 @@ fsm:define_states{ export_to=_M, closure={MISSING_MAX=MISSING_MAX},
 fsm:add_transitions{
    {"INIT", "FAILED",                             cond=input_invalid, desc="Invalid Input"},
    {"INIT", "START_TRACKING",                     cond=true, desc="Valid Input"},
-   {"START_TRACKING", "FAILED",                   timeout=6000, desc="Object tracker is not starting"},
+   {"START_TRACKING", "FAILED",                   timeout=60, desc="Object tracker is not starting"},
    {"START_TRACKING", "SEARCH",                   cond=object_tracker_active},
    {"FINE_TUNE_GRIPPER", "GRIPPER_ROUTINE",       cond=gripper_aligned, desc="Gripper aligned"},
    {"FINE_TUNE_GRIPPER", "MOVE_BASE_AND_GRIPPER", cond="vars.out_of_reach", desc="Gripper out of reach"},
@@ -396,11 +395,17 @@ function START_TRACKING:init()
 end
 
 function SEARCH:init()
+  fsm.vars.time_start = fawkes.Time:new():in_msec()
   move_gripper_default_pose()
   self.args["goto"] = {x = fsm.vars.expected_pos_x,
                        y = fsm.vars.expected_pos_y,
                        ori = fsm.vars.expected_pos_ori,
                        end_early = true}
+end
+
+function SEARCH:exit()
+  local now = fawkes.Time:new():in_msec()
+  print_info("[VS] Positioning took " .. now - fsm.vars.time_start .. " milliseconds")
 end
 
 function MOVE_BASE_AND_GRIPPER:init()
@@ -463,7 +468,13 @@ function FINE_TUNE_GRIPPER:loop()
               gripper_target.z)
 end
 
+function FINE_TUNE_GRIPPER:exit()
+  local now = fawkes.Time:new():in_msec()
+  print_info("[VS] Alignment took " .. now - fsm.vars.time_start .. " milliseconds")
+end
+
 function GRIPPER_ROUTINE:init()
+  fsm.vars.time_start = fawkes.Time:new():in_msec()
   -- perform pick or put routine
   if fsm.vars.target == "WORKPIECE" then
     self.args["gripper_routine"].pick_wp = true
@@ -472,13 +483,16 @@ function GRIPPER_ROUTINE:init()
   end
 end
 
+function GRIPPER_ROUTINE:exit()
+  local now = fawkes.Time:new():in_msec()
+  print_info("[VS] Gripper routine took " .. now - fsm.vars.time_start .. " milliseconds")
+end
+
 -- end tracking afterwards
 
 function FINAL:init()
   local msg = object_tracking_if.StopTrackingMessage:new()
   object_tracking_if:msgq_enqueue_copy(msg)
-  local now = fawkes.Time:new():in_msec()
-  print_info("Visual Servoing took " .. now - fsm.vars.time_start .. " milliseconds")
 end
 
 function FAILED:init()

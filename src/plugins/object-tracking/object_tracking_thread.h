@@ -176,6 +176,10 @@ private:
 	int                                                 msgid_;
 	fawkes::tf::Stamped<fawkes::tf::Point>              weighted_object_pos_target_;
 
+	//timing
+	fawkes::Time starting_time_;
+	long         loop_count_;
+
 	//compute expected position and start tracking
 	void  compute_expected_position();
 	float compute_middle_x(float x_offset);

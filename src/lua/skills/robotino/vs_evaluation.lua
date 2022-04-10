@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------
 --  vs_evaluation.lua
 --
---  Created Tue May 5
+--  Created Tue April 5
 --  Copyright  2022  Matteo Tschesche
 --
 ----------------------------------------------------------------------------
@@ -41,7 +41,7 @@ Parameters:
 
 
 local startpoints = {{x = -1.0, y = 4.0, ori = 3.14},
-                     {x = -0.5, y = 4.5, ori = -1.57},
+                     {x = -1.0, y = 4.0, ori = -1.57},
                      {x = -3.5, y = 3.5, ori = 3.14},
                      {x = -3.5, y = 3.5, ori = 0.0},
                      {x = -4.5, y = 1.5, ori = -1.57},
@@ -96,10 +96,10 @@ fsm:add_transitions{
 
 function INIT:init()
   fsm.vars.startpoint = startpoints[fsm.vars.startpoint_id]
-  print_info("Evaluating starting point " .. fsm.vars.startpoint_id)
-  print_info("starting x value: " .. fsm.vars.startpoint.x)
-  print_info("starting y value: " .. fsm.vars.startpoint.y)
-  print_info("starting orientation: " .. fsm.vars.startpoint.ori)
+  print_info("[VS] Evaluating starting point " .. fsm.vars.startpoint_id)
+  print_info("[VS] starting x value: " .. fsm.vars.startpoint.x)
+  print_info("[VS] starting y value: " .. fsm.vars.startpoint.y)
+  print_info("[VS] starting orientation: " .. fsm.vars.startpoint.ori)
   fsm.vars.output_done = false
   fsm.vars.input_done = false
 
@@ -134,12 +134,13 @@ function GOTO_START:init()
 end
 
 function PICK:init()
-  self.time_start = fawkes.Time:new():in_msec()
+  fsm.vars.time_start = fawkes.Time:new():in_msec()
+  fsm.vars.current_output_id = fsm.vars.next_output_id
   fsm.vars.next_target_output = target_outputs[fsm.vars.next_output_id]
-  print_info("Evaluating output " .. fsm.vars.next_output_id)
-  print_info("output target: " .. fsm.vars.next_target_output.target)
-  print_info("output mps: " .. fsm.vars.next_target_output.mps)
-  print_info("output side: " .. fsm.vars.next_target_output.side)
+  print_info("[VS] Evaluating output " .. fsm.vars.next_output_id)
+  print_info("[VS] output target: " .. fsm.vars.next_target_output.target)
+  print_info("[VS] output mps: " .. fsm.vars.next_target_output.mps)
+  print_info("[VS] output side: " .. fsm.vars.next_target_output.side)
 
   self.args["manipulate_wp"] = {target = fsm.vars.next_target_output.target,
                                 mps = fsm.vars.next_target_output.mps,
@@ -158,16 +159,17 @@ end
 
 function PICK:exit()
   local now = fawkes.Time:new():in_msec()
-  print_info("Execution time for output " .. fsm.vars.next_output_id .. ": " .. now - self.time_start)
+  print_info("[VS] Execution time for output " .. fsm.vars.current_output_id .. ": " .. now - fsm.vars.time_start)
 end
 
 function PUT:init()
-  self.time_start = fawkes.Time:new():in_msec()
+  fsm.vars.time_start = fawkes.Time:new():in_msec()
+  fsm.vars.current_input_id = fsm.vars.next_input_id
   fsm.vars.next_target_input = target_inputs[fsm.vars.next_input_id]
-  print_info("Evaluating input " .. fsm.vars.next_input_id)
-  print_info("input target: " .. fsm.vars.next_target_input.target)
-  print_info("input mps: " .. fsm.vars.next_target_input.mps)
-  print_info("input side: " .. fsm.vars.next_target_input.side)
+  print_info("[VS] Evaluating input " .. fsm.vars.next_input_id)
+  print_info("[VS] input target: " .. fsm.vars.next_target_input.target)
+  print_info("[VS] input mps: " .. fsm.vars.next_target_input.mps)
+  print_info("[VS] input side: " .. fsm.vars.next_target_input.side)
 
   self.args["manipulate_wp"] = {target = fsm.vars.next_target_input.target,
                                 mps = fsm.vars.next_target_input.mps,
@@ -187,7 +189,7 @@ end
 
 function PUT:exit()
   local now = fawkes.Time:new():in_msec()
-  print_info("Execution time for input " .. fsm.vars.next_input_id .. ": " .. now - self.time_start)
+  print_info("[VS] Execution time for input " .. fsm.vars.current_input_id .. ": " .. now - fsm.vars.time_start)
 end
 
 function PUT_POSSIBLE:init()
