@@ -40,16 +40,16 @@ Parameters:
 ]==]
 
 
-local startpoints = {{x = -1.0, y = 4.0, ori = 3.14},
-                     {x = -1.0, y = 4.0, ori = -1.57},
+local startpoints = {{x = -0.5, y = 4.5, ori = 3.14},
+                     {x = -0.5, y = 4.5, ori = -1.57},
                      {x = -3.5, y = 3.5, ori = 3.14},
                      {x = -3.5, y = 3.5, ori = 0.0},
                      {x = -4.5, y = 1.5, ori = -1.57},
                      {x = -2.5, y = 1.5, ori = 1.57},
                      {x = -2.5, y = 1.5, ori = 0.0},
                      {x = -2.5, y = 1.5, ori = -1.57},
-                     {x = -0.75, y = 0.75, ori = 3.14},
-                     {x = -0.75, y = 0.75, ori = 1.57}}
+                     {x = -0.5, y = 0.5, ori = 3.14},
+                     {x = -0.5, y = 0.5, ori = 1.57}}
 
 local target_outputs = {{target = "WORKPIECE", mps = "C-CS1", side = "input", shelf = "LEFT"},
                         {target = "WORKPIECE", mps = "C-RS1", side = "output"},
