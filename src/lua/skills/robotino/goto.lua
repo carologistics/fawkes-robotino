@@ -172,7 +172,7 @@ fsm:add_transitions{
   {"TIMEOUT", "WAIT_VS",      cond="target_reached() and vars.end_early", desc="Target reached without detecting object"},
   {"TIMEOUT", "FINAL",        cond=target_reached, desc="Target reached"},
   {"TIMEOUT", "FAILED",       cond=target_unreachable, desc="Target unreachable"},
-  {"WAIT_VS", "FINAL",        cond=early_endable, desc="Target close enough and object detected"},
+  {"WAIT_VS", "FINAL",        cond="vars.consecutive_detections > 2", desc="Target reached and object detected"},
   {"WAIT_VS", "FAILED",       timeout=15, desc="Object not detected"},
 }
 
