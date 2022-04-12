@@ -102,6 +102,7 @@ function INIT:init()
 end
 
 function DRIVE_TO_MACHINE_POINT:init()
+   self.fsm.vars.time_start = fawkes.Time:new():in_msec()
    local option = "CONVEYOR"
 
    if self.fsm.vars.slide then
@@ -122,9 +123,13 @@ function DRIVE_TO_MACHINE_POINT:exit()
   if dtmp_fsm.current == dtmp_fsm.states[dtmp_fsm.fail_state] then
     self.fsm.vars.error = "Drive To Machine Point Failed"
   end
+
+  local now = fawkes.Time:new():in_msec()
+  print_info("[ICP] Positioning took " .. now - self.fsm.vars.time_start .. " milliseconds")
 end
 
 function CONVEYOR_ALIGN:init()
+    self.fsm.vars.time_start = fawkes.Time:new():in_msec()
     self.args["conveyor_align"].side = self.fsm.vars.side
     self.args["conveyor_align"].place = self.fsm.vars.place
     self.args["conveyor_align"].slide = self.fsm.vars.slide
@@ -135,9 +140,13 @@ function CONVEYOR_ALIGN:exit()
   if cv_fsm.current == cv_fsm.states[cv_fsm.fail_state] then
     self.fsm.vars.error = "Conveyor Align Failed"
   end
+
+  local now = fawkes.Time:new():in_msec()
+  print_info("[ICP] Alignment took " .. now - self.fsm.vars.time_start .. " milliseconds")
 end
 
 function PRODUCT_PUT:init()
+  self.fsm.vars.time_start = fawkes.Time:new():in_msec()
   self.args["product_put"].place = self.fsm.vars.place
   self.args["product_put"].slide = self.fsm.vars.slide
   self.args["product_put"].side = self.fsm.vars.side
@@ -171,4 +180,7 @@ function PRODUCT_PUT:exit()
   if pp_fsm.current == pp_fsm.states[pp_fsm.fail_state] then
     self.fsm.vars.error = "Product Put Failed"
   end
+
+  local now = fawkes.Time:new():in_msec()
+  print_info("[ICP] Routine took " .. now - self.fsm.vars.time_start .. " milliseconds")
 end

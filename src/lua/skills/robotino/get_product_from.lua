@@ -90,6 +90,7 @@ function INIT:init()
 end
 
 function DRIVE_TO_MACHINE_POINT:init()
+   self.fsm.vars.time_start = fawkes.Time:new():in_msec()
    local option = "CONVEYOR"
    if self.fsm.vars.shelf ~= nil then
      self.fsm.vars.side = "input"
@@ -108,9 +109,13 @@ function DRIVE_TO_MACHINE_POINT:exit()
   if dtmp_fsm.current == dtmp_fsm.states[dtmp_fsm.fail_state] then
     self.fsm.vars.error = "Drive To Machine Point Failed"
   end
+
+  local now = fawkes.Time:new():in_msec()
+  print_info("[ICP] Positioning took " .. now - self.fsm.vars.time_start .. " milliseconds")
 end
 
 function PRODUCT_PICK:init()
+  self.fsm.vars.time_start = fawkes.Time:new():in_msec()
   self.args["product_pick"].place = self.fsm.vars.place
   self.args["product_pick"].side = self.fsm.vars.side
   self.args["product_pick"].slide = self.fsm.vars.slide
@@ -122,9 +127,13 @@ function PRODUCT_PICK:exit()
   if pp_fsm.current == pp_fsm.states[pp_fsm.fail_state] then
     self.fsm.vars.error = "Product Pick Failed"
   end
+
+  local now = fawkes.Time:new():in_msec()
+  print_info("[ICP] Routine took " .. now - self.fsm.vars.time_start .. " milliseconds")
 end
 
 function SHELF_PICK:init()
+  self.fsm.vars.time_start = fawkes.Time:new():in_msec()
   self.args["shelf_pick"].slot = self.fsm.vars.shelf
 end
 
@@ -133,9 +142,13 @@ function SHELF_PICK:exit()
   if sp_fsm.current == sp_fsm.states[sp_fsm.fail_state] then
     self.fsm.vars.error = "Shelf Pick Failed"
   end
+
+  local now = fawkes.Time:new():in_msec()
+  print_info("[ICP] Routine took " .. now - self.fsm.vars.time_start .. " milliseconds")
 end
 
 function CONVEYOR_ALIGN:init()
+   self.fsm.vars.time_start = fawkes.Time:new():in_msec()
    if self.fsm.vars.shelf ~= nil then
      self.args["conveyor_align"].side = "input"
      self.args["conveyor_align"].place = self.fsm.vars.place
@@ -176,4 +189,7 @@ function CONVEYOR_ALIGN:exit()
   if cv_fsm.current == cv_fsm.states[cv_fsm.fail_state] then
     self.fsm.vars.error = "Conveyor Align Failed"
   end
+
+  local now = fawkes.Time:new():in_msec()
+  print_info("[ICP] Alignment took " .. now - self.fsm.vars.time_start .. " milliseconds")
 end
