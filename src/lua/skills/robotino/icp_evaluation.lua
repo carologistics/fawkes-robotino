@@ -179,7 +179,7 @@ function PUT:init()
   print_info("[ICP] input side: " .. fsm.vars.next_target_input.side)
 
   if fsm.vars.next_target_input.slide ~= nil then
-    print_info("[ICP] input slide: " .. fsm.vars.next_target_input.slide)
+    print_info("[ICP] input slide: " .. tostring(fsm.vars.next_target_input.slide))
 
     self.args["bring_product_to"] = {place = fsm.vars.next_target_input.mps,
                                      side = fsm.vars.next_target_input.side,
