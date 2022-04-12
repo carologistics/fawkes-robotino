@@ -57,5 +57,6 @@ skillenv.use_skill("skills.robotino.get_product_from")
 skillenv.use_skill("skills.robotino.approach_test")
 skillenv.use_skill("skills.robotino.discard")
 skillenv.use_skill("skills.robotino.tsp_solve")
+skillenv.use_skill("skills.robotino.icp_evaluation")
 -- ProtoBuf communication
 skillenv.use_skill("skills.robotino.create_peer")
