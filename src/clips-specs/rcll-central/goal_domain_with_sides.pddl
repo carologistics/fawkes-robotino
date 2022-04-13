@@ -151,8 +151,8 @@
 )
 
 
-  (:action goal-buffer-cap
-    :parameters (?target-mps - mps ?wp - workpiece ?robot - robot ?wp-loc - mps ?ss - shelf-spot)
+  (:action BUFFER-CAP
+    :parameters (?target-mps - mps ?wp - workpiece ?robot - robot ?ss - shelf-spot)
     :precondition (and (mps-type ?target-mps CS)
                        ;(not (mps-state ?target-mps BROKEN))
                        ;(cs-can-perform ?target-mps RETRIEVE_CAP)
@@ -164,16 +164,16 @@
                        ;(wp-cap-color ?wp ?cap-color)
                        (wp-reachable ?wp ?robot)
                        (mps-side-free ?target-mps INPUT)
-                       (wp-on-shelf ?wp ?wp-loc ?ss)
+                       (wp-on-shelf ?wp ?target-mps ?ss)
                   )
     :effect (and
               (not (mps-side-free ?target-mps INPUT))
               (wp-at ?wp ?target-mps INPUT)
-              (not (wp-on-shelf ?wp ?wp-loc ?ss))
+              (not (wp-on-shelf ?wp ?target-mps ?ss))
             )
   )
 
-  (:action goal-instruct-cs-buffer-cap
+  (:action INSTRUCT-CS-BUFFER-CAP
     :parameters (?target-mps - mps ?cap-color - cap-color ?cc - workpiece)
     :precondition (and (mps-type ?target-mps CS)
                        ;(not (mps-state ?target-mps BR(wp-reachable ?wp ?robot)OKEN))
@@ -201,7 +201,7 @@
             )
   )
 
-  (:action goal-instruct-bs-dispense-base
+  (:action INSTRUCT-BS-DISPENSE-BASE
     :parameters (?wp - workpiece ?target-mps - mps ?base-color - base-color ?robot - robot)
     :precondition (and (mps-type ?target-mps BS)
                        ;(mps-state ?target-mps IDLE)
@@ -232,8 +232,8 @@
 	;	:effect (wp-get-pending ?wp ?target-mps ?target-side)
 	;)
 
-  (:action goal-mount-cap
-    :parameters (?wp - workpiece ?target-mps - mps  ?robot - robot ?cap-color - cap-color ?wp-loc - mps ?ring-num - ring-num ?wp-loc-side - mps-side)
+  (:action MOUNT-CAP
+    :parameters (?wp - workpiece ?target-mps - mps  ?robot - robot ?cap-color - cap-color ?wp-loc - mps ?ring-num - ring-num ?wp-side - mps-side)
     :precondition (and (mps-type ?target-mps CS)
                        ;(not (mps-state ?target-mps BROKEN))
                        ;(not (wp-at ?any-wp  ?target-mps INPUT))
@@ -248,7 +248,7 @@
                        ;(holding ?robot ?wp)
                        (wp-reachable ?wp ?robot)
                        (mps-side-free ?target-mps INPUT)
-                       (wp-at ?wp ?wp-loc ?wp-loc-side)
+                       (wp-at ?wp ?wp-loc ?wp-side)
                        (rings-mounted ?wp ?ring-num)
                        (wp-complexity ?wp ?ring-num)
                        ;(order-matching-wp-rings ?wp)
@@ -256,39 +256,39 @@
     :effect (and
                 (not (mps-side-free ?target-mps INPUT))
                 (wp-at ?wp ?target-mps INPUT)
-                (not (wp-at ?wp ?wp-loc ?wp-loc-side))
-                (mps-side-free ?wp-loc ?wp-loc-side)
+                (not (wp-at ?wp ?wp-loc ?wp-side))
+                (mps-side-free ?wp-loc ?wp-side)
             )
   )
 
-  (:action goal-instruct-cs-mount-cap
-    :parameters (?mps - mps ?cap-color - cap-color ?wp - workpiece)
+  (:action INSTRUCT-CS-MOUNT-CAP
+    :parameters (?target-mps - mps ?cap-color - cap-color ?wp - workpiece)
     :precondition (and
         ;(not (mps-state ?mps BROKEN))
-        (mps-type ?mps CS)
-        (cs-can-perform ?mps MOUNT_CAP)
+        (mps-type ?target-mps CS)
+        (cs-can-perform ?target-mps MOUNT_CAP)
         ;(or (cs-buffered ?mps CAP_BLACK)
         ;		(cs-buffered ?mps CAP_GREY)
         ;)
-        (cs-buffered ?mps ?cap-color)
-        (mps-side-free ?mps OUTPUT)
-        (wp-at ?wp ?mps INPUT)
+        (cs-buffered ?target-mps ?cap-color)
+        (mps-side-free ?target-mps OUTPUT)
+        (wp-at ?wp ?target-mps INPUT)
         (wp-cap-color ?wp CAP_NONE)
         ;(mps-occupied ?mps ?wp)
       )
     :effect (and
         ;(not (mps-state ?mps IDLE))
         ;(mps-state ?mps READY-AT-OUTPUT)
-        (not (wp-at ?wp ?mps INPUT))
-        (mps-side-free ?mps INPUT)
-        (wp-at ?wp ?mps OUTPUT)
-        (not (mps-side-free ?mps OUTPUT))
+        (not (wp-at ?wp ?target-mps INPUT))
+        (mps-side-free ?target-mps INPUT)
+        (wp-at ?wp ?target-mps OUTPUT)
+        (not (mps-side-free ?target-mps OUTPUT))
         (not (wp-cap-color ?wp CAP_NONE))
         (wp-cap-color ?wp ?cap-color)
-        (cs-can-perform ?mps RETRIEVE_CAP)
-        (not (cs-can-perform ?mps MOUNT_CAP))
-        (not (cs-buffered ?mps ?cap-color))
-        (cs-buffered ?mps CAP_NONE)
+        (cs-can-perform ?target-mps RETRIEVE_CAP)
+        (not (cs-can-perform ?target-mps MOUNT_CAP))
+        (not (cs-buffered ?target-mps ?cap-color))
+        (cs-buffered ?target-mps CAP_NONE)
       )
   )
 
@@ -327,7 +327,7 @@
   ;  :effect (order-matching-wp-rings ?wp)
   ;)
 
-  (:action goal-deliver-rc21
+  (:action DELIVER-RC21
     :parameters (?wp - workpiece ?target-mps - mps ?ord - order ?robot - robot ?wp-side - mps-side  ?ring1 - ring-color ?ring2 - ring-color ?ring3 - ring-color ?base-color - base-color ?cap-color - cap-color)
     :precondition (and ;(mps-type ?target-mps DS)
                        ;(mps-state ?target-mps IDLE)
@@ -371,14 +371,14 @@
   ;    )
   ;)
 
-  (:action goal-mount-next-ring
-    :parameters (?robot - robot ?rs - mps ?wp - workpiece ?ring-color - ring-color ?ring-payment-cost - ring-num ?ring-num - ring-num ?wp-loc - mps ?ord - order ?wp-loc-side - mps-side ?ring-num-next - ring-num)
+  (:action MOUNT-RING
+    :parameters (?wp - workpiece ?target-mps - mps ?ring-color - ring-color ?robot - robot ?ring-payment-cost - ring-num ?ring-num - ring-num ?wp-loc - mps ?ord - order ?wp-side - mps-side ?ring-num-next - ring-num)
     :precondition (and
             ;(not (mps-state ?rs BROKEN))
             ;(rs-paid-for ?rs ?bases-needed)
             ;(mps-side-free ?rs INPUT)
-            (mps-type ?rs RS)
-            (rs-ring-spec ?rs ?ring-color ?ring-payment-cost)
+            (mps-type ?target-mps RS)
+            (rs-ring-spec ?target-mps ?ring-color ?ring-payment-cost)
             ;(rs-filled-with ?rs ?rings-filled)
             ;(rs-sub ?rings-filled ?ring-payment-cost ?bases-left)
             ;(ring-num-mountable ?wp ?ring-num)
@@ -406,20 +406,20 @@
             ;  (wp-at ?wp ?wp-loc ?wp-side)
             ;)
             (wp-reachable ?wp ?robot)
-            (wp-at ?wp ?wp-loc ?wp-loc-side)
-            (mps-side-free ?rs INPUT)
+            (wp-at ?wp ?wp-loc ?wp-side)
+            (mps-side-free ?target-mps INPUT)
         )
     :effect (and
         ;(mps-occupied ?rs ?wp)
         ;(not (mps-free ?rs))
         ;(not (mps-occupied ?wp-loc ?wp))
         ;(mps-free ?wp-loc)
-        (not (wp-at ?wp ?wp-loc ?wp-loc-side))
+        (not (wp-at ?wp ?wp-loc ?wp-side))
         ;(not (rs-filled-with ?rs ?rings-filled))
         ;(rs-filled-with ?rs ?bases-left)
-        (not (mps-side-free ?rs INPUT))
-        (wp-at ?wp ?rs INPUT)
-        (mps-side-free ?wp-loc ?wp-loc-side)
+        (not (mps-side-free ?target-mps INPUT))
+        (wp-at ?wp ?target-mps INPUT)
+        (mps-side-free ?wp-loc ?wp-side)
         ;(not (holding ?robot ?wp))
         ;(can-hold ?robot)
     )
@@ -438,18 +438,18 @@
   ; )
 
 
-  (:action goal-instruct-rs-mount-ring
-    :parameters (?rs - mps ?wp - workpiece ?ring-color - ring-color ?ring-payment-cost - ring-num ?rings-filled - ring-num ?bases-left - ring-num ?ring-num - ring-num ?ring-num-next - ring-num)
+  (:action INSTRUCT-RS-MOUNT-RING
+    :parameters (?target-mps - mps ?ring-color - ring-color ?wp - workpiece ?ring-payment-cost - ring-num ?rings-filled - ring-num ?bases-left - ring-num ?ring-num - ring-num ?ring-num-next - ring-num)
     :precondition (and
           ;(not (mps-state ?rs BROKEN))
           ;(rs-paid-for ?rs ?bases-needed)
-          (wp-at ?wp ?rs INPUT)
-          (mps-side-free ?rs OUTPUT)
+          (wp-at ?wp ?target-mps INPUT)
+          (mps-side-free ?target-mps OUTPUT)
           ;ring-mountable()
-          (mps-type ?rs RS)
-          (rs-ring-spec ?rs ?ring-color ?ring-payment-cost)
+          (mps-type ?target-mps RS)
+          (rs-ring-spec ?target-mps ?ring-color ?ring-payment-cost)
           ;(sufficient-payment ?rs ?ring-color)
-          (rs-filled-with ?rs ?rings-filled)
+          (rs-filled-with ?target-mps ?rings-filled)
           (rs-sub ?rings-filled ?ring-payment-cost ?bases-left)
           ;(ring-num-mountable ?wp ?ring-num)
           (wp-cap-color ?wp CAP_NONE)
@@ -474,15 +474,15 @@
     :effect (and
           ;(not (rs-filled-with ?rs ?rings-filled))
           ;(rs-filled-with ?rs ?bases-left)
-          (mps-side-free ?rs INPUT)
-          (not (wp-at ?wp ?rs INPUT))
-          (not (mps-side-free ?rs OUTPUT))
-          (wp-at ?wp ?rs OUTPUT)
+          (mps-side-free ?target-mps INPUT)
+          (not (wp-at ?wp ?target-mps INPUT))
+          (not (mps-side-free ?target-mps OUTPUT))
+          (wp-at ?wp ?target-mps OUTPUT)
           (wp-ring-color ?wp ?ring-color ?ring-num-next)
           (not (wp-ring-color ?wp RING_NONE ?ring-num-next))
           ;(not (ring-num-mountable ?wp ?ring-num-next))
-          (not (rs-filled-with ?rs ?rings-filled))
-          (rs-filled-with ?rs ?bases-left)
+          (not (rs-filled-with ?target-mps ?rings-filled))
+          (rs-filled-with ?target-mps ?bases-left)
           (rings-mounted ?wp ?ring-num-next)
           (not (rings-mounted ?wp ?ring-num))
       )
@@ -527,30 +527,13 @@
   ;    )
   ;)
 
-  (:action goal-get-base-to-fill-rs-wp-on-shelf
-  :parameters (?wp - workpiece ?wp-loc - mps ?spot - shelf-spot ?target-mps - mps ?robot - robot ?bases-filled - ring-num ?bases-inc - ring-num)
-  :precondition (and
-                    (mps-type ?target-mps RS)
 
-                    (wp-reachable ?wp ?robot)
-                    (wp-on-shelf ?wp ?wp-loc ?spot)
-                    (rs-filled-with ?target-mps ?bases-filled)
-                    (rs-inc ?bases-filled ?bases-inc)
-                    ;(wp-cap-color ?wp CAP_NONE)
-                )
-  :effect (and
-        (not (wp-on-shelf ?wp ?wp-loc ?spot))
-        (not (wp-reachable ?wp ?robot))
-        (not (rs-filled-with ?target-mps ?bases-filled))
-        (rs-filled-with ?target-mps ?bases-inc)
-    )
-)
 
-  (:action goal-get-base-to-fill-rs-wp-at-mps
+  (:action PAY-FOR-RINGS-WITH-BASE
     :parameters (?wp - workpiece ?wp-loc - mps ?wp-side - mps-side ?target-mps - mps ?robot - robot ?bases-filled - ring-num ?bases-inc - ring-num)
     :precondition (and
                       (mps-type ?target-mps RS)
-
+                      (mps-type ?wp-loc BS)
                       (wp-reachable ?wp ?robot)
                       (wp-at ?wp ?wp-loc ?wp-side)
                       (rs-filled-with ?target-mps ?bases-filled)
@@ -566,16 +549,34 @@
       )
   )
 
+  (:action PAY-FOR-RINGS-WITH-CAP-CARRIER
+    :parameters (?wp - workpiece ?wp-loc - mps ?wp-side - mps-side ?target-mps - mps ?robot - robot ?bases-filled - ring-num ?bases-inc - ring-num)
+    :precondition (and
+                      (mps-type ?target-mps RS)
+                      (mps-type ?wp-loc CS)
+                      (wp-reachable ?wp ?robot)
+                      (wp-at ?wp ?wp-loc ?wp-side)
+                      (rs-filled-with ?target-mps ?bases-filled)
+                      (rs-inc ?bases-filled ?bases-inc)
+                      ;(wp-cap-color ?wp CAP_NONE)
+                  )
+    :effect (and
+          (not (wp-at ?wp ?wp-loc ?wp-side))
+          (mps-side-free ?wp-loc ?wp-side)
+          (not (wp-reachable ?wp ?robot))
+          (not (rs-filled-with ?target-mps ?bases-filled))
+          (rs-filled-with ?target-mps ?bases-inc)
+      )
+  )
 
-
-  (:action goal-discard-from-mps
-    :parameters (?wp - workpiece ?mps - mps ?robot - robot ?wp-side - mps-side)
+  (:action DISCARD
+    :parameters (?wp - workpiece ?wp-loc - mps ?wp-side - mps-side ?robot - robot)
     :precondition (and ;(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
                        (wp-reachable ?wp ?robot)
-                       (wp-at ?wp ?mps ?wp-side)
+                       (wp-at ?wp ?wp-loc ?wp-side)
                   )
-    :effect (and (not (wp-at ?wp ?mps ?wp-side))
-                 (mps-side-free ?mps ?wp-side)
+    :effect (and (not (wp-at ?wp ?wp-loc ?wp-side))
+                 (mps-side-free ?wp-loc ?wp-side)
                  (not (wp-reachable ?wp ?robot))
             )
   )

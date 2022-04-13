@@ -230,9 +230,12 @@
    it can directly put the cap on a product."
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class BUFFER-CAP) (mode SELECTED) (parent ?parent)
-	            (params target-mps ?mps
-	                    cap-color ?cap-color
-	            ))
+	            ;(params target-mps ?mps
+	            ;        cap-color ?cap-color
+	            ;))
+							(param-names target-mps wp robot ss);
+							(param-values ?mps ?cc ?robot ?ss));
+
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(or
 		(and (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps $?))
@@ -307,11 +310,12 @@
 	                          (mode SELECTED) (parent ?parent)
 	                          (params  wp ?wp
 	                                   target-mps ?target-mps
-	                                   target-side ?target-side
+	                          ;         target-side ?target-side
 	                                   $?params))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
+	(bind ?target-side INPUT)
 	(if (and (not (do-for-fact ((?da dependency-assignment))
 	                  (and (neq ?da:grounded-with nil)
 	                       (member$ wp ?da:params)
@@ -410,13 +414,14 @@
 	                                   wp-loc ?wp-loc
 	                                   wp-side ?wp-side
 	                                   target-mps ?target-mps
-	                                   target-side ?target-side
+	                                   ;target-side ?target-side
 	                                   $?))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	(wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
 	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before))
 	=>
+	(bind ?target-side INPUT)
 	(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
 		(if (not (is-holding ?robot ?wp))
 		 then
@@ -496,7 +501,9 @@
 (defrule goal-expander-instruct-cs-buffer-cap
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class INSTRUCT-CS-BUFFER-CAP) (mode SELECTED)
-	            (params target-mps ?mps cap-color ?cap-color))
+	            ;(params target-mps ?mps cap-color ?cap-color))
+							(param-names target-mps cap-color cc)
+							(param-values ?mps ?cap-color ?cap-carrier))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact wp-at args? wp ?cap-carrier m ?mps side INPUT))
 	=>
@@ -523,12 +530,14 @@
 (defrule goal-expander-instruct-bs-dispense-base
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class INSTRUCT-BS-DISPENSE-BASE) (mode SELECTED)
-	            (params wp ?wp target-mps ?mps  target-side ?side base-color ?base-color))
+	            ;(params wp ?wp target-mps ?mps  target-side ?side base-color ?base-color))
+							(param-names wp target-mps base-color robot)
+							(param-values ?wp ?mps ?base-color ?robot))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	=>
 	(plan-assert-sequential INSTRUCT-BS-DISPENSE-BASE-PLAN ?goal-id ?robot
-		(plan-assert-action prepare-bs ?mps ?side ?base-color)
-		(plan-assert-action bs-dispense ?mps ?side ?wp ?base-color)
+		(plan-assert-action prepare-bs ?mps OUTPUT ?base-color)
+		(plan-assert-action bs-dispense ?mps OUTPUT ?wp ?base-color)
 	)
 	(modify ?g (mode EXPANDED))
 )
@@ -590,7 +599,8 @@
 (defrule goal-expander-instruct-rs-mount-ring
 	?g <- (goal (id ?goal-id) (class INSTRUCT-RS-MOUNT-RING) (mode SELECTED)
 	            (params target-mps ?mps
-	                    ring-color ?ring-color))
+	                    ring-color ?ring-color
+											$?))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
 	(wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring-color rn ?req))
@@ -620,7 +630,7 @@
 (defrule goal-expander-deliver-rc21
 	?g <- (goal (id ?goal-id) (class DELIVER-RC21)
 	                          (mode SELECTED) (parent ?parent)
-	                          (params  wp ?wp target-mps ?mps ord ?order-id robot ?rob))
+	                          (params  wp ?wp target-mps ?mps ord ?order-id robot ?rob $?))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	(wm-fact (key refbox team-color) (value ?team-color))
