@@ -65,7 +65,6 @@ fsm:add_transitions{
 
 function INIT:init()
   fsm.vars.time_start = fawkes.Time:new():in_msec()
-  fsm.vars.startpoint = startpoints[fsm.vars.startpoint_id]
   print_info("[VS] Evaluating grasping challenge for mps " .. fsm.vars.mps)
   fsm.vars.nr_puts = 0
 end
