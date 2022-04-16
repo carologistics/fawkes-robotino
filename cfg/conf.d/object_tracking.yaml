@@ -31,8 +31,8 @@ plugins/object_tracking:
     shelf_height: 0.89
 
   target_frame_offsets:
-    gripper_offset_pick: 0.035
-    gripper_offset_put: 0.015
+    gripper_offset_pick: 0.005
+    gripper_offset_put: 0.01
     base_offset: 0.28
 
   camera_intrinsics:
