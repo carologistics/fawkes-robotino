@@ -136,7 +136,7 @@ function gripper_aligned()
 
   return math.abs(gripper_target.x - arduino:x_position()) < GRIPPER_TOLERANCE.x
      and math.abs(gripper_target.y - (arduino:y_position() - y_max/2)) < GRIPPER_TOLERANCE.y
-     and math.abs(gripper_target.z - arduino:z_position()) < GRIPPER_TOLERANCE.z
+     and math.abs(math.min(gripper_target.z, z_max) - arduino:z_position()) < GRIPPER_TOLERANCE.z
 end
 
 function set_gripper(x, y, z)
