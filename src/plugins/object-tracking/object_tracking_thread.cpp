@@ -484,6 +484,10 @@ ObjectTrackingThread::loop()
 	                    camera_width_,
 	                    camera_height_);
 
+	//save results
+	//std::string new_img_name = "/tmp/yolo_results/" + std::to_string(name_it_) + ".jpg";
+	//imwrite(new_img_name, image);
+	//name_it_ ++;
 	fawkes::Time after_projection(clock);
 
 	//compute weighted average
@@ -584,7 +588,7 @@ ObjectTrackingThread::loop()
 
 	fawkes::Time after_interface_update(clock);
 	loop_count_++;
-	long average_loop = starting_time_.get_usec() / loop_count_;
+	//double average_loop = (after_interface_update - &starting_time_) / loop_count_;
 
 	//logger->log_info("load image time ", std::to_string(before_detect - &start_time).c_str());
 	//logger->log_info("detection time  ", std::to_string(after_detect - &before_detect).c_str());
