@@ -19,9 +19,6 @@ include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 include $(BASEDIR)/fawkes/src/plugins/gazebo/gazebo.mk
 include $(BUILDSYSDIR)/protobuf.mk
-#include $(BASEDIR)src/plugins/gazebo/protobuf.mk
-
-PRESUBDIRS = interfaces
 
 LIBS_gazsim_object_tracking = fawkescore fawkesutils fawkesaspects fvutils \
 	       fawkestf fawkesinterface fawkesblackboard \
