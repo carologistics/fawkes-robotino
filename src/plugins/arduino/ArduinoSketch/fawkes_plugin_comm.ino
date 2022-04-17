@@ -128,10 +128,6 @@ bool open_gripper = false;
 
 int cur_status = STATUS_IDLE;
 
-long cur_x_ = 0;
-long cur_y_ = 0;
-long cur_z_ = 0;
-
 int loop_nr = 0;
 
 #define BUFFER_SIZE 128
@@ -161,9 +157,6 @@ void send_status() {
   if(cur_status == STATUS_ERROR){
     Serial.print(errormessage);
   } else { // send all the information while moving and while idle
-    cur_x_ = motor_X.currentPosition();
-    cur_y_ = motor_Y.currentPosition();
-    cur_z_ = motor_Z.currentPosition();
     Serial.print(-motor_X.currentPosition());
     Serial.print(" ");
     Serial.print(-motor_Y.currentPosition());
