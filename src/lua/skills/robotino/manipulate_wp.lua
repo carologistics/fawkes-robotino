@@ -123,6 +123,8 @@ if config:exists("plugins/object_tracking/puck_values/right_shelf_offset_side") 
 end
 
 function gripper_aligned()
+  -- wait one main loop cycle after gripper finaled
+  -- (because object tracking is updated after each main loop)
   if fsm.vars.gripper_wait < 1 then
     return false
   end
@@ -165,6 +167,7 @@ function set_gripper(x, y, z)
     print("Gripper cannot reache z-value: " .. z .. " ! Clipped to " .. z_clipped)
   end
 
+  -- allow adjustments while moving gripper using a higher tolerance
   if (not arduino:is_final() and (
      math.abs(fsm.vars.gripper_target_pos_x - x_clipped) > GRIPPER_TOLERANCE.x * 2 or
      math.abs(fsm.vars.gripper_target_pos_y - y_clipped) > GRIPPER_TOLERANCE.y * 1 or
@@ -286,12 +289,13 @@ function input_invalid()
     end
   end
 
-  if (fsm.vars.target == "SLIDE" or fsm.vars.target == "CONVEYOR") and
-      not arduino:is_gripper_closed() then
-    print_error("If a conveyor or slide is targeted, " ..
-      "make sure there is a workpiece in the gripper!")
-    return true
-  end
+  -- arduino:is_gripper_closed() always returns true
+  --if (fsm.vars.target == "SLIDE" or fsm.vars.target == "CONVEYOR") and
+  --    not arduino:is_gripper_closed() then
+  --  print_error("If a conveyor or slide is targeted, " ..
+  --    "make sure there is a workpiece in the gripper!")
+  --  return true
+  --end
   return false
 end
 
@@ -319,9 +323,14 @@ fsm:add_transitions{
 }
 
 function INIT:init()
-  fsm.vars.missing_detections = 0
-  fsm.vars.msgid              = 0
-  fsm.vars.out_of_reach       = false
+  -- initialize variables
+  fsm.vars.missing_detections   = 0
+  fsm.vars.msgid                = 0
+  fsm.vars.out_of_reach         = false
+  fsm.vars.gripper_target_pos_x = 0
+  fsm.vars.gripper_target_pos_y = 0
+  fsm.vars.gripper_target_pos_z = 0
+  fsm.vars.gripper_wait         = 0
 
   local TARGET_NAMES = {["WORKPIECE"] = object_tracking_if.WORKPIECE,
                         ["CONVEYOR"]  = object_tracking_if.CONVEYOR_BELT_FRONT,
@@ -349,16 +358,12 @@ function INIT:init()
 
   -- get ENUM of input variables
   fsm.vars.target_object_type = TARGET_NAMES[fsm.vars.target]
-  fsm.vars.expected_mps = MPS_NAMES[fsm.vars.mps]
-  fsm.vars.expected_side = SIDE_NAMES[fsm.vars.side]
-
-  fsm.vars.gripper_target_pos_x = 0
-  fsm.vars.gripper_target_pos_y = 0
-  fsm.vars.gripper_target_pos_z = 0
-  fsm.vars.gripper_wait       = 0
+  fsm.vars.expected_mps       = MPS_NAMES[fsm.vars.mps]
+  fsm.vars.expected_side      = SIDE_NAMES[fsm.vars.side]
 end
 
 function START_TRACKING:init()
+  -- start object tracking
   local msg = object_tracking_if.StartTrackingMessage:new(
     fsm.vars.target_object_type, fsm.vars.expected_mps, fsm.vars.expected_side)
   object_tracking_if:msgq_enqueue_copy(msg)
@@ -397,6 +402,7 @@ end
 function SEARCH:init()
   fsm.vars.time_start = fawkes.Time:new():in_msec()
   move_gripper_default_pose()
+  -- move roughly to expected position
   self.args["goto"] = {x = fsm.vars.expected_pos_x,
                        y = fsm.vars.expected_pos_y,
                        ori = fsm.vars.expected_pos_ori,
@@ -446,6 +452,7 @@ function FINE_TUNE_GRIPPER:init()
 end
 
 function FINE_TUNE_GRIPPER:loop()
+  -- count missing detections
   if fsm.vars.msgid ~= object_tracking_if:msgid() then
     fsm.vars.msgid = object_tracking_if:msgid()
     if object_tracking_if:is_detected() then

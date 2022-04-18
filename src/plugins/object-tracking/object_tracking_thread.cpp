@@ -88,7 +88,6 @@ ObjectTrackingThread::init()
 	base_offset_ = config->get_float("plugins/object_tracking/target_frame_offsets/base_offset");
 
 	//get camera params
-	focal_length_     = 580;
 	camera_width_     = config->get_int("plugins/object_tracking/camera_intrinsics/width");
 	camera_height_    = config->get_int("plugins/object_tracking/camera_intrinsics/height");
 	camera_ppx_       = config->get_float("plugins/object_tracking/camera_intrinsics/ppx");
@@ -128,7 +127,7 @@ ObjectTrackingThread::init()
 	intrinsics_.coeffs[4] = camera_coeffs_[4];
 
 	//set object params
-	//               {Unset, Workpiece, Conveyor, Slide} //TODO: get rid of Unset, if element -1 should get called, print error
+	//               {Unset, Workpiece, Conveyor, Slide}
 	object_widths_ = {0.0, 0.04, 0.03, 0.0585};
 
 	//get NN params
@@ -341,16 +340,12 @@ ObjectTrackingThread::loop()
 	detect_objects(image, out_boxes);
 	fawkes::Time after_detect(clock);
 
-	//save results
-	//std::string new_img_name = image_path_.insert(image_path_.find("."), "_results");
-	//imwrite(new_img_name, image);
-
 	//update results for saved images in webview
 	if (use_saved_) {
 		for (size_t i = 0; i < out_boxes.size(); ++i) {
 			float pos[3];
 			float wp_additional_height = 0;
-			compute_3d_point_direct_yolo(out_boxes[i], 0.0, pos, wp_additional_height);
+			compute_3d_point(out_boxes[i], 0.0, pos, wp_additional_height);
 
 			//draw bounding box on the image
 			cv::Rect rect_bb;
@@ -365,7 +360,6 @@ ObjectTrackingThread::loop()
 			sy << std::fixed << std::setprecision(3) << pos[1];
 			sz << std::fixed << std::setprecision(3) << pos[2];
 			std::string pos_str = sx.str() + " " + sy.str() + " " + sz.str();
-			//logger->log_info("cam_gripper: ", pos_str.c_str());
 
 			cv::putText(image,
 			            pos_str,
@@ -384,7 +378,7 @@ ObjectTrackingThread::loop()
 		                    camera_width_,
 		                    camera_height_);
 
-		//save results
+		//save results when using flag use_saved_
 		//std::string new_img_name = "/home/mtschesche/Pictures/realsense_sequence_3_norot_results/" + std::to_string(name_it_ -1) + ".jpg";
 		//imwrite(new_img_name, image);
 
@@ -397,11 +391,6 @@ ObjectTrackingThread::loop()
 		return;
 	}
 
-	// logger->log_info("expected pos", "frame: map");
-	// logger->log_info("exp_pos_[0]: ", std::to_string(exp_pos_.getX()).c_str());
-	// logger->log_info("exp_pos_[1]: ", std::to_string(exp_pos_.getY()).c_str());
-	// logger->log_info("exp_pos_[2]: ", std::to_string(exp_pos_.getZ()).c_str());
-
 	//get yaw difference between robot and mps
 	//TODO: get mps angle through laser-lines?
 	fawkes::tf::Quaternion mps_q = fawkes::tf::create_quaternion_from_yaw(double(mps_ori_));
@@ -412,19 +401,19 @@ ObjectTrackingThread::loop()
 	tf_listener->transform_pose("base_link", mps_pose_map, mps_pose_base);
 
 	float mps_angle = fawkes::tf::get_yaw(mps_pose_base.getRotation());
-	//logger->log_info("mps_yaw: ", std::to_string(mps_angle).c_str());
 	if (current_expected_side_ != ObjectTrackingInterface::OUTPUT_CONVEYOR) {
 		mps_angle += M_PI;
 	}
 
-	float cur_object_pos[3];
-	Rect  closest_box;
-	float additional_height = 0;
 	//get 3d position of closest bounding box to last weighted average in cam_gripper frame
+	float                                  cur_object_pos[3];
+	Rect                                   closest_box;
+	float                                  additional_height = 0;
 	fawkes::tf::Stamped<fawkes::tf::Point> expected_pos_cam;
 	tf_listener->transform_point(cam_frame_, exp_pos_, expected_pos_cam);
 	bool detected = closest_position(
 	  out_boxes, expected_pos_cam, mps_angle, cur_object_pos, closest_box, additional_height);
+
 	std::string                            pos_str;
 	fawkes::tf::Stamped<fawkes::tf::Point> cur_object_pos_target;
 	if (detected) {
@@ -439,11 +428,6 @@ ObjectTrackingThread::loop()
 		sy << std::fixed << std::setprecision(3) << cur_object_pos[1];
 		sz << std::fixed << std::setprecision(3) << cur_object_pos[2];
 		pos_str = sx.str() + " " + sy.str() + " " + sz.str();
-
-		// logger->log_info("cur obj", "frame: cam_gripper");
-		// logger->log_info("cur_object_pos[0]: ", std::to_string(cur_object_pos[0]).c_str());
-		// logger->log_info("cur_object_pos[1]: ", std::to_string(cur_object_pos[1]).c_str());
-		// logger->log_info("cur_object_pos[2]: ", std::to_string(cur_object_pos[2]).c_str());
 
 		//transform current response into target frame
 		fawkes::tf::Stamped<fawkes::tf::Point> cur_object_pos_cam;
@@ -493,15 +477,6 @@ ObjectTrackingThread::loop()
 	//compute weighted average
 	//-------------------------------------------------------------------------
 
-	//logger->log_info("cur pos", "frame: odom");
-	//logger->log_info("filter_weight: ", std::to_string(filter_weights_[0]).c_str());
-	//logger->log_info("cur_object_pos_target[0]: ",
-	//                 std::to_string(cur_object_pos_target.getX()).c_str());
-	//logger->log_info("cur_object_pos_target[1]: ",
-	//                 std::to_string(cur_object_pos_target.getY()).c_str());
-	//logger->log_info("cur_object_pos_target[2]: ",
-	//                 std::to_string(cur_object_pos_target.getZ()).c_str());
-
 	//use weighted average to improve robustness of object position
 	double weighted_object_pos[3];
 
@@ -510,13 +485,6 @@ ObjectTrackingThread::loop()
 	weighted_object_pos[2] = filter_weights_[0] * cur_object_pos_target.getZ();
 
 	for (size_t i = 0; i < past_responses_.size(); i++) {
-		//logger->log_info("past response", std::to_string(i).c_str());
-		//logger->log_info("filter_weight: ", std::to_string(filter_weights_[1 + i]).c_str());
-		//logger->log_info("past_responses_[0]: ", std::to_string(past_responses_[i].getX()).c_str());
-		//logger->log_info("past_responses_[1]: ", std::to_string(past_responses_[i].getY()).c_str());
-		//logger->log_info("past_responses_[2]: ", std::to_string(past_responses_[i].getZ()).c_str());
-		//fawkes::tf::Stamped<fawkes::tf::Point> response_target;
-		//tf_listener->transform_point(target_frame_, past_responses_[i], response_target);
 		weighted_object_pos[0] += filter_weights_[1 + i] * past_responses_[i].getX();
 		weighted_object_pos[1] += filter_weights_[1 + i] * past_responses_[i].getY();
 		weighted_object_pos[2] += filter_weights_[1 + i] * past_responses_[i].getZ();
@@ -534,11 +502,6 @@ ObjectTrackingThread::loop()
 	                                             weighted_object_pos_frame_);
 	weighted_object_pos_pub->send_transform(stf_weighted_object_pos);
 
-	// logger->log_info("weighted pos", "frame: odom");
-	// logger->log_info("weighted_object_pos[0]: ", std::to_string(weighted_object_pos[0]).c_str());
-	// logger->log_info("weighted_object_pos[1]: ", std::to_string(weighted_object_pos[1]).c_str());
-	// logger->log_info("weighted_object_pos[2]: ", std::to_string(weighted_object_pos[2]).c_str());
-
 	//transform weighted average into base_link
 	fawkes::tf::Stamped<fawkes::tf::Point> weighted_object_pos_base;
 	weighted_object_pos_target_.stamp    = fawkes::Time(0.0);
@@ -551,24 +514,10 @@ ObjectTrackingThread::loop()
 
 	//compute target frames
 	//-------------------------------------------------------------------------
-	//logger->log_info("weighted pos", "frame: base_link");
-	//logger->log_info("weighted_object_pos_base[0]: ",
-	//                 std::to_string(weighted_object_pos_base.getX()).c_str());
-	//logger->log_info("weighted_object_pos_base[1]: ",
-	//                 std::to_string(weighted_object_pos_base.getY()).c_str());
-	//logger->log_info("weighted_object_pos_base[2]: ",
-	//                 std::to_string(weighted_object_pos_base.getZ()).c_str());
 
 	double gripper_target[3];
 	double base_target[3];
 	compute_target_frames(weighted_object_pos_base, mps_angle, gripper_target, base_target);
-	// logger->log_info("target frames", "frame: base_link");
-	// logger->log_info("gripper_target[0]: ", std::to_string(gripper_target[0]).c_str());
-	// logger->log_info("gripper_target[1]: ", std::to_string(gripper_target[1]).c_str());
-	// logger->log_info("gripper_target[2]: ", std::to_string(gripper_target[2]).c_str());
-	// logger->log_info("base_target[0]: ", std::to_string(base_target[0]).c_str());
-	// logger->log_info("base_target[1]: ", std::to_string(base_target[1]).c_str());
-	// logger->log_info("base_target[2]: ", std::to_string(base_target[2]).c_str());
 
 	//update interface
 	object_tracking_if_->set_gripper_frame(0, gripper_target[0]);
@@ -790,7 +739,7 @@ ObjectTrackingThread::closest_position(std::vector<std::array<float, 4>>      bo
 	for (size_t i = 0; i < bounding_boxes.size(); ++i) {
 		float pos[3];
 		float wp_additional_height = 0;
-		compute_3d_point_direct_yolo(bounding_boxes[i], mps_angle, pos, wp_additional_height);
+		compute_3d_point(bounding_boxes[i], mps_angle, pos, wp_additional_height);
 		float dist = sqrt((pos[0] - ref_pos.getX()) * (pos[0] - ref_pos.getX())
 		                  + (pos[1] - ref_pos.getY()) * (pos[1] - ref_pos.getY())
 		                  + (pos[2] - ref_pos.getZ()) * (pos[2] - ref_pos.getZ()));
@@ -823,82 +772,12 @@ ObjectTrackingThread::closest_position(std::vector<std::array<float, 4>>      bo
 }
 
 void
-ObjectTrackingThread::compute_3d_point(Rect bounding_box, float point[3])
+ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
+                                       float                mps_angle,
+                                       float                point[3],
+                                       float &              wp_additional_height)
 {
-	//get distance using triangle similarity
-	float dist     = focal_length_ * object_widths_[(int)current_object_type_] / bounding_box.width;
-	float pixel[2] = {(float)bounding_box.x + bounding_box.width / 2,
-	                  (float)bounding_box.y + bounding_box.height / 2};
-	rs2_deproject_pixel_to_point(point, &intrinsics_, pixel, dist);
-}
-
-void
-ObjectTrackingThread::compute_3d_point_direct(Rect bounding_box, float mps_angle, float point[3])
-{
-	//adjusted from rs2_deproject_pixel_to_point at
-	// https://github.com/IntelRealSense/librealsense/blob/master/src/rs.cpp#L3598
-
-	//delta values (correct if no distortion):
-	float dx_1 = (bounding_box.x - camera_ppx_) / camera_fx_;
-	float dx_2 = (bounding_box.x + bounding_box.width - camera_ppx_) / camera_fx_;
-	float dy   = (bounding_box.y + bounding_box.height / 2 - camera_ppy_) / camera_fy_;
-
-	// delta values
-	// float cx_1 = x_1;
-	// float cx_2 = x_2;
-	// float cy = y;
-
-	if (camera_model_ == 2) { //Inverse Brown-Conrady distortion
-		//compute delta_x_1 and delta_y considering distortion
-		converge_delta_ibc(dx_1, dy, dx_1, dy);
-
-		//compute delta_x_2 and delta_y considering distortion
-		converge_delta_ibc(dx_2, dy, dx_2, dy);
-	}
-
-	if (dx_1 == dx_2) {
-		logger->log_error(name(), "Width of 0: Cannot project into 3D space!");
-		point[0] = 0;
-		point[1] = 0;
-		point[2] = 0;
-		return;
-	}
-
-	//workpieces have an equal width from all angles
-	if (current_object_type_ == ObjectTrackingInterface::WORKPIECE) {
-		mps_angle = 0;
-	}
-
-	//percieved object width from angle
-	float object_width = cos(mps_angle) * object_widths_[(int)current_object_type_];
-
-	//distance towards this perception + additional adjustments through angle
-	float dist = object_width / (dx_2 - dx_1)
-	             + sin(abs(mps_angle)) * object_widths_[(int)current_object_type_] / 2;
-
-	//compute middle point with deltas and distance
-	float depth_point[3];
-	depth_point[0] = (dx_1 + dx_2) * dist / 2;
-	depth_point[1] = -dy * dist;
-	depth_point[2] = dist;
-
-	if (!use_saved_ && !rotate_image_) {
-		depth_point[0] = -depth_point[0];
-		depth_point[1] = -depth_point[1];
-	}
-
-	//adjust for cam_gripper frame
-	point[0] = depth_point[2];
-	point[1] = -depth_point[0];
-	point[2] = depth_point[1];
-}
-
-void
-ObjectTrackingThread::compute_3d_point_direct_yolo(std::array<float, 4> bounding_box,
-                                                   float                mps_angle,
-                                                   float                point[3],
-                                                   float &              wp_additional_height)
-{
+	//compute bounding box values
 	float bb_left    = bounding_box[0] - bounding_box[2] / 2;
 	float bb_right   = bounding_box[0] + bounding_box[2] / 2;
 	float bb_bottom  = bounding_box[1] + bounding_box[3] / 2;
@@ -946,27 +825,6 @@ ObjectTrackingThread::compute_3d_point_direct_yolo(std::array<float, 4> bounding
 		point[2] = dy_center * dist;
 
 		wp_additional_height = 0;
-	}
-}
-
-void
-ObjectTrackingThread::converge_delta_ibc(float dx_start, float dy_start, float dx, float dy)
-{
-	dx = dx_start;
-	dy = dy_start;
-
-	// 10 iterations are supposed to converge
-	for (size_t i = 0; i < 10; i++) {
-		float r2 = dx * dx + dy * dy;
-		float icdist =
-		  (float)1
-		  / (float)(1 + ((camera_coeffs_[4] * r2 + camera_coeffs_[1]) * r2 + camera_coeffs_[0]) * r2);
-		float xq        = dx / icdist;
-		float yq        = dy / icdist;
-		float epsilon_x = 2 * camera_coeffs_[2] * xq * yq + camera_coeffs_[3] * (r2 + 2 * xq * xq);
-		float epsilon_y = 2 * camera_coeffs_[3] * xq * yq + camera_coeffs_[2] * (r2 + 2 * yq * yq);
-		dx              = (dx_start - epsilon_x) * icdist;
-		dy              = (dy_start - epsilon_y) * icdist;
 	}
 }
 

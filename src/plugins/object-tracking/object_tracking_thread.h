@@ -108,6 +108,7 @@ private:
 	int   camera_model_;
 	float camera_coeffs_[5];
 
+	//transform variables
 	std::string object_pos_frame_;
 	std::string weighted_object_pos_frame_;
 
@@ -139,7 +140,6 @@ private:
 	std::deque<fawkes::tf::Stamped<fawkes::tf::Point>> past_responses_;
 
 	//camera params
-	float          focal_length_;
 	rs2_intrinsics intrinsics_;
 
 	std::vector<float> object_widths_;
@@ -199,13 +199,10 @@ private:
 	                      float                                  closest_pos[3],
 	                      cv::Rect &                             closest_box,
 	                      float &                                additional_height);
-	void compute_3d_point(cv::Rect bounding_box, float point[3]);
-	void compute_3d_point_direct(cv::Rect bounding_box, float angle, float point[3]);
-	void compute_3d_point_direct_yolo(std::array<float, 4> bounding_box,
-	                                  float                angle,
-	                                  float                point[3],
-	                                  float &              wp_additional_height);
-	void converge_delta_ibc(float dx_start, float dy_start, float dx, float dy);
+	void compute_3d_point(std::array<float, 4> bounding_box,
+	                      float                angle,
+	                      float                point[3],
+	                      float &              wp_additional_height);
 
 	//compute base and gripper target frame
 	void compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Point> object_pos,
