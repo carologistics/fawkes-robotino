@@ -4,6 +4,7 @@
  *  Created: Mon Apr 04 11:48:36 2016
  *  Copyright  2011-2016  Tim Niemueller [www.niemueller.de]
  *                  2016  Nicolas Limpert
+ *                  2022  Matteo Tschesche
  ****************************************************************************/
 
 /*  This program is free software; you can redistribute it and/or modify
@@ -71,7 +72,6 @@ public:
 	virtual void init();
 	//	virtual void once();
 	virtual void loop();
-	virtual void update();
 	virtual void finalize();
 
 	/**
@@ -108,6 +108,9 @@ private:
 	float cfg_z_max_;
 
 	void load_config();
+
+	// update transform
+	virtual void update();
 
 	fawkes::Time end_time_point_;
 	float        desired_end_z_pose_;
