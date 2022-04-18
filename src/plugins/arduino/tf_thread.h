@@ -72,7 +72,6 @@ public:
 	virtual void init();
 	//	virtual void once();
 	virtual void loop();
-	virtual void update();
 	virtual void finalize();
 
 	/**
