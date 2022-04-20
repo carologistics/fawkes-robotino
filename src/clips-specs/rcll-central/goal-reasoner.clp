@@ -138,8 +138,9 @@
 )
 
 (deffunction goal-reasoner-compute-order-conflicts-payments (?order1 ?order2)
+  "Detects a conflict between two order payments, i.e. when the sum of required payments
+   by both orders is bigger than the max number of payments per machine, which is 3."
   (bind ?conflict FALSE)
-  (printout t crlf crlf ?order1 " " ?order2 crlf crlf)
   (do-for-all-facts ((?rs domain-fact)) (and (eq ?rs:name mps-type) (member$ RS ?rs:param-values))
     (bind ?rs-name (nth$ 1 ?rs:param-values))
     (if (> (+  (calculate-order-payments-sum ?order1 ?rs-name) (calculate-order-payments-sum ?order2 ?rs-name)) 3) then
@@ -413,7 +414,7 @@
            (neq ?goal-meta-fact:root-for-order nil)
            (eq ?goal-fact:mode FORMULATED)
       )
-  
+
     ;check active order trees for conflicts
     (bind ?existing-order-conflict FALSE)
     (do-for-all-facts ((?existing-goal-fact goal) (?existing-goal-meta-fact goal-meta))
@@ -427,9 +428,9 @@
         )
     )
 
-    ;if the priority is higher than that of the current candidate and there is no 
+    ;if the priority is higher than that of the current candidate and there is no
     ;conflict save this goal as new candidate
-    (if (and 
+    (if (and
           (> ?goal-fact:priority ?target-priority)
           (not ?existing-order-conflict)
         )
@@ -477,7 +478,7 @@
                 target-mps ?target-loc
                 target-side ?target-side
       )
-	  )
+    )
   )
 )
 
