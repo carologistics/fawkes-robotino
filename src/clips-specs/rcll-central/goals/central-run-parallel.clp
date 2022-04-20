@@ -50,14 +50,6 @@
 ; - User: EVALUATE goal
 ; - User: RETRACT goal
 
-(defrule central-run-parallel-set-to-expanded
-	"when a central-run-parall goal is selected it is automatically expanded"
-	?gf <- (goal (id ?id) (type ACHIEVE)
-                 (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL) (mode SELECTED))
-	=>
-	(modify ?gf (mode EXPANDED))
-)
-
 (defrule central-run-parallel-goal-expand-failed
 	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)
 	             (mode EXPANDED))

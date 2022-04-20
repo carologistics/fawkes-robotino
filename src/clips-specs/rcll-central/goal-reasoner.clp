@@ -67,7 +67,9 @@
               (eq ?goal-type TIMEOUT-SUBGOAL)
               (eq ?goal-type RUN-ONE-OF-SUBGOALS)
               (eq ?goal-type RETRY-SUBGOAL)
-              (eq ?goal-type RUN-ENDLESS)))
+              (eq ?goal-type RUN-ENDLESS)
+              (eq ?goal-type CENTRAL-RUN-ALL-OF-SUBGOALS)
+              (eq ?goal-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)))
 )
 
 (deffunction log-debug ($?verbosity)

@@ -48,14 +48,6 @@
 ;   * COMPLETED: mode FINISHED, outcome COMPLETED
 ; User: EVALUATE goal
 
-(defrule central-run-all-set-to-expanded
-	"when a central-run-parall goal is selected it is automatically expanded"
-	?gf <- (goal (id ?id) (type ACHIEVE)
-                 (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS) (mode SELECTED))
-	=>
-	(modify ?gf (mode EXPANDED))
-)
-
 (defrule central-run-all-goal-expand-failed
 	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
 	             (mode EXPANDED))
