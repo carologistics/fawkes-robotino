@@ -1279,6 +1279,7 @@ The workpiece remains in the output of the used ring station after
 
 (deffunction goal-production-assign-order-and-prio-to-goal (?goal ?order-id ?prio)
 	(bind ?goal-id (fact-slot-value ?goal id))
+	(modify ?goal (priority ?prio))
 	(do-for-fact ((?goal-meta goal-meta)) (eq ?goal-meta:goal-id ?goal-id)
 		(modify ?goal-meta (root-for-order ?order-id))
 	)
