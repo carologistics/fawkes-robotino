@@ -282,7 +282,7 @@
   (modify ?ze (value ?new-ts))
   (printout t "Goal EXPLORE-ZONE  formulated in zone: " ?zn " with tag: " ?tv crlf)
   (assert (goal (id (sym-cat EXPLORE-ZONE- (gensym*))) (class EXPLORE-ZONE) (sub-type SIMPLE)
-	              (params z ?zn) (meta-template goal-meta) (parent ?parent) (priority 100.) (mode FORMULATED)))
+	              (params z ?zn) (meta-template goal-meta) (parent ?parent) (priority 10.) (mode FORMULATED)))
 )
 
 (defrule exp-explore-zone-executable

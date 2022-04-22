@@ -1,5 +1,5 @@
 ;---------------------------------------------------------------------------
-;  central-run-all.clp - CLIPS executive - goal to run all subgoals 
+;  central-run-all.clp - CLIPS executive - goal to run all subgoals
 ;                                          for the central agent
 ;
 ;  Created: Sun 16 May 2021 23:34:00 CET
@@ -24,57 +24,55 @@
 ; Succeed: if all sub-goal succeeds
 ; Fail:    if exactly one sub-goal fails
 ;
-; A CENTRAL-RUN-ALL parent goal will order the executable  goals by priority 
+; A CENTRAL-RUN-ALL parent goal will order the executable  goals by priority
 ; and then start performing them in order. If any goal fails, the parent
-; fails. If all goals have been completed successfully, the parent 
+; fails. If all goals have been completed successfully, the parent
 ; goal succeeds.
 ;
 ; Through the goal meta a CENTRAL-RUN-ALL goal can be set to sequence mode
-; (add sequence-mode to goal meta). Then goal selection behavior changes 
-; the following way: if there is a formulated goal of higher priority that is 
-; not executable, do not select any child. 
+; (add sequence-mode to goal meta). Then goal selection behavior changes
+; the following way: if there is a formulated goal of higher priority that is
+; not executable, do not select any child.
 ;
-; This goal is part of the centralized goal reasoning approach for the 
+; This goal is part of the centralized goal reasoning approach for the
 ; RCLL 2021 season. It has less modes than normal goals (formulated, selected,
 ; dispatched, finished, failed). The CENTRAL-RUN-ALL goal is used to implement
-; sequential goal progression. 
+; sequential goal progression.
 ;
 ; Interactions:
 ; - User FORMULATES goal
-; - AUTOMATIC: SELECT executable sub-goal with highest priority if SELECTED
-; - User: handle sub-goal dispatching, evaluating
+; - AUTOMATIC: SELECT executable sub-goal with lowest ordering number (this happens in
+;              goal-reasoner.clp)
 ; - Automatic: when sub-goal is EVALUATED, outcome determines parent goal:
 ;   * FAILED: mode FINISHED, outcome FAILED, message
 ;   * COMPLETED: mode FINISHED, outcome COMPLETED
 ; User: EVALUATE goal
 
-
-(defrule central-run-all-goal-select-child
-	"Select the exectuable child with the highest priority."
-	?gf <- (goal (id ?id) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS) 
-			(mode SELECTED) (is-executable TRUE) 
-			(meta $?meta&:(not (member$ sequence-mode ?meta))))
-	?sg <- (goal (id ?sub-goal) (parent ?id) (type ACHIEVE) 
-			(mode FORMULATED) (is-executable TRUE) (priority ?priority1))
-
-	(not (goal (id ~?sub-goal) (parent ?id) (type ACHIEVE) (mode FORMULATED)
-	           (priority ?priority2&:(> ?priority2 ?priority1)) (is-executable TRUE)))
+(defrule central-run-all-goal-expand-failed
+	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
+	             (mode EXPANDED))
+	(not (goal (type ACHIEVE) (parent ?id)))
 	=>
-	(modify ?sg (mode SELECTED))
+	(modify ?gf (mode FINISHED) (outcome FAILED)
+	            (error NO-SUB-GOALS)
+	            (message (str-cat "No sub-goal for RUN-ALL goal '" ?id "'")))
 )
 
-(defrule central-run-all-goal-select-child-sequential
-	"Select the child with the highest priority. If it is not executable, stop
-	selection."
-	?gf <- (goal (id ?id) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS) 
-	              (mode SELECTED) (is-executable TRUE) (meta $? sequence-mode $?))
-	?sg <- (goal (id ?sub-goal) (parent ?id)  
-	             (mode FORMULATED) (is-executable TRUE) (priority ?priority1))
-
-	(not (goal (id ~?sub-goal) (parent ?id) (mode FORMULATED)
-	           (priority ?priority2&:(> ?priority2 ?priority1))))
+(defrule central-run-all-goal-commit
+	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
+	             (mode EXPANDED))
+	(goal (id ?sub-goal) (parent ?id) (type ACHIEVE) (mode FORMULATED))
 	=>
-	(modify ?sg (mode SELECTED))
+	(modify ?gf (mode COMMITTED))
+)
+
+(defrule central-run-all-goal-dispatch
+	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
+	             (mode COMMITTED)
+	             (required-resources $?req)
+	             (acquired-resources $?acq&:(subsetp ?req ?acq)))
+	=>
+	(modify ?gf (mode DISPATCHED))
 )
 
 (defrule central-run-all-goal-subgoal-finished
@@ -89,10 +87,19 @@
 (defrule central-run-all-goal-subgoal-failed
 	"Fail the goal if any of the child goals fail to propagate error handling."
 	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
-	             (mode ~FINISHED))
+	             (mode DISPATCHED))
 	?sg <- (goal (parent ?id) (type ACHIEVE) (mode FINISHED) (outcome FAILED))
 	=>
 	(modify ?gf (mode FINISHED) (outcome FAILED)
 	            (error SUB-GOAL-FAILED ?sg)
-	            (message (str-cat "Sub-goal '" ?sg "' of CENTRAL-RUN-ALL goal '" ?id "' has failed")))
+	            (message (str-cat "Sub-goal '" (fact-slot-value ?sg id) "' of CENTRAL-RUN-ALL goal '" ?id "' has failed")))
+)
+
+(defrule central-run-all-goal-finish-all-subgoals-finished-completed
+	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
+	             (mode DISPATCHED) (meta $?meta&:(not (member$ do-not-finish ?meta))))
+	(not (goal (parent ?id) (type ACHIEVE) (mode RETRACTED|FINISHED) (outcome ~COMPLETED)))
+	(not (goal (parent ?id) (type ACHIEVE) (mode ~FINISHED&~RETRACTED)))
+	=>
+	(modify ?gf (mode FINISHED) (outcome COMPLETED))
 )
