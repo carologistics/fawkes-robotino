@@ -74,12 +74,12 @@
   (assert (wm-fact (id "/refbox/points/cyan") (type UINT) (value (pb-field-value ?p "points_cyan")) ))
 )
 
-
 (defrule refbox-recv-order
   "Assert orders sent by the refbox."
   ?pf <- (protobuf-msg (type "llsf_msgs.OrderInfo") (ptr ?ptr))
   (wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
   =>
+  (printout t " REFBOX-RECV-ORDER: " ?team-color) 
   (foreach ?o (pb-field-list ?ptr "orders")
     (bind ?id (pb-field-value ?o "id"))
     (bind ?order-id (sym-cat O ?id))
@@ -126,14 +126,14 @@
           (printout t "Added order " ?id " with " (pb-field-value ?o "cap_color") crlf)
       else
           (if (eq ?team-color CYAN) then
-            (bind ?qd-them (pb-field-value ?o "quantity_delivered_magenta"))
-          else
             (bind ?qd-them (pb-field-value ?o "quantity_delivered_cyan"))
+          else
+            (bind ?qd-them (pb-field-value ?o "quantity_delivered_magenta"))
           )
           (do-for-fact ((?old-qd-them wm-fact))
             (and (wm-key-prefix ?old-qd-them:key
                    (create$ domain fact quantity-delivered args? ord ?order-id
-                    team (mirror-team ?team-color)))
+                    team ?team-color))
                  (neq ?old-qd-them:value ?qd-them))
               (modify ?old-qd-them (value ?qd-them))
           )
