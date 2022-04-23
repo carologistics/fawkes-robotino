@@ -178,7 +178,6 @@
   )
 )
 
-
 (deffunction deg-to-rad (?deg)
   "Converts an angle in degree to radiant
   @param ?deg angle in degree
@@ -1310,7 +1309,7 @@
              (member$ ?order ?ring3-color:param-values)
              (member$ (nth$ 2 ?ring3-color:param-values) ?ring3-spec:param-values)
         )
-      
+
       (bind ?ring3-payment (sym-to-int (nth$ 3 ?ring3-spec:param-values)))
   )
   (return (+ ?ring1-payment (+ ?ring2-payment ?ring3-payment)))

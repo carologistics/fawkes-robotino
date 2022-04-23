@@ -408,7 +408,7 @@
     (goal-meta (goal-id ?goal-id3) (root-for-order ~nil))
   ))
   =>
-  ;find a suitable order for parallel fulfillment 
+  ;find a suitable order for parallel fulfillment
   (bind ?target-priority 0)
   (bind ?target-goal nil)
   (do-for-all-facts ((?goal-fact goal) (?goal-meta-fact goal-meta))
@@ -449,7 +449,7 @@
 )
 
 (defrule goal-reasoner-balance-payment-goals
-  "If there are multiple orders being fulfilled in parallel and one of them contains 
+  "If there are multiple orders being fulfilled in parallel and one of them contains
   a DISCARD-CC goal, try to replace it with a payment goal instead."
   (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
       (id ?goal1) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED) (verbosity ?v1))
@@ -470,7 +470,7 @@
   (retract ?p1)
   (retract ?p2)
   (retract ?p3)
-  (assert 
+  (assert
     (goal (class PAY-FOR-RINGS-WITH-CAP-CARRIER)
       (id (sym-cat PAY-FOR-RINGS-WITH-CAP-CARRIER- (gensym*))) (sub-type SIMPLE)
       (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta) (parent ?payment-parent)
