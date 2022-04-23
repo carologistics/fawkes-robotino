@@ -1733,12 +1733,26 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key exploration active) (value TRUE))
 	; start to explore the grid only if grid coordinates are available
 	(wm-fact (key navgraph waitzone generated) (type BOOL) (value TRUE))
+	(confval (path ?min-path&:(eq ?min-path (str-cat ?*NAVGRAPH_GENERATOR_MPS_CONFIG* "bounding-box/p1")))
+	         (list-value ?x_min ?y_min))
+	(confval (path ?max-path&:(eq ?max-path (str-cat ?*NAVGRAPH_GENERATOR_MPS_CONFIG* "bounding-box/p2")))
+	         (list-value ?x_max ?y_max))
 	=>
+	(bind ?zones (create$))
+	(loop-for-count (?x ?x_min -1)
+		(loop-for-count (?y (+ 1 ?y_min) ?y_max)
+			(bind ?zones (append$ ?zones (translate-location-grid-to-map (abs ?x) ?y)))
+		)
+	)
+	(loop-for-count (?x 1 ?x_max)
+		(loop-for-count (?y (+ 1 ?y_min) ?y_max)
+			(bind ?zones (append$ ?zones (translate-location-grid-to-map (abs ?x) ?y)))
+		)
+	)
+
 	(assert (wm-fact (key exploration targets args?)
 	                 (is-list TRUE)
-	                 (values M-Z55 M-Z15 M-Z11 M-Z33 M-Z35 M-Z13 M-Z31
-	                         M-Z45 M-Z25 M-Z54 M-Z44 M-Z34 M-Z24 M-Z14
-	                         M-Z52 M-Z42 M-Z32 M-Z22 M-Z12 M-Z43 M-Z23))
+	                 (values (randomize$ ?zones)))
 	)
 )
 

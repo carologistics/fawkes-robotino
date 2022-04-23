@@ -62,41 +62,25 @@
 "
 	(not (wm-fact (key domain fact zone-content args? z ?zn m ?machine)))
 	(wm-fact (id "/config/rcll/exploration/zone-margin") (type FLOAT) (value ?zone-margin))
+	(confval (path ?min-path&:(eq ?min-path (str-cat ?*NAVGRAPH_GENERATOR_MPS_CONFIG* "bounding-box/p1")))
+	         (list-value ?x_min ?y_min))
+	(confval (path ?max-path&:(eq ?max-path (str-cat ?*NAVGRAPH_GENERATOR_MPS_CONFIG* "bounding-box/p2")))
+	         (list-value ?x_max ?y_max))
 =>
+	(bind ?zones (create$))
+	(loop-for-count (?x ?x_min -1)
+		(loop-for-count (?y (+ 1 ?y_min) ?y_max)
+			(bind ?zones (append$ ?zones (translate-location-grid-to-map (abs ?x) ?y)))
+		)
+	)
+	(loop-for-count (?x 1 ?x_max)
+		(loop-for-count (?y (+ 1 ?y_min) ?y_max)
+			(bind ?zones (append$ ?zones (translate-location-grid-to-map (abs ?x) ?y)))
+		)
+	)
 	(assert (exp-zone-margin ?zone-margin))
-  (bind $?Czones (create$))
-  ;  C-Z18 C-Z28 C-Z38 C-Z48 C-Z58 C-Z68 C-Z78
-  ;  C-Z17 C-Z27 C-Z37 C-Z47 C-Z57 C-Z67 C-Z77
-  ;  C-Z16 C-Z26 C-Z36 C-Z46 C-Z56 C-Z66 C-Z76
-  ;  C-Z15 C-Z25 C-Z35 C-Z45 C-Z55 C-Z65 C-Z75
-  ;  C-Z14 C-Z24 C-Z34 C-Z44 C-Z54 C-Z64 C-Z74
-  ;  C-Z13 C-Z23 C-Z33 C-Z43 C-Z53 C-Z63 C-Z73
-  ;  C-Z12 C-Z22 C-Z32 C-Z42 C-Z52 C-Z62 C-Z72
-  ;  C-Z11 C-Z21 C-Z31 C-Z41))
 
-  (bind $?Mzones (create$
-    ;M-Z78 M-Z68 M-Z58 M-Z48 M-Z38 M-Z28 M-Z18
-    ;M-Z77 M-Z67 M-Z57 M-Z47 M-Z37 M-Z27 M-Z17
-    ;M-Z76 M-Z66 M-Z56 M-Z46 M-Z36 M-Z26 M-Z16
-    ;M-Z75 M-Z65
-    ;M-Z74 M-Z64
-    ;M-Z73 M-Z63
-    ;M-Z72 M-Z62
-    ;M-Z41 M-Z31
-    M-Z55 M-Z45 M-Z35 M-Z25 M-Z15
-    M-Z54 M-Z44 M-Z34 M-Z24 M-Z14
-    M-Z53 M-Z43 M-Z33 M-Z23 M-Z13
-    M-Z52 M-Z42 M-Z32 M-Z22 M-Z12
-    M-Z21 M-Z11))
-
-   (foreach ?zone ?Czones
-     (assert (wm-fact (key exploration fact line-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
-             (wm-fact (key exploration fact tag-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
-             (wm-fact (key exploration fact time-searched args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
-             (domain-fact (name zone-content) (param-values ?zone UNKNOWN))
-     )
-   )
-   (foreach ?zone ?Mzones
+   (foreach ?zone ?zones
      (assert (wm-fact (key exploration fact line-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
              (wm-fact (key exploration fact tag-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
              (wm-fact (key exploration fact time-searched args? zone ?zone) (value 0) (type INT) (is-list FALSE) )

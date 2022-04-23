@@ -70,28 +70,31 @@
 	NA ZERO ONE TWO THREE - ring-num
 	ZERO ONE TWO THREE FOUR FIVE - ss-shelf
 	ZERO ONE TWO THREE FOUR FIVE SIX SEVEN - ss-slot
-  C-Z18 C-Z28 C-Z38 C-Z48 C-Z58 C-Z68 C-Z78 - zone
-  C-Z17 C-Z27 C-Z37 C-Z47 C-Z57 C-Z67 C-Z77 - zone
-  C-Z16 C-Z26 C-Z36 C-Z46 C-Z56 C-Z66 C-Z76 - zone
-  C-Z15 C-Z25 C-Z35 C-Z45 C-Z55 C-Z65 C-Z75 - zone
-  C-Z14 C-Z24 C-Z34 C-Z44 C-Z54 C-Z64 C-Z74 - zone
-  C-Z13 C-Z23 C-Z33 C-Z43 C-Z53 C-Z63 C-Z73 - zone
-  C-Z12 C-Z22 C-Z32 C-Z42 C-Z52 C-Z62 C-Z72 - zone
-  C-Z11 C-Z21 C-Z31 C-Z41 - zone
-  M-Z78 M-Z68 M-Z58 M-Z48 M-Z38 M-Z28 M-Z18 - zone
-  M-Z77 M-Z67 M-Z57 M-Z47 M-Z37 M-Z27 M-Z17 - zone
-  M-Z76 M-Z66 M-Z56 M-Z46 M-Z36 M-Z26 M-Z16 - zone
-  M-Z75 M-Z65 M-Z55 M-Z45 M-Z35 M-Z25 M-Z15 - zone
-  M-Z74 M-Z64 M-Z54 M-Z44 M-Z34 M-Z24 M-Z14 - zone
-  M-Z73 M-Z63 M-Z53 M-Z43 M-Z33 M-Z23 M-Z13 - zone
-  M-Z72 M-Z62 M-Z52 M-Z42 M-Z32 M-Z22 M-Z12 - zone
-                    M-Z41 M-Z31 M-Z21 M-Z11 - zone
+	C-Z18 C-Z28 C-Z38 C-Z48 C-Z58 C-Z68 C-Z78 - zone
+	C-Z17 C-Z27 C-Z37 C-Z47 C-Z57 C-Z67 C-Z77 - zone
+	C-Z16 C-Z26 C-Z36 C-Z46 C-Z56 C-Z66 C-Z76 - zone
+	C-Z15 C-Z25 C-Z35 C-Z45 C-Z55 C-Z65 C-Z75 - zone
+	C-Z14 C-Z24 C-Z34 C-Z44 C-Z54 C-Z64 C-Z74 - zone
+	C-Z13 C-Z23 C-Z33 C-Z43 C-Z53 C-Z63 C-Z73 - zone
+	C-Z12 C-Z22 C-Z32 C-Z42 C-Z52 C-Z62 C-Z72 - zone
+	C-Z11 C-Z21 C-Z31 C-Z41 C-Z31 C-Z21 C-Z11 - zone
+	M-Z78 M-Z68 M-Z58 M-Z48 M-Z38 M-Z28 M-Z18 - zone
+	M-Z77 M-Z67 M-Z57 M-Z47 M-Z37 M-Z27 M-Z17 - zone
+	M-Z76 M-Z66 M-Z56 M-Z46 M-Z36 M-Z26 M-Z16 - zone
+	M-Z75 M-Z65 M-Z55 M-Z45 M-Z35 M-Z25 M-Z15 - zone
+	M-Z74 M-Z64 M-Z54 M-Z44 M-Z34 M-Z24 M-Z14 - zone
+	M-Z73 M-Z63 M-Z53 M-Z43 M-Z33 M-Z23 M-Z13 - zone
+	M-Z72 M-Z62 M-Z52 M-Z42 M-Z32 M-Z22 M-Z12 - zone
+	M-Z71 M-Z61 M-Z51 M-Z41 M-Z31 M-Z21 M-Z11 - zone
 
-	G-1-1 G-2-1 G-3-1 G-4-1 G-5-1 - waitpoint
-	G-1-2 G-2-2 G-3-2 G-4-2 G-5-2 - waitpoint
-	G-1-3 G-2-3 G-3-3 G-4-3 G-5-3 - waitpoint
-	G-1-4 G-2-4 G-3-4 G-4-4 G-5-4 - waitpoint
-	G-1-5 G-2-5 G-3-5 G-4-5 G-5-5 - waitpoint
+	G-1-1 G-2-1 G-3-1 G-4-1 G-5-1 G-6-1 G-7-1 G-8-1 G-9-1 G-10-1 G-11-1 G-12-1 G-13-1 G-14-1 - waitpoint
+	G-1-2 G-2-2 G-3-2 G-4-2 G-5-2 G-6-2 G-7-2 G-8-2 G-9-2 G-10-2 G-11-2 G-12-2 G-13-2 G-14-2 - waitpoint
+	G-1-3 G-2-3 G-3-3 G-4-3 G-5-3 G-6-3 G-7-3 G-8-3 G-9-3 G-10-3 G-11-3 G-12-3 G-13-3 G-14-3 - waitpoint
+	G-1-4 G-2-4 G-3-4 G-4-4 G-5-4 G-6-4 G-7-4 G-8-4 G-9-4 G-10-4 G-11-4 G-12-4 G-13-4 G-14-4 - waitpoint
+	G-1-5 G-2-5 G-3-5 G-4-5 G-5-5 G-6-5 G-7-5 G-8-5 G-9-5 G-10-5 G-11-5 G-12-5 G-13-5 G-14-5 - waitpoint
+	G-1-6 G-2-6 G-3-6 G-4-6 G-5-6 G-6-6 G-7-6 G-8-6 G-9-6 G-10-6 G-11-6 G-12-6 G-13-6 G-14-6 - waitpoint
+	G-1-7 G-2-7 G-3-7 G-4-7 G-5-7 G-6-7 G-7-7 G-8-7 G-9-7 G-10-7 G-11-7 G-12-7 G-13-7 G-14-7 - waitpoint
+	G-1-8 G-2-8 G-3-8 G-4-8 G-5-8 G-6-8 G-7-8 G-8-8 G-9-8 G-10-8 G-11-8 G-12-8 G-13-8 G-14-8 - waitpoint
 )
 
 (:predicates
