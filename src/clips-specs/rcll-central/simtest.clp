@@ -71,6 +71,9 @@
 	(return (assert (testcase (id ?name) (type ?type) (termination FAILURE))))
 )
 
+
+(defffunction )
+
 (defrule simtest-initialize
 " Creates the configured testbed. "
 	(not (simtest-initialized))
@@ -82,14 +85,14 @@
 			(assert (testcase (type ENTER-FIELD)))
 		)
 		(case "FAST" then
-			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 1 points 1)))
+			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 3 points 2)))
 		)
 		(case "DELIVERY" then
-			(assert (testcase (type DELIVERY-COUNT) (args count 1)))
+			(assert (testcase (type DELIVERY-COUNT) (args count 2)))
 		)
 		(case "COMPLEX" then
 			(simtest-connect OR
-			  (assert (testcase (type DELIVERY-COUNT) (args count 5)))
+			  (assert (testcase (type DELIVERY-COUNT) (args count 4)))
 				(simtest-connect AND
 					(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C0)))
 					(simtest-connect OR
@@ -101,12 +104,20 @@
 			(assert (testcase (type FULL-GAME)))
 		)
 		(case "FULL" then
-			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 8 points 30)))
+			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 3 points 2)))
+			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 6 points 6)))
+			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 10 points 100)))
 			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 17 points 150)))
-			(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C0)))
-			(simtest-connect OR
-				(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C2)))
-				(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C3)))
+			(assert (testcase (type DELIVERY-COUNT) (args count 2)))
+			(simtest-connect AND
+				(simtest-connect OR
+					(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C0)))
+					(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C1)))
+				)
+				(simtest-connect OR
+					(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C2)))
+					(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C3)))
+				)
 			)
 			(assert (testcase (type FULL-GAME)))
 		)
@@ -237,10 +248,13 @@
 " Tests of type POINT-AFTER-MINUTE fail if the deadline is crossed. "
 	?testcase <- (testcase (type POINTS-AFTER-MINUTE) (state PENDING)
 	             (args minute ?time points ?desired-points))
+	(wm-fact (key refbox team-color) (value ?team-color&~nil))
 	(wm-fact (key refbox phase) (value PRODUCTION))
 	(wm-fact (key refbox game-time) (values $?gt&:(>= (nth$ 1 ?gt) (* ?time 60))))
+	(wm-fact (key refbox points ?lc-team-color&:(eq ?lc-team-color (lowcase ?team-color)))
+	         (value ?points&:(< ?points ?desired-points)))
 	=>
-	(modify ?testcase (state FAILED) (msg (str-cat "Insufficient points after " (nth$ 1 ?gt) " seconds")))
+	(modify ?testcase (state FAILED) (msg (str-cat "Insufficient points after " (nth$ 1 ?gt) " seconds with " ?points " points instead of the desired " ?desired-points)))
 )
 
 (defrule simtest-no-broken-mps-failure
