@@ -21,9 +21,23 @@ fi
 
 
 FAWKES_DIR=$(realpath $(dirname ${BASH_SOURCE[0]})/..)
+REFBOX_DIR=$(realpath $(dirname ~/$USER)/rcll-refbox)
+echo $REFBOX_DIR
 tmpconfig=$(mktemp $FAWKES_DIR/cfg/conf.d/simtest-XXXXXX.yaml)
+tmprefconfig=$(mktemp $REFBOX_DIR/cfg/simtest-XXXXXX.yaml)
+
 echo "/clips-executive/specs/rcll-central/parameters/simtest/enabled: true" > $tmpconfig
+echo "/clips-executive/specs/rcll-central/parameters/simtest/testbed: FULL" >> $tmpconfig
 echo "/clips-executive/spec: rcll-central" >> $tmpconfig
+echo "/plugins/execution-time-estimator/static/speed/: 2" >> $tmpconfig
+echo "/plugins/execution-time-estimator/navgraph/speed/: 1" >> $tmpconfig
+
+echo "/llsfrb/game/random-machine-down-times: false" > $tmprefconfig
+echo "/llsfrb/simulation/enable: true" >> $tmprefconfig
+echo "/llsfrb/simulation/speedup: 2" >> $tmprefconfig
+echo "/llsfrb/simulation/time-sync/enable: false" >> $tmprefconfig
+echo "/llsfrb/simulation/time-sync/estimate-time: false" >> $tmprefconfig
+
 export FAWKES_DIR
 SCRIPT_PATH=$FAWKES_DIR/bin
 WORKING_DIR=$FAWKES_DIR/tests.out.d/cx-central-simtest
@@ -41,10 +55,12 @@ stop_test () {
 
 trap stop_test $TRAP_SIGNALS
 ulimit -c 0
+echo "$tmprefconfig"
+
 $SCRIPT_PATH/gazsim.bash -o -r --mongodb \
-  -m m-skill-sim --central-agent m-central-clips-exec -n 1 \
+  -m m-skill-sim --central-agent m-central-clips-exec -n 3 \
   --team-cyan Carologistics --start-game=PRODUCTION \
-  --refbox-args "--cfg-mps mps/mockup_mps.yaml" \
+  --refbox-args "--cfg-mps mps/mockup_mps.yaml --cfg-custom $tmprefconfig" \
   $@
 echo "Waiting for results..."
 $SCRIPT_PATH/cx-simtest-check.bash ./robot11_latest.log
