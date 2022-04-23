@@ -569,6 +569,32 @@
   (printout (log-debug ?v) "Goal " ?goal-id " FORMULATED" crlf)
 )
 
+(defrule goal-reasoner-evaluate-failed-go-wait-unknown-grid-coord
+" Remove own navgraph-node if a robot does not know a target.
+"
+	?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED) (meta $?meta)
+	            (verbosity ?v))
+	(plan (id ?plan-id) (goal-id ?goal-id))
+	(plan-action (action-name go-wait)
+	             (param-values $? ?target-grid-coord)
+	             (error-msg "target invalid")
+	             (goal-id ?goal-id) (plan-id ?plan-id) (state FAILED))
+	?node <- (navgraph-node (name ?str-target&:(eq ?str-target (str-cat ?target-grid-coord))))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+	=>
+	(set-robot-to-waiting ?robot)
+	(remove-robot-assignment-from-goal-meta ?g)
+	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, invalid target " ?target-grid-coord " of go-wait." crlf)
+	(modify ?g (mode EVALUATED))
+  (retract ?node)
+	(delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
+		(delayed-do-for-all-facts ((?a plan-action)) (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
+			(retract ?a)
+		)
+		(retract ?p)
+	)
+)
+
 (defrule goal-reasoner-evaluate-failed-goto
 " Re-formulate a failed goal if the workpiece it processes is still usable
 "
@@ -576,7 +602,8 @@
 	            (verbosity ?v))
 	(plan (id ?plan-id) (goal-id ?goal-id))
 	(plan-action (action-name ?action&move|go-wait|wait-for-wp|wait-for-free-side)
-	             (goal-id ?goal-id) (plan-id ?plan-id) (state FAILED))
+	             (goal-id ?goal-id) (plan-id ?plan-id) (state FAILED)
+	             (error-msg ~"target invalid"))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 	=>
 	(set-robot-to-waiting ?robot)
