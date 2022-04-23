@@ -40,11 +40,6 @@
   ?*TIME-RETRIEVE-CAP* = 60
   ?*TIME-FILL-RS* = 20
 
-  ?*CHALLENGE_FIELD_BB_X_1* = -5
-  ?*CHALLENGE_FIELD_BB_Y_1* = 0
-  ?*CHALLENGE_FIELD_BB_X_2* = 5
-  ?*CHALLENGE_FIELD_BB_Y_2* = 5
-
 ; Maximum distance between two points on the field
   ?*MAX-DISTANCE* = 16.124
 
@@ -695,20 +690,28 @@
   )
 )
 
-
-(deffunction navgraph-challenge-field (?robot)
-	"Uses the NavGraphInterface to reduce the field size to challenges"
-	(if ?robot then
-	 (bind ?interface (remote-if "NavGraphGeneratorInterface" ?robot "navgraph-generator"))
-	else
-	 (bind ?interface "NavGraphGeneratorInterface::/navgraph-generator")
-	)
-	(bind ?msg (blackboard-create-msg ?interface "SetBoundingBoxMessage"))
-	(blackboard-set-msg-field ?msg "p1_x" ?*CHALLENGE_FIELD_BB_X_1*)
-	(blackboard-set-msg-field ?msg "p1_y" ?*CHALLENGE_FIELD_BB_Y_1*)
-	(blackboard-set-msg-field ?msg "p2_x" ?*CHALLENGE_FIELD_BB_X_2*)
-	(blackboard-set-msg-field ?msg "p2_y" ?*CHALLENGE_FIELD_BB_Y_2*)
-	(blackboard-send-msg ?msg)
+(deffunction navgraph-set-field-size (?robot)
+  "Uses the NavGraphInterface to setup the bounding box on a robot to match
+   the one from the central agent. If they have disagreeing bounding boxes,
+   then the existence and positions of grid coordinates are not lining up.
+  "
+  (bind ?interface (remote-if "NavGraphGeneratorInterface" ?robot "navgraph-generator"))
+  (bind ?prefix (str-cat ?*NAVGRAPH_GENERATOR_MPS_CONFIG* "bounding-box/"))
+  (if (not (do-for-fact ((?cf1 confval) (?cf2 confval))
+      (and (str-prefix (str-cat ?prefix "p1") ?cf1:path)
+           (str-prefix (str-cat ?prefix "p2") ?cf2:path)
+      )
+      (bind ?msg (blackboard-create-msg ?interface "SetBoundingBoxMessage"))
+      (blackboard-set-msg-field ?msg "p1_x" (integer (nth$ 1 ?cf1:list-value)))
+      (blackboard-set-msg-field ?msg "p1_y" (integer (nth$ 2 ?cf1:list-value)))
+      (blackboard-set-msg-field ?msg "p2_x" (integer (nth$ 1 ?cf2:list-value)))
+      (blackboard-set-msg-field ?msg "p2_y" (integer (nth$ 2 ?cf2:list-value)))
+      (bind ?msg (blackboard-create-msg ?interface "SetBoundingBoxMessage"))
+      (blackboard-send-msg ?msg)
+    ))
+   then
+    (printout warn "Could not set field size, bounding box config not found" crlf)
+  )
 )
 
 
