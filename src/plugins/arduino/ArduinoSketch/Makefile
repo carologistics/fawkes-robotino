@@ -6,7 +6,7 @@ mkfile_path := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 DEV_ARDUINO ?= /dev/arduino
 
 
-build: Compiled/fawkes_plugin_comm.ino.hex
+build: Compiled/ArduinoSketch.ino.hex
 
 accstepper: libraries/AccelStepper
 	cd libraries/AccelStepper;\
@@ -22,11 +22,11 @@ libraries/AccelStepper:
 
 COMPILE_COMMAND = arduino-builder -hardware=/usr/share/arduino/hardware -tools=/usr/bin -fqbn=arduino:avr:uno -libraries libraries -verbose=true -build-path=$(mkfile_path)/Compiled fawkes_plugin_comm.ino
 
-Compiled/fawkes_plugin_comm.ino.hex: fawkes_plugin_comm.ino accstepper
+Compiled/ArduinoSketch.ino.hex: ArduinoSketch.ino accstepper
 	mkdir -p Compiled
 	$(COMPILE_COMMAND) || $(COMPILE_COMMAND) # sometimes compilation breaks, due to https://github.com/arduino/arduino-builder/issues/67. Repeating compilation normally resolves the compilation error
 
-flash: Compiled/fawkes_plugin_comm.ino.hex
+flash: Compiled/ArduinoSketch.ino.hex
 	avrdude  -patmega328p -carduino -P$(DEV_ARDUINO) -B 10 -F -Uflash:w:$<:i
 
 clean:
@@ -38,9 +38,9 @@ cleanall: clean
 comm: 
 	minicom -D $(DEV_ARDUINO)
 
-verify: Compiled/fawkes_plugin_comm.ino.hex
+verify: Compiled/ArduinoSketch.ino.hex
 	avrdude  -patmega328p -carduino -P$(DEV_ARDUINO) -B 10 -F -Uflash:v:$<:i
 
-safe_flash: Compiled/fawkes_plugin_comm.ino.hex # flash only if verify goes wrong
+safe_flash: Compiled/ArduinoSketch.ino.hex # flash only if verify goes wrong
 	avrdude  -patmega328p -carduino -P$(DEV_ARDUINO) -B 10 -F -Uflash:v:$<:i || avrdude  -patmega328p -carduino -P$(DEV_ARDUINO) -B 10 -F -Uflash:w:$<:i
 
