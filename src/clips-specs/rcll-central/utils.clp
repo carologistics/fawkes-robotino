@@ -1256,7 +1256,6 @@
   )
   (if (eq "M" (sub-string 1 1 (str-cat ?map-style-location))) then
     (bind ?x-value (- (+ 1 ?x_min) (integer (string-to-field (sub-string 4 4 (str-cat ?map-style-location))))))
-    (printout t ?x-value " > " ?x_min "?" crlf)
     (if (or (> ?x-value ?x_min) (< ?x-value 1)) then
       (printout warn "translate-location-map-to-grid: Conversion of " ?map-style-location
                      " is outside of magenta-halve [0,"?x_min"], but x is at " ?x-value crlf)
@@ -1271,7 +1270,7 @@
   )
 
   (bind ?y-value (integer (string-to-field (sub-string 5 5 (str-cat ?map-style-location)))))
-  (if (or (> ?y-value ?y_min) (> ?y-value ?y_min)) then
+  (if (or (< ?y-value ?y_min) (> ?y-value ?y_max)) then
       (printout warn "translate-location-map-to-grid: Conversion of " ?map-style-location
                      " is outside of y dimensions [" (+ ?y_min 1) ","?y_max "], but y is at " ?y-value crlf)
   )
