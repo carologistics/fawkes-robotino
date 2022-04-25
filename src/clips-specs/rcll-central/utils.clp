@@ -40,13 +40,11 @@
   ?*TIME-RETRIEVE-CAP* = 60
   ?*TIME-FILL-RS* = 20
 
-  ?*CHALLENGE_FIELD_BB_X_1* = -5
-  ?*CHALLENGE_FIELD_BB_Y_1* = 0
-  ?*CHALLENGE_FIELD_BB_X_2* = 5
-  ?*CHALLENGE_FIELD_BB_Y_2* = 5
-
 ; Maximum distance between two points on the field
   ?*MAX-DISTANCE* = 16.124
+
+  ?*BBSYNC_PEER_CONFIG* = "/fawkes/bbsync/peers/"
+  ?*NAVGRAPH_GENERATOR_MPS_CONFIG* = "/navgraph-generator-mps/"
 
 )
 
@@ -179,7 +177,6 @@
     (sym-cat (sub-string 1 1 ?zone) "-" (sub-string 3 99 ?zone))
   )
 )
-
 
 (deffunction deg-to-rad (?deg)
   "Converts an angle in degree to radiant
@@ -692,20 +689,28 @@
   )
 )
 
-
-(deffunction navgraph-challenge-field (?robot)
-	"Uses the NavGraphInterface to reduce the field size to challenges"
-	(if ?robot then
-	 (bind ?interface (remote-if "NavGraphGeneratorInterface" ?robot "navgraph-generator"))
-	else
-	 (bind ?interface "NavGraphGeneratorInterface::/navgraph-generator")
-	)
-	(bind ?msg (blackboard-create-msg ?interface "SetBoundingBoxMessage"))
-	(blackboard-set-msg-field ?msg "p1_x" ?*CHALLENGE_FIELD_BB_X_1*)
-	(blackboard-set-msg-field ?msg "p1_y" ?*CHALLENGE_FIELD_BB_Y_1*)
-	(blackboard-set-msg-field ?msg "p2_x" ?*CHALLENGE_FIELD_BB_X_2*)
-	(blackboard-set-msg-field ?msg "p2_y" ?*CHALLENGE_FIELD_BB_Y_2*)
-	(blackboard-send-msg ?msg)
+(deffunction navgraph-set-field-size (?robot)
+  "Uses the NavGraphInterface to setup the bounding box on a robot to match
+   the one from the central agent. If they have disagreeing bounding boxes,
+   then the existence and positions of grid coordinates are not lining up.
+  "
+  (bind ?interface (remote-if "NavGraphGeneratorInterface" ?robot "navgraph-generator"))
+  (bind ?prefix (str-cat ?*NAVGRAPH_GENERATOR_MPS_CONFIG* "bounding-box/"))
+  (if (not (do-for-fact ((?cf1 confval) (?cf2 confval))
+      (and (str-prefix (str-cat ?prefix "p1") ?cf1:path)
+           (str-prefix (str-cat ?prefix "p2") ?cf2:path)
+      )
+      (bind ?msg (blackboard-create-msg ?interface "SetBoundingBoxMessage"))
+      (blackboard-set-msg-field ?msg "p1_x" (integer (nth$ 1 ?cf1:list-value)))
+      (blackboard-set-msg-field ?msg "p1_y" (integer (nth$ 2 ?cf1:list-value)))
+      (blackboard-set-msg-field ?msg "p2_x" (integer (nth$ 1 ?cf2:list-value)))
+      (blackboard-set-msg-field ?msg "p2_y" (integer (nth$ 2 ?cf2:list-value)))
+      (bind ?msg (blackboard-create-msg ?interface "SetBoundingBoxMessage"))
+      (blackboard-send-msg ?msg)
+    ))
+   then
+    (printout warn "Could not set field size, bounding box config not found" crlf)
+  )
 )
 
 
@@ -1186,6 +1191,48 @@
   (return (- 1 (/ ?dist ?*MAX-DISTANCE*)))
 )
 
+(deffunction translate-location-grid-to-map (?x ?y)
+  "This function takes a navgraph-node grid coordinate (e.g. G-1-1) and translates it
+  to the corresponding RCLL 'map-style' tile coordinate (e.g. M-Z21) of the same location.
+
+  @param A navgraph-node grid coordinate (as ?x ?y tuple)
+
+  @return A RCLL 'map-stye' tile coordinate"
+  (bind ?x_min 0)
+  (bind ?x_max 0)
+  (bind ?y_min 0)
+  (bind ?y_max 0)
+  (bind ?prefix (str-cat ?*NAVGRAPH_GENERATOR_MPS_CONFIG* "bounding-box/"))
+  (do-for-fact ((?cf1 confval) (?cf2 confval))
+    (and (str-prefix (str-cat ?prefix "p1") ?cf1:path)
+         (str-prefix (str-cat ?prefix "p2") ?cf2:path)
+    )
+    (bind ?x_min (abs (nth$ 1 ?cf1:list-value)))
+    (bind ?x_max (abs (nth$ 1 ?cf2:list-value)))
+    (bind ?y_min (abs (nth$ 2 ?cf1:list-value)))
+    (bind ?y_max (abs (nth$ 2 ?cf2:list-value)))
+  )
+  (bind ?x_res 1)
+  (bind ?field_halve C)
+  (if (and (<= ?x ?x_min) (>= ?x 1)) then
+    (bind ?field_halve M)
+    (bind ?x_res (- (+ ?x_min 1) ?x))
+   else
+    (if (and (<= ?x (+ ?x_min ?x_max)) (> ?x ?x_min)) then
+      (bind ?field_halve C)
+      (bind ?x_res (- ?x ?x_min))
+     else
+      (printout warn "translate-location-grid-to-map: x (" ?x ") out of bounds"
+                     " [1," (+ ?x_min ?x_max) "]" crlf)
+    )
+  )
+  (if (< ?y 1) then
+    (printout warn "translate-location-grid-to-map: y (" ?y ") out of bounds"
+                   " [1," ?y_max "]" crlf)
+  )
+  (return (sym-cat ?field_halve -Z ?x_res ?y))
+)
+
 (deffunction translate-location-map-to-grid (?map-style-location)
   "This function takes an RCLL 'map-style' tile coordinate (e.g. M-Z21) and translates it
   to the corresponding navgraph-node grid coordinate of the same location.
@@ -1193,13 +1240,43 @@
   @param An RCLL 'map-style' tile coordinate
 
   @return A navgraph-node grid coordinate"
-	(bind ?x-value (- 6 (integer (string-to-field (sub-string 4 4 (str-cat ?map-style-location))))))
-	(bind ?y-value (sym-cat (sub-string 5 5 (str-cat ?map-style-location))))
-	(bind ?grid-style-location (sym-cat G- ?x-value "-" ?y-value))
+  (bind ?x_min 0)
+  (bind ?x_max 0)
+  (bind ?y_min 0)
+  (bind ?y_max 0)
+  (bind ?prefix (str-cat ?*NAVGRAPH_GENERATOR_MPS_CONFIG* "bounding-box/"))
+  (do-for-fact ((?cf1 confval) (?cf2 confval))
+    (and (str-prefix (str-cat ?prefix "p1") ?cf1:path)
+         (str-prefix (str-cat ?prefix "p2") ?cf2:path)
+    )
+    (bind ?x_min (abs (nth$ 1 ?cf1:list-value)))
+    (bind ?x_max (abs (nth$ 1 ?cf2:list-value)))
+    (bind ?y_min (abs (nth$ 2 ?cf1:list-value)))
+    (bind ?y_max (abs (nth$ 2 ?cf2:list-value)))
+  )
+  (if (eq "M" (sub-string 1 1 (str-cat ?map-style-location))) then
+    (bind ?x-value (- (+ 1 ?x_min) (integer (string-to-field (sub-string 4 4 (str-cat ?map-style-location))))))
+    (printout t ?x-value " > " ?x_min "?" crlf)
+    (if (or (> ?x-value ?x_min) (< ?x-value 1)) then
+      (printout warn "translate-location-map-to-grid: Conversion of " ?map-style-location
+                     " is outside of magenta-halve [0,"?x_min"], but x is at " ?x-value crlf)
+    )
+   else
+    (bind ?x-value (+ ?x_min (integer (string-to-field (sub-string 4 4 (str-cat ?map-style-location))))))
+    (printout t ?x-value " > " ?x_max "?" crlf)
+    (if (or (> ?x-value ?x_max) (<= ?x-value ?x_min)) then
+      (printout warn "translate-location-map-to-grid: Conversion of " ?map-style-location
+                     " is outside of cyan-halve [" (+ ?x_min 1) ","?x_max "], but x is at " ?x-value crlf)
+    )
+  )
 
-	;(printout t "Conversion of grids: " ?map-style-location ?grid-style-location crlf)
-
-	(return ?grid-style-location)
+  (bind ?y-value (integer (string-to-field (sub-string 5 5 (str-cat ?map-style-location)))))
+  (if (or (> ?y-value ?y_min) (> ?y-value ?y_min)) then
+      (printout warn "translate-location-map-to-grid: Conversion of " ?map-style-location
+                     " is outside of y dimensions [" (+ ?y_min 1) ","?y_max "], but y is at " ?y-value crlf)
+  )
+  (bind ?grid-style-location (sym-cat G- ?x-value "-" ?y-value))
+  (return ?grid-style-location)
 )
 
 (deffunction calculate-order-payments-sum (?order ?rs)
@@ -1232,7 +1309,7 @@
              (member$ ?order ?ring3-color:param-values)
              (member$ (nth$ 2 ?ring3-color:param-values) ?ring3-spec:param-values)
         )
-      
+
       (bind ?ring3-payment (sym-to-int (nth$ 3 ?ring3-spec:param-values)))
   )
   (return (+ ?ring1-payment (+ ?ring2-payment ?ring3-payment)))
