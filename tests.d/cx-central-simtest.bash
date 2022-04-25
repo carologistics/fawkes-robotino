@@ -19,12 +19,14 @@ if [ "$NAME" != "Fedora" ] ; then
   exit 0
 fi
 
+if [ -n $LLSF_REFBOX_DIR ] ; then
+    export PATH=$LLSF_REFBOX_DIR:$PATH
+fi
+
 
 FAWKES_DIR=$(realpath $(dirname ${BASH_SOURCE[0]})/..)
-REFBOX_DIR=$(realpath $(dirname ~/$USER)/rcll-refbox)
-echo $REFBOX_DIR
 tmpconfig=$(mktemp $FAWKES_DIR/cfg/conf.d/simtest-XXXXXX.yaml)
-tmprefconfig=$(mktemp $REFBOX_DIR/cfg/simtest-XXXXXX.yaml)
+tmprefconfig=$(mktemp $LLSF_REFBOX_DIR/cfg/simtest-XXXXXX.yaml)
 
 echo "/clips-executive/specs/rcll-central/parameters/simtest/enabled: true" > $tmpconfig
 echo "/clips-executive/specs/rcll-central/parameters/simtest/testbed: FULL" >> $tmpconfig
