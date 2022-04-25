@@ -80,7 +80,7 @@
 	)
 	(assert (exp-zone-margin ?zone-margin))
 
-   (foreach ?zone ?zones
+   (progn$ (?zone ?zones)
      (assert (wm-fact (key exploration fact line-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
              (wm-fact (key exploration fact tag-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
              (wm-fact (key exploration fact time-searched args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
