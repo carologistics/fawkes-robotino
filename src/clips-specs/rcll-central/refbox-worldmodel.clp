@@ -220,13 +220,13 @@
     (bind ?rot  FALSE)
     (bind ?zone FALSE)
     (bind ?type FALSE)
-    (if (pb-has-field ?p "rotation") then
+    (if (pb-has-field ?machine "rotation") then
       (bind ?rot  (pb-field-value ?machine "rotation"))
     )
-    (if (pb-has-field ?p "zone") then
+    (if (pb-has-field ?machine "zone") then
       (bind ?zone (clips-name (pb-field-value ?machine "zone")))
     )
-    (if (pb-has-field ?p "type") then
+    (if (pb-has-field ?machine "type") then
       (bind ?type (sym-cat (pb-field-value ?machine "type")))
     )
 
