@@ -229,13 +229,15 @@
     (if (pb-has-field ?machine "type") then
       (bind ?type (sym-cat (pb-field-value ?machine "type")))
     )
-
     (if (and ?zone ?rot ?type (neq ?rot NOT-SET) (neq ?zone N-T-SET)) then
        (printout t "Received ground-truth for Machine: " ?name
         ", rot: " ?rot ", zone: " ?zone ", type: " ?type crlf)
-      (bind ?yaw ?rot)
-      (if (neq ?yaw NOT-SET) then
-        (bind ?yaw (deg-to-rad ?yaw))
+      (bind ?yaw (deg-to-rad ?rot))
+      (delayed-do-for-all-facts ((?old-gt wm-fact))
+        (and (wm-key-prefix ?old-gt:key
+                            (create$ refbox field-ground-truth))
+             (eq (wm-key-arg ?old-gt:key m) ?name))
+        (retract ?old-gt)
       )
       (assert
         (wm-fact (key refbox field-ground-truth name args? m ?name) (type BOOL) (value TRUE))

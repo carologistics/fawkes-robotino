@@ -26,7 +26,7 @@
   =>
   (bind ?beacon-name (pb-field-value ?p "peer_name"))
   (printout debug "Beacon Recieved from " ?beacon-name crlf)
-  (retract ?pf) 
+  (retract ?pf)
 )
 
 
@@ -105,7 +105,7 @@
           (loop-for-count (?c (+ 1 ?rings-count) 3) do
             (assert (wm-fact (key domain fact (sym-cat order- ring ?c -color) args? ord ?order-id col RING_NONE) (type BOOL) (value TRUE) ))
           )
-          (assert 
+          (assert
             (wm-fact (key domain fact order-complexity args? ord ?order-id comp ?complexity) (type BOOL) (value TRUE) )
             (wm-fact (key domain fact order-base-color args? ord ?order-id col ?base) (type BOOL) (value TRUE) )
             (wm-fact (key domain fact order-cap-color  args? ord ?order-id col ?cap) (type BOOL) (value TRUE) )
@@ -150,7 +150,7 @@
     (bind ?m-type (sym-cat (pb-field-value ?m "type")))
     (bind ?m-team (sym-cat (pb-field-value ?m "team_color")))
     (bind ?m-state (sym-cat (pb-field-value ?m "state")))
-    (if (not (any-factp ((?wm-fact wm-fact)) 
+    (if (not (any-factp ((?wm-fact wm-fact))
               (and  (wm-key-prefix ?wm-fact:key (create$ domain fact mps-state))
                     (eq ?m-name (wm-key-arg ?wm-fact:key m)))))
       then
@@ -164,12 +164,12 @@
         )
       )
     )
-   (do-for-fact ((?wm-fact wm-fact)) 
-                  (and  (wm-key-prefix ?wm-fact:key (create$ domain fact mps-state)) 
+   (do-for-fact ((?wm-fact wm-fact))
+                  (and  (wm-key-prefix ?wm-fact:key (create$ domain fact mps-state))
                         (eq ?m-name (wm-key-arg ?wm-fact:key m))
                         (neq ?m-state (wm-key-arg ?wm-fact:key s)))
       (retract ?wm-fact)
-      (assert (wm-fact (key domain fact mps-state args? m ?m-name s ?m-state) (type BOOL) (value TRUE))) 
+      (assert (wm-fact (key domain fact mps-state args? m ?m-name s ?m-state) (type BOOL) (value TRUE)))
     )
    )
 )
@@ -199,10 +199,16 @@
       (bind ?type (sym-cat (pb-field-value ?machine "type")))
     )
 
-    (if (and ?zone ?rot ?type) then
+    (if (and ?zone ?rot ?type (neq ?rot NOT-SET) (neq ?zone N-T-SET)) then
        (printout t "Received ground-truth for Machine: " ?name
         ", rot: " ?rot ", zone: " ?zone ", type: " ?type crlf)
       (bind ?yaw (deg-to-rad ?rot))
+      (delayed-do-for-all-facts ((?old-gt wm-fact))
+        (and (wm-key-prefix ?old-gt:key
+                            (create$ refbox field-ground-truth))
+             (eq (wm-key-arg ?old-gt:key m) ?name))
+        (retract ?old-gt)
+      )
       (assert
         (wm-fact (key refbox field-ground-truth name args? m ?name) (type BOOL) (value TRUE))
         (wm-fact (key refbox field-ground-truth mtype args? m ?name) (value ?type))
