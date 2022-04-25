@@ -75,7 +75,7 @@
 	)
 	(loop-for-count (?x 1 ?x_max)
 		(loop-for-count (?y (+ 1 ?y_min) ?y_max)
-			(bind ?zones (append$ ?zones (translate-location-grid-to-map (abs ?x) ?y)))
+			(bind ?zones (append$ ?zones (translate-location-grid-to-map (+ (abs ?x_min) (abs ?x)) ?y)))
 		)
 	)
 	(assert (exp-zone-margin ?zone-margin))
