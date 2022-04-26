@@ -75,12 +75,12 @@
 	)
 	(loop-for-count (?x 1 ?x_max)
 		(loop-for-count (?y (+ 1 ?y_min) ?y_max)
-			(bind ?zones (append$ ?zones (translate-location-grid-to-map (abs ?x) ?y)))
+			(bind ?zones (append$ ?zones (translate-location-grid-to-map (+ (abs ?x_min) (abs ?x)) ?y)))
 		)
 	)
 	(assert (exp-zone-margin ?zone-margin))
 
-   (foreach ?zone ?zones
+   (progn$ (?zone ?zones)
      (assert (wm-fact (key exploration fact line-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
              (wm-fact (key exploration fact tag-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
              (wm-fact (key exploration fact time-searched args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
