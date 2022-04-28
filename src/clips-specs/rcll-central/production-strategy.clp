@@ -27,6 +27,50 @@
   ?*SALIENCE-PRODUCTION-STRATEGY* = -1
 )
 
+
+(defrule order-workload-addition
+  (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
+  (domain-fact (name order-ring1-color|order-ring2-color|order-ring3-color )(param-values ?order-id ?ring-color&:(neq RING_NONE ?ring-color)))
+  (domain-fact (name rs-ring-spec)(param-values ?mn ?ring-color ?rn))
+  =>
+  (bind ?payments 0)
+  (if (eq ?rn ONE) then (bind ?payments 1))
+  (if (eq ?rn TWO) then (bind ?payments 2))
+  (if (eq ?rn THREE) then (bind ?payments 3))
+  (if (not (any-factp ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload) )
+                                                   (eq ?mn (wm-key-arg ?wm-fact:key m))
+                                                   (eq ?order-id (wm-key-arg ?wm-fact:key ord))
+                                            )))
+    then
+      (assert
+        (wm-fact (key mps workload args? m ?mn ord ?order-id) (type INT)
+          (is-list FALSE) (value (+ ?payments 1)))
+      )
+    else
+      (bind ?fact (nth$ 1 (find-fact ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload) )
+                                                            (eq ?mn (wm-key-arg ?wm-fact:key m))
+                                                            (eq ?order-id (wm-key-arg ?wm-fact:key ord))))))
+      (modify ?fact (value (+ (fact-slot-value ?fact value) 1)))
+  )
+)
+
+(defrule order-workload-subtraction
+  "TODO"
+  (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
+  ?g <- (goal (class MOUNT-RING)(mode RETRACTED)(outcome COMPLETED))
+  (wm-fact (key mps workload args? m ?mn ord ?order-id))
+  =>
+  (bind ?params (fact-slot-value ?g params))
+  (bind ?order-id (sym-cat (sub-string 4 6 (nth$ 2 ?params))))
+  (bind ?color (nth$ (length$ ?params) (fact-slot-value ?g params)))
+  (assert (oi ?order-id ?color))
+  ;(bind ?fact (nth$ 1 (find-fact ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload) )
+  ;                                                          (eq ?mn (wm-key-arg ?wm-fact:key m))
+  ;                                                          (eq ?order-id (wm-key-arg ?wm-fact:key ord))))))
+  ;(modify ?fact (value (- (fact-slot-value ?fact value) 1)))
+
+)
+
 (defrule production-strategy-init-order-meta-facts
 " Calculates the points for each production step, max points and initializes
   more order meta facts.
