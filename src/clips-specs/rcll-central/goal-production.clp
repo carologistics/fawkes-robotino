@@ -1523,6 +1523,36 @@ The workpiece remains in the output of the used ring station after
 )
 
 
+(defrule goal-production-order-can-be-started
+	"Define rules for when the production tree of an order can be formulated.
+	Currently use a simple limitation to two active orders.
+	This will be extended to consider resource usage, timing, and order preferences."
+	(wm-fact (key domain fact quantity-delivered args? ord ?order-id team ?team-color) (value 0))
+	(wm-fact (key refbox team-color) (value ?team-color))
+
+	(not (goal-meta (root-for-order ?order-id)))
+
+	(not 
+		(and
+			(goal (id ?gid1) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED))
+			(goal-meta (goal-id ?gid1) (root-for-order ~nil&~?order-id))
+			(goal (id ?gid2) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED))
+			(goal-meta (goal-id ?gid2&~?gid1) (root-for-order ~nil&~?order-id))
+		)
+	)
+
+	=>
+	(assert (wm-fact (key order meta can-be-started args? ord ?order-id) (value TRUE)))
+)
+
+(defrule goal-production-order-was-started
+	"The production tree was formulated, retract the fact."
+	?f<- (wm-fact (key order meta can-be-started args? ord ?order-id) (value TRUE))
+	(goal-meta (root-for-order ?order-id))
+	=>
+	(retract ?f)
+)
+
 (defrule goal-production-create-produce-for-order
 	"Create for each incoming order a grounded production tree with the"
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
@@ -1543,6 +1573,8 @@ The workpiece remains in the output of the used ring station after
 	    (wm-fact (key domain fact rs-ring-spec args? m ?rs2 r ?col-ring2 $?)))
 	(or (wm-fact (key domain fact order-ring3-color args? ord ?order-id col RING_NONE))
 	    (wm-fact (key domain fact rs-ring-spec args? m ?rs3 r ?col-ring3 $?)))
+ 
+ 	(wm-fact (key order meta can-be-started args? ord ?order-id) (value TRUE))
 	=>
 	;find the necessary ringstations
 	(bind ?rs1 (goal-production-get-machine-for-color ?col-ring1))
