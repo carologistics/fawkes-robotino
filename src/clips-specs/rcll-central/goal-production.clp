@@ -1567,14 +1567,10 @@ The workpiece remains in the output of the used ring station after
 (defrule goal-production-init-order-preference-facts
 	"Initialise the possible and preferred order facts to track orders of each 
 	complexity for production flow control."
-	(or
-		(not (wm-fact (key order fact possible-orders $?)))
-		(not (wm-fact (key order fact preferred-orders $?)))
-	)
+	(not (wm-fact (key order fact possible-orders $?)))
 	=>
 	(assert
 		(wm-fact (key order fact possible-orders) (is-list TRUE) (type SYMBOL))
-		(wm-fact (key order fact preferred-orders) (is-list TRUE) (type SYMBOL))
 		(wm-fact (key order fact filtered-orders args? filter delivery-ahead) (is-list TRUE) (type SYMBOL))
 		(wm-fact (key order fact filtered-orders args? filter delivery-limit) (is-list TRUE) (type SYMBOL))
 	)
