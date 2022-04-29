@@ -26,6 +26,48 @@
   ?*PRODUCTION-C1-PRIORITY* = 40
   ?*PRODUCTION-C2-PRIORITY* = 50
   ?*PRODUCTION-C3-PRIORITY* = 60
+
+  ?*PRODUCE-C0-AHEAD-TIME* = 150
+  ?*PRODUCE-C1-AHEAD-TIME* = 250
+  ?*PRODUCE-C2-AHEAD-TIME* = 350
+  ?*PRODUCE-C3-AHEAD-TIME* = 450
+  ?*DELIVER-AHEAD-TIME* = 60
+)
+
+(deffunction goal-production-produce-ahead-check (?gt ?begin ?complexity)
+	"Checks whether the current game time is within the produce ahead time 
+	of the given order's complexity"
+	(if (eq ?complexity C3) then
+		(return (< ?begin (+ ?gt ?*PRODUCE-C3-AHEAD-TIME*)))
+	)
+	(if (eq ?complexity C2) then
+		(return (< ?begin (+ ?gt ?*PRODUCE-C2-AHEAD-TIME*)))
+	)
+	(if (eq ?complexity C1) then
+		(return (< ?begin (+ ?gt ?*PRODUCE-C1-AHEAD-TIME*)))
+	)
+	(if (eq ?complexity C0) then
+		(return (< ?begin (+ ?gt ?*PRODUCE-C0-AHEAD-TIME*)))
+	)
+	(return nil)
+)
+
+(deffunction goal-production-produce-ahead-terminate (?gt ?end ?complexity)
+	"Checks whether the current game time is within the produce ahead time 
+	of the given order's complexity"
+	(if (eq ?complexity C3) then
+		(return (< ?end (+ ?gt ?*PRODUCE-C3-AHEAD-TIME*)))
+	)
+	(if (eq ?complexity C2) then
+		(return (< ?end (+ ?gt ?*PRODUCE-C2-AHEAD-TIME*)))
+	)
+	(if (eq ?complexity C1) then
+		(return (< ?end (+ ?gt ?*PRODUCE-C1-AHEAD-TIME*)))
+	)
+	(if (eq ?complexity C0) then
+		(return (< ?end (+ ?gt ?*PRODUCE-C0-AHEAD-TIME*)))
+	)
+	(return nil)
 )
 
 (deffunction goal-meta-assign-robot-to-goal (?goal ?robot)
@@ -1522,7 +1564,7 @@ The workpiece remains in the output of the used ring station after
 	(printout error "Can not build order " ?order-id " with ring-3 color " ?col-ring " because there is no ringstation for it" crlf)
 )
 
-(defrule goal-production-init-possible-and-preferred-ordres
+(defrule goal-production-init-order-preference-facts
 	"Initialise the possible and preferred order facts to track orders of each 
 	complexity for production flow control."
 	(or
@@ -1531,20 +1573,19 @@ The workpiece remains in the output of the used ring station after
 	)
 	=>
 	(assert
-		(wm-fact (key order fact possible-orders args? com C3) (is-list TRUE) (type SYMBOL))
-		(wm-fact (key order fact preferred-orders args? com C3) (is-list TRUE) (type SYMBOL))
-		(wm-fact (key order fact possible-orders args? com C2) (is-list TRUE) (type SYMBOL))
-		(wm-fact (key order fact preferred-orders args? com C2) (is-list TRUE) (type SYMBOL))
-		(wm-fact (key order fact possible-orders args? com C1) (is-list TRUE) (type SYMBOL))
-		(wm-fact (key order fact preferred-orders args? com C1) (is-list TRUE) (type SYMBOL))
-		(wm-fact (key order fact possible-orders args? com C0) (is-list TRUE) (type SYMBOL))
-		(wm-fact (key order fact preferred-orders args? com C0) (is-list TRUE) (type SYMBOL))
+		(wm-fact (key order fact possible-orders) (is-list TRUE) (type SYMBOL))
+		(wm-fact (key order fact preferred-orders) (is-list TRUE) (type SYMBOL))
+		(wm-fact (key order fact filtered-orders args? filter delivery-ahead) (is-list TRUE) (type SYMBOL))
+		(wm-fact (key order fact filtered-orders args? filter delivery-limit) (is-list TRUE) (type SYMBOL))
 	)
 )
 
 (defrule goal-production-append-possible-orders
 	"An order is possible if it's not been fulfilled yet and if the machine occupancy
 	allows it to be pursued."
+	;facts to modify
+	?poss <- (wm-fact (key order fact possible-orders) (values $?values))
+	;meta information
 	(wm-fact (key refbox team-color) (value ?team-color))
 	;neither delivered, nor started
 	(wm-fact (key domain fact quantity-delivered args? ord ?order-id team ?team-color) (value 0))
@@ -1559,24 +1600,94 @@ The workpiece remains in the output of the used ring station after
 		)
 	)
 	;it is not possible yet
-	(wm-fact (key domain fact order-complexity args? ord ?order-id com ?complexity))
-	?poss <- (wm-fact (key order fact possible-orders args? com ?complexity) (values $?values))
 	(test (not (member$ ?order-id ?values)))
 	=>
 	(modify ?poss (values $?values ?order-id))
 )
 
-(defrule goal-production-remove-from-possible-orders 
+(defrule goal-production-remove-from-possible-orders-active
 	"An order that has been started, fulfilled is not possible anymore."
-	(wm-fact (key order fact possible-orders args? com ?complexity) (values $? ?order-id $?))
+	(wm-fact (key order fact possible-orders) (values $? ?order-id $?))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	(or 
 		(wm-fact (key domain fact quantity-delivered args? ord ?order-id team ?team-color) (value ~0))
 		(goal-meta (root-for-order ?order-id))
 	)
-	?poss <- (wm-fact (key order fact possible-orders args? com ?complexity) (values $?values))
+	?poss <- (wm-fact (key order fact possible-orders) (values $?values))
 	=> 
 	(modify ?poss (values (delete$ ?values (member$ ?order-id ?values) (member$ ?order-id ?values))))
+)
+
+
+;filter delivery-ahead
+(defrule goal-production-filter-orders-delivery-ahead-add
+	"Add an order to this filter if its production ahead window is open and isn't closed yet."
+	?filtered <- (wm-fact (key order fact filtered-orders args? filter delivery-ahead) (values $?values))
+	(wm-fact (key order fact possible-orders) (values $? ?order-id $?))
+	(not (wm-fact (key order fact filtered-orders args? filter delivery-ahead) (values $? ?order-id $?)))
+	(wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
+	;filter condition
+	(wm-fact (key refbox order ?order-id delivery-begin) (value ?begin))
+	(wm-fact (key refbox order ?order-id delivery-end) (value ?end))
+	(wm-fact (key refbox game-time) (values ?gt $?))
+	(test 
+		(and 
+			(goal-production-produce-ahead-check ?gt ?begin ?comp)
+			(not (goal-production-produce-ahead-terminate ?gt ?end ?comp))
+		)
+	)
+	=>
+	(modify ?filtered (values $?values ?order-id))
+)
+
+(defrule goal-production-filter-orders-delivery-ahead-remove
+	"Remove an order from this filter if its production ahead window has finally closed."
+	?filtered <- (wm-fact (key order fact filtered-orders args? filter delivery-ahead) (values $?values))
+	(wm-fact (key order fact filtered-orders args? filter delivery-ahead) (values $? ?order-id $?))
+	(wm-fact (key order fact filtered-orders args? filter delivery-ahead) (values $? ?order-id $?))
+	(wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
+	(or 
+		(not (wm-fact (key order fact possible-orders) (values $? ?order-id $?)))
+		(and
+			;reverse filter condition
+			(wm-fact (key refbox order ?order-id delivery-end) (value ?end))
+			(wm-fact (key refbox game-time) (values ?gt $?))
+			(test (goal-production-produce-ahead-terminate ?gt ?end ?comp))
+		)
+	)
+	=>
+	(modify ?filtered (values (delete$ ?values (member$ ?order-id ?values) (member$ ?order-id ?values))))
+)
+
+;filter delivery-limit
+(defrule goal-production-filter-orders-delivery-limit-add
+	"Add an order to this filter its delivery window end is in the future."
+	?filtered <- (wm-fact (key order fact filtered-orders args? filter delivery-limit) (values $?values))
+	(wm-fact (key order fact possible-orders) (values $? ?order-id $?))
+	(not (wm-fact (key order fact filtered-orders args? filter delivery-limit) (values $? ?order-id $?)))
+	;filter condition
+	(wm-fact (key refbox order ?order-id delivery-end) (value ?end))
+	(wm-fact (key refbox game-time) (values ?gt $?))
+	(test (< ?gt ?end))
+	=>
+	(modify ?filtered (values $?values ?order-id))
+)
+
+(defrule goal-production-filter-orders-delivery-limit-remove
+	"Remove an order from this filter if its delivery window end has arrived."
+	?filtered <- (wm-fact (key order fact filtered-orders args? filter delivery-limit) (values $?values))
+	(wm-fact (key order fact filtered-orders args? filter delivery-limit) (values $? ?order-id $?))
+	(or 
+		(not (wm-fact (key order fact possible-orders) (values $? ?order-id $?)))
+		(and
+			;reverse filter condition
+			(wm-fact (key refbox order ?order-id delivery-end) (value ?end))
+			(wm-fact (key refbox game-time) (values ?gt $?))
+			(test (> ?gt ?end))
+		)
+	)
+	=>
+	(modify ?filtered (values (delete$ ?values (member$ ?order-id ?values) (member$ ?order-id ?values))))
 )
 
 (defrule goal-production-create-produce-for-order
@@ -1600,7 +1711,17 @@ The workpiece remains in the output of the used ring station after
 	(or (wm-fact (key domain fact order-ring3-color args? ord ?order-id col RING_NONE))
 	    (wm-fact (key domain fact rs-ring-spec args? m ?rs3 r ?col-ring3 $?)))
  
- 	(wm-fact (key order fact possible-orders args? com ?complexity) (values $? ?order-id $?))
+	;it is possible and it is in all the filters and there is none of higher value than this one
+	(wm-fact (key order fact possible-orders) (values $? ?order-id $?))
+	(not (wm-fact (key order fact filtered-orders $?) (values $?values&:(not (member$ ?order-id ?values)))))
+	(not 
+		(and
+			(wm-fact (key order fact possible-orders) (values $? ?o-order-id&~?order-id $?))
+			(wm-fact (key domain fact order-complexity args? ord ?o-order-id com ?comp-comp))
+			(not (wm-fact (key order fact filtered-orders $?) (values $?values&:(not (member$ ?o-order-id ?values)))))
+			(test (eq 1 (str-compare ?comp-comp ?comp)))
+		)
+	)
 	=>
 	;find the necessary ringstations
 	(bind ?rs1 (goal-production-get-machine-for-color ?col-ring1))
