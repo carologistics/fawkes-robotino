@@ -1522,35 +1522,61 @@ The workpiece remains in the output of the used ring station after
 	(printout error "Can not build order " ?order-id " with ring-3 color " ?col-ring " because there is no ringstation for it" crlf)
 )
 
+(defrule goal-production-init-possible-and-preferred-ordres
+	"Initialise the possible and preferred order facts to track orders of each 
+	complexity for production flow control."
+	(or
+		(not (wm-fact (key order fact possible-orders $?)))
+		(not (wm-fact (key order fact preferred-orders $?)))
+	)
+	=>
+	(assert
+		(wm-fact (key order fact possible-orders args? com C3) (is-list TRUE) (type SYMBOL))
+		(wm-fact (key order fact preferred-orders args? com C3) (is-list TRUE) (type SYMBOL))
+		(wm-fact (key order fact possible-orders args? com C2) (is-list TRUE) (type SYMBOL))
+		(wm-fact (key order fact preferred-orders args? com C2) (is-list TRUE) (type SYMBOL))
+		(wm-fact (key order fact possible-orders args? com C1) (is-list TRUE) (type SYMBOL))
+		(wm-fact (key order fact preferred-orders args? com C1) (is-list TRUE) (type SYMBOL))
+		(wm-fact (key order fact possible-orders args? com C0) (is-list TRUE) (type SYMBOL))
+		(wm-fact (key order fact preferred-orders args? com C0) (is-list TRUE) (type SYMBOL))
+	)
+)
 
-(defrule goal-production-order-can-be-started
-	"Define rules for when the production tree of an order can be formulated.
-	Currently use a simple limitation to two active orders.
-	This will be extended to consider resource usage, timing, and order preferences."
-	(wm-fact (key domain fact quantity-delivered args? ord ?order-id team ?team-color) (value 0))
+(defrule goal-production-append-possible-orders
+	"An order is possible if it's not been fulfilled yet and if the machine occupancy
+	allows it to be pursued."
 	(wm-fact (key refbox team-color) (value ?team-color))
-
+	;neither delivered, nor started
+	(wm-fact (key domain fact quantity-delivered args? ord ?order-id team ?team-color) (value 0))
 	(not (goal-meta (root-for-order ?order-id)))
-
+	;for now manage machine occupancy by enforcing a hard limit on the number of orders
 	(not 
 		(and
 			(goal (id ?gid1) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED))
-			(goal-meta (goal-id ?gid1) (root-for-order ~nil&~?order-id))
+			(goal-meta (goal-id ?gid1) (root-for-order ~nil))
 			(goal (id ?gid2) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED))
-			(goal-meta (goal-id ?gid2&~?gid1) (root-for-order ~nil&~?order-id))
+			(goal-meta (goal-id ?gid2&~?gid1) (root-for-order ~nil))
 		)
 	)
-
+	;it is not possible yet
+	(wm-fact (key domain fact order-complexity args? ord ?order-id com ?complexity))
+	?poss <- (wm-fact (key order fact possible-orders args? com ?complexity) (values $?values))
+	(test (not (member$ ?order-id ?values)))
 	=>
-	(assert (wm-fact (key order meta can-be-started args? ord ?order-id) (value TRUE)))
+	(modify ?poss (values $?values ?order-id))
 )
 
-(defrule goal-production-order-was-started
-	"The production tree was formulated, retract the fact."
-	?f<- (wm-fact (key order meta can-be-started args? ord ?order-id) (value TRUE))
-	(goal-meta (root-for-order ?order-id))
-	=>
-	(retract ?f)
+(defrule goal-production-remove-from-possible-orders 
+	"An order that has been started, fulfilled is not possible anymore."
+	(wm-fact (key order fact possible-orders args? com ?complexity) (values $? ?order-id $?))
+	(wm-fact (key refbox team-color) (value ?team-color))
+	(or 
+		(wm-fact (key domain fact quantity-delivered args? ord ?order-id team ?team-color) (value ~0))
+		(goal-meta (root-for-order ?order-id))
+	)
+	?poss <- (wm-fact (key order fact possible-orders args? com ?complexity) (values $?values))
+	=> 
+	(modify ?poss (values (delete$ ?values (member$ ?order-id ?values) (member$ ?order-id ?values))))
 )
 
 (defrule goal-production-create-produce-for-order
@@ -1574,7 +1600,7 @@ The workpiece remains in the output of the used ring station after
 	(or (wm-fact (key domain fact order-ring3-color args? ord ?order-id col RING_NONE))
 	    (wm-fact (key domain fact rs-ring-spec args? m ?rs3 r ?col-ring3 $?)))
  
- 	(wm-fact (key order meta can-be-started args? ord ?order-id) (value TRUE))
+ 	(wm-fact (key order fact possible-orders args? com ?complexity) (values $? ?order-id $?))
 	=>
 	;find the necessary ringstations
 	(bind ?rs1 (goal-production-get-machine-for-color ?col-ring1))
