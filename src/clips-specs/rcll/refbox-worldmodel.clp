@@ -106,7 +106,7 @@
             (assert (wm-fact (key domain fact (sym-cat order- ring ?c -color) args? ord ?order-id col RING_NONE) (type BOOL) (value TRUE) ))
           )
           (assert
-            (wm-fact (key domain fact order-complexity args? ord ?order-id comp ?complexity) (type BOOL) (value TRUE) )
+            (wm-fact (key domain fact order-complexity args? ord ?order-id com ?complexity) (type BOOL) (value TRUE) )
             (wm-fact (key domain fact order-base-color args? ord ?order-id col ?base) (type BOOL) (value TRUE) )
             (wm-fact (key domain fact order-cap-color  args? ord ?order-id col ?cap) (type BOOL) (value TRUE) )
             (wm-fact (key domain fact order-gate  args? ord ?order-id gate (sym-cat GATE- ?delivery-gate)) (type BOOL) (value TRUE) )
