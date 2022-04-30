@@ -61,27 +61,26 @@
   (if (eq ?req THREE) then (bind ?payments 3))
 
 
-   (bind ?order-fact (nth$ 1 (find-fact ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload order) )
+  (bind ?order-fact (nth$ 1 (find-fact ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload order))
                                                               (eq ?mps (wm-key-arg ?wm-fact:key m))
                                                               (eq ?order-id (wm-key-arg ?wm-fact:key ord))))))
-    (if (eq ?order-fact nil) 
-      then
-          (assert
-            (wm-fact (key mps workload order args? m ?mps ord ?order-id) (type INT)
-              (is-list FALSE) (value (+ ?payments 1)))
-          )
-      else
-        (modify ?order-fact (value (+ (fact-slot-value ?order-fact value) 1)) ) 
+  (if (eq ?order-fact nil) 
+  then
+    (assert
+      (wm-fact (key mps workload order args? m ?mps ord ?order-id) (type INT)
+        (is-list FALSE) (value (+ ?payments 1)))
     )
-   (if (not (any-factp ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload overall) )
-                                                   (eq ?mps (wm-key-arg ?wm-fact:key m))
-                                            )))
-    then
-      (assert
-        (wm-fact (key mps workload overall args? m ?mps) (type INT)
-          (is-list FALSE) (value 0))
-      )
-   )
+  else
+    (modify ?order-fact (value (+ (fact-slot-value ?order-fact value) 1)))
+  )
+  (if (not (any-factp ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload overall) )
+                                              (eq ?mps (wm-key-arg ?wm-fact:key m)))))
+  then
+    (assert
+      (wm-fact (key mps workload overall args? m ?mps) (type INT)
+        (is-list FALSE) (value 0))
+    )
+  )
 )
 
 (defrule production-strategy-init-order-meta-facts
