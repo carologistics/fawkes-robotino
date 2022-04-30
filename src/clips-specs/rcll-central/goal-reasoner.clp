@@ -533,9 +533,7 @@
 
 
 (defrule goal-reasoner-evaluate-mount-ring
-" TODO Finally set a finished goal to evaluated.
-  All pre evaluation steps should have been executed, enforced by the higher priority
-"
+" Reducing the order based mps workload after mounting a ring successfully"
 	?g <- (goal (id ?goal-id)(class MOUNT-RING) (mode FINISHED) (outcome COMPLETED)
 	            (verbosity ?v) (params $? ?mn $?))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot)(order-id ?order-id))
@@ -548,9 +546,7 @@
 )
 
 (defrule goal-reasoner-evaluate-pay-for-rings-with-base
-" TODO Finally set a finished goal to evaluated.
-  All pre evaluation steps should have been executed, enforced by the higher priority
-"
+" Reducing the order based mps workload after paying for a ring successfully"
 	?g <- (goal (id ?goal-id)(class PAY-FOR-RINGS-WITH-BASE) (mode FINISHED) (outcome COMPLETED)
 	            (verbosity ?v)(params $? ?mn $?))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot)(order-id ?order-id))
