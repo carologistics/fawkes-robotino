@@ -531,6 +531,39 @@
 
 ; ----------------------- EVALUATE SPECIFIC GOALS ---------------------------
 
+
+(defrule goal-reasoner-evaluate-mount-ring
+" TODO Finally set a finished goal to evaluated.
+  All pre evaluation steps should have been executed, enforced by the higher priority
+"
+	?g <- (goal (id ?goal-id)(class MOUNT-RING) (mode FINISHED) (outcome COMPLETED)
+	            (verbosity ?v) (params $? ?mn $?))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot)(order-id ?order-id))
+  ?wmf-order <- (wm-fact (key mps workload order args? m ?mn ord ?order-id))
+=>
+	(set-robot-to-waiting ?robot)
+	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED "  crlf)
+	(modify ?g (mode EVALUATED))
+  (modify ?wmf-order (value (- (fact-slot-value ?wmf-order value) 1)))
+)
+
+(defrule goal-reasoner-evaluate-pay-for-rings-with-base
+" TODO Finally set a finished goal to evaluated.
+  All pre evaluation steps should have been executed, enforced by the higher priority
+"
+	?g <- (goal (id ?goal-id)(class PAY-FOR-RINGS-WITH-BASE) (mode FINISHED) (outcome COMPLETED)
+	            (verbosity ?v)(params $? ?mn $?))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot)(order-id ?order-id))
+  ?wmf-order <- (wm-fact (key mps workload order args? m ?mn ord ?order-id))
+=>
+	(set-robot-to-waiting ?robot)
+	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED "  crlf)
+	(modify ?g (mode EVALUATED))
+  (modify ?wmf-order (value (- (fact-slot-value ?wmf-order value) 1)))
+)
+
+
+
 (defrule goal-reasoner-evaluate-move-out-of-way
 " Sets a finished move out of way goal independent of the outcome to formulated."
   ?g <- (goal (id ?goal-id) (class MOVE-OUT-OF-WAY) (mode FINISHED)
