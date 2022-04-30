@@ -854,7 +854,7 @@
 	(wm-fact (key domain fact quantity-delivered args? ord ?order-id team ?team-color) (value 0))
 	(not (goal-meta (root-for-order ?order-id)))
 	;for now manage machine occupancy by enforcing a hard limit on the number of orders
-	(test (< (goal-production-count-active-orders) 2))
+	(test (< (goal-production-count-active-orders) 3))
 	;it is not possible yet
 	(test (not (member$ ?order-id ?values)))
 	=>
