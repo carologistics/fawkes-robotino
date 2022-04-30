@@ -547,7 +547,7 @@
 
 (defrule goal-reasoner-evaluate-pay-for-rings-with-base
 " Reducing the order based mps workload after paying for a ring successfully"
-	?g <- (goal (id ?goal-id)(class PAY-FOR-RINGS-WITH-BASE) (mode FINISHED) (outcome COMPLETED)
+	?g <- (goal (id ?goal-id)(class PAY-FOR-RINGS-WITH-BASE|PAY-FOR-RINGS-WITH-CAP-CARRIER|PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF) (mode FINISHED) (outcome COMPLETED)
 	            (verbosity ?v)(params $? ?mn $?))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot)(order-id ?order-id))
   ?wmf-order <- (wm-fact (key mps workload order args? m ?mn ord ?order-id))
