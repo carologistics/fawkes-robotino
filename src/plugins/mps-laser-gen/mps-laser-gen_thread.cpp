@@ -159,10 +159,10 @@ MPSLaserGenThread::loop()
 				mps.corners[2] = (rot * mps.corners[2]) + mps.center;
 				mps.corners[3] = (rot * mps.corners[3]) + mps.center;
 
-				float dists[4]  = {mps.corners[0].norm(),
-                          mps.corners[1].norm(),
-                          mps.corners[2].norm(),
-                          mps.corners[3].norm()};
+				float dists[4] = {mps.corners[0].norm(),
+			                          mps.corners[1].norm(),
+			                          mps.corners[2].norm(),
+			                          mps.corners[3].norm()};
 				mps.closest_idx = 0;
 				for (unsigned int i = 1; i < 4; ++i) {
 					if (dists[i] < dists[mps.closest_idx])
