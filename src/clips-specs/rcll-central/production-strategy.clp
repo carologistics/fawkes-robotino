@@ -26,37 +26,24 @@
 (defglobal
   ?*SALIENCE-PRODUCTION-STRATEGY* = -1
 )
-
-
-;(defrule order-workload-init
-;  (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
-;  (domain-fact (name order-ring1-color|order-ring2-color|order-ring3-color)(param-values ?order-id ?ring-color&:(neq RING_NONE ?ring-color)))
-;  (domain-fact (name rs-ring-spec)(param-values ?mn ?ring-color ?rn))
+;
+;(defrule activate-workload-order
+;  (goal (id ?goal-id) (class PRODUCE-ORDER)(mode DISPATCHED))
+;  (goal-meta (goal-id ?goal-id)(root-for-order ?order-id))
 ;  =>
-;  (bind ?payments 0)
-;  (if (eq ?rn ONE) then (bind ?payments 1))
-;  (if (eq ?rn TWO) then (bind ?payments 2))
-;  (if (eq ?rn THREE) then (bind ?payments 3))
-;  (if (not (any-factp ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload) )
-;                                                   (eq ?mn (wm-key-arg ?wm-fact:key m))
-;                                                   (eq ?order-id (wm-key-arg ?wm-fact:key ord))
-;                                            )))
-;    then
-;      (assert
-;        (wm-fact (key mps workload args? m ?mn ord ?order-id) (type INT)
-;          (is-list FALSE) (value (+ ?payments 1)))
-;      )
-;    else
-;      (bind ?fact (nth$ 1 (find-fact ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload) )
-;                                                            (eq ?mn (wm-key-arg ?wm-fact:key m))
-;                                                            (eq ?order-id (wm-key-arg ?wm-fact:key ord))))))
-;      (modify ?fact (value (+ (fact-slot-value ?fact value) 1)) ) 
-;  )
+;  
+;    (do-for-all-facts ((?wm-fact wm-fact))
+;                      (and 
+;                        (wm-key-prefix ?wm-fact:key (create$ mps workload order) )
+;                        (eq ?order-id (wm-key-arg ?wm-fact:key ord)
+;                        (eq false     (wm-key-arg ?wm-fact:key active))))
+;      (modify ?wm-fact ())
+;    )
 ;)
-; (eq (sub-string  1 19 ?wm-fact) "/mps/workload/order")
 
 (defrule sum-workload
-  (wm-fact (key mps workload order args? m ?mn ord ?))
+  (wm-fact (key mps workload order args? m ?mn ord ?o-id))
+  (domain-fact (name wp-usable) (param-values ?wp-id&:(eq ?o-id (sym-cat (sub-string 4 6 ?wp-id)))))
   =>
 
   (bind ?sum 0)
@@ -66,7 +53,12 @@
                       (and 
                         (wm-key-prefix ?wm-fact:key (create$ mps workload order) )
                         (eq ?mn (wm-key-arg ?wm-fact:key m)))
-      (bind ?sum (+ ?sum ?wm-fact:value))
+      (bind ?order-id (wm-key-arg ?wm-fact:key ord))
+      (if (any-factp ((?domain-fact domain-fact)) (and (eq ?domain-fact:name wp-usable)
+                                                        (eq ?order-id (sym-cat (sub-string 4 6 (nth$ 1 ?domain-fact:param-values))))))
+       then 
+        (bind ?sum (+ ?sum ?wm-fact:value))
+       )
   )
   (modify ?order-fact (value ?sum))
 )
