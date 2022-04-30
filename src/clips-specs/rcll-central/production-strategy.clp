@@ -27,6 +27,62 @@
   ?*SALIENCE-PRODUCTION-STRATEGY* = -1
 )
 
+
+
+(defrule sum-workload
+  "Summing up the workload of a mps base on all started order productions"
+  (wm-fact (key mps workload order args? m ?mn ord ?o-id))
+  (domain-fact (name wp-usable) (param-values ?wp-id&:(eq ?o-id (sym-cat (sub-string 4 6 ?wp-id)))))
+  =>
+
+  (bind ?sum 0)
+  (bind ?order-fact (nth$ 1 (find-fact ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload overall) )
+                                                            (eq ?mn (wm-key-arg ?wm-fact:key m))))))
+    (do-for-all-facts ((?wm-fact wm-fact))
+                      (and 
+                        (wm-key-prefix ?wm-fact:key (create$ mps workload order) )
+                        (eq ?mn (wm-key-arg ?wm-fact:key m)))
+      (bind ?order-id (wm-key-arg ?wm-fact:key ord))
+      (if (any-factp ((?domain-fact domain-fact)) (and (eq ?domain-fact:name wp-usable)
+                                                        (eq ?order-id (sym-cat (sub-string 4 6 (nth$ 1 ?domain-fact:param-values))))))
+       then 
+        (bind ?sum (+ ?sum ?wm-fact:value))
+       )
+  )
+  (modify ?order-fact (value ?sum))
+)
+
+(deffunction assert-workload-for-machine
+  "Creating wm-facts for the order based and overall mps workload"
+  (?order-id ?mps ?req)
+  (bind ?payments 0)
+  (if (eq ?req ONE) then (bind ?payments 1))
+  (if (eq ?req TWO) then (bind ?payments 2))
+  (if (eq ?req THREE) then (bind ?payments 3))
+
+
+  (bind ?order-fact (nth$ 1 (find-fact ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload order))
+                                                              (eq ?mps (wm-key-arg ?wm-fact:key m))
+                                                              (eq ?order-id (wm-key-arg ?wm-fact:key ord))))))
+  (if (eq ?order-fact nil) 
+  then
+    (assert
+      (wm-fact (key mps workload order args? m ?mps ord ?order-id) (type INT)
+        (is-list FALSE) (value (+ ?payments 1)))
+    )
+  else
+    (modify ?order-fact (value (+ (fact-slot-value ?order-fact value) 1)))
+  )
+  (if (not (any-factp ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload overall) )
+                                              (eq ?mps (wm-key-arg ?wm-fact:key m)))))
+  then
+    (assert
+      (wm-fact (key mps workload overall args? m ?mps) (type INT)
+        (is-list FALSE) (value 0))
+    )
+  )
+)
+
 (defrule production-strategy-init-order-meta-facts
 " Calculates the points for each production step, max points and initializes
   more order meta facts.
@@ -58,6 +114,17 @@
   (wm-fact (key refbox order ?order delivery-end) (type UINT)
            (value ?deadline))
 =>
+  (if (neq ?col-r1 RING_NONE) then 
+      (assert-workload-for-machine  ?order ?mps1 ?req1)
+  )
+  (if (neq ?col-r2 RING_NONE) then 
+      (assert-workload-for-machine  ?order ?mps2 ?req2)
+  )
+  (if (neq ?col-r3 RING_NONE) then 
+      (assert-workload-for-machine  ?order ?mps3 ?req3)
+  )
+
+  
   (bind ?rings-needed (string-to-field (sub-string 2 2 (str-cat ?com))))
   (bind ?points-ring1 (+ (* (bool-to-int (> ?rings-needed 0))
                             (ring-req-points ?req1))
