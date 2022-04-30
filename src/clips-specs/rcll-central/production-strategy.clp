@@ -64,7 +64,6 @@
    (bind ?order-fact (nth$ 1 (find-fact ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload order) )
                                                               (eq ?mps (wm-key-arg ?wm-fact:key m))
                                                               (eq ?order-id (wm-key-arg ?wm-fact:key ord))))))
-    (printout t "REKT" ?order-fact) 
     (if (eq ?order-fact nil) 
       then
           (assert
