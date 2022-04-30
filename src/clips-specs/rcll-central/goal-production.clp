@@ -70,6 +70,23 @@
 	(return nil)
 )
 
+(deffunction goal-production-count-active-orders ()
+	"Count the number of order production root nodes that are not retracted."
+	(bind ?order-roots 0)
+	(do-for-all-facts 
+		((?goal goal) (?goal-meta goal-meta))
+		(and 
+			(eq ?goal:id ?goal-meta:goal-id) 
+			(neq ?goal-meta:root-for-order nil)
+			(neq ?goal:mode RETRACTED)
+		)
+		(bind ?order-roots (+ 1 ?order-roots))
+	)
+
+	(return ?order-roots)
+)
+
+
 (deffunction goal-meta-assign-robot-to-goal (?goal ?robot)
 "Changes an existing goal-meta fact and assign it to the given robot"
 	(if (eq (fact-slot-value ?goal id) FALSE) then
@@ -1587,14 +1604,7 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key domain fact quantity-delivered args? ord ?order-id team ?team-color) (value 0))
 	(not (goal-meta (root-for-order ?order-id)))
 	;for now manage machine occupancy by enforcing a hard limit on the number of orders
-	(not 
-		(and
-			(goal (id ?gid1) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED))
-			(goal-meta (goal-id ?gid1) (root-for-order ~nil))
-			(goal (id ?gid2) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED))
-			(goal-meta (goal-id ?gid2&~?gid1) (root-for-order ~nil))
-		)
-	)
+	(test (< (goal-production-count-active-orders) 2))
 	;it is not possible yet
 	(test (not (member$ ?order-id ?values)))
 	=>
