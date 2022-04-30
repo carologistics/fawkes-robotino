@@ -967,15 +967,28 @@
 	(or (wm-fact (key domain fact order-ring3-color args? ord ?order-id col RING_NONE))
 	    (wm-fact (key domain fact rs-ring-spec args? m ?rs3 r ?col-ring3 $?)))
  
-	;it is possible and it is in all the filters and there is none of higher value than this one
+	;check if the order should be pursued, i.e. if the following conditions hold
+	; - it is a possible order
+	; - there is no order of a higher complexity that also meets the criteria
+	; - or
+	;	- it fulfills all the filters
+	;	- no goal fulfills all the filters and no goal is currently pursued
 	(wm-fact (key order fact possible-orders) (values $? ?order-id $?))
-	(not (wm-fact (key order fact filtered-orders $?) (values $?values&:(not (member$ ?order-id ?values)))))
 	(not 
 		(and
 			(wm-fact (key order fact possible-orders) (values $? ?o-order-id&~?order-id $?))
 			(wm-fact (key domain fact order-complexity args? ord ?o-order-id com ?comp-comp))
 			(not (wm-fact (key order fact filtered-orders $?) (values $?values&:(not (member$ ?o-order-id ?values)))))
 			(test (eq 1 (str-compare ?comp-comp ?comp)))
+		)
+	)
+	(or 
+		(not (wm-fact (key order fact filtered-orders $?) (values $?values&:(not (member$ ?order-id ?values)))))
+		(not 
+			(and
+				(goal (id ?oid) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED))
+				(goal-meta (goal-id ?oid) (root-for-order ~nil))
+			)
 		)
 	)
 	=>
