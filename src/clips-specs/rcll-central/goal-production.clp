@@ -860,6 +860,9 @@ The workpiece remains in the output of the used ring station after
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
 	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
 	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
+
+	; Goal CEs
+	(not (goal (class MOUNT-RING) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED) (params $? target-mps ?target-mps $?)))
 	=>
 	(printout t "Goal MOUNT-RING executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
