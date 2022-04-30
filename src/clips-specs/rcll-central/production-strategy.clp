@@ -28,46 +28,87 @@
 )
 
 
-(defrule order-workload-addition
-  (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
-  (domain-fact (name order-ring1-color|order-ring2-color|order-ring3-color )(param-values ?order-id ?ring-color&:(neq RING_NONE ?ring-color)))
-  (domain-fact (name rs-ring-spec)(param-values ?mn ?ring-color ?rn))
+;(defrule order-workload-init
+;  (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
+;  (domain-fact (name order-ring1-color|order-ring2-color|order-ring3-color)(param-values ?order-id ?ring-color&:(neq RING_NONE ?ring-color)))
+;  (domain-fact (name rs-ring-spec)(param-values ?mn ?ring-color ?rn))
+;  =>
+;  (bind ?payments 0)
+;  (if (eq ?rn ONE) then (bind ?payments 1))
+;  (if (eq ?rn TWO) then (bind ?payments 2))
+;  (if (eq ?rn THREE) then (bind ?payments 3))
+;  (if (not (any-factp ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload) )
+;                                                   (eq ?mn (wm-key-arg ?wm-fact:key m))
+;                                                   (eq ?order-id (wm-key-arg ?wm-fact:key ord))
+;                                            )))
+;    then
+;      (assert
+;        (wm-fact (key mps workload args? m ?mn ord ?order-id) (type INT)
+;          (is-list FALSE) (value (+ ?payments 1)))
+;      )
+;    else
+;      (bind ?fact (nth$ 1 (find-fact ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload) )
+;                                                            (eq ?mn (wm-key-arg ?wm-fact:key m))
+;                                                            (eq ?order-id (wm-key-arg ?wm-fact:key ord))))))
+;      (modify ?fact (value (+ (fact-slot-value ?fact value) 1)) ) 
+;  )
+;)
+; (eq (sub-string  1 19 ?wm-fact) "/mps/workload/order")
+
+(defrule sum-workload
+  (wm-fact (key mps workload order args? m ?mn ord ?))
   =>
+
+  (bind ?sum 0)
+  (bind ?order-fact (nth$ 1 (find-fact ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload overall) )
+                                                            (eq ?mn (wm-key-arg ?wm-fact:key m))))))
+    (do-for-all-facts ((?wm-fact wm-fact))
+                      (and 
+                        (wm-key-prefix ?wm-fact:key (create$ mps workload order) )
+                        (eq ?mn (wm-key-arg ?wm-fact:key m)))
+      (bind ?sum (+ ?sum ?wm-fact:value))
+  )
+  (modify ?order-fact (value ?sum))
+)
+
+(deffunction assert-workload-for-machine
+  (?order-id ?mps ?req)
   (bind ?payments 0)
-  (if (eq ?rn ONE) then (bind ?payments 1))
-  (if (eq ?rn TWO) then (bind ?payments 2))
-  (if (eq ?rn THREE) then (bind ?payments 3))
-  (if (not (any-factp ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload) )
-                                                   (eq ?mn (wm-key-arg ?wm-fact:key m))
+  (if (eq ?req ONE) then (bind ?payments 1))
+  (if (eq ?req TWO) then (bind ?payments 2))
+  (if (eq ?req THREE) then (bind ?payments 3))
+ 
+   (if (not (any-factp ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload order ) )
+                                                   (eq ?mps (wm-key-arg ?wm-fact:key m))
                                                    (eq ?order-id (wm-key-arg ?wm-fact:key ord))
                                             )))
     then
-      (assert
-        (wm-fact (key mps workload args? m ?mn ord ?order-id) (type INT)
-          (is-list FALSE) (value (+ ?payments 1)))
-      )
+          (assert
+            (wm-fact (key mps workload order args? m ?mps ord ?order-id) (type INT)
+              (is-list FALSE) (value (+ ?payments 1)))
+          )
     else
-      (bind ?fact (nth$ 1 (find-fact ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload) )
-                                                            (eq ?mn (wm-key-arg ?wm-fact:key m))
+        (bind ?order-fact (nth$ 1 (find-fact ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload order) )
+                                                            (eq ?mps (wm-key-arg ?wm-fact:key m))
                                                             (eq ?order-id (wm-key-arg ?wm-fact:key ord))))))
-      (modify ?fact (value (+ (fact-slot-value ?fact value) 1)))
+        (modify ?order-fact (value (+ (fact-slot-value ?order-fact value) 1)) ) 
   )
-)
 
-(defrule order-workload-subtraction
-  "TODO"
-  (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
-  ?g <- (goal (class MOUNT-RING)(mode RETRACTED)(outcome COMPLETED))
-  (wm-fact (key mps workload args? m ?mn ord ?order-id))
-  =>
-  (bind ?params (fact-slot-value ?g params))
-  (bind ?order-id (sym-cat (sub-string 4 6 (nth$ 2 ?params))))
-  (bind ?color (nth$ (length$ ?params) (fact-slot-value ?g params)))
-  (assert (oi ?order-id ?color))
-  ;(bind ?fact (nth$ 1 (find-fact ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload) )
-  ;                                                          (eq ?mn (wm-key-arg ?wm-fact:key m))
-  ;                                                          (eq ?order-id (wm-key-arg ?wm-fact:key ord))))))
-  ;(modify ?fact (value (- (fact-slot-value ?fact value) 1)))
+ 
+   (if (not (any-factp ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload overall) )
+                                                   (eq ?mps (wm-key-arg ?wm-fact:key m))
+                                            )))
+    then
+          (assert
+            (wm-fact (key mps workload overall args? m ?mps) (type INT)
+              (is-list FALSE) (value (+ ?payments 1)))
+          )
+   )
+   ; else
+   ;     (bind ?overall-fact (nth$ 1 (find-fact ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload overall) )
+   ;                                                         (eq ?mps (wm-key-arg ?wm-fact:key m))))))
+   ;     (modify ?overall-fact (value (+ ?payments (+ (fact-slot-value ?overall-fact value) 1))) ) 
+   ;)
 
 )
 
@@ -102,6 +143,17 @@
   (wm-fact (key refbox order ?order delivery-end) (type UINT)
            (value ?deadline))
 =>
+  (if (neq ?col-r1 RING_NONE) then 
+      (assert-workload-for-machine  ?order ?mps1 ?req1)
+  )
+  (if (neq ?col-r2 RING_NONE) then 
+      (assert-workload-for-machine  ?order ?mps2 ?req2)
+  )
+  (if (neq ?col-r3 RING_NONE) then 
+      (assert-workload-for-machine  ?order ?mps3 ?req3)
+  )
+
+  
   (bind ?rings-needed (string-to-field (sub-string 2 2 (str-cat ?com))))
   (bind ?points-ring1 (+ (* (bool-to-int (> ?rings-needed 0))
                             (ring-req-points ?req1))
