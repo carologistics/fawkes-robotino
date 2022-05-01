@@ -842,6 +842,7 @@
 		(wm-fact (key order fact possible-orders) (is-list TRUE) (type SYMBOL))
 		(wm-fact (key order fact filtered-orders args? filter delivery-ahead) (is-list TRUE) (type SYMBOL))
 		(wm-fact (key order fact filtered-orders args? filter delivery-limit) (is-list TRUE) (type SYMBOL))
+		(wm-fact (key order fact filtered-orders args? filter workload) (is-list TRUE) (type SYMBOL))
 	)
 )
 
@@ -855,18 +856,6 @@
 	;neither delivered, nor started
 	(wm-fact (key domain fact quantity-delivered args? ord ?order-id team ?team-color) (value 0))
 	(not (goal-meta (root-for-order ?order-id)))
-	;for now manage machine occupancy by enforcing a hard limit on the number of orders
-	;(test (< (goal-production-count-active-orders) 3))
-
-	;check if pursuing this order in addition to the current orders would be above the limit
-	(not 
-		(and
-			(wm-fact (key mps workload overall args? m ?any-rs) (value ?workload))
-			(wm-fact (key mps workload order args? m ?any-rs ord ?order-id) (value ?added-workload))
-			(test (> (+ ?workload ?added-workload) ?*RS-WORKLOAD-THRESHOLD*))
-		)
-	)
-
 	;it is not possible yet
 	(test (not (member$ ?order-id ?values)))
 	=>
@@ -880,11 +869,6 @@
 	(or 
 		(wm-fact (key domain fact quantity-delivered args? ord ?order-id team ?team-color) (value ~0))
 		(goal-meta (root-for-order ?order-id))
-		(and
-			(wm-fact (key mps workload overall args? m ?any-rs) (value ?workload))
-			(wm-fact (key mps workload order args? m ?any-rs ord ?order-id) (value ?added-workload))
-			(test (> (+ ?workload ?added-workload) ?*RS-WORKLOAD-THRESHOLD*))
-		)
 	)
 	?poss <- (wm-fact (key order fact possible-orders) (values $?values))
 	=> 
@@ -957,6 +941,40 @@
 			(wm-fact (key refbox order ?order-id delivery-end) (value ?end))
 			(wm-fact (key refbox game-time) (values ?gt $?))
 			(test (> ?gt ?end))
+		)
+	)
+	=>
+	(modify ?filtered (values (delete$ ?values (member$ ?order-id ?values) (member$ ?order-id ?values))))
+)
+
+;filter machine workload
+(defrule goal-production-filter-orders-workload-add
+	"Add an order to this filter its workload doesn't push the summed workload over any machine's limit."
+	?filtered <- (wm-fact (key order fact filtered-orders args? filter workload) (values $?values))
+	(wm-fact (key order fact possible-orders) (values $? ?order-id $?))
+	(not (wm-fact (key order fact filtered-orders args? filter workload) (values $? ?order-id $?)))
+	;filter condition
+	(not 
+		(and
+			(wm-fact (key mps workload overall args? m ?any-rs) (value ?workload))
+			(wm-fact (key mps workload order args? m ?any-rs ord ?order-id) (value ?added-workload))
+			(test (> (+ ?workload ?added-workload) ?*RS-WORKLOAD-THRESHOLD*))
+		)
+	)
+	=>
+	(modify ?filtered (values $?values ?order-id))
+)
+
+(defrule goal-production-filter-orders-workload-remove
+	"Remove an order from this filter if its workload would push the summed workload over the limit."
+	?filtered <- (wm-fact (key order fact filtered-orders args? filter workload) (values $?values))
+	(wm-fact (key order fact filtered-orders args? filter workload) (values $? ?order-id $?))
+	(or 
+		(not (wm-fact (key order fact possible-orders) (values $? ?order-id $?)))
+		(and
+			(wm-fact (key mps workload overall args? m ?any-rs) (value ?workload))
+			(wm-fact (key mps workload order args? m ?any-rs ord ?order-id) (value ?added-workload))
+			(test (> (+ ?workload ?added-workload) ?*RS-WORKLOAD-THRESHOLD*))
 		)
 	)
 	=>
