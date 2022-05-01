@@ -496,7 +496,7 @@
   ?wmf-order <- (wm-fact (key mps workload order args? m ?mn ord ?order-id))
 =>
 	(set-robot-to-waiting ?robot)
-	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED for REKT machine " ?mn  crlf)
+	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" ?mn  crlf)
 	(modify ?g (mode EVALUATED))
   (modify ?wmf-order (value (- (fact-slot-value ?wmf-order value) 1)))
 )
