@@ -108,7 +108,7 @@
   Refer to fixed-squence.clp for the expandation of the goal and the creation of the EXPLORATION-PLAN
   The EXPLORATION-PLAN let the robot visit a number of configurable points. If a possible machine was detected, this plan is interrupted
 "
-  (wm-fact (key refbox phase) (value EXPLORATION))
+  (wm-fact (key refbox phase) (value EXPLORATION|PRODUCTION))
   (wm-fact (key game state) (value RUNNING))
    =>
   (assert (timer (name send-machine-reports)))
@@ -358,7 +358,8 @@
 
 (defrule exp-report-to-refbox
 " Regularly send all found machines to the refbox"
-  (wm-fact (key refbox phase) (value EXPLORATION))
+  (wm-fact (key exploration active) (type BOOL) (value TRUE))
+  (wm-fact (key refbox phase) (value EXPLORATION|PRODUCTION))
   (wm-fact (key refbox team-color) (value ?color))
   (exploration-result (team ?color) (machine ?machine) (zone ?zone)
     (orientation ?orientation)
