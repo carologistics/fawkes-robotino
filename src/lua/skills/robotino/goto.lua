@@ -165,6 +165,7 @@ function INIT:init()
 
       else
         self.fsm.vars.target_valid = false
+        self.fsm.error = "target invalid"
       end
     end
   else
