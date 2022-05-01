@@ -1473,8 +1473,8 @@ The workpiece remains in the output of the used ring station after
  	=>
   (bind ?wait-zones (create$)) 
   (do-for-all-facts ((?nav navgraph-node)) (and (eq "WAIT" (sub-string 1 4 ?nav:name))
-                                                 (not (member$ (sub-string 8 9 ?nav:name) (create$ "BS" "CS" "DS" "SS" "RS"))))
-    (bind ?wait-zones (insert$ ?wait-zones 1 (goal-production-assert-move-out-of-way-zone-exists  (sym-cat  ?nav:name)))) 
+                                                  (str-index "-Z" ?nav:name))
+    (bind ?wait-zones (insert$ ?wait-zones 1 (goal-production-assert-move-out-of-way  (sym-cat  ?nav:name)))) 
   )
 
 	(bind ?g (goal-tree-assert-central-run-parallel MOVE-OUT-OF-WAY ?wait-zones))
