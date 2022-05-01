@@ -35,7 +35,7 @@
   ?*PRODUCE-C3-AHEAD-TIME* = 450
   ?*DELIVER-AHEAD-TIME* = 60
   
-  ?*RS-WORKLOAD-THRESHOLD* = 5
+  ?*RS-WORKLOAD-THRESHOLD* = 7
 )
 
 (deffunction goal-production-produce-ahead-check (?gt ?begin ?complexity)
