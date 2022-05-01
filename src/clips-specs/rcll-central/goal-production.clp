@@ -1482,7 +1482,7 @@ The workpiece remains in the output of the used ring station after
 	(not (goal (class MOVE-OUT-OF-WAY)))
 	(not (wm-fact (key config rcll pick-and-place-challenge) (value TRUE)))
   (navgraph-node (name ?n&:(eq 1 (str-index "WAIT" ?n))))
-  (not (exists (created wait)))
+  (not (exists (wm-fact (key move waitpoints created))))
  	=>
   (bind ?wait-zones (create$)) 
   (do-for-all-facts ((?nav navgraph-node)) (and (eq "WAIT" (sub-string 1 4 ?nav:name))
@@ -1491,7 +1491,7 @@ The workpiece remains in the output of the used ring station after
   ) 
 
 	(bind ?g (goal-tree-assert-central-run-parallel MOVE-OUT-OF-WAY ?wait-zones))
-  (assert (created wait))
+  (assert  (wm-fact (key move waitpoints created)))
 	(modify ?g (parent ?root-id) (priority 1.0))
 )
 
