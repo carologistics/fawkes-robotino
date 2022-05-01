@@ -27,24 +27,20 @@
   ?*SALIENCE-PRODUCTION-STRATEGY* = -1
 )
 
-
-
-(defrule sum-workload
+(defrule production-strategy-sum-workload
   "Summing up the workload of a mps base on all started order productions"
   (wm-fact (key mps workload order args? m ?mn ord ?o-id))
-  (domain-fact (name wp-usable) (param-values ?wp-id&:(eq ?o-id (sym-cat (sub-string 4 6 ?wp-id)))))
+  (wm-fact (key order meta wp-for-order args? wp $? ord ?o-id))
   =>
-
   (bind ?sum 0)
   (bind ?order-fact (nth$ 1 (find-fact ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload overall) )
                                                             (eq ?mn (wm-key-arg ?wm-fact:key m))))))
-    (do-for-all-facts ((?wm-fact wm-fact))
-                      (and 
-                        (wm-key-prefix ?wm-fact:key (create$ mps workload order) )
-                        (eq ?mn (wm-key-arg ?wm-fact:key m)))
+    (do-for-all-facts ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload order))
+                                                (eq ?mn (wm-key-arg ?wm-fact:key m)))
       (bind ?order-id (wm-key-arg ?wm-fact:key ord))
-      (if (any-factp ((?domain-fact domain-fact)) (and (eq ?domain-fact:name wp-usable)
-                                                        (eq ?order-id (sym-cat (sub-string 4 6 (nth$ 1 ?domain-fact:param-values))))))
+      ;the order has been started
+      (if (any-factp ((?wp-for-order wm-fact)) (and (wm-key-prefix ?wp-for-order:key (create$ order meta wp-for-order))
+                                                    (eq ?o-id (wm-key-arg ?wp-for-order:key ord))))
        then 
         (bind ?sum (+ ?sum ?wm-fact:value))
        )
@@ -52,7 +48,7 @@
   (modify ?order-fact (value ?sum))
 )
 
-(deffunction assert-workload-for-machine
+(deffunction production-strategy-assert-workload-for-machine
   "Creating wm-facts for the order based and overall mps workload"
   (?order-id ?mps ?payments)
 
@@ -111,7 +107,7 @@
            (value ?deadline))
 =>
   (delayed-do-for-all-facts ((?mps-type domain-fact)) (eq (nth$ 2 ?mps-type:param-values) RS)
-    (assert-workload-for-machine ?order (nth$ 1 ?mps-type:param-values) 
+    (production-strategy-assert-workload-for-machine ?order (nth$ 1 ?mps-type:param-values) 
                                         (+ (calculate-order-payments-sum ?order 
                                                                          (nth$ 1 ?mps-type:param-values))
                                            (calculate-order-interaction-sum ?order
