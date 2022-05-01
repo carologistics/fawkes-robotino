@@ -340,7 +340,10 @@
     (rotation $?rot)
   )
   (domain-fact (name tag-matching) (param-values ?machine ?side ?team-color ?tag-id))
-  (wm-fact (key domain fact mps-type args? m ?machine t ?mtype))
+  (wm-fact (key domain fact mps-type args? m ?some-machine&:(or
+             (eq ?machine ?some-machine)
+             (eq ?machine (mirror-name ?some-machine)))
+             t ?mtype))
   ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (value ?times-searched))
   ?zm <- (domain-fact (name zone-content) (param-values ?zn2 ?))
   ; This is for a mirrored field
@@ -359,6 +362,11 @@
       (trans ?trans)
       (rot ?rot)
       (tag-id ?tag-id)
+    )
+    (exploration-result
+      (machine (mirror-name ?machine)) (zone (mirror-name ?zn2))
+      (orientation (mirror-orientation ?mtype ?zn2 ?orientation))
+      (team (mirror-team ?team-color))
     )
   )
   (printout t "EXP exploration fact zone successfull. Found " ?machine " in " ?zn2 crlf)
