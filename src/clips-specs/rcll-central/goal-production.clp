@@ -859,9 +859,13 @@
 	;(test (< (goal-production-count-active-orders) 3))
 
 	;check if pursuing this order in addition to the current orders would be above the limit
-	(wm-fact (key mps workload overall args? m ?any-rs) (value ?workload))
-	(wm-fact (key mps workload order args? m ?any-rs ord ?order-id) (value ?added-workload))
-	(test (<= (+ ?workload ?added-workload) ?*RS-WORKLOAD-THRESHOLD*))
+	(not 
+		(and
+			(wm-fact (key mps workload overall args? m ?any-rs) (value ?workload))
+			(wm-fact (key mps workload order args? m ?any-rs ord ?order-id) (value ?added-workload))
+			(test (> (+ ?workload ?added-workload) ?*RS-WORKLOAD-THRESHOLD*))
+		)
+	)
 
 	;it is not possible yet
 	(test (not (member$ ?order-id ?values)))
