@@ -494,9 +494,17 @@
 	            (verbosity ?v) (params $? ?mn $?))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot)(order-id ?order-id))
   ?wmf-order <- (wm-fact (key mps workload order args? m ?mn ord ?order-id))
+  ?pay-order <- (wm-fact (key mps finished payments order args? m ?mn ord ?order-id))
 =>
 	(set-robot-to-waiting ?robot)
 	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" ?mn  crlf)
+  
+  (if (not (member$ (fact-slot-value ?g class) (create$ MOUNT-RING MOUNT-CAP))) 
+    then
+    (modify ?pay-order (value (+ (fact-slot-value ?pay-order value) 1)))
+  )
+
+
 	(modify ?g (mode EVALUATED))
   (modify ?wmf-order (value (- (fact-slot-value ?wmf-order value) 1)))
 )
