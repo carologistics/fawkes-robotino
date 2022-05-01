@@ -36,6 +36,8 @@
   ?*DELIVER-AHEAD-TIME* = 60
   
   ?*RS-WORKLOAD-THRESHOLD* = 7
+  ?*C0-PRODUCTION-THRESHOLD* = 1
+  ?*C1-PRODUCTION-THRESHOLD* = 1
 )
 
 (deffunction goal-production-produce-ahead-check (?gt ?begin ?complexity)
@@ -85,6 +87,29 @@
 			(neq ?goal:mode RETRACTED)
 		)
 		(bind ?order-roots (+ 1 ?order-roots))
+	)
+
+	(return ?order-roots)
+)
+
+(deffunction goal-production-count-active-orders-of-complexity (?complexity)
+	"Count the number of order production root nodes that are not retracted."
+	(bind ?order-roots 0)
+	(do-for-all-facts 
+		((?goal goal) (?goal-meta goal-meta))
+		(and 
+			(eq ?goal:id ?goal-meta:goal-id) 
+			(neq ?goal-meta:root-for-order nil)
+			(neq ?goal:mode RETRACTED)
+		)
+		(if (any-factp ((?ord-comp wm-fact))
+				(and (wm-key-prefix ?ord-comp:key (create$ domain fact order-complexity)) 
+					(eq ?complexity (wm-key-arg ?ord-comp:key com)) 
+					(eq ?goal-meta:root-for-order (wm-key-arg ?ord-comp:key ord))
+				)
+			) then
+			(bind ?order-roots (+ 1 ?order-roots))
+		)
 	)
 
 	(return ?order-roots)
@@ -843,6 +868,8 @@
 		(wm-fact (key order fact filtered-orders args? filter delivery-ahead) (is-list TRUE) (type SYMBOL))
 		(wm-fact (key order fact filtered-orders args? filter delivery-limit) (is-list TRUE) (type SYMBOL))
 		(wm-fact (key order fact filtered-orders args? filter workload) (is-list TRUE) (type SYMBOL))
+		(wm-fact (key order fact filtered-orders args? filter c0-limit) (is-list TRUE) (type SYMBOL))
+		(wm-fact (key order fact filtered-orders args? filter c1-limit) (is-list TRUE) (type SYMBOL))
 	)
 )
 
@@ -975,6 +1002,72 @@
 			(wm-fact (key mps workload overall args? m ?any-rs) (value ?workload))
 			(wm-fact (key mps workload order args? m ?any-rs ord ?order-id) (value ?added-workload))
 			(test (> (+ ?workload ?added-workload) ?*RS-WORKLOAD-THRESHOLD*))
+		)
+	)
+	=>
+	(modify ?filtered (values (delete$ ?values (member$ ?order-id ?values) (member$ ?order-id ?values))))
+)
+
+;filter c0 limit
+(defrule goal-production-filter-orders-c0-limit-add
+	"Add an order to this filter if there is less than the threshold of active C0 orders"
+	?filtered <- (wm-fact (key order fact filtered-orders args? filter c0-limit) (values $?values))
+	(wm-fact (key order fact possible-orders) (values $? ?order-id $?))
+	(not (wm-fact (key order fact filtered-orders args? filter c0-limit) (values $? ?order-id $?)))
+	;filter condition
+	(or
+		(and
+			(wm-fact (key domain fact order-complexity args? ord ?order-id com C0))
+			(test (>= ?*C0-PRODUCTION-THRESHOLD* (goal-production-count-active-orders-of-complexity C0)))
+		)
+		(wm-fact (key domain fact order-complexity args? ord ?order-id com ~C0))
+	)
+	=>
+	(modify ?filtered (values $?values ?order-id))
+)
+
+(defrule goal-production-filter-orders-c0-limit-remove
+	"Remove an order from this filter if there is more than the threshold of active C0 orders"
+	?filtered <- (wm-fact (key order fact filtered-orders args? filter c0-limit) (values $?values))
+	(wm-fact (key order fact filtered-orders args? filter c0-limit) (values $? ?order-id $?))
+	(or 
+		(not (wm-fact (key order fact possible-orders) (values $? ?order-id $?)))
+		(and
+			(wm-fact (key domain fact order-complexity args? ord ?order-id com C0))
+			(test (< ?*C0-PRODUCTION-THRESHOLD* (goal-production-count-active-orders-of-complexity C0)))
+		)
+	)
+	=>
+	(modify ?filtered (values (delete$ ?values (member$ ?order-id ?values) (member$ ?order-id ?values))))
+)
+
+;filter c1 limit
+(defrule goal-production-filter-orders-c1-limit-add
+	"Add an order to this filter if there is less than the threshold of active c1 orders"
+	?filtered <- (wm-fact (key order fact filtered-orders args? filter c1-limit) (values $?values))
+	(wm-fact (key order fact possible-orders) (values $? ?order-id $?))
+	(not (wm-fact (key order fact filtered-orders args? filter c1-limit) (values $? ?order-id $?)))
+	;filter condition
+	(or
+		(and
+			(wm-fact (key domain fact order-complexity args? ord ?order-id com C1))
+			(test (>= ?*C1-PRODUCTION-THRESHOLD* (goal-production-count-active-orders-of-complexity C1)))
+		)
+		(wm-fact (key domain fact order-complexity args? ord ?order-id com ~C1))
+	)
+	=>
+	(modify ?filtered (values $?values ?order-id))
+)
+
+(defrule goal-production-filter-orders-c1-limit-remove
+	"Remove an order from this filter if there is more than the threshold of active c1 orders"
+	?filtered <- (wm-fact (key order fact filtered-orders args? filter C1-limit) (values $?values))
+	(wm-fact (key order fact filtered-orders args? filter C1-limit) (values $? ?order-id $?))
+	(or 
+		(not (wm-fact (key order fact possible-orders) (values $? ?order-id $?)))
+		(and
+			(wm-fact (key domain fact order-complexity args? ord ?order-id com C1))
+			(test (< ?*C1-PRODUCTION-THRESHOLD* (goal-production-count-active-orders-of-complexity C1)))
 		)
 	)
 	=>
