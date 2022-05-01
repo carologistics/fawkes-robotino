@@ -71,6 +71,7 @@ clips-executive:
             files:
               - wm-robmem-sync.clp
               - wm-template-facts.clp
+              - rcll-central/wm-sync.clp
               - rcll-central/init.clp
               - rcll-central/blackboard-init.clp
               - rcll-central/game-worldmodel.clp
