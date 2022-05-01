@@ -54,24 +54,11 @@
 
 (deffunction assert-workload-for-machine
   "Creating wm-facts for the order based and overall mps workload"
-  (?order-id ?mps ?req)
-  (bind ?payments 0)
-  (if (eq ?req ONE) then (bind ?payments 1))
-  (if (eq ?req TWO) then (bind ?payments 2))
-  (if (eq ?req THREE) then (bind ?payments 3))
+  (?order-id ?mps ?payments)
 
-
-  (bind ?order-fact (nth$ 1 (find-fact ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload order))
-                                                              (eq ?mps (wm-key-arg ?wm-fact:key m))
-                                                              (eq ?order-id (wm-key-arg ?wm-fact:key ord))))))
-  (if (eq ?order-fact nil) 
-  then
-    (assert
-      (wm-fact (key mps workload order args? m ?mps ord ?order-id) (type INT)
-        (is-list FALSE) (value (+ ?payments 1)))
-    )
-  else
-    (modify ?order-fact (value (+ (fact-slot-value ?order-fact value) 1)))
+  (assert
+    (wm-fact (key mps workload order args? m ?mps ord ?order-id) (type INT)
+      (is-list FALSE) (value ?payments))
   )
   (if (not (any-factp ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload overall) )
                                               (eq ?mps (wm-key-arg ?wm-fact:key m)))))
@@ -123,17 +110,16 @@
   (wm-fact (key refbox order ?order delivery-end) (type UINT)
            (value ?deadline))
 =>
-  (if (neq ?col-r1 RING_NONE) then 
-      (assert-workload-for-machine  ?order ?mps1 ?req1)
-  )
-  (if (neq ?col-r2 RING_NONE) then 
-      (assert-workload-for-machine  ?order ?mps2 ?req2)
-  )
-  (if (neq ?col-r3 RING_NONE) then 
-      (assert-workload-for-machine  ?order ?mps3 ?req3)
+  (delayed-do-for-all-facts ((?mps-type domain-fact)) (eq (nth$ 2 ?mps-type:param-values) RS)
+    (assert-workload-for-machine ?order (nth$ 1 ?mps-type:param-values) 
+                                        (+ (calculate-order-payments-sum ?order 
+                                                                         (nth$ 1 ?mps-type:param-values))
+                                           (calculate-order-interaction-sum ?order
+                                                                            (nth$ 1 ?mps-type:param-values))
+                                        )
+    )
   )
 
-  
   (bind ?rings-needed (string-to-field (sub-string 2 2 (str-cat ?com))))
   (bind ?points-ring1 (+ (* (bool-to-int (> ?rings-needed 0))
                             (ring-req-points ?req1))
