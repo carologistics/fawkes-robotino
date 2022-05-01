@@ -369,7 +369,7 @@
       (team (mirror-team ?team-color))
     )
   )
-  (printout t "EXP exploration fact zone successfull. Found " ?machine " in " ?zn2 crlf)
+  (printout t "EXP exploration fact zone successful. Found " ?machine " in " ?zn2 crlf)
 )
 
 (defrule exp-report-to-refbox
