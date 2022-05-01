@@ -32,7 +32,6 @@ fawkes/meta_plugins:
     - clips-executive
     - clips-executive-rest-api
   m-skiller:
-    - ros
     - m-fv-vision
     - navgraph
     - navgraph-generator
@@ -53,9 +52,8 @@ fawkes/meta_plugins:
     - m-realsense
     - skiller-rest-api
     - skiller_motor_state
-    - mps-laser-gen-ros2
-    - object-tracking
     - box_detect
+    - object-tracking
   m-robot-memory:
     - mongodb
     - robot-memory
