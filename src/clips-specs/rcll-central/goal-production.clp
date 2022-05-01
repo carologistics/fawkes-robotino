@@ -523,7 +523,7 @@
 )
 
 
-(deffunction goal-production-assert-move-out-of-way-zone-exists
+(deffunction goal-production-assert-move-out-of-way
 	(?location)
 	(bind ?goal (assert (goal (class MOVE-OUT-OF-WAY)
 	            (id (sym-cat MOVE-OUT-OF-WAY- (gensym*)))
@@ -536,6 +536,7 @@
 )
 
 
+<<<<<<< HEAD
 (deffunction goal-production-assert-move-out-of-way
   (?location)
   (bind ?goal (assert (goal (class MOVE-OUT-OF-WAY)
@@ -548,6 +549,8 @@
   (return ?goal)
 )
 
+=======
+>>>>>>> 932146e92 (rcll-central: removed unused function and redundant match)
 (deffunction goal-production-assign-order-and-prio-to-goal (?goal ?order-id ?prio)
   (bind ?goal-id (fact-slot-value ?goal id))
   (modify ?goal (priority ?prio))
@@ -739,7 +742,6 @@
 	(not (goal (class MOVE-OUT-OF-WAY)))
 	(not (wm-fact (key config rcll pick-and-place-challenge) (value TRUE)))
   (navgraph-node (name ?n&:(eq 1 (str-index "WAIT" ?n))))
-  (not (exists (wm-fact (key move waitpoints created))))
  	=>
   (bind ?wait-zones (create$))
   (do-for-all-facts ((?nav navgraph-node)) (and (eq "WAIT" (sub-string 1 4 ?nav:name))
@@ -748,7 +750,6 @@
   )
 
 	(bind ?g (goal-tree-assert-central-run-parallel MOVE-OUT-OF-WAY ?wait-zones))
-  (assert  (wm-fact (key move waitpoints created)))
 	(modify ?g (parent ?root-id) (priority 1.0))
 )
 
