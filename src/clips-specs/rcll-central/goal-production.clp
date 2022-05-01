@@ -1265,6 +1265,20 @@ The workpiece remains in the output of the used ring station after
 	(return ?goal)
 )
 
+
+(deffunction goal-production-assert-move-out-of-way-zone-exists
+	(?location)
+	(bind ?goal (assert (goal (class MOVE-OUT-OF-WAY)
+	            (id (sym-cat MOVE-OUT-OF-WAY- (gensym*)))
+	            (sub-type SIMPLE)
+	            (verbosity NOISY) (is-executable FALSE)
+	            (meta-template goal-meta)
+	            (params target-pos ?location location ?location)
+	)))
+	(return ?goal)
+)
+
+
 (deffunction goal-production-assert-move-out-of-way
 	(?location)
 	(bind ?goal (assert (goal (class MOVE-OUT-OF-WAY)
@@ -1467,11 +1481,17 @@ The workpiece remains in the output of the used ring station after
 	(goal (id ?root-id) (class WAIT-ROOT))
 	(not (goal (class MOVE-OUT-OF-WAY)))
 	(not (wm-fact (key config rcll pick-and-place-challenge) (value TRUE)))
-	=>
-	(bind ?g (goal-tree-assert-central-run-parallel MOVE-OUT-OF-WAY
-	        (goal-production-assert-move-out-of-way M_Z41)
-	        (goal-production-assert-move-out-of-way M_Z31))
-	)
+  (navgraph-node (name ?n&:(eq 1 (str-index "WAIT" ?n))))
+  (not (exists (created wait)))
+ 	=>
+  (bind ?wait-zones (create$)) 
+  (do-for-all-facts ((?nav navgraph-node)) (and (eq "WAIT" (sub-string 1 4 ?nav:name))
+                                                 (not (member$ (sub-string 8 9 ?nav:name) (create$ "BS" "CS" "DS" "SS" "RS"))))
+    (bind ?wait-zones (insert$ ?wait-zones 1 (goal-production-assert-move-out-of-way-zone-exists  (sym-cat  ?nav:name))))    
+  ) 
+
+	(bind ?g (goal-tree-assert-central-run-parallel MOVE-OUT-OF-WAY ?wait-zones))
+  (assert (created wait))
 	(modify ?g (parent ?root-id) (priority 1.0))
 )
 
