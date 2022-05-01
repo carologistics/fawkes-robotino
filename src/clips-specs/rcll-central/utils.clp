@@ -689,6 +689,16 @@
   )
 )
 
+(deffunction laser-lines-enable (?robot)
+  "Uses the NavGraphInterface to setup the bounding box on a robot to match
+   the one from the central agent. If they have disagreeing bounding boxes,
+   then the existence and positions of grid coordinates are not lining up.
+  "
+  (bind ?interface (remote-if "SwitchInterface" ?robot "laser-lines"))
+  (bind ?msg (blackboard-create-msg ?interface "EnableSwitchMessage"))
+  (blackboard-send-msg ?msg)
+)
+
 (deffunction navgraph-set-field-size (?robot)
   "Uses the NavGraphInterface to setup the bounding box on a robot to match
    the one from the central agent. If they have disagreeing bounding boxes,

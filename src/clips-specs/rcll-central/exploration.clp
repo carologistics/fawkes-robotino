@@ -103,6 +103,14 @@
 	(assert (exp-navigator-vlow ?robot ?low-velocity ?low-rotation))
 )
 
+(defrule exp-enable-laser-lines
+	(goal (id ?root-id) (class EXPLORATION-ROOT))
+	(goal (parent ?root-id) (mode SELECTED))
+	(goal-meta (goal-id ?root-id) (assigned-to ?robot))
+	=>
+	(laser-lines-enable ?robot)
+)
+
 (defrule exp-create-exploration-timer
 " Initial goal creating
   Refer to fixed-squence.clp for the expandation of the goal and the creation of the EXPLORATION-PLAN

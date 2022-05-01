@@ -67,7 +67,6 @@ fawkes/bbsync:
         tag13: Position3DInterface::/tag-vision/13/to_map=/robot1/tag-vision/13/to_map
         tag14: Position3DInterface::/tag-vision/14/to_map=/robot1/tag-vision/14/to_map
         tag15: Position3DInterface::/tag-vision/15/to_map=/robot1/tag-vision/15/to_map
-        foundtag: Position3DInterface::/explore-zone/found-tag=/robot1/explore-zone/found-tag
         navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/robot1/navgraph-generator-mps
         navgraph-generator: NavGraphGeneratorInterface::/navgraph-generator=/robot1/navgraph-generator
         navigator: NavigatorInterface::Navigator=/robot1/Navigator
@@ -81,6 +80,7 @@ fawkes/bbsync:
         laser6: LaserLineInterface::/laser-lines/6/to_map=/robot1/laser-lines/6/to_map
         laser7: LaserLineInterface::/laser-lines/7/to_map=/robot1/laser-lines/7/to_map
         laser8: LaserLineInterface::/laser-lines/8/to_map=/robot1/laser-lines/8/to_map
+        ll-switch: SwitchInterface::/laser-lines=/robot1/laser-lines
         zone: ZoneInterface::/explore-zone/info=/robot1/explore-zone/info
         tag-info: TagVisionInterface::/tag-vision/info=/robot1/tag-vision/info
 
@@ -108,7 +108,6 @@ fawkes/bbsync:
         tag13: Position3DInterface::/tag-vision/13/to_map=/robot2/tag-vision/13/to_map
         tag14: Position3DInterface::/tag-vision/14/to_map=/robot2/tag-vision/14/to_map
         tag15: Position3DInterface::/tag-vision/15/to_map=/robot2/tag-vision/15/to_map
-        foundtag: Position3DInterface::/explore-zone/found-tag=/robot2/explore-zone/found-tag
         navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/robot2/navgraph-generator-mps
         navgraph-generator: NavGraphGeneratorInterface::/navgraph-generator=/robot2/navgraph-generator
         navigator: NavigatorInterface::Navigator=/robot2/Navigator
@@ -122,6 +121,7 @@ fawkes/bbsync:
         laser6: LaserLineInterface::/laser-lines/6/to_map=/robot2/laser-lines/6/to_map
         laser7: LaserLineInterface::/laser-lines/7/to_map=/robot2/laser-lines/7/to_map
         laser8: LaserLineInterface::/laser-lines/8/to_map=/robot2/laser-lines/8/to_map
+        ll-switch: SwitchInterface::/laser-lines=/robot2/laser-lines
         zone: ZoneInterface::/explore-zone/info=/robot2/explore-zone/info
         tag-info: TagVisionInterface::/tag-vision/info=/robot2/tag-vision/info
 
@@ -147,9 +147,7 @@ fawkes/bbsync:
         tag13: Position3DInterface::/tag-vision/13/to_map=/robot3/tag-vision/13/to_map
         tag14: Position3DInterface::/tag-vision/14/to_map=/robot3/tag-vision/14/to_map
         tag15: Position3DInterface::/tag-vision/15/to_map=/robot3/tag-vision/15/to_map
-        foundtag: Position3DInterface::/explore-zone/found-tag=/robot3/explore-zone/found-tag
         pose: Position3DInterface::Pose=/robot3/Pose
-        foundtag: Position3DInterface::/explore-zone/found-tag=/robot3/explore-zone/found-tag
         navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/robot3/navgraph-generator-mps
         navgraph-generator: NavGraphGeneratorInterface::/navgraph-generator=/robot3/navgraph-generator
         navigator: NavigatorInterface::Navigator=/robot3/Navigator
@@ -163,5 +161,6 @@ fawkes/bbsync:
         laser6: LaserLineInterface::/laser-lines/6/to_map=/robot3/laser-lines/6/to_map
         laser7: LaserLineInterface::/laser-lines/7/to_map=/robot3/laser-lines/7/to_map
         laser8: LaserLineInterface::/laser-lines/8/to_map=/robot3/laser-lines/8/to_map
+        ll-switch: SwitchInterface::/laser-lines=/robot3/laser-lines
         zone: ZoneInterface::/explore-zone/info=/robot3/explore-zone/info
         tag-info: TagVisionInterface::/tag-vision/info=/robot3/tag-vision/info
