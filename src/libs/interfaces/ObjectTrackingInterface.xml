@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="ObjectTrackingInterface" author="Matteo Tschesche" year="2021">
+  <constants>
+    <enum name="TARGET_OBJECT_TYPE">
+      <comment>
+      The different types of objects to track.
+      </comment>
+      <item name="DEFAULT_TYPE">No object set.</item>
+      <item name="WORKPIECE">Workpiece.</item>
+      <item name="CONVEYOR_BELT_FRONT">Conveyor belt front.</item>
+      <item name="SLIDE_FRONT">Slide front.</item>
+    </enum>
+    <enum name="EXPECTED_MPS">
+      <comment>
+      The different machines.
+      </comment>
+      <item name="DEFAULT_MPS">No station set.</item>
+      <item name="M_BS">Magenta base station.</item>
+      <item name="M_RS1">Magenta ring station 1.</item>
+      <item name="M_RS2">Magenta ring station 2.</item>
+      <item name="M_CS1">Magenta cap station 1.</item>
+      <item name="M_CS2">Magenta cap station 2.</item>
+      <item name="M_DS">Magenta delivery station.</item>
+      <item name="M_SS">Magenta storage Station.</item>
+      <item name="C_BS">Cyan base station.</item>
+      <item name="C_RS1">Cyan ring station 1.</item>
+      <item name="C_RS2">Cyan ring station 2.</item>
+      <item name="C_CS1">Cyan cap station 1.</item>
+      <item name="C_CS2">Cyan cap station 2.</item>
+      <item name="C_DS">Cyan delivery station.</item>
+      <item name="C_SS">Cyan storage Station.</item>
+    </enum>
+    <enum name="EXPECTED_SIDE">
+      <comment>
+      The different possible expected locations of objects on machines.
+      </comment>
+      <item name="DEFAULT_SIDE">No side set.</item>
+      <item name="INPUT_CONVEYOR">Conveyor on the input side of the MPS.</item>
+      <item name="OUTPUT_CONVEYOR">Conveyor on the output side of the MPS.</item>
+      <item name="SHELF_LEFT">Left shelf of the Cap Station.</item>
+      <item name="SHELF_MIDDLE">Middle shelf of the Cap Station.</item>
+      <item name="SHELF_RIGHT">Right shelf of the Cap Station.</item>
+      <item name="SLIDE">Slide of the Ring Station.</item>
+    </enum>
+  </constants>
+  <data>
+    <comment>
+    The last target frames computed by the object-tracking plugin.
+    </comment>
+    <field type="uint32" name="msgid">
+      Last processed message ID. 0 if not tracking.
+    </field>
+    <field type="bool" name="detected">
+      Shows if target object was detected.
+    </field>
+    <field type="double" length="6" name="gripper_frame">
+      The gripper target frame is represented as a 6D pose in the camera coordinate frame by
+      (x, y, z, rotation around X axis, rotation around Y axis, rotation around Z axis).
+      The current gripper utilizes only the 3D translation vector from the reference frame's
+      origin to the target gripper frame, represented as (x, y, z, 0, 0, 0).
+    </field>
+    <field type="double" length="6" name="base_frame">
+      The base target frame is represented as a 6D pose in the camera coordinate frame by
+      (x, y, z, rotation around X axis, rotation around Y axis, rotation around Z axis).
+      The current base utilizes only the 2D translation vector and rotation around Z axis (yaw) from the
+      reference frame's origin to target base frame, represented as (x, y, 0, 0, 0, yaw).
+    </field>
+    <field type="float" length="1" name="additional_height">
+      The distance between the workpiece's top and its base middle point. 0 for conveyor and slide.
+      Used by the gripper routine to adjust to the workpiece's height.
+    </field>
+    <field type="TARGET_OBJECT_TYPE" name="current_object_type">
+      The current target object type to detect.
+    </field>
+    <field type="EXPECTED_MPS" name="current_expected_mps">
+      The current station to expect the object at.
+    </field>
+    <field type="EXPECTED_SIDE" name="current_expected_side">
+      The current expected location of the workpiece on the MPS.
+    </field>
+  </data>
+  <message name="StartTracking">
+    <comment>
+    Set object type to track and its exptected location on the machine.
+    </comment>
+    <field type="TARGET_OBJECT_TYPE"  name="object_type_to_set">
+      Type of the object to be tracked.
+    </field>
+    <field type="EXPECTED_MPS" name="expected_mps_to_set">
+      Expected station where the target object is located at.
+      Currently only used in simulation.
+    </field>
+    <field type="EXPECTED_SIDE" name="expected_side_to_set">
+      Expected location of target object on the machine.
+    </field>
+  </message>
+  <message name="StopTracking">
+    <comment>
+    Stop tracking the current target.
+    </comment>
+  </message>
+</interface>

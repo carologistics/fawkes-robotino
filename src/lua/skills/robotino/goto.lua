@@ -31,16 +31,18 @@ depends_interfaces = {
 --   {v = "pose", type="Position3DInterface", id="Pose"},
    {v = "navigator", type="NavigatorInterface", id="Navigator"},
    {v = "laserline_switch", type="SwitchInterface", id="laser-lines"},
+   {v = "object_tracking_if", type = "ObjectTrackingInterface", id="object-tracking"},
 }
 
 documentation      = [==[Move to a known location via place or x, y, ori.
 if place is set, this will be used and x, y and ori will be ignored
 
-@param place  Name of the place we want to go to.
-@param x      x we want to drive to
-@param y      y we want to drive to
-@param ori    ori we want to drive to
-
+@param place          Name of the place we want to go to.
+@param x              x we want to drive to
+@param y              y we want to drive to
+@param ori            ori we want to drive to
+@param end_early      (Optional) Set true, if skill should final after object is detected
+                      and close enough. Used to switch to visual servoing afterwards.
 ]==]
 
 -- Initialize as skill module
@@ -49,9 +51,19 @@ skillenv.skill_module(_M)
 local tf_mod = require 'fawkes.tfutils'
 
 if config:exists("/skills/goto/distance_to_travel") then
-   distance_to_travel = config:get_float("/skills/goto/distance_to_travel")
+  distance_to_travel = config:get_float("/skills/goto/distance_to_travel")
 else
-   distance_to_travel = 0.5
+  distance_to_travel = 0.5
+end
+if config:exists("/skills/goto/end_early_distance") then
+  end_early_distance = config:get_float("/skills/goto/end_early_distance")
+else
+  end_early_distance = 0.5
+end
+if config:exists("/skills/goto/end_early_ori_difference") then
+  end_early_ori_difference = config:get_float("/skills/goto/end_early_ori_difference")
+else
+  end_early_ori_difference = 0.5
 end
 
 -- Tunables
@@ -62,25 +74,52 @@ function check_navgraph(self)
 end
 
 function target_reached()
-   if navigator:is_final() and navigator:error_code() ~= 0 then
+   if navigator:is_final() and navigator:error_code() ~= 0 and not fsm.vars.end_early then
       return false
    end
    return navigator:is_final()
 end
 
+function close_enough(self)
+  if self.fsm.vars.end_early and self.fsm.vars.cur_x ~= nil and self.fsm.vars.x ~= nil and
+     self.fsm.vars.cur_y ~= nil and self.fsm.vars.y ~= nil and self.fsm.vars.cur_ori ~= nil and
+     self.fsm.vars.ori ~= nil then
+    local x = (self.fsm.vars.cur_x - self.fsm.vars.x) * (self.fsm.vars.cur_x - self.fsm.vars.x)
+    local y = (self.fsm.vars.cur_y - self.fsm.vars.y) * (self.fsm.vars.cur_y - self.fsm.vars.y)
+    local distance_to_target = math.sqrt(x + y)
+    local current_ori = self.fsm.vars.cur_ori % (2*math.pi)
+    if current_ori < 0 then
+      current_ori = current_ori + 2*math.pi
+    end
+    local target_ori = self.fsm.vars.ori % (2*math.pi)
+    if target_ori < 0 then
+      target_ori = target_ori + 2*math.pi
+    end
+    local ori_difference = math.abs(current_ori - target_ori)
+    if ori_difference > math.pi then
+      ori_difference = 2*math.pi - ori_difference
+    end
+    --print_info("distance_to_target: %f", distance_to_target)
+    --print_info("ori_difference: %f", ori_difference)
+    return distance_to_target < end_early_distance and ori_difference < end_early_ori_difference
+  end
+  return false
+end
+
 function has_navigator()
-   return navigator:has_writer()
+  return navigator:has_writer()
 end
 
 function can_navigate(self)
-   return self.fsm.vars.x ~= nil and self.fsm.vars.y ~= nil
+  return self.fsm.vars.x ~= nil and self.fsm.vars.y ~= nil
 end
 
 function target_unreachable()
-   if navigator:is_final() and navigator:error_code() ~= 0 then
-      return true
-   end
-   return false
+  if navigator:is_final() and navigator:error_code() ~= 0 and not fsm.vars.end_early then
+    print_info("error_code: %f", navigator:error_code())
+    return true
+  end
+  return false
 end
 
 function travelled_distance(self)
@@ -88,7 +127,7 @@ function travelled_distance(self)
   local x = (self.fsm.vars.cur_x - self.fsm.vars.initial_position_x) * (self.fsm.vars.cur_x - self.fsm.vars.initial_position_x)
   local y = (self.fsm.vars.cur_y - self.fsm.vars.initial_position_y) * (self.fsm.vars.cur_y - self.fsm.vars.initial_position_y)
   local distance_travelled = math.sqrt(x + y)
- 
+
   if distance_travelled > distance_to_travel then
     return true
   else
@@ -96,41 +135,62 @@ function travelled_distance(self)
   end
 end
 
+function object_tracker_inactive(self)
+  return self.fsm.vars.end_early and
+    (not object_tracking_if:has_writer() or object_tracking_if:msgid() == 0)
+end
+
+function early_endable(self)
+  return self.fsm.vars.end_early and close_enough(self)
+    and self.fsm.vars.consecutive_detections > 2
+end
+
 fsm:define_states{ export_to=_M,
-  closure={check_navgraph=check_navgraph, reached_target_region=reached_target_region, has_navigator=has_navigator, travelled_distance=travelled_distance},
+  closure={check_navgraph=check_navgraph, has_navigator=has_navigator,
+           travelled_distance=travelled_distance, close_enough=close_enough,
+           target_reached = target_reached},
   {"CHECK_INPUT",   JumpState},
   {"WAIT_TF",       JumpState},
   {"INIT",          JumpState},
   {"MOVING",        JumpState},
   {"TIMEOUT",       JumpState},
+  {"WAIT_VS",       JumpState},
 }
 
 fsm:add_transitions{
-  {"CHECK_INPUT", "FAILED", cond="not has_navigator()", desc="Navigator not running"},
-  {"CHECK_INPUT", "INIT", cond=can_navigate},
-  {"CHECK_INPUT", "WAIT_TF", cond=true},
-  {"WAIT_TF", "INIT", cond=can_navigate},
+  {"CHECK_INPUT", "FAILED",   cond="not has_navigator()", desc="Navigator not running"},
+  {"CHECK_INPUT", "FAILED",   cond=object_tracker_inactive, desc="Object tracker inactive"},
+  {"CHECK_INPUT", "INIT",     cond=can_navigate},
+  {"CHECK_INPUT", "WAIT_TF",  cond=true},
+  {"WAIT_TF", "INIT",         cond=can_navigate},
   {"INIT",  "FAILED",         precond=check_navgraph, desc="no navgraph"},
   {"INIT",  "FAILED",         cond="not vars.target_valid",                 desc="target invalid"},
   {"INIT",  "MOVING",         cond=true},
   {"MOVING", "TIMEOUT",       timeout=2}, -- Give the interface some time to update
   {"TIMEOUT", "FINAL",        cond="vars.waiting_pos and travelled_distance(self)", desc="Going to waiting position"},
+  {"TIMEOUT", "FINAL",        cond=early_endable, desc="Target close enough and object detected"},
+  {"TIMEOUT", "WAIT_VS",      cond="target_reached() and vars.end_early", desc="Target reached without detecting object"},
   {"TIMEOUT", "FINAL",        cond=target_reached, desc="Target reached"},
   {"TIMEOUT", "FAILED",       cond=target_unreachable, desc="Target unreachable"},
+  {"WAIT_VS", "FINAL",        cond="vars.consecutive_detections > 2", desc="Target reached and object detected"},
+  {"WAIT_VS", "FAILED",       timeout=15, desc="Object not detected"},
 }
 
 
 function INIT:init()
+  self.fsm.vars.msgid = 0
+  self.fsm.vars.tracking_msgid = 0
+  self.fsm.vars.consecutive_detections = 0
   self.fsm.vars.target_valid = true
   self.fsm.vars.waiting_pos = false
 
   if self.fsm.vars.place ~= nil then
     -- check for waiting position
     if string.match(self.fsm.vars.place, "WAIT") then 
-       self.fsm.vars.waiting_pos = true
+      self.fsm.vars.waiting_pos = true
     end
     if string.match(self.fsm.vars.place, "G-") then
-       laserline_switch:msgq_enqueue(laserline_switch.EnableSwitchMessage:new())
+      laserline_switch:msgq_enqueue(laserline_switch.EnableSwitchMessage:new())
     end
     if string.match(self.fsm.vars.place, "^[MC][-]Z[1-7][1-8]$") then
       -- place argument is a zone, e.g. M-Z21
@@ -176,20 +236,20 @@ function INIT:init()
 end
 
 function WAIT_TF:loop()
-   local cur_pose = tf_mod.transform({x=0, y=0, ori=0}, "base_link", "map")
-   if cur_pose == nil then
-      print_warn("Failed to transform from 'base_link' to 'map'!")
-      return
-   end
-   self.fsm.vars.x   = cur_pose.x
-   self.fsm.vars.y   = cur_pose.y
-   self.fsm.vars.ori = cur_pose.ori
-   self.fsm.vars.initial_position_x   = cur_pose.x
-   self.fsm.vars.initial_position_y   = cur_pose.y
-   self.fsm.vars.initial_position_ori = cur_pose.ori
-   self.fsm.vars.cur_x = cur_pose.x
-   self.fsm.vars.cur_y = cur_pose.y
-   self.fsm.vars.cur_ori = cur_pose.ori
+  local cur_pose = tf_mod.transform({x=0, y=0, ori=0}, "base_link", "map")
+  if cur_pose == nil then
+    print_warn("Failed to transform from 'base_link' to 'map'!")
+    return
+  end
+  self.fsm.vars.x   = cur_pose.x
+  self.fsm.vars.y   = cur_pose.y
+  self.fsm.vars.ori = cur_pose.ori
+  self.fsm.vars.initial_position_x   = cur_pose.x
+  self.fsm.vars.initial_position_y   = cur_pose.y
+  self.fsm.vars.initial_position_ori = cur_pose.ori
+  self.fsm.vars.cur_x = cur_pose.x
+  self.fsm.vars.cur_y = cur_pose.y
+  self.fsm.vars.cur_ori = cur_pose.ori
 end
 
 function MOVING:init()
@@ -218,9 +278,9 @@ function MOVING:init()
 end
 
 function TIMEOUT:loop()
-  if fsm.vars.waiting_pos == true then
+  if fsm.vars.waiting_pos == true or fsm.vars.end_early == true then
     local got_cur_pose = false
- 
+
     while not got_cur_pose do
       local cur_pose = tf_mod.transform({x=0, y=0, ori=0}, "base_link", "map")
       if cur_pose ~= nil then
@@ -231,11 +291,32 @@ function TIMEOUT:loop()
       end
     end
   end
+  if self.fsm.vars.end_early then
+    if self.fsm.vars.tracking_msgid ~= object_tracking_if:msgid() then
+      self.fsm.vars.tracking_msgid = object_tracking_if:msgid()
+      if object_tracking_if:is_detected() then
+        self.fsm.vars.consecutive_detections = self.fsm.vars.consecutive_detections + 1
+      else
+        self.fsm.vars.consecutive_detections = 0
+      end
+    end
+  end
+end
+
+function WAIT_VS:loop()
+  if self.fsm.vars.tracking_msgid ~= object_tracking_if:msgid() then
+    self.fsm.vars.tracking_msgid = object_tracking_if:msgid()
+    if object_tracking_if:is_detected() then
+      self.fsm.vars.consecutive_detections = self.fsm.vars.consecutive_detections + 1
+    else
+      self.fsm.vars.consecutive_detections = 0
+    end
+  end
 end
 
 function MOVING:reset()
-    if navigator:has_writer() and not navigator:is_final() and self.fsm.vars.waiting_pos == false then
-       printf("goto: sending stop");
-       navigator:msgq_enqueue(navigator.StopMessage:new(fsm.vars.msgid or 0))
-    end
- end
+  if navigator:has_writer() and not navigator:is_final() and self.fsm.vars.waiting_pos == false then
+    printf("goto: sending stop");
+    navigator:msgq_enqueue(navigator.StopMessage:new(fsm.vars.msgid or 0))
+  end
+end

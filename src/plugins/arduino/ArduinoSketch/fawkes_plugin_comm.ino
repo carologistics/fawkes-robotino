@@ -128,6 +128,12 @@ bool open_gripper = false;
 
 int cur_status = STATUS_IDLE;
 
+long cur_x_ = 0;
+long cur_y_ = 0;
+long cur_z_ = 0;
+
+int loop_nr = 0;
+
 #define BUFFER_SIZE 128
 char buffer_[BUFFER_SIZE];
 byte buf_i_ = 0;
@@ -155,6 +161,9 @@ void send_status() {
   if(cur_status == STATUS_ERROR){
     Serial.print(errormessage);
   } else { // send all the information while moving and while idle
+    cur_x_ = motor_X.currentPosition();
+    cur_y_ = motor_Y.currentPosition();
+    cur_z_ = motor_Z.currentPosition();
     Serial.print(-motor_X.currentPosition());
     Serial.print(" ");
     Serial.print(-motor_Y.currentPosition());
@@ -236,6 +245,24 @@ void calibrate()
     motor_X.enableOutputs();
     noInterrupts();
     if(!x_done) motor_X.move(20000L);
+    movement_done_flag = false;
+    interrupts();
+    // due to high step count, reaching end stops is guaranteed!
+    set_status(STATUS_MOVING); // status is always only changed on no interrupt code level, hence no race condition occurs here
+    // This while loop controls permanently the state of the respective end stops and handles crashing into them
+    // When all end stops are triggered simulatenously, additional latency is introduced.
+    // The latency is maily due to the planning of the back movement.
+    // One work around is to calibrate twice, the first time fast and the second time slowly.
+    // (again inspired from grbl)
+    // Additionally, the backwards movement should use different numbers of steps
+    // to ensure that the end stops will not be triggerend simulatenously at the second calibration.
+    while(!movement_done_flag && (!x_done)){
+      if(!x_done && digitalRead(MOTOR_X_LIMIT_PIN)==LOW){ x_done=true; reach_end_handle(motor_X,0);}
+    }
+    movement_done_flag = false;
+  } while(!x_done);
+  do { //repeat calibration as long as not successfull
+    noInterrupts();
     if(!y_done) motor_Y.move(20000L);
     if(!z_done) motor_Z.move(20000L);
     movement_done_flag = false;
@@ -249,8 +276,7 @@ void calibrate()
     // (again inspired from grbl)
     // Additionally, the backwards movement should use different numbers of steps
     // to ensure that the end stops will not be triggerend simulatenously at the second calibration.
-    while(!movement_done_flag && (!x_done || !y_done || !z_done)){
-      if(!x_done && digitalRead(MOTOR_X_LIMIT_PIN)==LOW){ x_done=true; reach_end_handle(motor_X,0);}
+    while(!movement_done_flag && (!y_done || !z_done)){
       if(!y_done && digitalRead(MOTOR_Y_LIMIT_PIN)==LOW){ y_done=true; reach_end_handle(motor_Y,100);}
       if(!z_done && digitalRead(MOTOR_Z_LIMIT_PIN)==LOW){ z_done=true; reach_end_handle(motor_Z,200);}
     }
@@ -591,7 +617,20 @@ void loop() {
     movement_done_flag = false;
     set_status(STATUS_IDLE);
   }
+
   read_package();
+
+  if(cur_status != STATUS_MOVING){
+    loop_nr = 0;
+    return;
+  }
+
+  if(loop_nr > 1000) {
+    send_status();
+    loop_nr = 0;
+  } else {
+    loop_nr++;
+  }
 }
 
 volatile byte step_bits_xyz = 0;

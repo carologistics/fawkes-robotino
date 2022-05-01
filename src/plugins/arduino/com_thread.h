@@ -114,6 +114,7 @@ private:
 
 	void handle_nodata(const boost::system::error_code &ec);
 	bool send_one_message();
+	bool send_message_from_queue();
 
 	std::string  cfg_device_;
 	unsigned int cfg_speed_;
@@ -156,6 +157,9 @@ private:
 	unsigned int open_tries_;
 
 	std::queue<ArduinoComMessage *> messages_;
+	ArduinoComMessage *             next_msg_;
+	bool                            new_msg_;
+	fawkes::Time                    expected_finish_time_;
 
 	boost::asio::io_service     io_service_;
 	boost::asio::serial_port    serial_;
@@ -174,12 +178,18 @@ private:
 	                             unsigned int                    value   = 0,
 	                             unsigned int                    timeout = 1000);
 	void append_message_to_queue(ArduinoComMessage *msg);
+	void set_message(ArduinoComMessage::command_id_t cmd,
+	                 unsigned int                    value   = 0,
+	                 unsigned int                    timeout = 1000);
+	void set_message(ArduinoComMessage *msg);
 	bool add_command_to_message(ArduinoComMessage *             msg,
 	                            ArduinoComMessage::command_id_t command,
 	                            unsigned int                    value);
 
 	float inline round_to_2nd_dec(float f);
 	void pose_publish_tf();
+
+	void gripper_update();
 
 protected:
 	/** Mutex to protect data_. Lock whenever accessing it. */

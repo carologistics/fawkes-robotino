@@ -1,0 +1,93 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/webview
+---
+plugins/object_tracking:
+  if_name: "object-tracking"
+
+  for_gazebo: false
+
+  puck_values:
+    puck_size: 0.02
+    puck_height: 0.025
+
+  belt_values:
+    belt_height: 0.895
+    belt_lenght: 0.35
+    belt_offset_side: 0.025
+    # = 0 in reality, used for gazebo
+    # height/size of the belt itself
+    belt_size: 0.045
+
+  slide_values:
+    slide_offset_side: -0.28
+    slide_height: 0.91
+
+  shelf_values:
+    left_shelf_offset_side: -0.1
+    middle_shelf_offset_side: -0.2
+    right_shelf_offset_side: -0.3
+    shelf_height: 0.89
+
+  target_frame_offsets:
+    gripper_offset_pick: 0.005
+    gripper_offset_put: 0.01
+    base_offset: 0.28
+
+  camera_intrinsics:
+    # image size
+    width: 640
+    height: 480
+    # principal point offset
+    ppx: 312.160461
+    ppy: 235.063721
+    # focal length
+    fx: 618.432129
+    fy: 618.432251
+    # distortion coefficients
+    model: 0
+    # 0 - no distortion, rectilinear images
+    # 1 - Brown-Conrady distortion with tangential applied to
+    #      radially distorted points
+    # 2 - inverse Brown-Conrady distortion
+    # 3 - F-Theta fish-eye distortion model
+    # 4 - Brown-Conrady distortion
+    k1: 0
+    k2: 0
+    p1: 0
+    p2: 0
+    k3: 0
+
+  rotate_image: false
+
+  # frame to use for the weighted average and the target frames
+  target_frame: "/odom"
+  camera_frame: "cam_gripper"
+
+  tf:
+    object_pos_frame: "object_pos"
+    weighted_object_pos_frame: "weighted_object_pos"
+
+  # maximal distance between yolo response and last weighted average to accept
+  #  as target object
+  max_acceptable_dist: 0.4
+
+  yolo:
+    weights_path: "../cfg/yolo/yolov4-tiny.weights"
+    config_path: "../cfg/yolo/yolov4-tiny.cfg"
+    confThreshold: 0.7
+    nmsThreshold: 0.3
+    # input size
+    width: 352
+    height: 352
+
+  saved:
+    use_saved: false
+    saved_object_type: 1
+    image_path: "../cfg/yolo/realsense2.jpg"
+
+  buffer:
+    shm_image_id: "realsense_rgb"
+    shm_image_id_res: "object_tracking"
+    frame: "cam_gripper"
