@@ -1472,8 +1472,7 @@ The workpiece remains in the output of the used ring station after
   (navgraph-node (name ?n&:(eq 1 (str-index "WAIT" ?n))))
  	=>
   (bind ?wait-zones (create$)) 
-  (do-for-all-facts ((?nav navgraph-node)) (and (eq "WAIT" (sub-string 1 4 ?nav:name))
-                                                  (str-index "-Z" ?nav:name))
+  (do-for-all-facts ((?nav navgraph-node)) (str-index "-Z" ?nav:name)
     (bind ?wait-zones (insert$ ?wait-zones 1 (goal-production-assert-move-out-of-way  (sym-cat  ?nav:name)))) 
   )
 
