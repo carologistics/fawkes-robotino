@@ -27,19 +27,19 @@
   ?*SALIENCE-PRODUCTION-STRATEGY* = -1
 )
 
-(deffunction production-strategy-assert-workload-for-machine
+(deffunction production-strategy-assert-workload-or-payment-for-machine
   "Creating wm-facts for the order based and overall mps workload"
-  (?order-id ?mps ?payments)
+  (?name ?order-id ?mps ?payments)
 
   (assert
-    (wm-fact (key mps workload order args? m ?mps ord ?order-id) (type INT)
+    (wm-fact (key mps ?name order args? m ?mps ord ?order-id) (type INT)
       (is-list FALSE) (value ?payments))
   )
-  (if (not (any-factp ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload overall) )
+  (if (not (any-factp ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps ?name overall) )
                                               (eq ?mps (wm-key-arg ?wm-fact:key m)))))
   then
     (assert
-      (wm-fact (key mps workload overall args? m ?mps) (type INT)
+      (wm-fact (key mps ?name overall args? m ?mps) (type INT)
         (is-list FALSE) (value 0))
     )
   )
@@ -62,7 +62,7 @@
   (wm-fact (key order meta wp-for-order args? wp $? ord ?o-id))
   =>
   (bind ?sum 0)
-  (bind ?order-fact (nth$ 1 (find-fact ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload overall) )
+  (bind ?order-fact (nth$ 1 (find-fact ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload overall))
                                                             (eq ?mn (wm-key-arg ?wm-fact:key m))))))
     (do-for-all-facts ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload order))
                                                 (eq ?mn (wm-key-arg ?wm-fact:key m)))
@@ -116,16 +116,21 @@
   (wm-fact (key refbox order ?order delivery-end) (type UINT)
            (value ?deadline))
 =>
+  (bind ?wl workload)
+  (bind ?pm (create$ finished payments))
   (delayed-do-for-all-facts ((?mps-type domain-fact)) (eq (nth$ 2 ?mps-type:param-values) RS)
-    (production-strategy-assert-workload-for-machine ?order (nth$ 1 ?mps-type:param-values) 
-                                        (+ (calculate-order-payments-sum ?order 
-                                                                         (nth$ 1 ?mps-type:param-values))
+    (bind ?payment-sum (calculate-order-payments-sum ?order (nth$ 1 ?mps-type:param-values)))
+    (production-strategy-assert-workload-or-payment-for-machine ?wl ?order (nth$ 1 ?mps-type:param-values) 
+                                        (+ 
+                                           ?payment-sum
                                            (calculate-order-interaction-sum ?order
                                                                             (nth$ 1 ?mps-type:param-values))
                                         )
     )
+    
+    (production-strategy-assert-workload-or-payment-for-machine ?pm ?order (nth$ 1 ?mps-type:param-values) 0 ) 
   )
-  (production-strategy-assert-workload-for-machine ?order ?mps-cap 1)
+  (production-strategy-assert-workload-or-payment-for-machine ?wl ?order ?mps-cap 1)
 
   (bind ?rings-needed (string-to-field (sub-string 2 2 (str-cat ?com))))
   (bind ?points-ring1 (+ (* (bool-to-int (> ?rings-needed 0))
