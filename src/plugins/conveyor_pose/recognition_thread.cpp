@@ -24,8 +24,8 @@
 
 #include "conveyor_pose_thread.h"
 
+#include <pcl/common/transforms.h>
 #include <pcl/filters/filter.h>
-#include <pcl/registration/transforms.h>
 #include <utils/time/clock.h>
 
 #include <pcl/recognition/impl/hv/hv_papazov.hpp>
