@@ -42,7 +42,7 @@
       (if (any-factp ((?wp-for-order wm-fact)) (and (wm-key-prefix ?wp-for-order:key (create$ order meta wp-for-order))
                                                     (eq ?o-id (wm-key-arg ?wp-for-order:key ord))))
        then 
-        (bind ?sum (+ ?sum ?wm-fact:value))
+         (bind ?sum (+ ?sum ?wm-fact:value))
        )
   )
   (modify ?order-fact (value ?sum))
@@ -85,6 +85,7 @@
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?col-r1))
   (wm-fact (key domain fact order-ring2-color args? ord ?order col ?col-r2))
   (wm-fact (key domain fact order-ring3-color args? ord ?order col ?col-r3))
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?col-cap))
   ; Ring Specs CEs
   (wm-fact (key domain fact rs-ring-spec
             args? m ?mps1 r ?col-r1 rn ?req1&:(neq ?req1 NA)))
@@ -92,6 +93,8 @@
             args? m ?mps2 r ?col-r2 rn ?req2&:(neq ?req2 NA)))
   (wm-fact (key domain fact rs-ring-spec
             args? m ?mps3 r ?col-r3 rn ?req3&:(neq ?req3 NA)))
+  ; Cap Spec
+  (wm-fact (key domain fact cs-color args? m ?mps-cap col ?col-cap))
   ; Order Meta CEs
   (wm-fact (key order meta competitive args? ord ?order) (value ?competitive))
   (not (wm-fact (key order meta points-max args? ord ?order)))
@@ -115,6 +118,7 @@
                                         )
     )
   )
+  (production-strategy-assert-workload-for-machine ?order ?mps-cap 1)
 
   (bind ?rings-needed (string-to-field (sub-string 2 2 (str-cat ?com))))
   (bind ?points-ring1 (+ (* (bool-to-int (> ?rings-needed 0))

@@ -488,15 +488,15 @@
 ; ----------------------- EVALUATE SPECIFIC GOALS ---------------------------
 
 
-(defrule goal-reasoner-evaluate-mount-ring-or-payment
-" Reducing the order based mps workload after mounting a ring or paying for a ring successfully"
-	?g <- (goal (id ?goal-id)(class MOUNT-RING|PAY-FOR-RINGS-WITH-BASE|PAY-FOR-RINGS-WITH-CAP-CARRIER|PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF) (mode FINISHED) (outcome COMPLETED)
+(defrule goal-reasoner-evaluate-mount-or-payment
+" Reducing the order based mps workload after mounting a ring/cap or paying for a ring successfully"
+	?g <- (goal (id ?goal-id)(class MOUNT-RING|MOUNT-CAP|PAY-FOR-RINGS-WITH-BASE|PAY-FOR-RINGS-WITH-CAP-CARRIER|PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF) (mode FINISHED) (outcome COMPLETED)
 	            (verbosity ?v) (params $? ?mn $?))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot)(order-id ?order-id))
   ?wmf-order <- (wm-fact (key mps workload order args? m ?mn ord ?order-id))
 =>
 	(set-robot-to-waiting ?robot)
-	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED "  crlf)
+	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" ?mn  crlf)
 	(modify ?g (mode EVALUATED))
   (modify ?wmf-order (value (- (fact-slot-value ?wmf-order value) 1)))
 )
