@@ -30,7 +30,6 @@
   ?*C1-PRODUCTION-THRESHOLD* = 1
 )
 
-<<<<<<< HEAD
 (deffunction production-strategy-produce-ahead-check (?gt ?start ?end ?complexity)
   "Checks whether the given time is within the bounds of the produce
   ahead time "
@@ -88,10 +87,7 @@
   (return ?order-roots)
 )
 
-(deffunction production-strategy-assert-workload-for-machine
-=======
 (deffunction production-strategy-assert-workload-or-payment-for-machine
->>>>>>> c713d0f76 (rcll-central: added finished payments fact)
   "Creating wm-facts for the order based and overall mps workload"
   (?name ?order-id ?mps ?payments)
 
@@ -650,13 +646,8 @@
 
 ; ========================= Order Preference FIlters =============================
 
-<<<<<<< HEAD
 (defrule production-strategy-init-order-preference-facts
-  "Initialise the possible and preferred order facts to track orders of each 
-=======
-(defrule goal-production-init-order-preference-facts
   "Initialise the possible and preferred order facts to track orders of each
->>>>>>> c713d0f76 (rcll-central: added finished payments fact)
   complexity for production flow control."
   (not (wm-fact (key strategy meta possible-orders $?)))
   =>
