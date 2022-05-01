@@ -60,7 +60,6 @@
   (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
   (wm-fact (key mps workload order args? m ?mn ord ?o-id))
   (wm-fact (key order meta wp-for-order args? wp $? ord ?o-id))
-	?update-fact <- (wm-fact (key mps workload needs-update) (value TRUE))
   =>
   (bind ?sum 0)
   (bind ?order-fact (nth$ 1 (find-fact ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload overall) )
@@ -76,7 +75,11 @@
        )
   )
   (modify ?order-fact (value ?sum))
-  (modify ?update-fact (value FALSE))
+	(delayed-do-for-all-facts 
+		((?update-fact wm-fact)) (wm-key-prefix ?update-fact:key (create$ mps workload needs-update))
+		(retract ?update-fact)
+	)
+	(assert (wm-fact (key mps workload needs-update) (value FALSE) (type BOOL)))
 )
 
 (defrule production-strategy-init-order-meta-facts
