@@ -626,10 +626,10 @@
 	(wm-fact (key refbox team-color) (value ?team-color))
 	(wm-fact (key config rcll challenge-flip-insertion) (value ?flip))
 	=>
-	(bind ?dropzone M-ins-out)
+	(bind ?dropzone M-INS-OUT)
 	(if (or (and (eq ?team-color CYAN) (neq ?flip TRUE))
 	        (and (eq ?team-color MAGENTA) (eq ?flip TRUE))) then
-		(bind ?dropzone C-ins-out)
+		(bind ?dropzone C-INS-OUT)
 	)
 
 	(plan-assert-sequential (sym-cat DELIVER-RC21-PLAN- (gensym*)) ?goal-id ?robot
