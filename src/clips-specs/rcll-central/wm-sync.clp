@@ -3,9 +3,26 @@
 	?*GOAL_META_ID_SLOTS* = goal-id
 	?*PLAN_ID_SLOTS* = id
 	?*PLAN_ACTION_ID_SLOTS* = (create$ id goal-id plan-id)
+
+	?*SALIENCE_SKIP_TRIGGER_OVERRIDE* = 1
 )
 
+(defrule wm-robmem-sync-init-override
+	(declare (salience ?*SALIENCE_SKIP_TRIGGER_OVERRIDE*))
+	(executive-init)
+	(not (executive-finalize))
+	(not (wm-robmem-sync-initialized))
+	=>
+	(assert (wm-robmem-sync-initialized))
+)
 
+(defrule wm-robmem-sync-finalize-override
+	(declare (salience ?*SALIENCE_SKIP_TRIGGER_OVERRIDE*))
+	(executive-finalize)
+	?wi <- (wm-robmem-sync-initialized)
+	=>
+	(retract ?wi)
+)
 
 (defrule init-worldmodel-sync
 	(executive-init)
