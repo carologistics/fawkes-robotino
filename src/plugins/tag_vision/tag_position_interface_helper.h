@@ -25,6 +25,7 @@
 
 #include <interfaces/Position3DInterface.h>
 #include <tf/transform_publisher.h>
+#include <tf/transformer.h>
 #include <tf/types.h>
 #include <utils/math/angle.h>
 
@@ -65,9 +66,12 @@ class TagPositionInterfaceHelper
 public:
 	/// Constructor
 	TagPositionInterfaceHelper(fawkes::Position3DInterface *   position_interface,
+	                           fawkes::Position3DInterface *   position_interface_map,
 	                           u_int32_t                       index_,
 	                           fawkes::Clock *                 clock,
 	                           fawkes::tf::TransformPublisher *tf_publisher,
+	                           fawkes::tf::TransformPublisher *map_tf_publisher,
+	                           fawkes::tf::Transformer *       tf_listener,
 	                           std::string                     frame);
 	/// Destructor
 	~TagPositionInterfaceHelper();
@@ -95,6 +99,17 @@ public:
 	}
 
 	/**
+   * @brief Returns the Position3D interface of this plugin
+   *
+   * @return The interface
+   */
+	fawkes::Position3DInterface *
+	pos_iface_map()
+	{
+		return this->pos_iface_map_;
+	}
+
+	/**
    * @brief Returns the position of this interface in the TagPositionList, or
    * any other enumeration
    *
@@ -109,6 +124,7 @@ public:
 private:
 	/// The interface to handle
 	fawkes::Position3DInterface *pos_iface_;
+	fawkes::Position3DInterface *pos_iface_map_;
 
 	/// The visibility history for the interface to handle
 	int32_t visibility_history_;
@@ -134,6 +150,8 @@ private:
 
 	/// The transform publisher
 	fawkes::tf::TransformPublisher *tf_publisher_;
+	fawkes::tf::TransformPublisher *map_tf_publisher_;
+	fawkes::tf::Transformer *       tf_listener_;
 };
 
 #endif // TAG_POSITION_INTREFACE_H

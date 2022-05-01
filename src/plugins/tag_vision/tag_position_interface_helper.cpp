@@ -45,21 +45,27 @@
  */
 TagPositionInterfaceHelper::TagPositionInterfaceHelper(
   fawkes::Position3DInterface *   position_interface,
+  fawkes::Position3DInterface *   position_interface_map,
   u_int32_t                       index,
   fawkes::Clock *                 clock,
   fawkes::tf::TransformPublisher *tf_publisher,
+  fawkes::tf::TransformPublisher *map_tf_publisher,
+  fawkes::tf::Transformer *       tf_listener,
   std::string                     cam_frame)
 {
 	pos_iface_          = position_interface;
+	pos_iface_map_      = position_interface_map;
 	index_              = index;
 	visibility_history_ = 0;
 	marker_id_          = 0;
 	was_seen_           = false;
 	clock_              = clock;
 
-	cam_frame_    = cam_frame;
-	tag_frame_    = TagVisionThread::tag_frame_basename + std::to_string(index);
-	tf_publisher_ = tf_publisher;
+	cam_frame_        = cam_frame;
+	tag_frame_        = TagVisionThread::tag_frame_basename + std::to_string(index);
+	tf_publisher_     = tf_publisher;
+	map_tf_publisher_ = map_tf_publisher;
+	tf_listener_      = tf_listener;
 }
 
 /**
@@ -122,6 +128,38 @@ TagPositionInterfaceHelper::set_pose(alvar::Pose new_pose)
 	fawkes::Time                 time(clock_);
 	fawkes::tf::StampedTransform stamped_transform(transform, time, cam_frame_, tag_frame_);
 	tf_publisher_->send_transform(stamped_transform);
+
+	try {
+		fawkes::tf::Stamped<fawkes::tf::Pose> tag_in_cam_pose(
+			fawkes::tf::Pose(
+				fawkes::tf::Quaternion(result.getX(), result.getY(), result.getZ(), result.getW()),
+				fawkes::tf::Vector3(new_pose.translation[0] / 1000,
+						new_pose.translation[1] / 1000,
+						new_pose.translation[2] / 1000)),
+				fawkes::Time(0, 0),
+				cam_frame_);
+		fawkes::tf::Stamped<fawkes::tf::Pose> tag_in_map_pose;
+		tf_listener_->transform_pose("map", tag_in_cam_pose, tag_in_map_pose);
+
+		fawkes::tf::Vector3          tf_pose_pos(tag_in_map_pose.getOrigin());
+		fawkes::tf::Quaternion       tf_pose_ori(tag_in_map_pose.getRotation());
+		fawkes::tf::StampedTransform tag_to_map(fawkes::tf::Transform(tf_pose_ori, tf_pose_pos),
+		                                        time,
+		                                        "map",
+		                                        tag_frame_ + "_to_map");
+		// publish the quaternion in map frame
+		pos_iface_map_->set_rotation(ROT::X, tag_in_map_pose.getRotation().getX());
+		pos_iface_map_->set_rotation(ROT::Y, tag_in_map_pose.getRotation().getY());
+		pos_iface_map_->set_rotation(ROT::Z, tag_in_map_pose.getRotation().getZ());
+		pos_iface_map_->set_rotation(ROT::W, tag_in_map_pose.getRotation().getW());
+		// publish the translation in map frame
+		pos_iface_map_->set_translation(TRANS::T_X /*1*/, tag_in_map_pose.getOrigin().getX());
+		pos_iface_map_->set_translation(TRANS::T_Y /*2*/, tag_in_map_pose.getOrigin().getY());
+		pos_iface_map_->set_translation(TRANS::T_Z /*0*/, tag_in_map_pose.getOrigin().getZ());
+
+	} catch (fawkes::tf::TransformException &e) {
+		std::cout << "Can't transform to " << tag_frame_ << " " << e.what() << std::endl;
+	}
 }
 
 /**
@@ -191,8 +229,10 @@ TagPositionInterfaceHelper::write()
 	}
 	// set the new visibility history
 	pos_iface_->set_visibility_history(visibility_history_);
+	pos_iface_map_->set_visibility_history(visibility_history_);
 	// write out the interface
 	pos_iface_->write();
+	pos_iface_map_->write();
 	// reset the update marker
 	was_seen_ = false;
 }

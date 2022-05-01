@@ -73,7 +73,8 @@ TagPositionList::TagPositionList(fawkes::BlackBoard *     blackboard,
 	// create blackboard interfaces
 	for (unsigned int i = 0; i < this->max_markers_; i++) {
 		// create a name for the new interface
-		std::string interface_name = std::string("/tag-vision/") + std::to_string(i);
+		std::string interface_name     = std::string("/tag-vision/") + std::to_string(i);
+		std::string interface_name_map = std::string("/tag-vision/") + std::to_string(i) + "/to_map";
 		// create the interface and store
 		try {
 			// get an interface from the blackboard
@@ -83,8 +84,21 @@ TagPositionList::TagPositionList(fawkes::BlackBoard *     blackboard,
 			interface->set_frame(cam_frame.c_str());
 			// generate a helper class and push it into this vector
 
-			this->push_back(new TagPositionInterfaceHelper(
-			  interface, i, this->clock_, main_thread_->get_tf_publisher(i), cam_frame));
+			// get an interface from the blackboard
+			auto map_interface = this->blackboard_->open_for_writing<fawkes::Position3DInterface>(
+			  (interface_name_map).c_str());
+			// set the frame of the interface
+			map_interface->set_frame("map");
+			// generate a helper class and push it into this vector
+
+			this->push_back(new TagPositionInterfaceHelper(interface,
+			                                               map_interface,
+			                                               i,
+			                                               this->clock_,
+			                                               main_thread_->get_tf_publisher(i, "tag_"),
+			                                               main_thread_->get_tf_publisher(i, "map_tag_"),
+			                                               tf_listener_,
+			                                               cam_frame));
 		} catch (std::exception &e) {
 			this->logger_->log_error(thread_name.c_str(), "Could not open the blackboard: %s", e.what());
 			throw(e);
