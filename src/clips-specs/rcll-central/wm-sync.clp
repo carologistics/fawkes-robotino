@@ -108,11 +108,11 @@
 	(retract ?wm)
 	(assert-template-wm-fact ?pa
 	                         ?*PLAN_ACTION_ID_SLOTS*
-	                         (delete-member$ (deftemplate-remaining-slots
-	                                           plan-action
-	                                           ?*PLAN_ACTION_ID_SLOTS*
-	                                         )
-	                                         skiller))
+	                         (deftemplate-remaining-slots
+	                           plan-action
+	                           ?*PLAN_ACTION_ID_SLOTS*
+	                         )
+	)
 )
 
 (defrule wm-sync-cleanup-plan-action-wm-fact

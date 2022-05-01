@@ -354,3 +354,27 @@
 	(assert (wm-fact (key central agent robot-waiting args? r ?robot)))
 )
 
+(defrule domain-restore-worldmodel-after-maintenance
+" Domain facts have not been loaded but the game is already running.
+  Restore the world model from the database."
+	(not (domain-facts-loaded))
+	(wm-fact (key refbox phase) (value EXPLORATION|PRODUCTION))
+	(wm-fact (key config agent name) (value ?robot-name))
+	(wm-fact (key refbox team-color) (value ?team-color&~nil))
+	=>
+	(printout warn "Restoring world model from the database" crlf)
+	(wm-robmem-sync-restore)
+	(assert (sync-wm-facts-to-template-facts))
+)
+
+(defrule domain-restore-template-facts
+	?sync-enable <- (sync-wm-facts-to-template-facts)
+	(not (wm-fact (id "")))
+	=>
+	(delayed-do-for-all-facts ((?wm wm-fact))
+		(wm-key-prefix ?wm:key (create$ template fact))
+		(assert-string (template-fact-str-from-wm ?wm:key ?wm:values))
+	)
+	(assert (domain-facts-loaded))
+	(retract ?sync-enable)
+)
