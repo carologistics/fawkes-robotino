@@ -83,6 +83,15 @@
   )
 )
 
+(defrule production-strategy-remove-workload-facts-for-completed-order
+  "If an order production tree has been retracted, do not track the workload."
+  ?workload <- (wm-fact (key mps workload order args? m ?mn ord ?o-id))
+  (goal-meta (goal-id ?g-id) (root-for-order ?o-id))
+  (goal (id ?g-id) (mode RETRACTED))
+  =>
+  (retract ?workload)
+)
+
 (defrule production-strategy-init-order-meta-facts
 " Calculates the points for each production step, max points and initializes
   more order meta facts.
