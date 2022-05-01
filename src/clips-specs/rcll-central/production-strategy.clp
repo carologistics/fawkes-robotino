@@ -27,27 +27,6 @@
   ?*SALIENCE-PRODUCTION-STRATEGY* = -1
 )
 
-(defrule production-strategy-sum-workload
-  "Summing up the workload of a mps base on all started order productions"
-  (wm-fact (key mps workload order args? m ?mn ord ?o-id))
-  (wm-fact (key order meta wp-for-order args? wp $? ord ?o-id))
-  =>
-  (bind ?sum 0)
-  (bind ?order-fact (nth$ 1 (find-fact ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload overall) )
-                                                            (eq ?mn (wm-key-arg ?wm-fact:key m))))))
-    (do-for-all-facts ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload order))
-                                                (eq ?mn (wm-key-arg ?wm-fact:key m)))
-      (bind ?order-id (wm-key-arg ?wm-fact:key ord))
-      ;the order has been started
-      (if (any-factp ((?wp-for-order wm-fact)) (and (wm-key-prefix ?wp-for-order:key (create$ order meta wp-for-order))
-                                                    (eq ?o-id (wm-key-arg ?wp-for-order:key ord))))
-       then 
-         (bind ?sum (+ ?sum ?wm-fact:value))
-       )
-  )
-  (modify ?order-fact (value ?sum))
-)
-
 (deffunction production-strategy-assert-workload-for-machine
   "Creating wm-facts for the order based and overall mps workload"
   (?order-id ?mps ?payments)
@@ -73,6 +52,31 @@
   (goal (id ?g-id) (mode RETRACTED))
   =>
   (retract ?workload)
+)
+
+
+(defrule production-strategy-sum-workload
+  "Summing up the workload of a mps base on all started order productions"
+  (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
+  (wm-fact (key mps workload order args? m ?mn ord ?o-id))
+  (wm-fact (key order meta wp-for-order args? wp $? ord ?o-id))
+	?update-fact <- (wm-fact (key mps workload needs-update) (value TRUE))
+  =>
+  (bind ?sum 0)
+  (bind ?order-fact (nth$ 1 (find-fact ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload overall) )
+                                                            (eq ?mn (wm-key-arg ?wm-fact:key m))))))
+    (do-for-all-facts ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload order))
+                                                (eq ?mn (wm-key-arg ?wm-fact:key m)))
+      (bind ?order-id (wm-key-arg ?wm-fact:key ord))
+      ;the order has been started
+      (if (any-factp ((?wp-for-order wm-fact)) (and (wm-key-prefix ?wp-for-order:key (create$ order meta wp-for-order))
+                                                    (eq ?o-id (wm-key-arg ?wp-for-order:key ord))))
+       then 
+        (bind ?sum (+ ?sum ?wm-fact:value))
+       )
+  )
+  (modify ?order-fact (value ?sum))
+  (modify ?update-fact (value FALSE))
 )
 
 (defrule production-strategy-init-order-meta-facts
