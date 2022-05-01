@@ -34,6 +34,8 @@
   ?*PRODUCE-C2-AHEAD-TIME* = 350
   ?*PRODUCE-C3-AHEAD-TIME* = 450
   ?*DELIVER-AHEAD-TIME* = 60
+  
+  ?*RS-WORKLOAD-THRESHOLD* = 9
 )
 
 (deffunction goal-production-produce-ahead-check (?gt ?begin ?complexity)
@@ -854,7 +856,13 @@
 	(wm-fact (key domain fact quantity-delivered args? ord ?order-id team ?team-color) (value 0))
 	(not (goal-meta (root-for-order ?order-id)))
 	;for now manage machine occupancy by enforcing a hard limit on the number of orders
-	(test (< (goal-production-count-active-orders) 3))
+	;(test (< (goal-production-count-active-orders) 3))
+
+	;check if pursuing this order in addition to the current orders would be above the limit
+	(wm-fact (key mps workload overall args? m ?any-rs) (value ?workload))
+	(wm-fact (key mps workload order args? m ?any-rs ord ?order-id) (value ?added-workload))
+	(test (<= (+ ?workload ?added-workload) ?*RS-WORKLOAD-THRESHOLD*))
+
 	;it is not possible yet
 	(test (not (member$ ?order-id ?values)))
 	=>
@@ -868,6 +876,11 @@
 	(or 
 		(wm-fact (key domain fact quantity-delivered args? ord ?order-id team ?team-color) (value ~0))
 		(goal-meta (root-for-order ?order-id))
+		(and
+			(wm-fact (key mps workload overall args? m ?any-rs) (value ?workload))
+			(wm-fact (key mps workload order args? m ?any-rs ord ?order-id) (value ?added-workload))
+			(test (> (+ ?workload ?added-workload) ?*RS-WORKLOAD-THRESHOLD*))
+		)
 	)
 	?poss <- (wm-fact (key order fact possible-orders) (values $?values))
 	=> 
