@@ -72,6 +72,12 @@ plugins/tag_vision:
 plugins/robot-memory:
   database: robmem1
 
+ros2:
+  node-name: "robotino1"
+  namespace: "robotino1"
+  tf:
+    tf_prefix: "robotino1"
+
 webtools-bridge:
   port: 6060
   #port where rosbridge is expected to start. Websocket connection will be established to forward the Ros requests to the Rosbridge

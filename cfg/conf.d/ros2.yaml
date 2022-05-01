@@ -1,0 +1,66 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/ros
+---
+ros2:
+  # name for the node
+  node-name: rb1
+  namespace: $HOSTNAME
+  async-spinning: false
+
+  cmdvel:
+    motor_interface_id: Robotino
+
+  odometry:
+    motor_interface_id: Robotino
+    odom_frame_id: odom
+    base_frame_id: base_link
+
+  pcl:
+    # The time interval which is used to search for new pointclouds in ROS.
+    # This is the maximum time until a pointcloud from ROS is visible and usable
+    # in FAWKES.
+    ros-search-interval: 2.
+
+  clock:
+    # Frequency in Hz at which the clock should be published
+    frequency: 100
+
+  tf:
+    # Use tf2 for communication with ROS.
+    # This means using the tf2_msgs message types and publishing
+    # static transforms to /tf_static.
+    use_tf2: true
+
+    # To allow a single tf tree shared among multiple robot systems it is necessary to
+    # set ignore the namespace of the actual topics /tf and /tf_static and hence
+    # disable the use of the namespace. Otherwise the topic names are /<namespace>/tf
+    # and /<namespace>/tf_static
+    use_namespace: false
+
+    # Add a prefix to published transforms.
+    # Useful for multi-robot scenarios which should not interfere with each other
+    # (i.e. you wouldn't want multiple robots to publish an odom -> base_link transform).
+    # Can be set to $HOSTNAME to replace with the system's hostname.
+    tf_prefix: $HOSTNAME
+
+    # Ignore the tf_prefix for the following set of frame_ids
+    # (i.e. "map" to allow a scenario like map -> robot1_odom -> robot1_base_link)
+    tf_prefix_exclusions: [ "map" ]
+
+    # Interval in which to post static transform updates; sec
+    # This setting is only relevant is use_tf2 is set to false above.
+    static-update-interval: 1.0
+
+  navigator:
+    dynreconf:
+      path: "/safety_controller"
+      trans_vel_name: "max_vel_trans"
+      rot_vel_name: "max_vel_theta"
+
+    fixed_frame: "map"
+
+    # tolerances to be set determining a goal could be reached or not.
+    trans_tolerance: 0.15
+    ori_tolerance: 0.1
