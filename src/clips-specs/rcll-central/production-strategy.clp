@@ -121,7 +121,7 @@
 =>
   (modify ?update-fact (value TRUE))
   (bind ?wl workload)
-  (bind ?pm (create$ finished payments))
+  (bind ?pm (create$ state payments))
   (delayed-do-for-all-facts ((?mps-type domain-fact)) (eq (nth$ 2 ?mps-type:param-values) RS)
     (bind ?payment-sum (calculate-order-payments-sum ?order (nth$ 1 ?mps-type:param-values)))
     (production-strategy-assert-workload-or-payment-for-machine ?wl ?order (nth$ 1 ?mps-type:param-values)

@@ -443,11 +443,11 @@
 (deffunction distribute-payments
 	(?root-id)
 ; Distributing the payments of a failed PRODUCE-ORDER goal
-;1 get finished payments for mps
+;1 get payments for mps
 	(bind ?paid (create$))
 	(bind ?paid-at (create$))
 	(bind ?order-id (fact-slot-value (nth$ 1 (find-fact ((?meta goal-meta))(eq ?meta:goal-id ?root-id))) order-id))
-	(do-for-all-facts ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps finished payments order))
+	(do-for-all-facts ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps state payments order))
 																							(eq ?order-id (wm-key-arg ?wm-fact:key ord)))
 		(if (neq 0 ?wm-fact:value) then
 			(bind ?paid (insert$ ?paid 1 ?wm-fact:value))
@@ -460,7 +460,7 @@
 																			(member$ (nth$ 8 ?gf:params) ?paid-at)
 																			(neq ?order-id (fact-slot-value (nth$ 1 (find-fact ((?m goal-meta)) (eq ?gf:id ?m:goal-id))) order-id))
 																			(neq 0 (length$ ?paid)))
-				;3 finish goal and reduce amout of finished payments for given
+				;3 finish goal and reduce amout of  payments
 		(modify ?gf (mode FINISHED)(outcome COMPLETED))
 		(bind ?i 0)
 		(if (eq (nth$ 8 ?gf:params) (nth$ 1 ?paid-at)) then

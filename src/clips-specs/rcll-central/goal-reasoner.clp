@@ -494,7 +494,7 @@
 	            (verbosity ?v) (params $? ?mn $? ?rc))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot)(order-id ?order-id))
   ?wmf-order <- (wm-fact (key mps workload order args? m ?mn ord ?order-id))
-  ?pay-order <- (wm-fact (key mps finished payments order args? m ?mn ord ?order-id))
+  ?pay-order <- (wm-fact (key mps state payments order args? m ?mn ord ?order-id))
 =>
 	(set-robot-to-waiting ?robot)
 	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" ?mn  crlf)
