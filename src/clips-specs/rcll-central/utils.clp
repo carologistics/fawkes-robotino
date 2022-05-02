@@ -1349,5 +1349,3 @@
   )
   (return ?rs-interactions)
 )
-
-
