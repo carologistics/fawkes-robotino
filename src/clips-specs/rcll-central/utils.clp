@@ -1352,5 +1352,3 @@
   )
   (return ?rs-interactions)
 )
-
-
