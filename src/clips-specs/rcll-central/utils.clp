@@ -1278,6 +1278,38 @@
   (return ?grid-style-location)
 )
 
+(deffunction distribute-payments
+	(?root-id)
+
+;1 get finished payments for mps
+	(bind ?paid (create$))
+	(bind ?paid-at (create$))
+	(bind ?order-id (fact-slot-value (nth$ 1 (find-fact ((?meta goal-meta))
+																						(eq ?meta:goal-id ?root-id)
+									))root-for-order))
+
+	(do-for-all-facts ((?wm-fact wm-fact)) (and (eq (wm-key-prefix ?wm-fact:key (create$ mps finished payments order)))
+																							(eq ?order-id (wm-key-arg ?wm-fact:key ord)))
+		(if (neq 0 ?wm-fact:value)
+			(bind ?paid (insert$ ?paid 1 ?wm-fact:value))
+			(bind ?paid-at (insert$ ?paid-at 1 (wm-key-arg ?wm-fact:key ord)))
+		)
+	)
+	(if (eq 0 (length$ ?paid))
+		(return)
+	)
+
+
+;2 get current running orders != the given one
+;3 get open payments for those order
+;4 finish those goals and reduce amout of finished payments for given
+
+
+
+
+)
+
+
 (deffunction calculate-order-payments-sum (?order ?rs)
   "Calculate the number of ring payments an order requires on an RS"
   (bind ?ring1-payment 0)
