@@ -339,3 +339,8 @@
 	(assert (wm-fact (key central agent robot-waiting args? r ?robot)))
 )
 
+(defrule start-with-no-mps-workload-update-needed
+  (not (wm-fact (key mps workload needs-update)))
+  =>
+  (assert (wm-fact (key mps workload needs-update) (value FALSE) (type BOOL)))
+)

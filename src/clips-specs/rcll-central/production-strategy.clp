@@ -51,33 +51,37 @@
 (defrule production-strategy-remove-workload-facts-for-completed-order
   "If an order production tree has been retracted, do not track the workload."
   ?workload <- (wm-fact (key mps workload order args? m ?mn ord ?o-id))
+  ?update-fact <- (wm-fact (key mps workload needs-update) (value FALSE))
   (goal-meta (goal-id ?g-id) (root-for-order ?o-id))
   (goal (id ?g-id) (mode RETRACTED))
   =>
   (retract ?workload)
+  (modify ?update-fact (value TRUE))
 )
-
 
 (defrule production-strategy-sum-workload
   "Summing up the workload of a mps base on all started order productions"
   (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
-  (wm-fact (key mps workload order args? m ?mn ord ?o-id))
-  (wm-fact (key order meta wp-for-order args? wp $? ord ?o-id));order has been started
-  ?order-fact <- (wm-fact (key mps workload overall args? m ?mn))
-  (wm-fact (key mps workload needs-update) (value TRUE))
+  ?update-fact <- (wm-fact (key mps workload needs-update) (value TRUE))
   =>
-  (bind ?sum 0)
-  (do-for-all-facts ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload order))
-                                              (eq ?mn (wm-key-arg ?wm-fact:key m)))
-    (bind ?order-id (wm-key-arg ?wm-fact:key ord))
-    (bind ?sum (+ ?sum ?wm-fact:value))
+  (delayed-do-for-all-facts ((?overall-fact wm-fact)) (wm-key-prefix ?overall-fact:key (create$ mps workload overall))
+    (bind ?m (wm-key-arg ?overall-fact:key m))
+    (bind ?sum 0)
+
+    (delayed-do-for-all-facts ((?workload-fact wm-fact)) (and (wm-key-prefix ?workload-fact:key (create$ mps workload order))
+                                                (eq ?m (wm-key-arg ?workload-fact:key m)))
+      ;the order has been started
+      (if (any-factp ((?wp-for-order wm-fact)) (and (wm-key-prefix ?wp-for-order:key (create$ order meta wp-for-order))
+                                                    (eq (wm-key-arg ?workload-fact:key ord)
+                                                        (wm-key-arg ?wp-for-order:key ord))))
+       then
+          (bind ?sum (+ ?sum ?workload-fact:value))
+      )
+    )
+    (modify ?overall-fact (value ?sum))
   )
-  (modify ?order-fact (value ?sum))
-  (delayed-do-for-all-facts 
-    ((?update-fact wm-fact)) (wm-key-prefix ?update-fact:key (create$ mps workload needs-update))
-    (retract ?update-fact)
-  )
-  (assert (wm-fact (key mps workload needs-update) (value FALSE) (type BOOL)))
+
+  (modify ?update-fact (value FALSE))
 )
 
 (defrule production-strategy-init-order-meta-facts
@@ -113,7 +117,9 @@
   (wm-fact (key refbox game-time) (values ?curr-time $?))
   (wm-fact (key refbox order ?order delivery-end) (type UINT)
            (value ?deadline))
+  ?update-fact <- (wm-fact (key mps workload needs-update) (value FALSE))
 =>
+  (modify ?update-fact (value TRUE))
   (delayed-do-for-all-facts ((?mps-type domain-fact)) (eq (nth$ 2 ?mps-type:param-values) RS)
     (production-strategy-assert-workload-for-machine ?order (nth$ 1 ?mps-type:param-values) 
                                         (+ (calculate-order-payments-sum ?order 
