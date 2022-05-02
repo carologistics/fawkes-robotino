@@ -34,10 +34,6 @@
   ?*PRODUCE-C2-AHEAD-TIME* = 350
   ?*PRODUCE-C3-AHEAD-TIME* = 450
   ?*DELIVER-AHEAD-TIME* = 60
-  
-  ?*RS-WORKLOAD-THRESHOLD* = 7
-  ?*C0-PRODUCTION-THRESHOLD* = 1
-  ?*C1-PRODUCTION-THRESHOLD* = 1
 )
 
 (deffunction goal-production-produce-ahead-check (?gt ?start ?end ?complexity)
@@ -840,218 +836,6 @@
 	(printout error "Can not build order " ?order-id " with ring-3 color " ?col-ring " because there is no ringstation for it" crlf)
 )
 
-(defrule goal-production-init-order-preference-facts
-	"Initialise the possible and preferred order facts to track orders of each 
-	complexity for production flow control."
-	(not (wm-fact (key order fact possible-orders $?)))
-	=>
-	(assert
-		(wm-fact (key order fact possible-orders) (is-list TRUE) (type SYMBOL))
-		(wm-fact (key order fact filtered-orders args? filter delivery-ahead) (is-list TRUE) (type SYMBOL))
-		(wm-fact (key order fact filtered-orders args? filter delivery-limit) (is-list TRUE) (type SYMBOL))
-		(wm-fact (key order fact filtered-orders args? filter workload) (is-list TRUE) (type SYMBOL))
-		(wm-fact (key order fact filtered-orders args? filter c0-limit) (is-list TRUE) (type SYMBOL))
-		(wm-fact (key order fact filtered-orders args? filter c1-limit) (is-list TRUE) (type SYMBOL))
-	)
-)
-
-(defrule goal-production-append-possible-orders
-	"An order is possible if it's not been fulfilled yet and if the machine occupancy
-	allows it to be pursued."
-	;facts to modify
-	?poss <- (wm-fact (key order fact possible-orders) (values $?values))
-	;meta information
-	(wm-fact (key refbox team-color) (value ?team-color))
-	;neither delivered, nor started
-	(wm-fact (key domain fact quantity-delivered args? ord ?order-id team ?team-color) (value 0))
-	(not (goal-meta (root-for-order ?order-id)))
-	;it is not possible yet
-	(test (not (member$ ?order-id ?values)))
-	=>
-	(modify ?poss (values $?values ?order-id))
-)
-
-(defrule goal-production-remove-from-possible-orders-active
-	"An order that has been started, fulfilled is not possible anymore."
-	(wm-fact (key order fact possible-orders) (values $? ?order-id $?))
-	(wm-fact (key refbox team-color) (value ?team-color))
-	(or 
-		(wm-fact (key domain fact quantity-delivered args? ord ?order-id team ?team-color) (value ~0))
-		(goal-meta (root-for-order ?order-id))
-	)
-	?poss <- (wm-fact (key order fact possible-orders) (values $?values))
-	=> 
-	(modify ?poss (values (delete$ ?values (member$ ?order-id ?values) (member$ ?order-id ?values))))
-)
-
-
-;filter delivery-ahead
-(defrule goal-production-filter-orders-delivery-ahead-add
-	"Add an order to this filter if its production ahead window is open and isn't closed yet."
-	?filtered <- (wm-fact (key order fact filtered-orders args? filter delivery-ahead) (values $?values))
-	(wm-fact (key order fact possible-orders) (values $? ?order-id $?))
-	(not (wm-fact (key order fact filtered-orders args? filter delivery-ahead) (values $? ?order-id $?)))
-	(wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
-	;filter condition
-	(wm-fact (key refbox order ?order-id delivery-begin) (value ?begin))
-	(wm-fact (key refbox order ?order-id delivery-end) (value ?end))
-	(wm-fact (key refbox game-time) (values ?gt $?))
-	(test (goal-production-produce-ahead-check ?gt ?begin ?end ?comp))
-	=>
-	(modify ?filtered (values $?values ?order-id))
-)
-
-(defrule goal-production-filter-orders-delivery-ahead-remove
-	"Remove an order from this filter if its production ahead window has finally closed."
-	?filtered <- (wm-fact (key order fact filtered-orders args? filter delivery-ahead) (values $?values))
-	(wm-fact (key order fact filtered-orders args? filter delivery-ahead) (values $? ?order-id $?))
-	(wm-fact (key order fact filtered-orders args? filter delivery-ahead) (values $? ?order-id $?))
-	(wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
-	(or 
-		(not (wm-fact (key order fact possible-orders) (values $? ?order-id $?)))
-		(and
-			;reverse filter condition
-			(wm-fact (key refbox order ?order-id delivery-begin) (value ?begin))
-			(wm-fact (key refbox order ?order-id delivery-end) (value ?end))
-			(wm-fact (key refbox game-time) (values ?gt $?))
-			(test (not (goal-production-produce-ahead-check ?gt ?begin ?end ?comp)))
-		)
-	)
-	=>
-	(modify ?filtered (values (delete$ ?values (member$ ?order-id ?values) (member$ ?order-id ?values))))
-)
-
-;filter delivery-limit
-(defrule goal-production-filter-orders-delivery-limit-add
-	"Add an order to this filter its delivery window end is in the future."
-	?filtered <- (wm-fact (key order fact filtered-orders args? filter delivery-limit) (values $?values))
-	(wm-fact (key order fact possible-orders) (values $? ?order-id $?))
-	(not (wm-fact (key order fact filtered-orders args? filter delivery-limit) (values $? ?order-id $?)))
-	;filter condition
-	(wm-fact (key refbox order ?order-id delivery-end) (value ?end))
-	(wm-fact (key refbox game-time) (values ?gt $?))
-	(test (< ?gt ?end))
-	=>
-	(modify ?filtered (values $?values ?order-id))
-)
-
-(defrule goal-production-filter-orders-delivery-limit-remove
-	"Remove an order from this filter if its delivery window end has arrived."
-	?filtered <- (wm-fact (key order fact filtered-orders args? filter delivery-limit) (values $?values))
-	(wm-fact (key order fact filtered-orders args? filter delivery-limit) (values $? ?order-id $?))
-	(or 
-		(not (wm-fact (key order fact possible-orders) (values $? ?order-id $?)))
-		(and
-			;reverse filter condition
-			(wm-fact (key refbox order ?order-id delivery-end) (value ?end))
-			(wm-fact (key refbox game-time) (values ?gt $?))
-			(test (> ?gt ?end))
-		)
-	)
-	=>
-	(modify ?filtered (values (delete$ ?values (member$ ?order-id ?values) (member$ ?order-id ?values))))
-)
-
-;filter machine workload
-(defrule goal-production-filter-orders-workload-add
-	"Add an order to this filter its workload doesn't push the summed workload over any machine's limit."
-	?filtered <- (wm-fact (key order fact filtered-orders args? filter workload) (values $?values))
-	(wm-fact (key order fact possible-orders) (values $? ?order-id $?))
-	(not (wm-fact (key order fact filtered-orders args? filter workload) (values $? ?order-id $?)))
-	;filter condition
-	(not 
-		(and
-			(wm-fact (key mps workload overall args? m ?any-rs) (value ?workload))
-			(wm-fact (key mps workload order args? m ?any-rs ord ?order-id) (value ?added-workload))
-			(test (> (+ ?workload ?added-workload) ?*RS-WORKLOAD-THRESHOLD*))
-		)
-	)
-	=>
-	(modify ?filtered (values $?values ?order-id))
-)
-
-(defrule goal-production-filter-orders-workload-remove
-	"Remove an order from this filter if its workload would push the summed workload over the limit."
-	?filtered <- (wm-fact (key order fact filtered-orders args? filter workload) (values $?values))
-	(wm-fact (key order fact filtered-orders args? filter workload) (values $? ?order-id $?))
-	(or 
-		(not (wm-fact (key order fact possible-orders) (values $? ?order-id $?)))
-		(and
-			(wm-fact (key mps workload overall args? m ?any-rs) (value ?workload))
-			(wm-fact (key mps workload order args? m ?any-rs ord ?order-id) (value ?added-workload))
-			(test (> (+ ?workload ?added-workload) ?*RS-WORKLOAD-THRESHOLD*))
-		)
-	)
-	=>
-	(modify ?filtered (values (delete$ ?values (member$ ?order-id ?values) (member$ ?order-id ?values))))
-)
-
-;filter c0 limit
-(defrule goal-production-filter-orders-c0-limit-add
-	"Add an order to this filter if there is less than the threshold of active C0 orders"
-	?filtered <- (wm-fact (key order fact filtered-orders args? filter c0-limit) (values $?values))
-	(wm-fact (key order fact possible-orders) (values $? ?order-id $?))
-	(not (wm-fact (key order fact filtered-orders args? filter c0-limit) (values $? ?order-id $?)))
-	;filter condition
-	(or
-		(and
-			(wm-fact (key domain fact order-complexity args? ord ?order-id com C0))
-			(test (>= ?*C0-PRODUCTION-THRESHOLD* (goal-production-count-active-orders-of-complexity C0)))
-		)
-		(wm-fact (key domain fact order-complexity args? ord ?order-id com ~C0))
-	)
-	=>
-	(modify ?filtered (values $?values ?order-id))
-)
-
-(defrule goal-production-filter-orders-c0-limit-remove
-	"Remove an order from this filter if there is more than the threshold of active C0 orders"
-	?filtered <- (wm-fact (key order fact filtered-orders args? filter c0-limit) (values $?values))
-	(wm-fact (key order fact filtered-orders args? filter c0-limit) (values $? ?order-id $?))
-	(or 
-		(not (wm-fact (key order fact possible-orders) (values $? ?order-id $?)))
-		(and
-			(wm-fact (key domain fact order-complexity args? ord ?order-id com C0))
-			(test (< ?*C0-PRODUCTION-THRESHOLD* (goal-production-count-active-orders-of-complexity C0)))
-		)
-	)
-	=>
-	(modify ?filtered (values (delete$ ?values (member$ ?order-id ?values) (member$ ?order-id ?values))))
-)
-
-;filter c1 limit
-(defrule goal-production-filter-orders-c1-limit-add
-	"Add an order to this filter if there is less than the threshold of active c1 orders"
-	?filtered <- (wm-fact (key order fact filtered-orders args? filter c1-limit) (values $?values))
-	(wm-fact (key order fact possible-orders) (values $? ?order-id $?))
-	(not (wm-fact (key order fact filtered-orders args? filter c1-limit) (values $? ?order-id $?)))
-	;filter condition
-	(or
-		(and
-			(wm-fact (key domain fact order-complexity args? ord ?order-id com C1))
-			(test (>= ?*C1-PRODUCTION-THRESHOLD* (goal-production-count-active-orders-of-complexity C1)))
-		)
-		(wm-fact (key domain fact order-complexity args? ord ?order-id com ~C1))
-	)
-	=>
-	(modify ?filtered (values $?values ?order-id))
-)
-
-(defrule goal-production-filter-orders-c1-limit-remove
-	"Remove an order from this filter if there is more than the threshold of active c1 orders"
-	?filtered <- (wm-fact (key order fact filtered-orders args? filter C1-limit) (values $?values))
-	(wm-fact (key order fact filtered-orders args? filter C1-limit) (values $? ?order-id $?))
-	(or 
-		(not (wm-fact (key order fact possible-orders) (values $? ?order-id $?)))
-		(and
-			(wm-fact (key domain fact order-complexity args? ord ?order-id com C1))
-			(test (< ?*C1-PRODUCTION-THRESHOLD* (goal-production-count-active-orders-of-complexity C1)))
-		)
-	)
-	=>
-	(modify ?filtered (values (delete$ ?values (member$ ?order-id ?values) (member$ ?order-id ?values))))
-)
-
 (defrule goal-production-create-produce-for-order
 	"Create for each incoming order a grounded production tree with the"
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
@@ -1079,17 +863,17 @@
 	; - or
 	;	- it fulfills all the filters
 	;	- no goal fulfills all the filters and no goal is currently pursued
-	(wm-fact (key order fact possible-orders) (values $? ?order-id $?))
+	(wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
 	(not 
 		(and
-			(wm-fact (key order fact possible-orders) (values $? ?o-order-id&~?order-id $?))
+			(wm-fact (key strategy meta possible-orders) (values $? ?o-order-id&~?order-id $?))
 			(wm-fact (key domain fact order-complexity args? ord ?o-order-id com ?comp-comp))
-			(not (wm-fact (key order fact filtered-orders $?) (values $?values&:(not (member$ ?o-order-id ?values)))))
+			(not (wm-fact (key strategy meta filtered-orders $?) (values $?values&:(not (member$ ?o-order-id ?values)))))
 			(test (eq 1 (str-compare ?comp-comp ?comp)))
 		)
 	)
 	(or 
-		(not (wm-fact (key order fact filtered-orders $?) (values $?values&:(not (member$ ?order-id ?values)))))
+		(not (wm-fact (key strategy meta filtered-orders $?) (values $?values&:(not (member$ ?order-id ?values)))))
 		(not 
 			(and
 				(goal (id ?oid) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED))
