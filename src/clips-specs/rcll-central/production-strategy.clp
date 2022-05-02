@@ -64,6 +64,7 @@
   (wm-fact (key mps workload order args? m ?mn ord ?o-id))
   (wm-fact (key order meta wp-for-order args? wp $? ord ?o-id));order has been started
   ?order-fact <- (wm-fact (key mps workload overall args? m ?mn))
+  (wm-fact (key mps workload needs-update) (value TRUE))
   =>
   (bind ?sum 0)
   (do-for-all-facts ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload order))
