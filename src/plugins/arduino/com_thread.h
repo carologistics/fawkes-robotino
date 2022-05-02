@@ -4,7 +4,6 @@
  *  Created: Mon Apr 04 11:48:36 2016
  *  Copyright  2011-2016  Tim Niemueller [www.niemueller.de]
  *                  2016  Nicolas Limpert
- *                  2022  Matteo Tschesche
  ****************************************************************************/
 
 /*  This program is free software; you can redistribute it and/or modify
