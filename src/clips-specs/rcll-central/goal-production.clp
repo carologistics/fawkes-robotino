@@ -1265,6 +1265,7 @@ The workpiece remains in the output of the used ring station after
 	(return ?goal)
 )
 
+
 (deffunction goal-production-assert-move-out-of-way
 	(?location)
 	(bind ?goal (assert (goal (class MOVE-OUT-OF-WAY)
@@ -1272,10 +1273,11 @@ The workpiece remains in the output of the used ring station after
 	            (sub-type SIMPLE)
 	            (verbosity NOISY) (is-executable FALSE)
 	            (meta-template goal-meta)
-	            (params target-pos (translate-location-map-to-grid ?location) location ?location)
+	            (params target-pos ?location location ?location)
 	)))
 	(return ?goal)
 )
+
 
 (deffunction goal-production-assign-order-and-prio-to-goal (?goal ?order-id ?prio)
 	(bind ?goal-id (fact-slot-value ?goal id))
@@ -1467,11 +1469,14 @@ The workpiece remains in the output of the used ring station after
 	(goal (id ?root-id) (class WAIT-ROOT))
 	(not (goal (class MOVE-OUT-OF-WAY)))
 	(not (wm-fact (key config rcll pick-and-place-challenge) (value TRUE)))
-	=>
-	(bind ?g (goal-tree-assert-central-run-parallel MOVE-OUT-OF-WAY
-	        (goal-production-assert-move-out-of-way M_Z41)
-	        (goal-production-assert-move-out-of-way M_Z31))
-	)
+  (navgraph-node (name ?n&:(eq 1 (str-index "WAIT" ?n))))
+ 	=>
+  (bind ?wait-zones (create$)) 
+  (do-for-all-facts ((?nav navgraph-node)) (str-index "-Z" ?nav:name)
+    (bind ?wait-zones (insert$ ?wait-zones 1 (goal-production-assert-move-out-of-way  (sym-cat  ?nav:name)))) 
+  )
+
+	(bind ?g (goal-tree-assert-central-run-parallel MOVE-OUT-OF-WAY ?wait-zones))
 	(modify ?g (parent ?root-id) (priority 1.0))
 )
 
