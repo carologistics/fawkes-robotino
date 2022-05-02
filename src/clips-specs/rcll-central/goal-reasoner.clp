@@ -586,6 +586,43 @@
 		(retract ?p)
 	)
 )
+(defrule goal-reasoner-evaluate-failed-preparation-goal
+  "A carrier was lost for a preparation goal, reformulate the goal."
+  ?g <- (goal (id ?goal-id) (class BUFFER-CAP|DISCARD) (mode FINISHED) (outcome FAILED))
+  ?p <- (plan (goal-id ?goal-id) (id ?plan-id))
+  (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (action-name wp-get-shelf|wp-get|wp-put) (state FAILED) (param-values ? ? ?mps $?))
+  => 
+  ;don't need to reset the machine, if wp-get fails, the machine is resetted, if wp-put fails, we don't need to reset
+  ;remove the plan
+  (delayed-do-for-all-facts ((?pa plan-action)) (and (eq ?pa:goal-id ?goal-id) (eq ?pa:plan-id ?plan-id))
+    (retract ?pa)
+  )
+  (retract ?p)
+
+  ;reassert the goal
+  (modify ?g (mode FORMULATED) (outcome UNKNOWN))
+)
+
+(defrule goal-reasoner-evaluate-failed-payment-goal
+  "A ring payment was lost, reformulate the goal"
+  ?g <- (goal (id ?goal-id) (class ?class&PAY-FOR-RINGS-WITH-CAP-CARRIER|PAY-FOR-RINGS-WITH-BASE) (mode FINISHED) (outcome FAILED))
+  ?p <- (plan (goal-id ?goal-id) (id ?plan-id))
+  (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (action-name wp-get-shelf|wp-get|wp-put) (state FAILED) (param-values ? ? ?mps $?))
+  => 
+  ;don't need to reset the machine, if wp-get fails, the machine is resetted, if wp-put fails, we don't need to reset
+  ;remove the plan
+  (delayed-do-for-all-facts ((?pa plan-action)) (and (eq ?pa:goal-id ?goal-id) (eq ?pa:plan-id ?plan-id))
+    (retract ?pa)
+  )
+  (retract ?p)
+
+  ;reassert the goal
+  (modify ?g (mode FORMULATED) (outcome UNKNOWN))
+  (if (eq ?class PAY-FOR-RINGS-WITH-CAP-CARRIER) then
+    (modify ?g (class PAY-FOR-RINGS-WITH-BASE))
+  )
+)
+
 
 ; ================================= Goal Clean up ============================
 
