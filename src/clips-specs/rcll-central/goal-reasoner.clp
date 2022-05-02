@@ -107,6 +107,14 @@
   (return (eq ?goal-id ?parent))
 )
 
+(deffunction goal-reasoner-nuke-subtree (?goal)
+  "Remove an entire subtree."
+  (do-for-all-facts ((?child goal)) (eq ?child:parent (fact-slot-value ?goal id))
+    (goal-reasoner-nuke-subtree ?child)  
+  )
+  (retract ?goal)
+)
+
 (deffunction set-robot-to-waiting (?robot)
 " Sets a robot that was assigned in a goal meta to waiting.
   If no robot was assigned nothing happens.
