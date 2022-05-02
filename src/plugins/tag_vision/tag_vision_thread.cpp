@@ -222,19 +222,26 @@ TagVisionThread::get_marker()
 {
 	// detect makres on image
 	alvar_detector_.Detect(ipl_image_, &alvar_cam_);
-	// reset currently saved markers
-	this->markers_->clear();
-	// fill output array
-	for (alvar::MarkerData &tmp_marker : *(this->alvar_detector_.markers)) {
-		Pose tmp_pose = tmp_marker.pose;
-		// skip the marker, if the pose is directly on the camera (error)
-		if (tmp_pose.translation[0] < 1 && tmp_pose.translation[1] < 1 && tmp_pose.translation[2] < 1) {
-			continue;
-		}
-		this->markers_->push_back(tmp_marker);
-		// add up to markers
-		tmp_marker.Visualize(ipl_image_, &alvar_cam_);
-	}
+        std::vector<int> markerIds;
+        std::vector<std::vector<cv::Point2f>> markerCorners, rejectedCandidates;
+        cv::Ptr<cv::aruco::DetectorParameters> parameters = cv::aruco::DetectorParameters::create();
+        cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_6X6_250);
+        cv::aruco::detectMarkers(ipl_image_, dictionary, markerCorners, markerIds, parameters, rejectedCandidates);
+	cv::aruco::drawDetectedMarkers(ipl_image_, markerCorners, markerIds);
+	logger->log_info(name(), "I'm seeing %li aruco markers!", markerIds.size());
+//	// reset currently saved markers
+//	this->markers_->clear();
+//	// fill output array
+//	for (alvar::MarkerData &tmp_marker : *(this->alvar_detector_.markers)) {
+//		Pose tmp_pose = tmp_marker.pose;
+//		// skip the marker, if the pose is directly on the camera (error)
+//		if (tmp_pose.translation[0] < 1 && tmp_pose.translation[1] < 1 && tmp_pose.translation[2] < 1) {
+//			continue;
+//		}
+//		this->markers_->push_back(tmp_marker);
+//		// add up to markers
+//		tmp_marker.Visualize(ipl_image_, &alvar_cam_);
+//	}
 	firevision::CvMatAdapter::convert_image_yuv422_planar(ipl_image_, image_buffer_);
 }
 

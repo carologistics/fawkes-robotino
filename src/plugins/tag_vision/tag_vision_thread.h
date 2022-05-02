@@ -38,6 +38,7 @@
 
 // cv is needed for image conversion to alvar
 #include <opencv2/opencv.hpp>
+#include <opencv2/aruco.hpp>
 // alvar marker detection to get poses
 #ifdef HAVE_AR_TRACK_ALVAR
 #	include <ar_track_alvar/MarkerDetector.h>
