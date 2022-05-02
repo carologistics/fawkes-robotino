@@ -619,9 +619,9 @@
 ;filter delivery-ahead
 (defrule goal-production-filter-orders-delivery-ahead-add
   "Add an order to this filter if its production ahead window is open and isn't closed yet."
-  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter delivery-ahead) (values $?values))
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
-  (not (wm-fact (key strategy meta filtered-orders args? filter delivery-ahead) (values $? ?order-id $?)))
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter delivery-ahead)
+                        (values $?values&:(not (member$ ?order-id ?values))))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
   ;filter condition
   (wm-fact (key refbox order ?order-id delivery-begin) (value ?begin))
@@ -634,10 +634,9 @@
 
 (defrule goal-production-filter-orders-delivery-ahead-remove
   "Remove an order from this filter if its production ahead window has finally closed."
-  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter delivery-ahead) (values $?values))
-  (wm-fact (key strategy meta filtered-orders args? filter delivery-ahead) (values $? ?order-id $?))
-  (wm-fact (key strategy meta filtered-orders args? filter delivery-ahead) (values $? ?order-id $?))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter delivery-ahead) 
+                        (values $?values&:(member$ ?order-id ?values)))
   (or 
     (not (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?)))
     (and
@@ -655,9 +654,9 @@
 ;filter delivery-limit
 (defrule goal-production-filter-orders-delivery-limit-add
   "Add an order to this filter its delivery window end is in the future."
-  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter delivery-limit) (values $?values))
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
-  (not (wm-fact (key strategy meta filtered-orders args? filter delivery-limit) (values $? ?order-id $?)))
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter delivery-limit) 
+                        (values $?values&:(not (member$ ?order-id ?values))))
   ;filter condition
   (wm-fact (key refbox order ?order-id delivery-end) (value ?end))
   (wm-fact (key refbox game-time) (values ?gt $?))
@@ -668,8 +667,9 @@
 
 (defrule goal-production-filter-orders-delivery-limit-remove
   "Remove an order from this filter if its delivery window end has arrived."
-  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter delivery-limit) (values $?values))
-  (wm-fact (key strategy meta filtered-orders args? filter delivery-limit) (values $? ?order-id $?))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter delivery-limit) 
+                        (values $?values&:(member$ ?order-id ?values)))
   (or 
     (not (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?)))
     (and
@@ -686,9 +686,9 @@
 ;filter machine workload
 (defrule goal-production-filter-orders-workload-add
   "Add an order to this filter its workload doesn't push the summed workload over any machine's limit."
-  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter workload) (values $?values))
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
-  (not (wm-fact (key strategy meta filtered-orders args? filter workload) (values $? ?order-id $?)))
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter workload) 
+                        (values $?values&:(not (member$ ?order-id ?values))))
   ;filter condition
   (not 
     (and
@@ -703,8 +703,9 @@
 
 (defrule goal-production-filter-orders-workload-remove
   "Remove an order from this filter if its workload would push the summed workload over the limit."
-  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter workload) (values $?values))
-  (wm-fact (key strategy meta filtered-orders args? filter workload) (values $? ?order-id $?))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter workload) 
+                        (values $?values&:(member$ ?order-id ?values)))
   (or 
     (not (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?)))
     (and
@@ -720,16 +721,17 @@
 ;filter c0 limit
 (defrule goal-production-filter-orders-c0-limit-add
   "Add an order to this filter if there is less than the threshold of active C0 orders"
-  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c0-limit) (values $?values))
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
-  (not (wm-fact (key strategy meta filtered-orders args? filter c0-limit) (values $? ?order-id $?)))
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c0-limit) 
+                        (values $?values&:(not (member$ ?order-id ?values))))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
   ;filter condition
   (or
     (and
-      (wm-fact (key domain fact order-complexity args? ord ?order-id com C0))
+      (test (eq ?comp C0))
       (test (>= ?*C0-PRODUCTION-THRESHOLD* (goal-production-count-active-orders-of-complexity C0)))
     )
-    (wm-fact (key domain fact order-complexity args? ord ?order-id com ~C0))
+    (test (neq ?comp C0))
   )
   =>
   (modify ?filtered (values $?values ?order-id))
@@ -737,12 +739,13 @@
 
 (defrule goal-production-filter-orders-c0-limit-remove
   "Remove an order from this filter if there is more than the threshold of active C0 orders"
-  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c0-limit) (values $?values))
-  (wm-fact (key strategy meta filtered-orders args? filter c0-limit) (values $? ?order-id $?))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c0-limit) 
+                        (values $?values&:(member$ ?order-id ?values)))
   (or 
     (not (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?)))
     (and
-      (wm-fact (key domain fact order-complexity args? ord ?order-id com C0))
+      (test (eq ?comp C0))
       (test (< ?*C0-PRODUCTION-THRESHOLD* (goal-production-count-active-orders-of-complexity C0)))
     )
   )
@@ -753,16 +756,17 @@
 ;filter c1 limit
 (defrule goal-production-filter-orders-c1-limit-add
   "Add an order to this filter if there is less than the threshold of active c1 orders"
-  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c1-limit) (values $?values))
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
-  (not (wm-fact (key strategy meta filtered-orders args? filter c1-limit) (values $? ?order-id $?)))
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c1-limit) 
+                        (values $?values&:(not (member$ ?order-id ?values))))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
   ;filter condition
   (or
     (and
-      (wm-fact (key domain fact order-complexity args? ord ?order-id com C1))
+      (test (eq ?comp C1))
       (test (>= ?*C1-PRODUCTION-THRESHOLD* (goal-production-count-active-orders-of-complexity C1)))
     )
-    (wm-fact (key domain fact order-complexity args? ord ?order-id com ~C1))
+    (test (neq ?comp C1))
   )
   =>
   (modify ?filtered (values $?values ?order-id))
@@ -770,12 +774,13 @@
 
 (defrule goal-production-filter-orders-c1-limit-remove
   "Remove an order from this filter if there is more than the threshold of active c1 orders"
-  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c1-limit) (values $?values))
-  (wm-fact (key strategy meta filtered-orders args? filter c1-limit) (values $? ?order-id $?))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c1-limit) 
+                        (values $?values&:(member$ ?order-id ?values)))
   (or 
     (not (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?)))
     (and
-      (wm-fact (key domain fact order-complexity args? ord ?order-id com C1))
+      (test (eq ?comp C1))
       (test (< ?*C1-PRODUCTION-THRESHOLD* (goal-production-count-active-orders-of-complexity C1)))
     )
   )
