@@ -5,6 +5,7 @@
  *  Created: Thu Sep 11 13:18:00 2014
  *  Copyright  2011-2014  Tim Niemueller [www.niemueller.de]
  *                  2016  Nicolas Limpert
+ *                  2022  Matteo Tschesche
  ****************************************************************************/
 
 /*  This program is free software; you can redistribute it and/or modify
@@ -39,7 +40,7 @@ using namespace fawkes;
 
 /** @class ArduinoComThread "com_thread.h"
  * Thread to communicate with an Arduino Uno via boost::asio
- * @author Tim Niemueller, Nicolas Limpert
+ * @author Tim Niemueller, Nicolas Limpert, Matteo Tschesche
  */
 
 /** Constructor. */
