@@ -125,13 +125,14 @@ clips-executive:
         move-wp-get: goto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
         move-wp-put: goto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
         go-wait: goto{place="?(to)Y"}
-        wp-get-shelf: get_product_from{place=?(m)S, shelf=?(spot)S}
-        wp-put: bring_product_to{place=?(m)S,
-                                 side=?(side|/INPUT/input/|/OUTPUT/output/)s}
-        wp-put-slide-cc: bring_product_to{place=?(m)S, slide="TRUE"}
-        wp-get: >
-          get_product_from{place=?(m)S,
-                           side=?(side|/INPUT/input/|/OUTPUT/output/)s}
+        wp-get-shelf: manipulate_wp{mps=?(m)S,
+                              side="SHELF-?(spot)Y",target="WORKPIECE"}
+        wp-put: manipulate_wp{mps=?(m)S,
+                             side=?(side)S,target="CONVEYOR"}
+        wp-put-slide-cc: manipulate_wp{mps=?(m)S,
+                         side="INPUT",target="SLIDE"}
+        wp-get: manipulate_wp{mps=?(m)S,
+                              side=?(side)S,target="WORKPIECE"}
         wp-discard: discard{}
       parameters:
         simtest:
