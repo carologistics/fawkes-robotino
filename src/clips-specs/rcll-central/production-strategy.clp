@@ -584,6 +584,8 @@
     (wm-fact (key strategy meta filtered-orders args? filter workload) (is-list TRUE) (type SYMBOL))
     (wm-fact (key strategy meta filtered-orders args? filter c0-limit) (is-list TRUE) (type SYMBOL))
     (wm-fact (key strategy meta filtered-orders args? filter c1-limit) (is-list TRUE) (type SYMBOL))
+    (wm-fact (key strategy meta selected-order args? cond filter) (is-list FALSE) (type SYMBOL) (value nil))
+    (wm-fact (key strategy meta selected-order args? cond possible) (is-list FALSE) (type SYMBOL) (value nil))
   )
 )
 
@@ -786,4 +788,60 @@
   )
   =>
   (modify ?filtered (values (delete-member$ ?values ?order-id)))
+)
+
+(defrule goal-production-filter-set-selected-order-possible
+  "- it is a possible order
+   - there is no order of a higher complexity that is also possible"
+  (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
+  (not
+    (and
+      (wm-fact (key strategy meta possible-orders) (values $? ?o-order-id&~?order-id $?))
+      (wm-fact (key domain fact order-complexity args? ord ?o-order-id com ?comp-comp))
+      (test (>= 0 (str-compare ?comp-comp ?comp)))
+    )
+  )
+
+  ?f <- (wm-fact (key strategy meta selected-order args? cond possible) (value ~?order-id))
+  =>
+  (modify ?f (value ?order-id))
+)
+
+(defrule goal-production-filter-set-selected-order-possible-empty
+  "There is no possible order"
+  (wm-fact (key strategy meta possible-orders) (values ))
+  ?f <- (wm-fact (key strategy meta selected-order args? cond possible) (value ~nil))
+  =>
+  (modify ?f (value nil))
+)
+
+(defrule goal-production-filter-set-selected-order-filter
+  " - it is a possible order
+    - it fulfills all the filters
+    - there is no order of a higher complexity that fulfills all the filters"
+
+  (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
+  (not (wm-fact (key strategy meta filtered-orders $?) (values $?values&:(not (member$ ?order-id ?values)))))
+  (not
+    (and
+      (wm-fact (key strategy meta possible-orders) (values $? ?o-order-id&~?order-id $?))
+      (wm-fact (key domain fact order-complexity args? ord ?o-order-id com ?comp-comp))
+      (not (wm-fact (key strategy meta filtered-orders $?) (values $?values&:(not (member$ ?o-order-id ?values)))))
+      (test (>= 0 (str-compare ?comp-comp ?comp)))
+    )
+  )
+
+  ?f <- (wm-fact (key strategy meta selected-order args? cond filter) (value ~?order-id))
+  =>
+  (modify ?f (value ?order-id))
+)
+
+(defrule goal-production-filter-set-selected-order-filter-empty
+  "There is no order that meets all filters"
+  ?f <- (wm-fact (key strategy meta selected-order args? cond filter) (value ?order-id&~nil))
+  (wm-fact (key strategy meta filtered-orders $?) (values $?values&:(not (member$ ?order-id ?values))))
+  =>
+  (modify ?f (value nil))
 )

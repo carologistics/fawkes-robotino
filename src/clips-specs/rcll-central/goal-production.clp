@@ -856,32 +856,21 @@
       (wm-fact (key domain fact rs-ring-spec args? m ?rs2 r ?col-ring2 $?)))
   (or (wm-fact (key domain fact order-ring3-color args? ord ?order-id col RING_NONE))
       (wm-fact (key domain fact rs-ring-spec args? m ?rs3 r ?col-ring3 $?)))
- 
-  ;check if the order should be pursued, i.e. if the following conditions hold
-  ; - it is a possible order
-  ; - there is no order of a higher complexity that also meets the criteria
-  ; - or
-  ;  - it fulfills all the filters
-  ;  - no goal fulfills all the filters and no goal is currently pursued
-  (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
-  (not 
-    (and
-      (wm-fact (key strategy meta possible-orders) (values $? ?o-order-id&~?order-id $?))
-      (wm-fact (key domain fact order-complexity args? ord ?o-order-id com ?comp-comp))
-      (not (wm-fact (key strategy meta filtered-orders $?) (values $?values&:(not (member$ ?o-order-id ?values)))))
-      (test (eq 1 (str-compare ?comp-comp ?comp)))
-    )
-  )
-  (or 
-    (not (wm-fact (key strategy meta filtered-orders $?) (values $?values&:(not (member$ ?order-id ?values)))))
-    (not 
-      (and
-        (goal (id ?oid) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED))
-        (goal-meta (goal-id ?oid) (root-for-order ~nil))
-      )
-    )
-  )
 
+
+  (or
+    (wm-fact (key strategy meta selected-order args? cond filter) (value ?order-id))
+    (and
+        (wm-fact (key strategy meta selected-order args? cond possible) (value ?order-id))
+        (not
+            (and
+                (goal (id ?oid) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED))
+                (goal-meta (goal-id ?oid) (root-for-order ~nil))
+            )
+        )
+    )
+
+  )
   (not (wm-fact (key mps workload needs-update) (value TRUE)))
   =>
   ;find the necessary ringstations
