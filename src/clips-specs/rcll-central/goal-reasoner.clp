@@ -491,20 +491,26 @@
 (defrule goal-reasoner-evaluate-mount-or-payment
 " Reducing the order based mps workload after mounting a ring/cap or paying for a ring successfully"
 	?g <- (goal (id ?goal-id)(class MOUNT-RING|MOUNT-CAP|PAY-FOR-RINGS-WITH-BASE|PAY-FOR-RINGS-WITH-CAP-CARRIER|PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF) (mode FINISHED) (outcome COMPLETED)
-	            (verbosity ?v) (params $? ?mn $?))
+	            (verbosity ?v) (params $? ?mn $? ?rc))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot)(order-id ?order-id))
   ?wmf-order <- (wm-fact (key mps workload order args? m ?mn ord ?order-id))
   ?pay-order <- (wm-fact (key mps finished payments order args? m ?mn ord ?order-id))
 =>
 	(set-robot-to-waiting ?robot)
 	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" ?mn  crlf)
-  
-  (if (not (member$ (fact-slot-value ?g class) (create$ MOUNT-RING MOUNT-CAP))) 
-    then
-    (modify ?pay-order (value (+ (fact-slot-value ?pay-order value) 1)))
-  )
-
-
+	(bind ?class (fact-slot-value ?g class))
+	(if (neq ?class MOUNT-CAP) then
+		(do-for-fact ((?df domain-fact)) (and (eq ?class MOUNT-RING)
+																					(eq ?df:name rs-ring-spec)
+																					(eq ?mn (nth$ 1 ?df:param-values))
+																					(eq ?rc (nth$ 2 ?df:param-values))
+																					(neq ZERO (nth$ 3 ?df:param-values)))
+			(modify ?pay-order (value (- (fact-slot-value ?pay-order value) 1)))
+		)
+		(if (neq ?class MOUNT-RING) then
+			(modify ?pay-order (value (+ (fact-slot-value ?pay-order value) 1)))
+		)
+	)
 	(modify ?g (mode EVALUATED))
   (modify ?wmf-order (value (- (fact-slot-value ?wmf-order value) 1)))
 )
