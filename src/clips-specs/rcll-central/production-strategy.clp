@@ -618,7 +618,7 @@
   )
   ?poss <- (wm-fact (key strategy meta possible-orders) (values $?values))
   => 
-  (modify ?poss (values (delete$ ?values (member$ ?order-id ?values) (member$ ?order-id ?values))))
+  (modify ?poss (values (delete-member$ ?values ?order-id)))
 )
 
 
@@ -655,7 +655,7 @@
     )
   )
   =>
-  (modify ?filtered (values (delete$ ?values (member$ ?order-id ?values) (member$ ?order-id ?values))))
+  (modify ?filtered (values (delete-member$ ?values ?order-id)))
 )
 
 ;filter delivery-limit
@@ -686,7 +686,7 @@
     )
   )
   =>
-  (modify ?filtered (values (delete$ ?values (member$ ?order-id ?values) (member$ ?order-id ?values))))
+  (modify ?filtered (values (delete-member$ ?values ?order-id)))
 )
 
 ;filter machine workload
@@ -720,7 +720,7 @@
     )
   )
   =>
-  (modify ?filtered (values (delete$ ?values (member$ ?order-id ?values) (member$ ?order-id ?values))))
+  (modify ?filtered (values (delete-member$ ?values ?order-id)))
 )
 
 ;filter c0 limit
@@ -753,7 +753,7 @@
     )
   )
   =>
-  (modify ?filtered (values (delete$ ?values (member$ ?order-id ?values) (member$ ?order-id ?values))))
+  (modify ?filtered (values (delete-member$ ?values ?order-id)))
 )
 
 ;filter c1 limit
@@ -786,5 +786,5 @@
     )
   )
   =>
-  (modify ?filtered (values (delete$ ?values (member$ ?order-id ?values) (member$ ?order-id ?values))))
+  (modify ?filtered (values (delete-member$ ?values ?order-id)))
 )
