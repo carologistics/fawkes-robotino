@@ -67,6 +67,19 @@
   (modify ?op (exogenous TRUE))
 )
 
+(defrule domain-worldmodel-flush
+	(executive-init)
+	(wm-fact (key cx identity))
+	(wm-fact (key refbox phase) (value SETUP))
+	=>
+	(printout warn "Flushing worldmodel!" crlf)
+	(wm-robmem-flush)
+	(do-for-all-facts ((?df domain-fact)) TRUE
+	  (retract ?df)
+	)
+	(assert (domain-wm-flushed))
+)
+
 (deffunction domain-load-local-facts (?self ?team-color)
 	"Initialize facts that are not synced."
   (if (eq ?team-color CYAN)
@@ -205,10 +218,12 @@
 (defrule domain-load-initial-facts
 " Load all initial domain facts on startup of the game "
   (domain-loaded)
+  ?flushed <- (domain-wm-flushed)
   (wm-fact (key config agent name) (value ?robot-name))
   (wm-fact (key refbox team-color) (value ?team-color&~nil))
   (wm-fact (key refbox phase) (value SETUP))
   =>
+  (retract ?flushed)
   (bind ?self (sym-cat ?robot-name))
   (config-load ?*NAVGRAPH_GENERATOR_MPS_CONFIG*)
   (printout info "Initializing worldmodel" crlf)
@@ -339,3 +354,27 @@
 	(assert (wm-fact (key central agent robot-waiting args? r ?robot)))
 )
 
+(defrule domain-restore-worldmodel-after-maintenance
+" Domain facts have not been loaded but the game is already running.
+  Restore the world model from the database."
+	(not (domain-facts-loaded))
+	(wm-fact (key refbox phase) (value EXPLORATION|PRODUCTION))
+	(wm-fact (key config agent name) (value ?robot-name))
+	(wm-fact (key refbox team-color) (value ?team-color&~nil))
+	=>
+	(printout warn "Restoring world model from the database" crlf)
+	(wm-robmem-sync-restore)
+	(assert (sync-wm-facts-to-template-facts))
+)
+
+(defrule domain-restore-template-facts
+	?sync-enable <- (sync-wm-facts-to-template-facts)
+	(not (wm-fact (id "")))
+	=>
+	(delayed-do-for-all-facts ((?wm wm-fact))
+		(wm-key-prefix ?wm:key (create$ template fact))
+		(assert-string (template-fact-str-from-wm ?wm:key ?wm:values))
+	)
+	(assert (domain-facts-loaded))
+	(retract ?sync-enable)
+)
