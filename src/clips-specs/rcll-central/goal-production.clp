@@ -40,40 +40,22 @@
   ?*C1-PRODUCTION-THRESHOLD* = 1
 )
 
-(deffunction goal-production-produce-ahead-check (?gt ?begin ?complexity)
-	"Checks whether the current game time is within the produce ahead time 
-	of the given order's complexity"
-	(if (eq ?complexity C3) then
-		(return (< ?begin (+ ?gt ?*PRODUCE-C3-AHEAD-TIME*)))
-	)
-	(if (eq ?complexity C2) then
-		(return (< ?begin (+ ?gt ?*PRODUCE-C2-AHEAD-TIME*)))
-	)
-	(if (eq ?complexity C1) then
-		(return (< ?begin (+ ?gt ?*PRODUCE-C1-AHEAD-TIME*)))
-	)
-	(if (eq ?complexity C0) then
-		(return (< ?begin (+ ?gt ?*PRODUCE-C0-AHEAD-TIME*)))
-	)
-	(return nil)
-)
+(deffunction goal-production-produce-ahead-check (?gt ?start ?end ?complexity)
+	"Checks whether the given time is within the bounds of the produce
+	ahead time "
+	(bind ?ahead-time 0)
 
-(deffunction goal-production-produce-ahead-terminate (?gt ?end ?complexity)
-	"Checks whether the current game time is within the produce ahead time 
-	of the given order's complexity"
 	(if (eq ?complexity C3) then
-		(return (< ?end (+ ?gt ?*PRODUCE-C3-AHEAD-TIME*)))
-	)
+		(bind ?ahead-time ?*PRODUCE-C3-AHEAD-TIME*))
 	(if (eq ?complexity C2) then
-		(return (< ?end (+ ?gt ?*PRODUCE-C2-AHEAD-TIME*)))
-	)
+		(bind ?ahead-time ?*PRODUCE-C2-AHEAD-TIME*))
 	(if (eq ?complexity C1) then
-		(return (< ?end (+ ?gt ?*PRODUCE-C1-AHEAD-TIME*)))
-	)
+		(bind ?ahead-time ?*PRODUCE-C1-AHEAD-TIME*))
 	(if (eq ?complexity C0) then
-		(return (< ?end (+ ?gt ?*PRODUCE-C0-AHEAD-TIME*)))
-	)
-	(return nil)
+		(bind ?ahead-time ?*PRODUCE-C0-AHEAD-TIME*))
+
+	(return (and (>= ?gt (max 0 (- ?start ?ahead-time))) 
+				 (<= ?gt (max 0 (- ?end ?ahead-time)))))
 )
 
 (deffunction goal-production-count-active-orders ()
@@ -914,12 +896,7 @@
 	(wm-fact (key refbox order ?order-id delivery-begin) (value ?begin))
 	(wm-fact (key refbox order ?order-id delivery-end) (value ?end))
 	(wm-fact (key refbox game-time) (values ?gt $?))
-	(test 
-		(and 
-			(goal-production-produce-ahead-check ?gt ?begin ?comp)
-			(not (goal-production-produce-ahead-terminate ?gt ?end ?comp))
-		)
-	)
+	(test (goal-production-produce-ahead-check ?gt ?begin ?end ?comp))
 	=>
 	(modify ?filtered (values $?values ?order-id))
 )
@@ -934,9 +911,10 @@
 		(not (wm-fact (key order fact possible-orders) (values $? ?order-id $?)))
 		(and
 			;reverse filter condition
+			(wm-fact (key refbox order ?order-id delivery-begin) (value ?begin))
 			(wm-fact (key refbox order ?order-id delivery-end) (value ?end))
 			(wm-fact (key refbox game-time) (values ?gt $?))
-			(test (goal-production-produce-ahead-terminate ?gt ?end ?comp))
+			(test (not (goal-production-produce-ahead-check ?gt ?begin ?end ?comp)))
 		)
 	)
 	=>
