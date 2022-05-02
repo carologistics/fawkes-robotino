@@ -374,6 +374,7 @@
 
 (defrule exp-report-to-refbox
 " Regularly send all found machines to the refbox"
+  (wm-fact (key exploration active) (type BOOL) (value TRUE))
   (wm-fact (key refbox phase) (value EXPLORATION|PRODUCTION))
   (wm-fact (key refbox team-color) (value ?color))
   (exploration-result (team ?color) (machine ?machine) (zone ?zone)
