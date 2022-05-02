@@ -596,6 +596,7 @@
   ?poss <- (wm-fact (key strategy meta possible-orders) (values $?values))
   ;meta information
   (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
   ;neither delivered, nor started
   (wm-fact (key domain fact quantity-delivered args? ord ?order-id team ?team-color) (value ?quant-del))
   (wm-fact (key refbox order ?order-id quantity-requested) (value ?quant-req&:(> ?quant-req ?quant-del)))
@@ -610,9 +611,15 @@
 (defrule goal-production-remove-from-possible-orders-active
   "An order that has been started, fulfilled is not possible anymore."
   (wm-fact (key refbox team-color) (value ?team-color))
-  (wm-fact (key domain fact quantity-delivered args? ord ?order-id team ?team-color) (value ?quant-del))
-  (wm-fact (key refbox order ?order-id quantity-requested) (value ?quant-req&:(= ?quant-req ?quant-del)))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
   ?poss <- (wm-fact (key strategy meta possible-orders) (values $?values&:(member$ ?order-id ?values)))
+  (or
+    (and
+      (wm-fact (key domain fact quantity-delivered args? ord ?order-id team ?team-color) (value ?quant-del))
+      (wm-fact (key refbox order ?order-id quantity-requested) (value ?quant-req&:(= ?quant-req ?quant-del)))
+    )
+    (goal-meta (root-for-order ?order-id))
+  )
   => 
   (modify ?poss (values (delete-member$ ?values ?order-id)))
 )
