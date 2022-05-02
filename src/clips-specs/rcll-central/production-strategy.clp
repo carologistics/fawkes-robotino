@@ -776,8 +776,8 @@
 
 (defrule goal-production-filter-orders-c1-limit-remove
 	"Remove an order from this filter if there is more than the threshold of active c1 orders"
-	?filtered <- (wm-fact (key strategy meta filtered-orders args? filter C1-limit) (values $?values))
-	(wm-fact (key strategy meta filtered-orders args? filter C1-limit) (values $? ?order-id $?))
+	?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c1-limit) (values $?values))
+	(wm-fact (key strategy meta filtered-orders args? filter c1-limit) (values $? ?order-id $?))
 	(or 
 		(not (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?)))
 		(and
