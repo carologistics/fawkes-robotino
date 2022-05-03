@@ -45,21 +45,21 @@ class TagVisionThread;
 class TagPositionList : public std::vector<TagPositionInterfaceHelper *>
 {
 public:
-	TagPositionList(fawkes::BlackBoard *     blackboard,
+	TagPositionList(fawkes::BlackBoard      *blackboard,
 	                fawkes::tf::Transformer *tf_listener,
 	                size_t                   max_markers,
 	                std::string              cam_frame,
 	                std::string              thread_name,
-	                fawkes::Logger *         logger,
-	                fawkes::Clock *          clock,
-	                TagVisionThread *        main_thread);
+	                fawkes::Logger          *logger,
+	                fawkes::Clock           *clock,
+	                TagVisionThread         *main_thread);
 	/// Destructor
 	~TagPositionList();
 
-	void update_blackboard(std::vector<alvar::MarkerData> *           marker_list,
-	                       std::vector<fawkes::LaserLineInterface *> *laser_line_ifs);
+	void update_blackboard(std::shared_ptr<std::vector<TagVisionMarker>> marker_list,
+	                       std::vector<fawkes::LaserLineInterface *>    *laser_line_ifs);
 
-	TagPositionInterfaceHelper *find_suitable_interface(const alvar::MarkerData &) const;
+	TagPositionInterfaceHelper *find_suitable_interface(const TagVisionMarker &) const;
 
 private:
 	/// How many markers can be detected at the same time
@@ -80,10 +80,9 @@ private:
 	std::string              cam_frame_;
 	fawkes::tf::Transformer *tf_listener_;
 
-	alvar::Pose get_laser_line_pose(fawkes::LaserLineInterface *laser_line_if);
-	alvar::Pose
-	get_nearest_laser_line_pose(alvar::Pose                                tag_pose,
-	                            std::vector<fawkes::LaserLineInterface *> *laser_line_ifs);
+	TagPose get_laser_line_pose(fawkes::LaserLineInterface *laser_line_if);
+	TagPose get_nearest_laser_line_pose(TagPose                                    tag_pose,
+	                                    std::vector<fawkes::LaserLineInterface *> *laser_line_ifs);
 };
 
 #endif // TAG_POSITION_LIST_H

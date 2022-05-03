@@ -70,7 +70,7 @@ namespace firevision {
 class Camera;
 class SharedMemoryImageBuffer;
 } // namespace firevision
-
+enum MarkerType { ARUCO_ORIGINAL, ALVAR };
 class TagVisionThread : public fawkes::Thread,
                         public fawkes::LoggingAspect,
                         public fawkes::ConfigurableAspect,
@@ -96,20 +96,22 @@ public:
 private:
 	/// load config from file
 	void loadConfig();
+#ifdef HAVE_AR_TRACK_ALVAR
 	/// the marker detector in alvar
 	alvar::MarkerDetector<alvar::MarkerData> alvar_detector_;
 	/// the camera the detector uses
 	alvar::Camera alvar_cam_;
+#endif
 	/// Intrinsic parameters of the camera
 	cv::Mat cameraMatrix_;
 	/// Distortion coefficients
 	cv::Mat distCoeffs_;
+	/// store the markers, containing the poses
+	std::shared_ptr<std::vector<TagVisionMarker>> markers_;
 	/// the size of a marker in millimeter
 	uint marker_size_;
 	/// function to get the markers from an image
 	void get_marker();
-	/// store the alvar markers, containing the poses
-	std::vector<alvar::MarkerData> *markers_;
 	/// maximum markers to detect, size for the markers array
 	size_t max_marker_;
 
@@ -120,7 +122,9 @@ private:
 	firevision::Camera *fv_cam_;
 	/// firevision image buffer
 	firevision::SharedMemoryImageBuffer *shm_buffer_;
-	unsigned char *                      image_buffer_;
+	unsigned char                       *image_buffer_;
+	/// Marker type
+	MarkerType marker_type_;
 	/// Image Buffer Id
 	std::string shm_id_;
 
@@ -134,7 +138,7 @@ private:
 	cv::Mat ipl_image_;
 
 	/// blackboard communication
-	TagPositionList *                          tag_interfaces_;
+	TagPositionList                           *tag_interfaces_;
 	std::vector<fawkes::LaserLineInterface *> *laser_line_ifs_;
 
 	/// Width of the image
