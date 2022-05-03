@@ -107,6 +107,14 @@
   (return (eq ?goal-id ?parent))
 )
 
+(deffunction goal-reasoner-nuke-subtree (?goal)
+  "Remove an entire subtree."
+  (do-for-all-facts ((?child goal)) (eq ?child:parent (fact-slot-value ?goal id))
+    (goal-reasoner-nuke-subtree ?child)  
+  )
+  (retract ?goal)
+)
+
 (deffunction set-robot-to-waiting (?robot)
 " Sets a robot that was assigned in a goal meta to waiting.
   If no robot was assigned nothing happens.
@@ -577,6 +585,177 @@
 		)
 		(retract ?p)
 	)
+)
+(defrule goal-reasoner-evaluate-failed-preparation-goal
+  "A carrier was lost for a preparation goal, reformulate the goal."
+  ?g <- (goal (id ?goal-id) (class BUFFER-CAP|DISCARD) (mode FINISHED) (outcome FAILED))
+  ?p <- (plan (goal-id ?goal-id) (id ?plan-id))
+  (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (action-name wp-get-shelf|wp-get|wp-put) (state FAILED) (param-values ? ? ?mps $?))
+  => 
+  ;don't need to reset the machine, if wp-get fails, the machine is resetted, if wp-put fails, we don't need to reset
+  ;remove the plan
+  (delayed-do-for-all-facts ((?pa plan-action)) (and (eq ?pa:goal-id ?goal-id) (eq ?pa:plan-id ?plan-id))
+    (retract ?pa)
+  )
+  (retract ?p)
+
+  ;reassert the goal
+  (modify ?g (mode FORMULATED) (outcome UNKNOWN))
+)
+
+(defrule goal-reasoner-evaluate-failed-payment-goal
+  "A ring payment was lost, reformulate the goal"
+  ?g <- (goal (id ?goal-id) (class ?class&PAY-FOR-RINGS-WITH-CAP-CARRIER|PAY-FOR-RINGS-WITH-BASE) (mode FINISHED) (outcome FAILED))
+  ?p <- (plan (goal-id ?goal-id) (id ?plan-id))
+  (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (action-name wp-get-shelf|wp-get|wp-put) (state FAILED) (param-values ? ? ?mps $?))
+  => 
+  ;don't need to reset the machine, if wp-get fails, the machine is resetted, if wp-put fails, we don't need to reset
+  ;remove the plan
+  (delayed-do-for-all-facts ((?pa plan-action)) (and (eq ?pa:goal-id ?goal-id) (eq ?pa:plan-id ?plan-id))
+    (retract ?pa)
+  )
+  (retract ?p)
+
+  ;reassert the goal
+  (modify ?g (mode FORMULATED) (outcome UNKNOWN))
+  (if (eq ?class PAY-FOR-RINGS-WITH-CAP-CARRIER) then
+    (modify ?g (class PAY-FOR-RINGS-WITH-BASE))
+  )
+)
+
+(defrule goal-reasoner-evaluate-failed-production-goal
+  "The goal failed and was not reformulated because the workpiece was lost. Escalate the error."
+  ?g <- (goal (id ?goal-id) (class ?goal-class&DELIVER|MOUNT-RING|MOUNT-CAP) (mode FINISHED) (outcome FAILED))
+  (goal-meta (goal-id ?goal-id) (order-id ?order-id))
+  (plan (goal-id ?goal-id) (id ?plan-id))
+  (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (action-name wp-get|wp-put|wp-get-shelf) (state FAILED) (param-values ? ? ?mps $?))
+  => 
+  ;fail the entire tree
+  (delayed-do-for-all-facts ((?tree-goal goal) (?tree-goal-meta goal-meta)) 
+                            (and (eq ?tree-goal:id ?tree-goal-meta:goal-id) 
+                                 (eq ?tree-goal-meta:order-id ?order-id)
+                                 (neq ?tree-goal:mode RETRACTED))
+      (modify ?tree-goal (mode FINISHED) (outcome FAILED))
+
+      (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?tree-goal:id)
+        (delayed-do-for-all-facts ((?pa plan-action)) (and (eq ?pa:goal-id ?tree-goal:id)  (eq ?pa:plan-id ?plan-id))
+          (retract ?pa)
+        )
+        (retract ?p)
+    )
+  )
+)
+
+(defrule goal-reasoner-evaluate-failed-order-tree
+  "If the root of an order tree fails, take care of open and fulfilled payments/buffered caps and
+  clean up the tree."
+  ?root <- (goal (id ?root-id) (mode FINISHED) (outcome FAILED))
+  (goal-meta (goal-id ?root-id) (root-for-order ?order-id))
+
+  ?instruct-root <- (goal (class INSTRUCT-ORDER) (id ?instruct-root-id))
+  (goal (parent ?instruct-root-id) (id ?instruct-root-child))
+  (goal-meta (order-id ?order-id) (goal-id ?instruct-root-child))
+
+  ;goals to handle 
+  (goal (id ?buffer-goal) (class BUFFER-CAP) (mode ?buffer-goal-mode) (outcome ?buffer-goal-outcome) (params target-mps ?cs $?))
+  (goal-meta (goal-id ?buffer-goal) (order-id ?order-id))
+  (goal (id ?discard-goal) (class  DISCARD) (mode ?discard-goal-mode) (outcome ?discard-goal-outcome))
+  (goal-meta (goal-id ?discard-goal) (order-id ?order-id))
+ 
+  (wm-fact (key order meta wp-for-order args? wp ?wp-for-order ord ?order-id))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp-for-order col ?cap-color $?))
+  (wm-fact (key domain fact order-cap-color args? ord ?order-id col ?order-cap-color))
+  (wm-fact (key domain fact cs-can-perform args? m ?cs op ?cs-op))
+  => 
+  ;we did the buffer for another goal and didn't use it, offer used buffer
+  (if (and (eq ?cap-color CAP_NONE) (eq ?buffer-goal-mode RETRACTED) (eq ?buffer-goal-outcome COMPLETED)) then
+    (assert (wm-fact (key evaluation offer buffer-cap args? status COMPLETED color ?order-cap-color)))
+  )
+  ;the buffer was done for us by another goal and we used it, offer free buffer
+  (if (and (neq ?cap-color CAP_NONE) (eq ?buffer-goal-mode RETRACTED) (eq ?buffer-goal-outcome FAILED)) then
+    (assert (wm-fact (key evaluation offer buffer-cap args? status FORMULATED color ?order-cap-color)))
+  )
+  ;the cap was mounted but the discard was never executed, offer the free discard
+  (if (and (neq ?cap-color CAP_NONE) (eq ?discard-goal-mode RETRACTED) (eq ?discard-goal-outcome FAILED)) then
+    (assert (wm-fact (key evaluation offer discard args? status FORMULATED cs ?cs)))
+  )
+  ;the cap was not mounted but the discard was executed, offer the used discard
+  (if (and (eq ?cap-color CAP_NONE) (eq ?discard-goal-mode RETRACTED) (eq ?discard-goal-outcome COMPLETED)) then
+    (assert (wm-fact (key evaluation offer discard args? status COMPLETED cs ?cs)))
+  )
+
+  ;MISSING: handle pay for for ring goals
+
+  ;nuke the production tree
+  (goal-reasoner-nuke-subtree ?root)
+  ;nuke the instruction tree
+  (goal-reasoner-nuke-subtree ?instruct-root)
+)
+
+(defrule goal-reasoner-remove-wp-facts-on-removed-order-parent
+  "When the root of an order is removed, remove the facts describing the wp for the order"
+  ?fwp-for-order <- (wm-fact (key order meta wp-for-order args? wp ?wp-for-order ord ?order-id))
+  ?fwp <- (domain-object (name ?wp-for-order) (type workpiece))
+  ?fwp-unused <- (domain-fact (name wp-unused) (param-values ?wp-for-order))
+  ?fwp-base-color <- (wm-fact (key domain fact wp-base-color args? wp ?wp-for-order col $?))
+  ?fwp-cap-color <- (wm-fact (key domain fact wp-cap-color args? wp ?wp-for-order col ?cap-color $?))
+  ?fwp-ring1-color <- (wm-fact (key domain fact wp-ring1-color args? wp ?wp-for-order col $?))
+  ?fwp-ring2-color <- (wm-fact (key domain fact wp-ring2-color args? wp ?wp-for-order col $?))
+  ?fwp-ring3-color <- (wm-fact (key domain fact wp-ring3-color args? wp ?wp-for-order col $?))
+  (not (goal-meta (root-for-order ?order-id)))
+  =>
+  (retract ?fwp-for-order ?fwp ?fwp-unused ?fwp-cap-color 
+           ?fwp-ring1-color ?fwp-ring2-color ?fwp-ring3-color)
+
+  (do-for-fact ((?wp-at wm-fact)) 
+     (and (wm-key-prefix ?wp-at:key (create$ domain fact wp-at))
+          (eq ?wp-for-order (wm-key-arg ?wp-at:key wp)))
+    (retract ?wp-at)
+  )
+)
+
+; ================================= Goal Offers ============================
+
+(defrule goal-reasoner-take-offer-buffer-cap-completed
+  "Take an offer for a completed buffer cap goal"
+  ?offer <- (wm-fact (key evaluation offer buffer-cap args? status COMPLETED color ?order-cap-color))
+  ?goal <- (goal (class BUFFER-CAP) (mode FORMULATED) (outcome UNKNOWN) (params $? cap-color ?order-cap-color $?))
+  =>
+  (modify ?goal (mode FINISHED) (outcome COMPLETED))
+  (retract ?offer)
+)
+
+(defrule goal-reasoner-take-offer-buffer-cap-formulated
+  "Take an offer for a formulated buffer cap goal if the own cap was never mounted but the goal is completed."
+  ?offer <- (wm-fact (key evaluation offer buffer-cap args? status FORMULATED color ?order-cap-color))
+  ?goal <- (goal (id ?goal-id) (class BUFFER-CAP) (mode FINISHED) (outcome COMPLETED) (params $? cap-color ?order-cap-color $?))
+  (goal-meta (goal-id ?goal-id) (order-id ?order-id))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE $?))
+  =>
+  (modify ?goal (mode FORMULATED) (outcome UNKNOWN))
+  (retract ?offer)
+)
+
+(defrule goal-reasoner-take-offer-discard-completed
+  "Take an offer for a completed discard if the own one is just formulated."
+  ?offer <- (wm-fact (key evaluation offer discard args? status COMPLETED cs ?cs))
+  ?goal <- (goal (class DISCARD) (mode FORMULATED) (outcome UNKNOWN) (params $? wp-loc ?cs $?))
+  =>
+  (modify ?goal (mode FINISHED) (outcome COMPLETED))
+  (retract ?offer)
+)
+
+(defrule goal-reasoner-take-offer-discard-formulated
+  "Take an offer for a formulated discard if the own was completed but the own cap was never mounted."
+  ?offer <- (wm-fact (key evaluation offer discard args? status FORMULATED cs ?cs))
+  ?goal <- (goal (id ?goal-id) (class DISCARD) (mode FINISHED) (outcome COMPLETED) (params $? wp-loc ?cs $?))
+  (goal-meta (goal-id ?goal-id) (order-id ?order-id))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE $?))
+  =>
+  (modify ?goal (mode FINISHED) (outcome COMPLETED))
+  (retract ?offer)
 )
 
 ; ================================= Goal Clean up ============================

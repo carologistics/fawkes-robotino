@@ -109,8 +109,13 @@
   "If an order production tree has been retracted, do not track the workload."
   ?workload <- (wm-fact (key mps workload order args? m ?mn ord ?o-id))
   ?update-fact <- (wm-fact (key mps workload needs-update) (value ?value))
-  (goal-meta (goal-id ?g-id) (root-for-order ?o-id))
-  (goal (id ?g-id) (mode RETRACTED))
+  (or
+    (and
+      (goal-meta (goal-id ?g-id) (root-for-order ?o-id))
+      (goal (id ?g-id) (mode RETRACTED))
+    )
+    (not (goal-meta (goal-id ?g-id) (root-for-order ?o-id)))
+  )
   =>
   (retract ?workload)
   (if (eq ?value FALSE) then
