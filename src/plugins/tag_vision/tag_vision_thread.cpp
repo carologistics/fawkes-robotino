@@ -31,7 +31,9 @@
 #define IMAGE_CAHNNELS 3
 
 using namespace fawkes;
+#ifdef HAVE_ALVAR
 using namespace alvar;
+#endif
 using namespace std;
 
 const std::string TagVisionThread::tag_frame_basename = "tag_";
@@ -71,31 +73,8 @@ TagVisionThread::init()
 		marker_type_ = MarkerType::ARUCO_ORIGINAL;
 	if (marker_type_str == "alvar")
 		marker_type_ = MarkerType::ALVAR;
-	switch (marker_type_) {
-	case ALVAR:
-#ifdef HAVE_AR_TRACK_ALVAR
-		// load alvar camera calibration
-		if (!alvar_cam_.SetCalib(
-		      config->get_string((prefix + "alvar_camera_calib_file").c_str()).c_str(),
-		      0,
-		      0,
-		      FILE_FORMAT_DEFAULT)) {
-			this->logger->log_warn(this->name(), "Failed to load calibration file");
-		}
-		alvar_detector_.SetMarkerSize(marker_size_);
-
-		// set camera resolution
-		alvar_cam_.SetRes(this->img_width_, this->img_height_);
-#else
-		throw Exception("Cannot detect alvar tags, ALVAR not found.");
-#endif
-		break;
-	case ARUCO_ORIGINAL:
-		cameraMatrix_ = (cv::Mat_<double>(3, 3) << 1, 0, 0, 0, 1, 0, 0, 0, 1);
-		distCoeffs_   = (cv::Mat_<double>(1, 4) << 0, 0, 0, 0);
-		break;
-	default: break;
-	}
+	else
+		throw fawkes::Exception("Invalid marker type selected!");
 	markers_ = std::make_shared<std::vector<TagVisionMarker>>();
 
 	// Image Buffer ID
@@ -165,6 +144,31 @@ TagVisionThread::init()
 		fawkes::LaserLineInterface *ll_if =
 		  blackboard->open_for_reading<fawkes::LaserLineInterface>(if_name.c_str());
 		laser_line_ifs_->push_back(ll_if);
+	}
+	switch (marker_type_) {
+	case ALVAR:
+#ifdef HAVE_ALVAR
+		// load alvar camera calibration
+		if (!alvar_cam_.SetCalib(
+		      config->get_string((prefix + "alvar_camera_calib_file").c_str()).c_str(),
+		      0,
+		      0,
+		      FILE_FORMAT_DEFAULT)) {
+			this->logger->log_warn(this->name(), "Failed to load calibration file");
+		}
+		alvar_detector_.SetMarkerSize(marker_size_);
+
+		// set camera resolution
+		alvar_cam_.SetRes(this->img_width_, this->img_height_);
+#else
+		throw fawkes::Exception("Cannot detect alvar tags, ALVAR not found.");
+#endif
+		break;
+	case ARUCO_ORIGINAL:
+		cameraMatrix_ = (cv::Mat_<double>(3, 3) << 1, 0, 0, 0, 1, 0, 0, 0, 1);
+		distCoeffs_   = (cv::Mat_<double>(1, 4) << 0, 0, 0, 0);
+		break;
+	default: break;
 	}
 }
 
@@ -239,54 +243,76 @@ TagVisionThread::loop()
 void
 TagVisionThread::get_marker()
 {
-	// detect makres on image
-#ifdef HAVE_AR_TRACK_ALVAR
-	alvar_detector_.Detect(ipl_image_, &alvar_cam_);
+	switch (marker_type_) {
+	case MarkerType::ALVAR: {
+		// detect makres on image
+#ifdef HAVE_ALVAR
+		alvar_detector_.Detect(ipl_image_, &alvar_cam_);
+		// reset currently saved markers
+		this->markers_->clear();
+		// fill output array
+		for (alvar::MarkerData &tmp_alvar_marker : *(this->alvar_detector_.markers)) {
+			alvar::Pose tmp_pose   = tmp_alvar_marker.pose;
+			cv::Mat     quaternion = (cv::Mat_<double>(4, 1) << 0, 0, 0, 0);
+			tmp_pose.GetQuaternion(quaternion);
+			TagVisionMarker tmp_marker{{{tmp_pose.translation[ALVAR_TRANS::A_T_X],
+			                             tmp_pose.translation[ALVAR_TRANS::A_T_Y],
+			                             tmp_pose.translation[ALVAR_TRANS::A_T_Z]},
+			                            {quaternion.at<double>(0, 0),
+			                             quaternion.at<double>(1, 0),
+			                             quaternion.at<double>(2, 0),
+			                             quaternion.at<double>(3, 0)}},
+			                           tmp_alvar_marker.GetId()};
+			// skip the marker, if the pose is directly on the camera (error)
+			if (tmp_pose.translation[0] < 1 && tmp_pose.translation[1] < 1
+			    && tmp_pose.translation[2] < 1) {
+				continue;
+			}
+			this->markers_->push_back(tmp_marker);
+			// add up to markers
+			tmp_alvar_marker.Visualize(ipl_image_, &alvar_cam_);
+		}
 #endif
-	std::vector<int>                       markerIds;
-	std::vector<std::vector<cv::Point2f>>  markerCorners, rejectedCandidates;
-	cv::Ptr<cv::aruco::DetectorParameters> parameters = cv::aruco::DetectorParameters::create();
-	cv::Ptr<cv::aruco::Dictionary>         dictionary =
-	  cv::aruco::getPredefinedDictionary(cv::aruco::DICT_ARUCO_ORIGINAL);
-	cv::aruco::detectMarkers(
-	  ipl_image_, dictionary, markerCorners, markerIds, parameters, rejectedCandidates);
-	// if at least one marker detected
-	if (markerIds.size() > 0) {
-		cv::aruco::drawDetectedMarkers(ipl_image_, markerCorners, markerIds);
+		break;
 	}
-	std::vector<cv::Vec3d> rvecs, tvecs;
-	for (std::vector<int>::size_type i = 0; i < markerIds.size(); i++) {
-		cv::aruco::estimatePoseSingleMarkers(
-		  markerCorners, 1, cameraMatrix_, distCoeffs_, rvecs, tvecs);
-		cv::Mat rot_matrix;
-		cv::Rodrigues(rvecs[i], rot_matrix);
-		auto qw = std::sqrt(1 + rot_matrix.at<double>(0, 0) + rot_matrix.at<double>(1, 1)
-		                    + rot_matrix.at<double>(2, 2))
-		          / 2;
-		TagVisionMarker tmp_marker{
-		  {tvecs[i],
-		   {(rot_matrix.at<double>(2, 1) - rot_matrix.at<double>(1, 2)) / (4 * qw),
-		    (rot_matrix.at<double>(0, 2) - rot_matrix.at<double>(2, 0)) / (4 * qw),
-		    (rot_matrix.at<double>(1, 0) - rot_matrix.at<double>(0, 1)) / (4 * qw)}},
-		  markerIds[i]};
-		markers_->push_back(tmp_marker);
-		// draw axis for each marker
-		cv::drawFrameAxes(ipl_image_, cameraMatrix_, distCoeffs_, rvecs[i], tvecs[i], 0.1);
+	case MarkerType::ARUCO_ORIGINAL: {
+		std::vector<int>                       markerIds;
+		std::vector<std::vector<cv::Point2f>>  markerCorners, rejectedCandidates;
+		cv::Ptr<cv::aruco::DetectorParameters> parameters = cv::aruco::DetectorParameters::create();
+		cv::Ptr<cv::aruco::Dictionary>         dictionary =
+		  cv::aruco::getPredefinedDictionary(cv::aruco::DICT_ARUCO_ORIGINAL);
+		cv::aruco::detectMarkers(
+		  ipl_image_, dictionary, markerCorners, markerIds, parameters, rejectedCandidates);
+		// if at least one marker detected
+		if (markerIds.size() > 0) {
+			cv::aruco::drawDetectedMarkers(ipl_image_, markerCorners, markerIds);
+		}
+		std::vector<cv::Vec3d> rvecs, tvecs;
+		for (std::vector<int>::size_type i = 0; i < markerIds.size(); i++) {
+			cv::aruco::estimatePoseSingleMarkers(
+			  markerCorners, 100, cameraMatrix_, distCoeffs_, rvecs, tvecs);
+			cv::Mat rot_matrix;
+			cv::Rodrigues(rvecs[i], rot_matrix);
+			auto qw = std::sqrt(1 + rot_matrix.at<double>(0, 0) + rot_matrix.at<double>(1, 1)
+			                    + rot_matrix.at<double>(2, 2))
+			          / 2;
+			TagVisionMarker tmp_marker{
+			  {tvecs[i],
+			   {qw,
+			    (rot_matrix.at<double>(2, 1) - rot_matrix.at<double>(1, 2)) / (4 * qw),
+			    (rot_matrix.at<double>(0, 2) - rot_matrix.at<double>(2, 0)) / (4 * qw),
+			    (rot_matrix.at<double>(1, 0) - rot_matrix.at<double>(0, 1)) / (4 * qw)}},
+			  markerIds[i]};
+			markers_->push_back(tmp_marker);
+			// draw axis for each marker
+			cv::drawFrameAxes(ipl_image_, cameraMatrix_, distCoeffs_, rvecs[i], tvecs[i], 0.1);
+		}
+		break;
 	}
-	logger->log_info(name(), "I'm seeing %li aruco markers!", markerIds.size());
-//	// reset currently saved markers
-//	this->markers_->clear();
-//	// fill output array
-//	for (alvar::MarkerData &tmp_marker : *(this->alvar_detector_.markers)) {
-//		Pose tmp_pose = tmp_marker.pose;
-//		// skip the marker, if the pose is directly on the camera (error)
-//		if (tmp_pose.translation[0] < 1 && tmp_pose.translation[1] < 1 && tmp_pose.translation[2] < 1) {
-//			continue;
-//		}
-//		this->markers_->push_back(tmp_marker);
-//		// add up to markers
-//		tmp_marker.Visualize(ipl_image_, &alvar_cam_);
-//	}
+	default:
+		logger->log_error(name(), "Marker detection skipped, specified marker type not supported");
+		break;
+	}
 	firevision::CvMatAdapter::convert_image_yuv422_planar(ipl_image_, image_buffer_);
 }
 

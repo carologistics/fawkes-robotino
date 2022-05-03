@@ -44,9 +44,9 @@
  * @param cam_frame The frame of reference for the transforms published
  */
 TagPositionInterfaceHelper::TagPositionInterfaceHelper(
-  fawkes::Position3DInterface    *position_interface,
+  fawkes::Position3DInterface *   position_interface,
   u_int32_t                       index,
-  fawkes::Clock                  *clock,
+  fawkes::Clock *                 clock,
   fawkes::tf::TransformPublisher *tf_publisher,
   std::string                     cam_frame)
 {
