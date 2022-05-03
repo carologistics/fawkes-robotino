@@ -51,14 +51,14 @@ using namespace fawkes;
  * @param main_thread Pointer to the main plugin thread, used to create TF
  *        publishers
  */
-TagPositionList::TagPositionList(fawkes::BlackBoard      *blackboard,
+TagPositionList::TagPositionList(fawkes::BlackBoard *     blackboard,
                                  fawkes::tf::Transformer *tf_listener,
                                  size_t                   max_markers,
                                  std::string              cam_frame,
                                  std::string              thread_name,
-                                 fawkes::Logger          *logger,
-                                 fawkes::Clock           *clock,
-                                 TagVisionThread         *main_thread)
+                                 fawkes::Logger *         logger,
+                                 fawkes::Clock *          clock,
+                                 TagVisionThread *        main_thread)
 {
 	// store parameters
 	this->blackboard_  = blackboard;
@@ -247,7 +247,7 @@ TagPositionList::find_suitable_interface(const TagVisionMarker &marker) const
  */
 void
 TagPositionList::update_blackboard(std::shared_ptr<std::vector<TagVisionMarker>> marker_list,
-                                   std::vector<fawkes::LaserLineInterface *>    *laser_line_ifs)
+                                   std::vector<fawkes::LaserLineInterface *> *   laser_line_ifs)
 {
 	int i = 0;
 	for (auto &marker : *marker_list) {

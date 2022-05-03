@@ -43,7 +43,9 @@
 #ifdef HAVE_AR_TRACK_ALVAR
 #	include <ar_track_alvar/MarkerDetector.h>
 #else
-#	include <alvar/MarkerDetector.h>
+#	ifdef HAVE_ALVAR
+#		include <alvar/MarkerDetector.h>
+#	endif
 #endif
 
 // firevision camera
@@ -96,7 +98,7 @@ public:
 private:
 	/// load config from file
 	void loadConfig();
-#ifdef HAVE_AR_TRACK_ALVAR
+#ifdef HAVE_ALVAR
 	/// the marker detector in alvar
 	alvar::MarkerDetector<alvar::MarkerData> alvar_detector_;
 	/// the camera the detector uses
@@ -122,7 +124,7 @@ private:
 	firevision::Camera *fv_cam_;
 	/// firevision image buffer
 	firevision::SharedMemoryImageBuffer *shm_buffer_;
-	unsigned char                       *image_buffer_;
+	unsigned char *                      image_buffer_;
 	/// Marker type
 	MarkerType marker_type_;
 	/// Image Buffer Id
@@ -138,7 +140,7 @@ private:
 	cv::Mat ipl_image_;
 
 	/// blackboard communication
-	TagPositionList                           *tag_interfaces_;
+	TagPositionList *                          tag_interfaces_;
 	std::vector<fawkes::LaserLineInterface *> *laser_line_ifs_;
 
 	/// Width of the image
