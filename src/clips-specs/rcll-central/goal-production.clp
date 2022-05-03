@@ -535,22 +535,6 @@
 	(return ?goal)
 )
 
-
-<<<<<<< HEAD
-(deffunction goal-production-assert-move-out-of-way
-  (?location)
-  (bind ?goal (assert (goal (class MOVE-OUT-OF-WAY)
-              (id (sym-cat MOVE-OUT-OF-WAY- (gensym*)))
-              (sub-type SIMPLE)
-              (verbosity NOISY) (is-executable FALSE)
-              (meta-template goal-meta)
-              (params target-pos (translate-location-map-to-grid ?location) location ?location)
-  )))
-  (return ?goal)
-)
-
-=======
->>>>>>> 932146e92 (rcll-central: removed unused function and redundant match)
 (deffunction goal-production-assign-order-and-prio-to-goal (?goal ?order-id ?prio)
   (bind ?goal-id (fact-slot-value ?goal id))
   (modify ?goal (priority ?prio))
