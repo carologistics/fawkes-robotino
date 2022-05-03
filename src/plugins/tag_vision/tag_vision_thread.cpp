@@ -69,9 +69,38 @@ TagVisionThread::init()
 	std::string marker_type_str = config->get_string((prefix + "marker_type").c_str());
 	// load marker size and apply it
 	marker_size_ = config->get_uint((prefix + "marker_size").c_str());
-	if (marker_type_str == "aruco_original")
-		marker_type_ = MarkerType::ARUCO_ORIGINAL;
-	if (marker_type_str == "alvar")
+	if (marker_type_str.find("ARUCO") != std::string::npos
+	    || marker_type_str.find("APRILTAG") != std::string::npos) {
+		std::unordered_map<std::string, cv::aruco::PREDEFINED_DICTIONARY_NAME> aruco_tag_type_lookup = {
+		  {"ARUCO_4X4_50", cv::aruco::DICT_4X4_50},
+		  {"ARUCO_4X4_100", cv::aruco::DICT_4X4_100},
+		  {"ARUCO_4X4_250", cv::aruco::DICT_4X4_250},
+		  {"ARUCO_4X4_1000", cv::aruco::DICT_4X4_1000},
+		  {"ARUCO_5X5_50", cv::aruco::DICT_5X5_50},
+		  {"ARUCO_5X5_100", cv::aruco::DICT_5X5_100},
+		  {"ARUCO_5X5_250", cv::aruco::DICT_5X5_250},
+		  {"ARUCO_5X5_1000", cv::aruco::DICT_5X5_1000},
+		  {"ARUCO_6X6_50", cv::aruco::DICT_6X6_50},
+		  {"ARUCO_6X6_100", cv::aruco::DICT_6X6_100},
+		  {"ARUCO_6X6_250", cv::aruco::DICT_6X6_250},
+		  {"ARUCO_6X6_1000", cv::aruco::DICT_6X6_1000},
+		  {"ARUCO_7X7_50", cv::aruco::DICT_7X7_50},
+		  {"ARUCO_7X7_100", cv::aruco::DICT_7X7_100},
+		  {"ARUCO_7X7_250", cv::aruco::DICT_7X7_250},
+		  {"ARUCO_7X7_1000", cv::aruco::DICT_7X7_1000},
+		  {"ARUCO_ORIGINAL", cv::aruco::DICT_ARUCO_ORIGINAL},
+		  {"APRILTAG_16h5", cv::aruco::DICT_APRILTAG_16h5},
+		  {"APRILTAG_25h9", cv::aruco::DICT_APRILTAG_25h9},
+		  {"APRILTAG_36h10", cv::aruco::DICT_APRILTAG_36h10},
+		  {"APRILTAG_36h11", cv::aruco::DICT_APRILTAG_36h11}};
+		marker_type_ = MarkerType::ARUCO;
+		auto it      = aruco_tag_type_lookup.find(marker_type_str);
+		if (it != aruco_tag_type_lookup.end()) {
+			aruco_tag_type_ = it->second;
+		} else {
+			throw Exception("Invalid Aruco marker type selected!");
+		}
+	} else if (marker_type_str == "ALVAR")
 		marker_type_ = MarkerType::ALVAR;
 	else
 		throw fawkes::Exception("Invalid marker type selected!");
@@ -164,7 +193,7 @@ TagVisionThread::init()
 		throw fawkes::Exception("Cannot detect alvar tags, ALVAR not found.");
 #endif
 		break;
-	case ARUCO_ORIGINAL:
+	case ARUCO:
 		cameraMatrix_ = (cv::Mat_<double>(3, 3) << 1, 0, 0, 0, 1, 0, 0, 0, 1);
 		distCoeffs_   = (cv::Mat_<double>(1, 4) << 0, 0, 0, 0);
 		break;
@@ -275,12 +304,11 @@ TagVisionThread::get_marker()
 #endif
 		break;
 	}
-	case MarkerType::ARUCO_ORIGINAL: {
+	case MarkerType::ARUCO: {
 		std::vector<int>                       markerIds;
 		std::vector<std::vector<cv::Point2f>>  markerCorners, rejectedCandidates;
 		cv::Ptr<cv::aruco::DetectorParameters> parameters = cv::aruco::DetectorParameters::create();
-		cv::Ptr<cv::aruco::Dictionary>         dictionary =
-		  cv::aruco::getPredefinedDictionary(cv::aruco::DICT_ARUCO_ORIGINAL);
+		cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(aruco_tag_type_);
 		cv::aruco::detectMarkers(
 		  ipl_image_, dictionary, markerCorners, markerIds, parameters, rejectedCandidates);
 		// if at least one marker detected
@@ -290,7 +318,7 @@ TagVisionThread::get_marker()
 		std::vector<cv::Vec3d> rvecs, tvecs;
 		for (std::vector<int>::size_type i = 0; i < markerIds.size(); i++) {
 			cv::aruco::estimatePoseSingleMarkers(
-			  markerCorners, 100, cameraMatrix_, distCoeffs_, rvecs, tvecs);
+			  markerCorners, marker_size_, cameraMatrix_, distCoeffs_, rvecs, tvecs);
 			cv::Mat rot_matrix;
 			cv::Rodrigues(rvecs[i], rot_matrix);
 			auto qw = std::sqrt(1 + rot_matrix.at<double>(0, 0) + rot_matrix.at<double>(1, 1)
