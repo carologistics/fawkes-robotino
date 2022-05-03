@@ -396,56 +396,12 @@
   "Select the root of an order-production-tree if it has the highest priority
   and is not interfering with currently selected goals."
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
-  (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
+  ?target-goal <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
       (id ?any-goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
-  (goal-meta (goal-id ?any-goal-id) (root-for-order ?any-order))
-
-  ;at most two orders are active
-  (not (and
-    (goal (parent nil) (type ACHIEVE) (sub-type ~nil) (id ?goal-id2) (mode SELECTED|EXPANDED|DISPATCHED))
-    (goal-meta (goal-id ?goal-id2) (root-for-order ~nil))
-    (goal (parent nil) (type ACHIEVE) (sub-type ~nil) (id ?goal-id3&:(neq ?goal-id3 ?goal-id2)) (mode SELECTED|EXPANDED|DISPATCHED))
-    (goal-meta (goal-id ?goal-id3) (root-for-order ~nil))
-  ))
+  (goal-meta (goal-id ?any-goal-id) (root-for-order ?any-order&~nil))
   =>
-  ;find a suitable order for parallel fulfillment
-  (bind ?target-priority 0)
-  (bind ?target-goal nil)
-  (do-for-all-facts ((?goal-fact goal) (?goal-meta-fact goal-meta))
-      (and (eq ?goal-fact:id ?goal-meta-fact:goal-id)
-           (neq ?goal-meta-fact:root-for-order nil)
-           (eq ?goal-fact:mode FORMULATED)
-      )
-
-    ;check active order trees for conflicts
-    (bind ?existing-order-conflict FALSE)
-    (do-for-all-facts ((?existing-goal-fact goal) (?existing-goal-meta-fact goal-meta))
-        (and (eq ?existing-goal-fact:id ?existing-goal-meta-fact:goal-id)
-            (neq ?existing-goal-meta-fact:root-for-order nil)
-            (neq ?existing-goal-fact:mode FORMULATED)
-            (neq ?existing-goal-fact:mode FINISHED)
-        )
-        (if (goal-reasoner-compute-order-conflicts-payments ?existing-goal-meta-fact:root-for-order ?goal-meta-fact:root-for-order) then
-          (bind ?existing-order-conflict TRUE)
-        )
-    )
-
-    ;if the priority is higher than that of the current candidate and there is no
-    ;conflict save this goal as new candidate
-    (if (and
-          (> ?goal-fact:priority ?target-priority)
-          (not ?existing-order-conflict)
-        )
-      then
-      (bind ?target-priority ?goal-fact:priority)
-      (bind ?target-goal ?goal-fact)
-    )
-  )
-
-  (if (neq ?target-goal nil) then
-    (printout (log-debug ?v) "Goal " (fact-slot-value ?target-goal id) " SELECTED" crlf)
-    (modify ?target-goal (mode SELECTED))
-  )
+  (printout (log-debug ?v) "Goal " (fact-slot-value ?target-goal id) " SELECTED" crlf)
+  (modify ?target-goal (mode SELECTED))
 )
 
 (defrule goal-reasoner-balance-payment-goals
@@ -457,8 +413,8 @@
   (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
       (id ?goal2) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED) (verbosity ?v2))
   (goal-meta (goal-id ?goal2) (root-for-order ?order2))
-  (wm-fact (key domain fact order-complexity args? ord ?order1 comp C0))
-  (wm-fact (key domain fact order-complexity args? ord ?order2 comp C2|C3))
+  (wm-fact (key domain fact order-complexity args? ord ?order1 com C0))
+  (wm-fact (key domain fact order-complexity args? ord ?order2 com C2|C3))
   ?d <- (goal (id ?discard-goal) (class DISCARD) (mode FORMULATED) (params wp ?wp&~UNKNOWN wp-loc ?source-loc wp-side ?source-side))
   ?p1 <- (goal (id ?payment-goal) (class PAY-FOR-RINGS-WITH-BASE) (mode FORMULATED) (parent ?pay-base-parent) (params $? target-mps ?target-loc target-side ?target-side))
   ?p2 <- (goal (id ?payment-instruct) (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED) (parent ?pay-base-parent))
@@ -532,17 +488,21 @@
 ; ----------------------- EVALUATE SPECIFIC GOALS ---------------------------
 
 
-(defrule goal-reasoner-evaluate-mount-ring-or-payment
-" Reducing the order based mps workload after mounting a ring or paying for a ring successfully"
-	?g <- (goal (id ?goal-id)(class MOUNT-RING|PAY-FOR-RINGS-WITH-BASE|PAY-FOR-RINGS-WITH-CAP-CARRIER|PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF) (mode FINISHED) (outcome COMPLETED)
+(defrule goal-reasoner-evaluate-mount-or-payment
+" Reducing the order based mps workload after mounting a ring/cap or paying for a ring successfully"
+	?g <- (goal (id ?goal-id)(class MOUNT-RING|MOUNT-CAP|PAY-FOR-RINGS-WITH-BASE|PAY-FOR-RINGS-WITH-CAP-CARRIER|PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF) (mode FINISHED) (outcome COMPLETED)
 	            (verbosity ?v) (params $? ?mn $?))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot)(order-id ?order-id))
   ?wmf-order <- (wm-fact (key mps workload order args? m ?mn ord ?order-id))
+  ?update-fact <- (wm-fact (key mps workload needs-update) (value ?value))
 =>
 	(set-robot-to-waiting ?robot)
-	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED "  crlf)
+	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" ?mn  crlf)
 	(modify ?g (mode EVALUATED))
   (modify ?wmf-order (value (- (fact-slot-value ?wmf-order value) 1)))
+  (if (eq ?value FALSE) then
+    (modify ?update-fact (value TRUE))
+  )
 )
 
 
