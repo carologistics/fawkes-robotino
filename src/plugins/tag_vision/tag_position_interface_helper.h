@@ -39,6 +39,17 @@
 #define EMPTY_INTERFACE_MARKER_ID 0
 #define INTERFACE_UNSEEN_BOUND -5
 
+struct TagPose
+{
+	cv::Vec3d tvec;
+	cv::Vec4d quaternion;
+};
+struct TagVisionMarker
+{
+	TagPose      pose;
+	unsigned int marker_id;
+};
+
 class TagPositionInterfaceHelper
 {
 	enum ROT { X = 0, Y = 1, Z = 2, W = 3 };

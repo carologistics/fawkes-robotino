@@ -222,12 +222,35 @@ TagVisionThread::get_marker()
 {
 	// detect makres on image
 	alvar_detector_.Detect(ipl_image_, &alvar_cam_);
-        std::vector<int> markerIds;
-        std::vector<std::vector<cv::Point2f>> markerCorners, rejectedCandidates;
-        cv::Ptr<cv::aruco::DetectorParameters> parameters = cv::aruco::DetectorParameters::create();
-        cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_6X6_250);
-        cv::aruco::detectMarkers(ipl_image_, dictionary, markerCorners, markerIds, parameters, rejectedCandidates);
-	cv::aruco::drawDetectedMarkers(ipl_image_, markerCorners, markerIds);
+	std::vector<int>                       markerIds;
+	std::vector<std::vector<cv::Point2f>>  markerCorners, rejectedCandidates;
+	cv::Ptr<cv::aruco::DetectorParameters> parameters = cv::aruco::DetectorParameters::create();
+	cv::Ptr<cv::aruco::Dictionary>         dictionary =
+	  cv::aruco::getPredefinedDictionary(cv::aruco::DICT_ARUCO_ORIGINAL);
+	cv::aruco::detectMarkers(
+	  ipl_image_, dictionary, markerCorners, markerIds, parameters, rejectedCandidates);
+	// if at least one marker detected
+	if (markerIds.size() > 0) {
+		cv::aruco::drawDetectedMarkers(ipl_image_, markerCorners, markerIds);
+	}
+	std::vector<cv::Vec3d> rvecs, tvecs;
+	for (std::vector<int>::size_type i = 0; i < markerIds.size(); i++) {
+		cv::aruco::estimatePoseSingleMarkers(
+		  markerCorners, 1, cameraMatrix_, distCoeffs_, rvecs, tvecs);
+		cv::Mat rot_matrix;
+		cv::Rodrigues(rvecs[i], rot_matrix);
+		auto qw = std::sqrt(1 + rot_matrix.at<double>(0, 0) + rot_matrix.at<double>(1, 1)
+		                    + rot_matrix.at<double>(2, 2))
+		          / 2;
+		TagVisionMarker tmp_marker{
+		  {tvecs[i],
+		   {(rot_matrix.at<double>(2, 1) - rot_matrix.at<double>(1, 2)) / (4 * qw),
+		    (rot_matrix.at<double>(0, 2) - rot_matrix.at<double>(2, 0)) / (4 * qw),
+		    (rot_matrix.at<double>(1, 0) - rot_matrix.at<double>(0, 1)) / (4 * qw)}},
+		  markerIds[i]};
+		// draw axis for each marker
+		cv::drawFrameAxes(ipl_image_, cameraMatrix_, distCoeffs_, rvecs[i], tvecs[i], 0.1);
+	}
 	logger->log_info(name(), "I'm seeing %li aruco markers!", markerIds.size());
 //	// reset currently saved markers
 //	this->markers_->clear();

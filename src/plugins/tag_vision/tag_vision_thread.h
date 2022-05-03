@@ -37,8 +37,8 @@
 #include <config/change_handler.h>
 
 // cv is needed for image conversion to alvar
-#include <opencv2/opencv.hpp>
 #include <opencv2/aruco.hpp>
+#include <opencv2/opencv.hpp>
 // alvar marker detection to get poses
 #ifdef HAVE_AR_TRACK_ALVAR
 #	include <ar_track_alvar/MarkerDetector.h>
@@ -100,6 +100,10 @@ private:
 	alvar::MarkerDetector<alvar::MarkerData> alvar_detector_;
 	/// the camera the detector uses
 	alvar::Camera alvar_cam_;
+	/// Intrinsic parameters of the camera
+	cv::Mat cameraMatrix_;
+	/// Distortion coefficients
+	cv::Mat distCoeffs_;
 	/// the size of a marker in millimeter
 	uint marker_size_;
 	/// function to get the markers from an image
