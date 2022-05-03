@@ -36,63 +36,6 @@
   ?*DELIVER-AHEAD-TIME* = 60
 )
 
-(deffunction goal-production-produce-ahead-check (?gt ?start ?end ?complexity)
-  "Checks whether the given time is within the bounds of the produce
-  ahead time "
-  (bind ?ahead-time 0)
-
-  (if (eq ?complexity C3) then
-    (bind ?ahead-time ?*PRODUCE-C3-AHEAD-TIME*))
-  (if (eq ?complexity C2) then
-    (bind ?ahead-time ?*PRODUCE-C2-AHEAD-TIME*))
-  (if (eq ?complexity C1) then
-    (bind ?ahead-time ?*PRODUCE-C1-AHEAD-TIME*))
-  (if (eq ?complexity C0) then
-    (bind ?ahead-time ?*PRODUCE-C0-AHEAD-TIME*))
-
-  (return (and (>= ?gt (max 0 (- ?start ?ahead-time))) 
-         (<= ?gt (max 0 (- ?end ?ahead-time)))))
-)
-
-(deffunction goal-production-count-active-orders ()
-  "Count the number of order production root nodes that are not retracted."
-  (bind ?order-roots 0)
-  (do-for-all-facts 
-    ((?goal goal) (?goal-meta goal-meta))
-    (and 
-      (eq ?goal:id ?goal-meta:goal-id) 
-      (neq ?goal-meta:root-for-order nil)
-      (neq ?goal:mode RETRACTED)
-    )
-    (bind ?order-roots (+ 1 ?order-roots))
-  )
-
-  (return ?order-roots)
-)
-
-(deffunction goal-production-count-active-orders-of-complexity (?complexity)
-  "Count the number of order production root nodes that are not retracted."
-  (bind ?order-roots 0)
-  (do-for-all-facts 
-    ((?goal goal) (?goal-meta goal-meta))
-    (and 
-      (eq ?goal:id ?goal-meta:goal-id) 
-      (neq ?goal-meta:root-for-order nil)
-      (neq ?goal:mode RETRACTED)
-    )
-    (if (any-factp ((?ord-comp wm-fact))
-        (and (wm-key-prefix ?ord-comp:key (create$ domain fact order-complexity)) 
-          (eq ?complexity (wm-key-arg ?ord-comp:key com)) 
-          (eq ?goal-meta:root-for-order (wm-key-arg ?ord-comp:key ord))
-        )
-      ) then
-      (bind ?order-roots (+ 1 ?order-roots))
-    )
-  )
-
-  (return ?order-roots)
-)
-
 
 (deffunction goal-meta-assign-robot-to-goal (?goal ?robot)
 "Changes an existing goal-meta fact and assign it to the given robot"

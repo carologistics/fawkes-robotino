@@ -494,11 +494,15 @@
 	            (verbosity ?v) (params $? ?mn $?))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot)(order-id ?order-id))
   ?wmf-order <- (wm-fact (key mps workload order args? m ?mn ord ?order-id))
+  ?update-fact <- (wm-fact (key mps workload needs-update) (value ?value))
 =>
 	(set-robot-to-waiting ?robot)
 	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" ?mn  crlf)
 	(modify ?g (mode EVALUATED))
   (modify ?wmf-order (value (- (fact-slot-value ?wmf-order value) 1)))
+  (if (eq ?value FALSE) then
+    (modify ?update-fact (value TRUE))
+  )
 )
 
 
