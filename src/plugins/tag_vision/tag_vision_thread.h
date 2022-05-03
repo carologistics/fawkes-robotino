@@ -72,7 +72,7 @@ namespace firevision {
 class Camera;
 class SharedMemoryImageBuffer;
 } // namespace firevision
-enum MarkerType { ARUCO_ORIGINAL, ALVAR };
+enum MarkerType { ARUCO, ALVAR };
 class TagVisionThread : public fawkes::Thread,
                         public fawkes::LoggingAspect,
                         public fawkes::ConfigurableAspect,
@@ -107,7 +107,8 @@ private:
 	/// Intrinsic parameters of the camera
 	cv::Mat cameraMatrix_;
 	/// Distortion coefficients
-	cv::Mat distCoeffs_;
+	cv::Mat                               distCoeffs_;
+	cv::aruco::PREDEFINED_DICTIONARY_NAME aruco_tag_type_;
 	/// store the markers, containing the poses
 	std::shared_ptr<std::vector<TagVisionMarker>> markers_;
 	/// the size of a marker in millimeter
