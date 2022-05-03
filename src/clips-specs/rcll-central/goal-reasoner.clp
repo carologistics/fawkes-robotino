@@ -502,10 +502,21 @@
 	            (verbosity ?v) (params $? ?mn $?))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot)(order-id ?order-id))
   ?wmf-order <- (wm-fact (key mps workload order args? m ?mn ord ?order-id))
+<<<<<<< HEAD
   ?update-fact <- (wm-fact (key mps workload needs-update) (value ?value))
+=======
+  ?pay-order <- (wm-fact (key mps finished payments order args? m ?mn ord ?order-id))
+>>>>>>> c713d0f76 (rcll-central: added finished payments fact)
 =>
 	(set-robot-to-waiting ?robot)
 	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" ?mn  crlf)
+  
+  (if (not (member$ (fact-slot-value ?g class) (create$ MOUNT-RING MOUNT-CAP))) 
+    then
+    (modify ?pay-order (value (+ (fact-slot-value ?pay-order value) 1)))
+  )
+
+
 	(modify ?g (mode EVALUATED))
   (modify ?wmf-order (value (- (fact-slot-value ?wmf-order value) 1)))
   (if (eq ?value FALSE) then
