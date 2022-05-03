@@ -13,6 +13,31 @@ plugins/tag_vision:
   # exposure_auto=1:exposure_absolute=305
   camera: v4l2:tag:device=/dev/video_tag
 
+  # Marker type
+  # Supported types: ALVAR
+  #                  ARUCO_4X4_50,
+  #                  ARUCO_4X4_100,
+  #                  ARUCO_4X4_250,
+  #                  ARUCO_4X4_1000,
+  #                  ARUCO_5X5_50,
+  #                  ARUCO_5X5_100,
+  #                  ARUCO_5X5_250,
+  #                  ARUCO_5X5_1000,
+  #                  ARUCO_6X6_50,
+  #                  ARUCO_6X6_100,
+  #                  ARUCO_6X6_250,
+  #                  ARUCO_6X6_1000,
+  #                  ARUCO_7X7_50,
+  #                  ARUCO_7X7_100,
+  #                  ARUCO_7X7_250,
+  #                  ARUCO_7X7_1000,
+  #                  ARUCO_ORIGINAL,
+  #                  APRILTAG_16h5,
+  #                  APRILTAG_25h9,
+  #                  APRILTAG_36h10,
+  #                  APRILTAG_36h11
+  marker_type: "ARUCO_ORIGINAL"
+
   # Shared Memory Imagebuffer name
   shm_image_id: "tag_vision"
 

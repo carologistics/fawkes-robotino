@@ -89,7 +89,9 @@ clips-executive:
               - rcll-central/goals/central-run-parallel.clp
               - rcll-central/goal-reasoner.clp
               - rcll-central/goal-dependencies.clp
+              - rcll-central/goal-executability.clp
               - rcll-central/goal-production.clp
+              - rcll-central/goal-challenges.clp
               - rcll-central/production-strategy.clp
               - rcll-central/exploration.clp
           - name: goal-expander
@@ -153,6 +155,8 @@ clips-executive:
             # Increased speed and rotation when exploring a zone
             max-velocity: 1.0
             max-rotation: 1.0
+
+            marker-type: ARUCO
 
             # Center of a laser-line must be this far from the zone border
             # before we start investigating it further (i.e. call the

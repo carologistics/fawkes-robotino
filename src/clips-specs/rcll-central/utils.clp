@@ -75,44 +75,25 @@
   (slot run-all-ordering (default 1))
 )
 
-(deffunction tag-id-to-side (?tag-id)
+(deffunction tag-id-to-side (?tag-id ?marker-type)
 " Output the side that is associated with the given tag id.
   @param ?tag-id tag id as specified by the rulebook
   @return INPUT OUTPUT or UNKNOWN
 "
-	(if (or (eq ?tag-id 1)  ; C-CS1
-	        (eq ?tag-id 17) ; C-CS2
-	        (eq ?tag-id 33) ; C-RS1
-	        (eq ?tag-id 177); C-RS2
-	        (eq ?tag-id 65) ; C-BS
-	        (eq ?tag-id 81) ; C-DS
-	        (eq ?tag-id 193); C-SS
-	        (eq ?tag-id 97) ; M-CS1
-	        (eq ?tag-id 113); M-CS2
-	        (eq ?tag-id 129); M-RS1
-	        (eq ?tag-id 145); M-RS2
-	        (eq ?tag-id 161); M-BS
-	        (eq ?tag-id 49) ; M-DS
-	        (eq ?tag-id 209); M-SS
-	    )
-	  then (return INPUT))
-	(if (or (eq ?tag-id 2)  ; C-CS1
-	        (eq ?tag-id 18) ; C-CS2
-	        (eq ?tag-id 34) ; C-RS1
-	        (eq ?tag-id 178); C-RS2
-	        (eq ?tag-id 66) ; C-BS
-	        (eq ?tag-id 82) ; C-DS
-	        (eq ?tag-id 194); C-SS
-	        (eq ?tag-id 98) ; M-CS1
-	        (eq ?tag-id 114); M-CS2
-	        (eq ?tag-id 130); M-RS1
-	        (eq ?tag-id 146); M-RS2
-	        (eq ?tag-id 162); M-BS
-	        (eq ?tag-id 50) ; M-DS
-	        (eq ?tag-id 210); M-SS
-	    )
-	  then (return OUTPUT))
-	(printout error "tag-id-to-side: unknown tag id: " ?tag-id crlf)
+	(if (eq ?marker-type ARUCO)
+	 then
+		(if (eq (mod ?tag-id 2) 0)
+		 then (return INPUT)
+		 else (return OUTPUT)
+		)
+	)
+	(if (eq ?marker-type ALVAR)
+	 then
+		(if (eq (mod ?tag-id 2) 0)
+		 then (return OUTPUT)
+		 else (return INPUT)
+		)
+	)
 	(return UNKNOWN)
 )
 
@@ -242,14 +223,14 @@
   (return (create$ ?x ?y 0.48))
 )
 
-(deffunction navgraph-add-tags-from-exploration ()
+(deffunction navgraph-add-tags-from-exploration (?marker-type)
   "Send all explored tags to the navgraph generator"
 	(bind ?any-tag-to-add FALSE)
 
 	(bind ?interfaces (get-interfaces "NavGraphWithMPSGeneratorInterface" "navgraph-generator-mps"))
 
 	(delayed-do-for-all-facts ((?res exploration-result)) TRUE
-		(bind ?side (tag-id-to-side ?res:tag-id))
+		(bind ?side (tag-id-to-side ?res:tag-id ?marker-type))
 		(bind ?frame "map")
 		(bind ?trans ?res:trans)
 		(bind ?rot  ?res:rot)
@@ -1312,4 +1293,40 @@
       (bind ?ring3-payment (sym-to-int (nth$ 3 ?ring3-spec:param-values)))
   )
   (return (+ ?ring1-payment (+ ?ring2-payment ?ring3-payment)))
+)
+
+(deffunction calculate-order-interaction-sum (?order ?rs)
+  "Calculate the number of mounting interactions an order requires on an RS"
+  (bind ?rs-interactions 0)
+  (do-for-fact ((?ring1-color domain-fact) (?ring1-spec domain-fact))
+        (and (eq ?ring1-color:name order-ring1-color)
+             (eq ?ring1-spec:name rs-ring-spec)
+             (member$ ?rs ?ring1-spec:param-values)
+             (member$ ?order ?ring1-color:param-values)
+             (member$ (nth$ 2 ?ring1-color:param-values) ?ring1-spec:param-values)
+             (neq (nth$ 2 ?ring1-color:param-values) RING_NONE)
+        )
+    (bind ?rs-interactions (+ ?rs-interactions 1))
+  )
+  (do-for-fact ((?ring2-color domain-fact) (?ring2-spec domain-fact))
+        (and (eq ?ring2-color:name order-ring2-color)
+             (eq ?ring2-spec:name rs-ring-spec)
+             (member$ ?rs ?ring2-spec:param-values)
+             (member$ ?order ?ring2-color:param-values)
+             (member$ (nth$ 2 ?ring2-color:param-values) ?ring2-spec:param-values)
+             (neq (nth$ 2 ?ring2-color:param-values) RING_NONE)
+        )
+    (bind ?rs-interactions (+ ?rs-interactions 1))
+  )
+  (do-for-fact ((?ring3-color domain-fact) (?ring3-spec domain-fact))
+        (and (eq ?ring3-color:name order-ring3-color)
+             (eq ?ring3-spec:name rs-ring-spec)
+             (member$ ?rs ?ring3-spec:param-values)
+             (member$ ?order ?ring3-color:param-values)
+             (member$ (nth$ 2 ?ring3-color:param-values) ?ring3-spec:param-values)
+             (neq (nth$ 2 ?ring3-color:param-values) RING_NONE)
+        )
+    (bind ?rs-interactions (+ ?rs-interactions 1))
+  )
+  (return ?rs-interactions)
 )

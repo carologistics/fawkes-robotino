@@ -44,7 +44,7 @@ PRESUBDIRS = interfaces
 
 ifeq ($(shell $(PKGCONFIG) --exists alvar; echo $$?),0)
     HAVE_ALVAR = 1
-    CFLAGS_ALVAR = $(shell $(PKGCONFIG) --cflags alvar)
+    CFLAGS_ALVAR = $(shell $(PKGCONFIG) --cflags alvar) -DHAVE_ALVAR
     LDFLAGS_ALVAR = $(shell $(PKGCONFIG) --libs alvar)
     LIBS_ALVAR   = alvar
 endif
@@ -56,22 +56,21 @@ ifneq ($(HAVE_ALVAR),1)
     ifeq ($(HAVE_AR_TRACK_ALVAR),1)
       HAVE_ALVAR     = 1
       CFLAGS_ALVAR  += $(shell $(PKGCONFIG) --cflags alvar) -DHAVE_AR_TRACK_ALVAR \
-		       $(call ros-pkg-cflags,ar_track_alvar) \
-		       -Wno-unused-variable
+           $(call ros-pkg-cflags,ar_track_alvar) \
+           -Wno-unused-variable
       LDFLAGS_ALVAR += $(call ros-pkg-lflags,ar_track_alvar)
+    else
+      WARN_TARGETS += warning_alvar
     endif
   endif
 endif
 
-ifeq ($(HAVE_TF)$(HAVE_ALVAR)$(HAVE_CPP11),111)
+ifeq ($(HAVE_TF)$(HAVE_CPP11),11)
   CFLAGS  += $(CFLAGS_ALVAR)  $(CFLAGS_TF) $(CFLAGS_CPP11) -Wno-error
   LDFLAGS += $(LDFLAGS_ALVAR) $(LDFLAGS_TF)
   LIBS_tag_vision += $(LIBS_ALVAR)
   PLUGINS_build = $(PLUGINS_all)
 else
-  ifneq ($(HAVE_ALVAR),1)
-    WARN_TARGETS += warning_alvar
-  endif
   ifneq ($(HAVE_TF),1)
     WARN_TARGETS += warning_tf
   endif
@@ -86,7 +85,7 @@ all: $(WARN_TARGETS)
   endif
 .PHONY: warning_alvar warning_tf warning_cpp11
 warning_alvar:
-	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TBROWN)Omitting tag-vision plugin$(TNORMAL) (ALVAR not available)"
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TBROWN)Alvar tags not supported $(TNORMAL) (ALVAR not available)"
 warning_tf:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TBROWN)Omitting tag-vision plugin$(TNORMAL) (tf not available)"
 warning_cpp11:
