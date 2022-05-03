@@ -121,9 +121,9 @@ TagPositionInterfaceHelper::set_pose(TagPose new_pose)
 		fawkes::tf::Stamped<fawkes::tf::Pose> tag_in_cam_pose(
 			fawkes::tf::Pose(
 				fawkes::tf::Quaternion(result.getX(), result.getY(), result.getZ(), result.getW()),
-				fawkes::tf::Vector3(new_pose.translation[0] / 1000,
-						new_pose.translation[1] / 1000,
-						new_pose.translation[2] / 1000)),
+				fawkes::tf::Vector3(new_pose.tvec[0] / 1000,
+						new_pose.tvec[1] / 1000,
+						new_pose.tvec[2] / 1000)),
 				fawkes::Time(0, 0),
 				cam_frame_);
 		fawkes::tf::Stamped<fawkes::tf::Pose> tag_in_map_pose;
