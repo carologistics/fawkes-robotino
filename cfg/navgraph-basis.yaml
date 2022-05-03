@@ -91,7 +91,7 @@ nodes:
       - group: exploration
       - orientation: 0.85
       - always-copy: true
-  
+
   # Low (near) row
   #
   - !unconnected
@@ -376,8 +376,10 @@ nodes:
     properties:
       - only-copy-properties
       - group: machines
-      - tag_input: 1
-      - tag_output: 2
+      # - tag_input: 1 # ALVAR
+      # - tag_output: 2 # ALVAR
+      - tag_input: 102 # ARUCO
+      - tag_output: 101 # ARUCO
       - output_offset_x: -0.003
   - !unconnected
     name: C-CS2
@@ -385,8 +387,10 @@ nodes:
     properties:
       - only-copy-properties
       - group: machines
-      - tag_input: 17
-      - tag_output: 18
+      # - tag_input: 17 # ALVAR
+      # - tag_output: 18 # ALVAR
+      - tag_input: 104 # ARUCO
+      - tag_output: 103 # ARUCO
       - input_offset_x: 0.0
       - output_offset_x: 0.0
   - !unconnected
@@ -395,8 +399,10 @@ nodes:
     properties:
       - only-copy-properties
       - group: machines
-      - tag_input: 33
-      - tag_output: 34
+      # - tag_input: 33 # ALVAR
+      # - tag_output: 34 # ALVAR
+      - tag_input: 112 # ARUCO
+      - tag_output: 111 # ARUCO
       - input_offset_y: 0.02
   - !unconnected
     name: C-RS2
@@ -404,8 +410,10 @@ nodes:
     properties:
       - only-copy-properties
       - group: machines
-      - tag_input: 177
-      - tag_output: 178
+      # - tag_input: 177 # ALVAR
+      # - tag_output: 178 # ALVAR
+      - tag_input: 114 # ARUCO
+      - tag_output: 113 # ARUCO
       - input_offset_x: -0.01
       - input_offset_y: 0.02
       - output_offset_x: 0.005
@@ -415,8 +423,10 @@ nodes:
     properties:
       - only-copy-properties
       - group: machines
-      - tag_input: 65
-      - tag_output: 66
+      # - tag_input: 65 # ALVAR
+      # - tag_output: 66 # ALVAR
+      - tag_input: 122 # ARUCO
+      - tag_output: 121 # ARUCO
       - output_offset_x: -0.015 #the gripper should be 2mm higher in z
   - !unconnected
     name: C-DS
@@ -424,8 +434,21 @@ nodes:
     properties:
       - only-copy-properties
       - group: machines
-      - tag_input: 81
-      - tag_output: 82
+      # - tag_input: 81 # ALVAR
+      # - tag_output: 82 # ALVAR
+      - tag_input: 132 # ARUCO
+      - tag_output: 131 # ARUCO
+      - input_offset_x: 0.02
+  - !unconnected
+    name: C-SS
+    pos: [0, 0]
+    properties:
+      - only-copy-properties
+      - group: machines
+      # - tag_input: 193 # ALVAR
+      # - tag_output: 194 # ALVAR
+      - tag_input: 142 # ARUCO
+      - tag_output: 141 # ARUCO
       - input_offset_x: 0.02
 #Magenta
   - !unconnected
@@ -434,8 +457,10 @@ nodes:
     properties:
       - only-copy-properties
       - group: machines
-      - tag_input: 97
-      - tag_output: 98
+      # - tag_input: 97 # ALVAR
+      # - tag_output: 98 # ALVAR
+      - tag_input: 202 # ARUCO
+      - tag_output: 201 # ARUCO
       - output_offset_y: -0.015
   - !unconnected
     name: M-CS2
@@ -443,8 +468,10 @@ nodes:
     properties:
       - only-copy-properties
       - group: machines
-      - tag_input: 113
-      - tag_output: 114
+      # - tag_input: 113 # ALVAR
+      # - tag_output: 114 # ALVAR
+      - tag_input: 204 # ARUCO
+      - tag_output: 203 # ARUCO
       - output_offset_x: -0.005
   - !unconnected
     name: M-RS1
@@ -452,16 +479,20 @@ nodes:
     properties:
       - only-copy-properties
       - group: machines
-      - tag_input: 129
-      - tag_output: 130
+      # - tag_input: 129 # ALVAR
+      # - tag_output: 130 # ALVAR
+      - tag_input: 212 # ARUCO
+      - tag_output: 211 # ARUCO
   - !unconnected
     name: M-RS2
     pos: [0, 0]
     properties:
       - only-copy-properties
       - group: machines
-      - tag_input: 145
-      - tag_output: 146
+      # - tag_input: 145 # ALVAR
+      # - tag_output: 146 # ALVAR
+      - tag_input: 214 # ARUCO
+      - tag_output: 213 # ARUCO
       - output_offset_x: -0.005
       - input_offset_x: -0.02
   - !unconnected
@@ -470,8 +501,10 @@ nodes:
     properties:
       - only-copy-properties
       - group: machines
-      - tag_input: 161
-      - tag_output: 162
+      # - tag_input: 161 # ALVAR
+      # - tag_output: 162 # ALVAR
+      - tag_input: 222 # ARUCO
+      - tag_output: 221 # ARUCO
       - input_offset_x: -0.01
       - input_offset_y: 0.025
       - output_offset_x: -0.015
@@ -482,9 +515,22 @@ nodes:
     properties:
       - only-copy-properties
       - group: machines
-      - tag_input: 49
-      - tag_output: 50
+      # - tag_input: 49 # ALVAR
+      # - tag_output: 50 # ALVAR
+      - tag_input: 232 # ARUCO
+      - tag_output: 231 # ARUCO
       - input_offset_x: -0.02
+  - !unconnected
+    name: M-SS
+    pos: [0, 0]
+    properties:
+      - only-copy-properties
+      - group: machines
+      # - tag_input: 209 # ALVAR
+      # - tag_output: 210 # ALVAR
+      - tag_input: 242 # ARUCO
+      - tag_output: 241 # ARUCO
+      - input_offset_x: 0.02
 
 # Possible directional tags:
 # !bidir (bidirectional, default), !dir (directed)
