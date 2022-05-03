@@ -63,16 +63,40 @@ TagVisionThread::init()
 	std::string prefix = CFG_PREFIX;
 	// log, that we open load the config
 	logger->log_info(name(), "loading config");
-	// load alvar camera calibration
-	if (!alvar_cam_.SetCalib(config->get_string((prefix + "alvar_camera_calib_file").c_str()).c_str(),
-	                         0,
-	                         0,
-	                         FILE_FORMAT_DEFAULT)) {
-		this->logger->log_warn(this->name(), "Faild to load calibration file");
-	}
+	// Marker type
+	std::string marker_type_str = config->get_string((prefix + "marker_type").c_str());
 	// load marker size and apply it
 	marker_size_ = config->get_uint((prefix + "marker_size").c_str());
-	alvar_detector_.SetMarkerSize(marker_size_);
+	if (marker_type_str == "aruco_original")
+		marker_type_ = MarkerType::ARUCO_ORIGINAL;
+	if (marker_type_str == "alvar")
+		marker_type_ = MarkerType::ALVAR;
+	switch (marker_type_) {
+	case ALVAR:
+#ifdef HAVE_AR_TRACK_ALVAR
+		// load alvar camera calibration
+		if (!alvar_cam_.SetCalib(
+		      config->get_string((prefix + "alvar_camera_calib_file").c_str()).c_str(),
+		      0,
+		      0,
+		      FILE_FORMAT_DEFAULT)) {
+			this->logger->log_warn(this->name(), "Failed to load calibration file");
+		}
+		alvar_detector_.SetMarkerSize(marker_size_);
+
+		// set camera resolution
+		alvar_cam_.SetRes(this->img_width_, this->img_height_);
+#else
+		throw Exception("Cannot detect alvar tags, ALVAR not found.");
+#endif
+		break;
+	case ARUCO_ORIGINAL:
+		cameraMatrix_ = (cv::Mat_<double>(3, 3) << 1, 0, 0, 0, 1, 0, 0, 0, 1);
+		distCoeffs_   = (cv::Mat_<double>(1, 4) << 0, 0, 0, 0);
+		break;
+	default: break;
+	}
+	markers_ = std::make_shared<std::vector<TagVisionMarker>>();
 
 	// Image Buffer ID
 	shm_id_ = config->get_string((prefix + "shm_image_id").c_str());
@@ -96,9 +120,6 @@ TagVisionThread::init()
 		this->img_width_  = fv_cam_->pixel_width();
 		this->img_height_ = fv_cam_->pixel_height();
 	}
-
-	// set camera resolution
-	alvar_cam_.SetRes(this->img_width_, this->img_height_);
 
 	// SHM image buffer
 	if (shm_buffer_ != nullptr) {
@@ -125,8 +146,7 @@ TagVisionThread::init()
 	ipl_image_    = cv::Mat(cv::Size(this->img_width_, this->img_height_), CV_8UC3, 3);
 
 	// set up marker
-	max_marker_    = 16;
-	this->markers_ = new std::vector<alvar::MarkerData>();
+	max_marker_ = 16;
 
 	this->tag_interfaces_ = new TagPositionList(this->blackboard,
 	                                            tf_listener,
@@ -155,7 +175,6 @@ TagVisionThread::finalize()
 	config->rem_change_handler(this);
 	// free the markers
 	this->markers_->clear();
-	delete this->markers_;
 	delete fv_cam_;
 	fv_cam_ = nullptr;
 	delete shm_buffer_;
@@ -221,7 +240,9 @@ void
 TagVisionThread::get_marker()
 {
 	// detect makres on image
+#ifdef HAVE_AR_TRACK_ALVAR
 	alvar_detector_.Detect(ipl_image_, &alvar_cam_);
+#endif
 	std::vector<int>                       markerIds;
 	std::vector<std::vector<cv::Point2f>>  markerCorners, rejectedCandidates;
 	cv::Ptr<cv::aruco::DetectorParameters> parameters = cv::aruco::DetectorParameters::create();
@@ -248,6 +269,7 @@ TagVisionThread::get_marker()
 		    (rot_matrix.at<double>(0, 2) - rot_matrix.at<double>(2, 0)) / (4 * qw),
 		    (rot_matrix.at<double>(1, 0) - rot_matrix.at<double>(0, 1)) / (4 * qw)}},
 		  markerIds[i]};
+		markers_->push_back(tmp_marker);
 		// draw axis for each marker
 		cv::drawFrameAxes(ipl_image_, cameraMatrix_, distCoeffs_, rvecs[i], tvecs[i], 0.1);
 	}
@@ -280,6 +302,7 @@ TagVisionThread::config_value_changed(const fawkes::Configuration::ValueIterator
 			std::string prefix = CFG_PREFIX;
 			// log, that we open load the config
 			logger->log_info(name(), "loading config");
+#ifdef HAVE_AR_TRACK_ALVAR
 			// load alvar camera calibration
 			alvar_cam_.SetCalib(config->get_string((prefix + "alvar_camera_calib_file").c_str()).c_str(),
 			                    0,
@@ -288,6 +311,7 @@ TagVisionThread::config_value_changed(const fawkes::Configuration::ValueIterator
 			// load marker size and apply it
 			marker_size_ = config->get_uint((prefix + "marker_size").c_str());
 			alvar_detector_.SetMarkerSize(marker_size_);
+#endif
 		} catch (fawkes::Exception &e) {
 			logger->log_error(name(), e);
 		}

@@ -61,6 +61,13 @@ class TagPositionInterfaceHelper
 		A_Z = 3,
 	};
 
+	enum CV_ROT {
+		CV_W = 0,
+		CV_X = 1,
+		CV_Y = 2,
+		CV_Z = 3,
+	};
+
 	enum TRANS {
 		T_X = 0,
 		T_Y = 1,
@@ -75,16 +82,16 @@ class TagPositionInterfaceHelper
 
 public:
 	/// Constructor
-	TagPositionInterfaceHelper(fawkes::Position3DInterface *   position_interface,
+	TagPositionInterfaceHelper(fawkes::Position3DInterface    *position_interface,
 	                           u_int32_t                       index_,
-	                           fawkes::Clock *                 clock,
+	                           fawkes::Clock                  *clock,
 	                           fawkes::tf::TransformPublisher *tf_publisher,
 	                           std::string                     frame);
 	/// Destructor
 	~TagPositionInterfaceHelper();
 
 	/// Update the position of the interface
-	void set_pose(alvar::Pose new_pose);
+	void set_pose(TagPose new_pose);
 
 	/// Write the interface on the blackboard
 	void write();
