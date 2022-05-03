@@ -37,12 +37,15 @@
 #include <config/change_handler.h>
 
 // cv is needed for image conversion to alvar
+#include <opencv2/aruco.hpp>
 #include <opencv2/opencv.hpp>
 // alvar marker detection to get poses
 #ifdef HAVE_AR_TRACK_ALVAR
 #	include <ar_track_alvar/MarkerDetector.h>
 #else
-#	include <alvar/MarkerDetector.h>
+#	ifdef HAVE_ALVAR
+#		include <alvar/MarkerDetector.h>
+#	endif
 #endif
 
 // firevision camera
@@ -69,7 +72,7 @@ namespace firevision {
 class Camera;
 class SharedMemoryImageBuffer;
 } // namespace firevision
-
+enum MarkerType { ARUCO, ALVAR };
 class TagVisionThread : public fawkes::Thread,
                         public fawkes::LoggingAspect,
                         public fawkes::ConfigurableAspect,
@@ -96,16 +99,23 @@ public:
 private:
 	/// load config from file
 	void loadConfig();
+#ifdef HAVE_ALVAR
 	/// the marker detector in alvar
 	alvar::MarkerDetector<alvar::MarkerData> alvar_detector_;
 	/// the camera the detector uses
 	alvar::Camera alvar_cam_;
+#endif
+	/// Intrinsic parameters of the camera
+	cv::Mat cameraMatrix_;
+	/// Distortion coefficients
+	cv::Mat                               distCoeffs_;
+	cv::aruco::PREDEFINED_DICTIONARY_NAME aruco_tag_type_;
+	/// store the markers, containing the poses
+	std::shared_ptr<std::vector<TagVisionMarker>> markers_;
 	/// the size of a marker in millimeter
 	uint marker_size_;
 	/// function to get the markers from an image
 	void get_marker();
-	/// store the alvar markers, containing the poses
-	std::vector<alvar::MarkerData> *markers_;
 	/// maximum markers to detect, size for the markers array
 	size_t max_marker_;
 
@@ -117,6 +127,8 @@ private:
 	/// firevision image buffer
 	firevision::SharedMemoryImageBuffer *shm_buffer_;
 	unsigned char *                      image_buffer_;
+	/// Marker type
+	MarkerType marker_type_;
 	/// Image Buffer Id
 	std::string shm_id_;
 
