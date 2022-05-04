@@ -254,11 +254,6 @@ TagPositionList::update_blackboard(std::shared_ptr<std::vector<TagVisionMarker>>
 		// skip the marker, if the pose is directly on the camera (error)
 		TagPose tmp_pose = marker.pose;
 		if (tmp_pose.tvec[0] < 1 && tmp_pose.tvec[1] < 1 && tmp_pose.tvec[2] < 1) {
-			logger_->log_info("tag_vision",
-			                  "don't use tag, %f,%f,%f",
-			                  tmp_pose.tvec[0],
-			                  tmp_pose.tvec[1],
-			                  tmp_pose.tvec[2]);
 			continue;
 		}
 		try {
