@@ -84,32 +84,29 @@ ObjectTrackingThread::init()
 	object_tracking_if_->write();
 
 	//read config values for computing expected position and target frames
-	puck_size_   = double(config->get_float("plugins/object_tracking/puck_values/puck_size"));
-	puck_height_ = double(config->get_float("plugins/object_tracking/puck_values/puck_height"));
+	puck_size_   = config->get_float("plugins/object_tracking/puck_values/puck_size");
+	puck_height_ = config->get_float("plugins/object_tracking/puck_values/puck_height");
 
-	belt_height_ = double(config->get_float("plugins/object_tracking/belt_values/belt_height"));
-	belt_lenght_ = double(config->get_float("plugins/object_tracking/belt_values/belt_lenght"));
-	belt_offset_side_ =
-	  double(config->get_float("plugins/object_tracking/belt_values/belt_offset_side"));
+	belt_height_      = config->get_float("plugins/object_tracking/belt_values/belt_height");
+	belt_length_      = config->get_float("plugins/object_tracking/belt_values/belt_length");
+	belt_offset_side_ = config->get_float("plugins/object_tracking/belt_values/belt_offset_side");
 
-	slide_offset_side_ =
-	  double(config->get_float("plugins/object_tracking/slide_values/slide_offset_side"));
-	slide_height_ = double(config->get_float("plugins/object_tracking/slide_values/slide_height"));
+	slide_offset_side_ = config->get_float("plugins/object_tracking/slide_values/slide_offset_side");
+	slide_height_      = config->get_float("plugins/object_tracking/slide_values/slide_height");
 
 	left_shelf_offset_side_ =
-	  double(config->get_float("plugins/object_tracking/shelf_values/left_shelf_offset_side"));
+	  config->get_float("plugins/object_tracking/shelf_values/left_shelf_offset_side");
 	middle_shelf_offset_side_ =
-	  double(config->get_float("plugins/object_tracking/shelf_values/middle_shelf_offset_side"));
+	  config->get_float("plugins/object_tracking/shelf_values/middle_shelf_offset_side");
 	right_shelf_offset_side_ =
-	  double(config->get_float("plugins/object_tracking/shelf_values/right_shelf_offset_side"));
-	shelf_height_ = double(config->get_float("plugins/object_tracking/shelf_values/shelf_height"));
+	  config->get_float("plugins/object_tracking/shelf_values/right_shelf_offset_side");
+	shelf_height_ = config->get_float("plugins/object_tracking/shelf_values/shelf_height");
 
 	gripper_offset_pick_ =
-	  double(config->get_float("plugins/object_tracking/target_frame_offsets/gripper_offset_pick"));
+	  config->get_float("plugins/object_tracking/target_frame_offsets/gripper_offset_pick");
 	gripper_offset_put_ =
-	  double(config->get_float("plugins/object_tracking/target_frame_offsets/gripper_offset_put"));
-	base_offset_ =
-	  double(config->get_float("plugins/object_tracking/target_frame_offsets/base_offset"));
+	  config->get_float("plugins/object_tracking/target_frame_offsets/gripper_offset_put");
+	base_offset_ = config->get_float("plugins/object_tracking/target_frame_offsets/base_offset");
 }
 
 //updating Robotino positions:
@@ -261,9 +258,9 @@ ObjectTrackingThread::start_tracking(ObjectTrackingInterface::StartTrackingMessa
 		break;
 	case ObjectTrackingInterface::OUTPUT_CONVEYOR:
 		middle_x_ =
-		  mps_x_ + belt_offset_side_ * cos(mps_ori_) + (belt_lenght_ / 2 - puck_size_) * sin(mps_ori_);
+		  mps_x_ + belt_offset_side_ * cos(mps_ori_) + (belt_length_ / 2 - puck_size_) * sin(mps_ori_);
 		middle_y_ =
-		  mps_y_ + belt_offset_side_ * sin(mps_ori_) - (belt_lenght_ / 2 - puck_size_) * cos(mps_ori_);
+		  mps_y_ + belt_offset_side_ * sin(mps_ori_) - (belt_length_ / 2 - puck_size_) * cos(mps_ori_);
 		middle_z_ = belt_height_ + puck_height_ / 2;
 		break;
 	case ObjectTrackingInterface::SLIDE:
@@ -294,7 +291,7 @@ ObjectTrackingThread::start_tracking(ObjectTrackingInterface::StartTrackingMessa
 
 	//if workpiece is tracked, find nearest workpiece (puck) to the middle point
 	if (current_object_type_ == ObjectTrackingInterface::WORKPIECE) {
-		double min_dist = 999;
+		double min_dist = std::numeric_limits<double>::max();
 		for (int i = 0; i < tracked_pucks_; i++) {
 			if (distance_middle_to_puck(i) < min_dist) {
 				min_dist          = distance_middle_to_puck(i);
@@ -323,13 +320,13 @@ ObjectTrackingThread::start_tracking(ObjectTrackingInterface::StartTrackingMessa
 double
 ObjectTrackingThread::compute_middle_x(double x_offset)
 {
-	return mps_x_ + x_offset * cos(mps_ori_) - (belt_lenght_ / 2 - puck_size_) * sin(mps_ori_);
+	return mps_x_ + x_offset * cos(mps_ori_) - (belt_length_ / 2 - puck_size_) * sin(mps_ori_);
 }
 
 double
 ObjectTrackingThread::compute_middle_y(double y_offset)
 {
-	return mps_y_ + y_offset * sin(mps_ori_) + (belt_lenght_ / 2 - puck_size_) * cos(mps_ori_);
+	return mps_y_ + y_offset * sin(mps_ori_) + (belt_length_ / 2 - puck_size_) * cos(mps_ori_);
 }
 
 double

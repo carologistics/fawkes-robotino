@@ -108,28 +108,28 @@ private:
 
 	//MPS values used to compute expected object position on MPS
 	//puck values:
-	double puck_size_;
-	double puck_height_;
+	float puck_size_;
+	float puck_height_;
 
 	//belt values:
-	double belt_height_;
-	double belt_lenght_;
-	double belt_offset_side_;
+	float belt_height_;
+	float belt_length_;
+	float belt_offset_side_;
 
 	//slide values:
-	double slide_offset_side_;
-	double slide_height_;
+	float slide_offset_side_;
+	float slide_height_;
 
 	//shelf values:
-	double left_shelf_offset_side_;
-	double middle_shelf_offset_side_;
-	double right_shelf_offset_side_;
-	double shelf_height_;
+	float left_shelf_offset_side_;
+	float middle_shelf_offset_side_;
+	float right_shelf_offset_side_;
+	float shelf_height_;
 
 	//target frame offsets:
-	double gripper_offset_pick_;
-	double gripper_offset_put_;
-	double base_offset_;
+	float gripper_offset_pick_;
+	float gripper_offset_put_;
+	float base_offset_;
 
 	//called from skill
 	void start_tracking(fawkes::ObjectTrackingInterface::StartTrackingMessage &msg);

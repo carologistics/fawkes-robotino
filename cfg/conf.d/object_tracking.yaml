@@ -10,7 +10,7 @@ plugins/object_tracking:
 
   belt_values:
     belt_height: 0.92
-    belt_lenght: 0.35
+    belt_length: 0.35
     belt_offset_side: 0.025
 
   slide_values:
