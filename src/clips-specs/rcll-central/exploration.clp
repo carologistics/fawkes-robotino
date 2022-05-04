@@ -348,7 +348,7 @@
   ?zm <- (domain-fact (name zone-content) (param-values ?zn2 ?))
   ; This is for a mirrored field
   ;?zm2 <- (domain-fact (name zone-content) (param-values ?zn3&:(eq (mirror-name ?zn2) ?zn3) ?))
-
+  (confval (path "/navgraph-generator-mps/bounding-box/p2") (list-value ?bp2))
   (not (exploration-result (machine ?machine) (zone ?zn2)))
   =>
   (modify ?ze (value (+ 1 ?times-searched)))
@@ -363,12 +363,15 @@
       (rot ?rot)
       (tag-id ?tag-id)
     )
+  )
+  (if (not (eq (first ?bp2) 0))
+  (assert
     (exploration-result
       (machine (mirror-name ?machine)) (zone (mirror-name ?zn2))
       (orientation (mirror-orientation ?mtype ?zn2 ?orientation))
       (team (mirror-team ?team-color))
     )
-  )
+  ))
   (printout t "EXP exploration fact zone successful. Found " ?machine " in " ?zn2 crlf)
 )
 
