@@ -87,19 +87,19 @@
   (return ?order-roots)
 )
 
-(deffunction production-strategy-assert-workload-for-machine
+(deffunction production-strategy-assert-workload-or-payment-for-machine
   "Creating wm-facts for the order based and overall mps workload"
-  (?order-id ?mps ?payments)
+  (?name ?order-id ?mps ?payments)
 
   (assert
-    (wm-fact (key mps workload order args? m ?mps ord ?order-id) (type INT)
+    (wm-fact (key mps ?name order args? m ?mps ord ?order-id) (type INT)
       (is-list FALSE) (value ?payments))
   )
-  (if (not (any-factp ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps workload overall) )
+  (if (not (any-factp ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps ?name overall) )
                                               (eq ?mps (wm-key-arg ?wm-fact:key m)))))
   then
     (assert
-      (wm-fact (key mps workload overall args? m ?mps) (type INT)
+      (wm-fact (key mps ?name overall args? m ?mps) (type INT)
         (is-list FALSE) (value 0))
     )
   )
@@ -184,16 +184,20 @@
   ?update-fact <- (wm-fact (key mps workload needs-update) (value FALSE))
 =>
   (modify ?update-fact (value TRUE))
+  (bind ?wl workload)
+  (bind ?pm (create$ state payments))
   (delayed-do-for-all-facts ((?mps-type domain-fact)) (eq (nth$ 2 ?mps-type:param-values) RS)
-    (production-strategy-assert-workload-for-machine ?order (nth$ 1 ?mps-type:param-values) 
-                                        (+ (calculate-order-payments-sum ?order 
-                                                                         (nth$ 1 ?mps-type:param-values))
+    (bind ?payment-sum (calculate-order-payments-sum ?order (nth$ 1 ?mps-type:param-values)))
+    (production-strategy-assert-workload-or-payment-for-machine ?wl ?order (nth$ 1 ?mps-type:param-values)
+                                        (+
+                                           ?payment-sum
                                            (calculate-order-interaction-sum ?order
                                                                             (nth$ 1 ?mps-type:param-values))
                                         )
     )
+    (production-strategy-assert-workload-or-payment-for-machine ?pm ?order (nth$ 1 ?mps-type:param-values) 0 )
   )
-  (production-strategy-assert-workload-for-machine ?order ?mps-cap 1)
+  (production-strategy-assert-workload-or-payment-for-machine ?wl ?order ?mps-cap 1)
 
   (bind ?rings-needed (string-to-field (sub-string 2 2 (str-cat ?com))))
   (bind ?points-ring1 (+ (* (bool-to-int (> ?rings-needed 0))
@@ -643,7 +647,7 @@
 ; ========================= Order Preference FIlters =============================
 
 (defrule production-strategy-init-order-preference-facts
-  "Initialise the possible and preferred order facts to track orders of each 
+  "Initialise the possible and preferred order facts to track orders of each
   complexity for production flow control."
   (not (wm-fact (key strategy meta possible-orders $?)))
   =>
@@ -690,7 +694,7 @@
     )
     (goal-meta (root-for-order ?order-id))
   )
-  => 
+  =>
   (modify ?poss (values (delete-member$ ?values ?order-id)))
 )
 
@@ -714,9 +718,9 @@
 (defrule production-strategy-filter-orders-delivery-ahead-remove
   "Remove an order from this filter if its production ahead window has finally closed."
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
-  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter delivery-ahead) 
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter delivery-ahead)
                         (values $?values&:(member$ ?order-id ?values)))
-  (or 
+  (or
     (not (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?)))
     (and
       ;reverse filter condition
@@ -734,7 +738,7 @@
 (defrule production-strategy-filter-orders-delivery-limit-add
   "Add an order to this filter its delivery window end is in the future."
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
-  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter delivery-limit) 
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter delivery-limit)
                         (values $?values&:(not (member$ ?order-id ?values))))
   ;filter condition
   (wm-fact (key refbox order ?order-id delivery-end) (value ?end))
@@ -747,9 +751,9 @@
 (defrule production-strategy-filter-orders-delivery-limit-remove
   "Remove an order from this filter if its delivery window end has arrived."
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
-  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter delivery-limit) 
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter delivery-limit)
                         (values $?values&:(member$ ?order-id ?values)))
-  (or 
+  (or
     (not (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?)))
     (and
       ;reverse filter condition
@@ -766,7 +770,7 @@
 (defrule production-strategy-filter-orders-workload-add
   "Add an order to this filter its workload doesn't push the summed workload over any machine's limit."
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
-  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter workload) 
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter workload)
                         (values $?values&:(not (member$ ?order-id ?values))))
   ;filter condition
   (not
@@ -783,9 +787,9 @@
 (defrule production-strategy-filter-orders-workload-remove
   "Remove an order from this filter if its workload would push the summed workload over the limit."
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
-  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter workload) 
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter workload)
                         (values $?values&:(member$ ?order-id ?values)))
-  (or 
+  (or
     (not (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?)))
     (and
       (wm-fact (key mps workload overall args? m ?any-rs) (value ?workload))
@@ -801,7 +805,7 @@
 (defrule production-strategy-filter-orders-c0-limit-add
   "Add an order to this filter if there is less than the threshold of active C0 orders"
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
-  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c0-limit) 
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c0-limit)
                         (values $?values&:(not (member$ ?order-id ?values))))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
   ;filter condition
@@ -819,9 +823,9 @@
 (defrule production-strategy-filter-orders-c0-limit-remove
   "Remove an order from this filter if there is more than the threshold of active C0 orders"
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
-  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c0-limit) 
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c0-limit)
                         (values $?values&:(member$ ?order-id ?values)))
-  (or 
+  (or
     (not (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?)))
     (and
       (test (eq ?comp C0))
@@ -836,7 +840,7 @@
 (defrule production-strategy-filter-orders-c1-limit-add
   "Add an order to this filter if there is less than the threshold of active c1 orders"
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
-  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c1-limit) 
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c1-limit)
                         (values $?values&:(not (member$ ?order-id ?values))))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
   ;filter condition
@@ -854,9 +858,9 @@
 (defrule production-strategy-filter-orders-c1-limit-remove
   "Remove an order from this filter if there is more than the threshold of active c1 orders"
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
-  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c1-limit) 
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c1-limit)
                         (values $?values&:(member$ ?order-id ?values)))
-  (or 
+  (or
     (not (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?)))
     (and
       (test (eq ?comp C1))

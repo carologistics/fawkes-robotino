@@ -275,6 +275,7 @@
 	(modify ?wm (value ?tries))
 )
 
+
 ; ----------------------- HANDLE BROKEN MPS -----------------------------------
 
 (defrule execution-monitoring-broken-mps-fail-pending-action
@@ -436,3 +437,42 @@
   (printout t "execuction monitoring wp-put-slide-cc: rs-before is unequal to rs-filled-with" crlf)
   (modify ?pa (param-values ?robot ?wp ?rs ?rs-num ?rs-num-after))
 )
+
+; ----------------------- DISTRIBUTION AFTER FAILURE -------------------------------
+
+(deffunction distribute-payments
+	(?root-id)
+; Distributing the payments of a failed PRODUCE-ORDER goal
+;1 get payments for mps
+	(bind ?paid (create$))
+	(bind ?paid-at (create$))
+	(bind ?order-id (fact-slot-value (nth$ 1 (find-fact ((?meta goal-meta))(eq ?meta:goal-id ?root-id))) order-id))
+	(do-for-all-facts ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps state payments order))
+																							(eq ?order-id (wm-key-arg ?wm-fact:key ord)))
+		(if (neq 0 ?wm-fact:value) then
+			(bind ?paid (insert$ ?paid 1 ?wm-fact:value))
+			(bind ?paid-at (insert$ ?paid-at 1 (wm-key-arg ?wm-fact:key m)))
+		)
+	)
+	;2 get current running orders != the given one
+	(do-for-all-facts ((?gf goal)) (and (str-index PAY-FOR-RINGS ?gf:class )
+																			(eq FORMULATED ?gf:mode)
+																			(member$ (nth$ 8 ?gf:params) ?paid-at)
+																			(neq ?order-id (fact-slot-value (nth$ 1 (find-fact ((?m goal-meta)) (eq ?gf:id ?m:goal-id))) order-id))
+																			(neq 0 (length$ ?paid)))
+				;3 finish goal and reduce amout of  payments
+		(modify ?gf (mode FINISHED)(outcome COMPLETED))
+		(bind ?i 0)
+		(if (eq (nth$ 8 ?gf:params) (nth$ 1 ?paid-at)) then
+			(bind ?i 1)
+		else
+			(bind ?i 2)
+		)
+		(bind ?paid (replace$ ?paid ?i ?i (- (nth$ ?i ?paid) 1)))
+		(if (eq 0 (nth$ ?i ?paid)) then
+			(delete$ ?paid ?i ?i)
+			(delete$ ?paid-at ?i ?i)
+		)
+	)
+)
+
