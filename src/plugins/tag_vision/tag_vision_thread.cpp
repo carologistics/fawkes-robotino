@@ -332,7 +332,13 @@ TagVisionThread::get_marker()
 			    (rot_matrix.at<double>(0, 2) - rot_matrix.at<double>(2, 0)) / (4 * qw),
 			    (rot_matrix.at<double>(1, 0) - rot_matrix.at<double>(0, 1)) / (4 * qw)}},
 			  markerIds[i]};
-			markers_->push_back(tmp_marker);
+
+			if (qw > 0.0) {
+				markers_->push_back(tmp_marker);
+			} else {
+				logger->log_error(name(), "Quaternion is 0 in W component. Discarding marker!");
+			}
+
 			// draw axis for each marker
 			cv::drawFrameAxes(ipl_image_, cameraMatrix_, distCoeffs_, rvecs[i], tvecs[i], 0.1);
 		}
