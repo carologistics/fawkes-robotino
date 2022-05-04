@@ -65,6 +65,7 @@ depends_interfaces = {
    {v = "tag_15", type = "Position3DInterface", id="/tag-vision/15"},
    {v = "tag_info", type = "TagVisionInterface", id="/tag-vision/info"},
    {v = "laserline_switch", type = "SwitchInterface", id="laser-lines"},
+   {v = "object_tracking_if", type = "ObjectTrackingInterface", id="object-tracking"},
 }
 
 documentation      = [==[Align precisely at the given coordinates, relative to the center of an MPS
@@ -132,6 +133,29 @@ function want_search()
    return fsm.vars.search_idx <= MAX_TRIES
 end
 
+function object_tracker_inactive(self)
+  return self.fsm.vars.end_early and
+    (not object_tracking_if:has_writer() or object_tracking_if:msgid() == 0)
+end
+
+function early_endable(self)
+  return self.fsm.vars.end_early and close_enough(self)
+    and self.fsm.vars.consecutive_detections > 2
+end
+
+function check_tracking(self)
+	if self.fsm.vars.end_early then
+		if self.fsm.vars.tracking_msgid ~= object_tracking_if:msgid() then
+			self.fsm.vars.tracking_msgid = object_tracking_if:msgid()
+			if object_tracking_if:is_detected() then
+				self.fsm.vars.consecutive_detections = self.fsm.vars.consecutive_detections + 1
+			else
+					self.fsm.vars.consecutive_detections = 0
+			end
+		end
+	end
+end
+
 
 fsm:define_states{ export_to=_M, closure={
       pose_error=pose_error, tag_visible=tag_visible, MIN_VIS_HIST_TAG=MIN_VIS_HIST_TAG,
@@ -157,16 +181,20 @@ fsm:add_transitions{
 
    {"CHECK_TAG",     "MATCH_LINE",      cond="tag_visible(MIN_VIS_HIST_TAG)", desc="found tag"},
    {"CHECK_TAG",     "FIND_TAG",        timeout=2, desc="no tag"},
+   {"CHECK_TAG",     "FIND_TAG",        timeout=2, desc="no tag"},
+   {"CHECK_TAG",     "FINAL",        timeout=erly_endable(),desc="Stopping to further pursue visual servoing"},
 
    {"FIND_TAG",      "SEARCH_LINES",    cond="want_search() and #vars.interesting_lines > 0", desc="search 4 tag"},
    {"FIND_TAG",      "MATCH_LINE",      cond="tag_visible(MIN_VIS_HIST_TAG)", desc="found tag"},
    {"FIND_TAG",      "TURN_AROUND",     timeout=1, desc="no interesting lines"},
    {"FIND_TAG",      "FAILED",          cond="not want_search()"},
+   {"FIND_TAG",      "FINAL",						cond=early_endable(), desc="Stopping to further pursue visual servoing"},
 
    {"SEARCH_LINES",  "MATCH_LINE",      cond="tag_visible(MIN_VIS_HIST_TAG)", desc="found tag"},
 
    {"MATCH_LINE",   "ALIGN_FAST",       cond="vars.matched_line and tag_visible(MIN_VIS_HIST_TAG)"},
    {"MATCH_LINE",   "NO_LINE",          timeout=2, desc="lost line"},
+   {"MATCH_LINE",   "FINAL",          timeout=early_endable(), desc="Stopping to further pursue visual servoing"},
 
    {"MATCH_AVG_LINE", "ALIGN_PRECISE",  timeout=1},
 
@@ -248,7 +276,7 @@ end
 -- Return all lines which may have the tag we're looking for
 function get_interesting_lines(lines)
    local rv = {}
-   
+
    -- Shallow-copy input table so we don't delete values from it
    local good_lines = {}
    for k,v in pairs(lines) do good_lines[k] = v end
@@ -261,7 +289,7 @@ function get_interesting_lines(lines)
          if matched then good_lines[matched:id()] = nil end
       end
    end
-   
+
    -- Use only lines that have been inspected 0 times or less often than the others
    local max_num_visited = 1
    for k,v in pairs(fsm.vars.lines_visited) do
@@ -294,6 +322,7 @@ function CHECK_TAG:loop()
    if tag and tag:visibility_history() > MIN_VIS_HIST_TAG then
       self.fsm.vars.matched_line = match_line(tag, self.fsm.vars.lines)
    end
+	check_tracking()
 end
 
 
@@ -302,7 +331,8 @@ function FIND_TAG:init()
 end
 
 function FIND_TAG:loop()
-   self.fsm.vars.interesting_lines = get_interesting_lines(self.fsm.vars.lines)
+	self.fsm.vars.interesting_lines = get_interesting_lines(self.fsm.vars.lines)
+	check_tracking()
 end
 
 
@@ -322,7 +352,7 @@ function SEARCH_LINES:init()
    end
 
    self.fsm.vars.lines_visited[chosen_line:id()] = self.fsm.vars.lines_visited[chosen_line:id()] + 1
-   
+
    print("SEARCH LINES turn ori: " .. ori)
    self.args["motor_move"].ori = ori
    self.fsm.vars.search_idx = self.fsm.vars.search_idx + 1
@@ -346,8 +376,9 @@ end
 
 
 function MATCH_LINE:loop()
-   local tag = tag_utils.iface_for_id(self.fsm.vars.tags, tag_info, self.fsm.vars.tag_id)
-   self.fsm.vars.matched_line = match_line(tag, self.fsm.vars.lines)
+	local tag = tag_utils.iface_for_id(self.fsm.vars.tags, tag_info, self.fsm.vars.tag_id)
+	self.fsm.vars.matched_line = match_line(tag, self.fsm.vars.lines)
+	check_tracking()
 end
 
 
@@ -382,7 +413,7 @@ function ALIGN_FAST:init()
    printf("center l: %f, %f, %f", center.x, center.y, center.ori)
    local center_bl = tfm.transform(center, "/base_laser", "/base_link")
    local p = llutils.point_in_front(center_bl, self.fsm.vars.x)
-   
+
    printf("p    : %f %f %f", p.x, p.y, p.ori)
 
    self.args["motor_move"] = {
@@ -425,14 +456,14 @@ end
 
 function ALIGN_PRECISE:init()
    self.fsm.vars.align_attempts = self.fsm.vars.align_attempts + 1
-  
+
    if self.fsm.vars.p_tag then
       printf("p_tag: %f %f %f",
          self.fsm.vars.p_tag.x,
          self.fsm.vars.p_tag.y,
          fawkes.tf.get_yaw(self.fsm.vars.p_tag.ori))
 
-      self.args["motor_move"] = { 
+      self.args["motor_move"] = {
          x = self.fsm.vars.p_tag.x,
          y = self.fsm.vars.p_tag.y,
          ori = fawkes.tf.get_yaw(self.fsm.vars.p_tag.ori),

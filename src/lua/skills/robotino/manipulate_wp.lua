@@ -25,7 +25,8 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "manipulate_wp"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"goto","motor_move","gripper_routine"}
+depends_skills     = {"mps_align","motor_move","gripper_routine"}
+-- depends_skills     = {"goto","motor_move","gripper_routine"}
 depends_interfaces = {
    {v = "object_tracking_if", type = "ObjectTrackingInterface", id="object-tracking"},
    {v = "arduino", type = "ArduinoInterface", id="Arduino"},
@@ -302,7 +303,8 @@ end
 fsm:define_states{ export_to=_M, closure={MISSING_MAX=MISSING_MAX},
    {"INIT",                  JumpState},
    {"START_TRACKING",        JumpState},
-   {"SEARCH",                SkillJumpState, skills={{goto}},            final_to="MOVE_BASE_AND_GRIPPER", fail_to="FAILED"},
+--   {"SEARCH",                SkillJumpState, skills={{goto}},            final_to="MOVE_BASE_AND_GRIPPER", fail_to="FAILED"},
+   {"SEARCH",                SkillJumpState, skills={{mps_align}},            final_to="MOVE_BASE_AND_GRIPPER", fail_to="FAILED"},
    {"MOVE_BASE_AND_GRIPPER", SkillJumpState, skills={{motor_move}},      final_to="FINE_TUNE_GRIPPER",     fail_to="SEARCH"},
    {"FINE_TUNE_GRIPPER",     JumpState},
    {"GRIPPER_ROUTINE",       SkillJumpState, skills={{gripper_routine}}, final_to="FINAL", fail_to="FINE_TUNE_GRIPPER"},
@@ -397,7 +399,7 @@ end
 function SEARCH:init()
   fsm.vars.time_start = fawkes.Time:new():in_msec()
   move_gripper_default_pose()
-  self.args["goto"] = {x = fsm.vars.expected_pos_x,
+  self.args["mps_align"] = {x = fsm.vars.expected_pos_x,
                        y = fsm.vars.expected_pos_y,
                        ori = fsm.vars.expected_pos_ori,
                        end_early = true}
