@@ -713,7 +713,8 @@
     (assert (wm-fact (key evaluation offer discard args? status COMPLETED cs ?cs)))
   )
 
-  ;MISSING: handle pay for for ring goals
+  ;handle pay for for ring goals
+  (goal-reasoner-redistribute-payments ?order-id)
 
   ;nuke the production tree
   (goal-reasoner-nuke-subtree ?root)
@@ -785,6 +786,16 @@
   (goal-meta (goal-id ?goal-id) (order-id ?order-id))
   (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE $?))
+  =>
+  (modify ?goal (mode FORMULATED) (outcome UNKNOWN))
+  (retract ?offer)
+)
+
+(defrule goal-reasoner-take-offer-payment-completed
+  "Take an offer for a completed payment if the own one is just formulated."
+  ?offer <- (wm-fact (key evaluation offer payment args? status COMPLETED rs ?rs))
+  ?goal <- (goal (class PAY-FOR-RINGS-WITH-BASE)
+                 (mode FORMULATED) (outcome UNKNOWN) (params $? target-mps ?rs $?))
   =>
   (modify ?goal (mode FINISHED) (outcome COMPLETED))
   (retract ?offer)
