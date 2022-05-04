@@ -231,6 +231,9 @@ void double_calibrate()
 
 void calibrate()
 {
+  // while the x axis is not done calibrating, the gripper is not moving in y
+  // and z direction, else this could be dangerous if a workpiece is placed
+  // near the gripper
   bool x_done = false, y_done = false, z_done = false;
   do { //repeat calibration as long as not successfull
     motor_X.enableOutputs();
