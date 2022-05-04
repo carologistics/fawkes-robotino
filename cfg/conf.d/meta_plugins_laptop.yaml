@@ -3,7 +3,6 @@
 ---
 fawkes/meta_plugins:
   m-bare:
-    - bbsync
     - static-transforms
     - webview
   m-fv:
@@ -40,12 +39,8 @@ fawkes/meta_plugins:
     - navgraph-generator-mps
     - skiller
     - m-realsense
-    - conveyor-plane
-    - conveyor-pose
-    - ros-pcl
     - skiller-rest-api
     - skiller_motor_state
-    - mps-laser-gen
     - object-tracking
   m-robot-memory:
     - mongodb
