@@ -746,8 +746,11 @@
   (goal-meta (goal-id ?goal-id) (order-id ?order-id))
   (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE $?))
+  ?instruct-goal <- (goal (id ?instruct-goal-id) (class INSTRUCT-CS-BUFFER-CAP))
+  (goal-meta (goal-id ?instruct-goal-id) (order-id ?order-id))
   =>
   (modify ?goal (mode FORMULATED) (outcome UNKNOWN))
+  (modify ?instruct-goal (mode FORMULATED) (outcome UNKNOWN))
   (retract ?offer)
 )
 
