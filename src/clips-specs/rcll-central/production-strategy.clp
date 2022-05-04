@@ -28,6 +28,7 @@
   ?*RS-WORKLOAD-THRESHOLD* = 6
   ?*C0-PRODUCTION-THRESHOLD* = 1
   ?*C1-PRODUCTION-THRESHOLD* = 1
+  ?*SALIENCE-ORDER-SELECTION* = 10000
 )
 
 (deffunction production-strategy-produce-ahead-check (?gt ?start ?end ?complexity)
@@ -657,6 +658,7 @@
 (defrule production-strategy-append-possible-orders
   "An order is possible if it's not been fulfilled yet and if the machine occupancy
   allows it to be pursued."
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   ;facts to modify
   ?poss <- (wm-fact (key strategy meta possible-orders) (values $?values))
   ;meta information
@@ -675,6 +677,7 @@
 
 (defrule production-strategy-remove-from-possible-orders-active
   "An order that has been started, fulfilled is not possible anymore."
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
   ?poss <- (wm-fact (key strategy meta possible-orders) (values $?values&:(member$ ?order-id ?values)))
@@ -693,6 +696,7 @@
 ;filter delivery-ahead
 (defrule production-strategy-filter-orders-delivery-ahead-add
   "Add an order to this filter if its production ahead window is open and isn't closed yet."
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter delivery-ahead)
                         (values $?values&:(not (member$ ?order-id ?values))))
@@ -708,6 +712,7 @@
 
 (defrule production-strategy-filter-orders-delivery-ahead-remove
   "Remove an order from this filter if its production ahead window has finally closed."
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter delivery-ahead) 
                         (values $?values&:(member$ ?order-id ?values)))
@@ -728,6 +733,7 @@
 ;filter delivery-limit
 (defrule production-strategy-filter-orders-delivery-limit-add
   "Add an order to this filter its delivery window end is in the future."
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter delivery-limit) 
                         (values $?values&:(not (member$ ?order-id ?values))))
@@ -741,6 +747,7 @@
 
 (defrule production-strategy-filter-orders-delivery-limit-remove
   "Remove an order from this filter if its delivery window end has arrived."
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter delivery-limit) 
                         (values $?values&:(member$ ?order-id ?values)))
@@ -760,6 +767,7 @@
 ;filter machine workload
 (defrule production-strategy-filter-orders-workload-add
   "Add an order to this filter its workload doesn't push the summed workload over any machine's limit."
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter workload) 
                         (values $?values&:(not (member$ ?order-id ?values))))
@@ -777,6 +785,7 @@
 
 (defrule production-strategy-filter-orders-workload-remove
   "Remove an order from this filter if its workload would push the summed workload over the limit."
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter workload) 
                         (values $?values&:(member$ ?order-id ?values)))
@@ -795,6 +804,7 @@
 ;filter c0 limit
 (defrule production-strategy-filter-orders-c0-limit-add
   "Add an order to this filter if there is less than the threshold of active C0 orders"
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c0-limit) 
                         (values $?values&:(not (member$ ?order-id ?values))))
@@ -813,6 +823,7 @@
 
 (defrule production-strategy-filter-orders-c0-limit-remove
   "Remove an order from this filter if there is more than the threshold of active C0 orders"
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c0-limit) 
                         (values $?values&:(member$ ?order-id ?values)))
@@ -830,6 +841,7 @@
 ;filter c1 limit
 (defrule production-strategy-filter-orders-c1-limit-add
   "Add an order to this filter if there is less than the threshold of active c1 orders"
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c1-limit) 
                         (values $?values&:(not (member$ ?order-id ?values))))
@@ -848,6 +860,7 @@
 
 (defrule production-strategy-filter-orders-c1-limit-remove
   "Remove an order from this filter if there is more than the threshold of active c1 orders"
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c1-limit) 
                         (values $?values&:(member$ ?order-id ?values)))
@@ -865,6 +878,7 @@
 (defrule production-strategy-filter-set-selected-order-possible
   "- it is a possible order
    - there is no order of a higher complexity that is also possible"
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
   (not
@@ -889,6 +903,7 @@
 
 (defrule production-strategy-filter-set-selected-order-possible-empty
   "There is no possible order"
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   (wm-fact (key strategy meta possible-orders) (values ))
   ?f <- (wm-fact (key strategy meta selected-order args? cond possible) (value ~nil))
   =>
@@ -899,6 +914,7 @@
   " - it is a possible order
     - it fulfills all the filters
     - there is no order of a higher complexity that fulfills all the filters"
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
 
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
@@ -926,6 +942,7 @@
 
 (defrule production-strategy-filter-set-selected-order-filter-empty
   "There is no order that meets all filters"
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   ?f <- (wm-fact (key strategy meta selected-order args? cond filter) (value ?order-id&~nil))
   (wm-fact (key strategy meta filtered-orders $?) (values $?values&:(not (member$ ?order-id ?values))))
   =>
