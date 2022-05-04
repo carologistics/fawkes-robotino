@@ -257,6 +257,21 @@
   )
 	(return ?goal)
 )
+
+(deffunction goal-reasoner-redistribute-payments (?order-id)
+  "Identify fulfilled but not consumed payments, and create offers for them."
+	(do-for-all-facts ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps state payments order))
+																							(eq ?order-id (wm-key-arg ?wm-fact:key ord)))
+		(if (neq 0 ?wm-fact:value) then
+			(bind ?paid (insert$ ?paid 1 ?wm-fact:value))
+      (while (> ?paid 0)
+        (assert (wm-fact (key evaluation offer payment args? status COMPLETED rs (wm-key-arg ?wm-fact:key m))))
+        (bind ?paid (- ?paid 1))
+      )
+    )
+	)
+)
+
 ; =========================== Goal Executability =============================
 
 (defrule goal-reasoner-propagate-executability
