@@ -40,6 +40,15 @@
 class CustomICP : public pcl::IterativeClosestPointNonLinear<pcl::PointXYZ, pcl::PointXYZ>
 {
 public:
+	/** Assignment operator - required due to deletion of parent class since PCL 1.12.
+	* @param other instance to copy from
+	* @return reference to this instance
+	*/
+	CustomICP &
+	operator=(const CustomICP &other /* copy of the object to take the assignment from */)
+	{
+		return *this;
+	}
 	using pcl::IterativeClosestPointNonLinear<pcl::PointXYZ,
 	                                          pcl::PointXYZ>::IterativeClosestPointNonLinear;
 
