@@ -318,28 +318,61 @@ TagVisionThread::get_marker()
 		std::vector<cv::Vec3d> rvecs, tvecs;
 		for (std::vector<int>::size_type i = 0; i < markerIds.size(); i++) {
 			cv::aruco::estimatePoseSingleMarkers(
-			  markerCorners, marker_size_, cameraMatrix_, distCoeffs_, rvecs, tvecs);
+			  markerCorners, marker_size_ / 1000., cameraMatrix_, distCoeffs_, rvecs, tvecs);
 			cv::Mat rot_matrix;
 			cv::Rodrigues(rvecs[i], rot_matrix);
-			auto qw = std::sqrt(1 + rot_matrix.at<double>(0, 0) + rot_matrix.at<double>(1, 1)
-			                    + rot_matrix.at<double>(2, 2))
-			          / 2;
-			TagVisionMarker tmp_marker{
-			  {tvecs[i],
-			   {qw,
-			    (rot_matrix.at<double>(2, 1) - rot_matrix.at<double>(1, 2)) / (4 * qw),
-			    (rot_matrix.at<double>(0, 2) - rot_matrix.at<double>(2, 0)) / (4 * qw),
-			    (rot_matrix.at<double>(1, 0) - rot_matrix.at<double>(0, 1)) / (4 * qw)}},
-			  markerIds[i]};
+			auto   tvec_scaled = 1000. * tvecs[i];
+			double m00, m01, m02, m10, m11, m12, m20, m21, m22, qw, qx, qy, qz;
+			m00 = rot_matrix.at<double>(0, 0);
+			m01 = rot_matrix.at<double>(0, 1);
+			m02 = rot_matrix.at<double>(0, 2);
+			m10 = rot_matrix.at<double>(1, 0);
+			m11 = rot_matrix.at<double>(1, 1);
+			m12 = rot_matrix.at<double>(1, 2);
+			m20 = rot_matrix.at<double>(2, 0);
+			m21 = rot_matrix.at<double>(2, 1);
+			m22 = rot_matrix.at<double>(2, 2);
 
-			if (qw > 0.0) {
-				markers_->push_back(tmp_marker);
+			double tr =
+			  rot_matrix.at<double>(0, 0) + rot_matrix.at<double>(1, 1) + rot_matrix.at<double>(2, 2);
+
+			if (tr > 0) {
+				double S = sqrt(tr + 1.0) * 2; // S=4*qw
+				qw       = 0.25 * S;
+				qx       = (m21 - m12) / S;
+				qy       = (m02 - m20) / S;
+				qz       = (m10 - m01) / S;
+			} else if ((m00 > m11) & (m00 > m22)) {
+				double S = sqrt(1.0 + m00 - m11 - m22) * 2; // S=4*qx
+				qw       = (m21 - m12) / S;
+				qx       = 0.25 * S;
+				qy       = (m01 + m10) / S;
+				qz       = (m02 + m20) / S;
+			} else if (m11 > m22) {
+				double S = sqrt(1.0 + m11 - m00 - m22) * 2; // S=4*qy
+				qw       = (m02 - m20) / S;
+				qx       = (m01 + m10) / S;
+				qy       = 0.25 * S;
+				qz       = (m12 + m21) / S;
 			} else {
-				logger->log_error(name(), "Quaternion is 0 in W component. Discarding marker!");
+				double S = sqrt(1.0 + m22 - m00 - m11) * 2; // S=4*qz
+				qw       = (m10 - m01) / S;
+				qx       = (m02 + m20) / S;
+				qy       = (m12 + m21) / S;
+				qz       = 0.25 * S;
 			}
 
-			// draw axis for each marker
-			cv::drawFrameAxes(ipl_image_, cameraMatrix_, distCoeffs_, rvecs[i], tvecs[i], 0.1);
+			TagVisionMarker tmp_marker{{tvec_scaled, {qw, qx, qy, qz}}, markerIds[i]};
+			markers_->push_back(tmp_marker);
+			//		cv::Mat outputImage;
+			//		ipl_image_.copyTo(outputImage);
+			//		for (unsigned int i = 0; i < rvecs.size(); ++i) {
+			//			auto rvec = rvecs[i];
+			//			auto tvec = tvecs[i];
+			//			cv::drawFrameAxes(outputImage, cameraMatrix_, distCoeffs_, rvec, tvec, 0.1);
+			//		}
+			//		cv::imshow("out", outputImage);
+			//		cv::waitKey(1);
 		}
 		break;
 	}
