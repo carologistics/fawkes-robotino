@@ -59,9 +59,9 @@ fsm:add_transitions{
 
 function INIT:init()
    if self.fsm.vars.team == "CYAN" then
-      self.fsm.vars.waypoints = {"C-ins-out", "C-ins-in"}
+      self.fsm.vars.waypoints = {"C-INS-OUT", "C-INS-IN"}
    else
-      self.fsm.vars.waypoints = {"M-ins-out", "M-ins-in"}
+      self.fsm.vars.waypoints = {"M-INS-OUT", "M-INS-IN"}
    end
 end
 
