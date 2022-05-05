@@ -20,7 +20,7 @@ plugins/amcl:
 
  #MAIN FIELD:
   origin_x: -8.2
-  origin_y: -0.25
+  origin_y: -1.0
  
 # MAGENTA FIELD:
 #  origin_x: -5.9
