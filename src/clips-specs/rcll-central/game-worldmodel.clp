@@ -109,7 +109,8 @@
 (defrule game-generate-navgraph-found-one-new-tag
 	(wm-fact (key refbox phase) (value PRODUCTION))
 	(wm-fact (key domain fact mps-team args? m ?mps col ?any-team-color))
+	(wm-fact (id "/config/rcll/exploration/marker-type") (type STRING) (value ?type))
 	(exploration-result (machine ?mps))
 	=>
-	(navgraph-add-tags-from-exploration)
+	(navgraph-add-tags-from-exploration (sym-cat ?type))
 )
