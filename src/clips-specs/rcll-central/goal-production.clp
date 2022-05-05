@@ -153,7 +153,7 @@
   (wm-fact (key refbox phase) (value PRODUCTION))
   =>
   (bind ?goal (goal-tree-assert-run-endless REFILL-SHELF-MAINTAIN 1))
-  (modify ?goal (required-resources refill-shelf)
+  (modify ?goal (required-resources)
                 (params frequency 1 retract-on-REJECTED)
                 (verbosity QUIET))
 )

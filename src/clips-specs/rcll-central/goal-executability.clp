@@ -586,7 +586,7 @@ The workpiece remains in the output of the used ring station after
 
 
 
-	(not (wm-fact (key domain fact wp-at args? wp ?wp-loc m ?target-mps side INPUT)))
+	(not (wm-fact (key domain fact wp-at args? wp ?any-wp-blocking m ?target-mps side INPUT)))
 	; There is at least one other rs side, except for the target input, that
 	; is free (because occupying all 4 sides at once can cause deadlocks)
 	(or (wm-fact (key domain fact mps-side-free args? m ?target-mps side OUTPUT))
@@ -677,7 +677,7 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; MPS CEs
 	(wm-fact (key domain fact mps-type args? m ?mps t CS))
-	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~DOWN))
 	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
 	(wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
 	(wm-fact (key domain fact cs-buffered args? m ?mps col ?any-cap-color))
@@ -756,7 +756,7 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; MPS CEs
 	(wm-fact (key domain fact mps-type args? m ?mps t RS))
-	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~DOWN))
 	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
 	(wm-fact (key domain fact rs-filled-with args? m ?mps n ?bases-filled))
 	; Ring Cost
