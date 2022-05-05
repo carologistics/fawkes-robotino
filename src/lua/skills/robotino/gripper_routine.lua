@@ -118,7 +118,7 @@ function MOVE_GRIPPER_DOWN:init()
   if self.fsm.vars.pick_wp then
     self.args["gripper_commands"].z = z_clipped 
   else
-    self.args["gripper_commands"].z = z_clipped + 0.005
+    self.args["gripper_commands"].z = z_clipped + 0.01
   end
   self.args["gripper_commands"].command = "MOVEABS"
 
