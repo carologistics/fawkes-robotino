@@ -272,13 +272,13 @@ TagVisionThread::loop()
 void
 TagVisionThread::get_marker()
 {
+	this->markers_->clear();
 	switch (marker_type_) {
 	case MarkerType::ALVAR: {
 		// detect makres on image
 #ifdef HAVE_ALVAR
 		alvar_detector_.Detect(ipl_image_, &alvar_cam_);
 		// reset currently saved markers
-		this->markers_->clear();
 		// fill output array
 		for (alvar::MarkerData &tmp_alvar_marker : *(this->alvar_detector_.markers)) {
 			alvar::Pose tmp_pose   = tmp_alvar_marker.pose;
