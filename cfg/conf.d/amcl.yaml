@@ -18,17 +18,17 @@ plugins/amcl:
   # set the origin to (-0.05, -0.05)
    #
 
-# MAIN FIELD:
-#  origin_x: -9.7
-#  origin_y: -0.25
-# 
+ #MAIN FIELD:
+  origin_x: -9.7
+  origin_y: -0.25
+ 
 # MAGENTA FIELD:
 #  origin_x: -5.9
 #  origin_y: -3.75
 
-  # CYAN FIELD:
-  origin_x: -15.0
-  origin_y: -3.75
+#  # CYAN FIELD:
+#  origin_x: -15.0
+#  origin_y: -3.75
 
   origin_theta: 0.0
 
