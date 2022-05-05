@@ -141,8 +141,8 @@ extractMapFromAnswerSet(const Clingo::SymbolVector &symbols,
                         std::unordered_map<std::string, std::vector<IntermediatePlanElement>> &map,
                         const int                      planGameTime,
                         const std::function<int(int)> &transform,
-                        fawkes::Logger *               logger,
-                        const char *                   logging_component)
+                        fawkes::Logger                *logger,
+                        const char                    *logging_component)
 {
 	for (auto &pair : map) {
 		pair.second.clear();
@@ -153,9 +153,9 @@ extractMapFromAnswerSet(const Clingo::SymbolVector &symbols,
 		const bool        begin = name == "begin", end = name == "end";
 		if (begin || end) {
 			// Assumes begin(robot, task, time) and end(robot, task, time).
-			const decltype(auto) args(symbol.arguments());
-			const auto           time = args[2].number();
-			const auto           robot(args[0].string());
+			const auto args(symbol.arguments());
+			const auto time = args[2].number();
+			const auto robot(args[0].string());
 
 			// If not in the map until now it will add a list for the robot.
 			map[robot].emplace_back(args[1].to_string(),
@@ -191,8 +191,8 @@ extractMapFromAnswerSet(const Clingo::SymbolVector &symbols,
 static inline void
 assembleTemporaryPlan(std::unordered_map<std::string, std::vector<IntermediatePlanElement>> &map,
                       std::unordered_map<std::string, std::vector<BasicPlanElement>> &tempPlan,
-                      const std::unordered_map<std::string, RobotPlan> &              plan,
-                      fawkes::Logger *                                                logger,
+                      const std::unordered_map<std::string, RobotPlan>               &plan,
+                      fawkes::Logger                                                 *logger,
                       const char *logging_component)
 {
 	for (auto &tempRobotPlan : tempPlan) {
@@ -204,7 +204,7 @@ assembleTemporaryPlan(std::unordered_map<std::string, std::vector<IntermediatePl
 	for (auto &pair : map) {
 		const auto &robotName(pair.first);
 		const auto  robotNameCStr(robotName.c_str());
-		auto &      robotTempPlan(tempPlan[robotName]);
+		auto       &robotTempPlan(tempPlan[robotName]);
 
 		auto       iter = pair.second.begin();
 		const auto end  = pair.second.end();
@@ -364,8 +364,8 @@ AspPlannerThread::loopPlan(void)
 
 	for (auto &pair : tempPlan) {
 		const auto &robotName(pair.first);
-		auto &      robotPlan(planCopy[robotName]);
-		auto &      tempRobotPlan(pair.second);
+		auto       &robotPlan(planCopy[robotName]);
+		auto       &tempRobotPlan(pair.second);
 
 		logger->log_info(LoggingComponent,
 		                 "Update plan for %s, %zu elements.",
@@ -516,8 +516,8 @@ AspPlannerThread::loopPlan(void)
 		// at the end of the loop.
 		for (const auto &pair : Robots) {
 			const auto &robot(pair.first);
-			auto &      deployed(Plan[robot].Tasks);
-			auto &      updated(planCopy[robot]);
+			auto       &deployed(Plan[robot].Tasks);
+			auto       &updated(planCopy[robot]);
 
 			int       index = 0;
 			const int dSize(deployed.size()), uSize(updated.size());
@@ -731,7 +731,7 @@ AspPlannerThread::planFeedbackCallback(const bsoncxx::document::view &document)
 		const auto task(taskCLIPStoASP(object["task"].get_utf8().value.to_string()));
 
 		MutexLocker planLocker(&PlanMutex);
-		auto &      robotPlan(Plan[robot]);
+		auto       &robotPlan(Plan[robot]);
 		logger->log_info(LoggingComponent,
 		                 "Plan-Feedback, R: %s T: %s A: %s CT: %s",
 		                 robot.c_str(),

@@ -329,7 +329,7 @@ AspPlannerThread::loopClingo(void)
 	} // for ( const auto& machine : {"RS1", "RS2"} )
 
 	for (auto index = 0; index < static_cast<int>(Products.size()); ++index) {
-		const auto &            product(Products[index]);
+		const auto             &product(Products[index]);
 		const ProductIdentifier id{index};
 		addExternal(generateProductExternal(id));
 		addExternal(generateProductBaseExternal(id, product.Base));
@@ -417,8 +417,8 @@ AspPlannerThread::loopClingo(void)
  * @param[in] interrupt Which level of interrupt is requested.
  */
 void
-AspPlannerThread::queueGround(GroundRequest &&       request,
-                              const char *           reason,
+AspPlannerThread::queueGround(GroundRequest        &&request,
+                              const char            *reason,
                               const InterruptSolving interrupt)
 {
 	MutexLocker locker(&RequestMutex);
@@ -434,8 +434,8 @@ AspPlannerThread::queueGround(GroundRequest &&       request,
  * @param[in] interrupt Which level of interrupt is requested.
  */
 void
-AspPlannerThread::queueRelease(Clingo::Symbol &&      atom,
-                               const char *           reason,
+AspPlannerThread::queueRelease(Clingo::Symbol       &&atom,
+                               const char            *reason,
                                const InterruptSolving interrupt)
 {
 	MutexLocker locker(&RequestMutex);
@@ -451,8 +451,8 @@ AspPlannerThread::queueRelease(Clingo::Symbol &&      atom,
  * @param[in] interrupt Which level of interrupt is requested.
  */
 void
-AspPlannerThread::queueAssign(Clingo::Symbol &&      atom,
-                              const char *           reason,
+AspPlannerThread::queueAssign(Clingo::Symbol       &&atom,
+                              const char            *reason,
                               const InterruptSolving interrupt)
 {
 	MutexLocker locker(&RequestMutex);
@@ -588,9 +588,9 @@ AspPlannerThread::solvingFinished(const Clingo::SolveResult &result)
  * @param[in] retFunction The function used to return the calculated value.
  */
 void
-AspPlannerThread::groundFunctions(const Clingo::Location &    loc,
-                                  const char *                name,
-                                  const Clingo::SymbolSpan &  arguments,
+AspPlannerThread::groundFunctions(const Clingo::Location     &loc,
+                                  const char                 *name,
+                                  const Clingo::SymbolSpan   &arguments,
                                   Clingo::SymbolSpanCallback &retFunction)
 {
 	if (clingo->debug_level() >= fawkes::ClingoAccess::ASP_DBG_ALL) {
@@ -1260,7 +1260,7 @@ AspPlannerThread::robotFinishedTask(const std::string &robot,
 	} // if ( !success )
 
 	auto generateProduct = [this](const string_view &machine,
-	                              std::string &&     baseColor) -> ProductIdentifier {
+	                              std::string      &&baseColor) -> ProductIdentifier {
 		if (static_cast<int>(Products.size()) >= MaxProducts) {
 			logger->log_error(LoggingComponent,
 			                  "Have to generate a product, this would be #%zu alive, but only "
@@ -1341,8 +1341,8 @@ AspPlannerThread::robotFinishedTask(const std::string &robot,
 		return id;
 	};
 
-	const decltype(auto) taskArguments(robotInfo.Doing.TaskSymbol.arguments());
-	const decltype(auto) machine(taskArguments[0].arguments()[1].string());
+	const auto taskArguments(robotInfo.Doing.TaskSymbol.arguments());
+	const auto machine(taskArguments[0].arguments()[1].string());
 
 	auto getOrder = [&taskArguments](void) {
 		return std::make_pair<int, int>(taskArguments[1].number(), taskArguments[2].number());
@@ -1402,7 +1402,7 @@ AspPlannerThread::robotFinishedTask(const std::string &robot,
 		auto       product    = robotDrops();
 		assert(Products[product.ID].Rings[ringNumber].empty());
 		const auto ringColor = Orders[order.first].Rings[ringNumber];
-		auto &     machineInfo(Machines[machine]);
+		auto      &machineInfo(Machines[machine]);
 		const auto ringInfo = std::find_if(RingColors.begin(),
 		                                   RingColors.end(),
 		                                   [&ringColor](const RingColorInformation &info) {
