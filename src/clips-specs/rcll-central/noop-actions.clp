@@ -186,12 +186,11 @@
                       (goal-id ?goal-id)
                       (action-name wait-for-wp)
                       (state RUNNING)
-                      (executable TRUE))
-  ; check if every wait-for-wp dependency-goal is executed successfully
-  (not (and (dependency-assignment (goal-id ?goal-id)
-                                   (wait-for WP)
-                                   (grounded-with ?dependency-id))
-            (goal (id ?dependency-id) (outcome ~COMPLETED))))
+                      (executable TRUE)
+                      (param-values ? ?m ?side)
+          )
+  (goal (id ?goal-id) (params wp ?wp $?))
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?m side ?side))
   =>
   (printout info "Goal " ?goal-id " finished wait-for-wp" crlf)
   (modify ?pa (state EXECUTION-SUCCEEDED))

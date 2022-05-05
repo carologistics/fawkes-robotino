@@ -110,24 +110,24 @@ nodes:
 # drive into field points
 # Cyan
   - !unconnected
-    name: C-ins-out
+    name: C-INS-OUT
     pos: [4.5, 0.5]
     properties:
       - always-copy: true
   - !unconnected
-    name: C-ins-in
+    name: C-INS-IN
     pos: [4.5, 1.5]
     properties:
       - always-copy: true
       - orientation: 1.5
 # Magenta
   - !unconnected
-    name: M-ins-out
+    name: M-INS-OUT
     pos: [-4.5, 0.5]
     properties:
       - always-copy: true
   - !unconnected
-    name: M-ins-in
+    name: M-INS-IN
     pos: [-4.5, 1.5]
     properties:
       - always-copy: true

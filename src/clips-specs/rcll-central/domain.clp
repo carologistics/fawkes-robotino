@@ -19,10 +19,6 @@
 ;
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
-(defglobal
-  ?*BBSYNC_PEER_CONFIG* = "/fawkes/bbsync/peers/"
-)
-
 (defrule domain-load
   (executive-init)
   (not (domain-loaded))
@@ -214,6 +210,7 @@
   (wm-fact (key refbox phase) (value SETUP))
   =>
   (bind ?self (sym-cat ?robot-name))
+  (config-load ?*NAVGRAPH_GENERATOR_MPS_CONFIG*)
   (printout info "Initializing worldmodel" crlf)
   (if (eq ?team-color CYAN)
     then
@@ -342,3 +339,8 @@
 	(assert (wm-fact (key central agent robot-waiting args? r ?robot)))
 )
 
+(defrule start-with-no-mps-workload-update-needed
+  (not (wm-fact (key mps workload needs-update)))
+  =>
+  (assert (wm-fact (key mps workload needs-update) (value FALSE) (type BOOL)))
+)

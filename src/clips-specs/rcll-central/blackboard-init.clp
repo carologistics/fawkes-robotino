@@ -99,18 +99,17 @@
                         (type "NavGraphGeneratorInterface"))
   (wm-fact (key config rcll use-static-navgraph) (type BOOL) (value FALSE))
   =>
-  (navgraph-challenge-field ?robot)
+  (navgraph-set-field-size ?robot)
   (navgraph-compute ?robot)
 )
 
 (defrule blackboard-init-compute-navgraph-central
-	(blackboard-interface (id "/navgraph-generator-mps")
-	                      (type "NavGraphWithMPSGeneratorInterface"))
-	(blackboard-interface (id "/navgraph-generator")
-	                      (type "NavGraphGeneratorInterface"))
-	=>
-	(navgraph-challenge-field FALSE)
-	(navgraph-compute FALSE)
+  (blackboard-interface (id "/navgraph-generator-mps")
+                        (type "NavGraphWithMPSGeneratorInterface"))
+  (blackboard-interface (id "/navgraph-generator")
+                        (type "NavGraphGeneratorInterface"))
+  =>
+  (navgraph-compute FALSE)
 )
 
 (defrule blackboard-init-open-skiller-interface

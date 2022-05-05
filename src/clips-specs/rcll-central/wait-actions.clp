@@ -36,7 +36,7 @@
   ?pa <- (plan-action (id ?action-id) (plan-id ?plan-id) (goal-id ?goal-id)
                       (action-name wait) (state RUNNING))
   (time $?now)
-  ?timer <- (timer (name ?name &: (sym-cat ?goal-id - ?plan-id - ?action-id))
+  ?timer <- (timer (name ?name &:(eq ?name (sym-cat ?goal-id - ?plan-id - ?action-id)))
                    (time $?t&:(timeout ?now ?t ?*WAIT-DURATION*)))
   =>
   (printout info "Finished waiting" crlf)
@@ -47,7 +47,7 @@
 (defrule action-fail-execute-wait-action
   ?pa <- (plan-action (id ?action-id) (plan-id ?plan-id) (goal-id ?goal-id)
                       (action-name wait) (state RUNNING) (executable TRUE))
-  (not (timer (name ?name &: (sym-cat ?goal-id - ?plan-id - ?action-id))))
+  (not (timer (name ?name &:(eq ?name (sym-cat ?goal-id - ?plan-id - ?action-id)))))
   =>
   (printout warn "Failed to wait, timer for action id " ?action-id
                  ", plan-id " ?plan-id ", goal-id " ?goal-id " does not exist"
