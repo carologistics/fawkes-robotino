@@ -243,33 +243,6 @@
  * the late delivery.
  */
 
-/**
- * @enum InterruptSolving
- * @brief States the current interrupt request.
- * @note Sort by priority. We use operator> when setting the value.
- *
- * @var InterruptSolving::Not
- * @brief Do not interrupt. But when a robot is too much behind schedule
- * increase interrupt level and check again.
- *
- * @var InterruptSolving::JustStarted
- * @brief Only interrupt if the solving was just started.
- *
- * @var InterruptSolving::Normal
- * @brief Do interrupt, if the plan isn't to old.
- *
- * @var InterruptSolving::High
- * @brief Like normal, but with a smaller threshold.
- *
- * @var InterruptSolving::Critical
- * @brief Interrupt in any case.
- *
- * @fn const char* interruptString(const InterruptSolving)
- * @brief Converts the enum to a string.
- * @param[in] interrupt The enum value.
- * @return The value represented as string.
- */
-
 /** @class AspPlannerThread "asp_planner_thread.h"
  * The thread to start and control the ASP planner.
  *
