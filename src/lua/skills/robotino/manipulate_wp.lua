@@ -27,6 +27,15 @@ name               = "manipulate_wp"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"goto","motor_move","gripper_routine"}
 depends_interfaces = {
+   {v = "line1", type="LaserLineInterface", id="/laser-lines/1"},
+   {v = "line2", type="LaserLineInterface", id="/laser-lines/2"},
+   {v = "line3", type="LaserLineInterface", id="/laser-lines/3"},
+   {v = "line4", type="LaserLineInterface", id="/laser-lines/4"},
+   {v = "line5", type="LaserLineInterface", id="/laser-lines/5"},
+   {v = "line6", type="LaserLineInterface", id="/laser-lines/6"},
+   {v = "line7", type="LaserLineInterface", id="/laser-lines/7"},
+   {v = "line8", type="LaserLineInterface", id="/laser-lines/8"},
+   {v = "laserline_switch", type = "SwitchInterface", id="laser-lines"},
    {v = "object_tracking_if", type = "ObjectTrackingInterface", id="object-tracking"},
    {v = "arduino", type = "ArduinoInterface", id="Arduino"},
 }
@@ -41,12 +50,26 @@ Parameters:
 ]==]
 
 local EXPECTED_BASE_OFFSET       = 0.5 -- distance between robotino middle point and workpiece
-                                       -- used as initial target position while searching
+                                        -- used as initial target position while searching
+local LASER_BASE_OFFSET          = 0.35 -- distance between robotino middle point and laser-line
+                                        -- used for DRIVE_TO_LASER_LINE
 local GRIPPER_TOLERANCE          = {x=0.005, y=0.001, z=0.001} -- accuracy
 local MISSING_MAX                = 2 -- limit for missing object detections in a row while fine-tuning gripper
 
+-- Tunables
+local LINE_MATCH_TOLERANCE=1.2      -- meter threshold of laserline to navgraph point
+local LINE_MATCH_ANG_TOLERANCE=0.05 -- rad threshold of laserline to navgraph point
+local NAVGRAPH_LIN_TOLERANCE=0.5    -- meter threshold of laser to navgraph point
+local NAVGRAPH_ANG_TOLERANCE=0.5    -- rad threshold of laser to navgraph point
+local LINE_LENGTH_MIN=0.64          -- minimum laser line length
+local LINE_LENGTH_MAX=0.71          -- maximum laser line length
+
+local MIN_VIS_HIST_LINE=5 --15
+local MIN_VIS_HIST_LINE_SEARCH=6 --15
+
 -- Initialize as skill module
 skillenv.skill_module(_M)
+local llutils = require("fawkes.laser-lines_utils")
 
 local tfm = require("fawkes.tfutils")
 
@@ -120,6 +143,52 @@ if config:exists("plugins/object_tracking/puck_values/middle_shelf_offset_side")
 end
 if config:exists("plugins/object_tracking/puck_values/right_shelf_offset_side") then
   right_shelf_offset_side = config:get_float("plugins/object_tracking/puck_values/right_shelf_offset_side")
+end
+
+-- Match tag to navgraph point
+function match_line(self,lines)
+   local matched_line = nil
+
+   local navgraph_point_laser = tfm.transform6D(
+         { x=self.fsm.vars.expected_pos_x, y=self.fsm.vars.expected_pos_y, z=0,
+           ori=fawkes.tf.create_quaternion_from_yaw(self.fsm.vars.expected_pos_ori) },
+           "/map", "/base_laser")
+
+   for k,line in pairs(self.fsm.vars.lines) do
+      local line_center = llutils.center(line, 0)
+      local d_navgraph_to_line = math.vec_length(navgraph_point_laser.x - line_center.x, navgraph_point_laser.y - line_center.y)
+
+      -- this is difference from the laser to navgraph point
+      local d_laser_to_navgraph = math.vec_length(navgraph_point_laser.x, navgraph_point_laser.y)
+
+      -- angular distance between the navgraph point (pointing towards the machine) and the line bearing
+      -- (also pointing towards the machine when the robot is standing in front of it).
+      -- This value should be very low when we are standing in front of the correct machine.
+      local yaw = fawkes.tf.get_yaw(navgraph_point_laser.ori)
+      local ang_dist = math.angle_distance(yaw, line:bearing())
+
+      if line:visibility_history() >= MIN_VIS_HIST_LINE
+         and d_navgraph_to_line < LINE_MATCH_TOLERANCE
+         and d_laser_to_navgraph < NAVGRAPH_LIN_TOLERANCE
+         and math.abs(yaw) < NAVGRAPH_ANG_TOLERANCE
+         and ang_dist < LINE_MATCH_ANG_TOLERANCE
+      then
+         matched_line = line
+      end
+   end
+
+   return matched_line
+end
+
+function laser_line_found(self)
+  self.fsm.vars.matched_line = match_line(self, self.fsm.vars.lines)
+
+  if self.fsm.vars.matched_line ~= nil then
+    printf ("found line: " .. self.fsm.vars.matched_line:id())
+    self.fsm.vars.line_point = llutils.point_in_front(llutils.center(self.fsm.vars.matched_line), self.fsm.vars.x_at_mps)
+  end
+
+  return self.fsm.vars.line_point ~= nil
 end
 
 function gripper_aligned()
@@ -302,8 +371,11 @@ end
 fsm:define_states{ export_to=_M, closure={MISSING_MAX=MISSING_MAX},
    {"INIT",                  JumpState},
    {"START_TRACKING",        JumpState},
-   {"SEARCH",                SkillJumpState, skills={{goto}},            final_to="MOVE_BASE_AND_GRIPPER", fail_to="FAILED"},
-   {"MOVE_BASE_AND_GRIPPER", SkillJumpState, skills={{motor_move}},      final_to="FINE_TUNE_GRIPPER",     fail_to="SEARCH"},
+   {"SEARCH",                SkillJumpState, skills={{goto}},            final_to="MOVE_BASE_AND_GRIPPER", fail_to="FIND_LASER_LINE"},
+   {"FIND_LASER_LINE",       JumpState},
+   {"DRIVE_TO_LASER_LINE",   SkillJumpState, skills={{motor_move}},      final_to="AT_LASER_LINE", fail_to="FAILED"},
+   {"AT_LASER_LINE",         JumpState},
+   {"MOVE_BASE_AND_GRIPPER", SkillJumpState, skills={{motor_move}},      final_to="FINE_TUNE_GRIPPER", fail_to="FIND_LASER_LINE"},
    {"FINE_TUNE_GRIPPER",     JumpState},
    {"GRIPPER_ROUTINE",       SkillJumpState, skills={{gripper_routine}}, final_to="FINAL", fail_to="FINE_TUNE_GRIPPER"},
 }
@@ -313,12 +385,28 @@ fsm:add_transitions{
    {"INIT", "START_TRACKING",                     cond=true, desc="Valid Input"},
    {"START_TRACKING", "FAILED",                   timeout=60, desc="Object tracker is not starting"},
    {"START_TRACKING", "SEARCH",                   cond=object_tracker_active},
+   {"FIND_LASER_LINE", "DRIVE_TO_LASER_LINE",     cond=laser_line_found},
+   {"FIND_LASER_LINE", "FAILED",                  timeout=1, desc="Could not find laser-line"},
+   {"AT_LASER_LINE", "MOVE_BASE_AND_GRIPPER",     cond="vars.consecutive_detections > 2", desc="Found Object"},
+   {"AT_LASER_LINE", "FAILED",                    timeout=2, desc="Object not found"},
    {"FINE_TUNE_GRIPPER", "GRIPPER_ROUTINE",       cond=gripper_aligned, desc="Gripper aligned"},
    {"FINE_TUNE_GRIPPER", "MOVE_BASE_AND_GRIPPER", cond="vars.out_of_reach", desc="Gripper out of reach"},
    {"FINE_TUNE_GRIPPER", "SEARCH",                cond="vars.missing_detections > MISSING_MAX", desc="Tracking lost target"},
 }
 
 function INIT:init()
+  laserline_switch:msgq_enqueue(laserline_switch.EnableSwitchMessage:new())
+
+  self.fsm.vars.lines = {}
+  self.fsm.vars.lines[line1:id()] = line1
+  self.fsm.vars.lines[line2:id()] = line2
+  self.fsm.vars.lines[line3:id()] = line3
+  self.fsm.vars.lines[line4:id()] = line4
+  self.fsm.vars.lines[line5:id()] = line5
+  self.fsm.vars.lines[line6:id()] = line6
+  self.fsm.vars.lines[line7:id()] = line7
+  self.fsm.vars.lines[line8:id()] = line8
+
   fsm.vars.missing_detections = 0
   fsm.vars.msgid              = 0
   fsm.vars.out_of_reach       = false
@@ -406,6 +494,64 @@ end
 function SEARCH:exit()
   local now = fawkes.Time:new():in_msec()
   print_info("[VS] Positioning took " .. now - fsm.vars.time_start .. " milliseconds")
+end
+
+function DRIVE_TO_LASER_LINE:init()
+  fsm.vars.consecutive_detections = 0
+  fsm.vars.tracking_msgid = 0
+  local offset_y = 0
+  if side == "INPUT" then
+    offset_y = belt_offset_side
+  elseif side == "OUTPUT" then
+    offset_y = -belt_offset_side
+  elseif side == "SLIDE" then
+    offset_y = belt_offset_side + slide_offset_side
+  elseif side == "SHELF-LEFT" then
+    offset_y = belt_offset_side + left_shelf_offset_side
+  elseif side == "SHELF-MIDDLE" then
+    offset_y = belt_offset_side + middle_shelf_offset_side
+  elseif side == "SHELF-RIGHT" then
+    offset_y = belt_offset_side + right_shelf_offset_side
+  end
+
+  local center = llutils.center(fsm.vars.matched_line)
+  local p = llutils.point_in_front(center, LASER_BASE_OFFSET)
+  local laser_target = tfm.transform6D(
+        {  x = p.x,
+           y = p.y + offset_y,
+           z = 0,
+           ori = fawkes.tf.create_quaternion_from_yaw(matched_line:bearing()) },
+        matched_line:frame_id(), "/odom"
+        )
+  if laser_target then
+    self.args["motor_move"] = {x = laser_target.x,
+                               y = laser_target.y,
+                               ori = laser_target.ori}
+  else
+    print_error("Transform Error: matched_line to odom")
+  end
+end
+
+function DRIVE_TO_LASER_LINE:loop()
+  if fsm.vars.tracking_msgid ~= object_tracking_if:msgid() then
+    fsm.vars.tracking_msgid = object_tracking_if:msgid()
+    if object_tracking_if:is_detected() then
+      fsm.vars.consecutive_detections = fsm.vars.consecutive_detections + 1
+    else
+      fsm.vars.consecutive_detections = 0
+    end
+  end
+end
+
+function AT_LASER_LINE:loop()
+  if fsm.vars.tracking_msgid ~= object_tracking_if:msgid() then
+    fsm.vars.tracking_msgid = object_tracking_if:msgid()
+    if object_tracking_if:is_detected() then
+      fsm.vars.consecutive_detections = fsm.vars.consecutive_detections + 1
+    else
+      fsm.vars.consecutive_detections = 0
+    end
+  end
 end
 
 function MOVE_BASE_AND_GRIPPER:init()
