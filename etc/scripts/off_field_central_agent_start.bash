@@ -50,4 +50,6 @@ for ACTIVE_ROBO in $ACTIVE_ROBOTS
 		echo "  robot$ACTIVE_ROBO/active: true" >> $CFG_DIR/startup_generated.yaml
 	done
 
+
+echo "  laptop1/active: true" >> $CFG_DIR/startup_generated.yaml
 $FAWKES_DIR/bin/fawkes m-central-clips-exec

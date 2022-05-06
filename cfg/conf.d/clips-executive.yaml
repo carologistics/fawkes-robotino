@@ -134,9 +134,9 @@ clips-executive:
           testbed: ENTER-FIELD
         rcll:
           peer-address: 172.26.255.255
-          peer-port: 4444
-          cyan-port: 4441
-          magenta-port: 4442
+            #peer-port: 4444
+            #cyan-port: 4441
+            #magenta-port: 4442
 
           team-name: Carologistics
           crypto-key: randomkey
@@ -314,9 +314,9 @@ clips-executive:
         rcll:
           # real-world-setup:
           peer-address: 172.26.255.255
-          peer-port: 4444
-          cyan-port: 4441
-          magenta-port: 4442
+            #peer-port: 4444
+            #cyan-port: 4441
+            #magenta-port: 4442
 
           team-name: Carologistics
           crypto-key: randomkey

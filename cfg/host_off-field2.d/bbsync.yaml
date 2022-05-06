@@ -12,6 +12,18 @@ network:
 webview:
   # TCP port for Webview HTTP requests; TCP port
   port: !tcp-port 8091
+clips-executive/specs/rcll-central/parameters/rcll:
+    peer-address: 172.26.255.255
+    peer-recv-port: 4444
+    peer-send-port: 4445
+    cyan-recv-port: 4441
+    magenta-recv-port: 4461
+    cyan-send-port: 4446
+    magenta-send-port: 4481
+    team-name: Carologistics
+    crypto-key: randomkey
+    cipher: "aes-128-cbc"
+
 
 plugins/mongodb:
   clients:
@@ -44,6 +56,14 @@ fawkes/bbsync:
   check_interval: 1000
   peers:
     robotino-base/active: false
+    laptop1:
+      #active: true (set via the off-field startup)
+      host: robotino-laptop-1
+      port: !tcp-port 1910
+      reading:
+        navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/laptop1/navgraph-generator-mps
+        navgraph-generator: NavGraphGeneratorInterface::/navgraph-generator=/laptop1/navgraph-generator
+        navigator: NavigatorInterface::Navigator=/laptop1/Navigator
     robot1:
       #active: true (set via the off-field startup)
       host: robotino-base-1
