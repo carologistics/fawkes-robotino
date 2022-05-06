@@ -146,9 +146,9 @@ if config:exists("plugins/object_tracking/puck_values/right_shelf_offset_side") 
 end
 
 -- Match tag to navgraph point
-function match_line(self,lines)
+function match_line(tag,lines)
    local matched_line = nil
-
+   
    local navgraph_point_laser = tfm.transform6D(
          { x=self.fsm.vars.expected_pos_x, y=self.fsm.vars.expected_pos_y, z=0,
            ori=fawkes.tf.create_quaternion_from_yaw(self.fsm.vars.expected_pos_ori) },
@@ -167,7 +167,6 @@ function match_line(self,lines)
       local yaw = fawkes.tf.get_yaw(navgraph_point_laser.ori)
       local ang_dist = math.angle_distance(yaw, line:bearing())
 
-      printf ("check line: " .. line:id() .. " " .. d_navgraph_to_line .. " " .. d_laser_to_navgraph .. " " .. math.abs(yaw) .. " " .. ang_dist)
       if line:visibility_history() >= MIN_VIS_HIST_LINE
          and d_navgraph_to_line < LINE_MATCH_TOLERANCE
          and d_laser_to_navgraph < NAVGRAPH_LIN_TOLERANCE
@@ -183,6 +182,7 @@ end
 
 function laser_line_found(self)
   self.fsm.vars.matched_line = match_line(self, self.fsm.vars.lines)
+  local tag = tag_utils.iface_for_id(fsm.vars.tags, tag_info, self.fsm.vars.tag_id)
 
   if self.fsm.vars.matched_line ~= nil then
     printf ("found line: " .. self.fsm.vars.matched_line:id())
@@ -407,6 +407,18 @@ function INIT:init()
   self.fsm.vars.lines[line6:id()] = line6
   self.fsm.vars.lines[line7:id()] = line7
   self.fsm.vars.lines[line8:id()] = line8
+
+  self.fsm.vars.matched_line = match_line(self, self.fsm.vars.lines)
+  local tag = tag_utils.iface_for_id(fsm.vars.tags, tag_info, self.fsm.vars.tag_id)
+  self.fsm.vars.matched_line = match_line(tag, self.fsm.vars.lines)
+
+  if self.fsm.vars.matched_line ~= nil then
+    printf ("found line: " .. self.fsm.vars.matched_line:id())
+    self.fsm.vars.line_point = llutils.point_in_front(llutils.center(self.fsm.vars.matched_line), self.fsm.vars.x_at_mps)
+    self.fsm.vars.line_point = llutils.point_in_front(llutils.center(self.fsm.vars.matched_line), 0)
+  end
+
+  return self.fsm.vars.line_point ~= nil
 
   fsm.vars.missing_detections = 0
   fsm.vars.msgid              = 0
