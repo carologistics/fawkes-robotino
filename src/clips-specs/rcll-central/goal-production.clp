@@ -522,6 +522,8 @@
   (return ?goal)
 )
 
+
+
 (deffunction goal-production-assert-move-out-of-way
   (?location)
   (bind ?goal (assert (goal (class MOVE-OUT-OF-WAY)
@@ -529,7 +531,7 @@
               (sub-type SIMPLE)
               (verbosity NOISY) (is-executable FALSE)
               (meta-template goal-meta)
-              (params target-pos (translate-location-map-to-grid ?location) location ?location)
+              (params target-pos  ?location location ?location)
   )))
   (return ?goal)
 )
@@ -724,11 +726,17 @@
   (goal (id ?root-id) (class WAIT-ROOT))
   (not (goal (class MOVE-OUT-OF-WAY)))
   (not (wm-fact (key config rcll pick-and-place-challenge) (value TRUE)))
+	(navgraph-node (name ?n&:(eq 1 (str-index "WAIT" ?n))))
   =>
-  (bind ?g (goal-tree-assert-central-run-parallel MOVE-OUT-OF-WAY
-          (goal-production-assert-move-out-of-way M_Z41)
-          (goal-production-assert-move-out-of-way M_Z31))
+		(printout t " REKT"  crlf)
+	(bind ?wait-zones (create$))
+  (do-for-all-facts ((?nav navgraph-node)) (str-index "SS" ?nav:name)
+		(printout t " REKT" ?nav:name crlf)
+    (bind ?wait-zones (insert$ ?wait-zones 1 (goal-production-assert-move-out-of-way  (sym-cat  ?nav:name))))
   )
+
+
+  (bind ?g (goal-tree-assert-central-run-parallel MOVE-OUT-OF-WAY ?wait-zones))
   (modify ?g (parent ?root-id) (priority 1.0))
 )
 
@@ -851,7 +859,7 @@
                 ?rs1 ?rs2 ?rs3 ?col-cap ?col-base ?col-ring1 ?col-ring2 ?col-ring3)
   )
 
-  (delayed-do-for-all-facts 
+  (delayed-do-for-all-facts
     ((?update-fact wm-fact)) (wm-key-prefix ?update-fact:key (create$ mps workload needs-update))
     (retract ?update-fact)
   )
