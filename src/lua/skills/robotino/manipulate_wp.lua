@@ -146,27 +146,35 @@ if config:exists("plugins/object_tracking/puck_values/right_shelf_offset_side") 
 end
 
 -- Match tag to navgraph point
-function match_line(tag,lines)
+function match_line(self,lines)
    local matched_line = nil
 
-   if tag and tag:visibility_history() >= MIN_VIS_HIST_TAG then
-      local tag_laser = tfm.transform6D(
-         { x=tag:translation(0), y=tag:translation(1), z=tag:translation(2),
-            ori = { x=tag:rotation(0), y=tag:rotation(1), z=tag:rotation(2), w=tag:rotation(3)  }
-         }, tag:frame(), "/base_laser"
-      )
-      local min_dist = LINE_MATCH_TOLERANCE
-      for k,line in pairs(lines) do
-         local line_center = llutils.center(line, 0)
-         local dist = math.vec_length(tag_laser.x - line_center.x, tag_laser.y - line_center.y)
-         if line:visibility_history() >= MIN_VIS_HIST_LINE
-            and dist < LINE_MATCH_TOLERANCE
-            and dist < min_dist
-         then
-            min_dist = dist
-            matched_line = line
-            printf("Line dist: %f", dist)
-         end
+   local navgraph_point_laser = tfm.transform6D(
+         { x=self.fsm.vars.expected_pos_x, y=self.fsm.vars.expected_pos_y, z=0,
+           ori=fawkes.tf.create_quaternion_from_yaw(self.fsm.vars.expected_pos_ori) },
+           "/map", "/base_laser")
+
+   for k,line in pairs(self.fsm.vars.lines) do
+      local line_center = llutils.center(line, 0)
+      local d_navgraph_to_line = math.vec_length(navgraph_point_laser.x - line_center.x, navgraph_point_laser.y - line_center.y)
+
+      -- this is difference from the laser to navgraph point
+      local d_laser_to_navgraph = math.vec_length(navgraph_point_laser.x, navgraph_point_laser.y)
+
+      -- angular distance between the navgraph point (pointing towards the machine) and the line bearing
+      -- (also pointing towards the machine when the robot is standing in front of it).
+      -- This value should be very low when we are standing in front of the correct machine.
+      local yaw = fawkes.tf.get_yaw(navgraph_point_laser.ori)
+      local ang_dist = math.angle_distance(yaw, line:bearing())
+
+      printf ("check line: " .. line:id() .. " " .. d_navgraph_to_line .. " " .. d_laser_to_navgraph .. " " .. math.abs(yaw) .. " " .. ang_dist)
+      if line:visibility_history() >= MIN_VIS_HIST_LINE
+         and d_navgraph_to_line < LINE_MATCH_TOLERANCE
+         and d_laser_to_navgraph < NAVGRAPH_LIN_TOLERANCE
+         and math.abs(yaw) < NAVGRAPH_ANG_TOLERANCE
+         and ang_dist < LINE_MATCH_ANG_TOLERANCE
+      then
+         matched_line = line
       end
    end
 
@@ -174,8 +182,7 @@ function match_line(tag,lines)
 end
 
 function laser_line_found(self)
-  local tag = tag_utils.iface_for_id(fsm.vars.tags, tag_info, self.fsm.vars.tag_id)
-  self.fsm.vars.matched_line = match_line(tag, self.fsm.vars.lines)
+  self.fsm.vars.matched_line = match_line(self, self.fsm.vars.lines)
 
   if self.fsm.vars.matched_line ~= nil then
     printf ("found line: " .. self.fsm.vars.matched_line:id())
@@ -400,15 +407,6 @@ function INIT:init()
   self.fsm.vars.lines[line6:id()] = line6
   self.fsm.vars.lines[line7:id()] = line7
   self.fsm.vars.lines[line8:id()] = line8
-
-  self.fsm.vars.tags = { tag_0, tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7,
-  tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15 }
-
-  if fsm.vars.side == "OUTPUT" then
-    self.fsm.vars.tag_id = navgraph:node(fsm.vars.mps):property_as_float("tag_output")
-  else
-    self.fsm.vars.tag_id = navgraph:node(fsm.vars.mps):property_as_float("tag_input")
-  end
 
   fsm.vars.missing_detections = 0
   fsm.vars.msgid              = 0
