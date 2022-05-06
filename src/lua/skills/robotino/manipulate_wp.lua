@@ -58,8 +58,8 @@ local MISSING_MAX                = 2 -- limit for missing object detections in a
 
 -- Tunables
 local LINE_MATCH_TOLERANCE=1.2      -- meter threshold of laserline to navgraph point
-local LINE_MATCH_ANG_TOLERANCE=0.05 -- rad threshold of laserline to navgraph point
-local NAVGRAPH_LIN_TOLERANCE=0.5    -- meter threshold of laser to navgraph point
+local LINE_MATCH_ANG_TOLERANCE=0.1 -- rad threshold of laserline to navgraph point
+local NAVGRAPH_LIN_TOLERANCE=0.8    -- meter threshold of laser to navgraph point
 local NAVGRAPH_ANG_TOLERANCE=0.5    -- rad threshold of laser to navgraph point
 local LINE_LENGTH_MIN=0.64          -- minimum laser line length
 local LINE_LENGTH_MAX=0.71          -- maximum laser line length
@@ -167,6 +167,7 @@ function match_line(self,lines)
       local yaw = fawkes.tf.get_yaw(navgraph_point_laser.ori)
       local ang_dist = math.angle_distance(yaw, line:bearing())
 
+      printf ("check line: " .. line:id() .. " " .. d_navgraph_to_line .. " " .. d_laser_to_navgraph .. " " .. math.abs(yaw) .. " " .. ang_dist)
       if line:visibility_history() >= MIN_VIS_HIST_LINE
          and d_navgraph_to_line < LINE_MATCH_TOLERANCE
          and d_laser_to_navgraph < NAVGRAPH_LIN_TOLERANCE
@@ -533,7 +534,8 @@ function DRIVE_TO_LASER_LINE:init()
   if laser_target then
     self.args["motor_move"] = {x = laser_target.x,
                                y = laser_target.y,
-                               ori = laser_target.ori}
+                               frame = "/odom",
+                               ori = fawkes.tf.get_yaw(laser_target.ori)}
   else
     print_error("Transform Error: matched_line to odom")
   end
