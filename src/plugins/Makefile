@@ -23,7 +23,6 @@ SUBDIRS	= clips-motor-switch \
 		tag_vision \
       navgraph_broker \
 	  navgraph-generator-mps \
-	  conveyor_pose \
 	  conveyor_plane \
 	  gazebo \
 	  marker_writer \

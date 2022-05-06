@@ -522,17 +522,6 @@
   (return ?goal)
 )
 
-(deffunction goal-production-assert-move-out-of-way
-  (?location)
-  (bind ?goal (assert (goal (class MOVE-OUT-OF-WAY)
-              (id (sym-cat MOVE-OUT-OF-WAY- (gensym*)))
-              (sub-type SIMPLE)
-              (verbosity NOISY) (is-executable FALSE)
-              (meta-template goal-meta)
-              (params target-pos (translate-location-map-to-grid ?location) location ?location)
-  )))
-  (return ?goal)
-)
 
 (deffunction goal-production-assign-order-and-prio-to-goal (?goal ?order-id ?prio)
   (bind ?goal-id (fact-slot-value ?goal id))
@@ -717,21 +706,6 @@
   (modify ?g (meta do-not-finish) (priority 0))
 )
 
-(defrule goal-production-create-move-out-of-way
-  "Creates a move out of way goal. As soon as it is completed it's reset"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
-  (goal (id ?root-id) (class WAIT-ROOT))
-  (not (goal (class MOVE-OUT-OF-WAY)))
-  (not (wm-fact (key config rcll pick-and-place-challenge) (value TRUE)))
-  =>
-  (bind ?g (goal-tree-assert-central-run-parallel MOVE-OUT-OF-WAY
-          (goal-production-assert-move-out-of-way M_Z41)
-          (goal-production-assert-move-out-of-way M_Z31))
-  )
-  (modify ?g (parent ?root-id) (priority 1.0))
-)
-
 (defrule goal-production-change-priority-move-out-of-way
   ?g <- (goal (id ?goal-id) (class MOVE-OUT-OF-WAY)
               (type ACHIEVE) (sub-type SIMPLE)
@@ -859,7 +833,7 @@
                 ?rs1 ?rs2 ?rs3 ?col-cap ?col-base ?col-ring1 ?col-ring2 ?col-ring3)
   )
 
-  (delayed-do-for-all-facts 
+  (delayed-do-for-all-facts
     ((?update-fact wm-fact)) (wm-key-prefix ?update-fact:key (create$ mps workload needs-update))
     (retract ?update-fact)
   )
