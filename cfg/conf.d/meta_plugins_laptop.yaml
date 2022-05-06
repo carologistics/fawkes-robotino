@@ -13,7 +13,6 @@ fawkes/meta_plugins:
     - m-bare
     - m-fv
     - tag_vision
-    - fvretriever
   m-realsense:
     - realsense2
   m-clips:
