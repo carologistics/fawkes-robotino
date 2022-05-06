@@ -328,7 +328,7 @@ ObjectTrackingThread::loop()
 		//read from sharedMemoryBuffer and convert into Mat
 		image = Mat(camera_height_, camera_width_, CV_8UC3, shm_buffer_->buffer()).clone();
 		cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
-		capture_time = shm_buffer_->capture_time();
+		capture_time = fawkes::Time(0.0);
 	}
 
 	if (rotate_image_)
