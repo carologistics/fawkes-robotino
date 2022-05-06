@@ -378,14 +378,14 @@ fsm:add_transitions{
    {"INIT", "FAILED",                             cond=input_invalid, desc="Invalid Input"},
    {"INIT", "START_TRACKING",                     cond=true, desc="Valid Input"},
    {"START_TRACKING", "FAILED",                   timeout=60, desc="Object tracker is not starting"},
-   {"START_TRACKING", "SEARCH",                   cond=object_tracker_active},
+   {"START_TRACKING", "FIND_LASER_LINE",          cond=object_tracker_active},
    {"FIND_LASER_LINE", "DRIVE_TO_LASER_LINE",     cond=laser_line_found},
-   {"FIND_LASER_LINE", "FAILED",                  timeout=1, desc="Could not find laser-line"},
+   {"FIND_LASER_LINE", "FAILED",                  timeout=10, desc="Could not find laser-line"},
    {"AT_LASER_LINE", "MOVE_BASE_AND_GRIPPER",     cond="vars.consecutive_detections > 2", desc="Found Object"},
    {"AT_LASER_LINE", "FAILED",                    timeout=2, desc="Object not found"},
    {"FINE_TUNE_GRIPPER", "GRIPPER_ROUTINE",       cond=gripper_aligned, desc="Gripper aligned"},
    {"FINE_TUNE_GRIPPER", "MOVE_BASE_AND_GRIPPER", cond="vars.out_of_reach", desc="Gripper out of reach"},
-   {"FINE_TUNE_GRIPPER", "SEARCH",                cond="vars.missing_detections > MISSING_MAX", desc="Tracking lost target"},
+   {"FINE_TUNE_GRIPPER", "FIND_LASER_LINE",       cond="vars.missing_detections > MISSING_MAX", desc="Tracking lost target"},
 }
 
 function INIT:init()
@@ -483,6 +483,7 @@ function START_TRACKING:init()
     local open_msg = arduino.OpenGripperMessage:new()
     arduino:msgq_enqueue(open_msg)
   end
+  move_gripper_default_pose()
 end
 
 function SEARCH:init()
