@@ -523,6 +523,18 @@
 )
 
 
+(deffunction goal-production-assert-move-out-of-way
+  (?location)
+  (bind ?goal (assert (goal (class MOVE-OUT-OF-WAY)
+              (id (sym-cat MOVE-OUT-OF-WAY- (gensym*)))
+              (sub-type SIMPLE)
+              (verbosity NOISY) (is-executable FALSE)
+              (meta-template goal-meta)
+              (params target-pos  ?location location ?location)
+  )))
+  (return ?goal)
+)
+
 (deffunction goal-production-assign-order-and-prio-to-goal (?goal ?order-id ?prio)
   (bind ?goal-id (fact-slot-value ?goal id))
   (modify ?goal (priority ?prio))
@@ -704,6 +716,27 @@
   =>
   (bind ?g (goal-tree-assert-central-run-parallel WAIT-ROOT))
   (modify ?g (meta do-not-finish) (priority 0))
+)
+
+(defrule goal-production-create-move-out-of-way
+  "Creates a move out of way goal. As soon as it is completed it's reset"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+  (goal (id ?root-id) (class WAIT-ROOT))
+  (not (goal (class MOVE-OUT-OF-WAY)))
+  (not (wm-fact (key config rcll pick-and-place-challenge) (value TRUE)))
+	(navgraph-node (name ?n&:(eq 1 (str-index "WAIT" ?n))))
+  =>
+		(printout t " REKT"  crlf)
+	(bind ?wait-zones (create$))
+  (do-for-all-facts ((?nav navgraph-node)) (str-index "SS" ?nav:name)
+		(printout t " REKT" ?nav:name crlf)
+    (bind ?wait-zones (insert$ ?wait-zones 1 (goal-production-assert-move-out-of-way  (sym-cat  ?nav:name))))
+  )
+
+
+  (bind ?g (goal-tree-assert-central-run-parallel MOVE-OUT-OF-WAY ?wait-zones))
+  (modify ?g (parent ?root-id) (priority 1.0))
 )
 
 (defrule goal-production-change-priority-move-out-of-way
