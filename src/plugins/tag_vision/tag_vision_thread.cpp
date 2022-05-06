@@ -195,7 +195,7 @@ TagVisionThread::init()
 #endif
 		break;
 	case ARUCO:
-		cameraMatrix_ = (cv::Mat_<double>(3, 3) << 547.4, 0, 317.50, 0, 544.05, 170.31, 0, 0, 1);
+		cameraMatrix_ = (cv::Mat_<double>(3, 3) << 1.31278706e+03, 0.00000000e+00, 7.69072438e+02, 0.00000000e+00, 1.31985642e+03, 5.88846023e+02 ,0.00000000e+00, 0.00000000e+00, 1.00000000e+00 );
 		distCoeffs_   = (cv::Mat_<double>(1, 4) << 0, 0, 0, 0);
 		break;
 	default: break;
