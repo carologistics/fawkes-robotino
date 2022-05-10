@@ -60,7 +60,7 @@ local puck_size   = 0.02
 local puck_height = 0.0225
 
 local belt_height      = 0.92
-local belt_lenght      = 0.35
+local belt_length      = 0.35
 local belt_offset_side = 0.025
 
 local slide_offset_side = -0.225
@@ -98,8 +98,8 @@ end
 if config:exists("plugins/object_tracking/puck_values/belt_height") then
   belt_height = config:get_float("plugins/object_tracking/puck_values/belt_height")
 end
-if config:exists("plugins/object_tracking/puck_values/belt_lenght") then
-  belt_lenght = config:get_float("plugins/object_tracking/puck_values/belt_lenght")
+if config:exists("plugins/object_tracking/puck_values/belt_length") then
+  belt_length = config:get_float("plugins/object_tracking/puck_values/belt_length")
 end
 if config:exists("plugins/object_tracking/puck_values/belt_offset_side") then
   belt_offset_side = config:get_float("plugins/object_tracking/puck_values/belt_offset_side")
@@ -203,20 +203,20 @@ end
 function compute_expected_pos_x(x_offset)
   if for_gazebo then
     return fsm.vars.mps_x + x_offset * math.cos(fsm.vars.mps_ori) -
-           (belt_lenght/2 - puck_size/2 + EXPECTED_BASE_OFFSET) * math.sin(fsm.vars.mps_ori)
+           (belt_length/2 - puck_size/2 + EXPECTED_BASE_OFFSET) * math.sin(fsm.vars.mps_ori)
   else
     return fsm.vars.mps_x + x_offset * math.sin(fsm.vars.mps_ori) +
-           (belt_lenght/2 - puck_size/2 + EXPECTED_BASE_OFFSET) * math.cos(fsm.vars.mps_ori)
+           (belt_length/2 - puck_size/2 + EXPECTED_BASE_OFFSET) * math.cos(fsm.vars.mps_ori)
   end
 end
 
 function compute_expected_pos_y(y_offset)
   if for_gazebo then
     return fsm.vars.mps_y + y_offset * math.sin(fsm.vars.mps_ori) +
-           (belt_lenght/2 - puck_size/2 + EXPECTED_BASE_OFFSET) * math.cos(fsm.vars.mps_ori)
+           (belt_length/2 - puck_size/2 + EXPECTED_BASE_OFFSET) * math.cos(fsm.vars.mps_ori)
   else
     return fsm.vars.mps_y - y_offset * math.cos(fsm.vars.mps_ori) +
-           (belt_lenght/2 - puck_size/2 + EXPECTED_BASE_OFFSET) * math.sin(fsm.vars.mps_ori)
+           (belt_length/2 - puck_size/2 + EXPECTED_BASE_OFFSET) * math.sin(fsm.vars.mps_ori)
   end
 end
 
@@ -228,14 +228,14 @@ function get_pos_for_side(side)
   elseif side == "OUTPUT" then
     if for_gazebo then
       return {x = fsm.vars.mps_x + belt_offset_side * math.cos(fsm.vars.mps_ori) +
-                  (belt_lenght/2 - puck_size/2 + EXPECTED_BASE_OFFSET) * math.sin(fsm.vars.mps_ori),
+                  (belt_length/2 - puck_size/2 + EXPECTED_BASE_OFFSET) * math.sin(fsm.vars.mps_ori),
               y = fsm.vars.mps_y + belt_offset_side * math.sin(fsm.vars.mps_ori) -
-                  (belt_lenght/2 - puck_size/2 + EXPECTED_BASE_OFFSET) * math.cos(fsm.vars.mps_ori)}
+                  (belt_length/2 - puck_size/2 + EXPECTED_BASE_OFFSET) * math.cos(fsm.vars.mps_ori)}
     else
       return {x = fsm.vars.mps_x -
-                  (belt_lenght/2 - puck_size/2 + EXPECTED_BASE_OFFSET) * math.cos(fsm.vars.mps_ori),
+                  (belt_length/2 - puck_size/2 + EXPECTED_BASE_OFFSET) * math.cos(fsm.vars.mps_ori),
               y = fsm.vars.mps_y -
-                  (belt_lenght/2 - puck_size/2 + EXPECTED_BASE_OFFSET) * math.sin(fsm.vars.mps_ori)}
+                  (belt_length/2 - puck_size/2 + EXPECTED_BASE_OFFSET) * math.sin(fsm.vars.mps_ori)}
     end
   elseif side == "SLIDE" then
     return {x = compute_expected_pos_x(slide_offset_side),

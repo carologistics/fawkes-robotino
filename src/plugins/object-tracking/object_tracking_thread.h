@@ -79,7 +79,7 @@ private:
 	//belt values:
 	float belt_size_;
 	float belt_height_;
-	float belt_lenght_;
+	float belt_length_;
 	float belt_offset_side_;
 
 	//slide values:
