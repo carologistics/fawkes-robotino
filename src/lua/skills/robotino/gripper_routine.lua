@@ -44,13 +44,13 @@ skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
 
 -- Constant
-local gripper_down_z_pick = -0.02  -- distance to move gripper down after driving over product TODO: get through object tracking yaml
-local gripper_down_z_put = -0.023  -- distance to move gripper down after driving over product
+local gripper_down_z_pick = -0.05  -- distance to move gripper down after driving over product TODO: get through object tracking yaml
+local gripper_down_z_put = -0.018  -- distance to move gripper down after driving over product
 
 local gripper_up_z_pick = 0.01   -- distance to move gripper up after closing gripper
 local gripper_up_z_put = 0.015   -- distance to move gripper up after opening gripper
 
-local drive_back_x = -0.3
+local drive_back_x = -0.1
 
 local gripper_default_pose_x = 0.00   -- conveyor pose offset in x direction
 local gripper_default_pose_y = 0.00   -- conveyor_pose offset in y direction
@@ -102,7 +102,7 @@ function MOVE_GRIPPER_DOWN:init()
     "base_link", "end_effector_home")
 
   -- Clip to axis limits
-  local x_clipped = math.max(0, math.min(gripper_target.x, x_max))
+  local x_clipped = math.max(0, math.min(gripper_target.x + 0.005, x_max))
   local y_clipped = math.max(-y_max/2, math.min(gripper_target.y, y_max/2))
 
   local z_given = 0
@@ -113,13 +113,9 @@ function MOVE_GRIPPER_DOWN:init()
   end
   local z_clipped = math.max(0, math.min(z_given, z_max))
 
-  self.args["gripper_commands"].x = x_clipped + 0.005
+  self.args["gripper_commands"].x = x_clipped
   self.args["gripper_commands"].y = y_clipped
-  if self.fsm.vars.pick_wp then
-    self.args["gripper_commands"].z = z_clipped 
-  else
-    self.args["gripper_commands"].z = z_clipped + 0.01
-  end
+  self.args["gripper_commands"].z = z_clipped
   self.args["gripper_commands"].command = "MOVEABS"
 
   fsm.vars.target_z = z_clipped
