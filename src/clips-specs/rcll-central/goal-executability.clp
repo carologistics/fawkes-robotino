@@ -356,6 +356,7 @@
 	                          (is-executable FALSE))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key refbox team-color) (value ?team-color))
+	(not (wm-fact (key domain fact wp-at args? wp ? m ?wp-loc side OUTPUT)))
 	;MPS-RS CEs (a cap carrier can be used to fill a RS later)
 	(wm-fact (key domain fact mps-type args? m ?target-mps t RS))
 	(wm-fact (key domain fact mps-state args? m ?target-mps s ~BROKEN))
@@ -560,6 +561,7 @@ The workpiece remains in the output of the used ring station after
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	; Robot CEs
 	(wm-fact (key refbox team-color) (value ?team-color))
+	(not (wm-fact (key domain fact wp-at args? wp ? m ?wp-loc side INPUT)))
 
 	; MPS-RS CEs
 	(wm-fact (key domain fact mps-type args?       m ?target-mps t RS))
