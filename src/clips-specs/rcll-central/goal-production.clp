@@ -727,10 +727,8 @@
   (not (wm-fact (key config rcll pick-and-place-challenge) (value TRUE)))
 	(navgraph-node (name ?n&:(eq 1 (str-index "WAIT" ?n))))
   =>
-		(printout t " REKT"  crlf)
 	(bind ?wait-zones (create$))
   (do-for-all-facts ((?nav navgraph-node)) (str-index "SS" ?nav:name)
-		(printout t " REKT" ?nav:name crlf)
     (bind ?wait-zones (insert$ ?wait-zones 1 (goal-production-assert-move-out-of-way  (sym-cat  ?nav:name))))
   )
 
