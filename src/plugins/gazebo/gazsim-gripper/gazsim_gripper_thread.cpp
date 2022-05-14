@@ -37,6 +37,7 @@
 
 using namespace fawkes;
 using namespace gazebo;
+using namespace gazsim_msgs;
 
 /** @class GazsimGripperThread "gazsim_gripper_thread.h"
  * Thread simulates the Gripper in Gazebo
@@ -153,9 +154,9 @@ GazsimGripperThread::loop()
 		} else if (arduino_if_->msgq_first_is<ArduinoInterface::CalibrateMessage>()) {
 			send_move_msg(0, 0, 0);
 		} else if (arduino_if_->msgq_first_is<ArduinoInterface::CloseGripperMessage>()) {
-			send_gripper_msg(0);
+			send_gripper_msg(GripperCommand_CommandType::GripperCommand_CommandType_CLOSE);
 		} else if (arduino_if_->msgq_first_is<ArduinoInterface::OpenGripperMessage>()) {
-			send_gripper_msg(1);
+			send_gripper_msg(GripperCommand_CommandType::GripperCommand_CommandType_OPEN);
 		} else if (arduino_if_->msgq_first_is<ArduinoInterface::StatusUpdateMessage>()) {
 			logger->log_warn(name(),
 			                 "%s is not implemented in the simulation.",
@@ -169,7 +170,7 @@ GazsimGripperThread::loop()
 }
 
 void
-GazsimGripperThread::send_gripper_msg(int value)
+GazsimGripperThread::send_gripper_msg(GripperCommand_CommandType value)
 {
 	// send message to gazebo
 	// 0 means close and 1 open
@@ -184,7 +185,7 @@ GazsimGripperThread::send_move_msg(float x, float y, float z)
 	// send message to gazebo
 	// 2 means move
 	gazsim_msgs::GripperCommand msg;
-	msg.set_command(2);
+	msg.set_command(GripperCommand_CommandType::GripperCommand_CommandType_MOVE);
 	// position is relative to gripper_home frame
 	msg.set_x(x);
 	msg.set_y(y);

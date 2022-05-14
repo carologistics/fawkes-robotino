@@ -110,7 +110,7 @@ private:
 	// Publisher to sent msgs to gazebo
 	gazebo::transport::PublisherPtr set_gripper_pub_;
 
-	void send_gripper_msg(int value);
+	void send_gripper_msg(gazsim_msgs::GripperCommand_CommandType value);
 	void send_move_msg(float x, float y, float z);
 	void on_gripper_pose_msg(ConstPosePtr &msg);
 	void on_gripper_final_msg(ConstIntPtr &msg);
