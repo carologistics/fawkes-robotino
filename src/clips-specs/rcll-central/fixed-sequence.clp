@@ -281,6 +281,18 @@
 	(modify ?g (mode EXPANDED))
 )
 
+(defrule goal-expander-reformulate-no-expansion
+	(declare (salience ?*SALIENCE-LOW*))
+	;?p <- (goal (mode DISPATCHED) (id ?parent))
+	?g <- (goal (id ?id) (mode SELECTED) (priority ?p))
+	?gm <- (goal-meta (goal-id ?id) (assigned-to ?robot&:(and (neq ?robot central) (neq ?robot nil))))
+	=>
+	(printout error "Goal " ?id " stuck on SELECTED, reformulate with lower priority" crlf)
+	(modify ?g (mode FORMULATED) (priority (- ?p 1)))
+	(set-robot-to-waiting ?robot)
+	(modify ?gm (assigned-to nil))
+)
+
 (defrule goal-expander-deliver-goals
 	?g <- (goal (id ?goal-id) (class ?class&DELIVER)
 	                          (mode SELECTED) (parent ?parent)
