@@ -299,6 +299,17 @@
 	(modify ?g (mode EXPANDED))
 )
 
+(defrule goal-fail-to-expand
+  (declare (salience -1000))
+	;?p <- (goal (mode DISPATCHED) (id ?parent))
+	?g <- (goal (id ?id) (mode SELECTED))
+	?gm <- (goal-meta (goal-id ?id) (assigned-to ?robot&:(and (neq ?robot central) (neq ?robot nil))))
+	=>
+	(modify ?g (mode FORMULATED))
+	(set-robot-to-waiting ?robot)
+	(modify ?gm (assigned-to nil))
+)
+
 (defrule goal-expander-transport-goals
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class ?class&MOUNT-CAP|
