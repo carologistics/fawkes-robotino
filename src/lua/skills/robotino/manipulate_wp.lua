@@ -186,7 +186,7 @@ function laser_line_found(self)
 
   if self.fsm.vars.matched_line ~= nil then
     printf ("found line: " .. self.fsm.vars.matched_line:id())
-    self.fsm.vars.line_point = llutils.point_in_front(llutils.center(self.fsm.vars.matched_line), self.fsm.vars.x_at_mps)
+    self.fsm.vars.line_point = llutils.point_in_front(llutils.center(self.fsm.vars.matched_line), 0)
   end
 
   return self.fsm.vars.line_point ~= nil
@@ -508,17 +508,17 @@ function DRIVE_TO_LASER_LINE:init()
   fsm.vars.consecutive_detections = 0
   fsm.vars.tracking_msgid = 0
   local offset_y = 0
-  if side == "INPUT" then
+  if fsm.vars.side == "INPUT" then
     offset_y = belt_offset_side
-  elseif side == "OUTPUT" then
+  elseif fsm.vars.side == "OUTPUT" then
     offset_y = -belt_offset_side
-  elseif side == "SLIDE" then
+  elseif fsm.vars.side == "SLIDE" then
     offset_y = belt_offset_side + slide_offset_side
-  elseif side == "SHELF-LEFT" then
+  elseif fsm.vars.side == "SHELF-LEFT" then
     offset_y = belt_offset_side + left_shelf_offset_side
-  elseif side == "SHELF-MIDDLE" then
+  elseif fsm.vars.side == "SHELF-MIDDLE" then
     offset_y = belt_offset_side + middle_shelf_offset_side
-  elseif side == "SHELF-RIGHT" then
+  elseif fsm.vars.side == "SHELF-RIGHT" then
     offset_y = belt_offset_side + right_shelf_offset_side
   end
 
@@ -528,8 +528,8 @@ function DRIVE_TO_LASER_LINE:init()
         {  x = p.x,
            y = p.y + offset_y,
            z = 0,
-           ori = fawkes.tf.create_quaternion_from_yaw(matched_line:bearing()) },
-        matched_line:frame_id(), "/odom"
+           ori = fawkes.tf.create_quaternion_from_yaw(fsm.vars.matched_line:bearing()) },
+        fsm.vars.matched_line:frame_id(), "/odom"
         )
   if laser_target then
     self.args["motor_move"] = {x = laser_target.x,
