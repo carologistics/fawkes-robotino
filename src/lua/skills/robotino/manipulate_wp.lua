@@ -50,18 +50,16 @@ Parameters:
       @param side    the side of the mps: (INPUT | OUTPUT | SHELF-LEFT | SHELF-MIDDLE | SHELF-RIGHT | SLIDE)
 ]==]
 
-local LASER_BASE_OFFSET          = 0.35 -- distance between robotino middle point and laser-line
-                                        -- used for DRIVE_TO_LASER_LINE
-local GRIPPER_TOLERANCE          = {x=0.005, y=0.001, z=0.001} -- accuracy
-local MISSING_MAX                = 2 -- limit for missing object detections in a row while fine-tuning gripper
-
--- Tunables
-local LINE_MATCH_TOLERANCE=0.3      -- meter threshold of laserline center to tag
+local LASER_BASE_OFFSET    = 0.35 -- distance between robotino middle point and laser-line
+                                  -- used for DRIVE_TO_LASER_LINE
+local GRIPPER_TOLERANCE    = {x=0.005, y=0.001, z=0.001} -- accuracy
+local MISSING_MAX          = 2 -- limit for missing object detections in a row while fine-tuning gripper
+local LINE_MATCH_TOLERANCE = 0.3 -- meter threshold of laserline center to tag
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
 local llutils = require("fawkes.laser-lines_utils")
-
+local tag_utils = require("tag_utils")
 local tfm = require("fawkes.tfutils")
 
 -- Load config
@@ -136,13 +134,7 @@ end
 function laser_line_found()
   local tag = tag_utils.iface_for_id(fsm.vars.tags, tag_info, fsm.vars.tag_id)
   fsm.vars.matched_line = match_line(tag, fsm.vars.lines)
-
-  if fsm.vars.matched_line ~= nil then
-    printf ("found line: " .. fsm.vars.matched_line:id())
-    fsm.vars.line_point = llutils.point_in_front(llutils.center(fsm.vars.matched_line), 0)
-  end
-
-  return fsm.vars.line_point ~= nil
+  return fsm.vars.matched_line ~= nil
 end
 
 function gripper_aligned()

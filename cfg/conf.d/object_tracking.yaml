@@ -5,7 +5,7 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/webview
 ---
 plugins/object_tracking:
   if_name: "object-tracking"
-  
+
   if:
     laser_lines: [
       "/laser-lines/1",
