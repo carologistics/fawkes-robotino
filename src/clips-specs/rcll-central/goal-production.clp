@@ -869,6 +869,7 @@ The workpiece remains in the output of the used ring station after
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
 	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
 	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
+	(IAMNOTEXECUTABLE)
 	=>
 	(printout t "Goal MOUNT-RING executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
@@ -1033,6 +1034,7 @@ The workpiece remains in the output of the used ring station after
 	          args? ord ?order col ?ring-color ))
 	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side OUTPUT)))
 	(not (goal (class INSTRUCT-RS-MOUNT-RING) (mode EXPANDED|SELECTED|DISPATCHED|COMMITTED)))
+	(IAMNOTEXECUTABLE)
 	=>
 	(printout t "Goal INSTRUCT-RS-MOUNT-RING executable" crlf)
 	(printout t "RING_5" ?ring crlf)
@@ -1580,18 +1582,18 @@ The workpiece remains in the output of the used ring station after
 	;		)
 	;	)
 	;	(goal-tree-assert-central-run-parallel MOUNT-GOALS
-	;		; Goal selection with run-one goals is broken, as a workaround simply
-	;		; remove alternative choices and switch to run-parallel
-	;		;(goal-tree-assert-central-run-one INTERACT-BS
+			; Goal selection with run-one goals is broken, as a workaround simply
+			; remove alternative choices and switch to run-parallel
+			;(goal-tree-assert-central-run-one INTERACT-BS
 	;		(goal-tree-assert-central-run-parallel INTERACT-BS
 	;			(goal-tree-assert-central-run-parallel OUTPUT-BS
 	;				(goal-production-assert-mount-cap ?wp-for-order ?cs C-BS OUTPUT ?order-id ?rob)
 	;				(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?base-col OUTPUT ?order-id)
 	;			)
-	;			;(goal-tree-assert-central-run-parallel INPUT-BS
-	;			;	(goal-production-assert-mount-cap ?wp-for-order ?cs C-BS INPUT ?order-id)
-	;			;	(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?base-col INPUT ?order-id)
-	;			;)
+				;(goal-tree-assert-central-run-parallel INPUT-BS
+				;	(goal-production-assert-mount-cap ?wp-for-order ?cs C-BS INPUT ?order-id)
+				;	(goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?base-col INPUT ?order-id)
+				;)
 	;		)
 	;		(goal-production-assert-instruct-cs-mount-cap ?cs ?cap-col ?order-id ?wp-for-order)
 	;	)
