@@ -1,30 +1,11 @@
-;****************************************************************************
-;  rcll_domain_production.pddl: RoboCup Logistics League Production Model
-;
-;  Created: Fri Feb 24 23:20:38 2017
-;  Copyright  2017  Tim Niemueller [www.niemueller.de]
-;             2018  Till Hofmann
-;****************************************************************************
+(define (domain rcll-goal-planning)
 
-;  This program is free software; you can redistribute it and/or modify
-;  it under the terms of the GNU General Public License as published by
-;  the Free Software Foundation; either version 2 of the License, or
-;  (at your option) any later version.
-;
-;  This program is distributed in the hope that it will be useful,
-;  but WITHOUT ANY WARRANTY; without even the implied warranty of
-;  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;  GNU Library General Public License for more details.
-;
-;  Read the full text in the LICENSE.GPL file in the doc directory.
-
-(define (domain rcll-production)
 (:requirements :strips :typing)
-
 (:types
-	robot - object
+  robot - object
 	team-color - object
 	location - object
+  location_ - location
 	obstacle - object
 	waitpoint - location
 	mps - location
@@ -36,6 +17,7 @@
 	base-color - object
 	cap-color - object
 	ring-color - object
+  step - object
 	ds-gate - object
 	ss-operation - object
 	cs-operation - object
@@ -45,32 +27,33 @@
 	workpiece - object
 	cap-carrier - workpiece
 	shelf-spot - object
-	number - object
-	ring-num - number
-	ss-shelf - number
-	ss-slot - number
+	;popf has a problem with the type name number and would induce an error
+	number_ - object
+	ring-num - number_
+	ss-shelf - number_
+	ss-slot - number_
 	token - object
 	master-token - token
 )
 
 (:constants
-	START - location
-	UNKNOWN NONE - obstacle
-	UNKNOWN_ROBOT - robot
-	BS CS DS RS SS - mps-typename
-	IDLE BROKEN PREPARED PROCESSING PROCESSED WAIT-IDLE READY-AT-OUTPUT DOWN - mps-statename
-	INPUT OUTPUT WAIT - mps-side
-	BASE_NONE BASE_RED BASE_BLACK BASE_SILVER - base-color
-	CAP_NONE CAP_BLACK CAP_GREY - cap-color
-	GATE-1 GATE-2 GATE-3 - ds-gate
-	RING_NONE RING_BLUE RING_GREEN RING_ORANGE RING_YELLOW - ring-color
-	RETRIEVE_CAP MOUNT_CAP - cs-operation
-	RETRIEVE STORE - ss-operation
-	C0 C1 C2 C3 - order-complexity-value
-	LEFT MIDDLE RIGHT - shelf-spot
-	NA ZERO ONE TWO THREE - ring-num
-	ZERO ONE TWO THREE FOUR FIVE - ss-shelf
-	ZERO ONE TWO THREE FOUR FIVE SIX SEVEN - ss-slot
+  START - location_
+  UNKNOWN NONE - obstacle
+  UNKNOWN_ROBOT - robot
+  BS CS DS RS SS - mps-typename
+  IDLE BROKEN PREPARED PROCESSING PROCESSED WAIT-IDLE READY-AT-OUTPUT DOWN - mps-statename
+  INPUT OUTPUT WAIT - mps-side
+  BASE_NONE BASE_RED BASE_BLACK BASE_SILVER - base-color
+  CAP_NONE CAP_BLACK CAP_GREY - cap-color
+  GATE-1 GATE-2 GATE-3 - ds-gate
+  RING_NONE RING_BLUE RING_GREEN RING_ORANGE RING_YELLOW - ring-color
+  RETRIEVE_CAP MOUNT_CAP - cs-operation
+  RETRIEVE STORE - ss-operation
+  C0 C1 C2 C3 - order-complexity-value
+  LEFT MIDDLE RIGHT - shelf-spot
+  NA ZERO ONE TWO THREE - ring-num
+  ;ZERO ONE TWO THREE FOUR FIVE - ss-shelf
+  ;ZERO ONE TWO THREE FOUR FIVE SIX SEVEN - ss-slot
   C-Z18 C-Z28 C-Z38 C-Z48 C-Z58 C-Z68 C-Z78 - zone
   C-Z17 C-Z27 C-Z37 C-Z47 C-Z57 C-Z67 C-Z77 - zone
   C-Z16 C-Z26 C-Z36 C-Z46 C-Z56 C-Z66 C-Z76 - zone
@@ -88,470 +71,514 @@
   M-Z72 M-Z62 M-Z52 M-Z42 M-Z32 M-Z22 M-Z12 - zone
                     M-Z41 M-Z31 M-Z21 M-Z11 - zone
 
-	G-1-1 G-2-1 G-3-1 G-4-1 G-5-1 - waitpoint
-	G-1-2 G-2-2 G-3-2 G-4-2 G-5-2 - waitpoint
-	G-1-3 G-2-3 G-3-3 G-4-3 G-5-3 - waitpoint
-	G-1-4 G-2-4 G-3-4 G-4-4 G-5-4 - waitpoint
-	G-1-5 G-2-5 G-3-5 G-4-5 G-5-5 - waitpoint
-)
+  G-1-1 G-2-1 G-3-1 G-4-1 G-5-1 - waitpoint
+  G-1-2 G-2-2 G-3-2 G-4-2 G-5-2 - waitpoint
+  G-1-3 G-2-3 G-3-3 G-4-3 G-5-3 - waitpoint
+  G-1-4 G-2-4 G-3-4 G-4-4 G-5-4 - waitpoint
+  G-1-5 G-2-5 G-3-5 G-4-5 G-5-5 - waitpoint
 
+  ;GET_BASE - step
+)
 (:predicates
-	(at ?r - robot ?m - location ?side - mps-side)
-	(holding ?r - robot ?wp - workpiece)
-	(can-hold ?r - robot)
-	(entered-field ?r - robot)
-	(robot-waiting ?r - robot)
-	(maps ?m - mps ?r -robot)
-	(zone-content ?z - zone ?m - obstacle)
-	(mps-type ?m - mps ?t - mps-typename)
-	(mps-state ?m - mps ?s - mps-statename)
-	(mps-team ?m - mps ?col - team-color)
-	(mps-side-free ?m - mps ?side - mps-side)
-	(mps-side-approachable ?m - location ?side - mps-side)
-	(bs-prepared-color ?m - mps ?col - base-color)
-	(bs-prepared-side ?m - mps ?side - mps-side)
-	(bs-color ?m - mps ?col - base-color)
-	(cs-can-perform ?m - mps ?op - cs-operation)
-	(cs-prepared-for ?m - mps ?op - cs-operation)
-	(cs-buffered ?m - mps ?col - cap-color)
-	(cs-color ?m - mps ?col - cap-color)
-	(ss-prepared-for ?m - mps ?op - ss-operation ?wp - workpiece ?shelf - ss-shelf ?slot - ss-slot)
-	(rs-prepared-color ?m - mps ?col - ring-color)
-	(rs-ring-spec ?m - mps ?r - ring-color ?rn - ring-num)
-	(rs-filled-with ?m - mps ?n - ring-num)
-	;rs-sub and rs-inc are static predicates stating the legal ring-num operations
-	(rs-sub ?minuend - ring-num ?subtrahend - ring-num ?difference - ring-num)
-	(rs-inc ?summand - ring-num ?sum - ring-num)
-	(ds-prepared-order ?m - mps ?ord - order)
-	(order-complexity ?ord - order ?com - order-complexity-value)
-	(order-base-color ?ord - order ?col - base-color)
-	(order-ring1-color ?ord - order ?col - ring-color)
-	(order-ring2-color ?ord - order ?col - ring-color)
-	(order-ring3-color ?ord - order ?col - ring-color)
-	(order-cap-color ?ord - order ?col - cap-color)
-	(order-fulfilled ?ord - order)
-	(order-delivery-begin ?ord - order)
-	(order-delivery-end ?ord - order)
-	(order-gate ?ord - order ?gate - ds-gate)
-	(wp-unused ?wp - workpiece)
-	(wp-usable ?wp - workpiece)
-	(wp-at ?wp - workpiece ?m - mps ?side - mps-side)
-	(wp-base-color ?wp - workpiece ?col - base-color)
-	(wp-ring1-color ?wp - workpiece ?col - ring-color)
-	(wp-ring2-color ?wp - workpiece ?col - ring-color)
-	(wp-ring3-color ?wp - workpiece ?col - ring-color)
-	(wp-cap-color ?wp - workpiece ?col - cap-color)
-	(wp-on-shelf ?wp - workpiece ?m - mps ?spot - shelf-spot)
-	(wp-spawned-for ?wp - workpiece ?r - robot)
-	(wp-get-pending ?wp - workpiece ?m - mps ?side - mps-side)
-	(spot-free ?m - mps ?spot - shelf-spot)
-	(ss-stored-wp ?m  - mps ?wp - workpiece ?shelf - ss-shelf ?slot - ss-slot)
-	(ss-shelf-slot-free ?m  - mps ?shelf - ss-shelf ?slot - ss-slot)
-	(ss-new-wp-at ?m  - mps ?wp - workpiece ?shelf - ss-shelf
-	              ?slot - ss-slot ?base-col - base-color
-	              ?ring1-col - ring-color ?ring2-col - ring-color
-	              ?ring3-col - ring-color ?cap-col - cap-color)
-	(order-matches-wp ?wp - workpiece ?ord - order)
-	(rs-payment-fillable ?mps - mps)
-	(wp-get-shelf-active-for ?wp - workpiece)
-	(pay-for-rings-with-carrier-from-shelf-active ?robot - robot ?wp-loc - mps ?wp - workpiece)
+  (wp-moveable-to ?wp - workpiece ?mps - mps ?side - mps-side)
+  (at ?r - robot ?m - location ?side - mps-side)
+  (holding ?r - robot ?wp - workpiece)
+  (can-hold ?r - robot)
+  (entered-field ?r - robot)
+  (robot-waiting ?r - robot)
+  (maps ?m - mps ?r - robot)
+  (zone-content ?z - zone ?m - obstacle)
+  (mps-type ?m - mps ?t - mps-typename)
+  (mps-state ?m - mps ?s - mps-statename)
+  (mps-team ?m - mps ?col - team-color)
+  (mps-side-free ?m - mps ?side - mps-side)
+  (mps-side-approachable ?m - location ?side - mps-side)
+  (bs-prepared-color ?m - mps ?col - base-color)
+  (bs-prepared-side ?m - mps ?side - mps-side)
+  (bs-color ?m - mps ?col - base-color)
+  (cs-can-perform ?m - mps ?op - cs-operation)
+  (cs-prepared-for ?m - mps ?op - cs-operation)
+  (cs-buffered ?m - mps ?col - cap-color)
+  (cs-color ?m - mps ?col - cap-color)
+  (ss-prepared-for ?m - mps ?op - ss-operation ?wp - workpiece ?shelf - ss-shelf ?slot - ss-slot)
+  (rs-prepared-color ?m - mps ?col - ring-color)
+  (rs-next-ring-mountable ?wp - workpiece ?mps - mps ?order - order ?ring-color - ring-color)
+  (rs-payed-for ?mps - mps ?ring-color - ring-color)
+  (rs-ring-spec ?m - mps ?r - ring-color ?rn - ring-num)
+  (rs-filled-with ?m - mps ?n - ring-num)
+  ;rs-sub and rs-inc are static predicates stating the legal ring-num operations
+  (rs-sub ?minuend - ring-num ?subtrahend - ring-num ?difference - ring-num)
+  (rs-inc ?summand - ring-num ?sum - ring-num)
+  (ds-prepared-order ?m - mps ?ord - order)
+  (order-complexity ?ord - order ?com - order-complexity-value)
+  (order-base-color ?ord - order ?col - base-color)
+  (order-ring-color ?ord - order ?col - ring-color ?ring-num - ring-num)
+  (order-ring1-color ?ord - order ?col - ring-color)
+  (order-ring2-color ?ord - order ?col - ring-color)
+  (order-ring3-color ?ord - order ?col - ring-color)
+  (order-cap-color ?ord - order ?col - cap-color)
+  (order-fulfilled ?ord - order)
+  (order-delivery-begin ?ord - order)
+  (order-delivery-end ?ord - order)
+  (order-gate ?ord - order ?gate - ds-gate)
+  (wp-unused ?wp - workpiece)
+  (wp-usable ?wp - workpiece)
+  (wp-at ?wp - workpiece ?m - mps ?side - mps-side)
+  (wp-base-color ?wp - workpiece ?col - base-color)
+  (wp-ring-color ?wp - workpiece ?col - ring-color ?ring-num - ring-num)
+  (wp-ring1-color ?wp - workpiece ?col - ring-color)
+  (wp-ring2-color ?wp - workpiece ?col - ring-color)
+  (wp-ring3-color ?wp - workpiece ?col - ring-color)
+  (wp-cap-color ?wp - workpiece ?col - cap-color)
+  (wp-on-shelf ?wp - workpiece ?m - mps ?spot - shelf-spot)
+  (wp-spawned-for ?wp - workpiece ?r - robot)
+  (spot-free ?m - mps ?spot - shelf-spot)
+  (ss-stored-wp ?m  - mps ?wp - workpiece ?shelf - ss-shelf ?slot - ss-slot)
+  (ss-shelf-slot-free ?m  - mps ?shelf - ss-shelf ?slot - ss-slot)
+  (ss-new-wp-at ?m  - mps ?wp - workpiece ?shelf - ss-shelf
+                ?slot - ss-slot ?base-col - base-color
+                ?ring1-col - ring-color ?ring2-col - ring-color
+                ?ring3-col - ring-color ?cap-col - cap-color)
+  (wp-get-pending ?wp - workpiece ?m - mps ?side - mps-side)
+  ;(order-matching-wp ?wp - workpiece)
+  (deliverd ?ord - order)
+  (wp-for-order ?wp - workpiece ?ord - order)
+  ;(ring-num-mountable ?wp - workpiece ?num - ring-num)
+  ;(order-matching-wp-rings ?wp - workpiece)
+  (wp-complexity ?wp - workpiece ?n - ring-num)
+  (rings-mounted ?wp - workpiece ?n - ring-num)
+  (wp-reachable ?wp - workpiece  ?r - robot)
 )
 
-(:action goal-instruct-cs-mount-cap
-	:parameters (?mps - mps ?cap-color - cap-color ?wp - workpiece)
-	:precondition (and
-			(not (mps-state ?mps BROKEN))
-			(mps-type ?mps CS)
-			(cs-can-perform ?mps MOUNT_CAP)
-			(or (cs-buffered ?mps CAP_BLACK)
-					(cs-buffered ?mps CAP_GREY)
-			)
-			(mps-side-free ?mps OUTPUT)
-			(not (mps-side-free ?mps INPUT))
-		)
-	:effect (and
-			(not (mps-state ?mps IDLE))
-	    (mps-state ?mps READY-AT-OUTPUT)
-			(not (wp-at ?wp ?mps INPUT))
-			(mps-side-free ?mps INPUT)
-			(wp-at ?wp ?mps OUTPUT)
-			(not (mps-side-free ?mps OUTPUT))
-			(not (wp-cap-color ?wp CAP_NONE))
-			(wp-cap-color ?wp ?cap-color)
-			(cs-can-perform ?mps RETRIEVE_CAP)
-			(not (cs-can-perform ?mps MOUNT_CAP))
-			(not (cs-buffered ?mps ?cap-color))
+
+  (:action BUFFER-CAP
+    :parameters (?target-mps - mps ?wp - workpiece ?robot - robot ?ss - shelf-spot)
+    :precondition (and (mps-type ?target-mps CS)
+                       ;(not (mps-state ?target-mps BROKEN))
+                       ;(cs-can-perform ?target-mps RETRIEVE_CAP)
+                       ;(not (or (cs-buffered ?target-mps CAP_BLACK)
+                       ;		 (cs-buffered ?target-mps CAP_GREY)
+                       ;	 )
+                       ;)
+                       (cs-can-perform ?target-mps RETRIEVE_CAP)
+                       ;(wp-cap-color ?wp ?cap-color)
+                       (wp-reachable ?wp ?robot)
+                       (mps-side-free ?target-mps INPUT)
+                       (wp-on-shelf ?wp ?target-mps ?ss)
+                  )
+    :effect (and
+              (not (mps-side-free ?target-mps INPUT))
+              (wp-at ?wp ?target-mps INPUT)
+              (not (wp-on-shelf ?wp ?target-mps ?ss))
+            )
+  )
+
+  (:action INSTRUCT-CS-BUFFER-CAP
+    :parameters (?target-mps - mps ?cap-color - cap-color ?cc - workpiece)
+    :precondition (and (mps-type ?target-mps CS)
+                       ;(not (mps-state ?target-mps BR(wp-reachable ?wp ?robot)OKEN))
+                       ;(cs-can-perform ?target-mps RETRIEVE_CAP)
+                       ;(not (or (cs-buffered ?target-mps CAP_BLACK)
+                       ;		 (cs-buffered ?target-mps CAP_GREY)
+                       ;	 )
+                       ;)
+                       (cs-can-perform ?target-mps RETRIEVE_CAP)
+                       (wp-cap-color ?cc ?cap-color)
+                       (wp-at ?cc ?target-mps INPUT)
+                       (mps-side-free ?target-mps OUTPUT)
+                  )
+    :effect (and
+              (not (wp-at ?cc ?target-mps INPUT))
+              (mps-side-free ?target-mps INPUT)
+              (wp-at ?cc ?target-mps OUTPUT)
+              (not (mps-side-free ?target-mps OUTPUT))
+              (not (wp-cap-color ?cc ?cap-color))
+              (wp-cap-color ?cc CAP_NONE)
+              (cs-buffered ?target-mps ?cap-color)
+              (not (cs-buffered ?target-mps CAP_NONE))
+              (cs-can-perform ?target-mps MOUNT_CAP)
+              (not (cs-can-perform ?target-mps RETRIEVE_CAP))
+            )
+  )
+
+  (:action INSTRUCT-BS-DISPENSE-BASE
+    :parameters (?wp - workpiece ?target-mps - mps ?base-color - base-color ?robot - robot)
+    :precondition (and (mps-type ?target-mps BS)
+                       ;(mps-state ?target-mps IDLE)
+                       ;(mps-side-free ?target-mps INPUT)
+                       (mps-side-free ?target-mps OUTPUT)
+                       ;(mps-side-free ?target-mps WAIT)
+                       (wp-unused ?wp)
+                       ;(next-step ?wp GET_BASE)
+                       (wp-base-color ?wp BASE_NONE)
+                       ;(wp-get-pending ?wp ?target-mps OUTPUT)
+                       ;(mps-free ?target-mps)
+                  )
+    :effect (and
+                 (not (mps-side-free ?target-mps OUTPUT))
+                 (wp-at ?wp ?target-mps OUTPUT)
+                 (not (wp-base-color ?wp BASE_NONE))
+                 (wp-base-color ?wp ?base-color)
+                 (not (wp-unused ?wp))
+                 (wp-reachable ?wp ?robot)
+                 ;(ring-num-mountable ?wp ONE)
+            )
+  )
+
+
+	;(:action NOOP-assert-wp-get-pending
+	;	:parameters (?wp - workpiece ?target-mps - mps ?target-side - mps-side)
+	;	:precondition ()
+	;	:effect (wp-get-pending ?wp ?target-mps ?target-side)
+	;)
+
+  (:action MOUNT-CAP
+    :parameters (?wp - workpiece ?target-mps - mps  ?robot - robot ?cap-color - cap-color ?wp-loc - mps ?ring-num - ring-num ?wp-side - mps-side)
+    :precondition (and (mps-type ?target-mps CS)
+                       ;(not (mps-state ?target-mps BROKEN))
+                       ;(not (wp-at ?any-wp  ?target-mps INPUT))
+                       ;(mps-side-free ?target-mps INPUT)
+                       ;(mps-team ?target-mps ?team-color)
+                       ;(or (cs-buffered ?target-mps CAP_BLACK)
+                       ;		 (cs-buffered ?target-mps CAP_GREY)
+                       ;)
+                       (cs-buffered ?target-mps ?cap-color)
+                       (cs-can-perform ?target-mps MOUNT_CAP)
+                       ;(mps-team ?wp-loc ?team-color)
+                       ;(holding ?robot ?wp)
+                       (wp-reachable ?wp ?robot)
+                       (mps-side-free ?target-mps INPUT)
+                       (wp-at ?wp ?wp-loc ?wp-side)
+                       (rings-mounted ?wp ?ring-num)
+                       (wp-complexity ?wp ?ring-num)
+                       ;(order-matching-wp-rings ?wp)
+               )
+    :effect (and
+                (not (mps-side-free ?target-mps INPUT))
+                (wp-at ?wp ?target-mps INPUT)
+                (not (wp-at ?wp ?wp-loc ?wp-side))
+                (mps-side-free ?wp-loc ?wp-side)
+            )
+  )
+
+  (:action INSTRUCT-CS-MOUNT-CAP
+    :parameters (?target-mps - mps ?cap-color - cap-color ?wp - workpiece)
+    :precondition (and
+        ;(not (mps-state ?mps BROKEN))
+        (mps-type ?target-mps CS)
+        (cs-can-perform ?target-mps MOUNT_CAP)
+        ;(or (cs-buffered ?mps CAP_BLACK)
+        ;		(cs-buffered ?mps CAP_GREY)
+        ;)
+        (cs-buffered ?target-mps ?cap-color)
+        (mps-side-free ?target-mps OUTPUT)
+        (wp-at ?wp ?target-mps INPUT)
+        (wp-cap-color ?wp CAP_NONE)
+        ;(mps-occupied ?mps ?wp)
+      )
+    :effect (and
+        ;(not (mps-state ?mps IDLE))
+        ;(mps-state ?mps READY-AT-OUTPUT)
+        (not (wp-at ?wp ?target-mps INPUT))
+        (mps-side-free ?target-mps INPUT)
+        (wp-at ?wp ?target-mps OUTPUT)
+        (not (mps-side-free ?target-mps OUTPUT))
+        (not (wp-cap-color ?wp CAP_NONE))
+        (wp-cap-color ?wp ?cap-color)
+        (cs-can-perform ?target-mps RETRIEVE_CAP)
+        (not (cs-can-perform ?target-mps MOUNT_CAP))
+        (not (cs-buffered ?target-mps ?cap-color))
+        (cs-buffered ?target-mps CAP_NONE)
+      )
+  )
+
+
+  ;(:action NOOP-assert-order-match-wp
+  ;  :parameters (?wp - workpiece ?ord - order ?ring1 - ring-color ?ring2 - ring-color ?ring3 - ring-color ?base-color - base-color ?cap-color - cap-color)
+  ;  :precondition (and ;(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
+  ;                   (order-ring-color ?ord ?ring1 ONE)
+  ;                   (order-ring-color ?ord ?ring2 TWO)
+  ;                   (order-ring-color ?ord ?ring3 THREE)
+  ;                   (order-base-color ?ord ?base-color)
+  ;                   (order-cap-color ?ord ?cap-color)
+  ;                   (wp-ring-color ?wp ?ring1 ONE)
+  ;                   (wp-ring-color ?wp ?ring2 TWO)
+  ;                   (wp-ring-color ?wp ?ring3 THREE)
+  ;                   (wp-base-color ?wp ?base-color)
+  ;                   (wp-cap-color ?wp ?cap-color)
+  ;                   (wp-for-order ?wp ?ord)
+  ;                )
+  ;  :effect (order-matching-wp ?wp)
+  ;)
+
+  ;(:action NOOP-assert-order-match-wp-rings
+  ;  :parameters (?wp - workpiece ?ord - order ?ring1 - ring-color ?ring2 - ring-color ?ring3 - ring-color ?base-color - base-color)
+  ;  :precondition (and ;(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
+  ;                   (order-ring-color ?ord ?ring1 ONE)
+  ;                   (order-ring-color ?ord ?ring2 TWO)
+  ;                   (order-ring-color ?ord 1?ring3 THREE)
+  ;                   (order-base-color ?ord ?base-color)
+  ;                   (wp-ring-color ?wp ?ring1 ONE)
+  ;                   (wp-ring-color ?wp ?ring2 TWO)
+  ;                   (wp-ring-color ?wp ?ring3 THREE)
+  ;                   (wp-base-color ?wp ?base-color)
+  ;                   (wp-for-order ?wp ?ord)
+  ;                )
+  ;  :effect (order-matching-wp-rings ?wp)
+  ;)
+
+  (:action DELIVER-RC21
+    :parameters (?wp - workpiece ?target-mps - mps ?ord - order ?robot - robot ?wp-side - mps-side  ?ring1 - ring-color ?ring2 - ring-color ?ring3 - ring-color ?base-color - base-color ?cap-color - cap-color)
+    :precondition (and ;(mps-type ?target-mps DS)
+                       ;(mps-state ?target-mps IDLE)
+                       ;(wp-at ?wp ?target-mps INPUT)
+                       ;(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
+                       ;(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
+                       (wp-reachable ?wp ?robot)
+                       ;(order-matching-wp ?wp)
+                       (wp-at ?wp ?target-mps ?wp-side)
+
+                       (order-ring-color ?ord ?ring1 ONE)
+                       (order-ring-color ?ord ?ring2 TWO)
+                       (order-ring-color ?ord ?ring3 THREE)
+                       (order-base-color ?ord ?base-color)
+                       (order-cap-color ?ord ?cap-color)
+                       (wp-ring-color ?wp ?ring1 ONE)
+                       (wp-ring-color ?wp ?ring2 TWO)
+                       (wp-ring-color ?wp ?ring3 THREE)
+                       (wp-base-color ?wp ?base-color)
+                       (wp-cap-color ?wp ?cap-color)
+                       (wp-for-order ?wp ?ord)
+                  )
+    :effect (and
+              (deliverd ?ord)
+              (not (wp-at ?wp ?target-mps ?wp-side))
+              (mps-side-free ?target-mps ?wp-side)
+            )
+  )
+
+  ;(:action debug-deliver-a-to-b
+  ;  :parameters (?wp - workpiece ?wp-loc - mps ?wp-loc-side - mps-side ?wp-to - mps ?wp-to-side - mps-side)
+  ;  :precondition (and
+  ;        (wp-at ?wp ?wp-loc ?wp-loc-side)
+  ;        (mps-side-free ?wp-to ?wp-to-side)
+  ;    )
+  ;  :effect (and
+  ;      (not (wp-at ?wp ?wp-loc ?wp-loc-side))
+  ;      (not (mps-side-free ?wp-to ?wp-to-side))
+  ;      (wp-at ?wp ?wp-to ?wp-to-side)
+  ;      (mps-side-free ?wp-loc ?wp-loc-side)
+  ;    )
+  ;)
+
+  (:action MOUNT-RING
+    :parameters (?wp - workpiece ?target-mps - mps ?ring-color - ring-color ?robot - robot ?ring-payment-cost - ring-num ?ring-num - ring-num ?wp-loc - mps ?ord - order ?wp-side - mps-side ?ring-num-next - ring-num)
+    :precondition (and
+            ;(not (mps-state ?rs BROKEN))
+            ;(rs-paid-for ?rs ?bases-needed)
+            ;(mps-side-free ?rs INPUT)
+            (mps-type ?target-mps RS)
+            (rs-ring-spec ?target-mps ?ring-color ?ring-payment-cost)
+            ;(rs-filled-with ?rs ?rings-filled)
+            ;(rs-sub ?rings-filled ?ring-payment-cost ?bases-left)
+            ;(ring-num-mountable ?wp ?ring-num)
+            (rings-mounted ?wp ?ring-num)
+            (rs-inc ?ring-num ?ring-num-next)
+            (wp-cap-color ?wp CAP_NONE)
+            (wp-for-order ?wp ?ord)
+            (order-ring-color ?ord ?ring-color ?ring-num-next)
+            ;(and)
+            ;    (wp-ring1-color ?wp RING_NONE)
+            ;    ;(wp-ring2-color ?wp RING_NONE)
+            ;    ;(wp-ring3-color ?wp RING_NONE)
+            ;    (wp-base-color ?wp ?base-color)
+            ;    (wp-cap-color ?wp CAP_NONE)
+            ;    (order-base-color ?ord ?base-color)
+            ;)
+
+            ;(wp-for-order ?wp ?ord)
+            ;(order-ring1-color ?ord ?ring-color)
+            ;(mps-has-side ?bs ?side)
+            ;missing deadlock prevention()
+            ;(order-producible ?order)
+            ;(and)
+            ;  (can-hold ?robot)
+            ;  (wp-at ?wp ?wp-loc ?wp-side)
+            ;)
+            (wp-reachable ?wp ?robot)
+            (wp-at ?wp ?wp-loc ?wp-side)
+            (mps-side-free ?target-mps INPUT)
+        )
+    :effect (and
+        ;(mps-occupied ?rs ?wp)
+        ;(not (mps-free ?rs))
+        ;(not (mps-occupied ?wp-loc ?wp))
+        ;(mps-free ?wp-loc)
+        (not (wp-at ?wp ?wp-loc ?wp-side))
+        ;(not (rs-filled-with ?rs ?rings-filled))
+        ;(rs-filled-with ?rs ?bases-left)
+        (not (mps-side-free ?target-mps INPUT))
+        (wp-at ?wp ?target-mps INPUT)
+        (mps-side-free ?wp-loc ?wp-side)
+        ;(not (holding ?robot ?wp))
+        ;(can-hold ?robot)
     )
-)
+  )
 
-(:action goal-mount-cap
-	:parameters (?wp - workpiece ?target-mps - mps ?target-side - mps-side ?wp-loc - mps ?wp-side - mps-side ?robot - robot)
-	:precondition (and (mps-type ?target-mps CS)
-										 (not (mps-state ?target-mps BROKEN))
-										 ;(not (wp-at ?any-wp  ?target-mps INPUT))
-							 			 (mps-side-free ?target-mps INPUT)
-										 ;(mps-team ?target-mps ?team-color)
-										 (or (cs-buffered ?target-mps CAP_BLACK)
-												 (cs-buffered ?target-mps CAP_GREY)
-										 )
-										 (cs-can-perform ?target-mps MOUNT_CAP)
-										 ;(mps-team ?wp-loc ?team-color)
-										 (or (and
-														 (can-hold ?robot)
-														 (or (and (mps-type ?wp-loc BS)
-														          (wp-unused ?wp)
-																			(wp-base-color ?wp BASE_NONE)
-														 		 )
-																 (wp-at ?wp ?wp-loc ?wp-side)
-														 )
-												 )
-												 (holding ?robot ?wp)
-										 )
-						 )
-	;effect is wrong revisit
-	:effect (and (not (wp-at ?wp ?target-mps INPUT))
-	             (mps-side-free ?target-mps INPUT)
-	             (wp-at ?wp ?target-mps OUTPUT)
-	             (not (mps-side-free ?target-mps OUTPUT))
-	             (not (wp-cap-color ?wp CAP_NONE))
-	             ;(wp-cap-color ?wp ?capcol)
-	             (cs-can-perform ?target-mps RETRIEVE_CAP)
-	             (not (cs-can-perform ?target-mps MOUNT_CAP))
-	             (not (cs-prepared-for ?target-mps MOUNT_CAP))
-	             ;(not (cs-buffered ?m ?capcol))
-	        )
-)
+  ;(:action assert-facts
+  ;    :parameters (?wp - workpiece ?ord - order ?mps - mps)
+  ;    :precondition (mps-type ?mps SS
+  ;    )
+  ;    :effect (and
+  ;      (rs-ring-spec ?mps RING_YELLOW ONE)
+  ;      (wp-for-order ?wp ?ord)
+  ;      (mps-type ?mps RS)
+  ;      (order-ring-color ?ord RING_YELLOW TWO)
+  ;    )
+  ; )
 
-; Capcarrier CEs
-;(or   (and
-;				 (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
-;				 (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
-;				 (not (plan-action (action-name wp-get-shelf) (param-values $? ?wp $?)))
-;				 (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-;		 )
-;		 (and
-;				 (wm-fact (key domain fact holding args? r ?robot wp ?cc))
-;				 (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-;				 (domain-object (name ?cc) (type cap-carrier))
-;
-(:action goal-buffer-cap
-	:parameters (?target-mps - mps ?cap-color - cap-color)
-	:precondition (and (mps-type ?target-mps CS)
-										 (not (mps-state ?target-mps BROKEN))
-										 (cs-can-perform ?target-mps RETRIEVE_CAP)
-										 (not (or (cs-buffered ?target-mps CAP_BLACK)
-												 (cs-buffered ?target-mps CAP_GREY)
-										 	 )
-										 )
-										 (mps-side-free ?target-mps INPUT)
-							  )
-	:effect (and
-						(not (mps-side-free ?target-mps INPUT))
-						;(wp-at ?wp ?target-mps INPUT)
-						;(can-hold ?robot)
-						;(not (holding ?r ?wp))
-					)
-)
 
-;(wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-(:action goal-instruct-cs-buffer-cap
-	:parameters (?target-mps - mps ?cap-color - cap-color)
-	:precondition (and (mps-type ?target-mps CS)
-										 (not (mps-state ?target-mps BROKEN))
-										 (cs-can-perform ?target-mps RETRIEVE_CAP)
-										 (not (or (cs-buffered ?target-mps CAP_BLACK)
-												 (cs-buffered ?target-mps CAP_GREY)
-										 	 )
-										 )
-										 (not (mps-side-free ?target-mps INPUT))
-										 (mps-side-free ?target-mps OUTPUT)
-								)
-	:effect (and
-						;(not (wp-at ?cc INPUT))
-						;(mps-side-free ?target-mps INPUT)
-						;(wp-at ?cc ?target-mps OUTPUT)
-						(not (mps-side-free ?target-mps OUTPUT))
-						;(not (wp-cap-color ?cc ?cap-color))
-						;(wp-cap-color ?cc CAP_NONE)
-						(cs-buffered ?target-mps ?cap-color)
-						(cs-can-perform ?target-mps MOUNT_CAP)
-						(not (cs-prepared-for ?target-mps RETRIEVE_CAP))
-					)
-)
+  (:action INSTRUCT-RS-MOUNT-RING
+    :parameters (?target-mps - mps ?ring-color - ring-color ?wp - workpiece ?ring-payment-cost - ring-num ?rings-filled - ring-num ?bases-left - ring-num ?ring-num - ring-num ?ring-num-next - ring-num)
+    :precondition (and
+          ;(not (mps-state ?rs BROKEN))
+          ;(rs-paid-for ?rs ?bases-needed)
+          (wp-at ?wp ?target-mps INPUT)
+          (mps-side-free ?target-mps OUTPUT)
+          ;ring-mountable()
+          (mps-type ?target-mps RS)
+          (rs-ring-spec ?target-mps ?ring-color ?ring-payment-cost)
+          ;(sufficient-payment ?rs ?ring-color)
+          (rs-filled-with ?target-mps ?rings-filled)
+          (rs-sub ?rings-filled ?ring-payment-cost ?bases-left)
+          ;(ring-num-mountable ?wp ?ring-num)
+          (wp-cap-color ?wp CAP_NONE)
+          (rings-mounted ?wp ?ring-num)
+          (rs-inc ?ring-num ?ring-num-next)
+          ;(and)
+          ;    (wp-ring1-color ?wp RING_NONE)
+          ;    ;(wp-ring2-color ?wp RING_NONE)
+          ;    ;(wp-ring3-color ?wp RING_NONE)
+          ;    (wp-base-color ?wp ?base-color)
+          ;    (wp-cap-color ?wp CAP_NONE)
+          ;    (order-base-color ?ord ?base-color)
+          ;)
 
-(:action goal-discard
-	:parameters (?wp - workpiece ?wp-loc - mps ?wp-side - mps-side ?robot - robot)
-	:precondition (and (or (mps-type ?wp-loc CS)
-												 (mps-type ?wp-loc BS)
-												 (mps-type ?wp-loc DS)
-												 (mps-type ?wp-loc RS)
-												 (mps-type ?wp-loc SS))
-										 ;(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
-										 (or (and (can-hold ?robot)
-									 	          (wp-at ?wp ?wp-loc ?wp-side))
-									 	    (holding ?robot ?wp))
-							  )
-	:effect (mps-type ?wp-loc CS)
-)
+          ;(wp-for-order ?wp ?ord)
+          ;(order-ring1-color ?ord ?ring-color)
+          ;(mps-has-side ?bs ?side)
+          ;missing deadlock prevention()
+          ;(order-producible ?order)
+          ;(mps-occupied ?rs ?wp)
+      )
+    :effect (and
+          ;(not (rs-filled-with ?rs ?rings-filled))
+          ;(rs-filled-with ?rs ?bases-left)
+          (mps-side-free ?target-mps INPUT)
+          (not (wp-at ?wp ?target-mps INPUT))
+          (not (mps-side-free ?target-mps OUTPUT))
+          (wp-at ?wp ?target-mps OUTPUT)
+          (wp-ring-color ?wp ?ring-color ?ring-num-next)
+          (not (wp-ring-color ?wp RING_NONE ?ring-num-next))
+          ;(not (ring-num-mountable ?wp ?ring-num-next))
+          (not (rs-filled-with ?target-mps ?rings-filled))
+          (rs-filled-with ?target-mps ?bases-left)
+          (rings-mounted ?wp ?ring-num-next)
+          (not (rings-mounted ?wp ?ring-num))
+      )
+  )
 
-(:action goal-instruct-bs-dispense-base
-	:parameters (?wp - workpiece ?target-mps - mps ?target-side - mps-side ?base-color - base-color)
-	:precondition (and (mps-type ?target-mps BS)
-										 (mps-state ?target-mps IDLE)
-  								 	 ;(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-										 (mps-side-free ?target-mps INPUT)
-										 (mps-side-free ?target-mps OUTPUT)
-										 ;(mps-side-free ?target-mps WAIT)
-									 	 (wp-unused ?wp)
-										 (wp-get-pending ?wp ?target-mps ?target-side)
-								)
-	:effect (and (wp-at ?wp ?target-mps ?target-side)
-	             (not (mps-side-free ?target-mps ?target-side))
-	             (not (wp-base-color ?wp BASE_NONE))
-	             (wp-base-color ?wp ?base-color)
-	             (not (wp-unused ?wp))
-		     			 (wp-usable ?wp)
-	             (mps-state ?target-mps READY-AT-OUTPUT)
-	        )
-)
+  ;(:action NOOP-ring-num-two-mountable
+  ;  :parameters (?wp - workpiece ?ord - order ?ring1 - ring-color ?ring2 - ring-color)
+  ;  :precondition (and
+  ;                   (wp-for-order ?wp ?ord)
+  ;                   (wp-ring-color ?wp ?ring1 ONE)
+  ;                   (wp-ring-color ?wp RING_NONE TWO)
+  ;                   (order-ring-color ?ord ?ring1 ONE)
+  ;                   (order-ring-color ?ord ?ring2 TWO)
+  ;                )
+  ;  :effect (ring-num-mountable ?wp TWO)
+  ;)
 
-(:action goal-deliver
-	:parameters (?wp - workpiece ?target-mps - mps)
-	:precondition (and (mps-type ?target-mps DS)
-										 (mps-state ?target-mps IDLE)
-										 (wp-at ?wp ?target-mps INPUT)
-							  )
-	:effect (mps-state ?target-mps READY-AT-OUTPUT)
-)
+  ;(:action NOOP-ring-num-three-mountable
+  ;  :parameters (?wp - workpiece ?ord - order ?ring1 - ring-color ?ring2 - ring-color ?ring3 - ring-color)
+  ;  :precondition (and
+  ;                   (wp-for-order ?wp ?ord)
+  ;                   (wp-ring-color ?wp ?ring1 ONE)
+  ;                   (wp-ring-color ?wp ?ring2 TWO)
+  ;                   (wp-ring-color ?wp RING_NONE THREE)
+  ;                   (order-ring-color ?ord ?ring1 ONE)
+  ;                   (order-ring-color ?ord ?ring2 TWO)
+  ;                   (order-ring-color ?ord ?ring3 THREE)
+  ;                )
+  ;  :effect (ring-num-mountable ?wp THREE)
+  ;)
 
-(:action goal-deliver-rc21
-	:parameters (?wp - workpiece ?target-mps - mps ?ord - order ?robot - robot)
-	:precondition (and ;(mps-type ?target-mps DS)
-										 ;(mps-state ?target-mps IDLE)
-										 ;(wp-at ?wp ?target-mps INPUT)
+  ;(:action NOOP-fill-payment
+  ;    :parameters (?rs - mps ?rings-filled - ring-num ?rings-inc - ring-num)
+  ;    :precondition (and
+  ;          (mps-type ?rs RS)
+  ;          (rs-filled-with ?rs ?rings-filled)
+  ;          (rs-inc ?rings-filled ?rings-inc)
+  ;    )
+  ;    :effect (and
+  ;          (not (rs-filled-with ?rs ?rings-filled))
+  ;          (rs-filled-with ?rs ?rings-inc)
+  ;    )
+  ;)
 
-										 ;(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
-										 ;(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
 
-										 (or (can-hold ?robot)
-										 	 (holding ?robot ?wp)
-										 )
-										 (order-matches-wp ?wp ?ord)
-							  )
-	:effect (mps-state ?target-mps READY-AT-OUTPUT)
-)
 
-(:action goal-get-base-to-fill-rs
-	:parameters (?wp - workpiece ?wp-loc - mps ?wp-side - mps-side ?target-mps - mps ?target-side - mps-side ?robot - robot)
-	:precondition (and
-										;(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-										;(wm-fact (key refbox team-color) (value ?team-color))
-										;MPS-RS CEs (a cap carrier can be used to fill a RS later)
-										(mps-type ?target-mps RS)
-										(not (mps-state ?target-mps BROKEN))
-										;(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
-										;check ring payment - prevention of overfilling rs()
-										;(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before&ZERO|ONE|TWO))
+  (:action PAY-FOR-RINGS-WITH-BASE
+    :parameters (?wp - workpiece ?wp-loc - mps ?wp-side - mps-side ?target-mps - mps ?robot - robot ?bases-filled - ring-num ?bases-inc - ring-num)
+    :precondition (and
+                      (mps-type ?target-mps RS)
+                      (mps-type ?wp-loc BS)
+                      (wp-reachable ?wp ?robot)
+                      (wp-at ?wp ?wp-loc ?wp-side)
+                      (rs-filled-with ?target-mps ?bases-filled)
+                      (rs-inc ?bases-filled ?bases-inc)
+                      ;(wp-cap-color ?wp CAP_NONE)
+                  )
+    :effect (and
+          (not (wp-at ?wp ?wp-loc ?wp-side))
+          (mps-side-free ?wp-loc ?wp-side)
+          (not (wp-reachable ?wp ?robot))
+          (not (rs-filled-with ?target-mps ?bases-filled))
+          (rs-filled-with ?target-mps ?bases-inc)
+      )
+  )
 
-										(rs-payment-fillable ?target-mps)
+  (:action PAY-FOR-RINGS-WITH-CAP-CARRIER
+    :parameters (?wp - workpiece ?wp-loc - mps ?wp-side - mps-side ?target-mps - mps ?robot - robot ?bases-filled - ring-num ?bases-inc - ring-num)
+    :precondition (and
+                      (mps-type ?target-mps RS)
+                      (mps-type ?wp-loc CS)
+                      (wp-reachable ?wp ?robot)
+                      (wp-at ?wp ?wp-loc ?wp-side)
+                      (rs-filled-with ?target-mps ?bases-filled)
+                      (rs-inc ?bases-filled ?bases-inc)
+                      ;(wp-cap-color ?wp CAP_NONE)
+                  )
+    :effect (and
+          (not (wp-at ?wp ?wp-loc ?wp-side))
+          (mps-side-free ?wp-loc ?wp-side)
+          (not (wp-reachable ?wp ?robot))
+          (not (rs-filled-with ?target-mps ?bases-filled))
+          (rs-filled-with ?target-mps ?bases-inc)
+      )
+  )
 
-										;(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
-										;(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
-
-										(or (and ; Either the workpiece needs to picked up...()
-										         ;(not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-														 (can-hold ?robot)
-														     ; ... and it is a fresh base located in a base station()
-										         (or (and ;(wm-fact (key domain fact mps-type args? m ?wp-loc t BS))
-														 					(mps-type ?wp-loc BS)
-										                  ;(wm-fact (key domain fact mps-state args? m ?wp-loc s ~BROKEN))
-																			(not (mps-state ?wp-loc BROKEN))
-																			;(wm-fact (key domain fact wp-unused args? wp ?wp))
-																			(wp-unused ?wp)
-																			;(wm-fact (key domain fact wp-base-color args? wp ?wp col BASE_NONE)))
-																			(wp-base-color ?wp BASE_NONE)
-																 )
-																 ; ... or is already at some machine()
-										             ;(wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side))
-																 (wp-at ?wp ?wp-loc ?wp-side)
-										         )
-										    )
-										    ; or the workpiece is already being held()
-										    ;(wm-fact (key domain fact holding args? r ?robot wp ?wp))
-												(holding ?robot ?wp)
-										)
-										;(domain-fact (name zone-content) (param-values ?zz1 ?wp-loc))
-										;(domain-fact (name zone-content) (param-values ?zz2 ?target-mps))
-								)
-	:effect (and
-				(not (wp-at ?wp ?wp-loc ?wp-side))
-	      (not (mps-state ?wp-loc READY-AT-OUTPUT))
-        (mps-state ?wp-loc IDLE)
-      	(mps-side-free ?wp-loc ?wp-side)
-				(not (wp-usable ?wp))
-        (not (holding ?robot ?wp))
-  			(can-hold ?robot)
-      	(not (rs-payment-fillable ?target-mps))
-		)
-)
-
-(:action goal-get-cap-carrier-to-fill-rs
-	:parameters (?wp - workpiece ?wp-loc - mps ?wp-side - mps-side ?target-mps - mps ?target-side - mps-side ?robot - robot)
-	:precondition (and
-										;(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-										;(wm-fact (key refbox team-color) (value ?team-color))
-										;MPS-RS CEs (a cap carrier can be used to fill a RS later)
-										(mps-type ?target-mps RS)
-										(not (mps-state ?target-mps BROKEN))
-										;(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
-										;check ring payment - prevention of overfilling rs()
-										;(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before&ZERO|ONE|TWO))
-
-										(rs-payment-fillable ?target-mps)
-										; MPS-Source CEs()
-										(mps-type ?wp-loc CS)
-										;(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
-
-										;check wp has no cap and is at the output of the CS()
-										(wp-cap-color ?wp CAP_NONE)
-										(or (and ; Either the workpiece needs to picked up...
-														 ;(not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-														 (can-hold ?robot)
-														 (wp-at ?wp ?wp-loc OUTPUT)
-												)
-												; or the workpiece is already being held()
-												;(wm-fact (key domain fact holding args? r ?robot wp ?wp&:(eq ?wp ?preset-wp)))
-												(holding ?robot ?wp)
-										)
-										;(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
-										;(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
-								)
-	:effect (and
-				(not (wp-at ?wp ?wp-loc ?wp-side))
-	      (not (mps-state ?wp-loc READY-AT-OUTPUT))
-        (mps-state ?wp-loc IDLE)
-      	(mps-side-free ?wp-loc ?wp-side)
-				(not (wp-usable ?wp))
-        (not (holding ?robot ?wp))
-  			(can-hold ?robot)
-      	(not (rs-payment-fillable ?target-mps))
-		)
-)
-
-;incomplete since it is not used in any creation of a C0 to a C3 and therefore not
-;testable for me at the moment
-(:action goal-pay-ring-with-carrier-from-shelf
-	:parameters (?wp - workpiece ?wp-loc - mps ?wp-side - mps-side ?target-mps - mps ?target-side - mps-side ?robot - robot)
-	:precondition (and
-										;(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-										;(wm-fact (key refbox team-color) (value ?team-color))
-										;MPS-RS CEs (a cap carrier can be used to fill a RS later)
-										(mps-type ?target-mps RS)
-										(not (mps-state ?target-mps BROKEN))
-										;(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
-										;check ring payment - prevention of overfilling rs()
-										;(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before&ZERO|ONE|TWO))
-
-										(rs-payment-fillable ?target-mps)
-
-										;MPS-CS CEs()
-										;(wm-fact (key domain fact mps-type args? m ?wp-loc t CS))
-										(mps-type ?wp-loc CS)
-										;(wm-fact (key domain fact mps-state args? m ?wp-loc s ~BROKEN))
-										(not (mps-state ?wp-loc BROKEN))
-										;(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
-
-										;either there is a wp on the shelf and we don't hold any or we hold one and it is()
-										;a CC (e.g. if the goal fails after pick-up)
-										(or (and ;(wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?wp-loc spot ?spot))
-													 ;(wp-on-shelf ?wp ?wp-loc ?spot)
-													 ;(not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-													 (can-hold ?robot)
-													 (not (wp-get-shelf-active-for ?wp))
-											)
-											(and ;(domain-object (name ?wp) (type cap-carrier))
-													 ;(wm-fact (key domain fact holding args? r ?robot wp ?wp))
-													 (holding ?robot ?wp)
-											)
-										)
-
-										; Formulate the goal only if it is not already formulated (prevents doubling)
-										; the goals due to matching with RS-1 and RS-2)
-										;(not (goal (class  PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF) (parent goal-id)
-										;		 (params robot ?robot cs ?wp-loc wp ?wp $?)))
-										(not (pay-for-rings-with-carrier-from-shelf-active ?robot ?wp-loc ?wp))
-										;(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
-										;(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
-								)
-	:effect (and
-			;(not (wp-on-shelf ?wp ?wp-loc ?spot))
-			;(wp-usable ?cc)
-			;(spot-free ?mps ?spot)
-			;(not (wp-usable ?wp))
-      ;(not (holding ?robot ?wp))
-      ;(can-hold ?robot)
-			(not (rs-payment-fillable ?target-mps))
-		)
-)
-
-(:action goal-mount-ring
-	:parameters (?wp - workpiece ?target-mps - mps ?target-side - mps-side
-				?wp-loc - mps ?wp-side - mps-side ?ring-color - ring-color)
-	:precondition (and (mps-type ?target-mps RS)
-										 (not (mps-state ?target-mps BROKEN))
-										 ;(wm-fact (key domain fact mps-team args?       m ?target-mps col ?team-color))
-										 ;(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?bases-filled))
-										 ;(wm-fact (key domain fact ?wp-ring-color&:(eq ?wp-ring-color(sym-cat wp-ring (sub-string 5 5 ?ring) -color)) args? wp ?wp col RING_NONE ))
-										 ;(wm-fact (key domain fact ?order-ring-color&:(eq ?order-ring-color(sym-cat order-ring (sub-string 5 5 ?ring) -color))args? ord ?order col ?ring-color ))
-										 ;(wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C1|C2|C3))
-										 ;WP LOC IS A WORKPIECE HERE?!?
-										 ;(not (wm-fact (key domain fact wp-at args? wp ?wp-loc m ?target-mps side INPUT)))
-										 ;(not (wp-at ?wp-loc ?target-mps INPUT))
-										 ;(Other-rs is missing)
-										 ;(or (wm-fact (key domain fact mps-side-free args? m ?target-mps side OUTPUT))
-									 	 ;   (and (wm-fact (key domain fact mps-type args? m ?other-rs&~?target-mps t RS))
-									 	 ;        (wm-fact (key domain fact mps-team args? m ?other-rs col ?team-color))
-									 	 ;        (wm-fact (key domain fact mps-side-free args? m ?other-rs side ?any-side))))
-										 ;MPS-SOURCE CEs FACTS MISSING .
-								)
-	:effect (mps-state ?target-mps READY-AT-OUTPUT)
-)
-
-;Similar difficulties to mount-ring
-(:action goal-instruct-rs-mount-ring
-	:parameters (?target-mps - mps ?ring-color - ring-color)
-	:precondition (and
-		; MPS CEs
-		(mps-type ?target-mps RS)
-		(not (mps-state ?target-mps BROKEN))
-		;STILL NEED THIS FACT
-		;(wm-fact (key domain fact rs-filled-with args? m ?mps n ?bases-filled))
-		; Ring Cost
-		;(wm-fact (key domain fact rs-ring-spec
-	  ;          args? m ?mps r ?ring-color&~RING_NONE rn ?bases-needed))
-		;(wm-fact (key domain fact rs-sub args? minuend ?bases-filled
-	  ;                                       subtrahend ?bases-needed
-	  ;                                       difference ?bases-remain&ZERO|ONE|TWO|THREE))
-
-		; WP CEs
-		;(wp-at ?wp ?target-mps INPUT)
-		;a new meta fact
-		;(wm-fact (key wp meta next-step args? wp ?wp) (value ?ring))
-
-		;(wm-fact (key domain fact ?wp-ring-color&:(eq ?wp-ring-color
-		;         (sym-cat wp-ring (sub-string 5 5 ?ring) -color))
-		;          args? wp ?wp col RING_NONE ))
-		;(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
-		;(wm-fact (key domain fact ?order-ring-color&:(eq ?order-ring-color
-		;         (sym-cat order-ring (sub-string 5 5 ?ring) -color))
-		;          args? ord ?order col ?ring-color ))
-
-		(mps-side-free ?target-mps OUTPUT)
-		;THERE IS NO OTHER GOAL CURRENTLY INSTRUCTING TO MOUNT A RING?
-		;(not (goal (class INSTRUCT-RS-MOUNT-RING) (mode EXPANDED|SELECTED|DISPATCHED|COMMITTED)))
-
-		)
-	:effect (mps-state ?target-mps READY-AT-OUTPUT)
-)
+  (:action DISCARD
+    :parameters (?wp - workpiece ?wp-loc - mps ?wp-side - mps-side ?robot - robot)
+    :precondition (and ;(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
+                       (wp-reachable ?wp ?robot)
+                       (wp-at ?wp ?wp-loc ?wp-side)
+                  )
+    :effect (and (not (wp-at ?wp ?wp-loc ?wp-side))
+                 (mps-side-free ?wp-loc ?wp-side)
+                 (not (wp-reachable ?wp ?robot))
+            )
+  )
 
 )
