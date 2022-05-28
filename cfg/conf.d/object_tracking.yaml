@@ -28,7 +28,6 @@ plugins/object_tracking:
     belt_height: 0.895
     belt_length: 0.35
     belt_offset_side: 0.025
-    # = 0 in reality, used for gazebo
     # height/size of the belt itself
     belt_size: 0.045
 
@@ -103,3 +102,8 @@ plugins/object_tracking:
     shm_image_id: "realsense_rgb"
     shm_image_id_res: "object_tracking"
     frame: "cam_gripper"
+
+  laser_line_fit:
+    max_dist: 0.8
+    visibility_history: 3
+    max_angle: 0.35

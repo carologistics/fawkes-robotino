@@ -174,6 +174,17 @@ ObjectTrackingThread::init()
 	object_tracking_if_ =
 	  blackboard->open_for_writing<ObjectTrackingInterface>(object_tracking_if_name_.c_str());
 
+	//open LaserLineInterface for reading
+	laserlines_names_ = config->get_strings((cfg_prefix + "if/laser_lines").c_str());
+	for (std::string ll : laserlines_names_) {
+		laserlines_.push_back(blackboard->open_for_reading<fawkes::LaserLineInterface>(ll.c_str()));
+	}
+
+	//get laser line fitting configs
+	ll_max_dist_ = this->config->get_float(("plugins/object_tracking/laser_line_fit/max_dist"));
+	ll_vs_hist_ = this->config->get_int(("plugins/object_tracking/laser_line_fit/visibility_history"));
+	ll_max_angle_ = this->config->get_float(("plugins/object_tracking/laser_line_fit/max_angle"));
+
 	object_tracking_if_->set_current_object_type(object_tracking_if_->DEFAULT_TYPE);
 	object_tracking_if_->set_current_expected_mps(object_tracking_if_->DEFAULT_MPS);
 	object_tracking_if_->set_current_expected_side(object_tracking_if_->DEFAULT_SIDE);
@@ -391,25 +402,36 @@ ObjectTrackingThread::loop()
 		return;
 	}
 
-	//get yaw difference between robot and mps
-	fawkes::tf::Quaternion mps_q = fawkes::tf::create_quaternion_from_yaw(double(mps_ori_));
-	tf::Point              mps_pos(mps_x_, mps_y_, 0.0);
-	fawkes::tf::Pose       mps_pose(mps_q, mps_pos);
-	fawkes::tf::Stamped<fawkes::tf::Pose> mps_pose_map(mps_pose, capture_time, "map");
-	fawkes::tf::Stamped<fawkes::tf::Pose> mps_pose_base;
-	tf_listener->transform_pose("base_link", mps_pose_map, mps_pose_base);
+	//get yaw difference between robot and mps and expected position in cam frame
+	fawkes::LaserLineInterface *ll;
+	fawkes::tf::Stamped<fawkes::tf::Point> expected_pos_cam;
+	if (laserline_get_best_fit(ll)) {
+		//using laser date if possible
+		mps_angle = ll->bearing();
+		fawkes::tf::Stamped<fawkes::tf::Point> expected_pos_ll;
+		laserline_get_expected_position(ll, expected_pos_ll);
+		tf_listener->transform_point(cam_frame_, expected_pos_ll, expected_pos_cam);
+	} else {
+		//else navgraph data
+		fawkes::tf::Quaternion mps_q = fawkes::tf::create_quaternion_from_yaw(double(mps_ori_));
+		tf::Point              mps_pos(mps_x_, mps_y_, 0.0);
+		fawkes::tf::Pose       mps_pose(mps_q, mps_pos);
+		fawkes::tf::Stamped<fawkes::tf::Pose> mps_pose_map(mps_pose, capture_time, "map");
+		fawkes::tf::Stamped<fawkes::tf::Pose> mps_pose_base;
+		tf_listener->transform_pose("base_link", mps_pose_map, mps_pose_base);
 
-	float mps_angle = fawkes::tf::get_yaw(mps_pose_base.getRotation());
-	if (current_expected_side_ != ObjectTrackingInterface::OUTPUT_CONVEYOR) {
-		mps_angle += M_PI;
+		float mps_angle = fawkes::tf::get_yaw(mps_pose_base.getRotation());
+		if (current_expected_side_ != ObjectTrackingInterface::OUTPUT_CONVEYOR) {
+			mps_angle += M_PI;
+		}
+
+		tf_listener->transform_point(cam_frame_, exp_pos_, expected_pos_cam);
 	}
 
 	//get 3d position of closest bounding box to last weighted average in cam_gripper frame
 	float                                  cur_object_pos[3];
 	Rect                                   closest_box;
 	float                                  additional_height = 0;
-	fawkes::tf::Stamped<fawkes::tf::Point> expected_pos_cam;
-	tf_listener->transform_point(cam_frame_, exp_pos_, expected_pos_cam);
 	bool detected = closest_position(
 	  out_boxes, expected_pos_cam, mps_angle, cur_object_pos, closest_box, additional_height);
 
@@ -655,6 +677,144 @@ float
 ObjectTrackingThread::compute_middle_y(float y_offset)
 {
 	return mps_y_ - y_offset * cos(mps_ori_) + (belt_length_ / 2) * sin(mps_ori_);
+}
+
+bool
+ConveyorPlaneThread::laserline_get_best_fit(fawkes::LaserLineInterface best_fit)
+{
+	best_fit = NULL;
+	float best_dist = ll_max_dist_;
+
+	// get best line
+	for (fawkes::LaserLineInterface *ll : laserlines_) {
+		// just with writer
+		if (!ll->has_writer()) {
+			continue;
+		}
+		// just with history
+		if (ll->visibility_history() < ll_vs_hist_) {
+			continue;
+		}
+		// just if robot is in front (~20°)
+		if (fabs(ll->bearing() < ll_max_angle_)) {
+			continue;
+		}
+
+		// take closest
+		Eigen::Vector3f center = laserline_get_center_transformed(ll);
+		float dist = std::sqrt(static_cast<float>(center(0) * center(0) + center(2) * center(2)));
+
+		if (dist < best_dist) {
+			best_fit = ll;
+			best_dist = dist;
+		}
+	}
+
+	return best_fit != NULL;
+}
+
+Eigen::Vector3f
+ConveyorPlaneThread::laserline_get_center_transformed(fawkes::LaserLineInterface *ll)
+{
+	fawkes::tf::Stamped<fawkes::tf::Point> tf_in, tf_out;
+	tf_in.stamp    = ll->timestamp();
+	tf_in.frame_id = ll->frame_id();
+	tf_in.setX(ll->end_point_2(0) + (ll->end_point_1(0) - ll->end_point_2(0)) / 2.);
+	tf_in.setY(ll->end_point_2(1) + (ll->end_point_1(1) - ll->end_point_2(1)) / 2.);
+	tf_in.setZ(ll->end_point_2(2) + (ll->end_point_1(2) - ll->end_point_2(2)) / 2.);
+
+	try {
+		tf_listener->transform_point("base_link", tf_in, tf_out);
+	} catch (tf::ExtrapolationException &) {
+		tf_in.stamp = Time(0, 0);
+		tf_listener->transform_point("base_link", tf_in, tf_out);
+	}
+
+	Eigen::Vector3f out(tf_out.getX(), tf_out.getY(), tf_out.getZ());
+
+	return out;
+}
+
+void
+ConveyorPlaneThread::laserline_get_expected_position(fawkes::LaserLineInterface *ll,
+                                                     fawkes::tf::Stamped<fawkes::tf::Point> expected_pos_ll)
+{
+	//set offsets from laser line center for expected object position
+	float x_offset;
+	float y_offset;
+	float z_offset;
+
+	switch (current_expected_side_) {
+	case ObjectTrackingInterface::INPUT_CONVEYOR:
+		x_offset = 0;
+		y_offset = belt_offset_side;
+		z_offset = belt_height_;
+		break;
+	case ObjectTrackingInterface::OUTPUT_CONVEYOR:
+		x_offset = 0;
+		y_offset = -belt_offset_side;
+		z_offset = belt_height_;
+		break;
+	case ObjectTrackingInterface::SLIDE:
+		x_offset = 0;
+		y_offset = belt_offset_side + slide_offset_side_;
+		z_offset = slide_height_;
+		break;
+	case ObjectTrackingInterface::SHELF_LEFT:
+		x_offset = 0;
+		y_offset = belt_offset_side + left_shelf_offset_side_;
+		z_offset = shelf_height_;
+		break;
+	case ObjectTrackingInterface::SHELF_MIDDLE:
+		x_offset = 0;
+		y_offset = belt_offset_side + middle_shelf_offset_side_;
+		z_offset = shelf_height_;
+		break;
+	case ObjectTrackingInterface::SHELF_RIGHT:
+		x_offset = 0;
+		y_offset = belt_offset_side + right_shelf_offset_side_;
+		z_offset = shelf_height_;
+		break;
+	default:
+		logger->log_error(object_tracking_if_->enum_tostring("EXPECTED_SIDE", current_expected_side_),
+		                  " is an invalid MPS-side!");
+		return;
+	}
+
+	if (current_object_type_ == ObjectTrackingInterface::WORKPIECE) {
+		x_offset += puck_size_ / 2;
+		z_offset += puck_height_ / 2;
+	} else if (current_object_type_ == ObjectTrackingInterface::CONVEYOR_BELT_FRONT) {
+		z_offset -= belt_size_ / 2;
+	}
+
+	fawkes::tf::Stamped<fawkes::tf::Point> tf_in;
+	tf_in.stamp    = ll->timestamp();
+	tf_in.frame_id = ll->frame_id();
+
+	//get point on laser-line with y_offset
+	float x_pos = ll->end_point_2(0) + (ll->end_point_1(0) - ll->end_point_2(0)) * (0.5 + y_offset / 0.7);
+	float y_pos = ll->end_point_2(1) + (ll->end_point_1(1) - ll->end_point_2(1)) * (0.5 + y_offset / 0.7);
+	float z_pos = z_offset;
+
+	float angle = fabs(ll->bearing());
+
+	//compute position with offset towards MPS
+	x_pos += math.cos(angle) * x_offset;
+	y_pos += math.sin(angle) * x_offset;
+
+	tf_in.setX(x_pos);
+	tf_in.setY(y_pos);
+	tf_in.setZ(z_pos);
+
+	try {
+		tf_listener->transform_point("/odom", tf_in, expected_pos_ll);
+	} catch (tf::ExtrapolationException &) {
+		tf_in.stamp = Time(0, 0);
+		tf_listener->transform_point("/odom", tf_in, expected_pos_ll);
+	}
+
+	return true;
 }
 
 void

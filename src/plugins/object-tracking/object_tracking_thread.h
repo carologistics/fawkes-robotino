@@ -165,6 +165,13 @@ private:
 	float mps_y_;
 	float mps_ori_;
 
+	//laser-line fitting:
+	std::vector<std::string> laserlines_names_;
+	std::vector<fawkes::LaserLineInterface*> laserlines_;
+	float ll_max_dist_;
+	int ll_vs_hist_;
+	float ll_max_angle_;
+
 	//expected object position based on navgraph
 	fawkes::tf::Stamped<fawkes::tf::Point> exp_pos_;
 
@@ -180,10 +187,16 @@ private:
 	fawkes::Time starting_time_;
 	long         loop_count_;
 
-	//compute expected position and start tracking
-	void  compute_expected_position();
+	//compute expected position in map frame
+	void  map_compute_expected_position();
 	float compute_middle_x(float x_offset);
 	float compute_middle_y(float y_offset);
+
+	//compute expected position from laser line
+	bool laserline_get_expected_position(fawkes::LaserLineInterface *ll,
+	                                     fawkes::tf::Stamped<fawkes::tf::Point> expected_pos_ll);
+	bool laserline_get_best_fit(fawkes::LaserLineInterface best_fit);
+	Eigen::Vector3f laserline_get_center_transformed(fawkes::LaserLineInterface *ll);
 
 	//set shared memory buffer to read only
 	void set_shm();
@@ -197,12 +210,12 @@ private:
 	                      fawkes::tf::Stamped<fawkes::tf::Point> exp_pos,
 	                      float                                  mps_angle,
 	                      float                                  closest_pos[3],
-	                      cv::Rect &                             closest_box,
-	                      float &                                additional_height);
+	                      cv::Rect                              &closest_box,
+	                      float                                 &additional_height);
 	void compute_3d_point(std::array<float, 4> bounding_box,
 	                      float                angle,
 	                      float                point[3],
-	                      float &              wp_additional_height);
+	                      float               &wp_additional_height);
 
 	//compute base and gripper target frame
 	void compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Point> object_pos,
