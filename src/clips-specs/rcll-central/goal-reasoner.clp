@@ -73,23 +73,23 @@
 )
 
 (deffunction log-debug ($?verbosity)
-	(bind ?v (nth$ 1 ?verbosity))
-	(switch ?v
-		(case NOISY then (return t))
-		(case DEFAULT then (return nil))
-		(case QUIET then (return nil))
-	)
-	(return nil)
+  (bind ?v (nth$ 1 ?verbosity))
+  (switch ?v
+    (case NOISY then (return t))
+    (case DEFAULT then (return nil))
+    (case QUIET then (return nil))
+  )
+  (return nil)
 )
 
 (deffunction log-info ($?verbosity)
-	(bind ?v (nth$ 1 ?verbosity))
-	(switch ?v
-		(case NOISY then (return warn))
-		(case DEFAULT then (return t))
-		(case QUIET then (return nil))
-	)
-	(return t)
+  (bind ?v (nth$ 1 ?verbosity))
+  (switch ?v
+    (case NOISY then (return warn))
+    (case DEFAULT then (return t))
+    (case QUIET then (return nil))
+  )
+  (return t)
 )
 
 (deffunction is-parent-of (?parent ?child)
@@ -121,24 +121,24 @@
 
   @param ?robot: robot1 robot2 robot3 central nil
 "
-	(if (neq ?robot nil) then
-		(do-for-fact ((?r wm-fact))
-			(and (wm-key-prefix ?r:key (create$ central agent robot))
-			     (eq ?robot (wm-key-arg ?r:key r)))
-			(assert (wm-fact (key central agent robot-waiting
-			                  args? r (wm-key-arg ?r:key r))))
-		)
-	)
+  (if (neq ?robot nil) then
+    (do-for-fact ((?r wm-fact))
+      (and (wm-key-prefix ?r:key (create$ central agent robot))
+           (eq ?robot (wm-key-arg ?r:key r)))
+      (assert (wm-fact (key central agent robot-waiting
+                        args? r (wm-key-arg ?r:key r))))
+    )
+  )
 )
 
 (deffunction remove-robot-assignment-from-goal-meta (?goal)
-	(if (not (do-for-fact ((?f goal-meta))
-			(eq ?f:goal-id (fact-slot-value ?goal id))
-			(modify ?f (assigned-to nil))
-			))
-	 then
-		(printout t "Cannot find a goal meta fact for the goal " ?goal crlf)
-	)
+  (if (not (do-for-fact ((?f goal-meta))
+      (eq ?f:goal-id (fact-slot-value ?goal id))
+      (modify ?f (assigned-to nil))
+      ))
+   then
+    (printout t "Cannot find a goal meta fact for the goal " ?goal crlf)
+  )
 )
 
 (deffunction goal-tree-update-meta-run-all-order (?f ?ordering)
@@ -177,99 +177,99 @@
 )
 
 (deffunction goal-tree-assert-central-run-one (?class $?fact-addresses)
-	(bind ?id (sym-cat CENTRAL-RUN-ONE- ?class - (gensym*)))
-	(bind ?goal
+  (bind ?id (sym-cat CENTRAL-RUN-ONE- ?class - (gensym*)))
+  (bind ?goal
     (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ONE-OF-SUBGOALS)))
   )
   (assert (goal-meta (goal-id ?id)))
-	(foreach ?f ?fact-addresses
-		(goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
-	(return ?goal)
+  (foreach ?f ?fact-addresses
+    (goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
+  (return ?goal)
 )
 
 (deffunction goal-tree-assert-central-run-all (?class $?fact-addresses)
-	(bind ?id (sym-cat CENTRAL-RUN-ALL- ?class - (gensym*)))
-	(bind ?goal
+  (bind ?id (sym-cat CENTRAL-RUN-ALL- ?class - (gensym*)))
+  (bind ?goal
     (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)))
   )
   (assert (goal-meta (goal-id ?id)))
-	(foreach ?f ?fact-addresses
-		(goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
-	(return ?goal)
+  (foreach ?f ?fact-addresses
+    (goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
+  (return ?goal)
 )
 
 (deffunction goal-tree-assert-central-run-all-sequence (?class $?fact-addresses)
-	(bind ?id (sym-cat CENTRAL-RUN-ALL- ?class - (gensym*)))
-	(bind ?goal
+  (bind ?id (sym-cat CENTRAL-RUN-ALL- ?class - (gensym*)))
+  (bind ?goal
     (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
                   (meta sequence-mode)))
   )
   (assert (goal-meta (goal-id ?id)))
-	(foreach ?f ?fact-addresses
-		(goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
-	(return ?goal)
+  (foreach ?f ?fact-addresses
+    (goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
+  (return ?goal)
 )
 
 (deffunction goal-tree-assert-central-run-all-prio (?class ?prio $?fact-addresses)
-	(bind ?id (sym-cat CENTRAL-RUN-ALL- ?class - (gensym*)))
-	(bind ?goal
+  (bind ?id (sym-cat CENTRAL-RUN-ALL- ?class - (gensym*)))
+  (bind ?goal
     (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)))
   )
   (assert (goal-meta (goal-id ?id)))
-	(foreach ?f ?fact-addresses
+  (foreach ?f ?fact-addresses
     ;(goal-tree-update-meta-run-all-order ?f (+ 1 (- (length$ ?fact-addresses) ?f-index)))
-		(goal-tree-update-child ?f ?id ?prio)
+    (goal-tree-update-child ?f ?id ?prio)
   )
-	(return ?goal)
+  (return ?goal)
 )
 
 (deffunction goal-tree-assert-central-run-parallel (?class $?fact-addresses)
-	(bind ?id (sym-cat CENTRAL-RUN-PARALLEL- ?class - (gensym*)))
-	(bind ?goal
+  (bind ?id (sym-cat CENTRAL-RUN-PARALLEL- ?class - (gensym*)))
+  (bind ?goal
     (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)))
   )
   (assert (goal-meta (goal-id ?id)))
-	(foreach ?f ?fact-addresses
-		(goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
-	(return ?goal)
+  (foreach ?f ?fact-addresses
+    (goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
+  (return ?goal)
 )
 
 (deffunction goal-tree-assert-central-run-parallel-flat (?class $?fact-addresses)
-	(bind ?id (sym-cat CENTRAL-RUN-PARALLEL- ?class - (gensym*)))
-	(bind ?goal
+  (bind ?id (sym-cat CENTRAL-RUN-PARALLEL- ?class - (gensym*)))
+  (bind ?goal
     (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)))
   )
   (assert (goal-meta (goal-id ?id)))
-	(foreach ?f ?fact-addresses
-		(goal-tree-update-child ?f ?id 1)
+  (foreach ?f ?fact-addresses
+    (goal-tree-update-child ?f ?id 1)
   )
-	(return ?goal)
+  (return ?goal)
 )
 
 (deffunction goal-tree-assert-central-run-parallel-prio (?class ?prio $?fact-addresses)
-	(bind ?id (sym-cat CENTRAL-RUN-PARALLEL- ?class - (gensym*)))
-	(bind ?goal
+  (bind ?id (sym-cat CENTRAL-RUN-PARALLEL- ?class - (gensym*)))
+  (bind ?goal
     (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)))
   )
   (assert (goal-meta (goal-id ?id)))
-	(foreach ?f ?fact-addresses
-		(goal-tree-update-child ?f ?id ?prio)
+  (foreach ?f ?fact-addresses
+    (goal-tree-update-child ?f ?id ?prio)
   )
-	(return ?goal)
+  (return ?goal)
 )
 
 (deffunction goal-reasoner-redistribute-payments (?order-id)
   "Identify fulfilled but not consumed payments, and create offers for them."
-	(do-for-all-facts ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps state payments order))
-																							(eq ?order-id (wm-key-arg ?wm-fact:key ord)))
-		(if (neq 0 ?wm-fact:value) then
-			(bind ?paid (insert$ ?paid 1 ?wm-fact:value))
+  (do-for-all-facts ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps state payments order))
+                                              (eq ?order-id (wm-key-arg ?wm-fact:key ord)))
+    (if (neq 0 ?wm-fact:value) then
+      (bind ?paid (insert$ ?paid 1 ?wm-fact:value))
       (while (> ?paid 0)
         (assert (wm-fact (key evaluation offer payment args? status COMPLETED rs (wm-key-arg ?wm-fact:key m))))
         (bind ?paid (- ?paid 1))
       )
     )
-	)
+  )
 )
 
 ; =========================== Goal Executability =============================
@@ -498,14 +498,14 @@
 " Finally set a finished goal to evaluated.
   All pre evaluation steps should have been executed, enforced by the higher priority
 "
-	(declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
-	?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome)
-	            (verbosity ?v))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+  (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome)
+              (verbosity ?v))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 =>
-	(set-robot-to-waiting ?robot)
-	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" crlf)
-	(modify ?g (mode EVALUATED))
+  (set-robot-to-waiting ?robot)
+  (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" crlf)
+  (modify ?g (mode EVALUATED))
 )
 
 ; ----------------------- EVALUATE SPECIFIC GOALS ---------------------------
@@ -513,29 +513,29 @@
 
 (defrule goal-reasoner-evaluate-mount-or-payment
 " Reducing the order based mps workload after mounting a ring/cap or paying for a ring successfully"
-	?g <- (goal (id ?goal-id)(class MOUNT-RING|MOUNT-CAP|PAY-FOR-RINGS-WITH-BASE|PAY-FOR-RINGS-WITH-CAP-CARRIER|PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF) (mode FINISHED) (outcome COMPLETED)
-	            (verbosity ?v) (params $? ?mn $? ?rc))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot)(order-id ?order-id))
+  ?g <- (goal (id ?goal-id)(class MOUNT-RING|MOUNT-CAP|PAY-FOR-RINGS-WITH-BASE|PAY-FOR-RINGS-WITH-CAP-CARRIER|PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF) (mode FINISHED) (outcome COMPLETED)
+              (verbosity ?v) (params $? ?mn $? ?rc))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot)(order-id ?order-id))
   ?wmf-order <- (wm-fact (key mps workload order args? m ?mn ord ?order-id))
   ?update-fact <- (wm-fact (key mps workload needs-update) (value ?value))
   ?pay-order <- (wm-fact (key mps finished payments order args? m ?mn ord ?order-id))
 =>
-	(set-robot-to-waiting ?robot)
-	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" ?mn  crlf)
-	(bind ?class (fact-slot-value ?g class))
-	(if (neq ?class MOUNT-CAP) then
-		(do-for-fact ((?df domain-fact)) (and (eq ?class MOUNT-RING)
-																					(eq ?df:name rs-ring-spec)
-																					(eq ?mn (nth$ 1 ?df:param-values))
-																					(eq ?rc (nth$ 2 ?df:param-values))
-																					(neq ZERO (nth$ 3 ?df:param-values)))
-			(modify ?pay-order (value (- (fact-slot-value ?pay-order value) 1)))
-		)
-		(if (neq ?class MOUNT-RING) then
-			(modify ?pay-order (value (+ (fact-slot-value ?pay-order value) 1)))
-		)
-	)
-	(modify ?g (mode EVALUATED))
+  (set-robot-to-waiting ?robot)
+  (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" ?mn  crlf)
+  (bind ?class (fact-slot-value ?g class))
+  (if (neq ?class MOUNT-CAP) then
+    (do-for-fact ((?df domain-fact)) (and (eq ?class MOUNT-RING)
+                                          (eq ?df:name rs-ring-spec)
+                                          (eq ?mn (nth$ 1 ?df:param-values))
+                                          (eq ?rc (nth$ 2 ?df:param-values))
+                                          (neq ZERO (nth$ 3 ?df:param-values)))
+      (modify ?pay-order (value (- (fact-slot-value ?pay-order value) 1)))
+    )
+    (if (neq ?class MOUNT-RING) then
+      (modify ?pay-order (value (+ (fact-slot-value ?pay-order value) 1)))
+    )
+  )
+  (modify ?g (mode EVALUATED))
   (modify ?wmf-order (value (- (fact-slot-value ?wmf-order value) 1)))
   (if (eq ?value FALSE) then
     (modify ?update-fact (value TRUE))
@@ -569,51 +569,51 @@
 (defrule goal-reasoner-evaluate-failed-goto
 " Re-formulate a failed goal if the workpiece it processes is still usable
 "
-	?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED) (meta $?meta)
-	            (verbosity ?v))
-	(plan (id ?plan-id) (goal-id ?goal-id))
-	(plan-action (action-name ?action&move|go-wait|wait-for-wp|wait-for-free-side)
-	             (goal-id ?goal-id) (plan-id ?plan-id) (state FAILED))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
-	=>
-	(set-robot-to-waiting ?robot)
-	(remove-robot-assignment-from-goal-meta ?g)
-	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as only a " ?action " action failed" crlf)
-	(modify ?g (mode FORMULATED) (outcome UNKNOWN))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED) (meta $?meta)
+              (verbosity ?v))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (plan-action (action-name ?action&move|go-wait|wait-for-wp|wait-for-free-side)
+               (goal-id ?goal-id) (plan-id ?plan-id) (state FAILED))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+  =>
+  (set-robot-to-waiting ?robot)
+  (remove-robot-assignment-from-goal-meta ?g)
+  (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as only a " ?action " action failed" crlf)
+  (modify ?g (mode FORMULATED) (outcome UNKNOWN))
 
-	(delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
-		(delayed-do-for-all-facts ((?a plan-action)) (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
-			(retract ?a)
-		)
-		(retract ?p)
-	)
+  (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
+    (delayed-do-for-all-facts ((?a plan-action)) (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
+      (retract ?a)
+    )
+    (retract ?p)
+  )
 )
 
 (defrule goal-reasoner-evaluate-failed-workpiece-usable
 " Re-formulate a failed goal if the workpiece it processes is still usable
 "
-	?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED) (meta $?meta)
-	            (verbosity ?v))
-	(plan (id ?plan-id) (goal-id ?goal-id))
-	(plan-action (action-name ?action&wp-get|wp-put|wp-put-slide-cc|wp-get-shelf)
-	             (goal-id ?goal-id) (plan-id ?plan-id) (state FAILED)
-	             (param-values $? ?wp $?))
-	(or (wm-fact (key domain fact wp-usable args? wp ?wp))
-	    (wm-fact (key domain fact wp-on-shelf args? wp ?wp $?))
-	)
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
-	=>
-	(set-robot-to-waiting ?robot)
-	(remove-robot-assignment-from-goal-meta ?g)
-	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as workpiece is still usable after failed " ?action crlf)
-	(modify ?g (mode FORMULATED) (outcome UNKNOWN))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED) (meta $?meta)
+              (verbosity ?v))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (plan-action (action-name ?action&wp-get|wp-put|wp-put-slide-cc|wp-get-shelf)
+               (goal-id ?goal-id) (plan-id ?plan-id) (state FAILED)
+               (param-values $? ?wp $?))
+  (or (wm-fact (key domain fact wp-usable args? wp ?wp))
+      (wm-fact (key domain fact wp-on-shelf args? wp ?wp $?))
+  )
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+  =>
+  (set-robot-to-waiting ?robot)
+  (remove-robot-assignment-from-goal-meta ?g)
+  (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as workpiece is still usable after failed " ?action crlf)
+  (modify ?g (mode FORMULATED) (outcome UNKNOWN))
 
-	(delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
-		(delayed-do-for-all-facts ((?a plan-action)) (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
-			(retract ?a)
-		)
-		(retract ?p)
-	)
+  (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
+    (delayed-do-for-all-facts ((?a plan-action)) (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
+      (retract ?a)
+    )
+    (retract ?p)
+  )
 )
 (defrule goal-reasoner-evaluate-failed-preparation-goal
   "A carrier was lost for a preparation goal, reformulate the goal."
@@ -851,13 +851,13 @@
 )
 
 (defrule goal-reasoner-clean-goals-separated-from-parent
-	?g <- (goal (parent ?pid&~nil))
-	(not (goal (id ?pid)))
-	=>
-	(retract ?g)
+  ?g <- (goal (parent ?pid&~nil))
+  (not (goal (id ?pid)))
+  =>
+  (retract ?g)
 )
 
 (deffunction is-goal-running (?mode)
-	(return (or (eq ?mode SELECTED) (eq ?mode EXPANDED)
-	            (eq ?mode COMMITTED) (eq ?mode DISPATCHED)))
+  (return (or (eq ?mode SELECTED) (eq ?mode EXPANDED)
+              (eq ?mode COMMITTED) (eq ?mode DISPATCHED)))
 )
