@@ -634,7 +634,6 @@
   ?p <- (plan (goal-id ?goal-id) (id ?plan-id))
   (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (action-name wp-get-shelf|wp-get|wp-put) (state FAILED) (param-values ? ? ?mps $?))
   =>
-  ;don't need to reset the machine, if wp-get fails, the machine is resetted, if wp-put fails, we don't need to reset
   ;remove the plan
   (delayed-do-for-all-facts ((?pa plan-action)) (and (eq ?pa:goal-id ?goal-id) (eq ?pa:plan-id ?plan-id))
     (retract ?pa)
