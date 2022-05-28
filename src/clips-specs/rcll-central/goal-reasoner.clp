@@ -730,9 +730,13 @@
 (defrule goal-reasoner-take-offer-buffer-cap-completed
   "Take an offer for a completed buffer cap goal"
   ?offer <- (wm-fact (key evaluation offer buffer-cap args? status COMPLETED color ?order-cap-color))
-  ?goal <- (goal (class BUFFER-CAP) (mode FORMULATED) (outcome UNKNOWN) (params $? cap-color ?order-cap-color $?))
+  ?goal <- (goal (class BUFFER-CAP) (id ?goal-id) (mode FORMULATED) (outcome UNKNOWN) (params $? cap-color ?order-cap-color $?))
+  (goal-meta (goal-id ?goal-id) (order-id ?order-id))
+  ?instruct-goal <- (goal (id ?instruct-goal-id) (class INSTRUCT-CS-BUFFER-CAP))
+  (goal-meta (goal-id ?instruct-goal-id) (order-id ?order-id))
   =>
   (modify ?goal (mode FINISHED) (outcome COMPLETED))
+  (modify ?instruct-goal (mode FINISHED) (outcome COMPLETED))
   (retract ?offer)
 )
 
