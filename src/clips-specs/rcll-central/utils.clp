@@ -1344,7 +1344,7 @@
              (member$ ?rs ?ring2-spec:param-values)
              (member$ ?order ?ring2-color:param-values)
              (member$ (nth$ 2 ?ring2-color:param-values) ?ring2-spec:param-values)
-             (neq (nth$ 2 ?ring2-color:param-values) RING_NONE) 
+             (neq (nth$ 2 ?ring2-color:param-values) RING_NONE)
         )
     (bind ?rs-interactions (+ ?rs-interactions 1))
   )
