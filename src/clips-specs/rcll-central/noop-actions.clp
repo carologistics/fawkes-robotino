@@ -243,10 +243,10 @@
 ; ROBOCUP 2021 NAVIGATION CHALLENGE
 (defrule action-stop-execute-wait-for-reached
   (plan (id ?plan-id) (goal-id ?goal-id))
-  (goal (id ?goal-id) (params $? location ?location))
+  (goal (id ?goal-id) (params zone ?zone))
   ?pa <- (plan-action (plan-id ?plan-id) (state RUNNING) (executable TRUE)
 	                    (action-name wait-for-reached) (param-values ?robot ?target))
-  (wm-fact (key domain fact reached args?) (values $?reached&:(member$ ?location ?reached)))
+  (wm-fact (key domain fact reached args?) (values $?reached&:(member$ ?zone ?reached)))
   =>
   (printout info "Refbox confirmed position " ?target " reached!" crlf)
   (modify ?pa (state FINAL))
