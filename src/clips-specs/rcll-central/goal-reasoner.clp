@@ -719,24 +719,10 @@
 
 (defrule goal-reasoner-remove-wp-facts-on-removed-order-parent
   "When the root of an order is removed, remove the facts describing the wp for the order"
-  ?fwp-for-order <- (wm-fact (key order meta wp-for-order args? wp ?wp-for-order ord ?order-id))
-  ?fwp <- (domain-object (name ?wp-for-order) (type workpiece))
-  ?fwp-unused <- (domain-fact (name wp-unused) (param-values ?wp-for-order))
-  ?fwp-base-color <- (wm-fact (key domain fact wp-base-color args? wp ?wp-for-order col $?))
-  ?fwp-cap-color <- (wm-fact (key domain fact wp-cap-color args? wp ?wp-for-order col ?cap-color $?))
-  ?fwp-ring1-color <- (wm-fact (key domain fact wp-ring1-color args? wp ?wp-for-order col $?))
-  ?fwp-ring2-color <- (wm-fact (key domain fact wp-ring2-color args? wp ?wp-for-order col $?))
-  ?fwp-ring3-color <- (wm-fact (key domain fact wp-ring3-color args? wp ?wp-for-order col $?))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
   (not (goal-meta (root-for-order ?order-id)))
   =>
-  (retract ?fwp-for-order ?fwp ?fwp-unused ?fwp-cap-color
-           ?fwp-ring1-color ?fwp-ring2-color ?fwp-ring3-color)
-
-  (do-for-fact ((?wp-at wm-fact))
-     (and (wm-key-prefix ?wp-at:key (create$ domain fact wp-at))
-          (eq ?wp-for-order (wm-key-arg ?wp-at:key wp)))
-    (retract ?wp-at)
-  )
+	(assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))
 )
 
 ; ================================= Goal Offers ============================
