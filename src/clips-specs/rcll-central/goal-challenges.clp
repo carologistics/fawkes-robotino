@@ -97,51 +97,6 @@
 )
 
 
-(defrule goal-production-exploration-challenge-assert-root
-	"Create the exploration root where all goals regarding the finding of stations
-   are located"
-	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-	(domain-facts-loaded)
-	(not (goal (class EXPLORATION-ROOT)))
-	(wm-fact (key config rcll start-with-waiting-robots) (value TRUE))
-	(wm-fact (key refbox phase) (value EXPLORATION|PRODUCTION))
-	(wm-fact (key game state) (value RUNNING))
-	(wm-fact (key refbox team-color) (value ?color))
-	(wm-fact (key exploration active) (value TRUE))
-	=>
-	(bind ?g (goal-tree-assert-central-run-parallel EXPLORATION-ROOT))
-	(modify ?g (meta do-not-finish) (priority 0.0))
-)
-
-(defrule goal-production-exploration-challenge-move-executable
-" Move to a navgraph node
-"
-	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
-	?g <- (goal (id ?goal-id) (class EXPLORATION-MOVE)
-	                          (mode FORMULATED)
-	                          (params target ?target $?)
-	                          (is-executable FALSE))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	(navgraph-node (name ?str-target&:(eq ?str-target (str-cat ?target))))
-	=>
-	(printout t "Goal EXPLORATION-MOVE executable for " ?robot crlf)
-	(modify ?g (is-executable TRUE))
-)
-
-(deffunction goal-production-exploration-challenge-assert-move
-	(?location)
-
-	(bind ?goal (assert (goal (class EXPLORATION-MOVE)
-	        (id (sym-cat EXPLORATION-MOVE- (gensym*)))
-	        (sub-type SIMPLE)
-	        (priority 1.0)
-	        (meta-template goal-meta)
-	        (verbosity NOISY) (is-executable FALSE)
-	        (params target (translate-location-map-to-grid ?location) location ?location)
-	        )))
-	(return ?goal)
-)
-
 (defrule goal-production-cleanup-exploration-move
 " A exploration move that is not executable can be removed as the target can
   never be targeted again.
@@ -153,26 +108,6 @@
 	(retract ?g ?gm)
 )
 
-(defrule goal-production-exploration-create-move-goal-lacking-choice
-  "The robot has nothing it can do, move it across the map to explore"
-	(goal (id ?root-id) (class EXPLORATION-ROOT) (mode FORMULATED|DISPATCHED))
-	(wm-fact (key central agent robot-waiting args? r ?robot))
-	?exp-targ <- (wm-fact (key exploration targets args?) (values ?location $?locations))
-	(not (goal (class EXPLORATION-MOVE) (mode FORMULATED)))
-	(wm-fact (key exploration active) (type BOOL) (value TRUE))
-	=>
-	(bind ?goal
-	      (goal-production-exploration-challenge-assert-move ?location)
-	)
-	(modify ?goal (parent ?root-id))
-	(modify ?exp-targ (values ?locations))
-)
-
-(defrule goal-production-exploration-challenge-cleanup
-	?g <- (goal (class EXPLORATION-MOVE) (mode RETRACTED) (outcome FAILED|COMPLETED))
-	=>
-	(retract ?g)
-)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; PICK-AND-PLACE CHALLENGE ;
