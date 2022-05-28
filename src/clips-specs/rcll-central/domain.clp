@@ -319,11 +319,15 @@
 		  then
 		    (printout error ?r-active crlf)
 		    (bind ?curr-robot (nth$ 1 ?r-active))
-		    (assert (wm-fact (key central agent robot args? r ?curr-robot))
-		            (domain-object (name ?curr-robot) (type robot))
-		            (domain-fact (name at) (param-values ?curr-robot START INPUT))
-		            (domain-fact (name robot-waiting) (param-values ?curr-robot))
-		            (domain-fact (name at) (param-values ?curr-robot START INPUT)))
+		    (if (neq ?curr-robot laptop1) then
+		      (assert (wm-fact (key central agent robot args? r ?curr-robot))
+		              (domain-object (name ?curr-robot) (type robot))
+		              (domain-fact (name at) (param-values ?curr-robot START INPUT))
+		              (domain-fact (name robot-waiting) (param-values ?curr-robot))
+		              (domain-fact (name at) (param-values ?curr-robot START INPUT)))
+		      else
+		      (assert (wm-fact (key central agent laptop args? r ?curr-robot)))
+		    )
 		  else
 		    (retract ?cf)
 		)

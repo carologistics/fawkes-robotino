@@ -77,6 +77,20 @@
   (blackboard-open "ZoneInterface" (remote-if-id ?robot "explore-zone/info"))
 )
 
+(defrule blackboard-init-open-laptop-navgraph-interfaces
+  "Open the robot-specific Navgraph blackboard interfaces."
+  (domain-facts-loaded)
+  (ff-feature-loaded blackboard)
+  (wm-fact (key central agent laptop args? r ?robot))
+  =>
+  (blackboard-open "NavGraphWithMPSGeneratorInterface"
+                   (remote-if-id ?robot "navgraph-generator-mps"))
+  (blackboard-open "NavGraphGeneratorInterface"
+                   (remote-if-id ?robot "navgraph-generator"))
+  (blackboard-open "NavigatorInterface"
+                   (remote-if-id ?robot "Navigator"))
+)
+
 (defrule blackboard-init-open-robot-navgraph-interfaces
   "Open the robot-specific Navgraph blackboard interfaces."
   (domain-facts-loaded)
@@ -92,7 +106,8 @@
 )
 
 (defrule blackboard-init-compute-navgraph
-  (wm-fact (key central agent robot args? r ?robot))
+  (or (wm-fact (key central agent robot args? r ?robot))
+      (wm-fact (key central agent laptop args? r ?robot)))
   (blackboard-interface (id ?id&:(str-index ?robot ?id))
                         (type "NavGraphWithMPSGeneratorInterface"))
   (blackboard-interface (id ?id2&:(str-index ?robot ?id2))
