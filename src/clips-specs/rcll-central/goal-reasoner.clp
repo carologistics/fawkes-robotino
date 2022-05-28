@@ -512,29 +512,23 @@
 
 
 (defrule goal-reasoner-evaluate-mount-or-payment
-" Reducing the order based mps workload after mounting a ring/cap or paying for a ring successfully"
+" Sets a finished mount or payment goal to evaluated"
   ?g <- (goal (id ?goal-id)(class MOUNT-RING|MOUNT-CAP|PAY-FOR-RINGS-WITH-BASE|PAY-FOR-RINGS-WITH-CAP-CARRIER|PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF) (mode FINISHED) (outcome COMPLETED)
               (verbosity ?v) (params $? ?mn $? ?rc))
   (goal-meta (goal-id ?goal-id) (assigned-to ?robot)(order-id ?order-id))
-  ?wmf-order <- (wm-fact (key mps workload order args? m ?mn ord ?order-id))
-  ?update-fact <- (wm-fact (key mps workload needs-update) (value ?value))
-  ?pay-order <- (wm-fact (key mps finished payments order args? m ?mn ord ?order-id))
 =>
   (set-robot-to-waiting ?robot)
   (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" ?mn  crlf)
-  (bind ?class (fact-slot-value ?g class))
-  (if (eq ?class MOUNT-RING) then
-    (do-for-fact ((?df domain-fact)) (and (eq ?df:name rs-ring-spec)
-                                          (eq ?mn (nth$ 1 ?df:param-values))
-                                          (eq ?rc (nth$ 2 ?df:param-values))
-                                          (neq ZERO (nth$ 3 ?df:param-values)))
-      (modify ?pay-order (value (- (fact-slot-value ?pay-order value) 1)))
-    )
-    (if (neq ?class MOUNT-RING) then
-      (modify ?pay-order (value (+ (fact-slot-value ?pay-order value) 1)))
-    )
-  )
   (modify ?g (mode EVALUATED))
+)
+
+(defrule goal-reasoner-evaluate-mount-goal-mps-workload
+" Reduces mps workload counter based on completed plan-actions"
+  (plan-action (action-name rs-mount-ring1|rs-mount-ring2|rs-mount-ring3) (param-values ?rs ?wp $?) (state FINAL))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
+  ?wmf-order <- (wm-fact (key mps workload order args? m ?rs ord ?order-id))
+  ?update-fact <- (wm-fact (key mps workload needs-update) (value ?value))
+  =>
   (modify ?wmf-order (value (- (fact-slot-value ?wmf-order value) 1)))
   (if (eq ?value FALSE) then
     (modify ?update-fact (value TRUE))
@@ -620,7 +614,6 @@
   ?p <- (plan (goal-id ?goal-id) (id ?plan-id))
   (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (action-name wp-get-shelf|wp-get|wp-put) (state FAILED) (param-values ? ? ?mps $?))
   =>
-  ;don't need to reset the machine, if wp-get fails, the machine is resetted, if wp-put fails, we don't need to reset
   ;remove the plan
   (delayed-do-for-all-facts ((?pa plan-action)) (and (eq ?pa:goal-id ?goal-id) (eq ?pa:plan-id ?plan-id))
     (retract ?pa)
