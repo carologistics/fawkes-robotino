@@ -265,7 +265,7 @@
     (if (neq 0 ?wm-fact:value) then
       (bind ?paid (insert$ ?paid 1 ?wm-fact:value))
       (while (> ?paid 0)
-        (assert (wm-fact (key evaluation offer payment args? status COMPLETED rs (wm-key-arg ?wm-fact:key m))))
+        (assert (wm-fact (key evaluation offer payment args? status COMPLETED rs (wm-key-arg ?wm-fact:key m) payment ?paid)))
         (bind ?paid (- ?paid 1))
       )
     )
@@ -792,7 +792,7 @@
 
 (defrule goal-reasoner-take-offer-payment-completed
   "Take an offer for a completed payment if the own one is just formulated."
-  ?offer <- (wm-fact (key evaluation offer payment args? status COMPLETED rs ?rs))
+  ?offer <- (wm-fact (key evaluation offer payment args? status COMPLETED rs ?rs $?))
   ?goal <- (goal (class PAY-FOR-RINGS-WITH-BASE)
                  (mode FORMULATED) (outcome UNKNOWN) (params $? target-mps ?rs $?))
   =>
