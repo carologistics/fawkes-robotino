@@ -523,9 +523,8 @@
   (set-robot-to-waiting ?robot)
   (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" ?mn  crlf)
   (bind ?class (fact-slot-value ?g class))
-  (if (neq ?class MOUNT-CAP) then
-    (do-for-fact ((?df domain-fact)) (and (eq ?class MOUNT-RING)
-                                          (eq ?df:name rs-ring-spec)
+  (if (eq ?class MOUNT-RING) then
+    (do-for-fact ((?df domain-fact)) (and (eq ?df:name rs-ring-spec)
                                           (eq ?mn (nth$ 1 ?df:param-values))
                                           (eq ?rc (nth$ 2 ?df:param-values))
                                           (neq ZERO (nth$ 3 ?df:param-values)))
