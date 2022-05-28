@@ -91,6 +91,16 @@
                    (remote-if-id ?robot "Navigator"))
 )
 
+(defrule blackboard-init-open-liveliness-check
+  "Open the robot-specific Heartbeat blackboard interface."
+  (domain-facts-loaded)
+  (ff-feature-loaded blackboard)
+  (wm-fact (key central agent robot args? r ?robot))
+  =>
+  (blackboard-open "HeartbeatInterface" (remote-if-id "heartbeat" ?robot))
+)
+
+
 (defrule blackboard-init-open-robot-navgraph-interfaces
   "Open the robot-specific Navgraph blackboard interfaces."
   (domain-facts-loaded)
