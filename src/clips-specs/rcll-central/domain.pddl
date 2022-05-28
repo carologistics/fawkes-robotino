@@ -29,7 +29,7 @@
 	waitpoint - location
 	mps - location
 	mps - obstacle
-	zone - location
+	zone - waitpoint
 	mps-typename - object
 	mps-statename - object
 	mps-side - object
@@ -86,15 +86,6 @@
 	M-Z73 M-Z63 M-Z53 M-Z43 M-Z33 M-Z23 M-Z13 - zone
 	M-Z72 M-Z62 M-Z52 M-Z42 M-Z32 M-Z22 M-Z12 - zone
 	M-Z71 M-Z61 M-Z51 M-Z41 M-Z31 M-Z21 M-Z11 - zone
-
-	G-1-1 G-2-1 G-3-1 G-4-1 G-5-1 G-6-1 G-7-1 G-8-1 G-9-1 G-10-1 G-11-1 G-12-1 G-13-1 G-14-1 - waitpoint
-	G-1-2 G-2-2 G-3-2 G-4-2 G-5-2 G-6-2 G-7-2 G-8-2 G-9-2 G-10-2 G-11-2 G-12-2 G-13-2 G-14-2 - waitpoint
-	G-1-3 G-2-3 G-3-3 G-4-3 G-5-3 G-6-3 G-7-3 G-8-3 G-9-3 G-10-3 G-11-3 G-12-3 G-13-3 G-14-3 - waitpoint
-	G-1-4 G-2-4 G-3-4 G-4-4 G-5-4 G-6-4 G-7-4 G-8-4 G-9-4 G-10-4 G-11-4 G-12-4 G-13-4 G-14-4 - waitpoint
-	G-1-5 G-2-5 G-3-5 G-4-5 G-5-5 G-6-5 G-7-5 G-8-5 G-9-5 G-10-5 G-11-5 G-12-5 G-13-5 G-14-5 - waitpoint
-	G-1-6 G-2-6 G-3-6 G-4-6 G-5-6 G-6-6 G-7-6 G-8-6 G-9-6 G-10-6 G-11-6 G-12-6 G-13-6 G-14-6 - waitpoint
-	G-1-7 G-2-7 G-3-7 G-4-7 G-5-7 G-6-7 G-7-7 G-8-7 G-9-7 G-10-7 G-11-7 G-12-7 G-13-7 G-14-7 - waitpoint
-	G-1-8 G-2-8 G-3-8 G-4-8 G-5-8 G-6-8 G-7-8 G-8-8 G-9-8 G-10-8 G-11-8 G-12-8 G-13-8 G-14-8 - waitpoint
 )
 
 (:predicates
