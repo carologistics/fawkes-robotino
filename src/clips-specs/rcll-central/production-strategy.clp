@@ -28,7 +28,7 @@
   ?*RS-WORKLOAD-THRESHOLD* = 6
   ?*C0-PRODUCTION-THRESHOLD* = 1
   ?*C1-PRODUCTION-THRESHOLD* = 1
-  ?*SALIENCE-ORDER-SELECTION* = 10000
+  ?*SALIENCE-ORDER-SELECTION* = ?*SALIENCE-HIGH*
 )
 
 (deffunction production-strategy-produce-ahead-check (?gt ?start ?end ?complexity)
