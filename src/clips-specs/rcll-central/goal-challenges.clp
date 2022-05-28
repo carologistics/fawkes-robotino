@@ -97,35 +97,6 @@
 )
 
 
-(defrule goal-production-exploration-challenge-create-targets
-" Create exploration targets, a list of zones that is targeted in order."
-	(not (wm-fact (key exploration targets args? $?)))
-	(wm-fact (key exploration active) (value TRUE))
-	; start to explore the grid only if grid coordinates are available
-	(wm-fact (key navgraph waitzone generated) (type BOOL) (value TRUE))
-	(confval (path ?min-path&:(eq ?min-path (str-cat ?*NAVGRAPH_GENERATOR_MPS_CONFIG* "bounding-box/p1")))
-	         (list-value ?x_min ?y_min))
-	(confval (path ?max-path&:(eq ?max-path (str-cat ?*NAVGRAPH_GENERATOR_MPS_CONFIG* "bounding-box/p2")))
-	         (list-value ?x_max ?y_max))
-	=>
-	(bind ?zones (create$))
-	(loop-for-count (?x ?x_min -1)
-		(loop-for-count (?y (+ 1 ?y_min) ?y_max)
-			(bind ?zones (append$ ?zones (translate-location-grid-to-map (abs ?x) ?y)))
-		)
-	)
-	(loop-for-count (?x 1 ?x_max)
-		(loop-for-count (?y (+ 1 ?y_min) ?y_max)
-			(bind ?zones (append$ ?zones (translate-location-grid-to-map (abs ?x) ?y)))
-		)
-	)
-
-	(assert (wm-fact (key exploration targets args?)
-	                 (is-list TRUE)
-	                 (values (randomize$ ?zones)))
-	)
-)
-
 (defrule goal-production-exploration-challenge-assert-root
 	"Create the exploration root where all goals regarding the finding of stations
    are located"
