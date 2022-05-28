@@ -632,7 +632,7 @@
   "A ring payment was lost, reformulate the goal"
   ?g <- (goal (id ?goal-id) (class ?class&PAY-FOR-RINGS-WITH-CAP-CARRIER|PAY-FOR-RINGS-WITH-BASE) (mode FINISHED) (outcome FAILED))
   ?p <- (plan (goal-id ?goal-id) (id ?plan-id))
-  (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (action-name wp-get-shelf|wp-get|wp-put) (state FAILED) (param-values ? ? ?mps $?))
+  (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (action-name wp-get-shelf|wp-get|wp-put-slide-cc) (state FAILED) (param-values ? ? ?mps $?))
   =>
   ;remove the plan
   (delayed-do-for-all-facts ((?pa plan-action)) (and (eq ?pa:goal-id ?goal-id) (eq ?pa:plan-id ?plan-id))
@@ -652,7 +652,7 @@
   ?g <- (goal (id ?goal-id) (class ?goal-class&DELIVER|MOUNT-RING|MOUNT-CAP) (mode FINISHED) (outcome FAILED))
   (goal-meta (goal-id ?goal-id) (order-id ?order-id))
   (plan (goal-id ?goal-id) (id ?plan-id))
-  (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (action-name wp-get|wp-put|wp-get-shelf) (state FAILED) (param-values ? ? ?mps $?))
+  (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (action-name wp-get|wp-put) (state FAILED) (param-values ? ? ?mps $?))
   =>
   ;fail the entire tree
   (delayed-do-for-all-facts ((?tree-goal goal) (?tree-goal-meta goal-meta))
