@@ -169,8 +169,7 @@
 
 (defrule goal-expander-move-out-of-way
 	?g <- (goal (id ?goal-id) (mode SELECTED) (class MOVE-OUT-OF-WAY)
-	            (params target-pos ?target-pos
-	                    location ?loc))
+	            (params target-pos ?target-pos))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-loc side ?curr-side))
 	=>

@@ -106,13 +106,13 @@
 	(declare (salience (- ?*SALIENCE-GOAL-EXECUTABLE-CHECK* 1)))
 	?g <- (goal (id ?id) (class MOVE-OUT-OF-WAY) (sub-type SIMPLE)
 	            (mode FORMULATED)
-	            (params target-pos ?target-pos location ?loc)
+	            (params target-pos ?pos)
 	            (is-executable FALSE))
 	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
 	; check if target position is free
-	(test (is-free ?target-pos))
+	(test (is-free ?pos))
 	=>
-	(printout t "Goal MOVE-OUT-OF-WAY executable for " ?robot " to pos " ?target-pos  crlf)
+	(printout t "Goal MOVE-OUT-OF-WAY executable for " ?robot " to pos " ?pos  crlf)
   (modify ?g (is-executable TRUE))
 )
 
