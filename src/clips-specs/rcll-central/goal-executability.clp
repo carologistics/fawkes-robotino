@@ -713,6 +713,7 @@ The workpiece remains in the output of the used ring station after
 	(plan-action (action-name wait-for-wp) (param-values ?robot ?mps ?side)
 	             (goal-id ?oid) (state PENDING|RUNNING)
 	             (precondition ?precondition-id))
+	(goal (id ?oid) (params $? wp ?wp $?))
 	(goal-meta (goal-id ?oid) (order-id ?order-id))
 	(not (goal (class INSTRUCT-BS-DISPENSE-BASE) (mode SELECTED|DISPATCHED|COMMITTED|EXPANDED)))
 	=>
