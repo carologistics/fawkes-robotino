@@ -33,15 +33,15 @@ echo "fawkes/bbsync/peers:" > $CFG_DIR/startup_generated.yaml
 
 for CURR_ROBO in $ALL_ROBOTS
  do
-	IS_INACTIVE=
+	IS_ACTIVE=
 	for ACTIVE_ROBO in $ACTIVE_ROBOTS
 	do
 		if [[ "$ACTIVE_ROBO" == "$CURR_ROBO" ]]; then
-			IS_INACTIVE=1
+			IS_ACTIVE=1
 			break;
 		fi
 	done
-	if [[ -z "$IS_INACTIVE" ]]; then
+	if [[ -z "$IS_ACTIVE" ]]; then
 		echo "  robot$CURR_ROBO/active: false" >> $CFG_DIR/startup_generated.yaml
 	fi
 done
