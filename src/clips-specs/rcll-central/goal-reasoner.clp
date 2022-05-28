@@ -513,7 +513,7 @@
 
 (defrule goal-reasoner-evaluate-mount-or-payment
 " Sets a finished mount or payment goal to evaluated"
-  ?g <- (goal (id ?goal-id)(class MOUNT-RING|MOUNT-CAP|PAY-FOR-RINGS-WITH-BASE|PAY-FOR-RINGS-WITH-CAP-CARRIER|PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF) (mode FINISHED) (outcome COMPLETED)
+  ?g <- (goal (id ?goal-id) (class MOUNT-CAP|PAY-FOR-RINGS-WITH-BASE|PAY-FOR-RINGS-WITH-CAP-CARRIER|PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF) (mode FINISHED) (outcome COMPLETED)
               (verbosity ?v) (params $? ?mn $? ?rc))
   (goal-meta (goal-id ?goal-id) (assigned-to ?robot)(order-id ?order-id))
 =>
@@ -523,8 +523,11 @@
 )
 
 (defrule goal-reasoner-evaluate-mount-goal-mps-workload
-" Reduces mps workload counter based on completed plan-actions"
-  (plan-action (action-name rs-mount-ring1|rs-mount-ring2|rs-mount-ring3) (param-values ?rs ?wp $?) (state FINAL))
+" Evaluate a MOUNT-RING goal and reduce mps workload counter based on completed plan-actions"
+ ?g <- (goal (id ?goal-id) (class MOUNT-RING) (mode FINISHED) (verbosity ?v))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot) (order-id ?order-id))
+  (plan-action (action-name rs-mount-ring1|rs-mount-ring2|rs-mount-ring3) (goal-id ?goal-id)
+               (param-values ?rs ?wp $?) (state FINAL))
   (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
   ?wmf-order <- (wm-fact (key mps workload order args? m ?rs ord ?order-id))
   ?update-fact <- (wm-fact (key mps workload needs-update) (value ?value))
@@ -533,9 +536,10 @@
   (if (eq ?value FALSE) then
     (modify ?update-fact (value TRUE))
   )
+  (set-robot-to-waiting ?robot)
+  (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" crlf)
+  (modify ?g (mode EVALUATED))
 )
-
-
 
 (defrule goal-reasoner-evaluate-move-out-of-way
 " Sets a finished move out of way goal independent of the outcome to formulated."
