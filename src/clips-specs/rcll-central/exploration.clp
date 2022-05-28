@@ -13,8 +13,7 @@
 )
 
 (deffunction exp-assert-move
-	(?location)
-
+	(?zone)
 	(bind ?goal (assert (goal (class EXPLORATION-MOVE)
 	        (id (sym-cat EXPLORATION-MOVE- (gensym*)))
 	        (sub-type SIMPLE)
@@ -145,7 +144,6 @@
 	                          (params zone ?target)
 	                          (is-executable FALSE))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	(navgraph-node (name ?str-target&:(eq ?str-target (str-cat ?target))))
 	=>
 	(printout t "Goal EXPLORATION-MOVE executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))

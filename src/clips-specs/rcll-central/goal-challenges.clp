@@ -96,18 +96,6 @@
 	(retract ?targets)
 )
 
-
-(defrule goal-production-cleanup-exploration-move
-" A exploration move that is not executable can be removed as the target can
-  never be targeted again.
-"
-	(declare (salience ?*SALIENCE-GOAL-REJECT*))
-	?g <- (goal (id ?goal-id) (class EXPLORATION-MOVE) (mode FORMULATED) (is-executable FALSE))
-	?gm <- (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	=>
-	(retract ?g ?gm)
-)
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; PICK-AND-PLACE CHALLENGE ;
