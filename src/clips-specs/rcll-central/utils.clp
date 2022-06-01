@@ -142,6 +142,16 @@
   (return ?interfaces)
 )
 
+(deffunction get-laptop-interfaces (?if ?id)
+  (bind ?interfaces (create$))
+  (do-for-all-facts ((?robot wm-fact))
+    (wm-key-prefix ?robot:key (create$ central agent laptop))
+    (bind ?interfaces (append$ ?interfaces
+                               (remote-if ?if (wm-key-arg ?robot:key r) ?id)))
+  )
+  (return ?interfaces)
+)
+
 (deffunction get-interfaces (?if ?id)
   (bind ?interfaces (create$ (str-cat ?if "::/" ?id)))
   (return (append$ ?interfaces (get-remote-interfaces ?if ?id)))
@@ -247,7 +257,7 @@
 	(bind ?any-tag-to-add FALSE)
 
 	(bind ?interfaces (get-interfaces "NavGraphWithMPSGeneratorInterface" "navgraph-generator-mps"))
-
+	(bind ?interfaces (append$ ?interfaces (get-laptop-interfaces "NavGraphWithMPSGeneratorInterface" "navgraph-generator-mps")))
 	(delayed-do-for-all-facts ((?res exploration-result)) TRUE
 		(bind ?side (tag-id-to-side ?res:tag-id))
 		(bind ?frame "map")
@@ -299,6 +309,7 @@
   (bind ?any-tag-to-add FALSE)
 
   (bind ?interfaces (get-interfaces "NavGraphWithMPSGeneratorInterface" "navgraph-generator-mps"))
+  (bind ?interfaces (append$ ?interfaces (get-laptop-interfaces "NavGraphWithMPSGeneratorInterface" "navgraph-generator-mps")))
 
   (if (any-factp ((?static-nav wm-fact))
         (and (wm-key-prefix ?static-nav:key (create$ config rcll use-static-navgraph))
@@ -1333,7 +1344,7 @@
              (member$ ?rs ?ring2-spec:param-values)
              (member$ ?order ?ring2-color:param-values)
              (member$ (nth$ 2 ?ring2-color:param-values) ?ring2-spec:param-values)
-             (neq (nth$ 2 ?ring2-color:param-values) RING_NONE) 
+             (neq (nth$ 2 ?ring2-color:param-values) RING_NONE)
         )
     (bind ?rs-interactions (+ ?rs-interactions 1))
   )
