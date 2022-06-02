@@ -119,6 +119,9 @@ ObjectTrackingThread::on_localization_msg(ConstPosePtr &msg)
 	                                                   msg->orientation().y(),
 	                                                   msg->orientation().z(),
 	                                                   msg->orientation().w()));
+	//substract rotational offset from Robotino model in
+	// https://github.com/robocup-logistics/gazebo-rcll/blob/master/models/
+	// carologistics/carologistics-robotino-3/model.sdf#L8
 	robotino_position_[2] = robotino_position_[2] - 1.57;
 }
 
