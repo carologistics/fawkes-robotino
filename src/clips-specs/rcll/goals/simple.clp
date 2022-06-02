@@ -84,6 +84,9 @@
 =>
   (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
     (delayed-do-for-all-facts ((?a plan-action)) (eq ?a:plan-id ?p:id)
+      (do-for-all-facts ((?g pddl-grounding)) (eq ?a:precondition ?g:id)
+        (retract ?g)
+      )
       (retract ?a)
     )
     (retract ?p)

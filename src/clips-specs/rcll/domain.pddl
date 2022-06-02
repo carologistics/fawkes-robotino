@@ -25,8 +25,16 @@
 		robot - object
 		team-color - object
 		location - object
-    waitpoint - location
+		waitpoint - location
 		mps - location
+		;cs - mps
+		bs - mps
+		;ss - mps
+		rs - mps
+		ds - mps
+		fs - mps
+		cs - fs
+		ss - fs
 		mps-typename - object
 		mps-statename - object
 		mps-side - object
@@ -38,7 +46,7 @@
 		cs-operation - object
 		cs-statename - object
 		order - object
-    order-complexity-value - object
+		order-complexity-value - object
 		workpiece - object
 		cap-carrier - workpiece
 		shelf-spot - object
@@ -46,6 +54,8 @@
 		zone - object
 		token - object
 		master-token - token
+		refbox-phasename - object
+		refbox-statename - object
 	)
 
 	(:constants
@@ -75,6 +85,7 @@
 		(mps-state ?m - mps ?s - mps-statename)
 		(mps-team ?m - mps ?col - team-color)
 		(mps-side-free ?m - mps ?side - mps-side)
+		(mps-has-side ?m - mps ?side - mps-side)
 		(bs-prepared-color ?m - mps ?col - base-color)
 		(bs-prepared-side ?m - mps ?side - mps-side)
 		(cs-can-perform ?m - mps ?op - cs-operation)
@@ -86,6 +97,8 @@
 		(rs-prepared-color ?m - mps ?col - ring-color)
 		(rs-ring-spec ?m - mps ?r - ring-color ?rn - ring-num)
 		(rs-filled-with ?m - mps ?n - ring-num)
+		(rs-paid-for ?rs - mps ?n - ring-num)
+		(rs-failed-put-slide ?rs - mps ?robot - robot ?wp - workpiece)
 		;rs-sub and rs-inc are static predicates stating the legal ring-num operations
 		(rs-sub ?minuend - ring-num ?subtrahend - ring-num ?difference - ring-num)
 		(rs-inc ?summand - ring-num ?sum - ring-num)
@@ -100,6 +113,10 @@
 		(order-delivery-begin ?ord - order)
 		(order-delivery-end ?ord - order)
 		(order-gate ?ord - order ?gate - ds-gate)
+		(order-producible ?ord - order)
+		(order-deliverable ?ord - order)
+		(order-has-wp ?ord - order)
+		(order-out-of-delivery ?ord -order)
 		(wp-unused ?wp - workpiece)
 		(wp-usable ?wp - workpiece)
 		(wp-at ?wp - workpiece ?m - mps ?side - mps-side)
@@ -110,12 +127,22 @@
 		(wp-cap-color ?wp - workpiece ?col - cap-color)
 		(wp-on-shelf ?wp - workpiece ?m - mps ?spot - shelf-spot)
 		(wp-spawned-for ?wp - workpiece ?r - robot)
-    (wp-for-order ?wp - workpiece ?ord - order)
-    (spot-free ?m - mps ?spot - shelf-spot)
-    (ss-initialized ?m - mps)
-    (ss-stored-wp ?m  - mps ?wp - workpiece)
-    (locked ?name - object)
-    (location-locked ?m - mps ?s - mps-side)
+		(wp-for-order ?wp - workpiece ?ord - order)
+		(wp-has-order ?wp - workpiece)
+		(spot-free ?m - mps ?spot - shelf-spot)
+		(ss-initialized ?m - mps)
+		(ss-stored-wp ?m  - mps ?wp - workpiece)
+		(locked ?name - object)
+		(location-locked ?m - mps ?s - mps-side)
+		(refbox-order-quantity-requested ?order - order ?quantity - integer)
+		(refbox-order-quantity-delivered ?order - order ?quantity - integer)
+		(refbox-game-time  ?value - float)
+		(refbox-points-cyan ?value - integer)
+		(refbox-points-magenta ?value - integer)
+		(refbox-team-color ?value - team-color)
+		(refbox-phase ?value - refbox-phasename)
+		(refbox-state ?value - refbox-statename)
+		(refbox-field-ground-truth ?name - object ?mtype - object ?zone - object ?yaw - float ?orientation - float)
 	)
 
 ;Kind of a hack. actually it should model the removal of present workpieces

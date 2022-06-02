@@ -31,6 +31,7 @@
 
 
 (defrule refbox-recv-GameState
+  (declare (salience 1000))
   ?pf <- (protobuf-msg (type "llsf_msgs.GameState") (ptr ?p) (rcvd-from ?host ?port))
   ?gt <- (wm-fact (key refbox game-time))
   ?rp <- (wm-fact (id "/refbox/phase")  (value ?phase) )
@@ -69,6 +70,10 @@
   (assert (wm-fact (key refbox game-time) (is-list TRUE) (type UINT) (values ?sec (/ ?nsec 1000))))
   (assert (wm-fact (id "/refbox/points/magenta") (type UINT) (value (pb-field-value ?p "points_magenta")) ))
   (assert (wm-fact (id "/refbox/points/cyan") (type UINT) (value (pb-field-value ?p "points_cyan")) ))
+  (assert (wm-fact (key domain fact refbox-game-time args? value ?sec)))
+  (assert (wm-fact (key domain fact refbox-points-magenta args? value (pb-field-value ?p "points_magenta"))))
+  (assert (wm-fact (key domain fact refbox-points-cyan args? value (pb-field-value ?p "points_cyan"))))
+  (assert (domain-fact (name refbox-team-color) (param-values ?new-team-color)))
 )
 
 
@@ -111,8 +116,10 @@
             (wm-fact (key domain fact order-cap-color  args? ord ?order-id col ?cap) (type BOOL) (value TRUE) )
             (wm-fact (key domain fact order-gate  args? ord ?order-id gate (sym-cat GATE- ?delivery-gate)) (type BOOL) (value TRUE) )
             (wm-fact (key refbox order ?order-id quantity-requested) (type UINT) (value ?quantity-requested) )
+            (domain-fact (name refbox-order-quantity-requested) (param-values ?order-id ?quantity-requested))
             (wm-fact (key domain fact quantity-delivered args? ord ?order-id team CYAN)
                      (type UINT) (value 0))
+            (domain-fact (name refbox-order-quantity-delivered) (param-values ?order-id 0))
             (wm-fact (key domain fact quantity-delivered args? ord ?order-id team MAGENTA)
                      (type UINT) (value 0))
             (wm-fact (key refbox order ?order-id delivery-begin) (type UINT) (value ?begin) )
@@ -215,6 +222,7 @@
         (wm-fact (key refbox field-ground-truth zone args? m ?name) (value ?zone))
         (wm-fact (key refbox field-ground-truth yaw args? m ?name) (type FLOAT) (value ?yaw))
         (wm-fact (key refbox field-ground-truth orientation args? m ?name) (type FLOAT) (value ?rot))
+        (wm-fact (key domain fact refbox-field-ground-truth args? name ?name  mtype ?type zone ?zone yaw ?yaw orientation ?rot))
       )
       (bind ?rcv-ground-truth TRUE)
     else
@@ -252,4 +260,39 @@
       (assert (wm-fact (key domain fact rs-ring-spec args? m ?mps r ?color rn ?rn) (type BOOL) (value TRUE)))
     )
   )
+)
+
+(defrule refbox-manage-domain-facts-refbox-game-time
+  ?p <- (wm-fact (key domain fact refbox-game-time args? value ?sec))
+  (not (wm-fact (key refbox game-time) (is-list TRUE) (type UINT) (values ?sec $?)))
+  =>
+  (retract ?p)
+)
+
+(defrule refbox-manage-domain-facts-refbox-points-magenta
+  ?p <- (wm-fact (key domain fact refbox-points-magenta args? value ?points))
+  (not (wm-fact (key domain fact refbox points magenta) (type UINT) (value ?points)))
+  =>
+  (retract ?p)
+)
+
+(defrule refbox-manage-domain-facts-refbox-points-cyan
+  ?p <- (wm-fact (key domain fact refbox-points-cyan args? value ?points))
+  (not (wm-fact (key domain fact refbox points cyan)  (type UINT) (value ?points)))
+  =>
+  (retract ?p)
+)
+
+
+(defrule refbox-manage-domain-facts-refbox-field-ground-truth
+  ?p <- (wm-fact (key domain fact refbox-field-ground-truth args? name ?name  mtype ?type zone ?zone yaw ?yaw orientation ?rot))
+  (or
+    (not (wm-fact (key refbox field-ground-truth name args? m ?name)))
+    (not (wm-fact (key refbox field-ground-truth mtype args? m ?name) (value ?type)))
+    (not (wm-fact (key refbox field-ground-truth zone args? m ?name) (value ?zone)))
+    (not (wm-fact (key refbox field-ground-truth yaw args? m ?name) (type FLOAT) (value ?yaw)))
+    (not (wm-fact (key refbox field-ground-truth orientation args? m ?name) (type FLOAT) (value ?rot)))
+  )
+  =>
+  (retract ?p)
 )

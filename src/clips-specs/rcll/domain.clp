@@ -192,13 +192,13 @@
     (domain-object (name CCG1) (type cap-carrier))
     (domain-object (name CCG2) (type cap-carrier))
     (domain-object (name CCG3) (type cap-carrier))
-    (domain-object (name ?bs) (type mps))
-    (domain-object (name ?cs1) (type mps))
-    (domain-object (name ?cs2) (type mps))
-    (domain-object (name ?ds) (type mps))
-    (domain-object (name ?rs1) (type mps))
-    (domain-object (name ?rs2) (type mps))
-    (domain-object (name ?ss) (type mps))
+    (domain-object (name ?bs) (type bs))
+    (domain-object (name ?cs1) (type cs))
+    (domain-object (name ?cs2) (type cs))
+    (domain-object (name ?ds) (type ds))
+    (domain-object (name ?rs1) (type rs))
+    (domain-object (name ?rs2) (type rs))
+    (domain-object (name ?ss) (type ss))
     (domain-object (name INPUT) (type mps-side))
     (domain-object (name OUTPUT) (type mps-side))
     (domain-object (name WAIT) (type mps-side))
@@ -280,6 +280,20 @@
     (domain-fact (name mps-side-free) (param-values ?rs2 OUTPUT))
     (domain-fact (name mps-side-free) (param-values ?ds OUTPUT))
     (domain-fact (name mps-side-free) (param-values ?ss OUTPUT))
+    (domain-fact (name mps-has-side) (param-values ?bs INPUT))
+    (domain-fact (name mps-has-side) (param-values ?cs1 INPUT))
+    (domain-fact (name mps-has-side) (param-values ?cs2 INPUT))
+    (domain-fact (name mps-has-side) (param-values ?rs1 INPUT))
+    (domain-fact (name mps-has-side) (param-values ?rs2 INPUT))
+    (domain-fact (name mps-has-side) (param-values ?ds INPUT))
+    (domain-fact (name mps-has-side) (param-values ?ss INPUT ))
+    (domain-fact (name mps-has-side) (param-values ?bs OUTPUT))
+    (domain-fact (name mps-has-side) (param-values ?cs1 OUTPUT))
+    (domain-fact (name mps-has-side) (param-values ?cs2 OUTPUT))
+    (domain-fact (name mps-has-side) (param-values ?rs1 OUTPUT))
+    (domain-fact (name mps-has-side) (param-values ?rs2 OUTPUT))
+    (domain-fact (name mps-has-side) (param-values ?ds OUTPUT))
+    (domain-fact (name mps-has-side) (param-values ?ss OUTPUT))
 
     (domain-fact (name wp-cap-color) (param-values CCB1 CAP_BLACK))
     (domain-fact (name wp-cap-color) (param-values CCB2 CAP_BLACK))
@@ -296,6 +310,8 @@
 
     (domain-fact (name rs-filled-with) (param-values ?rs1 ZERO))
     (domain-fact (name rs-filled-with) (param-values ?rs2 ZERO))
+    (domain-fact (name rs-filled-for) (param-values ?rs1 ZERO))
+    (domain-fact (name rs-filled-for) (param-values ?rs2 ZERO))
   )
 
   (assert (domain-facts-loaded))
@@ -314,4 +330,76 @@
 	(domain-load-local-facts (sym-cat ?robot-name) ?team-color)
 	(wm-robmem-sync-restore)
 	(assert (domain-facts-loaded))
+)
+
+; ----------------- PDDL Goal Formulation Objects and Predicates -------------------
+; the following objects and predicates cary information that make it easier to
+; define goal-formulation preconditions in PDDL by either removing the need for
+; quantification, or by reducing the size of the grounding space in the case of object
+; types.
+; (e.g. to detect if the given order has a workpiece assigned to it,
+; order-has-wp can be used instead just for that order instead of having to use
+; wp-for-order and quantifying over all workpieces)
+
+(defrule domain-assert-mps-polymorphism
+    (domain-object (name ?mps) (type bs|cs|ds|rs|ss))
+    =>
+    (assert (domain-object (name ?mps) (type mps)))
+)
+(defrule domain-assert-fs-polymorphism
+    (domain-object (name ?mps) (type cs|ss))
+    =>
+    (assert (domain-object (name ?mps) (type fs)))
+)
+
+(defrule domain-assert-order-has-wp
+  (domain-fact (name wp-for-order) (param-values ?wp ?order))
+  (not (domain-fact (name order-has-wp) (param-values ?order)))
+  =>
+  (assert (domain-fact (name order-has-wp) (param-values ?order)))
+)
+
+(defrule domain-retract-order-has-wp
+  ?df <- (domain-fact (name order-has-wp) (param-values ?order))
+  (not (domain-fact (name wp-for-order) (param-values ?wp ?order)))
+  =>
+  (retract ?df)
+)
+
+(defrule goal-class-wp-has-order
+    (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))
+    (not (domain-fact (name wp-has-order) (param-values ?wp)))
+    =>
+    (assert (domain-fact (name wp-has-order) (param-values ?wp)))
+)
+
+(defrule goal-class-not-wp-has-order
+    ?wmf <- (domain-fact (name wp-has-order) (param-values ?wp))
+    (not (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order)))
+    =>
+    (retract ?wmf)
+)
+
+(defrule domain-assert-rs-paid-for
+  (domain-fact (name rs-filled-with) (param-values ?rs ?bases-filled))
+  (not (domain-fact (name rs-filled-with) (param-values ?rs ?other-bases&~?bases-filled)))
+  (domain-constant (type ring-num) (value ?required))
+  (not (domain-fact (name rs-paid-for) (param-values ?rs ?required)))
+  (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
+                                         subtrahend ?required
+                                         difference ZERO|ONE|TWO|THREE))
+  =>
+  (assert (domain-fact (name rs-paid-for) (param-values ?rs ?required)))
+)
+
+(defrule domain-retract-rs-paid-for
+  (domain-fact (name rs-filled-with) (param-values ?rs ?bases-filled))
+  (not (domain-fact (name rs-filled-with) (param-values ?rs ?other-bases&~?bases-filled)))
+  (domain-constant (type ring-num) (value ?required))
+  ?df <- (domain-fact (name rs-paid-for) (param-values ?rs ?required))
+  (not (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
+                                         subtrahend ?required
+                                         difference ZERO|ONE|TWO|THREE)))
+  =>
+  (retract ?df)
 )
