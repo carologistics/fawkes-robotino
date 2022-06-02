@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "manipulate_wp"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"goto","motor_move","gripper_routine"}
+depends_skills     = {"goto","motor_move","pick_or_put_vs"}
 depends_interfaces = {
    {v = "object_tracking_if", type = "ObjectTrackingInterface", id="object-tracking"},
    {v = "arduino", type = "ArduinoInterface", id="Arduino"},
@@ -309,7 +309,7 @@ fsm:define_states{ export_to=_M, closure={MISSING_MAX=MISSING_MAX},
    {"SEARCH",                SkillJumpState, skills={{goto}},            final_to="MOVE_BASE_AND_GRIPPER", fail_to="FAILED"},
    {"MOVE_BASE_AND_GRIPPER", SkillJumpState, skills={{motor_move}},      final_to="FINE_TUNE_GRIPPER",     fail_to="SEARCH"},
    {"FINE_TUNE_GRIPPER",     JumpState},
-   {"GRIPPER_ROUTINE",       SkillJumpState, skills={{gripper_routine}}, final_to="FINAL", fail_to="FINE_TUNE_GRIPPER"},
+   {"GRIPPER_ROUTINE",       SkillJumpState, skills={{pick_or_put_vs}}, final_to="FINAL", fail_to="FINE_TUNE_GRIPPER"},
 }
 
 fsm:add_transitions{
@@ -484,9 +484,9 @@ function GRIPPER_ROUTINE:init()
   fsm.vars.time_start = fawkes.Time:new():in_msec()
   -- perform pick or put routine
   if fsm.vars.target == "WORKPIECE" then
-    self.args["gripper_routine"].pick_wp = true
+    self.args["pick_or_put_vs"].action = "PICK"
   else
-    self.args["gripper_routine"].pick_wp = false
+    self.args["pick_or_put_vs"].action = "PUT"
   end
 end
 

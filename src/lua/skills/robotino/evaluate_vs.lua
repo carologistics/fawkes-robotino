@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------
---  icp_evaluation.lua
+--  evaluate_vs.lua
 --
---  Created Sun April 10
+--  Created Tue April 5
 --  Copyright  2022  Matteo Tschesche
 --
 ----------------------------------------------------------------------------
@@ -22,16 +22,16 @@
 module(..., skillenv.module_init)
 
 -- Crucial skill information
-name               = "icp_evaluation"
+name               = "evaluate_vs"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"goto", "get_product_from", "bring_product_to"}
+depends_skills     = {"goto", "manipulate_wp"}
 depends_interfaces = {}
 
 documentation      = [==[
-This skill is used to evaluate the point cloud based approach against the
-visual servoing method. It requieres a starting point id as input and moves the
-bot to this location after every manipulation attempt. Each possible side of
-C-BS, C-RS1, and C-CS1 is target of either a pick or put action.
+This skill is used to evaluate the visual servoing approach against the point
+cloud based method. It requieres a starting point id as input and moves the bot
+to this location after every manipulation attempt. Each possible side of C-BS,
+C-RS1, and C-CS1 is target of either a pick or put action.
 
 Parameters:
       @param startpoint_id (type int, in [1,...,10]) start manipulate_wp from this position for every predefined in-/output
@@ -51,17 +51,17 @@ local startpoints = {{x = -0.5, y = 4.5, ori = 3.14},
                      {x = -0.5, y = 0.5, ori = 3.14},
                      {x = -0.5, y = 0.5, ori = 1.57}}
 
-local target_outputs = {{target = "WORKPIECE", mps = "C-CS1", side = "input", shelf = "LEFT"},
-                        {target = "WORKPIECE", mps = "C-RS1", side = "output"},
-                        {target = "WORKPIECE", mps = "C-BS", side = "input"},
-                        {target = "WORKPIECE", mps = "C-CS1", side = "input", shelf = "MIDDLE"},
-                        {target = "WORKPIECE", mps = "C-BS", side = "output"},
-                        {target = "WORKPIECE", mps = "C-CS1", side = "input", shelf = "RIGHT"},
-                        {target = "WORKPIECE", mps = "C-CS1", side = "output"}}
+local target_outputs = {{target = "WORKPIECE", mps = "C-CS1", side = "SHELF-LEFT"},
+                        {target = "WORKPIECE", mps = "C-RS1", side = "OUTPUT"},
+                        {target = "WORKPIECE", mps = "C-BS", side = "INPUT"},
+                        {target = "WORKPIECE", mps = "C-CS1", side = "SHELF-MIDDLE"},
+                        {target = "WORKPIECE", mps = "C-BS", side = "OUTPUT"},
+                        {target = "WORKPIECE", mps = "C-CS1", side = "SHELF-RIGHT"},
+                        {target = "WORKPIECE", mps = "C-CS1", side = "OUTPUT"}}
 
-local target_inputs = {{target = "CONVEYOR", mps = "C-CS1", side = "input"},
-                       {target = "CONVEYOR", mps = "C-RS1", side = "input"},
-                       {target = "SLIDE", mps = "C-RS1", side = "input", slide = true}}
+local target_inputs = {{target = "CONVEYOR", mps = "C-CS1", side = "INPUT"},
+                       {target = "CONVEYOR", mps = "C-RS1", side = "INPUT"},
+                       {target = "SLIDE", mps = "C-RS1", side = "SLIDE"}}
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
@@ -80,8 +80,8 @@ fsm:define_states{ export_to=_M, closure={},
    {"INIT",          JumpState},
    {"GOTO_START",    SkillJumpState, skills={{goto}}, final_to="CHOOSE_ACTION" ,fail_to="CHOOSE_ACTION"},
    {"CHOOSE_ACTION", JumpState},
-   {"PICK",          SkillJumpState, skills={{get_product_from}}, final_to="PUT_POSSIBLE" ,fail_to="GOTO_START"},
-   {"PUT",           SkillJumpState, skills={{bring_product_to}}, final_to="GOTO_START" ,fail_to="GOTO_START"},
+   {"PICK",          SkillJumpState, skills={{manipulate_wp}}, final_to="PUT_POSSIBLE" ,fail_to="GOTO_START"},
+   {"PUT",           SkillJumpState, skills={{manipulate_wp}}, final_to="GOTO_START" ,fail_to="GOTO_START"},
    {"PUT_POSSIBLE",  JumpState},
 }
 
@@ -96,10 +96,10 @@ fsm:add_transitions{
 
 function INIT:init()
   fsm.vars.startpoint = startpoints[fsm.vars.startpoint_id]
-  print_info("[ICP] Evaluating starting point " .. fsm.vars.startpoint_id)
-  print_info("[ICP] starting x value: " .. fsm.vars.startpoint.x)
-  print_info("[ICP] starting y value: " .. fsm.vars.startpoint.y)
-  print_info("[ICP] starting orientation: " .. fsm.vars.startpoint.ori)
+  print_info("[VS] Evaluating starting point " .. fsm.vars.startpoint_id)
+  print_info("[VS] starting x value: " .. fsm.vars.startpoint.x)
+  print_info("[VS] starting y value: " .. fsm.vars.startpoint.y)
+  print_info("[VS] starting orientation: " .. fsm.vars.startpoint.ori)
   fsm.vars.output_done = false
   fsm.vars.input_done = false
 
@@ -137,21 +137,14 @@ function PICK:init()
   fsm.vars.time_start = fawkes.Time:new():in_msec()
   fsm.vars.current_output_id = fsm.vars.next_output_id
   fsm.vars.next_target_output = target_outputs[fsm.vars.next_output_id]
-  print_info("[ICP] Evaluating output " .. fsm.vars.next_output_id)
-  print_info("[ICP] output target: " .. fsm.vars.next_target_output.target)
-  print_info("[ICP] output mps: " .. fsm.vars.next_target_output.mps)
-  print_info("[ICP] output side: " .. fsm.vars.next_target_output.side)
+  print_info("[VS] Evaluating output " .. fsm.vars.next_output_id)
+  print_info("[VS] output target: " .. fsm.vars.next_target_output.target)
+  print_info("[VS] output mps: " .. fsm.vars.next_target_output.mps)
+  print_info("[VS] output side: " .. fsm.vars.next_target_output.side)
 
-  if fsm.vars.next_target_output.shelf ~= nil then
-    print_info("[ICP] output shelf: " .. fsm.vars.next_target_output.shelf)
-
-    self.args["get_product_from"] = {place = fsm.vars.next_target_output.mps,
-                                     side = fsm.vars.next_target_output.side,
-                                     shelf = fsm.vars.next_target_output.shelf}
-  else
-    self.args["get_product_from"] = {place = fsm.vars.next_target_output.mps,
-                                     side = fsm.vars.next_target_output.side}
-  end
+  self.args["manipulate_wp"] = {target = fsm.vars.next_target_output.target,
+                                mps = fsm.vars.next_target_output.mps,
+                                side = fsm.vars.next_target_output.side}
 
   -- take next output
   fsm.vars.next_output_id = fsm.vars.next_output_id + 1
@@ -166,28 +159,21 @@ end
 
 function PICK:exit()
   local now = fawkes.Time:new():in_msec()
-  print_info("[ICP] Execution time for output " .. fsm.vars.current_output_id .. ": " .. now - fsm.vars.time_start)
+  print_info("[VS] Execution time for output " .. fsm.vars.current_output_id .. ": " .. now - fsm.vars.time_start)
 end
 
 function PUT:init()
   fsm.vars.time_start = fawkes.Time:new():in_msec()
   fsm.vars.current_input_id = fsm.vars.next_input_id
   fsm.vars.next_target_input = target_inputs[fsm.vars.next_input_id]
-  print_info("[ICP] Evaluating input " .. fsm.vars.next_input_id)
-  print_info("[ICP] input target: " .. fsm.vars.next_target_input.target)
-  print_info("[ICP] input mps: " .. fsm.vars.next_target_input.mps)
-  print_info("[ICP] input side: " .. fsm.vars.next_target_input.side)
+  print_info("[VS] Evaluating input " .. fsm.vars.next_input_id)
+  print_info("[VS] input target: " .. fsm.vars.next_target_input.target)
+  print_info("[VS] input mps: " .. fsm.vars.next_target_input.mps)
+  print_info("[VS] input side: " .. fsm.vars.next_target_input.side)
 
-  if fsm.vars.next_target_input.slide ~= nil then
-    print_info("[ICP] input slide: " .. fsm.vars.next_target_input.slide)
-
-    self.args["bring_product_to"] = {place = fsm.vars.next_target_input.mps,
-                                     side = fsm.vars.next_target_input.side,
-                                     slide = fsm.vars.next_target_input.slide}
-  else
-    self.args["bring_product_to"] = {place = fsm.vars.next_target_input.mps,
-                                     side = fsm.vars.next_target_input.side}
-  end
+  self.args["manipulate_wp"] = {target = fsm.vars.next_target_input.target,
+                                mps = fsm.vars.next_target_input.mps,
+                                side = fsm.vars.next_target_input.side}
 
   -- take next input
   fsm.vars.next_input_id = fsm.vars.next_input_id + 1
@@ -203,7 +189,7 @@ end
 
 function PUT:exit()
   local now = fawkes.Time:new():in_msec()
-  print_info("[ICP] Execution time for input " .. fsm.vars.current_input_id .. ": " .. now - fsm.vars.time_start)
+  print_info("[VS] Execution time for input " .. fsm.vars.current_input_id .. ": " .. now - fsm.vars.time_start)
 end
 
 function PUT_POSSIBLE:init()

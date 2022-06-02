@@ -1,5 +1,5 @@
 ----------------------------------------------------------------------------
---  vs_grasping_challenge.lua
+--  evaluate_grasping.lua
 --
 --  Created Sun April 10
 --  Copyright  2022  Matteo Tschesche
@@ -22,7 +22,7 @@
 module(..., skillenv.module_init)
 
 -- Crucial skill information
-name               = "vs_grasping_challenge"
+name               = "evaluate_grasping"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"goto", "manipulate_wp"}
 depends_interfaces = {}

@@ -1,5 +1,5 @@
 ----------------------------------------------------------------------------
---  gripper_routine.lua
+--  pick_or_put_vs.lua
 --
 --  Created Tue Jan 4
 --  Copyright  2022  Matteo Tschesche
@@ -22,7 +22,7 @@
 module(..., skillenv.module_init)
 
 -- Crucial skill information
-name               = "gripper_routine"
+name               = "pick_or_put_vs"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"gripper_commands", "motor_move"}
 depends_interfaces = {
@@ -31,11 +31,11 @@ depends_interfaces = {
 }
 
 documentation      = [==[
-Skill to pick a product and to put it down based on param pick_wp.
+Skill to pick a product and to put it down based on param action.
 It is independent of the workpiece location or its target location.
 
 Parameters:
-      @param pick_wp   (type bool) decides if a pick or put action is performed
+      @param action   decides if a pick or put action is performed: (PICK | PUT)
 ]==]
 
 
@@ -71,6 +71,18 @@ if config:exists("/arduino/max_z") then
   z_max = config:get_float("/arduino/z_max")
 end
 
+
+function input_invalid()
+  if fsm.vars.action == "PICK" then
+    fsm.vars.pick_wp = true
+  elseif fsm.vars.action == "PUT" then
+    fsm.vars.pick_wp = false
+  else
+    return true
+  end
+  return false
+end
+
 fsm:define_states{ export_to=_M, closure={},
    {"INIT",              JumpState},
    {"MOVE_GRIPPER_DOWN", SkillJumpState, skills={{gripper_commands}}, final_to="CHOOSE_ACTION" ,fail_to="FAILED"},
@@ -85,6 +97,7 @@ fsm:define_states{ export_to=_M, closure={},
 }
 
 fsm:add_transitions{
+   {"INIT", "FAILED",                 cond=input_invalid, desc="Invalid Input"},
    {"INIT", "MOVE_GRIPPER_DOWN",      true, desc="Start Routine"},
    {"CHOOSE_ACTION", "CLOSE_GRIPPER", cond="vars.pick_wp", desc="Picking Up Workpiece"},
    {"CHOOSE_ACTION", "OPEN_GRIPPER",  cond="not vars.pick_wp", desc="Putting Down Workpiece"},
@@ -106,7 +119,7 @@ function MOVE_GRIPPER_DOWN:init()
   local y_clipped = math.max(-y_max/2, math.min(gripper_target.y, y_max/2))
 
   local z_given = 0
-  if self.fsm.vars.pick_wp then
+  if fsm.vars.pick_wp then
     z_given = gripper_target.z + gripper_down_z_pick
   else
     z_given = gripper_target.z + gripper_down_z_put
@@ -131,7 +144,7 @@ end
 
 function MOVE_GRIPPER_UP:init()
   local z_given = 0
-  if self.fsm.vars.pick_wp then
+  if fsm.vars.pick_wp then
     z_given = fsm.vars.target_z + gripper_up_z_pick
   else
     z_given = fsm.vars.target_z + gripper_up_z_put
