@@ -31,9 +31,9 @@
 #include <aspect/tf.h>
 #include <blackboard/interface_listener.h>
 #include <core/threading/thread.h>
+#include <interfaces/LaserLineInterface.h>
 #include <interfaces/ObjectTrackingInterface.h>
 #include <librealsense2/rsutil.h>
-#include <navgraph/aspect/navgraph.h>
 #include <tf/types.h>
 #include <utils/time/time.h>
 
@@ -61,7 +61,6 @@ class ObjectTrackingThread : public fawkes::Thread,
                              public fawkes::ConfigurableAspect,
                              public fawkes::BlackBoardAspect,
                              public fawkes::BlockedTimingAspect,
-                             public fawkes::NavGraphAspect,
                              public fawkes::TransformAspect
 {
 public:
@@ -160,20 +159,12 @@ private:
 	std::string                          shm_id_res_;
 	firevision::SharedMemoryImageBuffer *shm_buffer_results_;
 
-	//MPS navgraph position:
-	float mps_x_;
-	float mps_y_;
-	float mps_ori_;
-
 	//laser-line fitting:
-	std::vector<std::string> laserlines_names_;
-	std::vector<fawkes::LaserLineInterface*> laserlines_;
-	float ll_max_dist_;
-	int ll_vs_hist_;
-	float ll_max_angle_;
-
-	//expected object position based on navgraph
-	fawkes::tf::Stamped<fawkes::tf::Point> exp_pos_;
+	std::vector<std::string>                  laserlines_names_;
+	std::vector<fawkes::LaserLineInterface *> laserlines_;
+	float                                     ll_max_dist_;
+	int                                       ll_vs_hist_;
+	float                                     ll_max_angle_;
 
 	//tracking values
 	fawkes::ObjectTrackingInterface::TARGET_OBJECT_TYPE current_object_type_;
@@ -181,22 +172,16 @@ private:
 	fawkes::ObjectTrackingInterface::EXPECTED_SIDE      current_expected_side_;
 	bool                                                tracking_;
 	int                                                 msgid_;
-	fawkes::tf::Stamped<fawkes::tf::Point>              weighted_object_pos_target_;
 
 	//timing
 	fawkes::Time starting_time_;
 	long         loop_count_;
 
-	//compute expected position in map frame
-	void  map_compute_expected_position();
-	float compute_middle_x(float x_offset);
-	float compute_middle_y(float y_offset);
-
 	//compute expected position from laser line
-	bool laserline_get_expected_position(fawkes::LaserLineInterface *ll,
+	void laserline_get_expected_position(fawkes::LaserLineInterface            *ll,
 	                                     fawkes::tf::Stamped<fawkes::tf::Point> expected_pos_ll);
-	bool laserline_get_best_fit(fawkes::LaserLineInterface best_fit);
-	Eigen::Vector3f laserline_get_center_transformed(fawkes::LaserLineInterface *ll);
+	bool laserline_get_best_fit(fawkes::LaserLineInterface *&best_fit);
+	void laserline_get_center_transformed(fawkes::LaserLineInterface *ll, float x, float y, float z);
 
 	//set shared memory buffer to read only
 	void set_shm();

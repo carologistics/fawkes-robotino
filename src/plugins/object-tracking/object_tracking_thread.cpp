@@ -24,7 +24,6 @@
 
 #include <aspect/logging.h>
 #include <interfaces/ObjectTrackingInterface.h>
-#include <navgraph/navgraph.h>
 #include <tf/types.h>
 #include <utils/math/angle.h>
 
@@ -175,14 +174,15 @@ ObjectTrackingThread::init()
 	  blackboard->open_for_writing<ObjectTrackingInterface>(object_tracking_if_name_.c_str());
 
 	//open LaserLineInterface for reading
-	laserlines_names_ = config->get_strings((cfg_prefix + "if/laser_lines").c_str());
+	laserlines_names_ = config->get_strings(("plugins/object_tracking/if/laser_lines"));
 	for (std::string ll : laserlines_names_) {
 		laserlines_.push_back(blackboard->open_for_reading<fawkes::LaserLineInterface>(ll.c_str()));
 	}
 
 	//get laser line fitting configs
 	ll_max_dist_ = this->config->get_float(("plugins/object_tracking/laser_line_fit/max_dist"));
-	ll_vs_hist_ = this->config->get_int(("plugins/object_tracking/laser_line_fit/visibility_history"));
+	ll_vs_hist_ =
+	  this->config->get_int(("plugins/object_tracking/laser_line_fit/visibility_history"));
 	ll_max_angle_ = this->config->get_float(("plugins/object_tracking/laser_line_fit/max_angle"));
 
 	object_tracking_if_->set_current_object_type(object_tracking_if_->DEFAULT_TYPE);
@@ -238,25 +238,8 @@ ObjectTrackingThread::loop()
 			current_expected_mps_  = msg->expected_mps_to_set();
 			current_expected_side_ = msg->expected_side_to_set();
 
-			//compute expected object position based on navgraph
-			compute_expected_position();
-
-			//transform from map to target (depends on target_frame in object_tracking.yaml)
-			fawkes::tf::Stamped<fawkes::tf::Point> exp_pos_target;
-			tf_listener->transform_point(target_frame_, exp_pos_, exp_pos_target);
-
-			//initialize past responses for weighted average using expected positions
+			//clear for weighted average
 			past_responses_.clear();
-			for (size_t i = 0; i < filter_size_ - 1; i++) {
-				past_responses_.push_front(exp_pos_target);
-			}
-
-			//initialize weighted average as expected position
-			weighted_object_pos_target_.stamp    = fawkes::Time(0.0);
-			weighted_object_pos_target_.frame_id = target_frame_;
-			weighted_object_pos_target_.setX(exp_pos_target.getX());
-			weighted_object_pos_target_.setY(exp_pos_target.getY());
-			weighted_object_pos_target_.setZ(exp_pos_target.getZ());
 
 			//activate shared memory buffer
 			if (!shm_active_)
@@ -345,6 +328,11 @@ ObjectTrackingThread::loop()
 		rotate(image, image, ROTATE_180);
 	//-------------------------------------------------------------------------
 
+	//get laser line if possible
+	fawkes::LaserLineInterface *ll;
+	if (!laserline_get_best_fit(ll))
+		return;
+
 	//detect objects
 	std::vector<std::array<float, 4>> out_boxes;
 	fawkes::Time                      before_detect(clock);
@@ -403,37 +391,18 @@ ObjectTrackingThread::loop()
 	}
 
 	//get yaw difference between robot and mps and expected position in cam frame
-	fawkes::LaserLineInterface *ll;
+	float                                  mps_angle = ll->bearing();
 	fawkes::tf::Stamped<fawkes::tf::Point> expected_pos_cam;
-	if (laserline_get_best_fit(ll)) {
-		//using laser date if possible
-		mps_angle = ll->bearing();
-		fawkes::tf::Stamped<fawkes::tf::Point> expected_pos_ll;
-		laserline_get_expected_position(ll, expected_pos_ll);
-		tf_listener->transform_point(cam_frame_, expected_pos_ll, expected_pos_cam);
-	} else {
-		//else navgraph data
-		fawkes::tf::Quaternion mps_q = fawkes::tf::create_quaternion_from_yaw(double(mps_ori_));
-		tf::Point              mps_pos(mps_x_, mps_y_, 0.0);
-		fawkes::tf::Pose       mps_pose(mps_q, mps_pos);
-		fawkes::tf::Stamped<fawkes::tf::Pose> mps_pose_map(mps_pose, capture_time, "map");
-		fawkes::tf::Stamped<fawkes::tf::Pose> mps_pose_base;
-		tf_listener->transform_pose("base_link", mps_pose_map, mps_pose_base);
+	fawkes::tf::Stamped<fawkes::tf::Point> expected_pos;
+	laserline_get_expected_position(ll, expected_pos);
+	tf_listener->transform_point(cam_frame_, expected_pos, expected_pos_cam);
 
-		float mps_angle = fawkes::tf::get_yaw(mps_pose_base.getRotation());
-		if (current_expected_side_ != ObjectTrackingInterface::OUTPUT_CONVEYOR) {
-			mps_angle += M_PI;
-		}
-
-		tf_listener->transform_point(cam_frame_, exp_pos_, expected_pos_cam);
-	}
-
-	//get 3d position of closest bounding box to last weighted average in cam_gripper frame
-	float                                  cur_object_pos[3];
-	Rect                                   closest_box;
-	float                                  additional_height = 0;
-	bool detected = closest_position(
-	  out_boxes, expected_pos_cam, mps_angle, cur_object_pos, closest_box, additional_height);
+	//get 3d position of closest bounding box to expected position in cam_gripper frame
+	float cur_object_pos[3];
+	Rect  closest_box;
+	float additional_height = 0;
+	bool  detected          = closest_position(
+    out_boxes, expected_pos_cam, mps_angle, cur_object_pos, closest_box, additional_height);
 
 	std::string                            pos_str;
 	fawkes::tf::Stamped<fawkes::tf::Point> cur_object_pos_target;
@@ -470,7 +439,7 @@ ObjectTrackingThread::loop()
 		pos_str = "X.XXX X.XXX X.XXX";
 
 		//transform from map to target
-		tf_listener->transform_point(target_frame_, exp_pos_, cur_object_pos_target);
+		tf_listener->transform_point(target_frame_, expected_pos, cur_object_pos_target);
 	}
 	cv::putText(image,
 	            pos_str,
@@ -500,6 +469,7 @@ ObjectTrackingThread::loop()
 
 	//use weighted average to improve robustness of object position
 	double weighted_object_pos[3];
+	double sum_weights = filter_weights_[0];
 
 	weighted_object_pos[0] = filter_weights_[0] * cur_object_pos_target.getX();
 	weighted_object_pos[1] = filter_weights_[0] * cur_object_pos_target.getY();
@@ -509,9 +479,17 @@ ObjectTrackingThread::loop()
 		weighted_object_pos[0] += filter_weights_[1 + i] * past_responses_[i].getX();
 		weighted_object_pos[1] += filter_weights_[1 + i] * past_responses_[i].getY();
 		weighted_object_pos[2] += filter_weights_[1 + i] * past_responses_[i].getZ();
+		sum_weights += filter_weights_[1 + i];
 	}
+
+	weighted_object_pos[0] /= sum_weights;
+	weighted_object_pos[1] /= sum_weights;
+	weighted_object_pos[2] /= sum_weights;
+
 	past_responses_.push_front(cur_object_pos_target);
-	past_responses_.pop_back();
+	if (past_responses_.size() == filter_size_) {
+		past_responses_.pop_back();
+	}
 
 	//update weighted object pos transform
 	tf::Quaternion       q(0.0, 0.0, 0.0);
@@ -525,12 +503,13 @@ ObjectTrackingThread::loop()
 
 	//transform weighted average into base_link
 	fawkes::tf::Stamped<fawkes::tf::Point> weighted_object_pos_base;
-	weighted_object_pos_target_.stamp    = fawkes::Time(0.0);
-	weighted_object_pos_target_.frame_id = target_frame_;
-	weighted_object_pos_target_.setX(weighted_object_pos[0]);
-	weighted_object_pos_target_.setY(weighted_object_pos[1]);
-	weighted_object_pos_target_.setZ(weighted_object_pos[2]);
-	tf_listener->transform_point("base_link", weighted_object_pos_target_, weighted_object_pos_base);
+	fawkes::tf::Stamped<fawkes::tf::Point> weighted_object_pos_target;
+	weighted_object_pos_target.stamp    = fawkes::Time(0.0);
+	weighted_object_pos_target.frame_id = target_frame_;
+	weighted_object_pos_target.setX(weighted_object_pos[0]);
+	weighted_object_pos_target.setY(weighted_object_pos[1]);
+	weighted_object_pos_target.setZ(weighted_object_pos[2]);
+	tf_listener->transform_point("base_link", weighted_object_pos_target, weighted_object_pos_base);
 	//-------------------------------------------------------------------------
 
 	//compute target frames
@@ -569,121 +548,12 @@ ObjectTrackingThread::loop()
 	//logger->log_info("average loop    ", std::to_string(average_loop).c_str());
 }
 
-void
-ObjectTrackingThread::compute_expected_position()
-{
-	float exp_pos_map[3];
-
-	if (current_object_type_ == ObjectTrackingInterface::DEFAULT_TYPE
-	    || current_expected_mps_ == ObjectTrackingInterface::DEFAULT_MPS
-	    || current_expected_side_ == ObjectTrackingInterface::DEFAULT_SIDE) {
-		logger->log_warn(name(), "Default value was send");
-		return;
-	}
-
-	//find corresponding MPS
-	std::string mps_name = object_tracking_if_->enum_tostring("EXPECTED_MPS", current_expected_mps_);
-	mps_name             = mps_name.replace(1, 1, "-");
-
-	fawkes::NavGraphNode node = navgraph->node(mps_name);
-	if (!node.is_valid()) {
-		std::string warnstring = "No navgraph node for " + mps_name + "!";
-		logger->log_warn(name(), warnstring.c_str());
-		mps_x_   = 0;
-		mps_y_   = 0;
-		mps_ori_ = 0;
-		return;
-	}
-
-	mps_x_   = node.x();
-	mps_y_   = node.y();
-	mps_ori_ = 0;
-	if (node.has_property("orientation")) {
-		mps_ori_ = node.property_as_float("orientation");
-	}
-	logger->log_info("mps_x_: ", std::to_string(mps_x_).c_str());
-	logger->log_info("mps_y_: ", std::to_string(mps_y_).c_str());
-	logger->log_info("mps_ori_: ", std::to_string(mps_ori_).c_str());
-
-	//find expected object position as middle point
-	switch (current_expected_side_) {
-	case ObjectTrackingInterface::INPUT_CONVEYOR:
-		exp_pos_map[0] = compute_middle_x(0);
-		exp_pos_map[1] = compute_middle_y(0);
-		exp_pos_map[2] = belt_height_;
-		break;
-	case ObjectTrackingInterface::OUTPUT_CONVEYOR:
-		exp_pos_map[0] = mps_x_ - (belt_length_ / 2) * cos(mps_ori_);
-		exp_pos_map[1] = mps_y_ - (belt_length_ / 2) * sin(mps_ori_);
-		exp_pos_map[2] = belt_height_;
-		break;
-	case ObjectTrackingInterface::SLIDE:
-		exp_pos_map[0] = compute_middle_x(slide_offset_side_);
-		exp_pos_map[1] = compute_middle_y(slide_offset_side_);
-		exp_pos_map[2] = slide_height_;
-		break;
-	case ObjectTrackingInterface::SHELF_LEFT:
-		exp_pos_map[0] = compute_middle_x(left_shelf_offset_side_);
-		exp_pos_map[1] = compute_middle_y(left_shelf_offset_side_);
-		exp_pos_map[2] = shelf_height_;
-		break;
-	case ObjectTrackingInterface::SHELF_MIDDLE:
-		exp_pos_map[0] = compute_middle_x(middle_shelf_offset_side_);
-		exp_pos_map[1] = compute_middle_y(middle_shelf_offset_side_);
-		exp_pos_map[2] = shelf_height_;
-		break;
-	case ObjectTrackingInterface::SHELF_RIGHT:
-		exp_pos_map[0] = compute_middle_x(right_shelf_offset_side_);
-		exp_pos_map[1] = compute_middle_y(right_shelf_offset_side_);
-		exp_pos_map[2] = shelf_height_;
-		break;
-	default:
-		logger->log_error(object_tracking_if_->enum_tostring("EXPECTED_SIDE", current_expected_side_),
-		                  " is an invalid MPS-side!");
-		return;
-	}
-
-	if (current_object_type_ == ObjectTrackingInterface::WORKPIECE) {
-		exp_pos_map[2] += puck_height_ / 2;
-		if (current_expected_side_ == ObjectTrackingInterface::OUTPUT_CONVEYOR) {
-			exp_pos_map[0] += (puck_size_ / 2) * cos(mps_ori_);
-			exp_pos_map[1] += (puck_size_ / 2) * sin(mps_ori_);
-		} else {
-			exp_pos_map[0] -= (puck_size_ / 2) * cos(mps_ori_);
-			exp_pos_map[1] -= (puck_size_ / 2) * sin(mps_ori_);
-		}
-	} else if (current_object_type_ == ObjectTrackingInterface::CONVEYOR_BELT_FRONT) {
-		exp_pos_map[2] -= belt_size_ / 2;
-	}
-
-	logger->log_info("exp_pos_map[0]: ", std::to_string(exp_pos_map[0]).c_str());
-	logger->log_info("exp_pos_map[1]: ", std::to_string(exp_pos_map[1]).c_str());
-	logger->log_info("exp_pos_map[2]: ", std::to_string(exp_pos_map[2]).c_str());
-	//transform into stamped point
-	exp_pos_.stamp    = fawkes::Time(0.0);
-	exp_pos_.frame_id = "map";
-	exp_pos_.setX(exp_pos_map[0]);
-	exp_pos_.setY(exp_pos_map[1]);
-	exp_pos_.setZ(exp_pos_map[2]);
-}
-
-float
-ObjectTrackingThread::compute_middle_x(float x_offset)
-{
-	return mps_x_ + x_offset * sin(mps_ori_) + (belt_length_ / 2) * cos(mps_ori_);
-}
-
-float
-ObjectTrackingThread::compute_middle_y(float y_offset)
-{
-	return mps_y_ - y_offset * cos(mps_ori_) + (belt_length_ / 2) * sin(mps_ori_);
-}
-
 bool
-ConveyorPlaneThread::laserline_get_best_fit(fawkes::LaserLineInterface best_fit)
+ObjectTrackingThread::laserline_get_best_fit(fawkes::LaserLineInterface *&best_fit)
 {
-	best_fit = NULL;
+	best_fit        = NULL;
 	float best_dist = ll_max_dist_;
+	bool  found     = false;
 
 	// get best line
 	for (fawkes::LaserLineInterface *ll : laserlines_) {
@@ -701,20 +571,27 @@ ConveyorPlaneThread::laserline_get_best_fit(fawkes::LaserLineInterface best_fit)
 		}
 
 		// take closest
-		Eigen::Vector3f center = laserline_get_center_transformed(ll);
-		float dist = std::sqrt(static_cast<float>(center(0) * center(0) + center(2) * center(2)));
+		float center_x = 0;
+		float center_y = 0;
+		float center_z = 0;
+		laserline_get_center_transformed(ll, center_x, center_y, center_z);
+		float dist = std::sqrt(static_cast<float>(center_x * center_x + center_y * center_y));
 
 		if (dist < best_dist) {
-			best_fit = ll;
+			found     = true;
+			best_fit  = ll;
 			best_dist = dist;
 		}
 	}
 
-	return best_fit != NULL;
+	return found;
 }
 
-Eigen::Vector3f
-ConveyorPlaneThread::laserline_get_center_transformed(fawkes::LaserLineInterface *ll)
+void
+ObjectTrackingThread::laserline_get_center_transformed(fawkes::LaserLineInterface *ll,
+                                                       float                       x,
+                                                       float                       y,
+                                                       float                       z)
 {
 	fawkes::tf::Stamped<fawkes::tf::Point> tf_in, tf_out;
 	tf_in.stamp    = ll->timestamp();
@@ -730,14 +607,15 @@ ConveyorPlaneThread::laserline_get_center_transformed(fawkes::LaserLineInterface
 		tf_listener->transform_point("base_link", tf_in, tf_out);
 	}
 
-	Eigen::Vector3f out(tf_out.getX(), tf_out.getY(), tf_out.getZ());
-
-	return out;
+	x = tf_out.getX();
+	y = tf_out.getY();
+	z = tf_out.getZ();
 }
 
 void
-ConveyorPlaneThread::laserline_get_expected_position(fawkes::LaserLineInterface *ll,
-                                                     fawkes::tf::Stamped<fawkes::tf::Point> expected_pos_ll)
+ObjectTrackingThread::laserline_get_expected_position(
+  fawkes::LaserLineInterface            *ll,
+  fawkes::tf::Stamped<fawkes::tf::Point> expected_pos)
 {
 	//set offsets from laser line center for expected object position
 	float x_offset;
@@ -747,32 +625,32 @@ ConveyorPlaneThread::laserline_get_expected_position(fawkes::LaserLineInterface 
 	switch (current_expected_side_) {
 	case ObjectTrackingInterface::INPUT_CONVEYOR:
 		x_offset = 0;
-		y_offset = belt_offset_side;
+		y_offset = belt_offset_side_;
 		z_offset = belt_height_;
 		break;
 	case ObjectTrackingInterface::OUTPUT_CONVEYOR:
 		x_offset = 0;
-		y_offset = -belt_offset_side;
+		y_offset = -belt_offset_side_;
 		z_offset = belt_height_;
 		break;
 	case ObjectTrackingInterface::SLIDE:
 		x_offset = 0;
-		y_offset = belt_offset_side + slide_offset_side_;
+		y_offset = belt_offset_side_ + slide_offset_side_;
 		z_offset = slide_height_;
 		break;
 	case ObjectTrackingInterface::SHELF_LEFT:
 		x_offset = 0;
-		y_offset = belt_offset_side + left_shelf_offset_side_;
+		y_offset = belt_offset_side_ + left_shelf_offset_side_;
 		z_offset = shelf_height_;
 		break;
 	case ObjectTrackingInterface::SHELF_MIDDLE:
 		x_offset = 0;
-		y_offset = belt_offset_side + middle_shelf_offset_side_;
+		y_offset = belt_offset_side_ + middle_shelf_offset_side_;
 		z_offset = shelf_height_;
 		break;
 	case ObjectTrackingInterface::SHELF_RIGHT:
 		x_offset = 0;
-		y_offset = belt_offset_side + right_shelf_offset_side_;
+		y_offset = belt_offset_side_ + right_shelf_offset_side_;
 		z_offset = shelf_height_;
 		break;
 	default:
@@ -793,28 +671,28 @@ ConveyorPlaneThread::laserline_get_expected_position(fawkes::LaserLineInterface 
 	tf_in.frame_id = ll->frame_id();
 
 	//get point on laser-line with y_offset
-	float x_pos = ll->end_point_2(0) + (ll->end_point_1(0) - ll->end_point_2(0)) * (0.5 + y_offset / 0.7);
-	float y_pos = ll->end_point_2(1) + (ll->end_point_1(1) - ll->end_point_2(1)) * (0.5 + y_offset / 0.7);
+	float x_pos =
+	  ll->end_point_2(0) + (ll->end_point_1(0) - ll->end_point_2(0)) * (0.5 + y_offset / 0.7);
+	float y_pos =
+	  ll->end_point_2(1) + (ll->end_point_1(1) - ll->end_point_2(1)) * (0.5 + y_offset / 0.7);
 	float z_pos = z_offset;
 
 	float angle = fabs(ll->bearing());
 
 	//compute position with offset towards MPS
-	x_pos += math.cos(angle) * x_offset;
-	y_pos += math.sin(angle) * x_offset;
+	x_pos += cos(angle) * x_offset;
+	y_pos += sin(angle) * x_offset;
 
 	tf_in.setX(x_pos);
 	tf_in.setY(y_pos);
 	tf_in.setZ(z_pos);
 
 	try {
-		tf_listener->transform_point("/odom", tf_in, expected_pos_ll);
+		tf_listener->transform_point("/odom", tf_in, expected_pos);
 	} catch (tf::ExtrapolationException &) {
 		tf_in.stamp = Time(0, 0);
-		tf_listener->transform_point("/odom", tf_in, expected_pos_ll);
+		tf_listener->transform_point("/odom", tf_in, expected_pos);
 	}
-
-	return true;
 }
 
 void
@@ -889,8 +767,8 @@ ObjectTrackingThread::closest_position(std::vector<std::array<float, 4>>      bo
                                        fawkes::tf::Stamped<fawkes::tf::Point> ref_pos,
                                        float                                  mps_angle,
                                        float                                  closest_pos[3],
-                                       Rect &                                 closest_box,
-                                       float &                                additional_height)
+                                       Rect                                  &closest_box,
+                                       float                                 &additional_height)
 {
 	float  min_dist = max_acceptable_dist_;
 	size_t box_id;
@@ -934,7 +812,7 @@ void
 ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
                                        float                mps_angle,
                                        float                point[3],
-                                       float &              wp_additional_height)
+                                       float               &wp_additional_height)
 {
 	//compute bounding box values
 	float bb_left    = bounding_box[0] - bounding_box[2] / 2;
