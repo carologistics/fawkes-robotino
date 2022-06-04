@@ -22,6 +22,7 @@ SUBDIRS	= gazsim-llsfrbcomm \
           gazsim-llsf-control \
           gazsim-gripper \
           gazsim-conveyor gazsim-tag-vision \
-          gazsim-navgraph-generator
+          gazsim-navgraph-generator \
+          gazsim-object-tracking
 
 include $(BUILDSYSDIR)/rules.mk

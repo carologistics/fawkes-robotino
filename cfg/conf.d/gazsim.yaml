@@ -33,6 +33,7 @@ gazsim:
     conveyor: "~/RobotinoSim/SetConveyor/"
     gripper-has-puck: "~/RobotinoSim/GripperHasPuck/"
     tag-vision: "~/tag-vision"
+    factory: "~/factory"
 
   llsf-rb-comm:
     refbox-host: "127.0.0.1"
@@ -212,3 +213,6 @@ gazsim:
       - M-SS
 
     nav-gen-if-name: "/navgraph-generator-mps"
+
+  object-tracking:
+    if-name: "object-tracking"
