@@ -4,6 +4,7 @@
  *  Created: Mon Apr 04 11:48:36 2016
  *  Copyright  2011-2016  Tim Niemueller [www.niemueller.de]
  *                  2016  Nicolas Limpert
+ *                  2022  Matteo Tschesche
  ****************************************************************************/
 
 /*  This program is free software; you can redistribute it and/or modify
@@ -82,13 +83,6 @@ public:
    */
 	void set_position(float new_x, float new_y, float new_z);
 
-	/**
-   * @brief sets the bool flag for the moving state ot the gripper
-   *
-   * @param moving New moving state
-   */
-	void set_moving(bool moving);
-
 private:
 	std::string cfg_gripper_frame_id_;
 	std::string cfg_gripper_dyn_x_frame_id_;
@@ -115,6 +109,9 @@ private:
 
 	void load_config();
 
+	// update transform
+	virtual void update();
+
 	fawkes::Time end_time_point_;
 	float        desired_end_z_pose_;
 	float        current_end_z_pose_;
@@ -123,8 +120,6 @@ private:
 	float cur_x_;
 	float cur_y_;
 	float cur_z_;
-
-	std::atomic<bool> moving_;
 
 protected:
 	/** Mutex to protect data_. Lock whenever accessing it. */

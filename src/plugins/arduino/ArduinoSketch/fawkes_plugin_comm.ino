@@ -128,6 +128,8 @@ bool open_gripper = false;
 
 int cur_status = STATUS_IDLE;
 
+int loop_nr = 0;
+
 #define BUFFER_SIZE 128
 char buffer_[BUFFER_SIZE];
 byte buf_i_ = 0;
@@ -611,7 +613,20 @@ void loop() {
     movement_done_flag = false;
     set_status(STATUS_IDLE);
   }
+
   read_package();
+
+  if(cur_status != STATUS_MOVING){
+    loop_nr = 0;
+    return;
+  }
+
+  if(loop_nr > 1000) {
+    send_status();
+    loop_nr = 0;
+  } else {
+    loop_nr++;
+  }
 }
 
 volatile byte step_bits_xyz = 0;

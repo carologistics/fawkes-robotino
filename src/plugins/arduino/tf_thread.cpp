@@ -5,6 +5,7 @@
  *  Created: Thu Sep 11 13:18:00 2014
  *  Copyright  2011-2014  Tim Niemueller [www.niemueller.de]
  *                  2016  Nicolas Limpert
+ *                  2022  Matteo Tschesche
  ****************************************************************************/
 
 /*  This program is free software; you can redistribute it and/or modify
@@ -40,7 +41,7 @@ using namespace fawkes;
 
 /** @class ArduinoTFThread "tf_thread.h"
  * Thread to share poses of the gripper via tf
- * @author Tim Niemueller, Nicolas Limpert
+ * @author Tim Niemueller, Nicolas Limpert, Matteo Tschesche
  */
 
 /** Constructor. */
@@ -65,13 +66,10 @@ void
 ArduinoTFThread::init()
 {
 	load_config();
-	//    last_official_z_position_ = 0.;
-	//    desired_end_z_pose_ = 0.;
+
 	cur_x_ = 0.0;
 	cur_y_ = 0.0;
 	cur_z_ = 0.0;
-
-	moving_ = false;
 
 	//-- initialize publisher objects
 	tf_add_publisher(cfg_gripper_dyn_x_frame_id_.c_str());
@@ -82,6 +80,9 @@ ArduinoTFThread::init()
 
 	tf_add_publisher(cfg_gripper_dyn_z_frame_id_.c_str());
 	dyn_z_pub = tf_publishers[cfg_gripper_dyn_z_frame_id_];
+
+	boost::mutex::scoped_lock lock(data_mutex_);
+	update();
 }
 
 void
@@ -92,59 +93,43 @@ ArduinoTFThread::finalize()
 void
 ArduinoTFThread::loop()
 {
-	if (!moving_) {
-		boost::mutex::scoped_lock lock(data_mutex_);
-		fawkes::Time              now(clock);
-
-		//    float d_mm = current_end_z_pose_ - desired_end_z_pose_;
-		//    double d_s = now - end_time_point_;
-
-		tf::Quaternion q(0.0, 0.0, 0.0);
-
-		tf::Vector3 v_x(cur_x_, 0.0, 0.0);
-
-		tf::Vector3 v_y(0.0, (cur_y_ - cfg_y_max_ / 2.), 0.0);
-
-		tf::Vector3 v_z(0.0, 0.0, cur_z_);
-
-		tf::Transform tf_pose_gripper_x(q, v_x);
-		tf::Transform tf_pose_gripper_y(q, v_y);
-		tf::Transform tf_pose_gripper_z(q, v_z);
-
-		tf::StampedTransform stamped_transform_x(tf_pose_gripper_x,
-		                                         now.stamp(),
-		                                         cfg_gripper_origin_x_frame_id_,
-		                                         cfg_gripper_dyn_x_frame_id_);
-		tf::StampedTransform stamped_transform_y(tf_pose_gripper_y,
-		                                         now.stamp(),
-		                                         cfg_gripper_origin_y_frame_id_,
-		                                         cfg_gripper_dyn_y_frame_id_);
-		tf::StampedTransform stamped_transform_z(tf_pose_gripper_z,
-		                                         now.stamp(),
-		                                         cfg_gripper_origin_z_frame_id_,
-		                                         cfg_gripper_dyn_z_frame_id_);
-		dyn_x_pub->send_transform(stamped_transform_x);
-		dyn_y_pub->send_transform(stamped_transform_y);
-		dyn_z_pub->send_transform(stamped_transform_z);
-	}
+	boost::mutex::scoped_lock lock(data_mutex_);
+	update();
 }
 
-//// interpolate the current z position based on an assumption of where the
-/// gripper should be given a timeframe and a length
-// void
-// ArduinoTFThread::set_interpolation_interval(fawkes::Time &end_time_point,
-// float desired_end_z_pose)
-//{
-//    boost::mutex::scoped_lock lock(data_mutex_);
-//    end_time_point_ = end_time_point;
-//    desired_end_z_pose_ = desired_end_z_pose;
-//
-////    // Stepper speed: 500 steps / second
-////    // 2.5 revolutions per second
-////    // 5mm per second
-//
-//
-//}
+void
+ArduinoTFThread::update()
+{
+	fawkes::Time now(clock);
+
+	tf::Quaternion q(0.0, 0.0, 0.0);
+
+	tf::Vector3 v_x(cur_x_, 0.0, 0.0);
+
+	tf::Vector3 v_y(0.0, (cur_y_ - cfg_y_max_ / 2.), 0.0);
+
+	tf::Vector3 v_z(0.0, 0.0, cur_z_);
+
+	tf::Transform tf_pose_gripper_x(q, v_x);
+	tf::Transform tf_pose_gripper_y(q, v_y);
+	tf::Transform tf_pose_gripper_z(q, v_z);
+
+	tf::StampedTransform stamped_transform_x(tf_pose_gripper_x,
+	                                         now.stamp(),
+	                                         cfg_gripper_origin_x_frame_id_,
+	                                         cfg_gripper_dyn_x_frame_id_);
+	tf::StampedTransform stamped_transform_y(tf_pose_gripper_y,
+	                                         now.stamp(),
+	                                         cfg_gripper_origin_y_frame_id_,
+	                                         cfg_gripper_dyn_y_frame_id_);
+	tf::StampedTransform stamped_transform_z(tf_pose_gripper_z,
+	                                         now.stamp(),
+	                                         cfg_gripper_origin_z_frame_id_,
+	                                         cfg_gripper_dyn_z_frame_id_);
+	dyn_x_pub->send_transform(stamped_transform_x);
+	dyn_y_pub->send_transform(stamped_transform_y);
+	dyn_z_pub->send_transform(stamped_transform_z);
+}
 
 void
 ArduinoTFThread::set_position(float new_x_pos, float new_y_pos, float new_z_pos)
@@ -153,12 +138,7 @@ ArduinoTFThread::set_position(float new_x_pos, float new_y_pos, float new_z_pos)
 	cur_x_ = new_x_pos;
 	cur_y_ = new_y_pos;
 	cur_z_ = new_z_pos;
-}
-
-void
-ArduinoTFThread::set_moving(bool moving)
-{
-	moving_ = moving;
+	update();
 }
 
 void
