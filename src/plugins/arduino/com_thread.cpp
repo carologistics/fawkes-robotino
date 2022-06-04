@@ -632,6 +632,7 @@ ArduinoComThread::handle_nodata(const boost::system::error_code &ec)
 
 		io_mutex_.unlock();
 
+		calibrated_ = false;
 		close_device();
 		sleep(1);
 		open_device();
