@@ -73,23 +73,23 @@
 )
 
 (deffunction log-debug ($?verbosity)
-	(bind ?v (nth$ 1 ?verbosity))
-	(switch ?v
-		(case NOISY then (return t))
-		(case DEFAULT then (return nil))
-		(case QUIET then (return nil))
-	)
-	(return nil)
+  (bind ?v (nth$ 1 ?verbosity))
+  (switch ?v
+    (case NOISY then (return t))
+    (case DEFAULT then (return nil))
+    (case QUIET then (return nil))
+  )
+  (return nil)
 )
 
 (deffunction log-info ($?verbosity)
-	(bind ?v (nth$ 1 ?verbosity))
-	(switch ?v
-		(case NOISY then (return warn))
-		(case DEFAULT then (return t))
-		(case QUIET then (return nil))
-	)
-	(return t)
+  (bind ?v (nth$ 1 ?verbosity))
+  (switch ?v
+    (case NOISY then (return warn))
+    (case DEFAULT then (return t))
+    (case QUIET then (return nil))
+  )
+  (return t)
 )
 
 (deffunction is-parent-of (?parent ?child)
@@ -107,30 +107,38 @@
   (return (eq ?goal-id ?parent))
 )
 
+(deffunction goal-reasoner-nuke-subtree (?goal)
+  "Remove an entire subtree."
+  (do-for-all-facts ((?child goal)) (eq ?child:parent (fact-slot-value ?goal id))
+    (goal-reasoner-nuke-subtree ?child)
+  )
+  (retract ?goal)
+)
+
 (deffunction set-robot-to-waiting (?robot)
 " Sets a robot that was assigned in a goal meta to waiting.
   If no robot was assigned nothing happens.
 
   @param ?robot: robot1 robot2 robot3 central nil
 "
-	(if (neq ?robot nil) then
-		(do-for-fact ((?r wm-fact))
-			(and (wm-key-prefix ?r:key (create$ central agent robot))
-			     (eq ?robot (wm-key-arg ?r:key r)))
-			(assert (wm-fact (key central agent robot-waiting
-			                  args? r (wm-key-arg ?r:key r))))
-		)
-	)
+  (if (neq ?robot nil) then
+    (do-for-fact ((?r wm-fact))
+      (and (wm-key-prefix ?r:key (create$ central agent robot))
+           (eq ?robot (wm-key-arg ?r:key r)))
+      (assert (wm-fact (key central agent robot-waiting
+                        args? r (wm-key-arg ?r:key r))))
+    )
+  )
 )
 
 (deffunction remove-robot-assignment-from-goal-meta (?goal)
-	(if (not (do-for-fact ((?f goal-meta))
-			(eq ?f:goal-id (fact-slot-value ?goal id))
-			(modify ?f (assigned-to nil))
-			))
-	 then
-		(printout t "Cannot find a goal meta fact for the goal " ?goal crlf)
-	)
+  (if (not (do-for-fact ((?f goal-meta))
+      (eq ?f:goal-id (fact-slot-value ?goal id))
+      (modify ?f (assigned-to nil))
+      ))
+   then
+    (printout t "Cannot find a goal meta fact for the goal " ?goal crlf)
+  )
 )
 
 (deffunction goal-tree-update-meta-run-all-order (?f ?ordering)
@@ -169,86 +177,101 @@
 )
 
 (deffunction goal-tree-assert-central-run-one (?class $?fact-addresses)
-	(bind ?id (sym-cat CENTRAL-RUN-ONE- ?class - (gensym*)))
-	(bind ?goal
+  (bind ?id (sym-cat CENTRAL-RUN-ONE- ?class - (gensym*)))
+  (bind ?goal
     (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ONE-OF-SUBGOALS)))
   )
   (assert (goal-meta (goal-id ?id)))
-	(foreach ?f ?fact-addresses
-		(goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
-	(return ?goal)
+  (foreach ?f ?fact-addresses
+    (goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
+  (return ?goal)
 )
 
 (deffunction goal-tree-assert-central-run-all (?class $?fact-addresses)
-	(bind ?id (sym-cat CENTRAL-RUN-ALL- ?class - (gensym*)))
-	(bind ?goal
+  (bind ?id (sym-cat CENTRAL-RUN-ALL- ?class - (gensym*)))
+  (bind ?goal
     (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)))
   )
   (assert (goal-meta (goal-id ?id)))
-	(foreach ?f ?fact-addresses
-		(goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
-	(return ?goal)
+  (foreach ?f ?fact-addresses
+    (goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
+  (return ?goal)
 )
 
 (deffunction goal-tree-assert-central-run-all-sequence (?class $?fact-addresses)
-	(bind ?id (sym-cat CENTRAL-RUN-ALL- ?class - (gensym*)))
-	(bind ?goal
+  (bind ?id (sym-cat CENTRAL-RUN-ALL- ?class - (gensym*)))
+  (bind ?goal
     (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
                   (meta sequence-mode)))
   )
   (assert (goal-meta (goal-id ?id)))
-	(foreach ?f ?fact-addresses
-		(goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
-	(return ?goal)
+  (foreach ?f ?fact-addresses
+    (goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
+  (return ?goal)
 )
 
 (deffunction goal-tree-assert-central-run-all-prio (?class ?prio $?fact-addresses)
-	(bind ?id (sym-cat CENTRAL-RUN-ALL- ?class - (gensym*)))
-	(bind ?goal
+  (bind ?id (sym-cat CENTRAL-RUN-ALL- ?class - (gensym*)))
+  (bind ?goal
     (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)))
   )
   (assert (goal-meta (goal-id ?id)))
-	(foreach ?f ?fact-addresses
+  (foreach ?f ?fact-addresses
     ;(goal-tree-update-meta-run-all-order ?f (+ 1 (- (length$ ?fact-addresses) ?f-index)))
-		(goal-tree-update-child ?f ?id ?prio)
+    (goal-tree-update-child ?f ?id ?prio)
   )
-	(return ?goal)
+  (return ?goal)
 )
 
 (deffunction goal-tree-assert-central-run-parallel (?class $?fact-addresses)
-	(bind ?id (sym-cat CENTRAL-RUN-PARALLEL- ?class - (gensym*)))
-	(bind ?goal
+  (bind ?id (sym-cat CENTRAL-RUN-PARALLEL- ?class - (gensym*)))
+  (bind ?goal
     (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)))
   )
   (assert (goal-meta (goal-id ?id)))
-	(foreach ?f ?fact-addresses
-		(goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
-	(return ?goal)
+  (foreach ?f ?fact-addresses
+    (goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
+  (return ?goal)
 )
 
 (deffunction goal-tree-assert-central-run-parallel-flat (?class $?fact-addresses)
-	(bind ?id (sym-cat CENTRAL-RUN-PARALLEL- ?class - (gensym*)))
-	(bind ?goal
+  (bind ?id (sym-cat CENTRAL-RUN-PARALLEL- ?class - (gensym*)))
+  (bind ?goal
     (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)))
   )
   (assert (goal-meta (goal-id ?id)))
-	(foreach ?f ?fact-addresses
-		(goal-tree-update-child ?f ?id 1)
+  (foreach ?f ?fact-addresses
+    (goal-tree-update-child ?f ?id 1)
   )
-	(return ?goal)
+  (return ?goal)
 )
 
 (deffunction goal-tree-assert-central-run-parallel-prio (?class ?prio $?fact-addresses)
-	(bind ?id (sym-cat CENTRAL-RUN-PARALLEL- ?class - (gensym*)))
-	(bind ?goal
+  (bind ?id (sym-cat CENTRAL-RUN-PARALLEL- ?class - (gensym*)))
+  (bind ?goal
     (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)))
   )
   (assert (goal-meta (goal-id ?id)))
-	(foreach ?f ?fact-addresses
-		(goal-tree-update-child ?f ?id ?prio)
+  (foreach ?f ?fact-addresses
+    (goal-tree-update-child ?f ?id ?prio)
   )
-	(return ?goal)
+  (return ?goal)
 )
+
+(deffunction goal-reasoner-redistribute-payments (?order-id)
+  "Identify fulfilled but not consumed payments, and create offers for them."
+  (do-for-all-facts ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps state payments order))
+                                              (eq ?order-id (wm-key-arg ?wm-fact:key ord)))
+    (if (neq 0 ?wm-fact:value) then
+      (bind ?paid (insert$ ?paid 1 ?wm-fact:value))
+      (while (> ?paid 0)
+        (assert (wm-fact (key evaluation offer payment args? status COMPLETED rs (wm-key-arg ?wm-fact:key m) payment ?paid)))
+        (bind ?paid (- ?paid 1))
+      )
+    )
+  )
+)
+
 ; =========================== Goal Executability =============================
 
 (defrule goal-reasoner-propagate-executability
@@ -475,37 +498,48 @@
 " Finally set a finished goal to evaluated.
   All pre evaluation steps should have been executed, enforced by the higher priority
 "
-	(declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
-	?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome)
-	            (verbosity ?v))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+  (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome)
+              (verbosity ?v))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 =>
-	(set-robot-to-waiting ?robot)
-	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" crlf)
-	(modify ?g (mode EVALUATED))
+  (set-robot-to-waiting ?robot)
+  (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" crlf)
+  (modify ?g (mode EVALUATED))
 )
 
 ; ----------------------- EVALUATE SPECIFIC GOALS ---------------------------
 
 
 (defrule goal-reasoner-evaluate-mount-or-payment
-" Reducing the order based mps workload after mounting a ring/cap or paying for a ring successfully"
-	?g <- (goal (id ?goal-id)(class MOUNT-RING|MOUNT-CAP|PAY-FOR-RINGS-WITH-BASE|PAY-FOR-RINGS-WITH-CAP-CARRIER|PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF) (mode FINISHED) (outcome COMPLETED)
-	            (verbosity ?v) (params $? ?mn $?))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot)(order-id ?order-id))
-  ?wmf-order <- (wm-fact (key mps workload order args? m ?mn ord ?order-id))
-  ?update-fact <- (wm-fact (key mps workload needs-update) (value ?value))
+" Sets a finished mount or payment goal to evaluated"
+  ?g <- (goal (id ?goal-id) (class MOUNT-CAP|PAY-FOR-RINGS-WITH-BASE|PAY-FOR-RINGS-WITH-CAP-CARRIER|PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF) (mode FINISHED) (outcome COMPLETED)
+              (verbosity ?v) (params $? ?mn $? ?rc))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot)(order-id ?order-id))
 =>
-	(set-robot-to-waiting ?robot)
-	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" ?mn  crlf)
-	(modify ?g (mode EVALUATED))
+  (set-robot-to-waiting ?robot)
+  (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" ?mn  crlf)
+  (modify ?g (mode EVALUATED))
+)
+
+(defrule goal-reasoner-evaluate-mount-goal-mps-workload
+" Evaluate a MOUNT-RING goal and reduce mps workload counter based on completed plan-actions"
+ ?g <- (goal (id ?goal-id) (class MOUNT-RING) (mode FINISHED) (verbosity ?v))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot) (order-id ?order-id))
+  (plan-action (action-name rs-mount-ring1|rs-mount-ring2|rs-mount-ring3) (goal-id ?goal-id)
+               (param-values ?rs ?wp $?) (state FINAL))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
+  ?wmf-order <- (wm-fact (key mps workload order args? m ?rs ord ?order-id))
+  ?update-fact <- (wm-fact (key mps workload needs-update) (value ?value))
+  =>
   (modify ?wmf-order (value (- (fact-slot-value ?wmf-order value) 1)))
   (if (eq ?value FALSE) then
     (modify ?update-fact (value TRUE))
   )
+  (set-robot-to-waiting ?robot)
+  (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" crlf)
+  (modify ?g (mode EVALUATED))
 )
-
-
 
 (defrule goal-reasoner-evaluate-move-out-of-way
 " Sets a finished move out of way goal independent of the outcome to formulated."
@@ -532,51 +566,224 @@
 (defrule goal-reasoner-evaluate-failed-goto
 " Re-formulate a failed goal if the workpiece it processes is still usable
 "
-	?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED) (meta $?meta)
-	            (verbosity ?v))
-	(plan (id ?plan-id) (goal-id ?goal-id))
-	(plan-action (action-name ?action&move|go-wait|wait-for-wp|wait-for-free-side)
-	             (goal-id ?goal-id) (plan-id ?plan-id) (state FAILED))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
-	=>
-	(set-robot-to-waiting ?robot)
-	(remove-robot-assignment-from-goal-meta ?g)
-	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as only a " ?action " action failed" crlf)
-	(modify ?g (mode FORMULATED) (outcome UNKNOWN))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED) (meta $?meta)
+              (verbosity ?v))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (plan-action (action-name ?action&move|go-wait|wait-for-wp|wait-for-free-side)
+               (goal-id ?goal-id) (plan-id ?plan-id) (state FAILED))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+  =>
+  (set-robot-to-waiting ?robot)
+  (remove-robot-assignment-from-goal-meta ?g)
+  (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as only a " ?action " action failed" crlf)
+  (modify ?g (mode FORMULATED) (outcome UNKNOWN))
 
-	(delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
-		(delayed-do-for-all-facts ((?a plan-action)) (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
-			(retract ?a)
-		)
-		(retract ?p)
-	)
+  (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
+    (delayed-do-for-all-facts ((?a plan-action)) (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
+      (retract ?a)
+    )
+    (retract ?p)
+  )
 )
 
 (defrule goal-reasoner-evaluate-failed-workpiece-usable
 " Re-formulate a failed goal if the workpiece it processes is still usable
 "
-	?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED) (meta $?meta)
-	            (verbosity ?v))
-	(plan (id ?plan-id) (goal-id ?goal-id))
-	(plan-action (action-name ?action&wp-get|wp-put|wp-put-slide-cc|wp-get-shelf)
-	             (goal-id ?goal-id) (plan-id ?plan-id) (state FAILED)
-	             (param-values $? ?wp $?))
-	(or (wm-fact (key domain fact wp-usable args? wp ?wp))
-	    (wm-fact (key domain fact wp-on-shelf args? wp ?wp $?))
-	)
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
-	=>
-	(set-robot-to-waiting ?robot)
-	(remove-robot-assignment-from-goal-meta ?g)
-	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as workpiece is still usable after failed " ?action crlf)
-	(modify ?g (mode FORMULATED) (outcome UNKNOWN))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED) (meta $?meta)
+              (verbosity ?v))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (plan-action (action-name ?action&wp-get|wp-put|wp-put-slide-cc|wp-get-shelf)
+               (goal-id ?goal-id) (plan-id ?plan-id) (state FAILED)
+               (param-values $? ?wp $?))
+  (or (wm-fact (key domain fact wp-usable args? wp ?wp))
+      (wm-fact (key domain fact wp-on-shelf args? wp ?wp $?))
+  )
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+  =>
+  (set-robot-to-waiting ?robot)
+  (remove-robot-assignment-from-goal-meta ?g)
+  (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as workpiece is still usable after failed " ?action crlf)
+  (modify ?g (mode FORMULATED) (outcome UNKNOWN))
 
-	(delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
-		(delayed-do-for-all-facts ((?a plan-action)) (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
-			(retract ?a)
-		)
-		(retract ?p)
-	)
+  (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
+    (delayed-do-for-all-facts ((?a plan-action)) (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
+      (retract ?a)
+    )
+    (retract ?p)
+  )
+)
+(defrule goal-reasoner-evaluate-failed-preparation-goal
+  "A carrier was lost for a preparation goal, reformulate the goal."
+  ?g <- (goal (id ?goal-id) (class BUFFER-CAP|DISCARD) (mode FINISHED) (outcome FAILED))
+  ?p <- (plan (goal-id ?goal-id) (id ?plan-id))
+  (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (action-name wp-get-shelf|wp-get|wp-put) (state FAILED) (param-values ? ? ?mps $?))
+  =>
+  ;remove the plan
+  (delayed-do-for-all-facts ((?pa plan-action)) (and (eq ?pa:goal-id ?goal-id) (eq ?pa:plan-id ?plan-id))
+    (retract ?pa)
+  )
+  (retract ?p)
+
+  ;reassert the goal
+  (modify ?g (mode FORMULATED) (outcome UNKNOWN))
+)
+
+(defrule goal-reasoner-evaluate-failed-payment-goal
+  "A ring payment was lost, reformulate the goal"
+  ?g <- (goal (id ?goal-id) (class ?class&PAY-FOR-RINGS-WITH-CAP-CARRIER|PAY-FOR-RINGS-WITH-BASE) (mode FINISHED) (outcome FAILED))
+  ?p <- (plan (goal-id ?goal-id) (id ?plan-id))
+  (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (action-name wp-get-shelf|wp-get|wp-put-slide-cc) (state FAILED) (param-values ? ? ?mps $?))
+  =>
+  ;remove the plan
+  (delayed-do-for-all-facts ((?pa plan-action)) (and (eq ?pa:goal-id ?goal-id) (eq ?pa:plan-id ?plan-id))
+    (retract ?pa)
+  )
+  (retract ?p)
+
+  ;reassert the goal
+  (modify ?g (mode FORMULATED) (outcome UNKNOWN))
+  (if (eq ?class PAY-FOR-RINGS-WITH-CAP-CARRIER) then
+    (modify ?g (class PAY-FOR-RINGS-WITH-BASE))
+  )
+)
+
+(defrule goal-reasoner-evaluate-failed-production-goal
+  "The goal failed and was not reformulated because the workpiece was lost. Escalate the error."
+  ?g <- (goal (id ?goal-id) (class ?goal-class&DELIVER|MOUNT-RING|MOUNT-CAP) (mode FINISHED) (outcome FAILED))
+  (goal-meta (goal-id ?goal-id) (order-id ?order-id))
+  (plan (goal-id ?goal-id) (id ?plan-id))
+  (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (action-name wp-get|wp-put) (state FAILED) (param-values ? ? ?mps $?))
+  =>
+  ;fail the entire tree
+  (delayed-do-for-all-facts ((?tree-goal goal) (?tree-goal-meta goal-meta))
+                            (and (eq ?tree-goal:id ?tree-goal-meta:goal-id)
+                                 (eq ?tree-goal-meta:order-id ?order-id)
+                                 (neq ?tree-goal:mode RETRACTED))
+      (modify ?tree-goal (mode FINISHED) (outcome FAILED))
+
+      (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?tree-goal:id)
+        (delayed-do-for-all-facts ((?pa plan-action)) (and (eq ?pa:goal-id ?tree-goal:id)  (eq ?pa:plan-id ?plan-id))
+          (retract ?pa)
+        )
+        (retract ?p)
+    )
+  )
+)
+
+(defrule goal-reasoner-evaluate-failed-order-tree
+  "If the root of an order tree fails, take care of open and fulfilled payments/buffered caps and
+  clean up the tree."
+  ?root <- (goal (id ?root-id) (mode FINISHED) (outcome FAILED))
+  (goal-meta (goal-id ?root-id) (root-for-order ?order-id))
+
+  ?instruct-root <- (goal (class INSTRUCT-ORDER) (id ?instruct-root-id))
+  (goal (parent ?instruct-root-id) (id ?instruct-root-child))
+  (goal-meta (order-id ?order-id) (goal-id ?instruct-root-child))
+
+  ;goals to handle
+  (goal (id ?buffer-goal) (class BUFFER-CAP) (mode ?buffer-goal-mode) (outcome ?buffer-goal-outcome) (params target-mps ?cs $?))
+  (goal-meta (goal-id ?buffer-goal) (order-id ?order-id))
+  (goal (id ?discard-goal) (class  DISCARD) (mode ?discard-goal-mode) (outcome ?discard-goal-outcome))
+  (goal-meta (goal-id ?discard-goal) (order-id ?order-id))
+
+  (wm-fact (key order meta wp-for-order args? wp ?wp-for-order ord ?order-id))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp-for-order col ?cap-color $?))
+  (wm-fact (key domain fact order-cap-color args? ord ?order-id col ?order-cap-color))
+  (wm-fact (key domain fact cs-can-perform args? m ?cs op ?cs-op))
+  =>
+  ;we did the buffer for another goal and didn't use it, offer used buffer
+  (if (and (eq ?cap-color CAP_NONE) (eq ?buffer-goal-mode RETRACTED) (eq ?buffer-goal-outcome COMPLETED)) then
+    (assert (wm-fact (key evaluation offer buffer-cap args? status COMPLETED color ?order-cap-color)))
+  )
+  ;the buffer was done for us by another goal and we used it, offer free buffer
+  (if (and (neq ?cap-color CAP_NONE) (eq ?buffer-goal-mode RETRACTED) (eq ?buffer-goal-outcome FAILED)) then
+    (assert (wm-fact (key evaluation offer buffer-cap args? status FORMULATED color ?order-cap-color)))
+  )
+  ;the cap was mounted but the discard was never executed, offer the free discard
+  (if (and (neq ?cap-color CAP_NONE) (eq ?discard-goal-mode RETRACTED) (eq ?discard-goal-outcome FAILED)) then
+    (assert (wm-fact (key evaluation offer discard args? status FORMULATED cs ?cs)))
+  )
+  ;the cap was not mounted but the discard was executed, offer the used discard
+  (if (and (eq ?cap-color CAP_NONE) (eq ?discard-goal-mode RETRACTED) (eq ?discard-goal-outcome COMPLETED)) then
+    (assert (wm-fact (key evaluation offer discard args? status COMPLETED cs ?cs)))
+  )
+
+  ;handle pay for for ring goals
+  (goal-reasoner-redistribute-payments ?order-id)
+
+  ;nuke the production tree
+  (goal-reasoner-nuke-subtree ?root)
+  ;nuke the instruction tree
+  (goal-reasoner-nuke-subtree ?instruct-root)
+)
+
+(defrule goal-reasoner-remove-wp-facts-on-removed-order-parent
+  "When the root of an order is removed, remove the facts describing the wp for the order"
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
+  (not (goal-meta (root-for-order ?order-id)))
+  =>
+	(assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))
+)
+
+; ================================= Goal Offers ============================
+
+(defrule goal-reasoner-take-offer-buffer-cap-completed
+  "Take an offer for a completed buffer cap goal"
+  ?offer <- (wm-fact (key evaluation offer buffer-cap args? status COMPLETED color ?order-cap-color))
+  ?goal <- (goal (class BUFFER-CAP) (id ?goal-id) (mode FORMULATED) (outcome UNKNOWN) (params $? cap-color ?order-cap-color $?))
+  (goal-meta (goal-id ?goal-id) (order-id ?order-id))
+  ?instruct-goal <- (goal (id ?instruct-goal-id) (class INSTRUCT-CS-BUFFER-CAP))
+  (goal-meta (goal-id ?instruct-goal-id) (order-id ?order-id))
+  =>
+  (modify ?goal (mode FINISHED) (outcome COMPLETED))
+  (modify ?instruct-goal (mode FINISHED) (outcome COMPLETED))
+  (retract ?offer)
+)
+
+(defrule goal-reasoner-take-offer-buffer-cap-formulated
+  "Take an offer for a formulated buffer cap goal if the own cap was never mounted but the goal is completed."
+  ?offer <- (wm-fact (key evaluation offer buffer-cap args? status FORMULATED color ?order-cap-color))
+  ?goal <- (goal (id ?goal-id) (class BUFFER-CAP) (mode FINISHED) (outcome COMPLETED) (params $? cap-color ?order-cap-color $?))
+  (goal-meta (goal-id ?goal-id) (order-id ?order-id))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE $?))
+  ?instruct-goal <- (goal (id ?instruct-goal-id) (class INSTRUCT-CS-BUFFER-CAP))
+  (goal-meta (goal-id ?instruct-goal-id) (order-id ?order-id))
+  =>
+  (modify ?goal (mode FORMULATED) (outcome UNKNOWN))
+  (modify ?instruct-goal (mode FORMULATED) (outcome UNKNOWN))
+  (retract ?offer)
+)
+
+(defrule goal-reasoner-take-offer-discard-completed
+  "Take an offer for a completed discard if the own one is just formulated."
+  ?offer <- (wm-fact (key evaluation offer discard args? status COMPLETED cs ?cs))
+  ?goal <- (goal (class DISCARD) (mode FORMULATED) (outcome UNKNOWN) (params $? wp-loc ?cs $?))
+  =>
+  (modify ?goal (mode FINISHED) (outcome COMPLETED))
+  (retract ?offer)
+)
+
+(defrule goal-reasoner-take-offer-discard-formulated
+  "Take an offer for a formulated discard if the own was completed but the own cap was never mounted."
+  ?offer <- (wm-fact (key evaluation offer discard args? status FORMULATED cs ?cs))
+  ?goal <- (goal (id ?goal-id) (class DISCARD) (mode FINISHED) (outcome COMPLETED) (params $? wp-loc ?cs $?))
+  (goal-meta (goal-id ?goal-id) (order-id ?order-id))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE $?))
+  =>
+  (modify ?goal (mode FORMULATED) (outcome UNKNOWN))
+  (retract ?offer)
+)
+
+(defrule goal-reasoner-take-offer-payment-completed
+  "Take an offer for a completed payment if the own one is just formulated."
+  ?offer <- (wm-fact (key evaluation offer payment args? status COMPLETED rs ?rs $?))
+  ?goal <- (goal (class PAY-FOR-RINGS-WITH-BASE)
+                 (mode FORMULATED) (outcome UNKNOWN) (params $? target-mps ?rs $?))
+  =>
+  (modify ?goal (mode FINISHED) (outcome COMPLETED))
+  (retract ?offer)
 )
 
 ; ================================= Goal Clean up ============================
@@ -629,13 +836,13 @@
 )
 
 (defrule goal-reasoner-clean-goals-separated-from-parent
-	?g <- (goal (parent ?pid&~nil))
-	(not (goal (id ?pid)))
-	=>
-	(retract ?g)
+  ?g <- (goal (parent ?pid&~nil))
+  (not (goal (id ?pid)))
+  =>
+  (retract ?g)
 )
 
 (deffunction is-goal-running (?mode)
-	(return (or (eq ?mode SELECTED) (eq ?mode EXPANDED)
-	            (eq ?mode COMMITTED) (eq ?mode DISPATCHED)))
+  (return (or (eq ?mode SELECTED) (eq ?mode EXPANDED)
+              (eq ?mode COMMITTED) (eq ?mode DISPATCHED)))
 )
