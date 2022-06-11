@@ -200,6 +200,7 @@ TagVisionThread::init()
 #endif
 		break;
 	case ARUCO:
+		//import camera matrix from tag_vision.yaml
 		{auto camera_matrix_float = config->get_floats((prefix + "camera_matrix").c_str());
 		std::vector<double> camera_matrix_double(camera_matrix_float.begin(), camera_matrix_float.end());
 		cameraMatrix_ = cv::Mat_<double>(3, 3);
@@ -211,7 +212,7 @@ TagVisionThread::init()
 				i++;
 			}
 		}
-		
+		//import distortion matrix from tag_vision.yaml
 		auto dist_coeffs_float = config->get_floats((prefix + "dist_coeffs").c_str());
 		std::vector<double> dist_coeffs_double(dist_coeffs_float.begin(), dist_coeffs_float.end());
 
