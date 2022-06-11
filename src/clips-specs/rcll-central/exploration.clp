@@ -12,6 +12,19 @@
   ?*EXP-SEARCH-LIMIT* = 1
 )
 
+(deffunction exp-assert-move
+	(?zone)
+	(bind ?goal (assert (goal (class EXPLORATION-MOVE)
+	        (id (sym-cat EXPLORATION-MOVE- (gensym*)))
+	        (sub-type SIMPLE)
+	        (priority 1.0)
+	        (meta-template goal-meta)
+	        (verbosity NOISY) (is-executable FALSE)
+	        (params zone ?zone)
+	        )))
+	(return ?goal)
+)
+
 (defrule exp-sync-ground-truth
 " When the RefBox sends ground-truth of a zone, update the corresponding
   domain fact. But only do so for ground-truth of the own team, this allows to
@@ -68,25 +81,95 @@
 	         (list-value ?x_max ?y_max))
 =>
 	(bind ?zones (create$))
-	(loop-for-count (?x ?x_min -1)
-		(loop-for-count (?y (+ 1 ?y_min) ?y_max)
-			(bind ?zones (append$ ?zones (translate-location-grid-to-map (abs ?x) ?y)))
-		)
-	)
-	(loop-for-count (?x 1 ?x_max)
-		(loop-for-count (?y (+ 1 ?y_min) ?y_max)
-			(bind ?zones (append$ ?zones (translate-location-grid-to-map (+ (abs ?x_min) (abs ?x)) ?y)))
+	(loop-for-count (?x ?x_min ?x_max)
+		(loop-for-count (?y ?y_min ?y_max)
+			(if (not (or (= ?x 0) (= ?y 0)))
+			 then
+				(bind ?team-prefix C)
+				(if (< ?x 0) then
+					(bind ?team-prefix M)
+				)
+				(bind ?zones (append$ ?zones (sym-cat ?team-prefix -Z (abs ?x) (abs ?y))))
+			)
 		)
 	)
 	(assert (exp-zone-margin ?zone-margin))
 
-   (progn$ (?zone ?zones)
-     (assert (wm-fact (key exploration fact line-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
-             (wm-fact (key exploration fact tag-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
-             (wm-fact (key exploration fact time-searched args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
-             (domain-fact (name zone-content) (param-values ?zone UNKNOWN))
-     )
-   )
+	(progn$ (?zone ?zones)
+		(assert (wm-fact (key exploration fact line-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
+		        (wm-fact (key exploration fact tag-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
+		        (wm-fact (key exploration fact time-searched args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
+		        (domain-fact (name zone-content) (param-values ?zone UNKNOWN))
+		)
+	)
+)
+
+(defrule exp-create-targets
+" Create exploration targets, a list of zones that is targeted in order."
+	(not (wm-fact (key exploration targets args? $?)))
+	(wm-fact (key exploration active) (value TRUE))
+	=>
+	(bind ?zones (create$))
+	(do-for-all-facts ((?zc domain-fact))
+		(and (eq ?zc:name zone-content)
+		     (eq (nth$ 2 ?zc:param-values) UNKNOWN))
+			(bind ?zones (append$ ?zones (nth$ 1 ?zc:param-values)))
+	)
+	(assert (wm-fact (key exploration targets args?)
+	                 (is-list TRUE)
+	                 (values (randomize$ ?zones)))
+	)
+)
+
+(defrule exp-assert-root
+	"Create the exploration root where all goals regarding the finding of stations
+   are located"
+	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	(domain-facts-loaded)
+	(not (goal (class EXPLORATION-ROOT)))
+	(wm-fact (key config rcll start-with-waiting-robots) (value TRUE))
+	(wm-fact (key refbox phase) (value EXPLORATION|PRODUCTION))
+	(wm-fact (key game state) (value RUNNING))
+	(wm-fact (key refbox team-color) (value ?color))
+	(wm-fact (key exploration active) (value TRUE))
+	=>
+	(bind ?g (goal-tree-assert-central-run-parallel EXPLORATION-ROOT))
+	(modify ?g (meta do-not-finish) (priority 0.0))
+)
+
+(defrule exp-move-executable
+" Move to a navgraph node
+"
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class EXPLORATION-MOVE)
+	                          (mode FORMULATED)
+	                          (params zone ?target)
+	                          (is-executable FALSE))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	=>
+	(printout t "Goal EXPLORATION-MOVE executable for " ?robot crlf)
+	(modify ?g (is-executable TRUE))
+)
+
+(defrule exp-create-move-goal-lacking-choice
+  "The robot has nothing it can do, move it across the map to explore"
+	(goal (id ?root-id) (class EXPLORATION-ROOT) (mode FORMULATED|DISPATCHED))
+	(wm-fact (key central agent robot-waiting args? r ?robot))
+	?exp-targ <- (wm-fact (key exploration targets args?) (values ?location $?locations))
+	(not (goal (class EXPLORATION-MOVE) (mode FORMULATED)))
+	(wm-fact (key exploration active) (type BOOL) (value TRUE))
+	=>
+	(bind ?goal
+	      (exp-assert-move ?location)
+	)
+	(modify ?goal (parent ?root-id))
+	(modify ?exp-targ (values ?locations))
+)
+
+(defrule goal-production-exploration-challenge-cleanup
+	?g <- (goal (class EXPLORATION-MOVE) (mode RETRACTED) (outcome FAILED|COMPLETED))
+	=>
+	(retract ?g)
 )
 
 

@@ -169,8 +169,7 @@
 
 (defrule goal-expander-move-out-of-way
 	?g <- (goal (id ?goal-id) (mode SELECTED) (class MOVE-OUT-OF-WAY)
-	            (params target-pos ?target-pos
-	                    location ?loc))
+	            (params target-pos ?target-pos))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-loc side ?curr-side))
 	=>
@@ -574,15 +573,15 @@
 
 (defrule goal-expander-navigation-challenge-move
 	?g <- (goal (id ?goal-id) (class NAVIGATION-CHALLENGE-MOVE) (mode SELECTED)
-				(params target ?target $?))
+				(params zone ?zone))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
 	(plan-assert-sequential NAVIGATION-CHALLENGE-MOVE-PLAN ?goal-id ?robot
 		(plan-assert-action go-wait
-			?robot ?curr-location ?curr-side ?target);target is a waitpoint
+			?robot ?curr-location ?curr-side ?zone)
 		(plan-assert-action wait-for-reached
-			?robot ?target);wait there
+			?robot ?zone) ; wait there until refbox confirmation
 	)
 	(modify ?g (mode EXPANDED))
 )
@@ -687,13 +686,13 @@
 
 (defrule goal-expander-exploration-challenge-move
 	?g <- (goal (id ?goal-id) (class EXPLORATION-MOVE) (mode SELECTED)
-	            (params target ?target $?))
+	            (params zone ?zone))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
 	(plan-assert-sequential EXPLORATION-MOVE-PLAN ?goal-id ?robot
 		(plan-assert-action go-wait
-			?robot ?curr-location ?curr-side ?target);target is a waitpoint
+			?robot ?curr-location ?curr-side ?zone)
 	)
 	(modify ?g (mode EXPANDED))
 )

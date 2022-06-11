@@ -530,7 +530,7 @@
 	            (sub-type SIMPLE)
 	            (verbosity NOISY) (is-executable FALSE)
 	            (meta-template goal-meta)
-	            (params target-pos ?location location ?location)
+	            (params target-pos ?location)
 	)))
 	(return ?goal)
 )
