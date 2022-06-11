@@ -55,10 +55,13 @@ TagVisionThread::TagVisionThread()
 	image_buffer_ = nullptr;
 	markers_      = nullptr;
 }
+// variable to name images when saving to file 
+int name_it_    = 0;
 
 void
 TagVisionThread::init()
-{
+{	
+	
 	config->add_change_handler(this);
 	// load config
 	// config prefix in string for concatinating
@@ -69,6 +72,7 @@ TagVisionThread::init()
 	std::string marker_type_str = config->get_string((prefix + "marker_type").c_str());
 	// load marker size and apply it
 	marker_size_ = config->get_uint((prefix + "marker_size").c_str());
+
 	if (marker_type_str.find("ARUCO") != std::string::npos
 	    || marker_type_str.find("APRILTAG") != std::string::npos) {
 		std::unordered_map<std::string, cv::aruco::PREDEFINED_DICTIONARY_NAME> aruco_tag_type_lookup = {
@@ -140,6 +144,8 @@ TagVisionThread::init()
 	                                                      firevision::YUV422_PLANAR,
 	                                                      this->img_width_,
 	                                                      this->img_height_);
+
+
 	if (!shm_buffer_->is_valid()) {
 		delete shm_buffer_;
 		delete fv_cam_;
@@ -194,10 +200,29 @@ TagVisionThread::init()
 #endif
 		break;
 	case ARUCO:
-		cameraMatrix_ = (cv::Mat_<double>(3, 3) << 1.31278706e+03, 0.00000000e+00, 7.69072438e+02, 0.00000000e+00, 1.31985642e+03, 5.88846023e+02 ,0.00000000e+00, 0.00000000e+00, 1.00000000e+00 );
-		distCoeffs_   = (cv::Mat_<double>(1, 4) << 0, 0, 0, 0);
+		{auto camera_matrix_float = config->get_floats((prefix + "camera_matrix").c_str());
+		std::vector<double> camera_matrix_double(camera_matrix_float.begin(), camera_matrix_float.end());
+		cameraMatrix_ = cv::Mat_<double>(3, 3);
+		int i = 0;
+		for (int row = 0; row < 3; row++){
+			for (int col = 0; col < 3; col++){
+				cameraMatrix_.at<double>(i) = camera_matrix_double[i];
+				logger->log_info(name(), "mat: %f ", cameraMatrix_.at<double>(i));
+				i++;
+			}
+		}
+		
+		auto dist_coeffs_float = config->get_floats((prefix + "dist_coeffs").c_str());
+		std::vector<double> dist_coeffs_double(dist_coeffs_float.begin(), dist_coeffs_float.end());
+
+		distCoeffs_   = cv::Mat_<double>(1, 5);
+		for (int k = 0; k < 5; k++){
+			distCoeffs_.at<double>(k)  = dist_coeffs_double[k];
+			logger->log_info(name(), "dis: %f ", distCoeffs_.at<double>(k));
+		}
+		}
 		break;
-	default: break;
+	default: break;						
 	}
 }
 
@@ -258,12 +283,25 @@ TagVisionThread::loop()
 	                    image_buffer_,
 	                    this->img_width_,
 	                    this->img_height_);
+	
+	
 	fv_cam_->dispose_buffer();
+
+
+	
+
 	// convert img
 	firevision::CvMatAdapter::convert_image_bgr(image_buffer_, ipl_image_);
+	// convert to grayscale
+		// TODO Add this??? 
 	// get marker from img
 	get_marker();
 
+	//Write images to file 
+	// std::string new_img_name = "/home/tom/Pictures/RoboCupCamCalib/" + std::to_string(name_it_ +1) + ".jpg";
+	// name_it_ ++;
+	// imwrite(new_img_name, ipl_image_);
+	
 	this->tag_interfaces_->update_blackboard(this->markers_, laser_line_ifs_);
 
 	cfg_mutex_.unlock();
@@ -271,7 +309,7 @@ TagVisionThread::loop()
 
 void
 TagVisionThread::get_marker()
-{
+{	
 	this->markers_->clear();
 	switch (marker_type_) {
 	case MarkerType::ALVAR: {
@@ -313,15 +351,18 @@ TagVisionThread::get_marker()
 		  ipl_image_, dictionary, markerCorners, markerIds, parameters, rejectedCandidates);
 		// if at least one marker detected
 		if (markerIds.size() > 0) {
+			//logger->log_info(name(), "Tag Detected");
 			cv::aruco::drawDetectedMarkers(ipl_image_, markerCorners, markerIds);
 		}
 		std::vector<cv::Vec3d> rvecs, tvecs;
 		for (std::vector<int>::size_type i = 0; i < markerIds.size(); i++) {
 			cv::aruco::estimatePoseSingleMarkers(
-			  markerCorners, marker_size_ / 1000., cameraMatrix_, distCoeffs_, rvecs, tvecs);
+			  markerCorners, marker_size_ / 1000. , cameraMatrix_, distCoeffs_, rvecs, tvecs);
 			cv::Mat rot_matrix;
 			cv::Rodrigues(rvecs[i], rot_matrix);
 			auto   tvec_scaled = 1000. * tvecs[i];
+			//log distance vectors in mm 
+			logger->log_info(name(), "x: %f y: %f z: %f ", tvec_scaled[0], tvec_scaled[1],tvec_scaled[2]);
 			double m00, m01, m02, m10, m11, m12, m20, m21, m22, qw, qx, qy, qz;
 			m00 = rot_matrix.at<double>(0, 0);
 			m01 = rot_matrix.at<double>(0, 1);
@@ -362,17 +403,18 @@ TagVisionThread::get_marker()
 				qz       = 0.25 * S;
 			}
 
-			TagVisionMarker tmp_marker{{tvec_scaled, {qw, qx, qy, qz}}, markerIds[i]};
-			markers_->push_back(tmp_marker);
-			//		cv::Mat outputImage;
-			//		ipl_image_.copyTo(outputImage);
-			//		for (unsigned int i = 0; i < rvecs.size(); ++i) {
-			//			auto rvec = rvecs[i];
-			//			auto tvec = tvecs[i];
-			//			cv::drawFrameAxes(outputImage, cameraMatrix_, distCoeffs_, rvec, tvec, 0.1);
-			//		}
-			//		cv::imshow("out", outputImage);
-			//		cv::waitKey(1);
+			//Output the Video and Overlays 
+			//TagVisionMarker tmp_marker{{tvec_scaled, {qw, qx, qy, qz}}, markerIds[i]};
+			//markers_->push_back(tmp_marker);
+				//cv::Mat outputImage;
+				//ipl_image_.copyTo(outputImage);
+				// for (unsigned int i = 0; i < rvecs.size(); ++i) {
+				// 	auto rvec = rvecs[i];
+				// 	auto tvec = tvecs[i];
+				// 	cv::drawFrameAxes(ipl_image_, cameraMatrix_, distCoeffs_, rvec, tvec, 0.1);
+				// }
+				//cv::imshow("out", outputImage);
+				//cv::waitKey();
 		}
 		break;
 	}

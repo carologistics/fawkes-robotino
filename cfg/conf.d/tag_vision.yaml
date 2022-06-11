@@ -49,4 +49,19 @@ plugins/tag_vision:
   alvar_camera_calib_file: /not/found
 
   # ar tag marker size in millimeter
-  marker_size: 135
+  marker_size: 130
+
+  # camera matrix
+  # These values are based on the tag camera calibrated in 2022
+  camera_matrix: [541.83897791, 0, 312.34902706,
+                  0, 539.27016132, 234.15780227,
+                  0, 0, 1]
+
+  # distortion Coeficents
+  dist_coeffs: [
+    0.11646948,
+    -0.43243322,
+    -0.00127437,
+    0.00096187,
+    0.46947971
+  ]
