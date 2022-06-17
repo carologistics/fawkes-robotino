@@ -470,8 +470,6 @@ function DRIVE_VS:init()
 end
 
 function DRIVE_VS:loop()
-   --TODO: set max speed
-
    if self.fsm.vars.msgid ~= object_tracking_if:msgid() then
       self.fsm.vars.msgid = object_tracking_if:msgid()
       if object_tracking_if:is_detected() then
