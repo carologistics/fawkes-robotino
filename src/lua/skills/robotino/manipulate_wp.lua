@@ -37,6 +37,22 @@ depends_interfaces = {
    {v = "line8", type="LaserLineInterface", id="/laser-lines/8"},
    {v = "laserline_switch", type = "SwitchInterface", id="laser-lines"},
    {v = "object_tracking_if", type = "ObjectTrackingInterface", id="object-tracking"},
+   {v = "tag_0", type = "Position3DInterface", id="/tag-vision/0"},
+   {v = "tag_1", type = "Position3DInterface", id="/tag-vision/1"},
+   {v = "tag_2", type = "Position3DInterface", id="/tag-vision/2"},
+   {v = "tag_3", type = "Position3DInterface", id="/tag-vision/3"},
+   {v = "tag_4", type = "Position3DInterface", id="/tag-vision/4"},
+   {v = "tag_5", type = "Position3DInterface", id="/tag-vision/5"},
+   {v = "tag_6", type = "Position3DInterface", id="/tag-vision/6"},
+   {v = "tag_7", type = "Position3DInterface", id="/tag-vision/7"},
+   {v = "tag_8", type = "Position3DInterface", id="/tag-vision/8"},
+   {v = "tag_9", type = "Position3DInterface", id="/tag-vision/9"},
+   {v = "tag_10", type = "Position3DInterface", id="/tag-vision/10"},
+   {v = "tag_11", type = "Position3DInterface", id="/tag-vision/11"},
+   {v = "tag_12", type = "Position3DInterface", id="/tag-vision/12"},
+   {v = "tag_13", type = "Position3DInterface", id="/tag-vision/13"},
+   {v = "tag_14", type = "Position3DInterface", id="/tag-vision/14"},
+   {v = "tag_15", type = "Position3DInterface", id="/tag-vision/15"},
    {v = "tag_info", type = "TagVisionInterface", id="/tag-vision/info"},
    {v = "arduino", type = "ArduinoInterface", id="Arduino"},
 }
@@ -55,6 +71,8 @@ local LASER_BASE_OFFSET    = 0.35 -- distance between robotino middle point and 
 local GRIPPER_TOLERANCE    = {x=0.005, y=0.001, z=0.001} -- accuracy
 local MISSING_MAX          = 2 -- limit for missing object detections in a row while fine-tuning gripper
 local LINE_MATCH_TOLERANCE = 0.3 -- meter threshold of laserline center to tag
+local MIN_VIS_HIST_LINE    = 5 -- minimum visibility history for laser-line before considering it
+local MIN_VIS_HIST_TAG     = 5 -- minimum visibility history for tag before considering it
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
@@ -370,13 +388,13 @@ function DRIVE_TO_LASER_LINE:init()
   elseif fsm.vars.side == "OUTPUT" then
     offset_y = -belt_offset_side
   elseif fsm.vars.side == "SLIDE" then
-    offset_y = belt_offset_side + slide_offset_side
+    offset_y = slide_offset_side
   elseif fsm.vars.side == "SHELF-LEFT" then
-    offset_y = belt_offset_side + left_shelf_offset_side
+    offset_y = left_shelf_offset_side
   elseif fsm.vars.side == "SHELF-MIDDLE" then
-    offset_y = belt_offset_side + middle_shelf_offset_side
+    offset_y = middle_shelf_offset_side
   elseif fsm.vars.side == "SHELF-RIGHT" then
-    offset_y = belt_offset_side + right_shelf_offset_side
+    offset_y = right_shelf_offset_side
   end
 
   local center = llutils.center(fsm.vars.matched_line)
