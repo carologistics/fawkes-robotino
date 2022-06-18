@@ -37,8 +37,10 @@
 #include <config/change_handler.h>
 
 // cv is needed for image conversion to alvar
+#pragma GCC diagnostic ignored "-Woverloaded-virtual"
 #include <opencv2/aruco.hpp>
 #include <opencv2/opencv.hpp>
+#pragma GCC diagnostic pop
 // alvar marker detection to get poses
 #ifdef HAVE_AR_TRACK_ALVAR
 #	include <ar_track_alvar/MarkerDetector.h>

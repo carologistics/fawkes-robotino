@@ -328,7 +328,7 @@ TagVisionThread::get_marker()
 			                             quaternion.at<double>(1, 0),
 			                             quaternion.at<double>(2, 0),
 			                             quaternion.at<double>(3, 0)}},
-			                           tmp_alvar_marker.GetId(),
+			                           (unsigned int)tmp_alvar_marker.GetId(),
 			                           marker_type_};
 			// skip the marker, if the pose is directly on the camera (error)
 			if (tmp_pose.translation[0] < 1 && tmp_pose.translation[1] < 1

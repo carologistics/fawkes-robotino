@@ -28,7 +28,9 @@
 #include <tf/types.h>
 #include <utils/math/angle.h>
 
+#pragma GCC diagnostic ignored "-Woverloaded-virtual"
 #include <opencv2/opencv.hpp>
+#pragma GCC diagnostic pop
 #include <string>
 
 #ifdef HAVE_AR_TRACK_ALVAR
