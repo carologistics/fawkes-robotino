@@ -330,8 +330,13 @@ ObjectTrackingThread::loop()
 
 	//get laser line if possible
 	fawkes::LaserLineInterface *ll;
-	if (!laserline_get_best_fit(ll))
+	if (!laserline_get_best_fit(ll)){
+		msgid_++;
+		object_tracking_if_->set_msgid(msgid_);
+		object_tracking_if_->set_detected(false);
+		object_tracking_if_->write();
 		return;
+	}
 
 	//detect objects
 	std::vector<std::array<float, 4>> out_boxes;
