@@ -321,9 +321,9 @@ TagVisionThread::get_marker()
 			alvar::Pose tmp_pose   = tmp_alvar_marker.pose;
 			cv::Mat     quaternion = (cv::Mat_<double>(4, 1) << 0, 0, 0, 0);
 			tmp_pose.GetQuaternion(quaternion);
-			TagVisionMarker tmp_marker{{{tmp_pose.translation[ALVAR_TRANS::A_T_X],
-			                             tmp_pose.translation[ALVAR_TRANS::A_T_Y],
-			                             tmp_pose.translation[ALVAR_TRANS::A_T_Z]},
+			TagVisionMarker tmp_marker{{{tmp_pose.translation[TRANS::T_X],
+			                             tmp_pose.translation[TRANS::T_Y],
+			                             tmp_pose.translation[TRANS::T_Z]},
 			                            {quaternion.at<double>(0, 0),
 			                             quaternion.at<double>(1, 0),
 			                             quaternion.at<double>(2, 0),

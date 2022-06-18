@@ -88,11 +88,6 @@ enum TRANS {
 	T_Z = 2,
 };
 
-enum ALVAR_TRANS {
-	A_T_X = 2,
-	A_T_Y = 0,
-	A_T_Z = 1,
-};
 class TagPositionInterfaceHelper
 {
 public:
