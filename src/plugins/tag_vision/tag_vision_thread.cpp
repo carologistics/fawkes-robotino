@@ -53,7 +53,6 @@ TagVisionThread::TagVisionThread()
 	fv_cam_       = nullptr;
 	shm_buffer_   = nullptr;
 	image_buffer_ = nullptr;
-	markers_      = nullptr;
 }
 // variable to name images when saving to file 
 int name_it_    = 0;
@@ -108,7 +107,6 @@ TagVisionThread::init()
 		marker_type_ = MarkerType::ALVAR;
 	else
 		throw fawkes::Exception("Invalid marker type selected!");
-	markers_ = std::make_shared<std::vector<TagVisionMarker>>();
 
 	// Image Buffer ID
 	shm_id_ = config->get_string((prefix + "shm_image_id").c_str());
@@ -233,7 +231,7 @@ TagVisionThread::finalize()
 	vision_master->unregister_thread(this);
 	config->rem_change_handler(this);
 	// free the markers
-	this->markers_->clear();
+	markers_.clear();
 	delete fv_cam_;
 	fv_cam_ = nullptr;
 	delete shm_buffer_;
@@ -302,16 +300,16 @@ TagVisionThread::loop()
 	// std::string new_img_name = "/home/tom/Pictures/RoboCupCamCalib/" + std::to_string(name_it_ +1) + ".jpg";
 	// name_it_ ++;
 	// imwrite(new_img_name, ipl_image_);
-	
-	this->tag_interfaces_->update_blackboard(this->markers_, laser_line_ifs_);
+
+	this->tag_interfaces_->update_blackboard(markers_, laser_line_ifs_);
 
 	cfg_mutex_.unlock();
 }
 
 void
 TagVisionThread::get_marker()
-{	
-	this->markers_->clear();
+{
+	markers_.clear();
 	switch (marker_type_) {
 	case MarkerType::ALVAR: {
 		// detect makres on image
@@ -337,7 +335,7 @@ TagVisionThread::get_marker()
 			    && tmp_pose.translation[2] < 1) {
 				continue;
 			}
-			this->markers_->push_back(tmp_marker);
+			markers_.push_back(tmp_marker);
 			// add up to markers
 			tmp_alvar_marker.Visualize(ipl_image_, &alvar_cam_);
 		}
@@ -409,7 +407,7 @@ TagVisionThread::get_marker()
 			TagVisionMarker tmp_marker{{tvec_scaled, {qw, qx, qy, qz}},
 			                           (unsigned int)markerIds[i],
 			                           marker_type_};
-			markers_->push_back(tmp_marker);
+			markers_.push_back(tmp_marker);
 			//cv::Mat outputImage;
 			//ipl_image_.copyTo(outputImage);
 			// for (unsigned int i = 0; i < rvecs.size(); ++i) {

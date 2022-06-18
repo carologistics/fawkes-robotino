@@ -58,8 +58,8 @@ public:
 	/// Destructor
 	~TagPositionList();
 
-	void update_blackboard(std::shared_ptr<std::vector<TagVisionMarker>> marker_list,
-	                       std::vector<fawkes::LaserLineInterface *> *   laser_line_ifs);
+	void update_blackboard(std::vector<TagVisionMarker> &             marker_list,
+	                       std::vector<fawkes::LaserLineInterface *> *laser_line_ifs);
 
 	TagPositionInterfaceHelper *find_suitable_interface(const TagVisionMarker &) const;
 

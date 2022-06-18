@@ -109,7 +109,7 @@ private:
 	cv::Mat                               distCoeffs_;
 	cv::aruco::PREDEFINED_DICTIONARY_NAME aruco_tag_type_;
 	/// store the markers, containing the poses
-	std::shared_ptr<std::vector<TagVisionMarker>> markers_;
+	std::vector<TagVisionMarker> markers_;
 	/// the size of a marker in millimeter
 	uint marker_size_;
 	/// function to get the markers from an image

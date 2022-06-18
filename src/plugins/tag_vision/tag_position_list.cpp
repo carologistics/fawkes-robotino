@@ -246,11 +246,11 @@ TagPositionList::find_suitable_interface(const TagVisionMarker &marker) const
  * @param laser_line_ifs Laser lines for orientation sanity check
  */
 void
-TagPositionList::update_blackboard(std::shared_ptr<std::vector<TagVisionMarker>> marker_list,
-                                   std::vector<fawkes::LaserLineInterface *> *   laser_line_ifs)
+TagPositionList::update_blackboard(std::vector<TagVisionMarker>  &            marker_list,
+                                   std::vector<fawkes::LaserLineInterface *> *laser_line_ifs)
 {
 	int i = 0;
-	for (auto &marker : *marker_list) {
+	for (auto &marker : marker_list) {
 		// skip the marker, if the pose is directly on the camera (error)
 		TagPose tmp_pose = marker.pose;
 		if (tmp_pose.tvec[0] < 1 && tmp_pose.tvec[1] < 1 && tmp_pose.tvec[2] < 1) {
