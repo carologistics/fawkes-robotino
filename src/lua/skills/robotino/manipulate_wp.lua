@@ -37,6 +37,23 @@ depends_interfaces = {
    {v = "line8", type="LaserLineInterface", id="/laser-lines/8"},
    {v = "laserline_switch", type = "SwitchInterface", id="laser-lines"},
    {v = "object_tracking_if", type = "ObjectTrackingInterface", id="object-tracking"},
+   {v = "tag_0", type = "Position3DInterface", id="/tag-vision/0"},
+   {v = "tag_1", type = "Position3DInterface", id="/tag-vision/1"},
+   {v = "tag_2", type = "Position3DInterface", id="/tag-vision/2"},
+   {v = "tag_3", type = "Position3DInterface", id="/tag-vision/3"},
+   {v = "tag_4", type = "Position3DInterface", id="/tag-vision/4"},
+   {v = "tag_5", type = "Position3DInterface", id="/tag-vision/5"},
+   {v = "tag_6", type = "Position3DInterface", id="/tag-vision/6"},
+   {v = "tag_7", type = "Position3DInterface", id="/tag-vision/7"},
+   {v = "tag_8", type = "Position3DInterface", id="/tag-vision/8"},
+   {v = "tag_9", type = "Position3DInterface", id="/tag-vision/9"},
+   {v = "tag_10", type = "Position3DInterface", id="/tag-vision/10"},
+   {v = "tag_11", type = "Position3DInterface", id="/tag-vision/11"},
+   {v = "tag_12", type = "Position3DInterface", id="/tag-vision/12"},
+   {v = "tag_13", type = "Position3DInterface", id="/tag-vision/13"},
+   {v = "tag_14", type = "Position3DInterface", id="/tag-vision/14"},
+   {v = "tag_15", type = "Position3DInterface", id="/tag-vision/15"},
+   {v = "tag_info", type = "TagVisionInterface", id="/tag-vision/info"},
    {v = "arduino", type = "ArduinoInterface", id="Arduino"},
 }
 
@@ -49,54 +66,30 @@ Parameters:
       @param side    the side of the mps: (INPUT | OUTPUT | SHELF-LEFT | SHELF-MIDDLE | SHELF-RIGHT | SLIDE)
 ]==]
 
-local EXPECTED_BASE_OFFSET       = 0.5 -- distance between robotino middle point and workpiece
-                                        -- used as initial target position while searching
-local LASER_BASE_OFFSET          = 0.35 -- distance between robotino middle point and laser-line
-                                        -- used for DRIVE_TO_LASER_LINE
-local GRIPPER_TOLERANCE          = {x=0.005, y=0.001, z=0.001} -- accuracy
-local MISSING_MAX                = 2 -- limit for missing object detections in a row while fine-tuning gripper
-
--- Tunables
-local LINE_MATCH_TOLERANCE=1.2      -- meter threshold of laserline to navgraph point
-local LINE_MATCH_ANG_TOLERANCE=0.1 -- rad threshold of laserline to navgraph point
-local NAVGRAPH_LIN_TOLERANCE=0.8    -- meter threshold of laser to navgraph point
-local NAVGRAPH_ANG_TOLERANCE=0.5    -- rad threshold of laser to navgraph point
-local LINE_LENGTH_MIN=0.64          -- minimum laser line length
-local LINE_LENGTH_MAX=0.71          -- maximum laser line length
-
-local MIN_VIS_HIST_LINE=5 --15
-local MIN_VIS_HIST_LINE_SEARCH=6 --15
+local LASER_BASE_OFFSET    = 0.35 -- distance between robotino middle point and laser-line
+                                  -- used for DRIVE_TO_LASER_LINE
+local GRIPPER_TOLERANCE    = {x=0.005, y=0.001, z=0.001} -- accuracy
+local MISSING_MAX          = 2 -- limit for missing object detections in a row while fine-tuning gripper
+local LINE_MATCH_TOLERANCE = 0.3 -- meter threshold of laserline center to tag
+local MIN_VIS_HIST_LINE    = 5 -- minimum visibility history for laser-line before considering it
+local MIN_VIS_HIST_TAG     = 5 -- minimum visibility history for tag before considering it
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
 local llutils = require("fawkes.laser-lines_utils")
-
+local tag_utils = require("tag_utils")
 local tfm = require("fawkes.tfutils")
 
 -- Load config
-local for_gazebo = false
 local x_max = 0.115
 local y_max = 0.075
 local z_max = 0.057
 
-local puck_size   = 0.02
-local puck_height = 0.0225
-
-local belt_height      = 0.92
-local belt_length      = 0.35
 local belt_offset_side = 0.025
-
 local slide_offset_side = -0.225
-local slide_height      = 0.92
-
 local left_shelf_offset_side   = -0.075
 local middle_shelf_offset_side = -0.175
 local right_shelf_offset_side  = -0.275
-
--- check if gazebo is used
-if config:exists("plugins/object_tracking/for_gazebo") then
-  for_gazebo = config:get_bool("plugins/object_tracking/for_gazebo")
-end
 
 -- read gripper config
 if config:exists("/arduino/x_max") then
@@ -110,29 +103,13 @@ if config:exists("/arduino/max_z") then
 end
 
 -- read config values for computing expected target position
--- puck
-if config:exists("plugins/object_tracking/puck_values/puck_size") then
-  puck_size = config:get_float("plugins/object_tracking/puck_values/puck_size")
-end
-if config:exists("plugins/object_tracking/puck_values/puck_height") then
-  puck_height = config:get_float("plugins/object_tracking/puck_values/puck_height")
-end
--- belt
-if config:exists("plugins/object_tracking/puck_values/belt_height") then
-  belt_height = config:get_float("plugins/object_tracking/puck_values/belt_height")
-end
-if config:exists("plugins/object_tracking/puck_values/belt_length") then
-  belt_length = config:get_float("plugins/object_tracking/puck_values/belt_length")
-end
+-- conveyor
 if config:exists("plugins/object_tracking/puck_values/belt_offset_side") then
   belt_offset_side = config:get_float("plugins/object_tracking/puck_values/belt_offset_side")
 end
 -- slide
 if config:exists("plugins/object_tracking/puck_values/slide_offset_side") then
   slide_offset_side = config:get_float("plugins/object_tracking/puck_values/slide_offset_side")
-end
-if config:exists("plugins/object_tracking/puck_values/slide_height") then
-  slide_height = config:get_float("plugins/object_tracking/puck_values/slide_height")
 end
 -- shelf
 if config:exists("plugins/object_tracking/puck_values/left_shelf_offset_side") then
@@ -146,55 +123,39 @@ if config:exists("plugins/object_tracking/puck_values/right_shelf_offset_side") 
 end
 
 -- Match tag to navgraph point
-function match_line(self,lines)
+function match_line(tag,lines)
    local matched_line = nil
 
-   local navgraph_point_laser = tfm.transform6D(
-         { x=self.fsm.vars.expected_pos_x, y=self.fsm.vars.expected_pos_y, z=0,
-           ori=fawkes.tf.create_quaternion_from_yaw(self.fsm.vars.expected_pos_ori) },
-           "/map", "/base_laser")
-
-   for k,line in pairs(self.fsm.vars.lines) do
-      local line_center = llutils.center(line, 0)
-      local d_navgraph_to_line = math.vec_length(navgraph_point_laser.x - line_center.x, navgraph_point_laser.y - line_center.y)
-
-      -- this is difference from the laser to navgraph point
-      local d_laser_to_navgraph = math.vec_length(navgraph_point_laser.x, navgraph_point_laser.y)
-
-      -- angular distance between the navgraph point (pointing towards the machine) and the line bearing
-      -- (also pointing towards the machine when the robot is standing in front of it).
-      -- This value should be very low when we are standing in front of the correct machine.
-      local yaw = fawkes.tf.get_yaw(navgraph_point_laser.ori)
-      local ang_dist = math.angle_distance(yaw, line:bearing())
-
-      printf ("check line: " .. line:id() .. " " .. d_navgraph_to_line .. " " .. d_laser_to_navgraph .. " " .. math.abs(yaw) .. " " .. ang_dist)
-      if line:visibility_history() >= MIN_VIS_HIST_LINE
-         and d_navgraph_to_line < LINE_MATCH_TOLERANCE
-         and d_laser_to_navgraph < NAVGRAPH_LIN_TOLERANCE
-         and math.abs(yaw) < NAVGRAPH_ANG_TOLERANCE
-         and ang_dist < LINE_MATCH_ANG_TOLERANCE
-      then
-         matched_line = line
+   if tag and tag:visibility_history() >= MIN_VIS_HIST_TAG then
+      local tag_laser = tfm.transform6D(
+         { x=tag:translation(0), y=tag:translation(1), z=tag:translation(2),
+            ori = { x=tag:rotation(0), y=tag:rotation(1), z=tag:rotation(2), w=tag:rotation(3)  }
+         }, tag:frame(), "/base_laser"
+      )
+      local min_dist = LINE_MATCH_TOLERANCE
+      for k,line in pairs(lines) do
+         local line_center = llutils.center(line, 0)
+         local dist = math.vec_length(tag_laser.x - line_center.x, tag_laser.y - line_center.y)
+         if line:visibility_history() >= MIN_VIS_HIST_LINE
+            and dist < min_dist
+         then
+            min_dist = dist
+            matched_line = line
+            printf("Line dist: %f", dist)
+         end
       end
    end
 
    return matched_line
 end
 
-function laser_line_found(self)
-  self.fsm.vars.matched_line = match_line(self, self.fsm.vars.lines)
-
-  if self.fsm.vars.matched_line ~= nil then
-    printf ("found line: " .. self.fsm.vars.matched_line:id())
-    self.fsm.vars.line_point = llutils.point_in_front(llutils.center(self.fsm.vars.matched_line), 0)
-  end
-
-  return self.fsm.vars.line_point ~= nil
+function laser_line_found()
+  local tag = tag_utils.iface_for_id(fsm.vars.tags, tag_info, fsm.vars.tag_id)
+  fsm.vars.matched_line = match_line(tag, fsm.vars.lines)
+  return fsm.vars.matched_line ~= nil
 end
 
 function gripper_aligned()
-  -- wait one main loop cycle after gripper finaled
-  -- (because object tracking is updated after each main loop)
   if fsm.vars.gripper_wait < 1 then
     return false
   end
@@ -237,7 +198,6 @@ function set_gripper(x, y, z)
     print("Gripper cannot reache z-value: " .. z .. " ! Clipped to " .. z_clipped)
   end
 
-  -- allow adjustments while moving gripper using a higher tolerance
   if (not arduino:is_final() and (
      math.abs(fsm.vars.gripper_target_pos_x - x_clipped) > GRIPPER_TOLERANCE.x * 2 or
      math.abs(fsm.vars.gripper_target_pos_y - y_clipped) > GRIPPER_TOLERANCE.y * 1 or
@@ -268,61 +228,6 @@ function move_gripper_default_pose()
   move_abs_message:set_z(z_max)
   move_abs_message:set_target_frame("gripper_home")
   arduino:msgq_enqueue_copy(move_abs_message)
-end
-
-function compute_expected_pos_x(x_offset)
-  if for_gazebo then
-    return fsm.vars.mps_x + x_offset * math.cos(fsm.vars.mps_ori) -
-           (belt_length/2 - puck_size/2 + EXPECTED_BASE_OFFSET) * math.sin(fsm.vars.mps_ori)
-  else
-    return fsm.vars.mps_x + x_offset * math.sin(fsm.vars.mps_ori) +
-           (belt_length/2 - puck_size/2 + EXPECTED_BASE_OFFSET) * math.cos(fsm.vars.mps_ori)
-  end
-end
-
-function compute_expected_pos_y(y_offset)
-  if for_gazebo then
-    return fsm.vars.mps_y + y_offset * math.sin(fsm.vars.mps_ori) +
-           (belt_length/2 - puck_size/2 + EXPECTED_BASE_OFFSET) * math.cos(fsm.vars.mps_ori)
-  else
-    return fsm.vars.mps_y - y_offset * math.cos(fsm.vars.mps_ori) +
-           (belt_length/2 - puck_size/2 + EXPECTED_BASE_OFFSET) * math.sin(fsm.vars.mps_ori)
-  end
-end
-
--- compute the expected target object position
-function get_pos_for_side(side)
-  if side == "INPUT" then
-    return {x = compute_expected_pos_x(0),
-            y = compute_expected_pos_y(0)}
-  elseif side == "OUTPUT" then
-    if for_gazebo then
-      return {x = fsm.vars.mps_x + belt_offset_side * math.cos(fsm.vars.mps_ori) +
-                  (belt_length/2 - puck_size/2 + EXPECTED_BASE_OFFSET) * math.sin(fsm.vars.mps_ori),
-              y = fsm.vars.mps_y + belt_offset_side * math.sin(fsm.vars.mps_ori) -
-                  (belt_length/2 - puck_size/2 + EXPECTED_BASE_OFFSET) * math.cos(fsm.vars.mps_ori)}
-    else
-      return {x = fsm.vars.mps_x -
-                  (belt_length/2 - puck_size/2 + EXPECTED_BASE_OFFSET) * math.cos(fsm.vars.mps_ori),
-              y = fsm.vars.mps_y -
-                  (belt_length/2 - puck_size/2 + EXPECTED_BASE_OFFSET) * math.sin(fsm.vars.mps_ori)}
-    end
-  elseif side == "SLIDE" then
-    return {x = compute_expected_pos_x(slide_offset_side),
-            y = compute_expected_pos_y(slide_offset_side)}
-  elseif side == "SHELF-LEFT" then
-    return {x = compute_expected_pos_x(left_shelf_offset_side),
-            y = compute_expected_pos_y(left_shelf_offset_side)}
-  elseif side == "SHELF-MIDDLE" then
-    return {x = compute_expected_pos_x(middle_shelf_offset_side),
-            y = compute_expected_pos_y(middle_shelf_offset_side)}
-  elseif side == "SHELF-RIGHT" then
-    return {x = compute_expected_pos_x(right_shelf_offset_side),
-            y = compute_expected_pos_y(right_shelf_offset_side)}
-  else
-    print_error("Error:" .. fsm.vars.side .. "is not a valid side!")
-    return nil
-  end
 end
 
 function input_invalid()
@@ -359,13 +264,12 @@ function input_invalid()
     end
   end
 
-  -- arduino:is_gripper_closed() always returns true
-  --if (fsm.vars.target == "SLIDE" or fsm.vars.target == "CONVEYOR") and
-  --    not arduino:is_gripper_closed() then
-  --  print_error("If a conveyor or slide is targeted, " ..
-  --    "make sure there is a workpiece in the gripper!")
-  --  return true
-  --end
+  if (fsm.vars.target == "SLIDE" or fsm.vars.target == "CONVEYOR") and
+      not arduino:is_gripper_closed() then
+    print_error("If a conveyor or slide is targeted, " ..
+      "make sure there is a workpiece in the gripper!")
+    return true
+  end
   return false
 end
 
@@ -376,7 +280,6 @@ end
 fsm:define_states{ export_to=_M, closure={MISSING_MAX=MISSING_MAX},
    {"INIT",                  JumpState},
    {"START_TRACKING",        JumpState},
-   {"SEARCH",                SkillJumpState, skills={{goto}},            final_to="MOVE_BASE_AND_GRIPPER", fail_to="FIND_LASER_LINE"},
    {"FIND_LASER_LINE",       JumpState},
    {"DRIVE_TO_LASER_LINE",   SkillJumpState, skills={{motor_move}},      final_to="AT_LASER_LINE", fail_to="FAILED"},
    {"AT_LASER_LINE",         JumpState},
@@ -400,26 +303,30 @@ fsm:add_transitions{
 }
 
 function INIT:init()
-  -- initialize variables
-  fsm.vars.missing_detections   = 0
-  fsm.vars.msgid                = 0
-  fsm.vars.out_of_reach         = false
-  fsm.vars.gripper_target_pos_x = 0
-  fsm.vars.gripper_target_pos_y = 0
-  fsm.vars.gripper_target_pos_z = 0
-  fsm.vars.gripper_wait         = 0
-
   laserline_switch:msgq_enqueue(laserline_switch.EnableSwitchMessage:new())
 
-  self.fsm.vars.lines = {}
-  self.fsm.vars.lines[line1:id()] = line1
-  self.fsm.vars.lines[line2:id()] = line2
-  self.fsm.vars.lines[line3:id()] = line3
-  self.fsm.vars.lines[line4:id()] = line4
-  self.fsm.vars.lines[line5:id()] = line5
-  self.fsm.vars.lines[line6:id()] = line6
-  self.fsm.vars.lines[line7:id()] = line7
-  self.fsm.vars.lines[line8:id()] = line8
+  fsm.vars.lines = {}
+  fsm.vars.lines[line1:id()] = line1
+  fsm.vars.lines[line2:id()] = line2
+  fsm.vars.lines[line3:id()] = line3
+  fsm.vars.lines[line4:id()] = line4
+  fsm.vars.lines[line5:id()] = line5
+  fsm.vars.lines[line6:id()] = line6
+  fsm.vars.lines[line7:id()] = line7
+  fsm.vars.lines[line8:id()] = line8
+
+  fsm.vars.tags = { tag_0, tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7,
+  tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15 }
+
+  if fsm.vars.side == "OUTPUT" then
+    fsm.vars.tag_id = navgraph:node(fsm.vars.mps):property_as_float("tag_output")
+  else
+    fsm.vars.tag_id = navgraph:node(fsm.vars.mps):property_as_float("tag_input")
+  end
+
+  fsm.vars.missing_detections = 0
+  fsm.vars.msgid              = 0
+  fsm.vars.out_of_reach       = false
 
   local TARGET_NAMES = {["WORKPIECE"] = object_tracking_if.WORKPIECE,
                         ["CONVEYOR"]  = object_tracking_if.CONVEYOR_BELT_FRONT,
@@ -447,8 +354,13 @@ function INIT:init()
 
   -- get ENUM of input variables
   fsm.vars.target_object_type = TARGET_NAMES[fsm.vars.target]
-  fsm.vars.expected_mps       = MPS_NAMES[fsm.vars.mps]
-  fsm.vars.expected_side      = SIDE_NAMES[fsm.vars.side]
+  fsm.vars.expected_mps = MPS_NAMES[fsm.vars.mps]
+  fsm.vars.expected_side = SIDE_NAMES[fsm.vars.side]
+
+  fsm.vars.gripper_target_pos_x = 0
+  fsm.vars.gripper_target_pos_y = 0
+  fsm.vars.gripper_target_pos_z = 0
+  fsm.vars.gripper_wait       = 0
 end
 
 function START_TRACKING:init()
@@ -457,51 +369,14 @@ function START_TRACKING:init()
     fsm.vars.target_object_type, fsm.vars.expected_mps, fsm.vars.expected_side)
   object_tracking_if:msgq_enqueue_copy(msg)
 
-  -- compute expected target location
-  local node = navgraph:node(fsm.vars.mps)
-  fsm.vars.mps_x = node:x()
-  fsm.vars.mps_y = node:y()
-  fsm.vars.mps_ori = node:property_as_float("orientation")
-
-  local expected_pos = get_pos_for_side(fsm.vars.side)
-  fsm.vars.expected_pos_x = expected_pos.x
-  fsm.vars.expected_pos_y = expected_pos.y
-
-  if fsm.vars.side == "OUTPUT" then
-    if for_gazebo then
-      fsm.vars.expected_pos_ori = fsm.vars.mps_ori + 1.57
-    else
-      fsm.vars.expected_pos_ori = fsm.vars.mps_ori
-    end
-  else
-    if for_gazebo then
-      fsm.vars.expected_pos_ori = fsm.vars.mps_ori + 1.57 + math.pi
-    else
-      fsm.vars.expected_pos_ori = fsm.vars.mps_ori + math.pi
-    end
-  end
-
-  -- meanwhile open gripper
+  -- open gripper
   if fsm.vars.target == "WORKPIECE" then
     local open_msg = arduino.OpenGripperMessage:new()
     arduino:msgq_enqueue(open_msg)
   end
-  move_gripper_default_pose()
-end
 
-function SEARCH:init()
-  fsm.vars.time_start = fawkes.Time:new():in_msec()
+  -- move to default pose
   move_gripper_default_pose()
-  -- move roughly to expected position
-  self.args["goto"] = {x = fsm.vars.expected_pos_x,
-                       y = fsm.vars.expected_pos_y,
-                       ori = fsm.vars.expected_pos_ori,
-                       end_early = true}
-end
-
-function SEARCH:exit()
-  local now = fawkes.Time:new():in_msec()
-  print_info("[VS] Positioning took " .. now - fsm.vars.time_start .. " milliseconds")
 end
 
 function DRIVE_TO_LASER_LINE:init()
@@ -513,13 +388,13 @@ function DRIVE_TO_LASER_LINE:init()
   elseif fsm.vars.side == "OUTPUT" then
     offset_y = -belt_offset_side
   elseif fsm.vars.side == "SLIDE" then
-    offset_y = belt_offset_side + slide_offset_side
+    offset_y = slide_offset_side
   elseif fsm.vars.side == "SHELF-LEFT" then
-    offset_y = belt_offset_side + left_shelf_offset_side
+    offset_y = left_shelf_offset_side
   elseif fsm.vars.side == "SHELF-MIDDLE" then
-    offset_y = belt_offset_side + middle_shelf_offset_side
+    offset_y = middle_shelf_offset_side
   elseif fsm.vars.side == "SHELF-RIGHT" then
-    offset_y = belt_offset_side + right_shelf_offset_side
+    offset_y = right_shelf_offset_side
   end
 
   local center = llutils.center(fsm.vars.matched_line)
@@ -564,7 +439,6 @@ function AT_LASER_LINE:loop()
 end
 
 function MOVE_BASE_AND_GRIPPER:init()
-  fsm.vars.time_start = fawkes.Time:new():in_msec()
   -- move base to target pose using visual servoing
   self.args["motor_move"] = {x = object_tracking_if:base_frame(0),
                              y = object_tracking_if:base_frame(1),
@@ -624,24 +498,13 @@ function FINE_TUNE_GRIPPER:loop()
               gripper_target.z)
 end
 
-function FINE_TUNE_GRIPPER:exit()
-  local now = fawkes.Time:new():in_msec()
-  print_info("[VS] Alignment took " .. now - fsm.vars.time_start .. " milliseconds")
-end
-
 function GRIPPER_ROUTINE:init()
-  fsm.vars.time_start = fawkes.Time:new():in_msec()
   -- perform pick or put routine
   if fsm.vars.target == "WORKPIECE" then
     self.args["pick_or_put_vs"].action = "PICK"
   else
     self.args["pick_or_put_vs"].action = "PUT"
   end
-end
-
-function GRIPPER_ROUTINE:exit()
-  local now = fawkes.Time:new():in_msec()
-  print_info("[VS] Gripper routine took " .. now - fsm.vars.time_start .. " milliseconds")
 end
 
 -- end tracking afterwards

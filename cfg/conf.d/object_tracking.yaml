@@ -6,6 +6,18 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/webview
 plugins/object_tracking:
   if_name: "object-tracking"
 
+  if:
+    laser_lines: [
+      "/laser-lines/1",
+      "/laser-lines/2",
+      "/laser-lines/3",
+      "/laser-lines/4",
+      "/laser-lines/5",
+      "/laser-lines/6",
+      "/laser-lines/7",
+      "/laser-lines/8"
+    ]
+
   for_gazebo: false
 
   puck_values:
