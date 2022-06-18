@@ -159,15 +159,6 @@ ObjectTrackingThread::init()
 
 	filter_size_ = sizeof(filter_weights_) / sizeof(filter_weights_[0]);
 
-	//normalize filter_weights
-	float weights_sum = 0;
-	for (size_t i = 0; i < filter_size_; i++) {
-		weights_sum += filter_weights_[i];
-	}
-	for (size_t i = 0; i < filter_size_; i++) {
-		filter_weights_[i] = filter_weights_[i] / weights_sum;
-	}
-
 	//open ObjectTrackingInterface for writing
 	object_tracking_if_name_ = config->get_string("plugins/object_tracking/if_name");
 	object_tracking_if_ =
@@ -395,8 +386,8 @@ ObjectTrackingThread::loop()
 		return;
 	}
 
-	//get yaw difference between robot and mps and expected position in cam frame
-	float                                  mps_angle = ll->bearing();
+	//get mps angle and expected object position through laser-data
+	float                                  mps_angle = fabs(ll->bearing());
 	fawkes::tf::Stamped<fawkes::tf::Point> expected_pos_cam;
 	fawkes::tf::Stamped<fawkes::tf::Point> expected_pos;
 	laserline_get_expected_position(ll, expected_pos);
@@ -571,7 +562,7 @@ ObjectTrackingThread::laserline_get_best_fit(fawkes::LaserLineInterface *&best_f
 			continue;
 		}
 		// just if robot is in front (~20°)
-		if (fabs(ll->bearing() < ll_max_angle_)) {
+		if (fabs(ll->bearing()) < ll_max_angle_) {
 			continue;
 		}
 
