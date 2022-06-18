@@ -87,8 +87,14 @@ local ZONE_MARGIN = 0.05
 local CAM_ANGLE = 0.4
 local MIN_VIS_HIST = 10
 local MAX_ATTEMPTS = 4
-local TAG_ID_OUTPUT_MOD2 = 1 -- for ARUCO tags
--- local TAG_ID_OUTPUT_MOD2 = 0 -- for ALVAR tags
+
+local output_marker_id_mod2 = 0
+-- read tag_vision config
+if config:exists("/plugins/tag_vision/output_marker_id_odd") then
+  if config:get_bool("/plugins/tag_vision/output_marker_id_odd") then
+    output_marker_id_mod2 = 1;
+  end
+end
 
 -- Maximum reachable coordinates (i.e. usable playing field dimensions)
 local X_MAX = 6.6 -- X direction is mirrored, so no minimum here
@@ -212,7 +218,7 @@ function found_tag()
                    if yaw == yaw then -- false for NAN
                       -- Rescale & Discretize angle from 0..315°
                       print_debug("Yaw 1: " .. yaw)
-                      if id % 2 == TAG_ID_OUTPUT_MOD2 then
+                      if id % 2 == output_marker_id_mod2 then
                          yaw = yaw + math.pi
                          print_debug("Yaw 2: " .. yaw)
                       end

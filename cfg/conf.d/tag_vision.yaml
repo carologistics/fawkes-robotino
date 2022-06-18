@@ -51,6 +51,10 @@ plugins/tag_vision:
   # ar tag marker size in millimeter
   marker_size: 130
 
+  # important for explore zone skill
+  # old alvar tags had even ids for markers, alvar tags have odd ids
+  output_marker_id_odd: true
+
   # camera matrix
   # These values are based on the tag camera calibrated in 2022
   camera_matrix: [541.83897791, 0, 312.34902706,
