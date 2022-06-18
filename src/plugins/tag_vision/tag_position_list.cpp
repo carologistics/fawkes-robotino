@@ -246,7 +246,7 @@ TagPositionList::find_suitable_interface(const TagVisionMarker &marker) const
  * @param laser_line_ifs Laser lines for orientation sanity check
  */
 void
-TagPositionList::update_blackboard(std::vector<TagVisionMarker>  &            marker_list,
+TagPositionList::update_blackboard(std::vector<TagVisionMarker> &             marker_list,
                                    std::vector<fawkes::LaserLineInterface *> *laser_line_ifs)
 {
 	int i = 0;

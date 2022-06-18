@@ -92,7 +92,7 @@ TagPositionInterfaceHelper::set_pose(TagPose new_pose, MarkerType marker_type)
 	switch (marker_type) {
 	case MarkerType::ARUCO:
 		fix_tag_orientation =
-			fawkes::tf::Quaternion(0,-M_PI_2,0)*fawkes::tf::Quaternion(0,0,-M_PI_2);
+		  fawkes::tf::Quaternion(0, -M_PI_2, 0) * fawkes::tf::Quaternion(0, 0, -M_PI_2);
 		break;
 	case MarkerType::ALVAR:
 		fix_tag_orientation =

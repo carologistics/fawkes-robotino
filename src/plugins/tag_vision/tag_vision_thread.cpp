@@ -54,13 +54,12 @@ TagVisionThread::TagVisionThread()
 	shm_buffer_   = nullptr;
 	image_buffer_ = nullptr;
 }
-// variable to name images when saving to file 
-int name_it_    = 0;
+// variable to name images when saving to file
+int name_it_ = 0;
 
 void
 TagVisionThread::init()
-{	
-	
+{
 	config->add_change_handler(this);
 	// load config
 	// config prefix in string for concatinating
@@ -143,7 +142,6 @@ TagVisionThread::init()
 	                                                      this->img_width_,
 	                                                      this->img_height_);
 
-
 	if (!shm_buffer_->is_valid()) {
 		delete shm_buffer_;
 		delete fv_cam_;
@@ -199,29 +197,31 @@ TagVisionThread::init()
 		break;
 	case ARUCO:
 		//import camera matrix from tag_vision.yaml
-		{auto camera_matrix_float = config->get_floats((prefix + "camera_matrix").c_str());
-		std::vector<double> camera_matrix_double(camera_matrix_float.begin(), camera_matrix_float.end());
-		cameraMatrix_ = cv::Mat_<double>(3, 3);
-		int i = 0;
-		for (int row = 0; row < 3; row++){
-			for (int col = 0; col < 3; col++){
-				cameraMatrix_.at<double>(i) = camera_matrix_double[i];
-				logger->log_info(name(), "mat: %f ", cameraMatrix_.at<double>(i));
-				i++;
+		{
+			auto camera_matrix_float = config->get_floats((prefix + "camera_matrix").c_str());
+			std::vector<double> camera_matrix_double(camera_matrix_float.begin(),
+			                                         camera_matrix_float.end());
+			cameraMatrix_ = cv::Mat_<double>(3, 3);
+			int i         = 0;
+			for (int row = 0; row < 3; row++) {
+				for (int col = 0; col < 3; col++) {
+					cameraMatrix_.at<double>(i) = camera_matrix_double[i];
+					logger->log_info(name(), "mat: %f ", cameraMatrix_.at<double>(i));
+					i++;
+				}
+			}
+			//import distortion matrix from tag_vision.yaml
+			auto                dist_coeffs_float = config->get_floats((prefix + "dist_coeffs").c_str());
+			std::vector<double> dist_coeffs_double(dist_coeffs_float.begin(), dist_coeffs_float.end());
+
+			distCoeffs_ = cv::Mat_<double>(1, 5);
+			for (int k = 0; k < 5; k++) {
+				distCoeffs_.at<double>(k) = dist_coeffs_double[k];
+				logger->log_info(name(), "dis: %f ", distCoeffs_.at<double>(k));
 			}
 		}
-		//import distortion matrix from tag_vision.yaml
-		auto dist_coeffs_float = config->get_floats((prefix + "dist_coeffs").c_str());
-		std::vector<double> dist_coeffs_double(dist_coeffs_float.begin(), dist_coeffs_float.end());
-
-		distCoeffs_   = cv::Mat_<double>(1, 5);
-		for (int k = 0; k < 5; k++){
-			distCoeffs_.at<double>(k)  = dist_coeffs_double[k];
-			logger->log_info(name(), "dis: %f ", distCoeffs_.at<double>(k));
-		}
-		}
 		break;
-	default: break;						
+	default: break;
 	}
 }
 
@@ -282,24 +282,14 @@ TagVisionThread::loop()
 	                    image_buffer_,
 	                    this->img_width_,
 	                    this->img_height_);
-	
-	
+
 	fv_cam_->dispose_buffer();
-
-
-	
 
 	// convert img
 	firevision::CvMatAdapter::convert_image_bgr(image_buffer_, ipl_image_);
 	// convert to grayscale
-		// TODO Add this??? 
 	// get marker from img
 	get_marker();
-
-	//Write images to file 
-	// std::string new_img_name = "/home/tom/Pictures/RoboCupCamCalib/" + std::to_string(name_it_ +1) + ".jpg";
-	// name_it_ ++;
-	// imwrite(new_img_name, ipl_image_);
 
 	this->tag_interfaces_->update_blackboard(markers_, laser_line_ifs_);
 
@@ -357,12 +347,13 @@ TagVisionThread::get_marker()
 		std::vector<cv::Vec3d> rvecs, tvecs;
 		for (std::vector<int>::size_type i = 0; i < markerIds.size(); i++) {
 			cv::aruco::estimatePoseSingleMarkers(
-			  markerCorners, marker_size_ / 1000. , cameraMatrix_, distCoeffs_, rvecs, tvecs);
+			  markerCorners, marker_size_ / 1000., cameraMatrix_, distCoeffs_, rvecs, tvecs);
 			cv::Mat rot_matrix;
 			cv::Rodrigues(rvecs[i], rot_matrix);
-			auto   tvec_scaled = 1000. * tvecs[i];
-			//log distance vectors in mm 
-			logger->log_info(name(), "x: %f y: %f z: %f ", tvec_scaled[0], tvec_scaled[1],tvec_scaled[2]);
+			auto tvec_scaled = 1000. * tvecs[i];
+			//log distance vectors in mm
+			//logger->log_info(
+			//  name(), "x: %f y: %f z: %f ", tvec_scaled[0], tvec_scaled[1], tvec_scaled[2]);
 			double m00, m01, m02, m10, m11, m12, m20, m21, m22, qw, qx, qy, qz;
 			m00 = rot_matrix.at<double>(0, 0);
 			m01 = rot_matrix.at<double>(0, 1);
