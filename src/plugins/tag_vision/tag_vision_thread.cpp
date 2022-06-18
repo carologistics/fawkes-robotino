@@ -330,7 +330,8 @@ TagVisionThread::get_marker()
 			                             quaternion.at<double>(1, 0),
 			                             quaternion.at<double>(2, 0),
 			                             quaternion.at<double>(3, 0)}},
-			                           tmp_alvar_marker.GetId()};
+			                           tmp_alvar_marker.GetId(),
+			                           marker_type_};
 			// skip the marker, if the pose is directly on the camera (error)
 			if (tmp_pose.translation[0] < 1 && tmp_pose.translation[1] < 1
 			    && tmp_pose.translation[2] < 1) {
@@ -404,18 +405,20 @@ TagVisionThread::get_marker()
 				qz       = 0.25 * S;
 			}
 
-			//Output the Video and Overlays 
-			//TagVisionMarker tmp_marker{{tvec_scaled, {qw, qx, qy, qz}}, markerIds[i]};
-			//markers_->push_back(tmp_marker);
-				//cv::Mat outputImage;
-				//ipl_image_.copyTo(outputImage);
-				// for (unsigned int i = 0; i < rvecs.size(); ++i) {
-				// 	auto rvec = rvecs[i];
-				// 	auto tvec = tvecs[i];
-				// 	cv::drawFrameAxes(ipl_image_, cameraMatrix_, distCoeffs_, rvec, tvec, 0.1);
-				// }
-				//cv::imshow("out", outputImage);
-				//cv::waitKey();
+			//Output the Video and Overlays
+			TagVisionMarker tmp_marker{{tvec_scaled, {qw, qx, qy, qz}},
+			                           (unsigned int)markerIds[i],
+			                           marker_type_};
+			markers_->push_back(tmp_marker);
+			//cv::Mat outputImage;
+			//ipl_image_.copyTo(outputImage);
+			// for (unsigned int i = 0; i < rvecs.size(); ++i) {
+			// 	auto rvec = rvecs[i];
+			// 	auto tvec = tvecs[i];
+			// 	cv::drawFrameAxes(ipl_image_, cameraMatrix_, distCoeffs_, rvec, tvec, 0.1);
+			// }
+			//cv::imshow("out", outputImage);
+			//cv::waitKey();
 		}
 		break;
 	}

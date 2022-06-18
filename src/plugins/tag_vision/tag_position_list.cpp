@@ -270,7 +270,7 @@ TagPositionList::update_blackboard(std::shared_ptr<std::vector<TagVisionMarker>>
 				marker_interface->set_marker_id(marker.marker_id);
 				marker_interface->set_visibility_history(0);
 			}
-			marker_interface->set_pose(tmp_pose);
+			marker_interface->set_pose(tmp_pose, marker.type);
 		} else
 			logger_->log_warn(thread_name_.c_str(),
 			                  "Cannot publish tag #%u: Index interface full!",

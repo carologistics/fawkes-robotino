@@ -42,6 +42,9 @@
 #define EMPTY_INTERFACE_MARKER_ID 0
 #define INTERFACE_UNSEEN_BOUND -5
 
+/// Type of the Marker
+enum MarkerType { ARUCO, ALVAR };
+
 /// Pose of a tag
 struct TagPose
 {
@@ -57,6 +60,8 @@ struct TagVisionMarker
 	TagPose pose;
 	/// ID of the marker
 	unsigned int marker_id;
+	/// Marker Type
+	MarkerType type;
 };
 
 enum ROT { X = 0, Y = 1, Z = 2, W = 3 };
@@ -99,7 +104,7 @@ public:
 	~TagPositionInterfaceHelper();
 
 	/// Update the position of the interface
-	void set_pose(TagPose new_pose);
+	void set_pose(TagPose new_pose, MarkerType marker_type);
 
 	/// Write the interface on the blackboard
 	void write();

@@ -77,17 +77,28 @@ TagPositionInterfaceHelper::~TagPositionInterfaceHelper()
  * It also sets a marker for the visibility history, so using write()
  * updates the Interfae properly. It also publishes the transforms.
  *
- * @param new_pose The new Position of the marker, as got from alvar::MarkerData
+ * @param new_pose The new Position of the marker
+ * @param marker_type The type of the marker
  */
 void
-TagPositionInterfaceHelper::set_pose(TagPose new_pose)
+TagPositionInterfaceHelper::set_pose(TagPose new_pose, MarkerType marker_type)
 {
 	// create a quaternion on the angles.
 	fawkes::tf::Quaternion tag_rot(new_pose.quaternion[CV_ROT::CV_X],
 	                               new_pose.quaternion[CV_ROT::CV_Y],
 	                               new_pose.quaternion[CV_ROT::CV_Z],
 	                               new_pose.quaternion[CV_ROT::CV_W]);
-	fawkes::tf::Quaternion fix_tag_orientation(0, -M_PI_2, -M_PI_2); // yaw: 0° pitch: 90° roll: -90°
+	fawkes::tf::Quaternion fix_tag_orientation(0, 0, 0);
+	switch (marker_type) {
+	case MarkerType::ARUCO:
+		fix_tag_orientation =
+			fawkes::tf::Quaternion(0,-M_PI_2,0)*fawkes::tf::Quaternion(0,0,-M_PI_2);
+		break;
+	case MarkerType::ALVAR:
+		fix_tag_orientation =
+		  fawkes::tf::Quaternion(0, -M_PI_2, -M_PI_2); // yaw: 0° pitch: 90° roll: -90°
+		break;
+	}
 	fawkes::tf::Quaternion result = tag_rot * fix_tag_orientation;
 
 	// publish the quaternion

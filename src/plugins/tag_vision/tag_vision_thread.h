@@ -72,7 +72,6 @@ namespace firevision {
 class Camera;
 class SharedMemoryImageBuffer;
 } // namespace firevision
-enum MarkerType { ARUCO, ALVAR };
 class TagVisionThread : public fawkes::Thread,
                         public fawkes::LoggingAspect,
                         public fawkes::ConfigurableAspect,
