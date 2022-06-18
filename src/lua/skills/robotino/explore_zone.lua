@@ -87,6 +87,8 @@ local ZONE_MARGIN = 0.05
 local CAM_ANGLE = 0.4
 local MIN_VIS_HIST = 10
 local MAX_ATTEMPTS = 4
+local TAG_ID_OUTPUT_MOD2 = 1 -- for ARUCO tags
+-- local TAG_ID_OUTPUT_MOD2 = 0 -- for ALVAR tags
 
 -- Maximum reachable coordinates (i.e. usable playing field dimensions)
 local X_MAX = 6.6 -- X direction is mirrored, so no minimum here
@@ -210,7 +212,7 @@ function found_tag()
                    if yaw == yaw then -- false for NAN
                       -- Rescale & Discretize angle from 0..315°
                       print_debug("Yaw 1: " .. yaw)
-                      if id % 2 == 0 then
+                      if id % 2 == TAG_ID_OUTPUT_MOD2 then
                          yaw = yaw + math.pi
                          print_debug("Yaw 2: " .. yaw)
                       end
