@@ -33,6 +33,7 @@
 	(wm-robmem-sync-enable "/mps-handling/")
 	(wm-robmem-sync-enable "/order/meta/wp-for-order")
 	(wm-robmem-sync-enable "/strategy/keep-mps-side-free")
+	(wm-robmem-sync-enable "/wp/meta")
 	(wm-robmem-sync-enable "/exploration/")
 )
 
