@@ -68,6 +68,24 @@
 	                         (deftemplate-remaining-slots goal-meta ?*GOAL_META_ID_SLOTS*))
 )
 
+(defrule wm-sync-update-goals-on-parent-change
+	?g <- (goal (id ?id) (parent ?parent))
+	?gm <- (goal-meta (goal-id ?id))
+	?wm <- (wm-fact (key template fact goal args? id ?id)
+	                (values $? parent ?other-parent&:(neq ?parent ?other-parent) $?))
+	?wm2 <- (wm-fact (key template fact goal-meta args? goal-id ?id))
+	=>
+	(retract ?wm)
+	(retract ?wm2)
+	(assert-template-wm-fact ?g
+	                         ?*GOAL_ID_SLOTS*
+	                         (delete-member$ (deftemplate-remaining-slots goal ?*GOAL_ID_SLOTS*)
+	                                             meta-fact))
+	(assert-template-wm-fact ?gm
+	                         ?*GOAL_META_ID_SLOTS*
+	                         (deftemplate-remaining-slots goal-meta ?*GOAL_META_ID_SLOTS*))
+)
+
 (defrule wm-sync-cleanup-goal-wm-fact
 	?wm <- (wm-fact (key template fact goal args? id ?id))
 	(not (goal (id ?id)))
