@@ -367,6 +367,7 @@
 (defrule domain-restore-worldmodel-after-maintenance
 " Domain facts have not been loaded but the game is already running.
   Restore the world model from the database."
+  (declare (salience ?*SALIENCE-FIRST*))
 	(not (domain-facts-loaded))
 	(wm-fact (key refbox phase) (value EXPLORATION|PRODUCTION))
 	(wm-fact (key config agent name) (value ?robot-name))
@@ -378,6 +379,7 @@
 )
 
 (defrule domain-restore-template-facts
+  (declare (salience ?*SALIENCE-FIRST*))
 	?sync-enable <- (sync-wm-facts-to-template-facts)
 	(not (wm-fact (id "")))
 	=>
