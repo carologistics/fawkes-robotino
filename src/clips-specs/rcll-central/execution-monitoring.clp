@@ -463,4 +463,31 @@
   =>
   (modify ?at (time ?now))
   (printout t "Action prepare-" ?mps " timer extended due to down machine" crlf)
+
+; ----------------------- RESTORE FROM BACKUP -------------------------------
+
+(defrule execution-monitoring-handle-restore-from-backup
+"
+If we restored the wm from the database, we can not be sure about the state of skills
+and the world. Therefore stop all skills and with that fail the goals. Then let
+execution monitoring handle the reformulation.
+"
+	?restored <- (wm-robmem-sync-restored)
+	=>
+	(do-for-all-facts
+		((?goal goal))
+		(and (eq ?goal:mode DISPATCHED) (eq ?goal:sub-type SIMPLE))
+		(printout t "Restored simple goal " ?goal:id " is dispatched, abort execution." crlf)
+		(do-for-all-facts
+			((?plan-action plan-action))
+			(and (eq ?plan-action:goal-id ?goal:id) (neq ?plan-action:state FORMULATED) (neq ?plan-action:state FINAL)  (neq ?plan-action:state FAILED))
+
+			(printout t "   Aborting action " ?plan-action:action-name " on interface" ?plan-action:skiller crlf)
+			(bind ?m (blackboard-create-msg (str-cat "SkillerInterface::" ?plan-action:skiller)
+										"StopExecMessage"))
+			(blackboard-send-msg ?m)
+			(modify ?plan-action (state FAILED))
+		)
+	)
+	(retract ?restored)
 )

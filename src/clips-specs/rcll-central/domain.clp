@@ -376,6 +376,7 @@
 	(printout warn "Restoring world model from the database" crlf)
 	(wm-robmem-sync-restore)
 	(assert (sync-wm-facts-to-template-facts))
+	(assert (wm-robmem-sync-restored-fail-goals))
 )
 
 (defrule domain-restore-template-facts
