@@ -178,6 +178,7 @@ clips-executive:
         - ZoneInterface
         - RobotinoSensorInterface
         - RobotinoLightInterface
+        - HeartbeatInterface
 
     test:
       domain: test-scenario/test-domain.clp

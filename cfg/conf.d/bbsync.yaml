@@ -6,6 +6,7 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/bbsync
 fawkes/bbsync:
   # Interval between checking for remote BB aliveness; ms
   check_interval: 5000
+  missing_heartbeat_report: 5
 
   peers:
 
