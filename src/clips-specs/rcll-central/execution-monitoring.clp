@@ -480,11 +480,14 @@ execution monitoring handle the reformulation.
 		(printout t "Restored simple goal " ?goal:id " is dispatched, abort execution." crlf)
 		(do-for-all-facts
 			((?plan-action plan-action))
-			(and (eq ?plan-action:goal-id ?goal:id) (neq ?plan-action:state FORMULATED) (neq ?plan-action:state FINAL)  (neq ?plan-action:state FAILED))
+			(and (eq ?plan-action:goal-id ?goal:id)
+			     (neq ?plan-action:state FORMULATED)
+			     (neq ?plan-action:state FINAL)
+			     (neq ?plan-action:state FAILED)
+			     (neq ?plan-action:skiller "/central/Skiller"))
 
 			(printout t "   Aborting action " ?plan-action:action-name " on interface" ?plan-action:skiller crlf)
-			(bind ?m (blackboard-create-msg (str-cat "SkillerInterface::" ?plan-action:skiller)
-										"StopExecMessage"))
+			(bind ?m (blackboard-create-msg (str-cat "SkillerInterface::" ?plan-action:skiller) "StopExecMessage"))
 			(blackboard-send-msg ?m)
 			(modify ?plan-action (state FAILED))
 		)
