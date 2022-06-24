@@ -54,7 +54,7 @@
 	?g <- (goal (id ?id) (mode ?mode))
 	?gm <- (goal-meta (goal-id ?id))
 	?wm <- (wm-fact (key template fact goal args? id ?id)
-	                (values $? mode ?other-mode&:(neq ?mode ?other-mode)))
+	                (values $? mode ?other-mode&:(neq ?mode ?other-mode) $?))
 	?wm2 <- (wm-fact (key template fact goal-meta args? goal-id ?id))
 	=>
 	(retract ?wm)
