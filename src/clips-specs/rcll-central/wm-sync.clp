@@ -38,7 +38,7 @@
 )
 
 (defrule wm-sync-init-goal-to-wm-fact
-	?g <- (goal (id ?id))
+	?g <- (goal (id ?id) (class ~SEND-BEACON&~BEACON-MAINTAIN))
 	?gm <- (goal-meta (goal-id ?id))
 	(not (wm-fact (key template fact goal args? id ?id)))
 	=>
