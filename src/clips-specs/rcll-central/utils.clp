@@ -45,7 +45,7 @@
 
   ?*BBSYNC_PEER_CONFIG* = "/fawkes/bbsync/peers/"
   ?*NAVGRAPH_GENERATOR_MPS_CONFIG* = "/navgraph-generator-mps/"
-
+  ?*TAG_VISION_CONFIG* = "/plugins/tag_vision/"
 )
 
 (deftemplate exploration-result
@@ -75,26 +75,18 @@
   (slot run-all-ordering (default 1))
 )
 
-(deffunction tag-id-to-side (?tag-id ?marker-type)
+(deffunction tag-id-to-side (?tag-id ?output-odd)
 " Output the side that is associated with the given tag id.
   @param ?tag-id tag id as specified by the rulebook
-  @return INPUT OUTPUT or UNKNOWN
+  @param ?output-odd set to true if output tags have odd ids
+
+  @return INPUT or OUTPUT
 "
-	(if (eq ?marker-type ARUCO)
-	 then
-		(if (eq (mod ?tag-id 2) 0)
+	(if ?output-odd then (bind ?mod 1) else (bind ?mod 0))
+	(if (eq (mod ?tag-id 2) ?mod)
 		 then (return INPUT)
 		 else (return OUTPUT)
-		)
 	)
-	(if (eq ?marker-type ALVAR)
-	 then
-		(if (eq (mod ?tag-id 2) 0)
-		 then (return OUTPUT)
-		 else (return INPUT)
-		)
-	)
-	(return UNKNOWN)
 )
 
 (deffunction random-id ()
@@ -233,14 +225,14 @@
   (return (create$ ?x ?y 0.48))
 )
 
-(deffunction navgraph-add-tags-from-exploration (?marker-type)
+(deffunction navgraph-add-tags-from-exploration (?output-odd)
   "Send all explored tags to the navgraph generator"
 	(bind ?any-tag-to-add FALSE)
 
 	(bind ?interfaces (get-interfaces "NavGraphWithMPSGeneratorInterface" "navgraph-generator-mps"))
 	(bind ?interfaces (append$ ?interfaces (get-laptop-interfaces "NavGraphWithMPSGeneratorInterface" "navgraph-generator-mps")))
 	(delayed-do-for-all-facts ((?res exploration-result)) TRUE
-		(bind ?side (tag-id-to-side ?res:tag-id ?marker-type))
+		(bind ?side (tag-id-to-side ?res:tag-id ?output-odd))
 		(bind ?frame "map")
 		(bind ?trans ?res:trans)
 		(bind ?rot  ?res:rot)

@@ -67,7 +67,7 @@
   (modify ?op (exogenous TRUE))
 )
 
-(deffunction domain-load-local-facts (?self ?team-color ?marker-type)
+(deffunction domain-load-local-facts (?self ?team-color)
 " Initialize facts that are not synced."
   (if (eq ?team-color CYAN)
     then
@@ -197,11 +197,11 @@
   (domain-loaded)
   (wm-fact (key config agent name) (value ?robot-name))
   (wm-fact (key refbox team-color) (value ?team-color&~nil))
-  (wm-fact (id "/config/rcll/exploration/marker-type") (type STRING) (value ?marker-type))
   (wm-fact (key refbox phase) (value SETUP))
   =>
   (bind ?self (sym-cat ?robot-name))
   (config-load ?*NAVGRAPH_GENERATOR_MPS_CONFIG*)
+  (config-load ?*TAG_VISION_CONFIG*)
   (printout info "Initializing worldmodel" crlf)
   (if (eq ?team-color CYAN)
     then
@@ -222,7 +222,7 @@
         (bind ?ss M-SS)
   )
 
-  (domain-load-local-facts ?self ?team-color (sym-cat ?marker-type))
+  (domain-load-local-facts ?self ?team-color)
   (assert
     (domain-fact (name cs-can-perform) (param-values ?cs1 RETRIEVE_CAP))
     (domain-fact (name cs-can-perform) (param-values ?cs2 RETRIEVE_CAP))

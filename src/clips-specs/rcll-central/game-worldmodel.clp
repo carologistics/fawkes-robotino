@@ -109,8 +109,8 @@
 (defrule game-generate-navgraph-found-one-new-tag
 	(wm-fact (key refbox phase) (value PRODUCTION))
 	(wm-fact (key domain fact mps-team args? m ?mps col ?any-team-color))
-	(wm-fact (id "/config/rcll/exploration/marker-type") (type STRING) (value ?type))
+	(confval (path "/plugins/tag_vision/output_marker_id_odd") (type BOOL) (value ?output-odd))
 	(exploration-result (machine ?mps))
 	=>
-	(navgraph-add-tags-from-exploration (sym-cat ?type))
+	(navgraph-add-tags-from-exploration (sym-cat ?output-odd))
 )
