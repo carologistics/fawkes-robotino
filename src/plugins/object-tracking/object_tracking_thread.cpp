@@ -262,6 +262,9 @@ ObjectTrackingThread::loop()
 		object_tracking_if_->msgq_pop();
 	}
 	//-------------------------------------------------------------------------
+	for (fawkes::LaserLineInterface *ll : laserlines_) {
+		ll->read();
+	}
 
 	//check if tracking is active
 	if (!use_saved_ && !tracking_)
@@ -321,7 +324,7 @@ ObjectTrackingThread::loop()
 
 	//get laser line if possible
 	fawkes::LaserLineInterface *ll;
-	if (!laserline_get_best_fit(ll)){
+	if (!laserline_get_best_fit(ll)) {
 		logger->log_info(name(), "No fitting laser line found!");
 		msgid_++;
 		object_tracking_if_->set_msgid(msgid_);
@@ -388,11 +391,12 @@ ObjectTrackingThread::loop()
 	}
 
 	//get mps angle and expected object position through laser-data
-	float                                  mps_angle = fabs(ll->bearing());
-		logger->log_info("mps_angle: ", std::to_string(mps_angle).c_str());
+	float mps_angle = fabs(ll->bearing());
+	logger->log_info("mps_angle: ", std::to_string(mps_angle).c_str());
 	fawkes::tf::Stamped<fawkes::tf::Point> expected_pos_cam;
 	fawkes::tf::Stamped<fawkes::tf::Point> expected_pos;
 	laserline_get_expected_position(ll, expected_pos);
+	expected_pos.stamp = Time(0, 0);
 	tf_listener->transform_point(cam_frame_, expected_pos, expected_pos_cam);
 
 	//get 3d position of closest bounding box to expected position in cam_gripper frame
@@ -564,14 +568,14 @@ ObjectTrackingThread::laserline_get_best_fit(fawkes::LaserLineInterface *&best_f
 		}
 
 		logger->log_info("visibility_history: ", std::to_string(ll->visibility_history()).c_str());
-		logger->log_info("bearing: ", std::to_string(ll->bearing()).c_str());
+		logger->log_info("bearing: ", std::to_string(fabs(ll->bearing())).c_str());
 
 		// just with history
 		if (ll->visibility_history() < ll_vs_hist_) {
 			continue;
 		}
 		// just if robot is in front (~20°)
-		if (fabs(ll->bearing()) < ll_max_angle_) {
+		if (fabs(ll->bearing()) > ll_max_angle_) {
 			continue;
 		}
 
@@ -580,7 +584,9 @@ ObjectTrackingThread::laserline_get_best_fit(fawkes::LaserLineInterface *&best_f
 		float center_y = 0;
 		float center_z = 0;
 		laserline_get_center_transformed(ll, center_x, center_y, center_z);
+
 		float dist = std::sqrt(static_cast<float>(center_x * center_x + center_y * center_y));
+		logger->log_info("center x: ", std::to_string(center_x).c_str());
 
 		logger->log_info("distance: ", std::to_string(dist).c_str());
 
@@ -596,9 +602,9 @@ ObjectTrackingThread::laserline_get_best_fit(fawkes::LaserLineInterface *&best_f
 
 void
 ObjectTrackingThread::laserline_get_center_transformed(fawkes::LaserLineInterface *ll,
-                                                       float                       x,
-                                                       float                       y,
-                                                       float                       z)
+                                                       float                      &x,
+                                                       float                      &y,
+                                                       float                      &z)
 {
 	fawkes::tf::Stamped<fawkes::tf::Point> tf_in, tf_out;
 	tf_in.stamp    = ll->timestamp();
@@ -621,8 +627,8 @@ ObjectTrackingThread::laserline_get_center_transformed(fawkes::LaserLineInterfac
 
 void
 ObjectTrackingThread::laserline_get_expected_position(
-  fawkes::LaserLineInterface            *ll,
-  fawkes::tf::Stamped<fawkes::tf::Point> expected_pos)
+  fawkes::LaserLineInterface             *ll,
+  fawkes::tf::Stamped<fawkes::tf::Point> &expected_pos)
 {
 	//set offsets from laser line center for expected object position
 	float x_offset;
@@ -695,6 +701,7 @@ ObjectTrackingThread::laserline_get_expected_position(
 	tf_in.setZ(z_pos);
 
 	try {
+		tf_in.stamp = Time(0, 0);
 		tf_listener->transform_point("/odom", tf_in, expected_pos);
 	} catch (tf::ExtrapolationException &) {
 		tf_in.stamp = Time(0, 0);

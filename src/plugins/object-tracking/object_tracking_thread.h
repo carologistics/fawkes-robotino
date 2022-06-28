@@ -178,10 +178,11 @@ private:
 	long         loop_count_;
 
 	//compute expected position from laser line
-	void laserline_get_expected_position(fawkes::LaserLineInterface            *ll,
-	                                     fawkes::tf::Stamped<fawkes::tf::Point> expected_pos_ll);
+	void laserline_get_expected_position(fawkes::LaserLineInterface             *ll,
+	                                     fawkes::tf::Stamped<fawkes::tf::Point> &expected_pos_ll);
 	bool laserline_get_best_fit(fawkes::LaserLineInterface *&best_fit);
-	void laserline_get_center_transformed(fawkes::LaserLineInterface *ll, float x, float y, float z);
+	void
+	laserline_get_center_transformed(fawkes::LaserLineInterface *ll, float &x, float &y, float &z);
 
 	//set shared memory buffer to read only
 	void set_shm();
