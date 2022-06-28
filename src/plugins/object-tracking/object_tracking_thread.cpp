@@ -391,7 +391,7 @@ ObjectTrackingThread::loop()
 	}
 
 	//get mps angle and expected object position through laser-data
-	float mps_angle = fabs(ll->bearing());
+	float mps_angle = ll->bearing();
 	logger->log_info("mps_angle: ", std::to_string(mps_angle).c_str());
 	fawkes::tf::Stamped<fawkes::tf::Point> expected_pos_cam;
 	fawkes::tf::Stamped<fawkes::tf::Point> expected_pos;
@@ -559,16 +559,11 @@ ObjectTrackingThread::laserline_get_best_fit(fawkes::LaserLineInterface *&best_f
 
 	// get best line
 	for (fawkes::LaserLineInterface *ll : laserlines_) {
-		logger->log_info(name(), "---- next laser line ----");
-		logger->log_info("has_writer: ", std::to_string(ll->has_writer()).c_str());
 
 		// just with writer
 		if (!ll->has_writer()) {
 			continue;
 		}
-
-		logger->log_info("visibility_history: ", std::to_string(ll->visibility_history()).c_str());
-		logger->log_info("bearing: ", std::to_string(fabs(ll->bearing())).c_str());
 
 		// just with history
 		if (ll->visibility_history() < ll_vs_hist_) {
@@ -586,9 +581,6 @@ ObjectTrackingThread::laserline_get_best_fit(fawkes::LaserLineInterface *&best_f
 		laserline_get_center_transformed(ll, center_x, center_y, center_z);
 
 		float dist = std::sqrt(static_cast<float>(center_x * center_x + center_y * center_y));
-		logger->log_info("center x: ", std::to_string(center_x).c_str());
-
-		logger->log_info("distance: ", std::to_string(dist).c_str());
 
 		if (dist < best_dist) {
 			found     = true;
