@@ -437,3 +437,30 @@
   (printout t "execuction monitoring wp-put-slide-cc: rs-before is unequal to rs-filled-with" crlf)
   (modify ?pa (param-values ?robot ?wp ?rs ?rs-num ?rs-num-after))
 )
+
+(defrule execution-monitoring-reset-action-timer-machine-down
+  "Restart timer for prepare actions if the machine is down"
+  (time $?now)
+  ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (id ?id)
+                      (state RUNNING)
+                      (action-name prepare-bs|
+                                   prepare-cs|
+                                   prepare-ds|
+                                   prepare-rs|
+                                   prepare-ss)
+                      (param-names $?param-names)
+                      (param-values $?param-values))
+  (domain-obj-is-of-type ?mps&:(eq ?mps (plan-action-arg m
+                                                         ?param-names
+                                                         ?param-values))
+                         mps)
+  ?at <- (timer (name ?nat&:(eq ?nat
+                                (sym-cat prepare- ?goal-id - ?plan-id
+                                         - ?id -abort-timer)))
+	        (time $?t&:(timeout ?now ?t (- ?*ABORT-PREPARE-PERIOD* ?*ABORT-PREPARE-DOWN-REST*)))
+                (seq ?seq))
+  (wm-fact (key domain fact mps-state args? m ?mps s DOWN))
+  =>
+  (modify ?at (time ?now))
+  (printout t "Action prepare-" ?mps " timer extended due to down machine" crlf)
+)
