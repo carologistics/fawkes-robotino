@@ -519,7 +519,7 @@ ObjectTrackingThread::loop()
 
 	double gripper_target[3];
 	double base_target[3];
-	compute_target_frames(weighted_object_pos_base, mps_angle, gripper_target, base_target);
+	compute_target_frames(weighted_object_pos_base, ll, gripper_target, base_target);
 
 	//update interface
 	object_tracking_if_->set_gripper_frame(0, gripper_target[0]);
@@ -788,13 +788,13 @@ ObjectTrackingThread::closest_position(std::vector<std::array<float, 4>>      bo
 		float dist = sqrt((pos[0] - ref_pos.getX()) * (pos[0] - ref_pos.getX())
 		                  + (pos[1] - ref_pos.getY()) * (pos[1] - ref_pos.getY())
 		                  + (pos[2] - ref_pos.getZ()) * (pos[2] - ref_pos.getZ()));
-		logger->log_warn(name(), std::to_string(dist).c_str());
-		logger->log_info("pos[0]: ", std::to_string(pos[0]).c_str());
-		logger->log_info("pos[1]: ", std::to_string(pos[1]).c_str());
-		logger->log_info("pos[2]: ", std::to_string(pos[2]).c_str());
-		logger->log_info("ref[0]: ", std::to_string(ref_pos.getX()).c_str());
-		logger->log_info("ref[1]: ", std::to_string(ref_pos.getY()).c_str());
-		logger->log_info("ref[2]: ", std::to_string(ref_pos.getZ()).c_str());
+		//logger->log_warn(name(), std::to_string(dist).c_str());
+		//logger->log_info("pos[0]: ", std::to_string(pos[0]).c_str());
+		//logger->log_info("pos[1]: ", std::to_string(pos[1]).c_str());
+		//logger->log_info("pos[2]: ", std::to_string(pos[2]).c_str());
+		//logger->log_info("ref[0]: ", std::to_string(ref_pos.getX()).c_str());
+		//logger->log_info("ref[1]: ", std::to_string(ref_pos.getY()).c_str());
+		//logger->log_info("ref[2]: ", std::to_string(ref_pos.getZ()).c_str());
 		if (dist < min_dist) {
 			min_dist          = dist;
 			closest_pos[0]    = pos[0];
@@ -875,10 +875,61 @@ ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
 
 void
 ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Point> object_pos,
-                                            float                                  mps_angle,
+                                            fawkes::LaserLineInterface            *ll,
                                             double gripper_target[3],
                                             double base_target[3])
 {
+	//set offsets from laser line center for expected object position
+	float x_offset;
+	float y_offset;
+	float z_offset;
+
+	switch (current_expected_side_) {
+	case ObjectTrackingInterface::INPUT_CONVEYOR:
+		x_offset = 0;
+		y_offset = belt_offset_side_;
+		z_offset = belt_height_;
+		break;
+	case ObjectTrackingInterface::OUTPUT_CONVEYOR:
+		x_offset = 0;
+		y_offset = -belt_offset_side_;
+		z_offset = belt_height_;
+		break;
+	case ObjectTrackingInterface::SLIDE:
+		x_offset = 0;
+		y_offset = belt_offset_side_ + slide_offset_side_;
+		z_offset = slide_height_;
+		break;
+	case ObjectTrackingInterface::SHELF_LEFT:
+		x_offset = 0;
+		y_offset = belt_offset_side_ + left_shelf_offset_side_;
+		z_offset = shelf_height_;
+		break;
+	case ObjectTrackingInterface::SHELF_MIDDLE:
+		x_offset = 0;
+		y_offset = belt_offset_side_ + middle_shelf_offset_side_;
+		z_offset = shelf_height_;
+		break;
+	case ObjectTrackingInterface::SHELF_RIGHT:
+		x_offset = 0;
+		y_offset = belt_offset_side_ + right_shelf_offset_side_;
+		z_offset = shelf_height_;
+		break;
+	default:
+		logger->log_error(object_tracking_if_->enum_tostring("EXPECTED_SIDE", current_expected_side_),
+		                  " is an invalid MPS-side!");
+		return;
+	}
+
+	if (current_object_type_ == ObjectTrackingInterface::WORKPIECE) {
+		x_offset += puck_size_ / 2;
+		z_offset += puck_height_ / 2;
+	} else if (current_object_type_ == ObjectTrackingInterface::CONVEYOR_BELT_FRONT) {
+		z_offset -= belt_size_ / 2;
+	}
+
+	float mps_angle = ll->bearing();
+
 	//compute target gripper frame first
 	switch (current_object_type_) {
 	case ObjectTrackingInterface::WORKPIECE:
@@ -906,7 +957,42 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 	}
 
 	//compute target base frame
-	base_target[0] = gripper_target[0] - cos(mps_angle) * base_offset_;
-	base_target[1] = gripper_target[1] + sin(mps_angle) * base_offset_;
+
+	//get point on laser-line with y_offset
+	float x_pos =
+	  ll->end_point_2(0) + (ll->end_point_1(0) - ll->end_point_2(0)) * (0.5 + y_offset / 0.7);
+	float y_pos =
+	  ll->end_point_2(1) + (ll->end_point_1(1) - ll->end_point_2(1)) * (0.5 + y_offset / 0.7);
+	float z_pos = z_offset;
+
+	float angle = fabs(ll->bearing());
+
+	//compute position with offset towards MPS
+	x_pos += cos(angle) * x_offset;
+	y_pos += sin(angle) * x_offset;
+
+	float x_1 = ll->end_point_1(0);
+	float x_2 = ll->end_point_2(0);
+	float y_1 = ll->end_point_1(1);
+	float y_2 = ll->end_point_2(1);
+
+	//normal
+	float normal_vector_length = std::sqrt((y_2 - y_1) * (y_2 - y_1) + (x_1 - x_2) * (x_1 - x_2));
+	float x_normal = (y_2 - y_1) / normal_vector_length;
+	float y_normal = (x_1 - x_2) / normal_vector_length;
+
+	float dist_line_to_obj = ((object_pos.getX() - x_2) / (y_1 - x_2) * (y_1 - y_2) + y_2 - object_pos.getY())
+	                       / (y_normal - (x_normal * (y_1 - y_2)) / (y_1 - x_2));
+
+	float base_offset = base_offset_; //TODO: or -base_offset | should work every time?
+	//if (dist_line_to_obj < 0) {
+	//	base_offset = -base_offset;
+	//}
+
+	base_target[0] = object_pos.getX() + (dist_line_to_obj + base_offset) * x_normal;
+	base_target[1] = object_pos.getY() + (dist_line_to_obj + base_offset) * y_normal;
 	base_target[2] = mps_angle;
+	logger->log_info("base_target[0]: ", std::to_string(base_target[0]).c_str());
+	logger->log_info("base_target[1]: ", std::to_string(base_target[1]).c_str());
+	logger->log_info("base_target[2]: ", std::to_string(base_target[2]).c_str());
 }

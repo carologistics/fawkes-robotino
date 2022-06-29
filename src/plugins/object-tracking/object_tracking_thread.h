@@ -205,7 +205,7 @@ private:
 
 	//compute base and gripper target frame
 	void compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Point> object_pos,
-	                           float                                  mps_angle,
+	                           fawkes::LaserLineInterface            *ll,
 	                           double                                 gripper_target[3],
 	                           double                                 base_target[3]);
 };
