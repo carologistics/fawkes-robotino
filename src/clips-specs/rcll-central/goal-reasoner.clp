@@ -418,7 +418,10 @@
 (defrule goal-reasoner-select-root-for-order
   "Select the root of an order-production-tree if it has the highest priority
   and is not interfering with currently selected goals."
-  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  ;the salience is increased by +1 statically as this rule has the same
+  ;priority as other goal selections and can in cases lead to race
+  ;conditions where the agent stucks on selection move-out-of-way goals
+  (declare (salience (+ 1 ?*SALIENCE-GOAL-SELECT*)))
   ?target-goal <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
       (id ?any-goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
   (goal-meta (goal-id ?any-goal-id) (root-for-order ?any-order&~nil))
