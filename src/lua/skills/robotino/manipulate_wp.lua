@@ -264,12 +264,12 @@ function input_invalid()
     end
   end
 
-  if (fsm.vars.target == "SLIDE" or fsm.vars.target == "CONVEYOR") and
-      not arduino:is_gripper_closed() then
-    print_error("If a conveyor or slide is targeted, " ..
-      "make sure there is a workpiece in the gripper!")
-    return true
-  end
+  -- if (fsm.vars.target == "SLIDE" or fsm.vars.target == "CONVEYOR") and
+  --     not arduino:is_gripper_closed() then
+  --   print_error("If a conveyor or slide is targeted, " ..
+  --     "make sure there is a workpiece in the gripper!")
+  --   return true
+  -- end
   return false
 end
 
