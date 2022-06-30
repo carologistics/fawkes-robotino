@@ -58,6 +58,7 @@
   ?*SALIENCE-GOAL-EXECUTABLE-CHECK* = 450
   ?*SALIENCE-GOAL-REJECT* = 400
   ?*SALIENCE-GOAL-EXPAND* = 300
+  ?*SALIENCE-GOAL-PRE-SELECT* = 250
   ?*SALIENCE-GOAL-SELECT* = 200
   ?*SALIENCE-GOAL-EVALUATE-GENERIC* = -1
 )
@@ -328,93 +329,23 @@
   ?g <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
       (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
   (goal-meta (goal-id ?goal-id) (root-for-order nil))
-
-  (or
-    ;either there is an executable sub-goal assigned to central
-    ;this should use some reference to the root id such that only the right root
-    ;is selected
-    (and
-      (goal (id ?id) (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE))
-      (goal-meta (goal-id ?id) (assigned-to central))
-    )
-    ;or there is a robot that is waiting and not assigned to a subgoal that is waiting
-    (and
-      (wm-fact (key central agent robot-waiting args? r ?robot))
-
-      (not (and (goal-meta (goal-id ?g-id) (assigned-to ?robot))
-                (goal (id ?g-id) (mode ~FORMULATED))))
-
-      (not (and (wm-fact (key central agent robot-waiting
-                          args? r ?o-robot&:(> (str-compare ?robot ?o-robot) 0)))
-          (goal-meta (assigned-to ?o-robot))))
-    )
-  )
+  (goal (id ?id) (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE))
+  (goal-meta (goal-id ?id) (assigned-to central))
   =>
   (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
   (modify ?g (mode SELECTED))
 )
 
-(defrule goal-reasoner-select-from-dispatched-children
-  "Select the candidate child goal of highest priority amongst the run-parallel and
-  run-all goals. Depending on the parent type enforce two different policies to find a candidate:
-  - if the parent is a RUN-ALL goal, then there must be no other goal under the same parent
-    that has a smaller ordering and has not been start yet.
-  - if the parent is a RUN-PARALLEL goal, there the candidate must have the highest priority."
-  (declare (salience ?*SALIENCE-GOAL-SELECT*))
-  ?g <- (goal (id ?candidate-id) (parent ?candidate-parent) (is-executable TRUE) (mode FORMULATED) (priority ?candidate-priority))
-  (goal-meta (goal-id ?candidate-id) (run-all-ordering ?candidate-ordering))
-  (goal (id ?candidate-parent) (mode DISPATCHED) (sub-type ?candidate-parent-type&CENTRAL-RUN-ALL-OF-SUBGOALS|CENTRAL-RUN-SUBGOALS-IN-PARALLEL))
-
-  ;it is the correct goal to choose within the subtree
-  (or
-    ;parent is a run-parallel goal (there is no formulated goal with a higher priority)
-    (and
-      (test (eq ?candidate-parent-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL))
-      (not (goal (id ~?candidate-id) (parent ?candidate-parent) (is-executable TRUE) (mode FORMULATED) (priority ?other-priority&:(> ?other-priority ?candidate-priority))))
-    )
-    ;parent is a run-all goal (there is no formulated goal with a smaller ordering number)
-    (and
-      (test (eq ?candidate-parent-type CENTRAL-RUN-ALL-OF-SUBGOALS))
-      (not
-        (and
-          (goal (id ?other-id&~?candidate-id) (parent ?candidate-parent) (mode FORMULATED))
-          (goal-meta (goal-id ?other-id) (run-all-ordering ?other-ordering&:(> ?candidate-ordering ?other-ordering)))
-        )
-      )
-    )
-  )
-
-  ;it is the correct goal within the entire tree to choose from (there is no goal that fulfills the same requirements with a higher priority)
-  (not
-    (and
-      (goal (id ?alternative-id&~?candidate-id) (parent ?alternative-parent) (is-executable TRUE) (mode FORMULATED) (priority ?alternative-priority&:(> ?alternative-priority ?candidate-priority)))
-      (goal-meta (goal-id ?alternative-id) (run-all-ordering ?alternative-ordering))
-      (goal (id ?alternative-parent) (mode DISPATCHED) (sub-type ?alternative-parent-type&CENTRAL-RUN-ALL-OF-SUBGOALS|CENTRAL-RUN-SUBGOALS-IN-PARALLEL))
-
-      (or
-        (and
-          (test (eq ?alternative-parent-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL))
-          (not (goal (id ~?alternative-id&~?candidate-id) (parent ?alternative-parent) (is-executable TRUE) (mode FORMULATED) (priority ?other-priority&:(> ?other-priority ?alternative-priority))))
-        )
-        (and
-          (test (eq ?alternative-parent-type CENTRAL-RUN-ALL-OF-SUBGOALS))
-          (not
-            (and
-              (goal (id ?other-id&~?alternative-id&~?candidate-id) (parent ?alternative-parent) (mode FORMULATED))
-              (goal-meta (goal-id ?other-id) (run-all-ordering ?other-ordering&:(> ?alternative-ordering ?other-ordering)))
-            )
-          )
-        )
-      )
-    )
-  )
-
-  ;there is no other acheive goal currently selected, expanded, or committed
-  (not (goal (mode SELECTED|EXPANDED|COMMITTED) (type ACHIEVE)))
+(defrule goal-reasoner-init-selection-criteria
+  (domain-loaded)
+  (not (wm-fact (key goal selection criterion args? t ?)))
   =>
-  (modify ?g (mode SELECTED))
+  (assert
+    (wm-fact (key goal selection criterion args? t root) (type SYMBOL) (is-list TRUE) (values (create$)))
+    (wm-fact (key goal selection criterion args? t run-all) (type SYMBOL) (is-list TRUE) (values (create$)))
+    (wm-fact (key goal selection criterion args? t run-parallel) (type SYMBOL) (is-list TRUE) (values (create$)))
+  )
 )
-
 (defrule goal-reasoner-select-root-for-order
   "Select the root of an order-production-tree if it has the highest priority
   and is not interfering with currently selected goals."
@@ -425,6 +356,65 @@
   =>
   (printout (log-debug ?v) "Goal " (fact-slot-value ?target-goal id) " SELECTED" crlf)
   (modify ?target-goal (mode SELECTED))
+)
+
+
+(defrule goal-reasoner-add-selectable-root-goal
+  (declare (salience ?*SALIENCE-GOAL-PRE-SELECT*))
+  (goal (type ACHIEVE) (id ?goal-id) (parent nil) (mode FORMULATED) (is-executable TRUE))
+  ?selection <- (wm-fact (key goal selection criterion args? t root) (values $?values&:(not (member$ ?goal-id ?values))))
+  =>
+  (modify ?selection (values (append$ ?values ?goal-id)))
+)
+
+(defrule goal-reasoner-add-selectable-run-all-goal
+  (declare (salience ?*SALIENCE-GOAL-PRE-SELECT*))
+  (goal (type ACHIEVE) (id ?parent-id) (mode DISPATCHED) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS))
+  (goal (type ACHIEVE) (id ?goal-id) (parent ?parent-id) (mode FORMULATED) (is-executable TRUE))
+  (goal-meta (goal-id ?goal-id) (run-all-ordering ?ordering))
+  (not (and
+    (goal (id ?other-id&~?goal-id) (parent ?parent-id) (mode FORMULATED))
+    (goal-meta (goal-id ?other-id) (run-all-ordering ?other-ordering&:(> ?ordering ?other-ordering)))
+  ))
+  ?selection <- (wm-fact (key goal selection criterion args? t run-all) (values $?values&:(not (member$ ?goal-id ?values))))
+  =>
+  (modify ?selection (values (append$ ?values ?goal-id)))
+)
+
+(defrule goal-reasoner-add-selectable-run-parallel-goal
+  (declare (salience ?*SALIENCE-GOAL-PRE-SELECT*))
+  (goal (type ACHIEVE) (id ?parent-id) (mode DISPATCHED) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL))
+  (goal (type ACHIEVE) (id ?goal-id) (parent ?parent-id) (mode FORMULATED)
+        (is-executable TRUE) (priority ?priority))
+  (not (goal (id ~?goal-id) (parent ?parent-id) (is-executable TRUE) (mode FORMULATED) (priority ?other-priority&:(> ?other-priority ?priority))))
+  ?selection <- (wm-fact (key goal selection criterion args? t run-parallel) (values $?values&:(not (member$ ?goal-id ?values))))
+  =>
+  (modify ?selection (values (append$ ?values ?goal-id)))
+)
+
+(defrule goal-reasoner-apply-selection-across-types
+  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  (wm-fact (key goal selection criterion args? t ?) (values ?some-goal-id $?))
+  ?some-goal <- (goal (id ?some-goal-id) (priority ?some-prio))
+  (not (goal (mode SELECTED|EXPANDED|COMMITTED) (type ACHIEVE)))
+  =>
+  (bind ?all-choices (create$))
+  (delayed-do-for-all-facts ((?selection wm-fact))
+    (wm-key-prefix ?selection:key (create$ goal selection criterion))
+    (bind ?all-choices (append$ ?all-choices ?selection:values))
+    (modify ?selection (values (create$)))
+  )
+  (bind ?highest-prio ?some-prio)
+  (bind ?highest-prio-goal-fact ?some-goal)
+  (do-for-all-facts ((?g goal))
+    (member$ ?g:id ?all-choices)
+    (if (> ?g:priority ?highest-prio)
+     then
+      (bind ?highest-prio ?g:priority)
+      (bind ?highest-prio-goal-fact ?g)
+    )
+  )
+  (modify ?highest-prio-goal-fact (mode SELECTED))
 )
 
 (defrule goal-reasoner-balance-payment-goals
