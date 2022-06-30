@@ -296,15 +296,15 @@
   (bind ?parent-id ?pid)
   (while (eq ?propagate TRUE)
     (do-for-all-facts ((?parent goal)) (eq ?parent:id ?parent-id)
-      (if (eq ?parent:mode FORMULATED)
-        then
-        (modify ?parent (is-executable TRUE))
-        (bind ?parent-id ?parent:parent)
-      )
-
       (if (or (eq ?parent:parent nil) (neq ?parent:mode FORMULATED))
         then (bind ?propagate FALSE)
       )
+      (if (eq ?parent:mode FORMULATED)
+        then
+        (bind ?parent-id ?parent:parent)
+        (modify ?parent (is-executable TRUE))
+      )
+
     )
   )
 )

@@ -27,7 +27,7 @@
   =>
   (do-for-all-facts ((?robot wm-fact))
     (wm-key-prefix ?robot:key (create$ central agent robot))
-    (modify ?bs (value (+ ?seq 1)))
+    (bind ?bs (modify ?bs (value (+ ?seq 1))))
     (bind ?robot-name (wm-key-arg ?robot:key r))
     (bind ?name-length (str-length (str-cat ?robot-name)))
     (bind ?robot-number (string-to-field (sub-string ?name-length ?name-length (str-cat ?robot-name))))

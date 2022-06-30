@@ -818,7 +818,7 @@
     )
 
   )
-  ?needs-update <- (wm-fact (key mps workload needs-update) (value FALSE))
+  (wm-fact (key mps workload needs-update) (value FALSE))
   =>
   ;find the necessary ringstations
   (bind ?rs1 (goal-production-get-machine-for-color ?col-ring1))
@@ -866,7 +866,7 @@
     ((?update-fact wm-fact)) (wm-key-prefix ?update-fact:key (create$ mps workload needs-update))
     (retract ?update-fact)
   )
-  (modify ?needs-update (value TRUE))
+  (assert (wm-fact (key mps workload needs-update) (is-list FALSE) (type BOOL) (value TRUE)))
 )
 
 (defrule goal-production-fill-in-unknown-wp-discard
