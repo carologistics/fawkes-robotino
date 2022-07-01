@@ -81,7 +81,7 @@
 )
 
 (deffunction domain-load-local-facts (?self ?team-color)
-	"Initialize facts that are not synced."
+" Initialize facts that are not synced."
   (if (eq ?team-color CYAN)
     then
         (bind ?bs C-BS)
@@ -100,7 +100,7 @@
         (bind ?ds M-DS)
         (bind ?ss M-SS)
   )
-	(assert
+  (assert
     (domain-fact (name self) (param-values ?self))
     (domain-fact (name at) (param-values robot1 START INPUT))
     (domain-fact (name at) (param-values robot2 START INPUT))
@@ -145,35 +145,6 @@
     (domain-fact (name rs-inc) (param-values TWO THREE))
     (domain-fact (name cs-color) (param-values ?cs1 CAP_GREY))
     (domain-fact (name cs-color) (param-values ?cs2 CAP_BLACK))
-    (domain-fact (name tag-matching) (param-values C-BS INPUT CYAN 65))
-    (domain-fact (name tag-matching) (param-values C-CS1 INPUT CYAN 1))
-    (domain-fact (name tag-matching) (param-values C-CS2 INPUT CYAN 17))
-    (domain-fact (name tag-matching) (param-values C-RS1 INPUT CYAN 33))
-    (domain-fact (name tag-matching) (param-values C-RS2 INPUT CYAN 177))
-    (domain-fact (name tag-matching) (param-values C-DS INPUT CYAN 81))
-    (domain-fact (name tag-matching) (param-values C-SS INPUT CYAN 193))
-    (domain-fact (name tag-matching) (param-values C-BS OUTPUT CYAN 66))
-    (domain-fact (name tag-matching) (param-values C-CS1 OUTPUT CYAN 2))
-    (domain-fact (name tag-matching) (param-values C-CS2 OUTPUT CYAN 18))
-    (domain-fact (name tag-matching) (param-values C-RS1 OUTPUT CYAN 34))
-    (domain-fact (name tag-matching) (param-values C-RS2 OUTPUT CYAN 178))
-    (domain-fact (name tag-matching) (param-values C-DS OUTPUT CYAN 82))
-    (domain-fact (name tag-matching) (param-values C-SS OUTPUT CYAN 194))
-
-    (domain-fact (name tag-matching) (param-values M-BS INPUT MAGENTA 161))
-    (domain-fact (name tag-matching) (param-values M-CS1 INPUT MAGENTA 97))
-    (domain-fact (name tag-matching) (param-values M-CS2 INPUT MAGENTA 113))
-    (domain-fact (name tag-matching) (param-values M-RS1 INPUT MAGENTA 129))
-    (domain-fact (name tag-matching) (param-values M-RS2 INPUT MAGENTA 145))
-    (domain-fact (name tag-matching) (param-values M-DS INPUT MAGENTA 49))
-    (domain-fact (name tag-matching) (param-values M-SS INPUT MAGENTA 209))
-    (domain-fact (name tag-matching) (param-values M-BS OUTPUT MAGENTA 162))
-    (domain-fact (name tag-matching) (param-values M-CS1 OUTPUT MAGENTA 98))
-    (domain-fact (name tag-matching) (param-values M-CS2 OUTPUT MAGENTA 114))
-    (domain-fact (name tag-matching) (param-values M-RS1 OUTPUT MAGENTA 130))
-    (domain-fact (name tag-matching) (param-values M-RS2 OUTPUT MAGENTA 146))
-    (domain-fact (name tag-matching) (param-values M-DS OUTPUT MAGENTA 50))
-    (domain-fact (name tag-matching) (param-values M-SS OUTPUT MAGENTA 210))
 
     (domain-fact (name mirror-orientation) (param-values 0 180))
     (domain-fact (name mirror-orientation) (param-values 45 135))
@@ -212,7 +183,26 @@
     (domain-object (name O9) (type order))
     (domain-fact (name rs-ring-spec) (param-values ?rs1 RING_NONE ZERO))
     (domain-fact (name rs-ring-spec) (param-values ?rs2 RING_NONE ZERO))
-	)
+  )
+)
+
+(defrule domain-init-tag-matching
+  (domain-fact (name mps-type) (param-values ?mps ?))
+  (navgraph-node (name ?str-mps&:(eq (sym-cat ?str-mps) ?mps))
+                 (properties $? "tag_input" ?input-str $?))
+  (navgraph-node (name ?str-mps)
+                 (properties $? "tag_output" ?output-str $?))
+  (not (domain-fact (name tag-matching) (param-values ?mps $?)))
+  =>
+  (if (str-index "C-" ?str-mps) then
+    (bind ?team CYAN)
+   else
+    (bind ?team MAGENTA)
+  )
+  (assert
+    (domain-fact (name tag-matching) (param-values ?mps INPUT ?team (string-to-field ?input-str)))
+    (domain-fact (name tag-matching) (param-values ?mps OUTPUT ?team (string-to-field ?output-str)))
+  )
 )
 
 (defrule domain-load-initial-facts
@@ -226,6 +216,7 @@
   (retract ?flushed)
   (bind ?self (sym-cat ?robot-name))
   (config-load ?*NAVGRAPH_GENERATOR_MPS_CONFIG*)
+  (config-load ?*TAG_VISION_CONFIG*)
   (printout info "Initializing worldmodel" crlf)
   (if (eq ?team-color CYAN)
     then
@@ -246,7 +237,7 @@
         (bind ?ss M-SS)
   )
 
-	(domain-load-local-facts ?self ?team-color)
+  (domain-load-local-facts ?self ?team-color)
   (assert
     (domain-fact (name cs-can-perform) (param-values ?cs1 RETRIEVE_CAP))
     (domain-fact (name cs-can-perform) (param-values ?cs2 RETRIEVE_CAP))

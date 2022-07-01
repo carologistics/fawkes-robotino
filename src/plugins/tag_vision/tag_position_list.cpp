@@ -116,10 +116,10 @@ TagPositionList::~TagPositionList()
 	}
 }
 
-alvar::Pose
+TagPose
 TagPositionList::get_laser_line_pose(fawkes::LaserLineInterface *laser_line_if)
 {
-	alvar::Pose pose;
+	TagPose pose;
 
 	float x = laser_line_if->end_point_1(0)
 	          + (laser_line_if->end_point_2(0) - laser_line_if->end_point_1(0)) / 2;
@@ -128,7 +128,6 @@ TagPositionList::get_laser_line_pose(fawkes::LaserLineInterface *laser_line_if)
 	float ori = fawkes::normalize_mirror_rad(laser_line_if->bearing());
 
 	fawkes::tf::Quaternion f_q = fawkes::tf::create_quaternion_from_yaw(double(ori));
-	double                 q[4];
 	tf::Point              f_p(tf::Scalar(x), tf::Scalar(y), 0.);
 
 	fawkes::tf::Pose f_p_in(f_q, f_p);
@@ -150,64 +149,58 @@ TagPositionList::get_laser_line_pose(fawkes::LaserLineInterface *laser_line_if)
 		//    %s\nuse newest", e.what());
 	}
 
-	pose.translation[0] = f_sp_out.getOrigin().getX() * 1000;
-	pose.translation[1] = f_sp_out.getOrigin().getY() * 1000;
-	pose.translation[2] = f_sp_out.getOrigin().getZ() * 1000;
+	pose.tvec = {f_sp_out.getOrigin().getX() * 1000,
+	             f_sp_out.getOrigin().getY() * 1000,
+	             f_sp_out.getOrigin().getZ() * 1000};
 
 	fawkes::tf::Quaternion q_out         = f_sp_out.getRotation();
 	fawkes::tf::Quaternion q_rot_for_cam = fawkes::tf::create_quaternion_from_rpy(M_PI_2, 0, -M_PI_2);
 	q_out                                = q_out * q_rot_for_cam;
-	q[0]                                 = q_out.getW();
-	q[1]                                 = q_out.getX();
-	q[2]                                 = q_out.getY();
-	q[3]                                 = q_out.getZ();
 
-	pose.SetQuaternion(q);
+	pose.quaternion = {q_out.getW(), q_out.getX(), q_out.getY(), q_out.getZ()};
 
 	return pose;
 }
 
-alvar::Pose
+TagPose
 TagPositionList::get_nearest_laser_line_pose(
-  alvar::Pose                                tag_pose,
+  TagPose                                    tag_pose,
   std::vector<fawkes::LaserLineInterface *> *laser_line_ifs)
 {
 	double dist_closest = 10000000000000000.;
 
-	alvar::Pose ll_pose_clostest; // = get_laser_line_pose( laser_line_ifs->at(0) );
-	ll_pose_clostest.translation[0] = 10000000.;
-	ll_pose_clostest.translation[1] = 10000000.;
-	ll_pose_clostest.translation[2] = 10000000.;
+	TagPose ll_pose_closest; // = get_laser_line_pose( laser_line_ifs->at(0) );
+	ll_pose_closest.tvec = {10000000, 10000000., 10000000.};
 	// for each laser_line
 	for (unsigned int i = 0; i < laser_line_ifs->size(); ++i) {
 		laser_line_ifs->at(i)->read();
 		if (laser_line_ifs->at(i)->visibility_history() > 0) {
 			// get centeroid
 			// transform to what we need ;)
-			alvar::Pose ll_pose_current;
+			TagPose ll_pose_current;
 			try {
 				ll_pose_current = get_laser_line_pose(laser_line_ifs->at(i));
 			} catch (fawkes::Exception &) {
 				continue;
 			}
-			// check if clostest (translation)
-			double dist_current = sqrt((ll_pose_current.translation[0] - tag_pose.translation[0])
-			                             * (ll_pose_current.translation[0] - tag_pose.translation[0])
-			                           + (ll_pose_current.translation[1] - tag_pose.translation[1])
-			                               * (ll_pose_current.translation[1] - tag_pose.translation[1])
-			                           + (ll_pose_current.translation[2] - tag_pose.translation[2])
-			                               * (ll_pose_current.translation[2] - tag_pose.translation[2]));
+			// check if closest (translation)
+			double dist_current = sqrt((ll_pose_current.tvec[0] - tag_pose.tvec[0])
+			                             * (ll_pose_current.tvec[0] - tag_pose.tvec[0])
+			                           + (ll_pose_current.tvec[1] - tag_pose.tvec[1])
+			                               * (ll_pose_current.tvec[1] - tag_pose.tvec[1])
+			                           + (ll_pose_current.tvec[2] - tag_pose.tvec[2])
+			                               * (ll_pose_current.tvec[2] - tag_pose.tvec[2]));
 			// save closest
 			if (dist_current < dist_closest) {
-				ll_pose_clostest = ll_pose_current;
-				dist_closest     = dist_current;
+				ll_pose_closest = ll_pose_current;
+				dist_closest    = dist_current;
 			}
 		}
 	}
 
 	// check if the choosen laser-line is ok, to use (don't use anything far away
 	if (dist_closest <= 150) {
-		return ll_pose_clostest;
+		return ll_pose_closest;
 	} else {
 		//    logger_->log_info("tag_vision", "can't find sutable laser-line, use
 		//    tag; dist is: %lf", dist_closest);
@@ -222,13 +215,13 @@ TagPositionList::get_nearest_laser_line_pose(
  * @return An unused or matching interface manager.
  */
 TagPositionInterfaceHelper *
-TagPositionList::find_suitable_interface(const alvar::MarkerData &marker) const
+TagPositionList::find_suitable_interface(const TagVisionMarker &marker) const
 {
 	int                         min_vis_hist = std::numeric_limits<int>::max();
 	TagPositionInterfaceHelper *rv           = nullptr;
 
 	for (TagPositionInterfaceHelper *interface : *this) {
-		if (interface->marker_id() == marker.GetId()
+		if (interface->marker_id() == marker.marker_id
 		    || interface->marker_id() == EMPTY_INTERFACE_MARKER_ID)
 			return interface;
 
@@ -253,20 +246,19 @@ TagPositionList::find_suitable_interface(const alvar::MarkerData &marker) const
  * @param laser_line_ifs Laser lines for orientation sanity check
  */
 void
-TagPositionList::update_blackboard(std::vector<alvar::MarkerData> *           marker_list,
+TagPositionList::update_blackboard(std::vector<TagVisionMarker> &             marker_list,
                                    std::vector<fawkes::LaserLineInterface *> *laser_line_ifs)
 {
 	int i = 0;
-	for (alvar::MarkerData &marker : *marker_list) {
+	for (auto &marker : marker_list) {
 		// skip the marker, if the pose is directly on the camera (error)
-		alvar::Pose tmp_pose = marker.pose;
-		if (tmp_pose.translation[0] < 1 && tmp_pose.translation[1] < 1 && tmp_pose.translation[2] < 1) {
-			logger_->log_info("tag_vision", "don't use tag");
+		TagPose tmp_pose = marker.pose;
+		if (tmp_pose.tvec[0] < 1 && tmp_pose.tvec[1] < 1 && tmp_pose.tvec[2] < 1) {
 			continue;
 		}
 		try {
-			alvar::Pose ll_pose = get_nearest_laser_line_pose(tmp_pose, laser_line_ifs);
-			tmp_pose            = ll_pose;
+			TagPose ll_pose = get_nearest_laser_line_pose(tmp_pose, laser_line_ifs);
+			tmp_pose        = ll_pose;
 		} catch (std::exception &e) {
 			logger_->log_error(thread_name_.c_str(), "Failed to match tag to laser line: %s", e.what());
 		}
@@ -274,15 +266,15 @@ TagPositionList::update_blackboard(std::vector<alvar::MarkerData> *           ma
 
 		TagPositionInterfaceHelper *marker_interface = find_suitable_interface(marker);
 		if (marker_interface) {
-			if (marker_interface->marker_id() != marker.GetId()) {
-				marker_interface->set_marker_id(marker.GetId());
+			if (marker_interface->marker_id() != marker.marker_id) {
+				marker_interface->set_marker_id(marker.marker_id);
 				marker_interface->set_visibility_history(0);
 			}
-			marker_interface->set_pose(tmp_pose);
+			marker_interface->set_pose(tmp_pose, marker.type);
 		} else
 			logger_->log_warn(thread_name_.c_str(),
-			                  "Cannot publish tag #%ld: Index interface full!",
-			                  marker.GetId());
+			                  "Cannot publish tag #%u: Index interface full!",
+			                  marker.marker_id);
 	}
 	// update blackboard with interfaces
 	int32_t visible_markers = 0;

@@ -77,29 +77,28 @@ TagPositionInterfaceHelper::~TagPositionInterfaceHelper()
  * It also sets a marker for the visibility history, so using write()
  * updates the Interfae properly. It also publishes the transforms.
  *
- * @param new_pose The new Position of the marker, as got from alvar::MarkerData
+ * @param new_pose The new Position of the marker
+ * @param marker_type The type of the marker
  */
 void
-TagPositionInterfaceHelper::set_pose(alvar::Pose new_pose)
+TagPositionInterfaceHelper::set_pose(TagPose new_pose, MarkerType marker_type)
 {
-	// angles in quaternion
-	double rot[4];
-	// create the mat
-	// temp mat to get cv data
-	cv::Mat mat = cv::Mat(4, 1, CV_64F, rot);
-	// get the angles in euler
-	new_pose.GetQuaternion(mat);
-	// get the temporary quaternion in wxyz
-	rot[0] = mat.at<double>(0, 0);
-	rot[1] = mat.at<double>(1, 0);
-	rot[2] = mat.at<double>(2, 0);
-	rot[3] = mat.at<double>(3, 0);
 	// create a quaternion on the angles.
-	fawkes::tf::Quaternion tag_rot(rot[ALVAR_ROT::A_X],
-	                               rot[ALVAR_ROT::A_Y],
-	                               rot[ALVAR_ROT::A_Z],
-	                               rot[ALVAR_ROT::A_W]);
-	fawkes::tf::Quaternion fix_tag_orientation(0, -M_PI_2, -M_PI_2); // yaw: 0° pitch: 90° roll: -90°
+	fawkes::tf::Quaternion tag_rot(new_pose.quaternion[CV_ROT::CV_X],
+	                               new_pose.quaternion[CV_ROT::CV_Y],
+	                               new_pose.quaternion[CV_ROT::CV_Z],
+	                               new_pose.quaternion[CV_ROT::CV_W]);
+	fawkes::tf::Quaternion fix_tag_orientation(0, 0, 0);
+	switch (marker_type) {
+	case MarkerType::ARUCO:
+		fix_tag_orientation =
+		  fawkes::tf::Quaternion(0, -M_PI_2, 0) * fawkes::tf::Quaternion(0, 0, -M_PI_2);
+		break;
+	case MarkerType::ALVAR:
+		fix_tag_orientation =
+		  fawkes::tf::Quaternion(0, -M_PI_2, -M_PI_2); // yaw: 0° pitch: 90° roll: -90°
+		break;
+	}
 	fawkes::tf::Quaternion result = tag_rot * fix_tag_orientation;
 
 	// publish the quaternion
@@ -108,17 +107,17 @@ TagPositionInterfaceHelper::set_pose(alvar::Pose new_pose)
 	pos_iface_->set_rotation(ROT::Z, result.getZ());
 	pos_iface_->set_rotation(ROT::W, result.getW());
 	// publish the translation
-	pos_iface_->set_translation(TRANS::T_X /*1*/, new_pose.translation[TRANS::T_X /*0*/] / 1000);
-	pos_iface_->set_translation(TRANS::T_Y /*2*/, new_pose.translation[TRANS::T_Y /*1*/] / 1000);
-	pos_iface_->set_translation(TRANS::T_Z /*0*/, new_pose.translation[TRANS::T_Z /*2*/] / 1000);
+	pos_iface_->set_translation(TRANS::T_X /*1*/, new_pose.tvec[TRANS::T_X /*0*/] / 1000);
+	pos_iface_->set_translation(TRANS::T_Y /*2*/, new_pose.tvec[TRANS::T_Y /*1*/] / 1000);
+	pos_iface_->set_translation(TRANS::T_Z /*0*/, new_pose.tvec[TRANS::T_Z /*2*/] / 1000);
 
 	was_seen_ = true;
 
 	// publish the transform
 	fawkes::tf::Transform        transform(result,
-                                  fawkes::tf::Vector3(new_pose.translation[0] / 1000,
-                                                      new_pose.translation[1] / 1000,
-                                                      new_pose.translation[2] / 1000));
+                                  fawkes::tf::Vector3(new_pose.tvec[0] / 1000,
+                                                      new_pose.tvec[1] / 1000,
+                                                      new_pose.tvec[2] / 1000));
 	fawkes::Time                 time(clock_);
 	fawkes::tf::StampedTransform stamped_transform(transform, time, cam_frame_, tag_frame_);
 	tf_publisher_->send_transform(stamped_transform);

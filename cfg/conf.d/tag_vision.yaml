@@ -13,14 +13,59 @@ plugins/tag_vision:
   # exposure_auto=1:exposure_absolute=305
   camera: v4l2:tag:device=/dev/video_tag
 
+  # Marker type
+  # Supported types: ALVAR
+  #                  ARUCO_4X4_50,
+  #                  ARUCO_4X4_100,
+  #                  ARUCO_4X4_250,
+  #                  ARUCO_4X4_1000,
+  #                  ARUCO_5X5_50,
+  #                  ARUCO_5X5_100,
+  #                  ARUCO_5X5_250,
+  #                  ARUCO_5X5_1000,
+  #                  ARUCO_6X6_50,
+  #                  ARUCO_6X6_100,
+  #                  ARUCO_6X6_250,
+  #                  ARUCO_6X6_1000,
+  #                  ARUCO_7X7_50,
+  #                  ARUCO_7X7_100,
+  #                  ARUCO_7X7_250,
+  #                  ARUCO_7X7_1000,
+  #                  ARUCO_ORIGINAL,
+  #                  APRILTAG_16h5,
+  #                  APRILTAG_25h9,
+  #                  APRILTAG_36h10,
+  #                  APRILTAG_36h11
+  marker_type: "ARUCO_ORIGINAL"
+  # marker_type: "ALVAR"
+
   # Shared Memory Imagebuffer name
   shm_image_id: "tag_vision"
 
   # frame of reference
-  frame: "/cam_tag"
+  frame: "cam_tag"
 
   # alvar calibration file
   alvar_camera_calib_file: /not/found
 
   # ar tag marker size in millimeter
-  marker_size: 135
+  marker_size: 130
+
+  # important for explore zone skill
+  # old alvar tags had even ids for markers, alvar tags have odd ids
+  output_marker_id_odd: true
+
+  # camera matrix
+  # These values are based on the tag camera calibrated in 2022
+  camera_matrix: [541.83897791, 0, 312.34902706,
+                  0, 539.27016132, 234.15780227,
+                  0, 0, 1]
+
+  # distortion Coeficents
+  dist_coeffs: [
+    0.11646948,
+    -0.43243322,
+    -0.00127437,
+    0.00096187,
+    0.46947971
+  ]

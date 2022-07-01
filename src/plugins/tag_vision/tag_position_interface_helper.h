@@ -28,40 +28,68 @@
 #include <tf/types.h>
 #include <utils/math/angle.h>
 
+#pragma GCC diagnostic ignored "-Woverloaded-virtual"
+#include <opencv2/opencv.hpp>
+#pragma GCC diagnostic pop
 #include <string>
 
 #ifdef HAVE_AR_TRACK_ALVAR
 #	include <ar_track_alvar/Pose.h>
 #else
-#	include <alvar/Pose.h>
+#	ifdef HAVE_ALVAR
+#		include <alvar/Pose.h>
+#	endif
 #endif
 
 #define EMPTY_INTERFACE_MARKER_ID 0
 #define INTERFACE_UNSEEN_BOUND -5
 
+/// Type of the Marker
+enum MarkerType { ARUCO, ALVAR };
+
+/// Pose of a tag
+struct TagPose
+{
+	/// Translation
+	cv::Vec3d tvec;
+	/// Rotation
+	cv::Vec4d quaternion;
+};
+/// Stores all requred information of a marker
+struct TagVisionMarker
+{
+	/// Pose of the mmarker
+	TagPose pose;
+	/// ID of the marker
+	unsigned int marker_id;
+	/// Marker Type
+	MarkerType type;
+};
+
+enum ROT { X = 0, Y = 1, Z = 2, W = 3 };
+
+enum ALVAR_ROT {
+	A_W = 0,
+	A_X = 1,
+	A_Y = 2,
+	A_Z = 3,
+};
+
+enum CV_ROT {
+	CV_W = 0,
+	CV_X = 1,
+	CV_Y = 2,
+	CV_Z = 3,
+};
+
+enum TRANS {
+	T_X = 0,
+	T_Y = 1,
+	T_Z = 2,
+};
+
 class TagPositionInterfaceHelper
 {
-	enum ROT { X = 0, Y = 1, Z = 2, W = 3 };
-
-	enum ALVAR_ROT {
-		A_W = 0,
-		A_X = 1,
-		A_Y = 2,
-		A_Z = 3,
-	};
-
-	enum TRANS {
-		T_X = 0,
-		T_Y = 1,
-		T_Z = 2,
-	};
-
-	enum ALVAR_TRANS {
-		A_T_X = 2,
-		A_T_Y = 0,
-		A_T_Z = 1,
-	};
-
 public:
 	/// Constructor
 	TagPositionInterfaceHelper(fawkes::Position3DInterface *   position_interface,
@@ -73,7 +101,7 @@ public:
 	~TagPositionInterfaceHelper();
 
 	/// Update the position of the interface
-	void set_pose(alvar::Pose new_pose);
+	void set_pose(TagPose new_pose, MarkerType marker_type);
 
 	/// Write the interface on the blackboard
 	void write();
