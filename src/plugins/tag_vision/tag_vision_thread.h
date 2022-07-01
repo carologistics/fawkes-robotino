@@ -95,6 +95,7 @@ public:
 
 	/// Common prefix of all tag frame names
 	static const std::string tag_frame_basename;
+	/// Common prefix of all tag frame names transformed to map
 	static const std::string tag_frame_basename_map;
 
 private:

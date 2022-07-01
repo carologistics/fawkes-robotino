@@ -251,6 +251,7 @@ TagVisionThread::finalize()
 /**
  * Get the appropriate TransformPublisher for the given tag index
  * @param idx The tag index
+ * @param frame frame of the publsher
  * @return The TransformPublisher to be used for the tag index
  */
 tf::TransformPublisher *
