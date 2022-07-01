@@ -67,9 +67,12 @@ ObjectTrackingThread::init()
 
 	belt_height_ = config->get_float("plugins/object_tracking/belt_values/belt_height");
 	belt_length_ = config->get_float("plugins/object_tracking/belt_values/belt_length");
+	belt_offset_side_ = config->get_float("plugins/object_tracking/belt_values/belt_offset_side");
+	belt_offset_front_ = config->get_float("plugins/object_tracking/belt_values/belt_offset_front");
 	belt_size_   = config->get_float("plugins/object_tracking/belt_values/belt_size");
 
 	slide_offset_side_ = config->get_float("plugins/object_tracking/slide_values/slide_offset_side");
+	slide_offset_front_ = config->get_float("plugins/object_tracking/slide_values/slide_offset_front");
 	slide_height_      = config->get_float("plugins/object_tracking/slide_values/slide_height");
 
 	left_shelf_offset_side_ =
@@ -78,6 +81,7 @@ ObjectTrackingThread::init()
 	  config->get_float("plugins/object_tracking/shelf_values/middle_shelf_offset_side");
 	right_shelf_offset_side_ =
 	  config->get_float("plugins/object_tracking/shelf_values/right_shelf_offset_side");
+	shelf_offset_front_ = config->get_float("plugins/object_tracking/shelf_values/shelf_offset_front");
 	shelf_height_ = config->get_float("plugins/object_tracking/shelf_values/shelf_height");
 
 	gripper_offset_pick_ =
@@ -228,6 +232,51 @@ ObjectTrackingThread::loop()
 			current_object_type_   = msg->object_type_to_set();
 			current_expected_mps_  = msg->expected_mps_to_set();
 			current_expected_side_ = msg->expected_side_to_set();
+
+			//set offsets from laser line center for expected object position
+			switch (current_expected_side_) {
+			case ObjectTrackingInterface::INPUT_CONVEYOR:
+				x_offset_ = belt_offset_front_;
+				y_offset_ = belt_offset_side_;
+				z_offset_ = belt_height_;
+				break;
+			case ObjectTrackingInterface::OUTPUT_CONVEYOR:
+				x_offset_ = belt_offset_front_;
+				y_offset_ = -belt_offset_side_;
+				z_offset_ = belt_height_;
+				break;
+			case ObjectTrackingInterface::SLIDE:
+				x_offset_ = slide_offset_front_;
+				y_offset_ = belt_offset_side_ + slide_offset_side_;
+				z_offset_ = slide_height_;
+				break;
+			case ObjectTrackingInterface::SHELF_LEFT:
+				x_offset_ = shelf_offset_front_;
+				y_offset_ = belt_offset_side_ + left_shelf_offset_side_;
+				z_offset_ = shelf_height_;
+				break;
+			case ObjectTrackingInterface::SHELF_MIDDLE:
+				x_offset_ = shelf_offset_front_;
+				y_offset_ = belt_offset_side_ + middle_shelf_offset_side_;
+				z_offset_ = shelf_height_;
+				break;
+			case ObjectTrackingInterface::SHELF_RIGHT:
+				x_offset_ = shelf_offset_front_;
+				y_offset_ = belt_offset_side_ + right_shelf_offset_side_;
+				z_offset_ = shelf_height_;
+				break;
+			default:
+				logger->log_error(object_tracking_if_->enum_tostring("EXPECTED_SIDE", current_expected_side_),
+								" is an invalid MPS-side!");
+				return;
+			}
+
+			if (current_object_type_ == ObjectTrackingInterface::WORKPIECE) {
+				x_offset_ += puck_size_;
+				z_offset_ += puck_height_ / 2;
+			} else if (current_object_type_ == ObjectTrackingInterface::CONVEYOR_BELT_FRONT) {
+				z_offset_ -= belt_size_ / 2;
+			}
 
 			//clear for weighted average
 			past_responses_.clear();
@@ -622,78 +671,28 @@ ObjectTrackingThread::laserline_get_expected_position(
   fawkes::LaserLineInterface             *ll,
   fawkes::tf::Stamped<fawkes::tf::Point> &expected_pos)
 {
-	//set offsets from laser line center for expected object position
-	float x_offset;
-	float y_offset;
-	float z_offset;
-
-	switch (current_expected_side_) {
-	case ObjectTrackingInterface::INPUT_CONVEYOR:
-		x_offset = 0;
-		y_offset = belt_offset_side_;
-		z_offset = belt_height_;
-		break;
-	case ObjectTrackingInterface::OUTPUT_CONVEYOR:
-		x_offset = 0;
-		y_offset = -belt_offset_side_;
-		z_offset = belt_height_;
-		break;
-	case ObjectTrackingInterface::SLIDE:
-		x_offset = 0;
-		y_offset = belt_offset_side_ + slide_offset_side_;
-		z_offset = slide_height_;
-		break;
-	case ObjectTrackingInterface::SHELF_LEFT:
-		x_offset = 0;
-		y_offset = belt_offset_side_ + left_shelf_offset_side_;
-		z_offset = shelf_height_;
-		break;
-	case ObjectTrackingInterface::SHELF_MIDDLE:
-		x_offset = 0;
-		y_offset = belt_offset_side_ + middle_shelf_offset_side_;
-		z_offset = shelf_height_;
-		break;
-	case ObjectTrackingInterface::SHELF_RIGHT:
-		x_offset = 0;
-		y_offset = belt_offset_side_ + right_shelf_offset_side_;
-		z_offset = shelf_height_;
-		break;
-	default:
-		logger->log_error(object_tracking_if_->enum_tostring("EXPECTED_SIDE", current_expected_side_),
-		                  " is an invalid MPS-side!");
-		return;
-	}
-
-	if (current_object_type_ == ObjectTrackingInterface::WORKPIECE) {
-		x_offset += puck_size_ / 2;
-		z_offset += puck_height_ / 2;
-	} else if (current_object_type_ == ObjectTrackingInterface::CONVEYOR_BELT_FRONT) {
-		z_offset -= belt_size_ / 2;
-	}
-
 	fawkes::tf::Stamped<fawkes::tf::Point> tf_in;
 	tf_in.stamp    = ll->timestamp();
 	tf_in.frame_id = ll->frame_id();
 
-	//get point on laser-line with y_offset
+	//get point on laser-line with y_offset_
 	float x_pos =
-	  ll->end_point_2(0) + (ll->end_point_1(0) - ll->end_point_2(0)) * (0.5 + y_offset / 0.7);
+	  ll->end_point_2(0) + (ll->end_point_1(0) - ll->end_point_2(0)) * (0.5 + y_offset_ / 0.7);
 	float y_pos =
-	  ll->end_point_2(1) + (ll->end_point_1(1) - ll->end_point_2(1)) * (0.5 + y_offset / 0.7);
-	float z_pos = z_offset;
+	  ll->end_point_2(1) + (ll->end_point_1(1) - ll->end_point_2(1)) * (0.5 + y_offset_ / 0.7);
+	float z_pos = z_offset_;
 
-	float angle = fabs(ll->bearing());
+	float angle = ll->bearing();
 
 	//compute position with offset towards MPS
-	x_pos += cos(angle) * x_offset;
-	y_pos += sin(angle) * x_offset;
+	x_pos += cos(angle) * x_offset_;
+	y_pos += sin(angle) * x_offset_;
 
 	tf_in.setX(x_pos);
 	tf_in.setY(y_pos);
 	tf_in.setZ(0.0);
 
 	try {
-		tf_in.stamp = Time(0, 0);
 		tf_listener->transform_point("/odom", tf_in, expected_pos);
 	} catch (tf::ExtrapolationException &) {
 		tf_in.stamp = Time(0, 0);
@@ -788,13 +787,13 @@ ObjectTrackingThread::closest_position(std::vector<std::array<float, 4>>      bo
 		float dist = sqrt((pos[0] - ref_pos.getX()) * (pos[0] - ref_pos.getX())
 		                  + (pos[1] - ref_pos.getY()) * (pos[1] - ref_pos.getY())
 		                  + (pos[2] - ref_pos.getZ()) * (pos[2] - ref_pos.getZ()));
-		//logger->log_warn(name(), std::to_string(dist).c_str());
-		//logger->log_info("pos[0]: ", std::to_string(pos[0]).c_str());
-		//logger->log_info("pos[1]: ", std::to_string(pos[1]).c_str());
-		//logger->log_info("pos[2]: ", std::to_string(pos[2]).c_str());
-		//logger->log_info("ref[0]: ", std::to_string(ref_pos.getX()).c_str());
-		//logger->log_info("ref[1]: ", std::to_string(ref_pos.getY()).c_str());
-		//logger->log_info("ref[2]: ", std::to_string(ref_pos.getZ()).c_str());
+		logger->log_warn(name(), std::to_string(dist).c_str());
+		logger->log_info("pos[0]: ", std::to_string(pos[0]).c_str());
+		logger->log_info("pos[1]: ", std::to_string(pos[1]).c_str());
+		logger->log_info("pos[2]: ", std::to_string(pos[2]).c_str());
+		logger->log_info("ref[0]: ", std::to_string(ref_pos.getX()).c_str());
+		logger->log_info("ref[1]: ", std::to_string(ref_pos.getY()).c_str());
+		logger->log_info("ref[2]: ", std::to_string(ref_pos.getZ()).c_str());
 		if (dist < min_dist) {
 			min_dist          = dist;
 			closest_pos[0]    = pos[0];
@@ -905,8 +904,8 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 		gripper_target[0] = object_pos.getX() + cos(mps_angle) * puck_size_;
 		gripper_target[1] = object_pos.getY() - sin(mps_angle) * puck_size_;
 	} else if (current_object_type_ == ObjectTrackingInterface::SLIDE_FRONT) {
-		gripper_target[0] = object_pos.getX() + cos(mps_angle) * puck_size_ * 0.2;
-		gripper_target[1] = object_pos.getY() - sin(mps_angle) * puck_size_ * 0.2;
+		gripper_target[0] = object_pos.getX() + cos(mps_angle) * puck_size_ * 0.5;
+		gripper_target[1] = object_pos.getY() - sin(mps_angle) * puck_size_ * 0.5;
 	}
 
 	float x_1 = ll->end_point_1(0);

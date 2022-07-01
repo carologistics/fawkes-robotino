@@ -80,22 +80,30 @@ private:
 	float belt_height_;
 	float belt_length_;
 	float belt_offset_side_;
+	float belt_offset_front_;
 
 	//slide values:
 	float slide_size_;
 	float slide_offset_side_;
+	float slide_offset_front_;
 	float slide_height_;
 
 	//shelf values:
 	float left_shelf_offset_side_;
 	float middle_shelf_offset_side_;
 	float right_shelf_offset_side_;
+	float shelf_offset_front_;
 	float shelf_height_;
 
 	//target frame offsets:
 	float gripper_offset_pick_;
 	float gripper_offset_put_;
 	float base_offset_;
+
+	//expected pose offsets:
+	float x_offset_;
+	float y_offset_;
+	float z_offset_;
 
 	//camera params
 	int   camera_width_;
