@@ -490,15 +490,27 @@
   (not (wm-fact (key wp meta points-current args? wp ?wp)))
   (wm-fact (key order meta estimated-points-total args? ord ?order)
            (value ?ep-total))
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color ))
+  (wm-fact (key domain fact cs-color args? m ?cs col ?cap-color))
+  (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring1-color $?))
 =>
   (bind ?curr-step RING1)
-  (if (eq ?com C0) then (bind ?curr-step CAP))
+  (bind ?curr-machine ?rs)
+  (if (eq ?com C0) then
+    (bind ?curr-step CAP)
+    (bind ?curr-machine ?cs)
+  )
+
   (assert (wm-fact (key wp meta points-current args? wp ?wp) (type INT)
                    (is-list FALSE) (value 0))
           (wm-fact (key wp meta next-step args? wp ?wp)
                    (type SYMBOL) (is-list FALSE) (value ?curr-step))
           (wm-fact (key wp meta estimated-points-total args? wp ?wp)
-                   (type INT) (is-list FALSE) (value ?ep-total)))
+                   (type INT) (is-list FALSE) (value ?ep-total))
+          (wm-fact (key wp meta next-machine args? wp ?wp)
+                   (type SYMBOL) (is-list FALSE) (value ?curr-machine))
+  )
 )
 
 
@@ -526,10 +538,20 @@
   (wm-fact (key domain fact order-ring2-color args? ord ?order col ?col-r2))
   (wm-fact (key domain fact order-ring3-color args? ord ?order col ?col-r3))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-col))
+  ; MPS CEs
+  (wm-fact (key domain fact cs-color args? m ?cs col ?cap-col))
+  (wm-fact (key domain fact rs-ring-spec args? m ?rs1 r ?col-r1 $?))
+  (wm-fact (key domain fact rs-ring-spec args? m ?rs2 r ?col-r2 $?))
+  (wm-fact (key domain fact rs-ring-spec args? m ?rs3 r ?col-r3 $?))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
+  (wm-fact (key domain fact mps-type args? m ?ds t DS))
   ; WP Meta CEs
   ?ns <- (wm-fact (key wp meta points-current args? wp ?wp) (value ?p-curr))
   ?wm <- (wm-fact (key wp meta next-step args? wp ?wp)
                    (value ?curr-step))
+  ?nm <- (wm-fact (key wp meta next-machine args? wp ?wp)
+                   (value ?curr-machine))
   ; Order Meta CE
   (wm-fact (key order meta points-steps args? ord ?order) (values $?p-list))
   ?ss <- (wm-fact (key order meta step-scored args? ord ?order step ?curr-step)
@@ -556,21 +578,26 @@
 ))
 =>
   (bind ?new-step DELIVER)
+  (bind ?new-machine ?ds)
   (if (not (eq ?wp-col-r1 ?col-r1))
     then
       (bind ?new-step RING1)
+      (bind ?new-machine ?rs1)
     else
       (if (not (eq ?wp-col-r2 ?col-r2))
         then
           (bind ?new-step RING2)
+          (bind ?new-machine ?rs2)
         else
           (if (not (eq ?wp-col-r3 ?col-r3))
             then
               (bind ?new-step RING3)
+              (bind ?new-machine ?rs3)
             else
               (if (not (eq ?wp-cap-col ?cap-col))
                 then
                   (bind ?new-step CAP)
+                  (bind ?new-machine ?cs)
               )
           )
       )
@@ -579,6 +606,7 @@
   (modify ?ns (value (+ ?p-curr
                         (nth$ (order-steps-index ?curr-step) $?p-list))))
   (modify ?wm (value ?new-step))
+  (modify ?nm (value ?new-machine))
 )
 
 
