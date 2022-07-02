@@ -441,7 +441,6 @@ ObjectTrackingThread::loop()
 
 	//get mps angle and expected object position through laser-data
 	float mps_angle = ll->bearing();
-	logger->log_info("mps_angle: ", std::to_string(mps_angle).c_str());
 	fawkes::tf::Stamped<fawkes::tf::Point> expected_pos_cam;
 	fawkes::tf::Stamped<fawkes::tf::Point> expected_pos;
 	laserline_get_expected_position(ll, expected_pos);
@@ -787,13 +786,13 @@ ObjectTrackingThread::closest_position(std::vector<std::array<float, 4>>      bo
 		float dist = sqrt((pos[0] - ref_pos.getX()) * (pos[0] - ref_pos.getX())
 		                  + (pos[1] - ref_pos.getY()) * (pos[1] - ref_pos.getY())
 		                  + (pos[2] - ref_pos.getZ()) * (pos[2] - ref_pos.getZ()));
-		logger->log_warn(name(), std::to_string(dist).c_str());
-		logger->log_info("pos[0]: ", std::to_string(pos[0]).c_str());
-		logger->log_info("pos[1]: ", std::to_string(pos[1]).c_str());
-		logger->log_info("pos[2]: ", std::to_string(pos[2]).c_str());
-		logger->log_info("ref[0]: ", std::to_string(ref_pos.getX()).c_str());
-		logger->log_info("ref[1]: ", std::to_string(ref_pos.getY()).c_str());
-		logger->log_info("ref[2]: ", std::to_string(ref_pos.getZ()).c_str());
+		//logger->log_warn(name(), std::to_string(dist).c_str());
+		//logger->log_info("pos[0]: ", std::to_string(pos[0]).c_str());
+		//logger->log_info("pos[1]: ", std::to_string(pos[1]).c_str());
+		//logger->log_info("pos[2]: ", std::to_string(pos[2]).c_str());
+		//logger->log_info("ref[0]: ", std::to_string(ref_pos.getX()).c_str());
+		//logger->log_info("ref[1]: ", std::to_string(ref_pos.getY()).c_str());
+		//logger->log_info("ref[2]: ", std::to_string(ref_pos.getZ()).c_str());
 		if (dist < min_dist) {
 			min_dist          = dist;
 			closest_pos[0]    = pos[0];
@@ -926,7 +925,4 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 	base_target[0] = gripper_target[0] + (dist_line_to_obj + base_offset) * x_normal;
 	base_target[1] = gripper_target[1] + (dist_line_to_obj + base_offset) * y_normal;
 	base_target[2] = mps_angle;
-	logger->log_info("base_target[0]: ", std::to_string(base_target[0]).c_str());
-	logger->log_info("base_target[1]: ", std::to_string(base_target[1]).c_str());
-	logger->log_info("base_target[2]: ", std::to_string(base_target[2]).c_str());
 }
