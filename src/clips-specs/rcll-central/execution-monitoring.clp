@@ -468,6 +468,7 @@
   =>
   (modify ?at (time ?now))
   (printout t "Action prepare-" ?mps " timer extended due to down machine" crlf)
+)
 
 ; ----------------------- RESTORE FROM BACKUP -------------------------------
 
