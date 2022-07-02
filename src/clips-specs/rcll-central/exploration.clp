@@ -469,7 +469,7 @@
     (value ?latest-report-time)
   )
   (wm-fact (key refbox team-color) (value ?team-color&~nil))
-  (wm-fact (key refbox comm peer-id public) (value ?peer))
+  (wm-fact (key refbox comm peer-id private) (value ?peer))
 =>
   (bind ?mr (pb-create "llsf_msgs.MachineReport"))
   (pb-set-field ?mr "team_color" ?team-color)
