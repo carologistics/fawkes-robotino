@@ -831,37 +831,3 @@ The workpiece remains in the output of the used ring station after
 
 
 
-(defrule retract-disconnected-agent-facts
-	(wm-fact (key central agent robot args? r ?robot))
-	?hbi <- (HeartbeatInterface (id ?id&:(str-index ?robot ?id)) (alive FALSE))
-	=>
-	(blackboard-close "HeartbeatInterface" ?id)
-	(do-for-all-facts ((?wm wm-fact))
-	                  (eq (wm-key-arg ?wm:key r) ?robot)
-		(retract ?wm)
-	)
-	(do-for-fact ((?si SkillerInterface)) (str-index ?robot ?si:id)
-		(retract ?si)
-	)
-	(do-for-all-facts ((?df domain-fact)) (str-index ?robot (implode$ ?df:param-values))
-		(retract ?df)
-	)
-
-	(do-for-all-facts ((?gm goal-meta)) (eq ?gm:assigned-to ?robot)
-		(do-for-all-facts ((?g goal)) (and (eq ?g:id ?gm:goal-id) (neq ?g:mode FORMULATED) (neq ?g:mode FINISHED) (neq ?g:mode RETRACTED))
-			(remove-robot-assignment-from-goal-meta ?g)
-			(modify ?g (mode FINISHED)(outcome FAILED))
-		)
-	)
-
-	(do-for-all-facts ((?bif blackboard-interface)) (str-index ?robot ?bif:id)
-		(blackboard-close ?bif:type ?bif:id)
-		(retract ?bif)
-	)
-
-	(do-for-all-facts ((?wsmf wm-sync-map-fact)) (eq (wm-key-arg ?wsmf:wm-fact-key r) ?robot)
-		(retract ?wsmf)
-	)
-
-	(retract ?hbi)
-)

@@ -500,3 +500,53 @@ execution monitoring handle the reformulation.
 	)
 	(retract ?restored)
 )
+
+(defrule execution-monitoring-detect-disconnected-robot
+  (declare (salience ?*MONITORING-SALIENCE*))
+	(wm-fact (key central agent robot args? r ?robot))
+	?hbi <- (HeartbeatInterface (id ?id&:(str-index ?robot ?id)) (alive FALSE))
+	; TODO: We could disable this as MAINTENANCE INFO SHOULD BE ENOUGH
+	=>
+	(printout error "Robot " ?robot  " lost, removing from worldmodel" crlf)
+	(blackboard-close "HeartbeatInterface" ?id)
+	(do-for-fact ((?si SkillerInterface)) (str-index ?robot ?si:id)
+		(retract ?si)
+	)
+	(do-for-all-facts ((?bif blackboard-interface)) (str-index ?robot ?bif:id)
+		(blackboard-close ?bif:type ?bif:id)
+		(retract ?bif)
+	)
+	(assert (reset-robot-in-wm ?robot))
+)
+
+(defrule execution-monitoring-clean-wm-from-robot
+  (declare (salience ?*MONITORING-SALIENCE*))
+	(domain-facts-loaded)
+	(reset-robot-in-wm ?robot)
+)
+	(do-for-all-facts ((?wm wm-fact))
+	                  (eq (wm-key-arg ?wm:key r) ?robot)
+		(retract ?wm)
+	)
+	(do-for-all-facts ((?df domain-fact)) (str-index ?robot (implode$ ?df:param-values))
+		(retract ?df)
+	)
+
+	(do-for-all-facts ((?gm goal-meta)) (eq ?gm:assigned-to ?robot)
+		(do-for-all-facts ((?g goal)) (and (eq ?g:id ?gm:goal-id) (neq ?g:mode FORMULATED) (neq ?g:mode FINISHED) (neq ?g:mode RETRACTED))
+			(remove-robot-assignment-from-goal-meta ?g)
+			(modify ?g (mode FINISHED)(outcome FAILED))
+		)
+	)
+
+	(do-for-all-facts ((?wsmf wm-sync-map-fact)) (eq (wm-key-arg ?wsmf:wm-fact-key r) ?robot)
+		(retract ?wsmf)
+	)
+
+	(retract ?hbi)
+	(assert (domain-fact (name at) (param-values ?robot START INPUT))
+	        (domain-fact (name can-hold) (param-values robot1))
+	        (domain-object (name ?curr-robot) (type robot))
+	        (wm-fact (key central agent robot args? r ?robot))
+	)
+)
