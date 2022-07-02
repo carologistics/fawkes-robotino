@@ -579,9 +579,8 @@ execution monitoring handle the reformulation.
 		(do-for-all-facts
 			((?plan-action plan-action))
 			(and (eq ?plan-action:goal-id ?goal:id)
-			     (neq ?plan-action:state FORMULATED)
-			     (neq ?plan-action:state FINAL)
-			     (neq ?plan-action:state FAILED)
+			     (or (eq ?plan-action:state WAITING)
+			         (eq ?plan-action:state RUNNING)
 			     (neq ?plan-action:skiller "/central/Skiller"))
 
 			(printout t "   Aborting action " ?plan-action:action-name " on interface" ?plan-action:skiller crlf)
