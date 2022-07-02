@@ -186,12 +186,20 @@
 	(assert (exp-navigator-vlow ?robot ?low-velocity ?low-rotation))
 )
 
+(defrule exp-enable-laser-lines
+	(goal (id ?root-id) (class EXPLORATION-ROOT))
+	(goal (parent ?root-id) (mode SELECTED))
+	(goal-meta (goal-id ?root-id) (assigned-to ?robot))
+	=>
+	(laser-lines-enable ?robot)
+)
+
 (defrule exp-create-exploration-timer
 " Initial goal creating
   Refer to fixed-squence.clp for the expandation of the goal and the creation of the EXPLORATION-PLAN
   The EXPLORATION-PLAN let the robot visit a number of configurable points. If a possible machine was detected, this plan is interrupted
 "
-  (wm-fact (key refbox phase) (value EXPLORATION))
+  (wm-fact (key refbox phase) (value EXPLORATION|PRODUCTION))
   (wm-fact (key game state) (value RUNNING))
    =>
   (assert (timer (name send-machine-reports)))
@@ -415,7 +423,10 @@
     (rotation $?rot)
   )
   (domain-fact (name tag-matching) (param-values ?machine ?side ?team-color ?tag-id))
-  (wm-fact (key domain fact mps-type args? m ?machine t ?mtype))
+  (wm-fact (key domain fact mps-type args? m ?some-machine&:(or
+             (eq ?machine ?some-machine)
+             (eq ?machine (mirror-name ?some-machine)))
+             t ?mtype))
   ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (value ?times-searched))
   ?zm <- (domain-fact (name zone-content) (param-values ?zn2 ?))
   ; This is for a mirrored field
@@ -435,13 +446,18 @@
       (rot ?rot)
       (tag-id ?tag-id)
     )
+    (exploration-result
+      (machine (mirror-name ?machine)) (zone (mirror-name ?zn2))
+      (orientation (mirror-orientation ?mtype ?zn2 ?orientation))
+      (team (mirror-team ?team-color))
+    )
   )
-  (printout t "EXP exploration fact zone successfull. Found " ?machine " in " ?zn2 crlf)
+  (printout t "EXP exploration fact zone successful. Found " ?machine " in " ?zn2 crlf)
 )
 
 (defrule exp-report-to-refbox
 " Regularly send all found machines to the refbox"
-  (wm-fact (key refbox phase) (value EXPLORATION))
+  (wm-fact (key refbox phase) (value EXPLORATION|PRODUCTION))
   (wm-fact (key refbox team-color) (value ?color))
   (exploration-result (team ?color) (machine ?machine) (zone ?zone)
     (orientation ?orientation)

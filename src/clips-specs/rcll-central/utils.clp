@@ -673,6 +673,17 @@
   )
 )
 
+(deffunction laser-lines-enable (?robot)
+  "Uses the SwitchInterface to enable laser lines. Those get disabled in
+   certain skills used for the production, hence if a robot interleaves
+   production and exploration tasks, then the laser lines need to be explicitly
+   enabled again while exploring.
+  "
+  (bind ?interface (remote-if "SwitchInterface" ?robot "laser-lines"))
+  (bind ?msg (blackboard-create-msg ?interface "EnableSwitchMessage"))
+  (blackboard-send-msg ?msg)
+)
+
 (deffunction navgraph-set-field-size (?robot)
   "Uses the NavGraphInterface to setup the bounding box on a robot to match
    the one from the central agent. If they have disagreeing bounding boxes,
