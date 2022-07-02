@@ -586,6 +586,25 @@
   )
 )
 
+(defrule goal-reasoner-evaluate-failed-discard
+" Re-formulate a failed discard goal"
+	?g <- (goal (id ?goal-id) (class DISCARD) (mode FINISHED) (outcome FAILED)
+	            (verbosity ?v))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+	=>
+	(set-robot-to-waiting ?robot)
+	(remove-robot-assignment-from-goal-meta ?g)
+	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED and reformulated as only a discard failed" crlf)
+	(modify ?g (mode FORMULATED) (outcome UNKNOWN))
+	(delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
+		(delayed-do-for-all-facts ((?a plan-action))
+		   (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
+			(retract ?a)
+		)
+		(retract ?p)
+	)
+)
+
 (defrule goal-reasoner-evaluate-failed-workpiece-usable
 " Re-formulate a failed goal if the workpiece it processes is still usable
 "
