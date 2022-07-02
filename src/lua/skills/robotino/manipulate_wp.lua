@@ -274,7 +274,7 @@ function input_invalid()
 end
 
 function object_tracker_active()
-  return object_tracking_if:has_writer() and object_tracking_if:msgid() > 0 and false
+  return object_tracking_if:has_writer() and object_tracking_if:msgid() > 0
 end
 
 fsm:define_states{ export_to=_M, closure={MISSING_MAX=MISSING_MAX},
@@ -291,7 +291,7 @@ fsm:define_states{ export_to=_M, closure={MISSING_MAX=MISSING_MAX},
 fsm:add_transitions{
    {"INIT", "FAILED",                             cond=input_invalid, desc="Invalid Input"},
    {"INIT", "START_TRACKING",                     cond=true, desc="Valid Input"},
-   {"START_TRACKING", "FAILED",                   timeout=6000, desc="Object tracker is not starting"},
+   {"START_TRACKING", "FAILED",                   timeout=2, desc="Object tracker is not starting"},
    {"START_TRACKING", "FIND_LASER_LINE",          cond=object_tracker_active},
    {"FIND_LASER_LINE", "DRIVE_TO_LASER_LINE",     cond=laser_line_found},
    {"FIND_LASER_LINE", "FAILED",                  timeout=10, desc="Could not find laser-line"},
