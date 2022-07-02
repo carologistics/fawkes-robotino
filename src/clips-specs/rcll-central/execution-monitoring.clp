@@ -570,7 +570,7 @@ If we restored the wm from the database, we can not be sure about the state of s
 and the world. Therefore stop all skills and with that fail the goals. Then let
 execution monitoring handle the reformulation.
 "
-	?restored <- (wm-robmem-sync-restored)
+	?restored <- (wm-robmem-sync-restored-fail-goals)
 	=>
 	(do-for-all-facts
 		((?goal goal))
