@@ -36,7 +36,8 @@ using namespace alvar;
 #endif
 using namespace std;
 
-const std::string TagVisionThread::tag_frame_basename = "tag_";
+const std::string TagVisionThread::tag_frame_basename     = "tag_";
+const std::string TagVisionThread::tag_frame_basename_map = "map_tag_";
 
 /** @class TagVisionThread "tag_vision_thread.h"
  * Thread to identify AR Tags and provid e their position
@@ -250,15 +251,16 @@ TagVisionThread::finalize()
 /**
  * Get the appropriate TransformPublisher for the given tag index
  * @param idx The tag index
+ * @param frame frame of the publsher
  * @return The TransformPublisher to be used for the tag index
  */
 tf::TransformPublisher *
-TagVisionThread::get_tf_publisher(size_t idx)
+TagVisionThread::get_tf_publisher(size_t idx, std::string frame)
 {
-	if (tf_publishers.find(tag_frame_basename + std::to_string(idx)) == tf_publishers.end())
-		tf_add_publisher("%s%ld", tag_frame_basename.c_str(), idx);
+	if (tf_publishers.find(frame + std::to_string(idx)) == tf_publishers.end())
+		tf_add_publisher("%s%ld", frame.c_str(), idx);
 
-	return tf_publishers[tag_frame_basename + std::to_string(idx)];
+	return tf_publishers[frame + std::to_string(idx)];
 }
 
 void

@@ -91,10 +91,12 @@ public:
 	virtual void loop() override;
 	virtual void finalize() override;
 
-	fawkes::tf::TransformPublisher *get_tf_publisher(size_t idx);
+	fawkes::tf::TransformPublisher *get_tf_publisher(size_t idx, std::string frame);
 
 	/// Common prefix of all tag frame names
 	static const std::string tag_frame_basename;
+	/// Common prefix of all tag frame names transformed to map
+	static const std::string tag_frame_basename_map;
 
 private:
 	/// load config from file
