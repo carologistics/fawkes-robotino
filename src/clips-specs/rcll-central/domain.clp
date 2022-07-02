@@ -307,7 +307,6 @@
 		    (if (neq ?curr-robot laptop1) then
 		      (assert (wm-fact (key central agent robot args? r ?curr-robot))
 		              (domain-object (name ?curr-robot) (type robot))
-		              (domain-fact (name at) (param-values ?curr-robot START INPUT))
 		              (domain-fact (name robot-waiting) (param-values ?curr-robot))
 		              (domain-fact (name at) (param-values ?curr-robot START INPUT)))
 		      else
@@ -346,7 +345,10 @@
 	(printout warn "Restoring world model from the database" crlf)
 	(wm-robmem-sync-restore)
 	(assert (sync-wm-facts-to-template-facts))
-	(assert (wm-robmem-sync-restored-fail-goals))
+	(assert (reset-robot-in-wm robot1)
+	        (reset-robot-in-wm robot2)
+	        (reset-robot-in-wm robot3)
+	)
 )
 
 (defrule domain-restore-template-facts
