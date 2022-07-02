@@ -189,6 +189,8 @@
   (wm-fact (key central agent robot args? r ?robot))
   (not (goal-meta (assigned-to ?robot)))
   (wm-fact (key central agent robot-waiting args? r ?robot))
+  ; TODO: not a nice condition, problem is a robot may be assigned before another robot flushes its assignments
+  (not (goal (sub-type SIMPLE) (mode SELECTED)))
   =>
   (bind ?longest-waiting 0)
   (bind ?longest-waiting-robot ?robot)
@@ -818,7 +820,7 @@
     )
 
   )
-  ?needs-update <- (wm-fact (key mps workload needs-update) (value FALSE))
+  (wm-fact (key mps workload needs-update) (value FALSE))
   =>
   ;find the necessary ringstations
   (bind ?rs1 (goal-production-get-machine-for-color ?col-ring1))
@@ -866,7 +868,7 @@
     ((?update-fact wm-fact)) (wm-key-prefix ?update-fact:key (create$ mps workload needs-update))
     (retract ?update-fact)
   )
-  (modify ?needs-update (value TRUE))
+  (assert (wm-fact (key mps workload needs-update) (is-list FALSE) (type BOOL) (value TRUE)))
 )
 
 (defrule goal-production-fill-in-unknown-wp-discard
