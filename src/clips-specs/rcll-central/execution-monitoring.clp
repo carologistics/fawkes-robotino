@@ -462,7 +462,7 @@
   ?at <- (timer (name ?nat&:(eq ?nat
                                 (sym-cat prepare- ?goal-id - ?plan-id
                                          - ?id -abort-timer)))
-	        (time $?t&:(timeout ?now ?t (- ?*ABORT-PREPARE-PERIOD* ?*ABORT-PREPARE-DOWN-RESET*)))
+	        (time $?t&:(timeout ?now ?t (- ?*ABORT-PREPARE-PERIOD* ?*ABORT-PREPARE-DOWN-REST*)))
                 (seq ?seq))
   (wm-fact (key domain fact mps-state args? m ?mps s DOWN))
   =>
@@ -501,60 +501,52 @@ execution monitoring handle the reformulation.
 	(retract ?restored)
 )
 
-; ----------------------- BS TRACKING -------------------------------
-(defrule execution-monitoring-bs-in-use
-"If a BS is part of a goal's operation, assert a fact to indicate this state."
-	(declare (salience ?*SALIENCE-HIGH*))
-	(not (wm-fact (key mps meta bs-in-use args? bs ?bs $?)))
-	(wm-fact (key domain fact mps-type args? $? ?bs $? BS $?))
-	(goal (id ?goal-id) (mode EXPANDED|COMMITTED|DISPATCHED) (sub-type SIMPLE))
-	(plan-action (action-name wp-get) (goal-id ?goal-id) (param-values $? ?bs $?)
-               (state FORMULATED|PENDING|WAITING|RUNNING))
+(defrule execution-monitoring-detect-disconnected-robot
+  (declare (salience ?*MONITORING-SALIENCE*))
+	(wm-fact (key central agent robot args? r ?robot))
+	?hbi <- (HeartbeatInterface (id ?id&:(str-index ?robot ?id)) (alive FALSE))
+	; TODO: We could disable this as MAINTENANCE INFO SHOULD BE ENOUGH
 	=>
-	(assert (wm-fact (key mps meta bs-in-use args? bs ?bs goal ?goal-id)))
-)
-
-(defrule execution-monitoring-bs-not-in-use
-"Retract BS in use fact if it is no longer in use."
-	(declare (salience ?*SALIENCE-HIGH*))
-	?wm <- (wm-fact (key mps meta bs-in-use args? bs ?bs goal ?goal-id))
-	(wm-fact (key domain fact mps-type args? $? ?bs $? BS $?))
-	(not (and (goal (id ?goal-id) (mode EXPANDED|COMMITTED|DISPATCHED))
-	          (plan-action (action-name wp-get) (goal-id ?goal-id) (param-values $? ?bs $?) (state FORMULATED|PENDING|WAITING|RUNNING))
-	))
-	=>
-	(retract ?wm)
-)
-
-; ----------------------- HANDLE FAILING INSTRUCT -----------------------------------
-(defrule execution-monitoring-break-instruct-fails
-"When an INSTRUCT fails on an MPS (except BS|DS), break the machine."
-	(declare (salience ?*MONITORING-SALIENCE*))
-	?g <- (goal (class INSTRUCT-CS-BUFFER-CAP|INSTRUCT-CS-MOUNT-CAP|INSTRUCT-RS-MOUNT-RING) (mode EVALUATED) (outcome FAILED) (params $? target-mps ?mps $?))
-	?wm <- (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
-	(not (goal (class BREAK-MPS) (params mps ?mps) (mode ~RETRACTED)))
-	=>
-	(bind ?goal-id (sym-cat BREAK-MPS - (gensym*)))
-	(assert (goal (id ?goal-id) (class RESET-MPS) (params mps ?mps) (mode EXPANDED) (sub-type SIMPLE) (type ACHIEVE)))
-	(assert (goal-meta (goal-id ?goal-id) (assigned-to central)))
-	(assert
-	    (plan (id (sym-cat ?goal-id -PLAN)) (goal-id ?goal-id))
-	    (plan-action (id 1) (plan-id (sym-cat ?goal-id -PLAN)) (goal-id ?goal-id)
-	        (action-name reset-mps)
-	        (param-names m)
-	        (param-values ?mps))
+	(printout error "Robot " ?robot  " lost, removing from worldmodel" crlf)
+	(blackboard-close "HeartbeatInterface" ?id)
+	(do-for-fact ((?si SkillerInterface)) (str-index ?robot ?si:id)
+		(retract ?si)
 	)
+	(do-for-all-facts ((?bif blackboard-interface)) (str-index ?robot ?bif:id)
+		(blackboard-close ?bif:type ?bif:id)
+		(retract ?bif)
+	)
+	(assert (reset-robot-in-wm ?robot))
 )
 
-(defrule execution-monitoring-reformulate-instruct-fails-bs-ds
-"When an INSTRUCT fails on a B|DS, reformulate the instruct goal."
-	(declare (salience ?*MONITORING-SALIENCE*))
-	?g <- (goal (class INSTRUCT-BS-DISPENSE-BASE|INSTRUCT-DS-DELIVER) (id ?id) (mode RETRACTED) (outcome FAILED))
-	?p <- (plan (goal-id ?id))
-	=>
-	(do-for-all-facts ((?plan-action plan-action)) (eq ?plan-action:goal-id ?id)
-		(retract ?plan-action)
+(defrule execution-monitoring-clean-wm-from-robot
+  (declare (salience ?*MONITORING-SALIENCE*))
+	(domain-facts-loaded)
+	(reset-robot-in-wm ?robot)
+)
+	(do-for-all-facts ((?wm wm-fact))
+	                  (eq (wm-key-arg ?wm:key r) ?robot)
+		(retract ?wm)
 	)
-	(modify ?g (mode FORMULATED) (outcome UNKNOWN))
-	(retract ?p)
+	(do-for-all-facts ((?df domain-fact)) (str-index ?robot (implode$ ?df:param-values))
+		(retract ?df)
+	)
+
+	(do-for-all-facts ((?gm goal-meta)) (eq ?gm:assigned-to ?robot)
+		(do-for-all-facts ((?g goal)) (and (eq ?g:id ?gm:goal-id) (neq ?g:mode FORMULATED) (neq ?g:mode FINISHED) (neq ?g:mode RETRACTED))
+			(remove-robot-assignment-from-goal-meta ?g)
+			(modify ?g (mode FINISHED)(outcome FAILED))
+		)
+	)
+
+	(do-for-all-facts ((?wsmf wm-sync-map-fact)) (eq (wm-key-arg ?wsmf:wm-fact-key r) ?robot)
+		(retract ?wsmf)
+	)
+
+	(retract ?hbi)
+	(assert (domain-fact (name at) (param-values ?robot START INPUT))
+	        (domain-fact (name can-hold) (param-values robot1))
+	        (domain-object (name ?curr-robot) (type robot))
+	        (wm-fact (key central agent robot args? r ?robot))
+	)
 )
