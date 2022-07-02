@@ -240,6 +240,15 @@
 	)
 	(return FALSE)
 )
+(defrule execution-monitoring-set-mps-side-approachable
+	(wm-fact (key domain fact mps-type args? m ?mps $?))
+	(wm-fact (key domain objects-by-type mps-side) (is-list TRUE)
+	         (values $? ?side&:(member$ ?side (create$ INPUT OUTPUT)) $?))
+	(not (domain-fact (name at) (param-values ? ?mps ?side)))
+	(not (domain-fact (name mps-side-approachable) (param-values ?mps ?side)))
+	=>
+	(assert (domain-fact (name mps-side-approachable) (param-values ?mps ?side)))
+)
 
 (defrule execution-monitoring-start-retry-action
 " For some actions it can be feasible to retry them in case of a failure, e.g. if
