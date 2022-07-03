@@ -82,7 +82,7 @@
 
   @return INPUT or OUTPUT
 "
-	(if ?output-odd then (bind ?mod 1) else (bind ?mod 0))
+	(if ?output-odd then (bind ?mod 0) else (bind ?mod 1))
 	(if (eq (mod ?tag-id 2) ?mod)
 		 then (return INPUT)
 		 else (return OUTPUT)
