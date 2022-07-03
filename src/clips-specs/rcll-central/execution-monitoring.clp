@@ -447,7 +447,7 @@
   "Restart timer for prepare actions if the machine is down"
   (time $?now)
   ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (id ?id)
-                      (state RUNNING)
+                      (state PENDING|RUNNING)
                       (action-name prepare-bs|
                                    prepare-cs|
                                    prepare-ds|
