@@ -813,8 +813,10 @@
         (wm-fact (key strategy meta selected-order args? cond possible) (value ?order-id))
         (not
             (and
-                (goal (id ?oid) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED))
+                (goal (id ?oid) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+                            (sub-type SIMPLE) (parent ?o-parent))
                 (goal-meta (goal-id ?oid) (root-for-order ~nil))
+                (goal (id ?o-parent) (class MOVE-OUT-OF-WAY))
             )
         )
     )
