@@ -21,6 +21,15 @@
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
 
+(defglobal
+  ?*PRODUCE-C0-AHEAD-TIME* = 150
+  ?*PRODUCE-C1-AHEAD-TIME* = 250
+  ?*PRODUCE-C2-AHEAD-TIME* = 350
+  ?*PRODUCE-C3-AHEAD-TIME* = 450
+  ?*DELIVER-AHEAD-TIME* = 60
+)
+
+
 (deffunction is-free (?target-pos)
 	(if (any-factp ((?at wm-fact))
 	        (and (wm-key-prefix ?at:key (create$ domain fact at))
@@ -281,6 +290,11 @@
 	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
 	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
 	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
+
+	; refbox CEs, prevent blocking DS by delivering too early
+  	(wm-fact (key refbox game-time) (values $?game-time))
+	(wm-fact (key refbox order ?order delivery-begin) (type UINT)
+	        (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*DELIVER-AHEAD-TIME*))))
 	=>
 	(printout t "Goal DELIVER executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
