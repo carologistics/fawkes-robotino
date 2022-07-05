@@ -510,12 +510,12 @@ end
 -- end tracking afterwards
 
 function FINAL:init()
-  local msg = object_tracking_if.StopTrackingMessage:new()
-  object_tracking_if:msgq_enqueue_copy(msg)
+  object_tracking_if:msgq_enqueue(object_tracking_if.StopTrackingMessage:new())
+  laserline_switch:msgq_enqueue(laserline_switch.DisableSwitchMessage:new())
 end
 
 function FAILED:init()
   move_gripper_default_pose()
-  local msg = object_tracking_if.StopTrackingMessage:new()
-  object_tracking_if:msgq_enqueue_copy(msg)
+  object_tracking_if:msgq_enqueue(object_tracking_if.StopTrackingMessage:new())
+  laserline_switch:msgq_enqueue(laserline_switch.DisableSwitchMessage:new())
 end
