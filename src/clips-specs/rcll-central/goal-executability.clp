@@ -586,12 +586,12 @@ The workpiece remains in the output of the used ring station after
 
 
     ; Our target-RS' input must be free
-	(not (wm-fact (key domain fact wp-at args? wp ?any-wp-blocking1 m ?target-mps side INPUT)))
-    ; One side must be kept free
+	(wm-fact (key domain fact mps-side-free args? m ?target-mps side INPUT))
+    ; One RS side must be kept free
+	(wm-fact (key domain fact mps-type args? m ?other-mps&~?target-mps t RS));make sure other mps is a RS
     (or
-	    (not (wm-fact (key domain fact wp-at args? wp ?any-wp-blocking2 m ?other-mps&~?target-mps side INPUT)))
-	    (not (wm-fact (key domain fact wp-at args? wp ?any-wp-blocking3 m ?target-mps side OUTPUT)))
-	    (not (wm-fact (key domain fact wp-at args? wp ?any-wp-blocking4 m ?other-mps&~?target-mps side OUTPUT)))
+		(wm-fact (key domain fact mps-side-free args? m ?other-mps side INPUT|OUTPUT))
+		(wm-fact (key domain fact mps-side-free args? m ?target-mps side OUTPUT))
 		(wm-fact (key domain fact mps-type args? m ?wp-loc t RS))
     )
 	; If we want to move the workpiece to a different RS, make sure that there is
