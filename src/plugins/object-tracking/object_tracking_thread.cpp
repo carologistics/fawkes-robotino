@@ -311,9 +311,6 @@ ObjectTrackingThread::loop()
 		object_tracking_if_->msgq_pop();
 	}
 	//-------------------------------------------------------------------------
-	for (fawkes::LaserLineInterface *ll : laserlines_) {
-		ll->read();
-	}
 
 	//check if tracking is active
 	if (!use_saved_ && !tracking_)
@@ -372,6 +369,9 @@ ObjectTrackingThread::loop()
 	//-------------------------------------------------------------------------
 
 	//get laser line if possible
+	for (fawkes::LaserLineInterface *ll : laserlines_) {
+		ll->read();
+	}
 	fawkes::LaserLineInterface *ll;
 	if (!laserline_get_best_fit(ll)) {
 		logger->log_info(name(), "No fitting laser line found!");
