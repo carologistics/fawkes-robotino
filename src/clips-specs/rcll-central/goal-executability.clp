@@ -599,14 +599,24 @@ The workpiece remains in the output of the used ring station after
 	;                                  difference ?bases-remain&ZERO|ONE|TWO|THREE))
 
 
+    ; Our target-RS' input must be free
+	(wm-fact (key domain fact mps-side-free args? m ?target-mps side INPUT))
+    ; One RS side must be kept free
+	(wm-fact (key domain fact mps-type args? m ?other-mps&~?target-mps t RS));make sure other mps is a RS
+    (or
+		(wm-fact (key domain fact mps-side-free args? m ?other-mps side INPUT|OUTPUT))
+		(wm-fact (key domain fact mps-side-free args? m ?target-mps side OUTPUT))
+		(wm-fact (key domain fact mps-type args? m ?wp-loc t RS))
+    )
+	; If we want to move the workpiece to a different RS, make sure that there is
+    ; no workpiece at the target RS output, that needs to be put into the same input
+    (not
+        (and
+            (wm-fact (key domain fact wp-at args? wp ?other-wp m ?target-mps&~?wp-loc side OUTPUT))
+            (wm-fact (key wp meta next-machine args? wp ?other-wp) (value ?target-mps))
+        )
+    )
 
-	(not (wm-fact (key domain fact wp-at args? wp ?any-wp-blocking m ?target-mps side INPUT)))
-	; There is at least one other rs side, except for the target input, that
-	; is free (because occupying all 4 sides at once can cause deadlocks)
-	(or (wm-fact (key domain fact mps-side-free args? m ?target-mps side OUTPUT))
-	    (and (wm-fact (key domain fact mps-type args? m ?other-rs&~?target-mps t RS))
-	         (wm-fact (key domain fact mps-team args? m ?other-rs col ?team-color))
-	         (wm-fact (key domain fact mps-side-free args? m ?other-rs side ?any-side))))
 
 	; MPS-Source CEs
 	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
