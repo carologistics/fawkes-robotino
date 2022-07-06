@@ -699,6 +699,21 @@
   (modify ?g (meta do-not-finish) (priority 1.0))
 )
 
+(defrule goal-production-create-support-root
+  "Create the SUPPPORT root, which is parent to all goals that are
+   supporting the production, i.e., payment and buffer goals.
+  "
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (domain-facts-loaded)
+  (not (goal (class SUPPORT-ROOT)))
+  (wm-fact (key refbox phase) (value PRODUCTION))
+  (wm-fact (key game state) (value RUNNING))
+  (wm-fact (key refbox team-color) (value ?color))
+  =>
+  (bind ?g (goal-tree-assert-central-run-parallel SUPPORT-ROOT))
+  (modify ?g (meta do-not-finish) (priority ?*PRODUCTION-C3-PRIORITY*))
+)
+
 (defrule goal-production-create-wait-root
   "Create the WAIT root, which has low priority and dispatches WAIT goals if
    nothing else is executable.
