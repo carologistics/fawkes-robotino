@@ -47,7 +47,7 @@ plugins/object_tracking:
   target_frame_offsets:
     gripper_offset_pick: 0.035
     gripper_offset_put: 0.015
-    base_offset: 0.235
+    base_offset: 0.28
 
   camera_intrinsics:
     # image size

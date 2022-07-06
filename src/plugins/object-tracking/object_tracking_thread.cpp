@@ -907,22 +907,7 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 		gripper_target[1] = object_pos.getY() - sin(mps_angle) * puck_size_ * 0.5;
 	}
 
-	float x_1 = ll->end_point_1(0);
-	float x_2 = ll->end_point_2(0);
-	float y_1 = ll->end_point_1(1);
-	float y_2 = ll->end_point_2(1);
-
-	//normal
-	float normal_vector_length = std::sqrt((y_2 - y_1) * (y_2 - y_1) + (x_1 - x_2) * (x_1 - x_2));
-	float x_normal = (y_2 - y_1) / normal_vector_length;
-	float y_normal = (x_1 - x_2) / normal_vector_length;
-
-	float dist_line_to_obj = ((gripper_target[0] - x_2) / (y_1 - x_2) * (y_1 - y_2) + y_2 - gripper_target[1])
-	                       / (y_normal - (x_normal * (y_1 - y_2)) / (y_1 - x_2));
-
-	float base_offset = base_offset_;
-
-	base_target[0] = gripper_target[0] + (dist_line_to_obj + base_offset) * x_normal;
-	base_target[1] = gripper_target[1] + (dist_line_to_obj + base_offset) * y_normal;
+	base_target[0] = gripper_target[0] - cos(mps_angle) * base_offset_;
+	base_target[1] = gripper_target[1] + sin(mps_angle) * base_offset_;
 	base_target[2] = mps_angle;
 }
