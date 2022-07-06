@@ -51,6 +51,57 @@
   (modify ?payment-goal (parent ?root-id) (priority ?prioPayment))
 )
 
+(defrule goal-request-assert-pay-with-cap-carrier-from-existing-discard
+  "If there is a formulated discard goal and a new payment request comes in
+   combine them into one pay-with-cap-carrier goal."
+  ?request-discard <- (wm-fact (key request discard args? ord ?orderDiscard cs ?cs prio ?prioDiscard) (value ?goalDiscard&~nil))
+  ?request-payment <- (wm-fact (key request pay args? ord ?orderPayment m ?rs seq ?seq prio ?prioPayment) (value nil))
+  ?goal-discard <- (goal (id ?goalDiscard) (class DISCARD) (mode FORMULATED))
+
+  (not (wm-fact (key request pay args? $? seq ?other-seq&:(> 0 (str-compare (str-cat ?other-seq) (str-cat ?seq))) $?) (value nil)))
+  (goal (class SUPPORT-ROOT) (id ?root-id))
+
+  (goal (class BUFFER-CAP) (mode DISPATCHED))
+  (not (goal (class PAY-FOR-RINGS-WITH-CAP-CARRIER) (mode ~RETRACTED)))
+  =>
+  (retract ?goal-discard)
+  (bind ?new-goal (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN ?cs UNKNOWN ?rs INPUT ?orderPayment))
+  (modify ?request-discard (value (fact-slot-value ?new-goal id)))
+  (modify ?request-payment (value (fact-slot-value ?new-goal id)))
+
+  (bind ?prio ?prioPayment)
+  (if (> 0 (str-compare (str-cat ?prioDiscard) (str-cat ?prioPayment))) then
+    (bind ?prio ?prioDiscard)
+  )
+  (modify ?new-goal (parent ?root-id) (priority ?prio))
+)
+
+(defrule goal-request-assert-pay-with-cap-carrier-from-existing-payment
+  "If there is a formulated pay-with-base goal and a new discard request comes in
+   combine them into one pay-with-cap-carrier goal."
+  ?request-discard <- (wm-fact (key request discard args? ord ?orderDiscard cs ?cs prio ?prioDiscard) (value nil))
+  ?request-payment <- (wm-fact (key request pay args? ord ?orderPayment m ?rs seq ?seq prio ?prioPayment) (value ?goalPayment&~nil))
+  ?goal-payment <- (goal (id ?goalPayment) (class PAY-FOR-RINGS-WITH-BASE) (mode FORMULATED) (params wp ?wp-base-pay $?))
+  ?goal-instruct <- (goal (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED) (params wp ?wp-base-pay $?))
+
+  (goal (class SUPPORT-ROOT) (id ?root-id))
+
+  (goal (class BUFFER-CAP) (mode DISPATCHED))
+  (not (goal (class PAY-FOR-RINGS-WITH-CAP-CARRIER) (mode ~RETRACTED)))
+  =>
+  (retract ?goal-payment)
+  (retract ?goal-instruct)
+  (bind ?new-goal (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN ?cs UNKNOWN ?rs INPUT ?orderPayment))
+  (modify ?request-discard (value (fact-slot-value ?new-goal id)))
+  (modify ?request-payment (value (fact-slot-value ?new-goal id)))
+
+  (bind ?prio ?prioPayment)
+  (if (> 0 (str-compare (str-cat ?prioDiscard) (str-cat ?prioPayment))) then
+    (bind ?prio ?prioDiscard)
+  )
+  (modify ?new-goal (parent ?root-id) (priority ?prio))
+)
+
 (defrule goal-request-assert-discard-goal
   "If there is a discard request that is not paired with a goal yet, create a discard goal."
   ?request <- (wm-fact (key request discard args? ord ?order-id cs ?cs prio ?prio) (value nil))
