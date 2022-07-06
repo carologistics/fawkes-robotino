@@ -539,6 +539,31 @@
   )
 )
 
+(deffunction goal-production-assert-requests
+  ;assert requests for an order's support goals (i.e., payment, buffer, discard)
+  (?rs ?cs ?col-rings ?col-cap ?order ?prio)
+
+  (bind ?index 1)
+  (bind ?seq 1)
+  (loop-for-count (length$ ?rs)
+    (bind ?price 0)
+    (do-for-fact ((?rs-ring-spec wm-fact))
+      (and (wm-key-prefix ?rs-ring-spec:key (create$ domain fact rs-ring-spec))
+          (eq (wm-key-arg ?rs-ring-spec:key r ) (nth$ ?index ?col-rings))
+      )
+      (bind ?price (sym-to-int (wm-key-arg ?rs-ring-spec:key rn)))
+    )
+    (loop-for-count ?price
+      (assert (wm-fact (key request pay args? ord ?order m (nth$ ?index ?rs) seq ?seq prio ?prio) (is-list FALSE) (type SYMBOL)))
+      (bind ?seq (+ ?seq 1))
+    )
+    (bind ?index (+ ?index 1))
+  )
+  (assert (wm-fact (key request buffer args? ord ?order col ?col-cap prio ?prio) (is-list FALSE) (type SYMBOL)))
+  (assert (wm-fact (key request discard args? ord ?order cs ?cs prio ?prio) (is-list FALSE) (type SYMBOL)))
+)
+
+
 (deffunction goal-production-assert-c0
   (?root-id ?order-id ?wp-for-order ?cs ?ds ?bs ?col-cap ?col-base)
 
@@ -569,6 +594,8 @@
   )
 
   (goal-production-assign-order-and-prio-to-goal ?goal ?order-id ?*PRODUCTION-C0-PRIORITY*)
+
+  (goal-production-assert-requests (create$ ) ?cs (create$ ) ?col-cap ?order-id ?*PRODUCTION-C0-PRIORITY*)
 )
 
 (deffunction goal-production-assert-c1
@@ -605,6 +632,8 @@
   )
 
   (goal-production-assign-order-and-prio-to-goal ?goal ?order-id ?*PRODUCTION-C1-PRIORITY*)
+
+  (goal-production-assert-requests (create$ ?rs1) ?cs (create$ ?col-ring1) ?col-cap ?order-id ?*PRODUCTION-C1-PRIORITY*)
 )
 
 (deffunction goal-production-assert-c2
@@ -641,6 +670,8 @@
   )
 
   (goal-production-assign-order-and-prio-to-goal ?goal ?order-id ?*PRODUCTION-C2-PRIORITY*)
+
+  (goal-production-assert-requests (create$ ?rs1 ?rs2) ?cs (create$ ?col-ring1 ?col-ring2) ?col-cap ?order-id ?*PRODUCTION-C2-PRIORITY*)
 )
 
 (deffunction goal-production-assert-c3
@@ -679,6 +710,8 @@
   )
 
   (goal-production-assign-order-and-prio-to-goal ?goal ?order-id ?*PRODUCTION-C3-PRIORITY*)
+
+  (goal-production-assert-requests (create$ ?rs1 ?rs2 ?rs3) ?cs (create$ ?col-ring1 ?col-ring2 ?col-ring3) ?col-cap ?order-id ?*PRODUCTION-C3-PRIORITY*)
 )
 
 (defrule goal-production-create-instruction-root
