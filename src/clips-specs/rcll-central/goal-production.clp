@@ -714,6 +714,18 @@
   (modify ?g (meta do-not-finish) (priority 0))
 )
 
+(defrule goal-production-assert-wait-nothing-executable
+  "When the robot is stuck, assert a new goal that keeps it waiting"
+  (goal (id ?p) (class WAIT-ROOT))
+  (not (goal (parent ?p) (mode FORMULATED)))
+  =>
+  (bind ?goal (assert (goal (class WAIT-NOTHING-EXECUTABLE)
+              (id (sym-cat WAIT-NOTHING-EXECUTABLE- (gensym*)))
+              (sub-type SIMPLE) (parent ?p) (priority 0.0) (meta-template goal-meta)
+              (verbosity NOISY)
+  )))
+)
+
 (defrule goal-production-create-move-out-of-way
 	"Creates a move out of way goal. As soon as it is completed it's reset"
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
@@ -881,18 +893,6 @@
   (goal-meta (goal-id ?instruct-goal) (order-id ?order-id))
   =>
   (modify ?g (params wp ?wp wp-loc ?mps wp-side ?mps-side))
-)
-
-(defrule goal-production-assert-wait-nothing-executable
-  "When the robot is stuck, assert a new goal that keeps it waiting"
-  (goal (id ?p) (class WAIT-ROOT))
-  (not (goal (parent ?p) (mode FORMULATED)))
-  =>
-  (bind ?goal (assert (goal (class WAIT-NOTHING-EXECUTABLE)
-              (id (sym-cat WAIT-NOTHING-EXECUTABLE- (gensym*)))
-              (sub-type SIMPLE) (parent ?p) (priority 0.0) (meta-template goal-meta)
-              (verbosity NOISY)
-  )))
 )
 
 (defrule goal-production-create-enter-field
