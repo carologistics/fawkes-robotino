@@ -11,7 +11,7 @@
   ?*BEACON-PERIOD* = 1.0
   ?*PREPARE-PERIOD* = 1.0
   ?*ABORT-PREPARE-PERIOD* = 30.0
-  ?*ABORT-PREPARE-DOWN-REST* = 1.0
+  ?*ABORT-PREPARE-DOWN-RESET* = 5.0
 )
 
 (defrule action-send-beacon-signal
