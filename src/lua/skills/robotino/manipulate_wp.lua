@@ -91,6 +91,8 @@ local left_shelf_offset_side   = -0.075
 local middle_shelf_offset_side = -0.175
 local right_shelf_offset_side  = -0.275
 
+local drive_back_x = -0.1
+
 -- read gripper config
 if config:exists("/arduino/x_max") then
   x_max = config:get_float("/arduino/x_max")
@@ -264,12 +266,12 @@ function input_invalid()
     end
   end
 
-  if (fsm.vars.target == "SLIDE" or fsm.vars.target == "CONVEYOR") and
-      not arduino:is_gripper_closed() then
-    print_error("If a conveyor or slide is targeted, " ..
-      "make sure there is a workpiece in the gripper!")
-    return true
-  end
+  -- if (fsm.vars.target == "SLIDE" or fsm.vars.target == "CONVEYOR") and
+  --     not arduino:is_gripper_closed() then
+  --   print_error("If a conveyor or slide is targeted, " ..
+  --     "make sure there is a workpiece in the gripper!")
+  --   return true
+  -- end
   return false
 end
 
@@ -281,6 +283,9 @@ fsm:define_states{ export_to=_M, closure={MISSING_MAX=MISSING_MAX},
    {"INIT",                  JumpState},
    {"START_TRACKING",        JumpState},
    {"FIND_LASER_LINE",       JumpState},
+   {"DRIVE_BACK",            SkillJumpState, skills={{motor_move}},      final_to="SEARCH_LASER_LINE", fail_to="SEARCH_LASER_LINE"},
+   {"SEARCH_LASER_LINE",     JumpState},
+   {"SPIN",                  SkillJumpState, skills={{motor_move}},      final_to="SEARCH_LASER_LINE", fail_to="SEARCH_LASER_LINE"},
    {"DRIVE_TO_LASER_LINE",   SkillJumpState, skills={{motor_move}},      final_to="AT_LASER_LINE", fail_to="FAILED"},
    {"AT_LASER_LINE",         JumpState},
    {"MOVE_BASE_AND_GRIPPER", SkillJumpState, skills={{motor_move}},      final_to="FINE_TUNE_GRIPPER", fail_to="FIND_LASER_LINE"},
@@ -291,10 +296,13 @@ fsm:define_states{ export_to=_M, closure={MISSING_MAX=MISSING_MAX},
 fsm:add_transitions{
    {"INIT", "FAILED",                             cond=input_invalid, desc="Invalid Input"},
    {"INIT", "START_TRACKING",                     cond=true, desc="Valid Input"},
-   {"START_TRACKING", "FAILED",                   timeout=60, desc="Object tracker is not starting"},
+   {"START_TRACKING", "FAILED",                   timeout=2, desc="Object tracker is not starting"},
    {"START_TRACKING", "FIND_LASER_LINE",          cond=object_tracker_active},
    {"FIND_LASER_LINE", "DRIVE_TO_LASER_LINE",     cond=laser_line_found},
-   {"FIND_LASER_LINE", "FAILED",                  timeout=10, desc="Could not find laser-line"},
+   {"FIND_LASER_LINE", "DRIVE_BACK",              timeout=1, desc="Could not find laser-line, drive back"},
+   {"SEARCH_LASER_LINE", "DRIVE_TO_LASER_LINE",   cond=laser_line_found},
+   {"SEARCH_LASER_LINE", "FAILED",                cond="vars.search_attemps > 10", desc="Tried 10 times, could not find laser-line"},
+   {"SEARCH_LASER_LINE", "SPIN",                  timeout=1, desc="Could not find laser-line, spin"},
    {"AT_LASER_LINE", "MOVE_BASE_AND_GRIPPER",     cond="vars.consecutive_detections > 2", desc="Found Object"},
    {"AT_LASER_LINE", "FAILED",                    timeout=2, desc="Object not found"},
    {"FINE_TUNE_GRIPPER", "GRIPPER_ROUTINE",       cond=gripper_aligned, desc="Gripper aligned"},
@@ -377,6 +385,23 @@ function START_TRACKING:init()
 
   -- move to default pose
   move_gripper_default_pose()
+end
+
+function FIND_LASER_LINE:init()
+  -- start searching for laser line
+  fsm.vars.search_attemps = 0
+end
+
+function DRIVE_BACK:init()
+  self.args["motor_move"].x = drive_back_x
+end
+
+function SEARCH_LASER_LINE:init()
+  fsm.vars.search_attemps = fsm.vars.search_attemps + 1
+end
+
+function SPIN:init()
+  self.args["motor_move"].ori = math.pi / 5
 end
 
 function DRIVE_TO_LASER_LINE:init()
@@ -510,12 +535,12 @@ end
 -- end tracking afterwards
 
 function FINAL:init()
-  local msg = object_tracking_if.StopTrackingMessage:new()
-  object_tracking_if:msgq_enqueue_copy(msg)
+  object_tracking_if:msgq_enqueue(object_tracking_if.StopTrackingMessage:new())
+  laserline_switch:msgq_enqueue(laserline_switch.DisableSwitchMessage:new())
 end
 
 function FAILED:init()
   move_gripper_default_pose()
-  local msg = object_tracking_if.StopTrackingMessage:new()
-  object_tracking_if:msgq_enqueue_copy(msg)
+  object_tracking_if:msgq_enqueue(object_tracking_if.StopTrackingMessage:new())
+  laserline_switch:msgq_enqueue(laserline_switch.DisableSwitchMessage:new())
 end
