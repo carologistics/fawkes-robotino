@@ -174,6 +174,10 @@ private:
 	int                                       ll_vs_hist_;
 	float                                     ll_max_angle_;
 
+	//laser-line:
+	fawkes::LaserLineInterface *ll_;
+	bool                        ll_found_;
+
 	//tracking values
 	fawkes::ObjectTrackingInterface::TARGET_OBJECT_TYPE current_object_type_;
 	fawkes::ObjectTrackingInterface::EXPECTED_MPS       current_expected_mps_;
@@ -186,7 +190,7 @@ private:
 	long         loop_count_;
 
 	//compute expected position from laser line
-	void laserline_get_expected_position(fawkes::LaserLineInterface             *ll,
+	void laserline_get_expected_position(fawkes::LaserLineInterface *            ll,
 	                                     fawkes::tf::Stamped<fawkes::tf::Point> &expected_pos_ll);
 	bool laserline_get_best_fit(fawkes::LaserLineInterface *&best_fit);
 	void
@@ -204,16 +208,16 @@ private:
 	                      fawkes::tf::Stamped<fawkes::tf::Point> exp_pos,
 	                      float                                  mps_angle,
 	                      float                                  closest_pos[3],
-	                      cv::Rect                              &closest_box,
-	                      float                                 &additional_height);
+	                      cv::Rect &                             closest_box,
+	                      float &                                additional_height);
 	void compute_3d_point(std::array<float, 4> bounding_box,
 	                      float                angle,
 	                      float                point[3],
-	                      float               &wp_additional_height);
+	                      float &              wp_additional_height);
 
 	//compute base and gripper target frame
 	void compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Point> object_pos,
-	                           fawkes::LaserLineInterface            *ll,
+	                           fawkes::LaserLineInterface *           ll,
 	                           double                                 gripper_target[3],
 	                           double                                 base_target[3]);
 };

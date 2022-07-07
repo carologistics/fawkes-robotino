@@ -65,15 +65,16 @@ ObjectTrackingThread::init()
 	puck_size_   = config->get_float("plugins/object_tracking/puck_values/puck_size");
 	puck_height_ = config->get_float("plugins/object_tracking/puck_values/puck_height");
 
-	belt_height_ = config->get_float("plugins/object_tracking/belt_values/belt_height");
-	belt_length_ = config->get_float("plugins/object_tracking/belt_values/belt_length");
-	belt_offset_side_ = config->get_float("plugins/object_tracking/belt_values/belt_offset_side");
+	belt_height_       = config->get_float("plugins/object_tracking/belt_values/belt_height");
+	belt_length_       = config->get_float("plugins/object_tracking/belt_values/belt_length");
+	belt_offset_side_  = config->get_float("plugins/object_tracking/belt_values/belt_offset_side");
 	belt_offset_front_ = config->get_float("plugins/object_tracking/belt_values/belt_offset_front");
-	belt_size_   = config->get_float("plugins/object_tracking/belt_values/belt_size");
+	belt_size_         = config->get_float("plugins/object_tracking/belt_values/belt_size");
 
 	slide_offset_side_ = config->get_float("plugins/object_tracking/slide_values/slide_offset_side");
-	slide_offset_front_ = config->get_float("plugins/object_tracking/slide_values/slide_offset_front");
-	slide_height_      = config->get_float("plugins/object_tracking/slide_values/slide_height");
+	slide_offset_front_ =
+	  config->get_float("plugins/object_tracking/slide_values/slide_offset_front");
+	slide_height_ = config->get_float("plugins/object_tracking/slide_values/slide_height");
 
 	left_shelf_offset_side_ =
 	  config->get_float("plugins/object_tracking/shelf_values/left_shelf_offset_side");
@@ -81,7 +82,8 @@ ObjectTrackingThread::init()
 	  config->get_float("plugins/object_tracking/shelf_values/middle_shelf_offset_side");
 	right_shelf_offset_side_ =
 	  config->get_float("plugins/object_tracking/shelf_values/right_shelf_offset_side");
-	shelf_offset_front_ = config->get_float("plugins/object_tracking/shelf_values/shelf_offset_front");
+	shelf_offset_front_ =
+	  config->get_float("plugins/object_tracking/shelf_values/shelf_offset_front");
 	shelf_height_ = config->get_float("plugins/object_tracking/shelf_values/shelf_height");
 
 	gripper_offset_pick_ =
@@ -266,8 +268,9 @@ ObjectTrackingThread::loop()
 				z_offset_ = shelf_height_;
 				break;
 			default:
-				logger->log_error(object_tracking_if_->enum_tostring("EXPECTED_SIDE", current_expected_side_),
-								" is an invalid MPS-side!");
+				logger->log_error(object_tracking_if_->enum_tostring("EXPECTED_SIDE",
+				                                                     current_expected_side_),
+				                  " is an invalid MPS-side!");
 				return;
 			}
 
@@ -277,6 +280,9 @@ ObjectTrackingThread::loop()
 			} else if (current_object_type_ == ObjectTrackingInterface::CONVEYOR_BELT_FRONT) {
 				z_offset_ -= belt_size_ / 2;
 			}
+
+			//reset laser-line
+			ll_found_ = false;
 
 			//clear for weighted average
 			past_responses_.clear();
@@ -368,12 +374,16 @@ ObjectTrackingThread::loop()
 		rotate(image, image, ROTATE_180);
 	//-------------------------------------------------------------------------
 
-	//get laser line if possible
+	//find laser-line if needed
 	for (fawkes::LaserLineInterface *ll : laserlines_) {
 		ll->read();
 	}
-	fawkes::LaserLineInterface *ll;
-	if (!laserline_get_best_fit(ll)) {
+	fawkes::LaserLineInterface *cur_ll;
+	bool                        cur_found = laserline_get_best_fit(cur_ll);
+	if (cur_found)
+		ll_ = cur_ll;
+	ll_found_ = cur_found || ll_found_;
+	if (!ll_found_) {
 		logger->log_info(name(), "No fitting laser line found!");
 		msgid_++;
 		object_tracking_if_->set_msgid(msgid_);
@@ -440,10 +450,10 @@ ObjectTrackingThread::loop()
 	}
 
 	//get mps angle and expected object position through laser-data
-	float mps_angle = ll->bearing();
+	float                                  mps_angle = ll_->bearing();
 	fawkes::tf::Stamped<fawkes::tf::Point> expected_pos_cam;
 	fawkes::tf::Stamped<fawkes::tf::Point> expected_pos;
-	laserline_get_expected_position(ll, expected_pos);
+	laserline_get_expected_position(ll_, expected_pos);
 	expected_pos.stamp = Time(0, 0);
 	tf_listener->transform_point(cam_frame_, expected_pos, expected_pos_cam);
 
@@ -567,7 +577,7 @@ ObjectTrackingThread::loop()
 
 	double gripper_target[3];
 	double base_target[3];
-	compute_target_frames(weighted_object_pos_base, ll, gripper_target, base_target);
+	compute_target_frames(weighted_object_pos_base, ll_, gripper_target, base_target);
 
 	//update interface
 	object_tracking_if_->set_gripper_frame(0, gripper_target[0]);
@@ -607,7 +617,6 @@ ObjectTrackingThread::laserline_get_best_fit(fawkes::LaserLineInterface *&best_f
 
 	// get best line
 	for (fawkes::LaserLineInterface *ll : laserlines_) {
-
 		// just with writer
 		if (!ll->has_writer()) {
 			continue;
@@ -642,9 +651,9 @@ ObjectTrackingThread::laserline_get_best_fit(fawkes::LaserLineInterface *&best_f
 
 void
 ObjectTrackingThread::laserline_get_center_transformed(fawkes::LaserLineInterface *ll,
-                                                       float                      &x,
-                                                       float                      &y,
-                                                       float                      &z)
+                                                       float &                     x,
+                                                       float &                     y,
+                                                       float &                     z)
 {
 	fawkes::tf::Stamped<fawkes::tf::Point> tf_in, tf_out;
 	tf_in.stamp    = ll->timestamp();
@@ -667,7 +676,7 @@ ObjectTrackingThread::laserline_get_center_transformed(fawkes::LaserLineInterfac
 
 void
 ObjectTrackingThread::laserline_get_expected_position(
-  fawkes::LaserLineInterface             *ll,
+  fawkes::LaserLineInterface *            ll,
   fawkes::tf::Stamped<fawkes::tf::Point> &expected_pos)
 {
 	fawkes::tf::Stamped<fawkes::tf::Point> tf_in;
@@ -773,8 +782,8 @@ ObjectTrackingThread::closest_position(std::vector<std::array<float, 4>>      bo
                                        fawkes::tf::Stamped<fawkes::tf::Point> ref_pos,
                                        float                                  mps_angle,
                                        float                                  closest_pos[3],
-                                       Rect                                  &closest_box,
-                                       float                                 &additional_height)
+                                       Rect &                                 closest_box,
+                                       float &                                additional_height)
 {
 	float  min_dist = max_acceptable_dist_;
 	size_t box_id;
@@ -818,7 +827,7 @@ void
 ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
                                        float                mps_angle,
                                        float                point[3],
-                                       float               &wp_additional_height)
+                                       float &              wp_additional_height)
 {
 	//compute bounding box values
 	float bb_left    = bounding_box[0] - bounding_box[2] / 2;
@@ -873,7 +882,7 @@ ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
 
 void
 ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Point> object_pos,
-                                            fawkes::LaserLineInterface            *ll,
+                                            fawkes::LaserLineInterface *           ll,
                                             double gripper_target[3],
                                             double base_target[3])
 {
