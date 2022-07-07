@@ -83,7 +83,13 @@
 	(bind ?zones (create$))
 	(loop-for-count (?x ?x_min ?x_max)
 		(loop-for-count (?y ?y_min ?y_max)
-			(if (not (or (= ?x 0) (= ?y 0)))
+			(if (and (not (or (= ?x 0) (= ?y 0)))
+			         ; not within the insertion area
+			         (or (> (abs ?y) 1)
+			             (< (abs ?x)
+			                (- (max (abs ?x_min) (abs ?x_max)) 3))
+			         )
+			    )
 			 then
 				(bind ?team-prefix C)
 				(if (< ?x 0) then
