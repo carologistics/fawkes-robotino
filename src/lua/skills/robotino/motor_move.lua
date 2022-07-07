@@ -73,6 +73,7 @@ local STUCK_THRESHOLD = 0.6  -- STUCK threshold: Consider ourselves stuck if we 
                              --                  this factor times V_MIN speed during the
                              --                  last MONITOR_LEN loops
 local MISSING_MAX     = 3    -- limit for missing object detections in a row
+local SAFE_DIST       = 0.17 -- minimum distance between front laser and mps while manipulating
 
 -- Initialize as skill module
 skillenv.skill_module(_M )
@@ -448,20 +449,20 @@ function DRIVE_VS:init()
 	   y = math.min(V_MAX.y, self.fsm.vars.vel_trans or V_MAX.y),
 	   ori = math.min(V_MAX.ori, self.fsm.vars.vel_rot or V_MAX.ori)
 	}
- 
+
 	self.fsm.vars.tolerance = self.fsm.vars.tolerance or {}
 	self.fsm.vars.tolerance_arg = {
 	   x = self.fsm.vars.tolerance.x or TOLERANCE_VS.x,
 	   y = self.fsm.vars.tolerance.y or TOLERANCE_VS.y,
 	   ori = self.fsm.vars.tolerance.ori or TOLERANCE_VS.ori
 	}
- 
+
 	print_info("motor_move tolerance x: %f, y: %f, ori: %f",
 	   self.fsm.vars.tolerance_arg.x,
 	   self.fsm.vars.tolerance_arg.y,
 	   self.fsm.vars.tolerance_arg.ori
 	)
-	
+
 	-- "Magic", i.e. heuristic multiplier that determines how much we brake
 	-- when approaching target. Important to avoid overshooting.
 	self.fsm.vars.decel_factor = 5
@@ -470,6 +471,10 @@ function DRIVE_VS:init()
 end
 
 function DRIVE_VS:loop()
+   local a_x = V_MAX.x / D_DECEL.x
+   local v_x_dec = a_x / self.fsm.vars.decel_factor * math.max(0, if_front_dist:translation(0) - SAFE_DIST)
+   self.fsm.vars.vmax_arg.x = math.min(V_MAX.x, self.fsm.vars.vel_trans or V_MAX.x, v_x_dec)
+
    if self.fsm.vars.msgid ~= object_tracking_if:msgid() then
       self.fsm.vars.msgid = object_tracking_if:msgid()
       if object_tracking_if:is_detected() then
