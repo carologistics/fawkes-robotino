@@ -38,10 +38,8 @@ fawkes/meta_plugins:
     - navgraph-generator-mps
     - skiller
     - m-realsense
-    - ros-pcl
     - skiller-rest-api
     - skiller_motor_state
-    - mps-laser-gen
     - object-tracking
   m-robot-memory:
     - mongodb
