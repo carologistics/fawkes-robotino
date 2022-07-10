@@ -505,13 +505,13 @@
       (bind ?price (sym-to-int (wm-key-arg ?rs-ring-spec:key rn)))
     )
     (loop-for-count ?price
-      (assert (wm-fact (key request pay args? ord ?order m (nth$ ?index ?rs) seq ?seq prio ?prio) (is-list FALSE) (type SYMBOL)))
+      (assert (wm-fact (key request pay args? ord ?order m (nth$ ?index ?rs) seq ?seq prio ?prio) (is-list FALSE) (type SYMBOL) (value OPEN)))
       (bind ?seq (+ ?seq 1))
     )
     (bind ?index (+ ?index 1))
   )
-  (assert (wm-fact (key request buffer args? ord ?order col ?col-cap prio ?prio) (is-list FALSE) (type SYMBOL)))
-  (assert (wm-fact (key request discard args? ord ?order cs ?cs prio ?prio) (is-list FALSE) (type SYMBOL)))
+  (assert (wm-fact (key request buffer args? ord ?order col ?col-cap prio ?prio) (is-list FALSE) (type SYMBOL) (value OPEN)))
+  (assert (wm-fact (key request discard args? ord ?order cs ?cs prio ?prio) (is-list FALSE) (type SYMBOL) (value OPEN)))
 )
 
 
