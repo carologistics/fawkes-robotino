@@ -918,11 +918,12 @@
   (modify ?f (value ?order-id))
 )
 
-(defrule production-strategy-filter-set-selected-order-possible-empty
-  "There is no possible order"
+(defrule production-strategy-filter-unset-selected-order-possible
+  " The selected order is not possible anymore (e.g., it was started).
+    Clear the selection"
   (declare (salience ?*SALIENCE-ORDER-SELECTION*))
-  (wm-fact (key strategy meta possible-orders) (values ))
-  ?f <- (wm-fact (key strategy meta selected-order args? cond possible) (value ~nil))
+  ?f <- (wm-fact (key strategy meta selected-order args? cond possible) (value ?ex-order-id&~nil))
+  (wm-fact (key strategy meta possible-orders) (values $?values&:(not (member$ ?ex-order-id ?values))))
   =>
   (modify ?f (value nil))
 )
