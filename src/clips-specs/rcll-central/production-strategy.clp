@@ -164,9 +164,7 @@
   (wm-fact (key refbox game-time) (values ?curr-time $?))
   (wm-fact (key refbox order ?order delivery-end) (type UINT)
            (value ?deadline))
-  ?update-fact <- (wm-fact (key mps workload needs-update) (value FALSE))
 =>
-  (modify ?update-fact (value TRUE))
   (bind ?wl workload)
   (bind ?pm (create$ state payments))
   (delayed-do-for-all-facts ((?mps-type domain-fact)) (eq (nth$ 2 ?mps-type:param-values) RS)
