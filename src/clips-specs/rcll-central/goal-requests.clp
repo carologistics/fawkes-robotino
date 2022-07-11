@@ -136,3 +136,78 @@
       (wm-fact (key domain fact wp-base-color args? wp ?wp-base-pay col BASE_NONE) (type BOOL) (value TRUE))
   )
 )
+
+; map requests to goals upon completion of order assembly steps
+
+(defrule goal-request-map-buffer-cap-completed-mount-cap
+  "If a MOUNT-CAP goal is completed and the buffer request for the same order is not mapped
+   to a fitting BUFFER-CAP goal, create the mapping."
+  (goal (class MOUNT-CAP) (id ?mount-cap-goal) (mode RETRACTED) (outcome COMPLETED))
+  (goal-meta (goal-id ?mount-cap-goal) (order-id ?order-id))
+  ?request <- (wm-fact (key request buffer args? ord ?order-id col ?cap-col $?) (value ACTIVE))
+  (wm-fact (key domain fact cs-color args? m ?cs col ?cap-col))
+
+  (goal (class BUFFER-CAP) (id ?buffer-cap-goal) (mode RETRACTED) (outcome COMPLETED) (params target-mps ?cs $?))
+  (not (wm-fact (key request buffer args? $? cs ?cs $?) (value ?buffer-cap-goal)))
+  =>
+  (modify ?request (value ?buffer-cap-goal))
+)
+
+(defrule goal-request-map-discard-completed-mount-cap-to-discard-goal
+  "If a MOUNT-CAP goal is completed and the discard request for the same order is not mapped
+   to a fitting DISCARD goal, for products that require no ring payments, create the mapping."
+  (goal (class MOUNT-CAP) (id ?mount-cap-goal) (mode RETRACTED) (outcome COMPLETED))
+  (goal-meta (goal-id ?mount-cap-goal) (order-id ?order-id))
+  ?request <- (wm-fact (key request discard args? ord ?order-id cs ?cs $?) (value ACTIVE))
+
+  (goal (class DISCARD) (id ?discard-goal) (mode RETRACTED) (outcome COMPLETED) (params $? wp-loc ?cs $?))
+  (not (wm-fact (key request discard args? $? cs ?cs $?) (value ?discard-goal)))
+
+  ; prefer discards for orders that have no RS workload, if there is a choice
+  (or
+    (and
+      (wm-fact (key mps workload order args? m ?rs1 ord ?order-id) (value 0))
+      (wm-fact (key mps workload order args? m ?rs2 ord ?order-id) (value 0))
+      (wm-fact (key domain fact mps-type args? m ?rs1 t RS))
+      (wm-fact (key domain fact mps-type args? m ?rs2 t RS))
+      (test (neq ?rs1 ?rs2))
+    )
+    (not
+      (and
+        (goal (class PAY-FOR-RINGS-WITH-CAP-CARRIER) (id ?pay-goal) (mode RETRACTED) (outcome COMPLETED) (params $? wp-loc ?cs $?))
+        (not (wm-fact (key request discard args? $? cs ?cs $?) (value ?pay-goal)))
+      )
+    )
+  )
+  =>
+  (modify ?request (value ?discard-goal))
+)
+
+(defrule goal-request-map-discard-completed-mount-cap-to-payment-goal
+  "If a MOUNT-CAP goal is completed and the discard request for the same order is not mapped
+   to a fitting discard or pay-with-carrier goal yet, create aa mapping to a pay with carrier goal."
+  (goal (class MOUNT-CAP) (id ?mount-cap-goal) (mode RETRACTED) (outcome COMPLETED))
+  (goal-meta (goal-id ?mount-cap-goal) (order-id ?order-id))
+  ?request <- (wm-fact (key request discard args? ord ?order-id cs ?cs $?) (value ACTIVE))
+
+  (goal (class PAY-FOR-RINGS-WITH-CAP-CARRIER) (id ?pay-goal) (mode RETRACTED) (outcome COMPLETED) (params  $? wp-loc ?cs $?))
+  (not (wm-fact (key request discard args? $? cs ?cs $?) (value ?pay-goal)))
+  =>
+  (modify ?request (value ?pay-goal))
+)
+
+(defrule goal-request-map-pay-completed-mount-ring
+  "If a MOUNT-RING goal that requires payment is completed and a pay request for the same order
+   on the same machine is not mapped to a fitting payment goal yet, create the mapping."
+  (goal (class MOUNT-RING) (id ?mount-ring-goal) (mode RETRACTED) (outcome COMPLETED) (params $? target-mps ?rs $? ring-color ?ring-color))
+  (goal-meta (goal-id ?mount-ring-goal) (order-id ?order-id))
+  ?request <- (wm-fact (key request pay args? ord ?order-id m ?rs $?) (value ACTIVE))
+
+  (goal (class PAY-FOR-RINGS-WITH-CAP-CARRIER|PAY-FOR-RINGS-WITH-BASE) (id ?pay-goal) (mode RETRACTED) (outcome COMPLETED) (params $? target-mps ?rs $?))
+  (not (wm-fact (key request pay args? $? m ?rs $?) (value ?pay-goal)))
+
+  ;only match on those mount-ring goal completions that actually need payments
+  (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring-color rn ONE|TWO))
+  =>
+  (modify ?request (value ?pay-goal))
+)
