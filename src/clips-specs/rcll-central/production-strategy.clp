@@ -108,7 +108,7 @@
 
 (defrule production-strategy-sum-workload
   "Summing up the workload of a mps base on all started order productions"
-  (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
+  (declare (salience ?*SALIENCE-LOW*))
   ?update-fact <- (wm-fact (key mps workload needs-update) (value TRUE))
   =>
   (delayed-do-for-all-facts ((?overall-fact wm-fact)) (wm-key-prefix ?overall-fact:key (create$ mps workload overall))
