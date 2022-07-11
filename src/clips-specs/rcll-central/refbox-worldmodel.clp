@@ -127,8 +127,10 @@
       else
           (if (eq ?team-color CYAN) then
             (bind ?qd-them (pb-field-value ?o "quantity_delivered_magenta"))
+            (bind ?qd-us (pb-field-value ?o "quantity_delivered_cyan"))
           else
             (bind ?qd-them (pb-field-value ?o "quantity_delivered_cyan"))
+            (bind ?qd-us (pb-field-value ?o "quantity_delivered_magenta"))
           )
           (do-for-fact ((?old-qd-them wm-fact))
             (and (wm-key-prefix ?old-qd-them:key
@@ -136,6 +138,13 @@
                     team (mirror-team ?team-color)))
                  (neq ?old-qd-them:value ?qd-them))
               (modify ?old-qd-them (value ?qd-them))
+          )
+          (do-for-fact ((?old-qd-us wm-fact))
+            (and (wm-key-prefix ?old-qd-us:key
+                   (create$ domain fact quantity-delivered args? ord ?order-id
+                    team ?team-color))
+                 (neq ?old-qd-us:value ?qd-us))
+              (modify ?old-qd-us (value ?qd-us))
           )
     )
   )
