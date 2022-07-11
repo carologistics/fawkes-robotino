@@ -106,24 +106,6 @@
   )
 )
 
-(defrule production-strategy-remove-workload-facts-for-completed-order
-  "If an order production tree has been retracted, do not track the workload."
-  ?workload <- (wm-fact (key mps workload order args? m ?mn ord ?o-id))
-  ?update-fact <- (wm-fact (key mps workload needs-update) (value ?value))
-  (or
-    (and
-      (goal-meta (goal-id ?g-id) (root-for-order ?o-id))
-      (goal (id ?g-id) (mode RETRACTED))
-    )
-    (not (goal-meta (goal-id ?g-id) (root-for-order ?o-id)))
-  )
-  =>
-  (retract ?workload)
-  (if (eq ?value FALSE) then
-    (modify ?update-fact (value TRUE))
-  )
-)
-
 (defrule production-strategy-sum-workload
   "Summing up the workload of a mps base on all started order productions"
   (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
