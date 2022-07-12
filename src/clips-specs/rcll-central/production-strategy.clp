@@ -506,6 +506,8 @@
                    (is-list FALSE) (value 0))
           (wm-fact (key wp meta next-step args? wp ?wp)
                    (type SYMBOL) (is-list FALSE) (value ?curr-step))
+          (wm-fact (key wp meta prev-step args? wp ?wp)
+                   (type SYMBOL) (is-list FALSE) (value NONE))
           (wm-fact (key wp meta estimated-points-total args? wp ?wp)
                    (type INT) (is-list FALSE) (value ?ep-total))
           (wm-fact (key wp meta next-machine args? wp ?wp)
@@ -550,6 +552,8 @@
   ?ns <- (wm-fact (key wp meta points-current args? wp ?wp) (value ?p-curr))
   ?wm <- (wm-fact (key wp meta next-step args? wp ?wp)
                    (value ?curr-step))
+  ?ps <- (wm-fact (key wp meta prev-step args? wp ?wp)
+                   (value ?last-step))
   ?nm <- (wm-fact (key wp meta next-machine args? wp ?wp)
                    (value ?curr-machine))
   ; Order Meta CE
@@ -607,6 +611,7 @@
                         (nth$ (order-steps-index ?curr-step) $?p-list))))
   (modify ?wm (value ?new-step))
   (modify ?nm (value ?new-machine))
+  (modify ?ps (value ?curr-step))
 )
 
 
