@@ -167,7 +167,9 @@
                          mps)
   (metadata-prepare-mps ?mps ?team-color ?peer-id $?instruction_info)
   (wm-fact (key domain fact mps-type args? m ?mps t ?mps-type) (value TRUE))
-  (wm-fact (key domain fact mps-state args? m ?mps s IDLE) (value TRUE))
+  ?state-fact <- (wm-fact (key domain fact mps-state args? m ?mps s IDLE) (value TRUE))
+  ?mps-change-fact <- (wm-fact (key mps meta mps-state-change args? m ?mps) (value ?last-idx))
+  (test (> (fact-index ?state-fact) ?last-idx))
   =>
   (bind ?machine-instruction (pb-create "llsf_msgs.PrepareMachine"))
   (pb-set-field ?machine-instruction "team_color" ?team-color)
@@ -213,6 +215,8 @@
   (pb-broadcast ?peer-id ?machine-instruction)
   (pb-destroy ?machine-instruction)
   (printout t "Sent Prepare Msg for " ?mps " with " ?instruction_info  crlf)
+
+  (modify ?mps-change-fact (value (fact-index ?state-fact)))
 )
 
 

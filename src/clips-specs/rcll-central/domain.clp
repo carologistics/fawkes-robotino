@@ -382,3 +382,10 @@
 	(assert (domain-facts-loaded))
 	(retract ?sync-enable)
 )
+
+(defrule domain-initialize-mps-state-meta
+  ?state-fact <- (wm-fact (key domain fact mps-state args? m ?mps s IDLE))
+  (not (wm-fact (key mps meta mps-state-change args? m ?mps)))
+  =>
+  (assert (wm-fact (key mps meta mps-state-change args? m ?mps) (value (fact-index ?state-fact))))
+)
