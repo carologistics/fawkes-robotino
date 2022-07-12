@@ -536,11 +536,9 @@ end
 
 function FINAL:init()
   object_tracking_if:msgq_enqueue(object_tracking_if.StopTrackingMessage:new())
-  laserline_switch:msgq_enqueue(laserline_switch.DisableSwitchMessage:new())
 end
 
 function FAILED:init()
   move_gripper_default_pose()
   object_tracking_if:msgq_enqueue(object_tracking_if.StopTrackingMessage:new())
-  laserline_switch:msgq_enqueue(laserline_switch.DisableSwitchMessage:new())
 end
