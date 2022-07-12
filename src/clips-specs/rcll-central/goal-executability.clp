@@ -132,6 +132,11 @@
 	                    cap-color ?cap-color
 	            )
 	            (is-executable FALSE))
+	(not (goal (class BUFFER-CAP)
+	            (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+	            (params target-mps ?mps
+	                    cap-color ?cap-color
+	            )))
 	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; Robot CEs
