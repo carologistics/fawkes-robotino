@@ -593,7 +593,7 @@ NavGraphGeneratorMPSThread::generate_navgraph()
 	}
 
 	for (const Eigen::Vector2i &zn : wait_zones_) {
-		std::string z_name = "WAIT-";
+		std::string z_name = "";
 
 		float x = float(zn.x());
 		if (x < 0) {
