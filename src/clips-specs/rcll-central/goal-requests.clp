@@ -38,7 +38,7 @@
   "If there is an unfulfilled discard and payment request of the same goal,
    create a pay with cap-carrier goal to handle both requests."
   ?request-discard <- (wm-fact (key request discard args? ord ?order-id cs ?cs prio ?prioDiscard) (value OPEN))
-  ?request-payment <- (wm-fact (key request pay args? ord ?order-id m ?rs seq ?seq prio ?prioPayment) (value OPEN))
+  ?request-payment <- (wm-fact (key request pay args? ord ?order-id m ?rs ring ?ring seq ?seq prio ?prioPayment) (value OPEN))
   ; to avoid potential delays by not being able to remove the cap-carrier, only pair the last payment request
   ; with the discard request
   (not (wm-fact (key request pay args? ord ?order-id $? seq ?other-seq&:(> 0 (str-compare (str-cat ?other-seq) (str-cat ?seq))) $?) (value nil)))
@@ -57,7 +57,7 @@
    combine them into one pay-with-cap-carrier goal."
   (goal (class SUPPORT-ROOT) (id ?root-id))
   ?request-discard <- (wm-fact (key request discard args? ord ?orderDiscard cs ?cs prio ?prioDiscard) (value ?valueDiscard))
-  ?request-payment <- (wm-fact (key request pay args? ord ?orderPayment m ?rs seq ?seq prio ?prioPayment) (value ?valuePayment))
+  ?request-payment <- (wm-fact (key request pay args? ord ?orderPayment m ?rs ring ?ring seq ?seq prio ?prioPayment) (value ?valuePayment))
   ?goal <- (goal (id ?goalId) (class ?goalClass) (mode FORMULATED) (params $?goalParams))
 
   ;there is no payment request that is open and has a higher sequence number (occurs later)
@@ -116,7 +116,7 @@
 (defrule goal-request-assert-payment-goal
   "If there is a payment request that is not paired with a goal yet,
    create a pay-with-base goal and a base dispense goal"
-  ?request <- (wm-fact (key request pay args? ord ?order-id m ?rs seq ?seq prio ?prio) (value OPEN))
+  ?request <- (wm-fact (key request pay args? ord ?order-id m ?rs ring ?ring seq ?seq prio ?prio) (value OPEN))
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
 
   (goal (class SUPPORT-ROOT) (id ?root-id))
@@ -201,13 +201,15 @@
    on the same machine is not mapped to a fitting payment goal yet, create the mapping."
   (goal (class MOUNT-RING) (id ?mount-ring-goal) (mode RETRACTED) (outcome COMPLETED) (params $? target-mps ?rs $? ring-color ?ring-color))
   (goal-meta (goal-id ?mount-ring-goal) (order-id ?order-id))
-  ?request <- (wm-fact (key request pay args? ord ?order-id m ?rs $?) (value ACTIVE))
+  ?request <- (wm-fact (key request pay args? ord ?order-id m ?rs ring ?ring $?) (value ACTIVE))
 
   (goal (class PAY-FOR-RINGS-WITH-CAP-CARRIER|PAY-FOR-RINGS-WITH-BASE) (id ?pay-goal) (mode RETRACTED) (outcome COMPLETED) (params $? target-mps ?rs $?))
   (not (wm-fact (key request pay args? $? m ?rs $?) (value ?pay-goal)))
 
-  ;only match on those mount-ring goal completions that actually need payments
+  ;only match on those mount-ring goal completions that actually needed payments in the last step
   (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring-color rn ONE|TWO))
+  (wm-fact (key wp meta prev-step args? wp ?wp) (value ?ring))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
   =>
   (modify ?request (value ?pay-goal))
 )

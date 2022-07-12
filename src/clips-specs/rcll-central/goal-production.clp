@@ -505,7 +505,7 @@
       (bind ?price (sym-to-int (wm-key-arg ?rs-ring-spec:key rn)))
     )
     (loop-for-count ?price
-      (assert (wm-fact (key request pay args? ord ?order m (nth$ ?index ?rs) seq ?seq prio ?prio) (is-list FALSE) (type SYMBOL) (value OPEN)))
+      (assert (wm-fact (key request pay args? ord ?order m (nth$ ?index ?rs) ring (sym-cat RING ?index) seq ?seq prio ?prio) (is-list FALSE) (type SYMBOL) (value OPEN)))
       (bind ?seq (+ ?seq 1))
     )
     (bind ?index (+ ?index 1))
