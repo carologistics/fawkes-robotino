@@ -137,6 +137,50 @@
   )
 )
 
+; take over existing request offers
+
+(defrule goal-request-accept-buffer-offer
+  "If there is an unfulfilled buffer request, use a buffer offer."
+  ?request <- (wm-fact (key request buffer args? ord ?order-id col ?cap-col prio ?prio) (value ACTIVE))
+  ?request-offer <- (wm-fact (key request offer buffer args? $? col ?cap-col) (value ?buffer-goal-id))
+  ?buffer-goal <- (goal (class BUFFER-CAP) (mode FORMULATED) (params $? cap-color ?cap-col $?))
+  =>
+  (modify ?request (value ?buffer-goal-id))
+  (retract ?request-offer ?buffer-goal)
+)
+
+(defrule goal-request-accept-pay-with-cc-offer
+  "If there is a discard  and pay request that is not paired with a goal yet, use a pay-with-cc offer."
+  ?request-discard <- (wm-fact (key request discard args? ord ?order-id cs ?cs $?) (value ACTIVE))
+  ?request-pay <- (wm-fact (key request pay args? ord ?order-id m ?rs ring ?ring seq ?seq $?) (value ACTIVE))
+  ?request-offer <- (wm-fact (key request offer pay-with-cc args? $? cs ?cs rs ?rs) (value ?payment-goal-id))
+  ?pay-goal <- (goal (class PAY-FOR-RINGS-WITH-CAP-CARRIER) (mode FORMULATED) (params $? wp-loc ?cs $? target-mps ?rs $?))
+  =>
+  (modify ?request-discard (value ?payment-goal-id))
+  (modify ?request-pay (value ?payment-goal-id))
+  (retract ?request-offer ?pay-goal)
+)
+
+(defrule goal-request-accept-discard-offer
+  "If there is a discard request that is not paired with a goal yet, use a discard offer."
+  ?request <- (wm-fact (key request discard args? ord ?order-id cs ?cs prio ?prio) (value ACTIVE))
+  ?request-offer <- (wm-fact (key request offer discard args? $? cs ?cs) (value ?discard-goal-id))
+  ?discard-goal <- (goal (class DISCARD) (mode FORMULATED) (params $? wp-loc ?cs $?))
+  =>
+  (modify ?request (value ?discard-goal-id))
+  (retract ?request-offer ?discard-goal)
+)
+
+(defrule goal-request-accept-payment-offer
+  "If there is a payment request that is not paired with a goal yet, "
+  ?request <- (wm-fact (key request pay args? ord ?order-id m ?rs ring ?ring seq ?seq prio ?prio) (value ACTIVE))
+  ?request-offer <- (wm-fact (key request offer pay args? $? m ?rs $?) (value ?payment-goal-id))
+  ?payment-goal <- (goal (class PAY-FOR-RINGS-WITH-BASE) (mode FORMULATED) (params $? target-mps ?rs $?))
+  =>
+  (modify ?request (value ?payment-goal-id))
+  (retract ?request-offer ?payment-goal)
+)
+
 ; map requests to goals upon completion of order assembly steps
 
 (defrule goal-request-map-buffer-cap-completed-mount-cap
@@ -212,4 +256,98 @@
   (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
   =>
   (modify ?request (value ?pay-goal))
+)
+
+; remap requests if order tree root fails
+
+(defrule goal-request-remove-completed-buffer-order-failed
+  ;an order root has failed
+  (goal (id ?root-id) (mode FINISHED) (outcome FAILED))
+  (goal-meta (goal-id ?root-id) (root-for-order ?order-id&~nil))
+
+  ;the instruct goal was not used yet
+  (goal (id ?instruct-goal-id) (class INSTRUCT-CS-MOUNT-CAP) (mode FORMULATED))
+  (goal-meta (goal-id ?instruct-goal-id) (order-id ?order-id))
+
+  ;the buffer cap request was completed
+  ?request <- (wm-fact (key request buffer args? ord ?order-id col ?cap-col $?) (value ?buffer-goal-id))
+  (goal (id ?buffer-goal-id) (class BUFFER-CAP) (mode FINISHED) (outcome COMPLETED))
+  =>
+  (assert (wm-fact (key request offer buffer args? ord ?order-id col ?cap-col) (value ?buffer-goal-id)))
+  (retract ?request)
+)
+
+(defrule goal-request-remove-completed-pay-with-cc-order-failed
+  ;an order root has failed
+  (goal (id ?root-id) (mode FINISHED) (outcome FAILED))
+  (goal-meta (goal-id ?root-id) (root-for-order ?order-id&~nil))
+
+  ;the instruct goal was not used yet
+  (goal (id ?instruct-goal-id) (class INSTRUCT-RS-MOUNT-RING) (mode FORMULATED))
+  (goal-meta (goal-id ?instruct-goal-id) (order-id ?order-id))
+  (plan-action (id 2) (goal-id ?instruct-goal-id) (action-name ?instruct-action-id))
+  (goal (id ?instruct-mount-id) (class INSTRUCT-CS-MOUNT-CAP) (mode FORMULATED))
+  (goal-meta (goal-id ?instruct-mount-id) (order-id ?order-id))
+
+  ;the payment request was completed
+  ?request-discard <- (wm-fact (key request discard args? ord ?order-id cs ?cs $?) (value ?payment-goal-id))
+  ?request-payment <- (wm-fact (key request pay args? ord ?order-id m ?rs ring ?ring seq ?seq $?) (value ?payment-goal-id))
+  (goal (class PAY-FOR-RINGS-WITH-CAP-CARRIER) (id ?pay-goal) (mode RETRACTED) (outcome COMPLETED))
+
+  ;match ring with payment goals
+  (test
+    (or
+      (and (eq ?instruct-action-id rs-mount-ring1) (eq ?ring RING1))
+      (and (eq ?instruct-action-id rs-mount-ring2) (eq ?ring RING2))
+      (and (eq ?instruct-action-id rs-mount-ring3) (eq ?ring RING3))
+    )
+  )
+  =>
+  (assert (wm-fact (key request offer pay-with-cc args? ord ?order-id rs ?rs cs ?cs ring ?ring ?seq) (value ?payment-goal-id)))
+  (retract ?request-discard ?request-payment)
+)
+
+
+(defrule goal-request-remove-completed-discard-order-failed
+  ;an order root has failed
+  (goal (id ?root-id) (mode FINISHED) (outcome FAILED))
+  (goal-meta (goal-id ?root-id) (root-for-order ?order-id&~nil))
+
+  ;the instruct goal was not used yet
+  (goal (id ?instruct-goal-id) (class INSTRUCT-CS-MOUNT-CAP) (mode FORMULATED))
+  (goal-meta (goal-id ?instruct-goal-id) (order-id ?order-id))
+
+  ;the discard request was completed
+  ?request <- (wm-fact (key request discard args? ord ?order-id cs ?cs $?) (value ?discard-goal-id))
+  (goal (id ?discard-goal-id) (class DISCARD) (mode FINISHED) (outcome COMPLETED))
+  =>
+  (assert (wm-fact (key request offer discard args? ord ?order-id cs ?cs) (value ?discard-goal-id)))
+  (retract ?request)
+)
+
+(defrule goal-request-remove-completed-payment-order-failed
+  ;an order root has failed
+  (goal (id ?root-id) (mode FINISHED) (outcome FAILED))
+  (goal-meta (goal-id ?root-id) (root-for-order ?order-id&~nil))
+
+  ;the instruct goal was not used yet
+  (goal (id ?instruct-goal-id) (class INSTRUCT-RS-MOUNT-RING) (mode FORMULATED))
+  (goal-meta (goal-id ?instruct-goal-id) (order-id ?order-id))
+  (plan-action (id 2) (goal-id ?instruct-goal-id) (action-name ?instruct-action-id))
+
+  ;the payment request was completed
+  ?request <- (wm-fact (key request pay args? ord ?order-id m ?rs ring ?ring seq ?seq $?) (value ?payment-goal-id))
+  (goal (class PAY-FOR-RINGS-WITH-BASE) (id ?pay-goal) (mode RETRACTED) (outcome COMPLETED))
+
+  ;match ring with payment goals
+  (test
+    (or
+      (and (eq ?instruct-action-id rs-mount-ring1) (eq ?ring RING1))
+      (and (eq ?instruct-action-id rs-mount-ring2) (eq ?ring RING2))
+      (and (eq ?instruct-action-id rs-mount-ring3) (eq ?ring RING3))
+    )
+  )
+  =>
+  (assert (wm-fact (key request offer pay args? ord ?order-id m ?rs ring ?ring seq ?seq) (value ?payment-goal-id)))
+  (retract ?request)
 )
