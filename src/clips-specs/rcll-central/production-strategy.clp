@@ -28,6 +28,9 @@
   ?*RS-WORKLOAD-THRESHOLD* = 6
   ?*C0-PRODUCTION-THRESHOLD* = 1
   ?*C1-PRODUCTION-THRESHOLD* = 1
+  ?*C2-PRODUCTION-THRESHOLD* = 1
+  ?*C3-PRODUCTION-THRESHOLD* = 1
+  ?*TOTAL-PRODUCTION-THRESHOLD* = 2
   ?*SALIENCE-ORDER-SELECTION* = ?*SALIENCE-HIGH*
 )
 
@@ -675,6 +678,9 @@
     (wm-fact (key strategy meta filtered-orders args? filter workload) (is-list TRUE) (type SYMBOL))
     (wm-fact (key strategy meta filtered-orders args? filter c0-limit) (is-list TRUE) (type SYMBOL))
     (wm-fact (key strategy meta filtered-orders args? filter c1-limit) (is-list TRUE) (type SYMBOL))
+    (wm-fact (key strategy meta filtered-orders args? filter c2-limit) (is-list TRUE) (type SYMBOL))
+    (wm-fact (key strategy meta filtered-orders args? filter c3-limit) (is-list TRUE) (type SYMBOL))
+    (wm-fact (key strategy meta filtered-orders args? filter total-limit) (is-list TRUE) (type SYMBOL))
     (wm-fact (key strategy meta selected-order args? cond filter) (is-list FALSE) (type SYMBOL) (value nil))
     (wm-fact (key strategy meta selected-order args? cond possible) (is-list FALSE) (type SYMBOL) (value nil))
   )
@@ -895,6 +901,110 @@
       (test (eq ?comp C1))
       (test (< ?*C1-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders-of-complexity C1)))
     )
+  )
+  =>
+  (modify ?filtered (values (delete-member$ ?values ?order-id)))
+)
+
+;filter c2 limit
+(defrule production-strategy-filter-orders-c2-limit-add
+  "Add an order to this filter if there is less than the threshold of active c2 orders"
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
+  (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c2-limit)
+                        (values $?values&:(not (member$ ?order-id ?values))))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
+  ;filter condition
+  (or
+    (and
+      (test (eq ?comp C2))
+      (test (>= ?*C2-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders-of-complexity C2)))
+    )
+    (test (neq ?comp C2))
+  )
+  =>
+  (modify ?filtered (values $?values ?order-id))
+)
+
+(defrule production-strategy-filter-orders-c2-limit-remove
+  "Remove an order from this filter if there is more than the threshold of active c2 orders"
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c2-limit)
+                        (values $?values&:(member$ ?order-id ?values)))
+  (or
+    (not (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?)))
+    (and
+      (test (eq ?comp C2))
+      (test (< ?*C2-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders-of-complexity C2)))
+    )
+  )
+  =>
+  (modify ?filtered (values (delete-member$ ?values ?order-id)))
+)
+
+;filter c3 limit
+(defrule production-strategy-filter-orders-c3-limit-add
+  "Add an order to this filter if there is less than the threshold of active c3 orders"
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
+  (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c3-limit)
+                        (values $?values&:(not (member$ ?order-id ?values))))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
+  ;filter condition
+  (or
+    (and
+      (test (eq ?comp C3))
+      (test (>= ?*C3-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders-of-complexity C3)))
+    )
+    (test (neq ?comp C3))
+  )
+  =>
+  (modify ?filtered (values $?values ?order-id))
+)
+
+(defrule production-strategy-filter-orders-c3-limit-remove
+  "Remove an order from this filter if there is more than the threshold of active c3 orders"
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c3-limit)
+                        (values $?values&:(member$ ?order-id ?values)))
+  (or
+    (not (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?)))
+    (and
+      (test (eq ?comp C3))
+      (test (< ?*C3-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders-of-complexity C3)))
+    )
+  )
+  =>
+  (modify ?filtered (values (delete-member$ ?values ?order-id)))
+)
+
+;filter total limit
+(defrule production-strategy-filter-orders-total-limit-add
+  "Add an order to this filter if there is less than the threshold of active total orders"
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
+  (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter total-limit)
+                        (values $?values&:(not (member$ ?order-id ?values))))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
+  ;filter condition
+  (and
+    (test (>= ?*TOTAL-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders)))
+  )
+  =>
+  (modify ?filtered (values $?values ?order-id))
+)
+
+(defrule production-strategy-filter-orders-total-limit-remove
+  "Remove an order from this filter if there is more than the threshold of active total orders"
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter total-limit)
+                        (values $?values&:(member$ ?order-id ?values)))
+  (or
+    (not (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?)))
+    (test (< ?*TOTAL-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders)))
   )
   =>
   (modify ?filtered (values (delete-member$ ?values ?order-id)))
