@@ -675,6 +675,7 @@
     (wm-fact (key strategy meta filtered-orders args? filter total-limit) (is-list TRUE) (type SYMBOL))
     (wm-fact (key strategy meta selected-order args? cond filter) (is-list FALSE) (type SYMBOL) (value nil))
     (wm-fact (key strategy meta selected-order args? cond possible) (is-list FALSE) (type SYMBOL) (value nil))
+    (wm-fact (key strategy meta selected-order args? cond fallback) (is-list FALSE) (type SYMBOL) (value nil))
   )
 )
 
@@ -1074,4 +1075,63 @@
   (wm-fact (key strategy meta filtered-orders $?) (values $?values&:(not (member$ ?order-id ?values))))
   =>
   (modify ?f (value nil))
+)
+
+(defrule production-strategy-filter-selected-order-filter-empty-fallback
+  "None of the orders fulfill all filters"
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
+  (wm-fact (key strategy meta selected-order args? cond filter) (value nil))
+  (wm-fact (key strategy meta filtered-orders args? filter $?) (values ?any-order))
+  ?fallback <- (wm-fact (key strategy meta selected-order args? cond fallback) (value ?fallback-order))
+  =>
+  (bind ?map (create$))
+  (bind ?counts (create$))
+  (do-for-all-facts ((?filter wm-fact)) (wm-key-prefix ?filter:key (create$ strategy meta filtered-orders))
+    (foreach ?order (fact-slot-value ?filter values)
+      (if (member$ ?order ?map) then
+          (bind ?index (member$ ?order ?map))
+          (bind ?count (nth$ ?index ?counts))
+          (bind ?counts (create$ (subseq$ ?counts 1 (- ?index 1)) (+ ?count 1) (subseq$ ?counts (+ ?index 1) (length$ ?counts))))
+        else
+          (bind ?map (create$ ?map ?order))
+          (bind ?counts (create$ ?counts 1))
+      )
+    )
+  )
+  (bind ?order (nth$ (member$ (nth$ 1 (sort < ?counts)) ?counts) ?map))
+  (if (neq ?order ?fallback-order) then
+    (modify ?fallback (value ?order))
+  )
+)
+
+(defrule production-strategy-filter-selected-order-filter-empty-fallback-remove
+  "There is at least order that meets all filters"
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
+  (wm-fact (key strategy meta selected-order args? cond filter) (value ~nil))
+  ?fallback <- (wm-fact (key strategy meta selected-order args? cond fallback) (value ~nil))
+  =>
+  (modify ?fallback (value nil))
+)
+
+(defrule production-strategy-nothing-executable-timer-create
+  "All robots have no goals assigned, create a timer to measure the duration of this condition"
+  (time $?now)
+  (not (timer (name production-strategy-nothing-executable-timer)))
+  (not
+    (and
+      (goal (id ?goal-id) (class ~MOVE-OUT-OF-WAY))
+      (goal-meta (goal-id ?goal-id) (assigned-to ~nil&~central))
+    )
+  )
+  =>
+  (assert (timer (name production-strategy-nothing-executable-timer) (time ?now)))
+)
+
+(defrule production-strategy-nothing-executable-timer-remove
+  "At leats one robots has a goal assigned, remove the timer"
+  (goal (id ?goal-id) (class ~MOVE-OUT-OF-WAY))
+  (goal-meta (goal-id ?goal-id) (assigned-to ~nil&~central))
+  ?timer <- (timer (name production-strategy-nothing-executable-timer))
+  =>
+  (retract ?timer)
 )

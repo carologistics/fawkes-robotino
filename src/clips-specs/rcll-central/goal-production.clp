@@ -28,6 +28,7 @@
   ?*PRODUCTION-C1-PRIORITY* = 40
   ?*PRODUCTION-C2-PRIORITY* = 50
   ?*PRODUCTION-C3-PRIORITY* = 60
+  ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT* = 30
 )
 
 
@@ -801,21 +802,13 @@
   (or (wm-fact (key domain fact order-ring3-color args? ord ?order-id col RING_NONE))
       (wm-fact (key domain fact rs-ring-spec args? m ?rs3 r ?col-ring3 $?)))
 
-
   (or
     (wm-fact (key strategy meta selected-order args? cond filter) (value ?order-id))
     (and
-        (wm-fact (key strategy meta selected-order args? cond possible) (value ?order-id))
-        (not
-            (and
-                (goal (id ?oid) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-                            (sub-type SIMPLE) (parent ?o-parent))
-                (goal-meta (goal-id ?oid) (root-for-order ~nil))
-                (goal (id ?o-parent) (class MOVE-OUT-OF-WAY))
-            )
-        )
+      (time $?now)
+      (timer (name production-strategy-nothing-executable-timer) (time $?t&:(timeout ?now ?t ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT*)))
+      (wm-fact (key strategy meta selected-order args? cond fallback) (value ?order-id))
     )
-
   )
   (wm-fact (key mps workload needs-update) (value FALSE))
   =>
