@@ -472,8 +472,11 @@ end
 
 function DRIVE_VS:loop()
    local a_x = V_MAX.x / D_DECEL.x
+   local a_y = V_MAX.y / D_DECEL.y
    local v_x_dec = a_x / self.fsm.vars.decel_factor * math.max(0, if_front_dist:translation(0) - SAFE_DIST)
    self.fsm.vars.vmax_arg.x = math.min(V_MAX.x, self.fsm.vars.vel_trans or V_MAX.x, v_x_dec)
+   local v_y_dec = a_y / self.fsm.vars.decel_factor * math.max(0, if_front_dist:translation(0) - SAFE_DIST)
+   self.fsm.vars.vmax_arg.y = math.min(V_MAX.y, self.fsm.vars.vel_trans or V_MAX.y, v_y_dec)
 
    if self.fsm.vars.msgid ~= object_tracking_if:msgid() then
       self.fsm.vars.msgid = object_tracking_if:msgid()
