@@ -18,7 +18,7 @@ plugins/amcl:
   # set the origin to (-0.05, -0.05)
 #  origin_x: -25.37
 #  origin_y: -17.4955
-  origin_x: -19.37
+  origin_x: -18.37
   origin_y: -16.4955
   origin_theta: 0.0
 
