@@ -218,6 +218,20 @@ plugins/laser-filter:
         # filter to remove map parts of the laser
         type: map_filter
 
+  map-1080:
+
+    # URG input interface
+    in/sick-tim55x: Laser1080Interface::Laser front base
+
+    # URG filtered output interface
+    out/mapless: Laser360Interface::Laser mapless-1080
+
+    filters:
+
+      1-map:
+        # filter to remove map parts of the laser
+        type: map_filter
+
   non-static:
 
     # URG input interface
