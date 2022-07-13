@@ -48,12 +48,22 @@
 	(assert (wm-fact (key exploration active) (type BOOL) (value TRUE)))
 )
 
-(defrule exp-disable-goals
-" Exploration is not needed anymore as all machines were found."
-	?g <-(goal (class EXPLORE-ZONE|EXPLORATION-MOVE) (mode FORMULATED))
+(defrule exp-disable-remove-assignment-from-goals
+" Exploration is not needed anymore, remove assignments."
+	?g <- (goal (id ?id) (class EXPLORE-ZONE|EXPLORATION-MOVE) (mode FORMULATED))
+  	(goal-meta (goal-id ?id) (assigned-to ~nil))
 	(wm-fact (key exploration active) (type BOOL) (value FALSE))
 	=>
-	(retract ?g)
+	(remove-robot-assignment-from-goal-meta ?g)
+)
+
+(defrule exp-disable-goals
+" Exploration is not needed anymore as all machines were found."
+	?gf <-(goal (class EXPLORE-ZONE|EXPLORATION-MOVE) (mode FORMULATED))
+  	?gm <- (goal-meta (goal-id ?id) (assigned-to nil))
+	(wm-fact (key exploration active) (type BOOL) (value FALSE))
+	=>
+	(retract ?gf ?gm)
 )
 
 (defrule exp-fail-goals
