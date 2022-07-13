@@ -209,7 +209,6 @@
   (retract ?pt)
   (modify ?pa (state FAILED))
 )
-)
 
 (defrule action-finish-execute-wait-for-wp-action
   ?pa <- (plan-action (id ?action-id)
