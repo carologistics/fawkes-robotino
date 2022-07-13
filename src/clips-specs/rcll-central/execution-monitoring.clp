@@ -560,3 +560,26 @@ execution monitoring handle the reformulation.
 	)
 	(retract ?restored)
 )
+
+; ----------------------- BS TRACKING -------------------------------
+(defrule execution-monitoring-bs-in-use
+"If a BS is part of a goal's operation, assert a fact to indicate this state."
+	(declare (salience ?*SALIENCE-HIGH*))
+	(not (wm-fact (key mps meta bs-in-use args? bs ?bs $?)))
+	(wm-fact (key domain fact mps-type args? $? ?bs $? BS $?))
+	(goal (id ?goal-id) (mode ~FORMULATED&~RETRACTED) (sub-type SIMPLE))
+	(plan-action (action-name wp-get) (goal-id ?goal-id) (param-values $? ?bs $?))
+	=>
+	(assert (wm-fact (key mps meta bs-in-use args? bs ?bs goal ?goal-id)))
+)
+
+(defrule execution-monitoring-bs-not-in-use
+"Retract BS in use fact if it is no longer in use."
+	(declare (salience ?*SALIENCE-HIGH*))
+	?wm <- (wm-fact (key mps meta bs-in-use args? bs ?bs goal ?goal-id))
+	(wm-fact (key domain fact mps-type args? $? ?bs $? BS $?))
+	(goal (id ?goal-id) (mode FORMULATED|RETRACTED))
+	=>
+	(retract ?wm)
+)
+
