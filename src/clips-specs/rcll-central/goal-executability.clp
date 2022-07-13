@@ -247,6 +247,8 @@
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
 	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
 	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
+	;the BS is not in use
+	(not (wm-fact (key mps meta bs-in-use args? bs ?wp-loc $?)))
 
 	; prevent other goals from interfering (goal takeover, etc.)
 	(wm-fact (key wp meta next-step args? wp ?wp) (value CAP))
@@ -420,6 +422,8 @@
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
 	(domain-fact (name zone-content) (param-values ?zz1 ?wp-loc))
 	(domain-fact (name zone-content) (param-values ?zz2 ?target-mps))
+	;the BS is not in use
+	(not (wm-fact (key mps meta bs-in-use args? bs ?wp-loc $?)))
 	=>
 	(printout t "Goal " PAY-FOR-RINGS-WITH-BASE " executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -643,6 +647,8 @@ The workpiece remains in the output of the used ring station after
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
 	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
 	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
+	;the BS is not in use
+	(not (wm-fact (key mps meta bs-in-use args? bs ?wp-loc $?)))
 
 	; Goal CEs
 	(not (goal (class MOUNT-RING) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED) (params $? target-mps ?target-mps $?)))
