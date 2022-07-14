@@ -583,3 +583,32 @@ execution monitoring handle the reformulation.
 	(retract ?wm)
 )
 
+; ----------------------- HANDLE FAILING INSTRUCT -----------------------------------
+(defrule execution-monitoring-break-instruct-fails
+"When an INSTRUCT fails on an MPS (except BS|DS), break the machine."
+	?g <- (goal (class INSTRUCT-CS-BUFFER-CAP|INSTRUCT-CS-MOUNT-CAP|INSTRUCT-RS-MOUNT-RING) (mode RETRACTED) (outcome FAILED) (params $? target-mps ?mps $?))
+	?wm <- (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+	=>
+	(bind ?goal-id (sym-cat BREAK-MPS - (gensym*)))
+	(assert (goal (id ?goal-id) (class RESET-MPS) (params mps ?mps) (mode EXPANDED) (sub-type SIMPLE) (type ACHIEVE)))
+	(assert (goal-meta (goal-id ?goal-id) (assigned-to central)))
+	(assert
+	    (plan (id (sym-cat ?goal-id -PLAN)) (goal-id ?goal-id))
+	    (plan-action (id 1) (plan-id (sym-cat ?goal-id -PLAN)) (goal-id ?goal-id)
+	        (action-name reset-mps)
+	        (param-names m)
+	        (param-values ?mps))
+	)
+)
+
+(defrule execution-monitoring-reformulate-instruct-fails-bs-ds
+"When an INSTRUCT fails on a B|DS, reformulate the instruct goal."
+	?g <- (goal (class INSTRUCT-BS-DISPENSE-BASE|INSTRUCT-DS-DELIVER) (id ?id) (mode RETRACTED) (outcome FAILED))
+	?p <- (plan (goal-id ?id))
+	=>
+	(do-for-all-facts ((?plan-action plan-action)) (eq ?plan-action:goal-id ?id)
+		(retract ?plan-action)
+	)
+	(modify ?g (mode FORMULATED) (outcome UNKNOWN))
+	(retract ?p)
+)
