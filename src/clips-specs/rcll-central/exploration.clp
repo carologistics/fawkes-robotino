@@ -132,6 +132,13 @@
 	(wm-fact (key game state) (value RUNNING))
 	(wm-fact (key refbox team-color) (value ?color))
 	(wm-fact (key exploration active) (value TRUE))
+
+	(not
+	    (and
+	        (domain-object (name ?robot) (type robot))
+	        (not (wm-fact (key domain fact entered-field args? r ?robot)))
+	    )
+	)
 	=>
 	(bind ?g (goal-tree-assert-central-run-parallel EXPLORATION-ROOT))
 	(modify ?g (meta do-not-finish) (priority 0.0))
