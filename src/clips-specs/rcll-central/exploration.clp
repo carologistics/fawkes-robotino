@@ -504,3 +504,13 @@
 	)
 	(modify ?exp-active (value FALSE))
 )
+
+(defrule exp-remove-selected-exploration-root
+  "Sometimes we may get ground-truth before actually starting the exploration.
+   This can lead to the exploration root getting stuck at selected...
+  "
+  ?g <- (goal (class EXPLORATION-ROOT) (mode SELECTED))
+  (wm-fact (key exploration active) (type BOOL) (value FALSE))
+  =>
+  (modify ?g (mode FINISHED) (outcome COMPLETED))
+)
