@@ -47,13 +47,13 @@
 " A waiting robot got a new goal, clear executability and robot assignment from other goals. "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	(goal (id ?goal-id) (sub-type SIMPLE) (mode SELECTED)
-	      (is-executable TRUE) (type ACHIEVE) (class ~SEND-BEACON))
+	      (is-executable TRUE) (type ACHIEVE))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 	(goal (id ?o-id) (sub-type SIMPLE) (mode FORMULATED))
 	(goal-meta (goal-id ?o-id) (assigned-to ?robot))
 	=>
 	(delayed-do-for-all-facts ((?g goal))
-		(and (eq ?g:is-executable TRUE) (neq ?g:class SEND-BEACON))
+		(eq ?g:is-executable TRUE)
 		(modify ?g (is-executable FALSE))
 	)
 	(if (and (neq ?robot central) (neq ?robot nil))

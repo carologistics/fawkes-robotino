@@ -11,16 +11,14 @@
   ?*BEACON-PERIOD* = 1.0
   ?*PREPARE-PERIOD* = 1.0
   ?*ABORT-PREPARE-PERIOD* = 30.0
-  ?*ABORT-PREPARE-DOWN-RESET* = 5.0
+  ?*ABORT-PREPARE-DOWN-REST* = 1.0
+  ?*BEACON-TIMER* = 2
 )
 
 (defrule action-send-beacon-signal
   (time $?now)
   ?bs <- (wm-fact (key refbox beacon seq) (value ?seq))
-  ?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state PENDING)
-                      (action-name send-beacon) (executable TRUE)
-                      (param-names $?param-names)
-                      (param-values $?param-values))
+  ?bt <- (timer (name refbox-beacon-timer) (time  $?t&:(timeout ?now ?t ?*BEACON-TIMER*)))
   (wm-fact (key config agent team)  (value ?team-name) )
   (wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
   (wm-fact (id "/refbox/comm/peer-id/public") (value ?peer) (type INT))
@@ -69,7 +67,7 @@
     (pb-broadcast ?peer ?beacon)
     (pb-destroy ?beacon)
   )
-  (modify ?pa (state FINAL))
+  (modify ?bt (time ?now))
 )
 
 
@@ -88,6 +86,8 @@
   (bind ?instruction_info (rest$ ?param-values))
   (printout t "Executing " ?action ?param-values crlf)
   (assert (metadata-reset-mps ?mps ?team-color ?peer-id ?instruction_info))
+  (assert (timer (name (sym-cat reset- ?goal-id - ?plan-id - ?id -send-timer))
+                 (time ?now) (seq 1)))
   (assert (timer (name (sym-cat reset- ?goal-id - ?plan-id - ?id -abort-timer))
                  (time ?now) (seq 1)))
   (modify ?pa (state RUNNING))
@@ -113,6 +113,9 @@
   (bind ?instruction_info (rest$ ?param-values))
   (printout t "Executing " ?action ?param-values crlf)
   (assert (metadata-prepare-mps ?mps ?team-color ?peer-id ?instruction_info))
+  (assert (timer (name (sym-cat prepare- ?goal-id - ?plan-id
+                                - ?id -send-timer))
+          (time ?now) (seq 1)))
   (assert (timer (name (sym-cat prepare- ?goal-id - ?plan-id
                                 - ?id -abort-timer))
           (time ?now) (seq 1)))
@@ -165,11 +168,12 @@
                                                          ?param-names
                                                          ?param-values))
                          mps)
+  ?st <- (timer (name ?n&:(eq ?n (sym-cat prepare- ?goal-id - ?plan-id
+                                          - ?id -send-timer)))
+                (time $?t&:(timeout ?now ?t ?*PREPARE-PERIOD*))
+                (seq ?seq))
   (metadata-prepare-mps ?mps ?team-color ?peer-id $?instruction_info)
   (wm-fact (key domain fact mps-type args? m ?mps t ?mps-type) (value TRUE))
-  ?state-fact <- (wm-fact (key domain fact mps-state args? m ?mps s IDLE) (value TRUE))
-  ?mps-change-fact <- (wm-fact (key mps meta mps-state-change args? m ?mps) (value ?last-idx))
-  (test (> (fact-index ?state-fact) ?last-idx))
   =>
   (bind ?machine-instruction (pb-create "llsf_msgs.PrepareMachine"))
   (pb-set-field ?machine-instruction "team_color" ?team-color)
@@ -216,7 +220,7 @@
   (pb-destroy ?machine-instruction)
   (printout t "Sent Prepare Msg for " ?mps " with " ?instruction_info  crlf)
 
-  (modify ?mps-change-fact (value (fact-index ?state-fact)))
+  (modify ?st (time ?now) (seq (+ ?seq 1)))
 )
 
 
@@ -232,12 +236,14 @@
                                                          ?param-names
                                                          ?param-values))
                          mps)
+  ?st <- (timer (name ?nst&:(eq ?nst (sym-cat reset- ?goal-id - ?plan-id
+                                      - ?id -send-timer))))
   ?at <- (timer (name ?nat&:(eq ?nat (sym-cat reset- ?goal-id - ?plan-id
                                       - ?id -abort-timer))))
   (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
   =>
   (printout t "Action Reset " ?mps " is final" crlf)
-  (retract ?at)
+  (retract ?st ?at)
   (modify ?pa (state EXECUTION-SUCCEEDED))
 )
 
@@ -257,6 +263,9 @@
                                                          ?param-names
                                                          ?param-values))
                          mps)
+  ?st <- (timer (name ?nst&:(eq ?nst
+                               (sym-cat prepare- ?goal-id - ?plan-id
+                                        - ?id -send-timer))))
   ?at <- (timer (name ?nat&:(eq ?nat
                                (sym-cat prepare- ?goal-id - ?plan-id
                                         - ?id -abort-timer))))
@@ -268,7 +277,7 @@
                                                      PREPARED))
   =>
   (printout t "Action Prepare " ?mps " is final" crlf)
-  (retract ?at ?md)
+  (retract ?st ?at ?md)
   (modify ?pa (state EXECUTION-SUCCEEDED))
 )
 
@@ -289,10 +298,13 @@
                                         - ?id -abort-timer)))
 			       (time $?t&:(timeout ?now ?t ?*ABORT-PREPARE-PERIOD*))
 			       (seq ?seq))
+  ?st <- (timer (name ?nst&:(eq ?nst
+                                (sym-cat reset- ?goal-id - ?plan-id
+                                         - ?id -send-timer))))
   (not (wm-fact (key domain fact mps-state args? m ?mps s BROKEN)))
   =>
   (printout t "Action Reset " ?mps " is Aborted" crlf)
-  (retract ?at)
+  (retract ?st ?at)
   (modify ?pa (state EXECUTION-FAILED))
 )
 
@@ -311,6 +323,9 @@
                                                          ?param-names
                                                          ?param-values))
                          mps)
+  ?st <- (timer (name ?nst&:(eq ?nst
+                               (sym-cat prepare- ?goal-id - ?plan-id
+                                        - ?id -send-timer))))
   ?at <- (timer (name ?nat&:(eq ?nat
                                (sym-cat prepare- ?goal-id - ?plan-id
                                         - ?id -abort-timer))))
@@ -318,7 +333,7 @@
   (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
   =>
   (printout t "Action Prepare " ?mps " is Aborted because mps is broken" crlf)
-  (retract ?md ?at)
+  (retract ?st ?md ?at)
   (modify ?pa (state EXECUTION-FAILED))
 )
 
@@ -343,6 +358,9 @@
                                          - ?id -abort-timer)))
 	        (time $?t&:(timeout ?now ?t ?*ABORT-PREPARE-PERIOD*))
                 (seq ?seq))
+  ?st <- (timer (name ?nst&:(eq ?nst
+                                (sym-cat prepare- ?goal-id - ?plan-id
+                                         - ?id -send-timer))))
   ?md <- (metadata-prepare-mps ?mps $?date)
   (not (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT|
                                                           PROCESSING|
@@ -350,6 +368,6 @@
                                                           PREPARED)))
   =>
   (printout t "Action Prepare " ?mps " is Aborted" crlf)
-  (retract ?md ?at)
+  (retract ?st ?md ?at)
   (modify ?pa (state EXECUTION-FAILED))
 )
