@@ -4,7 +4,6 @@
 fawkes/meta_plugins:
   m-bare:
     - static-transforms
-    - webview
   m-fv:
     - fvbase
     - fvfountain
