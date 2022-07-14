@@ -657,6 +657,12 @@
   ; Ensure that a MachineInfo was received already.
   ; So if there are ring stations with specs, then those specs are registered.
   (wm-fact (key domain fact mps-state args? m ?any-mps s IDLE))
+  (not
+    (and
+      (domain-object (name ?robot) (type robot))
+      (not (wm-fact (key domain fact entered-field args? r ?robot)))
+    )
+  )
   =>
   (bind ?g (goal-tree-assert-central-run-parallel INSTRUCTION-ROOT))
   (modify ?g (meta do-not-finish) (priority 1.0))
