@@ -273,7 +273,7 @@
   (goal (id ?urgent) (class URGENT) (mode FORMULATED))
   (wm-fact (key domain fact self args? r ?self))
   (domain-object (type waitpoint) (name ?waitpoint&:
-               (eq (str-length (str-cat ?waitpoint)) 10)))
+               (eq (str-index "-Z" ?waitpoint) 2)))
   =>
   (do-for-fact ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ monitoring shame))
     (retract ?wm)
