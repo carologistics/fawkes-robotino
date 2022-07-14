@@ -154,8 +154,6 @@
   (wm-fact (key central agent robot args? r ?robot))
   (not (goal-meta (assigned-to ?robot)))
   (wm-fact (key central agent robot-waiting args? r ?robot))
-  ; TODO: not a nice condition, problem is a robot may be assigned before another robot flushes its assignments
-  (not (goal (sub-type SIMPLE) (mode SELECTED)))
   =>
   (bind ?longest-waiting 0)
   (bind ?longest-waiting-robot ?robot)

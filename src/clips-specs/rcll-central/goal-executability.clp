@@ -41,43 +41,6 @@
 	)
 )
 
-; ----------------------- Executability Flushing -------------------------------
-
-(defrule goal-production-flush-executability
-" A waiting robot got a new goal, clear executability and robot assignment from other goals. "
-	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
-	(goal (id ?goal-id) (sub-type SIMPLE) (mode SELECTED)
-	      (is-executable TRUE) (type ACHIEVE))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
-	(goal (id ?o-id) (sub-type SIMPLE) (mode FORMULATED))
-	(goal-meta (goal-id ?o-id) (assigned-to ?robot))
-	=>
-	(delayed-do-for-all-facts ((?g goal))
-		(eq ?g:is-executable TRUE)
-		(modify ?g (is-executable FALSE))
-	)
-	(if (and (neq ?robot central) (neq ?robot nil))
-		then
-		(delayed-do-for-all-facts ((?g goal))
-			(and (eq ?g:mode FORMULATED) (not (eq ?g:type MAINTAIN))
-			     (any-factp ((?gm goal-meta))
-			                (and (eq ?gm:goal-id ?g:id)
-			                     (eq ?gm:assigned-to ?robot))))
-			(remove-robot-assignment-from-goal-meta ?g)
-		)
-		(do-for-fact ((?waiting wm-fact))
-			(and (wm-key-prefix ?waiting:key (create$ central agent robot-waiting))
-			     (eq (wm-key-arg ?waiting:key r) ?robot))
-			(retract ?waiting)
-		)
-	)
-	; cleaning goal dependencies by flushing grounded-with for formulated goals
-	(delayed-do-for-all-facts ((?da dependency-assignment) (?g goal))
-		(and (eq ?da:goal-id ?g:id) (neq ?da:grounded-with nil) (eq ?g:mode FORMULATED))
-		(modify ?da (grounded-with nil))
-	)
-)
-
 ; ----------------------- Production GOALS -------------------------------
 
 (defrule goal-production-enter-field-executable
@@ -169,11 +132,6 @@
 	                    cap-color ?cap-color
 	            )
 	            (is-executable FALSE))
-	(not (goal (class BUFFER-CAP)
-	            (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
-	            (params target-mps ?mps
-	                    cap-color ?cap-color
-	            )))
 	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; Robot CEs
@@ -247,8 +205,6 @@
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
 	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
 	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
-	;the BS is not in use
-	(not (wm-fact (key mps meta bs-in-use args? bs ?wp-loc $?)))
 
 	; prevent other goals from interfering (goal takeover, etc.)
 	(wm-fact (key wp meta next-step args? wp ?wp) (value CAP))
@@ -422,8 +378,6 @@
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
 	(domain-fact (name zone-content) (param-values ?zz1 ?wp-loc))
 	(domain-fact (name zone-content) (param-values ?zz2 ?target-mps))
-	;the BS is not in use
-	(not (wm-fact (key mps meta bs-in-use args? bs ?wp-loc $?)))
 	=>
 	(printout t "Goal " PAY-FOR-RINGS-WITH-BASE " executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -647,8 +601,6 @@ The workpiece remains in the output of the used ring station after
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
 	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
 	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
-	;the BS is not in use
-	(not (wm-fact (key mps meta bs-in-use args? bs ?wp-loc $?)))
 
 	; Goal CEs
 	(not (goal (class MOUNT-RING) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED) (params $? target-mps ?target-mps $?)))
@@ -689,7 +641,6 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key domain fact wp-at args? wp ?cc m ?mps side INPUT))
 	(wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
 	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side OUTPUT)))
-	(wm-fact (key game found-tag zone args? m ?mps));we have information of the machine
 	=>
 	(printout t "Goal INSTRUCT-CS-BUFFER-CAP executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -721,7 +672,6 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
 	(wm-fact (key wp meta next-step args? wp ?wp) (value CAP))
 	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side OUTPUT)))
-	(wm-fact (key game found-tag zone args? m ?mps));we have information of the machine
 	=>
 	(printout t "Goal INSTRUCT-CS-MOUNT-CAP executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -753,7 +703,6 @@ The workpiece remains in the output of the used ring station after
 	(goal (id ?oid) (params $? wp ?wp $?))
 	(goal-meta (goal-id ?oid) (order-id ?order-id))
 	(not (goal (class INSTRUCT-BS-DISPENSE-BASE) (mode SELECTED|DISPATCHED|COMMITTED|EXPANDED)))
-	(wm-fact (key game found-tag zone args? m ?mps));we have information of the machine
 	=>
 	(printout t "Goal INSTRUCT-BS-DISPENSE executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -776,7 +725,6 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key refbox game-time) (values $?game-time))
 	(wm-fact (key refbox order ?order delivery-begin) (type UINT)
 	         (value ?begin&:(< ?begin (nth$ 1 ?game-time))))
-	(wm-fact (key game found-tag zone args? m ?mps));we have information of the machine
 	=>
 	(printout t "Goal INSTRUCT-DS-DELIVER executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -819,7 +767,6 @@ The workpiece remains in the output of the used ring station after
 	          args? ord ?order col ?ring-color ))
 	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side OUTPUT)))
 	(not (goal (class INSTRUCT-RS-MOUNT-RING) (mode EXPANDED|SELECTED|DISPATCHED|COMMITTED)))
-	(wm-fact (key game found-tag zone args? m ?mps));we have information of the machine
 	=>
 	(printout t "Goal INSTRUCT-RS-MOUNT-RING executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -847,3 +794,37 @@ The workpiece remains in the output of the used ring station after
 
 
 
+(defrule retract-disconnected-agent-facts
+	(wm-fact (key central agent robot args? r ?robot))
+	?hbi <- (HeartbeatInterface (id ?id&:(str-index ?robot ?id)) (alive FALSE))
+	=>
+	(blackboard-close "HeartbeatInterface" ?id)
+	(do-for-all-facts ((?wm wm-fact))
+	                  (eq (wm-key-arg ?wm:key r) ?robot)
+		(retract ?wm)
+	)
+	(do-for-fact ((?si SkillerInterface)) (str-index ?robot ?si:id)
+		(retract ?si)
+	)
+	(do-for-all-facts ((?df domain-fact)) (str-index ?robot (implode$ ?df:param-values))
+		(retract ?df)
+	)
+
+	(do-for-all-facts ((?gm goal-meta)) (eq ?gm:assigned-to ?robot)
+		(do-for-all-facts ((?g goal)) (and (eq ?g:id ?gm:goal-id) (neq ?g:mode FORMULATED) (neq ?g:mode FINISHED) (neq ?g:mode RETRACTED))
+			(remove-robot-assignment-from-goal-meta ?g)
+			(modify ?g (mode FINISHED)(outcome FAILED))
+		)
+	)
+
+	(do-for-all-facts ((?bif blackboard-interface)) (str-index ?robot ?bif:id)
+		(blackboard-close ?bif:type ?bif:id)
+		(retract ?bif)
+	)
+
+	(do-for-all-facts ((?wsmf wm-sync-map-fact)) (eq (wm-key-arg ?wsmf:wm-fact-key r) ?robot)
+		(retract ?wsmf)
+	)
+
+	(retract ?hbi)
+)
