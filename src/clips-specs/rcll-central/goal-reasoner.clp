@@ -380,6 +380,16 @@
   (modify ?selection (values (append$ ?values ?goal-id)))
 )
 
+(defrule goal-reasoner-remove-non-executable-from-list
+  (declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+  (goal (id ?id) (is-executable FALSE))
+  ?selection <- (wm-fact (key goal selection criterion args? t ?) (values $?values&:(member$ ?id ?values)))
+  =>
+  (bind ?index (member$ ?id ?values))
+  (modify ?selection (values (delete$ ?values ?index ?index)))
+)
+
+
 (defrule goal-reasoner-apply-selection-across-types
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
   (time $?now)
