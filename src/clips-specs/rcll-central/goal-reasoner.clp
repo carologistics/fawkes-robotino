@@ -61,6 +61,7 @@
   ?*SALIENCE-GOAL-PRE-SELECT* = 250
   ?*SALIENCE-GOAL-SELECT* = 200
   ?*SALIENCE-GOAL-EVALUATE-GENERIC* = -1
+  ?*MIN-GOAL-SELECTION-TIME* = 1
 )
 
 (deffunction requires-subgoal (?goal-type)
@@ -344,6 +345,7 @@
     (wm-fact (key goal selection criterion args? t root) (type SYMBOL) (is-list TRUE) (values (create$)))
     (wm-fact (key goal selection criterion args? t run-all) (type SYMBOL) (is-list TRUE) (values (create$)))
     (wm-fact (key goal selection criterion args? t run-parallel) (type SYMBOL) (is-list TRUE) (values (create$)))
+    (timer (name GOAL-SELECTION-TIMER))
   )
 )
 (defrule goal-reasoner-select-root-for-order
@@ -394,10 +396,14 @@
 
 (defrule goal-reasoner-apply-selection-across-types
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  (time $?now)
+  ?timer <- (timer (name GOAL-SELECTION-TIMER)
+                   (time $?t&:(timeout ?now ?t ?*MIN-GOAL-SELECTION-TIME*)))
   (wm-fact (key goal selection criterion args? t ?) (values ?some-goal-id $?))
   ?some-goal <- (goal (id ?some-goal-id) (priority ?some-prio))
   (not (goal (mode SELECTED|EXPANDED|COMMITTED) (type ACHIEVE)))
   =>
+  (modify ?timer (time ?now))
   (bind ?all-choices (create$))
   (delayed-do-for-all-facts ((?selection wm-fact))
     (wm-key-prefix ?selection:key (create$ goal selection criterion))
