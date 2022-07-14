@@ -3,9 +3,9 @@
 ---
 hardware/laser:
   front:
-    time_offset: -0.072911
+    time_offset: -0.012582
   back:
-    time_offset: -0.028779
+    time_offset: -0.078836
 
 plugins/laser-filter:
   back-downsample:
