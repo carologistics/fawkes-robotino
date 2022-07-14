@@ -73,6 +73,7 @@ local MISSING_MAX          = 2 -- limit for missing object detections in a row w
 local LINE_MATCH_TOLERANCE = 0.3 -- meter threshold of laserline center to tag
 local MIN_VIS_HIST_LINE    = 5 -- minimum visibility history for laser-line before considering it
 local MIN_VIS_HIST_TAG     = 5 -- minimum visibility history for tag before considering it
+local SIMILAR_LINE_ORI_TOL = 0.4
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
@@ -279,13 +280,26 @@ function object_tracker_active()
   return object_tracking_if:has_writer() and object_tracking_if:msgid() > 0
 end
 
+function similar_ori_visited(compare_ori)
+  for ori in fsm.vars.tried_oris do
+    -- ori is within tolerance
+    if compare_ori < ori + SIMILAR_LINE_ORI_TOL
+       and compare_ori > ori - SIMILAR_LINE_ORI_TOL then
+      return true
+    end
+  end
+  -- no ori is in tolerance
+  return false
+end
+
 fsm:define_states{ export_to=_M, closure={MISSING_MAX=MISSING_MAX},
    {"INIT",                  JumpState},
    {"START_TRACKING",        JumpState},
    {"FIND_LASER_LINE",       JumpState},
    {"DRIVE_BACK",            SkillJumpState, skills={{motor_move}},      final_to="SEARCH_LASER_LINE", fail_to="SEARCH_LASER_LINE"},
    {"SEARCH_LASER_LINE",     JumpState},
-   {"SPIN",                  SkillJumpState, skills={{motor_move}},      final_to="SEARCH_LASER_LINE", fail_to="SEARCH_LASER_LINE"},
+   {"FIND_NEXT_LINE",        JumpState},
+   {"SPIN_TO_LASER_LINE",    SkillJumpState, skills={{motor_move}},      final_to="SEARCH_LASER_LINE", fail_to="SEARCH_LASER_LINE"},
    {"DRIVE_TO_LASER_LINE",   SkillJumpState, skills={{motor_move}},      final_to="AT_LASER_LINE", fail_to="FAILED"},
    {"AT_LASER_LINE",         JumpState},
    {"MOVE_BASE_AND_GRIPPER", SkillJumpState, skills={{motor_move}},      final_to="FINE_TUNE_GRIPPER", fail_to="FIND_LASER_LINE"},
@@ -301,8 +315,9 @@ fsm:add_transitions{
    {"FIND_LASER_LINE", "DRIVE_TO_LASER_LINE",     cond=laser_line_found},
    {"FIND_LASER_LINE", "DRIVE_BACK",              timeout=1, desc="Could not find laser-line, drive back"},
    {"SEARCH_LASER_LINE", "DRIVE_TO_LASER_LINE",   cond=laser_line_found},
-   {"SEARCH_LASER_LINE", "FAILED",                cond="vars.search_attemps > 10", desc="Tried 10 times, could not find laser-line"},
-   {"SEARCH_LASER_LINE", "SPIN",                  timeout=1, desc="Could not find laser-line, spin"},
+   {"SEARCH_LASER_LINE", "FIND_NEXT_LINE",        timeout=1, desc="Could not find laser-line, look for it"},
+   {"FIND_NEXT_LINE", "SPIN_TO_LASER_LINE",       cond=found_next_line, desc="Spin to another laser-line"},
+   {"FIND_NEXT_LINE", "FAILED",                   timeout=1, desc="Could not find another laser-line!"},
    {"AT_LASER_LINE", "MOVE_BASE_AND_GRIPPER",     cond="vars.consecutive_detections > 2", desc="Found Object"},
    {"AT_LASER_LINE", "FAILED",                    timeout=2, desc="Object not found"},
    {"FINE_TUNE_GRIPPER", "GRIPPER_ROUTINE",       cond=gripper_aligned, desc="Gripper aligned"},
@@ -389,22 +404,68 @@ end
 
 function FIND_LASER_LINE:init()
   -- start searching for laser line
-  fsm.vars.search_attemps = 0
+  local cur_pos = tfm.transform6D(
+        {  x = 0,
+           y = 0,
+           z = 0,
+           ori = 0},
+        "base_link", "/odom"
+        )
+  fsm.vars.tried_oris = {cur_pos.ori}
 end
 
 function DRIVE_BACK:init()
   self.args["motor_move"].x = drive_back_x
 end
 
-function SEARCH_LASER_LINE:init()
-  fsm.vars.search_attemps = fsm.vars.search_attemps + 1
+function FIND_NEXT_LINE:init()
+  local fsm.vars.next_ori = nil
+  local smallest_dist = 1000.0
+  fsm.vars.found_next_line = false
+  for k,line in pairs(fsm.vars.lines) do
+    local line_center = llutils.center(line, 0)
+    
+    local cur_pos = tfm.transform6D(
+      {  x = 0,
+         y = 0,
+         z = 0,
+         ori = 0},
+      "base_link", "/odom"
+      )
+
+    local laser_target = tfm.transform6D(
+      {  x = line_center.x,
+         y = line_center.y,
+         z = 0,
+         ori = 0},
+         next_line:frame_id(), "/odom"
+      )
+
+    local diff_x = (cur_pos.x - laser_target.x) * (cur_pos.x - laser_target.x)
+    local diff_y = (cur_pos.y - laser_target.y) * (cur_pos.y - laser_target.y)
+    local dist = math.sqrt(diff_x + diff_y)
+    
+    local cur_ori = math.atan(laser_target.y - cur_pos.y, laser_target.x - cur_pos.x ) * ( 180 / math.pi )
+    if line:visibility_history() >= MIN_VIS_HIST_LINE
+       and dist < smallest_dist
+       and not similar_ori_visited(cur_ori)
+    then
+       smallest_dist = dist
+       fsm.vars.next_ori = cur_ori
+       fsm.vars.found_next_line = true
+       printf("Line dist: %f", dist)
+    end
+  end
+  table.insert(fsm.vars.tried_oris, fsm.vars.next_ori)
 end
 
-function SPIN:init()
-  self.args["motor_move"].ori = math.pi / 5
+function SPIN_TO_LASER_LINE:init()
+  self.args["motor_move"].frame = "/odom"
+  self.args["motor_move"].ori = fsm.vars.next_ori
 end
 
 function DRIVE_TO_LASER_LINE:init()
+  fsm.vars.tried_oris = {}
   fsm.vars.consecutive_detections = 0
   fsm.vars.tracking_msgid = 0
   local offset_y = 0
