@@ -501,7 +501,6 @@ execution monitoring handle the reformulation.
 	(retract ?restored)
 )
 
-<<<<<<< HEAD
 ; ----------------------- BS TRACKING -------------------------------
 (defrule execution-monitoring-bs-in-use
 "If a BS is part of a goal's operation, assert a fact to indicate this state."
