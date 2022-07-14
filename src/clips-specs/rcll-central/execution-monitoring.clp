@@ -500,3 +500,55 @@ execution monitoring handle the reformulation.
 	)
 	(retract ?restored)
 )
+
+; ----------------------- BS TRACKING -------------------------------
+(defrule execution-monitoring-bs-in-use
+"If a BS is part of a goal's operation, assert a fact to indicate this state."
+	(declare (salience ?*SALIENCE-HIGH*))
+	(not (wm-fact (key mps meta bs-in-use args? bs ?bs $?)))
+	(wm-fact (key domain fact mps-type args? $? ?bs $? BS $?))
+	(goal (id ?goal-id) (mode ~FORMULATED&~RETRACTED) (sub-type SIMPLE))
+	(plan-action (action-name wp-get) (goal-id ?goal-id) (param-values $? ?bs $?))
+	=>
+	(assert (wm-fact (key mps meta bs-in-use args? bs ?bs goal ?goal-id)))
+)
+
+(defrule execution-monitoring-bs-not-in-use
+"Retract BS in use fact if it is no longer in use."
+	(declare (salience ?*SALIENCE-HIGH*))
+	?wm <- (wm-fact (key mps meta bs-in-use args? bs ?bs goal ?goal-id))
+	(wm-fact (key domain fact mps-type args? $? ?bs $? BS $?))
+	(goal (id ?goal-id) (mode FORMULATED|RETRACTED))
+	=>
+	(retract ?wm)
+)
+
+; ----------------------- HANDLE FAILING INSTRUCT -----------------------------------
+(defrule execution-monitoring-break-instruct-fails
+"When an INSTRUCT fails on an MPS (except BS|DS), break the machine."
+	?g <- (goal (class INSTRUCT-CS-BUFFER-CAP|INSTRUCT-CS-MOUNT-CAP|INSTRUCT-RS-MOUNT-RING) (mode RETRACTED) (outcome FAILED) (params $? target-mps ?mps $?))
+	?wm <- (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+	=>
+	(bind ?goal-id (sym-cat BREAK-MPS - (gensym*)))
+	(assert (goal (id ?goal-id) (class RESET-MPS) (params mps ?mps) (mode EXPANDED) (sub-type SIMPLE) (type ACHIEVE)))
+	(assert (goal-meta (goal-id ?goal-id) (assigned-to central)))
+	(assert
+	    (plan (id (sym-cat ?goal-id -PLAN)) (goal-id ?goal-id))
+	    (plan-action (id 1) (plan-id (sym-cat ?goal-id -PLAN)) (goal-id ?goal-id)
+	        (action-name reset-mps)
+	        (param-names m)
+	        (param-values ?mps))
+	)
+)
+
+(defrule execution-monitoring-reformulate-instruct-fails-bs-ds
+"When an INSTRUCT fails on a B|DS, reformulate the instruct goal."
+	?g <- (goal (class INSTRUCT-BS-DISPENSE-BASE|INSTRUCT-DS-DELIVER) (id ?id) (mode RETRACTED) (outcome FAILED))
+	?p <- (plan (goal-id ?id))
+	=>
+	(do-for-all-facts ((?plan-action plan-action)) (eq ?plan-action:goal-id ?id)
+		(retract ?plan-action)
+	)
+	(modify ?g (mode FORMULATED) (outcome UNKNOWN))
+	(retract ?p)
+)
