@@ -891,7 +891,7 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 	//compute target gripper frame first
 	switch (current_object_type_) {
 	case ObjectTrackingInterface::WORKPIECE:
-		gripper_target[0] = object_pos.getX();
+		gripper_target[0] = object_pos.getX() + 0.005;
 		gripper_target[1] = object_pos.getY();
 		gripper_target[2] = object_pos.getZ() + gripper_offset_pick_;
 		break;
@@ -909,8 +909,8 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 	}
 
 	if (current_object_type_ == ObjectTrackingInterface::CONVEYOR_BELT_FRONT) {
-		gripper_target[0] = object_pos.getX() + cos(mps_angle) * puck_size_;
-		gripper_target[1] = object_pos.getY() - sin(mps_angle) * puck_size_;
+		gripper_target[0] = object_pos.getX() + cos(mps_angle) * puck_size_ * 1.2;
+		gripper_target[1] = object_pos.getY() - sin(mps_angle) * puck_size_ * 1.2;
 	} else if (current_object_type_ == ObjectTrackingInterface::SLIDE_FRONT) {
 		gripper_target[0] = object_pos.getX() + cos(mps_angle) * puck_size_ * 0.5;
 		gripper_target[1] = object_pos.getY() - sin(mps_angle) * puck_size_ * 0.5;
