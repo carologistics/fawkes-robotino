@@ -267,7 +267,7 @@
   (wm-fact (key domain fact zone-content args? z ?zn m NONE))
   ?we <- (domain-fact (name zone-content) (param-values ?zn2&:(eq ?zn2 (mirror-name ?zn)) UNKNOWN))
   =>
-  (modify ?we (param-values ?zn NONE))
+  (modify ?we (param-values ?zn2 NONE))
   (printout t "Synced zone: " ?zn2 crlf)
 )
 
@@ -279,7 +279,7 @@
   ?wm <- (domain-fact (name zone-content) (param-values ?zn2 UNKNOWN))
   (test (eq TRUE (zone-is-blocked ?zn ?orientation ?zn2 ?machine)))
   =>
-  (modify ?wm (param-values ?zn NONE))
+  (modify ?wm (param-values ?zn2 NONE))
   (printout t "There is a machine in " ?zn " with orientation " ?orientation  " so block " ?zn2 crlf)
 )
 
