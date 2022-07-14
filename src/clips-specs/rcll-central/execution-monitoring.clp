@@ -501,6 +501,7 @@ execution monitoring handle the reformulation.
 	(retract ?restored)
 )
 
+<<<<<<< HEAD
 ; ----------------------- BS TRACKING -------------------------------
 (defrule execution-monitoring-bs-in-use
 "If a BS is part of a goal's operation, assert a fact to indicate this state."
@@ -551,4 +552,16 @@ execution monitoring handle the reformulation.
 	)
 	(modify ?g (mode FORMULATED) (outcome UNKNOWN))
 	(retract ?p)
+)
+
+(defrule execution-monitoring-re-formulate-stuck-selected-goal
+	(declare (salience ?*SALIENCE-LOW*))
+	?g <- (goal (id ?id) (sub-type SIMPLE) (mode SELECTED) (priority ?p))
+  (wm-fact (key central agent robot args? r ?robot))
+	(goal-meta (assigned-to ?robot))
+	=>
+  (set-robot-to-waiting ?robot)
+  (remove-robot-assignment-from-goal-meta ?g)
+  (printout error "Goal " ?id " stuck on selected. Re-formulate." crlf)
+  (modify ?g (mode FORMULATED) (priority (- ?p 1)))
 )
