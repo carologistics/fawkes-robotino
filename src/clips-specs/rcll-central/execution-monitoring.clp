@@ -500,3 +500,15 @@ execution monitoring handle the reformulation.
 	)
 	(retract ?restored)
 )
+
+(defrule execution-monitoring-re-formulate-stuck-selected-goal
+	(declare (salience ?*SALIENCE-LOW*))
+	?g <- (goal (id ?id) (sub-type SIMPLE) (mode SELECTED) (priority ?p))
+  (wm-fact (key central agent robot args? r ?robot))
+	(goal-meta (assigned-to ?robot))
+	=>
+  (set-robot-to-waiting ?robot)
+  (remove-robot-assignment-from-goal-meta ?g)
+  (printout error "Goal " ?id " stuck on selected. Re-formulate." crlf)
+  (modify ?g (mode FORMULATED) (priority (- ?p 1)))
+)
