@@ -782,8 +782,8 @@ ObjectTrackingThread::closest_position(std::vector<std::array<float, 4>>      bo
                                        fawkes::tf::Stamped<fawkes::tf::Point> ref_pos,
                                        float                                  mps_angle,
                                        float                                  closest_pos[3],
-                                       Rect &                                 closest_box,
-                                       float &                                additional_height)
+                                       Rect                                  &closest_box,
+                                       float                                 &additional_height)
 {
 	float  min_dist = max_acceptable_dist_;
 	size_t box_id;
@@ -827,7 +827,7 @@ void
 ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
                                        float                mps_angle,
                                        float                point[3],
-                                       float &              wp_additional_height)
+                                       float               &wp_additional_height)
 {
 	//compute bounding box values
 	float bb_left    = bounding_box[0] - bounding_box[2] / 2;
@@ -851,31 +851,29 @@ ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
 		return;
 	}
 
+	float object_width = object_widths_[(int)current_object_type_];
+	float angle;
 	if (current_object_type_ == ObjectTrackingInterface::WORKPIECE) {
-		//workpieces have an equal width from all angles
-		//distance towards this perception + additional adjustments through angle
-		float dist = object_widths_[(int)current_object_type_] / (dx_right - dx_left);
+		//workpiece angles depend only on the camera view and not the mps
+		angle = atan((dx_right + dx_left) / 2);
+	} else {
+		angle = mps_angle;
+	}
 
-		//compute base middle point with deltas and distance
-		// using the bottom point + wp_height/2
-		point[0] = dist;
-		point[1] = (dx_left + dx_right) * dist / 2;
-		point[2] = dy_top * dist + puck_height_ / 2;
+	//distance towards object center point
+	float dist = ((cos(angle) + sin(angle) * dx_left) * object_width) / (dx_right - dx_left)
+	             + sin(angle) * object_width / 2;
 
+	//compute middle point with deltas and distance
+	point[0] = dist;
+	point[1] = (dx_left + dx_right) * dist / 2;
+
+	if (current_object_type_ == ObjectTrackingInterface::WORKPIECE) {
+		//compute base middle point using the bottom point + wp_height/2
+		point[2]             = dy_top * dist + puck_height_ / 2;
 		wp_additional_height = max(puck_height_ / 2, dy_bottom * dist - point[2]);
 	} else {
-		//percieved object width from angle
-		float object_width = cos(mps_angle) * object_widths_[(int)current_object_type_];
-
-		//distance towards this perception + additional adjustments through angle
-		float dist = object_width / (dx_right - dx_left)
-		             + sin(abs(mps_angle)) * object_widths_[(int)current_object_type_] / 2;
-
-		//compute middle point with deltas and distance
-		point[0] = dist;
-		point[1] = (dx_left + dx_right) * dist / 2;
-		point[2] = dy_center * dist;
-
+		point[2]             = dy_center * dist;
 		wp_additional_height = 0;
 	}
 }
