@@ -114,7 +114,7 @@ fawkes/bbsync:
         tag7: Position3DInterface::/tag-vision/7/to_map=/robot2/tag-vision/7/to_map
         tag8: Position3DInterface::/tag-vision/8/to_map=/robot2/tag-vision/8/to_map
         tag9: Position3DInterface::/tag-vision/9/to_map=/robot2/tag-vision/9/to_map
-        tag10: Position3DInterface::/tag-vision/10/to_map=/robot2/tag-vision/10/to_map/to_map
+        tag10: Position3DInterface::/tag-vision/10/to_map=/robot2/tag-vision/10/to_map
         tag11: Position3DInterface::/tag-vision/11/to_map=/robot2/tag-vision/11/to_map
         tag12: Position3DInterface::/tag-vision/12/to_map=/robot2/tag-vision/12/to_map
         tag13: Position3DInterface::/tag-vision/13/to_map=/robot2/tag-vision/13/to_map
@@ -153,7 +153,7 @@ fawkes/bbsync:
         tag7: Position3DInterface::/tag-vision/7/to_map=/robot3/tag-vision/7/to_map
         tag8: Position3DInterface::/tag-vision/8/to_map=/robot3/tag-vision/8/to_map
         tag9: Position3DInterface::/tag-vision/9/to_map=/robot3/tag-vision/9/to_map
-        tag10: Position3DInterface::/tag-vision/10/to_map=/robot3/tag-vision/10/to_map/to_map
+        tag10: Position3DInterface::/tag-vision/10/to_map=/robot3/tag-vision/10/to_map
         tag11: Position3DInterface::/tag-vision/11/to_map=/robot3/tag-vision/11/to_map
         tag12: Position3DInterface::/tag-vision/12/to_map=/robot3/tag-vision/12/to_map
         tag13: Position3DInterface::/tag-vision/13/to_map=/robot3/tag-vision/13/to_map
