@@ -55,7 +55,7 @@
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; (NavGraphGeneratorInterface (final TRUE))
 	(not (wm-fact (key domain fact entered-field
-	               args? r ?robot team-color ?team-color)))
+	               args? r ?robot)))
 	=>
 	(printout t "Goal ENTER-FIELD executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
