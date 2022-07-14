@@ -127,17 +127,6 @@
 	(modify ?g (mode EXPANDED))
 )
 
-(defrule goal-expander-send-beacon-signal
-  ?p <- (goal (mode DISPATCHED) (id ?parent-id))
-  ?g <- (goal (id ?goal-id) (class SEND-BEACON) (mode SELECTED)
-              (parent ?parent-id))
-=>
-	(plan-assert-sequential BEACONPLAN ?goal-id central
-		(plan-assert-action send-beacon)
-	)
-  (modify ?g (mode EXPANDED))
-)
-
 (defrule goal-expander-refill-shelf
   ?p <- (goal (mode DISPATCHED) (id ?parent-id))
   ?g <- (goal (id ?goal-id) (class REFILL-SHELF) (mode SELECTED)
