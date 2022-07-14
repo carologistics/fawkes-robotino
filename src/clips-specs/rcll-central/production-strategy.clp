@@ -106,27 +106,9 @@
   )
 )
 
-(defrule production-strategy-remove-workload-facts-for-completed-order
-  "If an order production tree has been retracted, do not track the workload."
-  ?workload <- (wm-fact (key mps workload order args? m ?mn ord ?o-id))
-  ?update-fact <- (wm-fact (key mps workload needs-update) (value ?value))
-  (or
-    (and
-      (goal-meta (goal-id ?g-id) (root-for-order ?o-id))
-      (goal (id ?g-id) (mode RETRACTED))
-    )
-    (not (goal-meta (goal-id ?g-id) (root-for-order ?o-id)))
-  )
-  =>
-  (retract ?workload)
-  (if (eq ?value FALSE) then
-    (modify ?update-fact (value TRUE))
-  )
-)
-
 (defrule production-strategy-sum-workload
   "Summing up the workload of a mps base on all started order productions"
-  (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
+  (declare (salience ?*SALIENCE-LOW*))
   ?update-fact <- (wm-fact (key mps workload needs-update) (value TRUE))
   =>
   (delayed-do-for-all-facts ((?overall-fact wm-fact)) (wm-key-prefix ?overall-fact:key (create$ mps workload overall))
@@ -182,9 +164,7 @@
   (wm-fact (key refbox game-time) (values ?curr-time $?))
   (wm-fact (key refbox order ?order delivery-end) (type UINT)
            (value ?deadline))
-  ?update-fact <- (wm-fact (key mps workload needs-update) (value FALSE))
 =>
-  (modify ?update-fact (value TRUE))
   (bind ?wl workload)
   (bind ?pm (create$ state payments))
   (delayed-do-for-all-facts ((?mps-type domain-fact)) (eq (nth$ 2 ?mps-type:param-values) RS)
@@ -943,11 +923,12 @@
   (modify ?f (value ?order-id))
 )
 
-(defrule production-strategy-filter-set-selected-order-possible-empty
-  "There is no possible order"
+(defrule production-strategy-filter-unset-selected-order-possible
+  " The selected order is not possible anymore (e.g., it was started).
+    Clear the selection"
   (declare (salience ?*SALIENCE-ORDER-SELECTION*))
-  (wm-fact (key strategy meta possible-orders) (values ))
-  ?f <- (wm-fact (key strategy meta selected-order args? cond possible) (value ~nil))
+  ?f <- (wm-fact (key strategy meta selected-order args? cond possible) (value ?ex-order-id&~nil))
+  (wm-fact (key strategy meta possible-orders) (values $?values&:(not (member$ ?ex-order-id ?values))))
   =>
   (modify ?f (value nil))
 )
@@ -965,7 +946,6 @@
     (and
       (wm-fact (key strategy meta possible-orders) (values $? ?o-order-id&:(neq ?order-id ?o-order-id) $?))
       (wm-fact (key domain fact order-complexity args? ord ?o-order-id com ?comp-comp))
-      (not (wm-fact (key strategy meta filtered-orders $?) (values $?values&:(not (member$ ?o-order-id ?values)))))
       (test (> 0 (str-compare ?comp-comp ?comp)))
     )
   )
