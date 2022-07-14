@@ -42,17 +42,11 @@ for CURR_ROBO in $ALL_ROBOTS
 		fi
 	done
 	if [[ -z "$IS_ACTIVE" ]]; then
-		if (( $CURR_ROBO == 1)); then
-			echo "  laptop1/active: false" >> $CFG_DIR/startup_generated.yaml
-		fi
 		echo "  robot$CURR_ROBO/active: false" >> $CFG_DIR/startup_generated.yaml
 	fi
 done
 for ACTIVE_ROBO in $ACTIVE_ROBOTS
 	do
-		if (( $ACTIVE_ROBO == 1)); then
-			echo "  laptop1/active: true" >> $CFG_DIR/startup_generated.yaml
-		fi
 		echo "  robot$ACTIVE_ROBO/active: true" >> $CFG_DIR/startup_generated.yaml
 	done
 
