@@ -426,7 +426,7 @@
 		(and (eq ?g:is-executable TRUE) (neq ?g:class SEND-BEACON))
 		(modify ?g (is-executable FALSE))
 	)
-  ; if it is actually a robot, remove all other assignments of it and remove its waiting status
+  ; if it is actually a robot, remove all other assignments and the waiting status
 	(if (and (neq ?robot central) (neq ?robot nil))
 		then
 		(delayed-do-for-all-facts ((?g goal))
@@ -442,6 +442,7 @@
 			(retract ?waiting)
 		)
 	)
+	(modify ?highest-prio-goal-fact (mode SELECTED))
 )
 
 (defrule goal-reasoner-balance-payment-goals
