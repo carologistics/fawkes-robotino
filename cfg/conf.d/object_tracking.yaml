@@ -28,18 +28,20 @@ plugins/object_tracking:
     belt_height: 0.895
     belt_length: 0.35
     belt_offset_side: 0.025
-    # = 0 in reality, used for gazebo
+    belt_offset_front: 0.005
     # height/size of the belt itself
     belt_size: 0.045
 
   slide_values:
     slide_offset_side: -0.28
+    slide_offset_front: 0.015
     slide_height: 0.91
 
   shelf_values:
     left_shelf_offset_side: -0.1
     middle_shelf_offset_side: -0.2
     right_shelf_offset_side: -0.3
+    shelf_offset_front: 0.01
     shelf_height: 0.89
 
   target_frame_offsets:
@@ -83,7 +85,7 @@ plugins/object_tracking:
 
   # maximal distance between yolo response and last weighted average to accept
   #  as target object
-  max_acceptable_dist: 0.4
+  max_acceptable_dist: 0.15
 
   yolo:
     weights_path: "../cfg/yolo/yolov4-tiny.weights"
@@ -103,3 +105,8 @@ plugins/object_tracking:
     shm_image_id: "realsense_rgb"
     shm_image_id_res: "object_tracking"
     frame: "cam_gripper"
+
+  laser_line_fit:
+    max_dist: 0.8
+    visibility_history: 3
+    max_angle: 0.35
