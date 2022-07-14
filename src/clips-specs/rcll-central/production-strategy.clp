@@ -28,6 +28,9 @@
   ?*RS-WORKLOAD-THRESHOLD* = 6
   ?*C0-PRODUCTION-THRESHOLD* = 1
   ?*C1-PRODUCTION-THRESHOLD* = 1
+  ?*C2-PRODUCTION-THRESHOLD* = 1
+  ?*C3-PRODUCTION-THRESHOLD* = 1
+  ?*TOTAL-PRODUCTION-THRESHOLD* = 2
   ?*SALIENCE-ORDER-SELECTION* = ?*SALIENCE-HIGH*
 )
 
@@ -675,8 +678,12 @@
     (wm-fact (key strategy meta filtered-orders args? filter workload) (is-list TRUE) (type SYMBOL))
     (wm-fact (key strategy meta filtered-orders args? filter c0-limit) (is-list TRUE) (type SYMBOL))
     (wm-fact (key strategy meta filtered-orders args? filter c1-limit) (is-list TRUE) (type SYMBOL))
+    (wm-fact (key strategy meta filtered-orders args? filter c2-limit) (is-list TRUE) (type SYMBOL))
+    (wm-fact (key strategy meta filtered-orders args? filter c3-limit) (is-list TRUE) (type SYMBOL))
+    (wm-fact (key strategy meta filtered-orders args? filter total-limit) (is-list TRUE) (type SYMBOL))
     (wm-fact (key strategy meta selected-order args? cond filter) (is-list FALSE) (type SYMBOL) (value nil))
     (wm-fact (key strategy meta selected-order args? cond possible) (is-list FALSE) (type SYMBOL) (value nil))
+    (wm-fact (key strategy meta selected-order args? cond fallback) (is-list FALSE) (type SYMBOL) (value nil))
   )
 )
 
@@ -900,6 +907,110 @@
   (modify ?filtered (values (delete-member$ ?values ?order-id)))
 )
 
+;filter c2 limit
+(defrule production-strategy-filter-orders-c2-limit-add
+  "Add an order to this filter if there is less than the threshold of active c2 orders"
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
+  (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c2-limit)
+                        (values $?values&:(not (member$ ?order-id ?values))))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
+  ;filter condition
+  (or
+    (and
+      (test (eq ?comp C2))
+      (test (>= ?*C2-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders-of-complexity C2)))
+    )
+    (test (neq ?comp C2))
+  )
+  =>
+  (modify ?filtered (values $?values ?order-id))
+)
+
+(defrule production-strategy-filter-orders-c2-limit-remove
+  "Remove an order from this filter if there is more than the threshold of active c2 orders"
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c2-limit)
+                        (values $?values&:(member$ ?order-id ?values)))
+  (or
+    (not (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?)))
+    (and
+      (test (eq ?comp C2))
+      (test (< ?*C2-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders-of-complexity C2)))
+    )
+  )
+  =>
+  (modify ?filtered (values (delete-member$ ?values ?order-id)))
+)
+
+;filter c3 limit
+(defrule production-strategy-filter-orders-c3-limit-add
+  "Add an order to this filter if there is less than the threshold of active c3 orders"
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
+  (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c3-limit)
+                        (values $?values&:(not (member$ ?order-id ?values))))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
+  ;filter condition
+  (or
+    (and
+      (test (eq ?comp C3))
+      (test (>= ?*C3-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders-of-complexity C3)))
+    )
+    (test (neq ?comp C3))
+  )
+  =>
+  (modify ?filtered (values $?values ?order-id))
+)
+
+(defrule production-strategy-filter-orders-c3-limit-remove
+  "Remove an order from this filter if there is more than the threshold of active c3 orders"
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c3-limit)
+                        (values $?values&:(member$ ?order-id ?values)))
+  (or
+    (not (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?)))
+    (and
+      (test (eq ?comp C3))
+      (test (< ?*C3-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders-of-complexity C3)))
+    )
+  )
+  =>
+  (modify ?filtered (values (delete-member$ ?values ?order-id)))
+)
+
+;filter total limit
+(defrule production-strategy-filter-orders-total-limit-add
+  "Add an order to this filter if there is less than the threshold of active total orders"
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
+  (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter total-limit)
+                        (values $?values&:(not (member$ ?order-id ?values))))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
+  ;filter condition
+  (and
+    (test (>= ?*TOTAL-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders)))
+  )
+  =>
+  (modify ?filtered (values $?values ?order-id))
+)
+
+(defrule production-strategy-filter-orders-total-limit-remove
+  "Remove an order from this filter if there is more than the threshold of active total orders"
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter total-limit)
+                        (values $?values&:(member$ ?order-id ?values)))
+  (or
+    (not (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?)))
+    (test (< ?*TOTAL-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders)))
+  )
+  =>
+  (modify ?filtered (values (delete-member$ ?values ?order-id)))
+)
+
 (defrule production-strategy-filter-set-selected-order-possible
   "- it is a possible order
    - there is no order of a higher complexity that is also possible"
@@ -972,4 +1083,63 @@
   (wm-fact (key strategy meta filtered-orders $?) (values $?values&:(not (member$ ?order-id ?values))))
   =>
   (modify ?f (value nil))
+)
+
+(defrule production-strategy-filter-selected-order-filter-empty-fallback
+  "None of the orders fulfill all filters"
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
+  (wm-fact (key strategy meta selected-order args? cond filter) (value nil))
+  (wm-fact (key strategy meta filtered-orders args? filter $?) (values ?any-order))
+  ?fallback <- (wm-fact (key strategy meta selected-order args? cond fallback) (value ?fallback-order))
+  =>
+  (bind ?map (create$))
+  (bind ?counts (create$))
+  (do-for-all-facts ((?filter wm-fact)) (wm-key-prefix ?filter:key (create$ strategy meta filtered-orders))
+    (foreach ?order (fact-slot-value ?filter values)
+      (if (member$ ?order ?map) then
+          (bind ?index (member$ ?order ?map))
+          (bind ?count (nth$ ?index ?counts))
+          (bind ?counts (create$ (subseq$ ?counts 1 (- ?index 1)) (+ ?count 1) (subseq$ ?counts (+ ?index 1) (length$ ?counts))))
+        else
+          (bind ?map (create$ ?map ?order))
+          (bind ?counts (create$ ?counts 1))
+      )
+    )
+  )
+  (bind ?order (nth$ (member$ (nth$ 1 (sort < ?counts)) ?counts) ?map))
+  (if (neq ?order ?fallback-order) then
+    (modify ?fallback (value ?order))
+  )
+)
+
+(defrule production-strategy-filter-selected-order-filter-empty-fallback-remove
+  "There is at least order that meets all filters"
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
+  (wm-fact (key strategy meta selected-order args? cond filter) (value ~nil))
+  ?fallback <- (wm-fact (key strategy meta selected-order args? cond fallback) (value ~nil))
+  =>
+  (modify ?fallback (value nil))
+)
+
+(defrule production-strategy-nothing-executable-timer-create
+  "All robots have no goals assigned, create a timer to measure the duration of this condition"
+  (time $?now)
+  (not (timer (name production-strategy-nothing-executable-timer)))
+  (not
+    (and
+      (goal (id ?goal-id) (class ~MOVE-OUT-OF-WAY))
+      (goal-meta (goal-id ?goal-id) (assigned-to ~nil&~central))
+    )
+  )
+  =>
+  (assert (timer (name production-strategy-nothing-executable-timer) (time ?now)))
+)
+
+(defrule production-strategy-nothing-executable-timer-remove
+  "At leats one robots has a goal assigned, remove the timer"
+  (goal (id ?goal-id) (class ~MOVE-OUT-OF-WAY))
+  (goal-meta (goal-id ?goal-id) (assigned-to ~nil&~central))
+  ?timer <- (timer (name production-strategy-nothing-executable-timer))
+  =>
+  (retract ?timer)
 )
