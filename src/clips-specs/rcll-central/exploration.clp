@@ -243,7 +243,7 @@
 	(wm-fact (key central agent robot args? r ?r))
 	(LaserLineInterface
 	  (id ?laser-id&:(str-index (str-cat ?r) ?laser-id))
-	  (visibility_history ?vh&:(>= ?vh 1))
+	  (visibility_history ?vh&:(>= ?vh 10))
 	  (time $?timestamp)
 	  (end_point_1 ?e1 ?e2 $?)
 	  (end_point_2 ?e3 ?e4 $?)
