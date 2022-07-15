@@ -652,6 +652,7 @@
 ; ----------------------- HANDLE FAILING INSTRUCT -----------------------------------
 (defrule execution-monitoring-break-instruct-fails
 "When an INSTRUCT fails on an MPS (except BS|DS), break the machine."
+	(declare (salience ?*MONITORING-SALIENCE*))
 	?g <- (goal (class INSTRUCT-CS-BUFFER-CAP|INSTRUCT-CS-MOUNT-CAP|INSTRUCT-RS-MOUNT-RING) (mode EVALUATED) (outcome FAILED) (params $? target-mps ?mps $?))
 	?wm <- (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
 	(not (goal (class BREAK-MPS) (params mps ?mps) (mode ~RETRACTED)))
@@ -670,6 +671,7 @@
 
 (defrule execution-monitoring-reformulate-instruct-fails-bs-ds
 "When an INSTRUCT fails on a B|DS, reformulate the instruct goal."
+	(declare (salience ?*MONITORING-SALIENCE*))
 	?g <- (goal (class INSTRUCT-BS-DISPENSE-BASE|INSTRUCT-DS-DELIVER) (id ?id) (mode RETRACTED) (outcome FAILED))
 	?p <- (plan (goal-id ?id))
 	=>
