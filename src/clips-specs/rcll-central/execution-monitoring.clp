@@ -96,7 +96,7 @@
 	)
 	(if (eq ?status RUNNING)
 	 then
-		(bind ?timeout-duration ?*WAITING-TIMEOUT-DURATION*)
+		(bind ?timeout-duration ?*RUNNING-TIMEOUT-DURATION*)
 	)
 	(assert (action-timer (plan-id ?plan-id)
 	            (action-id ?id)
@@ -490,7 +490,12 @@
                                    prepare-cs|
                                    prepare-ds|
                                    prepare-rs|
-                                   prepare-ss)
+                                   prepare-ss|
+                                   cs-mount-cap|
+                                   cs-buffer-cap|
+                                   rs-mount-ring1|
+                                   rs-mount-ring2|
+                                   rs-mount-ring3)
                       (param-names $?param-names)
                       (param-values $?param-values))
   (domain-obj-is-of-type ?mps&:(eq ?mps (plan-action-arg m
@@ -506,6 +511,21 @@
   =>
   (modify ?at (time ?now))
   (printout t "Action prepare-" ?mps " timer extended due to down machine" crlf)
+)
+
+(defrule execution-monitoring-fix-rs-mount-counter
+  ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (id ?id)
+                      (state PENDING) (executable FALSE)
+                      (action-name rs-mount-ring1|
+                                   rs-mount-ring2|
+                                   rs-mount-ring3)
+                      (param-values ?rs $?o-args ?rs-before ?rs-after ?rs-req))
+	(wm-fact (key domain fact rs-filled-with args? m ?rs n ?rs-new&:(neq ?rs-new ?rs-before)))
+	(wm-fact (key domain fact rs-sub args? minuend ?rs-new
+                                         subtrahend ?rs-req
+                                         difference ?bases-remain))
+  =>
+  (modify ?pa (param-values ?rs $?o-args ?rs-new ?bases-remain ?rs-req))
 )
 
 ; ----------------------- RESTORE FROM BACKUP -------------------------------
