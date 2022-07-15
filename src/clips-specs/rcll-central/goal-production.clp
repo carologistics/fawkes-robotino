@@ -496,8 +496,7 @@
     )
   )
   (bind ?instruct-parent (fact-slot-value ?instruct-goals id))
-  (bind ?instruct-goals (modify ?instruct-goals (parent ?root-id)))
-  (goal-production-assign-order-and-prio-to-goal ?instruct-goals ?order-id ?*PRODUCTION-C0-PRIORITY*)
+  (bind ?instruct-goals (modify ?instruct-goals (parent ?root-id) (priority ?*PRODUCTION-C0-PRIORITY*)))
 
   ;assert the main production tree
   (bind ?goal
@@ -525,8 +524,7 @@
     )
   )
   (bind ?instruct-parent (fact-slot-value ?instruct-goals id))
-  (bind ?instruct-goals (modify ?instruct-goals (parent ?root-id)))
-  (goal-production-assign-order-and-prio-to-goal ?instruct-goals ?order-id ?*PRODUCTION-C1-PRIORITY*)
+  (bind ?instruct-goals (modify ?instruct-goals (parent ?root-id) (priority ?*PRODUCTION-C1-PRIORITY*)))
 
   ;assert the main production tree
   (bind ?goal
@@ -555,8 +553,7 @@
     )
   )
   (bind ?instruct-parent (fact-slot-value ?instruct-goals id))
-  (bind ?instruct-goals (modify ?instruct-goals (parent ?root-id)))
-  (goal-production-assign-order-and-prio-to-goal ?instruct-goals ?order-id ?*PRODUCTION-C2-PRIORITY*)
+  (bind ?instruct-goals (modify ?instruct-goals (parent ?root-id) (priority ?*PRODUCTION-C2-PRIORITY*)))
 
   (bind ?goal
     (goal-tree-assert-central-run-all-prio PRODUCE-ORDER ?*PRODUCTION-C2-PRIORITY*
@@ -586,8 +583,7 @@
     )
   )
   (bind ?instruct-parent (fact-slot-value ?instruct-goals id))
-  (bind ?instruct-goals (modify ?instruct-goals (parent ?root-id)))
-  (goal-production-assign-order-and-prio-to-goal ?instruct-goals ?order-id ?*PRODUCTION-C3-PRIORITY*)
+  (bind ?instruct-goals (modify ?instruct-goals (parent ?root-id) (priority ?*PRODUCTION-C3-PRIORITY*)))
 
   (bind ?goal
     (goal-tree-assert-central-run-all-prio PRODUCE-ORDER ?*PRODUCTION-C3-PRIORITY*
