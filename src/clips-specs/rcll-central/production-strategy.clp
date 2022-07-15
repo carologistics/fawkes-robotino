@@ -28,8 +28,8 @@
   ?*RS-WORKLOAD-THRESHOLD* = 6
   ?*C0-PRODUCTION-THRESHOLD* = 2
   ?*C1-PRODUCTION-THRESHOLD* = 2
-  ?*C2-PRODUCTION-THRESHOLD* = 1
-  ?*C3-PRODUCTION-THRESHOLD* = 1
+  ?*C2-PRODUCTION-THRESHOLD* = 2
+  ?*C3-PRODUCTION-THRESHOLD* = 2
   ?*TOTAL-PRODUCTION-THRESHOLD* = 3
   ?*SALIENCE-ORDER-SELECTION* = ?*SALIENCE-HIGH*
 )
@@ -121,9 +121,9 @@
     (delayed-do-for-all-facts ((?workload-fact wm-fact)) (and (wm-key-prefix ?workload-fact:key (create$ mps workload order))
                                                 (eq ?m (wm-key-arg ?workload-fact:key m)))
       ;the order has been started
-      (if (any-factp ((?wp-for-order wm-fact)) (and (wm-key-prefix ?wp-for-order:key (create$ order meta wp-for-order))
+      (if (not (any-factp ((?wp-for-order wm-fact)) (and (wm-key-prefix ?wp-for-order:key (create$ domain fact order-fulfilled))
                                                     (eq (wm-key-arg ?workload-fact:key ord)
-                                                        (wm-key-arg ?wp-for-order:key ord))))
+                                                        (wm-key-arg ?wp-for-order:key ord)))))
        then
           (bind ?sum (+ ?sum ?workload-fact:value))
       )
