@@ -128,16 +128,13 @@
                       (state RUNNING)
                       (action-name reset-mps)
                       (executable TRUE)
-                      (param-names $?param-names)
-                      (param-values $?param-values))
+                      (param-names m)
+                      (param-values ?mps))
   ?st <- (timer (name ?n&:(eq ?n (sym-cat reset- ?goal-id - ?plan-id
                                           - ?id -send-timer)))
                 (time $?t&:(timeout ?now ?t ?*PREPARE-PERIOD*))
                 (seq ?seq))
-  (domain-obj-is-of-type ?mps&:(eq ?mps (plan-action-arg m
-                                                         ?param-names
-                                                         ?param-values))
-                         mps)
+  (domain-obj-is-of-type ?mps mps)
   (metadata-reset-mps ?mps ?team-color ?peer-id $?instruction_info)
   (wm-fact (key domain fact mps-type args? m ?mps t ?mps-type) (value TRUE))
   =>
