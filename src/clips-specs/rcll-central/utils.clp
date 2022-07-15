@@ -130,6 +130,23 @@
   (return (append$ ?interfaces (get-remote-interfaces ?if ?id)))
 )
 
+(deffunction mirror-name (?zn)
+  "Gets the name of a zone or mps on the other half on the field
+  @param ?zn name of a zone or machine (eg M-CS1 or M-Z22)
+
+  @return name of the corresponding zone on the other half of the field
+  "
+  (bind ?team (sub-string 1 1 ?zn))
+  (bind ?zone (sub-string 3 99 ?zn))
+  (if (eq ?team "M") then
+    (return (sym-cat "C-" ?zone))
+  else
+    (return (sym-cat "M-" ?zone))
+  )
+)
+
+
+
 (deffunction get-param-by-arg (?params ?arg)
 	"Extract the argument named in ?arg.
    @param ?params the paramter list
@@ -318,6 +335,17 @@
         (blackboard-set-msg-multifield ?msg "tag_translation" ?trans)
         (blackboard-set-msg-multifield ?msg "tag_rotation" ?rot)
         (blackboard-set-msg-multifield ?msg "zone_coords" (zone-coords ?zone))
+        (blackboard-send-msg ?msg)
+        (bind ?mirrored-trans (replace$ ?trans 1 1 (- 0 (nth$ 1 ?trans))))
+        (bind ?msg (blackboard-create-msg ?interface "UpdateStationByTagMessage"))
+        (blackboard-set-msg-field ?msg "name" (str-cat (mirror-name ?mps)))
+        (blackboard-set-msg-field ?msg "side" ?side)
+        (blackboard-set-msg-field ?msg "frame" ?frame)
+        (blackboard-set-msg-multifield ?msg "tag_translation" ?mirrored-trans)
+        ; rotation mirroring is complicated, do not do that as opposing mps
+        ; are only added for laser filtering
+        (blackboard-set-msg-multifield ?msg "tag_rotation" ?rot)
+        (blackboard-set-msg-multifield ?msg "zone_coords" (zone-coords (mirror-name ?zone)))
         (blackboard-send-msg ?msg)
         (printout t "Send UpdateStationByTagMessage: id " (str-cat ?mps)
             " side " ?side
@@ -571,22 +599,6 @@
   (bind ?c (get-2d-center (nth$ 1 ?ep1) (nth$ 2 ?ep1) (nth$ 1 ?ep2) (nth$ 2 ?ep2)))
   (bind ?c3 (nth$ 1 ?c) (nth$ 2 ?c) 0)
   (return (transform-safe "map" ?frame ?timestamp ?c3 (create$ 0 0 0 1)))
-)
-
-
-(deffunction mirror-name (?zn)
-  "Gets the name of a zone or mps on the other half on the field
-  @param ?zn name of a zone or machine (eg M-CS1 or M-Z22)
-
-  @return name of the corresponding zone on the other half of the field
-  "
-  (bind ?team (sub-string 1 1 ?zn))
-  (bind ?zone (sub-string 3 99 ?zn))
-  (if (eq ?team "M") then
-    (return (sym-cat "C-" ?zone))
-  else
-    (return (sym-cat "M-" ?zone))
-  )
 )
 
 
