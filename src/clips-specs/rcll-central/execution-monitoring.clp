@@ -457,11 +457,11 @@
   (modify ?pa (param-values ?robot ?wp ?rs ?rs-num ?rs-num-after))
 )
 
-(defrule execution-monitoring-reset-action-timer-machine-down
+(defrule execution-monitoring-reset-abort-timer-machine-down
   "Restart timer for prepare actions if the machine is down"
   (time $?now)
   ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (id ?id)
-                      (state PENDING|RUNNING)
+                      (state RUNNING)
                       (action-name prepare-bs|
                                    prepare-cs|
                                    prepare-ds|
@@ -481,6 +481,37 @@
   (wm-fact (key domain fact mps-state args? m ?mps s DOWN))
   =>
   (modify ?at (time ?now))
+  (printout t "Action prepare-" ?mps " timer extended due to down machine" crlf)
+)
+
+(defrule execution-monitoring-reset-action-timer-machine-down
+  "Restart timer for prepare actions if the machine is down"
+  (time $?now)
+  ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (id ?id)
+                      (state PENDING|RUNNING)
+                      (action-name prepare-bs|
+                                   prepare-cs|
+                                   prepare-ds|
+                                   prepare-rs|
+                                   prepare-ss|
+                                   cs-mount-cap|
+                                   cs-buffer-cap|
+                                   rs-mount-ring1|
+                                   rs-mount-ring2|
+                                   rs-mount-ring3)
+                      (param-names $?param-names)
+                      (param-values $?param-values))
+  ?at <- (action-timer (plan-id ?plan-id) (status ?status)
+            (action-id ?id)
+            (start-time $?st)
+            (timeout-duration ?timeout&:(timeout ?now ?st (- ?timeout ?*ABORT-PREPARE-DOWN-RESET*))))
+  (domain-obj-is-of-type ?mps&:(eq ?mps (plan-action-arg m
+                                                         ?param-names
+                                                         ?param-values))
+                         mps)
+  (wm-fact (key domain fact mps-state args? m ?mps s DOWN))
+  =>
+  (modify ?at (timeout-duration (* ?timeout 2)))
   (printout t "Action prepare-" ?mps " timer extended due to down machine" crlf)
 )
 
