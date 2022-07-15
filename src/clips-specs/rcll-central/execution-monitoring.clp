@@ -79,7 +79,7 @@
 	)
 	(if (eq ?status RUNNING)
 	 then
-		(bind ?timeout-duration ?*WAITING-TIMEOUT-DURATION*)
+		(bind ?timeout-duration ?*RUNNING-TIMEOUT-DURATION*)
 	)
 	(assert (action-timer (plan-id ?plan-id)
 	            (action-id ?id)
