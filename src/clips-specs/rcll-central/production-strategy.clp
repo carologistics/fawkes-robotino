@@ -1159,7 +1159,7 @@
 
 (defrule production-strategy-nothing-executable-timer-remove
   "At leats one robots has a goal assigned, remove the timer"
-  (goal (id ?goal-id) (class ~MOVE-OUT-OF-WAY))
+  (goal (id ?goal-id) (class ~MOVE-OUT-OF-WAY) (mode DISPATCHED))
   (goal-meta (goal-id ?goal-id) (assigned-to ~nil&~central))
   ?timer <- (timer (name production-strategy-nothing-executable-timer))
   =>
