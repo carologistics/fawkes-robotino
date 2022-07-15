@@ -203,18 +203,6 @@ ObjectTrackingThread::init()
 	std::string frame_id = this->config->get_string("plugins/object_tracking/buffer/frame");
 	shm_buffer_results_->set_frame_id(frame_id.c_str());
 
-	//initialize publisher objects----------
-	object_pos_frame_ = this->config->get_string("plugins/object_tracking/tf/object_pos_frame");
-	weighted_object_pos_frame_ =
-	  this->config->get_string("plugins/object_tracking/tf/weighted_object_pos_frame");
-
-	tf_add_publisher(object_pos_frame_.c_str());
-	object_pos_pub = tf_publishers[object_pos_frame_];
-
-	tf_add_publisher(weighted_object_pos_frame_.c_str());
-	weighted_object_pos_pub = tf_publishers[weighted_object_pos_frame_];
-	//--------------------------------------
-
 	name_it_    = 0;
 	tracking_   = false;
 	shm_active_ = false;
@@ -487,13 +475,6 @@ ObjectTrackingThread::loop()
 		cur_object_pos_cam.setY(cur_object_pos[1]);
 		cur_object_pos_cam.setZ(cur_object_pos[2]);
 		tf_listener->transform_point(target_frame_, cur_object_pos_cam, cur_object_pos_target);
-
-		//update object pos transform
-		tf::Quaternion       q(0.0, 0.0, 0.0);
-		tf::Vector3          v(cur_object_pos[0], cur_object_pos[1], cur_object_pos[2]);
-		tf::Transform        tf_object_pos(q, v);
-		tf::StampedTransform stf_object_pos(tf_object_pos, capture_time, cam_frame_, object_pos_frame_);
-		object_pos_pub->send_transform(stf_object_pos);
 	} else {
 		//if object is not detected, use expected position instead
 		pos_str = "X.XXX X.XXX X.XXX";
@@ -550,16 +531,6 @@ ObjectTrackingThread::loop()
 	if (past_responses_.size() == filter_size_) {
 		past_responses_.pop_back();
 	}
-
-	//update weighted object pos transform
-	tf::Quaternion       q(0.0, 0.0, 0.0);
-	tf::Vector3          v(weighted_object_pos[0], weighted_object_pos[1], weighted_object_pos[2]);
-	tf::Transform        tf_weighted_object_pos(q, v);
-	tf::StampedTransform stf_weighted_object_pos(tf_weighted_object_pos,
-	                                             capture_time,
-	                                             target_frame_,
-	                                             weighted_object_pos_frame_);
-	weighted_object_pos_pub->send_transform(stf_weighted_object_pos);
 
 	//transform weighted average into base_link
 	fawkes::tf::Stamped<fawkes::tf::Point> weighted_object_pos_base;
