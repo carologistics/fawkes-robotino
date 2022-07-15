@@ -22,6 +22,7 @@
   ?*COMMON-TIMEOUT-DURATION* = 30
   ; The waiting timeout duration needs to be smaller than the common one above!
   ?*WAITING-TIMEOUT-DURATION* = 25
+  ?*RUNNING-TIMEOUT-DURATION* = 120
   ?*MPS-DOWN-TIMEOUT-DURATION* = 120
   ?*HOLDING-MONITORING* = 60
 )
@@ -62,7 +63,7 @@
 	(declare (salience ?*MONITORING-SALIENCE*))
 	(plan-action (plan-id ?plan-id) (goal-id ?goal-id)
 	    (id ?id)
-	    (state ?status&~FORMULATED&~RUNNING&~FAILED&~FINAL)
+	    (state ?status&~FORMULATED&~FAILED&~FINAL)
 	    (action-name ?action-name)
 	    (param-values $?param-values))
 	(plan (id ?plan-id) (goal-id ?goal-id))
@@ -75,6 +76,10 @@
 	(if (eq ?status WAITING)
 	 then
 		(bind ?timeout-duration ?*WAITING-TIMEOUT-DURATION*)
+	)
+	(if (eq ?status RUNNING)
+	 then
+		(bind ?timeout-duration ?*RUNNING-TIMEOUT-DURATION*)
 	)
 	(assert (action-timer (plan-id ?plan-id)
 	            (action-id ?id)
@@ -116,9 +121,10 @@
   reason that this action got stuck. Print a notification, set state to failed and retract the timer.
 "
   ?p <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
-	         (id ?id) (state ?status)
-	         (action-name ?action-name)
-	         (param-values $?param-values)
+           (id ?id) (state ?status)
+           (skiller ?skiller)
+           (action-name ?action-name)
+           (param-values $?param-values)
            (precondition ?grounding-id))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
@@ -130,7 +136,15 @@
             (timeout-duration ?timeout&:(timeout ?now ?st ?timeout)))
   =>
   (printout t "Action "  ?action-name " timed out after " ?status  crlf)
-  (modify ?p (state FAILED) (error-msg "Unsatisfied precondition"))
+  (if (eq ?status RUNNING)
+   then
+    (printout t "   Aborting action " ?action-name " on interface" ?skiller crlf)
+    (bind ?m (blackboard-create-msg (str-cat "SkillerInterface::" ?skiller) "StopExecMessage"))
+    (blackboard-send-msg ?m)
+    (modify ?p (state FAILED) (error-msg "Stuck on RUNNING"))
+   else
+    (modify ?p (state FAILED) (error-msg "Unsatisfied precondition"))
+  )
   (retract ?pt)
 )
 
