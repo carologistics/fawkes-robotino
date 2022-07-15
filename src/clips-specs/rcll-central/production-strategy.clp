@@ -1147,20 +1147,20 @@
   "All robots have no goals assigned, create a timer to measure the duration of this condition"
   (time $?now)
   (not (timer (name production-strategy-nothing-executable-timer)))
-  (not
-    (and
-      (goal (id ?goal-id) (class ~MOVE-OUT-OF-WAY))
-      (goal-meta (goal-id ?goal-id) (assigned-to ~nil&~central))
-    )
-  )
+
+  (goal (id ?goal-id) (class MOVE-OUT-OF-WAY) (mode DISPATCHED))
   =>
   (assert (timer (name production-strategy-nothing-executable-timer) (time ?now)))
 )
 
 (defrule production-strategy-nothing-executable-timer-remove
   "At leats one robots has a goal assigned, remove the timer"
-  (goal (id ?goal-id) (class ~MOVE-OUT-OF-WAY) (mode DISPATCHED))
-  (goal-meta (goal-id ?goal-id) (assigned-to ~nil&~central))
+  (forall
+    (wm-fact (key central agent robot args? r ?robot))
+    (goal (mode DISPATCHED) (id ?goal-id) (class ~MOVE-OUT-OF-WAY))
+    (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+  )
+
   ?timer <- (timer (name production-strategy-nothing-executable-timer))
   =>
   (retract ?timer)
