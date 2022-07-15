@@ -421,6 +421,7 @@
                (eq ?highest-prio-gm:goal-id (fact-slot-value ?highest-prio-goal-fact id))
                  (bind ?robot (fact-slot-value ?highest-prio-gm assigned-to))
   )
+  (modify ?highest-prio-goal-fact (mode SELECTED))
   ; flush executability
 	(delayed-do-for-all-facts ((?g goal))
 		(and (eq ?g:is-executable TRUE) (neq ?g:class SEND-BEACON))
@@ -442,7 +443,6 @@
 			(retract ?waiting)
 		)
 	)
-	(modify ?highest-prio-goal-fact (mode SELECTED))
 )
 
 (defrule goal-reasoner-balance-payment-goals
