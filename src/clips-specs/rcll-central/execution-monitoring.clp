@@ -630,8 +630,9 @@
 	(declare (salience ?*SALIENCE-HIGH*))
 	(not (wm-fact (key mps meta bs-in-use args? bs ?bs $?)))
 	(wm-fact (key domain fact mps-type args? $? ?bs $? BS $?))
-	(goal (id ?goal-id) (mode ~FORMULATED&~RETRACTED) (sub-type SIMPLE))
-	(plan-action (action-name wp-get) (goal-id ?goal-id) (param-values $? ?bs $?) (state ~FINAL))
+	(goal (id ?goal-id) (mode EXPANDED|COMMITTED|DISPATCHED) (sub-type SIMPLE))
+	(plan-action (action-name wp-get) (goal-id ?goal-id) (param-values $? ?bs $?)
+               (state FORMULATED|PENDING|WAITING|RUNNING))
 	=>
 	(assert (wm-fact (key mps meta bs-in-use args? bs ?bs goal ?goal-id)))
 )
