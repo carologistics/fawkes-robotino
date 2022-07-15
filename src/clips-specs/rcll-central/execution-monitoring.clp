@@ -489,6 +489,21 @@
   (printout t "Action prepare-" ?mps " timer extended due to down machine" crlf)
 )
 
+(defrule execution-monitoring-fix-rs-mount-counter
+  ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (id ?id)
+                      (state PENDING) (executable FALSE)
+                      (action-name rs-mount-ring1|
+                                   rs-mount-ring2|
+                                   rs-mount-ring3)
+                      (param-values ?rs $?o-args ?rs-before ?rs-after ?rs-req))
+	(wm-fact (key domain fact rs-filled-with args? m ?rs n ?rs-new&:(neq ?rs-new ?rs-before)))
+	(wm-fact (key domain fact rs-sub args? minuend ?rs-new
+                                         subtrahend ?rs-req
+                                         difference ?bases-remain))
+  =>
+  (modify ?pa (param-values ?rs $?o-args ?rs-new ?bases-remain ?rs-req))
+)
+
 ; ----------------------- RESTORE FROM BACKUP -------------------------------
 
 (defrule execution-monitoring-handle-restore-from-backup
