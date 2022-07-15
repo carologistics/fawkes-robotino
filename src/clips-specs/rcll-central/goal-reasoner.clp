@@ -430,6 +430,7 @@
       (bind ?highest-prio-goal-fact ?g)
     )
   )
+  (bind ?robot nil)
   ; get assigned robot
   (do-for-fact ((?highest-prio-gm goal-meta))
                (eq ?highest-prio-gm:goal-id (fact-slot-value ?highest-prio-goal-fact id))
