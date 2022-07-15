@@ -466,7 +466,12 @@
                                    prepare-cs|
                                    prepare-ds|
                                    prepare-rs|
-                                   prepare-ss)
+                                   prepare-ss|
+                                   cs-mount-cap|
+                                   cs-buffer-cap|
+                                   rs-mount-ring1|
+                                   rs-mount-ring2|
+                                   rs-mount-ring3)
                       (param-names $?param-names)
                       (param-values $?param-values))
   (domain-obj-is-of-type ?mps&:(eq ?mps (plan-action-arg m
