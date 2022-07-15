@@ -22,25 +22,9 @@
   ?*COMMON-TIMEOUT-DURATION* = 30
   ; The waiting timeout duration needs to be smaller than the common one above!
   ?*WAITING-TIMEOUT-DURATION* = 25
+  ?*RUNNING-TIMEOUT-DURATION* = 120
   ?*MPS-DOWN-TIMEOUT-DURATION* = 120
   ?*HOLDING-MONITORING* = 60
-)
-
-(deffunction fail-action (?action ?error-msg)
-	(do-for-fact ((?sae skill-action-execinfo))
-		(and (eq ?sae:goal-id (fact-slot-value ?action goal-id))
-		     (eq ?sae:plan-id (fact-slot-value ?action plan-id))
-		     (eq ?sae:action-id (fact-slot-value ?action id))
-		)
-		(do-for-fact ((?skill skill))
-			(and (eq ?skill:id ?sae:skill-id)
-			     (eq ?skill:skiller ?sae:skiller)
-			)
-			(retract ?skill)
-		)
-		(retract ?sae)
-	)
-	(return (modify ?action (state EXECUTION-FAILED) (error-msg ?error-msg)))
 )
 
 (defrule execution-monitoring-stop-dependency-waits
@@ -66,7 +50,7 @@
 	          (start-time $?st)
 	          (timeout-duration ?timeout&:(timeout ?now ?st (/ ?timeout 2))))
 	=>
-	(fail-action ?pa "Stop Dependency Wait")
+	(modify ?pa (state FAILED))
 )
 
 ;
@@ -79,7 +63,7 @@
 	(declare (salience ?*MONITORING-SALIENCE*))
 	(plan-action (plan-id ?plan-id) (goal-id ?goal-id)
 	    (id ?id)
-	    (state ?status&~FORMULATED&~RUNNING&~FAILED&~FINAL)
+	    (state ?status&~FORMULATED&~FAILED&~FINAL)
 	    (action-name ?action-name)
 	    (param-values $?param-values))
 	(plan (id ?plan-id) (goal-id ?goal-id))
@@ -90,6 +74,10 @@
 	=>
 	(bind ?timeout-duration ?*COMMON-TIMEOUT-DURATION*)
 	(if (eq ?status WAITING)
+	 then
+		(bind ?timeout-duration ?*WAITING-TIMEOUT-DURATION*)
+	)
+	(if (eq ?status RUNNING)
 	 then
 		(bind ?timeout-duration ?*WAITING-TIMEOUT-DURATION*)
 	)
@@ -133,9 +121,10 @@
   reason that this action got stuck. Print a notification, set state to failed and retract the timer.
 "
   ?p <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
-	         (id ?id) (state ?status)
-	         (action-name ?action-name)
-	         (param-values $?param-values)
+           (id ?id) (state ?status)
+           (skiller ?skiller)
+           (action-name ?action-name)
+           (param-values $?param-values)
            (precondition ?grounding-id))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
@@ -147,7 +136,15 @@
             (timeout-duration ?timeout&:(timeout ?now ?st ?timeout)))
   =>
   (printout t "Action "  ?action-name " timed out after " ?status  crlf)
-  (fail-action ?p "Unsatisfied precondition")
+  (if (eq ?status RUNNING)
+   then
+    (printout t "   Aborting action " ?action-name " on interface" ?skiller crlf)
+    (bind ?m (blackboard-create-msg (str-cat "SkillerInterface::" ?skiller) "StopExecMessage"))
+    (blackboard-send-msg ?m)
+    (modify ?p (state FAILED) (error-msg "Stuck on RUNNING"))
+   else
+    (modify ?p (state FAILED) (error-msg "Unsatisfied precondition"))
+  )
   (retract ?pt)
 )
 
@@ -237,16 +234,6 @@
 	(return FALSE)
 )
 
-(defrule execution-monitoring-set-mps-side-approachable
-	(wm-fact (key domain fact mps-type args? m ?mps $?))
-	(wm-fact (key domain objects-by-type mps-side) (is-list TRUE)
-	         (values $? ?side&:(member$ ?side (create$ INPUT OUTPUT)) $?))
-	(not (domain-fact (name at) (param-values ? ?mps ?side)))
-	(not (domain-fact (name mps-side-approachable) (param-values ?mps ?side)))
-	=>
-	(assert (domain-fact (name mps-side-approachable) (param-values ?mps ?side)))
-)
-
 (defrule execution-monitoring-start-retry-action
 " For some actions it can be feasible to retry them in case of a failure, e.g. if
   the align failed. If an action failed and the error-msg inquires, that we should
@@ -265,8 +252,8 @@
 	            (param-values $?param-values))
 	(test (eq TRUE (should-retry ?an ?error)))
 	(wm-fact (key central agent robot args? r ?r))
-	(not (wm-fact (key central agent robot-lost args? r ?r)))
 	(not (wm-fact (key monitoring action-retried args? r ?r a ?an id ?id2&:(eq ?id2 (sym-cat ?id)) m ? g ?goal-id)))
+	?sae <- (skill-action-execinfo (goal-id ?goal-id) (plan-id ?plan-id) (skill-name ?an))
 	=>
 	(bind ?mps nil)
 	(do-for-fact ((?do domain-object)) (and (member$ ?do:name ?param-values) (eq ?do:type mps))
@@ -276,6 +263,7 @@
 	  (wm-fact (key monitoring action-retried args? r ?r a ?an id (sym-cat ?id) m ?mps g ?goal-id) (value 0))
 	)
 	(modify ?pa (state FORMULATED) (error-msg ""))
+	(retract ?sae)
 	(printout error "Start retrying" crlf)
 )
 
@@ -297,10 +285,12 @@
 	(test (eq TRUE (should-retry ?an ?error)))
 	?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an id ?id2&:(eq ?id2 (sym-cat ?id)) m ? g ?goal-id)
 	        (value ?tries&:(< ?tries 3)));?*MAX-RETRIES-PICK*
+	?sae <- (skill-action-execinfo (goal-id ?goal-id) (plan-id ?plan-id) (skill-name ?an))
 	=>
 	(bind ?tries (+ 1 ?tries))
 	(modify ?pa (state FORMULATED) (error-msg ""))
 	(printout error "Restarted: " ?tries crlf)
+	(retract ?sae)
 	(modify ?wm (value ?tries))
 )
 
@@ -323,7 +313,7 @@
 	)
 	(grounded-pddl-predicate (grounding ?grounding-id) (is-satisfied FALSE))
 	=>
-	(fail-action ?pa (str-cat "Action uses broken MPS " ?mps))
+	(modify ?pa (state EXECUTION-FAILED))
 )
 
 (defrule execution-monitoring-broken-mps-add-fail-goal-flag
@@ -381,7 +371,7 @@
 	                                          (wm-key-prefix ?wf:key (create$ domain fact rs-prepared-color))
 	                                       )
 	                                   )
-	  (printout t "Exec-Monitoring: Broken Machine " ?wf:key crlf " domain facts flushed!"  crlf)
+	  (printout t "Exec-Monotoring: Broken Machine " ?wf:key crlf " domain facts flushed!"  crlf)
 	  (retract ?wf)
 	)
 
@@ -496,118 +486,33 @@
 
 ; ----------------------- RESTORE FROM BACKUP -------------------------------
 
-(defrule execution-monitoring-detect-disconnected-robot
-	(declare (salience ?*MONITORING-SALIENCE*))
-	(wm-fact (key central agent robot args? r ?robot))
-	(HeartbeatInterface (id ?id&:(str-index ?robot ?id)) (alive FALSE))
-	(or (wm-fact (key central agent robot-waiting args? r ?robot))
-	    (goal-meta (assigned-to ?robot)))
-	(not (wm-fact (key central agent robot-lost args? r ?robot)))
-	; TODO: We could disable this as MAINTENANCE INFO SHOULD BE ENOUGH
-	=>
-	(printout error "Robot " ?robot  " lost, removing from worldmodel" crlf)
-	;(blackboard-close "HeartbeatInterface" ?id)
-	(do-for-fact ((?si SkillerInterface)) (str-index ?robot ?si:id)
-		(retract ?si)
-	)
-	(assert (wm-fact (key central agent robot-lost args? r ?robot)))
-	;(do-for-all-facts ((?bif blackboard-interface)) (str-index ?robot ?bif:id)
-	;	(blackboard-close ?bif:type ?bif:id)
-	;	(retract ?bif)
-	;)
-	(assert (reset-robot-in-wm ?robot))
-)
-(defrule execution-monitoring-remove-waiting-robot
-	(declare (salience ?*SALIENCE-HIGH*))
-	(wm-fact (key central agent robot args? r ?robot))
-	(HeartbeatInterface (id ?id&:(str-index ?robot ?id)) (alive FALSE))
-	?rw <- (wm-fact (key central agent robot-waiting args? r ?robot))
-	=>
-	(retract ?rw)
-)
-
-(defrule execution-monitoring-add-waiting-robot
-	(declare (salience ?*SALIENCE-HIGH*))
-	(wm-fact (key central agent robot args? r ?robot))
-	?rl <- (wm-fact (key central agent robot-lost args? r ?robot))
-	(HeartbeatInterface (id ?id&:(str-index ?robot ?id)) (alive TRUE))
-	(not (wm-fact (key central agent robot-waiting args? r ?robot)))
-	(not (goal-meta (assigned-to ?robot)))
-	(SkillerInterface (id ?skiller-id&:(str-index ?robot ?skiller-id)) (exclusive_controller ~""))
-	=>
-	(assert (wm-fact (key central agent robot-waiting args? r ?robot)))
-	(retract ?rl)
-)
-
-(defrule execution-monitoring-clean-wm-from-robot
-	(declare (salience ?*MONITORING-SALIENCE*))
-	(domain-facts-loaded)
-	?reset <- (reset-robot-in-wm ?robot)
+(defrule execution-monitoring-handle-restore-from-backup
+"
+If we restored the wm from the database, we can not be sure about the state of skills
+and the world. Therefore stop all skills and with that fail the goals. Then let
+execution monitoring handle the reformulation.
+"
+	?restored <- (wm-robmem-sync-restored)
 	=>
 	(do-for-all-facts
 		((?goal goal))
 		(and (eq ?goal:mode DISPATCHED) (eq ?goal:sub-type SIMPLE))
 		(printout t "Restored simple goal " ?goal:id " is dispatched, abort execution." crlf)
-	)
-	(do-for-all-facts ((?wm wm-fact))
-	                  (eq (wm-key-arg ?wm:key r) ?robot)
-		(retract ?wm)
-	)
-	(do-for-all-facts ((?df domain-fact)) (str-index ?robot (implode$ ?df:param-values))
-		(retract ?df)
-	)
+		(do-for-all-facts
+			((?plan-action plan-action))
+			(and (eq ?plan-action:goal-id ?goal:id)
+			     (neq ?plan-action:state FORMULATED)
+			     (neq ?plan-action:state FINAL)
+			     (neq ?plan-action:state FAILED)
+			     (neq ?plan-action:skiller "/central/Skiller"))
 
-	(delayed-do-for-all-facts ((?gm goal-meta) (?g goal))
-		(and (eq ?gm:assigned-to ?robot) (eq ?g:id ?gm:goal-id)
-		     (neq ?g:mode FORMULATED) (neq ?g:mode FINISHED) (neq ?g:mode RETRACTED))
-			(if (not
-				(do-for-all-facts
-					((?plan-action plan-action))
-					(and (eq ?plan-action:goal-id ?g:id)
-					     (neq ?plan-action:state FORMULATED)
-					     (neq ?plan-action:state FINAL)
-					)
-					(printout t "   Aborting action " ?plan-action:action-name " on interface" ?plan-action:skiller crlf)
-					(bind ?m (blackboard-create-msg (str-cat "SkillerInterface::" ?plan-action:skiller) "StopExecMessage"))
-					(blackboard-send-msg ?m)
-					(do-for-fact ((?sae skill-action-execinfo))
-						(and (eq ?sae:goal-id ?plan-action:goal-id)
-						     (eq ?sae:plan-id ?plan-action:plan-id)
-						     (eq ?sae:action-id ?plan-action:id)
-						)
-						(do-for-fact ((?skill skill))
-							(and (eq ?skill:id ?sae:skill-id)
-							     (eq ?skill:skiller ?sae:skiller)
-							)
-							(retract ?skill)
-						)
-						(retract ?sae)
-					)
-					(modify ?plan-action (state EXECUTION-FAILED))
-				))
-			 then
-				(do-for-fact
-					((?formulated-action plan-action) (?final-action plan-action))
-					(and (eq ?formulated-action:goal-id ?g:id)
-					     (eq ?final-action:goal-id ?g:id)
-					     (eq ?formulated-action:state FORMULATED)
-					     (eq ?final-action:state FINAL))
-				 (modify ?formulated-action (sate FAILED))
-				)
-			)
+			(printout t "   Aborting action " ?plan-action:action-name " on interface" ?plan-action:skiller crlf)
+			(bind ?m (blackboard-create-msg (str-cat "SkillerInterface::" ?plan-action:skiller) "StopExecMessage"))
+			(blackboard-send-msg ?m)
+			(modify ?plan-action (state FAILED))
+		)
 	)
-
-	(do-for-all-facts ((?wsmf wm-sync-map-fact)) (eq (wm-key-arg ?wsmf:wm-fact-key r) ?robot)
-		(retract ?wsmf)
-	)
-
-	(assert (domain-fact (name at) (param-values ?robot START INPUT))
-	        (domain-fact (name can-hold) (param-values robot1))
-	        (domain-object (name ?robot) (type robot))
-	        (wm-fact (key central agent robot args? r ?robot))
-	        (wm-fact (key central agent robot-lost args? r ?robot))
-	)
-	(retract ?reset)
+	(retract ?restored)
 )
 
 (defrule execution-monitoring-re-formulate-stuck-selected-goal
