@@ -542,7 +542,7 @@ The workpiece remains in the output of the used ring station after
 	; Robot CEs
 	(wm-fact (key refbox team-color) (value ?team-color))
 	(not (and (wm-fact (key domain fact mps-type args? m ?wp-loc t BS))
-           (wm-fact (key domain fact wp-at args? m ~?wp side ?))))
+	          (wm-fact (key domain fact wp-at args? m ~?wp side ?))))
 
 	; MPS-RS CEs
 	(wm-fact (key domain fact mps-type args?       m ?target-mps t RS))
