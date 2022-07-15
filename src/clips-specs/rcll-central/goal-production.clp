@@ -898,7 +898,7 @@
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key central agent robot args? r ?robot))
   (not (wm-fact (key domain fact entered-field args? r ?robot)))
-  (not (goal (id ?some-goal-id) (class ENTER-FIELD) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
+  (not (goal (id ?some-goal-id) (class ENTER-FIELD) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED)))
   (domain-facts-loaded)
   (wm-fact (key refbox team-color) (value ?team-color))
   =>
