@@ -508,7 +508,7 @@ execution monitoring handle the reformulation.
 	(not (wm-fact (key mps meta bs-in-use args? bs ?bs $?)))
 	(wm-fact (key domain fact mps-type args? $? ?bs $? BS $?))
 	(goal (id ?goal-id) (mode ~FORMULATED&~RETRACTED) (sub-type SIMPLE))
-	(plan-action (action-name wp-get) (goal-id ?goal-id) (param-values $? ?bs $?))
+	(plan-action (action-name wp-get) (goal-id ?goal-id) (param-values $? ?bs $?) (state ~FINAL))
 	=>
 	(assert (wm-fact (key mps meta bs-in-use args? bs ?bs goal ?goal-id)))
 )
@@ -518,7 +518,9 @@ execution monitoring handle the reformulation.
 	(declare (salience ?*SALIENCE-HIGH*))
 	?wm <- (wm-fact (key mps meta bs-in-use args? bs ?bs goal ?goal-id))
 	(wm-fact (key domain fact mps-type args? $? ?bs $? BS $?))
-	(goal (id ?goal-id) (mode FORMULATED|RETRACTED))
+	(not (and (goal (id ?goal-id) (mode EXPANDED|COMMITTED|DISPATCHED))
+	          (plan-action (action-name wp-get) (goal-id ?goal-id) (param-values $? ?bs $?) (state FORMULATED|PENDING|WAITING|RUNNING))
+	))
 	=>
 	(retract ?wm)
 )
