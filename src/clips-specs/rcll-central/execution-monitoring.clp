@@ -589,8 +589,9 @@ execution monitoring handle the reformulation.
 ; ----------------------- HANDLE FAILING INSTRUCT -----------------------------------
 (defrule execution-monitoring-break-instruct-fails
 "When an INSTRUCT fails on an MPS (except BS|DS), break the machine."
-	?g <- (goal (class INSTRUCT-CS-BUFFER-CAP|INSTRUCT-CS-MOUNT-CAP|INSTRUCT-RS-MOUNT-RING) (mode RETRACTED) (outcome FAILED) (params $? target-mps ?mps $?))
+	?g <- (goal (class INSTRUCT-CS-BUFFER-CAP|INSTRUCT-CS-MOUNT-CAP|INSTRUCT-RS-MOUNT-RING) (mode EVALUATED) (outcome FAILED) (params $? target-mps ?mps $?))
 	?wm <- (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+	(not (goal (class BREAK-MPS) (params mps ?mps) (mode ~RETRACTED)))
 	=>
 	(bind ?goal-id (sym-cat BREAK-MPS - (gensym*)))
 	(assert (goal (id ?goal-id) (class RESET-MPS) (params mps ?mps) (mode EXPANDED) (sub-type SIMPLE) (type ACHIEVE)))
