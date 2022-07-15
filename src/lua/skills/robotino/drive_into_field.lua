@@ -42,7 +42,7 @@ skillenv.skill_module(_M)
 local TIMEOUT_UPPER_LIMIT = 60
 
 function is_in_field(x)
-   return pose:translation(1) > 2.0
+   return pose:translation(1) > 3.0
 end
 
 fsm:define_states{ export_to=_M,
