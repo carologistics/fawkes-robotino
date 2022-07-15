@@ -186,8 +186,10 @@
 	(wm-fact (key domain fact cs-buffered args? m ?target-mps col ?cap-color))
 	(wm-fact (key domain fact cs-can-perform args? m ?target-mps op MOUNT_CAP))
 	; MPS-Source CEs
-	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
+	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?wp-loc-type))
 	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
+	(not (and (test (eq ?wp-loc-type BS))
+	          (wm-fact (key domain fact wp-at args? m ~?wp side ?))))
 
 	(or (and ; Either the workpiece needs to picked up...
 	         (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
@@ -358,8 +360,10 @@
 	   )
 	)
 	; MPS-Source CEs
-	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
+	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?wp-loc-type))
 	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
+	(not (and (test (eq ?wp-loc-type BS))
+	          (wm-fact (key domain fact wp-at args? m ~?wp side ?))))
 
 	(or (and ; Either the workpiece needs to picked up...
 	         (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
@@ -537,6 +541,8 @@ The workpiece remains in the output of the used ring station after
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	; Robot CEs
 	(wm-fact (key refbox team-color) (value ?team-color))
+	(not (and (wm-fact (key domain fact mps-type args? m ?wp-loc t BS))
+	          (wm-fact (key domain fact wp-at args? m ~?wp side ?))))
 
 	; MPS-RS CEs
 	(wm-fact (key domain fact mps-type args?       m ?target-mps t RS))
