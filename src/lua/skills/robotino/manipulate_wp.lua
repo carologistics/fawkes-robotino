@@ -283,6 +283,7 @@ fsm:define_states{ export_to=_M, closure={MISSING_MAX=MISSING_MAX},
    {"INIT",                  JumpState},
    {"START_TRACKING",        JumpState},
    {"FIND_LASER_LINE",       JumpState},
+   {"DRIVE_BACK",            SkillJumpState, skills={{motor_move}},      final_to="SEARCH_LASER_LINE", fail_to="SEARCH_LASER_LINE"},
    {"SEARCH_LASER_LINE",     JumpState},
    {"MPS_ALIGN",             SkillJumpState, skills={{mps_align}},       final_to="SEARCH_LASER_LINE", fail_to="FAILED"},
    {"DRIVE_TO_LASER_LINE",   SkillJumpState, skills={{motor_move}},      final_to="AT_LASER_LINE", fail_to="FAILED"},
@@ -298,7 +299,7 @@ fsm:add_transitions{
    {"START_TRACKING", "FAILED",                   timeout=2, desc="Object tracker is not starting"},
    {"START_TRACKING", "FIND_LASER_LINE",          cond=object_tracker_active},
    {"FIND_LASER_LINE", "DRIVE_TO_LASER_LINE",     cond=laser_line_found},
-   {"FIND_LASER_LINE", "MPS_ALIGN",               timeout=1, desc="Could not find laser-line, drive back"},
+   {"FIND_LASER_LINE", "DRIVE_BACK",              timeout=1, desc="Could not find laser-line, drive back"},
    {"SEARCH_LASER_LINE", "DRIVE_TO_LASER_LINE",   cond=laser_line_found},
    {"SEARCH_LASER_LINE", "FAILED",                cond="vars.search_attemps > 10", desc="Tried 10 times, could not find laser-line"},
    {"SEARCH_LASER_LINE", "MPS_ALIGN",             timeout=1, desc="Could not find laser-line, spin"},
@@ -394,6 +395,10 @@ end
 function FIND_LASER_LINE:init()
   -- start searching for laser line
   fsm.vars.search_attemps = 0
+end
+
+function DRIVE_BACK:init()
+  self.args["motor_move"].x = drive_back_x
 end
 
 function SEARCH_LASER_LINE:init()
