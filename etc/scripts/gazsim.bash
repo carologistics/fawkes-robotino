@@ -20,7 +20,9 @@ OPTIONS:
    -l                Run Gazebo headless
    -k                Keep started shells open after finish
    -s                Keep statistics and shutdown after game
-   -r|--ros          Start with ROS support
+   -r|--ros          Start with ROS support,
+                     also starts move base, unless --no-move-base is given
+   --no-move-base    Do not start move base (only meaningful with -r)
    --ros-launch-main Run ROS launch file once for main (non-robot) master
                      Argument: package:file.launch
                      Calls: roslaunch package file.launch
@@ -50,6 +52,9 @@ OPTIONS:
    --asp             Run with ASP agent and global planner
    --challenge       Start refbox challenge script instead of refbox
    --refbox-args     Pass options to the refbox
+   --no-refbox       Do not start the refbox
+   --terminal TERM   The terminal to use, e.g., gnome-terminal or tmux
+   --wait            Wait for completion
 EOF
 }
 
@@ -65,7 +70,7 @@ REFBOX_ARGS="--cfg-simulation simulation/gazebo_simulation.yaml"
 ROS=
 ROS_LAUNCH_MAIN=
 ROS_LAUNCH_ROBOT=
-ROS_LAUNCH_MOVEBASE=
+ROS_LAUNCH_MOVE_BASE=false
 AGENT=
 DEBUG=
 DETAILED=
@@ -77,7 +82,6 @@ NUM_CYAN=3
 NUM_MAGENTA=0
 FIRST_ROBOTINO_NUMBER=1
 REPLAY=
-FAWKES_BIN=$FAWKES_DIR/bin
 META_PLUGIN=
 CENTRAL_AGENT=
 START_GAZEBO=true
@@ -90,6 +94,8 @@ TEAM_MAGENTA=
 START_CENTRAL_AGENT=false
 START_ASP_PLANER=false
 START_MONGODB=false
+START_REFBOX=true
+WAIT=false
 
 if [ -z $TERMINAL ] ; then
     if [[ -n $TMUX ]] ; then
@@ -103,39 +109,10 @@ if [ -n $LLSF_REFBOX_DIR ] ; then
     export PATH=$LLSF_REFBOX_DIR/bin:$PATH
 fi
 
-case "$TERMINAL" in
-    gnome-terminal)
-        TERM_COMMAND="gnome-terminal --maximize -- bash -i -c '"
-        TERM_COMMAND_END=" echo -e \"\n\n\nAll commands started. This tab may now be closed.\"'"
-        SUBTERM_PREFIX="gnome-terminal --tab -- "
-        SUBTERM_SUFFIX=" ; "
-        ;;
-    screen)
-        TERM_COMMAND="screen -A -d -m -S gazsim /usr/bin/sleep 1 ; "
-        SUBTERM_PREFIX="screen -S gazsim -X screen "
-        SUBTERM_SUFFIX=" ; "
-        ;;
-    tmux)
-        if [[ -n $TMUX ]] ; then
-            TERM_COMMAND=""
-        else
-            TERM_COMMAND="tmux new-session -s gazsim -d;"
-        fi
-        TERM_COMMAND_END=""
-        SUBTERM_PREFIX="tmux new-window "
-        SUBTERM_SUFFIX=";"
-        ;;
-    *)
-        >&2 echo "Unknown terminal $TERMINAL"
-        exit 1
-esac
-
-echo "Using $TERMINAL"
-
 ROS_MASTER_PORT=${ROS_MASTER_URI##*:}
 ROS_MASTER_PORT=${ROS_MASTER_PORT%%/*}
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "debug,ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:,keep-tmpfiles,challenge,refbox-args:" -- "$@")
+OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "debug,ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:,keep-tmpfiles,challenge,refbox-args:,no-refbox,terminal:,no-move-base,wait" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
@@ -170,8 +147,11 @@ while true; do
              ;;
          -r)
            ROS=-r
-           ROS_LAUNCH_MOVE_BASE=yes
+           ROS_LAUNCH_MOVE_BASE=true
              ;;
+         --no-move-base)
+           ROS_LAUNCH_MOVE_BASE=false
+           ;;
          -g)
 	     if [ -n "$GDB" ]; then
 				echo "Can pass only either valgrind or GDB, not both"
@@ -226,6 +206,12 @@ while true; do
      --keep-tmpfiles)
          KEEP_TMPFILES=true
          ;;
+     --terminal)
+         TERMINAL=$OPTARG
+         ;;
+     --wait)
+         WAIT=true
+         ;;
 	 --central-agent)
 	     CENTRAL_AGENT="$OPTARG"
          START_CENTRAL_AGENT=true
@@ -234,11 +220,14 @@ while true; do
 	     CONF="-c asp-planner"
 	     META_PLUGIN="-m asp-sim-2016"
 	     START_ASP_PLANER=true
-       ROS_LAUNCH_MOVE_BASE=
+       ROS_LAUNCH_MOVE_BASE=false
 	     ;;
 	 -o)
 	     START_GAZEBO=false
 	     ;;
+     --no-refbox)
+         START_REFBOX=false
+         ;;
 	 -r|--ros)
 	     ROS=-r
 	     ;;
@@ -282,6 +271,35 @@ while true; do
      shift
 done
 
+echo "Using $TERMINAL"
+
+case "$TERMINAL" in
+    gnome-terminal)
+        TERM_COMMAND="gnome-terminal --maximize -- bash -i -c '"
+        TERM_COMMAND_END=" echo -e \"\n\n\nAll commands started. This tab may now be closed.\"'"
+        SUBTERM_PREFIX="gnome-terminal --tab -- "
+        SUBTERM_SUFFIX=" ; "
+        ;;
+    screen)
+        TERM_COMMAND="screen -A -d -m -S gazsim /usr/bin/sleep 1 ; "
+        SUBTERM_PREFIX="screen -S gazsim -X screen "
+        SUBTERM_SUFFIX=" ; "
+        ;;
+    tmux)
+        if [[ -n $TMUX ]] ; then
+            TERM_COMMAND=""
+        else
+            TERM_COMMAND="tmux new-session -s gazsim -d;"
+        fi
+        TERM_COMMAND_END=""
+        SUBTERM_PREFIX="tmux new-window "
+        SUBTERM_SUFFIX=";"
+        ;;
+    *)
+        >&2 echo "Unknown terminal $TERMINAL"
+        exit 1
+esac
+
 if [[ -z $COMMAND ]]
 then
      echo "No command given"
@@ -315,9 +333,11 @@ NUM_MAGENTA=$(($NUM_ROBOTINOS-$NUM_CYAN))
 
 echo 'Automated Simulation control'
 
-script_path=$FAWKES_DIR/bin
-startup_script_location=$script_path/gazsim-startup.bash
-initial_pose_script_location=$script_path/gazsim-publish-initial-pose.bash
+script_path=$(realpath $(dirname ${BASH_SOURCE[0]}))
+FAWKES_DIR=${FAWKES_DIR:-$(realpath ${script_path}/..)}
+FAWKES_BIN=$FAWKES_DIR/bin
+startup_script_location=$script_path/gazsim-startup.bash 
+initial_pose_script_location=$script_path/gazsim-publish-initial-pose.bash 
 
 function stop_simulation {
   echo 'Kill Gazebo-sim'
@@ -346,6 +366,7 @@ if [  $COMMAND  == start ]; then
 	echo "FAWKES_DIR is not set"
 	exit 1
     fi
+    export FAWKES_DIR
     if $START_GAZEBO && ! [[ $GAZEBO_PLUGIN_PATH == *gazebo-rcll* ]]
     then
 	echo "Missing path to Gazebo Plugins in GAZEBO_PLUGIN_PATH";
@@ -391,7 +412,7 @@ if [  $COMMAND  == start ]; then
 				# robot roscore
 				COMMANDS+=("bash -i -c \"$startup_script_location -x roscore -p 1132$ROBO $KEEP $@\"")
         # move_base
-				if $START_GAZEBO && [ -n "$ROS_LAUNCH_MOVE_BASE" ]; then
+				if $ROS_LAUNCH_MOVE_BASE ; then
 					COMMANDS+=("bash -i -c \"$startup_script_location -x move_base -p 1132$ROBO $KEEP $@\"")
 				fi
 	if [ -n "$ROS_LAUNCH_ROBOT" ]; then
@@ -399,10 +420,12 @@ if [  $COMMAND  == start ]; then
 	fi
     	done
     fi
-    #start refbox
-    COMMANDS+=("bash -i -c \"$startup_script_location -x $REFBOX  $KEEP $@ -- $REFBOX_ARGS\"")
-    #start refbox frontend
-    COMMANDS+=("bash -i -c \"$startup_script_location -x refbox-frontend $KEEP $@\"")
+    if $START_REFBOX ; then
+        #start refbox
+        COMMANDS+=("bash -i -c \"$startup_script_location -x $REFBOX  $KEEP $@ -- $REFBOX_ARGS\"")
+        #start refbox frontend
+        COMMANDS+=("bash -i -c \"$startup_script_location -x refbox-frontend $KEEP $@\"")
+    fi
 
     # start mongodb central instance
     if $START_MONGODB ; then
@@ -454,7 +477,7 @@ if [  $COMMAND  == start ]; then
     echo "Executing $TERM_COMMAND ${SUFFIXED_COMMANDS[@]} ${TERM_COMMAND_END}"
     eval "$TERM_COMMAND ${SUFFIXED_COMMANDS[@]} ${TERM_COMMAND_END}"
 
-    if $FAWKES_USED && $START_GAZEBO
+    if $FAWKES_USED && $ROS_LAUNCH_MOVE_BASE
     then
 	# publish initial poses
 	echo "publish initial poses"
@@ -477,6 +500,11 @@ if [  $COMMAND  == start ]; then
 
     else
     usage
+fi
+
+if $FAWKES_USED && $WAIT ; then
+    # Just wait and watch robot 1.
+    tail -f robot1_latest.log
 fi
 
 # vim:et:sw=4:ts=4

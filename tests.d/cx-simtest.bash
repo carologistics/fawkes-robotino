@@ -41,7 +41,7 @@ stop_test () {
 
 trap stop_test $TRAP_SIGNALS
 ulimit -c 0
-$SCRIPT_PATH/gazsim.bash -o -r --mongodb \
+$SCRIPT_PATH/gazsim.bash -o -r --no-move-base --mongodb \
   -m m-distributed-skill-sim-clips-exec -n 3 \
   --team-cyan Carologistics --start-game=PRODUCTION \
   --refbox-args "--cfg-mps mps/mockup_mps.yaml" \
