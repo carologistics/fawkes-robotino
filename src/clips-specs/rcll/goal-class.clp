@@ -1444,9 +1444,9 @@
 
     (bind ?resource-cc ?cc)
     (bind ?resource-cs-input (sym-cat ?cs -INPUT))
-    (bind ?resources (create$  ?resource-cs-input ?resource-cc))
+    (bind ?resources (create$ ?cs ?resource-cs-input ?resource-cc))
     (if (output-side-free ?cs) then
-        (bind ?resources (create$  ?resource-cs-input ?resource-cc ?cs (sym-cat ?cs -OUTPUT)))
+        (bind ?resources (create$  ?cs ?resource-cs-input ?resource-cc (sym-cat ?cs -OUTPUT)))
     )
 
     (bind ?distance (node-distance (str-cat ?cs -I)))
