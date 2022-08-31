@@ -1,0 +1,80 @@
+syntax = "proto2";
+
+package llsf_msgs;
+
+import "Team.proto";
+import "ProductColor.proto";
+
+option java_package = "org.robocup_logistics.llsf_msgs";
+option java_outer_classname = "AgentTasksProtos";
+
+message AgentTask {
+    enum CompType {
+        COMP_ID = 8000;  // COMPONENT 8000 is Simulation
+        MSG_TYPE = 502;
+    }
+
+    // general infos
+    required Team team_color = 1;    // Color of the team
+    required uint32 task_id  = 2;    // identifier for the tasks
+    required uint32 robot_id = 3;
+
+    // Tasks
+    optional Move move = 4;
+    optional Retrieve retrieve = 5;
+    optional Deliver deliver = 6;
+    optional BufferStation buffer = 7;
+    optional ExploreWaypoint explore_machine = 8;
+
+    // additional info for the refbox
+    optional WorkpieceDescription workpiece_description = 9;
+    optional uint32 order_id = 10;
+
+    // flags and result of the current task
+    optional bool cancel_task = 11; // cancels current task
+    optional bool pause_task = 12; // if true current task is paused, if false again task is continued
+    optional bool successful = 13; // was the task finished successful?
+    optional bool canceled = 14;   // the task was successfully cancled from the agent
+    optional uint32 error_code = 15; // only set if failure, error-codes not yet defined, might be changed to an enum
+}
+
+// Move robot to stated waypoint
+message Move {
+    required string waypoint = 1; // can be a zone or a machine (default is input side of a machine)
+    optional string machine_point = 2; // can be used to specify the point of the machine (input, output)
+}
+
+// Get a workpiece at the given station and hold the product in the gripper
+message Retrieve {
+    required string machine_id    = 1; // name of the machine
+    required string machine_point = 2; // valid machine-points: input, output, shelf
+}
+
+// Deliver the holding product to the given station
+message Deliver {
+    required string machine_id    = 1; // name of the machine
+    required string machine_point = 2; // valid machine-points: input, slide
+}
+
+// Get product from shelf and place it immediately afterwards on the conveyor
+message BufferStation {
+    required string machine_id   = 1;  // machine-id because need to know if CS1 or CS2
+    required uint32 shelf_number = 2;  // only for old-gripper, valid shelf-numbers: 1, 2, 3
+}
+
+// Move to the given machine (if position already detected), else move to given waypoint (=zone on the playing field)
+message ExploreWaypoint {
+    required string machine_id    = 1;  // name of the machine
+    required string machine_point = 2;  // valid machine-points: input, output
+    required string waypoint      = 3;
+}
+
+message WorkpieceDescription {
+	enum CompType {
+		COMP_ID  = 8000;
+		MSG_TYPE = 510;
+	}
+	required BaseColor base_color = 3; // description fo the current workpiece the robot has gripped
+	repeated RingColor ring_colors = 4; // description fo the current workpiece the robot has gripped
+	optional CapColor cap_color = 5;  // description fo the current workpiece the robot has gripped
+}

@@ -41,6 +41,7 @@ package llsf_msgs;
 import "Time.proto";
 import "Team.proto";
 import "Pose2D.proto";
+import "AgentTask.proto";
 
 option java_package =
   "org.robocup_logistics.llsf_msgs";
@@ -49,7 +50,7 @@ option java_outer_classname =
 
 message BeaconSignal {
   enum CompType {
-    COMP_ID  = 2000;
+    COMP_ID = 2000;
     MSG_TYPE = 1;
   }
 
@@ -59,7 +60,7 @@ message BeaconSignal {
   required uint64 seq = 2;
 
   // The robot's jersey number
-  required uint32 number = 8;
+  required uint32 number = 3;
   // The robot's team name
   required string team_name = 4;
   // The robot's name
@@ -70,4 +71,14 @@ message BeaconSignal {
   // Position and orientation of the
   // robot on the LLSF playing field
   optional Pose2D pose = 7;
+  // Maybe needed for future generalisation of beacon signal and tracking of robots current activity (used by GRIPS currently)
+  optional AgentTask task = 9; // current task-id of robot
+  repeated FinishedTask finished_tasks = 10; // a list of all the tasks that the robot has done. Contains the ID of the task and the result
 }
+
+message FinishedTask{
+	required uint32 TaskId = 1; // the specific task thats been done
+	required bool successful = 2; // the result of the task thats been done
+}
+
+
