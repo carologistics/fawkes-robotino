@@ -24,9 +24,9 @@
   "Initialization of refbox related facts."
   (executive-init)
   (time $?now)
-  (not (timer (name refbox-beacon-timer)))
+  (not (wm-fact (id "/refbox/team-color")))
   =>
-  (assert 
+  (assert
     (wm-fact (id "/refbox/team-color") )
     (wm-fact (id "/refbox/points/magenta") (type UINT) (value 0) )
     (wm-fact (id "/refbox/points/cyan") (type UINT) (value 0) )
@@ -36,7 +36,7 @@
     (wm-fact (id "/refbox/game-time")  (type UINT) (is-list TRUE) (values 0 0))
     (wm-fact (key refbox beacon seq) (type UINT) (value 1))
     (timer (name refbox-beacon-timer) (time ?now))
-  )  
+  )
 )
 
 (defrule refbox-comm-enable-public
