@@ -35,7 +35,17 @@
     (wm-fact (id "/game/state")  (value WAIT_START) )
     (wm-fact (id "/refbox/game-time")  (type UINT) (is-list TRUE) (values 0 0))
     (wm-fact (key refbox beacon seq) (type UINT) (value 1))
-    (timer (name refbox-beacon-timer) (time ?now))
+  )
+)
+
+(defrule refbox-beacon-init
+  (wm-fact (key central agent robot args? r ?robot))
+  (not (timer (name ?timer-name&:(eq ?timer-name (sym-cat refbox-beacon-timer- ?robot)))))
+  =>
+  (assert (timer (name (sym-cat refbox-beacon-timer- ?robot))
+                 (time 0 0)
+          )
+          (wm-fact (key refbox robot task seq args? r ?robot) (type UINT) (value 1))
   )
 )
 
