@@ -46,6 +46,21 @@
   ?*BBSYNC_PEER_CONFIG* = "/fawkes/bbsync/peers/"
   ?*NAVGRAPH_GENERATOR_MPS_CONFIG* = "/navgraph-generator-mps/"
   ?*TAG_VISION_CONFIG* = "/plugins/tag_vision/"
+
+  ; network sending periods; seconds
+  ?*BEACON-PERIOD* = 1.0
+  ?*PREPARE-PERIOD* = 1.0
+  ?*ABORT-PREPARE-PERIOD* = 30.0
+  ?*ABORT-PREPARE-DOWN-RESET* = 5.0
+  ?*BEACON-TIMER* = 2
+
+  ?*MONITORING-SALIENCE* = 1
+  ?*COMMON-TIMEOUT-DURATION* = 30
+  ; The waiting timeout duration needs to be smaller than the common one above!
+  ?*WAITING-TIMEOUT-DURATION* = 25
+  ?*RUNNING-TIMEOUT-DURATION* = 120
+  ?*MPS-DOWN-TIMEOUT-DURATION* = 120
+  ?*HOLDING-MONITORING* = 60
 )
 
 (deftemplate exploration-result
