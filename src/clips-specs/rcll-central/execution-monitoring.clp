@@ -17,14 +17,21 @@
   (slot status)
 )
 
-(defglobal
-  ?*MONITORING-SALIENCE* = 1
-  ?*COMMON-TIMEOUT-DURATION* = 30
-  ; The waiting timeout duration needs to be smaller than the common one above!
-  ?*WAITING-TIMEOUT-DURATION* = 25
-  ?*RUNNING-TIMEOUT-DURATION* = 120
-  ?*MPS-DOWN-TIMEOUT-DURATION* = 120
-  ?*HOLDING-MONITORING* = 60
+(deffunction fail-action (?action ?error-msg)
+	(do-for-fact ((?sae skill-action-execinfo))
+		(and (eq ?sae:goal-id (fact-slot-value ?action goal-id))
+		     (eq ?sae:plan-id (fact-slot-value ?action plan-id))
+		     (eq ?sae:action-id (fact-slot-value ?action id))
+		)
+		(do-for-fact ((?skill skill))
+			(and (eq ?skill:id ?sae:skill-id)
+			     (eq ?skill:skiller ?sae:skiller)
+			)
+			(retract ?skill)
+		)
+		(retract ?sae)
+	)
+	(return (modify ?action (state EXECUTION-FAILED) (error-msg ?error-msg)))
 )
 
 (defrule execution-monitoring-stop-dependency-waits
