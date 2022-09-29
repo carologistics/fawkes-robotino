@@ -1,0 +1,402 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/clips-executive
+---
+clips-executive:
+  # If true, will enable watching of facts and rules
+  debug:
+    enable: true
+    # debug level is a number of: 0 ~ none, 1 ~ minimal, 2 ~ more, 3 ~ maximum
+    level: 3
+
+    # If CLIPS debugging is enabled, certain rules and facts can be excluded
+    # from watching, e.g. if they are showing up at too high frequencies or
+    # are not of interest.
+    unwatch-facts: ["time"]
+    unwatch-rules: ["time-retract", "blackboard-read"]
+
+  # Currently not working in clips-executive!
+  #
+  # If true, simulate skills (assuming they always succeed) instead of
+  # actually executing the skills. The time indicates how long it should
+  # take to declare success on skill execution. Note that this cannot
+  # simulate side effects, like a called component writing to an interface
+  # skill-sim: true
+  # skill-sim-time: 2.0
+
+  # automatically pre-require redefine-warning feature? Enabling
+  # this in the plugin instead of in the initial code (init.clp) is
+  # beneficial because it already catches errors in said file.
+  request-redefine-warning-feature: true
+
+  # Automatically assert the (start) fact after successful initialization,
+  # otherwise wait until the an enable message has been received
+  # auto-start: true
+
+  # If set to true, will trigger the assertion of a (time (now)) fact in
+  # each loop. This can be used to trigger loop events in CLIPS.
+  assert-time-each-loop: true
+
+  # If set to true will force the acquisition of the skiller control.
+  # This is particularly useful to kick an SkillGUI which is holding
+  # the lock just due to an oversight.
+  steal-skiller-control: true
+
+  # Directory where to look for CLIPS files
+  clips-dirs: ["@BASEDIR@/src/clips-specs"]
+
+  # Agent name. On startup the clips-agent will try to resolve a file named
+  # <agent name>.clp. It must be in the CLIPS path directories.
+  spec: rcll
+
+  specs:
+    rcll-central:
+      init:
+        stage-1:
+          - name: pddl-parser
+          - name: motor-switch
+          - name: navgraph
+          - name: protobuf
+          - name: tf
+          - name: robmem-wait
+            feature-request: false
+            files: ["BATCH|robmem-wait-init.clp"]
+            wait-for: robmem-initialized
+          - name: robot_memory
+        stage-3:
+          - name: utils
+            file: rcll-central/utils.clp
+          - name: worldmodel
+            files:
+              - wm-robmem-sync.clp
+              - wm-template-facts.clp
+              - rcll-central/wm-sync.clp
+              - rcll-central/init.clp
+              - rcll-central/blackboard-init.clp
+              - rcll-central/game-worldmodel.clp
+          - name: communication
+            files:
+              - rcll-central/refbox-comm-init.clp
+              - rcll-central/refbox-worldmodel.clp
+          - name: domain
+            file: rcll-central/domain.clp
+          - name: goal-reasoner
+            files:
+              - goals/retry.clp
+              - goals/run-all.clp
+              - goals/run-one.clp
+              - goals/run-parallel.clp
+              - goals/timeout.clp
+              - goals/try-all.clp
+              - goal-tree.clp
+              - rcll-central/goals/run-endless.clp
+              - rcll-central/goals/simple.clp
+              - rcll-central/goals/central-run-all.clp
+              - rcll-central/goals/central-run-one.clp
+              - rcll-central/goals/central-run-parallel.clp
+              - rcll-central/goal-reasoner.clp
+              - rcll-central/goal-dependencies.clp
+              - rcll-central/goal-executability.clp
+              - rcll-central/goal-production.clp
+              - rcll-central/goal-challenges.clp
+              - rcll-central/production-strategy.clp
+              - rcll-central/exploration.clp
+          - name: goal-expander
+            file: rcll-central/fixed-sequence.clp
+          - name: action-selection
+            file: rcll-central/action-selection.clp
+          - name: action-execution
+            files:
+              - skills-actions.clp
+              - rcll-central/noop-actions.clp
+              - rcll-central/refbox-actions.clp
+              - rcll-central/wait-actions.clp
+          - name: execution-monitoring
+            file: rcll-central/execution-monitoring.clp
+          - name: simtest
+            file: rcll-central/simtest.clp
+
+      action-mapping:
+        enter-field: >
+          drive_into_field{team=?(team-color)S,
+                           wait=0.0}
+        explore-zone: explore_zone{zone=?(z)s}
+        move-node: goto{place=?(z)s}
+        move: goto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
+        move-wp-get: goto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
+        move-wp-put: goto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
+        go-wait: goto{place="?(to)Y"}
+        wp-get-shelf: manipulate_wp{mps=?(m)S,
+                              side="SHELF-?(spot)Y",target="WORKPIECE"}
+        wp-put: manipulate_wp{mps=?(m)S,
+                             side=?(side)S,target="CONVEYOR"}
+        wp-put-slide-cc: manipulate_wp{mps=?(m)S,
+                         side="SLIDE", target="SLIDE"}
+        wp-get: manipulate_wp{mps=?(m)S,
+                              side=?(side)S,target="WORKPIECE"}
+        wp-discard: discard{}
+      parameters:
+        simtest:
+          enabled: false
+          testbed: ENTER-FIELD
+        rcll:
+          peer-address: 172.26.255.255
+          peer-recv-port: 4444
+          peer-send-port: 4445
+          cyan-recv-port: 4441
+          magenta-recv-port: 4442
+          cyan-send-port: 4446
+          magenta-send-port: 4447
+
+          team-name: Carologistics
+          crypto-key: randomkey
+          cipher: "aes-128-cbc"
+          pick-and-place-challenge: false
+
+          challenge-flip-insertion: true
+          use-static-navgraph: false
+
+          start-with-waiting-robots: true
+          exploration:
+            # Reduce navigator velocity while traveling the field so we can
+            # find laser-lines more reliably
+            low-velocity: 0.4
+            low-rotation: 0.5
+
+            # Increased speed and rotation when exploring a zone
+            max-velocity: 1.0
+            max-rotation: 1.0
+
+            # Center of a laser-line must be this far from the zone border
+            # before we start investigating it further (i.e. call the
+            # explore_zone skill on it)
+
+            zone-margin: 0.15
+            latest-send-last-report-time: 180  # =3:00
+
+      blackboard-preload:
+        - Position3DInterface
+        - NavGraphWithMPSGeneratorInterface
+        - NavGraphGeneratorInterface
+        - NavigatorInterface
+        - AX12GripperInterface
+        - MotorInterface
+        - LaserLineInterface
+        - TagVisionInterface
+        - ZoneInterface
+        - RobotinoSensorInterface
+        - RobotinoLightInterface
+        - HeartbeatInterface
+
+    test:
+      domain: test-scenario/test-domain.clp
+      goal-reasoner: test-scenario/goal-reasoner.clp
+      goal-expander: test-scenario/fixed-sequence.clp
+      action-selection: test-scenario/action-selection.clp
+      # macro-expansion: test-scenario/action-selection.clp
+      action-execution: plan-exec.clp
+      execution-monitoring: test-scenario/execution-monitoring.clp
+
+      action-mapping:
+        say: say{text=?(text)s, wait=true}
+        say-hello: say{text="Hello ?(name)y", wait=true}
+        say-goodbye: say{text="Good bye", wait=true}
+    visitall:
+      domain: visit-all/visitall-domain.clp
+      goal-reasoner: visit-all/goal-reasoner.clp
+      goal-expander: visit-all/fixed-sequence.clp
+      action-selection: visit-all/action-selection.clp
+      # macro-expansion: visit-all/action-selection.clp
+      action-execution: plan-exec.clp
+      execution-monitoring: visit-all/execution-monitoring.clp
+      state-estimation: visit-all/state-estimation-init.clp
+
+      action-mapping:
+        visit: ppgoto{place=?(m)S}
+      blackboard-preload: ["Position3DInterface"]
+
+    rcll:
+      init:
+        stage-1:
+          - name: pddl-parser
+          - name: motor-switch
+          - name: navgraph
+          - name: protobuf
+          - name: tf
+          - name: robmem-wait
+            feature-request: false
+            files: ["BATCH|robmem-wait-init.clp"]
+            wait-for: robmem-initialized
+          - name: robot_memory
+        stage-3:
+          - name: utils
+            file: rcll/utils.clp
+          - name: coordination
+            file: coordination-mutex.clp
+          - name: state-estimation
+            file: rcll/state-estimation-init.clp
+          - name: worldmodel
+            files:
+              - wm-robmem-sync.clp
+              - rcll/init-wm-sync.clp
+              - rcll/init-worldmodel.clp
+              - rcll/game-worldmodel.clp
+          - name: communication
+            files:
+              - rcll/refbox-comm-init.clp
+              - rcll/refbox-worldmodel.clp
+          - name: domain
+            file: rcll/domain.clp
+          - name: resource-locking
+            file: resource-locks.clp
+          - name: goal-reasoner
+            files:
+              - goals/retry.clp
+              - goals/run-all.clp
+              - goals/run-one.clp
+              - goals/timeout.clp
+              - goals/try-all.clp
+              - goal-tree.clp
+              - rcll/goals/run-endless.clp
+              - rcll/goals/simple.clp
+              - rcll/goal-reasoner.clp
+              - rcll/goal-production.clp
+              - rcll/production-strategy.clp
+              - rcll/exploration.clp
+              - rcll/goal-lock-expiration.clp
+              - rcll/goal-class.clp
+          - name: goal-expander
+            file: rcll/fixed-sequence.clp
+          - name: action-selection
+            file: rcll/action-selection.clp
+          - name: action-execution
+            files:
+              - skills-actions.clp
+              - rcll/noop-actions.clp
+              - rcll/refbox-actions.clp
+              - rcll/lock-actions.clp
+              - rcll/wait-actions.clp
+              - rcll/action-resources.clp
+          - name: execution-monitoring
+            file: rcll/execution-monitoring.clp
+          - name: simtest
+            file: rcll/simtest.clp
+          - name: local-promises
+            file: rcll/promises.clp
+
+      action-mapping:
+        enter-field: >
+          drive_into_field{team=?(team-color)S,
+                           wait=?(r|/Icks/0.0/|/Upsilan/10.0/|/Set/20.0/)f}
+        explore-zone: explore_zone{zone=?(z)s}
+        move-node: goto{place=?(z)s}
+        move: goto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
+        move-wp-get: goto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
+        move-wp-put: goto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
+        go-wait: goto{place="?(to)Y"}
+        wp-get-shelf: get_product_from{place=?(m)S, shelf=?(spot)S}
+        wp-put: bring_product_to{place=?(m)S}
+        wp-put-slide-cc: bring_product_to{place=?(m)S, slide="TRUE"}
+        wp-get: >
+          get_product_from{place=?(m)S,
+                           side=?(side|/INPUT/input/|/OUTPUT/output/)s}
+        wp-discard: discard{}
+
+      blackboard-preload:
+        - Position3DInterface
+        - NavGraphWithMPSGeneratorInterface
+        - NavGraphGeneratorInterface
+        - NavigatorInterface
+        - AX12GripperInterface
+        - MotorInterface
+        - LaserLineInterface
+        - TagVisionInterface
+        - ZoneInterface
+        - RobotinoSensorInterface
+        - RobotinoLightInterface
+
+      parameters:
+        use-promises: false
+        simtest:
+          enabled: false
+          # FAST checks only first minute of a game
+          # DELIVERY tests until the first delivery happens
+          # FULL checks whole game
+          testbed: FULL
+        coordination:
+          mutex:
+            renew-interval: 5
+            max-age-sec: 30
+        rcll:
+          # real-world-setup:
+          peer-address: 172.26.255.255
+          peer-recv-port: 4444
+          peer-send-port: 4445
+          cyan-recv-port: 4441
+          magenta-recv-port: 4442
+          cyan-send-port: 4446
+          magenta-send-port: 4447
+
+          team-name: Carologistics
+          crypto-key: randomkey
+          cipher: "aes-128-cbc"
+
+          waitpoint-in-cyan: Icks
+          waitpoint-in-magenta: Set
+
+          route:
+            CYAN:
+              Icks: ["exp-12", "exp-11", "exp-22"]
+              Upsilan: ["exp-22", "exp-23", "exp-31"]
+              Set: ["exp-31", "exp-32", "exp-21"]
+            MAGENTA:
+              Icks: ["exp-11", "exp-12", "exp-21"]
+              Upsilan: ["exp-22", "exp-21", "exp-32"]
+              Set: ["exp-32", "exp-31", "exp-22"]
+
+          exploration:
+            # Reduce navigator velocity while traveling the field so we can find
+            # laser-lines more reliably
+            low-velocity: 0.4
+            low-rotation: 0.5
+
+            # Increased speed and rotation when exploring a zone
+            max-velocity: 1.0
+            max-rotation: 1.0
+
+            # Center of a laser-line must be this far from the zone border
+            # before we start investigating it further (i.e. call the
+            # explore_zone skill on it)
+
+            zone-margin: 0.15
+            latest-send-last-report-time: 210  # =3:30
+
+          max-velocity: 1.0
+          max-rotation: 1.0
+          master: Upsilan
+
+          allowed-complexities: ["C0", "C2", "C3", "C1"]
+          exclusive-complexities: []
+
+          # If true, robots will not start big products after a certain time
+          block-late-c2-c3: true
+
+          # Priority to pursue competitive orders.
+          # HIGH: Produce it as fast as possible.
+          # DEFAULT: Treat competitive order just like normal ones
+          # LOW: Try to avoid producing competitive orders
+
+          competitive-order-priority: DEFAULT
+
+          # If true, the standing c0 order is stored at the storage station
+          # else, a C0 with the same base and opposite cap color as the
+          # standing C0 is stored.
+
+          store-standing-c0: true
+          use-ss: false
+
+          # Bots that are enabled can formulate production goals,
+          # disabled bots only formulate wait goals
+
+          enable-bot: true
