@@ -406,8 +406,8 @@ if [  $COMMAND  == start ]; then
 
     # start mongodb central instance
     if $START_MONGODB ; then
-        MONGODB_DBPATH=$(mktemp -d --tmpdir mongodb-27017-XXXXXXXXXXXX)
-        COMMANDS+=("bash -i -c \"mongod --port 27017 --dbpath $MONGODB_DBPATH | tee mongodb.log \"")
+        MONGODB_DBPATH=$(mktemp -d --tmpdir mongodb-27018-XXXXXXXXXXXX)
+        COMMANDS+=("bash -i -c \"mongod --port 27018 --dbpath $MONGODB_DBPATH | tee mongodb.log \"")
     fi
     #start fawkes for robotinos
     for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
