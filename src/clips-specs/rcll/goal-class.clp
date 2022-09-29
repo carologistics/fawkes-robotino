@@ -1420,6 +1420,20 @@
     (pddl-grounding (id ?grounding-id) (param-values ?robot ?cs ?cc ?spot ?cap-color))
     (promise-time (usecs ?game-time))
     (test (sat-or-promised ?sat ?game-time ?from ?lt))
+    ;prevent this goal from being asserted, if there is already another fill cap active on the same machine
+    ;since we don't have access to goals on other robots, we use shared facts to deduce this.
+    (not
+        (and
+            (wm-fact (key domain fact holding args? r ~?robot wp ?wp))
+            (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
+        )
+    )
+    (not
+        (and
+            (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side INPUT|OUTPUT))
+            (domain-object (name ?wp) (type cap-carrier))
+        )
+    )
     =>
     (bind ?priority-increase 0)
     ;increase priority if there is a product being produced that requires this cap-color
