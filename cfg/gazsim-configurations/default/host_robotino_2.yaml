@@ -100,9 +100,7 @@ plugins/mongodb:
     robot-memory-local-direct/hostport: localhost:27022
     robot-memory-distributed/hosts:
       - localhost:27031
-      - localhost:27032
-      - localhost:27033
-    robot-memory-distributed-direct/hostport: localhost:27032
+    robot-memory-distributed-direct/hostport: localhost:27031
   replica-sets:
     bootstrap-mongodb/client: default
     managed-sets:
@@ -110,10 +108,8 @@ plugins/mongodb:
         - localhost:27022
       robot-memory-distributed/hosts:
         - localhost:27031
-        - localhost:27032
-        - localhost:27033
   instances:
     robot-memory-local:
       port: 27022
     robot-memory-distributed:
-      port: 27032
+      enabled: false

@@ -9,12 +9,12 @@ plugins/mongodb:
     default:
       enabled: false
       mode: connection
-      hostport: localhost:27017
+      hostport: localhost:27018
 
     arbiter:
       enabled: true
       mode: connection
-      hostport: arbiter:27017
+      hostport: arbiter:27018
 
     robot-memory-local-direct:
       enabled: true
