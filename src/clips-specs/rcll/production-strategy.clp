@@ -351,11 +351,16 @@
            (value ?ep-total))
 =>
   (bind ?curr-step RING1)
+  (bind ?next-step RING2)
   (if (eq ?com C0) then (bind ?curr-step CAP))
+  (if (eq ?com C0) then (bind ?next-step DELIVER))
+  (if (eq ?com C1) then (bind ?next-step CAP))
   (assert (wm-fact (key wp meta points-current args? wp ?wp) (type INT)
                    (is-list FALSE) (value 0))
           (wm-fact (key wp meta next-step args? wp ?wp)
                    (type SYMBOL) (is-list FALSE) (value ?curr-step))
+          (wm-fact (key wp meta next-step-one-over args? wp ?wp)
+                   (type SYMBOL) (is-list FALSE) (value ?next-step))
           (wm-fact (key wp meta estimated-points-total args? wp ?wp)
                    (type INT) (is-list FALSE) (value ?ep-total)))
 )
@@ -385,10 +390,13 @@
   (wm-fact (key domain fact order-ring2-color args? ord ?order col ?col-r2))
   (wm-fact (key domain fact order-ring3-color args? ord ?order col ?col-r3))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-col))
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
   ; WP Meta CEs
   ?ns <- (wm-fact (key wp meta points-current args? wp ?wp) (value ?p-curr))
   ?wm <- (wm-fact (key wp meta next-step args? wp ?wp)
                    (value ?curr-step))
+  ?os <- (wm-fact (key wp meta next-step-one-over args? wp ?wp)
+                   (value ?next-step))
   ; Order Meta CE
   (wm-fact (key order meta points-steps args? ord ?order) (values $?p-list))
   ?ss <- (wm-fact (key order meta step-scored args? ord ?order step ?curr-step)
@@ -415,6 +423,7 @@
 ))
 =>
   (bind ?new-step DELIVER)
+  (bind ?new-step-one-over NONE)
   (if (not (eq ?wp-col-r1 ?col-r1))
     then
       (bind ?new-step RING1)
@@ -434,10 +443,27 @@
           )
       )
   )
+
+  (if (and (eq ?new-step RING1) (not (eq ?wp-col-r2 ?col-r2))) then
+    (bind ?new-step-one-over RING2)
+  )
+  (if (and (eq ?new-step RING2) (not (eq ?wp-col-r3 ?col-r3))) then
+    (bind ?new-step-one-over RING3)
+  )
+  (if (or (and (eq ?new-step RING3) (eq ?com C3))
+          (and (eq ?new-step RING2) (eq ?com C2))
+          (and (eq ?new-step RING1) (eq ?com C1))) then
+    (bind ?new-step-one-over CAP)
+  )
+  (if (eq ?new-step CAP) then
+    (bind ?new-step-one-over DELIVER)
+  )
+
   (modify ?ss (value (+ ?scored 1)))
   (modify ?ns (value (+ ?p-curr
                         (nth$ (order-steps-index ?curr-step) $?p-list))))
   (modify ?wm (value ?new-step))
+  (modify ?os (value ?new-step-one-over))
 )
 
 
