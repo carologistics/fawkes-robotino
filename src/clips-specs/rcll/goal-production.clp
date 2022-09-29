@@ -371,7 +371,7 @@
   (wm-fact (key domain fact self args? r ?robot))
   ;Requested process CEs
 ; Separate conditions apply for delivery stations
-  (wm-fact (key domain fact mps-type args? m ?mps t ~DS))
+  (wm-fact (key domain fact mps-type args? m ?mps t ~DS&~RS))
   (wm-fact (key mps-handling prepare ?prepare-action ?mps args? $?prepare-params))
   (wm-fact (key mps-handling process ?process-action ?mps args? $?process-params))
   ;MPS CEs
@@ -390,6 +390,35 @@
   (modify ?pg (mode EXPANDED))
 )
 
+(defrule goal-production-mps-handling-create-prepare-goal-mount-ring
+  "Prepare and model processing of a mount-ring-action"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ?pg <- (goal (id ?mps-handling-id) (class MPS-HANDLING-MAINTAIN) (mode SELECTED))
+  ;Robot CEs
+  (wm-fact (key domain fact self args? r ?robot))
+  ;Requested process CEs
+; Separate conditions apply for delivery stations
+  (wm-fact (key mps-handling prepare ?prepare-action ?mps args? $?prepare-params))
+  (wm-fact (key mps-handling process ?process-action ?mps args? $?process-params))
+  ;MPS CEs
+  (wm-fact (key domain fact mps-state args? m ?mps s IDLE))
+  (not (wm-fact (key domain fact wp-at args? wp ? m ?mps side OUTPUT)))
+  (wm-fact (key domain fact mps-type args? m ?mps t RS))
+  ;payment CEs
+  (wm-fact (key domain fact rs-paid-for args? rs ?mps n ?r-req))
+  (test (member$ ?r-req ?process-params))
+  =>
+  (bind ?resources (create$ ?mps (sym-cat ?mps -OUTPUT) (sym-cat ?mps -INPUT)))
+  (assert (goal (id (sym-cat PROCESS-MPS- ?mps - (gensym*)))
+                (class PROCESS-MPS) (sub-type SIMPLE)
+                (priority ?*PRIORITY-RESET*)
+                (parent ?mps-handling-id)
+                (params m ?mps
+                )
+                (required-resources ?resources)
+  ))
+  (modify ?pg (mode EXPANDED))
+)
 
 (defrule goal-production-mps-handling-create-prepare-goal-delivery
   "Prepare and model processing of a delivery"
@@ -441,6 +470,7 @@
                             (value TRUE))
   (not (wm-fact (key domain fact wp-usable args? wp ?wp)))
   ?do <- (domain-object (name ?wp))
+  (goal (class WP-SPAWN-MAINTAIN))
   =>
   (retract ?wp-for-order)
   (delayed-do-for-all-facts ((?wm wm-fact))
