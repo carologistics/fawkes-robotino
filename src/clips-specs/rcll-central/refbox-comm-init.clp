@@ -24,6 +24,7 @@
   "Initialization of refbox related facts."
   (executive-init)
   (time $?now)
+  (not (timer (name refbox-beacon-timer)))
   =>
   (assert 
     (wm-fact (id "/refbox/team-color") )
