@@ -23,6 +23,9 @@ realsense2:
   # messages. If false, switch messages will be ignored.
   use_switch: true
 
+  # If true, enable depth vision and publish point cloud
+  enable_depth: false
+
   # Desired Frame rate. Device will try deliver new frames in time.
   # Use 0 for don't care
   # Not all Frame rates supported on each device
