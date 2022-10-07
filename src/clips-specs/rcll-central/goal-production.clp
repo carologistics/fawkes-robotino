@@ -842,6 +842,12 @@
   "Enter the field (drive outside of the starting box)."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key central agent robot args? r ?robot))
+  (not
+    (and
+      (goal (class ENTER-FIELD) (id ?enter-field-goal))
+      (goal-meta (goal-id ?enter-field-goal) (assigned-to ?robot))
+    )
+  )
   (not (wm-fact (key domain fact entered-field args? r ?robot)))
   (not (goal (id ?some-goal-id) (class ENTER-FIELD) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED)))
   (domain-facts-loaded)
