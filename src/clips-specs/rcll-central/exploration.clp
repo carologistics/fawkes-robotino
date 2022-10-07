@@ -59,7 +59,7 @@
 
 (defrule exp-disable-goals
 " Exploration is not needed anymore as all machines were found."
-	?gf <-(goal (class EXPLORE-ZONE|EXPLORATION-MOVE) (mode FORMULATED))
+	?gf <-(goal (id ?id) (class EXPLORE-ZONE|EXPLORATION-MOVE) (mode FORMULATED))
   	?gm <- (goal-meta (goal-id ?id) (assigned-to nil))
 	(wm-fact (key exploration active) (type BOOL) (value FALSE))
 	=>
