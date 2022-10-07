@@ -481,7 +481,7 @@
   ?at <- (timer (name ?nat&:(eq ?nat
                                 (sym-cat prepare- ?goal-id - ?plan-id
                                          - ?id -abort-timer)))
-	        (time $?t&:(timeout ?now ?t (- ?*ABORT-PREPARE-PERIOD* ?*ABORT-PREPARE-DOWN-REST*)))
+	        (time $?t&:(timeout ?now ?t (- ?*ABORT-PREPARE-PERIOD* ?*ABORT-PREPARE-DOWN-RESET*)))
                 (seq ?seq))
   (wm-fact (key domain fact mps-state args? m ?mps s DOWN))
   =>
