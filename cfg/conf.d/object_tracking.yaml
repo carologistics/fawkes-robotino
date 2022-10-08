@@ -48,6 +48,9 @@ plugins/object_tracking:
     gripper_offset_pick: 0.035
     gripper_offset_put: 0.015
     base_offset: 0.28
+    target_wp_offset_x: 0.005
+    conveyor_offset_coefficient: 1.2
+    slide_offset_coefficient: 0.5
 
   camera_intrinsics:
     # image size

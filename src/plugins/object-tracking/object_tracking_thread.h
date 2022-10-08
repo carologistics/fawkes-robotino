@@ -99,6 +99,9 @@ private:
 	float gripper_offset_pick_;
 	float gripper_offset_put_;
 	float base_offset_;
+	float target_wp_offset_x_;
+	float conveyor_offset_coefficient_;
+	float slide_offset_coefficient_;
 
 	//expected pose offsets:
 	float x_offset_;

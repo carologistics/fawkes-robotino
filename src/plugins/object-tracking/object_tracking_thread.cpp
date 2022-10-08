@@ -92,6 +92,13 @@ ObjectTrackingThread::init()
 	  config->get_float("plugins/object_tracking/target_frame_offsets/gripper_offset_put");
 	base_offset_ = config->get_float("plugins/object_tracking/target_frame_offsets/base_offset");
 
+	target_wp_offset_x_ =
+	  config->get_float("plugins/object_tracking/target_frame_offsets/target_wp_offset_x");
+	conveyor_offset_coefficient_ =
+	  config->get_float("plugins/object_tracking/target_frame_offsets/conveyor_offset_coefficient");
+	slide_offset_coefficient_ =
+	  config->get_float("plugins/object_tracking/target_frame_offsets/slide_offset_coefficient");
+
 	//get camera params
 	camera_width_     = config->get_int("plugins/object_tracking/camera_intrinsics/width");
 	camera_height_    = config->get_int("plugins/object_tracking/camera_intrinsics/height");
@@ -891,7 +898,7 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 	//compute target gripper frame first
 	switch (current_object_type_) {
 	case ObjectTrackingInterface::WORKPIECE:
-		gripper_target[0] = object_pos.getX() + 0.005;
+		gripper_target[0] = object_pos.getX() + target_wp_offset_x_;
 		gripper_target[1] = object_pos.getY();
 		gripper_target[2] = object_pos.getZ() + gripper_offset_pick_;
 		break;
@@ -909,11 +916,13 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 	}
 
 	if (current_object_type_ == ObjectTrackingInterface::CONVEYOR_BELT_FRONT) {
-		gripper_target[0] = object_pos.getX() + cos(mps_angle) * puck_size_ * 1.2;
-		gripper_target[1] = object_pos.getY() - sin(mps_angle) * puck_size_ * 1.2;
+		gripper_target[0] =
+		  object_pos.getX() + cos(mps_angle) * puck_size_ * conveyor_offset_coefficient_;
+		gripper_target[1] =
+		  object_pos.getY() - sin(mps_angle) * puck_size_ * conveyor_offset_coefficient_;
 	} else if (current_object_type_ == ObjectTrackingInterface::SLIDE_FRONT) {
-		gripper_target[0] = object_pos.getX() + cos(mps_angle) * puck_size_ * 0.5;
-		gripper_target[1] = object_pos.getY() - sin(mps_angle) * puck_size_ * 0.5;
+		gripper_target[0] = object_pos.getX() + cos(mps_angle) * puck_size_ * slide_offset_coefficient_;
+		gripper_target[1] = object_pos.getY() - sin(mps_angle) * puck_size_ * slide_offset_coefficient_;
 	}
 
 	base_target[0] = gripper_target[0] - cos(mps_angle) * base_offset_;
