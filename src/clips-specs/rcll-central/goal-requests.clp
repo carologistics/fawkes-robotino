@@ -52,8 +52,7 @@
 )
 
 (defrule goal-request-assert-pay-with-cap-carrier-from-active-requests
-  "If there is a formulated discard goal and a new payment request comes in
-   or a formulated payment goal and a new discard request comes in,
+  "If there is a formulated discard and payment with base goal with active requests,
    combine them into one pay-with-cap-carrier goal."
   (goal (class SUPPORT-ROOT) (id ?root-id))
   ?request-discard <- (wm-fact (key request discard args? ord ?order-discard cs ?cs prio ?prio-discard) (value ACTIVE))
