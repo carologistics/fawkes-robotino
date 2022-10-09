@@ -592,9 +592,9 @@ execution monitoring handle the reformulation.
 	(declare (salience ?*MONITORING-SALIENCE*))
 	?g <- (goal (class INSTRUCT-CS-BUFFER-CAP|INSTRUCT-CS-MOUNT-CAP|INSTRUCT-RS-MOUNT-RING) (mode EVALUATED) (outcome FAILED) (params $? target-mps ?mps $?))
 	?wm <- (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
-	(not (goal (class BREAK-MPS) (params mps ?mps) (mode ~RETRACTED)))
+	(not (goal (class RESET-MPS) (params mps ?mps) (mode ~RETRACTED)))
 	=>
-	(bind ?goal-id (sym-cat BREAK-MPS - (gensym*)))
+	(bind ?goal-id (sym-cat RESET-MPS - (gensym*)))
 	(assert (goal (id ?goal-id) (class RESET-MPS) (params mps ?mps) (mode EXPANDED) (sub-type SIMPLE) (type ACHIEVE)))
 	(assert (goal-meta (goal-id ?goal-id) (assigned-to central)))
 	(assert
@@ -607,7 +607,7 @@ execution monitoring handle the reformulation.
 )
 
 (defrule execution-monitoring-reformulate-instruct-fails-bs-ds
-"When an INSTRUCT fails on a B|DS, reformulate the instruct goal."
+"When an INSTRUCT fails on a BS|DS, reformulate the instruct goal."
 	(declare (salience ?*MONITORING-SALIENCE*))
 	?g <- (goal (class INSTRUCT-BS-DISPENSE-BASE|INSTRUCT-DS-DELIVER) (id ?id) (mode RETRACTED) (outcome FAILED))
 	?p <- (plan (goal-id ?id))
