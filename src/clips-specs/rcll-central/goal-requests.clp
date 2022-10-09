@@ -37,8 +37,8 @@
 (defrule goal-request-assert-pay-with-cap-carrier
   "If there is an unfulfilled discard and payment request of the same goal,
    create a pay with cap-carrier goal to handle both requests."
-  ?request-discard <- (wm-fact (key request discard args? ord ?order-id cs ?cs prio ?prioDiscard) (value OPEN))
-  ?request-payment <- (wm-fact (key request pay args? ord ?order-id m ?rs ring ?ring seq ?seq prio ?prioPayment) (value OPEN))
+  ?request-discard <- (wm-fact (key request discard args? ord ?order-id cs ?cs prio ?prio-discard) (value OPEN))
+  ?request-payment <- (wm-fact (key request pay args? ord ?order-id m ?rs ring ?ring seq ?seq prio ?prio-payment) (value OPEN))
   ; to avoid potential delays by not being able to remove the cap-carrier, only pair the last payment request
   ; with the discard request
   (not (wm-fact (key request pay args? ord ?order-id $? seq ?other-seq&:(> 0 (str-compare (str-cat ?other-seq) (str-cat ?seq))) $?) (value nil)))
@@ -48,7 +48,7 @@
   (bind ?payment-goal (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN ?cs UNKNOWN ?rs INPUT ?order-id))
   (modify ?request-discard (value ACTIVE))
   (modify ?request-payment (value ACTIVE))
-  (modify ?payment-goal (parent ?root-id) (priority ?prioPayment))
+  (modify ?payment-goal (parent ?root-id) (priority ?prio-payment))
 )
 
 (defrule goal-request-assert-pay-with-cap-carrier-from-active-requests
@@ -56,28 +56,28 @@
    or a formulated payment goal and a new discard request comes in,
    combine them into one pay-with-cap-carrier goal."
   (goal (class SUPPORT-ROOT) (id ?root-id))
-  ?request-discard <- (wm-fact (key request discard args? ord ?orderDiscard cs ?cs prio ?prioDiscard) (value ?valueDiscard))
-  ?request-payment <- (wm-fact (key request pay args? ord ?orderPayment m ?rs ring ?ring seq ?seq prio ?prioPayment) (value ?valuePayment))
-  ?goal <- (goal (id ?goalId) (class ?goalClass) (mode FORMULATED) (params $?goalParams))
+  ?request-discard <- (wm-fact (key request discard args? ord ?order-discard cs ?cs prio ?prio-discard) (value ?value-discard))
+  ?request-payment <- (wm-fact (key request pay args? ord ?order-payment m ?rs ring ?ring seq ?seq prio ?prio-payment) (value ?value-payment))
+  ?goal <- (goal (id ?goal-id) (class ?goal-class) (mode FORMULATED) (params $?goal-params))
 
   ;there is no payment request that is open and has a higher sequence number (occurs later)
   (not (wm-fact (key request pay args? $? seq ?other-seq&:(> 0 (str-compare (str-cat ?other-seq) (str-cat ?seq))) $?) (value OPEN)))
 
-  ;only do a swap if there is already a buffer-cpa running and no cap-carrier payment goal to avoid deadlocks
+  ;only do a swap if there is already a buffer-cap running and no cap-carrier payment goal to avoid deadlocks
   (goal (class BUFFER-CAP) (mode DISPATCHED))
   (not (goal (class PAY-FOR-RINGS-WITH-CAP-CARRIER) (mode ~RETRACTED)))
 
   ;one request must be active, one must be open and the goal class must match
   (test
     (or
-        (and (eq ?valueDiscard ACTIVE) (eq ?valuePayment OPEN) (eq ?goalClass DISCARD))
-        (and (eq ?valueDiscard OPEN) (eq ?valuePayment ACTIVE) (eq ?goalClass PAY-FOR-RINGS-WITH-BASE))
+        (and (eq ?value-discard ACTIVE) (eq ?value-payment OPEN) (eq ?goal-class DISCARD))
+        (and (eq ?value-discard OPEN) (eq ?value-payment ACTIVE) (eq ?goal-class PAY-FOR-RINGS-WITH-BASE))
     )
   )
   =>
   ;if the goal is a PAY-FOR-RINGS-WITH-BASE goal, retract the corresponding instruct goal too
-  (if (eq ?goalClass PAY-FOR-RINGS-WITH-BASE) then
-    (bind ?base-wp (get-param-by-arg ?goalParams wp))
+  (if (eq ?goal-class PAY-FOR-RINGS-WITH-BASE) then
+    (bind ?base-wp (get-param-by-arg ?goal-params wp))
     (do-for-fact ((?instruct-goal goal))
       (and
         (eq ?instruct-goal:class INSTRUCT-BS-DISPENSE-BASE)
@@ -91,13 +91,13 @@
   (retract ?goal)
 
   ;assert the new payment goal
-  (bind ?new-goal (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN ?cs UNKNOWN ?rs INPUT ?orderPayment))
+  (bind ?new-goal (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN ?cs UNKNOWN ?rs INPUT ?order-payment))
   (modify ?request-discard (value ACTIVE))
   (modify ?request-payment (value ACTIVE))
 
-  (bind ?prio ?prioPayment)
-  (if (> 0 (str-compare (str-cat ?prioDiscard) (str-cat ?prioPayment))) then
-    (bind ?prio ?prioDiscard)
+  (bind ?prio ?prio-payment)
+  (if (> 0 (str-compare (str-cat ?prio-discard) (str-cat ?prio-payment))) then
+    (bind ?prio ?prio-discard)
   )
   (modify ?new-goal (parent ?root-id) (priority ?prio))
 )
@@ -150,7 +150,7 @@
 )
 
 (defrule goal-request-accept-pay-with-cc-offer
-  "If there is a discard  and pay request that is not paired with a goal yet, use a pay-with-cc offer."
+  "If there is a discard and pay request that is not paired with a goal yet, use a pay-with-cc offer."
   ?request-discard <- (wm-fact (key request discard args? ord ?order-id cs ?cs $?) (value ACTIVE))
   ?request-pay <- (wm-fact (key request pay args? ord ?order-id m ?rs ring ?ring seq ?seq $?) (value ACTIVE))
   ?request-offer <- (wm-fact (key request offer pay-with-cc args? $? cs ?cs rs ?rs) (value ?payment-goal-id))
