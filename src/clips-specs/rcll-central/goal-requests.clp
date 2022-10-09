@@ -206,23 +206,6 @@
 
   (goal (class DISCARD) (id ?discard-goal) (mode RETRACTED) (outcome COMPLETED) (params $? wp-loc ?cs $?))
   (not (wm-fact (key request discard args? $? cs ?cs $?) (value ?discard-goal)))
-
-  ; prefer discards for orders that have no RS workload, if there is a choice
-  (or
-    (and
-      (wm-fact (key mps workload order args? m ?rs1 ord ?order-id) (value 0))
-      (wm-fact (key mps workload order args? m ?rs2 ord ?order-id) (value 0))
-      (wm-fact (key domain fact mps-type args? m ?rs1 t RS))
-      (wm-fact (key domain fact mps-type args? m ?rs2 t RS))
-      (test (neq ?rs1 ?rs2))
-    )
-    (not
-      (and
-        (goal (class PAY-FOR-RINGS-WITH-CAP-CARRIER) (id ?pay-goal) (mode RETRACTED) (outcome COMPLETED) (params $? wp-loc ?cs $?))
-        (not (wm-fact (key request discard args? $? cs ?cs $?) (value ?pay-goal)))
-      )
-    )
-  )
   =>
   (modify ?request (value ?discard-goal))
 )
