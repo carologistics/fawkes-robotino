@@ -58,12 +58,14 @@
   ?request-discard <- (wm-fact (key request discard args? ord ?order-discard cs ?cs prio ?prio-discard) (value ACTIVE))
   ?request-payment <- (wm-fact (key request pay args? ord ?order-payment m ?rs ring ?ring seq ?seq prio ?prio-payment) (value ACTIVE))
   ?goal-discard <- (goal (id ?goal-id-discard) (class DISCARD) (mode FORMULATED) (params $?goal-params-discard) (is-executable FALSE))
-  ?goal-payment <- (goal (id ?goal-id-payment) (class PAY-FOR-RINGS-WITH-BASE) (mode FORMULATED) (params $?goal-params-payment) (is-executable FALSE))
+  ?goal-payment <- (goal (id ?goal-id-payment) (class PAY-FOR-RINGS-WITH-BASE) (mode FORMULATED) (params wp ?pay-wp $? target-mps ?rs $?) (is-executable FALSE))
   ?goal-instruct <- (goal (id ?goal-id-instruct) (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED) (params $?goal-params-instruct) (is-executable FALSE))
-  (test (member$ (get-param-by-arg ?goal-params-payment wp) ?goal-params-instruct))
+  (test (member$ ?pay-wp ?goal-params-instruct))
 
-  ;there is no payment request that is open and has a higher sequence number (occurs later)
-  (not (wm-fact (key request pay args? $? seq ?other-seq&:(> 0 (str-compare (str-cat ?other-seq) (str-cat ?seq))) $?) (value OPEN)))
+  ;there is no payment request that is active with a formulated goal that has a higher sequence number (occurs later)
+  (not
+    (wm-fact (key request pay args? m ?rs ring ?ring seq ?other-seq&:(> 0 (str-compare (str-cat ?other-seq) (str-cat ?seq))) $?) (value ACTIVE))
+  )
 
   ;only do a swap if there is already a buffer-cap running and no cap-carrier payment goal to avoid deadlocks
   (goal (class BUFFER-CAP) (mode DISPATCHED))
