@@ -244,10 +244,6 @@
  */
 
 /**
- * @enum InterruptSolving
- * @brief States the current interrupt request.
- * @note Sort by priority. We use operator> when setting the value.
- *
  * @var InterruptSolving::Not
  * @brief Do not interrupt. But when a robot is too much behind schedule
  * increase interrupt level and check again.
