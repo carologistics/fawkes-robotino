@@ -259,20 +259,6 @@
   (return ?goal)
 )
 
-(deffunction goal-reasoner-redistribute-payments (?order-id)
-  "Identify fulfilled but not consumed payments, and create offers for them."
-  (do-for-all-facts ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ mps state payments order))
-                                              (eq ?order-id (wm-key-arg ?wm-fact:key ord)))
-    (if (neq 0 ?wm-fact:value) then
-      (bind ?paid (insert$ ?paid 1 ?wm-fact:value))
-      (while (> ?paid 0)
-        (assert (wm-fact (key evaluation offer payment args? status COMPLETED rs (wm-key-arg ?wm-fact:key m) payment ?paid)))
-        (bind ?paid (- ?paid 1))
-      )
-    )
-  )
-)
-
 ; =========================== Goal Executability =============================
 
 (defrule goal-reasoner-propagate-executability
@@ -685,6 +671,9 @@
   ?root <- (goal (id ?root-id) (mode FINISHED) (outcome FAILED))
   (goal-meta (goal-id ?root-id) (root-for-order ?order-id))
 
+  ;wait until no requests for the order are
+  (not (wm-fact (key request $? args? ord ?order-id $?) (value ~ACTIVE)))
+
   ?instruct-root <- (goal (class INSTRUCT-ORDER) (id ?instruct-root-id))
   (goal (parent ?instruct-root-id) (id ?instruct-root-child))
   (goal-meta (order-id ?order-id) (goal-id ?instruct-root-child))
@@ -700,26 +689,6 @@
   (wm-fact (key domain fact order-cap-color args? ord ?order-id col ?order-cap-color))
   (wm-fact (key domain fact cs-can-perform args? m ?cs op ?cs-op))
   =>
-  ;we did the buffer for another goal and didn't use it, offer used buffer
-  (if (and (eq ?cap-color CAP_NONE) (eq ?buffer-goal-mode RETRACTED) (eq ?buffer-goal-outcome COMPLETED)) then
-    (assert (wm-fact (key evaluation offer buffer-cap args? status COMPLETED color ?order-cap-color)))
-  )
-  ;the buffer was done for us by another goal and we used it, offer free buffer
-  (if (and (neq ?cap-color CAP_NONE) (eq ?buffer-goal-mode RETRACTED) (eq ?buffer-goal-outcome FAILED)) then
-    (assert (wm-fact (key evaluation offer buffer-cap args? status FORMULATED color ?order-cap-color)))
-  )
-  ;the cap was mounted but the discard was never executed, offer the free discard
-  (if (and (neq ?cap-color CAP_NONE) (eq ?discard-goal-mode RETRACTED) (eq ?discard-goal-outcome FAILED)) then
-    (assert (wm-fact (key evaluation offer discard args? status FORMULATED cs ?cs)))
-  )
-  ;the cap was not mounted but the discard was executed, offer the used discard
-  (if (and (eq ?cap-color CAP_NONE) (eq ?discard-goal-mode RETRACTED) (eq ?discard-goal-outcome COMPLETED)) then
-    (assert (wm-fact (key evaluation offer discard args? status COMPLETED cs ?cs)))
-  )
-
-  ;handle pay for for ring goals
-  (goal-reasoner-redistribute-payments ?order-id)
-
   ;nuke the production tree
   (goal-reasoner-nuke-subtree ?root)
   ;nuke the instruction tree
@@ -732,67 +701,6 @@
   (not (goal-meta (root-for-order ?order-id)))
   =>
 	(assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))
-)
-
-; ================================= Goal Offers ============================
-
-(defrule goal-reasoner-take-offer-buffer-cap-completed
-  "Take an offer for a completed buffer cap goal"
-  ?offer <- (wm-fact (key evaluation offer buffer-cap args? status COMPLETED color ?order-cap-color))
-  ?goal <- (goal (class BUFFER-CAP) (id ?goal-id) (mode FORMULATED) (outcome UNKNOWN) (params $? cap-color ?order-cap-color $?))
-  (goal-meta (goal-id ?goal-id) (order-id ?order-id))
-  ?instruct-goal <- (goal (id ?instruct-goal-id) (class INSTRUCT-CS-BUFFER-CAP))
-  (goal-meta (goal-id ?instruct-goal-id) (order-id ?order-id))
-  =>
-  (modify ?goal (mode FINISHED) (outcome COMPLETED))
-  (modify ?instruct-goal (mode FINISHED) (outcome COMPLETED))
-  (retract ?offer)
-)
-
-(defrule goal-reasoner-take-offer-buffer-cap-formulated
-  "Take an offer for a formulated buffer cap goal if the own cap was never mounted but the goal is completed."
-  ?offer <- (wm-fact (key evaluation offer buffer-cap args? status FORMULATED color ?order-cap-color))
-  ?goal <- (goal (id ?goal-id) (class BUFFER-CAP) (mode FINISHED) (outcome COMPLETED) (params $? cap-color ?order-cap-color $?))
-  (goal-meta (goal-id ?goal-id) (order-id ?order-id))
-  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
-  (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE $?))
-  ?instruct-goal <- (goal (id ?instruct-goal-id) (class INSTRUCT-CS-BUFFER-CAP))
-  (goal-meta (goal-id ?instruct-goal-id) (order-id ?order-id))
-  =>
-  (modify ?goal (mode FORMULATED) (outcome UNKNOWN))
-  (modify ?instruct-goal (mode FORMULATED) (outcome UNKNOWN))
-  (retract ?offer)
-)
-
-(defrule goal-reasoner-take-offer-discard-completed
-  "Take an offer for a completed discard if the own one is just formulated."
-  ?offer <- (wm-fact (key evaluation offer discard args? status COMPLETED cs ?cs))
-  ?goal <- (goal (class DISCARD) (mode FORMULATED) (outcome UNKNOWN) (params $? wp-loc ?cs $?))
-  =>
-  (modify ?goal (mode FINISHED) (outcome COMPLETED))
-  (retract ?offer)
-)
-
-(defrule goal-reasoner-take-offer-discard-formulated
-  "Take an offer for a formulated discard if the own was completed but the own cap was never mounted."
-  ?offer <- (wm-fact (key evaluation offer discard args? status FORMULATED cs ?cs))
-  ?goal <- (goal (id ?goal-id) (class DISCARD) (mode FINISHED) (outcome COMPLETED) (params $? wp-loc ?cs $?))
-  (goal-meta (goal-id ?goal-id) (order-id ?order-id))
-  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
-  (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE $?))
-  =>
-  (modify ?goal (mode FORMULATED) (outcome UNKNOWN))
-  (retract ?offer)
-)
-
-(defrule goal-reasoner-take-offer-payment-completed
-  "Take an offer for a completed payment if the own one is just formulated."
-  ?offer <- (wm-fact (key evaluation offer payment args? status COMPLETED rs ?rs $?))
-  ?goal <- (goal (class PAY-FOR-RINGS-WITH-BASE)
-                 (mode FORMULATED) (outcome UNKNOWN) (params $? target-mps ?rs $?))
-  =>
-  (modify ?goal (mode FINISHED) (outcome COMPLETED))
-  (retract ?offer)
 )
 
 ; ================================= Goal Clean up ============================
