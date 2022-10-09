@@ -47,15 +47,6 @@ fawkes/bbsync:
   peers:
     robotino-base/active: false
 
-    laptop1:
-      #active: true (set via the off-field startup)
-      host: robotino-laptop-1
-      port: !tcp-port 1910
-      reading:
-        navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/laptop1/navgraph-generator-mps
-        navgraph-generator: NavGraphGeneratorInterface::/navgraph-generator=/laptop1/navgraph-generator
-        navigator: NavigatorInterface::Navigator=/laptop1/Navigator
-
     robot1:
       #active: true (set via the off-field startup)
       host: robotino-base-1
