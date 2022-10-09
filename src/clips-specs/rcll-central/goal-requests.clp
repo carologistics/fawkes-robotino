@@ -56,9 +56,12 @@
    or a formulated payment goal and a new discard request comes in,
    combine them into one pay-with-cap-carrier goal."
   (goal (class SUPPORT-ROOT) (id ?root-id))
-  ?request-discard <- (wm-fact (key request discard args? ord ?order-discard cs ?cs prio ?prio-discard) (value ?value-discard))
-  ?request-payment <- (wm-fact (key request pay args? ord ?order-payment m ?rs ring ?ring seq ?seq prio ?prio-payment) (value ?value-payment))
-  ?goal <- (goal (id ?goal-id) (class ?goal-class) (mode FORMULATED) (params $?goal-params))
+  ?request-discard <- (wm-fact (key request discard args? ord ?order-discard cs ?cs prio ?prio-discard) (value ACTIVE))
+  ?request-payment <- (wm-fact (key request pay args? ord ?order-payment m ?rs ring ?ring seq ?seq prio ?prio-payment) (value ACTIVE))
+  ?goal-discard <- (goal (id ?goal-id-discard) (class DISCARD) (mode FORMULATED) (params $?goal-params-discard) (is-executable FALSE))
+  ?goal-payment <- (goal (id ?goal-id-payment) (class PAY-FOR-RINGS-WITH-BASE) (mode FORMULATED) (params $?goal-params-payment) (is-executable FALSE))
+  ?goal-instruct <- (goal (id ?goal-id-instruct) (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED) (params $?goal-params-instruct) (is-executable FALSE))
+  (test (member$ (get-param-by-arg ?goal-params-payment wp) ?goal-params-instruct))
 
   ;there is no payment request that is open and has a higher sequence number (occurs later)
   (not (wm-fact (key request pay args? $? seq ?other-seq&:(> 0 (str-compare (str-cat ?other-seq) (str-cat ?seq))) $?) (value OPEN)))
@@ -66,29 +69,9 @@
   ;only do a swap if there is already a buffer-cap running and no cap-carrier payment goal to avoid deadlocks
   (goal (class BUFFER-CAP) (mode DISPATCHED))
   (not (goal (class PAY-FOR-RINGS-WITH-CAP-CARRIER) (mode ~RETRACTED)))
-
-  ;one request must be active, one must be open and the goal class must match
-  (test
-    (or
-        (and (eq ?value-discard ACTIVE) (eq ?value-payment OPEN) (eq ?goal-class DISCARD))
-        (and (eq ?value-discard OPEN) (eq ?value-payment ACTIVE) (eq ?goal-class PAY-FOR-RINGS-WITH-BASE))
-    )
-  )
   =>
-  ;if the goal is a PAY-FOR-RINGS-WITH-BASE goal, retract the corresponding instruct goal too
-  (if (eq ?goal-class PAY-FOR-RINGS-WITH-BASE) then
-    (bind ?base-wp (get-param-by-arg ?goal-params wp))
-    (do-for-fact ((?instruct-goal goal))
-      (and
-        (eq ?instruct-goal:class INSTRUCT-BS-DISPENSE-BASE)
-        (member$ ?base-wp ?instruct-goal:params)
-      )
-      (retract ?instruct-goal)
-    )
-  )
-
   ;retract the goal to be replaced
-  (retract ?goal)
+  (retract ?goal-instruct ?goal-payment ?goal-discard)
 
   ;assert the new payment goal
   (bind ?new-goal (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN ?cs UNKNOWN ?rs INPUT ?order-payment))
