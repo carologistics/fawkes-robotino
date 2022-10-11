@@ -94,6 +94,7 @@
               (eq ?goal-class FILL-CAP)
               (eq ?goal-class CLEAR-MPS)
               (eq ?goal-class DISCARD)
+              (eq ?goal-class PICKUP-WP)
               (eq ?goal-class GET-AND-DISCARD)
               (eq ?goal-class PRODUCE-C0)
               (eq ?goal-class PRODUCE-CX)
