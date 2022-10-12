@@ -454,7 +454,7 @@
                             (not (cs-buffered ?cs CAP_BLACK))
                             (not (cs-buffered ?cs CAP_GREY))
                             (mps-side-free ?cs INPUT)
-                            (mps-side-free ?cs OUTPUT)
+                            ;(mps-side-free ?cs OUTPUT)
                             (wp-on-shelf ?cc ?cs ?spot)
                             (wp-cap-color ?cc ?cap-color)
                         )
@@ -502,7 +502,7 @@
                             (not (mps-state ?rs BROKEN))
                             (rs-paid-for ?rs ?bases-needed)
                             (mps-side-free ?rs INPUT)
-                            (mps-side-free ?rs OUTPUT)
+                            ;(mps-side-free ?rs OUTPUT)
                             (or
                                 (mps-side-free ?rs OUTPUT)
                                 (mps-side-free ?other-rs INPUT)
@@ -587,7 +587,7 @@
 
                             (not (mps-state ?rs BROKEN))
                             (mps-side-free ?rs INPUT)
-                            (mps-side-free ?rs OUTPUT)
+                            ;(mps-side-free ?rs OUTPUT)
                             (not
                                 (or
                                     (rs-prepared-color ?rs ?ring2-color)
@@ -660,7 +660,7 @@
 
                             (not (mps-state ?rs BROKEN))
                             (mps-side-free ?rs INPUT)
-                            (mps-side-free ?rs OUTPUT)
+                            ;(mps-side-free ?rs OUTPUT)
                             (not
                                 (or
                                     (rs-prepared-color ?rs ?ring3-color)
@@ -773,7 +773,7 @@
                         (and
                             ;cs CEs
                             (mps-side-free ?cs INPUT)
-                            (mps-side-free ?cs OUTPUT)
+                            ;(mps-side-free ?cs OUTPUT)
                             (not (mps-state ?cs BROKEN))
                             (mps-team ?cs ?team-color)
                             (cs-buffered ?cs ?cap-color)
