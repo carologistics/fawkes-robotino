@@ -15,7 +15,7 @@ set -eu -o pipefail
 
 # Only run the simtest on Fedora.
 source /etc/os-release
-if [ "$NAME" != "Fedora" ] ; then
+if [ "$ID" != "fedora" ] ; then
   exit 0
 fi
 
