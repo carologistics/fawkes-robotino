@@ -139,7 +139,7 @@ def main():
     plt.plot(x, pdf_individual, '--k')
     plt.text(0.04, 0.96, "Best-fit Mixture",
              ha='left', va='top')
-    plt.show()
+    #plt.show()
 
 
 
