@@ -79,8 +79,8 @@ plugins/execution-time-estimator:
   # Takes samples from a mongodb database to provide skill exec times
   lookup:
     # misc options
-    priority: 0
-    speed: 2.0
+    priority: 2
+    speed: 1.0
     database: "skills"
     collection: "exec_times"
 
