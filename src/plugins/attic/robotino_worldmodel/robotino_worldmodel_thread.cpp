@@ -76,7 +76,7 @@ RobotinoWorldModelThread::finalize()
 
 void
 RobotinoWorldModelThread::write_state_changes(
-  RobotinoWorldModelInterface *                                    wm_if,
+  RobotinoWorldModelInterface                                     *wm_if,
   std::map<uint32_t, RobotinoWorldModelInterface::machine_state_t> changed_machine_states)
 {
 	for (std::map<uint32_t, RobotinoWorldModelInterface::machine_state_t>::iterator it =
@@ -89,7 +89,7 @@ RobotinoWorldModelThread::write_state_changes(
 
 void
 RobotinoWorldModelThread::write_type_changes(
-  RobotinoWorldModelInterface *                                   wm_if,
+  RobotinoWorldModelInterface                                    *wm_if,
   std::map<uint32_t, RobotinoWorldModelInterface::machine_type_t> changed_machine_types)
 {
 	for (std::map<uint32_t, RobotinoWorldModelInterface::machine_type_t>::iterator it =

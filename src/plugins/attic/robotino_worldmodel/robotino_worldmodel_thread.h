@@ -63,7 +63,7 @@ private:
 	                         std::map<uint32_t, fawkes::RobotinoWorldModelInterface::machine_state_t>
 	                           changed_machine_states);
 	void write_type_changes(
-	  fawkes::RobotinoWorldModelInterface *                                   wm_if,
+	  fawkes::RobotinoWorldModelInterface                                    *wm_if,
 	  std::map<uint32_t, fawkes::RobotinoWorldModelInterface::machine_type_t> changed_machine_types);
 	void merge_worldmodels(fawkes::RobotinoWorldModelInterface *wm_sink_if,
 	                       fawkes::RobotinoWorldModelInterface *wm_source_if);
