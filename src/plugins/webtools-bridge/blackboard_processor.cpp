@@ -60,10 +60,10 @@ using namespace rapidjson;
  * @param clock Fawkes clock
  */
 BridgeBlackBoardProcessor::BridgeBlackBoardProcessor(std::string            prefix,
-                                                     fawkes::Logger *       logger,
+                                                     fawkes::Logger        *logger,
                                                      fawkes::Configuration *config,
-                                                     fawkes::BlackBoard *   blackboard,
-                                                     fawkes::Clock *        clock)
+                                                     fawkes::BlackBoard    *blackboard,
+                                                     fawkes::Clock         *clock)
 : BridgeProcessor(prefix)
 {
 	logger_     = logger;
@@ -275,10 +275,10 @@ BridgeBlackBoardProcessor::publish(
  */
 BlackBoardSubscription::BlackBoardSubscription(std::string         topic_name,
                                                std::string         processor_prefix,
-                                               fawkes::Logger *    logger,
-                                               fawkes::Clock *     clock,
+                                               fawkes::Logger     *logger,
+                                               fawkes::Clock      *clock,
                                                fawkes::BlackBoard *blackboard,
-                                               fawkes::Interface * interface)
+                                               fawkes::Interface  *interface)
 : Subscription(topic_name, processor_prefix, logger, clock),
   BlackBoardInterfaceListener("WebToolsBridgeListener"),
   blackboard_(blackboard),

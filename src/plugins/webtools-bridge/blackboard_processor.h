@@ -52,10 +52,10 @@ class BlackBoardSubscription : public Subscription, public fawkes::BlackBoardInt
 public:
 	BlackBoardSubscription(std::string         topic_name,
 	                       std::string         processor_prefix,
-	                       fawkes::Logger *    logger,
-	                       fawkes::Clock *     clock,
+	                       fawkes::Logger     *logger,
+	                       fawkes::Clock      *clock,
 	                       fawkes::BlackBoard *blackboard,
-	                       fawkes::Interface * interface);
+	                       fawkes::Interface  *interface);
 
 	~BlackBoardSubscription();
 
@@ -70,7 +70,7 @@ public:
 
 private:
 	fawkes::BlackBoard *blackboard_; /**< Fawkes blackboard */
-	fawkes::Interface * interface_;  /**< Fawkes interface */
+	fawkes::Interface  *interface_;  /**< Fawkes interface */
 };
 
 //=================================   Processor
@@ -83,10 +83,10 @@ class BridgeBlackBoardProcessor : public BridgeProcessor,
 {
 public:
 	BridgeBlackBoardProcessor(std::string            prefix,
-	                          fawkes::Logger *       logger,
+	                          fawkes::Logger        *logger,
 	                          fawkes::Configuration *config,
-	                          fawkes::BlackBoard *   blackboard,
-	                          fawkes::Clock *        clock);
+	                          fawkes::BlackBoard    *blackboard,
+	                          fawkes::Clock         *clock);
 
 	virtual ~BridgeBlackBoardProcessor();
 
@@ -122,10 +122,10 @@ public:
 	             std::shared_ptr<WebSession>   session);
 
 private:
-	fawkes::Logger *       logger_;     /**< Fawkes logger */
+	fawkes::Logger        *logger_;     /**< Fawkes logger */
 	fawkes::Configuration *config_;     /**< Fawkes config */
-	fawkes::BlackBoard *   blackboard_; /**< Fawkes blackboard */
-	fawkes::Clock *        clock_;      /**< Fawkes clock */
+	fawkes::BlackBoard    *blackboard_; /**< Fawkes blackboard */
+	fawkes::Clock         *clock_;      /**< Fawkes clock */
 
 	std::map<std::string, fawkes::Interface *>::iterator
 	  ifi_; /**< Iterator for Fawkes Interface list */
