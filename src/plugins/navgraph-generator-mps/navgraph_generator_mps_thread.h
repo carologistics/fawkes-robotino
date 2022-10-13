@@ -87,7 +87,7 @@ private:
 	size_t                                        cfg_num_wait_zones_;
 
 	unsigned int                               last_id_;
-	fawkes::NavGraphGeneratorInterface *       navgen_if_;
+	fawkes::NavGraphGeneratorInterface        *navgen_if_;
 	fawkes::NavGraphWithMPSGeneratorInterface *navgen_mps_if_;
 
 	fawkes::BlackBoardOnMessageWaker *msg_waker_;
