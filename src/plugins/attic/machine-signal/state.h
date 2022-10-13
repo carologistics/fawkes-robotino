@@ -124,10 +124,10 @@ private:
 	std::string      debug_R_;
 	std::string      debug_Y_;
 	std::string      debug_G_;
-	fawkes::Logger * logger_;
+	fawkes::Logger  *logger_;
 
 	fawkes::RobotinoLightInterface::LightState eval_history(light_history_t_ &history,
-	                                                        std::string &     debug_str);
+	                                                        std::string      &debug_str);
 
 public:
 	fawkes::RobotinoLightInterface::LightState              red;

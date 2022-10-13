@@ -21,7 +21,7 @@
 #include "state.h"
 
 SignalState::SignalState(unsigned int             buflen,
-                         fawkes::Logger *         logger,
+                         fawkes::Logger          *logger,
                          historic_signal_rois_t_ &signal)
 : world_pos(nullptr), signal_rois_history_(signal)
 {
