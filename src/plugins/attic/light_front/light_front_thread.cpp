@@ -269,7 +269,7 @@ LightFrontThread::finalize() // TODO check if everthing gets deleted
 }
 
 void
-LightFrontThread::process_light(fawkes::Position3DInterface *   position_interface,
+LightFrontThread::process_light(fawkes::Position3DInterface    *position_interface,
                                 fawkes::RobotinoLightInterface *light_interface,
                                 boost::circular_buffer<LightFrontThread::lightSignal> *buffer)
 {
@@ -852,7 +852,7 @@ LightFrontThread::signalLightCurrentPicture(firevision::ROI signal)
 bool
 LightFrontThread::lightFromHistoryBuffer(
   boost::circular_buffer<LightFrontThread::lightSignal> *buffer,
-  LightFrontThread::lightSignal *                        lighSignal)
+  LightFrontThread::lightSignal                         *lighSignal)
 {
 	int red    = 0;
 	int yellow = 0;
