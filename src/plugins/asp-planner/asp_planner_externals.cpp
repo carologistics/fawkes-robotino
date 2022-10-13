@@ -144,7 +144,7 @@ generateProductBaseExternal(const ProductIdentifier &product, const std::string 
 Clingo::Symbol
 generateProductRingExternal(const ProductIdentifier &product,
                             const int                ringNumber,
-                            const std::string &      color)
+                            const std::string       &color)
 {
 	return Clingo::Function(
 	  "productRing",
@@ -185,7 +185,7 @@ generateMachineBrokenExternal(const std::string &machineName, const int duration
  * @return The external atom.
  */
 Clingo::Symbol
-generateMachineWorkingExternal(const std::string &      machineName,
+generateMachineWorkingExternal(const std::string       &machineName,
                                const int                duration,
                                const ProductIdentifier &product)
 {

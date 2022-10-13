@@ -71,7 +71,7 @@ AspPlannerThread::beaconCallback(const bsoncxx::document::view &document)
 		const auto        object(document["o"]);
 		const std::string name(object["name"].get_utf8().value.to_string());
 		MutexLocker       locker(&WorldMutex);
-		auto &            info = Robots[name];
+		auto             &info = Robots[name];
 
 		if (!info.Alive) {
 			logger->log_info(LoggingComponent, "New robot %s detected.", name.c_str());
@@ -149,7 +149,7 @@ AspPlannerThread::machineCallback(const bsoncxx::document::view &document)
 		const std::string machine(object["machine"].get_utf8().value.to_string().substr(2));
 		const std::string state(object["state"].get_utf8().value.to_string());
 		MutexLocker       locker(&WorldMutex);
-		auto &            info(Machines[machine]);
+		auto             &info(Machines[machine]);
 		if (state != info.State) {
 			logger->log_warn(LoggingComponent,
 			                 "Machine %s from %s to %s",
