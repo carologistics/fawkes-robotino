@@ -89,7 +89,7 @@ protected:
 
 private:
 	protobuf_comm::ProtobufStreamClient *client_;
-	protobuf_comm::MessageRegister *     message_register_;
+	protobuf_comm::MessageRegister      *message_register_;
 
 	// config values
 	std::vector<std::string> proto_dirs_;

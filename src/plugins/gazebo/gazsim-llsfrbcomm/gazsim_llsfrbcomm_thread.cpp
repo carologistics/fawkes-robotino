@@ -220,7 +220,7 @@ GazsimLLSFRbCommThread::on_time_sync_msg(ConstSimTimePtr &msg)
 	}
 	// fill msg for refbox with info from gazsim_msg
 	llsf_msgs::SimTimeSync to_rb;
-	llsf_msgs::Time *      time = to_rb.mutable_sim_time();
+	llsf_msgs::Time       *time = to_rb.mutable_sim_time();
 	time->set_sec(msg->sim_time_sec());
 	time->set_nsec(msg->sim_time_nsec());
 	to_rb.set_real_time_factor(msg->real_time_factor());
