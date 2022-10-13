@@ -121,7 +121,7 @@ pb_converter<llsf_msgs::Order, OrderInterface>::get_sequence_id(const llsf_msgs:
 template <>
 void
 pb_converter<llsf_msgs::Order, OrderInterface>::handle(const llsf_msgs::Order &msg,
-                                                       OrderInterface *        iface)
+                                                       OrderInterface         *iface)
 {
 	if (iface->base_color() != base_color_enum_order.of(msg.base_color()))
 		iface->set_base_color(base_color_enum_order.of(msg.base_color()));
@@ -174,7 +174,7 @@ template <>
 void
 pb_converter<llsf_msgs::BeaconSignal, RecvBeaconInterface>::handle(
   const llsf_msgs::BeaconSignal &msg,
-  RecvBeaconInterface *          iface)
+  RecvBeaconInterface           *iface)
 {
 	iface->set_number(msg.number());
 	iface->set_peer_name(msg.peer_name().substr(0, iface->maxlenof_peer_name()).c_str());
@@ -289,7 +289,7 @@ pb_sequence_converter<llsf_msgs::MachineInfo,
 template <>
 void
 pb_converter<llsf_msgs::Machine, MachineInfoInterface>::handle(const llsf_msgs::Machine &msg,
-                                                               MachineInfoInterface *    iface)
+                                                               MachineInfoInterface     *iface)
 {
 	float pose[3]{msg.pose().x(), msg.pose().y(), msg.pose().ori()};
 	iface->set_pose(pose);
@@ -346,7 +346,7 @@ static const enum_map<llsf_msgs::RingColor, RingInfoInterface::RingColor> ring_i
 template <>
 void
 pb_converter<llsf_msgs::RingInfo, RingInfoInterface>::handle(const llsf_msgs::RingInfo &msg,
-                                                             RingInfoInterface *        iface)
+                                                             RingInfoInterface         *iface)
 {
 	if (msg.rings_size() != 4) {
 		logger_->log_error(name(),
@@ -359,9 +359,9 @@ pb_converter<llsf_msgs::RingInfo, RingInfoInterface>::handle(const llsf_msgs::Ri
 		                                            ring_info_color_enum.of(msg.rings(2).ring_color()),
 		                                            ring_info_color_enum.of(msg.rings(3).ring_color())};
 		uint32_t                     cost[4]{msg.rings(0).raw_material(),
-                     msg.rings(1).raw_material(),
-                     msg.rings(2).raw_material(),
-                     msg.rings(3).raw_material()};
+		                                     msg.rings(1).raw_material(),
+		                                     msg.rings(2).raw_material(),
+		                                     msg.rings(3).raw_material()};
 		iface->set_ring_colors(ring_colors);
 		iface->set_raw_materials(cost);
 	}
