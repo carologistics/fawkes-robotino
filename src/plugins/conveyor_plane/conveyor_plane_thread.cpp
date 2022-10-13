@@ -626,8 +626,8 @@ ConveyorPlaneThread::laserline_get_center_transformed(fawkes::LaserLineInterface
 
 Eigen::Vector3f
 ConveyorPlaneThread::get_conveyor_estimate(fawkes::LaserLineInterface *laser_line,
-                                           const std::string &         target_frame,
-                                           const fawkes::Time &        desired_stamp)
+                                           const std::string          &target_frame,
+                                           const fawkes::Time         &desired_stamp)
 {
 	btVector3 endpt_1(laser_line->end_point_1(0),
 	                  laser_line->end_point_1(1),
