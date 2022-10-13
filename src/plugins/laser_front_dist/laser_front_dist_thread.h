@@ -64,7 +64,7 @@ protected:
 
 private:
 	// Define class member variables here
-	fawkes::Laser360Interface *  if_laser_;
+	fawkes::Laser360Interface   *if_laser_;
 	fawkes::Position3DInterface *if_result_;
 	std::string                  frame_;
 	int                          beams_used_;
