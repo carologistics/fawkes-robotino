@@ -197,12 +197,12 @@ private:
 	                      fawkes::tf::Stamped<fawkes::tf::Point> exp_pos,
 	                      float                                  mps_angle,
 	                      float                                  closest_pos[3],
-	                      cv::Rect &                             closest_box,
-	                      float &                                additional_height);
+	                      cv::Rect                              &closest_box,
+	                      float                                 &additional_height);
 	void compute_3d_point(std::array<float, 4> bounding_box,
 	                      float                angle,
 	                      float                point[3],
-	                      float &              wp_additional_height);
+	                      float               &wp_additional_height);
 
 	//compute base and gripper target frame
 	void compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Point> object_pos,
