@@ -106,7 +106,7 @@ private:
 	firevision::Camera *fv_cam;
 	/// firevision image buffer
 	firevision::SharedMemoryImageBuffer *shm_buffer;
-	unsigned char *                      image_buffer;
+	unsigned char                       *image_buffer;
 	std::deque<float>                    world_pos_z_measurements;
 	std::deque<float>                    world_pos_y_measurements;
 	std::deque<float>                    world_pos_x_measurements;
