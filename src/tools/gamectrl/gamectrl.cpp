@@ -58,7 +58,7 @@ main(int argc, char **argv)
 		argp.parse_hostport("r", host, port);
 	}
 
-	BlackBoard *     remote_bb   = new RemoteBlackBoard(host.c_str(), port);
+	BlackBoard      *remote_bb   = new RemoteBlackBoard(host.c_str(), port);
 	SwitchInterface *gamectrl_if = remote_bb->open_for_writing<SwitchInterface>("Clips Agent Start");
 
 	if (strcmp(argp.items()[0], "start") == 0) {
