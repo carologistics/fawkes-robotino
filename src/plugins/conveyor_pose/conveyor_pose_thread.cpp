@@ -68,7 +68,7 @@ ConveyorPoseThread::ConveyorPoseThread()
 }
 
 std::string
-ConveyorPoseThread::get_model_path(ConveyorPoseInterface *           iface,
+ConveyorPoseThread::get_model_path(ConveyorPoseInterface            *iface,
                                    ConveyorPoseInterface::MPS_TYPE   type,
                                    ConveyorPoseInterface::MPS_TARGET target)
 {
@@ -361,7 +361,7 @@ ConveyorPoseThread::init()
 		std::string new_record_path = cfg_record_path_;
 
 		bool   exists;
-		FILE * tmp;
+		FILE  *tmp;
 		size_t count = 0;
 
 		do {
@@ -615,14 +615,14 @@ ConveyorPoseThread::set_external_initial_tf(fawkes::tf::Stamped<fawkes::tf::Pose
 	bb_init_guess_pose_->read();
 	//-- compose translational part
 	btVector3 init_origin;
-	double *  blackboard_origin = bb_init_guess_pose_->translation();
+	double   *blackboard_origin = bb_init_guess_pose_->translation();
 	init_origin.setX(static_cast<btScalar>(blackboard_origin[0]));
 	init_origin.setY(static_cast<btScalar>(blackboard_origin[1]));
 	init_origin.setZ(static_cast<btScalar>(blackboard_origin[2]));
 
 	//-- compose orientation
 	btMatrix3x3  init_basis;
-	double *     blackboard_orientation = bb_init_guess_pose_->rotation();
+	double      *blackboard_orientation = bb_init_guess_pose_->rotation();
 	btQuaternion init_orientation(static_cast<btScalar>(blackboard_orientation[0]) //-- x
 	                              ,
 	                              static_cast<btScalar>(blackboard_orientation[1]) //-- y
@@ -649,7 +649,7 @@ ConveyorPoseThread::set_external_initial_tf(fawkes::tf::Stamped<fawkes::tf::Pose
 	                            pose_orig_frame_transformed);
 
 	//-- check if initial guess would get invalid is invalid
-	const btVector3 &   translation = pose_orig_frame_transformed.getOrigin();
+	const btVector3    &translation = pose_orig_frame_transformed.getOrigin();
 	const btQuaternion &orientation = pose_orig_frame_transformed.getRotation();
 	if (std::isnan(translation.getX()) || std::isinf(translation.getX())
 	    || std::isnan(translation.getY()) || std::isinf(translation.getY())
@@ -727,7 +727,7 @@ ConveyorPoseThread::set_laserline_initial_tf(fawkes::tf::Stamped<fawkes::tf::Pos
 	                            initial_guess_transdormed);
 
 	//-- check if initial guess would get invalid is invalid
-	const btVector3 &   translation = initial_guess_transdormed.getOrigin();
+	const btVector3    &translation = initial_guess_transdormed.getOrigin();
 	const btQuaternion &orientation = initial_guess_transdormed.getRotation();
 	if (std::isnan(translation.getX()) || std::isinf(translation.getX())
 	    || std::isnan(translation.getY()) || std::isinf(translation.getY())
@@ -1238,7 +1238,7 @@ Eigen::Matrix4f
 pose_to_eigen(const fawkes::tf::Pose &pose)
 {
 	const tf::Matrix3x3 &rot   = pose.getBasis();
-	const tf::Vector3 &  trans = pose.getOrigin();
+	const tf::Vector3   &trans = pose.getOrigin();
 	Eigen::Matrix4f      rv(Eigen::Matrix4f::Identity());
 	rv.block<3, 3>(0, 0) << float(rot[0][0]), float(rot[0][1]), float(rot[0][2]), float(rot[1][0]),
 	  float(rot[1][1]), float(rot[1][2]), float(rot[2][0]), float(rot[2][1]), float(rot[2][2]);

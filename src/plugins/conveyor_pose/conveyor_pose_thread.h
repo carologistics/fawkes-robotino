@@ -120,7 +120,7 @@ private:
 	fawkes::ConveyorPoseInterface::MPS_TARGET current_mps_target_;
 
 	std::unique_ptr<fawkes::Time> initial_guess_deadline_;
-	fawkes::Position3DInterface * bb_init_guess_pose_;
+	fawkes::Position3DInterface  *bb_init_guess_pose_;
 
 	int cfg_force_shelf_;
 
@@ -205,7 +205,7 @@ private:
 
 	// interfaces read
 	std::vector<fawkes::LaserLineInterface *> laserlines_;
-	fawkes::SwitchInterface *                 realsense_switch_;
+	fawkes::SwitchInterface                  *realsense_switch_;
 	fawkes::Time                              wait_start_;
 	fawkes::Time                              wait_time_;
 
@@ -227,7 +227,7 @@ private:
 	std::unique_ptr<fawkes::tf::Stamped<fawkes::tf::Pose>> result_pose_;
 
 	fawkes::tf::Stamped<fawkes::tf::Pose> initial_guess_odom_;
-	fawkes::LaserLineInterface *          best_laser_line_;
+	fawkes::LaserLineInterface           *best_laser_line_;
 
 	std::atomic<bool> cfg_debug_mode_;
 
