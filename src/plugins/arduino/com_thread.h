@@ -90,7 +90,7 @@ public:
 
 	// For BlackBoardInterfaceListener
 	virtual bool bb_interface_message_received(fawkes::Interface *interface,
-	                                           fawkes::Message *  message) throw();
+	                                           fawkes::Message   *message) throw();
 
 	virtual void config_value_erased(const char *path) override;
 	virtual void config_tag_changed(const char *new_tag) override;
@@ -158,7 +158,7 @@ private:
 	unsigned int open_tries_;
 
 	std::queue<ArduinoComMessage *> messages_;
-	ArduinoComMessage *             next_msg_;
+	ArduinoComMessage              *next_msg_;
 	bool                            new_msg_;
 	fawkes::Time                    expected_finish_time_;
 
@@ -168,7 +168,7 @@ private:
 	boost::asio::streambuf      input_buffer_;
 
 	boost::mutex               io_mutex_;
-	fawkes::ArduinoInterface * arduino_if_;
+	fawkes::ArduinoInterface  *arduino_if_;
 	fawkes::JoystickInterface *joystick_if_;
 
 	ArduinoTFThread *tf_thread_;
@@ -183,7 +183,7 @@ private:
 	                 unsigned int                    value   = 0,
 	                 unsigned int                    timeout = 1000);
 	void set_message(ArduinoComMessage *msg);
-	bool add_command_to_message(ArduinoComMessage *             msg,
+	bool add_command_to_message(ArduinoComMessage              *msg,
 	                            ArduinoComMessage::command_id_t command,
 	                            unsigned int                    value);
 

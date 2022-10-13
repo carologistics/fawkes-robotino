@@ -86,7 +86,7 @@ private:
 	void dtor();
 
 private:
-	char *         data_;
+	char          *data_;
 	unsigned short data_size_;
 	unsigned short cur_buffer_index_; // index of next data field
 
