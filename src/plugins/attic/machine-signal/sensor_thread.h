@@ -64,8 +64,8 @@ protected:
 
 private:
 	std::vector<fawkes::RobotinoLightInterface *> bb_signal_states_;
-	fawkes::RobotinoLightInterface *              bb_signal_compat_;
-	MachineSignalPipelineThread *                 pipeline_thread_;
+	fawkes::RobotinoLightInterface               *bb_signal_compat_;
+	MachineSignalPipelineThread                  *pipeline_thread_;
 };
 
 #endif /* __PLUGINS_MACHINE_SIGNAL_SENSOR_THREAD_H_ */
