@@ -115,11 +115,11 @@ private:
 	unsigned int cfg_color_v_min;
 	unsigned int cfg_color_v_max;
 
-	void                     drawROIsInBuffer(unsigned char *             buffer,
+	void                     drawROIsInBuffer(unsigned char              *buffer,
 	                                          unsigned int                width,
 	                                          unsigned int                height,
 	                                          std::list<firevision::ROI> *rois);
-	void                     drawROIInBuffer(unsigned char *  buffer,
+	void                     drawROIInBuffer(unsigned char   *buffer,
 	                                         unsigned int     width,
 	                                         unsigned int     height,
 	                                         firevision::ROI *roi);
@@ -139,16 +139,16 @@ private:
 
 	unsigned char *buffer_filtered;
 
-	firevision::Camera *       cam_;
+	firevision::Camera        *cam_;
 	firevision::ScanlineModel *scanline_;
 	// firevision::ColorModel *cm_;
-	firevision::MirrorModel *            mirror_;
-	firevision::RelativePositionModel *  rel_pos_;
-	firevision::SimpleColorClassifier *  classifierExpected_;
+	firevision::MirrorModel             *mirror_;
+	firevision::RelativePositionModel   *rel_pos_;
+	firevision::SimpleColorClassifier   *classifierExpected_;
 	firevision::SharedMemoryImageBuffer *shm_buffer_filtered;
 	firevision::colorspace_t             cspace_from_;
 	firevision::colorspace_t             cspace_to_;
-	firevision::ColorModelRange *        colorModel_;
+	firevision::ColorModelRange         *colorModel_;
 
 	firevision::FilterROIDraw *filterROIDraw;
 

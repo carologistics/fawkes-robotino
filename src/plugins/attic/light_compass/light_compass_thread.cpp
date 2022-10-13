@@ -390,7 +390,7 @@ LightCompassThread::getBestROI(unsigned char *bufferYCbCr)
 
 	// rois die nicht "gut" sind löschen (zu groß / zu nah am Roboter)
 	std::list<firevision::ROI> *roisGood = new std::list<firevision::ROI>();
-	firevision::ROI *           roi      = NULL;
+	firevision::ROI            *roi      = NULL;
 	while (!rois->empty()) {
 		roi = new firevision::ROI(rois->front());
 		if (cfg_debugOutput_) {
@@ -438,7 +438,7 @@ LightCompassThread::getBestROI(unsigned char *bufferYCbCr)
 }
 
 void
-LightCompassThread::drawROIsInBuffer(unsigned char *             buffer,
+LightCompassThread::drawROIsInBuffer(unsigned char              *buffer,
                                      unsigned int                width,
                                      unsigned int                height,
                                      std::list<firevision::ROI> *rois)
@@ -453,7 +453,7 @@ LightCompassThread::drawROIsInBuffer(unsigned char *             buffer,
 }
 
 void
-LightCompassThread::drawROIInBuffer(unsigned char *  buffer,
+LightCompassThread::drawROIInBuffer(unsigned char   *buffer,
                                     unsigned int     width,
                                     unsigned int     height,
                                     firevision::ROI *roi)
