@@ -61,7 +61,7 @@ ClipsMotorSwitchThread::finalize()
 }
 
 void
-ClipsMotorSwitchThread::clips_context_init(const std::string &          env_name,
+ClipsMotorSwitchThread::clips_context_init(const std::string           &env_name,
                                            LockPtr<CLIPS::Environment> &clips)
 {
 	envs_[env_name] = clips;
