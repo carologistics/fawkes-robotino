@@ -88,7 +88,7 @@ protected:
 	}
 
 private:
-	fawkes::Laser360Interface *      laser_if_;
+	fawkes::Laser360Interface       *laser_if_;
 	fawkes::LaserBoxFilterInterface *laser_box_filter_if_;
 	ros::Publisher                   vispub_;
 	std::string                      mps_laser_gen_cfg_prefix;
