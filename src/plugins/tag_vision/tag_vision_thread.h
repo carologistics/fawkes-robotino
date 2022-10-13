@@ -128,7 +128,7 @@ private:
 	firevision::Camera *fv_cam_;
 	/// firevision image buffer
 	firevision::SharedMemoryImageBuffer *shm_buffer_;
-	unsigned char *                      image_buffer_;
+	unsigned char                       *image_buffer_;
 	/// Marker type
 	MarkerType marker_type_;
 	/// Image Buffer Id
@@ -144,7 +144,7 @@ private:
 	cv::Mat ipl_image_;
 
 	/// blackboard communication
-	TagPositionList *                          tag_interfaces_;
+	TagPositionList                           *tag_interfaces_;
 	std::vector<fawkes::LaserLineInterface *> *laser_line_ifs_;
 
 	/// Width of the image
