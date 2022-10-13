@@ -76,9 +76,9 @@ private:
 	void enable(unsigned int output);
 	void disable(unsigned int output);
 
-	fawkes::SkillerInterface *       skiller_if_;
+	fawkes::SkillerInterface        *skiller_if_;
 	fawkes::RobotinoSensorInterface *rsens_if_;
-	fawkes::MotorInterface *         motor_if_;
+	fawkes::MotorInterface          *motor_if_;
 
 	fawkes::Mutex         timeout_wait_mutex_;
 	fawkes::WaitCondition timeout_wait_condition_;
