@@ -130,14 +130,14 @@ private:
 	double  calculate_cluster_size(const PolarPos &last_peak, const PolarPos &current);
 	void    calc_average_of_distances(std::list<PolarPos>::iterator last_peak,
 	                                  std::list<PolarPos>::iterator current,
-	                                  float *                       average_distance,
-	                                  float *                       variance);
+	                                  float                        *average_distance,
+	                                  float                        *variance);
 
 	// TODO
 
 private:
-	fawkes::Laser360Interface *  laser_if_;
-	fawkes::Laser360Interface *  laser_vis_;
+	fawkes::Laser360Interface   *laser_if_;
+	fawkes::Laser360Interface   *laser_vis_;
 	fawkes::Position3DInterface *pos3d_nearest_cluster_if_;
 	fawkes::Position3DInterface *pos3d_nearest_reading_if_;
 
