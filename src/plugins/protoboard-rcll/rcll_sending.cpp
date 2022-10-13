@@ -50,7 +50,7 @@ static const enum_map<llsf_msgs::Team, SendBeaconInterface::TEAM_COLOR> team_enu
  * @param msg The SendBeaconMessage that came in on the interface */
 template <>
 void
-BlackboardManager::handle_message(SendBeaconInterface *                   iface,
+BlackboardManager::handle_message(SendBeaconInterface                    *iface,
                                   SendBeaconInterface::SendBeaconMessage *msg)
 {
 	std::shared_ptr<llsf_msgs::BeaconSignal> m = std::make_shared<llsf_msgs::BeaconSignal>();
@@ -86,7 +86,7 @@ BlackboardManager::handle_message(SendBeaconInterface *                   iface,
  * @param msg The SetPeerMessage that came in on the interface */
 template <>
 void
-BlackboardManager::handle_message(SendBeaconInterface *                iface,
+BlackboardManager::handle_message(SendBeaconInterface                 *iface,
                                   SendBeaconInterface::SetPeerMessage *msg)
 {
 	iface->set_peer_id(msg->peer_id());
@@ -138,11 +138,11 @@ static const enum_map<llsf_msgs::SSOp, PrepareMachineInterface::SSOp> ssop_enum{
  * @param msg The PrepareBSMessage that came in on the interface */
 template <>
 void
-BlackboardManager::handle_message(PrepareMachineInterface *                  iface,
+BlackboardManager::handle_message(PrepareMachineInterface                   *iface,
                                   PrepareMachineInterface::PrepareBSMessage *msg)
 {
 	std::shared_ptr<llsf_msgs::PrepareMachine> m     = std::make_shared<llsf_msgs::PrepareMachine>();
-	llsf_msgs::PrepareInstructionBS *          instr = new llsf_msgs::PrepareInstructionBS();
+	llsf_msgs::PrepareInstructionBS           *instr = new llsf_msgs::PrepareInstructionBS();
 	instr->set_color(base_color_enum.of(msg->color()));
 	instr->set_side(machine_side_enum.of(msg->side()));
 	m->set_allocated_instruction_bs(instr);
@@ -157,11 +157,11 @@ BlackboardManager::handle_message(PrepareMachineInterface *                  ifa
  * @param msg The PrepareCSMessage that came in on the interface */
 template <>
 void
-BlackboardManager::handle_message(PrepareMachineInterface *                  iface,
+BlackboardManager::handle_message(PrepareMachineInterface                   *iface,
                                   PrepareMachineInterface::PrepareCSMessage *msg)
 {
 	std::shared_ptr<llsf_msgs::PrepareMachine> m     = std::make_shared<llsf_msgs::PrepareMachine>();
-	llsf_msgs::PrepareInstructionCS *          instr = new llsf_msgs::PrepareInstructionCS();
+	llsf_msgs::PrepareInstructionCS           *instr = new llsf_msgs::PrepareInstructionCS();
 	instr->set_operation(csop_enum.of(msg->operation()));
 	m->set_allocated_instruction_cs(instr);
 	m->set_team_color(team_enum_prepare.of(msg->team_color()));
@@ -175,11 +175,11 @@ BlackboardManager::handle_message(PrepareMachineInterface *                  ifa
  * @param msg The PrepareCSMessage that came in on the interface */
 template <>
 void
-BlackboardManager::handle_message(PrepareMachineInterface *                  iface,
+BlackboardManager::handle_message(PrepareMachineInterface                   *iface,
                                   PrepareMachineInterface::PrepareDSMessage *msg)
 {
 	std::shared_ptr<llsf_msgs::PrepareMachine> m     = std::make_shared<llsf_msgs::PrepareMachine>();
-	llsf_msgs::PrepareInstructionDS *          instr = new llsf_msgs::PrepareInstructionDS();
+	llsf_msgs::PrepareInstructionDS           *instr = new llsf_msgs::PrepareInstructionDS();
 	instr->set_order_id(msg->order_id());
 	m->set_allocated_instruction_ds(instr);
 	m->set_team_color(team_enum_prepare.of(msg->team_color()));
@@ -193,11 +193,11 @@ BlackboardManager::handle_message(PrepareMachineInterface *                  ifa
  * @param msg The PrepareRSMessage that came in on the interface */
 template <>
 void
-BlackboardManager::handle_message(PrepareMachineInterface *                  iface,
+BlackboardManager::handle_message(PrepareMachineInterface                   *iface,
                                   PrepareMachineInterface::PrepareRSMessage *msg)
 {
 	std::shared_ptr<llsf_msgs::PrepareMachine> m     = std::make_shared<llsf_msgs::PrepareMachine>();
-	llsf_msgs::PrepareInstructionRS *          instr = new llsf_msgs::PrepareInstructionRS();
+	llsf_msgs::PrepareInstructionRS           *instr = new llsf_msgs::PrepareInstructionRS();
 	instr->set_ring_color(prepare_ring_color_enum.of(msg->ring_color()));
 	m->set_allocated_instruction_rs(instr);
 	m->set_team_color(team_enum_prepare.of(msg->team_color()));
@@ -211,7 +211,7 @@ BlackboardManager::handle_message(PrepareMachineInterface *                  ifa
  * @param msg The PrepareSSMessage that came in on the interface */
 template <>
 void
-BlackboardManager::handle_message(PrepareMachineInterface *                  iface,
+BlackboardManager::handle_message(PrepareMachineInterface                   *iface,
                                   PrepareMachineInterface::PrepareSSMessage *msg)
 {
 	logger->log_error(name(), "Storage Station is not implemented yet");
@@ -222,7 +222,7 @@ BlackboardManager::handle_message(PrepareMachineInterface *                  ifa
  * @param msg The SetPeerMessage that came in on the interface */
 template <>
 void
-BlackboardManager::handle_message(PrepareMachineInterface *                iface,
+BlackboardManager::handle_message(PrepareMachineInterface                 *iface,
                                   PrepareMachineInterface::SetPeerMessage *msg)
 {
 	iface->set_peer_id(msg->peer_id());
