@@ -120,7 +120,7 @@ LlsfStatisticsSimThread::write_statistics()
                             config->get_string("/gazsim/llsf-statistics/get-refbox-summary-script"))
 		                      + " " + refbox_log_file;
 		logger->log_info(name(), "command %s\n", command.c_str());
-		FILE *      bash_output      = popen(command.c_str(), "r");
+		FILE       *bash_output      = popen(command.c_str(), "r");
 		std::string refbox_score_log = "";
 		if (bash_output) {
 			logger->log_info(name(), "shuffeling");

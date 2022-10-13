@@ -71,9 +71,9 @@ private:
 
 	// provided interfaces
 	fawkes::RobotinoLightInterface *light_if_;
-	fawkes::SwitchInterface *       switch_if_;
-	fawkes::SignalHintInterface *   hint_if_;
-	fawkes::SwitchInterface *       delivery_if_;
+	fawkes::SwitchInterface        *switch_if_;
+	fawkes::SignalHintInterface    *hint_if_;
+	fawkes::SwitchInterface        *delivery_if_;
 
 	// handler function for incoming messages about the machine light signals
 	void on_light_signals_msg(ConstLightSignalDetectionPtr &msg);

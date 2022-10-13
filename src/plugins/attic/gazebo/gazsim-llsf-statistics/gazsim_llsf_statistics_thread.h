@@ -71,7 +71,7 @@ private:
 	gazebo::transport::SubscriberPtr game_state_sub_;
 
 	// Mongo stuff
-	mongo::DBClientBase *                  mongodb_;
+	mongo::DBClientBase                   *mongodb_;
 	std::map<std::string, mongo::GridFS *> mongogrids_;
 
 	// handler functions
