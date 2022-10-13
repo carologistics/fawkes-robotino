@@ -44,7 +44,7 @@ private:
 	void           grow_blobs();
 	void           merge_blobs();
 	void           filter_blobs();
-	Blob *         merge_blob(Blob *first, Blob *second);
+	Blob          *merge_blob(Blob *first, Blob *second);
 	unsigned char *buffer_;
 
 	int               buffer_width_;
