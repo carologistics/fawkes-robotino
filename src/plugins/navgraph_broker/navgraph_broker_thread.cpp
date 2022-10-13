@@ -318,7 +318,7 @@ NavgraphBrokerThread::reserve_edges(
 	constraint_repo.lock();
 
 	fawkes::NavGraphTimedReservationListEdgeConstraint *timed_edge_constraint;
-	const std::vector<fawkes::NavGraphEdge> &           graph_edges = navgraph->edges();
+	const std::vector<fawkes::NavGraphEdge>            &graph_edges = navgraph->edges();
 
 	if (constraint_repo->has_constraint(constraint_name)) {
 		timed_edge_constraint =
@@ -398,7 +398,7 @@ NavgraphBrokerThread::bb_interface_data_changed(fawkes::Interface *interface) th
 }
 
 void
-NavgraphBrokerThread::handle_peer_msg(boost::asio::ip::udp::endpoint &           endpoint,
+NavgraphBrokerThread::handle_peer_msg(boost::asio::ip::udp::endpoint            &endpoint,
                                       uint16_t                                   component_id,
                                       uint16_t                                   msg_type,
                                       std::shared_ptr<google::protobuf::Message> msg)
