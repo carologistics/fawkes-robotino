@@ -78,7 +78,7 @@ public:
 
 	// For BlackBoardInterfaceListener
 	virtual bool bb_interface_message_received(fawkes::Interface *interface,
-	                                           fawkes::Message *  message) throw();
+	                                           fawkes::Message   *message) throw();
 
 	/** Stub to see name in backtrace for easier debugging. @see Thread::run() */
 protected:
@@ -89,13 +89,13 @@ protected:
 	}
 
 private:
-	fawkes::AX12GripperInterface *   __gripper_if;
-	fawkes::LedInterface *           __led_if;
-	fawkes::JointInterface *         __leftjoint_if;
-	fawkes::JointInterface *         __rightjoint_if;
+	fawkes::AX12GripperInterface    *__gripper_if;
+	fawkes::LedInterface            *__led_if;
+	fawkes::JointInterface          *__leftjoint_if;
+	fawkes::JointInterface          *__rightjoint_if;
 	fawkes::DynamixelServoInterface *__servo_if_left;
 	fawkes::DynamixelServoInterface *__servo_if_right;
-	fawkes::JoystickInterface *      joystick_if_;
+	fawkes::JoystickInterface       *joystick_if_;
 
 	/* fawkes::RefPtr<RobotisAX12A> __ax12a; */
 	std::string __gripper_cfg_prefix;
