@@ -136,12 +136,12 @@ private:
 	boost::circular_buffer<lightSignal> *historyBufferCluster3;
 	// std::deque<lightSignal> *historyBufferCluster1;
 
-	firevision::Camera *                 camera;
-	firevision::ScanlineModel *          scanline;
-	firevision::ColorModelLuminance *    colorModel;
-	firevision::ColorModelBlack *        colorModelBlack;
-	firevision::SimpleColorClassifier *  classifierWhite;
-	firevision::SimpleColorClassifier *  classifierBlack;
+	firevision::Camera                  *camera;
+	firevision::ScanlineModel           *scanline;
+	firevision::ColorModelLuminance     *colorModel;
+	firevision::ColorModelBlack         *colorModelBlack;
+	firevision::SimpleColorClassifier   *classifierWhite;
+	firevision::SimpleColorClassifier   *classifierBlack;
 	firevision::SharedMemoryImageBuffer *shmBufferYCbCr;
 	unsigned char *bufferYCbCr; // reference to the buffer of shm_buffer_YCbCr (to
 	                            // use in code)
@@ -166,10 +166,10 @@ private:
 	fawkes::RobotinoLightInterface::LightState signalLightCurrentPicture(firevision::ROI signal);
 	fawkes::RobotinoLightInterface::LightState signalLightWithHistory(int lightHistory,
 	                                                                  int buffersize);
-	std::list<firevision::ROI> *               classifyInRoi(firevision::ROI         searchArea,
+	std::list<firevision::ROI>                *classifyInRoi(firevision::ROI         searchArea,
 	                                                         firevision::Classifier *classifier);
 	bool lightFromHistoryBuffer(boost::circular_buffer<LightFrontThread::lightSignal> *buffer,
-	                            LightFrontThread::lightSignal *                        lighSignal);
+	                            LightFrontThread::lightSignal                         *lighSignal);
 
 	unsigned char *calculatePositionInCamBuffer();
 
@@ -204,13 +204,13 @@ private:
 	bool isLightInViewarea(fawkes::polar_coord_2d_t light);
 	void takePicture(LightFrontThread::lightROIs lightROIs);
 
-	void            processHistoryBuffer(fawkes::RobotinoLightInterface *                       interface,
+	void            processHistoryBuffer(fawkes::RobotinoLightInterface                        *interface,
 	                                     boost::circular_buffer<LightFrontThread::lightSignal> *buffer);
 	firevision::ROI getBiggestRoi(std::list<firevision::ROI> *roiList);
 	void            checkIfROIIsInBuffer(const firevision::ROI &light);
 	void processSignal(fawkes::cart_coord_3d_t lightPosition, bool contiueToPictureProcess);
-	void process_light(fawkes::Position3DInterface *                          position_interface,
-	                   fawkes::RobotinoLightInterface *                       interface,
+	void process_light(fawkes::Position3DInterface                           *position_interface,
+	                   fawkes::RobotinoLightInterface                        *interface,
 	                   boost::circular_buffer<LightFrontThread::lightSignal> *buffer);
 
 protected:
