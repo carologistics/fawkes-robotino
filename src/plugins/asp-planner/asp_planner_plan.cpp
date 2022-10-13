@@ -153,9 +153,9 @@ extractMapFromAnswerSet(const Clingo::SymbolVector &symbols,
 		const bool        begin = name == "begin", end = name == "end";
 		if (begin || end) {
 			// Assumes begin(robot, task, time) and end(robot, task, time).
-			const decltype(auto) args(symbol.arguments());
-			const auto           time = args[2].number();
-			const auto           robot(args[0].string());
+			const auto args = symbol.arguments();
+			const auto time = args[2].number();
+			const auto robot(args[0].string());
 
 			// If not in the map until now it will add a list for the robot.
 			map[robot].emplace_back(args[1].to_string(),

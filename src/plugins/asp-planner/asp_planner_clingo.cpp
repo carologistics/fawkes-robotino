@@ -1341,8 +1341,8 @@ AspPlannerThread::robotFinishedTask(const std::string &robot,
 		return id;
 	};
 
-	const decltype(auto) taskArguments(robotInfo.Doing.TaskSymbol.arguments());
-	const decltype(auto) machine(taskArguments[0].arguments()[1].string());
+	const auto taskArguments = robotInfo.Doing.TaskSymbol.arguments();
+	const auto machine       = taskArguments[0].arguments()[1].string();
 
 	auto getOrder = [&taskArguments](void) {
 		return std::make_pair<int, int>(taskArguments[1].number(), taskArguments[2].number());
