@@ -68,7 +68,7 @@ private:
 	std::shared_ptr<BridgeManager> bridge_manager_;
 
 	fawkes::Logger *logger_;
-	fawkes::Mutex * mutex_;
+	fawkes::Mutex  *mutex_;
 
 	unsigned int m_next_sessionid;
 	bool         finalized_;

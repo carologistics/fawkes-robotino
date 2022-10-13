@@ -50,7 +50,7 @@ using namespace fawkes;
  * @param logger Fawkes logger
  * @param bridge_manager entry point to dispatching requests
  */
-WebSocketServer::WebSocketServer(fawkes::Logger *               logger,
+WebSocketServer::WebSocketServer(fawkes::Logger                *logger,
                                  std::shared_ptr<BridgeManager> bridge_manager)
 : m_next_sessionid(1), finalized_(false)
 {

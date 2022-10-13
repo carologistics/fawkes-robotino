@@ -68,9 +68,9 @@ class RosBridgeProxyProcessor : public BridgeProcessor,
 {
 public:
 	RosBridgeProxyProcessor(std::string            prefix,
-	                        fawkes::Logger *       logger,
+	                        fawkes::Logger        *logger,
 	                        fawkes::Configuration *config,
-	                        fawkes::Clock *        clock);
+	                        fawkes::Clock         *clock);
 
 	virtual ~RosBridgeProxyProcessor();
 
@@ -122,10 +122,10 @@ public:
 private:
 	std::string rosbridge_uri_;
 
-	fawkes::Logger *       logger_;
+	fawkes::Logger        *logger_;
 	fawkes::Configuration *config_;
-	fawkes::Clock *        clock_;
-	fawkes::Mutex *        mutex_;
+	fawkes::Clock         *clock_;
+	fawkes::Mutex         *mutex_;
 
 	std::list<std::shared_ptr<ProxySession>>           peers_;
 	std::list<std::shared_ptr<ProxySession>>::iterator it_peers_;
