@@ -151,8 +151,8 @@ LaserClusterDetector::calculate_cluster_size(const PolarPos &last_peak, const Po
 void
 LaserClusterDetector::calc_average_of_distances(list<PolarPos>::iterator last_peak,
                                                 list<PolarPos>::iterator current,
-                                                float *                  average_distance,
-                                                float *                  variance)
+                                                float                   *average_distance,
+                                                float                   *variance)
 {
 	float sum           = 0;
 	float sum_diffs     = 0;
