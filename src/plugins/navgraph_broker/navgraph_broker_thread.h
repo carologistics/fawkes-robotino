@@ -96,7 +96,7 @@ private: // methods
 	std::vector<std::string>          get_path_from_interface_as_vector();
 	void                              send_msg();
 
-	void handle_peer_msg(boost::asio::ip::udp::endpoint &           endpoint,
+	void handle_peer_msg(boost::asio::ip::udp::endpoint            &endpoint,
 	                     uint16_t                                   component_id,
 	                     uint16_t                                   msg_type,
 	                     std::shared_ptr<google::protobuf::Message> msg);
@@ -112,13 +112,13 @@ private:
 	boost::signals2::connection sig_send_error_conn_;
 
 private:
-	fawkes::NavPathInterface *                                      path_if_;
+	fawkes::NavPathInterface                                       *path_if_;
 	std::vector<std::string>                                        path_;
 	std::queue<std::shared_ptr<navgraph_broker::NavigationMessage>> reservation_messages_;
 	std::string                                                     robotname_;
 
 	navgraph_broker::NavigationMessage *m_;
-	fawkes::Mutex *                     m_mutex_;
+	fawkes::Mutex                      *m_mutex_;
 	int                                 last_message_time_sec_;
 	int                                 last_message_time_nsec_;
 
