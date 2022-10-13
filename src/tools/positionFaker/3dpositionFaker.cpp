@@ -81,7 +81,7 @@ public:
 
 		continuous = false;
 
-		char *             host      = (char *)"localhost";
+		char              *host      = (char *)"localhost";
 		unsigned short int port      = 1910;
 		bool               free_host = argp->parse_hostport("r", &host, &port);
 
@@ -241,11 +241,11 @@ public:
 	}
 
 private:
-	ArgumentParser *     argp;
+	ArgumentParser      *argp;
 	FawkesNetworkClient *c;
-	BlackBoard *         rbb;
+	BlackBoard          *rbb;
 	Position3DInterface *sif, *poseInterface;
-	const char *         prompt;
+	const char          *prompt;
 	bool                 just_connected;
 	bool                 connection_died_recently;
 
