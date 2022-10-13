@@ -88,10 +88,10 @@ struct camera_info
 
 typedef struct
 {
-	firevision::ColorModel *                                       colormodel;
-	firevision::SimpleColorClassifier *                            classifier;
+	firevision::ColorModel                                        *colormodel;
+	firevision::SimpleColorClassifier                             *classifier;
 	std::vector<firevision::ColorModelSimilarity::color_class_t *> color_classes;
-	firevision::ScanlineGrid *                                     scanline_grid;
+	firevision::ScanlineGrid                                      *scanline_grid;
 	std::vector<unsigned int>                                      cfg_ref_col;
 	int                                                            cfg_chroma_thresh;
 	int                                                            cfg_sat_thresh;
@@ -159,13 +159,13 @@ private:
 
 	std::string cfg_frame_;
 
-	firevision::Camera *                 cam_;
+	firevision::Camera                  *cam_;
 	firevision::SharedMemoryImageBuffer *shm_buffer_;
 
 	// interfaces
 	std::vector<fawkes::Position3DInterface *> puck_interfaces_;
 	std::vector<firevision::ROI>               detected_pucks;
-	fawkes::SwitchInterface *                  switchInterface_;
+	fawkes::SwitchInterface                   *switchInterface_;
 
 	unsigned char *buffer_; // reference to the buffer of shm_buffer_YCbCr (to use in code)
 
@@ -188,7 +188,7 @@ private:
 	                                           std::list<firevision::ROI> *rois_all);
 
 	void setup_color_classifier(color_classifier_context_t_ *color_data,
-	                            const char *                 prefix,
+	                            const char                  *prefix,
 	                            firevision::color_t          expected);
 
 	std::list<firevision::ROI> *classifyInRoi(firevision::ROI              searchArea,

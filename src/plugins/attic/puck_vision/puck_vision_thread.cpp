@@ -257,7 +257,7 @@ PuckVisionThread::deleteClassifier(color_classifier_context_t_ *color_data)
 
 void
 PuckVisionThread::setup_color_classifier(color_classifier_context_t_ *color_data,
-                                         const char *                 prefix,
+                                         const char                  *prefix,
                                          firevision::color_t          expected)
 {
 	deleteClassifier(color_data);
@@ -422,7 +422,7 @@ PuckVisionThread::sortPucks(std::vector<puck> *pucks)
 }
 
 void
-PuckVisionThread::calculatePuckPositions(std::vector<puck> *        pucks,
+PuckVisionThread::calculatePuckPositions(std::vector<puck>         *pucks,
                                          std::list<firevision::ROI> pucks_in_view)
 {
 	for (std::list<firevision::ROI>::iterator it = pucks_in_view.begin(); it != pucks_in_view.end();
