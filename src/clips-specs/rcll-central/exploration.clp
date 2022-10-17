@@ -243,7 +243,7 @@
 	(wm-fact (key central agent robot args? r ?r))
 	(LaserLineInterface
 	  (id ?laser-id&:(str-index (str-cat ?r) ?laser-id))
-	  (visibility_history ?vh&:(>= ?vh 1))
+	  (visibility_history ?vh&:(>= ?vh 10))
 	  (time $?timestamp)
 	  (end_point_1 ?e1 ?e2 $?)
 	  (end_point_2 ?e3 ?e4 $?)
@@ -267,7 +267,7 @@
   (wm-fact (key domain fact zone-content args? z ?zn m NONE))
   ?we <- (domain-fact (name zone-content) (param-values ?zn2&:(eq ?zn2 (mirror-name ?zn)) UNKNOWN))
   =>
-  (modify ?we (param-values ?zn NONE))
+  (modify ?we (param-values ?zn2 NONE))
   (printout t "Synced zone: " ?zn2 crlf)
 )
 
@@ -279,7 +279,7 @@
   ?wm <- (domain-fact (name zone-content) (param-values ?zn2 UNKNOWN))
   (test (eq TRUE (zone-is-blocked ?zn ?orientation ?zn2 ?machine)))
   =>
-  (modify ?wm (param-values ?zn NONE))
+  (modify ?wm (param-values ?zn2 NONE))
   (printout t "There is a machine in " ?zn " with orientation " ?orientation  " so block " ?zn2 crlf)
 )
 
@@ -503,4 +503,14 @@
 		(retract ?exp)
 	)
 	(modify ?exp-active (value FALSE))
+)
+
+(defrule exp-remove-selected-exploration-root
+  "Sometimes we may get ground-truth before actually starting the exploration.
+   This can lead to the exploration root getting stuck at selected...
+  "
+  ?g <- (goal (class EXPLORATION-ROOT) (mode SELECTED))
+  (wm-fact (key exploration active) (type BOOL) (value FALSE))
+  =>
+  (modify ?g (mode FINISHED) (outcome COMPLETED))
 )

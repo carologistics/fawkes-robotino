@@ -121,7 +121,7 @@ clips-executive:
       action-mapping:
         enter-field: >
           drive_into_field{team=?(team-color)S,
-                           wait=0.0}
+                           wait=?(r|/robot1/0.0/|/robot2/7.0/|/robot3/14.0/)f}
         explore-zone: explore_zone{zone=?(z)s}
         move-node: goto{place=?(z)s}
         move: goto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}

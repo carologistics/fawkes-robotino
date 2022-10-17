@@ -173,6 +173,16 @@
 
 ; ----------------------- Robot Assignment -------------------------------
 
+(defrule goal-production-assign-robot-to-enter-field
+  (wm-fact (key central agent robot args? r ?robot))
+  (not (wm-fact (key domain fact entered-field args? r ?robot)))
+  (goal (id ?oid) (class ENTER-FIELD)  (sub-type SIMPLE) (mode FORMULATED) (is-executable FALSE))
+  ?gm <- (goal-meta (goal-id ?oid) (assigned-to nil))
+  (not (goal-meta (assigned-to ?robot)))
+  =>
+  (modify ?gm (assigned-to ?robot))
+)
+
 (defrule goal-production-assign-robot-to-simple-goals
 " Before checking SIMPLE goals for their executability, pick a waiting robot
   that should get a new goal assigned to it next. "
@@ -181,10 +191,9 @@
   (goal (id ?oid) (sub-type SIMPLE) (mode FORMULATED) (is-executable FALSE))
   (goal-meta (goal-id ?oid) (assigned-to nil))
   (wm-fact (key central agent robot args? r ?robot))
+  (wm-fact (key domain fact entered-field args? r ?robot))
   (not (goal-meta (assigned-to ?robot)))
   (wm-fact (key central agent robot-waiting args? r ?robot))
-  ; TODO: not a nice condition, problem is a robot may be assigned before another robot flushes its assignments
-  (not (goal (sub-type SIMPLE) (mode SELECTED)))
   =>
   (bind ?longest-waiting 0)
   (bind ?longest-waiting-robot ?robot)
@@ -869,8 +878,7 @@
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key central agent robot args? r ?robot))
   (not (wm-fact (key domain fact entered-field args? r ?robot)))
-  (not (and (goal (id ?some-goal-id) (class ENTER-FIELD))
-            (goal-meta (goal-id ?some-goal-id) (assigned-to ?robot))))
+  (not (goal (id ?some-goal-id) (class ENTER-FIELD) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED)))
   (domain-facts-loaded)
   (wm-fact (key refbox team-color) (value ?team-color))
   =>

@@ -41,43 +41,6 @@
 	)
 )
 
-; ----------------------- Executability Flushing -------------------------------
-
-(defrule goal-production-flush-executability
-" A waiting robot got a new goal, clear executability and robot assignment from other goals. "
-	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
-	(goal (id ?goal-id) (sub-type SIMPLE) (mode SELECTED)
-	      (is-executable TRUE) (type ACHIEVE) (class ~SEND-BEACON))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
-	(goal (id ?o-id) (sub-type SIMPLE) (mode FORMULATED))
-	(goal-meta (goal-id ?o-id) (assigned-to ?robot))
-	=>
-	(delayed-do-for-all-facts ((?g goal))
-		(and (eq ?g:is-executable TRUE) (neq ?g:class SEND-BEACON))
-		(modify ?g (is-executable FALSE))
-	)
-	(if (and (neq ?robot central) (neq ?robot nil))
-		then
-		(delayed-do-for-all-facts ((?g goal))
-			(and (eq ?g:mode FORMULATED) (not (eq ?g:type MAINTAIN))
-			     (any-factp ((?gm goal-meta))
-			                (and (eq ?gm:goal-id ?g:id)
-			                     (eq ?gm:assigned-to ?robot))))
-			(remove-robot-assignment-from-goal-meta ?g)
-		)
-		(do-for-fact ((?waiting wm-fact))
-			(and (wm-key-prefix ?waiting:key (create$ central agent robot-waiting))
-			     (eq (wm-key-arg ?waiting:key r) ?robot))
-			(retract ?waiting)
-		)
-	)
-	; cleaning goal dependencies by flushing grounded-with for formulated goals
-	(delayed-do-for-all-facts ((?da dependency-assignment) (?g goal))
-		(and (eq ?da:goal-id ?g:id) (neq ?da:grounded-with nil) (eq ?g:mode FORMULATED))
-		(modify ?da (grounded-with nil))
-	)
-)
-
 ; ----------------------- Production GOALS -------------------------------
 
 (defrule goal-production-enter-field-executable
@@ -92,7 +55,7 @@
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; (NavGraphGeneratorInterface (final TRUE))
 	(not (wm-fact (key domain fact entered-field
-	               args? r ?robot team-color ?team-color)))
+	               args? r ?robot)))
 	=>
 	(printout t "Goal ENTER-FIELD executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
@@ -223,8 +186,10 @@
 	(wm-fact (key domain fact cs-buffered args? m ?target-mps col ?cap-color))
 	(wm-fact (key domain fact cs-can-perform args? m ?target-mps op MOUNT_CAP))
 	; MPS-Source CEs
-	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
+	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?wp-loc-type))
 	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
+	(not (and (test (eq ?wp-loc-type BS))
+	          (wm-fact (key domain fact wp-at args? m ~?wp side ?))))
 
 	(or (and ; Either the workpiece needs to picked up...
 	         (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
@@ -395,8 +360,10 @@
 	   )
 	)
 	; MPS-Source CEs
-	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
+	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?wp-loc-type))
 	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
+	(not (and (test (eq ?wp-loc-type BS))
+	          (wm-fact (key domain fact wp-at args? m ~?wp side ?))))
 
 	(or (and ; Either the workpiece needs to picked up...
 	         (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
@@ -574,6 +541,8 @@ The workpiece remains in the output of the used ring station after
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	; Robot CEs
 	(wm-fact (key refbox team-color) (value ?team-color))
+	(not (and (wm-fact (key domain fact mps-type args? m ?wp-loc t BS))
+	          (wm-fact (key domain fact wp-at args? m ~?wp side ?))))
 
 	; MPS-RS CEs
 	(wm-fact (key domain fact mps-type args?       m ?target-mps t RS))

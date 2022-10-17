@@ -22,6 +22,7 @@
   ?*COMMON-TIMEOUT-DURATION* = 30
   ; The waiting timeout duration needs to be smaller than the common one above!
   ?*WAITING-TIMEOUT-DURATION* = 25
+  ?*RUNNING-TIMEOUT-DURATION* = 120
   ?*MPS-DOWN-TIMEOUT-DURATION* = 120
   ?*HOLDING-MONITORING* = 60
 )
@@ -62,7 +63,7 @@
 	(declare (salience ?*MONITORING-SALIENCE*))
 	(plan-action (plan-id ?plan-id) (goal-id ?goal-id)
 	    (id ?id)
-	    (state ?status&~FORMULATED&~RUNNING&~FAILED&~FINAL)
+	    (state ?status&~FORMULATED&~FAILED&~FINAL)
 	    (action-name ?action-name)
 	    (param-values $?param-values))
 	(plan (id ?plan-id) (goal-id ?goal-id))
@@ -75,6 +76,10 @@
 	(if (eq ?status WAITING)
 	 then
 		(bind ?timeout-duration ?*WAITING-TIMEOUT-DURATION*)
+	)
+	(if (eq ?status RUNNING)
+	 then
+		(bind ?timeout-duration ?*RUNNING-TIMEOUT-DURATION*)
 	)
 	(assert (action-timer (plan-id ?plan-id)
 	            (action-id ?id)
@@ -116,9 +121,10 @@
   reason that this action got stuck. Print a notification, set state to failed and retract the timer.
 "
   ?p <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
-	         (id ?id) (state ?status)
-	         (action-name ?action-name)
-	         (param-values $?param-values)
+           (id ?id) (state ?status)
+           (skiller ?skiller)
+           (action-name ?action-name)
+           (param-values $?param-values)
            (precondition ?grounding-id))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
@@ -130,7 +136,15 @@
             (timeout-duration ?timeout&:(timeout ?now ?st ?timeout)))
   =>
   (printout t "Action "  ?action-name " timed out after " ?status  crlf)
-  (modify ?p (state FAILED) (error-msg "Unsatisfied precondition"))
+  (if (eq ?status RUNNING)
+   then
+    (printout t "   Aborting action " ?action-name " on interface" ?skiller crlf)
+    (bind ?m (blackboard-create-msg (str-cat "SkillerInterface::" ?skiller) "StopExecMessage"))
+    (blackboard-send-msg ?m)
+    (modify ?p (state FAILED) (error-msg "Stuck on RUNNING"))
+   else
+    (modify ?p (state FAILED) (error-msg "Unsatisfied precondition"))
+  )
   (retract ?pt)
 )
 
@@ -443,11 +457,11 @@
   (modify ?pa (param-values ?robot ?wp ?rs ?rs-num ?rs-num-after))
 )
 
-(defrule execution-monitoring-reset-action-timer-machine-down
+(defrule execution-monitoring-reset-abort-timer-machine-down
   "Restart timer for prepare actions if the machine is down"
   (time $?now)
   ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (id ?id)
-                      (state PENDING|RUNNING)
+                      (state RUNNING)
                       (action-name prepare-bs|
                                    prepare-cs|
                                    prepare-ds|
@@ -468,6 +482,52 @@
   =>
   (modify ?at (time ?now))
   (printout t "Action prepare-" ?mps " timer extended due to down machine" crlf)
+)
+
+(defrule execution-monitoring-reset-action-timer-machine-down
+  "Restart timer for prepare actions if the machine is down"
+  (time $?now)
+  ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (id ?id)
+                      (state PENDING|RUNNING)
+                      (action-name prepare-bs|
+                                   prepare-cs|
+                                   prepare-ds|
+                                   prepare-rs|
+                                   prepare-ss|
+                                   cs-mount-cap|
+                                   cs-buffer-cap|
+                                   rs-mount-ring1|
+                                   rs-mount-ring2|
+                                   rs-mount-ring3)
+                      (param-names $?param-names)
+                      (param-values $?param-values))
+  ?at <- (action-timer (plan-id ?plan-id) (status ?status)
+            (action-id ?id)
+            (start-time $?st)
+            (timeout-duration ?timeout&:(timeout ?now ?st (- ?timeout ?*ABORT-PREPARE-DOWN-RESET*))))
+  (domain-obj-is-of-type ?mps&:(eq ?mps (plan-action-arg m
+                                                         ?param-names
+                                                         ?param-values))
+                         mps)
+  (wm-fact (key domain fact mps-state args? m ?mps s DOWN))
+  =>
+  (modify ?at (timeout-duration (* ?timeout 2)))
+  (printout t "Action prepare-" ?mps " timer extended due to down machine" crlf)
+)
+
+(defrule execution-monitoring-fix-rs-mount-counter
+  ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (id ?id)
+                      (state PENDING) (executable FALSE)
+                      (action-name rs-mount-ring1|
+                                   rs-mount-ring2|
+                                   rs-mount-ring3)
+                      (param-values ?rs $?o-args ?rs-before ?rs-after ?rs-req))
+	(wm-fact (key domain fact rs-filled-with args? m ?rs n ?rs-new&:(neq ?rs-new ?rs-before)))
+	(wm-fact (key domain fact rs-sub args? minuend ?rs-new
+                                         subtrahend ?rs-req
+                                         difference ?bases-remain))
+  =>
+  (modify ?pa (param-values ?rs $?o-args ?rs-new ?bases-remain ?rs-req))
 )
 
 ; ----------------------- RESTORE FROM BACKUP -------------------------------

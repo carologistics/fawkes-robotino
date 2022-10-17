@@ -378,6 +378,16 @@
   (modify ?selection (values (append$ ?values ?goal-id)))
 )
 
+(defrule goal-reasoner-remove-non-executable-from-list
+  (declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+  (goal (id ?id) (is-executable FALSE))
+  ?selection <- (wm-fact (key goal selection criterion args? t ?) (values $?values&:(member$ ?id ?values)))
+  =>
+  (bind ?index (member$ ?id ?values))
+  (modify ?selection (values (delete$ ?values ?index ?index)))
+)
+
+
 (defrule goal-reasoner-apply-selection-across-types
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
   (wm-fact (key goal selection criterion args? t ?) (values ?some-goal-id $?))
@@ -400,7 +410,34 @@
       (bind ?highest-prio-goal-fact ?g)
     )
   )
+  (bind ?robot nil)
+  ; get assigned robot
+  (do-for-fact ((?highest-prio-gm goal-meta))
+               (eq ?highest-prio-gm:goal-id (fact-slot-value ?highest-prio-goal-fact id))
+                 (bind ?robot (fact-slot-value ?highest-prio-gm assigned-to))
+  )
   (modify ?highest-prio-goal-fact (mode SELECTED))
+  ; flush executability
+	(delayed-do-for-all-facts ((?g goal))
+		(and (eq ?g:is-executable TRUE) (neq ?g:class SEND-BEACON))
+		(modify ?g (is-executable FALSE))
+	)
+  ; if it is actually a robot, remove all other assignments and the waiting status
+	(if (and (neq ?robot central) (neq ?robot nil))
+		then
+		(delayed-do-for-all-facts ((?g goal))
+			(and (eq ?g:mode FORMULATED) (not (eq ?g:type MAINTAIN))
+			     (any-factp ((?gm goal-meta))
+			                (and (eq ?gm:goal-id ?g:id)
+			                     (eq ?gm:assigned-to ?robot))))
+			(remove-robot-assignment-from-goal-meta ?g)
+		)
+		(do-for-fact ((?waiting wm-fact))
+			(and (wm-key-prefix ?waiting:key (create$ central agent robot-waiting))
+			     (eq (wm-key-arg ?waiting:key r) ?robot))
+			(retract ?waiting)
+		)
+	)
 )
 
 (defrule goal-reasoner-balance-payment-goals
