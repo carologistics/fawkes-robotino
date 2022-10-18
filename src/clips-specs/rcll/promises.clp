@@ -16,3 +16,9 @@
     )
     (assert (promise-time (usecs ?now)))
 )
+(defrule promise-meta-retract
+  ?pm <- (wm-fact (key promise meta args? g ?goal-id $?))
+  (not (goal (id ?goal-id)))
+  =>
+  (retract ?pm)
+)

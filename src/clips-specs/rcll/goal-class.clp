@@ -96,6 +96,18 @@
 ;     )
 ; )
 
+
+(deffunction promise-meta-assert (?goal-id ?promised-from-goal)
+  (foreach ?promiser-goal ?promised-from-goal
+      (assert
+          (wm-fact (key promise meta args? g ?goal-id
+                                            p (goal-agent-separate-goal (str-cat ?promiser-goal))
+                                            a (goal-agent-separate-agent (str-cat ?promiser-goal))))
+      )
+  )
+)
+
+
 (defrule goal-class-create-clear-cs-from-capless-carrier
     "Assert a goal class for GET-AND-DISCARD and FILL-RS goals that holds the precondition for formulation
     in case a CC blocks a CS."
@@ -1116,6 +1128,9 @@
         ;location-unlock -> dc
         ;go-wait -> dc
     )
+    (if (eq ?promised TRUE) then
+        (promise-meta-assert ?goal-id ?promised-from-goals)
+    )
 )
 
 (defrule goal-class-assert-goal-get-and-discard
@@ -1210,6 +1225,9 @@
         (domain-promise (name wp-usable) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 49 ?game-time)) (negated TRUE))
         (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE))
     )
+    (if (eq ?promised TRUE) then
+        (promise-meta-assert ?goal-id ?promised-from-goals)
+    )
 )
 
 (defrule goal-class-assert-goal-discard
@@ -1257,6 +1275,9 @@
         (domain-promise (name wp-unused) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 8 ?game-time)) (negated FALSE))
         (domain-promise (name wp-usable) (param-values ?wp) (promising-goal ?goal-id) (valid-at (+ 8 ?game-time)) (negated TRUE))
         (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE))
+    )
+    (if (eq ?promised TRUE) then
+        (promise-meta-assert ?goal-id ?promised-from-goals)
     )
 )
 
@@ -1348,6 +1369,9 @@
         ;location-unlock -> dc
         ;go-wait -> dc
     )
+    (if (eq ?promised TRUE) then
+        (promise-meta-assert ?goal-id ?promised-from-goals)
+    )
 )
 
 (defrule goal-class-assert-goal-get-from-shelf-and-fill-rs
@@ -1417,6 +1441,9 @@
         ;location-unlock -> dc
         ;go-wait -> dc
     )
+    (if (eq ?promised TRUE) then
+        (promise-meta-assert ?goal-id ?promised-from-goals)
+    )
 )
 
 (defrule goal-class-assert-goal-fill-rs
@@ -1484,6 +1511,9 @@
         (domain-promise (name RESOURCES) (param-values ?resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE))
         ;unlocks -> dc
         ;go-wait -> dc
+    )
+    (if (eq ?promised TRUE) then
+        (promise-meta-assert ?goal-id ?promised-from-goals)
     )
 )
 
@@ -1591,6 +1621,9 @@
             ;(domain-promise (name cs-prepared-for) (param-values ?cs RETRIEVE_CAP) (promising-goal ?goal-id) (valid-at (+ 54 21 ?game-time)) (negated TRUE) (do-not-invalidate FALSE))
             (domain-promise (name cs-buffered) (param-values ?cs ?cap-color) (promising-goal ?goal-id) (valid-at (+ 54 21 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
         )
+    )
+    (if (eq ?promised TRUE) then
+        (promise-meta-assert ?goal-id ?promised-from-goals)
     )
 )
 
@@ -1737,6 +1770,9 @@
             (domain-promise (name rs-filled-with) (param-values ?rs ?bases-remain) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 25 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
         )
     )
+    (if (eq ?promised TRUE) then
+        (promise-meta-assert ?goal-id ?promised-from-goals)
+    )
 )
 
 (defrule goal-class-assert-goal-mount-next-ring
@@ -1861,6 +1897,9 @@
             (domain-promise (name rs-filled-with) (param-values ?rs ?bases-remain) (promising-goal ?goal-id) (valid-at (+ 21 ?offset 25 ?game-time)) (negated FALSE) (do-not-invalidate FALSE))
         )
     )
+    (if (eq ?promised TRUE) then
+        (promise-meta-assert ?goal-id ?promised-from-goals)
+    )
 )
 
 (defrule goal-class-assert-goal-deliver
@@ -1942,6 +1981,9 @@
         ;unlocks -> dc
         ;go-wait -> dc
     ;)
+    (if (eq ?promised TRUE) then
+        (promise-meta-assert ?goal-id ?promised-from-goals)
+    )
 )
 
 (defrule goal-class-assert-goal-produce-c0
@@ -2072,6 +2114,9 @@
         )
     )
     (assert (domain-promise (name order-deliverable) (param-values ?order) (promising-goal ?goal-id) (valid-at ?begin) (negated FALSE) (do-not-invalidate TRUE)))
+    (if (eq ?promised TRUE) then
+        (promise-meta-assert ?goal-id ?promised-from-goals)
+    )
 )
 
 (defrule goal-class-assert-goal-produce-cx
@@ -2182,6 +2227,8 @@
         )
     )
     (assert (domain-promise (name order-deliverable) (param-values ?order) (promising-goal ?goal-id) (valid-at ?begin) (negated FALSE) (do-not-invalidate TRUE)))
+    (if (eq ?promised TRUE) then
+        (promise-meta-assert ?goal-id ?promised-from-goals)
 )
 
 (defrule goal-class-assert-goal-pickup-wp
