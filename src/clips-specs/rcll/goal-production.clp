@@ -124,6 +124,7 @@
   =>
   (assert (goal (id (sym-cat SPAWN-WP- (gensym*))) (sub-type SIMPLE)
                 (class SPAWN-WP) (parent ?maintain-id)
+                (meta promised FALSE)
                 (params robot ?robot)))
 )
 
@@ -160,6 +161,7 @@
   =>
   (assert (goal (id (sym-cat SPAWN-SS-C0- (gensym*))) (sub-type SIMPLE)
                 (class SPAWN-SS-C0) (parent ?maintain-id)
+                (meta promised FALSE)
                 (params robot ?robot ss ?ss base ?base-color cap ?other-cap-color)))
 )
 
@@ -195,6 +197,7 @@
   =>
   (assert (goal (id (sym-cat REFILL-SHELF- (gensym*)))
                 (class REFILL-SHELF) (sub-type SIMPLE)
+                (meta promised FALSE)
                 (parent ?maintain-id) (verbosity QUIET)
                 (params mps ?mps)))
 )
@@ -265,6 +268,7 @@
                (parent ?production-id)
                (params r ?self
                        point ?waitpoint)
+               (meta promised FALSE)
                (required-resources ?waitpoint)
   ))
 )
@@ -291,6 +295,7 @@
                 (params r ?self
                         point ?waitpoint
                 )
+                (meta promised FALSE)
                 (required-resources ?waitpoint)
   ))
 )
@@ -308,7 +313,7 @@
   ; (not (wm-fact (key domain fact entered-field args? r ?robot)))
   =>
   (printout t "Goal " ENTER-FIELD " formulated" crlf)
-  (assert (goal (id (sym-cat ENTER-FIELD- (gensym*)))
+  (assert (goal (id (sym-cat ENTER-FIELD- (gensym*))) (meta promised FALSE)
                 (class ENTER-FIELD) (sub-type SIMPLE)))
 )
 
@@ -358,6 +363,7 @@
                 (params r ?self
                         m ?mps
                 )
+                (meta promised FALSE)
                 (required-resources ?mps)
   ))
 )
@@ -385,6 +391,7 @@
                 (parent ?mps-handling-id)
                 (params m ?mps
                 )
+                (meta promised FALSE)
                 (required-resources ?resources)
   ))
   (modify ?pg (mode EXPANDED))
@@ -415,6 +422,7 @@
                 (parent ?mps-handling-id)
                 (params m ?mps
                 )
+                (meta promised FALSE)
                 (required-resources ?resources)
   ))
   (modify ?pg (mode EXPANDED))
@@ -445,6 +453,7 @@
                 (priority ?*PRIORITY-RESET*)
                 (parent ?mps-handling-id)
                 (params m ?mps ord ?order)
+                (meta promised FALSE)
                 (required-resources ?resources)
   ))
   (modify ?pg (mode EXPANDED))
