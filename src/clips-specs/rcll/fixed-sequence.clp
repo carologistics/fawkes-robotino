@@ -176,6 +176,8 @@
     (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
     (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?shelf-spot))
     =>
+    (bind ?locked-resources (create$ ))
+    (bind ?loc-locked-resources (create$ ))
    (assert
         (plan (id FILL-CAP-PLAN) (goal-id ?goal-id))
         (plan-action (id 1) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
@@ -228,6 +230,7 @@
                      (action-name unlock)
                      (param-values ?mps))
       )
+      (bind ?locked-resources (insert$ ?locked-resources 1 ?mps))
   )
   (assert
       (plan-action (id (+ ?offset 6)) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
@@ -238,7 +241,10 @@
                    (param-names r from from-side to)
                    (param-values ?robot ?mps INPUT (wait-pos ?mps INPUT)))
   )
+  (bind ?loc-locked-resources (insert$ ?loc-locked-resources 1 (create$ ?mps INPUT)))
   (modify ?g (mode EXPANDED))
+  (assert (domain-promise (name LOCK-RESOURCES) (param-values ?locked-resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE)))
+  (assert (domain-promise (name LOCATION-LOCK-RESOURCES) (param-values ?loc-locked-resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE)))
 )
 
 (defrule goal-remove-workpiece-from-mps
@@ -334,6 +340,8 @@
              ))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   =>
+  (bind ?locked-resources (create$ ))
+  (bind ?loc-locked-resources (create$ ))
   (bind ?offset 0)
   (bind ?plan-id GET-AND-DISCARD-PLAN)
   (assert
@@ -373,6 +381,8 @@
               (action-name go-wait)
               (param-names r from from-side to)
               (param-values ?robot ?wp-loc ?wp-side (wait-pos ?wp-loc ?wp-side))))
+      (bind ?locked-resources (insert$ ?locked-resources 1 ?wp-loc))
+      (bind ?loc-locked-resources (insert$ ?loc-locked-resources 1 (create$ ?wp-loc ?wp-side)))
   )
   (assert
     (plan-action (id (+ ?offset 1)) (plan-id ?plan-id) (goal-id ?goal-id)
@@ -381,6 +391,8 @@
           (param-values ?robot ?wp))
   )
   (modify ?g (mode EXPANDED))
+  (assert (domain-promise (name LOCK-RESOURCES) (param-values ?locked-resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE)))
+  (assert (domain-promise (name LOCATION-LOCK-RESOURCES) (param-values ?loc-locked-resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE)))
 )
 
 (defrule goal-expander-get-shelf-and-fill-rs
@@ -398,6 +410,8 @@
        )
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   =>
+  (bind ?locked-resources (create$ ))
+  (bind ?loc-locked-resources (create$ ))
   (bind ?offset 1)
   (bind ?plan-id (sym-cat ?class -PLAN))
   (assert
@@ -436,6 +450,7 @@
               (action-name go-wait)
               (param-names r from from-side to)
               (param-values ?robot ?cs INPUT (wait-pos ?rs INPUT))))
+        (bind ?loc-locked-resources (insert$ ?loc-locked-resources 1 (create$ ?cs INPUT)))
      else
       (assert
         (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
@@ -464,7 +479,10 @@
         (param-names r from from-side to)
         (param-values ?robot ?rs INPUT (wait-pos ?rs INPUT)))
   )
+  (bind ?loc-locked-resources (insert$ ?loc-locked-resources 1 (create$ ?rs INPUT)))
   (modify ?g (mode EXPANDED))
+  (assert (domain-promise (name LOCK-RESOURCES) (param-values ?locked-resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE)))
+  (assert (domain-promise (name LOCATION-LOCK-RESOURCES) (param-values ?loc-locked-resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE)))
 )
 
 (defrule goal-expander-fill-rs
@@ -477,9 +495,13 @@
                       wp ?wp
                       rs-before ?rs-before
                       rs-after ?rs-after
-             ))
+             )
+             (meta $? promised ?promised $?)
+        )
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   =>
+  (bind ?locked-resources (create$ ))
+  (bind ?loc-locked-resources (create$ ))
   (bind ?plan-id (sym-cat ?class -PLAN))
   (assert
     (plan (id ?plan-id) (goal-id ?goal-id)))
@@ -491,16 +513,26 @@
                       (eq (wm-key-arg ?holding:key wp) ?wp))))
     then
       (do-for-fact ((?wp-at wm-fact))
-                 (and (wm-key-prefix ?wp-at:key (create$ domain fact wp-at))
-                      (eq (wm-key-arg ?wp-at:key wp) ?wp))
+                 (or (and (wm-key-prefix ?wp-at:key (create$ domain fact wp-at))
+                          (eq (wm-key-arg ?wp-at:key wp) ?wp))
+                     (and (eq ?promised TRUE)
+                          (wm-key-prefix ?wp-at:key (create$ domain promise wp-at))
+                          (eq (nth$ 4 ?wp-at:key) ?wp))
+                 )
       (bind ?offset 8)
-      (bind ?wp-loc (wm-key-arg ?wp-at:key m))
+      (bind ?wp-loc nil)
       (bind ?wp-side OUTPUT)
-      (if (any-factp ((?p domain-fact)) (and (eq ?p:name mps-type)
-                                             (member$ BS ?p:param-values)
-                                             (member$ ?wp-loc ?p:param-values))
-          ) then
-            (bind ?wp-side (wm-key-arg ?wp-at:key side))
+      (if (eq ?promised TRUE) then
+            (bind ?wp-loc (nth$ 5 ?wp-at:key))
+            (bind ?wp-side (nth$ 6 ?wp-at:key))
+      else
+            (bind ?wp-loc (wm-key-arg ?wp-at:key m))
+            (if (any-factp ((?p domain-fact)) (and (eq ?p:name mps-type)
+                                                (member$ BS ?p:param-values)
+                                                (member$ ?wp-loc ?p:param-values))
+            ) then
+                  (bind ?wp-side (wm-key-arg ?wp-at:key side))
+            )
       )
       (assert
         (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
@@ -531,6 +563,8 @@
               (action-name go-wait)
               (param-names r from from-side to)
               (param-values ?robot ?wp-loc ?wp-side (wait-pos ?mps INPUT))))
+        (bind ?locked-resources (insert$ ?locked-resources 1 ?wp-loc))
+        (bind ?loc-locked-resources (insert$ ?loc-locked-resources 1 (create$ ?wp-loc ?wp-side)))
       )
      else
       (assert
@@ -560,7 +594,10 @@
         (param-names r from from-side to)
         (param-values ?robot ?mps INPUT (wait-pos ?mps INPUT)))
   )
+  (bind ?loc-locked-resources (insert$ ?loc-locked-resources 1 (create$ ?mps INPUT)))
   (modify ?g (mode EXPANDED))
+  (assert (domain-promise (name LOCK-RESOURCES) (param-values ?locked-resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE)))
+  (assert (domain-promise (name LOCATION-LOCK-RESOURCES) (param-values ?loc-locked-resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE)))
 )
 
 
@@ -579,6 +616,8 @@
        ))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
+ (bind ?locked-resources (create$ ))
+ (bind ?loc-locked-resources (create$ ))
  (assert
   (plan (id GET-BASE-AND-FILL-RS-PLAN) (goal-id ?goal-id))
   (plan-action (id 1) (plan-id GET-BASE-AND-FILL-RS-PLAN) (goal-id ?goal-id)
@@ -635,7 +674,12 @@
         (param-values ?robot ?rs INPUT (wait-pos ?rs INPUT)))
 
  )
+(bind ?loc-locked-resources (insert$ ?loc-locked-resources 1 (create$ ?bs ?bs-side)))
+(bind ?loc-locked-resources (insert$ ?loc-locked-resources 1 (create$ ?rs INPUT)))
+ (bind ?locked-resources (insert$ ?locked-resources 1 ?bs))
  (modify ?g (mode EXPANDED))
+ (assert (domain-promise (name LOCK-RESOURCES) (param-values ?locked-resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE)))
+ (assert (domain-promise (name LOCATION-LOCK-RESOURCES) (param-values ?loc-locked-resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE)))
 )
 
 
@@ -650,6 +694,8 @@
        ))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   =>
+ (bind ?locked-resources (create$ ))
+ (bind ?loc-locked-resources (create$ ))
  (assert
     (plan (id GET-SHELF-TO-FILL-RS-PLAN) (goal-id ?goal-id))
     (plan-action (id 1) (plan-id GET-SHELF-TO-FILL-RS-PLAN) (goal-id ?goal-id)
@@ -675,7 +721,10 @@
           (param-names r from from-side to)
           (param-values ?robot ?cs INPUT (wait-pos ?cs INPUT)))
   )
+  (bind ?loc-locked-resources (insert$ ?loc-locked-resources 1 (create$ ?cs INPUT)))
   (modify ?g (mode EXPANDED))
+  (assert (domain-promise (name LOCK-RESOURCES) (param-values ?locked-resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE)))
+  (assert (domain-promise (name LOCATION-LOCK-RESOURCES) (param-values ?loc-locked-resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE)))
 )
 
 
@@ -694,6 +743,8 @@
                                               (meta promised ?promised))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
+  (bind ?locked-resources (create$ ))
+  (bind ?loc-locked-resources (create$ ))
   (bind ?offset 1)
   (if (not (any-factp ((?holding wm-fact))
                  (and (wm-key-prefix ?holding:key (create$ domain fact holding))
@@ -736,6 +787,8 @@
               (action-name go-wait)
               (param-names r from from-side to)
               (param-values ?robot ?bs ?bs-side (wait-pos ?mps INPUT))))
+        (bind ?locked-resources (insert$ ?locked-resources 1 ?bs))
+        (bind ?loc-locked-resources (insert$ ?loc-locked-resources 1 (create$ ?bs ?bs-side)))
     else
       (assert
         (plan-action (id 1) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
@@ -787,6 +840,7 @@
                 (action-name unlock)
                 (param-values ?mps))
       )
+      (bind ?locked-resources (insert$ ?locked-resources 1 ?mps))
       (bind ?offset (+ ?offset 4))
   )
   (assert
@@ -798,7 +852,10 @@
         (param-names r from from-side to)
         (param-values ?robot ?mps INPUT (wait-pos ?mps INPUT)))
  )
+ (bind ?loc-locked-resources (insert$ ?loc-locked-resources 1 (create$ ?mps INPUT)))
  (modify ?g (mode EXPANDED))
+ (assert (domain-promise (name LOCK-RESOURCES) (param-values ?locked-resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE)))
+ (assert (domain-promise (name LOCATION-LOCK-RESOURCES) (param-values ?loc-locked-resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE)))
 )
 
 (defrule goal-mount-first-ring
@@ -820,6 +877,8 @@
              (meta promised ?promised))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
+  (bind ?locked-resources (create$ ))
+  (bind ?loc-locked-resources (create$ ))
   (bind ?offset 1)
   (bind ?mount-ring-param-values ?mps ?spawned-wp ?ring-color ?rs-before ?rs-after ?rs-req)
   (if (not (any-factp ((?holding wm-fact))
@@ -864,6 +923,8 @@
               (action-name go-wait)
               (param-names r from from-side to)
               (param-values ?robot ?bs ?bs-side (wait-pos ?mps INPUT))))
+        (bind ?locked-resources (insert$ ?locked-resources 1 ?bs))
+        (bind ?loc-locked-resources (insert$ ?loc-locked-resources 1 (create$ ?bs ?bs-side)))
     else
       (assert
         (plan-action (id 1) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id)
@@ -885,6 +946,7 @@
         (param-names r wp m)
         (param-values ?robot ?spawned-wp ?mps))
   )
+ (bind ?loc-locked-resources (insert$ ?loc-locked-resources 1 (create$ ?mps INPUT)))
   (if (or (any-factp ((?at-output wm-fact))
                  (and (wm-key-prefix ?at-output:key (create$ domain fact wp-at))
                       (eq (wm-key-arg ?at-output:key m) ?mps)
@@ -917,6 +979,7 @@
                (action-name unlock)
                (param-values ?mps))
   )
+  (bind ?locked-resources (insert$ ?locked-resources 1 ?mps))
   (bind ?offset (+ ?offset 4))
   )
   (assert
@@ -929,6 +992,8 @@
         (param-values ?robot ?mps INPUT (wait-pos ?mps INPUT)))
  )
  (modify ?g (mode EXPANDED))
+ (assert (domain-promise (name LOCK-RESOURCES) (param-values ?locked-resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE)))
+ (assert (domain-promise (name LOCATION-LOCK-RESOURCES) (param-values ?loc-locked-resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE)))
 )
 
 
@@ -954,6 +1019,8 @@
              (meta promised ?promised))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
+  (bind ?locked-resources (create$ ))
+  (bind ?loc-locked-resources (create$ ))
   (bind ?offset 1)
   (bind ?mount-ring-action-name (sym-cat rs-mount-ring (sym-to-int ?ring-pos)))
   (switch (sym-to-int ?ring-pos)
@@ -994,6 +1061,7 @@
             (action-name go-wait)
             (param-names r from from-side to)
             (param-values ?robot ?prev-rs ?prev-rs-side (wait-pos ?rs INPUT))))
+      (bind ?loc-locked-resources (insert$ ?loc-locked-resources 1 (create$ ?prev-rs ?prev-rs-side)))
     else
       (assert
         (plan-action (id 1) (plan-id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id)
@@ -1046,6 +1114,7 @@
                (action-name unlock)
                (param-values ?rs))
   )
+  (bind ?locked-resources (insert$ ?locked-resources 1 ?rs))
   (bind ?offset (+ ?offset 4))
   )
   (assert
@@ -1057,7 +1126,10 @@
             (param-names r from from-side to)
             (param-values ?robot ?rs INPUT (wait-pos ?rs INPUT)))
      )
+    (bind ?loc-locked-resources (insert$ ?loc-locked-resources 1 (create$ ?rs INPUT)))
     (modify ?g (mode EXPANDED))
+    (assert (domain-promise (name LOCK-RESOURCES) (param-values ?locked-resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE)))
+    (assert (domain-promise (name LOCATION-LOCK-RESOURCES) (param-values ?loc-locked-resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE)))
 )
 
 
@@ -1074,6 +1146,8 @@
                                               (meta promised ?promised))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
+  (bind ?locked-resources (create$ ))
+  (bind ?loc-locked-resources (create$ ))
   (bind ?offset 1)
   (if (not (any-factp ((?holding wm-fact))
                  (and (wm-key-prefix ?holding:key (create$ domain fact holding))
@@ -1110,6 +1184,8 @@
               (action-name go-wait)
               (param-names r from from-side to)
               (param-values ?robot ?rs OUTPUT (wait-pos ?mps INPUT))))
+      (bind ?locked-resources (insert$ ?locked-resources 1 ?rs))
+      (bind ?loc-locked-resources (insert$ ?loc-locked-resources 1 (create$ ?rs OUTPUT)))
     else
       (assert
         (plan-action (id 1) (plan-id PRODUCE-CX-PLAN) (goal-id ?goal-id)
@@ -1160,6 +1236,7 @@
                   (action-name unlock)
                   (param-values ?mps))
   )
+  (bind ?locked-resources (insert$ ?locked-resources 1 ?mps))
   (bind ?offset (+ ?offset 4))
   )
   (assert
@@ -1171,7 +1248,10 @@
           (param-names r from from-side to)
           (param-values ?robot ?mps INPUT (wait-pos ?mps INPUT)))
    )
+   (bind ?loc-locked-resources (insert$ ?loc-locked-resources 1 (create$ ?mps INPUT)))
   (modify ?g (mode EXPANDED))
+  (assert (domain-promise (name LOCK-RESOURCES) (param-values ?locked-resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE)))
+  (assert (domain-promise (name LOCATION-LOCK-RESOURCES) (param-values ?loc-locked-resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE)))
 )
 
 
@@ -1229,6 +1309,8 @@
  (wm-fact (key domain fact order-cap-color args? ord ?ord col ?cap-color))
  (wm-fact (key domain fact order-gate args? ord ?ord gate ?gate))
  =>
+  (bind ?locked-resources (create$ ))
+  (bind ?loc-locked-resources (create$ ))
   (bind ?offset 1)
  (bind ?param-values (create$ ?ord ?wp ?ds ?gate ?base-color ?cap-color))
  (switch ?complexity
@@ -1272,6 +1354,8 @@
               (action-name go-wait)
               (param-names r from from-side to)
               (param-values ?robot ?mps OUTPUT (wait-pos ?ds INPUT))))
+        (bind ?locked-resources (insert$ ?locked-resources 1 ?mps))
+        (bind ?loc-locked-resources (insert$ ?loc-locked-resources 1 (create$ ?mps OUTPUT)))
     else
       (assert
         (plan-action (id 1) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
@@ -1301,6 +1385,7 @@
                (action-name (sym-cat fulfill-order- (lowcase ?complexity)))
                (param-values ?param-values))
 )
+(bind ?locked-resources (insert$ ?locked-resources 1 ?ds))
 
  (assert
    (plan-action (id (+ ?offset 7)) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
@@ -1313,7 +1398,10 @@
         (param-names r from from-side to)
         (param-values ?robot ?ds INPUT (wait-pos ?ds INPUT)))
  )
+ (bind ?loc-locked-resources (insert$ ?loc-locked-resources 1 (create$ ?ds INPUT)))
  (modify ?g (mode EXPANDED))
+ (assert (domain-promise (name LOCK-RESOURCES) (param-values ?locked-resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE)))
+ (assert (domain-promise (name LOCATION-LOCK-RESOURCES) (param-values ?loc-locked-resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE)))
 )
 
 (defrule goal-expander-wait-mps-process
@@ -1357,6 +1445,8 @@
   =>
   (bind ?prepare-param-values (values-from-name-value-list ?prepare-params))
   (bind ?process-param-values (values-from-name-value-list ?process-params))
+  (bind ?locked-resources (create$ ))
+  (bind ?loc-locked-resources (create$ ))
 
   (bind ?success TRUE)
   ;Special case: if process is a ring mount, we have to get the current number of rings stored
@@ -1402,12 +1492,15 @@
             (action-name unlock)
             (param-values ?mps))
     )
+    (bind ?locked-resources (insert$ ?locked-resources 1 ?mps))
     (modify ?g (mode EXPANDED))
   else
     (retract ?pre ?pro)
     (printout error "Tried to expand Process RS goal on changed fact" crlf)
     (modify ?g (mode RETRACTED) (outcome REJECTED))
   )
+  (assert (domain-promise (name LOCK-RESOURCES) (param-values ?locked-resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE)))
+  (assert (domain-promise (name LOCATION-LOCK-RESOURCES) (param-values ?loc-locked-resources) (promising-goal ?goal-id) (valid-at ?*PROMISES-MAX-FUTURE*) (negated FALSE)))
 )
 
 (defrule goal-expander-pickup-wp

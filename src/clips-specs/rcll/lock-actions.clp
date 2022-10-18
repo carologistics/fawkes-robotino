@@ -59,6 +59,31 @@
     )
   )
   (time $?now)
+  (or
+    (goal (id ?goal-id) (meta $? promised FALSE $?))
+    (and
+      (test (eq ?action lock))
+      (goal (id ?goal-id) (meta $? promised TRUE $?))
+      (not
+        (and
+          (wm-fact (key promise meta args? g ?goal-id p ?promising-goal a ?promising-agent))
+          (domain-promise (name LOCK-RESOURCES) (param-values $? ?resource $?) (promising-goal ?promising-goal) (promising-agent ?promising-agent))
+          (test (eq ?resource (plan-action-arg name ?param-names ?param-values)))
+        )
+      )
+    )
+    (and
+      (test (eq ?action location-lock))
+      (goal (id ?goal-id) (meta $? promised TRUE $?))
+      (not
+        (and
+          (wm-fact (key promise meta args? g ?goal-id p ?promising-goal a ?promising-agent))
+          (domain-promise (name LOCATION-LOCK-RESOURCES) (param-values $? ?mps ?side $?) (promising-goal ?promising-goal) (promising-agent ?promising-agent))
+          (test (and (eq ?mps (plan-action-arg location ?param-names ?param-values)) (eq ?side (plan-action-arg side ?param-names ?param-values))))
+        )
+      )
+    )
+  )
 	=>
   (if (or (eq ?action lock) (eq ?action one-time-lock))  then
 	  (bind ?lock-name (plan-action-arg name ?param-names ?param-values))
