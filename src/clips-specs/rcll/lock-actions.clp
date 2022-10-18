@@ -46,7 +46,7 @@
         (test (eq ?lock-info-name (plan-action-arg name ?param-names ?param-values)))
       )
       (and
-        (test (eq ?action lcoation-ock))
+        (test (eq ?action location-lock))
         (lock-info (plan-id ~?plan-id) (goal-id ~?goal-id)
                    (name ?lock-info-name))
         (test (eq ?lock-info-name (sym-cat
