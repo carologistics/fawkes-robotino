@@ -17,3 +17,5 @@ fawkes:
   mainapp:
     loggers: console;file:robot1_$time.log;file/debug:debug1_$time.log
 
+clips-executive:
+  spec: rcll

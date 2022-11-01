@@ -17,3 +17,6 @@ fawkes:
   mainapp:
     loggers: console;file/debug:debug12_$time.log
 
+
+clips-executive:
+  rcll-central
