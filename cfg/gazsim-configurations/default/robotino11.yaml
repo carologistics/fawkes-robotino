@@ -19,4 +19,4 @@ fawkes:
     loggers: console;file:robot11_$time.log;file/debug:debug11_$time.log
 
 clips-executive:
-  rcll-central
+  spec: rcll-central
