@@ -113,7 +113,8 @@ for index, row in df.iterrows():
 df = pd.read_csv(args.path+'game-export_goals.csv')
 fg = df.loc[(df['dispatched'].notna())
            & (df['subtype'] == 'SIMPLE')
-           & ~(df['class'].isin(['SEND-BEACON','EXPIRE-LOCKS','SPAWN-WP','PROCESS-MPS','REFILL-SHELF']))
+           & ~(df['class'].isin(['SEND-BEACON','EXPIRE-LOCKS',
+                 'SPAWN-WP','PROCESS-MPS','REFILL-SHELF','MOVE-OUT-OF-WAY']))
            & (df['outcome'].isin(['COMPLETED','FAILED','UNKNOWN']))]
 
 number_classes = fg['class'].nunique()

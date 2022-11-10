@@ -227,7 +227,7 @@ start_simulation_generate_game() {
 start_simulation () {
     echo "starting simulation $1"
     eval $1
-    sleep 10
+    sleep 20
 }
 
 setup_simulation () {
@@ -326,7 +326,7 @@ do
 done
 
 #if more than 2 games and baseline+experiment, visualize
-if ! [ -z ${BASELINE_COMMAND+x} ] && [ "$NUMBER_GAMES" -gt "1" ] then
+if ! [ -z ${BASELINE_COMMAND+x} ] && [ "$NUMBER_GAMES" -gt "1" ]; then
   python $scripts_path/exp_visualizer.py --path $name
 fi
 

@@ -328,8 +328,8 @@ if consistency_check():
     ax.text(0.66,0.0, "late deliveries")
 
     # plot the key performance indicators over the data
-    plot_summary(plt, (3,1), results, stdev, "Mean")
-    plot_summary(plt, (4,1), results, stdev, "Max")
+    plot_summary(plt, (3,1), results, mean, "Mean")
+    plot_summary(plt, (4,1), results, max, "Max")
     plot_summary(plt, (5,1), results, stdev, "Stdev")
 
     # visualize the orders
