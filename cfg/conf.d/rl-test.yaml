@@ -1,0 +1,45 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/clips-agent
+---
+rl-agent:
+  env_name: "blocks"  # "blockstower"
+
+  # Name of saved rl agent after training
+  name: "MaskablePPOAgent_e"
+  # Directory where the rl agent is saved after training
+  # And to look for trained agent files
+  dir: "@BASEDIR@/src/plugins/rl-test/rl-agent"  # ,"@BASEDIR@/testagent"]
+
+  # If set to true a new agent is created and trained and save at the
+  # rl-agent-dirs with rl-agent-name.
+  # Otherwise - if set to false - the rl-agent-name is loaded and executed
+  training-mode: false
+
+  # Number of time the env reaches a final state
+  training-laps: 30
+
+python:
+  # if trainings-mode is set to true the training script is executed
+  training-script: "TrainingClipsWorld.py"  # "trainingRLAgent.py"
+
+  # if trainings-mode is set to false the execution script is called
+  execution-script: "InitClipsWorld.py"  # "executingClipsWorld.py"
+
+  # Directory where the python scripts are located
+  dir: "@BASEDIR@/src/plugins/rl-test/rl-agent"
+
+  # Directory where the python env script is located
+  env-dir: "@BASEDIR@/src/plugins/clips-gym"
+
+  env-script: "ClipsWorld.py"
+  # training-dirs: ["@BASEDIR@/src/plugins/rl-test/rl-agent"]
+
+  # Directory where the plugin binaries are located
+  plugins-dir: "@BASEDIR@/plugins"
+
+goal-space:
+  # Classname: params [Identifier - Typ]
+  TOWER-C1: {buttom: block, top: block}
+  TOWER-C2: {blocks: block}

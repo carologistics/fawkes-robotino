@@ -1,0 +1,40 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/clips-agent
+---
+
+#python:
+  # if trainings-mode is set to true the training script is executed
+  #training-script: "TrainingClipsWorld.py"  # "trainingRLAgent.py"
+
+  # if trainings-mode is set to false the execution script is called
+  #execution-script: "executingClipsWorld.py"  # "executingRLAgent.py"
+
+  # Directory where the python scripts are located
+  #dir: "@BASEDIR@/src/plugins/rl-test/rl-agent"
+
+  # Directory where the python env script is located
+  #env-dir: "@BASEDIR@/src/plugins/clips-gym"
+
+  #env-script: "ClipsWorld.py"
+  # training-dirs: ["@BASEDIR@/src/plugins/rl-test/rl-agent"]
+
+  # Directory where the plugin binaries are located
+  #plugins-dir: "@BASEDIR@/plugins"
+
+goal-space:
+  # Classname: params [Identifier - Typ]
+  # TOWER-C1: {buttom: block, top: block}
+  # TOWER-C2: {blocks: block}
+  # Goal Classnames
+  classes: ["TOWER-C1", "TOWER-C2"]
+
+param-names:
+  TOWER-C1: ["buttom", "top"]
+  TOWER-C2: ["buttom", "middle", "top"]
+
+  param-types:
+    buttom: block
+    middle: block
+    top: block
