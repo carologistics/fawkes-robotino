@@ -65,6 +65,8 @@ clips-executive:
             files: ["BATCH|robmem-wait-init.clp"]
             wait-for: robmem-initialized
           - name: robot_memory
+          - name: rl-test
+          - name: clips-gym
         stage-3:
           - name: utils
             file: rcll-central/utils.clp
@@ -104,6 +106,7 @@ clips-executive:
               - rcll-central/production-strategy.clp
               - rcll-central/exploration.clp
               - rcll-central/refbox-agent-task.clp
+              - rcll-central/reinforcementLearning.clp
           - name: goal-expander
             file: rcll-central/fixed-sequence.clp
           - name: action-selection
