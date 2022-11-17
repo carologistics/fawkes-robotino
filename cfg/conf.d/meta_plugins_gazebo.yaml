@@ -136,6 +136,8 @@ fawkes/meta_plugins:
     - navgraph-generator-mps
     - m-distributed-clips-executive
     - webview
+    - rl-test
+    - clips-gym
 
   m-central-clips-exec-ros1:
     - ros

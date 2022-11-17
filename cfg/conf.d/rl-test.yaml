@@ -10,15 +10,16 @@ rl-agent:
   name: "MaskablePPOAgent_e"
   # Directory where the rl agent is saved after training
   # And to look for trained agent files
-  dir: "@BASEDIR@/src/plugins/rl-test/rl-agent"  # ,"@BASEDIR@/testagent"]
+  dir: "@FAWKES_BASEDIR@/src/plugins/rl-test/rl-agent"
+  # ,"@BASEDIR@/testagent"]
 
   # If set to true a new agent is created and trained and save at the
   # rl-agent-dirs with rl-agent-name.
   # Otherwise - if set to false - the rl-agent-name is loaded and executed
-  training-mode: false
+  training-mode: true
 
   # Number of time the env reaches a final state
-  training-laps: 30
+  training-laps: 10
 
 python:
   # if trainings-mode is set to true the training script is executed
@@ -28,10 +29,10 @@ python:
   execution-script: "InitClipsWorld.py"  # "executingClipsWorld.py"
 
   # Directory where the python scripts are located
-  dir: "@BASEDIR@/src/plugins/rl-test/rl-agent"
+  dir: "@FAWKES_BASEDIR@/src/plugins/rl-test/rl-agent"
 
   # Directory where the python env script is located
-  env-dir: "@BASEDIR@/src/plugins/clips-gym"
+  env-dir: "@FAWKES_BASEDIR@/src/plugins/clips-gym"
 
   env-script: "ClipsWorld.py"
   # training-dirs: ["@BASEDIR@/src/plugins/rl-test/rl-agent"]
