@@ -88,7 +88,7 @@ public:
 	Subscription(std::string     topic_name,
 	             std::string     processor_prefix,
 	             fawkes::Logger *logger,
-	             fawkes::Clock * clock);
+	             fawkes::Clock  *clock);
 
 	virtual ~Subscription();
 
@@ -159,7 +159,7 @@ protected:
 	std::string processor_prefix_; /**< processor specific prefix included in that
                                     topic name*/
 
-	fawkes::Clock * clock_;  /**< Fawkes clock needed for periodic publishing*/
+	fawkes::Clock  *clock_;  /**< Fawkes clock needed for periodic publishing*/
 	fawkes::Logger *logger_; /**< Fawkes logger*/
 
 	bool finalized_; /**< Is set to true if it was Object was finalized before */

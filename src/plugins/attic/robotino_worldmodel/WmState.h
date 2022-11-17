@@ -43,7 +43,7 @@ private:
 	fawkes::RobotinoWorldModelInterface::machine_state_t machine_states_[13];
 	fawkes::RobotinoWorldModelInterface::machine_type_t  machine_types_[13];
 	u_int32_t                                            express_machine;
-	fawkes::Logger *                                     logger_;
+	fawkes::Logger                                      *logger_;
 };
 
 #endif /* WMSTATE_H_ */

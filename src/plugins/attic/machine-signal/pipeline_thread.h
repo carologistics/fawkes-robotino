@@ -93,7 +93,7 @@ public:
 
 	void unlock();
 
-	std::list<SignalState> &         get_known_signals();
+	std::list<SignalState>          &get_known_signals();
 	std::list<SignalState>::iterator get_best_signal();
 
 	/** Check if pipeline thread is enabled.
@@ -121,10 +121,10 @@ private:
 
 	typedef struct
 	{
-		firevision::ColorModelSimilarity *                             colormodel;
-		firevision::SimpleColorClassifier *                            classifier;
+		firevision::ColorModelSimilarity                              *colormodel;
+		firevision::SimpleColorClassifier                             *classifier;
 		std::vector<firevision::ColorModelSimilarity::color_class_t *> color_class;
-		firevision::ScanlineGrid *                                     scanline_grid;
+		firevision::ScanlineGrid                                      *scanline_grid;
 		std::vector<unsigned int>                                      cfg_ref_col;
 		std::vector<int>                                               cfg_chroma_thresh;
 		std::vector<int>                                               cfg_sat_thresh;
@@ -200,8 +200,8 @@ private:
 	unsigned int                       cfg_light_on_min_neighborhood_;
 	std::atomic<float>                 cfg_light_on_min_area_cover_;
 	firevision::SimpleColorClassifier *light_classifier_;
-	firevision::ColorModelLuminance *  light_colormodel_;
-	firevision::ScanlineGrid *         light_scangrid_;
+	firevision::ColorModelLuminance   *light_colormodel_;
+	firevision::ScanlineGrid          *light_scangrid_;
 
 	unsigned int                       cfg_black_y_thresh_;
 	unsigned int                       cfg_black_u_thresh_;
@@ -211,17 +211,17 @@ private:
 	unsigned int                       cfg_black_min_points_;
 	unsigned int                       cfg_black_min_neighborhood_;
 	firevision::SimpleColorClassifier *black_classifier_;
-	firevision::ColorModelBlack *      black_colormodel_;
-	firevision::ScanlineGrid *         black_scangrid_;
+	firevision::ColorModelBlack       *black_colormodel_;
+	firevision::ScanlineGrid          *black_scangrid_;
 
-	firevision::FilterROIDraw *          roi_drawer_;
+	firevision::FilterROIDraw           *roi_drawer_;
 	firevision::SharedMemoryImageBuffer *shmbuf_;
 	firevision::SharedMemoryImageBuffer *shmbuf_cam_;
-	firevision::FilterColorThreshold *   color_filter_;
-	firevision::ColorModelSimilarity *   combined_colormodel_;
+	firevision::FilterColorThreshold    *color_filter_;
+	firevision::ColorModelSimilarity    *combined_colormodel_;
 
 	void setup_color_classifier(color_classifier_context_t_ *classifier,
-	                            firevision::ROI *            roi = nullptr);
+	                            firevision::ROI             *roi = nullptr);
 	void setup_camera();
 	bool color_data_consistent(color_classifier_context_t_ *);
 	void reinit_color_config();
@@ -258,7 +258,7 @@ private:
 	firevision::ROI *red_green_match(firevision::ROI *roi_R, firevision::ROI *roi_G);
 	std::list<SignalState::signal_rois_t_> *create_field_signals(std::list<firevision::ROI> *rois_R,
 	                                                             std::list<firevision::ROI> *rois_G);
-	SignalState::signal_rois_t_ *           create_laser_signals(const firevision::ROI &,
+	SignalState::signal_rois_t_            *create_laser_signals(const firevision::ROI &,
 	                                                             std::list<firevision::ROI> *rois_R,
 	                                                             std::list<firevision::ROI> *rois_G);
 
@@ -281,7 +281,7 @@ private:
 	firevision::WorldROI pos3d_to_roi(const fawkes::tf::Stamped<fawkes::tf::Point> &pos3d);
 	std::set<firevision::WorldROI, SignalState::compare_rois_by_area> *cluster_rois_;
 
-	fawkes::SignalHintInterface *          bb_signal_position_estimate_;
+	fawkes::SignalHintInterface           *bb_signal_position_estimate_;
 	fawkes::tf::Stamped<fawkes::tf::Point> signal_hint_;
 
 	/*std::map<firevision::ROI, SignalState::signal_rois_t_, compare_rois_by_x_>
@@ -289,7 +289,7 @@ private:
     SignalState::compare_rois_by_area> *laser_rois, std::list<firevision::ROI>
     *rois_R, std::list<firevision::ROI> *rois_G); //*/
 
-	firevision::ROI *merge_rois_in_roi(const firevision::ROI &     outer_roi,
+	firevision::ROI *merge_rois_in_roi(const firevision::ROI      &outer_roi,
 	                                   std::list<firevision::ROI> *rois);
 
 	// Implemented abstracts inherited from ConfigurationChangeHandler

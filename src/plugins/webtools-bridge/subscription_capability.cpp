@@ -158,7 +158,7 @@ using namespace fawkes;
 Subscription::Subscription(std::string     topic_name,
                            std::string     prefix,
                            fawkes::Logger *logger,
-                           fawkes::Clock * clock)
+                           fawkes::Clock  *clock)
 : active_status_(DORMANT),
   topic_name_(topic_name),
   processor_prefix_(prefix),

@@ -140,12 +140,12 @@ private:
 	fawkes::RefPtr<Cloud>       cloud_out_result_;
 
 	// interfaces write
-	fawkes::SwitchInterface *    bb_enable_switch_;
+	fawkes::SwitchInterface     *bb_enable_switch_;
 	fawkes::Position3DInterface *bb_pose_;
 
 	// interfaces read
 	std::vector<fawkes::LaserLineInterface *> laserlines_;
-	fawkes::SwitchInterface *                 realsense_switch_;
+	fawkes::SwitchInterface                  *realsense_switch_;
 	fawkes::Time                              wait_start_;
 	fawkes::Time                              wait_time_;
 	//  fawkes::Position3DInterface * bb_tag_;
@@ -164,8 +164,8 @@ private:
 	bool            laserline_get_best_fit(fawkes::LaserLineInterface *&best_fit);
 	Eigen::Vector3f laserline_get_center_transformed(fawkes::LaserLineInterface *ll);
 	Eigen::Vector3f get_conveyor_estimate(fawkes::LaserLineInterface *laser_line,
-	                                      const std::string &         target_frame,
-	                                      const fawkes::Time &        stamp);
+	                                      const std::string          &target_frame,
+	                                      const fawkes::Time         &stamp);
 
 	bool is_inbetween(double a, double b, double val);
 

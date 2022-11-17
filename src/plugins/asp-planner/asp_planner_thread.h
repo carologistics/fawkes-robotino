@@ -50,7 +50,7 @@ private:
 	const char *const           LoggingComponent;
 	const char *const           ConfigPrefix;
 	std::vector<EventTrigger *> RobotMemoryCallbacks;
-	const char *                TeamColor;
+	const char                 *TeamColor;
 
 	int Unsat;
 
@@ -135,23 +135,23 @@ private:
 	void finalizeClingo(void);
 	void loopClingo(void);
 
-	void queueGround(GroundRequest &&       request,
-	                 const char *           reason,
+	void queueGround(GroundRequest        &&request,
+	                 const char            *reason,
 	                 const InterruptSolving interrupt = InterruptSolving::Not);
-	void queueRelease(Clingo::Symbol &&      atom,
-	                  const char *           reason,
+	void queueRelease(Clingo::Symbol       &&atom,
+	                  const char            *reason,
 	                  const InterruptSolving interrupt = InterruptSolving::Not);
-	void queueAssign(Clingo::Symbol &&      atom,
-	                 const char *           reason,
+	void queueAssign(Clingo::Symbol       &&atom,
+	                 const char            *reason,
 	                 const InterruptSolving interrupt = InterruptSolving::Not);
 	void setInterrupt(const InterruptSolving interrupt, const char *reason);
 	bool shouldInterrupt(void);
 
 	bool newModel(void);
 	void solvingFinished(const Clingo::SolveResult &result);
-	void groundFunctions(const Clingo::Location &    loc,
-	                     char const *                name,
-	                     const Clingo::SymbolSpan &  arguments,
+	void groundFunctions(const Clingo::Location     &loc,
+	                     char const                 *name,
+	                     const Clingo::SymbolSpan   &arguments,
 	                     Clingo::SymbolSpanCallback &retFunction);
 
 	void setTeam(void);

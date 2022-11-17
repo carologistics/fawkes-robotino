@@ -68,10 +68,10 @@ public:
 private:
 	void detect_white_blobs();
 
-	BlobFarm *                           blobFarm;
-	firevision::Camera *                 cam_;
+	BlobFarm                            *blobFarm;
+	firevision::Camera                  *cam_;
 	firevision::SharedMemoryImageBuffer *shm_buffer_;
-	unsigned char *                      buffer_;
+	unsigned char                       *buffer_;
 	int                                  pic_width_;
 	int                                  pic_height_;
 

@@ -132,7 +132,7 @@ MachineSignalPipelineThread::color_data_consistent(color_classifier_context_t_ *
 
 void
 MachineSignalPipelineThread::setup_color_classifier(color_classifier_context_t_ *color_data,
-                                                    ROI *                        roi)
+                                                    ROI                         *roi)
 {
 	delete color_data->classifier;
 	delete color_data->colormodel;
@@ -786,7 +786,7 @@ MachineSignalPipelineThread::compactness(const SignalState::signal_rois_t_ &s, c
 
 float
 MachineSignalPipelineThread::signal_beauty(const SignalState::signal_rois_t_ &s,
-                                           const ROI &                        laser_roi)
+                                           const ROI                         &laser_roi)
 {
 	ROI opt_R(*(s.red_roi));
 	opt_R.start.x = laser_roi.start.x;
@@ -899,7 +899,7 @@ MachineSignalPipelineThread::loop()
 
 		for (const ROI &laser_roi : *cluster_rois_) {
 			list<SignalState::signal_rois_t_> laser_signals;
-			SignalState::signal_rois_t_ *     signal;
+			SignalState::signal_rois_t_      *signal;
 
 			signal = create_laser_signals(laser_roi, rois_R_0, rois_G_0);
 			if (signal)
@@ -1291,7 +1291,7 @@ MachineSignalPipelineThread::create_field_signals(std::list<ROI> *rois_R, std::l
 			it_R->height = it_R->width;
 		}
 
-		ROI *                    roi_Y = nullptr;
+		ROI                     *roi_Y = nullptr;
 		std::list<ROI>::iterator it_G  = rois_G->begin();
 		while (it_G != rois_G->end()) {
 			if ((roi_Y = red_green_match(&*it_R, &*it_G))) {
@@ -1318,7 +1318,7 @@ MachineSignalPipelineThread::create_field_signals(std::list<ROI> *rois_R, std::l
 ROI *
 MachineSignalPipelineThread::merge_rois_in_roi(const ROI &outer_roi, list<ROI> *rois)
 {
-	ROI *               rv     = nullptr;
+	ROI                *rv     = nullptr;
 	list<ROI>::iterator it_roi = rois->begin();
 	while (it_roi != rois->end()) {
 		ROI          intersection = it_roi->intersect(outer_roi);
@@ -1345,7 +1345,7 @@ MachineSignalPipelineThread::merge_rois_in_roi(const ROI &outer_roi, list<ROI> *
 }
 
 SignalState::signal_rois_t_ *
-MachineSignalPipelineThread::create_laser_signals(const ROI &     laser_roi,
+MachineSignalPipelineThread::create_laser_signals(const ROI      &laser_roi,
                                                   std::list<ROI> *rois_R,
                                                   std::list<ROI> *rois_G)
 {
@@ -1397,7 +1397,7 @@ MachineSignalPipelineThread::create_laser_signals(const ROI &     laser_roi,
 			if (roi_R) {
 				if (!black_stuff_top->empty()) {
 					// Extend red ROI up to the black cap
-					ROI &        black       = black_stuff_top->front();
+					ROI         &black       = black_stuff_top->front();
 					unsigned int black_end_y = black.start.y + black.height;
 					int          hdiff       = roi_R->start.y - black_end_y;
 					roi_R->start.y           = black_end_y;

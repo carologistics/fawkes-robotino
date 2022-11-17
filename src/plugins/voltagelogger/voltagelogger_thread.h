@@ -63,7 +63,7 @@ protected:
 private:
 private:
 	fawkes::BatteryInterface *bat_if_;
-	fawkes::FileLogger *      flogger_;
+	fawkes::FileLogger       *flogger_;
 	fawkes::Time              last_measure_;
 };
 

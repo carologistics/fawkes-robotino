@@ -32,11 +32,11 @@ struct ProductIdentifier;
 struct TaskDescription;
 
 Clingo::Symbol generateAliveExternal(const std::string &robotName);
-Clingo::Symbol generateRobotLocationExternal(const std::string &   robotName,
+Clingo::Symbol generateRobotLocationExternal(const std::string    &robotName,
                                              const Clingo::Symbol &location);
-Clingo::Symbol generateHoldingExternal(const std::string &      robotName,
+Clingo::Symbol generateHoldingExternal(const std::string       &robotName,
                                        const ProductIdentifier &product);
-Clingo::Symbol generateDoingExternal(const std::string &    robotName,
+Clingo::Symbol generateDoingExternal(const std::string     &robotName,
                                      const TaskDescription &task,
                                      const int              duration);
 
@@ -45,17 +45,17 @@ Clingo::Symbol generateExploreTaskExternal(const int zone);
 
 Clingo::Symbol generateProductExternal(const ProductIdentifier &product);
 Clingo::Symbol generateProductBaseExternal(const ProductIdentifier &product,
-                                           const std::string &      base);
+                                           const std::string       &base);
 Clingo::Symbol generateProductRingExternal(const ProductIdentifier &product,
                                            const int                ringNumber,
-                                           const std::string &      color);
+                                           const std::string       &color);
 Clingo::Symbol generateProductCapExternal(const ProductIdentifier &product, const std::string &cap);
 
 Clingo::Symbol generateMachineBrokenExternal(const std::string &machineName, const int duration);
-Clingo::Symbol generateMachineWorkingExternal(const std::string &      machineName,
+Clingo::Symbol generateMachineWorkingExternal(const std::string       &machineName,
                                               const int                duration,
                                               const ProductIdentifier &product);
-Clingo::Symbol generateMachineStoringExternal(const std::string &      machineName,
+Clingo::Symbol generateMachineStoringExternal(const std::string       &machineName,
                                               const ProductIdentifier &product);
 Clingo::Symbol generatePreparedExternal(const std::string &machineName);
 Clingo::Symbol generateFillStateExternal(const std::string &machineName, const int fillState);

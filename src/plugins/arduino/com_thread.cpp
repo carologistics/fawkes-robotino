@@ -44,8 +44,8 @@ using namespace fawkes;
  */
 
 /** Constructor. */
-ArduinoComThread::ArduinoComThread(std::string &    cfg_name,
-                                   std::string &    cfg_prefix,
+ArduinoComThread::ArduinoComThread(std::string     &cfg_name,
+                                   std::string     &cfg_prefix,
                                    ArduinoTFThread *tf_thread)
 : Thread("ArduinoComThread", Thread::OPMODE_WAITFORWAKEUP),
   BlackBoardInterfaceListener("ArduinoThread(%s)", cfg_prefix.c_str()),
@@ -150,7 +150,7 @@ ArduinoComThread::set_message(ArduinoComMessage *msg)
 }
 
 bool
-ArduinoComThread::add_command_to_message(ArduinoComMessage *             msg,
+ArduinoComThread::add_command_to_message(ArduinoComMessage              *msg,
                                          ArduinoComMessage::command_id_t command,
                                          unsigned int                    value)
 {
@@ -280,7 +280,7 @@ ArduinoComThread::loop()
 
 				} else if (arduino_if_->msgq_first_is<ArduinoInterface::MoveXYZRelMessage>()) {
 					ArduinoInterface::MoveXYZRelMessage *msg         = arduino_if_->msgq_first(msg);
-					ArduinoComMessage *                  arduino_msg = new ArduinoComMessage();
+					ArduinoComMessage                   *arduino_msg = new ArduinoComMessage();
 
 					bool msg_has_data = false;
 

@@ -100,19 +100,19 @@ private:
 
 	PuckPuckMap relPositions_;
 
-	PuckIfMap *          if_puck_map_;
+	PuckIfMap           *if_puck_map_;
 	std::vector<Point3d> current_pucks_;
 	std::vector<Point3d> old_pucks_;
 	void                 associate_pucks_with_ifs();
 
 	Point3d apply_tf_to_global(Point3d src);
 
-	firevision::Camera *                 cam_;
-	firevision::ScanlineModel *          scanline_;
-	firevision::ColorModel *             cm_;
-	firevision::MirrorModel *            mirror_;
-	firevision::RelativePositionModel *  rel_pos_;
-	firevision::SimpleColorClassifier *  classifier_;
+	firevision::Camera                  *cam_;
+	firevision::ScanlineModel           *scanline_;
+	firevision::ColorModel              *cm_;
+	firevision::MirrorModel             *mirror_;
+	firevision::RelativePositionModel   *rel_pos_;
+	firevision::SimpleColorClassifier   *classifier_;
 	firevision::SharedMemoryImageBuffer *shm_buffer_;
 
 	fawkes::tf::TransformListener *tf_listener_;

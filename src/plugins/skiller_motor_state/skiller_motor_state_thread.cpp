@@ -220,7 +220,7 @@ SkillerMotorStateThread::disable(unsigned int output)
 // @oaram digital_output_to_reset the corresponding signal lamp output
 void
 SkillerMotorStateThread::get_next_switchoff(fawkes::Time *&wait_until,
-                                            unsigned int & digital_output_to_reset)
+                                            unsigned int  &digital_output_to_reset)
 {
 	// first determine which LED needs to be reset earliest
 	wait_until              = &failed_time_;

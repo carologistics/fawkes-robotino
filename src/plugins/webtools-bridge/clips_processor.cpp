@@ -62,9 +62,9 @@ using namespace rapidjson;
  */
 ClipsSubscription::ClipsSubscription(std::string                               topic_name,
                                      std::string                               processor_prefix,
-                                     fawkes::Logger *                          logger,
-                                     fawkes::Clock *                           clock,
-                                     fawkes::LockPtr<CLIPS::Environment> &     clips,
+                                     fawkes::Logger                           *logger,
+                                     fawkes::Clock                            *clock,
+                                     fawkes::LockPtr<CLIPS::Environment>      &clips,
                                      fawkes::LockPtr<fawkes::CLIPSEnvManager> &clips_env_mgr)
 : Subscription(topic_name, processor_prefix, logger, clock),
   clips_(clips),
@@ -280,9 +280,9 @@ ClipsSubscription::serialize(std::string op, std::string topic_name, std::string
  * @param clips_env_mgr the clips enviorment manager
  */
 ClipsProcessor::ClipsProcessor(std::string                               prefix,
-                               fawkes::Logger *                          logger,
-                               fawkes::Configuration *                   config,
-                               fawkes::Clock *                           clock,
+                               fawkes::Logger                           *logger,
+                               fawkes::Configuration                    *config,
+                               fawkes::Clock                            *clock,
                                fawkes::LockPtr<fawkes::CLIPSEnvManager> &clips_env_mgr)
 : BridgeProcessor(prefix), env_name_("agent") // TODO: get from configs
 {

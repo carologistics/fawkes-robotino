@@ -52,9 +52,9 @@ class ClipsSubscription : public Subscription
 public:
 	ClipsSubscription(std::string                               topic_name,
 	                  std::string                               processor_prefix,
-	                  fawkes::Logger *                          logger,
-	                  fawkes::Clock *                           clock,
-	                  fawkes::LockPtr<CLIPS::Environment> &     clips,
+	                  fawkes::Logger                           *logger,
+	                  fawkes::Clock                            *clock,
+	                  fawkes::LockPtr<CLIPS::Environment>      &clips,
 	                  fawkes::LockPtr<fawkes::CLIPSEnvManager> &clips_env_mgr);
 
 	~ClipsSubscription();
@@ -79,9 +79,9 @@ class ClipsProcessor : public BridgeProcessor, public SubscriptionCapability
 {
 public:
 	ClipsProcessor(std::string                               prefix,
-	               fawkes::Logger *                          logger,
-	               fawkes::Configuration *                   config,
-	               fawkes::Clock *                           clock,
+	               fawkes::Logger                           *logger,
+	               fawkes::Configuration                    *config,
+	               fawkes::Clock                            *clock,
 	               fawkes::LockPtr<fawkes::CLIPSEnvManager> &clips_env_mgr);
 
 	virtual ~ClipsProcessor(); // why did i leave this virtual. does it make sense
@@ -102,9 +102,9 @@ public:
 	                 std::shared_ptr<WebSession>   session);
 
 private:
-	fawkes::Logger *       logger_;
+	fawkes::Logger        *logger_;
 	fawkes::Configuration *config_;
-	fawkes::Clock *        clock_;
+	fawkes::Clock         *clock_;
 
 	fawkes::LockPtr<fawkes::CLIPSEnvManager> clips_env_mgr_;
 	fawkes::LockPtr<CLIPS::Environment>      clips_;

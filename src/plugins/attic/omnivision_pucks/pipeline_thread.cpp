@@ -116,7 +116,7 @@ OmniVisionPucksPipelineThread::init()
 		int i;
 		for (i = 1; i <= PUCK_AMOUNT; i++) {
 			Position3DInterface *puckif;
-			char *               omni_name;
+			char                *omni_name;
 			if (asprintf(&omni_name, "OmniPuck%d", i) != -1) {
 				puckif = blackboard->open_for_writing<Position3DInterface>(omni_name);
 				puckif->set_frame(cfg_frame_.c_str());
@@ -374,7 +374,7 @@ OmniVisionPucksPipelineThread::associate_pucks_with_ifs()
 
 	list<Position3DInterface *> unused_ifs(puck_ifs_);
 	list<Point3d>               new_pucks;
-	PuckIfMap *                 if_puck_map_current = new PuckIfMap();
+	PuckIfMap                  *if_puck_map_current = new PuckIfMap();
 
 	for (int i = 0; i < size_assignment; ++i) {
 		if ((unsigned int)i >= old_pucks_.size()) {

@@ -65,9 +65,9 @@ public:
 	virtual void loop();
 
 private:
-	firevision::Camera *                 cam_;
-	firevision::ScanlineModel *          scanline_;
-	firevision::Bulb *                   mirror_;
+	firevision::Camera                  *cam_;
+	firevision::ScanlineModel           *scanline_;
+	firevision::Bulb                    *mirror_;
 	firevision::SharedMemoryImageBuffer *shm_buffer_;
 
 	unsigned char *buffer_;

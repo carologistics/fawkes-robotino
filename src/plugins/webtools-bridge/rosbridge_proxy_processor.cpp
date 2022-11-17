@@ -71,9 +71,9 @@ using namespace fawkes;
  * @param clock Fawkes clock
  */
 RosBridgeProxyProcessor::RosBridgeProxyProcessor(std::string            prefix,
-                                                 fawkes::Logger *       logger,
+                                                 fawkes::Logger        *logger,
                                                  fawkes::Configuration *config,
-                                                 fawkes::Clock *        clock)
+                                                 fawkes::Clock         *clock)
 : BridgeProcessor(prefix), logger_(logger), clock_(clock)
 {
 	config_        = config;
