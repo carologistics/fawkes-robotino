@@ -78,35 +78,22 @@
 	(wm-fact (key config simtest testbed) (value ?testbed))
 	=>
 	(switch ?testbed
-		(case "FAST" then
-			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 1 points 1)))
-		)
-		(case "DELIVERY" then
-			(assert (testcase (type DELIVERY-COUNT) (args count 1)))
-		)
-		(case "COMPLEX" then
-			(simtest-connect OR
-			  (assert (testcase (type DELIVERY-COUNT) (args count 5)))
-				(simtest-connect AND
-					(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C0)))
-					(simtest-connect OR
-						(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C2)))
-						(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C3)))
-					)
-				)
-			)
-			(assert (testcase (type FULL-GAME)))
+		(case "ENTER-FIELD" then
+			(assert (testcase (type ENTER-FIELD)))
 		)
 		(case "FULL" then
-			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 8 points 30)))
-			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 17 points 150)))
+			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 10 points 30)))
+			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 20 points 200)))
 			(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C0)))
-			(simtest-connect OR
-				(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C2)))
-				(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C3)))
-			)
+			(assert (testcase (type DELIVERY-COUNT) (args count 3)))
 			(assert (testcase (type FULL-GAME)))
 		)
+		(case "PRODUCE-C1" then
+			(assert (testcase (type DELIVERY-COUNT) (args count 1)))
+			(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C1)))
+			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 10 points 30)))
+		)
+
 		(default none)
 	)
 	(assert (testcase (type NO-BROKEN-MPS) (termination SUCCESS)))
