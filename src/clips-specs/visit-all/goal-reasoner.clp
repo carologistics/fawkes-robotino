@@ -15,7 +15,7 @@
 	(wm-fact (key game state) (value RUNNING))
 	(wm-fact (key refbox team-color) (value ?color&~nil))
 	(domain-facts-loaded)
-	(wm-fact (key navgraph waitzone generated) (value TRUE))
+	;(wm-fact (key navgraph waitzone generated) (value TRUE))
 	=>
 	(assert (goal (id TESTGOAL)))
 	; This is just to make sure we formulate the goal only once.
