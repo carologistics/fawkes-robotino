@@ -340,8 +340,10 @@
       (id ?any-goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
   (goal-meta (goal-id ?any-goal-id) (root-for-order ?any-order&~nil))
   =>
-  (printout (log-debug ?v) "Goal " (fact-slot-value ?target-goal id) " SELECTED" crlf)
-  (modify ?target-goal (mode SELECTED))
+  ;(printout (log-debug ?v) "Goal " (fact-slot-value ?target-goal id) " SELECTED" crlf)
+  ;(modify ?target-goal (mode SELECTED))
+  (printout (log-debug ?v) "Goal " (fact-slot-value ?target-goal id) " is root for order - asserted rl-waiting fact" crlf crlf)
+  (assert (rl-waiting))
 )
 
 

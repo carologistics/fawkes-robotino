@@ -3,38 +3,86 @@
 ---
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/clips-agent
 ---
+# python:
+# if trainings-mode is set to true the training script is executed
+# training-script: "TrainingClipsWorld.py"  # "trainingRLAgent.py"
 
-#python:
-  # if trainings-mode is set to true the training script is executed
-  #training-script: "TrainingClipsWorld.py"  # "trainingRLAgent.py"
+# if trainings-mode is set to false the execution script is called
+# execution-script: "executingClipsWorld.py"  # "executingRLAgent.py"
 
-  # if trainings-mode is set to false the execution script is called
-  #execution-script: "executingClipsWorld.py"  # "executingRLAgent.py"
+# Directory where the python scripts are located
+# dir: "@BASEDIR@/src/plugins/rl-test/rl-agent"
 
-  # Directory where the python scripts are located
-  #dir: "@BASEDIR@/src/plugins/rl-test/rl-agent"
+# Directory where the python env script is located
+# env-dir: "@BASEDIR@/src/plugins/clips-gym"
 
-  # Directory where the python env script is located
-  #env-dir: "@BASEDIR@/src/plugins/clips-gym"
+# env-script: "ClipsWorld.py"
+# training-dirs: ["@BASEDIR@/src/plugins/rl-test/rl-agent"]
 
-  #env-script: "ClipsWorld.py"
-  # training-dirs: ["@BASEDIR@/src/plugins/rl-test/rl-agent"]
-
-  # Directory where the plugin binaries are located
-  #plugins-dir: "@BASEDIR@/plugins"
+# Directory where the plugin binaries are located
+# plugins-dir: "@BASEDIR@/plugins"
 
 goal-space:
   # Classname: params [Identifier - Typ]
   # TOWER-C1: {buttom: block, top: block}
   # TOWER-C2: {blocks: block}
   # Goal Classnames
-  classes: ["TOWER-C1", "TOWER-C2"]
-
+  # classes: ["TOWER-C1", "TOWER-C2"]
+  classes:
+    [
+      "BUFFER-CAP",
+      "MOUNT-CAP",
+      "MOUNT-RING",
+      "PAY-FOR-RING-GOAL",
+      "PAY-FOR-RINGS-WITH-BASE",
+      "PAY-FOR-RINGS-WITH-CAP-CARRIER",
+      "PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF",
+      "DELIVER",
+      "DELIVER-RC21",
+      "DISCARD",
+      "MOVE-OUT-OF-WAY",
+    ]
+    # "PICK-AND-PLACE", "MOVE", "PAYMENT-1", "PAYMENT-2",
+    # "INSTRUCT-ORDER","INSTRUCT-CS-BUFFER-CAP", "INSTRUCT-CS-MOUNT-CAP",
+    # "INSTRUCT-BS-DISPENSE-BASE","INSTRUCT-RS-MOUNT-RING","INSTRUCT-DS-DELIVER",
+    # ENTER-FIELD
+    # NAVIGATION-CHALLENGE-MOVE, PRODUCTION-ROOT, NAVIGATION-CHALLENGE-ROOT,
+    # EXPLORE-ZONE, EXPLORATION-, EXPLORATION-ROOT
+    # BEACON-MAINTAIN INSTRUCTION-ROOT SUPPORT-ROOT WAIT-ROOT
+    # WAIT-NOTHING-EXECUTABLE REFILL-SHELF "CLEAR-OUTPUT",
 param-names:
-  TOWER-C1: ["buttom", "top"]
-  TOWER-C2: ["buttom", "middle", "top"]
+  # TOWER-C1: ["buttom", "top"]
+  # TOWER-C2: ["buttom", "middle", "top"]
+
+  BUFFER-CAP: ["cap-color", "target-mps"]
+  MOUNT-CAP: ["wp", "target-mps", "target-side", "wp-loc", "wp-side"]
+  MOUNT-RING:
+    ["wp", "target-mps", "target-side", "wp-loc", "wp-side", "ring-color"]
+  # MOVE: ["target-mps"]
+  # MOVE-OUT-OF-WAY: ["target-pos"]
+  # PICK-AND-PLACE: ["target-mps"]
+  PAY-FOR-RINGS-WITH-BASE:
+    ["wp", "wp-loc", "wp-side", "target-mps", "target-side"]
+  PAY-FOR-RINGS-WITH-CAP-CARRIER:
+    ["wp", "wp-loc", "wp-side", "target-mps", "target-side"]
+  PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF: ["wp-loc", "target-mps", "target-side"]
+  DISCARD: ["wp", "wp-loc", "wp-side"]
+  # PRODUCE-ORDER: []
+  # PAY-FOR-RING-GOAL:
+  # PAYMENT-1:
+  # PAYMENT-2:
+  DELIVER: ["wp", "target-mps", "target-side"]
+  DELIVER-RC21: ["wp"]
 
   param-types:
-    buttom: block
-    middle: block
-    top: block
+    # buttom: block
+    # middle: block
+    # top: block
+    wp: workpiece
+    target-mps: mps-typename
+    target-side: mps-side
+    wp-loc: location
+    wp-side: object
+    cap-color: cap-color
+    ring-color: object
+    # target-pos: zone

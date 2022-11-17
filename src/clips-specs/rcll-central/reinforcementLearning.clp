@@ -4,6 +4,8 @@
 	(slot next-goal-id (type SYMBOL))
 )
 
+(deftemplate rl-waiting)
+
 (deftemplate rl-finished-goal
 	(slot goal-id (type SYMBOL));
 	(slot outcome (type SYMBOL));
@@ -18,6 +20,16 @@
 	(blackboard-set-msg-field ?m "goal" ?goal-id)
 	(printout info "Calling rl plugin for goal '" ?goal "' and " ?goal-id crlf) ;$?executableGoals crlf)
 	(bind ?gen-id (blackboard-send-msg ?m))
+)
+
+(defrule rl-waiting-assert
+	(not (reset-domain-facts))
+	(not (rl-waiting))
+	?g <- (goal (mode FORMULATED))
+	(not (goal (mode SELECTED|COMMITTED|DISPATCHED)))
+=>
+	(printout t crlf "Assert rl waiting" ?g crlf crlf)
+	(assert (rl-waiting))
 )
 
 (defrule rl-execution-goal-selection

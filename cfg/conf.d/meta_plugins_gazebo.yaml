@@ -117,6 +117,8 @@ fawkes/meta_plugins:
     - navgraph-generator-mps
     - m-distributed-clips-executive
     - webview
+    - rl-test
+    - clips-gym
 
   rcll-sim-2016:
     - mps-laser-gen
