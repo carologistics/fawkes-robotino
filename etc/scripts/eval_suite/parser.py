@@ -184,7 +184,6 @@ def parse_robot_log(goals, robot):
                 goal_robot_id = parsed['id']+'_r'+str(robot)
                 goals[goal_robot_id]["agent"] = parsed["robot"]
 
-# make case distinction from promises
 goals = {}
 if args.central:
     parse_robot_log(goals, 11)
