@@ -19,11 +19,13 @@ if [ "$ID" != "fedora" ] ; then
   exit 0
 fi
 
-
 FAWKES_DIR=$(realpath $(dirname ${BASH_SOURCE[0]})/..)
 tmpconfig=$(mktemp $FAWKES_DIR/cfg/conf.d/simtest-XXXXXX.yaml)
 echo "/clips-executive/specs/rcll/parameters/simtest/enabled: true" > $tmpconfig
-echo "/clips-executive/spec: rcll" >> $tmpconfig
+echo "/clips-executive/specs/rcll/parameters/simtest/testbed: BUILDTEST" >> $tmpconfig
+echo "/plugins/execution-time-estimator/static/speed: 4" >> $tmpconfig
+echo "/plugins/execution-time-estimator/navgraph/speed: 2" >> $tmpconfig
+echo "/plugins/execution-time-estimator/lookup/speed: 4.0" >> $tmpconfig
 export FAWKES_DIR
 SCRIPT_PATH=$FAWKES_DIR/bin
 WORKING_DIR=$FAWKES_DIR/tests.out.d/cx-simtest
@@ -44,7 +46,7 @@ ulimit -c 0
 $SCRIPT_PATH/gazsim.bash -o -r --mongodb \
   -m m-distributed-skill-sim-clips-exec -n 3 \
   --team-cyan Carologistics --start-game=PRODUCTION \
-  --refbox-args "--cfg-mps mps/mockup_mps.yaml" \
+  --refbox-args "--cfg-mps mps/mockup_mps.yaml --cfg-simulation simulation/fast_simulation.yaml " \
   $@
 echo "Waiting for results..."
 $SCRIPT_PATH/cx-simtest-check.bash ./robot1_latest.log ./robot2_latest.log ./robot3_latest.log
