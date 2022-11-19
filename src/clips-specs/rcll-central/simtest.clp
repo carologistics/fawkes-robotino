@@ -78,20 +78,31 @@
 	(wm-fact (key config simtest testbed) (value ?testbed))
 	=>
 	(switch ?testbed
+		; integration test like tests
 		(case "ENTER-FIELD" then
 			(assert (testcase (type ENTER-FIELD)))
 		)
+		(case "PRODUCE-C1" then
+			(assert (testcase (type DELIVERY-COUNT) (args count 1)))
+			(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C1)))
+			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 12 points 30)))
+		)
+		; agent performance-focused tests
 		(case "FULL" then
-			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 10 points 30)))
+			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 12 points 30)))
 			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 20 points 200)))
 			(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C0)))
 			(assert (testcase (type DELIVERY-COUNT) (args count 3)))
 			(assert (testcase (type FULL-GAME)))
 		)
-		(case "PRODUCE-C1" then
-			(assert (testcase (type DELIVERY-COUNT) (args count 1)))
-			(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C1)))
-			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 10 points 30)))
+		; combines conditions for ENTER-FIELD, PRODUCE-C1 and FULL for
+		(case "BUILDTEST" then
+			(assert (testcase (type ENTER-FIELD)))
+			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 12 points 30)))
+			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 20 points 200)))
+			(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C0)))
+			(assert (testcase (type DELIVERY-COUNT) (args count 3)))
+			(assert (testcase (type FULL-GAME)))
 		)
 
 		(default none)
