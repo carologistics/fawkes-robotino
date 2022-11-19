@@ -256,11 +256,13 @@
 	(simtest-initialized)
 	(not (testcase (state PENDING)))
 	=>
+	(printout info "SIMTEST: Finished" crlf)
 	(if (do-for-all-facts ((?testcase testcase))
 		(and (eq ?testcase:state FAILED) (eq ?testcase:parent nil))
 		(printout error ?testcase:type " failed: " ?testcase:msg crlf)
 	)
 	 then
+		(printout info "SIMTEST: End" crlf)
 		(simtest-quit FALSE)
 	else
 		(printout info "All tests successful!" crlf)

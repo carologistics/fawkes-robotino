@@ -22,6 +22,21 @@
 
 set -eu
 
+print_simtest_error() {
+  print_lines=0
+  tail -n +0 -f $failure | while read LINE ; do
+    if [[ "${LINE}" == *"SIMTEST: Finished"* ]] ; then
+      print_lines=1;continue
+    fi
+    if [[ "${LINE}" == *"SIMTEST: End"* ]] ; then
+      return
+    fi
+    if [ $print_lines -eq 1 ]; then
+      echo $LINE;
+    fi
+  done
+}
+
 check_file () {
   tail -n +0 -f $file | while read LINE ; do
     if [[ "${LINE}" == *"SIMTEST: FAILED"* ]] ; then
@@ -46,7 +61,9 @@ done
 
 if [ ${#failures[@]} -gt 0 ] ; then
   for failure in ${failures[@]} ; do
-    echo "Failure in $failure"
+    echo "Failure in $failure";
+    echo "Reasons: ";
+    print_simtest_error $failure;
   done
   exit 1
 fi
