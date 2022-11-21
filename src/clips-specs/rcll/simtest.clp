@@ -246,6 +246,22 @@
 	(modify ?testcase (state FAILED) (msg (str-cat "Broken MPS " ?m)))
 )
 
+(defrule simtest-enter-field-success
+" The ENTER-FIELD goal succeeded; we can move."
+	?testcase <- (testcase (type ENTER-FIELD) (state PENDING))
+	(goal (class ENTER-FIELD) (mode FINISHED) (outcome COMPLETED))
+	=>
+	(modify ?testcase (state SUCCEEDED))
+)
+
+(defrule simtest-enter-field-failed
+" The ENTER-FIELD goal failed; something is broken."
+	?testcase <- (testcase (type ENTER-FIELD) (state PENDING))
+	(goal (class ENTER-FIELD) (mode FINISHED) (outcome ~COMPLETED))
+	=>
+	(modify ?testcase (state FAILED))
+)
+
 ; ============================================================================
 
 (defrule simtest-abort-early
