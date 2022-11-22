@@ -43,10 +43,12 @@ stop_test () {
 
 trap stop_test $TRAP_SIGNALS
 ulimit -c 0
-$SCRIPT_PATH/gazsim.bash -x start -o -k -r -n 3 --mongodb \
+$SCRIPT_PATH/gazsim.bash -o -r -n 3 --mongodb \
   -m m-skill-sim --central-agent m-central-clips-exec \
   --team-cyan Carologistics --start-game=PRODUCTION \
-  --refbox-args "--cfg-mps mps/mockup_mps.yaml --cfg-simulation simulation/fast_simulation.yaml " \
+  --refbox-args "--cfg-mps mps/mockup_mps.yaml\
+     --cfg-simulation simulation/fast_simulation.yaml \
+     --cfg-game game/buildtest_game.yaml" \
   $@
 echo "Waiting for results..."
 $SCRIPT_PATH/cx-simtest-check.bash ./robot11_latest.log
