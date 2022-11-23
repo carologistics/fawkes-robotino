@@ -7,8 +7,12 @@
 	        (type SEQUENTIAL))
 	(plan-action (id 1) (plan-id TESTGOAL-PLAN) (goal-id TESTGOAL)
 	             (action-name visit) (skiller "/robot1/Skiller")
-	             (param-values C-BS OUTPUT CYAN))
+					     (param-values C-BS OUTPUT CYAN))
+	(plan-action (id 2) (plan-id TESTGOAL-PLAN) (goal-id TESTGOAL)
+               (action-name visit) (skiller "/robot1/Skiller")
+							 (param-values C-CS1 OUTPUT CYAN))
 	 )
+
 	(modify ?g (mode EXPANDED))
 )
 
