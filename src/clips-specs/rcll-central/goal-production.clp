@@ -711,11 +711,11 @@
 	(goal (id ?root-id) (class WAIT-ROOT))
 	(not (goal (class MOVE-OUT-OF-WAY)))
 	(not (wm-fact (key config rcll pick-and-place-challenge) (value TRUE)))
-	(navgraph-node (name ?n&:(and (str-index "WAIT-" ?n) (str-index "-Z" ?n))))
+	(navgraph-node (name ?n&:(eq (str-index "-Z" ?n) 2)))
 	=>
   (bind ?wait-zones (create$))
   (do-for-all-facts ((?nav navgraph-node))
-                    (and (str-index "-Z" ?nav:name) (str-index "WAIT-" ?nav:name))
+                    (eq 2 (str-index "-Z" ?nav:name))
     (bind ?wait-zones (insert$ ?wait-zones 1 (goal-production-assert-move-out-of-way  (sym-cat ?nav:name))))
   )
 	(bind ?g (goal-tree-assert-central-run-parallel MOVE-OUT-OF-WAY ?wait-zones))
