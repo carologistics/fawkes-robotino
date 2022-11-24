@@ -159,14 +159,14 @@
   (blackboard-open "MotorInterface" (remote-if-id ?robot "Robotino"))
 )
 
-;(defrule blackboard-init-open-rl-goal-selection
-  ;"Open the rl-test interface for rl goal selection"
-  ;(domain-facts-loaded)
-  ;(ff-feature-loaded blackboard)
-  ;=>
-  ;(blackboard-open "RLAgentGoalSelectionInterface" "goal-selection")
+(defrule blackboard-init-open-rl-goal-selection
+  "Open the rl-test interface for rl goal selection"
+  (domain-facts-loaded)
+  (ff-feature-loaded blackboard)
+  =>
+  (blackboard-open "RLAgentGoalSelectionInterface" "goal-selection")
   ;(assert (pddl-init-control (interface-id "goal-selection")))
-;)
+)
 
 ; TODO: TagVisionInterface? LaserLineInterfaces
 (defrule blackboard-init-unwatch
@@ -179,5 +179,5 @@
   (unwatch facts NavGraphWithMPSGeneratorInterface)
   (unwatch facts MotorInterface)
   (unwatch facts NavigatorInterface)
-  ;(unwatch facts RLAgentGoalSelectionInterface)
+  (unwatch facts RLAgentGoalSelectionInterface)
 )

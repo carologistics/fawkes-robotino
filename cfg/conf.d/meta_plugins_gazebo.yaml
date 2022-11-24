@@ -118,7 +118,7 @@ fawkes/meta_plugins:
     - m-distributed-clips-executive
     - webview
     - rl-test
-    - clips-gym
+    - clips_gym
 
   rcll-sim-2016:
     - mps-laser-gen

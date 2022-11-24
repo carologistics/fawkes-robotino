@@ -4,7 +4,6 @@
 	(slot next-goal-id (type SYMBOL))
 )
 
-(deftemplate rl-waiting)
 
 (deftemplate rl-finished-goal
 	(slot goal-id (type SYMBOL));
@@ -57,12 +56,25 @@
 	(rl-waiting)
 	(not (execution-mode))
 	(not (training-started))
+    (wm-fact (key refbox phase) (value PRODUCTION))
 	?g <- (goal (id ?id))
 =>
 	(printout t crlf "Start rl test thread loop in training mode" crlf )
 	;(rl-goal-selection-start ?id " TEST-STRING-RL ") ;calling RL Plugin via CLIPS Feature function
 	(rl-call ?id ?g)
 	(assert (training-started))
+)
+
+(defrule flush-executability
+; for all goals except the next goal for selection
+  ?r <- (rl-goal-selection (next-goal-id ?a))
+ =>
+  (printout t crlf "flush-executability execpt for " ?a crlf )
+	
+  (delayed-do-for-all-facts ((?g goal))
+	(and (eq ?g:is-executable TRUE) (neq ?g:class SEND-BEACON) (neq ?g:id ?a))
+	(modify ?g (is-executable FALSE))
+  )
 )
 
 ;TODO Check for mode if mode is FORMULATED then leaf it
@@ -79,12 +91,19 @@
 	(retract ?r)
 )
 
-(defrule delete-domain-facts
-  (reset-domain-facts)
-  ?f <- (domain-fact)
+(defrule no-reset-on-start
+	?r<-(reset-domain-facts)
+	?n<-(no-reset-on-training-start)
+	=>
+	(retract ?r)
+	(retract ?n)
+	(assert (reset-domain-finish))	
+)
+
+(defrule delete-domain-facts-loaded
+  ?f <- (domain-facts-loaded)
   =>
-	;(printout t crlf "delete domain fact " ?f crlf crlf)
-  (retract ?f)  
+  (retract ?f)
 )
 
 (defrule delete-goals
@@ -95,29 +114,114 @@
   (retract ?g)  
 )
 
+(defrule delete-goal-metas
+  (reset-domain-facts)
+  ?m <- (goal-meta)
+  =>
+	;(printout t crlf "delete goal-meta " ?m crlf crlf)
+  (retract ?m)  
+)
+
+(defrule delete-domain-facts
+  (reset-domain-facts)
+  ?f <- (domain-fact)
+  =>
+	;(printout t crlf "delete domain fact " ?f crlf crlf)
+  (retract ?f)  
+)
+
+(defrule delete-domain-objects
+  (reset-domain-facts)
+  ?o <- (domain-object)
+  =>
+	;(printout t crlf "delete domain object " ?o crlf crlf)
+  (retract ?o)  
+)
+
+(defrule delete-domain-object-types
+  (reset-domain-facts)
+  ?o <- (domain-object-type)
+  =>
+	;(printout t crlf "delete domain object type" ?o crlf crlf)
+  (retract ?o)  
+)
+
+(defrule delete-domain-object-is-of-types
+  (reset-domain-facts)
+  ?o <- (domain-object-is-of-type)
+  =>
+	;(printout t crlf "delete domain object-is-of-type" ?o crlf crlf)
+  (retract ?o)  
+)
+
+(defrule delete-domain-operators
+  (reset-domain-facts)
+  ?o <- (domain-operator)
+  =>
+	;(printout t crlf "delete domain-operator " ?o crlf crlf)
+  (retract ?o)  
+)
+
+(defrule delete-domain-predicate
+  (reset-domain-facts)
+  ?o <- (domain-predicate)
+  =>
+	;(printout t crlf "delete domain predicate " ?o crlf crlf)
+  (retract ?o)  
+)
+
+; (defrule delete-plan-action
+;   (reset-domain-facts)
+;   ?o <- (plan-action)
+;   =>
+; 	;(printout t crlf "delete plan-action " ?o crlf crlf)
+;   (retract ?o)  
+; )
+
+; (defrule delete-action-timer
+;   (reset-domain-facts)
+;   ?o <- (action-timer)
+;   =>
+; 	;(printout t crlf "delete action-timer " ?o crlf crlf)
+;   (retract ?o)  
+; )
+
 (defrule reset-domain
   ?r<-(reset-domain-facts)
   (not (domain-fact))
   (not (goal))
+  (not (goal-meta))
+  (not (domain-object))
+  (not (domain-predicate))
+  ;(not (plan-action))
+  ;(not (action-timer))
   ?d<- (domain-loaded)
   ?fl<-(domain-facts-loaded)
   ?g <-(goals-loaded)
+  ?p <- (wm-fact (key refbox phase))
   =>
   (printout t crlf "reset domain running" crlf crlf)
   (retract ?d)
   (retract ?fl)
   (retract ?r)
   (retract ?g)
+  (assert (executive-init))
   (assert (reset-domain-running))
+  (modify ?p (value SETUP))
 )
 
 (defrule reset-running
   ?r <-(reset-domain-running)
   (domain-loaded)
-	(domain-facts-loaded)
+  (domain-facts-loaded)
   (goals-loaded)
+  ?p <- (wm-fact (key refbox phase))
   =>
   (printout t crlf "reset domain finish" crlf crlf)
   (retract ?r)
+  (modify ?p (value PRODUCTION))
   (assert (reset-domain-finish))
 )
+
+
+
