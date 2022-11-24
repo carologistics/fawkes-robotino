@@ -28,61 +28,51 @@ goal-space:
   # TOWER-C2: {blocks: block}
   # Goal Classnames
   # classes: ["TOWER-C1", "TOWER-C2"]
-  classes:
-    [
-      "BUFFER-CAP",
-      "MOUNT-CAP",
-      "MOUNT-RING",
-      "PAY-FOR-RING-GOAL",
-      "PAY-FOR-RINGS-WITH-BASE",
-      "PAY-FOR-RINGS-WITH-CAP-CARRIER",
-      "PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF",
-      "DELIVER",
-      "DELIVER-RC21",
-      "DISCARD",
-      "MOVE-OUT-OF-WAY",
-    ]
-    # "PICK-AND-PLACE", "MOVE", "PAYMENT-1", "PAYMENT-2",
-    # "INSTRUCT-ORDER","INSTRUCT-CS-BUFFER-CAP", "INSTRUCT-CS-MOUNT-CAP",
-    # "INSTRUCT-BS-DISPENSE-BASE","INSTRUCT-RS-MOUNT-RING","INSTRUCT-DS-DELIVER",
-    # ENTER-FIELD
-    # NAVIGATION-CHALLENGE-MOVE, PRODUCTION-ROOT, NAVIGATION-CHALLENGE-ROOT,
-    # EXPLORE-ZONE, EXPLORATION-, EXPLORATION-ROOT
-    # BEACON-MAINTAIN INSTRUCTION-ROOT SUPPORT-ROOT WAIT-ROOT
-    # WAIT-NOTHING-EXECUTABLE REFILL-SHELF "CLEAR-OUTPUT",
+  classes: ["ENTER-FIELD",
+            "BUFFER-CAP",
+            "MOUNT-CAP",
+            "MOUNT-RING",
+            "PAY-FOR-RING-GOAL",
+            "PAY-FOR-RINGS-WITH-BASE",
+            "PAY-FOR-RINGS-WITH-CAP-CARRIER",
+            "PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF",
+            "MOVE-OUT-OF-WAY",
+            "DELIVER",
+            "DELIVER-RC21",
+            "DISCARD"]
 param-names:
   # TOWER-C1: ["buttom", "top"]
   # TOWER-C2: ["buttom", "middle", "top"]
+  ENTER-FIELD: []
+  BUFFER-CAP: ["cap-color", "target-mps", "cap-color"]
+  MOUNT-CAP: ["target-mps", "wp-loc"]
+  # ["wp", "target-mps", "target-side", "wp-loc", "wp-side"]
+  MOUNT-RING: ["target-mps", "wp-loc", "ring-color"]
+  #  ["wp", "target-mps", "target-side", "wp-loc", "wp-side", "ring-color"]
 
-  BUFFER-CAP: ["cap-color", "target-mps"]
-  MOUNT-CAP: ["wp", "target-mps", "target-side", "wp-loc", "wp-side"]
-  MOUNT-RING:
-    ["wp", "target-mps", "target-side", "wp-loc", "wp-side", "ring-color"]
-  # MOVE: ["target-mps"]
-  # MOVE-OUT-OF-WAY: ["target-pos"]
-  # PICK-AND-PLACE: ["target-mps"]
-  PAY-FOR-RINGS-WITH-BASE:
-    ["wp", "wp-loc", "wp-side", "target-mps", "target-side"]
-  PAY-FOR-RINGS-WITH-CAP-CARRIER:
-    ["wp", "wp-loc", "wp-side", "target-mps", "target-side"]
-  PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF: ["wp-loc", "target-mps", "target-side"]
-  DISCARD: ["wp", "wp-loc", "wp-side"]
-  # PRODUCE-ORDER: []
-  # PAY-FOR-RING-GOAL:
-  # PAYMENT-1:
-  # PAYMENT-2:
-  DELIVER: ["wp", "target-mps", "target-side"]
-  DELIVER-RC21: ["wp"]
+  PAY-FOR-RING-GOAL: []
+  PAY-FOR-RINGS-WITH-BASE: ["wp-loc", "target-mps"]
+  #  ["wp", "wp-loc", "wp-side", "target-mps", "target-side"]
+  PAY-FOR-RINGS-WITH-CAP-CARRIER: ["wp-loc", "target-mps"]
+  #  ["wp", "wp-loc", "wp-side", "target-mps", "target-side"]
+  PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF: ["wp-loc", "target-mps"]
+  #  ,"target-side"]
+  MOVE-OUT-OF-WAY: []
+
+  DISCARD: ["wp-loc"]  # ["wp", "wp-loc", "wp-side"]
+  DELIVER: []  # ["wp", "target-mps", "target-side"]
+  DELIVER-RC21: []  # ["wp"]
 
   param-types:
     # buttom: block
     # middle: block
     # top: block
-    wp: workpiece
-    target-mps: mps-typename
-    target-side: mps-side
-    wp-loc: location
-    wp-side: object
+    # wp: workpiece
+    target-mps: mps  # mps-typename nur BS (ohne Cyan)
+    # target-side: mps-side
+    wp-loc: mps  # location (typ + team) C-BS
+    # wp-side: mps-side
     cap-color: cap-color
-    ring-color: object
+    ring-color: ring-color
+    base-color: base-color  # only used for instruct goals
     # target-pos: zone
