@@ -14,7 +14,8 @@ clips-executive:
     # from watching, e.g. if they are showing up at too high frequencies or
     # are not of interest.
     unwatch-facts: ["time"]
-    unwatch-rules: ["time-retract", "blackboard-read"]
+    unwatch-rules: ["time-retract", "blackboard-read",
+                    "action-send-beacon-signal"]
 
   # Currently not working in clips-executive!
   #
@@ -110,11 +111,12 @@ clips-executive:
           - name: action-execution
             files:
               - skills-actions.clp
-              - rcll-central/noop-actions.clp
               - rcll-central/refbox-actions.clp
               - rcll-central/wait-actions.clp
           - name: execution-monitoring
             file: rcll-central/execution-monitoring.clp
+          - name: simulated-actions
+            file: rcll-central/noop-actions.clp
           - name: simtest
             file: rcll-central/simtest.clp
 

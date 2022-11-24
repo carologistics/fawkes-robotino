@@ -11,16 +11,14 @@
   ?*BEACON-PERIOD* = 1.0
   ?*PREPARE-PERIOD* = 1.0
   ?*ABORT-PREPARE-PERIOD* = 30.0
+  ?*BEACON-TIMER* = 2
   ?*ABORT-PREPARE-DOWN-RESET* = 5.0
 )
 
 (defrule action-send-beacon-signal
   (time $?now)
   ?bs <- (wm-fact (key refbox beacon seq) (value ?seq))
-  ?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state PENDING)
-                      (action-name send-beacon) (executable TRUE)
-                      (param-names $?param-names)
-                      (param-values $?param-values))
+  ?bt <- (timer (name refbox-beacon-timer) (time  $?t&:(timeout ?now ?t ?*BEACON-TIMER*)))
   (wm-fact (key config agent team)  (value ?team-name) )
   (wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
   (wm-fact (id "/refbox/comm/peer-id/public") (value ?peer) (type INT))
@@ -69,7 +67,7 @@
     (pb-broadcast ?peer ?beacon)
     (pb-destroy ?beacon)
   )
-  (modify ?pa (state FINAL))
+  (modify ?bt (time ?now))
 )
 
 
@@ -130,16 +128,13 @@
                       (state RUNNING)
                       (action-name reset-mps)
                       (executable TRUE)
-                      (param-names $?param-names)
-                      (param-values $?param-values))
+                      (param-names m)
+                      (param-values ?mps))
   ?st <- (timer (name ?n&:(eq ?n (sym-cat reset- ?goal-id - ?plan-id
                                           - ?id -send-timer)))
                 (time $?t&:(timeout ?now ?t ?*PREPARE-PERIOD*))
                 (seq ?seq))
-  (domain-obj-is-of-type ?mps&:(eq ?mps (plan-action-arg m
-                                                         ?param-names
-                                                         ?param-values))
-                         mps)
+  (domain-obj-is-of-type ?mps mps)
   (metadata-reset-mps ?mps ?team-color ?peer-id $?instruction_info)
   (wm-fact (key domain fact mps-type args? m ?mps t ?mps-type) (value TRUE))
   =>

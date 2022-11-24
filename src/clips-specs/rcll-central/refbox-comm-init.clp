@@ -23,6 +23,8 @@
 (defrule refbox-init
   "Initialization of refbox related facts."
   (executive-init)
+  (time $?now)
+  (not (timer (name refbox-beacon-timer)))
   =>
   (assert 
     (wm-fact (id "/refbox/team-color") )
@@ -33,6 +35,7 @@
     (wm-fact (id "/game/state")  (value WAIT_START) )
     (wm-fact (id "/refbox/game-time")  (type UINT) (is-list TRUE) (values 0 0))
     (wm-fact (key refbox beacon seq) (type UINT) (value 1))
+    (timer (name refbox-beacon-timer) (time ?now))
   )  
 )
 

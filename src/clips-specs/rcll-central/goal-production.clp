@@ -107,36 +107,6 @@
 
 ; ----------------------- Maintenance Goals -------------------------------
 
-(defrule goal-production-create-beacon-maintain
-" The parent goal for beacon signals. Allows formulation of
-  goals that periodically communicate with the refbox.
-"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (not (goal (class BEACON-MAINTAIN)))
-  (or (domain-facts-loaded)
-      (wm-fact (key refbox phase) (value ~SETUP&~PRE_GAME)))
-  =>
-  (bind ?goal (goal-tree-assert-run-endless BEACON-MAINTAIN 1))
-  (modify ?goal (verbosity QUIET) (params frequency 1))
-)
-
-
-(defrule goal-production-create-beacon-achieve
-" Send a beacon signal whenever at least one second has elapsed since it
-  last one got sent.
-"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (time $?now)
-  ?g <- (goal (id ?maintain-id) (class BEACON-MAINTAIN) (mode SELECTED))
-  (not (goal (parent ?maintain-id)))
-  (wm-fact (key central agent robot args? r ?r))
-  =>
-  (bind ?goal (assert (goal (id (sym-cat SEND-BEACON- (gensym*))) (sub-type SIMPLE)
-                (class SEND-BEACON) (parent ?maintain-id) (verbosity QUIET)
-                (is-executable TRUE))))
-  (goal-meta-assert ?goal central nil nil)
-)
-
 (defrule goal-production-create-refill-shelf-maintain
 " The parent goal to refill a shelf. Allows formulation of goals to refill
   a shelf only if the game is in the production phase and the domain is loaded.
@@ -657,6 +627,12 @@
   ; Ensure that a MachineInfo was received already.
   ; So if there are ring stations with specs, then those specs are registered.
   (wm-fact (key domain fact mps-state args? m ?any-mps s IDLE))
+  (not
+    (and
+      (domain-object (name ?robot) (type robot))
+      (not (wm-fact (key domain fact entered-field args? r ?robot)))
+    )
+  )
   =>
   (bind ?g (goal-tree-assert-central-run-parallel INSTRUCTION-ROOT))
   (modify ?g (meta do-not-finish) (priority 1.0))

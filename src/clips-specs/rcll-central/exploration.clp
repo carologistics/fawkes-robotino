@@ -49,11 +49,14 @@
 )
 
 (defrule exp-disable-goals
-" Exploration is not needed anymore as all machines were found."
-	?g <-(goal (class EXPLORE-ZONE|EXPLORATION-MOVE) (mode FORMULATED))
+" Exploration is not needed anymore, as all machines were found.
+  Remove assignments and retract goal/goal-meta facts."
+	?gf <-(goal (id ?id) (class EXPLORE-ZONE|EXPLORATION-MOVE) (mode FORMULATED))
+  	?gm <- (goal-meta (goal-id ?id) (assigned-to nil))
 	(wm-fact (key exploration active) (type BOOL) (value FALSE))
 	=>
-	(retract ?g)
+	(remove-robot-assignment-from-goal-meta ?gf)
+	(retract ?gf ?gm)
 )
 
 (defrule exp-fail-goals
@@ -138,6 +141,13 @@
 	(wm-fact (key game state) (value RUNNING))
 	(wm-fact (key refbox team-color) (value ?color))
 	(wm-fact (key exploration active) (value TRUE))
+
+	(not
+	    (and
+	        (domain-object (name ?robot) (type robot))
+	        (not (wm-fact (key domain fact entered-field args? r ?robot)))
+	    )
+	)
 	=>
 	(bind ?g (goal-tree-assert-central-run-parallel EXPLORATION-ROOT))
 	(modify ?g (meta do-not-finish) (priority 0.0))
