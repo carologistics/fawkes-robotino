@@ -142,6 +142,7 @@ clips-executive:
       parameters:
         simtest:
           enabled: false
+          testbed: FULL  # defined in simtest.clp
         rcll:
           peer-address: 172.26.255.255
           peer-recv-port: 4444
@@ -317,6 +318,7 @@ clips-executive:
       parameters:
         simtest:
           enabled: false
+          testbed: FULL  # defined in simtest.clp
         coordination:
           mutex:
             renew-interval: 5
