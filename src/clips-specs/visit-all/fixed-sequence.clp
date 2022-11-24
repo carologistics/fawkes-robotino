@@ -2,17 +2,15 @@
 (defrule goal-expander-create-sequence
 	?g <- (goal (mode SELECTED) (id TESTGOAL))
 	=>
-	(assert
-	  (plan (id TESTGOAL-PLAN) (goal-id TESTGOAL)
-	        (type SEQUENTIAL))
-	(plan-action (id 1) (plan-id TESTGOAL-PLAN) (goal-id TESTGOAL)
-	             (action-name visit) (skiller "/robot1/Skiller")
-					     (param-values C-BS OUTPUT CYAN))
-	(plan-action (id 2) (plan-id TESTGOAL-PLAN) (goal-id TESTGOAL)
-               (action-name visit) (skiller "/robot1/Skiller")
-							 (param-values C-CS1 OUTPUT CYAN))
-	 )
+        (assert (plan (id TESTGOAL-PLAN) (goal-id TESTGOAL) (type SEQUENTIAL)))
 
+	(bind ?id 1)
+	(delayed-do-for-all-facts ((?obj domain-object)) (eq ?obj:type mps) 
+		(assert (plan-action (id ?id) (plan-id TESTGOAL-PLAN) (goal-id TESTGOAL)          
+               			(action-name visit) (skiller "/robot1/Skiller")                  
+                        	(param-values ?obj:name OUTPUT CYAN)))
+		(bind ?id (+ ?id 1))		
+	)
 	(modify ?g (mode EXPANDED))
 )
 
