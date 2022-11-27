@@ -53,6 +53,8 @@
   ?*ABORT-PREPARE-PERIOD* = 30.0
   ?*ABORT-PREPARE-DOWN-RESET* = 5.0
   ?*BEACON-TIMER* = 2
+  ; bound on number of past task outcomes that are sent
+  ?*NUM-SENT-FINISHED-TASKS* = 10
 
   ?*MONITORING-SALIENCE* = 1
   ?*COMMON-TIMEOUT-DURATION* = 30
