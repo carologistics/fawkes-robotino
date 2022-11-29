@@ -1111,7 +1111,7 @@
   "None of the orders fulfill all filters"
   (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   (wm-fact (key strategy meta selected-order args? cond filter) (value nil))
-  (wm-fact (key strategy meta filtered-orders args? filter $?) (values ?any-order))
+  (wm-fact (key strategy meta filtered-orders args? filter $?) (values ?any-order $?))
   ?fallback <- (wm-fact (key strategy meta selected-order args? cond fallback) (value ?fallback-order))
   =>
   (bind ?map (create$))
@@ -1121,7 +1121,7 @@
       (if (member$ ?order ?map) then
           (bind ?index (member$ ?order ?map))
           (bind ?count (nth$ ?index ?counts))
-          (bind ?counts (create$ (subseq$ ?counts 1 (- ?index 1)) (+ ?count 1) (subseq$ ?counts (+ ?index 1) (length$ ?counts))))
+          (bind ?counts (replace$ ?counts ?index ?index (+ ?count 1)))
         else
           (bind ?map (create$ ?map ?order))
           (bind ?counts (create$ ?counts 1))
@@ -1148,7 +1148,7 @@
   (time $?now)
   (not (timer (name production-strategy-nothing-executable-timer)))
 
-  (goal (id ?goal-id) (class MOVE-OUT-OF-WAY) (mode DISPATCHED))
+  (goal (id ?goal-id) (class MOVE-OUT-OF-WAY) (mode DISPATCHED) (sub-type SIMPLE))
   =>
   (assert (timer (name production-strategy-nothing-executable-timer) (time ?now)))
 )
@@ -1157,7 +1157,7 @@
   "At leats one robots has a goal assigned, remove the timer"
   (forall
     (wm-fact (key central agent robot args? r ?robot))
-    (goal (mode DISPATCHED) (id ?goal-id) (class ~MOVE-OUT-OF-WAY))
+    (goal (mode DISPATCHED) (id ?goal-id) (class ~MOVE-OUT-OF-WAY) (sub-type SIMPLE))
     (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
   )
 
