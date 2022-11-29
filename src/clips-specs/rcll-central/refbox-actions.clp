@@ -140,6 +140,7 @@
     (if (neq (nth$ 5 ?colors) CAP_NONE) then
      (pb-set-field ?wp-description-msg "cap_color" (nth$ 5 ?colors))
     )
+    (pb-set-field ?task-msg "workpiece_description" ?wp-description-msg)
   )
   (if ?task-msg-valid
    then
