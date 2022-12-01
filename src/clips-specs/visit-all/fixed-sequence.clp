@@ -1,22 +1,58 @@
 
-(defrule goal-expander-create-sequence
-	?g <- (goal (mode SELECTED) (id TESTGOAL))
+(defrule goal-expander-create-sequence-robot1
+	?g <- (goal (mode SELECTED) (id GOALR1))
 	=>
-        (assert (plan (id TESTGOAL-PLAN) (goal-id TESTGOAL) (type SEQUENTIAL)))
+        (assert (plan (id GOALR1-PLAN) (goal-id GOALR1) (type SEQUENTIAL)))
+		(assert (plan-action (id 1) (plan-id GOALR1-PLAN) (goal-id GOALR1)          
+               			(action-name visit) (skiller "/robot1/Skiller")                  
+                        	(param-values C-BS OUTPUT CYAN)))
 
-	(bind ?id 1)
-	(bind ?r 1)
-	(bind ?s (str-cat (str-cat "/robot" ?r ) "/Skiller"))
-	(delayed-do-for-all-facts ((?obj domain-object)) (eq ?obj:type mps) 
-		(assert (plan-action (id ?id) (plan-id TESTGOAL-PLAN) (goal-id TESTGOAL)          
-               			(action-name visit) (skiller ?s)                  
-                        	(param-values ?obj:name OUTPUT CYAN)))
-		(bind ?id (+ ?id 1))
-		(bind ?r (+ (mod ?r 3) 1))
-		(bind ?s (str-cat (str-cat "/robot" ?r ) "/Skiller"))
-	)
+	; (bind ?id 1)
+	; (delayed-do-for-all-facts ((?obj domain-object)) (eq ?obj:type mps) 
+	; 	(assert (plan-action (id ?id) (plan-id GOALR1-PLAN) (goal-id GOALR1)          
+    ;            			(action-name visit) (skiller "/robot1/Skiller")                  
+    ;                     	(param-values ?obj:name OUTPUT CYAN)))
+	; 	(bind ?id (+ ?id 1))
+	; )
 	(modify ?g (mode EXPANDED))
 )
+
+(defrule goal-expander-create-sequence-robot2
+	?g <- (goal (mode SELECTED) (id GOALR2))
+	=>
+        (assert (plan (id GOALR2-PLAN) (goal-id GOALR2) (type SEQUENTIAL)))
+
+		(assert (plan-action (id 1) (plan-id GOALR2-PLAN) (goal-id GOALR2)          
+               			(action-name visit) (skiller "/robot2/Skiller")                  
+                        	(param-values C-CS1 OUTPUT CYAN)))
+
+	;(bind ?id 1)
+	;(delayed-do-for-all-facts ((?obj domain-object)) (eq ?obj:type mps) 
+	;	(assert (plan-action (id ?id) (plan-id GOALR2-PLAN) (goal-id GOALR2)          
+    ;           			(action-name visit) (skiller "/robot2/Skiller")                  
+    ;                    	(param-values ?obj:name OUTPUT CYAN)))
+	;	(bind ?id (+ ?id 1))
+	;)
+	(modify ?g (mode EXPANDED))
+)
+
+(defrule goal-expander-create-sequence-robot3
+	?g <- (goal (mode SELECTED) (id GOALR3))
+	=>
+        (assert (plan (id GOALR3-PLAN) (goal-id GOALR3) (type SEQUENTIAL)))
+		(assert (plan-action (id 1) (plan-id GOALR3-PLAN) (goal-id GOALR3)          
+               			(action-name visit) (skiller "/robot3/Skiller")                  
+                        	(param-values C-CS2 OUTPUT CYAN)))
+	; (bind ?id 1)
+	; (delayed-do-for-all-facts ((?obj domain-object)) (eq ?obj:type mps) 
+	; 	(assert (plan-action (id ?id) (plan-id GOALR3-PLAN) (goal-id GOALR3)          
+    ;            			(action-name visit) (skiller "/robot3/Skiller")                  
+    ;                     	(param-values ?obj:name OUTPUT CYAN)))
+	; 	(bind ?id (+ ?id 1))
+	; )
+	(modify ?g (mode EXPANDED))
+)
+
 
 (defrule goal-expander-maintain-beacon
 	?p <- (goal (mode SELECTED) (id ?parent-id))
