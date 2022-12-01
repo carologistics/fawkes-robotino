@@ -111,6 +111,10 @@
   (return (random 0 1000000000))
 )
 
+(deffunction order-to-int (?order)
+  (return (integer (string-to-field (sub-string 2 (length$ ?order) ?order))))
+)
+
 (deffunction remote-if-id (?remote ?id)
   (return (str-cat "/" ?remote "/" ?id))
 )

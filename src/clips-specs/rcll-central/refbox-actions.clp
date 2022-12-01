@@ -71,7 +71,7 @@
   ?bs <- (wm-fact (key refbox beacon seq) (value ?seq))
   (refbox-agent-task (task-id ?task-seq) (robot ?robot) (task-type ?task-type)
     (machine ?m) (side ?side) (waypoint ?waypoint) (workpiece ?wp)
-    (workpiece-colors $?colors) (outcome ?outcome)
+    (workpiece-colors $?colors) (order ?order-id) (outcome ?outcome)
   )
   (wm-fact (key central agent robot args? r ?robot))
   (wm-fact (key refbox robot task seq args? r ?robot) (value ?task-seq))
@@ -141,6 +141,9 @@
      (pb-set-field ?wp-description-msg "cap_color" (nth$ 5 ?colors))
     )
     (pb-set-field ?task-msg "workpiece_description" ?wp-description-msg)
+  )
+  (if (neq ?order-id nil) then
+    (pb-set-field ?task-msg "order_id" (order-to-int ?order-id))
   )
   (if ?task-msg-valid
    then
