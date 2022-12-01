@@ -11,7 +11,7 @@
 # Read the full text in the LICENSE.GPL file in the doc directory.
 #
 
-set -eu -o pipefail
+set -u -o pipefail
 
 # Only run the simtest on Fedora.
 source /etc/os-release
@@ -43,12 +43,24 @@ stop_test () {
 
 trap stop_test $TRAP_SIGNALS
 ulimit -c 0
-$SCRIPT_PATH/gazsim.bash -o -r -n 3 --mongodb \
+if timeout 60 $SCRIPT_PATH/gazsim.bash -o -r -n 3 --mongodb \
   -m m-skill-sim --central-agent m-central-clips-exec \
   --team-cyan Carologistics --start-game=PRODUCTION \
   --refbox-args "--cfg-mps mps/mockup_mps.yaml\
      --cfg-simulation simulation/fast_simulation.yaml \
-     --cfg-game game/buildtest_game.yaml" \
-  $@
-echo "Waiting for results..."
-$SCRIPT_PATH/cx-simtest-check.bash ./robot11_latest.log
+     --cfg-game game/buildtest_game.yaml";
+then
+  echo "Waiting for results..."
+  if timeout 360 $SCRIPT_PATH/cx-simtest-check.bash ./robot11_latest.log
+  then
+    echo "Simtest over."
+    exit 0
+  else
+    echo "Failure: Timeout during execution."
+    exit 1
+  fi
+else
+  echo "Failure: Timeout during startup."
+  exit 1
+fi
+
