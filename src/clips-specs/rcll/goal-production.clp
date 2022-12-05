@@ -230,6 +230,7 @@
   (goal-tree-assert-run-endless PRODUCTION-MAINTAIN 1)
 )
 
+
 (defrule goal-production-create-mps-handling-maintain
 " The parent mps handling goal. Allows formulation of
   mps handling goals, if requested by a production goal.
@@ -245,14 +246,14 @@
   (goal-tree-assert-run-endless MPS-HANDLING-MAINTAIN 1)
 )
 
+
 (defrule goal-production-create-wait
   "Keep waiting at one of the waiting positions."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class NO-PROGRESS) (mode FORMULATED))
   (wm-fact (key domain fact self args? r ?self))
-  (domain-object (type waitpoint) (name ?waitpoint))
-  (wm-fact (key domain fact at args? r ?self m ?waitpoint&:
-               (eq (str-length (str-cat ?waitpoint)) 10) side WAIT))
+  (wm-fact (key domain fact at args? r ?self m ?waitpoint side WAIT))
+  (navgraph-node (name ?n&:(and (eq (sym-cat ?n) ?waitpoint) (eq (str-index "-Z" ?n) 2))))
   =>
   (printout t "Goal " WAIT " formulated" crlf)
   (assert (goal (id (sym-cat WAIT- (gensym*)))
@@ -272,8 +273,7 @@
   (goal (id ?production-id) (class NO-PROGRESS) (mode FORMULATED))
   (goal (id ?urgent) (class URGENT) (mode FORMULATED))
   (wm-fact (key domain fact self args? r ?self))
-  (domain-object (type waitpoint) (name ?waitpoint&:
-               (eq (str-index "-Z" ?waitpoint) 2)))
+  (navgraph-node (name ?waitpoint&:(eq (str-index "-Z" ?waitpoint) 2)))
   =>
   (do-for-fact ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ monitoring shame))
     (retract ?wm)
@@ -285,9 +285,9 @@
                 (priority  ?*PRIORITY-GO-WAIT*)
                 (parent ?production-id)
                 (params r ?self
-                        point ?waitpoint
+                        point (sym-cat ?waitpoint)
                 )
-                (required-resources ?waitpoint)
+                (required-resources (sym-cat ?waitpoint))
   ))
 )
 
@@ -499,7 +499,7 @@
   ))
 )
 
-(defrule goal-production-clear-cs-blocked 
+(defrule goal-production-clear-cs-blocked
   "Remove a finished product from a cap station if the station is blocked"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class CLEAR) (mode FORMULATED))
@@ -507,7 +507,7 @@
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-  ;There is a cap-carrier on the input that needs the CS, 
+  ;There is a cap-carrier on the input that needs the CS,
   ;there is a product that needs the CS,
   ;there is a product on the output blocking it
   (wm-fact (key domain fact wp-at args? wp ?cc m ?mps side INPUT))
