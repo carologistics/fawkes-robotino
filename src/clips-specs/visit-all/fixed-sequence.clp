@@ -1,14 +1,24 @@
 
 (defrule goal-expander-create-sequence1
-	?g <- (goal (mode SELECTED) (id ?machine)) ; If a goal still exists, then this machine has not been visited yet
-	; [EXISTS robot ?r1: ?machine is the nearest goal for ?r1]
-	; [FORALL robot ?r2: ?r1 is nearer(or equal) to ?machine than ?r2]
-	=> ; assign ?r1 to goal ?machine
+	?g <- (goal (mode SELECTED) (id ?machine))
+	(domain-fact (name robot-waiting) (param-values ?r1))
+	(domain-fact (name robot-waiting) (param-values ?r2))
+	(test (neq ?r1 ?r2))
+	;(navgraph-node (name ?machine) (pos ?x ?y) $?) distance function verwenden!!
+	 ; If a goal still exists, then this machine has not been visited yet
+ 	;[EXISTS robot ?r1: ?machine is the nearest goal for ?r1]
+	;[FORALL robot ?r2: ?r1 is nearer(or equal) to ?machine than ?r2]
+ 	=> ; assign ?r1 to goal ?machine
 	(modify ?g (mode EXPANDED))
 )
 
 (defrule goal-expander-create-sequence2
-	?g <- (goal (mode SELECTED) (id ?machine)) ; If a goal still exists, then this machine has not been visited yet
+	?g <- (goal (mode SELECTED) (id ?machine))
+	(domain-fact (name robot-waiting) (param-values ?r1))
+	not ((domain-fact (name robot-waiting) (param-values ?r2:(neq ?r1 ?r2))))
+
+
+	 ; If a goal still exists, then this machine has not been visited yet
 	; [EXISTS robot ?r1: ?machine is the nearest goal for ?r1]
 	; [FORALL robot ?r2 != ?r1: ?r2 is busy]
 	=> ; assign ?r1 to goal ?machine
