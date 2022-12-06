@@ -78,35 +78,32 @@
 	(wm-fact (key config simtest testbed) (value ?testbed))
 	=>
 	(switch ?testbed
-		(case "FAST" then
-			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 1 points 1)))
+		; integration test like tests
+		(case "ENTER-FIELD" then
+			(assert (testcase (type ENTER-FIELD)))
 		)
-		(case "DELIVERY" then
+		(case "PRODUCE-C1" then
 			(assert (testcase (type DELIVERY-COUNT) (args count 1)))
+			(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C1)))
+			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 12 points 30)))
 		)
-		(case "COMPLEX" then
-			(simtest-connect OR
-			  (assert (testcase (type DELIVERY-COUNT) (args count 5)))
-				(simtest-connect AND
-					(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C0)))
-					(simtest-connect OR
-						(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C2)))
-						(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C3)))
-					)
-				)
-			)
-			(assert (testcase (type FULL-GAME)))
-		)
+		; agent performance-focused tests
 		(case "FULL" then
-			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 8 points 30)))
-			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 17 points 150)))
+			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 12 points 30)))
+			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 20 points 200)))
 			(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C0)))
-			(simtest-connect OR
-				(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C2)))
-				(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C3)))
-			)
+			(assert (testcase (type DELIVERY-COUNT) (args count 3)))
 			(assert (testcase (type FULL-GAME)))
 		)
+		; combines conditions for ENTER-FIELD, PRODUCE-C1 and FULL for
+		(case "BUILDTEST" then
+			(assert (testcase (type ENTER-FIELD)))
+			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 12 points 30)))
+			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 20 points 200)))
+			(assert (testcase (type DELIVERY-COUNT) (args count 3)))
+			(assert (testcase (type FULL-GAME)))
+		)
+
 		(default none)
 	)
 	(assert (testcase (type NO-BROKEN-MPS) (termination SUCCESS)))
@@ -248,6 +245,22 @@
 	(modify ?testcase (state FAILED) (msg (str-cat "Broken MPS " ?m)))
 )
 
+(defrule simtest-enter-field-success
+" The ENTER-FIELD goal succeeded; we can move."
+	?testcase <- (testcase (type ENTER-FIELD) (state PENDING))
+	(goal (class ENTER-FIELD) (mode FINISHED) (outcome COMPLETED))
+	=>
+	(modify ?testcase (state SUCCEEDED))
+)
+
+(defrule simtest-enter-field-failed
+" The ENTER-FIELD goal failed; something is broken."
+	?testcase <- (testcase (type ENTER-FIELD) (state PENDING))
+	(goal (class ENTER-FIELD) (mode FINISHED) (outcome ~COMPLETED))
+	=>
+	(modify ?testcase (state FAILED))
+)
+
 ; ============================================================================
 
 (defrule simtest-abort-early
@@ -269,11 +282,13 @@
 	(simtest-initialized)
 	(not (testcase (state PENDING)))
 	=>
+	(printout info "SIMTEST: Finished" crlf)
 	(if (do-for-all-facts ((?testcase testcase))
 		(and (eq ?testcase:state FAILED) (eq ?testcase:parent nil))
 		(printout error ?testcase:type " failed: " ?testcase:msg crlf)
 	)
 	 then
+		(printout info "SIMTEST: End" crlf)
 		(simtest-quit FALSE)
 	else
 		(printout info "All tests successful!" crlf)

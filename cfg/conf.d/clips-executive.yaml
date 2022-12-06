@@ -142,7 +142,7 @@ clips-executive:
       parameters:
         simtest:
           enabled: false
-          testbed: ENTER-FIELD
+          testbed: FULL  # defined in simtest.clp
         rcll:
           peer-address: 172.26.255.255
           peer-recv-port: 4444
@@ -318,10 +318,7 @@ clips-executive:
       parameters:
         simtest:
           enabled: false
-          # FAST checks only first minute of a game
-          # DELIVERY tests until the first delivery happens
-          # FULL checks whole game
-          testbed: FULL
+          testbed: FULL  # defined in simtest.clp
         coordination:
           mutex:
             renew-interval: 5
