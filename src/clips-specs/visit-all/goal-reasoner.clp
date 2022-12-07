@@ -9,7 +9,9 @@
 
 ; #  Goal Creation
 (defrule goal-reasoner-create
-	(not (goal (id TESTGOAL)))
+	(not (goal (id TESTGOAL1)))
+	(not (goal (id TESTGOAL2)))
+	(not (goal (id TESTGOAL3)))
 	(not (goal-already-tried))
 	(wm-fact (key refbox phase) (value PRODUCTION))
 	(wm-fact (key game state) (value RUNNING))
@@ -17,7 +19,9 @@
 	(domain-facts-loaded)
 	;(wm-fact (key navgraph waitzone generated) (value TRUE))
 	=>
-	(assert (goal (id TESTGOAL)))
+	(assert (goal (id TESTGOAL1) ))
+	(assert (goal (id TESTGOAL2) ))
+	(assert (goal (id TESTGOAL3s) ))
 	; This is just to make sure we formulate the goal only once.
 	; In an actual domain this would be more sophisticated.
 	(assert (goal-already-tried))
