@@ -1,14 +1,31 @@
 
+(deffunction distance (?x ?y ?x2 ?y2)
+  "Returns the distance of two points in the x,y-plane.
+  @param ?x ?y coordinates of one point
+  @param ?x2 ?y2 coordinates of the other point
+
+  @return euclidean distance of the two points
+  "
+  (return (float (sqrt (float(+ (* (- ?x ?x2) (- ?x ?x2)) (* (- ?y ?y2) (- ?y ?y2)))))))
+)
+
 (defrule goal-expander-create-sequence1
 	?g <- (goal (mode SELECTED) (id ?machine))
 	(domain-fact (name robot-waiting) (param-values ?r1))
 	(domain-fact (name robot-waiting) (param-values ?r2))
 	(test (neq ?r1 ?r2))
-	;(navgraph-node (name ?machine) (pos ?x ?y) $?) distance function verwenden!!
-	 ; If a goal still exists, then this machine has not been visited yet
- 	;[EXISTS robot ?r1: ?machine is the nearest goal for ?r1]
-	;[FORALL robot ?r2: ?r1 is nearer(or equal) to ?machine than ?r2]
- 	=> ; assign ?r1 to goal ?machine
+	(wm-fact (id ?) (key domain fact at args? r ?r1 m ?loc1 $?) $?)
+	(wm-fact (id ?) (key domain fact at args? r ?r2 m ?loc2 $?) $?)
+	(navgraph-node (name (str-cat ?loc1)) (pos ?x1 ?y1) $?)
+	(navgraph-node (name (str-cat ?loc2)) (pos ?x2 ?y2) $?)
+	(navgraph-node (name (str-cat ?machine)) (pos ?x3 ?y3) $?)
+	(> (distance ?x2 ?y2 ?x3 ?y3) (distance ?x1 ?y1 ?x3 ?y3))
+ 	=>
+	(assert (plan (id (str-cat ?machine "-PLAN")) (goal-id ?machine) (type SEQUENTIAL)))
+	(assert (plan-action (id 1) (plan-id (str-cat ?machine "-PLAN")) (goal-id ?machine)          
+               			(action-name visit) (skiller (str-cat "/robot" ?r1 "/Skiller")                  
+                        	(param-values ?machine OUTPUT CYAN))))
+
 	(modify ?g (mode EXPANDED))
 )
 
@@ -17,11 +34,11 @@
 	(domain-fact (name robot-waiting) (param-values ?r1))
 	not ((domain-fact (name robot-waiting) (param-values ?r2:(neq ?r1 ?r2))))
 
-
-	 ; If a goal still exists, then this machine has not been visited yet
-	; [EXISTS robot ?r1: ?machine is the nearest goal for ?r1]
-	; [FORALL robot ?r2 != ?r1: ?r2 is busy]
-	=> ; assign ?r1 to goal ?machine
+	=>
+	(assert (plan (id (str-cat ?machine "-PLAN")) (goal-id ?machine) (type SEQUENTIAL)))
+	(assert (plan-action (id 1) (plan-id (str-cat ?machine "-PLAN")) (goal-id ?machine)          
+               			(action-name visit) (skiller (str-cat "/robot" ?r1 "/Skiller")                  
+                        	(param-values ?machine OUTPUT CYAN))))
 	(modify ?g (mode EXPANDED))
 )
 

@@ -19,6 +19,9 @@
 	(delayed-do-for-all-facts ((?obj domain-object)) (eq ?obj:type mps)
 		(assert (goal (id ?obj:name)))
 	)
+	assert (goal (id GOALR1))
+	assert (goal (id GOALR2))
+	assert (goal (id GOALR3))
 	; This is just to make sure we formulate the goal only once.
 	; In an actual domain this would be more sophisticated.
 	(assert (goal-already-tried))
