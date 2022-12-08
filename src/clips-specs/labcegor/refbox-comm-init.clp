@@ -164,3 +164,27 @@
   (pb-peer-destroy ?peer-id)
   (modify ?pe (value FALSE))
 )
+
+
+(defrule refbox-startup
+  (wm-fact (id "/refbox/comm/peer-id/public") (value ?peer-id) (type INT))
+  (wm-fact (id "/refbox/phase")  (value PRE_GAME) )
+  (wm-fact (id "/refbox/state")  (value WAIT_START) )
+  =>
+  (bind ?prepare-team (pb-create "llsf_msgs.SetTeamName"))
+  ;(bind ?prepare-phase (pb-create "llsf_msgs.SetGamePhase"))
+  (bind ?prepare-state (pb-create "llsf_msgs.SetGameState"))
+  (pb-set-field ?prepare-team "team_name" Carologistics)
+  (pb-set-field ?prepare-team "team_color" CYAN)
+  ;(pb-set-field ?prepare-phase "phase" SETUP)
+  (pb-set-field ?prepare-state "state" RUNNING)
+
+  (pb-send ?peer-id ?prepare-team)
+  (pb-send ?peer-id ?prepare-state)
+  ;(pb-send ?peer-id ?prepare-phase)
+
+  (pb-destroy ?prepare-team)
+  ;(pb-destroy ?prepare-phase)
+  (pb-destroy ?prepare-state)
+  (printout t "Sent refbox init " crlf)
+)
