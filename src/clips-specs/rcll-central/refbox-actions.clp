@@ -6,68 +6,166 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file in the doc directory.
 ;---------------------------------------------------------------------------
 
-(defglobal
-  ; network sending periods; seconds
-  ?*BEACON-PERIOD* = 1.0
-  ?*PREPARE-PERIOD* = 1.0
-  ?*ABORT-PREPARE-PERIOD* = 30.0
-  ?*BEACON-TIMER* = 2
-  ?*ABORT-PREPARE-DOWN-RESET* = 5.0
+(deffunction create-beacon-msg (?robot-name ?team-name ?team-color ?time)
+  (bind ?name-length (str-length (str-cat ?robot-name)))
+  (bind ?robot-number (string-to-field (sub-string ?name-length ?name-length (str-cat ?robot-name))))
+  (bind ?beacon (pb-create "llsf_msgs.BeaconSignal"))
+  (bind ?beacon-time (pb-field-value ?beacon "time"))
+  (pb-set-field ?beacon-time "sec" (nth$ 1 ?time))
+  (pb-set-field ?beacon-time "nsec" (* (nth$ 2 ?time) 1000))
+  (pb-set-field ?beacon "time" ?beacon-time) ; destroys ?beacon-time!
+  (pb-set-field ?beacon "team_name" ?team-name)
+  ; TODO: robot-name as peer? why?
+  (pb-set-field ?beacon "peer_name" ?robot-name)
+  (pb-set-field ?beacon "team_color" ?team-color)
+  (pb-set-field ?beacon "number" ?robot-number)
+
+  (bind ?trans (create$ 0 0))
+  (bind ?ori (create$ 0 0 0 1))
+  (bind ?ptime ?time)
+  (if (not (do-for-fact ((?pose Position3DInterface)) (eq ?pose:id (remote-if-id ?robot-name "Pose"))
+                        (bind ?trans ?pose:translation)
+                        (bind ?ptime ?pose:time)))
+   then
+    ; We do not have a correct Pose, fake it using the position of the machine we're at
+    (do-for-fact ((?at wm-fact) (?node navgraph-node))
+                 (and (wm-key-prefix ?at:key (create$ domain fact at args? r (sym-cat ?robot-name)))
+                      (eq ?node:name (wm-fact-to-navgraph-node ?at:key)))
+                 (bind ?trans ?node:pos)
+    )
+  )
+  (bind ?beacon-pose (pb-field-value ?beacon "pose"))
+  (pb-set-field ?beacon-pose "x" (nth$ 1 ?trans))
+  (pb-set-field ?beacon-pose "y" (nth$ 2 ?trans))
+  (pb-set-field ?beacon-pose "ori" (tf-yaw-from-quat ?ori))
+  (bind ?beacon-pose-time (pb-field-value ?beacon-pose "timestamp"))
+  (pb-set-field ?beacon-pose-time "sec" (nth$ 1 ?ptime))
+  (pb-set-field ?beacon-pose-time "nsec" (* (nth$ 2 ?ptime) 1000))
+  (pb-set-field ?beacon-pose "timestamp" ?beacon-pose-time)
+  (pb-set-field ?beacon "pose" ?beacon-pose)
+  (return ?beacon)
 )
 
 (defrule action-send-beacon-signal
   (time $?now)
   ?bs <- (wm-fact (key refbox beacon seq) (value ?seq))
-  ?bt <- (timer (name refbox-beacon-timer) (time  $?t&:(timeout ?now ?t ?*BEACON-TIMER*)))
-  (wm-fact (key config agent team)  (value ?team-name) )
+  (wm-fact (key central agent robot args? r ?robot))
+  (wm-fact (key refbox robot task seq args? r ?robot) (value ?task-seq))
+  (not (refbox-agent-task (robot ?robot) (task-id ?task-seq)))
+  ?bt <- (timer (name ?tn&:(eq ?tn (sym-cat refbox-beacon-timer- ?robot)))
+                (time  $?t&:(timeout ?now ?t ?*BEACON-TIMER*)))
+  (wm-fact (key config agent team)  (value ?team-name))
   (wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
   (wm-fact (id "/refbox/comm/peer-id/public") (value ?peer) (type INT))
   =>
-  (do-for-all-facts ((?robot wm-fact))
-    (wm-key-prefix ?robot:key (create$ central agent robot))
-    (bind ?bs (modify ?bs (value (+ ?seq 1))))
-    (bind ?robot-name (wm-key-arg ?robot:key r))
-    (bind ?name-length (str-length (str-cat ?robot-name)))
-    (bind ?robot-number (string-to-field (sub-string ?name-length ?name-length (str-cat ?robot-name))))
-    (bind ?beacon (pb-create "llsf_msgs.BeaconSignal"))
-    (bind ?beacon-time (pb-field-value ?beacon "time"))
-    (pb-set-field ?beacon-time "sec" (nth$ 1 ?now))
-    (pb-set-field ?beacon-time "nsec" (* (nth$ 2 ?now) 1000))
-    (pb-set-field ?beacon "time" ?beacon-time) ; destroys ?beacon-time!
-    (pb-set-field ?beacon "seq" ?seq)
-    (pb-set-field ?beacon "team_name" ?team-name)
-    (pb-set-field ?beacon "peer_name" ?robot-name)
-    (pb-set-field ?beacon "team_color" ?team-color)
-    (pb-set-field ?beacon "number" ?robot-number)
-
-    (bind ?trans (create$ 0 0))
-    (bind ?ori (create$ 0 0 0 1))
-    (bind ?ptime ?now)
-    (if (not (do-for-fact ((?pose Position3DInterface)) (eq ?pose:id (remote-if-id ?robot-name "Pose"))
-                          (bind ?trans ?pose:translation)
-                          (bind ?ptime ?pose:time)))
-     then
-      ; We do not have a correct Pose, fake it using the position of the machine we're at
-      (do-for-fact ((?at wm-fact) (?node navgraph-node))
-                   (and (wm-key-prefix ?at:key (create$ domain fact at args? r (sym-cat ?robot-name)))
-                        (eq ?node:name (wm-fact-to-navgraph-node ?at:key)))
-                   (bind ?trans ?node:pos)
-      )
-    )
-    (bind ?beacon-pose (pb-field-value ?beacon "pose"))
-    (pb-set-field ?beacon-pose "x" (nth$ 1 ?trans))
-    (pb-set-field ?beacon-pose "y" (nth$ 2 ?trans))
-    (pb-set-field ?beacon-pose "ori" (tf-yaw-from-quat ?ori))
-    (bind ?beacon-pose-time (pb-field-value ?beacon-pose "timestamp"))
-    (pb-set-field ?beacon-pose-time "sec" (nth$ 1 ?ptime))
-    (pb-set-field ?beacon-pose-time "nsec" (* (nth$ 2 ?ptime) 1000))
-    (pb-set-field ?beacon-pose "timestamp" ?beacon-pose-time)
-    (pb-set-field ?beacon "pose" ?beacon-pose)
-
-    (pb-broadcast ?peer ?beacon)
-    (pb-destroy ?beacon)
-  )
+  (bind ?bs (modify ?bs (value (+ ?seq 1))))
   (modify ?bt (time ?now))
+  (bind ?beacon (create-beacon-msg ?robot ?team-name ?team-color ?now))
+  (pb-set-field ?beacon "seq" ?seq)
+  (pb-broadcast ?peer ?beacon)
+  (pb-destroy ?beacon)
+)
+
+(defrule action-send-beacon-signal-with-task
+  (time $?now)
+  ?bs <- (wm-fact (key refbox beacon seq) (value ?seq))
+  (refbox-agent-task (task-id ?task-seq) (robot ?robot) (task-type ?task-type)
+    (machine ?m) (side ?side) (waypoint ?waypoint) (workpiece ?wp)
+    (workpiece-colors $?colors) (order ?order-id) (outcome ?outcome)
+  )
+  (wm-fact (key central agent robot args? r ?robot))
+  (wm-fact (key refbox robot task seq args? r ?robot) (value ?task-seq))
+  ; TODO could we skip a task by accident?
+  ?bt <- (timer (name ?tn&:(eq ?tn (sym-cat refbox-beacon-timer- ?robot)))
+                (time  $?t&:(timeout ?now ?t ?*BEACON-TIMER*)))
+  (wm-fact (key config agent team)  (value ?team-name))
+  (wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
+  (wm-fact (id "/refbox/comm/peer-id/public") (value ?peer) (type INT))
+  =>
+  (bind ?bs (modify ?bs (value (+ ?seq 1))))
+  (modify ?bt (time ?now))
+  (bind ?beacon (create-beacon-msg ?robot ?team-name ?team-color ?now))
+  (pb-set-field ?beacon "seq" ?seq)
+
+  (bind ?task-msg-valid TRUE)
+  (bind ?task-msg (pb-create "llsf_msgs.AgentTask"))
+  (bind ?name-length (str-length (str-cat ?robot)))
+  (bind ?robot-number (string-to-field (sub-string ?name-length ?name-length (str-cat ?robot))))
+  (pb-set-field ?task-msg "team_color" ?team-color)
+  (pb-set-field ?task-msg "task_id" ?task-seq)
+  (pb-set-field ?task-msg "robot_id" ?robot-number)
+  (bind ?task-info (pb-create (str-cat "llsf_msgs." ?task-type)))
+  (bind ?task-field-name (str-cat (lowcase ?task-type)))
+  (bind ?param1 "waypoint")
+  (bind ?param2 "machine_point")
+  (if (member$ ?task-type (create$ BufferStation Retrieve Deliver))
+   then
+    (bind ?param1 "machine_id")
+  )
+  (if (eq ?task-type BufferStation)
+   then
+    (bind ?task-field-name "buffer")
+  )
+  (if (eq ?task-type ExploreWaypoint)
+   then
+    (bind ?task-field-name "explore_machine")
+  )
+  (if (neq ?m UNSET)
+   then
+    (pb-set-field ?task-info ?param1 ?m)
+   else
+    (if (neq ?waypoint UNSET)
+     then
+      (pb-set-field ?task-info ?param1 ?waypoint)
+     else
+      (bind ?task-msg-valid FALSE)
+      (printout error "AgentTask with UNSET param " ?param1 ", skip" crlf)
+    )
+  )
+  (if (neq ?side UNSET) then
+    (pb-set-field ?task-info ?param2 ?side)
+   else
+    (if (eq ?task-type Retrieve) then
+      (bind ?task-msg-valid FALSE)
+      (printout error "AgentTask Retrive with UNSET param " ?param2 ", skip" crlf)
+    )
+  )
+  (if (and (neq ?wp nil) (eq (length$ ?colors) 5))
+   then
+    (bind ?wp-description-msg (pb-create "llsf_msgs.WorkpieceDescription"))
+    (pb-set-field ?wp-description-msg "base_color" (nth$ 1 ?colors))
+    (progn$ (?col (subseq$ ?colors 2 4))
+      (pb-add-list ?wp-description-msg "ring_colors" ?col)
+    )
+    (if (neq (nth$ 5 ?colors) CAP_NONE) then
+     (pb-set-field ?wp-description-msg "cap_color" (nth$ 5 ?colors))
+    )
+    (pb-set-field ?task-msg "workpiece_description" ?wp-description-msg)
+  )
+  (if (neq ?order-id nil) then
+    (pb-set-field ?task-msg "order_id" (order-to-int ?order-id))
+  )
+  (if ?task-msg-valid
+   then
+    (pb-set-field ?task-msg ?task-field-name ?task-info)
+    (pb-set-field ?beacon "task" ?task-msg)
+   else
+    (pb-destroy ?task-info)
+    (pb-destroy ?task-msg)
+  )
+  (do-for-all-facts ((?old-task refbox-agent-task))
+    (and (eq ?old-task:robot ?robot)
+         (> ?task-seq ?old-task:task-id)
+         (< (- ?task-seq ?old-task:task-id) ?*NUM-SENT-FINISHED-TASKS*)
+    )
+    (bind ?fin-task-msg (pb-create "llsf_msgs.FinishedTask"))
+    (pb-set-field ?fin-task-msg "TaskId" ?old-task:task-id)
+    (pb-set-field ?fin-task-msg "successful" (eq ?old-task:outcome SUCCESSFUL))
+    (pb-add-list ?beacon "finished_tasks" ?fin-task-msg)
+  )
+
+  (pb-broadcast ?peer ?beacon)
+  (pb-destroy ?beacon)
 )
 
 
