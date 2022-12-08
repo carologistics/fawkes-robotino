@@ -52,7 +52,7 @@ clips-executive:
   # spec: rcll-central
 
   specs:
-    rcll-central:
+    labcegor:
       init:
         stage-1:
           - name: pddl-parser
@@ -67,21 +67,21 @@ clips-executive:
           - name: robot_memory
         stage-3:
           - name: utils
-            file: rcll-central/utils.clp
+            file: labcegor/utils.clp
           - name: worldmodel
             files:
               - wm-robmem-sync.clp
               - wm-template-facts.clp
-              - rcll-central/wm-sync.clp
-              - rcll-central/init.clp
-              - rcll-central/blackboard-init.clp
-              - rcll-central/game-worldmodel.clp
+              - labcegor/wm-sync.clp
+              - labcegor/init.clp
+              - labcegor/blackboard-init.clp
+              - labcegor/game-worldmodel.clp
           - name: communication
             files:
-              - rcll-central/refbox-comm-init.clp
-              - rcll-central/refbox-worldmodel.clp
+              - labcegor/refbox-comm-init.clp
+              - labcegor/refbox-worldmodel.clp
           - name: domain
-            file: rcll-central/domain.clp
+            file: labcegor/domain.clp
           - name: goal-reasoner
             files:
               - goals/retry.clp
@@ -91,35 +91,32 @@ clips-executive:
               - goals/timeout.clp
               - goals/try-all.clp
               - goal-tree.clp
-              - rcll-central/goals/run-endless.clp
-              - rcll-central/goals/simple.clp
-              - rcll-central/goals/central-run-all.clp
-              - rcll-central/goals/central-run-one.clp
-              - rcll-central/goals/central-run-parallel.clp
-              - rcll-central/goal-reasoner.clp
-              - rcll-central/goal-dependencies.clp
-              - rcll-central/goal-executability.clp
-              - rcll-central/goal-production.clp
-              - rcll-central/goal-requests.clp
-              - rcll-central/goal-challenges.clp
-              - rcll-central/production-strategy.clp
-              - rcll-central/exploration.clp
-              - rcll-central/refbox-agent-task.clp
+              - labcegor/goals/run-endless.clp
+              - labcegor/goals/simple.clp
+              - labcegor/goals/central-run-all.clp
+              - labcegor/goals/central-run-one.clp
+              - labcegor/goals/central-run-parallel.clp
+              - labcegor/goal-reasoner.clp
+              - labcegor/goal-executability.clp
+              - labcegor/goal-production.clp
+              - labcegor/production-strategy.clp
+              - labcegor/exploration.clp
+              - labcegor/refbox-agent-task.clp
           - name: goal-expander
-            file: rcll-central/fixed-sequence.clp
+            file: labcegor/fixed-sequence.clp
           - name: action-selection
-            file: rcll-central/action-selection.clp
+            file: action-selection/sequential.clp
           - name: action-execution
             files:
               - skills-actions.clp
-              - rcll-central/refbox-actions.clp
-              - rcll-central/wait-actions.clp
+              - labcegor/refbox-actions.clp
+              - labcegor/wait-actions.clp
           - name: execution-monitoring
-            file: rcll-central/execution-monitoring.clp
+            file: labcegor/execution-monitoring.clp
           - name: simulated-actions
-            file: rcll-central/noop-actions.clp
+            file: labcegor/noop-actions.clp
           - name: simtest
-            file: rcll-central/simtest.clp
+            file: labcegor/simtest.clp
 
       action-mapping:
         enter-field: >
