@@ -14,17 +14,27 @@
 	(domain-fact (name robot-waiting) (param-values ?r1))
 	(domain-fact (name robot-waiting) (param-values ?r2))
 	(test (neq ?r1 ?r2))
-	(wm-fact (id ?) (key domain fact at args? r ?r1 m ?loc1 $?) $?)
-	(wm-fact (id ?) (key domain fact at args? r ?r2 m ?loc2 $?) $?)
-	(navgraph-node (name (str-cat ?loc1)) (pos ?x1 ?y1) $?)
-	(navgraph-node (name (str-cat ?loc2)) (pos ?x2 ?y2) $?)
-	(navgraph-node (name (str-cat ?machine)) (pos ?x3 ?y3) $?)
-	(> (distance ?x2 ?y2 ?x3 ?y3) (distance ?x1 ?y1 ?x3 ?y3))
+	(domain-fact (name at) (param-values ?r1 ?loc1 ?))
+	(domain-fact (name at) (param-values ?r2 ?loc2 ?))
+	; (wm-fact (key domain fact at args? r ?r1 m ?loc1 side ?))
+	; (wm-fact (key domain fact at args? r ?r2 m ?loc2 side ?))
+	; (bind ?sloc1 (str-cat ?loc1))
+	; (bind ?sloc2 (str-cat ?loc2))
+	; (bind ?smachine (str-cat ?machine))
+	(navgraph-node (name ?loc3) (pos ?x1 ?y1))
+	(navgraph-node (name ?loc4) (pos ?x2 ?y2))
+	(navgraph-node (name ?machine2) (pos ?x3 ?y3))
+	(eq ?loc1 ?loc3)
+	(eq ?loc2 ?loc4)
+	(eq ?machine ?machine2)
+	?dist13 <- (distance ?x2 ?y2 ?x3 ?y3)
+	?dist23 <- (distance ?x1 ?y1 ?x3 ?y3)
+	(> ?dist13 ?dist23)
  	=>
 	(assert (plan (id (str-cat ?machine "-PLAN")) (goal-id ?machine) (type SEQUENTIAL)))
 	(assert (plan-action (id 1) (plan-id (str-cat ?machine "-PLAN")) (goal-id ?machine)          
-               			(action-name visit) (skiller (str-cat "/robot" ?r1 "/Skiller")                  
-                        	(param-values ?machine OUTPUT CYAN))))
+               			(action-name visit) (skiller (str-cat "/" ?r1 "/Skiller"))                  
+                        	(param-values ?machine OUTPUT CYAN)))
 
 	(modify ?g (mode EXPANDED))
 )
@@ -32,14 +42,21 @@
 (defrule goal-expander-create-sequence2
 	?g <- (goal (mode SELECTED) (id ?machine))
 	(domain-fact (name robot-waiting) (param-values ?r1))
-	not ((domain-fact (name robot-waiting) (param-values ?r2:(neq ?r1 ?r2))))
+	(not (domain-fact (name robot-waiting) (param-values ?r2&:(neq ?r1 ?r2))))
 
 	=>
 	(assert (plan (id (str-cat ?machine "-PLAN")) (goal-id ?machine) (type SEQUENTIAL)))
 	(assert (plan-action (id 1) (plan-id (str-cat ?machine "-PLAN")) (goal-id ?machine)          
-               			(action-name visit) (skiller (str-cat "/robot" ?r1 "/Skiller")                  
-                        	(param-values ?machine OUTPUT CYAN))))
+               			(action-name visit) (skiller (str-cat "/" ?r1 "/Skiller"))                  
+                        	(param-values ?machine OUTPUT CYAN)))
 	(modify ?g (mode EXPANDED))
+)
+
+(defrule adjust-robot-at-function
+	(domain-fact (name robot-waiting) (param-values ?r1))
+	?rule <- (domain-fact (name at) (param-values ?r1 START ?s))
+	=>
+	(modify ?rule (param-values ?r1 C-INS ?s))
 )
 
 (defrule goal-expander-create-sequence-robot1
