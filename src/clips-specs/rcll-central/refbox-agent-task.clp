@@ -185,6 +185,7 @@
                   ?side)
     (state RUNNING) (goal-id ?goal-id) (plan-id ?plan-id)
   )
+  (wm-fact (key domain fact mps-state args? m ?mps s PROCESSED|READY-AT-OUTPUT|IDLE))
   (not (refbox-agent-task (robot ?robot) (task-id ?seq)))
   =>
   (assert (refbox-agent-task (task-id ?seq) (robot ?robot) (task-type Retrieve)
