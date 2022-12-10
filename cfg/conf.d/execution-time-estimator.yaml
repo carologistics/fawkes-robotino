@@ -36,6 +36,34 @@ plugins/execution-time-estimator:
       discard:
         name: discard
         exec-time: 8.25
+      # shelf picks
+      01-get-shelf-new-left:
+        name: maniuplate_wp
+        args: ["side=SHELF-LEFT"]
+        exec-time: 24.19
+      01-get-shelf-new-mid:
+        name: maniuplate_wp
+        args: ["side=SHELF-MIDDLE"]
+        exec-time: 24.19
+      01-get-shelf-new-right:
+        name: maniuplate_wp
+        args: ["side=SHELF-RIGHT"]
+        exec-time: 24.19
+      # shelf picks
+      02-put-slide-new:
+        name: manipulate_wp
+        args: ["target=SLIDE"]
+        exec-time: 23.49
+      # default pick
+      99-default-pick-new:
+        name: manipulate_wp
+        args: ["target=WORKPIECE"]
+        exec-time: 20.94
+      # default put
+      99-default-put-new:
+        name: manipulate_wp
+        args: ["target=CONVEYOR"]
+        exec-time: 19.24
 
       # shelf picks
       01-get-shelf:
