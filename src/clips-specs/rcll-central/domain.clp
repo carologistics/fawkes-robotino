@@ -68,7 +68,8 @@
 )
 
 (defrule domain-worldmodel-flush
-	(executive-init)
+	(or (executive-init)
+      (reset-game (stage STAGE-1)))
 	(wm-fact (key cx identity))
 	(wm-fact (key refbox phase) (value SETUP))
 	=>
@@ -78,6 +79,13 @@
 	  (retract ?df)
 	)
 	(assert (domain-wm-flushed))
+)
+
+(defrule reset-game-stage-two
+  ?r <- (reset-game (stage STAGE-1))
+	(domain-wm-flushed)
+	=>
+  (modify ?r (stage STAGE-2))
 )
 
 (deffunction domain-load-local-facts (?self ?team-color)
