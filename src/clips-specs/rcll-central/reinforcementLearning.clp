@@ -1,3 +1,26 @@
+(defrule refbox-startup
+  (wm-fact (id "/refbox/comm/peer-id/public") (value ?peer-id) (type INT))
+  (wm-fact (id "/refbox/phase")  (value PRE_GAME) )
+  (wm-fact (id "/refbox/state")  (value WAIT_START) )
+  =>
+  (bind ?prepare-team (pb-create "llsf_msgs.SetTeamName"))
+  ;(bind ?prepare-phase (pb-create "llsf_msgs.SetGamePhase"))
+  (bind ?prepare-state (pb-create "llsf_msgs.SetGameState"))
+  (pb-set-field ?prepare-team "team_name" Carologistics)
+  (pb-set-field ?prepare-team "team_color" CYAN)
+  ;(pb-set-field ?prepare-phase "phase" SETUP)
+  (pb-set-field ?prepare-state "state" RUNNING)
+
+  (pb-send ?peer-id ?prepare-team)
+  (pb-send ?peer-id ?prepare-state)
+  ;(pb-send ?peer-id ?prepare-phase)
+
+  (pb-destroy ?prepare-team)
+  ;(pb-destroy ?prepare-phase)
+  (pb-destroy ?prepare-state)
+  (printout error "Sent refbox init " crlf)
+)
+
 ; Defining templates and rules for goal selection with rl
 
 (deftemplate rl-goal-selection
@@ -10,6 +33,8 @@
 	(slot outcome (type SYMBOL));
 	(slot result (type INTEGER));
 )
+
+
 
 ; The rl calls the rl plugin and passes the goal id. It never leaves the DISPATCHED
 ; state.
@@ -65,17 +90,17 @@
 	(assert (training-started))
 )
 
-(defrule flush-executability
-; for all goals except the next goal for selection
-  ?r <- (rl-goal-selection (next-goal-id ?a))
- =>
-  (printout t crlf "flush-executability execpt for " ?a crlf )
+; (defrule flush-executability
+; ; for all goals except the next goal for selection
+;   ?r <- (rl-goal-selection (next-goal-id ?a))
+;  =>
+;   (printout t crlf "flush-executability execpt for " ?a crlf )
 	
-  (delayed-do-for-all-facts ((?g goal))
-	(and (eq ?g:is-executable TRUE) (neq ?g:class SEND-BEACON) (neq ?g:id ?a))
-	(modify ?g (is-executable FALSE))
-  )
-)
+;   (delayed-do-for-all-facts ((?g goal))
+; 	(and (eq ?g:is-executable TRUE) (neq ?g:class SEND-BEACON) (neq ?g:id ?a))
+; 	(modify ?g (is-executable FALSE))
+;   )
+; )
 
 ;TODO Check for mode if mode is FORMULATED then leaf it
 ;TODO add function for mode EVALUATED or rejected to assert:
@@ -92,136 +117,227 @@
 )
 
 (defrule no-reset-on-start
-	?r<-(reset-domain-facts)
+	;?r<-(reset-domain-facts)
+  ?r <- (reset-game (stage STAGE-0))
 	?n<-(no-reset-on-training-start)
 	=>
 	(retract ?r)
 	(retract ?n)
-	(assert (reset-domain-finish))	
+	(assert (reset-game-finished))	
 )
 
-(defrule delete-domain-facts-loaded
-  ?f <- (domain-facts-loaded)
+; (defrule delete-domain-facts-loaded
+;   ?f <- (domain-facts-loaded)
+;   =>
+;   (retract ?f)
+; )
+
+(defrule reset-game-refbox-setup
+  ;?r<-(reset-domain-facts)
+  ?r <- (reset-game (stage STAGE-0))
+  (wm-fact (id "/refbox/comm/peer-id/public") (value ?peer-id) (type INT))
+  (wm-fact (id "/refbox/phase")  (value PRODUCTION) )
+  (wm-fact (id "/refbox/state")  (value ?v) )
+  ?f<-(domain-facts-loaded)
+  ;WAIT_START
+  =>
+ 	(printout t crlf "reset-game-refbox-setup - current state: " ?v crlf)
+  (bind ?prepare-phase (pb-create "llsf_msgs.SetGamePhase"))
+  (bind ?prepare-state (pb-create "llsf_msgs.SetGameState"))
+  (pb-set-field ?prepare-phase "phase" SETUP)
+  (pb-set-field ?prepare-state "state" PAUSED )
+  ;WAIT_START
+
+  (pb-send ?peer-id ?prepare-phase)
+  (pb-send ?peer-id ?prepare-state)
+
+  (pb-destroy ?prepare-phase)
+  (pb-destroy ?prepare-state)
+
+  (printout error "Change refbox phase to SETUP - state PAUSED" crlf)
+)
+
+(defrule reset-game-stage-one
+  ;?r<-(reset-domain-facts)
+  ?r <- (reset-game (stage STAGE-0))
+  (wm-fact (id "/refbox/phase")  (value SETUP) )
+  ?f<-(domain-facts-loaded)
   =>
   (retract ?f)
+  (modify ?r (stage STAGE-1-2))
 )
 
-(defrule delete-goals
-  (reset-domain-facts)
-  ?g <- (goal)
+(defrule delete-produce-order-goals
+  ;(reset-domain-facts)
+  (reset-game (stage STAGE-1-2))
+  ?g <- (goal (class PRODUCE-ORDER))
   =>
-	;(printout t crlf "delete goal " ?g crlf crlf)
+   (printout t crlf "delete PRDOCUTION-ROOT goal " ?g crlf crlf)
+   (goal-reasoner-nuke-subtree ?g)
   (retract ?g)  
 )
 
-(defrule delete-goal-metas
-  (reset-domain-facts)
-  ?m <- (goal-meta)
+(defrule delete-instruct-root-goal
+  ;(reset-domain-facts)
+  (reset-game (stage STAGE-1-2))
+  ?g <- (goal (class INSTRUCTION-ROOT))
   =>
-	;(printout t crlf "delete goal-meta " ?m crlf crlf)
-  (retract ?m)  
+   (printout t crlf "delete INSTRUCTION-ROOT goal " ?g crlf crlf)
+   (goal-reasoner-nuke-subtree ?g)
+  (retract ?g)  
 )
 
-(defrule delete-domain-facts
-  (reset-domain-facts)
-  ?f <- (domain-fact)
+(defrule delete-support-root-goal
+  ;(reset-domain-facts)
+  (reset-game (stage STAGE-1-2))
+  ?g <- (goal (class SUPPORT-ROOT))
   =>
-	;(printout t crlf "delete domain fact " ?f crlf crlf)
-  (retract ?f)  
+   (printout t crlf "delete SUPPORT-ROOT goal " ?g crlf crlf)
+   (goal-reasoner-nuke-subtree ?g)
+  (retract ?g)  
 )
 
-(defrule delete-domain-objects
-  (reset-domain-facts)
-  ?o <- (domain-object)
-  =>
-	;(printout t crlf "delete domain object " ?o crlf crlf)
-  (retract ?o)  
+(defrule reset-game-stage-xx
+	;(reset-domain-facts)
+  ?r <- (reset-game (stage STAGE-1-2))
+	(not (goal (class SUPPORT-ROOT)))
+	=>
+  (modify ?r (stage STAGE-1))
 )
 
-(defrule delete-domain-object-types
-  (reset-domain-facts)
-  ?o <- (domain-object-type)
-  =>
-	;(printout t crlf "delete domain object type" ?o crlf crlf)
-  (retract ?o)  
-)
 
-(defrule delete-domain-object-is-of-types
-  (reset-domain-facts)
-  ?o <- (domain-object-is-of-type)
-  =>
-	;(printout t crlf "delete domain object-is-of-type" ?o crlf crlf)
-  (retract ?o)  
-)
-
-(defrule delete-domain-operators
-  (reset-domain-facts)
-  ?o <- (domain-operator)
-  =>
-	;(printout t crlf "delete domain-operator " ?o crlf crlf)
-  (retract ?o)  
-)
-
-(defrule delete-domain-predicate
-  (reset-domain-facts)
-  ?o <- (domain-predicate)
-  =>
-	;(printout t crlf "delete domain predicate " ?o crlf crlf)
-  (retract ?o)  
-)
-
-; (defrule delete-plan-action
-;   (reset-domain-facts)
-;   ?o <- (plan-action)
-;   =>
-; 	;(printout t crlf "delete plan-action " ?o crlf crlf)
-;   (retract ?o)  
+; (defrule domain-flush
+;   (reset-game (stage STAGE-1)))
+; 	(wm-fact (key cx identity))
+; 	(wm-fact (key refbox phase) (value SETUP))
+; 	=>
+; 	(printout warn "Flushing domain!" crlf)
+; 	(wm-robmem-flush)
+; 	(do-for-all-facts ((?df domain-fact)) TRUE
+; 	  (retract ?df)
+; 	)
+; 	(assert (domain-wm-flushed))
 ; )
 
-; (defrule delete-action-timer
+
+; (defrule delete-order-information
 ;   (reset-domain-facts)
-;   ?o <- (action-timer)
+;   (reset-cx-stage-one)
+;   (wm-fact (key domain fact order-complexity args? ord ?order-id comp ?complexity) (type BOOL) (value TRUE) )
+;             (wm-fact (key domain fact order-base-color args? ord ?order-id col ?base) (type BOOL) (value TRUE) )
+;             (wm-fact (key domain fact order-cap-color  args? ord ?order-id col ?cap) (type BOOL) (value TRUE) )
+;             (wm-fact (key domain fact order-gate  args? ord ?order-id gate (sym-cat GATE- ?delivery-gate)) (type BOOL) (value TRUE) )
+;             (wm-fact (key refbox order ?order-id quantity-requested) (type UINT) (value ?quantity-requested) )
+;             (wm-fact (key domain fact quantity-delivered args? ord ?order-id team CYAN)
+;                      (type UINT) (value 0))
+;             (wm-fact (key domain fact quantity-delivered args? ord ?order-id team MAGENTA)
+;                      (type UINT) (value 0))
+;             (wm-fact (key refbox order ?order-id delivery-begin) (type UINT) (value ?begin) )
+;             (wm-fact (key refbox order ?order-id delivery-end) (type UINT) (value ?end) )
+;             )
 ;   =>
-; 	;(printout t crlf "delete action-timer " ?o crlf crlf)
-;   (retract ?o)  
+;    (printout t crlf "delete SUPPORT-ROOT goal " ?g crlf crlf)
+;    (goal-reasoner-nuke-subtree ?g)
+;   (retract ?g)  
 ; )
 
-(defrule reset-domain
-  ?r<-(reset-domain-facts)
-  (not (domain-fact))
-  (not (goal))
-  (not (goal-meta))
-  (not (domain-object))
-  (not (domain-predicate))
-  ;(not (plan-action))
-  ;(not (action-timer))
-  ?d<- (domain-loaded)
-  ?fl<-(domain-facts-loaded)
-  ?g <-(goals-loaded)
-  ?p <- (wm-fact (key refbox phase))
+; (defrule rl-remove-goals
+;   (reset-game (stage STAGE-1))
+;   ?g <- (goal (id ?goal-id) (verbosity ?v)
+;         (acquired-resources) (parent ?parent))
+;   (not (goal (parent ?goal-id)))
+;   (goal (id ?parent) (type MAINTAIN))
+; =>
+;   (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
+;     (delayed-do-for-all-facts ((?a plan-action)) (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
+;       (retract ?a)
+;     )
+;     (retract ?p)
+;   )
+;   (delayed-do-for-all-facts ((?f goal-meta)) (eq ?f:goal-id ?goal-id)
+;     (retract ?f)
+;   )
+;   (retract ?g)
+;   (printout (log-debug ?v) "Goal " ?goal-id " removed" crlf)
+; )
+
+
+; (defrule print-cx-identity
+; 	?w <- (wm-fact (key cx identity))
+; 	?r<-(reset-domain-facts)
+; 	(not (print-cx-done))
+; 	=>
+;   	(printout t crlf "key cx identity: " ?w crlf)
+; 	(assert (print-cx-done))
+; )
+
+; (defrule reset-game-stage-two
+; 	;(reset-domain-facts)
+;   ?r <- (reset-game (stage STAGE-1))
+; 	(domain-wm-flushed)
+; 	=>
+;   (modify ?r (stage STAGE-2))
+; )
+
+(defrule reset-game-refbox-setup-running
+  ;?r<-(reset-domain-facts)
+  (reset-game (stage STAGE-2))
+  (wm-fact (id "/refbox/comm/peer-id/public") (value ?peer-id) (type INT))
+  (wm-fact (id "/refbox/phase")  (value SETUP) )
+  (wm-fact (id "/refbox/state")  (value ?v) )
   =>
-  (printout t crlf "reset domain running" crlf crlf)
-  (retract ?d)
-  (retract ?fl)
-  (retract ?r)
-  (retract ?g)
-  (assert (executive-init))
-  (assert (reset-domain-running))
-  (modify ?p (value SETUP))
+ 	(printout t crlf "reset-game-refbox-setup-running - current state: " ?v crlf)
+  ;(bind ?prepare-phase (pb-create "llsf_msgs.SetGamePhase"))
+  (bind ?prepare-state (pb-create "llsf_msgs.SetGameState"))
+  ;(pb-set-field ?prepare-phase "phase" SETUP)
+  (pb-set-field ?prepare-state "state" RUNNING)
+
+  (pb-send ?peer-id ?prepare-state)
+  ;(pb-send ?peer-id ?prepare-phase)
+
+  (pb-destroy ?prepare-state)
+  (printout error "Change refbox phase SETUP - state RUNNING" crlf)
 )
 
-(defrule reset-running
-  ?r <-(reset-domain-running)
-  (domain-loaded)
+; Waiting till initial facts are loaded
+(defrule reset-game-stage-three
+  ?r<-(reset-game (stage STAGE-2))
   (domain-facts-loaded)
-  (goals-loaded)
-  ?p <- (wm-fact (key refbox phase))
-  =>
-  (printout t crlf "reset domain finish" crlf crlf)
-  (retract ?r)
-  (modify ?p (value PRODUCTION))
-  (assert (reset-domain-finish))
+	=>
+ 	(printout t crlf "reset-game-stage-three - domain-facts-loaded" crlf)
+  (modify ?r (stage STAGE-3))
 )
 
 
+(defrule reset-game-refbox-production-running
+	;?r<-(reset-domain-facts)
+  (reset-game (stage STAGE-3))
+	(wm-fact (id "/refbox/comm/peer-id/public") (value ?peer-id) (type INT))
+  (wm-fact (id "/refbox/phase")  (value SETUP) )
+  (wm-fact (id "/refbox/state")  (value ?v) ) 
 
+=>
+	(printout t crlf "reset-game-refbox-production-running - current state: " ?v crlf)
+  (bind ?prepare-phase (pb-create "llsf_msgs.SetGamePhase"))
+  (bind ?prepare-state (pb-create "llsf_msgs.SetGameState"))
+  (pb-set-field ?prepare-phase "phase" PRODUCTION)
+  (pb-set-field ?prepare-state "state" RUNNING)
+
+  (pb-send ?peer-id ?prepare-phase)
+  (pb-send ?peer-id ?prepare-state)
+
+  (pb-destroy ?prepare-phase)
+  (pb-destroy ?prepare-state)
+)
+
+(defrule reset-game-finished
+  ?r<-(reset-game (stage STAGE-3))
+  (wm-fact (id "/refbox/phase")  (value PRODUCTION) )
+  (wm-fact (id "/refbox/state")  (value RUNNNING) ) 
+  (goal (class ENTER-FIELD))
+  =>
+
+	(printout t crlf "reset-game-finished- current state: RUNNING" crlf)
+  (retract ?r)
+	(assert (reset-game-finished))	
+)
