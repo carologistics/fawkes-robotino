@@ -75,6 +75,7 @@ clips-executive:
               - wm-robmem-sync.clp
               - wm-template-facts.clp
               - rcll-central/wm-sync.clp
+              - rcll-central/reset-game.clp
               - rcll-central/init.clp
               - rcll-central/blackboard-init.clp
               - rcll-central/game-worldmodel.clp
@@ -98,6 +99,7 @@ clips-executive:
               - rcll-central/goals/central-run-all.clp
               - rcll-central/goals/central-run-one.clp
               - rcll-central/goals/central-run-parallel.clp
+              - rcll-central/reinforcementLearning.clp
               - rcll-central/goal-reasoner.clp
               - rcll-central/goal-executability.clp
               - rcll-central/goal-production.clp
@@ -106,7 +108,6 @@ clips-executive:
               - rcll-central/production-strategy.clp
               - rcll-central/exploration.clp
               - rcll-central/refbox-agent-task.clp
-              - rcll-central/reinforcementLearning.clp
           - name: goal-expander
             file: rcll-central/fixed-sequence.clp
           - name: action-selection

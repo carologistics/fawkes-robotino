@@ -78,15 +78,15 @@
 	(do-for-all-facts ((?df domain-fact)) TRUE
 	  (retract ?df)
 	)
+  (do-for-all-facts ((?df domain-object)) TRUE
+	  (retract ?df)
+	)
 	(assert (domain-wm-flushed))
 )
 
-(defrule reset-game-stage-two
-  ?r <- (reset-game (stage STAGE-1))
-	(domain-wm-flushed)
-	=>
-  (modify ?r (stage STAGE-2))
-)
+
+
+
 
 (deffunction domain-load-local-facts (?self ?team-color)
 " Initialize facts that are not synced."
