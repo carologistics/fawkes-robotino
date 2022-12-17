@@ -28,6 +28,18 @@
   (retract ?i)
 )
 
+; (defrule reset-game-finished
+;   ?r<-(reset-game (stage STAGE-4))
+;   (wm-fact (id "/refbox/phase")  (value PRODUCTION) )
+;  ; (wm-fact (id "/refbox/state")  (value RUNNNING) ) 
+;   (goal (class ENTER-FIELD))
+;   =>
+
+; 	(printout t crlf "reset-game-finished- current state: RUNNING" crlf)
+;   (retract ?r)
+; 	(assert (reset-game-finished))	
+; )
+
 (defrule initialization-abort-on-finalize
   "Abort initialization if we are in finalize"
   (declare (salience 500))
