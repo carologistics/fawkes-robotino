@@ -155,7 +155,10 @@
 	;(reset-domain-facts)
   ?r <- (reset-game (stage STAGE-1-2))
 	(not (goal (class SUPPORT-ROOT)))
-	=>
+  (not (wm-fact (key request $? args? $?) ))
+  (or (not (goal-meta (goal-id ?goal-id)))
+   (goal (id ?goal-id)))	
+  =>
   (modify ?r (stage STAGE-1))
 )
 
@@ -175,13 +178,14 @@
   (modify ?r (stage STAGE-2))
 )
 
+; reset finished if the first order is recieved from the refbox
 (defrule reset-game-finished
   ?r<-(reset-game (stage STAGE-4))
   (wm-fact (id "/refbox/phase")  (value PRODUCTION) )
  ; (wm-fact (id "/refbox/state")  (value RUNNNING) ) 
   (goal (class ENTER-FIELD))
+  (goal (class PRODUCE-ORDER))
   =>
-
 	(printout t crlf "reset-game-finished- current state: RUNNING" crlf)
   (retract ?r)
 	(assert (reset-game-finished))	
