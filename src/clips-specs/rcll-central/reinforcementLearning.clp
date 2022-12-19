@@ -107,11 +107,31 @@
 ;(assert (rl-finished-goal (goal-id ?goal-id) (outcome ?outcome) (result 0)))
 (defrule rl-clips-goal-selection
 	?r <- (rl-goal-selection (next-goal-id ?a))
-	?g <- (goal (id ?a) (mode ?m))
+	?g <- (goal (id ?a) (mode ?m&FORMULATED))
 	=>
 	(printout t crlf "in RL Plugin added fact: " ?r " with next action " ?a crlf )
 	(printout t crlf "goal: " ?g "with in mode: "?m crlf crlf)
 	(modify ?g (mode SELECTED))
+	;(retract ?r)
+)
+
+;(wm-fact (key refbox game-time) (values ?game-time $?ms))
+(defrule rl-selected-goal-finished
+	?r <- (rl-goal-selection (next-goal-id ?goal-id))
+	(goal (id ?goal-id) (mode ?mode&FINISHED|EVALUATED) (outcome ?outcome))
+  ?pm <- (wm-fact (id "/refbox/points/magenta") (value ?mvalue))
+  ?pc <- (wm-fact (id "/refbox/points/cyan") (value ?cvalue) )
+  ?tc <- (wm-fact (id "/refbox/team-color")  (value ?team-color) )
+	=>
+	(printout t crlf "Goal: " ?goal-id " is " ?mode crlf )
+  (bind ?result 1)
+  (if (eq ?team-color CYAN)
+    then (bind ?result ?cvalue))
+  (if (eq ?team-color MAGENTA)
+    then (bind ?result ?mvalue))
+  
+	(printout t crlf "Points CYAN: " ?cvalue " Points MAGENTA: " ?mvalue " Result: " ?result crlf )
+  (assert (rl-finished-goal (goal-id ?goal-id) (outcome ?outcome) (result ?result)))
 	(retract ?r)
 )
 
