@@ -19,7 +19,7 @@ rl-agent:
   training-mode: true
 
   # Number of time the env reaches a final state
-  training-laps: 15
+  training-laps: 24
 
 python:
   # if trainings-mode is set to true the training script is executed

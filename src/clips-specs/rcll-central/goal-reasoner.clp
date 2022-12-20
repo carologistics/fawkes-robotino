@@ -349,7 +349,7 @@
 
 (defrule goal-reasoner-add-selectable-root-goal
   (declare (salience ?*SALIENCE-GOAL-PRE-SELECT*))
-  (not (reset-game (stage STAGE-0|STAGE-1-2|STAGE-1|STAGE-2)))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
   (goal (type ACHIEVE) (id ?goal-id) (parent nil) (mode FORMULATED) (is-executable TRUE))
   ?selection <- (wm-fact (key goal selection criterion args? t root) (values $?values&:(not (member$ ?goal-id ?values))))
   =>
@@ -358,7 +358,7 @@
 
 (defrule goal-reasoner-add-selectable-run-all-goal
   (declare (salience ?*SALIENCE-GOAL-PRE-SELECT*))
-  (not (reset-game (stage STAGE-0|STAGE-1-2|STAGE-1|STAGE-2)))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
   (goal (type ACHIEVE) (id ?parent-id) (mode DISPATCHED) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS))
   (goal (type ACHIEVE) (id ?goal-id) (parent ?parent-id) (mode FORMULATED) (is-executable TRUE))
   (goal-meta (goal-id ?goal-id) (run-all-ordering ?ordering))
@@ -373,7 +373,7 @@
 
 (defrule goal-reasoner-add-selectable-run-parallel-goal
   (declare (salience ?*SALIENCE-GOAL-PRE-SELECT*))
-  (not (reset-game (stage STAGE-0|STAGE-1-2|STAGE-1|STAGE-2)))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
   (goal (type ACHIEVE) (id ?parent-id) (mode DISPATCHED) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL))
   (goal (type ACHIEVE) (id ?goal-id) (parent ?parent-id) (mode FORMULATED)
         (is-executable TRUE) (priority ?priority))

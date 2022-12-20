@@ -27,18 +27,17 @@ goal-space:
   # TOWER-C1: {buttom: block, top: block}
   # TOWER-C2: {blocks: block}
   # Goal Classnames
-  # classes: ["TOWER-C1", "TOWER-C2"]
+  # classes: ["TOWER-C1", "TOWER-C2"] "MOUNT-RING",
+  # "PAY-FOR-RING-GOAL",
+
   classes: ["ENTER-FIELD",
             "BUFFER-CAP",
             "MOUNT-CAP",
-            "MOUNT-RING",
-            "PAY-FOR-RING-GOAL",
             "PAY-FOR-RINGS-WITH-BASE",
             "PAY-FOR-RINGS-WITH-CAP-CARRIER",
             "PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF",
-            "MOVE-OUT-OF-WAY",
+            "MOUNT-RING",
             "DELIVER",
-            "DELIVER-RC21",
             "DISCARD"]
 param-names:
   # TOWER-C1: ["buttom", "top"]
@@ -46,21 +45,19 @@ param-names:
   ENTER-FIELD: []
   BUFFER-CAP: ["cap-color"]
   # ["cap-color", "target-mps", "cap-color"]
-  MOUNT-CAP: []
-  # ["target-mps", "wp-loc"]
+  MOUNT-CAP: ["wp-loc"]
   # ["wp", "target-mps", "target-side", "wp-loc", "wp-side"]
   MOUNT-RING: ["ring-color"]
   # ["target-mps", "wp-loc", "ring-color"]
   #  ["wp", "target-mps", "target-side", "wp-loc", "wp-side", "ring-color"]
 
   PAY-FOR-RING-GOAL: []
-  PAY-FOR-RINGS-WITH-BASE: []
+  PAY-FOR-RINGS-WITH-BASE: ["target-mps"]
   # ["wp-loc", "target-mps"]
   #  ["wp", "wp-loc", "wp-side", "target-mps", "target-side"]
-  PAY-FOR-RINGS-WITH-CAP-CARRIER: []
-  # ["wp-loc", "target-mps"]
+  PAY-FOR-RINGS-WITH-CAP-CARRIER: ["target-mps"]
   #  ["wp", "wp-loc", "wp-side", "target-mps", "target-side"]
-  PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF: []
+  PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF: ["target-mps"]
   # ["wp-loc", "target-mps"]
   #  ,"target-side"]
   MOVE-OUT-OF-WAY: []
