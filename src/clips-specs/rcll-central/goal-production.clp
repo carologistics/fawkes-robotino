@@ -656,7 +656,7 @@
   "Create the production root under which all instruction goal trees for the orders
   are asserted"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (not (reset-game (stage STAGE-0|STAGE-1-2|STAGE-1|STAGE-2)))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
   (domain-facts-loaded)
   (not (goal (class INSTRUCTION-ROOT)))
   (wm-fact (key refbox phase) (value PRODUCTION))
@@ -676,7 +676,7 @@
    supporting the production, i.e., payment and buffer goals.
   "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (not (reset-game (stage STAGE-0|STAGE-1-2|STAGE-1|STAGE-2)))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
   (domain-facts-loaded)
   (not (goal (class SUPPORT-ROOT)))
   (wm-fact (key refbox phase) (value PRODUCTION))
@@ -692,7 +692,7 @@
    nothing else is executable.
   "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (not (reset-game (stage STAGE-0|STAGE-1-2|STAGE-1|STAGE-2)))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
   (domain-facts-loaded)
   (not (goal (class WAIT-ROOT)))
   (wm-fact (key refbox phase) (value PRODUCTION))
@@ -718,7 +718,7 @@
 (defrule goal-production-create-move-out-of-way
 	"Creates a move out of way goal. As soon as it is completed it's reset"
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (not (reset-game (stage STAGE-0|STAGE-1-2|STAGE-1|STAGE-2)))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
 	(goal (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
 	(goal (id ?root-id) (class WAIT-ROOT))
 	(not (goal (class MOVE-OUT-OF-WAY)))
@@ -797,7 +797,7 @@
 (defrule goal-production-create-produce-for-order
   "Create for each incoming order a grounded production tree with the"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (not (reset-game (stage STAGE-0|STAGE-1-2|STAGE-1|STAGE-2)))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
   (goal (id ?root-id) (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
   (wm-fact (key config rcll pick-and-place-challenge) (value FALSE))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))

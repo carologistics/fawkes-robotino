@@ -69,7 +69,7 @@
 
 (defrule domain-worldmodel-flush
 	(or (executive-init)
-      (reset-game (stage STAGE-1)))
+      (reset-game (stage STAGE-2)))
 	(wm-fact (key cx identity))
 	(wm-fact (key refbox phase) (value SETUP))
 	=>

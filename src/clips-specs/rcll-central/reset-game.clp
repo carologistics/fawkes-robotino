@@ -13,6 +13,7 @@
 )
 
 (defrule no-reset-on-start
+  (declare (salience ?*SALIENCE-HIGH*))
 	;?r<-(reset-domain-facts)
   ?r <- (reset-game (stage STAGE-0))
 	?n<-(no-reset-on-training-start)
@@ -23,6 +24,7 @@
 )
 
 (defrule reset-game-refbox-setup
+  (declare (salience ?*SALIENCE-HIGH*))
   ;?r<-(reset-domain-facts)
   ?r <- (reset-game (stage STAGE-0))
   (wm-fact (id "/refbox/comm/peer-id/public") (value ?peer-id) (type INT))
@@ -48,18 +50,20 @@
 )
 
 (defrule reset-game-stage-one
+  (declare (salience ?*SALIENCE-HIGH*))
   ;?r<-(reset-domain-facts)
   ?r <- (reset-game (stage STAGE-0))
   (wm-fact (id "/refbox/phase")  (value SETUP) )
   ?f<-(domain-facts-loaded)
   =>
   (retract ?f)
-  (modify ?r (stage STAGE-1-2))
+  (modify ?r (stage STAGE-1))
 )
 
 (defrule delete-produce-order-goals
+  (declare (salience ?*SALIENCE-HIGH*))
   ;(reset-domain-facts)
-  (reset-game (stage STAGE-1-2))
+  (reset-game (stage STAGE-1))
   ?g <- (goal (class PRODUCE-ORDER))
   =>
    (printout t crlf "delete PRDOCUTION-ROOT goal " ?g crlf crlf)
@@ -68,8 +72,9 @@
 )
 
 (defrule delete-instruct-root-goal
+  (declare (salience ?*SALIENCE-HIGH*))
   ;(reset-domain-facts)
-  (reset-game (stage STAGE-1-2))
+  (reset-game (stage STAGE-1))
   ?g <- (goal (class INSTRUCTION-ROOT))
   =>
    (printout t crlf "delete INSTRUCTION-ROOT goal " ?g crlf crlf)
@@ -78,8 +83,9 @@
 )
 
 (defrule delete-support-root-goal
+  (declare (salience ?*SALIENCE-HIGH*))
   ;(reset-domain-facts)
-  (reset-game (stage STAGE-1-2))
+  (reset-game (stage STAGE-1))
   ?g <- (goal (class SUPPORT-ROOT))
   =>
    (printout t crlf "delete SUPPORT-ROOT goal " ?g crlf crlf)
@@ -88,7 +94,8 @@
 )
 
 (defrule delete-simple-goals
-  (reset-game (stage STAGE-1-2))
+  (declare (salience ?*SALIENCE-HIGH*))
+  (reset-game (stage STAGE-1))
   ?g <- (goal (id ?goal-id) (class ?goal-class&ENTER-FIELD|BUFFER-CAP|DELIVER|MOUNT-RING|MOUNT-CAP))
   ;?m <- (goal-meta (goal-id ?goal-id))
   =>
@@ -96,7 +103,8 @@
 )
 
 (defrule delete-plan
-  (reset-game (stage STAGE-1-2))
+  (declare (salience ?*SALIENCE-HIGH*))
+  (reset-game (stage STAGE-1))
   ?p <- (plan (goal-id ?goal-id))
   (not (goal (id ?goal-id)))
   =>
@@ -104,7 +112,8 @@
 )
 
 (defrule delete-plan-action
-  (reset-game (stage STAGE-1-2))
+  (declare (salience ?*SALIENCE-HIGH*))
+  (reset-game (stage STAGE-1))
   ?p <- (plan (goal-id ?goal-id))
   (not (goal (id ?goal-id)))
   =>
@@ -112,7 +121,8 @@
 )
 
 (defrule delete-goal-meta
-  (reset-game (stage STAGE-1-2))
+  (declare (salience ?*SALIENCE-HIGH*))
+  (reset-game (stage STAGE-1))
   ;?g <- (goal (id ?goal-id) (class ?goal-class&ENTER-FIELD|BUFFER-CAP|DELIVER|MOUNT-RING|MOUNT-CAP))
   ?m <- (goal-meta (goal-id ?goal-id))
   (not (goal (id ?goal-id)))
@@ -121,7 +131,8 @@
 )
 
 (defrule delete-wp-meta
-  (reset-game (stage STAGE-1-2))
+  (declare (salience ?*SALIENCE-HIGH*))
+  (reset-game (stage STAGE-1))
   ?nm <- (wm-fact (key wp meta next-machine args? wp ?wp))
 =>
   (delayed-do-for-all-facts ((?wm-fact wm-fact))
@@ -131,7 +142,8 @@
 )
 
 (defrule delete-order-meta
-  (reset-game (stage STAGE-1-2))
+  (declare (salience ?*SALIENCE-HIGH*))
+  (reset-game (stage STAGE-1))
   ?ss <- (wm-fact (key order meta step-scored args? ord ?order step ?curr-step))
 =>
   (delayed-do-for-all-facts ((?wm-fact wm-fact))
@@ -141,7 +153,8 @@
 )
 
 (defrule delete-wm-fact-request
-  (reset-game (stage STAGE-1-2))
+  (declare (salience ?*SALIENCE-HIGH*))
+  (reset-game (stage STAGE-1))
   ;?ss <- (wm-fact (key request pay args? ord ?order m ?m ring ?ring seq ?seq prio ?prio))
   (wm-fact (key request $? args? $?) )
 =>
@@ -151,19 +164,36 @@
   )
 )
 
-(defrule reset-game-stage-xx
-	;(reset-domain-facts)
-  ?r <- (reset-game (stage STAGE-1-2))
-	(not (goal (class SUPPORT-ROOT)))
-  (not (wm-fact (key request $? args? $?) ))
-  (or (not (goal-meta (goal-id ?goal-id)))
-   (goal (id ?goal-id)))	
+(defrule delete-refbox-agent-task
+  (declare (salience ?*SALIENCE-HIGH*))
+  (reset-game (stage STAGE-1))
+  (refbox-agent-task (robot ?robot) (task-id ?seq))
+  ;(refbox-agent-task (robot ?robot) (task-id ?seq)
+  ;(goal-id ?goal-id) (plan-id ?plan-id) (action-id ?action-id)
+  ;)
   =>
-  (modify ?r (stage STAGE-1))
+  (delayed-do-for-all-facts ((?task refbox-agent-task)) TRUE
+    (retract ?task)
+  )
+
 )
 
-(defrule save-f-to-file
-  (reset-game (stage STAGE-1))
+
+(defrule reset-game-stage-two
+	(declare (salience ?*SALIENCE-HIGH*))
+  ?r <- (reset-game (stage STAGE-1))
+	(not (goal (class SUPPORT-ROOT)))
+  (not (wm-fact (key request $? args? $?)))
+  (not (refbox-agent-task (robot ?robot) (task-id ?seq)))
+  (or (not (goal-meta (goal-id ?goal-id)))
+   (goal (id ?goal-id)))
+  =>
+  (modify ?r (stage STAGE-2))
+)
+
+(defrule save-to-file
+  (declare (salience ?*SALIENCE-HIGH*))
+  (reset-game (stage STAGE-2))
   (domain-wm-flushed)
   (not (saved))
   =>
@@ -171,16 +201,17 @@
   (assert (saved))
 )
 
-(defrule reset-game-stage-two
-  ?r <- (reset-game (stage STAGE-1))
+(defrule reset-game-stage-three
+  (declare (salience ?*SALIENCE-HIGH*))
+  ?r <- (reset-game (stage STAGE-2))
 	(domain-wm-flushed)
 	=>
-  (modify ?r (stage STAGE-2))
+  (modify ?r (stage STAGE-3))
 )
 
 ; reset finished if the first order is recieved from the refbox
 (defrule reset-game-finished
-  ?r<-(reset-game (stage STAGE-4))
+  ?r<-(reset-game (stage STAGE-5))
   (wm-fact (id "/refbox/phase")  (value PRODUCTION) )
  ; (wm-fact (id "/refbox/state")  (value RUNNNING) ) 
   (goal (class ENTER-FIELD))
