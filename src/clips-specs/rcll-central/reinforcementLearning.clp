@@ -22,6 +22,30 @@
   (printout error "Sent refbox init " crlf)
 )
 
+(defrule refbox-start-production-after-sartup
+  (declare (salience ?*SALIENCE-RESET-GAME-LOW*))
+	;?r<-(reset-domain-facts)
+  (not (reset-game (stage ?stage)))
+	(wm-fact (id "/refbox/comm/peer-id/public") (value ?peer-id) (type INT))
+  (wm-fact (id "/refbox/phase")  (value SETUP) )
+  (wm-fact (id "/refbox/state")  (value ?v) ) 
+  (goal (class ENTER-FIELD) (id ?id) )
+  (goal-meta (goal-id ?id) (assigned-to ?robot&~nil) )
+=>
+	(printout t crlf "reset-game-refbox-production-running - current state: " ?v crlf)
+  (bind ?prepare-phase (pb-create "llsf_msgs.SetGamePhase"))
+  (bind ?prepare-state (pb-create "llsf_msgs.SetGameState"))
+  (pb-set-field ?prepare-phase "phase" PRODUCTION)
+  (pb-set-field ?prepare-state "state" RUNNING)
+
+  (pb-send ?peer-id ?prepare-phase)
+  (pb-send ?peer-id ?prepare-state)
+
+  (pb-destroy ?prepare-phase)
+  (pb-destroy ?prepare-state)
+  (printout error "Sent refbox start production " crlf)
+)
+
 ; Defining templates and rules for goal selection with rl
 
 (deftemplate rl-goal-selection
@@ -112,6 +136,17 @@
 ;   )
 ; )
 
+
+(deffunction remove-robot-assignment-from-goal-meta (?goal)
+  (if (not (do-for-fact ((?f goal-meta))
+      (eq ?f:goal-id (fact-slot-value ?goal id))
+      (modify ?f (assigned-to nil))
+      ))
+   then
+    (printout t "Cannot find a goal meta fact for the goal " ?goal crlf)
+  )
+)
+
 ;TODO Check for mode if mode is FORMULATED then leaf it
 ;TODO add function for mode EVALUATED or rejected to assert:
 ;(printout t "Goal '" ?goal-id "' has failed (" ?outcome "), evaluating" crlf)
@@ -119,12 +154,35 @@
 (defrule rl-clips-goal-selection
   (declare (salience ?*SALIENCE-RL-SELECTION*))
 	?r <- (rl-goal-selection (next-goal-id ?a))
-	?g <- (goal (id ?a) (mode ?m&FORMULATED))
+	?next-goal <- (goal (id ?a) (mode ?m&FORMULATED))
+  (goal-meta (goal-id ?a) (assigned-to ?robot))
 	=>
 	(printout t crlf "in RL Plugin added fact: " ?r " with next action " ?a crlf )
-	(printout t crlf "goal: " ?g "with in mode: "?m crlf crlf)
-	(modify ?g (mode SELECTED))
+	(printout t crlf "goal: " ?next-goal "with in mode: "?m crlf crlf)
+	
 	;(retract ?r)
+  (modify ?next-goal (mode SELECTED))
+
+  (delayed-do-for-all-facts ((?g goal))
+		(and (eq ?g:is-executable TRUE) (neq ?g:class SEND-BEACON))
+		(modify ?g (is-executable FALSE))
+	)
+  ; if it is actually a robot, remove all other assignments and the waiting status
+	(if (and (neq ?robot central) (neq ?robot nil))
+		then
+		(delayed-do-for-all-facts ((?g goal))
+			(and (eq ?g:mode FORMULATED) (not (eq ?g:type MAINTAIN))
+			     (any-factp ((?gm goal-meta))
+			                (and (eq ?gm:goal-id ?g:id)
+			                     (eq ?gm:assigned-to ?robot))))
+			(remove-robot-assignment-from-goal-meta ?g)
+		)
+		(do-for-fact ((?waiting wm-fact))
+			(and (wm-key-prefix ?waiting:key (create$ central agent robot-waiting))
+			     (eq (wm-key-arg ?waiting:key r) ?robot))
+			(retract ?waiting)
+		)
+	)
 )
 
 ;(wm-fact (key refbox game-time) (values ?game-time $?ms))
@@ -149,58 +207,3 @@
 )
 
 
-
-(defrule reset-game-refbox-setup-running
-  (declare (salience ?*SALIENCE-RL-SELECTION*))
-  ;?r<-(reset-domain-facts)
-  (reset-game (stage STAGE-3))
-  (wm-fact (id "/refbox/comm/peer-id/public") (value ?peer-id) (type INT))
-  (wm-fact (id "/refbox/phase")  (value SETUP) )
-  (wm-fact (id "/refbox/state")  (value ?v) )
-  =>
- 	(printout t crlf "reset-game-refbox-setup-running - current state: " ?v crlf)
-  ;(bind ?prepare-phase (pb-create "llsf_msgs.SetGamePhase"))
-  (bind ?prepare-state (pb-create "llsf_msgs.SetGameState"))
-  ;(pb-set-field ?prepare-phase "phase" SETUP)
-  (pb-set-field ?prepare-state "state" RUNNING)
-
-  (pb-send ?peer-id ?prepare-state)
-  ;(pb-send ?peer-id ?prepare-phase)
-
-  (pb-destroy ?prepare-state)
-  (printout error "Change refbox phase SETUP - state RUNNING" crlf)
-)
-
-; Waiting till initial facts are loaded
-(defrule reset-game-stage-four
-  (declare (salience ?*SALIENCE-LOW*))
-  ?r<-(reset-game (stage STAGE-3))
-  (domain-facts-loaded)
-	=>
- 	(printout t crlf "reset-game-stage-four - domain-facts-loaded" crlf)
-  (modify ?r (stage STAGE-4))
-)
-
-
-(defrule reset-game-refbox-production-running
-  (declare (salience ?*SALIENCE-RL-SELECTION*))
-	;?r<-(reset-domain-facts)
-  ?r<-(reset-game (stage STAGE-4))
-	(wm-fact (id "/refbox/comm/peer-id/public") (value ?peer-id) (type INT))
-  (wm-fact (id "/refbox/phase")  (value SETUP) )
-  (wm-fact (id "/refbox/state")  (value ?v) ) 
-
-=>
-	(printout t crlf "reset-game-refbox-production-running - current state: " ?v crlf)
-  (bind ?prepare-phase (pb-create "llsf_msgs.SetGamePhase"))
-  (bind ?prepare-state (pb-create "llsf_msgs.SetGameState"))
-  (pb-set-field ?prepare-phase "phase" PRODUCTION)
-  (pb-set-field ?prepare-state "state" RUNNING)
-
-  (pb-send ?peer-id ?prepare-phase)
-  (pb-send ?peer-id ?prepare-state)
-
-  (pb-destroy ?prepare-phase)
-  (pb-destroy ?prepare-state)
-  (modify ?r (stage STAGE-5))
-)

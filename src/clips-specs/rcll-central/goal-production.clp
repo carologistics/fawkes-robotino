@@ -144,6 +144,7 @@
 ; ----------------------- Robot Assignment -------------------------------
 
 (defrule goal-production-assign-robot-to-enter-field
+  (declare (salience ?*SALIENCE-HIGH*))
   (wm-fact (key central agent robot args? r ?robot))
   (not (wm-fact (key domain fact entered-field args? r ?robot)))
   (goal (id ?oid) (class ENTER-FIELD)  (sub-type SIMPLE) (mode FORMULATED) (is-executable FALSE))
