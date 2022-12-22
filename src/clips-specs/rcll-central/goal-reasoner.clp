@@ -132,15 +132,15 @@
   )
 )
 
-(deffunction remove-robot-assignment-from-goal-meta (?goal)
-  (if (not (do-for-fact ((?f goal-meta))
-      (eq ?f:goal-id (fact-slot-value ?goal id))
-      (modify ?f (assigned-to nil))
-      ))
-   then
-    (printout t "Cannot find a goal meta fact for the goal " ?goal crlf)
-  )
-)
+; (deffunction remove-robot-assignment-from-goal-meta (?goal)
+;   (if (not (do-for-fact ((?f goal-meta))
+;       (eq ?f:goal-id (fact-slot-value ?goal id))
+;       (modify ?f (assigned-to nil))
+;       ))
+;    then
+;     (printout t "Cannot find a goal meta fact for the goal " ?goal crlf)
+;   )
+; )
 
 (deffunction goal-tree-update-meta-run-all-order (?f ?ordering)
   (do-for-fact ((?goal-meta goal-meta)) (eq ?goal-meta:goal-id (fact-slot-value ?f id))
