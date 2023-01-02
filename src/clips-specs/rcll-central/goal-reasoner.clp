@@ -351,6 +351,7 @@
   (declare (salience ?*SALIENCE-GOAL-PRE-SELECT*))
   (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
   (goal (type ACHIEVE) (id ?goal-id) (parent nil) (mode FORMULATED) (is-executable TRUE))
+  (goal-meta (goal-id ?goal-id) (assigned-to central|nil))
   ?selection <- (wm-fact (key goal selection criterion args? t root) (values $?values&:(not (member$ ?goal-id ?values))))
   =>
   (modify ?selection (values (append$ ?values ?goal-id)))
@@ -361,7 +362,7 @@
   (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
   (goal (type ACHIEVE) (id ?parent-id) (mode DISPATCHED) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS))
   (goal (type ACHIEVE) (id ?goal-id) (parent ?parent-id) (mode FORMULATED) (is-executable TRUE))
-  (goal-meta (goal-id ?goal-id) (run-all-ordering ?ordering))
+  (goal-meta (goal-id ?goal-id) (run-all-ordering ?ordering) (assigned-to central|nil))
   (not (and
     (goal (id ?other-id&~?goal-id) (parent ?parent-id) (mode FORMULATED))
     (goal-meta (goal-id ?other-id) (run-all-ordering ?other-ordering&:(> ?ordering ?other-ordering)))
@@ -377,6 +378,7 @@
   (goal (type ACHIEVE) (id ?parent-id) (mode DISPATCHED) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL))
   (goal (type ACHIEVE) (id ?goal-id) (parent ?parent-id) (mode FORMULATED)
         (is-executable TRUE) (priority ?priority))
+  (goal-meta (goal-id ?goal-id) (assigned-to central|nil))
   (not (goal (id ~?goal-id) (parent ?parent-id) (is-executable TRUE) (mode FORMULATED) (priority ?other-priority&:(> ?other-priority ?priority))))
   ?selection <- (wm-fact (key goal selection criterion args? t run-parallel) (values $?values&:(not (member$ ?goal-id ?values))))
   =>
@@ -393,57 +395,60 @@
 )
 
 
-; (defrule goal-reasoner-apply-selection-across-types
-;   (declare (salience ?*SALIENCE-GOAL-SELECT*))
-;   (wm-fact (key goal selection criterion args? t ?) (values ?some-goal-id $?))
-;   ?some-goal <- (goal (id ?some-goal-id) (priority ?some-prio))
-;   (not (goal (mode SELECTED|EXPANDED|COMMITTED) (type ACHIEVE)))
-;   =>
-;   (bind ?all-choices (create$))
-;   (delayed-do-for-all-facts ((?selection wm-fact))
-;     (wm-key-prefix ?selection:key (create$ goal selection criterion))
-;     (bind ?all-choices (append$ ?all-choices ?selection:values))
-;     (modify ?selection (values (create$)))
-;   )
-;   (bind ?highest-prio ?some-prio)
-;   (bind ?highest-prio-goal-fact ?some-goal)
-;   (do-for-all-facts ((?g goal))
-;     (member$ ?g:id ?all-choices)
-;     (if (> ?g:priority ?highest-prio)
-;      then
-;       (bind ?highest-prio ?g:priority)
-;       (bind ?highest-prio-goal-fact ?g)
-;     )
-;   )
-;   (bind ?robot nil)
-;   ; get assigned robot
-;   (do-for-fact ((?highest-prio-gm goal-meta))
-;                (eq ?highest-prio-gm:goal-id (fact-slot-value ?highest-prio-goal-fact id))
-;                  (bind ?robot (fact-slot-value ?highest-prio-gm assigned-to))
-;   )
-;   (modify ?highest-prio-goal-fact (mode SELECTED))
-;   ; flush executability
-; 	(delayed-do-for-all-facts ((?g goal))
-; 		(and (eq ?g:is-executable TRUE) (neq ?g:class SEND-BEACON))
-; 		(modify ?g (is-executable FALSE))
-; 	)
-;   ; if it is actually a robot, remove all other assignments and the waiting status
-; 	(if (and (neq ?robot central) (neq ?robot nil))
-; 		then
-; 		(delayed-do-for-all-facts ((?g goal))
-; 			(and (eq ?g:mode FORMULATED) (not (eq ?g:type MAINTAIN))
-; 			     (any-factp ((?gm goal-meta))
-; 			                (and (eq ?gm:goal-id ?g:id)
-; 			                     (eq ?gm:assigned-to ?robot))))
-; 			(remove-robot-assignment-from-goal-meta ?g)
-; 		)
-; 		(do-for-fact ((?waiting wm-fact))
-; 			(and (wm-key-prefix ?waiting:key (create$ central agent robot-waiting))
-; 			     (eq (wm-key-arg ?waiting:key r) ?robot))
-; 			(retract ?waiting)
-; 		)
-; 	)
-; )
+(defrule goal-reasoner-apply-selection-across-types
+  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  (wm-fact (key goal selection criterion args? t ?) (values ?some-goal-id $?))
+  ?some-goal <- (goal (id ?some-goal-id) (class ~ENTER-FIELD) (priority ?some-prio))
+  (not (goal (mode SELECTED|EXPANDED|COMMITTED) (type ACHIEVE)))
+  (goal-meta (goal-id ?some-goal-id) (assigned-to central|nil))
+  =>
+  (bind ?all-choices (create$))
+  (delayed-do-for-all-facts ((?selection wm-fact))
+    (wm-key-prefix ?selection:key (create$ goal selection criterion))
+    (bind ?all-choices (append$ ?all-choices ?selection:values))
+    (modify ?selection (values (create$)))
+  )
+  (bind ?highest-prio ?some-prio)
+  (bind ?highest-prio-goal-fact ?some-goal)
+  (do-for-all-facts ((?g goal))
+    (member$ ?g:id ?all-choices)
+    (if (> ?g:priority ?highest-prio)
+     then
+      (bind ?highest-prio ?g:priority)
+      (bind ?highest-prio-goal-fact ?g)
+    )
+  )
+  (bind ?robot nil)
+  ; get assigned robot
+  (do-for-fact ((?highest-prio-gm goal-meta))
+               (eq ?highest-prio-gm:goal-id (fact-slot-value ?highest-prio-goal-fact id))
+                 (bind ?robot (fact-slot-value ?highest-prio-gm assigned-to))
+  )
+  (printout error (fact-slot-value ?highest-prio-goal-fact id) crlf)
+  (modify ?highest-prio-goal-fact (mode SELECTED))
+  
+  ; flush executability
+	(delayed-do-for-all-facts ((?g goal))
+		(and (eq ?g:is-executable TRUE) (neq ?g:class SEND-BEACON))
+		(modify ?g (is-executable FALSE))
+	)
+  ; if it is actually a robot, remove all other assignments and the waiting status
+	(if (and (neq ?robot central) (neq ?robot nil))
+		then
+		(delayed-do-for-all-facts ((?g goal))
+			(and (eq ?g:mode FORMULATED) (not (eq ?g:type MAINTAIN))
+			     (any-factp ((?gm goal-meta))
+			                (and (eq ?gm:goal-id ?g:id)
+			                     (eq ?gm:assigned-to ?robot))))
+			(remove-robot-assignment-from-goal-meta ?g)
+		)
+		(do-for-fact ((?waiting wm-fact))
+			(and (wm-key-prefix ?waiting:key (create$ central agent robot-waiting))
+			     (eq (wm-key-arg ?waiting:key r) ?robot))
+			(retract ?waiting)
+		)
+	)
+)
 
 (defrule goal-reasoner-balance-payment-goals
   "If there are multiple orders being fulfilled in parallel and one of them contains
