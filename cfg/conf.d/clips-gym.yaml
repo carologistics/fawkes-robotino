@@ -38,7 +38,8 @@ goal-space:
             "PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF",
             "MOUNT-RING",
             "DELIVER",
-            "DISCARD"]
+            "DISCARD",
+            WAIT-NOTHING-EXECUTABLE]
 param-names:
   # TOWER-C1: ["buttom", "top"]
   # TOWER-C2: ["buttom", "middle", "top"]
@@ -65,6 +66,7 @@ param-names:
   DISCARD: ["wp-loc"]  # ["wp", "wp-loc", "wp-side"]
   DELIVER: []  # ["wp", "target-mps", "target-side"]
   DELIVER-RC21: []  # ["wp"]
+  WAIT-NOTHING-EXECUTABLE: []
 
   param-types:
     # buttom: block
