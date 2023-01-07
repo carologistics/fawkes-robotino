@@ -7,7 +7,7 @@ rl-agent:
   env_name: "blocks"  # "blockstower"
 
   # Name of saved rl agent after training
-  name: "MaskablePPOAgent_e"
+  name: "MaskablePPOAgent_RCLL_3_1_23_20_30"
   # Directory where the rl agent is saved after training
   # And to look for trained agent files
   dir: "@FAWKES_BASEDIR@/src/plugins/rl-test/rl-agent"
@@ -18,8 +18,10 @@ rl-agent:
   # Otherwise - if set to false - the rl-agent-name is loaded and executed
   training-mode: true
 
-  # Number of time the env reaches a final state
-  training-laps: 24
+  # Number of time the env reaches a final state * count of steps per game
+  # 5number games * 100 steps per game = 500
+  # 70 games -> 7000 training-laps
+  training-laps: 200
 
 python:
   # if trainings-mode is set to true the training script is executed

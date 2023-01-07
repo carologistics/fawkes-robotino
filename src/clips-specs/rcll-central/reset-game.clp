@@ -34,7 +34,7 @@
   ;?r<-(reset-domain-facts)
   ?r <- (reset-game (stage STAGE-0))
   (wm-fact (id "/refbox/comm/peer-id/public") (value ?peer-id) (type INT))
-  (wm-fact (id "/refbox/phase")  (value PRODUCTION) )
+  (wm-fact (id "/refbox/phase")  (value PRODUCTION|POST_GAME) )
   (wm-fact (id "/refbox/state")  (value ?v) )
   ?f<-(domain-facts-loaded)
   ;WAIT_START
