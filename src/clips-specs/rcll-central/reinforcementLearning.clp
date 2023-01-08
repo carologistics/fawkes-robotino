@@ -22,29 +22,29 @@
   (printout error "Sent refbox init " crlf)
 )
 
-(defrule refbox-start-production-after-sartup
-  (declare (salience ?*SALIENCE-RESET-GAME-LOW*))
-	;?r<-(reset-domain-facts)
-  (not (reset-game (stage ?stage)))
-	(wm-fact (id "/refbox/comm/peer-id/public") (value ?peer-id) (type INT))
-  (wm-fact (id "/refbox/phase")  (value SETUP) )
-  (wm-fact (id "/refbox/state")  (value ?v) ) 
-  (goal (class ENTER-FIELD) (id ?id) )
-  (goal-meta (goal-id ?id) (assigned-to ?robot&~nil) )
-=>
-	(printout t crlf "reset-game-refbox-production-running - current state: " ?v crlf)
-  (bind ?prepare-phase (pb-create "llsf_msgs.SetGamePhase"))
-  (bind ?prepare-state (pb-create "llsf_msgs.SetGameState"))
-  (pb-set-field ?prepare-phase "phase" PRODUCTION)
-  (pb-set-field ?prepare-state "state" RUNNING)
+; (defrule refbox-start-production-after-sartup
+;   (declare (salience ?*SALIENCE-RESET-GAME-LOW*))
+; 	;?r<-(reset-domain-facts)
+;   (not (reset-game (stage ?stage)))
+; 	(wm-fact (id "/refbox/comm/peer-id/public") (value ?peer-id) (type INT))
+;   (wm-fact (id "/refbox/phase")  (value SETUP) )
+;   (wm-fact (id "/refbox/state")  (value ?v) ) 
+;   (goal (class ENTER-FIELD) (id ?id) )
+;   (goal-meta (goal-id ?id) (assigned-to ?robot&~nil) )
+; =>
+; 	(printout t crlf "reset-game-refbox-production-running - current state: " ?v crlf)
+;   (bind ?prepare-phase (pb-create "llsf_msgs.SetGamePhase"))
+;   (bind ?prepare-state (pb-create "llsf_msgs.SetGameState"))
+;   (pb-set-field ?prepare-phase "phase" PRODUCTION)
+;   (pb-set-field ?prepare-state "state" RUNNING)
 
-  (pb-send ?peer-id ?prepare-phase)
-  (pb-send ?peer-id ?prepare-state)
+;   (pb-send ?peer-id ?prepare-phase)
+;   (pb-send ?peer-id ?prepare-state)
 
-  (pb-destroy ?prepare-phase)
-  (pb-destroy ?prepare-state)
-  (printout error "Sent refbox start production " crlf)
-)
+;   (pb-destroy ?prepare-phase)
+;   (pb-destroy ?prepare-state)
+;   (printout error "Sent refbox start production " crlf)
+; )
 
 ; Defining templates and rules for goal selection with rl
 
@@ -81,7 +81,7 @@
   (wm-fact (id "/refbox/phase")  (value PRODUCTION) )
   (wm-fact (id "/refbox/state")  (value RUNNING) )
 	?g <- (goal (mode FORMULATED))
-	(not (goal (mode SELECTED|COMMITTED|DISPATCHED)))
+	(not (goal (mode SELECTED|COMMITTED|DISPATCHED) (type ACHIEVE)))
 =>
 	(printout t crlf "Assert rl waiting" ?g crlf crlf)
 	(assert (rl-waiting))
@@ -89,25 +89,34 @@
 
 (defrule rl-execution-goal-selection
   (declare (salience ?*SALIENCE-RL-SELECTION*))
-	(rl-waiting)
+	;(rl-waiting)
 	(execution-mode)
-	(not (executing-rl-agent))
-	?g <- (goal (id ?id))
+	(not (executing-rl-agent-started))
+	; robot is waiting
+	(wm-fact (key central agent robot-waiting args? r ?robot))
+    ?g <- (goal (id ?goal-id) (class ?class&~EXPLORATION-MOVE) (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE)
+                  (parent ?pid))
+    (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~central&~nil))
+	(wm-fact (key refbox phase) (value PRODUCTION))
+	;?g <- (goal (class ENTER-FIELD| PRODUCE-ORDER) (id ?id)); CENTRAL-RUN-PARALLEL-SUPPORT-ROOT-gen205 buffer cap,
+	;mount-ring CENTRAL-RUN-ALL-PRODUCE-ORDER-gen235
 =>
 	(printout t crlf "Start rl test thread goal selection function in execution mode" crlf )
 	;(rl-goal-selection-start ?id " TEST-STRING-RL ") ;calling RL Plugin via CLIPS Feature function
-	(rl-call ?id ?g)
-	(assert (executing-rl-agent))
+	(rl-call ?goal-id ?g)
+	(assert (executing-rl-agent-started))
 )
 
 
 (defrule executing-rl-agent-retract
   (declare (salience ?*SALIENCE-RL-SELECTION*))
-	?g<-(goal (id ?id) (mode SELECTED|DISPATCHED|COMMITTED))
-	?r <- (executing-rl-agent)
+	(execution-mode)
+	?e <- (executing-rl-agent-started)
+	(rl-goal-selection (next-goal-id ?id))
+	?g<-(goal (id ?id) (mode DISPATCHED|COMMITTED)(type ACHIEVE))
 	=>
-	(printout t crlf "Retracting executing-rl-agent " ?r crlf "Goal: " ?g " id: " ?id crlf crlf)
-	(retract ?r)
+	(printout t crlf "Retracting executing-rl-agent " ?e crlf "Goal: " ?g " id: " ?id crlf crlf)
+	(retract ?e)
 )
 
 (defrule start-training-rl-agent
