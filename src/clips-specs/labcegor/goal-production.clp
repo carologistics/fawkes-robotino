@@ -134,23 +134,172 @@
   (retract ?gf ?gm)
 )
 
-(defrule goal-production-create-testgoal
-  "Enter the field (drive outside of the starting box)."
+;;;;;;;;;;;;  CHANGES BY VISHWAS JAIN  ;;;;;;;;;;;
+
+;(defrule goal-production-create-testgoal
+;  "Enter the field (drive outside of the starting box)."
+;  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;  (wm-fact (key central agent robot args? r ?robot))
+;  (wm-fact (key domain fact entered-field args? r ?robot))
+;  (not (goal (id ?some-goal-id) (class TESTGOAL)))
+;  (domain-facts-loaded)
+;  (wm-fact (key refbox team-color) (value ?team-color))
+;   =>
+;
+;  (bind ?goal-1-id (sym-cat TESTGOAL- (gensym*)))
+;  (assert (goal (class TESTGOAL)
+;                (id ?goal-1-id)
+;                (sub-type SIMPLE)
+;                (verbosity NOISY) (is-executable FALSE)
+;                (params bs C-BS)
+;                (meta-template goal-meta)
+;  ))
+;  (assert (goal-meta (goal-id ?goal-1-id) (assigned-to robot1)))
+;
+;
+;  (bind ?goal-2-id (sym-cat TESTGOAL- (gensym*)))
+;  (assert (goal (class TESTGOAL)
+;                (id ?goal-2-id)
+;                (sub-type SIMPLE)
+;				(parent ?goal-1-id)
+;                (verbosity NOISY) (is-executable FALSE)
+;                (params target-cs C-CS1 cc CCG1)
+;                (meta-template goal-meta)
+;  ))
+;  (assert (goal-meta (goal-id ?goal-2-id) (assigned-to robot1)))
+;
+;  (printout t "Goal " TESTGOAL " formulated" crlf)
+;
+;)
+
+(deffunction goal-production-g1-c1-base
+	(?rnd-id ?base-clr ?wp ?robot)
+	(bind ?goal-1-id (sym-cat ?rnd-id 1))
+  (assert (goal (class ORDER1)
+                (id ?goal-1-id)
+                (sub-type SIMPLE)
+                (verbosity NOISY) (is-executable FALSE)
+                (params bs C-BS base-color ?base-clr workpiece ?wp)
+                (meta-template goal-meta)
+  ))
+  (assert (goal-meta (goal-id ?goal-1-id) (assigned-to ?robot)))
+)
+
+
+
+
+(deffunction g1-goal-production-assert-c1 ()
+
+	(bind ?goal 
+		(goal-tree-assert-central-run-all-sequence PRODUCE-C1 
+			()
+			()
+			()
+	
+
+(defrule goal-production-create-from-order
+	"Take goal from refbox"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key central agent robot args? r ?robot))
   (wm-fact (key domain fact entered-field args? r ?robot))
-  (not (goal (id ?some-goal-id) (class TESTGOAL)))
+	(wm-fact (key domain fact order-complexity args?  ord ?ord comp C1))
+	(wm-fact (key domain fact order-ring1-color args? ord ?ord col ?rng-clr))
+	(wm-fact (key domain fact order-complexity args?  ord  ?ord comp ?ord-cmplx))
+	(wm-fact (key domain fact order-base-color args? ord ?ord  col ?base-clr))
+	(wm-fact (key domain fact order-cap-color args? ord ?ord col ?cap-clr))
+	(wm-fact (key domain fact order-gate args? ord ?ord gate ?ds-gate))
+  ;(not (goal (id ?some-goal-id) (class ORDER1)))
   (domain-facts-loaded)
   (wm-fact (key refbox team-color) (value ?team-color))
-  =>
-  (printout t "Goal " TESTGOAL " formulated" crlf)
-  (bind ?goal-id (sym-cat TESTGOAL- (gensym*)))
-  (assert (goal (class TESTGOAL)
-                (id ?goal-id)
+	=>
+	(bind ?rnd-id (gensym*))
+  
+	(if (or (eq ?rng-clr RING_BLUE) (eq ?rng-clr RING_YELLOW))
+		then 
+			(bind ?rs C-RS2)
+		else 
+			(bind ?rs C-RS1)
+	)
+
+	(bind ?goal-1-id (sym-cat ?rnd-id 1))
+  (assert (goal (class ORDER1)
+                (id ?goal-1-id)
                 (sub-type SIMPLE)
                 (verbosity NOISY) (is-executable FALSE)
-                (params target-cs C-CS1 cc CCG1)
+                (params bs C-BS base-color ?base-clr workpiece CCB1)
                 (meta-template goal-meta)
   ))
-  (assert (goal-meta (goal-id ?goal-id) (assigned-to robot1)))
+  (assert (goal-meta (goal-id ?goal-1-id) (assigned-to robot1)))
+
+
+	(bind ?goal-2-id (sym-cat ?rnd-id 2))
+  (assert (goal (class ORDER1)
+                (id ?goal-2-id)
+                (sub-type SIMPLE)
+                (verbosity NOISY) (is-executable FALSE)
+                (params target-rs ?rs ring-color ?rng-clr ring-before 1 ring-after 0 ring-req 1 workpiece CCB1)
+                (meta-template goal-meta)
+  ))
+  (assert (goal-meta (goal-id ?goal-2-id) (assigned-to robot1)))
+
+
+	(bind ?goal-3-id (sym-cat ?rnd-id 3))
+  (assert (goal (class ORDER1)
+                (id ?goal-3-id)
+                (sub-type SIMPLE)
+                (verbosity NOISY) (is-executable FALSE)
+                (params ds C-DS order ?ord)
+                (meta-template goal-meta)
+  ))
+  (assert (goal-meta (goal-id ?goal-1-id) (assigned-to robot1)))
 )
+
+
+
+;(defrule goal-production-create-testgoal-1
+;  "Enter the field (drive outside of the starting box)."
+;  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;  (wm-fact (key central agent robot args? r ?robot))
+;  (wm-fact (key domain fact entered-field args? r ?robot))
+;  (not (goal (id ?some-goal-id) (class TESTGOAL)))
+;  (domain-facts-loaded)
+;  (wm-fact (key refbox team-color) (value ?team-color))
+;  (goal (id ?goal-2-id) (class TESTGOAL) (mode RETRACTED))
+;  =>
+;
+;  (bind ?goal-1-id (sym-cat TESTGOAL- (gensym*)))
+;  (assert (goal (class TESTGOAL)
+;                (id ?goal-1-id)
+;                (sub-type SIMPLE)
+;                (verbosity NOISY) (is-executable FALSE)
+;                (params bs C-BS base-color BASE_BLACK workpiece CCB1)
+;                (meta-template goal-meta)
+;  ))
+;  (assert (goal-meta (goal-id ?goal-1-id) (assigned-to robot1)))
+;)
+;
+;
+;
+;(defrule goal-production-create-testgoal-2
+;  "Enter the field (drive outside of the starting box)."
+;  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;  (wm-fact (key central agent robot args? r ?robot))
+;  (wm-fact (key domain fact entered-field args? r ?robot))
+;  (not (goal (id ?some-goal-id) (class TESTGOAL)))
+;  (domain-facts-loaded)
+;  (wm-fact (key refbox team-color) (value ?team-color))
+;  (goal (class TESTGOAL) (id ?other-goal-id))
+;  =>
+;
+;  (bind ?goal-2-id (sym-cat TESTGOAL- (gensym*)))
+;  (assert (goal (class TESTGOAL)
+;                (id ?goal-2-id)
+;                (sub-type SIMPLE)
+;                (parent ?other-goal-id)
+;				(verbosity NOISY) (is-executable FALSE)
+;                (params target-cs C-CS1 cc CCG1)
+;                (meta-template goal-meta)
+;  ))
+;  (assert (goal-meta (goal-id ?goal-2-id) (assigned-to robot1)))
+;)
+

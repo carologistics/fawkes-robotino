@@ -73,7 +73,31 @@
 )
 
 
-(defrule goal-expander-test-goal
+(defrule goal-expander-test-goal-1
+" Moves the robot to the output of the given mps."
+	?g <- (goal (id ?goal-id) (class TESTGOAL) (mode SELECTED) (parent ?parent)
+	            (params bs ?bs base-color ?bs-color workpiece ?wp))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-loc side ?curr-side))
+	(wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+	=>
+	(bind ?shelf-spot nil)
+	(do-for-fact ((?wp-on-shelf wm-fact)) (and (wm-key-prefix ?wp-on-shelf:key (create$ domain fact wp-on-shelf))
+	                                      (eq (wm-key-arg ?wp-on-shelf:key wp) ?cc)
+	                                      (eq (wm-key-arg ?wp-on-shelf:key m) ?cs))
+		(bind ?shelf-spot (wm-key-arg ?wp-on-shelf:key spot))
+	)
+	(plan-assert-sequential BUFFER-CAP-PLAN ?goal-id ?robot
+		(plan-assert-safe-move ?robot ?curr-loc ?curr-side ?bs INPUT
+			(plan-assert-action prepare-bs ?bs INPUT ?bs-color)
+			(plan-assert-action bs-dispense ?bs OUTPUT ?wp ?bs-color)
+		)
+	)
+	(modify ?g (mode EXPANDED))
+)
+
+
+(defrule goal-expander-test-goal-2
 " Moves the robot to the output of the given mps."
 	?g <- (goal (id ?goal-id) (class TESTGOAL) (mode SELECTED) (parent ?parent)
 	            (params target-cs ?cs cc ?cc))
