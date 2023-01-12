@@ -1,0 +1,17 @@
+(defrule goal-assign-c0-order
+    (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+    (oder-complexity ?ord C0)
+    (robot-waiting ?r)
+    (not (goal (id ?some-goal-id) (class GOAL-ORDER)))
+    =>
+    (printout t "Goal " GOAL-ORDER " formulated" crlf)
+    (bind ?goal-id (sym-cat GOAL-ORDER- ?ord ))
+    (assert (goal (class GOAL-ORDER)
+                (id ?goal-id)
+                (sub-type SIMPLE)
+                (verbosity NOISY) (is-executable FALSE)
+                (params order)
+                (meta-template goal-meta)
+    ))
+    (assert (goal-meta (goal-id ?goal-id) (assigned-to ?r)))
+)
