@@ -173,28 +173,94 @@
 ;)
 
 (deffunction goal-production-g1-c1-base
-	(?rnd-id ?base-clr ?wp ?robot)
+	(?rnd-id ?base-clr ?robot )
 	(bind ?goal-1-id (sym-cat ?rnd-id 1))
   (assert (goal (class ORDER1)
                 (id ?goal-1-id)
                 (sub-type SIMPLE)
                 (verbosity NOISY) (is-executable FALSE)
-                (params bs C-BS base-color ?base-clr workpiece ?wp)
+                (params bs C-BS bs-side OUTPUT base-color ?base-clr)
                 (meta-template goal-meta)
   ))
   (assert (goal-meta (goal-id ?goal-1-id) (assigned-to ?robot)))
 )
 
+(deffunction goal-production-g1-c1-rs
+	(?rnd-id ?rs ?rng-clr ?wp ?robot)
+	(bind ?goal-2-id (sym-cat ?rnd-id 2))
+  (assert (goal (class ORDER1)
+                (id ?goal-2-id)
+                (sub-type SIMPLE)
+                (verbosity NOISY) (is-executable FALSE)
+                (params target-rs ?rs ring-color ?rng-clr ring-before 1 ring-after 0 ring-req 1 workpiece ?wp)
+                (meta-template goal-meta)
+  ))
+  (assert (goal-meta (goal-id ?goal-2-id) (assigned-to ?robot)))
+)
 
 
 
-(deffunction g1-goal-production-assert-c1 ()
+(deffunction goal-production-g1-c1-cap-retrieve
+	(?rnd-id ?cs ?cap-clr ?wp ?robot)
+	(bind ?goal-3-id (sym-cat ?rnd-id 3))
+  (assert (goal (class ORDER1)
+                (id ?goal-3-id)
+                (sub-type SIMPLE)
+                (verbosity NOISY) (is-executable FALSE)
+                (params cap-carrier ?wp cap-color ?cap-clr cap-station ?cs)
+                (meta-template goal-meta)
+  ))
+  (assert (goal-meta (goal-id ?goal-3-id) (assigned-to ?robot)))
+)
+
+
+(deffunction goal-production-g1-c1-cap-mount
+	(?rnd-id ?cs ?cap-clr ?wp ?robot)
+	(bind ?goal-4-id (sym-cat ?rnd-id 4))
+  (assert (goal (class ORDER1)
+                (id ?goal-4-id)
+                (sub-type SIMPLE)
+                (verbosity NOISY) (is-executable FALSE)
+                (params cap-carrier ?wp cap-color ?cap-clr cap-station ?cs)
+                (meta-template goal-meta)
+  ))
+  (assert (goal-meta (goal-id ?goal-4-id) (assigned-to ?robot)))
+)
+
+
+
+(deffunction goal-production-g1-c1-deliver
+	(?rnd-id ?ds ?ord ?robot)
+	(bind ?goal-5-id (sym-cat ?rnd-id 5))
+  (assert (goal (class ORDER1)
+                (id ?goal-5-id)
+                (sub-type SIMPLE)
+                (verbosity NOISY) (is-executable FALSE)
+                (params order ?ord delivery-station ?ds)
+                (meta-template goal-meta)
+  ))
+  (assert (goal-meta (goal-id ?goal-5-id) (assigned-to ?robot)))
+)
+
+
+
+(deffunction g1-goal-production-assert-c1 
+	(?rnd-id ?base-clr ?wp ?rs ?rng-clr ?cs ?cap-clr ?ds ?ord ?robot)
 
 	(bind ?goal 
-		(goal-tree-assert-central-run-all-sequence PRODUCE-C1 
-			()
-			()
-			()
+		(goal-tree-assert-central-run-all-sequence PRODUCE-C1 30
+			(goal-production-g1-c1-base ?rnd-id ?base-clr ?robot)
+			(goal-production-g1-c1-rs ?rnd-id ?rs ?rng-clr ?wp ?robot)
+			(goal-production-g1-c1-cap-retrieve ?rnd-id ?cs ?cap-clr ?wp ?robot)
+			(goal-production-g1-c1-cap-mount ?rnd-id ?cs ?cap-clr ?wp ?robot)
+			(goal-production-g1-c1-deliver ?rnd-id ?ds ?ord ?robot)
+		)
+	)
+
+	(return ?goal)
+)
+
+
 	
 
 (defrule goal-production-create-from-order
@@ -220,38 +286,7 @@
 		else 
 			(bind ?rs C-RS1)
 	)
-
-	(bind ?goal-1-id (sym-cat ?rnd-id 1))
-  (assert (goal (class ORDER1)
-                (id ?goal-1-id)
-                (sub-type SIMPLE)
-                (verbosity NOISY) (is-executable FALSE)
-                (params bs C-BS base-color ?base-clr workpiece CCB1)
-                (meta-template goal-meta)
-  ))
-  (assert (goal-meta (goal-id ?goal-1-id) (assigned-to robot1)))
-
-
-	(bind ?goal-2-id (sym-cat ?rnd-id 2))
-  (assert (goal (class ORDER1)
-                (id ?goal-2-id)
-                (sub-type SIMPLE)
-                (verbosity NOISY) (is-executable FALSE)
-                (params target-rs ?rs ring-color ?rng-clr ring-before 1 ring-after 0 ring-req 1 workpiece CCB1)
-                (meta-template goal-meta)
-  ))
-  (assert (goal-meta (goal-id ?goal-2-id) (assigned-to robot1)))
-
-
-	(bind ?goal-3-id (sym-cat ?rnd-id 3))
-  (assert (goal (class ORDER1)
-                (id ?goal-3-id)
-                (sub-type SIMPLE)
-                (verbosity NOISY) (is-executable FALSE)
-                (params ds C-DS order ?ord)
-                (meta-template goal-meta)
-  ))
-  (assert (goal-meta (goal-id ?goal-1-id) (assigned-to robot1)))
+	(bind ?goal-tree g1-goal-production-assert-c1 ?rnd-id ?base-clr CCB1 ?rs ?rng-clr C-CS1 ?cap-clr C-DS ?ord robot1)
 )
 
 
