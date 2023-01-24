@@ -49,6 +49,11 @@ parser.add_argument(
     type=str,
     required=True,
     help='path of the root directory containing all the runs of the given experiment')
+parser.add_argument(
+    '--ngames',
+    type=int,
+    default=1,
+    help='multiple games in one folder e.g. *_0.log for the first game')
 args = parser.parse_args(args=None if sys.argv[1:] else ['--help'])
 # validate inputs
 if args==None:
@@ -67,7 +72,7 @@ def time_diff(start,end):
   return -(start - end).total_seconds()
 
 # plot the given goals onto the given axis
-def plot_goals(goals, ax, ps, pe, title):
+def plot_goals(goals, ax, ps, pe, title,goal_color_map):
   plt.title(title)
   ax.set_xlim([0,time_diff(ps,pe)])
   ax.set_ylim([0,0.3])
@@ -99,55 +104,69 @@ def plot_legend(color_map):
   legend_lines = [Line2D([0],[0], color=color, lw=9) for color in colors]
   plt.legend(legend_lines, goals, loc='upper left', bbox_to_anchor=(0,0.5), ncol=3)
 
-# set the time to compute time differences
-ps = None
-pe = None
-df = pd.read_csv(args.path+'game-export_meta.csv')
-for index, row in df.iterrows():
-    if row['key'] == 'production:start':
-        ps = datetime.strptime(row['value'], time_format)
-    if row['key'] == 'production:end':
-        pe = datetime.strptime(row['value'], time_format)
 
 # load the goal data and filter the relevant goals
-df = pd.read_csv(args.path+'game-export_goals.csv')
-fg = df.loc[(df['dispatched'].notna())
-           & (df['subtype'] == 'SIMPLE')
-           & ~(df['class'].isin(['SEND-BEACON','EXPIRE-LOCKS',
-                 'SPAWN-WP','PROCESS-MPS','REFILL-SHELF','MOVE-OUT-OF-WAY']))
-           & (df['outcome'].isin(['COMPLETED','FAILED','UNKNOWN']))]
+def generate_goal_visualization(game_export_goals_file, game_export_meta_file,number = None):
+  # set the time to compute time differences
+  ps = None
+  pe = None
+  df = None
+  df = pd.read_csv(game_export_meta_file)
+  for index, row in df.iterrows():
+      if row['key'] == 'production:start':
+          ps = datetime.strptime(row['value'], time_format)
+      if row['key'] == 'production:end':
+          pe = datetime.strptime(row['value'], time_format)
 
-number_classes = fg['class'].nunique()
-goal_classes = fg['class'].unique().tolist()
+  df = pd.read_csv(game_export_goals_file)
+  fg = df.loc[(df['dispatched'].notna())
+            & (df['subtype'] == 'SIMPLE')
+            & ~(df['class'].isin(['SEND-BEACON','EXPIRE-LOCKS',
+                  'SPAWN-WP','PROCESS-MPS','REFILL-SHELF','MOVE-OUT-OF-WAY']))
+            & (df['outcome'].isin(['COMPLETED','FAILED','UNKNOWN']))]
 
-# create color map
-cmap = plt.cm.get_cmap('viridis',fg['class'].nunique())
-goal_color_map = {}
-for i in range(0, number_classes):
-  goal_class = goal_classes[i]
-  goal_color_map[goal_class] = cmap(i/number_classes)
+  number_classes = fg['class'].nunique()
+  goal_classes = fg['class'].unique().tolist()
 
-# plot values for each agent
-unique_agents = fg["agent"].unique().tolist()
-grid_size = len(unique_agents)+1
+  # create color map
+  cmap = plt.cm.get_cmap('viridis',fg['class'].nunique())
+  goal_color_map = {}
+  for i in range(0, number_classes):
+    goal_class = goal_classes[i]
+    goal_color_map[goal_class] = cmap(i/number_classes)
 
-# create the figure + legend
-fig = plt.figure(1, figsize=(26,10),)
-gridspec.GridSpec(grid_size,1)
-plt.suptitle('Goal Plot')
+  # plot values for each agent
+  unique_agents = fg["agent"].unique().tolist()
+  grid_size = len(unique_agents)+1
 
-ax = plt.subplot2grid((grid_size,1), (0,0), colspan=1, rowspan=1)
-ax.axis('off')
-plot_legend(goal_color_map)
+  # create the figure + legend
+  fig = plt.figure(1, figsize=(26,10),)
+  gridspec.GridSpec(grid_size,1)
+  plt.suptitle('Goal Plot')
 
-row = 1
-for agent in unique_agents:
-  # get the goals for one agent and plot them
-  data = fg.loc[fg['agent'] == agent]
-  ax = plt.subplot2grid((grid_size,1), (row,0), colspan=1,rowspan=1)
-  plot_goals(data, ax, ps, pe, str(agent))
-  row += 1
+  ax = plt.subplot2grid((grid_size,1), (0,0), colspan=1, rowspan=1)
+  ax.axis('off')
+  plot_legend(goal_color_map)
 
-fig.tight_layout()
-plt.savefig(args.path+'goals.pdf')
-print("Goal timeline plot saved to "+args.path+'goals.pdf')
+  row = 1
+  for agent in unique_agents:
+    # get the goals for one agent and plot them
+    data = fg.loc[fg['agent'] == agent]
+    ax = plt.subplot2grid((grid_size,1), (row,0), colspan=1,rowspan=1)
+    plot_goals(data, ax, ps, pe, str(agent), goal_color_map)
+    row += 1
+
+  fig.tight_layout()
+  if number:
+    file_name = args.path+ f"goals{number}.pdf"
+
+  file_name = args.path + "goals"+ (f"{number}.pdf" if number else ".pdf")
+  plt.savefig(file_name)
+  print(f"Goal timeline plot saved to {file_name}")
+
+#'game-export_meta.csv' game-export_goals.csv
+if args.ngames > 1:
+  for i in range(0,args.ngames):
+    generate_goal_visualization(args.path+f'game-export_goals-{i}.csv',args.path+f'game-export_meta-{i}.csv',i)
+else:
+  generate_goal_visualization(args.path+'game-export_goals.csv',args.path+'game-export_meta.csv')
