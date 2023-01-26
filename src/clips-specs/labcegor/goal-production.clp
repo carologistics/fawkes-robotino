@@ -172,6 +172,9 @@
 ;
 ;)
 
+
+
+
 (defrule goal-production-g1-c1-selected
   ?g <- (goal (id ?id) (class ORDER1) (mode FORMULATED))
   =>
@@ -180,8 +183,9 @@
 
 
 (deffunction goal-production-g1-c1-spawn-wp
-	(?rnd-id ?wp ?robot )
-	(bind ?goal-0-id (sym-cat ?rnd-id 0))
+	(?rnd-id ?wp ?robot)
+	(bind ?goal-0-id (sym-cat ?rnd-id -g0))
+  
   (bind ?g (assert (goal (class ORDER1)
                 (id ?goal-0-id)
                 (sub-type SIMPLE)
@@ -196,12 +200,12 @@
 
 (deffunction goal-production-g1-c1-base
 	(?rnd-id ?base-clr ?wp ?robot )
-	(bind ?goal-1-id (sym-cat ?rnd-id 1))
+	(bind ?goal-1-id (sym-cat ?rnd-id -g1))
   (bind ?g (assert (goal (class ORDER1)
                 (id ?goal-1-id)
                 (sub-type SIMPLE)
                 (verbosity NOISY) (is-executable FALSE)
-                (params bs C-BS bs-side OUTPUT base-color ?base-clr workpece ?wp) 
+                (params bs C-BS bs-side OUTPUT base-color ?base-clr workpiece ?wp) 
                 (meta-template goal-meta)
   )))
   (assert (goal-meta (goal-id ?goal-1-id) (assigned-to ?robot)))
@@ -211,7 +215,7 @@
 
 (deffunction goal-production-g1-c1-rs
 	(?rnd-id ?rs ?rng-clr ?wp ?robot)
-	(bind ?goal-2-id (sym-cat ?rnd-id 2))
+	(bind ?goal-2-id (sym-cat ?rnd-id -g2))
   (bind ?g (assert (goal (class ORDER1)
                 (id ?goal-2-id)
                 (sub-type SIMPLE)
@@ -228,7 +232,7 @@
 
 (deffunction goal-production-g1-c1-cap-retrieve
 	(?rnd-id ?cs ?cap-clr ?wp ?robot)
-	(bind ?goal-3-id (sym-cat ?rnd-id 3))
+	(bind ?goal-3-id (sym-cat ?rnd-id -g3))
   (bind ?g (assert (goal (class ORDER1)
                 (id ?goal-3-id)
                 (sub-type SIMPLE)
@@ -244,7 +248,7 @@
 
 (deffunction goal-production-g1-c1-cap-mount
 	(?rnd-id ?cs ?cap-clr ?wp ?robot)
-	(bind ?goal-4-id (sym-cat ?rnd-id 4))
+	(bind ?goal-4-id (sym-cat ?rnd-id -g4))
   (bind ?g (assert (goal (class ORDER1)
                 (id ?goal-4-id)
                 (sub-type SIMPLE)
@@ -261,7 +265,7 @@
 
 (deffunction goal-production-g1-c1-deliver
 	(?rnd-id ?ds ?ord ?robot)
-	(bind ?goal-5-id (sym-cat ?rnd-id 5))
+	(bind ?goal-5-id (sym-cat ?rnd-id -g5))
   (bind ?g (assert (goal (class ORDER1)
                 (id ?goal-5-id)
                 (sub-type SIMPLE)
@@ -277,26 +281,7 @@
 
 
 (deffunction g1-goal-production-assert-c1 
-	(?rnd-id ?base-clr ?wp ?rs ?rng-clr ?cs ?cap-clr ?ds ?ord ?robot)
-  
-
-  ; (wm-fact (key domain fact can-hold args? r ?robot))
-  ; (if (eq (?robot) robot1) then
-  ;   (bind ?robot robot1)
-  ;   (bind ?wp CCB1)
-  ; else 
-  ;   (if (eq (?robot) robot1) then
-  ;     (bind ?robot robot2)
-  ;     (bind ?wp CCB2)
-  ;   else 
-  ;     (if (eq (?robot) robot1) then
-  ;       (bind ?robot robot3)
-  ;       (bind ?wp CCB3)
-  ;     else 
-  ;       (printout "No robot is free. Insert logic for waiting for a robot to be free.")
-  ;     )
-  ;   )
-  ; )
+	(?rnd-id ?base-clr ?rs ?rng-clr ?cs ?cap-clr ?ds ?ord ?wp ?robot)
 
 	(bind ?goal 
 		(goal-tree-assert-central-run-all-sequence PRODUCE-C1
@@ -313,28 +298,88 @@
 )
 
 
-(defrule goal-production-create-from-order
+(defrule g1-verify-robots-in-field
+  "Check if all the robots have entered the field"
+  (wm-fact (key central agent robot args? r ?robot))  
+  (wm-fact (key domain fact entered-field args? r ?robot)) 
+
+  =>
+  (do-for-fact ((?r-in wm-fact))
+			              (and (wm-key-prefix ?r-in:key (create$ domain fact entered-field))
+			                   (eq (wm-key-arg ?r-in:key r) robot1))
+			              (assert (robot1-in-field))
+  )
+
+  (do-for-fact ((?r-in wm-fact))
+			              (and (wm-key-prefix ?r-in:key (create$ domain fact entered-field))
+			                   (eq (wm-key-arg ?r-in:key r) robot2))
+			              (assert (robot2-in-field))
+  )
+
+  (do-for-fact ((?r-in wm-fact))
+			              (and (wm-key-prefix ?r-in:key (create$ domain fact entered-field))
+			                   (eq (wm-key-arg ?r-in:key r) robot3))
+			              (assert (robot3-in-field))
+  )
+)
+
+
+(defrule g1-goal-production-create-from-order-complexity-C1
 	"Take goal from refbox"
   ;(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (wm-fact (key central agent robot args? r ?robot))  ;done
-  (wm-fact (key domain fact entered-field args? r ?robot)) ;done
-	(wm-fact (key domain fact order-complexity args?  ord ?ord com C1)) ;done
-	(wm-fact (key domain fact order-ring1-color args? ord ?ord col ?rng-clr)) ;done
+  ; (wm-fact (key central agent robot args? r ?robot))  
+  ; (wm-fact (key domain fact entered-field args? r ?robot)) 
+	(robot1-in-field)
+  (robot2-in-field)
+  (robot3-in-field)
+  (wm-fact (key domain fact order-complexity args?  ord ?ord com C1)) 
+	(wm-fact (key domain fact order-ring1-color args? ord ?ord col ?rng-clr)) 
 	;(wm-fact (key domain fact order-complexity args?  ord  ?ord comp ?ord-cmplx))
-	(wm-fact (key domain fact order-base-color args? ord ?ord  col ?base-clr)) ;done
-	(wm-fact (key domain fact order-cap-color args? ord ?ord col ?cap-clr)) ;done
-	(wm-fact (key domain fact order-gate args? ord ?ord gate ?ds-gate)) ;done
+	(wm-fact (key domain fact order-base-color args? ord ?ord  col ?base-clr)) 
+	(wm-fact (key domain fact order-cap-color args? ord ?ord col ?cap-clr)) 
+	(wm-fact (key domain fact order-gate args? ord ?ord gate ?ds-gate)) 
   ;(not (goal (id ?some-goal-id) (class ORDER1)))
-  (domain-facts-loaded) ;done
-  (wm-fact (key refbox team-color) (value ?team-color)) ;done
+  (domain-facts-loaded) 
+  (wm-fact (key refbox team-color) (value ?team-color)) 
+  
 	=>
-	(bind ?rnd-id (gensym*))
-  (assert (our-goal-inserted))
+	(bind ?ord-comp C1)     ; just for information
+  (bind ?rnd-id (sym-cat ?ord - (gensym*) ))
+  (bind ?wp (sym-cat WP - ?ord))
+  ; (assert (domain-object (name ?wp) (type workpiece)))
+
+
 	(if (or (eq ?rng-clr RING_BLUE) (eq ?rng-clr RING_YELLOW))
 		then 
 			(bind ?rs C-RS2)
 		else 
 			(bind ?rs C-RS1)
 	)
-	(bind ?goal-tree (g1-goal-production-assert-c1 ?rnd-id ?base-clr CCB1 ?rs ?rng-clr C-CS1 ?cap-clr C-DS ?ord robot1))
+
+  (if (not (do-for-fact ((?can-hold wm-fact))
+			              (and (wm-key-prefix ?can-hold:key (create$ domain fact can-hold))
+			                   (wm-key-arg ?can-hold:key r))
+			              (bind ?assn-robot (wm-key-arg ?can-hold:key r)))) then 
+                    
+                    (bind ?assn-robot nil) (printout t "assn-robot has been assigned as nil"))
+  
+  ;  (if (not (do-for-fact ((?wp-avl wm-fact))
+	; 		              (and (wm-key-prefix ?wp-avl:key (create$ domain fact wp-usable))
+	; 		                   (wm-key-arg ?wp-avl:key wp))
+	; 		              (bind ?assn-wp (wm-key-arg ?wp-avl:key wp)))) then
+
+  ;                   (bind ?assn-wp nil) (printout t "assn-wp has been assigned as nil"))
+
+  (printout "Assigned variables are" ?wp ?assn-robot)
+	(bind ?goal-tree (g1-goal-production-assert-c1 ?rnd-id ?base-clr ?rs ?rng-clr C-CS1 ?cap-clr C-DS ?ord ?wp ?assn-robot))
 )
+
+
+
+
+;;;;;;;;; NOTES FOR NEXT WORK
+; 1. Need to spawn a workpiece for each new order. Write a function/rule for that
+; 2. Need to assign robot when goal is created. Make a logic for that. 
+;
+;
+;

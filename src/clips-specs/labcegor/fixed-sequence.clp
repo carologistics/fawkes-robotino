@@ -79,14 +79,16 @@
  	            (params workpiece ?wp robot ?robot))
  	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
  	=>
-	(plan-assert-action spawn-wp ?wp ?robot)
+	(plan-assert-sequential SPAWN-WP ?goal-id ?robot
+		(plan-assert-action spawn-wp ?wp ?robot)
+	)
 	(modify ?g (mode EXPANDED))
 )
 
 (defrule goal-expander-g1-c1-base
 "Take the base from base station"
-	?g <- (goal (id ?goal-id) (class ORDER1) (mode SELECTED) (parent ?parent)
- 	            (params bs ?bs bs-side ?bs-side bs-clr ?bs-clr workpiece ?wp robot ?robot))
+	?g <- (goal (id ?goal-id) (class ORDER1) (mode SELECTED) 
+ 	            (params bs ?bs bs-side ?bs-side base-color ?bs-clr workpiece ?wp ))
  	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
  	=>
 	(plan-assert-sequential RETRIEVE-BASE ?goal-id ?robot
