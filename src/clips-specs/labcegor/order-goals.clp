@@ -65,15 +65,15 @@
     (assert (goal-meta (goal-id ?goal-id) (order-id ?ord) (root-for-order ?root-goal-id)))
 )
 
-;Get CS
-(defrule goal-get-bs
+; Get CS
+(defrule goal-get-cs
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (goal-meta (goal-id (sym-cat GOAL-PARALLEL-BS-CS- ?ord)) (order-id ?ord) (root-for-order ?root-goal-id))
-    (not (goal-meta (goal-id (sym-cat GOAL-GET-BS- ?ord)) (order-id ?ord) (root-for-order ?root-goal-id)))
+    (not (goal-meta (goal-id (sym-cat GOAL-GET-CS- ?ord)) (order-id ?ord) (root-for-order ?root-goal-id)))
     =>
-    (printout t "Goal " GOAL-GET-BS " formulated" crlf)
-    (bind ?goal-id (sym-cat GOAL-GET-BS- ?ord))
-    (assert (goal (class GOAL-GET-BS)
+    (printout t "Goal " GOAL-GET-CS " formulated" crlf)
+    (bind ?goal-id (sym-cat GOAL-GET-CS- ?ord))
+    (assert (goal (class GOAL-GET-CS)
                 (id ?goal-id)
                 (type ACHIEVE)
                 (sub-type SIMPLE)
@@ -83,6 +83,25 @@
     ))
     (assert (goal-meta (goal-id ?goal-id) (order-id ?ord) (root-for-order ?root-goal-id)))
 )
+
+; Get CS
+; (defrule goal-get-cs
+;     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;     (goal-meta (goal-id (sym-cat GOAL-PARALLEL-BS-CS- ?ord)) (order-id ?ord) (root-for-order ?root-goal-id))
+;     (not (goal-meta (goal-id (sym-cat GOAL-BS-TO-CS- ?ord)) (order-id ?ord) (root-for-order ?root-goal-id)))
+;     =>
+;     (printout t "Goal " GOAL-GET-CS " formulated" crlf)
+;     (bind ?goal-id (sym-cat GOAL-GET-CS- ?ord))
+;     (assert (goal (class GOAL-GET-CS)
+;                 (id ?goal-id)
+;                 (type ACHIEVE)
+;                 (sub-type SIMPLE)
+;                 (parent (sym-cat GOAL-PARALLEL-CS-CS- ?ord))
+;                 (verbosity NOISY) (is-executable FALSE)
+;                 (meta-template goal-meta)
+;     ))
+;     (assert (goal-meta (goal-id ?goal-id) (order-id ?ord) (root-for-order ?root-goal-id)))
+; )
 
 ; Expand goals
 ;----------------------------------------------------------------------------
