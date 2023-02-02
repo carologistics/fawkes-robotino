@@ -47,6 +47,7 @@
 )
 
 (defrule action-send-beacon-signal
+  (not (action-task-mapping))
   (time $?now)
   ?bs <- (wm-fact (key refbox beacon seq) (value ?seq))
   (wm-fact (key central agent robot args? r ?robot))
@@ -67,6 +68,7 @@
 )
 
 (defrule action-send-beacon-signal-with-task
+  (not (action-task-mapping))
   (time $?now)
   ?bs <- (wm-fact (key refbox beacon seq) (value ?seq))
   (refbox-agent-task (task-id ?task-seq) (robot ?robot) (task-type ?task-type)
