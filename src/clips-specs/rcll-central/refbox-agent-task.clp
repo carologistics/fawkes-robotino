@@ -149,8 +149,8 @@
   )
   (assert (refbox-agent-task (task-id ?seq) (robot ?robot) (task-type Move)
   (waypoint (sym-cat ?prefix
-                     -Z
-                     (round (+ ?x-f ?x-offset))
+                     _Z
+                     (abs (round (+ ?x-f ?x-offset)))
                      (round (+ ?y-f ?y-offset))
                     ))
   (goal-id ?goal-id) (plan-id ?plan-id) (action-id ?id)
@@ -171,7 +171,7 @@
   (domain-fact (name zone-content) (param-values ?zone ?))
   =>
   (assert (refbox-agent-task (task-id ?seq) (robot ?robot) (task-type Move)
-    (waypoint ?zone) (goal-id ?goal-id) (plan-id ?plan-id) (action-id ?id)
+    (waypoint (sym-cat (protobuf-name ?zone))) (goal-id ?goal-id) (plan-id ?plan-id) (action-id ?id)
   ))
 )
 
