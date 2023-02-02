@@ -116,7 +116,9 @@ clips-executive:
           - name: execution-monitoring
             file: rcll-central/execution-monitoring.clp
           - name: simulated-actions
-            file: rcll-central/noop-actions.clp
+            files:
+              - rcll-central/noop-actions.clp
+              - rcll-central/action-task-executor.clp
           - name: simtest
             file: rcll-central/simtest.clp
       # the mapping syntax for parameters is defined in
