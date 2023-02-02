@@ -65,6 +65,11 @@
   ?*HOLDING-MONITORING* = 60
 )
 
+(deftemplate action-task-mapping
+  (slot name (type SYMBOL) (default ?NONE))
+  (slot map-string (type STRING))
+)
+
 (deftemplate exploration-result
 " Template for storing a exploration result. Stores the machine name, zone, orientation and the team this machine belongs to"
   (slot machine (type SYMBOL) (allowed-symbols C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS C-SS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS M-SS))
