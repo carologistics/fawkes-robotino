@@ -60,7 +60,7 @@ message BeaconSignal {
   required uint64 seq = 2;
 
   // The robot's jersey number
-  required uint32 number = 3;
+  required uint32 number = 8;
   // The robot's team name
   required string team_name = 4;
   // The robot's name

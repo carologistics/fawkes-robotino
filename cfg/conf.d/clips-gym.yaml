@@ -39,7 +39,8 @@ goal-space:
             "MOUNT-RING",
             "DELIVER",
             "DISCARD",
-            WAIT-NOTHING-EXECUTABLE]
+            "MOVE-OUT-OF-WAY",
+            "WAIT-NOTHING-EXECUTABLE"]
 param-names:
   # TOWER-C1: ["buttom", "top"]
   # TOWER-C2: ["buttom", "middle", "top"]
