@@ -92,12 +92,49 @@
  	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
  	=>
 	(plan-assert-sequential RETRIEVE-BASE ?goal-id ?robot
+		(plan-assert-action move ?robot START INPUT ?bs ?bs-side)
 		(plan-assert-action prepare-bs ?bs ?bs-side ?bs-clr)
 		(plan-assert-action bs-dispense ?bs ?bs-side ?wp ?bs-clr)
 	)
 	(modify ?g (mode EXPANDED))
 )
 
+
+(defrule goal-expander-g1-c1-transport-wp
+"Take the workpiece from one mps to another"
+	?g <- (goal (id ?goal-id) (class ORDER1) (mode SELECTED) 
+ 	            (params s-from ?from s-to ?to workpiece ?wp))
+ 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+ 	=>
+	(plan-assert-sequential TRANSPORT-WP ?goal-id ?robot
+		(plan-assert-action wp-get ?robot ?wp ?from OUTPUT)
+		(plan-assert-action move ?robot ?from OUTPUT ?to INPUT)
+		(plan-assert-action wp-put ?robot ?wp ?to INPUT)
+	)
+	(modify ?g (mode EXPANDED))
+)
+
+
+
+(defrule goal-expander-g1-c1-rs
+"Take the base from base station"
+	?g <- (goal (id ?goal-id) (class ORDER1) (mode SELECTED) 
+ 	            (params target-rs ?rs ring-color ?rng-clr ring-before ?rng-before ring-after ?rng-after ring-req ?rng-req workpiece ?wp))
+ 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	; (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before))
+	; (wm-fact (key domain fact rs-sub args? minuend ?rs-before subtrahend ?rs-req difference ?rs-after))
+	(wm-fact (key domain fact rs-ring-spec args? m ?rs r ?rng-clr rn ?rn))
+ 	=>
+	(printout t "Req-ring" ?rn)
+	(bind ?rs-before ZERO)
+	(bind ?rs-after ZERO)
+	(bind ?rs-req ZERO)
+	(plan-assert-sequential MOUNT-RING ?goal-id ?robot
+		(plan-assert-action prepare-rs ?rs ?rng-clr ?rs-before ?rs-after ?rs-req)
+		(plan-assert-action rs-mount-ring1 ?rs ?wp ?rng-clr ?rs-before ?rs-after ?rs-req)
+	)
+	(modify ?g (mode EXPANDED))
+)
 
 ; (defrule goal-expander-g1-c1-execute
 ; "Execute the goal "

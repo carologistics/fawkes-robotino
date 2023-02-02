@@ -183,47 +183,81 @@
 
 
 (deffunction goal-production-g1-c1-spawn-wp
-	(?rnd-id ?wp ?robot)
-	(bind ?goal-0-id (sym-cat ?rnd-id -g0))
+	(?rnd-id ?wp ?robot ?num)
+	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
   
   (bind ?g (assert (goal (class ORDER1)
-                (id ?goal-0-id)
+                (id ?goal-id)
                 (sub-type SIMPLE)
                 (verbosity NOISY) (is-executable FALSE)
                 (params workpiece ?wp robot ?robot) 
                 (meta-template goal-meta)
   )))
-  (assert (goal-meta (goal-id ?goal-0-id) (assigned-to ?robot)))
+  (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
   (return ?g)
 )
 
 
 (deffunction goal-production-g1-c1-base
-	(?rnd-id ?base-clr ?wp ?robot )
-	(bind ?goal-1-id (sym-cat ?rnd-id -g1))
+	(?rnd-id ?bs ?base-clr ?wp ?robot ?num)
+	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
   (bind ?g (assert (goal (class ORDER1)
-                (id ?goal-1-id)
+                (id ?goal-id)
                 (sub-type SIMPLE)
                 (verbosity NOISY) (is-executable FALSE)
-                (params bs C-BS bs-side OUTPUT base-color ?base-clr workpiece ?wp) 
+                (params bs ?bs bs-side OUTPUT base-color ?base-clr workpiece ?wp) 
                 (meta-template goal-meta)
   )))
-  (assert (goal-meta (goal-id ?goal-1-id) (assigned-to ?robot)))
+  (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
   (return ?g)
 
 )
 
-(deffunction goal-production-g1-c1-rs
-	(?rnd-id ?rs ?rng-clr ?wp ?robot)
-	(bind ?goal-2-id (sym-cat ?rnd-id -g2))
+
+(deffunction goal-production-g1-c1-transport-wp
+	(?rnd-id ?from ?to ?wp ?robot ?num)
+	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
   (bind ?g (assert (goal (class ORDER1)
-                (id ?goal-2-id)
+                (id ?goal-id)
+                (sub-type SIMPLE)
+                (verbosity NOISY) (is-executable FALSE)
+                (params s-from ?from s-to ?to workpiece ?wp) 
+                (meta-template goal-meta)
+  )))
+  (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
+  (return ?g)
+
+)
+
+
+(deffunction goal-production-g1-c1-rs
+	(?rnd-id ?rs ?rng-clr ?wp ?robot ?num)
+	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
+
+  (do-for-fact ((?rs-status wm-fact))
+			              (and (wm-key-prefix ?rs-status:key (create$ domain fact rs-ring-spec))
+			                   (eq (wm-key-arg ?rs-status:key m) ?rs))
+			              (bind ?rng-num (wm-key-arg ?rs-status:key n))
+  )
+
+
+  ; (do-for-fact ((?rs-status wm-fact))
+	; 		              ((wm-key-prefix ?rs-status:key (create$ domain fact rs-sub)))
+	; 		              ((bind ?rng-after (wm-key-arg ?rs-status:key minuend))
+  ;                    (bind ?rng-before (wm-key-arg ?rs-status:key subtrahend))
+  ;                    (bind ?rng-req (wm-key-arg ?rs-status:key difference)))
+                    
+  ; )
+
+
+  (bind ?g (assert (goal (class ORDER1)
+                (id ?goal-id)
                 (sub-type SIMPLE)
                 (verbosity NOISY) (is-executable FALSE)
                 (params target-rs ?rs ring-color ?rng-clr ring-before 1 ring-after 0 ring-req 1 workpiece ?wp)
                 (meta-template goal-meta)
   )))
-  (assert (goal-meta (goal-id ?goal-2-id) (assigned-to ?robot)))
+  (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
   (return ?g)
 
 )
@@ -231,32 +265,32 @@
 
 
 (deffunction goal-production-g1-c1-cap-retrieve
-	(?rnd-id ?cs ?cap-clr ?wp ?robot)
-	(bind ?goal-3-id (sym-cat ?rnd-id -g3))
+	(?rnd-id ?cs ?cap-clr ?wp ?robot ?num)
+	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
   (bind ?g (assert (goal (class ORDER1)
-                (id ?goal-3-id)
+                (id ?goal-id)
                 (sub-type SIMPLE)
                 (verbosity NOISY) (is-executable FALSE)
                 (params cap-carrier ?wp cap-color ?cap-clr cap-station ?cs)
                 (meta-template goal-meta)
   )))
-  (assert (goal-meta (goal-id ?goal-3-id) (assigned-to ?robot)))
+  (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
   (return ?g)
 
 )
 
 
 (deffunction goal-production-g1-c1-cap-mount
-	(?rnd-id ?cs ?cap-clr ?wp ?robot)
-	(bind ?goal-4-id (sym-cat ?rnd-id -g4))
+	(?rnd-id ?cs ?cap-clr ?wp ?robot ?num)
+	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
   (bind ?g (assert (goal (class ORDER1)
-                (id ?goal-4-id)
+                (id ?goal-id)
                 (sub-type SIMPLE)
                 (verbosity NOISY) (is-executable FALSE)
                 (params cap-carrier ?wp cap-color ?cap-clr cap-station ?cs)
                 (meta-template goal-meta)
   )))
-  (assert (goal-meta (goal-id ?goal-4-id) (assigned-to ?robot)))
+  (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
   (return ?g)
 
 )
@@ -264,16 +298,16 @@
 
 
 (deffunction goal-production-g1-c1-deliver
-	(?rnd-id ?ds ?ord ?robot)
-	(bind ?goal-5-id (sym-cat ?rnd-id -g5))
+	(?rnd-id ?ds ?ord ?robot ?num)
+	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
   (bind ?g (assert (goal (class ORDER1)
-                (id ?goal-5-id)
+                (id ?goal-id)
                 (sub-type SIMPLE)
                 (verbosity NOISY) (is-executable FALSE)
                 (params order ?ord delivery-station ?ds)
                 (meta-template goal-meta)
   )))
-  (assert (goal-meta (goal-id ?goal-5-id) (assigned-to ?robot)))
+  (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
   (return ?g)
 
 )
@@ -282,15 +316,16 @@
 
 (deffunction g1-goal-production-assert-c1 
 	(?rnd-id ?base-clr ?rs ?rng-clr ?cs ?cap-clr ?ds ?ord ?wp ?robot)
-
+  (bind ?base-station C-BS)
 	(bind ?goal 
 		(goal-tree-assert-central-run-all-sequence PRODUCE-C1
-      (goal-production-g1-c1-spawn-wp ?rnd-id ?wp ?robot)
-			(goal-production-g1-c1-base ?rnd-id ?base-clr ?wp ?robot)
-			(goal-production-g1-c1-rs ?rnd-id ?rs ?rng-clr ?wp ?robot)
-			(goal-production-g1-c1-cap-retrieve ?rnd-id ?cs ?cap-clr ?wp ?robot)
-			(goal-production-g1-c1-cap-mount ?rnd-id ?cs ?cap-clr ?wp ?robot)
-			(goal-production-g1-c1-deliver ?rnd-id ?ds ?ord ?robot)
+      (goal-production-g1-c1-spawn-wp ?rnd-id ?wp ?robot 0)
+			(goal-production-g1-c1-base ?rnd-id ?base-station ?base-clr ?wp ?robot 1)
+      ;(goal-production-g1-c1-cap-retrieve ?rnd-id ?cs ?cap-clr ?wp ?robot)
+			(goal-production-g1-c1-transport-wp ?rnd-id ?base-station ?rs ?wp ?robot 2)
+      (goal-production-g1-c1-rs ?rnd-id ?rs ?rng-clr ?wp ?robot 3)
+			(goal-production-g1-c1-cap-mount ?rnd-id ?cs ?cap-clr ?wp ?robot 4)
+			(goal-production-g1-c1-deliver ?rnd-id ?ds ?ord ?robot 5)
 		)
 	)
 
@@ -378,7 +413,7 @@
 
 
 ;;;;;;;;; NOTES FOR NEXT WORK
-; 1. Need to spawn a workpiece for each new order. Write a function/rule for that
+; 1. Understand the logic of ring bfore after and required
 ; 2. Need to assign robot when goal is created. Make a logic for that. 
 ;
 ;
