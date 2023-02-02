@@ -18,16 +18,16 @@
   (retract ?goal)
 )
 
-; (defrule no-reset-on-start
-;   (declare (salience ?*SALIENCE-RESET-GAME-HIGH*))
-; 	;?r<-(reset-domain-facts)
-;   ?r <- (reset-game (stage STAGE-0))
-; 	?n<-(no-reset-on-training-start)
-; 	=>
-; 	(retract ?r)
-; 	(retract ?n)
-; 	(assert (reset-game-finished))	
-; )
+(defrule no-reset-on-start
+  (declare (salience ?*SALIENCE-RESET-GAME-HIGH*))
+	;?r<-(reset-domain-facts)
+  ?r <- (reset-game (stage STAGE-0))
+	?n<-(no-reset-on-training-start)
+	=>
+	(retract ?r)
+	(retract ?n)
+	(assert (reset-game-finished))	
+)
 
 (defrule reset-game-refbox-setup
   (declare (salience ?*SALIENCE-RESET-GAME-HIGH*))

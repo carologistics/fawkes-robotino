@@ -64,6 +64,11 @@ parser.add_argument(
     type=bool,
     default=False,
     help='multiple games in one log file e.g. training central-rl agent')
+parser.add_argument(
+    '--duration',
+    type=int,
+    default=1200,
+    help='Duration of the game in sec')
 args = parser.parse_args(args=None if sys.argv[1:] else ['--help'])
 # validate inputs
 if args==None:
@@ -244,7 +249,7 @@ if args.ngames:
             newfile.write(f"Game {i}\n"+content[file_start:file_end])
         start_time, end_time = parse_refbox_debug_log(file_name)
         print(f"game {i}: start {start_time} end {end_time}")
-        if start_time > end_time and end_time > "0:15:0":
+        if end_time == None or (start_time > end_time and end_time > "0:15:0"):
             file_start = content.find("net-SetGamePhase PRODUCTION")+len("net-SetGamePhase PRODUCTION")
             split_end = content[file_start:].find("ws-attention-message \"Game Over\" nil 60")+len("ws-attention-message \"Game Over\" nil 60")+1
             file_name = fn_refbox_debug+f"_split_{i}.log" 
@@ -296,8 +301,9 @@ if args.central and args.ngames:
         short_name = prefix+f"debug11_split_{i}.log"
         goals = {}
         parse_robot_log(goals, short_name,1)
-        df_goals = pd.concat([pd.DataFrame(goal, index=[0]) for goal in goals.values()],ignore_index=True)
-        df_goals.to_csv(prefix+"game-export_goals"+f"-{i}.csv")
+        if goals:
+            df_goals = pd.concat([pd.DataFrame(goal, index=[0]) for goal in goals.values()],ignore_index=True)
+            df_goals.to_csv(prefix+"game-export_goals"+f"-{i}.csv")
 elif args.central:
     filename = fn_bots.format(11)
     parse_robot_log(goals, filename,11)
