@@ -86,74 +86,74 @@
   (modify ?counter (value (+ ?seq 1)))
 )
 
-(defrule register-new-agent-task-move-machine
-  (declare (salience ?*MONITORING-SALIENCE*))
-  (wm-fact (key refbox robot task seq args? r ?robot) (value ?seq))
-  (plan-action (id ?id) (action-name move)
-    (param-values ?robot
-                  ?from
-                  ?from-side
-                  ?mps
-                  ?side&:(member$ ?side (create$ INPUT OUTPUT)))
-    (state RUNNING) (goal-id ?goal-id) (plan-id ?plan-id)
-  )
-  (not (refbox-agent-task (robot ?robot) (task-id ?seq)))
-  =>
-  (assert (refbox-agent-task (task-id ?seq) (robot ?robot) (task-type Move)
-   (machine ?mps) (side ?side) (goal-id ?goal-id) (plan-id ?plan-id)
-   (action-id ?id)
-  ))
-)
+;(defrule register-new-agent-task-move-machine
+;  (declare (salience ?*MONITORING-SALIENCE*))
+;  (wm-fact (key refbox robot task seq args? r ?robot) (value ?seq))
+;  (plan-action (id ?id) (action-name move)
+;    (param-values ?robot
+;                  ?from
+;                  ?from-side
+;                  ?mps
+;                  ?side&:(member$ ?side (create$ INPUT OUTPUT)))
+;    (state RUNNING) (goal-id ?goal-id) (plan-id ?plan-id)
+;  )
+;  (not (refbox-agent-task (robot ?robot) (task-id ?seq)))
+;  =>
+;  (assert (refbox-agent-task (task-id ?seq) (robot ?robot) (task-type Move)
+;   (machine ?mps) (side ?side) (goal-id ?goal-id) (plan-id ?plan-id)
+;   (action-id ?id)
+;  ))
+;)
 
-(defrule register-new-agent-task-move-go-wait-nav-pos
-  (declare (salience ?*MONITORING-SALIENCE*))
-  (wm-fact (key refbox robot task seq args? r ?robot) (value ?seq))
-  (plan-action (id ?id) (action-name go-wait)
-    (param-values ?robot
-                  ?from
-                  ?from-side
-                  ?nav-node)
-    (state RUNNING) (goal-id ?goal-id) (plan-id ?plan-id)
-  )
-  (not (refbox-agent-task (robot ?robot) (task-id ?seq)))
-  (navgraph-node (name ?str-nav-node&:(eq (str-cat ?nav-node) ?str-nav-node))
-   (pos ?x-f ?y-f))
-  =>
-  ; get the associated zone by ceiling all values
-  (bind ?x-offset 0.5)
-  (bind ?prefix C)
-  (bind ?y-offset 0.5)
-  (if (< ?x-f 0) then
-    (bind ?x-offset -0.5)
-    (bind ?prefix M)
-  )
-  (assert (refbox-agent-task (task-id ?seq) (robot ?robot) (task-type Move)
-  (waypoint (sym-cat ?prefix
-                     -Z
-                     (round (+ ?x-f ?x-offset))
-                     (round (+ ?y-f ?y-offset))
-                    ))
-  (goal-id ?goal-id) (plan-id ?plan-id) (action-id ?id)
- ))
-)
-
-(defrule register-new-agent-task-move-go-wait-wait-zone
-  (declare (salience ?*MONITORING-SALIENCE*))
-  (wm-fact (key refbox robot task seq args? r ?robot) (value ?seq))
-  (plan-action (id ?id) (action-name go-wait)
-    (param-values ?robot
-                  ?from
-                  ?from-side
-                  ?zone)
-    (state RUNNING) (goal-id ?goal-id) (plan-id ?plan-id)
-  )
-  (not (refbox-agent-task (robot ?robot) (task-id ?seq)))
-  (domain-fact (name zone-content) (param-values ?zone ?))
-  =>
-  (assert (refbox-agent-task (task-id ?seq) (robot ?robot) (task-type Move)
-    (waypoint ?zone) (goal-id ?goal-id) (plan-id ?plan-id) (action-id ?id)
-  ))
-)
+;(defrule register-new-agent-task-move-go-wait-nav-pos
+;  (declare (salience ?*MONITORING-SALIENCE*))
+;  (wm-fact (key refbox robot task seq args? r ?robot) (value ?seq))
+;  (plan-action (id ?id) (action-name go-wait)
+;    (param-values ?robot
+;                  ?from
+;                  ?from-side
+;                  ?nav-node)
+;    (state RUNNING) (goal-id ?goal-id) (plan-id ?plan-id)
+;  )
+;  (not (refbox-agent-task (robot ?robot) (task-id ?seq)))
+;  (navgraph-node (name ?str-nav-node&:(eq (str-cat ?nav-node) ?str-nav-node))
+;   (pos ?x-f ?y-f))
+;  =>
+;  ; get the associated zone by ceiling all values
+;  (bind ?x-offset 0.5)
+;  (bind ?prefix C)
+;  (bind ?y-offset 0.5)
+;  (if (< ?x-f 0) then
+;    (bind ?x-offset -0.5)
+;    (bind ?prefix M)
+;  )
+;  (assert (refbox-agent-task (task-id ?seq) (robot ?robot) (task-type Move)
+;  (waypoint (sym-cat ?prefix
+;                     -Z
+;                     (round (+ ?x-f ?x-offset))
+;                     (round (+ ?y-f ?y-offset))
+;                    ))
+;  (goal-id ?goal-id) (plan-id ?plan-id) (action-id ?id)
+; ))
+;)
+;
+;(defrule register-new-agent-task-move-go-wait-wait-zone
+;  (declare (salience ?*MONITORING-SALIENCE*))
+;  (wm-fact (key refbox robot task seq args? r ?robot) (value ?seq))
+;  (plan-action (id ?id) (action-name go-wait)
+;    (param-values ?robot
+;                  ?from
+;                  ?from-side
+;                  ?zone)
+;    (state RUNNING) (goal-id ?goal-id) (plan-id ?plan-id)
+;  )
+;  (not (refbox-agent-task (robot ?robot) (task-id ?seq)))
+;  (domain-fact (name zone-content) (param-values ?zone ?))
+;  =>
+;  (assert (refbox-agent-task (task-id ?seq) (robot ?robot) (task-type Move)
+;    (waypoint ?zone) (goal-id ?goal-id) (plan-id ?plan-id) (action-id ?id)
+;  ))
+;)
 
 (defrule register-new-agent-task-retrieve-wp-get
   (declare (salience ?*MONITORING-SALIENCE*))
