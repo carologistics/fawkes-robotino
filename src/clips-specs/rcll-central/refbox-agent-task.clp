@@ -117,6 +117,7 @@
                   ?side&:(member$ ?side (create$ INPUT OUTPUT)))
     (state RUNNING) (goal-id ?goal-id) (plan-id ?plan-id)
   )
+  (test (or (neq ?from ?mps) (neq ?from-side ?side)))
   (not (refbox-agent-task (robot ?robot) (task-id ?seq)))
   =>
   (assert (refbox-agent-task (task-id ?seq) (robot ?robot) (task-type Move)
@@ -135,6 +136,7 @@
                   ?nav-node)
     (state RUNNING) (goal-id ?goal-id) (plan-id ?plan-id)
   )
+  (test (or (neq ?from ?nav-node) (neq ?from-side WAIT)))
   (not (refbox-agent-task (robot ?robot) (task-id ?seq)))
   (navgraph-node (name ?str-nav-node&:(eq (str-cat ?nav-node) ?str-nav-node))
    (pos ?x-f ?y-f))
@@ -169,6 +171,7 @@
   )
   (not (refbox-agent-task (robot ?robot) (task-id ?seq)))
   (domain-fact (name zone-content) (param-values ?zone ?))
+  (test (or (neq ?from ?zone) (neq ?from-side WAIT)))
   =>
   (assert (refbox-agent-task (task-id ?seq) (robot ?robot) (task-type Move)
     (waypoint (sym-cat (protobuf-name ?zone))) (goal-id ?goal-id) (plan-id ?plan-id) (action-id ?id)
