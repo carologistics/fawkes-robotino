@@ -79,83 +79,18 @@
 (defrule action-task-send-command
   ?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id)
            (state RUNNING) (action-name ?action-name))
-  (action-task-mapping (name ?action-name))
-  (refbox-agent-task (task-id ?task-seq) (robot ?robot) (task-type ?task-type)
-    (machine ?m) (side ?side) (waypoint ?waypoint) (workpiece ?wp)
-    (goal-id ?goal-id) (plan-id ?plan-id) (action-id ?id)
-    (workpiece-colors $?colors) (order ?order-id) (outcome ?outcome)
-  )
+  ?at <- (refbox-agent-task (task-id ?task-seq) (robot ?robot))
   (wm-fact (key refbox robot task seq args? r ?robot) (value ?task-seq))
   (wm-fact (key simulator comm peer-enabled ?robot) (value TRUE) (type BOOL))
   (wm-fact (key simulator comm peer-id ?robot) (value ?peer-id) (type INT))
   (wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
   =>
-  (bind ?task-msg-valid TRUE)
-  (bind ?task-msg (pb-create "llsf_msgs.AgentTask"))
-  (bind ?name-length (str-length (str-cat ?robot)))
-  (bind ?robot-number (string-to-field (sub-string ?name-length ?name-length (str-cat ?robot))))
-  (pb-set-field ?task-msg "team_color" ?team-color)
-  (pb-set-field ?task-msg "task_id" ?task-seq)
-  (pb-set-field ?task-msg "robot_id" ?robot-number)
-  (bind ?task-info (pb-create (str-cat "llsf_msgs." ?task-type)))
-  (bind ?task-field-name (str-cat (lowcase ?task-type)))
-  (bind ?param1 "waypoint")
-  (bind ?param2 "machine_point")
-  (if (member$ ?task-type (create$ BufferStation Retrieve Deliver))
+  (bind ?task-msg (create-task-msg ?at ?team-color))
+  (if ?task-msg
    then
-    (bind ?param1 "machine_id")
-  )
-  (if (eq ?task-type BufferStation)
-   then
-    (bind ?task-field-name "buffer")
-  )
-  (if (eq ?task-type ExploreWaypoint)
-   then
-    (bind ?task-field-name "explore_machine")
-  )
-  (if (neq ?m UNSET)
-   then
-    (pb-set-field ?task-info ?param1 ?m)
-   else
-    (if (neq ?waypoint UNSET)
-     then
-      (pb-set-field ?task-info ?param1 ?waypoint)
-     else
-      (bind ?task-msg-valid FALSE)
-      (printout error "AgentTask with UNSET param " ?param1 ", skip" crlf)
-    )
-  )
-  (if (neq ?side UNSET) then
-    (pb-set-field ?task-info ?param2 ?side)
-   else
-    (if (eq ?task-type Retrieve) then
-      (bind ?task-msg-valid FALSE)
-      (printout error "AgentTask Retrive with UNSET param " ?param2 ", skip" crlf)
-    )
-  )
-  (if (and (neq ?wp nil) (eq (length$ ?colors) 5))
-   then
-    (bind ?wp-description-msg (pb-create "llsf_msgs.WorkpieceDescription"))
-    (pb-set-field ?wp-description-msg "base_color" (nth$ 1 ?colors))
-    (progn$ (?col (subseq$ ?colors 2 4))
-      (pb-add-list ?wp-description-msg "ring_colors" ?col)
-    )
-    (if (neq (nth$ 5 ?colors) CAP_NONE) then
-     (pb-set-field ?wp-description-msg "cap_color" (nth$ 5 ?colors))
-    )
-    (pb-set-field ?task-msg "workpiece_description" ?wp-description-msg)
-  )
-  (if (neq ?order-id nil) then
-    (pb-set-field ?task-msg "order_id" (order-to-int ?order-id))
-  )
-  (if ?task-msg-valid
-   then
-    (pb-set-field ?task-msg ?task-field-name ?task-info)
     (pb-send ?peer-id ?task-msg)
     (pb-destroy ?task-msg)
    else
-    (pb-destroy ?task-info)
-    (pb-destroy ?task-msg)
     (modify ?pa (state FAILED) (error-msg (str-cat "Failed to create agent-task message for " ?action-name)))
   )
 )
