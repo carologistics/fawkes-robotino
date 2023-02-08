@@ -78,13 +78,14 @@ EOF
 POSITIONAL_ARGS=()
 
 CUSTOM_MONGO=0
-NUMBER_GAMES=3
+NUMMER_TRAININGS=2
 EXPERIMENT_EVAL="rl"
 BASELINE_EVAL="central"
 EXPERIMENT_REFBOX_ARGS=$refbox_args
 BASELINE_REFBOX_ARGS=$refbox_args
-GAME_TIME=400
-GAMES_PER_TRAINING=18
+REFBOX_SPEED=1
+GAME_TIME=$((1200/$REFBOX_SPEED))
+GAMES_PER_TRAINING=25
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -98,7 +99,7 @@ while [[ $# -gt 0 ]]; do
       shift # past argument
       ;;
     -n)
-      NUMBER_GAMES=$2
+      NUMMER_TRAININGS=$2
       shift # past argument
       shift
       ;;
@@ -241,7 +242,9 @@ start_simulation_generate_game() {
     sleep 2
 }
 
-rcll-loadgame () {                                                     
+rcll-loadgame () {      
+$LLSF_REFBOX_DIR/bin/./restore_reports.bash rl_game_1.gz 
+echo "Finished restore report starting refbox with loaded game"                                              
 $FAWKES_DIR/bin/./gazsim.bash -x kill; $FAWKES_DIR/bin/./gazsim.bash -r -k -o --mongodb --central-agent m-central-clips-exec -m m-skill-sim -n 1 --refbox-args "--cfg-mps mps/mockup_mps.yaml --cfg-game game/game1.yaml --cfg-simulation simulation/fast_simulation.yaml --cfg-mongodb mongodb/enable_mongodb.yaml" "$@"
 } 
 
@@ -373,13 +376,17 @@ name=`generate_name`
 mkdir $name
 rl_agent_name=`generate_agent_name`
 
+
 #writeout configuration
 echo "Your chosen configuration: " >> $name/configuration.txt
-echo "- number of games     = ${NUMBER_GAMES}" >> $name/configuration.txt
+echo "- number of trainings     = ${NUMMER_TRAININGS}" >> $name/configuration.txt
 echo "- custom mongo config = ${CUSTOM_MONGO}" >> $name/configuration.txt
 echo "- experiment command  = ${EXPERIMENT_COMMAND}" >> $name/configuration.txt
 echo "- experiment eval     = ${EXPERIMENT_EVAL}" >> $name/configuration.txt
 echo "- agent name          = ${rl_agent_name}" >> $name/configuration.txt
+echo "- number of games per training = ${GAMES_PER_TRAINING}" >> $name/configuration.txt
+echo "- refbox speedup = ${REFBOX_SPEED}" >> $name/configuration.txt
+
 if [ -z ${BASELINE_COMMAND+x} ];
 then
     echo "- baseline command    = not set, only doing experiment runs"; >> $name/configuration.txt
@@ -405,23 +412,28 @@ if [ $CUSTOM_MONGO -eq 1 ]; then
 fi
 
 #start a simulation and let it run for a view seconds to generate a valid configuration to load from
-echo "Start a refbox to generate a game configuration"
-start_simulation_generate_game
+#echo "Start a refbox to generate a game configuration"
+#start_simulation_generate_game
 
-#run simulation $NUMBER_GAMES times
-for i in $(seq $NUMBER_GAMES)
+dir_monitoring=""
+#run simulation $NUMMER_TRAININGS times
+for i in $(seq $NUMMER_TRAININGS)
 do
     #run experiment
     #run_simulation $name experiment$i "$EXPERIMENT_COMMAND" $EXPERIMENT_EVAL
     run_rl_training $name experiment$i "$EXPERIMENT_COMMAND" $EXPERIMENT_EVAL
+    dir_monitoring+=" experiment$i"
     #if baseline configured, run baseline
     if ! [ -z ${BASELINE_COMMAND+x} ]; then
       run_rl_training $name baseline$i "$BASELINE_COMMAND" $BASELINE_EVAL
     fi
 done
 
+python $scripts_path/visualize_monitoring.py --path `pwd`/$1 --name monitor.csv --dirs $dir_monitoring
+
+
 #if more than 2 games and baseline+experiment, visualize
-#if ! [ -z ${BASELINE_COMMAND+x} ] && [ "$NUMBER_GAMES" -gt "1" ]; then
+#if ! [ -z ${BASELINE_COMMAND+x} ] && [ "$NUMMER_TRAININGS" -gt "1" ]; then
 #  python $scripts_path/exp_visualizer.py --path $name
 #fi
 
