@@ -110,8 +110,6 @@
   (retract ?g)  
 )
 
-
-
 (defrule delete-simple-goals
   (declare (salience ?*SALIENCE-RESET-GAME-HIGH*))
   (reset-game (stage STAGE-1))
@@ -133,10 +131,18 @@
 (defrule delete-plan-action
   (declare (salience ?*SALIENCE-RESET-GAME-HIGH*))
   (reset-game (stage STAGE-1))
-  ?p <- (plan (goal-id ?goal-id))
+  ?p <- (plan-action (goal-id ?goal-id))
   (not (goal (id ?goal-id)))
   =>
   (retract ?p)
+)
+
+(defrule delete-rl-goal-selection-fact
+  (declare (salience ?*SALIENCE-RESET-GAME-HIGH*))
+  (reset-game (stage STAGE-1))
+  ?r <- (rl-goal-selection (next-goal-id ?a))
+  =>
+  (retract ?r)
 )
 
 
