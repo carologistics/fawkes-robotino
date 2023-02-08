@@ -134,23 +134,63 @@
   (retract ?gf ?gm)
 )
 
-(defrule goal-production-create-testgoal
+(defrule goal-production-create-mygoal
   "Enter the field (drive outside of the starting box)."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key central agent robot args? r ?robot))
   (wm-fact (key domain fact entered-field args? r ?robot))
-  (not (goal (id ?some-goal-id) (class TESTGOAL)))
+  (not (goal (id ?some-goal-id) (class MYGOAL)))
   (domain-facts-loaded)
   (wm-fact (key refbox team-color) (value ?team-color))
   =>
-  (printout t "Goal " TESTGOAL " formulated" crlf)
-  (bind ?goal-id (sym-cat TESTGOAL- (gensym*)))
-  (assert (goal (class TESTGOAL)
+  (printout t "Goal " MYGOAL " formulated" crlf)
+  (bind ?goal-id (sym-cat MYGOAL- (gensym*)))
+  (assert (goal (class MYGOAL)
                 (id ?goal-id)
-                (sub-type SIMPLE)
+                (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)
                 (verbosity NOISY) (is-executable FALSE)
-                (params target-cs C-CS1 cc CCG1)
                 (meta-template goal-meta)
   ))
-  (assert (goal-meta (goal-id ?goal-id) (assigned-to robot1)))
+  (assert (goal-meta (goal-id ?goal-id)))
+
+  (bind ?goal-id1 (sym-cat GOAL1- (gensym*)))
+	(assert (goal (class GOAL1)
+					(id ?goal-id1)
+					(sub-type SIMPLE)
+					(parent ?goal-id)
+					(verbosity NOISY) (is-executable FALSE)
+					(params target-cs C-CS1 cc CCG1)
+					(meta-template goal-meta)
+	))
+	(assert (goal-meta (goal-id ?goal-id1) (assigned-to robot1)))
+
+  ; (bind ?goal-id1 (sym-cat TESTGOAL- (gensym*)))
+	; (assert (goal (class INSTRUCT-BS-DISPENSE-BASE)
+	; 				(id ?goal-id1)
+	; 				(sub-type SIMPLE)
+	; 				(parent ?goal-id)
+	; 				(verbosity NOISY) (is-executable FALSE)
+  ;         ;wp base-color facts
+  ;         (params wp ?wp target-mps C-BS target-side OUTPUT base-color ?base-color)
+	; 				(meta-template goal-meta)
+	; ))
+	; (assert (goal-meta (goal-id ?goal-id1) ))
+)
+
+(defrule goal-reasoner-mygoal-select
+	?g <- (goal (id ?goal-id) (class MYGOAL) (mode FORMULATED))
+	=>
+	(modify ?g (mode SELECTED))
+)
+
+(defrule goal-reasoner-goal1-select
+	?g <- (goal (id ?goal-id) (class GOAL1) (mode FORMULATED))
+	=>
+	(modify ?g (mode SELECTED))
+)
+
+(defrule goal-reasoner-bs-dispense-select
+	?g <- (goal (id ?goal-id) (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED))
+	=>
+	(modify ?g (mode SELECTED))
 )

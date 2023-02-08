@@ -73,9 +73,9 @@
 )
 
 
-(defrule goal-expander-test-goal
+(defrule goal-expander-goal1
 " Moves the robot to the output of the given mps."
-	?g <- (goal (id ?goal-id) (class TESTGOAL) (mode SELECTED) (parent ?parent)
+	?g <- (goal (id ?goal-id) (class GOAL1) (mode SELECTED) (parent ?parent)
 	            (params target-cs ?cs cc ?cc))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-loc side ?curr-side))
@@ -97,6 +97,8 @@
 	)
 	(modify ?g (mode EXPANDED))
 )
+
+
 
 
 ; ----------------------- MPS Instruction GOALS -------------------------------
@@ -127,18 +129,18 @@
 ;	(modify ?g (mode EXPANDED))
 ;)
 ;
-;(defrule goal-expander-instruct-bs-dispense-base
-;	;?p <- (goal (mode DISPATCHED) (id ?parent))
-;	?g <- (goal (id ?goal-id) (class INSTRUCT-BS-DISPENSE-BASE) (mode SELECTED)
-;	            (params wp ?wp target-mps ?mps  target-side ?side base-color ?base-color))
-;	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-;	=>
-;	(plan-assert-sequential INSTRUCT-BS-DISPENSE-BASE-PLAN ?goal-id ?robot
-;		(plan-assert-action prepare-bs ?mps ?side ?base-color)
-;		(plan-assert-action bs-dispense ?mps ?side ?wp ?base-color)
-;	)
-;	(modify ?g (mode EXPANDED))
-;)
+(defrule goal-expander-instruct-bs-dispense-base
+	;?p <- (goal (mode DISPATCHED) (id ?parent))
+	?g <- (goal (id ?goal-id) (class INSTRUCT-BS-DISPENSE-BASE) (mode SELECTED)
+	            (params wp ?wp target-mps ?mps  target-side ?side base-color ?base-color))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	=>
+	(plan-assert-sequential INSTRUCT-BS-DISPENSE-BASE-PLAN ?goal-id ?robot
+		(plan-assert-action prepare-bs ?mps ?side ?base-color)
+		(plan-assert-action bs-dispense ?mps ?side ?wp ?base-color)
+	)
+	(modify ?g (mode EXPANDED))
+)
 ;
 ;(defrule goal-expander-instruct-ds-deliver
 ;	;?p <- (goal (mode DISPATCHED) (id ?parent))
