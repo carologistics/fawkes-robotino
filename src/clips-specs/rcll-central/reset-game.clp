@@ -145,6 +145,14 @@
   (retract ?r)
 )
 
+(defrule delete-rl-waiting-fact
+  (declare (salience ?*SALIENCE-RESET-GAME-HIGH*))
+  (reset-game (stage STAGE-1))
+  ?r <- (rl-waiting)
+  =>
+  (retract ?r)
+)
+
 
 (defrule delete-goal-meta
   (declare (salience ?*SALIENCE-RESET-GAME-HIGH*))
@@ -211,12 +219,13 @@
 (defrule delete-goal-selection-criterion
   (declare (salience ?*SALIENCE-RESET-GAME-HIGH*))
   (reset-game (stage STAGE-1))
-  (wm-fact (key goal selection criterion $? args? $?) )
+  ?r <-(wm-fact (key goal selection criterion $? args? $?) )
 =>
   (delayed-do-for-all-facts ((?wm-fact wm-fact))
     (wm-key-prefix ?wm-fact:key (create$ goal selection criterion ))
     (retract ?wm-fact)
   )
+  (retract ?r)
 )
 
 
