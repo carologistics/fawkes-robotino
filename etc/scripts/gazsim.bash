@@ -388,6 +388,7 @@ if [  $COMMAND  == start ]; then
 
     if $PROTOBUF_SIM
     then
+        mkdir -p $(pwd)/Simulator
         COMMANDS+=("bash -c \"export TAB_START_TIME=$(date +%s); podman run --rm --name rcll-sim -v ${FAWKES_DIR}/cfg/rcll-simulator/:/simulator/caros-config/:z -v $(pwd)/Simulator:/simulator/logs/:z --net=host quay.io/robocup-logistics/rcll-simulator:tviehmann_protobuf-submodule dotnet run -cfg /simulator/caros-config/config.yaml\"")
 	COMMANDS+=("bash -c \"export TAB_START_TIME=$(date +%s); podman run --rm --name rcll-sim-gui --net=host quay.io/robocup-logistics/rcll-simulator-frontend:tviehmann_protobuf-submodule; podman kill rcll-sim-gui\"")
     fi
