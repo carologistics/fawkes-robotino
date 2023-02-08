@@ -72,9 +72,13 @@
   ?*GOAL-SELECTION-TIMEOUT* = 10
 )
 
-(deftemplate action-task-mapping
+(deftemplate action-task-executor-enable
+" Define this for plan actions that should be handled by the protobuf
+  executor that sends agent task messages to a suitable simulator.
+  The messages are created based on the agent task descriptions that are used
+  in beacon signals.
+"
   (slot name (type SYMBOL) (default ?NONE))
-  (slot map-string (type STRING))
 )
 
 (deftemplate exploration-result

@@ -23,14 +23,14 @@
 )
 
 (defrule action-task-register
-  (not (action-task-mapping))
+  (not (action-task-executor-enable))
   =>
-  (assert (action-task-mapping (name move))
-          (action-task-mapping (name go-wait))
-          (action-task-mapping (name wp-get-shelf))
-          (action-task-mapping (name wp-get))
-          (action-task-mapping (name wp-put-slide-cc))
-          (action-task-mapping (name wp-put))
+  (assert (action-task-executor-enable (name move))
+          (action-task-executor-enable (name go-wait))
+          (action-task-executor-enable (name wp-get-shelf))
+          (action-task-executor-enable (name wp-get))
+          (action-task-executor-enable (name wp-put-slide-cc))
+          (action-task-executor-enable (name wp-put))
   )
 )
 
@@ -55,28 +55,17 @@
   (declare (salience 1000))
   ?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id) (state PENDING)
                       (action-name ?action-name) (executable TRUE))
-  (action-task-mapping (name ?action-name))
+  (action-task-executor-enable (name ?action-name))
   (wm-fact (id "/simulator/comm/peer-enabled") (value TRUE))
   ;(skiller-control (skiller ?skiller) (acquired TRUE))
   =>
   (modify ?pa (state WAITING))
 )
 
-(defrule action-task-start-running
-  ?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id) (state WAITING)
-                      (action-name ?action-name) (executable TRUE))
-  (action-task-mapping (name ?action-name))
-  (refbox-agent-task (task-id ?seq) (goal-id ?goal-id)
-    (plan-id ?plan-id) (action-id ?id)
-  )
-  =>
-  (printout error "action running" crlf)
-  (modify ?pa (state RUNNING))
-)
-
 (defrule action-task-send-command
   ?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id)
-           (state RUNNING) (action-name ?action-name))
+           (state WAITING) (action-name ?action-name))
+  (action-task-executor-enable (name ?action-name))
   ?at <- (refbox-agent-task (task-id ?task-seq) (robot ?robot))
   (wm-fact (key refbox robot task seq args? r ?robot) (value ?task-seq))
   (wm-fact (key simulator comm peer-enabled ?robot) (value TRUE) (type BOOL))
@@ -88,6 +77,7 @@
    then
     (pb-send ?peer-id ?task-msg)
     (pb-destroy ?task-msg)
+    (modify ?pa (state RUNNING))
    else
     (modify ?pa (state FAILED) (error-msg (str-cat "Failed to create agent-task message for " ?action-name)))
   )
@@ -97,7 +87,7 @@
   ?pf <- (protobuf-msg (type "llsf_msgs.AgentTask") (ptr ?task-msg))
   ?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id)
            (state RUNNING) (action-name ?action-name))
-  (action-task-mapping (name ?action-name))
+  (action-task-executor-enable (name ?action-name))
   (refbox-agent-task (task-id ?task-seq) (robot ?robot)
     (goal-id ?goal-id) (plan-id ?plan-id) (action-id ?id)
     (outcome ?outcome)
