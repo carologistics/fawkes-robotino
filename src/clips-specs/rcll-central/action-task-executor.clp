@@ -6,7 +6,7 @@
   (wm-fact (id "/config/rcll/sim-peer-recv-port") (value ?peer-recv-port))
   (not (wm-fact (id "/simulator/comm/sim-peer-enabled") (value TRUE)))
   =>
-  (printout t "Enabling local peer (public)" crlf)
+  (printout t "Enabling local simulation peer (public)" crlf)
   (bind ?peer-id (pb-peer-create-local ?peer-address ?peer-recv-port ?peer-recv-port))
   (assert (wm-fact (id "/simulator/comm/peer-enabled") (value TRUE) (type BOOL))
           (wm-fact (id "/simulator/comm/peer-id/public") (value ?peer-id) (type INT))
@@ -19,7 +19,7 @@
   ?pe <- (wm-fact (id "/simulator/comm/peer-enabled") (value TRUE))
   (wm-fact (id "/simulator/comm/peer-id/public") (value ?peer-id) (type INT))
   =>
-  (printout t "Closing local peer (public)" crlf)
+  (printout t "Closing local simulation peer (public)" crlf)
   (pb-peer-destroy ?peer-id)
   (modify ?pe (value FALSE))
 )
@@ -44,7 +44,7 @@
   (wm-fact (key central agent robot args? r ?robot&:(str-index (str-cat (pb-field-value ?p "number")) ?robot)))
   (not (wm-fact (key simulator comm peer-id ?robot)))
   =>
-  (printout error "Created send peer for robot " ?robot crlf)
+  (printout t "Created send peer for robot " ?robot crlf)
   (bind ?peer-id (pb-peer-create-local ?host ?robot-rcvd 2018))
   (assert (wm-fact (key simulator comm peer-enabled ?robot) (value TRUE) (type BOOL))
           (wm-fact (key simulator comm peer-id ?robot) (value ?peer-id) (type INT))
@@ -54,17 +54,21 @@
 )
 
 (defrule action-task-set-on-waiting
-  (declare (salience 1000))
+" Override skiller invocation for actions with an action-task mapping by
+  putting them in state WAITING before the skiller is invoked.
+"
+  (declare (salience ?*SALIENCE-HIGH*))
   ?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id) (state PENDING)
                       (action-name ?action-name) (executable TRUE))
   (action-task-executor-enable (name ?action-name))
   (wm-fact (id "/simulator/comm/peer-enabled") (value TRUE))
-  ;(skiller-control (skiller ?skiller) (acquired TRUE))
   =>
   (modify ?pa (state WAITING))
 )
 
 (defrule action-task-send-command
+" Create an AgentTask protobuf message and send it to the simulator peer.
+"
   ?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id)
            (state WAITING) (action-name ?action-name))
   (action-task-executor-enable (name ?action-name))
