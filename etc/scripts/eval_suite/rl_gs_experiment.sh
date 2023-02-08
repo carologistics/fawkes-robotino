@@ -78,14 +78,14 @@ EOF
 POSITIONAL_ARGS=()
 
 CUSTOM_MONGO=0
-NUMMER_TRAININGS=2
+NUMMER_TRAININGS=1
 EXPERIMENT_EVAL="rl"
 BASELINE_EVAL="central"
 EXPERIMENT_REFBOX_ARGS=$refbox_args
 BASELINE_REFBOX_ARGS=$refbox_args
-REFBOX_SPEED=1
+REFBOX_SPEED=4
 GAME_TIME=$((1200/$REFBOX_SPEED))
-GAMES_PER_TRAINING=25
+GAMES_PER_TRAINING=4
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -323,6 +323,9 @@ copy_rl_agent_files(){
   cp $rl_log_path/log.txt `pwd`/$1/$2/log.txt
   cp $rl_log_path/progress.csv `pwd`/$1/$2/progress.csv
   cat `pwd`/.monitor.csv >> `pwd`/$1/$2/monitor.csv
+  cp `pwd`/log_stage2_facts.txt `pwd`/$1/$2/log_stage2_facts.log
+  cp `pwd`/log_stage3_facts.txt `pwd`/$1/$2/log_stage3_facts.log
+  cp `pwd`/log_stage5_facts.txt `pwd`/$1/$2/log_stage5_facts.log
 }
 
 run_simulation () {
@@ -333,7 +336,7 @@ run_simulation () {
     if [ "$3" = "rl" ]; then
       echo "Run rl simulation"
       line=$(grep -n 'Maskable' $FAWKES_DIR/cfg/conf.d/rl-test.yaml | cut -d ':' -f1)
-      sed -i $line's/.*/  name: "'$rl_agent_name'" /' $FAWKES_DIR/cfg/conf.d/rl-test.yaml
+      sed -i $line's/.*/  name: "'$rl_agent_name'"/' $FAWKES_DIR/cfg/conf.d/rl-test.yaml
 
       setup_rl_simulation
     else
@@ -353,7 +356,7 @@ run_rl_training () {
     echo `pwd`/$1/$2/
     start_simulation "$3"
     line=$(grep -n 'Maskable' $FAWKES_DIR/cfg/conf.d/rl-test.yaml | cut -d ':' -f1)
-    sed -i $line's/.*/  name: "'$rl_agent_name'" /' $FAWKES_DIR/cfg/conf.d/rl-test.yaml
+    sed -i $line's/.*/  name: "'$rl_agent_name'"/' $FAWKES_DIR/cfg/conf.d/rl-test.yaml
 
     setup_rl_simulation
     wait_rl_training_ends
@@ -428,7 +431,8 @@ do
       run_rl_training $name baseline$i "$BASELINE_COMMAND" $BASELINE_EVAL
     fi
 done
-
+echo "Monitoring dirs: " $dir_monitoring
+echo "path: " `pwd`/$1
 python $scripts_path/visualize_monitoring.py --path `pwd`/$1 --name monitor.csv --dirs $dir_monitoring
 
 

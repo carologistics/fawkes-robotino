@@ -317,6 +317,7 @@
   (goal-meta (goal-id ?goal-id) (root-for-order nil))
   (goal (id ?id) (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE))
   (goal-meta (goal-id ?id) (assigned-to central))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
   =>
   (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
   (modify ?g (mode SELECTED))
@@ -325,6 +326,7 @@
 (defrule goal-reasoner-init-selection-criteria
   (domain-loaded)
   (not (wm-fact (key goal selection criterion args? t ?)))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
   =>
   (assert
     (wm-fact (key goal selection criterion args? t root) (type SYMBOL) (is-list TRUE) (values (create$)))
@@ -339,6 +341,7 @@
   ?target-goal <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
       (id ?any-goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
   (goal-meta (goal-id ?any-goal-id) (root-for-order ?any-order&~nil))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
   =>
   ;(printout (log-debug ?v) "Goal " (fact-slot-value ?target-goal id) " SELECTED" crlf)
   ;(modify ?target-goal (mode SELECTED))
@@ -397,6 +400,7 @@
 
 (defrule goal-reasoner-apply-selection-across-types
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
   (wm-fact (key goal selection criterion args? t ?) (values ?some-goal-id $?))
   ?some-goal <- (goal (id ?some-goal-id) (class ~ENTER-FIELD) (priority ?some-prio))
   (not (goal (mode SELECTED|EXPANDED|COMMITTED) (type ACHIEVE)))
