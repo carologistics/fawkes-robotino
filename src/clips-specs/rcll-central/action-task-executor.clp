@@ -43,7 +43,7 @@
   (not (wm-fact (key simulator comm peer-id ?robot)))
   =>
   (printout t "Created send peer for robot " ?robot crlf)
-  (bind ?peer-id (pb-peer-create-local ?host ?robot-rcvd 2018))
+  (bind ?peer-id (pb-peer-create-local ?host ?robot-rcvd (+ 2018 (pb-field-value ?p "number"))))
   (assert (wm-fact (key simulator comm peer-enabled ?robot) (value TRUE) (type BOOL))
           (wm-fact (key simulator comm peer-id ?robot) (value ?peer-id) (type INT))
    )
