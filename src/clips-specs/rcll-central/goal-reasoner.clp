@@ -334,6 +334,7 @@
     (wm-fact (key goal selection criterion args? t run-parallel) (type SYMBOL) (is-list TRUE) (values (create$)))
   )
 )
+
 (defrule goal-reasoner-select-root-for-order
   "Select the root of an order-production-tree if it has the highest priority
   and is not interfering with currently selected goals."
@@ -342,17 +343,40 @@
       (id ?any-goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
   (goal-meta (goal-id ?any-goal-id) (root-for-order ?any-order&~nil))
   (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
+  (goal-selection-via-rl-inactive)
   =>
-  ;(printout (log-debug ?v) "Goal " (fact-slot-value ?target-goal id) " SELECTED" crlf)
-  ;(modify ?target-goal (mode SELECTED))
+  (printout (log-debug ?v) "Goal " (fact-slot-value ?target-goal id) " SELECTED" crlf)
+  (modify ?target-goal (mode SELECTED))
+)
+
+(defrule goal-reasoner-assert-rl-waiting
+  "Select the root of an order-production-tree if it has the highest priority
+  and is not interfering with currently selected goals."
+  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  ?target-goal <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
+      (id ?any-goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
+  (goal-meta (goal-id ?any-goal-id) (root-for-order ?any-order&~nil))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
+  (not (goal-selection-via-rl-inactive))
+  =>
   (printout (log-debug ?v) "Goal " (fact-slot-value ?target-goal id) " is root for order - asserted rl-waiting fact" crlf crlf)
   (assert (rl-waiting))
 )
 
-
 (defrule goal-reasoner-add-selectable-root-goal
   (declare (salience ?*SALIENCE-GOAL-PRE-SELECT*))
   (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
+  (goal-selection-via-rl-inactive)
+  (goal (type ACHIEVE) (id ?goal-id) (parent nil) (mode FORMULATED) (is-executable TRUE))
+  ?selection <- (wm-fact (key goal selection criterion args? t root) (values $?values&:(not (member$ ?goal-id ?values))))
+  =>
+  (modify ?selection (values (append$ ?values ?goal-id)))
+)
+
+(defrule goal-reasoner-add-selectable-root-goal-rl
+  (declare (salience ?*SALIENCE-GOAL-PRE-SELECT*))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
+  (not (goal-selection-via-rl-inactive))
   (goal (type ACHIEVE) (id ?goal-id) (parent nil) (mode FORMULATED) (is-executable TRUE))
   (goal-meta (goal-id ?goal-id) (assigned-to central|nil))
   ?selection <- (wm-fact (key goal selection criterion args? t root) (values $?values&:(not (member$ ?goal-id ?values))))
@@ -363,6 +387,23 @@
 (defrule goal-reasoner-add-selectable-run-all-goal
   (declare (salience ?*SALIENCE-GOAL-PRE-SELECT*))
   (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
+  (goal-selection-via-rl-inactive)
+  (goal (type ACHIEVE) (id ?parent-id) (mode DISPATCHED) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS))
+  (goal (type ACHIEVE) (id ?goal-id) (parent ?parent-id) (mode FORMULATED) (is-executable TRUE))
+  (goal-meta (goal-id ?goal-id) (run-all-ordering ?ordering))
+  (not (and
+    (goal (id ?other-id&~?goal-id) (parent ?parent-id) (mode FORMULATED))
+    (goal-meta (goal-id ?other-id) (run-all-ordering ?other-ordering&:(> ?ordering ?other-ordering)))
+  ))
+  ?selection <- (wm-fact (key goal selection criterion args? t run-all) (values $?values&:(not (member$ ?goal-id ?values))))
+  =>
+  (modify ?selection (values (append$ ?values ?goal-id)))
+)
+
+(defrule goal-reasoner-add-selectable-run-all-goal-rl
+  (declare (salience ?*SALIENCE-GOAL-PRE-SELECT*))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
+  (not (goal-selection-via-rl-inactive))
   (goal (type ACHIEVE) (id ?parent-id) (mode DISPATCHED) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS))
   (goal (type ACHIEVE) (id ?goal-id) (parent ?parent-id) (mode FORMULATED) (is-executable TRUE))
   (goal-meta (goal-id ?goal-id) (run-all-ordering ?ordering) (assigned-to central|nil))
@@ -378,6 +419,21 @@
 (defrule goal-reasoner-add-selectable-run-parallel-goal
   (declare (salience ?*SALIENCE-GOAL-PRE-SELECT*))
   (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
+  (goal-selection-via-rl-inactive)
+  (goal (type ACHIEVE) (id ?parent-id) (mode DISPATCHED) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL))
+  (goal (type ACHIEVE) (id ?goal-id) (parent ?parent-id) (mode FORMULATED)
+        (is-executable TRUE) (priority ?priority))
+  (not (goal (id ~?goal-id) (parent ?parent-id) (is-executable TRUE) (mode FORMULATED) (priority ?other-priority&:(> ?other-priority ?priority))))
+  ?selection <- (wm-fact (key goal selection criterion args? t run-parallel) (values $?values&:(not (member$ ?goal-id ?values))))
+  =>
+  (modify ?selection (values (append$ ?values ?goal-id)))
+)
+
+
+(defrule goal-reasoner-add-selectable-run-parallel-goal-rl
+  (declare (salience ?*SALIENCE-GOAL-PRE-SELECT*))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
+  (not (goal-selection-via-rl-inactive))
   (goal (type ACHIEVE) (id ?parent-id) (mode DISPATCHED) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL))
   (goal (type ACHIEVE) (id ?goal-id) (parent ?parent-id) (mode FORMULATED)
         (is-executable TRUE) (priority ?priority))
@@ -397,14 +453,72 @@
   (modify ?selection (values (delete$ ?values ?index ?index)))
 )
 
-
 (defrule goal-reasoner-apply-selection-across-types
+  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
+  (wm-fact (key goal selection criterion args? t ?) (values ?some-goal-id $?))
+  ?some-goal <- (goal (id ?some-goal-id) (priority ?some-prio))
+  (not (goal (mode SELECTED|EXPANDED|COMMITTED) (type ACHIEVE)))
+  (goal-selection-via-rl-inactive)
+  =>
+  (bind ?all-choices (create$))
+  (delayed-do-for-all-facts ((?selection wm-fact))
+    (wm-key-prefix ?selection:key (create$ goal selection criterion))
+    (bind ?all-choices (append$ ?all-choices ?selection:values))
+    (modify ?selection (values (create$)))
+  )
+  (bind ?highest-prio ?some-prio)
+  (bind ?highest-prio-goal-fact ?some-goal)
+  (do-for-all-facts ((?g goal))
+    (member$ ?g:id ?all-choices)
+    (if (> ?g:priority ?highest-prio)
+     then
+      (bind ?highest-prio ?g:priority)
+      (bind ?highest-prio-goal-fact ?g)
+    )
+  )
+  (bind ?robot nil)
+  ; get assigned robot
+  (do-for-fact ((?highest-prio-gm goal-meta))
+               (eq ?highest-prio-gm:goal-id (fact-slot-value ?highest-prio-goal-fact id))
+                 (bind ?robot (fact-slot-value ?highest-prio-gm assigned-to))
+  )
+  (printout error (fact-slot-value ?highest-prio-goal-fact id) crlf)
+  (modify ?highest-prio-goal-fact (mode SELECTED))
+  
+  ; flush executability
+	(delayed-do-for-all-facts ((?g goal))
+		(and (eq ?g:is-executable TRUE) (neq ?g:class SEND-BEACON))
+		(modify ?g (is-executable FALSE))
+	)
+  ; if it is actually a robot, remove all other assignments and the waiting status
+	(if (and (neq ?robot central) (neq ?robot nil))
+		then
+		(delayed-do-for-all-facts ((?g goal))
+			(and (eq ?g:mode FORMULATED) (not (eq ?g:type MAINTAIN))
+			     (any-factp ((?gm goal-meta))
+			                (and (eq ?gm:goal-id ?g:id)
+			                     (eq ?gm:assigned-to ?robot))))
+			(remove-robot-assignment-from-goal-meta ?g)
+		)
+		(do-for-fact ((?waiting wm-fact))
+			(and (wm-key-prefix ?waiting:key (create$ central agent robot-waiting))
+			     (eq (wm-key-arg ?waiting:key r) ?robot))
+			(retract ?waiting)
+		)
+	)
+)
+
+
+
+(defrule goal-reasoner-apply-selection-across-types-rl
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
   (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
   (wm-fact (key goal selection criterion args? t ?) (values ?some-goal-id $?))
   ?some-goal <- (goal (id ?some-goal-id) (class ~ENTER-FIELD) (priority ?some-prio))
   (not (goal (mode SELECTED|EXPANDED|COMMITTED) (type ACHIEVE)))
   (goal-meta (goal-id ?some-goal-id) (assigned-to central|nil))
+  (not (goal-selection-via-rl-inactive))
   =>
   (bind ?all-choices (create$))
   (delayed-do-for-all-facts ((?selection wm-fact))
