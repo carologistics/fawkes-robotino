@@ -282,6 +282,7 @@
   (wm-fact (id "/refbox/comm/peer-id/public") (value ?peer-id) (type INT))
   (wm-fact (id "/refbox/phase")  (value SETUP) )
   (wm-fact (id "/refbox/state")  (value ?v) )
+  (saved)
   =>
  	(printout t crlf "reset-game-refbox-setup-running - current state: " ?v crlf)
   ;(bind ?prepare-phase (pb-create "llsf_msgs.SetGamePhase"))

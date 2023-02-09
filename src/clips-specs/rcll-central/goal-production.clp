@@ -84,6 +84,7 @@
 
 (defrule goal-production-navgraph-compute-wait-positions-finished
   "Add the waiting points to the domain once their generation is finished."
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
   (NavGraphWithMPSGeneratorInterface (id "/navgraph-generator-mps") (final TRUE))
   (or (wm-fact (key config rcll use-static-navgraph) (type BOOL) (value TRUE))
       (forall
@@ -158,6 +159,7 @@
 " Before checking SIMPLE goals for their executability, pick a waiting robot
   that should get a new goal assigned to it next. "
   (declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
 ;  "a simple unassigned goal"
   (goal (id ?oid) (sub-type SIMPLE) (mode FORMULATED) (is-executable FALSE))
   (goal-meta (goal-id ?oid) (assigned-to nil))
@@ -676,6 +678,7 @@
   "When the robot is stuck, assert a new goal that keeps it waiting"
   (goal (id ?p) (class WAIT-ROOT))
   (not (goal (parent ?p) (mode FORMULATED)))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
   =>
   (bind ?goal (assert (goal (class WAIT-NOTHING-EXECUTABLE)
               (id (sym-cat WAIT-NOTHING-EXECUTABLE- (gensym*)))
@@ -851,6 +854,7 @@
   (not (wm-fact (key order meta wp-for-order args? wp ?wp $?)))
   (goal (id ?instruct-goal) (class INSTRUCT-CS-BUFFER-CAP) (mode DISPATCHED|FINISHED|RETRACTED))
   (goal-meta (goal-id ?instruct-goal) (order-id ?order-id))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
   =>
   (modify ?g (params wp ?wp wp-loc ?mps wp-side ?mps-side))
 )
