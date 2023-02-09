@@ -48,9 +48,7 @@
 
 ; Defining templates and rules for goal selection with rl
 
-(deftemplate rl-goal-selection
-	(slot next-goal-id (type SYMBOL))
-)
+
 
 
 (deftemplate rl-finished-goal

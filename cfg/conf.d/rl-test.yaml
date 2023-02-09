@@ -4,10 +4,14 @@
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/clips-agent
 ---
 rl-agent:
+  # True: goal selection via rl is activated
+  # False: normal goal selection with properties
+  active: true
+
   env_name: "blocks"  # "blockstower"
 
   # Name of saved rl agent after training
-  name: "MaskablePPOAgent_RCLL_3_1_23_20_30"
+  name: "MaskablePPO_RCLL_23-02-09_14-42.zip"
   # Directory where the rl agent is saved after training
   # And to look for trained agent files
   dir: "@FAWKES_BASEDIR@/src/plugins/rl-test/rl-agent"
@@ -21,7 +25,7 @@ rl-agent:
   # Number of time the env reaches a final state * count of steps per game
   # 5number games * 100 steps per game = 500
   # 70 games -> 7000 training-laps
-  training-laps: 200
+  training-laps: 300
 
 python:
   # if trainings-mode is set to true the training script is executed

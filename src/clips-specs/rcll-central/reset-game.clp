@@ -3,6 +3,7 @@
 ; 	(slot stage (type SYMBOL));
 ; )
 
+
 (defglobal
   ?*SALIENCE-RESET-GAME-HIGH* = ?*SALIENCE-HIGH*
   ?*SALIENCE-RESET-GAME-MIDDLE* = 800
@@ -140,7 +141,7 @@
 (defrule delete-rl-goal-selection-fact
   (declare (salience ?*SALIENCE-RESET-GAME-HIGH*))
   (reset-game (stage STAGE-1))
-  ?r <- (rl-goal-selection (next-goal-id ?a))
+  ?r <- (rl-goal-selection )
   =>
   (retract ?r)
 )

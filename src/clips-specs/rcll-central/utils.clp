@@ -97,6 +97,10 @@
 	(slot stage (type SYMBOL));
 )
 
+(deftemplate rl-goal-selection
+	(slot next-goal-id (type SYMBOL))
+)
+
 (deftemplate exploration-result
 " Template for storing a exploration result. Stores the machine name, zone, orientation and the team this machine belongs to"
   (slot machine (type SYMBOL) (allowed-symbols C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS C-SS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS M-SS))
