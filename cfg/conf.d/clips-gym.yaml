@@ -22,9 +22,9 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/clips-agent
 # Directory where the plugin binaries are located
 # plugins-dir: "@BASEDIR@/plugins"
 
-env: 
-  #  speed: control the request interval speed through applying a factor
-  #  on each time interval (should be the same as execution-time-estimator speed)
+env:
+  #  speed: adapting the time for checking if step/resetCX is done
+  # (should be the same as execution-time-estimator speed)
   speed: 12.0
 
   #  estimated time till the goal selection and execution is completed
@@ -38,12 +38,10 @@ env:
   #  estimated time till the reset is completed successfully
   resetCX:
     # in seconds default: 45 sec
-    max_time: 45.0 
+    max_time: 45.0
     # time thread is spleeping till checking if reset is completed
     # default 4 sec
     wait_time: 4.0
-
-
 
 goal-space:
   # Classname: params [Identifier - Typ]
