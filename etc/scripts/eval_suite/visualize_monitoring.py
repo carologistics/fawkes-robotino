@@ -130,14 +130,17 @@ for t in all_df:
   count_episodes = all_df[t].shape[0]
   print(all_df[t].head())
   print(count_episodes)
-  ax.plot(all_df[t]['r'])
-  ax.set_xlim(0,count_episodes)
-  ax.set_ylim(bottom=0)
+  RANGE = [i for i in range(1, count_episodes+1)]
+  ax.plot(range(1,count_episodes+1),all_df[t]['r'])
+  ax.set_xticks(RANGE)
+  #ax.set_ylim(bottom=0)
   ax.set_xlabel('Games') #or Episodes
   ax.grid(False)
 
   count_rewards.append(all_df[t]['l'])
 
+ax.set_ylim(bottom=0, emit=True)
+ax.set_xlim(0,count_episodes+1)
 
 reward_df = pd.concat(count_rewards)
 lx = fig.add_subplot(111)
@@ -145,7 +148,8 @@ ax = plt.subplot2grid((3,1), (2,0), colspan=1, rowspan=1)
 create_boxplot(reward_df,'Count steps per episode')
 
 fig.tight_layout()
-plt.show()
-loc = args.path +"/"+ dir +"/result.pdf"
-plt.savefig(loc)
-print(f"Goal timeline plot saved to {loc}")
+result_file = args.path +"/result.pdf"
+
+plt.savefig(result_file)
+#plt.show()
+print(f"Goal timeline plot saved to {result_file}")

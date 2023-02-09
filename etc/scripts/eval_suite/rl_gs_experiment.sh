@@ -78,14 +78,14 @@ EOF
 POSITIONAL_ARGS=()
 
 CUSTOM_MONGO=0
-NUMMER_TRAININGS=1
+NUMMER_TRAININGS=5
 EXPERIMENT_EVAL="rl"
 BASELINE_EVAL="central"
 EXPERIMENT_REFBOX_ARGS=$refbox_args
 BASELINE_REFBOX_ARGS=$refbox_args
 REFBOX_SPEED=4
 GAME_TIME=$((1200/$REFBOX_SPEED))
-GAMES_PER_TRAINING=4
+GAMES_PER_TRAINING=12
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -432,8 +432,8 @@ do
     fi
 done
 echo "Monitoring dirs: " $dir_monitoring
-echo "path: " `pwd`/$1
-python $scripts_path/visualize_monitoring.py --path `pwd`/$1 --name monitor.csv --dirs $dir_monitoring
+echo "path: " `pwd`/$name
+python $scripts_path/visualize_monitoring.py --path `pwd`/$name --name monitor.csv --dirs $dir_monitoring
 
 
 #if more than 2 games and baseline+experiment, visualize
