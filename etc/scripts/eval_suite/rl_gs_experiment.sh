@@ -34,7 +34,9 @@ Base Options:
    -m                Use custom ports for mongodb (requires config change)
                      and launch the instances.
                      The custom ports are: 27019 for refbox and 27018 for agents.
-   -n                Number of games (2x if baseline and experiment), default 3
+   -n                Number of runs (games or trainings) (2x if baseline and experiment), default 3
+   -t                Training mode on, default off
+                     If the training mode is turned on only trainings are conducted
 
 Experiment and baseline configurations:
        experiment defines the setup to be tested whereas baseline defines
@@ -78,14 +80,17 @@ EOF
 POSITIONAL_ARGS=()
 
 CUSTOM_MONGO=0
-NUMMER_TRAININGS=5
+NUMBER_RUN=1
+NUMBER_TRAININGS=1
 EXPERIMENT_EVAL="rl"
 BASELINE_EVAL="central"
 EXPERIMENT_REFBOX_ARGS=$refbox_args
 BASELINE_REFBOX_ARGS=$refbox_args
+LOAD_GAME="rl_game_1.gz"
+TRAINING_MODE=0
 REFBOX_SPEED=4
 GAME_TIME=$((1200/$REFBOX_SPEED))
-GAMES_PER_TRAINING=12
+GAMES_PER_TRAINING=10
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -99,7 +104,18 @@ while [[ $# -gt 0 ]]; do
       shift # past argument
       ;;
     -n)
-      NUMMER_TRAININGS=$2
+      NUMBER_RUN=$2
+      NUMBER_TRAININGS=$2
+      shift # past argument
+      shift
+      ;;
+    -t)
+      TRAINING_MODE=$2
+      shift # past argument
+      shift
+      ;;
+    --load-game)
+      LOAD_GAME=$2
       shift # past argument
       shift
       ;;
@@ -133,10 +149,10 @@ while [[ $# -gt 0 ]]; do
           BASELINE_EVAL="rl"
         else
           if [ "$2" = "decentral" ]; then
-            EXPERIMENT_COMMAND="$gazsim_path $decentral_args $EXPERIMENT_REFBOX_ARGS"
-            EXPERIMENT_EVAL="decentral"
+            BASELINE_COMMAND="$gazsim_path $decentral_args $EXPERIMENT_REFBOX_ARGS"
+            BASELINE_EVAL="decentral"
           else
-            EXPERIMENT_COMMAND="$gazsim_path $2 $EXPERIMENT_REFBOX_ARGS"
+            BASELINE_COMMAND="$gazsim_path $2 $EXPERIMENT_REFBOX_ARGS"
           fi
         fi
       fi
@@ -243,9 +259,10 @@ start_simulation_generate_game() {
 }
 
 rcll-loadgame () {      
-$LLSF_REFBOX_DIR/bin/./restore_reports.bash rl_game_1.gz 
+$LLSF_REFBOX_DIR/bin/./restore_reports.bash $1 #rl_game_1.gz 
 echo "Finished restore report starting refbox with loaded game"                                              
-$FAWKES_DIR/bin/./gazsim.bash -x kill; $FAWKES_DIR/bin/./gazsim.bash -r -k -o --mongodb --central-agent m-central-clips-exec -m m-skill-sim -n 1 --refbox-args "--cfg-mps mps/mockup_mps.yaml --cfg-game game/game1.yaml --cfg-simulation simulation/fast_simulation.yaml --cfg-mongodb mongodb/enable_mongodb.yaml" "$@"
+$FAWKES_DIR/bin/./gazsim.bash -x kill; 
+$FAWKES_DIR/bin/./gazsim.bash -r -k -o --mongodb --central-agent m-central-clips-exec -m m-skill-sim -n 1 --refbox-args "--cfg-mps mps/mockup_mps.yaml --cfg-game game/game1.yaml --cfg-simulation simulation/fast_simulation.yaml --cfg-mongodb mongodb/enable_mongodb.yaml" "$@"
 } 
 
 start_simulation () {
@@ -257,9 +274,9 @@ start_simulation () {
 
 setup_simulation () {
     $LLSF_REFBOX_DIR/bin/./rcll-refbox-instruct -w30
-    echo "Starting game (Phase: PRODUCTION; Cyan: Carologistics)"
-    $LLSF_REFBOX_DIR/bin/./rcll-refbox-instruct -p SETUP -s RUNNING -c Carologistics
-    $LLSF_REFBOX_DIR/bin/./rcll-refbox-instruct -n 1 -W200 || (stop_simulation)
+    #echo "Starting game (Phase: PRODUCTION; Cyan: Carologistics)"
+    #$LLSF_REFBOX_DIR/bin/./rcll-refbox-instruct -p SETUP -s RUNNING -c Carologistics
+    #$LLSF_REFBOX_DIR/bin/./rcll-refbox-instruct -n 1 -W200 || (stop_simulation)
     $LLSF_REFBOX_DIR/bin/./rcll-refbox-instruct -p PRODUCTION -s RUNNING
 }
 
@@ -274,7 +291,8 @@ setup_rl_simulation () {
 
 wait_simulation_ends () {
     echo "Waiting for POST_GAME..."
-    #$LLSF_REFBOX_DIR/bin/./rcll-refbox-instruct -W1300 -p POST_GAME
+    wait_time=$(($GAME_TIME+100))
+    $LLSF_REFBOX_DIR/bin/./rcll-refbox-instruct -W$wait_time -p POST_GAME
     sleep 60
     stop_simulation
 }
@@ -291,6 +309,35 @@ wait_rl_training_ends () {
     stop_simulation
 }
 
+activate_rl_agent_in_yaml()
+{
+    line=$(grep -n 'active' $FAWKES_DIR/cfg/conf.d/rl-test.yaml | cut -d ':' -f1)
+    sed -i $line's/.*/  active: true/' $FAWKES_DIR/cfg/conf.d/rl-test.yaml
+}
+
+deactivate_rl_agent_in_yaml()
+{
+    line=$(grep -n 'active' $FAWKES_DIR/cfg/conf.d/rl-test.yaml | cut -d ':' -f1)
+    sed -i $line's/.*/  active: false/' $FAWKES_DIR/cfg/conf.d/rl-test.yaml
+}
+
+set_rl_agent_training_mode_in_yaml()
+{
+    line=$(grep -n 'training-mode' $FAWKES_DIR/cfg/conf.d/rl-test.yaml | cut -d ':' -f1)
+    sed -i $line's/.*/  training-mode: true/' $FAWKES_DIR/cfg/conf.d/rl-test.yaml
+}
+
+set_rl_agent_execution_mode_in_yaml()
+{
+    line=$(grep -n 'training-mode' $FAWKES_DIR/cfg/conf.d/rl-test.yaml | cut -d ':' -f1)
+    sed -i $line's/.*/  training-mode: false/' $FAWKES_DIR/cfg/conf.d/rl-test.yaml
+}
+
+change_rl_agent_name_in_yaml()
+{
+    line=$(grep -n 'Maskable' $FAWKES_DIR/cfg/conf.d/rl-test.yaml | cut -d ':' -f1)
+    sed -i $line's/.*/  name: "'$rl_agent_name'"/' $FAWKES_DIR/cfg/conf.d/rl-test.yaml
+}
 
 copy_game_files () {
     mkdir `pwd`/$1/$2
@@ -334,12 +381,17 @@ run_simulation () {
     start_simulation "$3"
 
     if [ "$3" = "rl" ]; then
-      echo "Run rl simulation"
-      line=$(grep -n 'Maskable' $FAWKES_DIR/cfg/conf.d/rl-test.yaml | cut -d ':' -f1)
-      sed -i $line's/.*/  name: "'$rl_agent_name'"/' $FAWKES_DIR/cfg/conf.d/rl-test.yaml
+      echo "Run agent with rl goal selection in execution mode!"
+      change_rl_agent_name_in_yaml
+      activate_rl_agent_in_yaml
+      set_rl_agent_execution_mode_in_yaml
+      #line=$(grep -n 'Maskable' $FAWKES_DIR/cfg/conf.d/rl-test.yaml | cut -d ':' -f1)
+      #sed -i $line's/.*/  name: "'$rl_agent_name'"/' $FAWKES_DIR/cfg/conf.d/rl-test.yaml
 
       setup_rl_simulation
     else
+      deactivate_rl_agent_in_yaml
+      set_rl_agent_execution_mode_in_yaml
       setup_simulation
     fi
     wait_simulation_ends
@@ -355,8 +407,9 @@ run_rl_training () {
     echo "Run rl training!!!"
     echo `pwd`/$1/$2/
     start_simulation "$3"
-    line=$(grep -n 'Maskable' $FAWKES_DIR/cfg/conf.d/rl-test.yaml | cut -d ':' -f1)
-    sed -i $line's/.*/  name: "'$rl_agent_name'"/' $FAWKES_DIR/cfg/conf.d/rl-test.yaml
+    change_rl_agent_name_in_yaml
+    activate_rl_agent_in_yaml
+    set_rl_agent_training_mode_in_yaml
 
     setup_rl_simulation
     wait_rl_training_ends
@@ -382,20 +435,28 @@ rl_agent_name=`generate_agent_name`
 
 #writeout configuration
 echo "Your chosen configuration: " >> $name/configuration.txt
-echo "- number of trainings     = ${NUMMER_TRAININGS}" >> $name/configuration.txt
+echo "- number of runs      = ${NUMBER_RUN}" >> $name/configuration.txt
 echo "- custom mongo config = ${CUSTOM_MONGO}" >> $name/configuration.txt
 echo "- experiment command  = ${EXPERIMENT_COMMAND}" >> $name/configuration.txt
 echo "- experiment eval     = ${EXPERIMENT_EVAL}" >> $name/configuration.txt
 echo "- agent name          = ${rl_agent_name}" >> $name/configuration.txt
-echo "- number of games per training = ${GAMES_PER_TRAINING}" >> $name/configuration.txt
+echo "- load game           = ${LOAD_GAME}" >> $name/configuration.txt
 echo "- refbox speedup = ${REFBOX_SPEED}" >> $name/configuration.txt
 
-if [ -z ${BASELINE_COMMAND+x} ];
+if [ $TRAINING_MODE -eq 0 ];
 then
-    echo "- baseline command    = not set, only doing experiment runs"; >> $name/configuration.txt
+  echo "- trainings mode off  = ${TRAINING_MODE}" >> $name/configuration.txt
+  if [ -z ${BASELINE_COMMAND+x} ];
+  then
+      echo "- baseline command    = not set, only doing experiment runs"; >> $name/configuration.txt
+  else
+      echo "- baseline command    = ${BASELINE_COMMAND}" >> $name/configuration.txt
+      echo "- baseline eval       = ${BASELINE_EVAL}" >> $name/configuration.txt
+  fi
 else
-    echo "- baseline command    = ${BASELINE_COMMAND}" >> $name/configuration.txt
-    echo "- baseline eval       = ${BASELINE_EVAL}" >> $name/configuration.txt
+  echo "- trainings mode on  = ${TRAINING_MODE}" >> $name/configuration.txt
+  echo "- number training = ${NUMBER_TRAININGS}" >> $name/configuration.txt
+  echo "- number of games per training = ${GAMES_PER_TRAINING}" >> $name/configuration.txt
 fi
 
 cat $name/configuration.txt
@@ -414,32 +475,43 @@ if [ $CUSTOM_MONGO -eq 1 ]; then
     start_agents_mongod_instance
 fi
 
-#start a simulation and let it run for a view seconds to generate a valid configuration to load from
-#echo "Start a refbox to generate a game configuration"
-#start_simulation_generate_game
 
-dir_monitoring=""
-#run simulation $NUMMER_TRAININGS times
-for i in $(seq $NUMMER_TRAININGS)
-do
-    #run experiment
-    #run_simulation $name experiment$i "$EXPERIMENT_COMMAND" $EXPERIMENT_EVAL
-    run_rl_training $name experiment$i "$EXPERIMENT_COMMAND" $EXPERIMENT_EVAL
-    dir_monitoring+=" experiment$i"
-    #if baseline configured, run baseline
-    if ! [ -z ${BASELINE_COMMAND+x} ]; then
-      run_rl_training $name baseline$i "$BASELINE_COMMAND" $BASELINE_EVAL
-    fi
-done
-echo "Monitoring dirs: " $dir_monitoring
-echo "path: " `pwd`/$name
-python $scripts_path/visualize_monitoring.py --path `pwd`/$name --name monitor.csv --dirs $dir_monitoring
+#if [ -z ${LOAD_GAME+x}];
+#then
+  #start a simulation and let it run for a view seconds to generate a valid configuration to load from
+  #echo "Start a refbox to generate a game configuration"
+  #start_simulation_generate_game
+#fi
 
+if [ $TRAINING_MODE -eq 0 ]; then
+  for i in $(seq $NUMBER_RUN)
+  do
+      #run experiment
+      run_simulation $name experiment$i "$EXPERIMENT_COMMAND" $EXPERIMENT_EVAL
+      dir_monitoring+=" experiment$i"
+      #if baseline configured, run baseline
+      if ! [ -z ${BASELINE_COMMAND+x} ]; then
+        run_simulation $name baseline$i "$BASELINE_COMMAND" $BASELINE_EVAL
+      fi
+  done
+else
+  dir_monitoring=""
+  #start simulation (with fawkes) $NUMBER_TRAININGS times
+  for i in $(seq $NUMBER_TRAININGS)
+  do
+      #run training
+      run_rl_training $name training$i "$EXPERIMENT_COMMAND" $EXPERIMENT_EVAL
+      dir_monitoring+=" training$i"
+  done
+  echo "Monitoring dirs: " $dir_monitoring
+  echo "path: " `pwd`/$name
+  python $scripts_path/visualize_monitoring.py --path `pwd`/$name --name monitor.csv --dirs $dir_monitoring
+fi
 
 #if more than 2 games and baseline+experiment, visualize
-#if ! [ -z ${BASELINE_COMMAND+x} ] && [ "$NUMMER_TRAININGS" -gt "1" ]; then
-#  python $scripts_path/exp_visualizer.py --path $name
-#fi
+if ! [ -z ${BASELINE_COMMAND+x} ] && [ "$NUMBER_RUN" -gt "1" ]; then
+  python $scripts_path/exp_visualizer.py --path $name
+fi
 
 #clean up simulation
 stop_mongod
