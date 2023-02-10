@@ -696,6 +696,7 @@
 	(not (goal (class MOVE-OUT-OF-WAY)))
 	(not (wm-fact (key config rcll pick-and-place-challenge) (value TRUE)))
 	(navgraph-node (name ?n&:(eq (str-index "-Z" ?n) 2)))
+  (domain-object (name ?robot&robot2|robot3))
 	=>
   (bind ?wait-zones (create$))
   (do-for-all-facts ((?nav navgraph-node))

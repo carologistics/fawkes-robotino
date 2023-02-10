@@ -70,7 +70,7 @@ param-names:
   # ["cap-color", "target-mps", "cap-color"]
   MOUNT-CAP: ["wp-loc"]
   # ["wp", "target-mps", "target-side", "wp-loc", "wp-side"]
-  MOUNT-RING: ["ring-color"]
+  MOUNT-RING: ["ring-color", "wp-loc"]
   # ["target-mps", "wp-loc", "ring-color"]
   #  ["wp", "target-mps", "target-side", "wp-loc", "wp-side", "ring-color"]
 
