@@ -84,7 +84,7 @@
     (assert (goal-meta (goal-id ?goal-id) (order-id ?ord) (root-for-order ?root-goal-id)))
 )
 
-; Transport BC to CS
+; Transport BS to CS
 (defrule goal-bs-to-cs
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (goal-meta (goal-id (sym-cat GOAL-ORDER-C0- ?ord)) (order-id ?ord) (root-for-order (sym-cat GOAL-ORDER-C0- ?ord)))
@@ -126,26 +126,65 @@
 ;----------------------------------------------------------------------------
 
 ; ASSIGN ROBOTS ON EXPANDING STEP ONLY (not goal level)
-; DO NOT FORGET TO SET ROBOTS TO not(robot-waiting ?r) WHILE EXECUTING!
 
+;Expand get Base
 (defrule goal-expander-goal-get-bs
 	?g <- (goal (id ?goal-id) (class GOAL-GET-BS) (mode SELECTED) (parent ?parent))
 	?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
     (robot-waiting ?robot)
     ; WIP! select correct BS based on team color
+    ; in our case this is always CYAN (doesnt matter if we set it to CYAN or leave it at "?team-color")
     (domain-object (name ?team-color) (type team-color))
-    (domain-fact (name mps-type) (param-values C-BS BS))
 
     (order-base-color ?ord ?basecol)
-    (mps-team ?bs ?team-color)
+    (mps-team ?bs&:(mps-type ?bs BS) ?team-color) ;Does this work like this?
 
 	=>
     
 	(plan-assert-sequential GET-BS-PLAN ?goal-id ?robot
+        (plan-assert-action move ?robot ?fl ?fs ?bs INPUT)
 		(plan-assert-action prepare-bs ?bs OUTPUT ?basecol)
-        (plan-assert-action spawn-wp ;WIP)
-        (plan-assert-action bs-dispense ;WIP)
+        (plan-assert-action spawn-wp (str-cat "wp" ?goal-id) ?robot)
+        (plan-assert-action bs-dispense ?bs INPUT wp1 ?basecol)
 	)
 	(modify ?g (mode EXPANDED))
     (modify ?m (assigned-to ?robot))
+    (retract (robot-waiting ?robot)) ;We must insert this again when done executing!
 )
+
+;Expand get Cap
+(defrule goal-expander-goal-get-cs
+    ?g <- (goal (id ?goal-id) (class GOAL-GET-CS) (mode SELECTED) (parent ?parent))
+    ?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
+    (robot-waiting ?robot)
+    ; WIP! select correct BS based on team color
+    ; in our case this is always CYAN (doesnt matter if we set it to CYAN or leave it at "?team-color")
+    (domain-object (name ?team-color) (type team-color))
+
+    (order-cap-color ?ord ?capcol)
+
+    (mps-team ?cs&:(mps-type ?cs CS) ?team-color) ;Does this work like this?
+    (order-cap-color ?ord ?capcol)
+    (wp-on-shelf ?wp&:(wp-cap-color ?wp ?capcol) ?cs ?spot)
+
+    =>
+
+    (plan-assert-sequential GET-CS-PLAN ?goal-id ?robot
+        (plan-assert-action move ?robot ?fl1 ?fs1 ?cs INPUT)
+        (plan-assert-action prepare-cs ?cs RETRIEVE_CAP)
+        (plan-assert-action wp-get-shelf ?robot ?wp ?cs ?spot)
+        (plan-assert-action wp-put ?robot ?wp ?cs INPUT)
+        (plan-assert-action cs-retrieve-cap ?cs ?wp ?capcol)
+        (plan-assert-action move ?robot ?fl2 ?fs2 ?cs OUTPUT)
+        (plan-assert-action wp-get ?robot ?wp ?cs OUTPUT)
+        (plan-assert-action wp-discard ?robot ?cc)
+    )
+    (modify ?g (mode EXPANDED))
+    (modify ?m (assigned-to ?robot))
+    (retract (robot-waiting ?robot)) ;We must insert this again when done executing!
+
+
+)
+;Expand Transport BS to CS
+
+;Expand Transport C0 to DS
