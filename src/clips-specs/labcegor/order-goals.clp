@@ -28,7 +28,7 @@
 (defrule goal-parallel-bs-cs
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (goal-meta (goal-id ?root-goal-id) (order-id ?ord) (root-for-order ?root-goal-id))
-    (not (goal-meta (goal-id (sym-cat GOAL-PARALLEL-BS-CS- ?ord)) (order-id ?ord) (root-for-order ?root-goal-id)))
+    (not (goal-meta (goal-id ?name&:(sym-cat GOAL-PARALLEL-BS-CS- ?ord)) (order-id ?ord) (root-for-order ?root-goal-id)))
     =>
     (printout t "Goal " GOAL-PARALLEL-BS-CS " formulated" crlf)
     (bind ?goal-id (sym-cat GOAL-PARALLEL-BS-CS- ?ord))
@@ -37,7 +37,8 @@
                 (type ACHIEVE)
                 (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)
                 (parent ?root-goal-id)
-                (verbosity NOISY) (is-exectuable FALSE)
+                (verbosity NOISY) 
+                (is-executable FALSE)
                 (meta-template goal-meta)
     ))
     (assert (goal-meta (goal-id ?goal-id) (order-id ?ord) (root-for-order ?root-goal-id)))
@@ -49,9 +50,10 @@
 ; Get base
 (defrule goal-get-bs
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-    (goal-meta (goal-id (sym-cat GOAL-PARALLEL-BS-CS- ?ord)) (order-id ?ord) (root-for-order ?root-goal-id))
-    (not (goal-meta (goal-id (sym-cat GOAL-GET-BS- ?ord)) (order-id ?ord) (root-for-order ?root-goal-id)))
-    =>GOAL-PARALLEL-BS-CS-
+    (goal-meta (order-id ?ord) (root-for-order ?root-goal-id))
+    (goal-meta (goal-id ?name1&:(sym-cat GOAL-PARALLEL-BS-CS- ?ord)) (order-id ?ord) (root-for-order ?root-goal-id))
+    (not (goal-meta (goal-id ?name2&:(sym-cat GOAL-GET-BS- ?ord)) (order-id ?ord) (root-for-order ?root-goal-id)))
+    =>
     (printout t "Goal " GOAL-GET-BS " formulated" crlf)
     (bind ?goal-id (sym-cat GOAL-GET-BS- ?ord))
     (assert (goal (class GOAL-GET-BS)
@@ -68,8 +70,9 @@
 ; Get CS
 (defrule goal-get-cs
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-    (goal-meta (goal-id (sym-cat GOAL-PARALLEL-BS-CS- ?ord)) (order-id ?ord) (root-for-order ?root-goal-id))
-    (not (goal-meta (goal-id (sym-cat GOAL-GET-CS- ?ord)) (order-id ?ord) (root-for-order ?root-goal-id)))
+    (goal-meta (order-id ?ord) (root-for-order ?root-goal-id))
+    (goal-meta (goal-id ?name1&:(sym-cat GOAL-PARALLEL-BS-CS- ?ord)) (order-id ?ord) (root-for-order ?root-goal-id))
+    (not (goal-meta (goal-id ?name2&:(sym-cat GOAL-GET-CS- ?ord)) (order-id ?ord) (root-for-order ?root-goal-id)))
     =>
     (printout t "Goal " GOAL-GET-CS " formulated" crlf)
     (bind ?goal-id (sym-cat GOAL-GET-CS- ?ord))
@@ -87,8 +90,9 @@
 ; Transport BS to CS
 (defrule goal-bs-to-cs
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-    (goal-meta (goal-id (sym-cat GOAL-ORDER-C0- ?ord)) (order-id ?ord) (root-for-order (sym-cat GOAL-ORDER-C0- ?ord)))
-    (not (goal-meta (goal-id (sym-cat GOAL-BS-TO-CS- ?ord)) (order-id ?ord) (root-for-order (sym-cat GOAL-ORDER-C0- ?ord))))
+    (goal-meta (order-id ?ord) (root-for-order ?root-goal-id))
+    (goal-meta (goal-id ?name1&:(sym-cat GOAL-ORDER-C0- ?ord)) (order-id ?ord) (root-for-order ?root1&:(sym-cat GOAL-ORDER-C0- ?ord)))
+    (not (goal-meta (goal-id ?name2&:(sym-cat GOAL-BS-TO-CS- ?ord)) (order-id ?ord) (root-for-order ?root2&:(sym-cat GOAL-ORDER-C0- ?ord))))
     =>
     (printout t "Goal " GOAL-BS-TO-CS " formulated" crlf)
     (bind ?goal-id (sym-cat GOAL-BS-TO-CS- ?ord))
@@ -106,8 +110,9 @@
 ; Transport C0 to DS
 (defrule goal-deliver-c0
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-    (goal-meta (goal-id (sym-cat GOAL-ORDER-C0- ?ord)) (order-id ?ord) (root-for-order (sym-cat GOAL-ORDER-C0- ?ord)))
-    (not (goal-meta (goal-id (sym-cat GOAL-DELIVER-C0- ?ord)) (order-id ?ord) (root-for-order (sym-cat GOAL-ORDER-C0- ?ord))))
+    (goal-meta (order-id ?ord) (root-for-order ?root-goal-id))
+    (goal-meta (goal-id ?name1&:(sym-cat GOAL-ORDER-C0- ?ord)) (order-id ?ord) (root-for-order ?root1&:(sym-cat GOAL-ORDER-C0- ?ord)))
+    (not (goal-meta (goal-id ?name2&:(sym-cat GOAL-DELIVER-C0- ?ord)) (order-id ?ord) (root-for-order ?root2&:(sym-cat GOAL-ORDER-C0- ?ord))))
     =>
     (printout t "Goal " GOAL-DELIVER-C0 " formulated" crlf)
     (bind ?goal-id (sym-cat GOAL-DELIVER-C0- ?ord))
@@ -131,7 +136,7 @@
 (defrule goal-expander-goal-get-bs
 	?g <- (goal (id ?goal-id) (class GOAL-GET-BS) (mode SELECTED) (parent ?parent))
 	?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
-    ;(domain-fact (name robot-waiting) (param-values ?robot))
+    (domain-fact (name robot-waiting) (param-values ?robot))
     (domain-object (name ?team-color) (type team-color)) ; This selects our team color, as this fact only exists for our own team
 
     (domain-fact (name order-base-color) (param-values ?ord ?basecol))
@@ -141,7 +146,6 @@
 	=>
     
 	(plan-assert-sequential GET-BS-PLAN ?goal-id ?robot
-        (plan-assert-action move ?robot ?fl ?fs ?bs INPUT)
 		(plan-assert-action prepare-bs ?bs OUTPUT ?basecol)
         (plan-assert-action spawn-wp (str-cat "wp" ?goal-id) ?robot)
         (plan-assert-action bs-dispense ?bs INPUT wp1 ?basecol)
@@ -155,15 +159,16 @@
 (defrule goal-expander-goal-get-cs
     ?g <- (goal (id ?goal-id) (class GOAL-GET-CS) (mode SELECTED) (parent ?parent))
     ?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
-    ;(domain-fact (name robot-waiting) (param-values ?robot))
+    (domain-fact (name robot-waiting) (param-values ?robot))
     (domain-object (name ?team-color) (type team-color)) ; This selects our team color, as this fact only exists for our own team
 
     (domain-fact (name order-cap-color) (param-values ?ord ?capcol))
 
-    (domain-fact (name mps-team ?cs) (param-values ?cs ?team-color))
+    (domain-fact (name mps-team) (param-values ?cs ?team-color))
     (domain-fact (name mps-type) (param-values ?cs CS))
     (domain-fact (name wp-on-shelf) (param-values ?wp ?cs ?spot))
     (domain-fact (name wp-cap-color) (param-values ?wp ?capcol))
+    (domain-fact (name at) (param-values ?robot ?fl1 ?fs1))
 
     =>
 
@@ -173,9 +178,9 @@
         (plan-assert-action wp-get-shelf ?robot ?wp ?cs ?spot)
         (plan-assert-action wp-put ?robot ?wp ?cs INPUT)
         (plan-assert-action cs-retrieve-cap ?cs ?wp ?capcol)
-        (plan-assert-action move ?robot ?fl2 ?fs2 ?cs OUTPUT)
+        (plan-assert-action move ?robot ?cs INPUT ?cs OUTPUT)
         (plan-assert-action wp-get ?robot ?wp ?cs OUTPUT)
-        (plan-assert-action wp-discard ?robot ?cc)
+        (plan-assert-action wp-discard ?robot ?wp)
     )
     (modify ?g (mode EXPANDED))
     (modify ?m (assigned-to ?robot))
@@ -188,7 +193,7 @@
 (defrule goal-expander-goal-bs-to-cs
     ?g <- (goal (id ?goal-id) (class GOAL-BS-TO-CS) (mode SELECTED) (parent ?parent))
     ?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
-    ;(domain-fact (name robot-waiting) (param-values ?robot))
+    (domain-fact (name robot-waiting) (param-values ?robot))
     (domain-object (name ?team-color) (type team-color)) ; This selects our team color, as this fact only exists for our own team
     (domain-fact (name order-base-color) (param-values ?ord ?basecol))
     (domain-fact (name order-cap-color) (param-values ?ord ?capcol))
@@ -199,11 +204,12 @@
     (domain-fact (name mps-team) (param-values ?bs ?team-color))
 
     (domain-fact (name cs-buffered) (param-values ?cs ?capcol)) ; PROBLEM:two robots on two different goals could go to the same cs
+    (domain-fact (name at) (param-values ?robot ?fl1 ?fs1))
     =>
     (plan-assert-sequential GET-CS-PLAN ?goal-id ?robot
         (plan-assert-action move ?robot ?fl1 ?fs1 ?bs ?side)
         (plan-assert-action wp-get ?robot ?wp ?bs ?side)
-        (plan-assert-action move ?robot ?fl2 ?fs2 ?cs INPUT)
+        (plan-assert-action move ?robot ?bs ?side ?cs INPUT)
         (plan-assert-action wp-put ?robot ?wp ?cs INPUT)
         (plan-assert-action cs-mount-cap ?cs ?wp ?capcol)
     )
@@ -217,7 +223,7 @@
 (defrule goal-expander-goal-deliver-c0
     ?g <- (goal (id ?goal-id) (class GOAL-DELIVER-C0) (mode SELECTED) (parent ?parent))
     ?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
-    ;(domain-fact (name robot-waiting) (param-values ?robot))
+    (domain-fact (name robot-waiting) (param-values ?robot))
     (domain-object (name ?team-color) (type team-color)) ; This selects our team color, as this fact only exists for our own team
     (domain-fact (name mps-team) (param-values ?ds ?team-color))
     (domain-fact (name mps-type) (param-values ?ds DS))
@@ -231,6 +237,7 @@
     (domain-fact (name wp-cap-color) (param-values ?wp ?capcol))
     (domain-fact (name wp-ring1-color) (param-values RING_NONE))
     (domain-fact (name mps-type) (param-values ?cs CS))
+    (domain-fact (name at) (param-values ?robot ?fl1 ?fs1))
     =>
     (plan-assert-sequential GET-CS-PLAN ?goal-id ?robot
         (plan-assert-action wp-get ?robot ?wp ?cs OUTPUT)
