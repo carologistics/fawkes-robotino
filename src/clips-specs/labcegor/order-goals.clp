@@ -5,7 +5,7 @@
 
 (defrule goal-assign-c0-order
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-    (order-complexity ?ord C0)
+    (domain-fact (name order-complexity) (param-values ?ord C0))
     (not (goal (id ?some-goal-id) (class GOAL-ORDER-C0)))   ; This has the effect, that there is only one C0 root-order formulated at any given point in time
     =>
     (printout t "Goal " GOAL-ORDER-C0 " formulated" crlf)
@@ -131,13 +131,12 @@
 (defrule goal-expander-goal-get-bs
 	?g <- (goal (id ?goal-id) (class GOAL-GET-BS) (mode SELECTED) (parent ?parent))
 	?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
-    (robot-waiting ?robot)
-    ; WIP! select correct BS based on team color
-    ; in our case this is always CYAN (doesnt matter if we set it to CYAN or leave it at "?team-color")
-    (domain-object (name ?team-color) (type team-color))
+    ;(domain-fact (name robot-waiting) (param-values ?robot))
+    (domain-object (name ?team-color) (type team-color)) ; This selects our team color, as this fact only exists for our own team
 
-    (order-base-color ?ord ?basecol)
-    (mps-team ?bs&:(mps-type ?bs BS) ?team-color) ;Does this work like this?
+    (domain-fact (name order-base-color) (param-values ?ord ?basecol))
+    (domain-fact (name mps-team) (param-values ?bs ?team-color))
+    (domain-fact (name mps-type) (param-values ?bs BS))
 
 	=>
     
@@ -149,23 +148,22 @@
 	)
 	(modify ?g (mode EXPANDED))
     (modify ?m (assigned-to ?robot))
-    (retract (robot-waiting ?robot)) ;We must insert this again when done executing!
+    ;(retract (domain-fact (name robot-waiting) (param-values ?robot))) ;We must insert this again when done executing!
 )
 
 ;Expand get Cap
 (defrule goal-expander-goal-get-cs
     ?g <- (goal (id ?goal-id) (class GOAL-GET-CS) (mode SELECTED) (parent ?parent))
     ?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
-    (robot-waiting ?robot)
-    ; WIP! select correct BS based on team color
-    ; in our case this is always CYAN (doesnt matter if we set it to CYAN or leave it at "?team-color")
-    (domain-object (name ?team-color) (type team-color))
+    ;(domain-fact (name robot-waiting) (param-values ?robot))
+    (domain-object (name ?team-color) (type team-color)) ; This selects our team color, as this fact only exists for our own team
 
-    (order-cap-color ?ord ?capcol)
+    (domain-fact (name order-cap-color) (param-values ?ord ?capcol))
 
-    (mps-team ?cs&:(mps-type ?cs CS) ?team-color) ;Does this work like this?
-    (order-cap-color ?ord ?capcol)
-    (wp-on-shelf ?wp&:(wp-cap-color ?wp ?capcol) ?cs ?spot)
+    (domain-fact (name mps-team ?cs) (param-values ?cs ?team-color))
+    (domain-fact (name mps-type) (param-values ?cs CS))
+    (domain-fact (name wp-on-shelf) (param-values ?wp ?cs ?spot))
+    (domain-fact (name wp-cap-color) (param-values ?wp ?capcol))
 
     =>
 
@@ -181,7 +179,7 @@
     )
     (modify ?g (mode EXPANDED))
     (modify ?m (assigned-to ?robot))
-    (retract (robot-waiting ?robot)) ;We must insert this again when done executing!
+    ;(retract (domain-fact (name robot-waiting) (param-values ?robot))) ;We must insert this again when done executing!
 
 
 )
@@ -190,16 +188,17 @@
 (defrule goal-expander-goal-bs-to-cs
     ?g <- (goal (id ?goal-id) (class GOAL-BS-TO-CS) (mode SELECTED) (parent ?parent))
     ?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
-    (robot-waiting ?robot)
-    ; WIP! select correct BS based on team color
-    ; in our case this is always CYAN (doesnt matter if we set it to CYAN or leave it at "?team-color")
-    (domain-object (name ?team-color) (type team-color))
-    (order-base-color ?ord ?basecol)
-    (order-cap-color ?ord ?capcol)
+    ;(domain-fact (name robot-waiting) (param-values ?robot))
+    (domain-object (name ?team-color) (type team-color)) ; This selects our team color, as this fact only exists for our own team
+    (domain-fact (name order-base-color) (param-values ?ord ?basecol))
+    (domain-fact (name order-cap-color) (param-values ?ord ?capcol))
 
-    (wp-at ?wp&:(wp-base-color ?wp ?basecol) ?bs&:(and (mps-type ?bs BS) (mps-team ?bs ?team-color)) ?side) ;and hier Erlaubt?
-    (cs-buffered ?cs ?capcol) ;PROBLEM:two robots on two different goals could go to the same cs
+    (domain-fact (name wp-at) (param-values ?wp ?bs ?side))
+    (domain-fact (name wp-base-color) (param-values ?wp ?basecol))
+    (domain-fact (name mps-type) (param-values ?bs BS))
+    (domain-fact (name mps-team) (param-values ?bs ?team-color))
 
+    (domain-fact (name cs-buffered) (param-values ?cs ?capcol)) ; PROBLEM:two robots on two different goals could go to the same cs
     =>
     (plan-assert-sequential GET-CS-PLAN ?goal-id ?robot
         (plan-assert-action move ?robot ?fl1 ?fs1 ?bs ?side)
@@ -210,7 +209,7 @@
     )
     (modify ?g (mode EXPANDED))
     (modify ?m (assigned-to ?robot))
-    (retract (robot-waiting ?robot)) ;We must insert this again when done executing!
+    ;(retract (domain-fact (name robot-waiting) (param-values ?robot))) ;We must insert this again when done executing!
 
 )
 
@@ -218,18 +217,20 @@
 (defrule goal-expander-goal-deliver-c0
     ?g <- (goal (id ?goal-id) (class GOAL-DELIVER-C0) (mode SELECTED) (parent ?parent))
     ?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
-    (robot-waiting ?robot)
-    ; WIP! select correct BS based on team color
-    ; in our case this is always CYAN (doesnt matter if we set it to CYAN or leave it at "?team-color")
-    (domain-object (name ?team-color) (type team-color))
-    (mps-team ?ds&:(mps-type ?ds DS) ?team-color)
+    ;(domain-fact (name robot-waiting) (param-values ?robot))
+    (domain-object (name ?team-color) (type team-color)) ; This selects our team color, as this fact only exists for our own team
+    (domain-fact (name mps-team) (param-values ?ds ?team-color))
+    (domain-fact (name mps-type) (param-values ?ds DS))
 
-    (order-base-color ?ord ?basecol)
-    (order-cap-color ?ord ?capcol)
-    (order-gate ?ord ?gate)
+    (domain-fact (name order-base-color) (param-values ?ord ?basecol))
+    (domain-fact (name order-cap-color) (param-values ?ord ?capcol))
+    (domain-fact (name order-gate) (param-values ?ord ?gate))
 
-    (wp-at ?wp&:(and (wp-base-color ?wp ?basecol) (wp-cap-color ?wp ?capcol) (wp-ring1-color RING_NONE)) ?cs&:(mps-type ?cs CS) OUTPUT)
-
+    (domain-fact (name wp-at) (param-values ?wp ?cs OUTPUT))
+    (domain-fact (name wp-base-color) (param-values ?wp ?basecol))
+    (domain-fact (name wp-cap-color) (param-values ?wp ?capcol))
+    (domain-fact (name wp-ring1-color) (param-values RING_NONE))
+    (domain-fact (name mps-type) (param-values ?cs CS))
     =>
     (plan-assert-sequential GET-CS-PLAN ?goal-id ?robot
         (plan-assert-action wp-get ?robot ?wp ?cs OUTPUT)
@@ -240,6 +241,6 @@
     )
     (modify ?g (mode EXPANDED))
     (modify ?m (assigned-to ?robot))
-    (retract (robot-waiting ?robot)) ;We must insert this again when done executing!
+    ;(domain-fact (name robot-waiting) (param-values ?robot)) ;We must insert this again when done executing!
 
 )
