@@ -30,7 +30,7 @@
     (assert (goal (class GOAL-PARALLEL-BS-CS)
                 (id ?goal-id-parallel)
                 (type ACHIEVE)
-                (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)
+                (sub-type CENTRAL-RUN-PARALLEL)
                 (parent ?goal-id-root)
                 (verbosity NOISY)
                 (priority 1.0) 
