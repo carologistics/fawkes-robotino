@@ -134,23 +134,23 @@
   (retract ?gf ?gm)
 )
 
-(defrule goal-production-create-testgoal
-  "Enter the field (drive outside of the starting box)."
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (wm-fact (key central agent robot args? r ?robot))
-  (wm-fact (key domain fact entered-field args? r ?robot))
-  (not (goal (id ?some-goal-id) (class TESTGOAL)))
-  (domain-facts-loaded)
-  (wm-fact (key refbox team-color) (value ?team-color))
-  =>
-  (printout t "Goal " TESTGOAL " formulated" crlf)
-  (bind ?goal-id (sym-cat TESTGOAL- (gensym*)))
-  (assert (goal (class TESTGOAL)
-                (id ?goal-id)
-                (sub-type SIMPLE)
-                (verbosity NOISY) (is-executable FALSE)
-                (params target-cs C-CS1 cc CCG1)
-                (meta-template goal-meta)
-  ))
-  (assert (goal-meta (goal-id ?goal-id) (assigned-to robot1)))
-)
+; (defrule goal-production-create-testgoal
+;   "Enter the field (drive outside of the starting box)."
+;   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;   (wm-fact (key central agent robot args? r ?robot))
+;   (wm-fact (key domain fact entered-field args? r ?robot))
+;   (not (goal (id ?some-goal-id) (class TESTGOAL)))
+;   (domain-facts-loaded)
+;   (wm-fact (key refbox team-color) (value ?team-color))
+;   =>
+;   (printout t "Goal " TESTGOAL " formulated" crlf)
+;   (bind ?goal-id (sym-cat TESTGOAL- (gensym*)))
+;   (assert (goal (class TESTGOAL)
+;                 (id ?goal-id)
+;                 (sub-type SIMPLE)
+;                 (verbosity NOISY) (is-executable FALSE)
+;                 (params target-cs C-CS1 cc CCG1)
+;                 (meta-template goal-meta)
+;   ))
+;   (assert (goal-meta (goal-id ?goal-id) (assigned-to robot1)))
+; )
