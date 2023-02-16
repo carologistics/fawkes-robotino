@@ -184,10 +184,11 @@
     (domain-fact (name cs-buffered) (param-values ?cs ?capcol)) ; PROBLEM:two robots on two different goals could go to the same cs
     (domain-fact (name at) (param-values ?robot ?fl1 ?fs1))
     =>
-    (plan-assert-sequential GET-CS-PLAN ?goal-id ?robot
+    (plan-assert-sequential TRANSPORT-BS-TO-CS-PLAN ?goal-id ?robot
         (plan-assert-action move ?robot ?fl1 ?fs1 ?bs ?side)
         (plan-assert-action wp-get ?robot ?wp ?bs ?side)
         (plan-assert-action move ?robot ?bs ?side ?cs INPUT)
+        (plan-assert-action prepare-cs ?cs MOUNT_CAP)
         (plan-assert-action wp-put ?robot ?wp ?cs INPUT)
         (plan-assert-action cs-mount-cap ?cs ?wp ?capcol)
     )
@@ -210,16 +211,17 @@
     (domain-fact (name order-cap-color) (param-values ?ord ?capcol))
     (domain-fact (name order-gate) (param-values ?ord ?gate))
 
+    (domain-fact (name mps-type) (param-values ?cs CS))
     (domain-fact (name wp-at) (param-values ?wp ?cs OUTPUT))
     (domain-fact (name wp-base-color) (param-values ?wp ?basecol))
     (domain-fact (name wp-cap-color) (param-values ?wp ?capcol))
-    (domain-fact (name wp-ring1-color) (param-values RING_NONE))
-    (domain-fact (name mps-type) (param-values ?cs CS))
+    (domain-fact (name wp-ring1-color) (param-values ?wp RING_NONE))
     (domain-fact (name at) (param-values ?robot ?fl1 ?fs1))
     =>
-    (plan-assert-sequential GET-CS-PLAN ?goal-id ?robot
+    (plan-assert-sequential DELIVER-C0 ?goal-id ?robot
+        (plan-assert-action move ?robot ?fl1 ?fs1 ?cs OUTPUT)
         (plan-assert-action wp-get ?robot ?wp ?cs OUTPUT)
-        (plan-assert-action move ?robot ?fl1 ?fs1 ?ds INPUT)
+        (plan-assert-action move ?robot ?cs OUTPUT ?ds INPUT)
         (plan-assert-action prepare-ds ?ds ?ord)
         (plan-assert-action wp-put ?robot ?wp ?ds INPUT)
         (plan-assert-action fulfill-order-c0 ?ord ?wp ?ds ?gate ?basecol ?capcol)
