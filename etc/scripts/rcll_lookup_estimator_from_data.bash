@@ -15,6 +15,8 @@ gauss_params=$(${gauss_fit}  \
 
 ${sample_script} -dc ${skillsim_options} -s bring_product_to \
 	-a place ${gauss_params} -l 10 -u 45 > /dev/null 2>&1
+${sample_script} -dc ${skillsim_options} -s manipulate_wp \
+	-a target CONVEYOR ${gauss_params} -l 10 -u 45 > /dev/null 2>&1
 
 echo -e "wp-put-slide-cc"
 gauss_params=$(${gauss_fit} \
@@ -22,6 +24,8 @@ gauss_params=$(${gauss_fit} \
 
 ${sample_script} ${skillsim_options} -s bring_product_to \
 	-a place -a slide TRUE ${gauss_params} -l 10 -u 45 > /dev/null 2>&1
+${sample_script} ${skillsim_options} -s manipulate_wp \
+	-a target SLIDE -a side SLIDE ${gauss_params} -l 10 -u 45 > /dev/null 2>&1
 
 echo -e "wp-get"
 gauss_params=$(${gauss_fit} \
@@ -29,6 +33,8 @@ gauss_params=$(${gauss_fit} \
 
 ${sample_script} ${skillsim_options} -s get_product_from \
 	-a place -a side ${gauss_params} -l 10 -u 45 > /dev/null 2>&1
+${sample_script} ${skillsim_options} -s manipulate_wp \
+	-a target CONVEYOR ${gauss_params} -l 10 -u 45 > /dev/null 2>&1
 
 echo -e "wp-get-shelf"
 
@@ -37,6 +43,8 @@ gauss_params=$(${gauss_fit} \
 
 ${sample_script} ${skillsim_options} -s get_product_from \
 	-a place -a shelf ${gauss_params} -l 10 -u 45 > /dev/null 2>&1
+${sample_script} ${skillsim_options} -s manipulate_wp \
+	-a target WORKPIECE -a side "SHELF-.*" ${gauss_params} -l 10 -u 45 > /dev/null 2>&1
 
 echo -e "wp-discard"
 

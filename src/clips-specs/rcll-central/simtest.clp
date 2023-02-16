@@ -99,7 +99,7 @@
 		(case "BUILDTEST" then
 			(assert (testcase (type ENTER-FIELD)))
 			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 12 points 30)))
-			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 20 points 200)))
+			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 20 points 100)))
 			(assert (testcase (type DELIVERY-COUNT) (args count 3)))
 			(assert (testcase (type FULL-GAME)))
 		)

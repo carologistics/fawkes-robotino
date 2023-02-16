@@ -59,7 +59,7 @@
 	BS CS DS RS SS - mps-typename
 	IDLE BROKEN PREPARED PROCESSING PROCESSED WAIT-IDLE READY-AT-OUTPUT DOWN - mps-statename
 	INPUT OUTPUT WAIT - mps-side
-	BASE_NONE BASE_RED BASE_BLACK BASE_SILVER - base-color
+	BASE_NONE BASE_CLEAR BASE_RED BASE_BLACK BASE_SILVER - base-color
 	CAP_NONE CAP_BLACK CAP_GREY - cap-color
 	GATE-1 GATE-2 GATE-3 - ds-gate
 	RING_NONE RING_BLUE RING_GREEN RING_ORANGE RING_YELLOW - ring-color
@@ -183,9 +183,9 @@
 
 (:action prepare-cs
 	:parameters (?m - mps ?op - cs-operation)
-	:precondition (and  (mps-type ?m CS)
-	                    (mps-state ?m IDLE)
-	                    (cs-can-perform ?m ?op)
+	:precondition (and (mps-type ?m CS)
+	                   (mps-state ?m IDLE)
+	                   (cs-can-perform ?m ?op)
 	              )
 	:effect (and (not (mps-state ?m IDLE))
 	             (mps-state ?m READY-AT-OUTPUT)
@@ -460,6 +460,10 @@
 	:effect (and (not (spot-free ?m ?spot))
 	             (wp-on-shelf ?cc ?m ?spot)
 	             (not (wp-unused ?cc))
+	             (wp-base-color ?cc BASE_CLEAR)
+	             (wp-ring1-color ?cc RING_NONE)
+	             (wp-ring2-color ?cc RING_NONE)
+	             (wp-ring3-color ?cc RING_NONE)
 	             (wp-cap-color ?cc ?color)
 	        )
 )
