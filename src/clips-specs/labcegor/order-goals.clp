@@ -1,130 +1,82 @@
-; Parent goals
-;----------------------------------------------------------------------------
-
-; Root for C0 order
-
-(defrule goal-assign-c0-order
+(defrule assign-c0-order
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (domain-fact (name order-complexity) (param-values ?ord C0))
     (not (goal (id ?some-goal-id) (class GOAL-ORDER-C0)))   ; This has the effect, that there is only one C0 root-order formulated at any given point in time
     =>
-    (printout t "Goal " GOAL-ORDER-C0 " formulated" crlf)
-    (bind ?goal-id (sym-cat GOAL-ORDER-C0- ?ord ))
+    (printout t "Building C0-Tree ..." crlf)
+
+    (bind ?goal-id-root (sym-cat GOAL-ORDER-C0- ?ord ))
+    (bind ?goal-id-parallel (sym-cat GOAL-PARALLEL-BS-CS- ?ord ))
+    (bind ?goal-id-bs (sym-cat GOAL-GET-BS- ?ord ))
+    (bind ?goal-id-cs (sym-cat GOAL-GET-CS- ?ord ))
+    (bind ?goal-id-bscs (sym-cat GOAL-BS-TO-CS- ?ord ))
+    (bind ?goal-id-csds (sym-cat GOAL-DELIVER-C0- ?ord ))
+
+    ; Root Goal
     (assert (goal (class GOAL-ORDER-C0)                     ; This declares the class for this goal, which is a blocking precondition for executing another C0 order
-                (id ?goal-id)
+                (id ?goal-id-root)
                 (type ACHIEVE)
                 (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
                 (verbosity NOISY) (is-executable FALSE)
                 (meta-template goal-meta)
     ))
-    (assert (goal-meta (goal-id ?goal-id) (order-id ?ord) (root-for-order ?goal-id)))
-)
+    (assert (goal-meta (goal-id ?goal-id-root) (order-id ?ord) (root-for-order ?goal-id-root)))
 
-; Parallel goals
-;----------------------------------------------------------------------------
-
-; Parallel execution of BS and CS
-
-(defrule goal-parallel-bs-cs
-    (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-    (goal-meta (goal-id ?root-goal-id) (order-id ?ord) (root-for-order ?root-goal-id))
-    (not (goal-meta (goal-id ?name&:(sym-cat GOAL-PARALLEL-BS-CS- ?ord)) (order-id ?ord) (root-for-order ?root-goal-id)))
-    =>
-    (printout t "Goal " GOAL-PARALLEL-BS-CS " formulated" crlf)
-    (bind ?goal-id (sym-cat GOAL-PARALLEL-BS-CS- ?ord))
+    ; Parallel part goal
     (assert (goal (class GOAL-PARALLEL-BS-CS)
-                (id ?goal-id)
+                (id ?goal-id-parallel)
                 (type ACHIEVE)
                 (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)
-                (parent ?root-goal-id)
+                (parent ?goal-id-root)
                 (verbosity NOISY) 
                 (is-executable FALSE)
                 (meta-template goal-meta)
     ))
-    (assert (goal-meta (goal-id ?goal-id) (order-id ?ord) (root-for-order ?root-goal-id)))
-)
+    (assert (goal-meta (goal-id ?goal-id-parallel) (order-id ?ord) (root-for-order ?goal-id-root)))
 
-; Simple goals
-;----------------------------------------------------------------------------
-
-; Get base
-(defrule goal-get-bs
-    (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-    (goal-meta (order-id ?ord) (root-for-order ?root-goal-id))
-    (goal-meta (goal-id ?name1&:(sym-cat GOAL-PARALLEL-BS-CS- ?ord)) (order-id ?ord) (root-for-order ?root-goal-id))
-    (not (goal-meta (goal-id ?name2&:(sym-cat GOAL-GET-BS- ?ord)) (order-id ?ord) (root-for-order ?root-goal-id)))
-    =>
-    (printout t "Goal " GOAL-GET-BS " formulated" crlf)
-    (bind ?goal-id (sym-cat GOAL-GET-BS- ?ord))
+    ; Goal get BS
     (assert (goal (class GOAL-GET-BS)
-                (id ?goal-id)
+                (id ?goal-id-bs)
                 (type ACHIEVE)
                 (sub-type SIMPLE)
-                (parent (sym-cat GOAL-PARALLEL-BS-CS- ?ord))
+                (parent ?goal-id-parallel)
                 (verbosity NOISY) (is-executable FALSE)
                 (meta-template goal-meta)
     ))
-    (assert (goal-meta (goal-id ?goal-id) (order-id ?ord) (root-for-order ?root-goal-id)))
-)
+    (assert (goal-meta (goal-id ?goal-id-bs) (order-id ?ord) (root-for-order ?goal-id-root)))
 
-; Get CS
-(defrule goal-get-cs
-    (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-    (goal-meta (order-id ?ord) (root-for-order ?root-goal-id))
-    (goal-meta (goal-id ?name1&:(sym-cat GOAL-PARALLEL-BS-CS- ?ord)) (order-id ?ord) (root-for-order ?root-goal-id))
-    (not (goal-meta (goal-id ?name2&:(sym-cat GOAL-GET-CS- ?ord)) (order-id ?ord) (root-for-order ?root-goal-id)))
-    =>
-    (printout t "Goal " GOAL-GET-CS " formulated" crlf)
-    (bind ?goal-id (sym-cat GOAL-GET-CS- ?ord))
+    ;Goal get CS
     (assert (goal (class GOAL-GET-CS)
-                (id ?goal-id)
+                (id ?goal-id-cs)
                 (type ACHIEVE)
                 (sub-type SIMPLE)
-                (parent (sym-cat GOAL-PARALLEL-BS-CS- ?ord))
+                (parent ?goal-id-parallel)
                 (verbosity NOISY) (is-executable FALSE)
                 (meta-template goal-meta)
     ))
-    (assert (goal-meta (goal-id ?goal-id) (order-id ?ord) (root-for-order ?root-goal-id)))
-)
+    (assert (goal-meta (goal-id ?goal-id-cs) (order-id ?ord) (root-for-order ?goal-id-root)))
 
-; Transport BS to CS
-(defrule goal-bs-to-cs
-    (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-    (goal-meta (order-id ?ord) (root-for-order ?root-goal-id))
-    (goal-meta (goal-id ?name1&:(sym-cat GOAL-ORDER-C0- ?ord)) (order-id ?ord) (root-for-order ?root1&:(sym-cat GOAL-ORDER-C0- ?ord)))
-    (not (goal-meta (goal-id ?name2&:(sym-cat GOAL-BS-TO-CS- ?ord)) (order-id ?ord) (root-for-order ?root2&:(sym-cat GOAL-ORDER-C0- ?ord))))
-    =>
-    (printout t "Goal " GOAL-BS-TO-CS " formulated" crlf)
-    (bind ?goal-id (sym-cat GOAL-BS-TO-CS- ?ord))
+    ;Goal BS -> CS
     (assert (goal (class GOAL-BS-TO-CS)
-                (id ?goal-id)
+                (id ?goal-id-bscs)
                 (type ACHIEVE)
                 (sub-type SIMPLE)
-                (parent (sym-cat GOAL-ORDER-C0- ?ord))
+                (parent ?goal-id-root)
                 (verbosity NOISY) (is-executable FALSE)
                 (meta-template goal-meta)
     ))
-    (assert (goal-meta (goal-id ?goal-id) (order-id ?ord) (root-for-order (sym-cat GOAL-ORDER-C0- ?ord))))
-)
+    (assert (goal-meta (goal-id ?goal-id-bscs) (order-id ?ord) (root-for-order ?goal-id-root)))
 
-; Transport C0 to DS
-(defrule goal-deliver-c0
-    (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-    (goal-meta (order-id ?ord) (root-for-order ?root-goal-id))
-    (goal-meta (goal-id ?name1&:(sym-cat GOAL-ORDER-C0- ?ord)) (order-id ?ord) (root-for-order ?root1&:(sym-cat GOAL-ORDER-C0- ?ord)))
-    (not (goal-meta (goal-id ?name2&:(sym-cat GOAL-DELIVER-C0- ?ord)) (order-id ?ord) (root-for-order ?root2&:(sym-cat GOAL-ORDER-C0- ?ord))))
-    =>
-    (printout t "Goal " GOAL-DELIVER-C0 " formulated" crlf)
-    (bind ?goal-id (sym-cat GOAL-DELIVER-C0- ?ord))
+    ;Goal CS -> DS
     (assert (goal (class GOAL-DELIVER-C0)
-                (id ?goal-id)
+                (id ?goal-id-csds)
                 (type ACHIEVE)
                 (sub-type SIMPLE)
-                (parent (sym-cat GOAL-ORDER-C0- ?ord))
+                (parent ?goal-id-root)
                 (verbosity NOISY) (is-executable FALSE)
                 (meta-template goal-meta)
     ))
-    (assert (goal-meta (goal-id ?goal-id) (order-id ?ord) (root-for-order (sym-cat GOAL-ORDER-C0- ?ord))))
+    (assert (goal-meta (goal-id ?goal-id-csds) (order-id ?ord) (root-for-order ?goal-id-root)))
 )
 
 ; Expand goals
