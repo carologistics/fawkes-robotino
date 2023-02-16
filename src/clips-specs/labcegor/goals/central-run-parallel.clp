@@ -77,6 +77,13 @@
 	(modify ?gf (mode DISPATCHED))
 )
 
+(defrule central-run-parallel-goal-subgoals-select
+	(goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL) (mode DISPATCHED) (is-executable TRUE))
+	?g <- (goal (parent ?id) (type ACHIEVE) (mode FORMULATED) (is-executable TRUE))
+	=>
+	(modify ?g (mode SELECTED))
+)
+
 (defrule central-run-parallel-subgoal-evaluated
 	(goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)
 	      (mode DISPATCHED))

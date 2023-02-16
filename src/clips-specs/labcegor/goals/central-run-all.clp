@@ -75,6 +75,13 @@
 	(modify ?gf (mode DISPATCHED))
 )
 
+(defrule central-run-all-goal-subgoals-select
+	(goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS) (mode DISPATCHED) (is-executable TRUE))
+	?g <- (goal (parent ?id) (type ACHIEVE) (mode FORMULATED) (is-executable TRUE))
+	=>
+	(modify ?g (mode SELECTED))
+)
+
 (defrule central-run-all-goal-subgoal-finished
 	"Set the goal to finished when all subgoals are finished."
 	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
