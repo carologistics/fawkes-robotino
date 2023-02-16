@@ -30,7 +30,7 @@
     (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-LINEAR) (mode DISPATCHED))
     ?sg <- (goal (id ?sub-goal) (parent ?id) (type ACHIEVE) (mode FORMULATED)
 	      (priority ?priority) (is-executable TRUE))
-	(not (goal (id ~?sub-goal) (parent ?id) (type ACHIEVE) (mode ?mode&~EVALUATED)
+	(not (goal (id ~?sub-goal) (parent ?id) (type ACHIEVE) (outcome ?outcome&~COMPLETED)
 	           (priority ?priority2&:(< ?priority2 ?priority)) (is-executable TRUE))) ; The goal with priority ?priority is the lowest-priority non-evaluated goal that is executable
     
     =>
