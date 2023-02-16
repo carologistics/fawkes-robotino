@@ -9,7 +9,8 @@ function log_to_facts() {
 }
 
 echo "Generating filtered log-files..."
-grep -e "GOAL-.*mode" debug11_latest.log | sed 's/^.*goal (id //g' | sort -u > debug11_goals.log
-grep "(state " debug11_latest.log > debug11_states.log
-log_to_facts debug11_latest.log > debug11_facts.log
+grep -e "GOAL-.*mode" debug11_latest.log  > goals.log
+grep "(state " debug11_latest.log > states.log
+log_to_facts debug11_latest.log > facts.log
+mv debug11_latest.log latest.log
 echo "Finished generating files!"
