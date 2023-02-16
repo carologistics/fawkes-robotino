@@ -42,7 +42,7 @@
 
 (defrule central-run-parallel-subgoals-evaluated ; 
     ?gf <- (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-PARALLEL) (mode DISPATCHED))
-    (not (goal (id ?sub-goal) (parent ?id) (type ACHIEVE) (mode ?mode&~EVALUATED)))
+    (not (goal (id ?sub-goal) (parent ?id) (type ACHIEVE) (outcome ?outcome&~COMPLETED)))
 
     =>
 
