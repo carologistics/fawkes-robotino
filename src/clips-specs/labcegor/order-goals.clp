@@ -4,6 +4,8 @@
 
 (defrule assign-c0-order
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+    (not (and (domain-object (name ?robot) (type robot)) (not (domain-fact (name entered-field) (param-values ?robot)))))
+    
     (domain-fact (name order-complexity) (param-values ?ord C0))
     (not (goal (id ?some-goal-id) (class GOAL-ORDER-C0)))   ; This has the effect, that there is only one C0 root-order formulated at any given point in time
     =>
@@ -120,11 +122,11 @@
     (domain-fact (name mps-type) (param-values ?bs BS))
 
 	=>
-    (bind ?wp (str-cat "wpdoghiduyfghsuiy" ?goal-id))
+    (bind ?wp (sym-cat wpdoghiduyfghsuiy ?goal-id))
 	(plan-assert-sequential GET-BS-PLAN ?goal-id ?robot
 		(plan-assert-action prepare-bs ?bs OUTPUT ?basecol)
         (plan-assert-action spawn-wp ?wp ?robot)
-        (plan-assert-action bs-dispense ?bs INPUT wp1 ?basecol)
+        (plan-assert-action bs-dispense ?bs OUTPUT ?wp ?basecol)
 	)
 	(modify ?g (mode EXPANDED))
     (modify ?m (assigned-to ?robot))
