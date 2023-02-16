@@ -120,10 +120,10 @@
     (domain-fact (name mps-type) (param-values ?bs BS))
 
 	=>
-    
+    (bind ?wp (str-cat "wpdoghiduyfghsuiy" ?goal-id))
 	(plan-assert-sequential GET-BS-PLAN ?goal-id ?robot
 		(plan-assert-action prepare-bs ?bs OUTPUT ?basecol)
-        (plan-assert-action spawn-wp (str-cat "wp" ?goal-id) ?robot)
+        (plan-assert-action spawn-wp ?wp ?robot)
         (plan-assert-action bs-dispense ?bs INPUT wp1 ?basecol)
 	)
 	(modify ?g (mode EXPANDED))

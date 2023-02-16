@@ -40,7 +40,7 @@
 
 (defrule central-run-linear-subgoals-evaluated ; 
     ?gf <- (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-LINEAR) (mode DISPATCHED))
-    (not (goal (id ?sub-goal) (parent ?id) (type ACHIEVE) (mode ?mode&~(EVALUATED|RETRACTED))))
+    (not (goal (id ?sub-goal) (parent ?id) (type ACHIEVE) (mode ?mode&:(not (or EVALUATED RETRACTED)))))
 
     =>
 
