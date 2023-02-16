@@ -1,3 +1,7 @@
+
+; Assert goals
+;----------------------------------------------------------------------------
+
 (defrule assign-c0-order
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (domain-fact (name order-complexity) (param-values ?ord C0))
@@ -16,7 +20,7 @@
     (assert (goal (class GOAL-ORDER-C0)                     ; This declares the class for this goal, which is a blocking precondition for executing another C0 order
                 (id ?goal-id-root)
                 (type ACHIEVE)
-                (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
+                (sub-type CENTRAL-RUN-LINEAR)
                 (verbosity NOISY) (is-executable TRUE)
                 (meta-template goal-meta)
     ))
@@ -28,7 +32,8 @@
                 (type ACHIEVE)
                 (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)
                 (parent ?goal-id-root)
-                (verbosity NOISY) 
+                (verbosity NOISY)
+                (priority 1) 
                 (is-executable TRUE)
                 (meta-template goal-meta)
     ))
@@ -62,7 +67,7 @@
                 (type ACHIEVE)
                 (sub-type SIMPLE)
                 (parent ?goal-id-root)
-                (verbosity NOISY) (is-executable TRUE)
+                (verbosity NOISY) (priority 2) (is-executable TRUE)
                 (meta-template goal-meta)
     ))
     (assert (goal-meta (goal-id ?goal-id-bscs) (order-id ?ord) (root-for-order ?goal-id-root)))
@@ -73,20 +78,29 @@
                 (type ACHIEVE)
                 (sub-type SIMPLE)
                 (parent ?goal-id-root)
-                (verbosity NOISY) (is-executable TRUE)
+                (verbosity NOISY) (priority 3) (is-executable TRUE)
                 (meta-template goal-meta)
     ))
     (assert (goal-meta (goal-id ?goal-id-csds) (order-id ?ord) (root-for-order ?goal-id-root)))
 )
 
-; Stupidly select the root goal automatically (later on decide which goal is next)
-(defrule select-c0-root
-    ?g <- (goal (id ?some-goal-id) (class GOAL-ORDER-C0) (mode SELECTED))
+; Goal executablity
+;----------------------------------------------------------------------------
 
-    =>
+(defrule execute-bscs
+    (domain-fact (name order-complexity) (param-values ?ord C0))
+	(goal (id ?id&:(sym-cat GOAL-PARALLEL-BS-CS- ?ord)) (type ACHIEVE) (is-executable TRUE) (mode EVALUATED))
+	?g <- (goal (parent ?id&:(sym-cat GOAL-BS-TO-CS- ?ord)) (type ACHIEVE) (is-executable FALSE))
+	=>
+	(modify ?g (is-executable TRUE))
+)
 
-    (modify ?g (mode EXPANDED))
-    
+(defrule execute-csds
+    (domain-fact (name order-complexity) (param-values ?ord C0))
+	(goal (id ?id&:(sym-cat GOAL-BS-TO-CS- ?ord)) (type ACHIEVE) (is-executable TRUE) (mode EVALUATED))
+	?g <- (goal (parent ?id&:(sym-cat GOAL-CS-TO-DS- ?ord)) (type ACHIEVE) (is-executable FALSE))
+	=>
+	(modify ?g (is-executable TRUE))
 )
 
 ; Expand goals
