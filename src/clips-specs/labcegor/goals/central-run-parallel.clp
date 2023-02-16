@@ -25,7 +25,7 @@
 )
 
 (defrule central-run-parallel-dispatch ; 
-	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-PARALLEL) (mode COMMITED))
+	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-PARALLEL) (mode COMMITTED))
 	=>
 	(modify ?gf (mode DISPATCHED))
 )

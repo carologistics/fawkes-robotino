@@ -21,7 +21,7 @@
 )
 
 (defrule central-run-linear-dispatch ; 
-	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-LINEAR) (mode COMMITED))
+	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-LINEAR) (mode COMMITTED))
 	=>
 	(modify ?gf (mode DISPATCHED))
 )
