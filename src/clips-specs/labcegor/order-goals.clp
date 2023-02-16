@@ -17,7 +17,7 @@
                 (id ?goal-id-root)
                 (type ACHIEVE)
                 (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
-                (verbosity NOISY) (is-executable FALSE)
+                (verbosity NOISY) (is-executable TRUE)
                 (meta-template goal-meta)
     ))
     (assert (goal-meta (goal-id ?goal-id-root) (order-id ?ord) (root-for-order ?goal-id-root)))
@@ -29,7 +29,7 @@
                 (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)
                 (parent ?goal-id-root)
                 (verbosity NOISY) 
-                (is-executable FALSE)
+                (is-executable TRUE)
                 (meta-template goal-meta)
     ))
     (assert (goal-meta (goal-id ?goal-id-parallel) (order-id ?ord) (root-for-order ?goal-id-root)))
@@ -40,43 +40,53 @@
                 (type ACHIEVE)
                 (sub-type SIMPLE)
                 (parent ?goal-id-parallel)
-                (verbosity NOISY) (is-executable FALSE)
+                (verbosity NOISY) (is-executable TRUE)
                 (meta-template goal-meta)
     ))
     (assert (goal-meta (goal-id ?goal-id-bs) (order-id ?ord) (root-for-order ?goal-id-root)))
 
-    ;Goal get CS
+    ; Goal get CS
     (assert (goal (class GOAL-GET-CS)
                 (id ?goal-id-cs)
                 (type ACHIEVE)
                 (sub-type SIMPLE)
                 (parent ?goal-id-parallel)
-                (verbosity NOISY) (is-executable FALSE)
+                (verbosity NOISY) (is-executable TRUE)
                 (meta-template goal-meta)
     ))
     (assert (goal-meta (goal-id ?goal-id-cs) (order-id ?ord) (root-for-order ?goal-id-root)))
 
-    ;Goal BS -> CS
+    ; Goal BS -> CS
     (assert (goal (class GOAL-BS-TO-CS)
                 (id ?goal-id-bscs)
                 (type ACHIEVE)
                 (sub-type SIMPLE)
                 (parent ?goal-id-root)
-                (verbosity NOISY) (is-executable FALSE)
+                (verbosity NOISY) (is-executable TRUE)
                 (meta-template goal-meta)
     ))
     (assert (goal-meta (goal-id ?goal-id-bscs) (order-id ?ord) (root-for-order ?goal-id-root)))
 
-    ;Goal CS -> DS
+    ; Goal CS -> DS
     (assert (goal (class GOAL-DELIVER-C0)
                 (id ?goal-id-csds)
                 (type ACHIEVE)
                 (sub-type SIMPLE)
                 (parent ?goal-id-root)
-                (verbosity NOISY) (is-executable FALSE)
+                (verbosity NOISY) (is-executable TRUE)
                 (meta-template goal-meta)
     ))
     (assert (goal-meta (goal-id ?goal-id-csds) (order-id ?ord) (root-for-order ?goal-id-root)))
+)
+
+; Stupidly select the root goal automatically (later on decide which goal is next)
+(defrule select-c0-root
+    ?g <- (goal (id ?some-goal-id) (class GOAL-ORDER-C0) (mode SELECTED))
+
+    =>
+
+    (modify ?g (mode EXPANDED))
+    
 )
 
 ; Expand goals

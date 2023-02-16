@@ -125,8 +125,8 @@
 
 ; ============================== Goal Expander ===============================
 
-;(defrule goal-reasoner-expand-goal-with-sub-type
-;" Expand a goal with sub-type, if it has a child."
+; (defrule goal-reasoner-expand-goal-with-sub-type
+; " Expand a goal with sub-type, if it has a child."
 ;  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
 ;  ?p <- (goal (id ?parent-id) (type ACHIEVE|MAINTAIN)
 ;              (sub-type ?sub-type&:(requires-subgoal ?sub-type)) (mode SELECTED)
@@ -135,7 +135,7 @@
 ;  =>
 ;  (printout (log-debug ?v) "Goal " ?goal-id " EXPANDED" crlf)
 ;  (modify ?p (mode EXPANDED))
-;)
+; )
 
 
 ; ========================= Goal Dispatching =================================
