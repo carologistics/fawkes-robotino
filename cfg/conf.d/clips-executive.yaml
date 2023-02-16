@@ -96,6 +96,7 @@ clips-executive:
               - labcegor/goals/central-run-all.clp
               - labcegor/goals/central-run-one.clp
               - labcegor/goals/central-run-parallel.clp
+              - labcegor/goals/central-run-linear.clp
               - labcegor/goal-reasoner.clp
               - labcegor/goal-executability.clp
               - labcegor/goal-production.clp
