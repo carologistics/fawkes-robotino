@@ -80,8 +80,8 @@ EOF
 POSITIONAL_ARGS=()
 
 CUSTOM_MONGO=0
-NUMBER_RUN=1
-NUMBER_TRAININGS=1
+NUMBER_RUN=2
+NUMBER_TRAININGS=6
 EXPERIMENT_EVAL="rl"
 BASELINE_EVAL="central"
 EXPERIMENT_REFBOX_ARGS=$refbox_args
@@ -110,7 +110,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     -t)
-      TRAINING_MODE=$2
+      TRAINING_MODE=1
       shift # past argument
       shift
       ;;
@@ -343,14 +343,15 @@ copy_game_files () {
     mkdir `pwd`/$1/$2
     cp `pwd`/refbox_latest.log `pwd`/$1/$2/refbox.log
     cp `pwd`/refbox-debug_latest.log `pwd`/$1/$2/refbox-debug.log
-    if [ "$3" = "central" ]; then
+    if [ "$3" = "central" ] || [ $TRAINING_MODE -eq 0 ]; then
         cp `pwd`/debug11_latest.log `pwd`/$1/$2/debug11.log
         python $scripts_path/parser.py --central TRUE --path `pwd`/$1/$2/ --postfix ".log"
         python $scripts_path/goal_visualizer.py --path `pwd`/$1/$2/
     fi
-    if [ "$3" = "rl" ]; then
+    if [ "$3" = "rl" ] && [ $TRAINING_MODE -eq 1 ]; then
         cp `pwd`/debug11_latest.log `pwd`/$1/$2/debug11.log
-        python $scripts_path/trainings_parser.py --central TRUE --path `pwd`/$1/$2/ --postfix ".log" --ngames TRUE
+        python $scripts_path/trainings_parser_2.py --central TRUE --path `pwd`/$1/$2/ --postfix ".log" --ngames TRUE
+        python $scripts_path/goal_visualizer.py --path `pwd`/$1/$2/ --ngames $GAMES_PER_TRAINING
         #python $scripts_path/rl_training_visualizer.py --path `pwd`/$1/$2/ --ngames $GAMES_PER_TRAINING
     fi
     if [ "$3" = "decentral" ]; then
@@ -366,19 +367,24 @@ copy_game_files () {
 copy_rl_agent_files(){
   echo "Copy Game files " $rl_agent_path 
   echo $3
+
   cp $rl_agent_path/$3 `pwd`/$1/$2/$3
   cp $rl_log_path/log.txt `pwd`/$1/$2/log.txt
   cp $rl_log_path/progress.csv `pwd`/$1/$2/progress.csv
   cat `pwd`/.monitor.csv >> `pwd`/$1/$2/monitor.csv
-  cp `pwd`/log_stage2_facts.txt `pwd`/$1/$2/log_stage2_facts.log
-  cp `pwd`/log_stage3_facts.txt `pwd`/$1/$2/log_stage3_facts.log
-  cp `pwd`/log_stage5_facts.txt `pwd`/$1/$2/log_stage5_facts.log
+
+  for i in $(seq $GAMES_PER_TRAINING)
+  do
+    echo log_stage3_facts_split_$i.log
+    cp `pwd`/log_stage3_facts_split_$i.txt `pwd`/$1/$2/log_stage3_facts_split_$i.log
+    cp `pwd`/log_stage4_facts_split_$i.txt `pwd`/$1/$2/log_stage4_facts_split_$i.log
+    cp `pwd`/log_stage6_facts_split_$i.txt `pwd`/$1/$2/log_stage6_facts_split_$i.log
+  done
 }
 
 run_simulation () {
     # name of directory, name of experiment directory, configuration, load or generate
     echo `pwd`/$1/$2/
-    start_simulation "$3"
 
     if [ "$3" = "rl" ]; then
       echo "Run agent with rl goal selection in execution mode!"
@@ -388,17 +394,20 @@ run_simulation () {
       #line=$(grep -n 'Maskable' $FAWKES_DIR/cfg/conf.d/rl-test.yaml | cut -d ':' -f1)
       #sed -i $line's/.*/  name: "'$rl_agent_name'"/' $FAWKES_DIR/cfg/conf.d/rl-test.yaml
 
+      start_simulation "$3"
       setup_rl_simulation
     else
       deactivate_rl_agent_in_yaml
       set_rl_agent_execution_mode_in_yaml
+
+      start_simulation "$3"
       setup_simulation
     fi
     wait_simulation_ends
     copy_game_files $1 $2 $4
-    if [ "$3" = "rl" ]; then
-      copy_rl_agent_files $1 $2 $rl_agent_name
-    fi
+    #if [ "$3" = "rl" ]; then
+    #  copy_rl_agent_files $1 $2 $rl_agent_name
+    #fi
 }
 
 run_rl_training () {
@@ -406,10 +415,10 @@ run_rl_training () {
 
     echo "Run rl training!!!"
     echo `pwd`/$1/$2/
-    start_simulation "$3"
     change_rl_agent_name_in_yaml
     activate_rl_agent_in_yaml
     set_rl_agent_training_mode_in_yaml
+    start_simulation "$3"
 
     setup_rl_simulation
     wait_rl_training_ends

@@ -51,7 +51,7 @@
 
   ; network sending periods; seconds
   ?*BEACON-PERIOD* = 1.0
-  ?*PREPARE-PERIOD* = 1.0
+  ?*PREPARE-PERIOD* = 5.0 ;1.0
   ?*ABORT-PREPARE-PERIOD* = 30.0
   ?*ABORT-PREPARE-DOWN-RESET* = 5.0
   ?*BEACON-TIMER* = 2
@@ -131,13 +131,28 @@
   (slot action-id (type INTEGER))
 )
 
+(deftemplate training-counter
+  (slot num (type INTEGER))
+)
+
 (deftemplate reset-game
-	(slot stage (type SYMBOL));
+	(slot stage (type SYMBOL))
+  ; time of the last stage change
+  (slot stage-time (type FLOAT))
 )
 
 (deftemplate rl-goal-selection
 	(slot next-goal-id (type SYMBOL))
 )
+
+(deffunction goal-reasoner-nuke-subtree (?goal)
+  "Remove an entire subtree."
+  (do-for-all-facts ((?child goal)) (eq ?child:parent (fact-slot-value ?goal id))
+    (goal-reasoner-nuke-subtree ?child)
+  )
+  (retract ?goal)
+)
+
 
 (deftemplate exploration-result
 " Template for storing a exploration result. Stores the machine name, zone, orientation and the team this machine belongs to"

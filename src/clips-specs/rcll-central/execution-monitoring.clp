@@ -803,6 +803,12 @@
 	  (printout t "WP-fact " ?wf:key crlf " domain fact flushed!" crlf)
 	  (retract ?wf)
 	)
+	
+	;"The goal with the workpiece as parameter is obsolet."
+	;(do-for-all-facts ((?g goal)) (member$ ?wp ?g:params)
+	;  (printout error "Goal with wp " ?g:id crlf " flushed!"  crlf)
+	;  (retract ?g)
+	;)
 	(assert (wm-fact (key wp-unused args? wp ?wp)))
 	(do-for-all-facts ((?g goal))
 		(and (eq ?g:outcome UNKNOWN) (member$ ?wp ?g:params))
