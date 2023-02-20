@@ -91,7 +91,7 @@
 	?sg <- (goal (parent ?id) (type ACHIEVE) (mode FINISHED) (outcome FAILED))
 	=>
 	(modify ?gf (mode FINISHED) (outcome FAILED)
-	            (error SUB-GOAL-FAILED ?sg)
+	            (error SUB-GOAL-FAILED)
 	            (message (str-cat "Sub-goal '" (fact-slot-value ?sg id) "' of CENTRAL-RUN-ALL goal '" ?id "' has failed")))
 )
 
