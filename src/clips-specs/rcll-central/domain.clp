@@ -69,7 +69,7 @@
 
 (defrule domain-worldmodel-flush
 	(or (executive-init)
-      (reset-game (stage STAGE-2)))
+      (reset-game (stage STAGE-3)))
 	(wm-fact (key cx identity))
 	(wm-fact (key refbox phase) (value SETUP))
 	=>
@@ -220,6 +220,7 @@
 " Load all initial domain facts on startup of the game "
   (domain-loaded)
   ?flushed <- (domain-wm-flushed)
+  (not (reset-game (stage STAGE-3)))
   (wm-fact (key config agent name) (value ?robot-name))
   (wm-fact (key refbox team-color) (value ?team-color&~nil))
   (wm-fact (key refbox phase) (value SETUP))

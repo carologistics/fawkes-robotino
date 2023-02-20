@@ -84,7 +84,7 @@
 
 (defrule goal-production-navgraph-compute-wait-positions-finished
   "Add the waiting points to the domain once their generation is finished."
-  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3|STAGE-4)))
   (NavGraphWithMPSGeneratorInterface (id "/navgraph-generator-mps") (final TRUE))
   (or (wm-fact (key config rcll use-static-navgraph) (type BOOL) (value TRUE))
       (forall
@@ -159,7 +159,7 @@
 " Before checking SIMPLE goals for their executability, pick a waiting robot
   that should get a new goal assigned to it next. "
   (declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
-  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3|STAGE-4)))
 ;  "a simple unassigned goal"
   (goal (id ?oid) (sub-type SIMPLE) (mode FORMULATED) (is-executable FALSE))
   (goal-meta (goal-id ?oid) (assigned-to nil))
@@ -621,7 +621,7 @@
   "Create the production root under which all instruction goal trees for the orders
   are asserted"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3|STAGE-4)))
   (domain-facts-loaded)
   (not (goal (class INSTRUCTION-ROOT)))
   (wm-fact (key refbox phase) (value PRODUCTION))
@@ -647,7 +647,7 @@
    supporting the production, i.e., payment and buffer goals.
   "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3|STAGE-4)))
   (domain-facts-loaded)
   (not (goal (class SUPPORT-ROOT)))
   (wm-fact (key refbox phase) (value PRODUCTION))
@@ -663,7 +663,7 @@
    nothing else is executable.
   "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3|STAGE-4)))
   (domain-facts-loaded)
   (not (goal (class WAIT-ROOT)))
   (wm-fact (key refbox phase) (value PRODUCTION))
@@ -678,7 +678,7 @@
   "When the robot is stuck, assert a new goal that keeps it waiting"
   (goal (id ?p) (class WAIT-ROOT))
   (not (goal (parent ?p) (mode FORMULATED)))
-  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3|STAGE-4)))
   =>
   (bind ?goal (assert (goal (class WAIT-NOTHING-EXECUTABLE)
               (id (sym-cat WAIT-NOTHING-EXECUTABLE- (gensym*)))
@@ -690,7 +690,7 @@
 (defrule goal-production-create-move-out-of-way
 	"Creates a move out of way goal. As soon as it is completed it's reset"
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3|STAGE-4)))
 	(goal (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
 	(goal (id ?root-id) (class WAIT-ROOT))
 	(not (goal (class MOVE-OUT-OF-WAY)))
@@ -757,7 +757,7 @@
 (defrule goal-production-create-produce-for-order
   "Create for each incoming order a grounded production tree with the"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3|STAGE-4)))
   (goal (id ?root-id) (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
   (wm-fact (key config rcll pick-and-place-challenge) (value FALSE))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
@@ -855,7 +855,7 @@
   (not (wm-fact (key order meta wp-for-order args? wp ?wp $?)))
   (goal (id ?instruct-goal) (class INSTRUCT-CS-BUFFER-CAP) (mode DISPATCHED|FINISHED|RETRACTED))
   (goal-meta (goal-id ?instruct-goal) (order-id ?order-id))
-  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3|STAGE-4)))
   =>
   (modify ?g (params wp ?wp wp-loc ?mps wp-side ?mps-side))
 )
@@ -868,7 +868,7 @@
   (not (goal (id ?some-goal-id) (class ENTER-FIELD) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED)))
   (domain-facts-loaded)
   (wm-fact (key refbox team-color) (value ?team-color))
-  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3)))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3|STAGE-4)))
   =>
   (printout t "Goal " ENTER-FIELD " formulated" crlf)
   (goal-production-assert-enter-field ?team-color)
