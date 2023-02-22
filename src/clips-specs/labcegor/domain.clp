@@ -82,6 +82,7 @@
 
 (deffunction domain-load-local-facts (?self ?team-color)
 " Initialize facts that are not synced."
+" 7 machines"
   (if (eq ?team-color CYAN)
     then
         (bind ?bs C-BS)
@@ -105,10 +106,10 @@
     (domain-fact (name at) (param-values robot1 START INPUT))
     (domain-fact (name at) (param-values robot2 START INPUT))
     (domain-fact (name at) (param-values robot3 START INPUT))
-    (domain-fact (name mps-team) (param-values ?bs ?team-color))
     (domain-fact (name can-hold) (param-values robot1))
     (domain-fact (name can-hold) (param-values robot2))
     (domain-fact (name can-hold) (param-values robot3))
+    (domain-fact (name mps-team) (param-values ?bs ?team-color))
     (domain-fact (name mps-team) (param-values ?ds ?team-color))
     (domain-fact (name mps-team) (param-values ?ss ?team-color))
     (domain-fact (name mps-team) (param-values ?cs1 ?team-color))
@@ -131,6 +132,7 @@
     (domain-fact (name mps-type) (param-values M-CS2 CS))
     (domain-fact (name mps-type) (param-values M-RS1 RS))
     (domain-fact (name mps-type) (param-values M-RS2 RS))
+    ; ????????????
     (domain-fact (name rs-sub) (param-values THREE TWO ONE))
     (domain-fact (name rs-sub) (param-values THREE ONE TWO))
     (domain-fact (name rs-sub) (param-values THREE ZERO THREE))
@@ -146,6 +148,8 @@
     (domain-fact (name cs-color) (param-values ?cs1 CAP_GREY))
     (domain-fact (name cs-color) (param-values ?cs2 CAP_BLACK))
 
+
+
     (domain-fact (name mirror-orientation) (param-values 0 180))
     (domain-fact (name mirror-orientation) (param-values 45 135))
     (domain-fact (name mirror-orientation) (param-values 90 90))
@@ -155,9 +159,17 @@
     (domain-fact (name mirror-orientation) (param-values 270 270))
     (domain-fact (name mirror-orientation) (param-values 315 225))
 
+    (domain-fact (name bs-prepared-color) (param-values C-BS BASE_RED))
+    (domain-fact (name bs-prepared-color) (param-values C-BS BASE_BLACK))
+    (domain-fact (name bs-prepared-color) (param-values C-BS BASE_SILVER))
+
+
+; ccb black
+; cap carrier with a cap and it es enough to op the cc
     (domain-object (name CCB1) (type cap-carrier))
     (domain-object (name CCB2) (type cap-carrier))
     (domain-object (name CCB3) (type cap-carrier))
+; ccg gray
     (domain-object (name CCG1) (type cap-carrier))
     (domain-object (name CCG2) (type cap-carrier))
     (domain-object (name CCG3) (type cap-carrier))
@@ -268,12 +280,15 @@
     (domain-fact (name wp-cap-color) (param-values CCG1 CAP_GREY))
     (domain-fact (name wp-cap-color) (param-values CCG2 CAP_GREY))
     (domain-fact (name wp-cap-color) (param-values CCG3 CAP_GREY))
+
     (domain-fact (name wp-on-shelf) (param-values CCB1 ?cs2 LEFT))
     (domain-fact (name wp-on-shelf) (param-values CCB2 ?cs2 MIDDLE))
     (domain-fact (name wp-on-shelf) (param-values CCB3 ?cs2 RIGHT))
+
     (domain-fact (name wp-on-shelf) (param-values CCG1 ?cs1 LEFT))
     (domain-fact (name wp-on-shelf) (param-values CCG2 ?cs1 MIDDLE))
     (domain-fact (name wp-on-shelf) (param-values CCG3 ?cs1 RIGHT))
+    
     (domain-fact (name cs-can-perform) (param-values ?cs1 RETRIEVE_CAP))
     (domain-fact (name cs-can-perform) (param-values ?cs2 RETRIEVE_CAP))
     (domain-fact (name cs-free) (param-values ?cs1))

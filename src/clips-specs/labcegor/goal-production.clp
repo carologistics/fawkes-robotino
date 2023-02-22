@@ -134,6 +134,8 @@
   (retract ?gf ?gm)
 )
 
+
+;--------------------------------------mygoal------------------------
 (defrule goal-production-create-mygoal
   "Enter the field (drive outside of the starting box)."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
@@ -143,6 +145,7 @@
   (domain-facts-loaded)
   (wm-fact (key refbox team-color) (value ?team-color))
   =>
+  ; root goal
   (printout t "Goal " MYGOAL " formulated" crlf)
   (bind ?goal-id (sym-cat MYGOAL- (gensym*)))
   (assert (goal (class MYGOAL)
@@ -153,41 +156,105 @@
   ))
   (assert (goal-meta (goal-id ?goal-id)))
 
-  (bind ?goal-id1 (sym-cat GOAL1- (gensym*)))
-	(assert (goal (class GOAL1)
+; subgoal 1
+  (bind ?goal-id1 (sym-cat BUFFER-CAP-GOAL- (gensym*)))
+	(assert (goal (class BUFFER-CAP-GOAL)
 					(id ?goal-id1)
 					(sub-type SIMPLE)
 					(parent ?goal-id)
-					(verbosity NOISY) (is-executable FALSE)
+					(verbosity NOISY) (is-executable TRUE)
+          ; go to cc get ccg( cap carrier gray)
 					(params target-cs C-CS1 cc CCG1)
 					(meta-template goal-meta)
 	))
 	(assert (goal-meta (goal-id ?goal-id1) (assigned-to robot1)))
 
-  ; (bind ?goal-id1 (sym-cat TESTGOAL- (gensym*)))
-	; (assert (goal (class INSTRUCT-BS-DISPENSE-BASE)
-	; 				(id ?goal-id1)
-	; 				(sub-type SIMPLE)
-	; 				(parent ?goal-id)
-	; 				(verbosity NOISY) (is-executable FALSE)
-  ;         ;wp base-color facts
-  ;         (params wp ?wp target-mps C-BS target-side OUTPUT base-color ?base-color)
-	; 				(meta-template goal-meta)
-	; ))
-	; (assert (goal-meta (goal-id ?goal-id1) ))
+
+; subgoal 2 PRE-GET-BASE
+  (bind ?goal-id2 (sym-cat PRE-GET-BASE-GOAL- (gensym*)))
+	(assert (goal (class PRE-GET-BASE)
+                (id ?goal-id2)
+                (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
+                (parent ?goal-id)
+                (verbosity NOISY) (is-executable TRUE)
+                (meta-template goal-meta)
+	))
+	(assert (goal-meta (goal-id ?goal-id2)))
+
+; subgoal 21 PRE
+  (bind ?goal-id21 (sym-cat PRE-BASE- (gensym*)))
+  ; init base wp
+  (bind ?wp (sym-cat ABCDE- (gensym*)))
+  (assert (domain-object (name ?wp) (type workpiece))
+          (domain-fact (name wp-unused) (param-values ?wp))
+          (wm-fact (key domain fact wp-base-color args? wp ?wp col BASE_NONE) (type BOOL) (value TRUE))
+          )
+	(assert (goal (class INSTRUCT-BS-DISPENSE-BASE)
+                (id ?goal-id21)
+                (sub-type SIMPLE)
+                (parent ?goal-id2)
+                (verbosity NOISY) (is-executable TRUE)
+                ;wp base-color facts
+                (params wp ?wp target-mps C-BS target-side OUTPUT base-color BASE_RED)
+                (meta-template goal-meta)
+          )
+  )
+	(assert (goal-meta (goal-id ?goal-id21) (assigned-to robot2)))
+
+
+
+; ; subgoal 22 GET
+;   (bind ?goal-id22 (sym-cat GET-BASE- (gensym*)))
+;   (bind ?wp (sym-cat ABCDE- (gensym*)))
+; 	(assert (goal (class GET-BASE)
+; 					(id ?goal-id22)
+; 					(sub-type SIMPLE)
+; 					(parent ?goal-id2)
+; 					(verbosity NOISY) (is-executable TRUE)
+;           (params target-cs C-BS cc ?wp)
+; 					(meta-template goal-meta)
+; 	))
+; 	(assert (goal-meta (goal-id ?goal-id22) (assigned-to robot3)))
+
 )
 
+
+
+
+
+
+
+;-----------------------------------------selector--------------------------------
 (defrule goal-reasoner-mygoal-select
 	?g <- (goal (id ?goal-id) (class MYGOAL) (mode FORMULATED))
 	=>
 	(modify ?g (mode SELECTED))
 )
 
-(defrule goal-reasoner-goal1-select
-	?g <- (goal (id ?goal-id) (class GOAL1) (mode FORMULATED))
+(defrule goal-reasoner-buffer-cap-goal-select
+	?g <- (goal (id ?goal-id) (class BUFFER-CAP-GOAL) (mode FORMULATED))
 	=>
 	(modify ?g (mode SELECTED))
 )
+
+(defrule goal-reasoner-pre-get-base-goal-select
+	?g <- (goal (id ?goal-id) (class PRE-GET-BASE) (mode FORMULATED))
+	=>
+	(modify ?g (mode SELECTED))
+)
+
+(defrule goal-reasoner-pre-base-goal-select
+	?g <- (goal (id ?goal-id) (class PRE-BASE) (mode FORMULATED))
+	=>
+	(modify ?g (mode SELECTED))
+)
+
+(defrule goal-reasoner-get-base-goal-select
+	?g <- (goal (id ?goal-id) (class GET-BASE) (mode FORMULATED))
+	=>
+	(modify ?g (mode SELECTED))
+)
+
 
 (defrule goal-reasoner-bs-dispense-select
 	?g <- (goal (id ?goal-id) (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED))
