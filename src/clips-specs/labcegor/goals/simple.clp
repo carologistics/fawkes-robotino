@@ -54,6 +54,13 @@
 	(return t)
 )
 
+(defrule simple-set-robot-waiting
+  (goal (id ?goal-id) (sub-type SIMPLE) (outcome COMPLETED))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+  (not (domain-fact (name robot-waiting) (param-values ?robot)))
+  =>
+  (assert (domain-fact (name robot-waiting) (param-values ?robot)))
+)
 
 (defrule simple-goal-commit
   ?g <- (goal (id ?goal-id) (sub-type SIMPLE) (mode EXPANDED) (verbosity ?v))

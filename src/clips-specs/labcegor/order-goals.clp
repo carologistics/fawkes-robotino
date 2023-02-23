@@ -7,7 +7,11 @@
     (not (and (domain-object (name ?robot) (type robot)) (not (domain-fact (name entered-field) (param-values ?robot)))))
     
     (domain-fact (name order-complexity) (param-values ?ord C0))
-    (not (goal (id ?some-goal-id) (class GOAL-ORDER-C0)))   ; This has the effect, that there is only one C0 root-order formulated at any given point in time
+    (not (domain-fact (name order-fulfilled) (param-values ?ord)))
+
+    (not (goal-meta (order-id ?ord)))
+    ;(not (goal (id ?some-goal-id) (class GOAL-ORDER-C0) (outcome ~COMPLETED))) ;This has the effect, that always there is only one C0 root-order which is not COMPLETED
+    
     =>
     (printout t "Building C0-Tree ..." crlf)
 
@@ -88,22 +92,23 @@
 
 ; Goal executablity
 ;----------------------------------------------------------------------------
+;CHECK LATER IF THIS IS NEEDED
 
-(defrule execute-bscs
-    (domain-fact (name order-complexity) (param-values ?ord C0))
-	(goal (id ?id&:(sym-cat GOAL-PARALLEL-BS-CS- ?ord)) (type ACHIEVE) (is-executable TRUE) (mode EVALUATED))
-	?g <- (goal (parent ?id&:(sym-cat GOAL-BS-TO-CS- ?ord)) (type ACHIEVE) (is-executable FALSE))
-	=>
-	(modify ?g (is-executable TRUE))
-)
+; (defrule execute-bscs
+;     (domain-fact (name order-complexity) (param-values ?ord C0))
+; 	(goal (id ?id&:(sym-cat GOAL-PARALLEL-BS-CS- ?ord)) (type ACHIEVE) (is-executable TRUE) (mode EVALUATED))
+; 	?g <- (goal (parent ?id&:(sym-cat GOAL-BS-TO-CS- ?ord)) (type ACHIEVE) (is-executable FALSE))
+; 	=>
+; 	(modify ?g (is-executable TRUE))
+; )
 
-(defrule execute-csds
-    (domain-fact (name order-complexity) (param-values ?ord C0))
-	(goal (id ?id&:(sym-cat GOAL-BS-TO-CS- ?ord)) (type ACHIEVE) (is-executable TRUE) (mode EVALUATED))
-	?g <- (goal (parent ?id&:(sym-cat GOAL-CS-TO-DS- ?ord)) (type ACHIEVE) (is-executable FALSE))
-	=>
-	(modify ?g (is-executable TRUE))
-)
+; (defrule execute-csds
+;     (domain-fact (name order-complexity) (param-values ?ord C0))
+; 	(goal (id ?id&:(sym-cat GOAL-BS-TO-CS- ?ord)) (type ACHIEVE) (is-executable TRUE) (mode EVALUATED))
+; 	?g <- (goal (parent ?id&:(sym-cat GOAL-CS-TO-DS- ?ord)) (type ACHIEVE) (is-executable FALSE))
+; 	=>
+; 	(modify ?g (is-executable TRUE))
+; )
 
 ; Expand goals
 ;----------------------------------------------------------------------------
@@ -114,7 +119,7 @@
 (defrule goal-expander-goal-get-bs
 	?g <- (goal (id ?goal-id) (class GOAL-GET-BS) (mode SELECTED) (parent ?parent))
 	?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
-    (domain-fact (name robot-waiting) (param-values ?robot))
+    ?rw <- (domain-fact (name robot-waiting) (param-values ?robot))
     (domain-object (name ?team-color) (type team-color)) ; This selects our team color, as this fact only exists for our own team
 
     (domain-fact (name order-base-color) (param-values ?ord ?basecol))
@@ -122,7 +127,7 @@
     (domain-fact (name mps-type) (param-values ?bs BS))
 
 	=>
-    (bind ?wp (sym-cat wpdoghiduyfghsuiy ?goal-id))
+    (bind ?wp (sym-cat wp ?goal-id))
 	(plan-assert-sequential GET-BS-PLAN ?goal-id ?robot
 		(plan-assert-action prepare-bs ?bs OUTPUT ?basecol)
         (plan-assert-action spawn-wp ?wp ?robot)
@@ -130,14 +135,15 @@
 	)
 	(modify ?g (mode EXPANDED))
     (modify ?m (assigned-to ?robot))
-    ;(retract (domain-fact (name robot-waiting) (param-values ?robot))) ;We must insert this again when done executing!
+    (printout t "Robot " ?robot " was assigned GET-BS-" ?ord crlf)
+    (retract ?rw) 
 )
 
 ;Expand get Cap
 (defrule goal-expander-goal-get-cs
     ?g <- (goal (id ?goal-id) (class GOAL-GET-CS) (mode SELECTED) (parent ?parent))
     ?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
-    (domain-fact (name robot-waiting) (param-values ?robot))
+    ?rw <- (domain-fact (name robot-waiting) (param-values ?robot))
     (domain-object (name ?team-color) (type team-color)) ; This selects our team color, as this fact only exists for our own team
 
     (domain-fact (name order-cap-color) (param-values ?ord ?capcol))
@@ -162,7 +168,8 @@
     )
     (modify ?g (mode EXPANDED))
     (modify ?m (assigned-to ?robot))
-    ;(retract (domain-fact (name robot-waiting) (param-values ?robot))) ;We must insert this again when done executing!
+    (printout t "Robot " ?robot " was assigned GET-CS-" ?ord crlf)
+    (retract ?rw)  ;We must insert this again when done executing!
 
 
 )
@@ -171,7 +178,7 @@
 (defrule goal-expander-goal-bs-to-cs
     ?g <- (goal (id ?goal-id) (class GOAL-BS-TO-CS) (mode SELECTED) (parent ?parent))
     ?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
-    (domain-fact (name robot-waiting) (param-values ?robot))
+    ?rw <- (domain-fact (name robot-waiting) (param-values ?robot))
     (domain-object (name ?team-color) (type team-color)) ; This selects our team color, as this fact only exists for our own team
     (domain-fact (name order-base-color) (param-values ?ord ?basecol))
     (domain-fact (name order-cap-color) (param-values ?ord ?capcol))
@@ -194,7 +201,8 @@
     )
     (modify ?g (mode EXPANDED))
     (modify ?m (assigned-to ?robot))
-    ;(retract (domain-fact (name robot-waiting) (param-values ?robot))) ;We must insert this again when done executing!
+    (printout t "Robot " ?robot " was assigned BS-TO-CS-" ?ord crlf)
+    (retract ?rw)  ;We must insert this again when done executing!
 
 )
 
@@ -202,7 +210,7 @@
 (defrule goal-expander-goal-deliver-c0
     ?g <- (goal (id ?goal-id) (class GOAL-DELIVER-C0) (mode SELECTED) (parent ?parent))
     ?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
-    (domain-fact (name robot-waiting) (param-values ?robot))
+    ?rw <- (domain-fact (name robot-waiting) (param-values ?robot))
     (domain-object (name ?team-color) (type team-color)) ; This selects our team color, as this fact only exists for our own team
     (domain-fact (name mps-team) (param-values ?ds ?team-color))
     (domain-fact (name mps-type) (param-values ?ds DS))
@@ -228,6 +236,7 @@
     )
     (modify ?g (mode EXPANDED))
     (modify ?m (assigned-to ?robot))
-    ;(domain-fact (name robot-waiting) (param-values ?robot)) ;We must insert this again when done executing!
+    (printout t "Robot " ?robot " was assigned DELIVER-C0-" ?ord crlf)
+    (retract ?rw)  ;We must insert this again when done executing!
 
 )
