@@ -215,13 +215,13 @@
 
 
 (deffunction goal-production-g1-c1-transport-wp
-	(?rnd-id ?from ?to ?wp ?robot ?num)
+	(?rnd-id ?from ?from-side ?to ?to-side ?wp ?robot ?num)
 	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
   (bind ?g (assert (goal (class ORDER1)
                 (id ?goal-id)
                 (sub-type SIMPLE)
                 (verbosity NOISY) (is-executable FALSE)
-                (params s-from ?from s-to ?to workpiece ?wp) 
+                (params from ?from from-side ?from-side to ?to to-side ?to-side workpiece ?wp) 
                 (meta-template goal-meta)
   )))
   (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
@@ -240,21 +240,18 @@
 			              (bind ?rng-num (wm-key-arg ?rs-status:key n))
   )
 
-
-  ; (do-for-fact ((?rs-status wm-fact))
-	; 		              ((wm-key-prefix ?rs-status:key (create$ domain fact rs-sub)))
-	; 		              ((bind ?rng-after (wm-key-arg ?rs-status:key minuend))
-  ;                    (bind ?rng-before (wm-key-arg ?rs-status:key subtrahend))
-  ;                    (bind ?rng-req (wm-key-arg ?rs-status:key difference)))
-                    
-  ; )
+  (do-for-fact ((?rs-status wm-fact))
+			              (and (wm-key-prefix ?rs-status:key (create$ domain fact rs-filled-with))
+			                   (eq (wm-key-arg ?rs-status:key m) ?rs))
+			              (bind ?rng-pay (wm-key-arg ?rs-status:key n))
+  )
 
 
   (bind ?g (assert (goal (class ORDER1)
                 (id ?goal-id)
                 (sub-type SIMPLE)
                 (verbosity NOISY) (is-executable FALSE)
-                (params target-rs ?rs ring-color ?rng-clr ring-before 1 ring-after 0 ring-req 1 workpiece ?wp)
+                (params target-rs ?rs ring-color ?rng-clr ring-before ?rng-num ring-after (- ?rng-num ?rng-pay) ring-req ?rng-pay workpiece ?wp)
                 (meta-template goal-meta)
   )))
   (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
@@ -298,13 +295,13 @@
 
 
 (deffunction goal-production-g1-c1-deliver
-	(?rnd-id ?ds ?ord ?robot ?num)
+	(?rnd-id ?ds ?ds-gate ?base-clr ?cap-clr ?rng-clr ?wp ?ord ?robot ?num)
 	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
   (bind ?g (assert (goal (class ORDER1)
                 (id ?goal-id)
                 (sub-type SIMPLE)
                 (verbosity NOISY) (is-executable FALSE)
-                (params order ?ord delivery-station ?ds)
+                (params order ?ord workpiece ?wp delivery-station ?ds ds-gate ?ds-gate base-clr ?base-clr cap-clr ?cap-clr rng-clr ?rng-clr) 
                 (meta-template goal-meta)
   )))
   (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
@@ -315,17 +312,19 @@
 
 
 (deffunction g1-goal-production-assert-c1 
-	(?rnd-id ?base-clr ?rs ?rng-clr ?cs ?cap-clr ?ds ?ord ?wp ?robot)
+	(?rnd-id ?base-clr ?rs ?rng-clr ?cs ?cap-clr ?ds ?ds-gate ?ord ?wp ?robot)
   (bind ?base-station C-BS)
 	(bind ?goal 
 		(goal-tree-assert-central-run-all-sequence PRODUCE-C1
       (goal-production-g1-c1-spawn-wp ?rnd-id ?wp ?robot 0)
 			(goal-production-g1-c1-base ?rnd-id ?base-station ?base-clr ?wp ?robot 1)
-      ;(goal-production-g1-c1-cap-retrieve ?rnd-id ?cs ?cap-clr ?wp ?robot)
-			(goal-production-g1-c1-transport-wp ?rnd-id ?base-station ?rs ?wp ?robot 2)
+			(goal-production-g1-c1-transport-wp ?rnd-id ?base-station OUTPUT ?rs INPUT ?wp ?robot 2)
       (goal-production-g1-c1-rs ?rnd-id ?rs ?rng-clr ?wp ?robot 3)
-			(goal-production-g1-c1-cap-mount ?rnd-id ?cs ?cap-clr ?wp ?robot 4)
-			(goal-production-g1-c1-deliver ?rnd-id ?ds ?ord ?robot 5)
+      (goal-production-g1-c1-cap-retrieve ?rnd-id ?cs ?cap-clr ?wp ?robot 4)
+			(goal-production-g1-c1-transport-wp ?rnd-id ?rs OUTPUT ?cs INPUT ?wp ?robot 5)
+			(goal-production-g1-c1-cap-mount ?rnd-id ?cs ?cap-clr ?wp ?robot 6)
+      (goal-production-g1-c1-transport-wp ?rnd-id ?cs OUTPUT ?ds INPUT ?wp ?robot 7)
+			(goal-production-g1-c1-deliver ?rnd-id ?ds ?ds-gate ?base-clr ?cap-clr ?rng-clr ?wp ?ord ?robot 8)
 		)
 	)
 
@@ -373,7 +372,7 @@
 	(wm-fact (key domain fact order-base-color args? ord ?ord  col ?base-clr)) 
 	(wm-fact (key domain fact order-cap-color args? ord ?ord col ?cap-clr)) 
 	(wm-fact (key domain fact order-gate args? ord ?ord gate ?ds-gate)) 
-  ;(not (goal (id ?some-goal-id) (class ORDER1)))
+  (not (goal (id ?some-goal-id) (class ORDER1)))
   (domain-facts-loaded) 
   (wm-fact (key refbox team-color) (value ?team-color)) 
   
@@ -391,6 +390,13 @@
 			(bind ?rs C-RS1)
 	)
 
+  (if (eq ?cap-clr CAP_BLACK)
+		then 
+			(bind ?cs C-CS2)
+		else 
+			(bind ?cs C-CS1)
+	)
+
   (if (not (do-for-fact ((?can-hold wm-fact))
 			              (and (wm-key-prefix ?can-hold:key (create$ domain fact can-hold))
 			                   (wm-key-arg ?can-hold:key r))
@@ -398,22 +404,18 @@
                     
                     (bind ?assn-robot nil) (printout t "assn-robot has been assigned as nil"))
   
-  ;  (if (not (do-for-fact ((?wp-avl wm-fact))
-	; 		              (and (wm-key-prefix ?wp-avl:key (create$ domain fact wp-usable))
-	; 		                   (wm-key-arg ?wp-avl:key wp))
-	; 		              (bind ?assn-wp (wm-key-arg ?wp-avl:key wp)))) then
-
-  ;                   (bind ?assn-wp nil) (printout t "assn-wp has been assigned as nil"))
+  
 
   (printout "Assigned variables are" ?wp ?assn-robot)
-	(bind ?goal-tree (g1-goal-production-assert-c1 ?rnd-id ?base-clr ?rs ?rng-clr C-CS1 ?cap-clr C-DS ?ord ?wp ?assn-robot))
+	(bind ?goal-tree (g1-goal-production-assert-c1 ?rnd-id ?base-clr ?rs ?rng-clr C-CS1 ?cap-clr C-DS ?ds-gate ?ord ?wp ?assn-robot))
 )
 
 
 
 
-;;;;;;;;; NOTES FOR NEXT WORK
+;;;;;;;;; NOTES FOR NEXT WORK (22nd Feb 2023)
 ; 1. Understand the logic of ring bfore after and required
+      ; there is rng-num. Bind a variable to required number of payments for rig colour. 
 ; 2. Need to assign robot when goal is created. Make a logic for that. 
 ;
 ;

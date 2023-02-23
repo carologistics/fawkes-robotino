@@ -73,6 +73,8 @@
 )
 
 
+;;;;;; CODE FOR GROUP 1
+
 (defrule goal-expander-g1-c1-spawn-wp
 "Spawn the workpiece"
 	?g <- (goal (id ?goal-id) (class ORDER1) (mode SELECTED) (parent ?parent)
@@ -103,13 +105,34 @@
 (defrule goal-expander-g1-c1-transport-wp
 "Take the workpiece from one mps to another"
 	?g <- (goal (id ?goal-id) (class ORDER1) (mode SELECTED) 
- 	            (params s-from ?from s-to ?to workpiece ?wp))
+ 	            (params from ?from from-side ?from-side to ?to to-side ?to-side workpiece ?wp))
  	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(wm-fact (key domain fact at args?  r ?robot m ?at-mps side ?at-side )) 
  	=>
+	; (do-for-fact ((?r-at wm-fact))
+	; 		              (and (wm-key-prefix ?r-at:key (create$ domain fact at))
+	; 		                   (eq (wm-key-arg ?r-at:key r) ?robot)
+	; 						   )
+	; 		              ((bind ?at-mps (wm-key-arg ?r-at:key m))
+	; 					   (bind ?at-side (wm-key-arg ?r-at:key side)))
+    ; )
+; (wm-key-arg ?r-at:key m)
+; 							   (wm-key-arg ?r-at:key side)
 	(plan-assert-sequential TRANSPORT-WP ?goal-id ?robot
-		(plan-assert-action wp-get ?robot ?wp ?from OUTPUT)
-		(plan-assert-action move ?robot ?from OUTPUT ?to INPUT)
-		(plan-assert-action wp-put ?robot ?wp ?to INPUT)
+		(if (and (eq ?at-mps ?from) (eq ?at-side ?from-side)) then 
+		(create$
+			(plan-assert-action move ?robot ?at-mps ?at-side ?from ?from-side)
+			(plan-assert-action wp-get ?robot ?wp ?from ?from-side)
+			(plan-assert-action move ?robot ?from ?from-side ?to ?to-side)
+			(plan-assert-action wp-put ?robot ?wp ?to ?to-side)
+		)
+		else 
+		(create$
+			(plan-assert-action wp-get ?robot ?wp ?from ?from-side)
+			(plan-assert-action move ?robot ?from ?from-side ?to ?to-side)
+			(plan-assert-action wp-put ?robot ?wp ?to ?to-side)
+		)
+		)
 	)
 	(modify ?g (mode EXPANDED))
 )
@@ -117,7 +140,7 @@
 
 
 (defrule goal-expander-g1-c1-rs
-"Take the base from base station"
+"Prepare and dispatch a ring"
 	?g <- (goal (id ?goal-id) (class ORDER1) (mode SELECTED) 
  	            (params target-rs ?rs ring-color ?rng-clr ring-before ?rng-before ring-after ?rng-after ring-req ?rng-req workpiece ?wp))
  	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
@@ -135,6 +158,60 @@
 	)
 	(modify ?g (mode EXPANDED))
 )
+
+
+(defrule goal-expander-g1-c1-cap-retrive
+"Retrieve the cap"
+	?g <- (goal (id ?goal-id) (class ORDER1) (mode SELECTED) 
+                (params cap-carrier ?wp cap-color ?cap-clr cap-station ?cs))
+ 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(wm-fact (key domain fact at args?  r ?robot m ?at-mps side ?at-side )) 
+	(wm-fact (key domain fact wp-on-shelf args?  wp ?cc m ?cs spot ?cc-spot)) 
+
+ 	=>
+
+	(plan-assert-sequential CAP-RETRIEVE ?goal-id ?robot
+		(plan-assert-action move ?robot ?at-mps ?at-side ?cs INPUT)
+		(plan-assert-action wp-get-shelf ?robot ?cc ?cs ?cc-spot)
+		(plan-assert-action wp-put ?robot ?cc ?cs INPUT)
+		(plan-assert-action move ?robot ?cs INPUT ?cs OUTPUT)	
+		(plan-assert-action wp-get ?robot ?cc ?cs OUTPUT)
+		(plan-assert-action wp-discard ?robot ?cc)
+	)
+	(modify ?g (mode EXPANDED))
+)
+
+
+
+(defrule goal-expander-g1-c1-cap-mount
+"Mount the cap on the order workpiece"
+	?g <- (goal (id ?goal-id) (class ORDER1) (mode SELECTED) 
+                (params cap-carrier ?wp cap-color ?cap-clr cap-station ?cs))
+ 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+ 	=>
+
+	(plan-assert-sequential CAP-MOUNT ?goal-id ?robot
+		(plan-assert-action cs-mount-cap ?cs ?wp ?cap-clr)
+	)
+	(modify ?g (mode EXPANDED))
+)
+
+
+
+(defrule goal-expander-g1-c1-deliver
+"Prepare the DS and deliver order"
+	?g <- (goal (id ?goal-id) (class ORDER1) (mode SELECTED) 
+                (params order ?ord workpiece ?wp delivery-station ?ds ds-gate ?ds-gate base-clr ?base-clr cap-clr ?cap-clr rng-clr ?rng-clr))
+ 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+ 	=>
+
+	(plan-assert-sequential CAP-MOUNT ?goal-id ?robot
+		(plan-assert-action prepare-ds ?ds ?ord)
+		(plan-assert-action fulfill-order-c1 ?ord ?wp ?ds ?ds-gate ?base-clr ?cap-clr ?rng-clr)
+	)
+	(modify ?g (mode EXPANDED))
+)
+
 
 ; (defrule goal-expander-g1-c1-execute
 ; "Execute the goal "
@@ -269,3 +346,21 @@
 ;	)
 ;	(modify ?g (mode EXPANDED))
 ;)
+
+
+(defrule goal-expander-refill-shelf
+  ?p <- (goal (mode DISPATCHED) (id ?parent-id))
+  ?g <- (goal (id ?goal-id) (class REFILL-SHELF) (mode SELECTED)
+              (params mps ?mps) (parent ?parent-id))
+  (wm-fact (key domain fact cs-color args? m ?mps col ?col))
+  =>
+	(plan-assert-sequential REFILL-PLAN ?goal-id central
+		(plan-assert-action refill-shelf
+		  ?mps LEFT (sym-cat CC- (random-id)) ?col)
+		(plan-assert-action refill-shelf
+		  ?mps MIDDLE (sym-cat CC- (random-id)) ?col)
+		(plan-assert-action refill-shelf
+		  ?mps RIGHT (sym-cat CC- (random-id)) ?col)
+	)
+  (modify ?g (mode EXPANDED))
+)
