@@ -135,104 +135,162 @@
 )
 
 
+
 ;--------------------------------------mygoal------------------------
 (defrule goal-production-create-mygoal
   "Enter the field (drive outside of the starting box)."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key central agent robot args? r ?robot))
   (wm-fact (key domain fact entered-field args? r ?robot))
-  (not (goal (id ?some-goal-id) (class MYGOAL)))
+  (not (goal (id ?some-goal-id) (class C0-ORDER)))
   (domain-facts-loaded)
   (wm-fact (key refbox team-color) (value ?team-color))
   =>
-  ; root goal
-  (printout t "Goal " MYGOAL " formulated" crlf)
-  (bind ?goal-id (sym-cat MYGOAL- (gensym*)))
-  (assert (goal (class MYGOAL)
-                (id ?goal-id)
-                (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)
+
+; c0 goal
+  (printout t "Goal " C0-ORDER " formulated" crlf)
+  (bind ?goal-id-c0 (sym-cat C0-ORDER- (gensym*)))
+  (assert (goal (class C0-ORDER)
+                (id ?goal-id-c0)
+                (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
                 (verbosity NOISY) (is-executable FALSE)
                 (meta-template goal-meta)
   ))
-  (assert (goal-meta (goal-id ?goal-id)))
-
-; subgoal 1
-  (bind ?goal-id1 (sym-cat BUFFER-CAP-GOAL- (gensym*)))
-	(assert (goal (class BUFFER-CAP-GOAL)
-					(id ?goal-id1)
-					(sub-type SIMPLE)
-					(parent ?goal-id)
-					(verbosity NOISY) (is-executable TRUE)
-          ; go to cc get ccg( cap carrier gray)
-					(params target-cs C-CS1 cc CCG1)
-					(meta-template goal-meta)
-	))
-	(assert (goal-meta (goal-id ?goal-id1) (assigned-to robot1)))
+  (assert (goal-meta (goal-id ?goal-id-c0)))
+  
 
 
-; subgoal 2 PRE-GET-BASE
-  (bind ?goal-id2 (sym-cat PRE-GET-BASE-GOAL- (gensym*)))
-	(assert (goal (class PRE-GET-BASE)
-                (id ?goal-id2)
-                (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
-                (parent ?goal-id)
+; subgoal 1 holding Base and cap buffered
+  (printout t "Goal " BASE-CAP-READY " formulated" crlf)
+  (bind ?goal-id-1 (sym-cat BASE-CAP-READY- (gensym*)))
+  (assert (goal (class BASE-CAP-READY)
+                (id ?goal-id-1)
+                (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)
+                (parent ?goal-id-c0)
+                ; todo para
+                (verbosity NOISY) (is-executable FALSE)
+                (meta-template goal-meta)
+  ))
+  (assert (goal-meta (goal-id ?goal-id-1)))
+
+; subgoal 2 mount cap upon base
+  (bind ?goal-id-2 (sym-cat MOUNT-CAP-GOAL- (gensym*)))
+	(assert (goal (class MOUNT-CAP-GOAL)
+                (id ?goal-id-2)
+                (sub-type SIMPLE)
+                (parent ?goal-id-c0)
+                ; todo para
                 (verbosity NOISY) (is-executable TRUE)
                 (meta-template goal-meta)
 	))
-	(assert (goal-meta (goal-id ?goal-id2)))
+	(assert (goal-meta (goal-id ?goal-id-2) (assigned-to robot1)))
 
-; subgoal 21 PRE
-  (bind ?goal-id21 (sym-cat PRE-BASE- (gensym*)))
+; subgoal 3 deliver
+  (bind ?goal-id-3 (sym-cat INSTRUCT-DS-DELIVER- (gensym*)))
+	(assert (goal (class INSTRUCT-DS-DELIVER)
+                (id ?goal-id-3)
+                (sub-type SIMPLE)
+                (parent ?goal-id-c0)
+                ; todo para
+                (verbosity NOISY) (is-executable TRUE)
+                (meta-template goal-meta)
+	))
+	(assert (goal-meta (goal-id ?goal-id-3) (assigned-to robot1)))
+
+; subgoal 1-1 buffer cap then discard base 
+  (bind ?goal-id-1-1 (sym-cat BUFFER-CAP-DISCARD-GOAL- (gensym*)))
+	(assert (goal (class BUFFER-CAP-DISCARD-GOAL)
+					(id ?goal-id-1-1)
+					(sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)
+					(parent ?goal-id-1)
+					(verbosity NOISY) (is-executable TRUE)
+					(meta-template goal-meta)
+	))
+	(assert (goal-meta (goal-id ?goal-id-1-1)))
+
+
+
+; subgoal 1-1-1 buffer cap
+  (bind ?goal-id-1-1-1 (sym-cat BUFFER-CAP-GOAL- (gensym*)))
+	(assert (goal (class BUFFER-CAP-GOAL)
+					(id ?goal-id-1-1-1)
+					(sub-type SIMPLE)
+					(parent ?goal-id-1-1)
+					(verbosity NOISY) (is-executable TRUE)
+					(params target-cs C-CS1 cc CCG1)
+					(meta-template goal-meta)
+	))
+	(assert (goal-meta (goal-id ?goal-id-1-1-1) (assigned-to robot1)))
+
+; subgoal 1-1-2 discard          todo
+  (bind ?goal-id-1-1-2 (sym-cat DISCARD-GOAL- (gensym*)))
+	(assert (goal (class DISCARD-GOAL)
+					(id ?goal-id-1-1-2)
+					(sub-type SIMPLE)
+					(parent ?goal-id-1-1)
+					(verbosity NOISY) (is-executable TRUE)
+					(params target-cs C-CS1 cc CCG1)
+					(meta-template goal-meta)
+	))
+	(assert (goal-meta (goal-id ?goal-id-1-1-2) (assigned-to robot1)))
+
+
+
   ; init base wp
   (bind ?wp (sym-cat ABCDE- (gensym*)))
   (assert (domain-object (name ?wp) (type workpiece))
           (domain-fact (name wp-unused) (param-values ?wp))
           (wm-fact (key domain fact wp-base-color args? wp ?wp col BASE_NONE) (type BOOL) (value TRUE))
           )
-	(assert (goal (class INSTRUCT-BS-DISPENSE-BASE)
-                (id ?goal-id21)
+; subgoal 1-2 Prepare and get base
+  (bind ?goal-id-1-2 (sym-cat PRE-GET-BASE-GOAL- (gensym*)))
+	(assert (goal (class PRE-GET-BASE-GOAL)
+                (id ?goal-id-1-2)
                 (sub-type SIMPLE)
-                (parent ?goal-id2)
+                (parent ?goal-id-1)
                 (verbosity NOISY) (is-executable TRUE)
                 ;wp base-color facts
                 (params wp ?wp target-mps C-BS target-side OUTPUT base-color BASE_RED)
                 (meta-template goal-meta)
           )
   )
-	(assert (goal-meta (goal-id ?goal-id21) (assigned-to robot2)))
-
-
-
-; ; subgoal 22 GET
-;   (bind ?goal-id22 (sym-cat GET-BASE- (gensym*)))
-;   (bind ?wp (sym-cat ABCDE- (gensym*)))
-; 	(assert (goal (class GET-BASE)
-; 					(id ?goal-id22)
-; 					(sub-type SIMPLE)
-; 					(parent ?goal-id2)
-; 					(verbosity NOISY) (is-executable TRUE)
-;           (params target-cs C-BS cc ?wp)
-; 					(meta-template goal-meta)
-; 	))
-; 	(assert (goal-meta (goal-id ?goal-id22) (assigned-to robot3)))
+	(assert (goal-meta (goal-id ?goal-id-1-2) (assigned-to robot2)))
 
 )
-
-
-
-
 
 
 
 ;-----------------------------------------selector--------------------------------
 (defrule goal-reasoner-mygoal-select
-	?g <- (goal (id ?goal-id) (class MYGOAL) (mode FORMULATED))
+	?g <- (goal (id ?goal-id) (class C0-ORDER) (mode FORMULATED))
 	=>
 	(modify ?g (mode SELECTED))
 )
 
+
+
+(defrule goal-reasoner-mygoal-select
+	?g <- (goal (id ?goal-id) (class BASE-CAP-READY) (mode FORMULATED))
+	=>
+	(modify ?g (mode SELECTED))
+)
+
+(defrule goal-reasoner-mygoal-select
+	?g <- (goal (id ?goal-id) (class MOUNT-CAP-GOAL) (mode FORMULATED))
+	=>
+	(modify ?g (mode SELECTED))
+)
+
+(defrule goal-reasoner-bs-dispense-select
+	?g <- (goal (id ?goal-id) (class PRE-GET-BASE-GOAL) (mode FORMULATED))
+	=>
+	(modify ?g (mode SELECTED))
+)
+
+
+
 (defrule goal-reasoner-buffer-cap-goal-select
-	?g <- (goal (id ?goal-id) (class BUFFER-CAP-GOAL) (mode FORMULATED))
+	?g <- (goal (id ?goal-id) (class BUFFER-CAP-DISCARD-GOAL) (mode FORMULATED))
 	=>
 	(modify ?g (mode SELECTED))
 )
@@ -243,21 +301,15 @@
 	(modify ?g (mode SELECTED))
 )
 
-(defrule goal-reasoner-pre-base-goal-select
-	?g <- (goal (id ?goal-id) (class PRE-BASE) (mode FORMULATED))
+
+(defrule goal-reasoner-buffer-cap-goal-select
+	?g <- (goal (id ?goal-id) (class BUFFER-CAP-GOAL) (mode FORMULATED))
 	=>
 	(modify ?g (mode SELECTED))
 )
 
-(defrule goal-reasoner-get-base-goal-select
-	?g <- (goal (id ?goal-id) (class GET-BASE) (mode FORMULATED))
-	=>
-	(modify ?g (mode SELECTED))
-)
-
-
-(defrule goal-reasoner-bs-dispense-select
-	?g <- (goal (id ?goal-id) (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED))
+(defrule goal-reasoner-buffer-cap-goal-select
+	?g <- (goal (id ?goal-id) (class DISCARD-GOAL) (mode FORMULATED))
 	=>
 	(modify ?g (mode SELECTED))
 )
