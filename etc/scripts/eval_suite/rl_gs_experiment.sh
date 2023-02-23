@@ -81,7 +81,7 @@ POSITIONAL_ARGS=()
 
 CUSTOM_MONGO=0
 NUMBER_RUN=2
-NUMBER_TRAININGS=6
+NUMBER_TRAININGS=5
 EXPERIMENT_EVAL="rl"
 BASELINE_EVAL="central"
 EXPERIMENT_REFBOX_ARGS=$refbox_args
@@ -386,9 +386,9 @@ run_simulation () {
     # name of directory, name of experiment directory, configuration, load or generate
     echo `pwd`/$1/$2/
 
-    if [ "$3" = "rl" ]; then
+    if [ "$4" = "rl" ]; then
       echo "Run agent with rl goal selection in execution mode!"
-      change_rl_agent_name_in_yaml
+      #change_rl_agent_name_in_yaml
       activate_rl_agent_in_yaml
       set_rl_agent_execution_mode_in_yaml
       #line=$(grep -n 'Maskable' $FAWKES_DIR/cfg/conf.d/rl-test.yaml | cut -d ':' -f1)
@@ -439,7 +439,6 @@ generate_agent_name () {
 #generate experiment dictionary
 name=`generate_name`
 mkdir $name
-rl_agent_name=`generate_agent_name`
 
 
 #writeout configuration
@@ -448,7 +447,6 @@ echo "- number of runs      = ${NUMBER_RUN}" >> $name/configuration.txt
 echo "- custom mongo config = ${CUSTOM_MONGO}" >> $name/configuration.txt
 echo "- experiment command  = ${EXPERIMENT_COMMAND}" >> $name/configuration.txt
 echo "- experiment eval     = ${EXPERIMENT_EVAL}" >> $name/configuration.txt
-echo "- agent name          = ${rl_agent_name}" >> $name/configuration.txt
 echo "- load game           = ${LOAD_GAME}" >> $name/configuration.txt
 echo "- refbox speedup = ${REFBOX_SPEED}" >> $name/configuration.txt
 
@@ -463,10 +461,12 @@ then
       echo "- baseline eval       = ${BASELINE_EVAL}" >> $name/configuration.txt
   fi
 else
+  rl_agent_name=`generate_agent_name`
   echo "- trainings mode on  = ${TRAINING_MODE}" >> $name/configuration.txt
   echo "- number training = ${NUMBER_TRAININGS}" >> $name/configuration.txt
   echo "- number of games per training = ${GAMES_PER_TRAINING}" >> $name/configuration.txt
 fi
+echo "- agent name          = ${rl_agent_name}" >> $name/configuration.txt
 
 cat $name/configuration.txt
 
@@ -495,6 +495,7 @@ fi
 if [ $TRAINING_MODE -eq 0 ]; then
   for i in $(seq $NUMBER_RUN)
   do
+      echo "Training mode off!"
       #run experiment
       run_simulation $name experiment$i "$EXPERIMENT_COMMAND" $EXPERIMENT_EVAL
       dir_monitoring+=" experiment$i"

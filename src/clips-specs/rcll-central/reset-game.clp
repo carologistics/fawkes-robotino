@@ -8,6 +8,7 @@
   ?*SALIENCE-RESET-GAME-HIGH* = ?*SALIENCE-HIGH*
   ?*SALIENCE-RESET-GAME-MIDDLE* = 800
   ?*SALIENCE-RESET-GAME-LOW* = 300
+  ?*RESET-GAME-TIMER* = 1.0
 )
 
 ; move to uitl?!
@@ -38,26 +39,36 @@
 	=>
 	(retract ?r)
 	(retract ?n)
-	(assert (reset-game-finished))	
+	(assert (reset-game-finished))
 )
 
-; (defrule reset-game-refbox-post-game
-;   (declare (salience ?*SALIENCE-RESET-GAME-HIGH*))
-;   ?r <- (reset-game (stage STAGE-0) (stage-time ?t))
-;   (wm-fact (id "/refbox/comm/peer-id/public") (value ?peer-id) (type INT))
-;   (wm-fact (id "/refbox/phase")  (value PRODUCTION) )
-;   ?f<-(domain-facts-loaded)
-;   =>
-;   (bind ?prepare-phase (pb-create "llsf_msgs.SetGamePhase"))
-;   (pb-set-field ?prepare-phase "phase" POST_GAME)
+(defrule reset-game-refbox-post-game
+  (declare (salience ?*SALIENCE-RESET-GAME-HIGH*))
+  ?r <- (reset-game (stage STAGE-0) (stage-time ?t))
+  (wm-fact (id "/refbox/comm/peer-id/public") (value ?peer-id) (type INT))
+  (wm-fact (id "/refbox/phase")  (value PRODUCTION) )
+  ?f<-(domain-facts-loaded)
+  =>
+  (bind ?prepare-phase (pb-create "llsf_msgs.SetGamePhase"))
+  (pb-set-field ?prepare-phase "phase" POST_GAME)
   
-;   (pb-send ?peer-id ?prepare-phase)
-;   (pb-destroy ?prepare-phase)
+  (pb-send ?peer-id ?prepare-phase)
+  (pb-destroy ?prepare-phase)
 
-;   (modify ?r (stage STAGE-1) (stage-time (time)))
-;   (printout error "Change refbox phase to POST_GAME" crlf)
-; )
+  (modify ?r (stage STAGE-1) (stage-time (time)))
+  (printout error "Change refbox phase to POST_GAME" crlf)
+)
 
+
+(defrule reset-game-assert-timer
+  (declare (salience ?*SALIENCE-RESET-GAME-HIGH*))
+  (time $?now)
+  ?r <- (reset-game (stage STAGE-0|STAGE-1) (stage-time ?t))
+  (not (timer (name reset-game-timer)))
+=> 
+  (assert (timer (name reset-game-timer)
+          (time ?now) (seq 1)))
+)
 
 ; (defrule reset-game-refbox-post-game-reached
 ;   ?r <- (reset-game (stage STAGE-2) (stage-time ?t))
@@ -68,14 +79,21 @@
 
 (defrule reset-game-refbox-setup
   (declare (salience ?*SALIENCE-RESET-GAME-HIGH*))
+  (time $?now)
   ;?r<-(reset-domain-facts)
-  ?r <- (reset-game (stage STAGE-0))
+  ?r <- (reset-game (stage STAGE-0|STAGE-1) (stage-time ?t))
   (wm-fact (id "/refbox/comm/peer-id/public") (value ?peer-id) (type INT))
-  (wm-fact (id "/refbox/phase")  (value PRODUCTION|POST_GAME) )
+  (wm-fact (id "/refbox/phase")  (value POST_GAME) )
   (wm-fact (id "/refbox/state")  (value ?v) )
   ?f<-(domain-facts-loaded)
+  (not (changed-to-setup-phase))
+  ?rtimer <-  (timer (name reset-game-timer)
+                  (time $?reset-time&:(timeout ?now ?reset-time ?*RESET-GAME-TIMER*))
+                (seq ?seq))
+  
+   ;(test (>= (time) (+ ?t 0.5)))
   =>
- 	(printout t crlf "reset-game-refbox-setup - current state: " ?v crlf)
+ 	(printout t crlf "reset-game-refbox-setup - current state: " ?v " stage-time "?t  crlf)
   (bind ?prepare-phase (pb-create "llsf_msgs.SetGamePhase"))
   (bind ?prepare-state (pb-create "llsf_msgs.SetGameState"))
   (pb-set-field ?prepare-phase "phase" SETUP)
@@ -88,6 +106,8 @@
   (pb-destroy ?prepare-state)
 
   (modify ?r (stage STAGE-1) (stage-time (time)))
+  (modify ?rtimer (time ?now) (seq (+ ?seq 1)))
+  (assert (changed-to-setup-phase))
   (printout error "Change refbox phase to SETUP - state PAUSED" crlf)
 )
 
@@ -100,6 +120,15 @@
   =>
   (retract ?f)
   (modify ?r (stage STAGE-2))
+)
+
+(defrule delete-changed-to-setup-phase
+  (declare (salience ?*SALIENCE-RESET-GAME-HIGH*))
+  (reset-game (stage STAGE-2))
+  ?f <- (changed-to-setup-phase)
+  =>
+  (printout t crlf "delete changed-to-setup-phase fact " ?f crlf crlf)
+  (retract ?f)
 )
 
 (defrule delete-produce-order-goals
