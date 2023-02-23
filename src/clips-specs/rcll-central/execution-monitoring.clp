@@ -464,6 +464,22 @@
   (modify ?pa (param-values ?robot ?wp ?rs ?rs-num ?rs-num-after))
 )
 
+(defrule execution-monitoring-correct-inconsistent-slide-counter
+" Whenever a wp-put-slide-cc and a mount-ring action are both RUNNING, the one
+  that finishes first will cause the second action to apply the wrong effects.
+  Either way, the result are two rs-filled-with facts, one with the initial
+  count + 1, one with the initial count - payment-value.
+  The correct solution however would be the initial count - payment-value + 1.
+"
+  (declare (salience ?*SALIENCE-HIGH*))
+  ?wm1 <- (wm-fact (key domain fact rs-filled-with args? m ?rs n ?rs-num))
+  ?wm2 <- (wm-fact (key domain fact rs-filled-with args? m ?rs n ?rs-num2&:(< (sym-to-int ?rs-num) (sym-to-int ?rs-num2))))
+  =>
+  (printout t "execuction monitoring: two rs-filled-with facts detected" crlf)
+  (retract ?wm1 ?wm2)
+  (assert (domain-fact (name rs-filled-with) (param-values ?rs (int-to-sym (+ (sym-to-int ?rs-num) 1)))))
+)
+
 (defrule execution-monitoring-reset-abort-timer-machine-down
   "Restart timer for prepare actions if the machine is down"
   (time $?now)

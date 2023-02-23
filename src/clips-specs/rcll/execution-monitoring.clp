@@ -174,8 +174,8 @@
                                                  (member$ ?mps (wm-key-path ?wf:key)))
                                          )
                                      )
-    (retract ?wf)
     (printout t "Exec-Monotoring: Broken Machine " ?wf:key crlf " domain facts flushed!"  crlf)
+    (retract ?wf)
   )
 
   (switch ?type
