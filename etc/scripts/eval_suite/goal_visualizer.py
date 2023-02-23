@@ -177,7 +177,7 @@ def generate_goal_visualization(game_export_goals_file, game_export_meta_file,nu
 
 #'game-export_meta.csv' game-export_goals.csv
 if args.ngames > 1:
-  for i in range(0,args.ngames):
+  for i in range(0,args.ngames-1):
     generate_goal_visualization(args.path+f'game-export_goals-{i}.csv',args.path+f'game-export_meta-{i}.csv',i)
 else:
   generate_goal_visualization(args.path+'game-export_goals.csv',args.path+'game-export_meta.csv')
