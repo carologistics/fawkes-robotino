@@ -109,17 +109,11 @@
  	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args?  r ?robot m ?at-mps side ?at-side )) 
  	=>
-	; (do-for-fact ((?r-at wm-fact))
-	; 		              (and (wm-key-prefix ?r-at:key (create$ domain fact at))
-	; 		                   (eq (wm-key-arg ?r-at:key r) ?robot)
-	; 						   )
-	; 		              ((bind ?at-mps (wm-key-arg ?r-at:key m))
-	; 					   (bind ?at-side (wm-key-arg ?r-at:key side)))
-    ; )
-; (wm-key-arg ?r-at:key m)
-; 							   (wm-key-arg ?r-at:key side)
-	(plan-assert-sequential TRANSPORT-WP ?goal-id ?robot
-		(if (and (eq ?at-mps ?from) (eq ?at-side ?from-side)) then 
+	
+	(bind ?cls (sym-cat TRANSPORT-WP- (gensym*)))
+
+	(plan-assert-sequential ?cls ?goal-id ?robot
+		(if (or (neq ?at-mps ?from) (neq ?at-side ?from-side)) then 
 		(create$
 			(plan-assert-action move ?robot ?at-mps ?at-side ?from ?from-side)
 			(plan-assert-action wp-get ?robot ?wp ?from ?from-side)
@@ -149,12 +143,10 @@
 	(wm-fact (key domain fact rs-ring-spec args? m ?rs r ?rng-clr rn ?rn))
  	=>
 	(printout t "Req-ring" ?rn)
-	(bind ?rs-before ZERO)
-	(bind ?rs-after ZERO)
-	(bind ?rs-req ZERO)
+
 	(plan-assert-sequential MOUNT-RING ?goal-id ?robot
-		(plan-assert-action prepare-rs ?rs ?rng-clr ?rs-before ?rs-after ?rs-req)
-		(plan-assert-action rs-mount-ring1 ?rs ?wp ?rng-clr ?rs-before ?rs-after ?rs-req)
+		(plan-assert-action prepare-rs ?rs ?rng-clr ?rng-before ?rng-after ?rng-req)
+		(plan-assert-action rs-mount-ring1 ?rs ?wp ?rng-clr ?rng-before ?rng-after ?rng-req)
 	)
 	(modify ?g (mode EXPANDED))
 )
@@ -171,9 +163,11 @@
  	=>
 
 	(plan-assert-sequential CAP-RETRIEVE ?goal-id ?robot
+		(plan-assert-action prepare-cs ?cs RETRIEVE_CAP)
 		(plan-assert-action move ?robot ?at-mps ?at-side ?cs INPUT)
 		(plan-assert-action wp-get-shelf ?robot ?cc ?cs ?cc-spot)
 		(plan-assert-action wp-put ?robot ?cc ?cs INPUT)
+		(plan-assert-action cs-retrieve-cap ?cs ?cc ?cap-clr)
 		(plan-assert-action move ?robot ?cs INPUT ?cs OUTPUT)	
 		(plan-assert-action wp-get ?robot ?cc ?cs OUTPUT)
 		(plan-assert-action wp-discard ?robot ?cc)
@@ -186,11 +180,12 @@
 (defrule goal-expander-g1-c1-cap-mount
 "Mount the cap on the order workpiece"
 	?g <- (goal (id ?goal-id) (class ORDER1) (mode SELECTED) 
-                (params cap-carrier ?wp cap-color ?cap-clr cap-station ?cs))
+                (params order-carrier ?wp cap-color ?cap-clr cap-station ?cs))
  	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
  	=>
 
 	(plan-assert-sequential CAP-MOUNT ?goal-id ?robot
+	    (plan-assert-action prepare-cs ?cs MOUNT_CAP)
 		(plan-assert-action cs-mount-cap ?cs ?wp ?cap-clr)
 	)
 	(modify ?g (mode EXPANDED))

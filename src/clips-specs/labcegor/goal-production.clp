@@ -175,11 +175,11 @@
 
 
 
-(defrule goal-production-g1-c1-selected
-  ?g <- (goal (id ?id) (class ORDER1) (mode FORMULATED))
-  =>
-  (modify ?g (mode SELECTED))
-)
+; (defrule goal-production-g1-c1-selected
+;   ?g <- (goal (id ?id) (class ORDER1) (mode FORMULATED))
+;   =>
+;   (modify ?g (mode SELECTED))
+; )
 
 
 (deffunction goal-production-g1-c1-spawn-wp
@@ -189,7 +189,7 @@
   (bind ?g (assert (goal (class ORDER1)
                 (id ?goal-id)
                 (sub-type SIMPLE)
-                (verbosity NOISY) (is-executable FALSE)
+                (verbosity NOISY) (is-executable FALSE) 
                 (params workpiece ?wp robot ?robot) 
                 (meta-template goal-meta)
   )))
@@ -204,7 +204,7 @@
   (bind ?g (assert (goal (class ORDER1)
                 (id ?goal-id)
                 (sub-type SIMPLE)
-                (verbosity NOISY) (is-executable FALSE)
+                (verbosity NOISY) (is-executable FALSE) 
                 (params bs ?bs bs-side OUTPUT base-color ?base-clr workpiece ?wp) 
                 (meta-template goal-meta)
   )))
@@ -220,7 +220,7 @@
   (bind ?g (assert (goal (class ORDER1)
                 (id ?goal-id)
                 (sub-type SIMPLE)
-                (verbosity NOISY) (is-executable FALSE)
+                (verbosity NOISY) (is-executable FALSE) 
                 (params from ?from from-side ?from-side to ?to to-side ?to-side workpiece ?wp) 
                 (meta-template goal-meta)
   )))
@@ -236,22 +236,27 @@
 
   (do-for-fact ((?rs-status wm-fact))
 			              (and (wm-key-prefix ?rs-status:key (create$ domain fact rs-ring-spec))
-			                   (eq (wm-key-arg ?rs-status:key m) ?rs))
-			              (bind ?rng-num (wm-key-arg ?rs-status:key n))
+			                   (eq (wm-key-arg ?rs-status:key m) ?rs)
+                         (eq (wm-key-arg ?rs-status:key r) ?rng-clr))
+			              (bind ?rng-pay (wm-key-arg ?rs-status:key rn))
   )
 
   (do-for-fact ((?rs-status wm-fact))
 			              (and (wm-key-prefix ?rs-status:key (create$ domain fact rs-filled-with))
 			                   (eq (wm-key-arg ?rs-status:key m) ?rs))
-			              (bind ?rng-pay (wm-key-arg ?rs-status:key n))
+			              (bind ?rng-num (wm-key-arg ?rs-status:key n))
   )
+
+  (bind ?a (sym-to-int ?rng-pay))
+  (bind ?b (sym-to-int ?rng-num))
+  (bind ?r-after (int-to-sym (- ?b ?a)))
 
 
   (bind ?g (assert (goal (class ORDER1)
                 (id ?goal-id)
                 (sub-type SIMPLE)
-                (verbosity NOISY) (is-executable FALSE)
-                (params target-rs ?rs ring-color ?rng-clr ring-before ?rng-num ring-after (- ?rng-num ?rng-pay) ring-req ?rng-pay workpiece ?wp)
+                (verbosity NOISY) (is-executable FALSE) 
+                (params target-rs ?rs ring-color ?rng-clr ring-before ?rng-num ring-after ?r-after ring-req ?rng-pay workpiece ?wp)
                 (meta-template goal-meta)
   )))
   (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
@@ -267,7 +272,7 @@
   (bind ?g (assert (goal (class ORDER1)
                 (id ?goal-id)
                 (sub-type SIMPLE)
-                (verbosity NOISY) (is-executable FALSE)
+                (verbosity NOISY) (is-executable FALSE) 
                 (params cap-carrier ?wp cap-color ?cap-clr cap-station ?cs)
                 (meta-template goal-meta)
   )))
@@ -283,8 +288,8 @@
   (bind ?g (assert (goal (class ORDER1)
                 (id ?goal-id)
                 (sub-type SIMPLE)
-                (verbosity NOISY) (is-executable FALSE)
-                (params cap-carrier ?wp cap-color ?cap-clr cap-station ?cs)
+                (verbosity NOISY) (is-executable FALSE) 
+                (params order-carrier ?wp cap-color ?cap-clr cap-station ?cs)
                 (meta-template goal-meta)
   )))
   (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
@@ -300,7 +305,7 @@
   (bind ?g (assert (goal (class ORDER1)
                 (id ?goal-id)
                 (sub-type SIMPLE)
-                (verbosity NOISY) (is-executable FALSE)
+                (verbosity NOISY) (is-executable FALSE) 
                 (params order ?ord workpiece ?wp delivery-station ?ds ds-gate ?ds-gate base-clr ?base-clr cap-clr ?cap-clr rng-clr ?rng-clr) 
                 (meta-template goal-meta)
   )))
@@ -316,15 +321,15 @@
   (bind ?base-station C-BS)
 	(bind ?goal 
 		(goal-tree-assert-central-run-all-sequence PRODUCE-C1
-      (goal-production-g1-c1-spawn-wp ?rnd-id ?wp ?robot 0)
-			(goal-production-g1-c1-base ?rnd-id ?base-station ?base-clr ?wp ?robot 1)
-			(goal-production-g1-c1-transport-wp ?rnd-id ?base-station OUTPUT ?rs INPUT ?wp ?robot 2)
-      (goal-production-g1-c1-rs ?rnd-id ?rs ?rng-clr ?wp ?robot 3)
-      (goal-production-g1-c1-cap-retrieve ?rnd-id ?cs ?cap-clr ?wp ?robot 4)
-			(goal-production-g1-c1-transport-wp ?rnd-id ?rs OUTPUT ?cs INPUT ?wp ?robot 5)
-			(goal-production-g1-c1-cap-mount ?rnd-id ?cs ?cap-clr ?wp ?robot 6)
-      (goal-production-g1-c1-transport-wp ?rnd-id ?cs OUTPUT ?ds INPUT ?wp ?robot 7)
-			(goal-production-g1-c1-deliver ?rnd-id ?ds ?ds-gate ?base-clr ?cap-clr ?rng-clr ?wp ?ord ?robot 8)
+      (goal-production-g1-c1-spawn-wp ?rnd-id ?wp ?robot 9)
+			(goal-production-g1-c1-base ?rnd-id ?base-station ?base-clr ?wp ?robot 8)
+			(goal-production-g1-c1-transport-wp ?rnd-id ?base-station OUTPUT ?rs INPUT ?wp ?robot 7)
+      (goal-production-g1-c1-rs ?rnd-id ?rs ?rng-clr ?wp ?robot 6)
+      (goal-production-g1-c1-cap-retrieve ?rnd-id ?cs ?cap-clr ?wp ?robot 5)
+			(goal-production-g1-c1-transport-wp ?rnd-id ?rs OUTPUT ?cs INPUT ?wp ?robot 4)
+			(goal-production-g1-c1-cap-mount ?rnd-id ?cs ?cap-clr ?wp ?robot 3)
+      (goal-production-g1-c1-transport-wp ?rnd-id ?cs OUTPUT ?ds INPUT ?wp ?robot 2)
+			(goal-production-g1-c1-deliver ?rnd-id ?ds ?ds-gate ?base-clr ?cap-clr ?rng-clr ?wp ?ord ?robot 1)
 		)
 	)
 

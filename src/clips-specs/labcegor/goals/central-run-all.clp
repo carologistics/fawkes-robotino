@@ -66,6 +66,19 @@
 	(modify ?gf (mode COMMITTED))
 )
 
+
+(defrule central-run-all-goal-select-sequential
+	?tree <- (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS) (meta sequence-mode))
+	?child <- (goal (id ?sub-goal) (parent ?id) (sub-type SIMPLE) (mode FORMULATED)
+	      (priority ?priority))
+	(not (goal (id ~?sub-goal) (parent ?id) (mode ~RETRACTED)
+	           (priority ?priority2&:(> ?priority2 ?priority))))
+	
+	=>
+	(modify ?child (mode SELECTED))
+)
+
+
 (defrule central-run-all-goal-dispatch
 	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
 	             (mode COMMITTED)
