@@ -256,33 +256,33 @@
 )
 
 (defrule goal-expander-discard
-" Pick up a product and discard it."
-	;?p <- (goal (mode DISPATCHED) (id ?parent))
+" Pick up a product and discard it by delivering it to the delivery station."
 	?g <- (goal (id ?goal-id) (class DISCARD) (mode SELECTED) (parent ?parent)
 	            (params wp ?wp wp-loc ?wp-loc wp-side ?wp-side))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	(wm-fact (key domain fact mps-type args? m ?target-mps t DS))
+	(wm-fact (key domain fact mps-team args? m ?target-mps col ?col))
+	(wm-fact (key refbox team-color) (value ?col))
 	=>
-	; used when wp-loc and wp-side is removed
-;	(if (not (do-for-fact ((?da dependency-assignment))
-;	             (and (neq ?da:grounded-with nil)
-;	                  (member$ wp ?da:params)
-;	                  (member$ wp-loc ?da:params)
-;	                  (member$ wp-side ?da:params)
-;	                  (eq ?da:goal-id ?goal-id))
-;	             (bind ?wp (multifield-key-value ?da:params wp))
-;	             (bind ?wp-loc (multifield-key-value ?da:params wp-loc))
-;	             (bind ?wp-side (multifield-key-value ?da:params wp-side)))))
 	(plan-assert-sequential (sym-cat DISCARD-PLAN- (gensym*)) ?goal-id ?robot
 		(if (not (is-holding ?robot ?wp))
-		 then
+		then
 			(create$ ; only last statement of if is returned
 				(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
 					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
 				)
+				(plan-assert-safe-move-wait-for-free-side ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps INPUT
+					(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
+				)
+			)
+		else
+			(plan-assert-safe-move-wait-for-free-side ?robot ?curr-location ?curr-side ?target-mps INPUT
+				(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
 			)
 		)
-		(plan-assert-action wp-discard ?robot ?wp)
+		(plan-assert-action prepare-ds ?target-mps O0)
+		(plan-assert-action fulfill-order-C0 (create$ O0 ?wp ?target-mps GATE1 BASE_BLACK CAP_BLACK))
 	)
 	(modify ?g (mode EXPANDED))
 )
