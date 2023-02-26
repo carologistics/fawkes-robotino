@@ -296,7 +296,7 @@
 )
 
 (defrule goal-production-discard-executable
-" Bring a product to a cap station to mount a cap on it.
+" Remove an unused workpiece by bringing it to the delivery station.
 "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class DISCARD)
@@ -312,6 +312,12 @@
 	; MPS-Source CEs
 	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
 	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
+
+	; MPS-CS CEs
+	(wm-fact (key domain fact mps-type args? m ?target-mps t DS))
+	(wm-fact (key domain fact mps-state args? m ?target-mps s ~BROKEN))
+	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?target-mps side INPUT)))
+	(wm-fact (key domain fact mps-team args? m ?target-mps col ?team-color))
 
 	(or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
 	         (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side)))
