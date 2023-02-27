@@ -194,3 +194,4 @@ ArduinoComMessage::parse_message_from_arduino(int (&gripperr_position)[3],
 	//catched exeption
 	return false;
 }
+
