@@ -1,0 +1,1 @@
+/usr/lib64/ccache/c++ -fPIC -g -shared -Wl,-soname,fawkesinterface.so -o /home/adas/fawkes-robotino/lib/lua/fawkesinterface.so CMakeFiles/fawkesinterface_tolua.dir/fawkesinterface_tolua.cpp.o  -llua-5.1 -lm -ldl -ltolua++ -llua-5.1 -lm -ldl -ltolua++

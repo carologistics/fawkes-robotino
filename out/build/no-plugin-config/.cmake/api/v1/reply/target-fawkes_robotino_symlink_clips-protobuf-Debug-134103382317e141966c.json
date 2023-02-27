@@ -1,0 +1,74 @@
+{
+	"backtrace" : 2,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_custom_target",
+			"create_symlink_custom_target"
+		],
+		"files" : 
+		[
+			"fawkes/cmake/utils.cmake",
+			"src/clips-specs/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 1
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 12,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 312,
+				"parent" : 1
+			}
+		]
+	},
+	"id" : "fawkes_robotino_symlink_clips-protobuf::@a7c18bf01cc5b9b8a5cf",
+	"name" : "fawkes_robotino_symlink_clips-protobuf",
+	"paths" : 
+	{
+		"build" : "src/clips-specs",
+		"source" : "src/clips-specs"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		},
+		{
+			"name" : "CMake Rules",
+			"sourceIndexes" : 
+			[
+				1
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 2,
+			"isGenerated" : true,
+			"path" : "out/build/no-plugin-config/src/clips-specs/CMakeFiles/fawkes_robotino_symlink_clips-protobuf",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "out/build/no-plugin-config/src/clips-specs/CMakeFiles/fawkes_robotino_symlink_clips-protobuf.rule",
+			"sourceGroupIndex" : 1
+		}
+	],
+	"type" : "UTILITY"
+}

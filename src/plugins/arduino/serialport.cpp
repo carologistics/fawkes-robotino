@@ -56,7 +56,7 @@ SerialPort::SerialPort(std::string                                port,
 			io_service_.run_one_until(std::chrono::system_clock::now() + std::chrono::seconds(2));
 			if (!port_) {
 				terminate_thread = true;
-				deconstruct_callback_();
+				disconnect_callback_();
 			}
 		}
 	});
@@ -143,12 +143,12 @@ SerialPort::on_receive_(const boost::system::error_code &ec, size_t bytes_transf
 		boost::mutex::scoped_lock lock(port_mutex_);
 		if (port_ == nullptr || !port_->is_open()) {
 			terminate_thread = true;
-			deconstruct_callback_();
+			disconnect_callback_();
 			return;
 		}
 		if (ec) {
 			terminate_thread = true;
-			deconstruct_callback_();
+			disconnect_callback_();
 			return;
 		}
 

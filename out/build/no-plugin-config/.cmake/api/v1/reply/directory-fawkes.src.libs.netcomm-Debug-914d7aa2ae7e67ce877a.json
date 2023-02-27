@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "fawkes/src/libs/netcomm",
+		"source" : "fawkes/src/libs/netcomm"
+	}
+}

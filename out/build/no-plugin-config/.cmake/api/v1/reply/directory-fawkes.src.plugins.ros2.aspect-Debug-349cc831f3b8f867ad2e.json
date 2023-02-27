@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "fawkes/src/plugins/ros2/aspect",
+		"source" : "fawkes/src/plugins/ros2/aspect"
+	}
+}

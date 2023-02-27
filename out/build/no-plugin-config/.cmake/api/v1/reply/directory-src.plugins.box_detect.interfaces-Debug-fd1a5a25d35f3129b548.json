@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "src/plugins/box_detect/interfaces",
+		"source" : "src/plugins/box_detect/interfaces"
+	}
+}

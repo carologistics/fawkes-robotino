@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "fawkes/src/libs/navgraph/generators",
+		"source" : "fawkes/src/libs/navgraph/generators"
+	}
+}

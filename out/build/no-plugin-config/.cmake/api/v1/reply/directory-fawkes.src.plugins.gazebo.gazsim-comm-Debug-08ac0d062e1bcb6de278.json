@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "fawkes/src/plugins/gazebo/gazsim-comm",
+		"source" : "fawkes/src/plugins/gazebo/gazsim-comm"
+	}
+}

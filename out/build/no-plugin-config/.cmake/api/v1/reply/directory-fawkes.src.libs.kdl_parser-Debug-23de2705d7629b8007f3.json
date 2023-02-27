@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "fawkes/src/libs/kdl_parser",
+		"source" : "fawkes/src/libs/kdl_parser"
+	}
+}

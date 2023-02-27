@@ -1,0 +1,595 @@
+{
+	"artifacts" : 
+	[
+		{
+			"path" : "test_skill_parser"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_executable",
+			"target_link_libraries",
+			"generate_interface_from_xml",
+			"depend_on_lua",
+			"optional_depend_on_pkgconfig_libs",
+			"depend_on_boost_libs",
+			"target_compile_definitions",
+			"set_common_properties_of_targets_recucursive",
+			"set_common_properties_of_targets",
+			"include_directories",
+			"include"
+		],
+		"files" : 
+		[
+			"fawkes/src/libs/execution_time_estimator/tests/CMakeLists.txt",
+			"fawkes/src/libs/execution_time_estimator/CMakeLists.txt",
+			"fawkes/cmake/lua.cmake",
+			"fawkes/src/libs/interfaces/CMakeLists.txt",
+			"fawkes/src/libs/utils/CMakeLists.txt",
+			"fawkes/cmake/utils.cmake",
+			"fawkes/src/libs/core/CMakeLists.txt",
+			"CMakeLists.txt",
+			"fawkes/cmake/base.cmake",
+			"fawkes/src/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 4,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 5,
+				"parent" : 0
+			},
+			{
+				"file" : 1
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 25,
+				"parent" : 3
+			},
+			{
+				"file" : 3
+			},
+			{
+				"command" : 2,
+				"file" : 3,
+				"line" : 90,
+				"parent" : 5
+			},
+			{
+				"command" : 1,
+				"file" : 2,
+				"line" : 95,
+				"parent" : 6
+			},
+			{
+				"file" : 4
+			},
+			{
+				"command" : 3,
+				"file" : 4,
+				"line" : 86,
+				"parent" : 8
+			},
+			{
+				"command" : 1,
+				"file" : 2,
+				"line" : 34,
+				"parent" : 9
+			},
+			{
+				"command" : 4,
+				"file" : 4,
+				"line" : 88,
+				"parent" : 8
+			},
+			{
+				"command" : 1,
+				"file" : 5,
+				"line" : 144,
+				"parent" : 11
+			},
+			{
+				"command" : 4,
+				"file" : 4,
+				"line" : 98,
+				"parent" : 8
+			},
+			{
+				"command" : 1,
+				"file" : 5,
+				"line" : 144,
+				"parent" : 13
+			},
+			{
+				"command" : 1,
+				"file" : 4,
+				"line" : 105,
+				"parent" : 8
+			},
+			{
+				"file" : 6
+			},
+			{
+				"command" : 1,
+				"file" : 6,
+				"line" : 59,
+				"parent" : 16
+			},
+			{
+				"command" : 5,
+				"file" : 4,
+				"line" : 117,
+				"parent" : 8
+			},
+			{
+				"command" : 1,
+				"file" : 5,
+				"line" : 99,
+				"parent" : 18
+			},
+			{
+				"file" : 7
+			},
+			{
+				"command" : 8,
+				"file" : 7,
+				"line" : 38,
+				"parent" : 20
+			},
+			{
+				"command" : 7,
+				"file" : 5,
+				"line" : 232,
+				"parent" : 21
+			},
+			{
+				"command" : 7,
+				"file" : 5,
+				"line" : 196,
+				"parent" : 22
+			},
+			{
+				"command" : 7,
+				"file" : 5,
+				"line" : 196,
+				"parent" : 23
+			},
+			{
+				"command" : 7,
+				"file" : 5,
+				"line" : 196,
+				"parent" : 24
+			},
+			{
+				"command" : 7,
+				"file" : 5,
+				"line" : 196,
+				"parent" : 25
+			},
+			{
+				"command" : 7,
+				"file" : 5,
+				"line" : 196,
+				"parent" : 26
+			},
+			{
+				"command" : 6,
+				"file" : 5,
+				"line" : 209,
+				"parent" : 27
+			},
+			{
+				"command" : 10,
+				"file" : 7,
+				"line" : 29,
+				"parent" : 20
+			},
+			{
+				"file" : 8,
+				"parent" : 29
+			},
+			{
+				"command" : 9,
+				"file" : 8,
+				"line" : 51,
+				"parent" : 30
+			},
+			{
+				"command" : 9,
+				"file" : 7,
+				"line" : 31,
+				"parent" : 20
+			},
+			{
+				"file" : 9
+			},
+			{
+				"command" : 9,
+				"file" : 9,
+				"line" : 23,
+				"parent" : 33
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-g -std=gnu++20"
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-DHAVE_EXECINFO"
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-I/usr/include/lua-5.1"
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-DHAVE_LUA"
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-DLUADIR=\\\"/home/adas/fawkes-robotino/src/lua\\\""
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-DLUALIBDIR=\\\"/home/adas/fawkes-robotino/lib/lua\\\""
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-Wno-unused-function"
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-I/usr/include"
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-D_REENTRANT"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 28,
+					"define" : "BASEDIR=\"/home/adas/fawkes-robotino\""
+				},
+				{
+					"backtrace" : 28,
+					"define" : "BINDIR=\"\""
+				},
+				{
+					"backtrace" : 2,
+					"define" : "BOOST_SYSTEM_DYN_LINK"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "BOOST_SYSTEM_NO_LIB"
+				},
+				{
+					"backtrace" : 28,
+					"define" : "BUILDTYPE=\"\""
+				},
+				{
+					"backtrace" : 28,
+					"define" : "CONFDIR=\"/home/adas/fawkes-robotino/cfg\""
+				},
+				{
+					"backtrace" : 28,
+					"define" : "FAWKES_BASEDIR=\"/home/adas/fawkes-robotino\""
+				},
+				{
+					"backtrace" : 2,
+					"define" : "GTEST_LINKED_AS_SHARED_LIBRARY=1"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "HAVE_EXECINFO"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "HAVE_INOTIFY"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "HAVE_LIBMAGIC"
+				},
+				{
+					"backtrace" : 28,
+					"define" : "IFACEDIR=\"/home/adas/fawkes-robotino/lib/interfaces/\""
+				},
+				{
+					"backtrace" : 28,
+					"define" : "LIBDIR=\"/home/adas/fawkes-robotino/out/build/no-plugin-config/src/libs/\""
+				},
+				{
+					"backtrace" : 28,
+					"define" : "LOGDIR=\"/home/adas/fawkes-robotino/log\""
+				},
+				{
+					"backtrace" : 28,
+					"define" : "PLUGINDIR=\"/home/adas/fawkes-robotino/plugins/\""
+				},
+				{
+					"backtrace" : 28,
+					"define" : "RESDIR=\"/home/adas/fawkes-robotino/res\""
+				},
+				{
+					"backtrace" : 28,
+					"define" : "SOEXT=\"so\""
+				},
+				{
+					"backtrace" : 28,
+					"define" : "SRCDIR=\"/home/adas/fawkes-robotino/fawkes/src/libs/execution_time_estimator/tests\""
+				},
+				{
+					"backtrace" : 28,
+					"define" : "TMPDIR=\"/tmp\""
+				},
+				{
+					"backtrace" : 28,
+					"define" : "USERDIR=\".fawkes\""
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 31,
+					"path" : "/home/adas/fawkes-robotino/lib"
+				},
+				{
+					"backtrace" : 32,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src"
+				},
+				{
+					"backtrace" : 34,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs/core/core"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs/interfaces/.."
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs/utils/core"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs/interface/interface"
+				}
+			],
+			"language" : "CXX",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					2,
+					2,
+					2
+				],
+				"standard" : "20"
+			},
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "fawkescore::@96de920f2c1ee174bd2c"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "fawkesutils::@bbf8304ef445661713ec"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "fawkeslogging::@2a8715505af097febee1"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "fawkesinterface::@0652ad9b532afe87f7bc"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "SkillerInterface::@95a7ec6ccb46bc81bd11"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "fawkes_execution_time_estimator::@a542d1391ffd4d7ce92b"
+		}
+	],
+	"id" : "test_skill_parser::@423f7f9b41f88aa816fd",
+	"link" : 
+	{
+		"commandFragments" : 
+		[
+			{
+				"fragment" : "-g",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "-Wl,-rpath,/home/adas/fawkes-robotino/lib:/home/adas/fawkes-robotino/lib/interfaces",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "-lm",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkes_execution_time_estimator.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "-lpthread",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "/usr/lib64/libgtest_main.so.1.14.0",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "/home/adas/fawkes-robotino/lib/interfaces/libSkillerInterface.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 7,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkesinterface.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 7,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkesutils.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "-llua-5.1",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "-lm",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "-ldl",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "-ltolua++",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "-L/usr/lib64",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "-lmagic",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 14,
+				"fragment" : "-ldaemon",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 15,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkeslogging.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkescore.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "-lm",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 17,
+				"fragment" : "-lrt",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 17,
+				"fragment" : "-lstdc++",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 15,
+				"fragment" : "-ldl",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "-lpthread",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 15,
+				"fragment" : "-luuid",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 19,
+				"fragment" : "/usr/lib64/libboost_system.so.1.83.0",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "/usr/lib64/libgtest.so.1.14.0",
+				"role" : "libraries"
+			}
+		],
+		"language" : "CXX"
+	},
+	"name" : "test_skill_parser",
+	"nameOnDisk" : "test_skill_parser",
+	"paths" : 
+	{
+		"build" : "fawkes/src/libs/execution_time_estimator/tests",
+		"source" : "fawkes/src/libs/execution_time_estimator/tests"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "fawkes/src/libs/execution_time_estimator/tests/test_skill_parser.cpp",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "EXECUTABLE"
+}

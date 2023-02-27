@@ -1,0 +1,43 @@
+file(REMOVE_RECURSE
+  "/home/adas/fawkes-robotino/lib/libfawkeswebview.pdb"
+  "/home/adas/fawkes-robotino/lib/libfawkeswebview.so"
+  "CMakeFiles/fawkeswebview.dir/access_log.cpp.o"
+  "CMakeFiles/fawkeswebview.dir/access_log.cpp.o.d"
+  "CMakeFiles/fawkeswebview.dir/error_reply.cpp.o"
+  "CMakeFiles/fawkeswebview.dir/error_reply.cpp.o.d"
+  "CMakeFiles/fawkeswebview.dir/file_reply.cpp.o"
+  "CMakeFiles/fawkeswebview.dir/file_reply.cpp.o.d"
+  "CMakeFiles/fawkeswebview.dir/nav_manager.cpp.o"
+  "CMakeFiles/fawkeswebview.dir/nav_manager.cpp.o.d"
+  "CMakeFiles/fawkeswebview.dir/page_footer_generator.cpp.o"
+  "CMakeFiles/fawkeswebview.dir/page_footer_generator.cpp.o.d"
+  "CMakeFiles/fawkeswebview.dir/page_header_generator.cpp.o"
+  "CMakeFiles/fawkeswebview.dir/page_header_generator.cpp.o.d"
+  "CMakeFiles/fawkeswebview.dir/page_reply.cpp.o"
+  "CMakeFiles/fawkeswebview.dir/page_reply.cpp.o.d"
+  "CMakeFiles/fawkeswebview.dir/redirect_reply.cpp.o"
+  "CMakeFiles/fawkeswebview.dir/redirect_reply.cpp.o.d"
+  "CMakeFiles/fawkeswebview.dir/reply.cpp.o"
+  "CMakeFiles/fawkeswebview.dir/reply.cpp.o.d"
+  "CMakeFiles/fawkeswebview.dir/request.cpp.o"
+  "CMakeFiles/fawkeswebview.dir/request.cpp.o.d"
+  "CMakeFiles/fawkeswebview.dir/request_dispatcher.cpp.o"
+  "CMakeFiles/fawkeswebview.dir/request_dispatcher.cpp.o.d"
+  "CMakeFiles/fawkeswebview.dir/request_manager.cpp.o"
+  "CMakeFiles/fawkeswebview.dir/request_manager.cpp.o.d"
+  "CMakeFiles/fawkeswebview.dir/rest_api.cpp.o"
+  "CMakeFiles/fawkeswebview.dir/rest_api.cpp.o.d"
+  "CMakeFiles/fawkeswebview.dir/rest_api_manager.cpp.o"
+  "CMakeFiles/fawkeswebview.dir/rest_api_manager.cpp.o.d"
+  "CMakeFiles/fawkeswebview.dir/server.cpp.o"
+  "CMakeFiles/fawkeswebview.dir/server.cpp.o.d"
+  "CMakeFiles/fawkeswebview.dir/url_manager.cpp.o"
+  "CMakeFiles/fawkeswebview.dir/url_manager.cpp.o.d"
+  "CMakeFiles/fawkeswebview.dir/user_verifier.cpp.o"
+  "CMakeFiles/fawkeswebview.dir/user_verifier.cpp.o.d"
+)
+
+# Per-language clean rules from dependency scanning.
+foreach(lang CXX)
+  include(CMakeFiles/fawkeswebview.dir/cmake_clean_${lang}.cmake OPTIONAL)
+endforeach()

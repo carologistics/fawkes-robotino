@@ -1,0 +1,819 @@
+{
+	"artifacts" : 
+	[
+		{
+			"path" : "/home/adas/fawkes-robotino/lib/libfawkestf.so"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"target_link_libraries",
+			"depend_on_tf",
+			"depend_on_pkgconfig_libs",
+			"optional_depend_on_pkgconfig_libs",
+			"depend_on_libcrypto",
+			"depend_on_lua",
+			"depend_on_boost_libs",
+			"target_compile_options",
+			"target_compile_definitions",
+			"set_common_properties_of_targets_recucursive",
+			"set_common_properties_of_targets",
+			"include_directories",
+			"include"
+		],
+		"files" : 
+		[
+			"fawkes/src/libs/tf/CMakeLists.txt",
+			"fawkes/cmake/tf.cmake",
+			"fawkes/cmake/utils.cmake",
+			"fawkes/src/libs/blackboard/CMakeLists.txt",
+			"fawkes/src/libs/netcomm/CMakeLists.txt",
+			"fawkes/cmake/libcrypto.cmake",
+			"fawkes/cmake/lua.cmake",
+			"fawkes/src/libs/utils/CMakeLists.txt",
+			"fawkes/src/libs/core/CMakeLists.txt",
+			"CMakeLists.txt",
+			"fawkes/cmake/base.cmake",
+			"fawkes/src/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 23,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 36,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 39,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 31,
+				"parent" : 3
+			},
+			{
+				"command" : 3,
+				"file" : 1,
+				"line" : 33,
+				"parent" : 3
+			},
+			{
+				"command" : 1,
+				"file" : 2,
+				"line" : 120,
+				"parent" : 5
+			},
+			{
+				"file" : 3
+			},
+			{
+				"command" : 1,
+				"file" : 3,
+				"line" : 57,
+				"parent" : 7
+			},
+			{
+				"file" : 4
+			},
+			{
+				"command" : 4,
+				"file" : 4,
+				"line" : 63,
+				"parent" : 9
+			},
+			{
+				"command" : 1,
+				"file" : 2,
+				"line" : 144,
+				"parent" : 10
+			},
+			{
+				"command" : 5,
+				"file" : 4,
+				"line" : 73,
+				"parent" : 9
+			},
+			{
+				"command" : 4,
+				"file" : 5,
+				"line" : 28,
+				"parent" : 12
+			},
+			{
+				"command" : 1,
+				"file" : 2,
+				"line" : 144,
+				"parent" : 13
+			},
+			{
+				"file" : 7
+			},
+			{
+				"command" : 6,
+				"file" : 7,
+				"line" : 86,
+				"parent" : 15
+			},
+			{
+				"command" : 1,
+				"file" : 6,
+				"line" : 34,
+				"parent" : 16
+			},
+			{
+				"command" : 4,
+				"file" : 7,
+				"line" : 88,
+				"parent" : 15
+			},
+			{
+				"command" : 1,
+				"file" : 2,
+				"line" : 144,
+				"parent" : 18
+			},
+			{
+				"command" : 4,
+				"file" : 7,
+				"line" : 98,
+				"parent" : 15
+			},
+			{
+				"command" : 1,
+				"file" : 2,
+				"line" : 144,
+				"parent" : 20
+			},
+			{
+				"command" : 1,
+				"file" : 7,
+				"line" : 105,
+				"parent" : 15
+			},
+			{
+				"file" : 8
+			},
+			{
+				"command" : 1,
+				"file" : 8,
+				"line" : 59,
+				"parent" : 23
+			},
+			{
+				"command" : 7,
+				"file" : 7,
+				"line" : 117,
+				"parent" : 15
+			},
+			{
+				"command" : 1,
+				"file" : 2,
+				"line" : 99,
+				"parent" : 25
+			},
+			{
+				"command" : 8,
+				"file" : 1,
+				"line" : 32,
+				"parent" : 3
+			},
+			{
+				"command" : 8,
+				"file" : 2,
+				"line" : 121,
+				"parent" : 5
+			},
+			{
+				"file" : 9
+			},
+			{
+				"command" : 11,
+				"file" : 9,
+				"line" : 38,
+				"parent" : 29
+			},
+			{
+				"command" : 10,
+				"file" : 2,
+				"line" : 232,
+				"parent" : 30
+			},
+			{
+				"command" : 10,
+				"file" : 2,
+				"line" : 196,
+				"parent" : 31
+			},
+			{
+				"command" : 10,
+				"file" : 2,
+				"line" : 196,
+				"parent" : 32
+			},
+			{
+				"command" : 10,
+				"file" : 2,
+				"line" : 196,
+				"parent" : 33
+			},
+			{
+				"command" : 10,
+				"file" : 2,
+				"line" : 196,
+				"parent" : 34
+			},
+			{
+				"command" : 9,
+				"file" : 2,
+				"line" : 209,
+				"parent" : 35
+			},
+			{
+				"command" : 9,
+				"file" : 0,
+				"line" : 42,
+				"parent" : 0
+			},
+			{
+				"command" : 13,
+				"file" : 9,
+				"line" : 29,
+				"parent" : 29
+			},
+			{
+				"file" : 10,
+				"parent" : 38
+			},
+			{
+				"command" : 12,
+				"file" : 10,
+				"line" : 51,
+				"parent" : 39
+			},
+			{
+				"command" : 12,
+				"file" : 9,
+				"line" : 31,
+				"parent" : 29
+			},
+			{
+				"file" : 11
+			},
+			{
+				"command" : 12,
+				"file" : 11,
+				"line" : 23,
+				"parent" : 42
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-g -fPIC"
+				},
+				{
+					"backtrace" : 27,
+					"fragment" : "-DHAVE_TF"
+				},
+				{
+					"backtrace" : 27,
+					"fragment" : "-DBT_INFINITY"
+				},
+				{
+					"backtrace" : 27,
+					"fragment" : "-DBT_USE_DOUBLE_PRECISION"
+				},
+				{
+					"backtrace" : 27,
+					"fragment" : "-DB_EULER_DEFAULT_ZYX"
+				},
+				{
+					"backtrace" : 27,
+					"fragment" : "-O2"
+				},
+				{
+					"backtrace" : 28,
+					"fragment" : "-I/usr/include/bullet"
+				},
+				{
+					"backtrace" : 28,
+					"fragment" : "-I/usr/include"
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-DHAVE_EXECINFO"
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-I/usr/include/lua-5.1"
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-DHAVE_LUA"
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-DLUADIR=\\\"/home/adas/fawkes-robotino/src/lua\\\""
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-DLUALIBDIR=\\\"/home/adas/fawkes-robotino/lib/lua\\\""
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-Wno-unused-function"
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-D_REENTRANT"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 36,
+					"define" : "BASEDIR=\"/home/adas/fawkes-robotino\""
+				},
+				{
+					"backtrace" : 36,
+					"define" : "BINDIR=\"\""
+				},
+				{
+					"backtrace" : 2,
+					"define" : "BOOST_SYSTEM_DYN_LINK"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "BOOST_SYSTEM_NO_LIB"
+				},
+				{
+					"backtrace" : 37,
+					"define" : "BT_EULER_DEFAULT_ZYX"
+				},
+				{
+					"backtrace" : 37,
+					"define" : "BT_INFINITY"
+				},
+				{
+					"backtrace" : 37,
+					"define" : "BT_USE_DOUBLE_PRECISION"
+				},
+				{
+					"backtrace" : 36,
+					"define" : "BUILDTYPE=\"\""
+				},
+				{
+					"backtrace" : 36,
+					"define" : "CONFDIR=\"/home/adas/fawkes-robotino/cfg\""
+				},
+				{
+					"backtrace" : 36,
+					"define" : "FAWKES_BASEDIR=\"/home/adas/fawkes-robotino\""
+				},
+				{
+					"backtrace" : 2,
+					"define" : "HAVE_AVAHI"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "HAVE_EXECINFO"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "HAVE_INOTIFY"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "HAVE_LIBMAGIC"
+				},
+				{
+					"backtrace" : 36,
+					"define" : "IFACEDIR=\"/home/adas/fawkes-robotino/lib/interfaces/\""
+				},
+				{
+					"backtrace" : 36,
+					"define" : "LIBDIR=\"/home/adas/fawkes-robotino/out/build/no-plugin-config/src/libs/\""
+				},
+				{
+					"backtrace" : 36,
+					"define" : "LOGDIR=\"/home/adas/fawkes-robotino/log\""
+				},
+				{
+					"backtrace" : 36,
+					"define" : "PLUGINDIR=\"/home/adas/fawkes-robotino/plugins/\""
+				},
+				{
+					"backtrace" : 36,
+					"define" : "RESDIR=\"/home/adas/fawkes-robotino/res\""
+				},
+				{
+					"backtrace" : 36,
+					"define" : "SOEXT=\"so\""
+				},
+				{
+					"backtrace" : 36,
+					"define" : "SRCDIR=\"/home/adas/fawkes-robotino/fawkes/src/libs/tf\""
+				},
+				{
+					"backtrace" : 36,
+					"define" : "TMPDIR=\"/tmp\""
+				},
+				{
+					"backtrace" : 36,
+					"define" : "USERDIR=\".fawkes\""
+				},
+				{
+					"define" : "fawkestf_EXPORTS"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 40,
+					"path" : "/home/adas/fawkes-robotino/lib"
+				},
+				{
+					"backtrace" : 41,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src"
+				},
+				{
+					"backtrace" : 43,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs/core/core"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs/utils/core"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs/netcomm/netcomm"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs/interface/interface"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs/interfaces/.."
+				}
+			],
+			"language" : "CXX",
+			"sourceIndexes" : 
+			[
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "fawkescore::@96de920f2c1ee174bd2c"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "fawkesutils::@bbf8304ef445661713ec"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "fawkeslogging::@2a8715505af097febee1"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "fawkesinterface::@0652ad9b532afe87f7bc"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "fawkesnetcomm::@8d332be442fab0c75e95"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "fawkesblackboard::@c34c7108ff86799f515b"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "TransformInterface::@95a7ec6ccb46bc81bd11"
+		}
+	],
+	"id" : "fawkestf::@afa33a25a108ef6a3b06",
+	"link" : 
+	{
+		"commandFragments" : 
+		[
+			{
+				"fragment" : "",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "-Wl,-rpath,/home/adas/fawkes-robotino/lib:/home/adas/fawkes-robotino/lib/interfaces",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkesblackboard.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "/home/adas/fawkes-robotino/lib/interfaces/libTransformInterface.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-lLinearMath",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-lm",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 6,
+				"fragment" : "-L/usr/lib64",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 6,
+				"fragment" : "-lBulletSoftBody",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 6,
+				"fragment" : "-lBulletDynamics",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 6,
+				"fragment" : "-lBulletCollision",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-lLinearMath",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkesnetcomm.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 11,
+				"fragment" : "-lavahi-common",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 11,
+				"fragment" : "-lavahi-client",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 14,
+				"fragment" : "-lcrypto",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkesinterface.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkesutils.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 6,
+				"fragment" : "-L/usr/lib64",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 17,
+				"fragment" : "-llua-5.1",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 17,
+				"fragment" : "-ldl",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 17,
+				"fragment" : "-ltolua++",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 19,
+				"fragment" : "-lmagic",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 21,
+				"fragment" : "-ldaemon",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 22,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkeslogging.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkescore.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 24,
+				"fragment" : "-lm",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 24,
+				"fragment" : "-lrt",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 22,
+				"fragment" : "-ldl",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 24,
+				"fragment" : "-lpthread",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 24,
+				"fragment" : "-lstdc++",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 22,
+				"fragment" : "-luuid",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 26,
+				"fragment" : "/usr/lib64/libboost_system.so.1.83.0",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 6,
+				"fragment" : "-lBulletSoftBody",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 6,
+				"fragment" : "-lBulletDynamics",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 6,
+				"fragment" : "-lBulletCollision",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-lm",
+				"role" : "libraries"
+			}
+		],
+		"language" : "CXX"
+	},
+	"name" : "fawkestf",
+	"nameOnDisk" : "libfawkestf.so",
+	"paths" : 
+	{
+		"build" : "fawkes/src/libs/tf",
+		"source" : "fawkes/src/libs/tf"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7
+			]
+		},
+		{
+			"name" : "Header Files",
+			"sourceIndexes" : 
+			[
+				8
+			]
+		},
+		{
+			"name" : "CMake Rules",
+			"sourceIndexes" : 
+			[
+				9
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "fawkes/src/libs/tf/time_cache.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "fawkes/src/libs/tf/static_cache.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "fawkes/src/libs/tf/transform_listener.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "fawkes/src/libs/tf/transformer.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "fawkes/src/libs/tf/exceptions.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "fawkes/src/libs/tf/buffer_core.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"isGenerated" : true,
+			"path" : "out/build/no-plugin-config/fawkes/src/libs/tf/fawkestf_tolua.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "fawkes/src/libs/tf/transform_publisher.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "fawkes/src/libs/tf/types.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "out/build/no-plugin-config/fawkes/src/libs/tf/fawkestf_tolua.pkg.rule",
+			"sourceGroupIndex" : 2
+		}
+	],
+	"type" : "SHARED_LIBRARY"
+}

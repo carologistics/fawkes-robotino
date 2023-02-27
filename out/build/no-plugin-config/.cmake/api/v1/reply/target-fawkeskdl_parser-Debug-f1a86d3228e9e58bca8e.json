@@ -1,0 +1,525 @@
+{
+	"artifacts" : 
+	[
+		{
+			"path" : "/home/adas/fawkes-robotino/lib/libfawkeskdl_parser.so"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"target_link_libraries",
+			"optional_depend_on_pkgconfig_libs",
+			"depend_on_kdl_parser",
+			"depend_on_pkgconfig_libs",
+			"depend_on_eigen3",
+			"target_compile_options",
+			"target_compile_definitions",
+			"set_common_properties_of_targets_recucursive",
+			"set_common_properties_of_targets",
+			"include_directories",
+			"include"
+		],
+		"files" : 
+		[
+			"fawkes/src/libs/kdl_parser/CMakeLists.txt",
+			"fawkes/cmake/utils.cmake",
+			"fawkes/cmake/kdl_parser.cmake",
+			"fawkes/cmake/eigen3.cmake",
+			"fawkes/src/libs/core/CMakeLists.txt",
+			"CMakeLists.txt",
+			"fawkes/cmake/base.cmake",
+			"fawkes/src/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 24,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 28,
+				"parent" : 0
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 29,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 2,
+				"line" : 41,
+				"parent" : 3
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 144,
+				"parent" : 4
+			},
+			{
+				"command" : 4,
+				"file" : 2,
+				"line" : 45,
+				"parent" : 3
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 120,
+				"parent" : 6
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 120,
+				"parent" : 6
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 30,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 3,
+				"line" : 34,
+				"parent" : 9
+			},
+			{
+				"file" : 4
+			},
+			{
+				"command" : 1,
+				"file" : 4,
+				"line" : 59,
+				"parent" : 11
+			},
+			{
+				"command" : 2,
+				"file" : 2,
+				"line" : 34,
+				"parent" : 3
+			},
+			{
+				"command" : 6,
+				"file" : 1,
+				"line" : 145,
+				"parent" : 13
+			},
+			{
+				"command" : 6,
+				"file" : 2,
+				"line" : 37,
+				"parent" : 3
+			},
+			{
+				"command" : 6,
+				"file" : 1,
+				"line" : 145,
+				"parent" : 4
+			},
+			{
+				"command" : 6,
+				"file" : 1,
+				"line" : 121,
+				"parent" : 6
+			},
+			{
+				"command" : 6,
+				"file" : 1,
+				"line" : 121,
+				"parent" : 6
+			},
+			{
+				"command" : 6,
+				"file" : 3,
+				"line" : 31,
+				"parent" : 9
+			},
+			{
+				"command" : 6,
+				"file" : 3,
+				"line" : 39,
+				"parent" : 9
+			},
+			{
+				"file" : 5
+			},
+			{
+				"command" : 9,
+				"file" : 5,
+				"line" : 38,
+				"parent" : 21
+			},
+			{
+				"command" : 8,
+				"file" : 1,
+				"line" : 232,
+				"parent" : 22
+			},
+			{
+				"command" : 8,
+				"file" : 1,
+				"line" : 196,
+				"parent" : 23
+			},
+			{
+				"command" : 8,
+				"file" : 1,
+				"line" : 196,
+				"parent" : 24
+			},
+			{
+				"command" : 8,
+				"file" : 1,
+				"line" : 196,
+				"parent" : 25
+			},
+			{
+				"command" : 8,
+				"file" : 1,
+				"line" : 196,
+				"parent" : 26
+			},
+			{
+				"command" : 7,
+				"file" : 1,
+				"line" : 209,
+				"parent" : 27
+			},
+			{
+				"command" : 11,
+				"file" : 5,
+				"line" : 29,
+				"parent" : 21
+			},
+			{
+				"file" : 6,
+				"parent" : 29
+			},
+			{
+				"command" : 10,
+				"file" : 6,
+				"line" : 51,
+				"parent" : 30
+			},
+			{
+				"command" : 10,
+				"file" : 5,
+				"line" : 31,
+				"parent" : 21
+			},
+			{
+				"file" : 7
+			},
+			{
+				"command" : 10,
+				"file" : 7,
+				"line" : 23,
+				"parent" : 33
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-g -fPIC"
+				},
+				{
+					"backtrace" : 14,
+					"fragment" : "-I/usr/lib64/ros2-humble/include/urdfdom_headers"
+				},
+				{
+					"backtrace" : 15,
+					"fragment" : "-DHAVE_URDFDOM_TYPES_H"
+				},
+				{
+					"backtrace" : 16,
+					"fragment" : "-I/usr/lib64/pkgconfig/../../include"
+				},
+				{
+					"backtrace" : 16,
+					"fragment" : "-I/usr/include/eigen3"
+				},
+				{
+					"backtrace" : 17,
+					"fragment" : "-I/usr/lib64/ros2-humble/lib64/pkgconfig/../../include/urdfdom"
+				},
+				{
+					"backtrace" : 17,
+					"fragment" : "-I/usr/include"
+				},
+				{
+					"backtrace" : 18,
+					"fragment" : "-DTIXML_USE_STL=YES"
+				},
+				{
+					"backtrace" : 19,
+					"fragment" : "-DHAVE_EIGEN3"
+				},
+				{
+					"backtrace" : 19,
+					"fragment" : "-DEIGEN_USE_NEW_STDVECTOR"
+				},
+				{
+					"backtrace" : 19,
+					"fragment" : "-DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET"
+				},
+				{
+					"backtrace" : 20,
+					"fragment" : "-Wno-deprecated-declarations"
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-DHAVE_EXECINFO"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 28,
+					"define" : "BASEDIR=\"/home/adas/fawkes-robotino\""
+				},
+				{
+					"backtrace" : 28,
+					"define" : "BINDIR=\"\""
+				},
+				{
+					"backtrace" : 28,
+					"define" : "BUILDTYPE=\"\""
+				},
+				{
+					"backtrace" : 28,
+					"define" : "CONFDIR=\"/home/adas/fawkes-robotino/cfg\""
+				},
+				{
+					"backtrace" : 28,
+					"define" : "FAWKES_BASEDIR=\"/home/adas/fawkes-robotino\""
+				},
+				{
+					"backtrace" : 28,
+					"define" : "IFACEDIR=\"/home/adas/fawkes-robotino/lib/interfaces/\""
+				},
+				{
+					"backtrace" : 28,
+					"define" : "LIBDIR=\"/home/adas/fawkes-robotino/out/build/no-plugin-config/src/libs/\""
+				},
+				{
+					"backtrace" : 28,
+					"define" : "LOGDIR=\"/home/adas/fawkes-robotino/log\""
+				},
+				{
+					"backtrace" : 28,
+					"define" : "PLUGINDIR=\"/home/adas/fawkes-robotino/plugins/\""
+				},
+				{
+					"backtrace" : 28,
+					"define" : "RESDIR=\"/home/adas/fawkes-robotino/res\""
+				},
+				{
+					"backtrace" : 28,
+					"define" : "SOEXT=\"so\""
+				},
+				{
+					"backtrace" : 28,
+					"define" : "SRCDIR=\"/home/adas/fawkes-robotino/fawkes/src/libs/kdl_parser\""
+				},
+				{
+					"backtrace" : 28,
+					"define" : "TMPDIR=\"/tmp\""
+				},
+				{
+					"backtrace" : 28,
+					"define" : "USERDIR=\".fawkes\""
+				},
+				{
+					"define" : "fawkeskdl_parser_EXPORTS"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 31,
+					"path" : "/home/adas/fawkes-robotino/lib"
+				},
+				{
+					"backtrace" : 32,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src"
+				},
+				{
+					"backtrace" : 34,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs/core/core"
+				}
+			],
+			"language" : "CXX",
+			"sourceIndexes" : 
+			[
+				0,
+				1
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "fawkescore::@96de920f2c1ee174bd2c"
+		}
+	],
+	"id" : "fawkeskdl_parser::@bc8c14d5bd2de521fb86",
+	"link" : 
+	{
+		"commandFragments" : 
+		[
+			{
+				"fragment" : "",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "-Wl,-rpath,/home/adas/fawkes-robotino/lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkescore.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "-L/usr/lib64/pkgconfig/../../lib64",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "-lorocos-kdl",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 7,
+				"fragment" : "-L/usr/lib64/ros2-humble/lib64/pkgconfig/../../lib64",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 7,
+				"fragment" : "-lurdfdom_sensor",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 7,
+				"fragment" : "-lurdfdom_model_state",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 7,
+				"fragment" : "-lurdfdom_model",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 7,
+				"fragment" : "-lurdfdom_world",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 7,
+				"fragment" : "-L/usr/lib64",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 7,
+				"fragment" : "-lconsole_bridge",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 7,
+				"fragment" : "-L/usr/lib64",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "-ltinyxml",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "-ltolua++",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "-lpthread",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "-lstdc++",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "-lm",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "-lrt",
+				"role" : "libraries"
+			}
+		],
+		"language" : "CXX"
+	},
+	"name" : "fawkeskdl_parser",
+	"nameOnDisk" : "libfawkeskdl_parser.so",
+	"paths" : 
+	{
+		"build" : "fawkes/src/libs/kdl_parser",
+		"source" : "fawkes/src/libs/kdl_parser"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0,
+				1
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "fawkes/src/libs/kdl_parser/model.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "fawkes/src/libs/kdl_parser/kdl_parser.cpp",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "SHARED_LIBRARY"
+}

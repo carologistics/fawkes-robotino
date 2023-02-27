@@ -1,0 +1,536 @@
+{
+	"artifacts" : 
+	[
+		{
+			"path" : "/home/adas/fawkes-robotino/lib/lua/fawkesutils.so"
+		}
+	],
+	"backtrace" : 2,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"generate_lua_lib",
+			"target_link_libraries",
+			"depend_on_lua",
+			"optional_depend_on_pkgconfig_libs",
+			"depend_on_boost_libs",
+			"target_compile_options",
+			"target_compile_definitions",
+			"set_common_properties_of_targets_recucursive",
+			"set_common_properties_of_targets",
+			"include_directories",
+			"include"
+		],
+		"files" : 
+		[
+			"fawkes/cmake/lua.cmake",
+			"fawkes/src/libs/utils/CMakeLists.txt",
+			"fawkes/cmake/utils.cmake",
+			"fawkes/src/libs/core/CMakeLists.txt",
+			"CMakeLists.txt",
+			"fawkes/cmake/base.cmake",
+			"fawkes/src/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 1
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 85,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 59,
+				"parent" : 1
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 63,
+				"parent" : 1
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 34,
+				"parent" : 3
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 64,
+				"parent" : 1
+			},
+			{
+				"command" : 4,
+				"file" : 1,
+				"line" : 88,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 2,
+				"line" : 144,
+				"parent" : 6
+			},
+			{
+				"command" : 4,
+				"file" : 1,
+				"line" : 98,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 2,
+				"line" : 144,
+				"parent" : 8
+			},
+			{
+				"command" : 2,
+				"file" : 1,
+				"line" : 105,
+				"parent" : 0
+			},
+			{
+				"file" : 3
+			},
+			{
+				"command" : 2,
+				"file" : 3,
+				"line" : 59,
+				"parent" : 11
+			},
+			{
+				"command" : 5,
+				"file" : 1,
+				"line" : 117,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 2,
+				"line" : 99,
+				"parent" : 13
+			},
+			{
+				"command" : 6,
+				"file" : 0,
+				"line" : 31,
+				"parent" : 3
+			},
+			{
+				"file" : 4
+			},
+			{
+				"command" : 9,
+				"file" : 4,
+				"line" : 38,
+				"parent" : 16
+			},
+			{
+				"command" : 8,
+				"file" : 2,
+				"line" : 232,
+				"parent" : 17
+			},
+			{
+				"command" : 8,
+				"file" : 2,
+				"line" : 196,
+				"parent" : 18
+			},
+			{
+				"command" : 8,
+				"file" : 2,
+				"line" : 196,
+				"parent" : 19
+			},
+			{
+				"command" : 8,
+				"file" : 2,
+				"line" : 196,
+				"parent" : 20
+			},
+			{
+				"command" : 8,
+				"file" : 2,
+				"line" : 196,
+				"parent" : 21
+			},
+			{
+				"command" : 7,
+				"file" : 2,
+				"line" : 209,
+				"parent" : 22
+			},
+			{
+				"command" : 11,
+				"file" : 4,
+				"line" : 29,
+				"parent" : 16
+			},
+			{
+				"file" : 5,
+				"parent" : 24
+			},
+			{
+				"command" : 10,
+				"file" : 5,
+				"line" : 51,
+				"parent" : 25
+			},
+			{
+				"command" : 10,
+				"file" : 4,
+				"line" : 31,
+				"parent" : 16
+			},
+			{
+				"file" : 6
+			},
+			{
+				"command" : 10,
+				"file" : 6,
+				"line" : 23,
+				"parent" : 28
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-g -fPIC"
+				},
+				{
+					"backtrace" : 15,
+					"fragment" : "-I/usr/include/lua-5.1"
+				},
+				{
+					"backtrace" : 15,
+					"fragment" : "-DHAVE_LUA"
+				},
+				{
+					"backtrace" : 15,
+					"fragment" : "-DLUADIR=\\\"/home/adas/fawkes-robotino/src/lua\\\""
+				},
+				{
+					"backtrace" : 15,
+					"fragment" : "-DLUALIBDIR=\\\"/home/adas/fawkes-robotino/lib/lua\\\""
+				},
+				{
+					"backtrace" : 15,
+					"fragment" : "-Wno-unused-function"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-DHAVE_EXECINFO"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-I/usr/include"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-D_REENTRANT"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 23,
+					"define" : "BASEDIR=\"/home/adas/fawkes-robotino\""
+				},
+				{
+					"backtrace" : 23,
+					"define" : "BINDIR=\"\""
+				},
+				{
+					"backtrace" : 5,
+					"define" : "BOOST_SYSTEM_DYN_LINK"
+				},
+				{
+					"backtrace" : 5,
+					"define" : "BOOST_SYSTEM_NO_LIB"
+				},
+				{
+					"backtrace" : 23,
+					"define" : "BUILDTYPE=\"\""
+				},
+				{
+					"backtrace" : 23,
+					"define" : "CONFDIR=\"/home/adas/fawkes-robotino/cfg\""
+				},
+				{
+					"backtrace" : 23,
+					"define" : "FAWKES_BASEDIR=\"/home/adas/fawkes-robotino\""
+				},
+				{
+					"backtrace" : 5,
+					"define" : "HAVE_EXECINFO"
+				},
+				{
+					"backtrace" : 5,
+					"define" : "HAVE_INOTIFY"
+				},
+				{
+					"backtrace" : 5,
+					"define" : "HAVE_LIBMAGIC"
+				},
+				{
+					"backtrace" : 23,
+					"define" : "IFACEDIR=\"/home/adas/fawkes-robotino/lib/interfaces/\""
+				},
+				{
+					"backtrace" : 23,
+					"define" : "LIBDIR=\"/home/adas/fawkes-robotino/out/build/no-plugin-config/src/libs/\""
+				},
+				{
+					"backtrace" : 23,
+					"define" : "LOGDIR=\"/home/adas/fawkes-robotino/log\""
+				},
+				{
+					"backtrace" : 23,
+					"define" : "PLUGINDIR=\"/home/adas/fawkes-robotino/plugins/\""
+				},
+				{
+					"backtrace" : 23,
+					"define" : "RESDIR=\"/home/adas/fawkes-robotino/res\""
+				},
+				{
+					"backtrace" : 23,
+					"define" : "SOEXT=\"so\""
+				},
+				{
+					"backtrace" : 23,
+					"define" : "SRCDIR=\"/home/adas/fawkes-robotino/fawkes/src/libs/utils\""
+				},
+				{
+					"backtrace" : 23,
+					"define" : "TMPDIR=\"/tmp\""
+				},
+				{
+					"backtrace" : 23,
+					"define" : "USERDIR=\".fawkes\""
+				},
+				{
+					"define" : "fawkesutils_tolua_EXPORTS"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 26,
+					"path" : "/home/adas/fawkes-robotino/lib"
+				},
+				{
+					"backtrace" : 27,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src"
+				},
+				{
+					"backtrace" : 29,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs/core/core"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs/utils/core"
+				}
+			],
+			"language" : "CXX",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 5,
+			"id" : "fawkescore::@96de920f2c1ee174bd2c"
+		},
+		{
+			"backtrace" : 5,
+			"id" : "fawkesutils::@bbf8304ef445661713ec"
+		},
+		{
+			"backtrace" : 5,
+			"id" : "fawkeslogging::@2a8715505af097febee1"
+		}
+	],
+	"id" : "fawkesutils_tolua::@bbf8304ef445661713ec",
+	"link" : 
+	{
+		"commandFragments" : 
+		[
+			{
+				"fragment" : "",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "-Wl,-rpath,/home/adas/fawkes-robotino/lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-llua-5.1",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-lm",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-ldl",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-ltolua++",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkesutils.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-llua-5.1",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-lm",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-ldl",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-ltolua++",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 7,
+				"fragment" : "-L/usr/lib64",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 7,
+				"fragment" : "-lmagic",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 9,
+				"fragment" : "-ldaemon",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkeslogging.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkescore.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "-lm",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "-lrt",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "-ldl",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "-lpthread",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "-lstdc++",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "-luuid",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 14,
+				"fragment" : "/usr/lib64/libboost_system.so.1.83.0",
+				"role" : "libraries"
+			}
+		],
+		"language" : "CXX"
+	},
+	"name" : "fawkesutils_tolua",
+	"nameOnDisk" : "fawkesutils.so",
+	"paths" : 
+	{
+		"build" : "fawkes/src/libs/utils",
+		"source" : "fawkes/src/libs/utils"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		},
+		{
+			"name" : "CMake Rules",
+			"sourceIndexes" : 
+			[
+				1
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"isGenerated" : true,
+			"path" : "out/build/no-plugin-config/fawkes/src/libs/utils/fawkesutils_tolua.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "out/build/no-plugin-config/fawkes/src/libs/utils/fawkesutils_tolua.pkg.rule",
+			"sourceGroupIndex" : 1
+		}
+	],
+	"type" : "SHARED_LIBRARY"
+}

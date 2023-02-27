@@ -1,0 +1,614 @@
+{
+	"artifacts" : 
+	[
+		{
+			"path" : "/home/adas/fawkes-robotino/lib/lua/interfaces/LaserClusterInterface.so"
+		}
+	],
+	"backtrace" : 2,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"generate_interface_from_xml",
+			"target_link_libraries",
+			"depend_on_lua",
+			"optional_depend_on_pkgconfig_libs",
+			"depend_on_boost_libs",
+			"add_custom_command",
+			"target_compile_options",
+			"target_compile_definitions",
+			"set_common_properties_of_targets_recucursive",
+			"set_common_properties_of_targets",
+			"include_directories",
+			"include"
+		],
+		"files" : 
+		[
+			"fawkes/cmake/lua.cmake",
+			"fawkes/src/plugins/laser-cluster/interfaces/CMakeLists.txt",
+			"fawkes/cmake/utils.cmake",
+			"fawkes/src/libs/utils/CMakeLists.txt",
+			"fawkes/src/libs/core/CMakeLists.txt",
+			"CMakeLists.txt",
+			"fawkes/cmake/base.cmake",
+			"fawkes/src/CMakeLists.txt",
+			"fawkes/src/plugins/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 1
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 23,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 81,
+				"parent" : 1
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 82,
+				"parent" : 1
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 34,
+				"parent" : 3
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 89,
+				"parent" : 1
+			},
+			{
+				"file" : 3
+			},
+			{
+				"command" : 4,
+				"file" : 3,
+				"line" : 88,
+				"parent" : 6
+			},
+			{
+				"command" : 2,
+				"file" : 2,
+				"line" : 144,
+				"parent" : 7
+			},
+			{
+				"command" : 4,
+				"file" : 3,
+				"line" : 98,
+				"parent" : 6
+			},
+			{
+				"command" : 2,
+				"file" : 2,
+				"line" : 144,
+				"parent" : 9
+			},
+			{
+				"command" : 2,
+				"file" : 3,
+				"line" : 105,
+				"parent" : 6
+			},
+			{
+				"file" : 4
+			},
+			{
+				"command" : 2,
+				"file" : 4,
+				"line" : 59,
+				"parent" : 12
+			},
+			{
+				"command" : 5,
+				"file" : 3,
+				"line" : 117,
+				"parent" : 6
+			},
+			{
+				"command" : 2,
+				"file" : 2,
+				"line" : 99,
+				"parent" : 14
+			},
+			{
+				"command" : 6,
+				"file" : 0,
+				"line" : 72,
+				"parent" : 1
+			},
+			{
+				"command" : 7,
+				"file" : 0,
+				"line" : 31,
+				"parent" : 3
+			},
+			{
+				"file" : 5
+			},
+			{
+				"command" : 10,
+				"file" : 5,
+				"line" : 38,
+				"parent" : 18
+			},
+			{
+				"command" : 9,
+				"file" : 2,
+				"line" : 232,
+				"parent" : 19
+			},
+			{
+				"command" : 9,
+				"file" : 2,
+				"line" : 196,
+				"parent" : 20
+			},
+			{
+				"command" : 9,
+				"file" : 2,
+				"line" : 196,
+				"parent" : 21
+			},
+			{
+				"command" : 9,
+				"file" : 2,
+				"line" : 196,
+				"parent" : 22
+			},
+			{
+				"command" : 9,
+				"file" : 2,
+				"line" : 196,
+				"parent" : 23
+			},
+			{
+				"command" : 9,
+				"file" : 2,
+				"line" : 196,
+				"parent" : 24
+			},
+			{
+				"command" : 8,
+				"file" : 2,
+				"line" : 209,
+				"parent" : 25
+			},
+			{
+				"command" : 12,
+				"file" : 5,
+				"line" : 29,
+				"parent" : 18
+			},
+			{
+				"file" : 6,
+				"parent" : 27
+			},
+			{
+				"command" : 11,
+				"file" : 6,
+				"line" : 51,
+				"parent" : 28
+			},
+			{
+				"command" : 11,
+				"file" : 5,
+				"line" : 31,
+				"parent" : 18
+			},
+			{
+				"file" : 7
+			},
+			{
+				"command" : 11,
+				"file" : 7,
+				"line" : 23,
+				"parent" : 31
+			},
+			{
+				"command" : 11,
+				"file" : 7,
+				"line" : 25,
+				"parent" : 31
+			},
+			{
+				"file" : 8
+			},
+			{
+				"command" : 11,
+				"file" : 8,
+				"line" : 26,
+				"parent" : 34
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-g -fPIC"
+				},
+				{
+					"backtrace" : 17,
+					"fragment" : "-I/usr/include/lua-5.1"
+				},
+				{
+					"backtrace" : 17,
+					"fragment" : "-DHAVE_LUA"
+				},
+				{
+					"backtrace" : 17,
+					"fragment" : "-DLUADIR=\\\"/home/adas/fawkes-robotino/src/lua\\\""
+				},
+				{
+					"backtrace" : 17,
+					"fragment" : "-DLUALIBDIR=\\\"/home/adas/fawkes-robotino/lib/lua\\\""
+				},
+				{
+					"backtrace" : 17,
+					"fragment" : "-Wno-unused-function"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-DHAVE_EXECINFO"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-I/usr/include"
+				},
+				{
+					"backtrace" : 5,
+					"fragment" : "-D_REENTRANT"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 26,
+					"define" : "BASEDIR=\"/home/adas/fawkes-robotino\""
+				},
+				{
+					"backtrace" : 26,
+					"define" : "BINDIR=\"\""
+				},
+				{
+					"backtrace" : 5,
+					"define" : "BOOST_SYSTEM_DYN_LINK"
+				},
+				{
+					"backtrace" : 5,
+					"define" : "BOOST_SYSTEM_NO_LIB"
+				},
+				{
+					"backtrace" : 26,
+					"define" : "BUILDTYPE=\"\""
+				},
+				{
+					"backtrace" : 26,
+					"define" : "CONFDIR=\"/home/adas/fawkes-robotino/cfg\""
+				},
+				{
+					"backtrace" : 26,
+					"define" : "FAWKES_BASEDIR=\"/home/adas/fawkes-robotino\""
+				},
+				{
+					"backtrace" : 5,
+					"define" : "HAVE_EXECINFO"
+				},
+				{
+					"backtrace" : 5,
+					"define" : "HAVE_INOTIFY"
+				},
+				{
+					"backtrace" : 5,
+					"define" : "HAVE_LIBMAGIC"
+				},
+				{
+					"backtrace" : 26,
+					"define" : "IFACEDIR=\"/home/adas/fawkes-robotino/lib/interfaces/\""
+				},
+				{
+					"backtrace" : 26,
+					"define" : "LIBDIR=\"/home/adas/fawkes-robotino/out/build/no-plugin-config/src/libs/\""
+				},
+				{
+					"backtrace" : 26,
+					"define" : "LOGDIR=\"/home/adas/fawkes-robotino/log\""
+				},
+				{
+					"define" : "LaserClusterInterface_tolua_EXPORTS"
+				},
+				{
+					"backtrace" : 26,
+					"define" : "PLUGINDIR=\"/home/adas/fawkes-robotino/plugins/\""
+				},
+				{
+					"backtrace" : 26,
+					"define" : "RESDIR=\"/home/adas/fawkes-robotino/res\""
+				},
+				{
+					"backtrace" : 26,
+					"define" : "SOEXT=\"so\""
+				},
+				{
+					"backtrace" : 26,
+					"define" : "SRCDIR=\"/home/adas/fawkes-robotino/fawkes/src/plugins/laser-cluster/interfaces\""
+				},
+				{
+					"backtrace" : 26,
+					"define" : "TMPDIR=\"/tmp\""
+				},
+				{
+					"backtrace" : 26,
+					"define" : "USERDIR=\".fawkes\""
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 29,
+					"path" : "/home/adas/fawkes-robotino/lib"
+				},
+				{
+					"backtrace" : 30,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src"
+				},
+				{
+					"backtrace" : 32,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs"
+				},
+				{
+					"backtrace" : 33,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/."
+				},
+				{
+					"backtrace" : 35,
+					"path" : "/home/adas/fawkes-robotino/src"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs/core/core"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs/utils/core"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs/interface/interface"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/plugins/laser-cluster/interfaces/.."
+				}
+			],
+			"language" : "CXX",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 5,
+			"id" : "fawkescore::@96de920f2c1ee174bd2c"
+		},
+		{
+			"backtrace" : 5,
+			"id" : "fawkesutils::@bbf8304ef445661713ec"
+		},
+		{
+			"backtrace" : 5,
+			"id" : "fawkeslogging::@2a8715505af097febee1"
+		},
+		{
+			"backtrace" : 5,
+			"id" : "fawkesinterface::@0652ad9b532afe87f7bc"
+		},
+		{
+			"backtrace" : 16,
+			"id" : "ffifacegen::@95a7ec6ccb46bc81bd11"
+		},
+		{
+			"backtrace" : 5,
+			"id" : "LaserClusterInterface::@9dad1a12e1ec17b3a2a1"
+		}
+	],
+	"id" : "LaserClusterInterface_tolua::@9dad1a12e1ec17b3a2a1",
+	"link" : 
+	{
+		"commandFragments" : 
+		[
+			{
+				"fragment" : "",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "-Wl,-rpath,/home/adas/fawkes-robotino/lib/interfaces:/home/adas/fawkes-robotino/lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-llua-5.1",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-lm",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-ldl",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-ltolua++",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "/home/adas/fawkes-robotino/lib/interfaces/libLaserClusterInterface.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkesinterface.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkesutils.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-llua-5.1",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-lm",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-ldl",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-ltolua++",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "-L/usr/lib64",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "-lmagic",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "-ldaemon",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 11,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkeslogging.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkescore.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 13,
+				"fragment" : "-lm",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 13,
+				"fragment" : "-lrt",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 11,
+				"fragment" : "-ldl",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 13,
+				"fragment" : "-lpthread",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 13,
+				"fragment" : "-lstdc++",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 11,
+				"fragment" : "-luuid",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 15,
+				"fragment" : "/usr/lib64/libboost_system.so.1.83.0",
+				"role" : "libraries"
+			}
+		],
+		"language" : "CXX"
+	},
+	"name" : "LaserClusterInterface_tolua",
+	"nameOnDisk" : "LaserClusterInterface.so",
+	"paths" : 
+	{
+		"build" : "fawkes/src/plugins/laser-cluster/interfaces",
+		"source" : "fawkes/src/plugins/laser-cluster/interfaces"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		},
+		{
+			"name" : "CMake Rules",
+			"sourceIndexes" : 
+			[
+				1,
+				2
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"isGenerated" : true,
+			"path" : "out/build/no-plugin-config/fawkes/src/plugins/laser-cluster/interfaces/interfaces_LaserClusterInterface_tolua.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "out/build/no-plugin-config/fawkes/src/plugins/laser-cluster/interfaces/interfaces_LaserClusterInterface_tolua.pkg.rule",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "fawkes/src/plugins/laser-cluster/interfaces/LaserClusterInterface.tolua.rule",
+			"sourceGroupIndex" : 1
+		}
+	],
+	"type" : "SHARED_LIBRARY"
+}

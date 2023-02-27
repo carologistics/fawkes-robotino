@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "src/plugins/conveyor_pose/interfaces",
+		"source" : "src/plugins/conveyor_pose/interfaces"
+	}
+}

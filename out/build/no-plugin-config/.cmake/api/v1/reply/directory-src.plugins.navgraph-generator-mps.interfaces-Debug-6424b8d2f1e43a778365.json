@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "src/plugins/navgraph-generator-mps/interfaces",
+		"source" : "src/plugins/navgraph-generator-mps/interfaces"
+	}
+}

@@ -1,0 +1,2008 @@
+{
+	"artifacts" : 
+	[
+		{
+			"path" : "/home/adas/fawkes-robotino/plugins/realsense2.so"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"target_link_libraries",
+			"depend_on_pkgconfig_libs",
+			"depend_on_pcl",
+			"depend_on_eigen3",
+			"depend_on_tf",
+			"optional_depend_on_pkgconfig_libs",
+			"depend_on_yamlcpp",
+			"depend_on_libcrypto",
+			"depend_on_fvconf",
+			"depend_on_lua",
+			"depend_on_boost_libs",
+			"target_compile_options",
+			"target_compile_definitions",
+			"set_common_properties_of_targets_recucursive",
+			"set_common_properties_of_targets",
+			"include_directories",
+			"include"
+		],
+		"files" : 
+		[
+			"fawkes/src/plugins/realsense2/CMakeLists.txt",
+			"fawkes/cmake/utils.cmake",
+			"fawkes/cmake/pcl.cmake",
+			"fawkes/cmake/eigen3.cmake",
+			"fawkes/cmake/tf.cmake",
+			"fawkes/src/libs/aspect/CMakeLists.txt",
+			"fawkes/cmake/yamlcpp.cmake",
+			"fawkes/src/libs/config/CMakeLists.txt",
+			"fawkes/src/libs/plugin/CMakeLists.txt",
+			"fawkes/src/libs/baseapp/CMakeLists.txt",
+			"fawkes/src/libs/tf/CMakeLists.txt",
+			"fawkes/src/libs/netcomm/CMakeLists.txt",
+			"fawkes/cmake/libcrypto.cmake",
+			"fawkes/src/libs/fvutils/CMakeLists.txt",
+			"fawkes/cmake/fvconf.cmake",
+			"fawkes/cmake/lua.cmake",
+			"fawkes/src/libs/utils/CMakeLists.txt",
+			"fawkes/src/libs/core/CMakeLists.txt",
+			"CMakeLists.txt",
+			"fawkes/cmake/base.cmake",
+			"fawkes/src/CMakeLists.txt",
+			"fawkes/src/plugins/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 29,
+				"parent" : 0
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 31,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 2,
+				"line" : 51,
+				"parent" : 2
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 120,
+				"parent" : 3
+			},
+			{
+				"command" : 4,
+				"file" : 2,
+				"line" : 52,
+				"parent" : 2
+			},
+			{
+				"command" : 1,
+				"file" : 3,
+				"line" : 34,
+				"parent" : 5
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 32,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 4,
+				"line" : 31,
+				"parent" : 7
+			},
+			{
+				"command" : 2,
+				"file" : 4,
+				"line" : 33,
+				"parent" : 7
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 120,
+				"parent" : 9
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 34,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 120,
+				"parent" : 11
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 37,
+				"parent" : 0
+			},
+			{
+				"file" : 5
+			},
+			{
+				"command" : 1,
+				"file" : 5,
+				"line" : 83,
+				"parent" : 14
+			},
+			{
+				"command" : 6,
+				"file" : 5,
+				"line" : 78,
+				"parent" : 14
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 144,
+				"parent" : 16
+			},
+			{
+				"command" : 1,
+				"file" : 5,
+				"line" : 86,
+				"parent" : 14
+			},
+			{
+				"file" : 7
+			},
+			{
+				"command" : 7,
+				"file" : 7,
+				"line" : 42,
+				"parent" : 19
+			},
+			{
+				"command" : 1,
+				"file" : 6,
+				"line" : 31,
+				"parent" : 20
+			},
+			{
+				"command" : 2,
+				"file" : 7,
+				"line" : 47,
+				"parent" : 19
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 120,
+				"parent" : 22
+			},
+			{
+				"file" : 8
+			},
+			{
+				"command" : 1,
+				"file" : 8,
+				"line" : 32,
+				"parent" : 24
+			},
+			{
+				"file" : 9
+			},
+			{
+				"command" : 1,
+				"file" : 9,
+				"line" : 27,
+				"parent" : 26
+			},
+			{
+				"command" : 1,
+				"file" : 5,
+				"line" : 75,
+				"parent" : 14
+			},
+			{
+				"file" : 10
+			},
+			{
+				"command" : 1,
+				"file" : 10,
+				"line" : 36,
+				"parent" : 29
+			},
+			{
+				"file" : 11
+			},
+			{
+				"command" : 6,
+				"file" : 11,
+				"line" : 63,
+				"parent" : 31
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 144,
+				"parent" : 32
+			},
+			{
+				"command" : 8,
+				"file" : 11,
+				"line" : 73,
+				"parent" : 31
+			},
+			{
+				"command" : 6,
+				"file" : 12,
+				"line" : 28,
+				"parent" : 34
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 144,
+				"parent" : 35
+			},
+			{
+				"file" : 13
+			},
+			{
+				"command" : 6,
+				"file" : 13,
+				"line" : 96,
+				"parent" : 37
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 144,
+				"parent" : 38
+			},
+			{
+				"command" : 6,
+				"file" : 13,
+				"line" : 105,
+				"parent" : 37
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 144,
+				"parent" : 40
+			},
+			{
+				"command" : 6,
+				"file" : 13,
+				"line" : 112,
+				"parent" : 37
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 144,
+				"parent" : 42
+			},
+			{
+				"command" : 9,
+				"file" : 13,
+				"line" : 119,
+				"parent" : 37
+			},
+			{
+				"command" : 6,
+				"file" : 14,
+				"line" : 43,
+				"parent" : 44
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 144,
+				"parent" : 45
+			},
+			{
+				"command" : 6,
+				"file" : 14,
+				"line" : 44,
+				"parent" : 44
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 144,
+				"parent" : 47
+			},
+			{
+				"command" : 6,
+				"file" : 14,
+				"line" : 46,
+				"parent" : 44
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 144,
+				"parent" : 49
+			},
+			{
+				"command" : 6,
+				"file" : 14,
+				"line" : 47,
+				"parent" : 44
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 144,
+				"parent" : 51
+			},
+			{
+				"file" : 16
+			},
+			{
+				"command" : 10,
+				"file" : 16,
+				"line" : 86,
+				"parent" : 53
+			},
+			{
+				"command" : 1,
+				"file" : 15,
+				"line" : 34,
+				"parent" : 54
+			},
+			{
+				"command" : 6,
+				"file" : 16,
+				"line" : 88,
+				"parent" : 53
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 144,
+				"parent" : 56
+			},
+			{
+				"command" : 6,
+				"file" : 16,
+				"line" : 98,
+				"parent" : 53
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 144,
+				"parent" : 58
+			},
+			{
+				"command" : 1,
+				"file" : 16,
+				"line" : 105,
+				"parent" : 53
+			},
+			{
+				"file" : 17
+			},
+			{
+				"command" : 1,
+				"file" : 17,
+				"line" : 59,
+				"parent" : 61
+			},
+			{
+				"command" : 11,
+				"file" : 16,
+				"line" : 117,
+				"parent" : 53
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 99,
+				"parent" : 63
+			},
+			{
+				"command" : 12,
+				"file" : 1,
+				"line" : 121,
+				"parent" : 3
+			},
+			{
+				"command" : 2,
+				"file" : 3,
+				"line" : 30,
+				"parent" : 5
+			},
+			{
+				"command" : 12,
+				"file" : 1,
+				"line" : 121,
+				"parent" : 66
+			},
+			{
+				"command" : 12,
+				"file" : 3,
+				"line" : 31,
+				"parent" : 5
+			},
+			{
+				"command" : 12,
+				"file" : 3,
+				"line" : 39,
+				"parent" : 5
+			},
+			{
+				"command" : 12,
+				"file" : 2,
+				"line" : 53,
+				"parent" : 2
+			},
+			{
+				"command" : 12,
+				"file" : 2,
+				"line" : 54,
+				"parent" : 2
+			},
+			{
+				"command" : 12,
+				"file" : 4,
+				"line" : 32,
+				"parent" : 7
+			},
+			{
+				"command" : 12,
+				"file" : 1,
+				"line" : 121,
+				"parent" : 9
+			},
+			{
+				"file" : 18
+			},
+			{
+				"command" : 15,
+				"file" : 18,
+				"line" : 38,
+				"parent" : 74
+			},
+			{
+				"command" : 14,
+				"file" : 1,
+				"line" : 232,
+				"parent" : 75
+			},
+			{
+				"command" : 14,
+				"file" : 1,
+				"line" : 196,
+				"parent" : 76
+			},
+			{
+				"command" : 14,
+				"file" : 1,
+				"line" : 196,
+				"parent" : 77
+			},
+			{
+				"command" : 14,
+				"file" : 1,
+				"line" : 196,
+				"parent" : 78
+			},
+			{
+				"command" : 14,
+				"file" : 1,
+				"line" : 196,
+				"parent" : 79
+			},
+			{
+				"command" : 13,
+				"file" : 1,
+				"line" : 209,
+				"parent" : 80
+			},
+			{
+				"command" : 17,
+				"file" : 18,
+				"line" : 29,
+				"parent" : 74
+			},
+			{
+				"file" : 19,
+				"parent" : 82
+			},
+			{
+				"command" : 16,
+				"file" : 19,
+				"line" : 51,
+				"parent" : 83
+			},
+			{
+				"command" : 16,
+				"file" : 18,
+				"line" : 31,
+				"parent" : 74
+			},
+			{
+				"file" : 20
+			},
+			{
+				"command" : 16,
+				"file" : 20,
+				"line" : 23,
+				"parent" : 86
+			},
+			{
+				"command" : 16,
+				"file" : 20,
+				"line" : 25,
+				"parent" : 86
+			},
+			{
+				"file" : 21
+			},
+			{
+				"command" : 16,
+				"file" : 21,
+				"line" : 26,
+				"parent" : 89
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-g -fPIC"
+				},
+				{
+					"backtrace" : 65,
+					"fragment" : "-I/usr/include/pcl-1.12"
+				},
+				{
+					"backtrace" : 67,
+					"fragment" : "-I/usr/include/eigen3"
+				},
+				{
+					"backtrace" : 68,
+					"fragment" : "-DHAVE_EIGEN3"
+				},
+				{
+					"backtrace" : 68,
+					"fragment" : "-DEIGEN_USE_NEW_STDVECTOR"
+				},
+				{
+					"backtrace" : 68,
+					"fragment" : "-DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET"
+				},
+				{
+					"backtrace" : 69,
+					"fragment" : "-Wno-deprecated-declarations"
+				},
+				{
+					"backtrace" : 70,
+					"fragment" : "-DHAVE_PCL"
+				},
+				{
+					"backtrace" : 71,
+					"fragment" : "-Wno-unknown-pragmas"
+				},
+				{
+					"backtrace" : 71,
+					"fragment" : "-Wno-overloaded-virtual"
+				},
+				{
+					"backtrace" : 71,
+					"fragment" : "-Wno-array-bounds"
+				},
+				{
+					"backtrace" : 72,
+					"fragment" : "-DHAVE_TF"
+				},
+				{
+					"backtrace" : 72,
+					"fragment" : "-DBT_INFINITY"
+				},
+				{
+					"backtrace" : 72,
+					"fragment" : "-DBT_USE_DOUBLE_PRECISION"
+				},
+				{
+					"backtrace" : 72,
+					"fragment" : "-DB_EULER_DEFAULT_ZYX"
+				},
+				{
+					"backtrace" : 72,
+					"fragment" : "-O2"
+				},
+				{
+					"backtrace" : 73,
+					"fragment" : "-I/usr/include/bullet"
+				},
+				{
+					"backtrace" : 73,
+					"fragment" : "-I/usr/include"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DHAVE_EXECINFO"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-I/usr/include/lua-5.1"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DHAVE_LUA"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DLUADIR=\\\"/home/adas/fawkes-robotino/src/lua\\\""
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DLUALIBDIR=\\\"/home/adas/fawkes-robotino/lib/lua\\\""
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-Wno-unused-function"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-D_REENTRANT"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-I/usr/include/p11-kit-1"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DWITH_GZFILEOP"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DHAVE_INOTIFY"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DHAVE_YAMLCPP"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DHAVE_YAMLCPP_NODE_MARK"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DHAVE_SQLITE"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DHAVE_LIBELF"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DHAVE_NETWORK_MANAGER"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DHAVE_NETWORK_LOGGER"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DHAVE_CONFIG_NETWORK_HANDLER"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DHAVE_PLUGIN_NETWORK_HANDLER"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DHAVE_LOGGING_FD_REDIRECT"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DHAVE_BLACKBOARD"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DHAVE_BOOST"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DHAVE_CPP11"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-I/usr/include/libpng16"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-I/usr/include/opencv4"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DHAVE_RECTINFO"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DHAVE_NETWORK_CAM"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DHAVE_FILELOADER_CAM"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DHABE_SHMEM_CAM"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-D__STDC_LIMIT_MACROS"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-DFVCONFDIR=\\\"/home/adas/fawkes-robotino/cfg/firevision\\\""
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-I/usr/include/SDL"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-D_GNU_SOURCE=1"
+				},
+				{
+					"backtrace" : 13,
+					"fragment" : "-I/usr/include/libusb-1.0"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 81,
+					"define" : "BASEDIR=\"/home/adas/fawkes-robotino\""
+				},
+				{
+					"backtrace" : 81,
+					"define" : "BINDIR=\"\""
+				},
+				{
+					"backtrace" : 13,
+					"define" : "BOOST_SYSTEM_DYN_LINK"
+				},
+				{
+					"backtrace" : 13,
+					"define" : "BOOST_SYSTEM_NO_LIB"
+				},
+				{
+					"backtrace" : 13,
+					"define" : "BT_EULER_DEFAULT_ZYX"
+				},
+				{
+					"backtrace" : 13,
+					"define" : "BT_INFINITY"
+				},
+				{
+					"backtrace" : 13,
+					"define" : "BT_USE_DOUBLE_PRECISION"
+				},
+				{
+					"backtrace" : 81,
+					"define" : "BUILDTYPE=\"\""
+				},
+				{
+					"backtrace" : 81,
+					"define" : "CONFDIR=\"/home/adas/fawkes-robotino/cfg\""
+				},
+				{
+					"backtrace" : 81,
+					"define" : "FAWKES_BASEDIR=\"/home/adas/fawkes-robotino\""
+				},
+				{
+					"backtrace" : 13,
+					"define" : "HAVE_AVAHI"
+				},
+				{
+					"backtrace" : 13,
+					"define" : "HAVE_BUMBLEBEE2_CAM"
+				},
+				{
+					"backtrace" : 13,
+					"define" : "HAVE_EXECINFO"
+				},
+				{
+					"backtrace" : 13,
+					"define" : "HAVE_FIREWIRE_CAM"
+				},
+				{
+					"backtrace" : 13,
+					"define" : "HAVE_INOTIFY"
+				},
+				{
+					"backtrace" : 13,
+					"define" : "HAVE_LIBJPEG"
+				},
+				{
+					"backtrace" : 13,
+					"define" : "HAVE_LIBMAGIC"
+				},
+				{
+					"backtrace" : 13,
+					"define" : "HAVE_LIBPNG"
+				},
+				{
+					"backtrace" : 13,
+					"define" : "HAVE_LIBUSB"
+				},
+				{
+					"backtrace" : 13,
+					"define" : "HAVE_LIBV4L2"
+				},
+				{
+					"backtrace" : 13,
+					"define" : "HAVE_OPENCV"
+				},
+				{
+					"backtrace" : 13,
+					"define" : "HAVE_PIKE_CAM"
+				},
+				{
+					"backtrace" : 13,
+					"define" : "HAVE_SDL"
+				},
+				{
+					"backtrace" : 13,
+					"define" : "HAVE_V4L2_CAM"
+				},
+				{
+					"backtrace" : 13,
+					"define" : "HAVE_WEBVIEW"
+				},
+				{
+					"backtrace" : 81,
+					"define" : "IFACEDIR=\"/home/adas/fawkes-robotino/lib/interfaces/\""
+				},
+				{
+					"backtrace" : 81,
+					"define" : "LIBDIR=\"/home/adas/fawkes-robotino/out/build/no-plugin-config/src/libs/\""
+				},
+				{
+					"backtrace" : 81,
+					"define" : "LOGDIR=\"/home/adas/fawkes-robotino/log\""
+				},
+				{
+					"backtrace" : 81,
+					"define" : "PLUGINDIR=\"/home/adas/fawkes-robotino/plugins/\""
+				},
+				{
+					"backtrace" : 81,
+					"define" : "RESDIR=\"/home/adas/fawkes-robotino/res\""
+				},
+				{
+					"backtrace" : 81,
+					"define" : "SOEXT=\"so\""
+				},
+				{
+					"backtrace" : 81,
+					"define" : "SRCDIR=\"/home/adas/fawkes-robotino/fawkes/src/plugins/realsense2\""
+				},
+				{
+					"backtrace" : 81,
+					"define" : "TMPDIR=\"/tmp\""
+				},
+				{
+					"backtrace" : 81,
+					"define" : "USERDIR=\".fawkes\""
+				},
+				{
+					"define" : "realsense2_EXPORTS"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 84,
+					"path" : "/home/adas/fawkes-robotino/lib"
+				},
+				{
+					"backtrace" : 85,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src"
+				},
+				{
+					"backtrace" : 87,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs"
+				},
+				{
+					"backtrace" : 88,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/."
+				},
+				{
+					"backtrace" : 90,
+					"path" : "/home/adas/fawkes-robotino/src"
+				},
+				{
+					"backtrace" : 13,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs/core/core"
+				},
+				{
+					"backtrace" : 13,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs/utils/core"
+				},
+				{
+					"backtrace" : 13,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs/netcomm/netcomm"
+				},
+				{
+					"backtrace" : 13,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs/interface/interface"
+				},
+				{
+					"backtrace" : 13,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs/interfaces/.."
+				}
+			],
+			"language" : "CXX",
+			"sourceIndexes" : 
+			[
+				0,
+				1
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 13,
+			"id" : "fawkescore::@96de920f2c1ee174bd2c"
+		},
+		{
+			"backtrace" : 13,
+			"id" : "fawkesutils::@bbf8304ef445661713ec"
+		},
+		{
+			"backtrace" : 13,
+			"id" : "fawkeslogging::@2a8715505af097febee1"
+		},
+		{
+			"backtrace" : 13,
+			"id" : "fawkesinterface::@0652ad9b532afe87f7bc"
+		},
+		{
+			"backtrace" : 13,
+			"id" : "fawkesnetcomm::@8d332be442fab0c75e95"
+		},
+		{
+			"backtrace" : 13,
+			"id" : "fawkesblackboard::@c34c7108ff86799f515b"
+		},
+		{
+			"backtrace" : 13,
+			"id" : "TransformInterface::@95a7ec6ccb46bc81bd11"
+		},
+		{
+			"backtrace" : 13,
+			"id" : "SwitchInterface::@95a7ec6ccb46bc81bd11"
+		},
+		{
+			"backtrace" : 13,
+			"id" : "fawkesconfig::@2b3d3b2fa869bcfe49a7"
+		},
+		{
+			"backtrace" : 13,
+			"id" : "fawkestf::@afa33a25a108ef6a3b06"
+		},
+		{
+			"backtrace" : 13,
+			"id" : "fawkesplugin::@89f76d6532615e7a693a"
+		},
+		{
+			"backtrace" : 13,
+			"id" : "fawkesaspects::@2d56d30b29692f0ae490"
+		},
+		{
+			"backtrace" : 13,
+			"id" : "fawkesnetwork_logger::@cba2a1c31eb4224ce5e2"
+		},
+		{
+			"backtrace" : 13,
+			"id" : "fawkeswebview::@2bfeb02eb5ac5fde3405"
+		},
+		{
+			"backtrace" : 13,
+			"id" : "fawkesbaseapp::@90698cec861f3d1b067c"
+		},
+		{
+			"backtrace" : 13,
+			"id" : "fvutils::@0e909327ae6da1ea7117"
+		},
+		{
+			"backtrace" : 13,
+			"id" : "fawkespcl_utils::@36a10cc5e1149e471970"
+		},
+		{
+			"backtrace" : 13,
+			"id" : "fawkessyncpoint::@ccda345fd350c276ab5e"
+		}
+	],
+	"id" : "realsense2::@f6f7beda1590075ae468",
+	"link" : 
+	{
+		"commandFragments" : 
+		[
+			{
+				"fragment" : "",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "-Wl,-rpath,/home/adas/fawkes-robotino/lib:/home/adas/fawkes-robotino/lib/interfaces",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-L/usr/lib64",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-lpcl_common",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 6,
+				"fragment" : "-ltolua++",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "-lLinearMath",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "-lm",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-L/usr/lib64",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "-lBulletSoftBody",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "-lBulletDynamics",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "-lBulletCollision",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "-lLinearMath",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "-L/usr/lib/x86_64-linux-gnu",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "-lrealsense2",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 13,
+				"fragment" : "-lm",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 13,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkesbaseapp.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 13,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfvutils.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 13,
+				"fragment" : "/home/adas/fawkes-robotino/lib/interfaces/libSwitchInterface.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 13,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkesaspects.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 15,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkeswebview.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 17,
+				"fragment" : "-lmicrohttpd",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 18,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkesplugin.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 18,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkesconfig.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 21,
+				"fragment" : "-lyaml-cpp",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 23,
+				"fragment" : "-lsqlite3",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 25,
+				"fragment" : "-lelf",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 18,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkessyncpoint.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 27,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkesnetwork_logger.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 13,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkespcl_utils.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 28,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkestf.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "-lLinearMath",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "-lBulletSoftBody",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "-lBulletDynamics",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "-lBulletCollision",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "-lLinearMath",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "-lBulletSoftBody",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "-lBulletDynamics",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "-lBulletCollision",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 13,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkesblackboard.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 30,
+				"fragment" : "/home/adas/fawkes-robotino/lib/interfaces/libTransformInterface.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 18,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkesnetcomm.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 33,
+				"fragment" : "-lavahi-common",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 33,
+				"fragment" : "-lavahi-client",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 36,
+				"fragment" : "-lcrypto",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 39,
+				"fragment" : "-ljpeg",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 41,
+				"fragment" : "-lpng16",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_gapi",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_stitching",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_alphamat",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_aruco",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_bgsegm",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_bioinspired",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_ccalib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_cvv",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_dnn_objdetect",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_dnn_superres",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_dpm",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_face",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_freetype",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_fuzzy",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_hdf",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_hfs",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_img_hash",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_intensity_transform",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_line_descriptor",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_mcc",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_quality",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_rapid",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_reg",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_rgbd",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_saliency",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_shape",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_stereo",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_structured_light",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_phase_unwrapping",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_superres",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_optflow",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_surface_matching",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_tracking",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_highgui",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_datasets",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_text",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_plot",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_ml",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_videostab",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_videoio",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_viz",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_wechat_qrcode",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_ximgproc",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_video",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_xobjdetect",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_objdetect",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_calib3d",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_imgcodecs",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_features2d",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_dnn",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_flann",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_xphoto",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_photo",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_imgproc",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_core",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 46,
+				"fragment" : "-ldc1394",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 48,
+				"fragment" : "-lSDL",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 50,
+				"fragment" : "-lv4l2",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 52,
+				"fragment" : "-lusb",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 39,
+				"fragment" : "-ljpeg",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 41,
+				"fragment" : "-lpng16",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_gapi",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_stitching",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_alphamat",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_aruco",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_bgsegm",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_bioinspired",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_ccalib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_cvv",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_dnn_objdetect",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_dnn_superres",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_dpm",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_face",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_freetype",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_fuzzy",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_hdf",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_hfs",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_img_hash",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_intensity_transform",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_line_descriptor",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_mcc",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_quality",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_rapid",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_reg",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_rgbd",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_saliency",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_shape",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_stereo",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_structured_light",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_phase_unwrapping",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_superres",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_optflow",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_surface_matching",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_tracking",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_highgui",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_datasets",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_text",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_plot",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_ml",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_videostab",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_videoio",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_viz",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_wechat_qrcode",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_ximgproc",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_video",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_xobjdetect",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_objdetect",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_calib3d",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_imgcodecs",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_features2d",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_dnn",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_flann",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_xphoto",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_photo",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_imgproc",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 43,
+				"fragment" : "-lopencv_core",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 46,
+				"fragment" : "-ldc1394",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 48,
+				"fragment" : "-lSDL",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 50,
+				"fragment" : "-lv4l2",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 52,
+				"fragment" : "-lusb",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-lpcl_common",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 13,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkesinterface.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 13,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkesutils.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-L/usr/lib64",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 55,
+				"fragment" : "-llua-5.1",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "-lm",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 55,
+				"fragment" : "-ldl",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 6,
+				"fragment" : "-ltolua++",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 57,
+				"fragment" : "-lmagic",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 59,
+				"fragment" : "-ldaemon",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 60,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkeslogging.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 13,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkescore.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 13,
+				"fragment" : "-lm",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 62,
+				"fragment" : "-lrt",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 62,
+				"fragment" : "-lpthread",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 62,
+				"fragment" : "-lstdc++",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 60,
+				"fragment" : "-ldl",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 60,
+				"fragment" : "-luuid",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 64,
+				"fragment" : "/usr/lib64/libboost_system.so.1.83.0",
+				"role" : "libraries"
+			}
+		],
+		"language" : "CXX"
+	},
+	"name" : "realsense2",
+	"nameOnDisk" : "realsense2.so",
+	"paths" : 
+	{
+		"build" : "fawkes/src/plugins/realsense2",
+		"source" : "fawkes/src/plugins/realsense2"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0,
+				1
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "fawkes/src/plugins/realsense2/realsense2_plugin.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "fawkes/src/plugins/realsense2/realsense2_thread.cpp",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "MODULE_LIBRARY"
+}

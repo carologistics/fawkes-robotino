@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Site BuildName="(empty)"
+	BuildStamp="20241210-1544-Experimental"
+	Name="fedora"
+	Generator="ctest-3.29.5"
+	CompilerName="/usr/lib64/ccache/c++"
+	CompilerVersion="14.2.1"
+	OSName="Linux"
+	Hostname="fedora"
+	OSRelease="6.11.6-200.fc40.x86_64"
+	OSVersion="#1 SMP PREEMPT_DYNAMIC Fri Nov  1 16:09:34 UTC 2024"
+	OSPlatform="x86_64"
+	Is64Bits="1"
+	VendorString="GenuineIntel"
+	VendorID="Intel Corporation"
+	FamilyID="6"
+	ModelID="165"
+	ProcessorCacheSize="8192"
+	NumberOfLogicalCPU="8"
+	NumberOfPhysicalCPU="4"
+	TotalVirtualMemory="8191"
+	TotalPhysicalMemory="31924"
+	LogicalProcessorsPerPhysical="2"
+	ProcessorClockFrequency="4090.72"
+	>
+	<Testing>
+		<StartDateTime>Dec 10 16:44 CET</StartDateTime>
+		<StartTestTime>1733845486</StartTestTime>
+		<TestList/>
+		<EndDateTime>Dec 10 16:44 CET</EndDateTime>
+		<EndTestTime>1733845486</EndTestTime>
+		<ElapsedMinutes>0</ElapsedMinutes>
+	</Testing>
+</Site>

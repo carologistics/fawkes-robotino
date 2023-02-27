@@ -1,0 +1,715 @@
+{
+	"artifacts" : 
+	[
+		{
+			"path" : "/home/adas/fawkes-robotino/bin/fflaser_deadspots"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_executable",
+			"target_link_libraries",
+			"optional_depend_on_pkgconfig_libs",
+			"depend_on_libcrypto",
+			"depend_on_yamlcpp",
+			"depend_on_pkgconfig_libs",
+			"depend_on_lua",
+			"depend_on_boost_libs",
+			"target_compile_definitions",
+			"set_common_properties_of_targets_recucursive",
+			"set_common_properties_of_targets",
+			"include_directories",
+			"include"
+		],
+		"files" : 
+		[
+			"fawkes/src/plugins/laser-filter/deadspots/CMakeLists.txt",
+			"fawkes/cmake/utils.cmake",
+			"fawkes/src/libs/netcomm/CMakeLists.txt",
+			"fawkes/cmake/libcrypto.cmake",
+			"fawkes/cmake/yamlcpp.cmake",
+			"fawkes/src/libs/config/CMakeLists.txt",
+			"fawkes/cmake/lua.cmake",
+			"fawkes/src/libs/utils/CMakeLists.txt",
+			"fawkes/src/libs/core/CMakeLists.txt",
+			"CMakeLists.txt",
+			"fawkes/cmake/base.cmake",
+			"fawkes/src/CMakeLists.txt",
+			"fawkes/src/plugins/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 29,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 30,
+				"parent" : 0
+			},
+			{
+				"file" : 2
+			},
+			{
+				"command" : 2,
+				"file" : 2,
+				"line" : 63,
+				"parent" : 3
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 144,
+				"parent" : 4
+			},
+			{
+				"command" : 3,
+				"file" : 2,
+				"line" : 73,
+				"parent" : 3
+			},
+			{
+				"command" : 2,
+				"file" : 3,
+				"line" : 28,
+				"parent" : 6
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 144,
+				"parent" : 7
+			},
+			{
+				"file" : 5
+			},
+			{
+				"command" : 4,
+				"file" : 5,
+				"line" : 42,
+				"parent" : 9
+			},
+			{
+				"command" : 1,
+				"file" : 4,
+				"line" : 31,
+				"parent" : 10
+			},
+			{
+				"command" : 5,
+				"file" : 5,
+				"line" : 47,
+				"parent" : 9
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 120,
+				"parent" : 12
+			},
+			{
+				"file" : 7
+			},
+			{
+				"command" : 6,
+				"file" : 7,
+				"line" : 86,
+				"parent" : 14
+			},
+			{
+				"command" : 1,
+				"file" : 6,
+				"line" : 34,
+				"parent" : 15
+			},
+			{
+				"command" : 2,
+				"file" : 7,
+				"line" : 88,
+				"parent" : 14
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 144,
+				"parent" : 17
+			},
+			{
+				"command" : 2,
+				"file" : 7,
+				"line" : 98,
+				"parent" : 14
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 144,
+				"parent" : 19
+			},
+			{
+				"command" : 1,
+				"file" : 7,
+				"line" : 105,
+				"parent" : 14
+			},
+			{
+				"file" : 8
+			},
+			{
+				"command" : 1,
+				"file" : 8,
+				"line" : 59,
+				"parent" : 22
+			},
+			{
+				"command" : 7,
+				"file" : 7,
+				"line" : 117,
+				"parent" : 14
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 99,
+				"parent" : 24
+			},
+			{
+				"file" : 9
+			},
+			{
+				"command" : 10,
+				"file" : 9,
+				"line" : 38,
+				"parent" : 26
+			},
+			{
+				"command" : 9,
+				"file" : 1,
+				"line" : 232,
+				"parent" : 27
+			},
+			{
+				"command" : 9,
+				"file" : 1,
+				"line" : 196,
+				"parent" : 28
+			},
+			{
+				"command" : 9,
+				"file" : 1,
+				"line" : 196,
+				"parent" : 29
+			},
+			{
+				"command" : 9,
+				"file" : 1,
+				"line" : 196,
+				"parent" : 30
+			},
+			{
+				"command" : 9,
+				"file" : 1,
+				"line" : 196,
+				"parent" : 31
+			},
+			{
+				"command" : 9,
+				"file" : 1,
+				"line" : 196,
+				"parent" : 32
+			},
+			{
+				"command" : 8,
+				"file" : 1,
+				"line" : 209,
+				"parent" : 33
+			},
+			{
+				"command" : 12,
+				"file" : 9,
+				"line" : 29,
+				"parent" : 26
+			},
+			{
+				"file" : 10,
+				"parent" : 35
+			},
+			{
+				"command" : 11,
+				"file" : 10,
+				"line" : 51,
+				"parent" : 36
+			},
+			{
+				"command" : 11,
+				"file" : 9,
+				"line" : 31,
+				"parent" : 26
+			},
+			{
+				"file" : 11
+			},
+			{
+				"command" : 11,
+				"file" : 11,
+				"line" : 23,
+				"parent" : 39
+			},
+			{
+				"command" : 11,
+				"file" : 11,
+				"line" : 25,
+				"parent" : 39
+			},
+			{
+				"file" : 12
+			},
+			{
+				"command" : 11,
+				"file" : 12,
+				"line" : 26,
+				"parent" : 42
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-g"
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-DHAVE_EXECINFO"
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-I/usr/include/lua-5.1"
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-DHAVE_LUA"
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-DLUADIR=\\\"/home/adas/fawkes-robotino/src/lua\\\""
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-DLUALIBDIR=\\\"/home/adas/fawkes-robotino/lib/lua\\\""
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-Wno-unused-function"
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-I/usr/include"
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-D_REENTRANT"
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-DHAVE_INOTIFY"
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-DHAVE_YAMLCPP"
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-DHAVE_YAMLCPP_NODE_MARK"
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-DHAVE_SQLITE"
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-DHAVE_LIBELF"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 34,
+					"define" : "BASEDIR=\"/home/adas/fawkes-robotino\""
+				},
+				{
+					"backtrace" : 34,
+					"define" : "BINDIR=\"\""
+				},
+				{
+					"backtrace" : 2,
+					"define" : "BOOST_SYSTEM_DYN_LINK"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "BOOST_SYSTEM_NO_LIB"
+				},
+				{
+					"backtrace" : 34,
+					"define" : "BUILDTYPE=\"\""
+				},
+				{
+					"backtrace" : 34,
+					"define" : "CONFDIR=\"/home/adas/fawkes-robotino/cfg\""
+				},
+				{
+					"backtrace" : 34,
+					"define" : "FAWKES_BASEDIR=\"/home/adas/fawkes-robotino\""
+				},
+				{
+					"backtrace" : 2,
+					"define" : "HAVE_AVAHI"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "HAVE_EXECINFO"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "HAVE_INOTIFY"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "HAVE_LIBMAGIC"
+				},
+				{
+					"backtrace" : 34,
+					"define" : "IFACEDIR=\"/home/adas/fawkes-robotino/lib/interfaces/\""
+				},
+				{
+					"backtrace" : 34,
+					"define" : "LIBDIR=\"/home/adas/fawkes-robotino/out/build/no-plugin-config/src/libs/\""
+				},
+				{
+					"backtrace" : 34,
+					"define" : "LOGDIR=\"/home/adas/fawkes-robotino/log\""
+				},
+				{
+					"backtrace" : 34,
+					"define" : "PLUGINDIR=\"/home/adas/fawkes-robotino/plugins/\""
+				},
+				{
+					"backtrace" : 34,
+					"define" : "RESDIR=\"/home/adas/fawkes-robotino/res\""
+				},
+				{
+					"backtrace" : 34,
+					"define" : "SOEXT=\"so\""
+				},
+				{
+					"backtrace" : 34,
+					"define" : "SRCDIR=\"/home/adas/fawkes-robotino/fawkes/src/plugins/laser-filter/deadspots\""
+				},
+				{
+					"backtrace" : 34,
+					"define" : "TMPDIR=\"/tmp\""
+				},
+				{
+					"backtrace" : 34,
+					"define" : "USERDIR=\".fawkes\""
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 37,
+					"path" : "/home/adas/fawkes-robotino/lib"
+				},
+				{
+					"backtrace" : 38,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src"
+				},
+				{
+					"backtrace" : 40,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs"
+				},
+				{
+					"backtrace" : 41,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/."
+				},
+				{
+					"backtrace" : 43,
+					"path" : "/home/adas/fawkes-robotino/src"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs/core/core"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs/utils/core"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs/netcomm/netcomm"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs/interface/interface"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/adas/fawkes-robotino/fawkes/src/libs/interfaces/.."
+				}
+			],
+			"language" : "CXX",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "fawkescore::@96de920f2c1ee174bd2c"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "fawkesutils::@bbf8304ef445661713ec"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "fawkeslogging::@2a8715505af097febee1"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "fawkesinterface::@0652ad9b532afe87f7bc"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "fawkesnetcomm::@8d332be442fab0c75e95"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "fawkesblackboard::@c34c7108ff86799f515b"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "Laser720Interface::@95a7ec6ccb46bc81bd11"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "Laser360Interface::@95a7ec6ccb46bc81bd11"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "fawkesconfig::@2b3d3b2fa869bcfe49a7"
+		}
+	],
+	"id" : "fflaser_deadspots::@96450ad3d3e07c9ed9f3",
+	"link" : 
+	{
+		"commandFragments" : 
+		[
+			{
+				"fragment" : "-g",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "-Wl,-rpath,/home/adas/fawkes-robotino/lib:/home/adas/fawkes-robotino/lib/interfaces",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "-lstdc++",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "-lm",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkesblackboard.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkesconfig.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "/home/adas/fawkes-robotino/lib/interfaces/libLaser360Interface.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "/home/adas/fawkes-robotino/lib/interfaces/libLaser720Interface.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkesnetcomm.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "-lavahi-common",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "-lavahi-client",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "-lcrypto",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 11,
+				"fragment" : "-lyaml-cpp",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 13,
+				"fragment" : "-lsqlite3",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkesinterface.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkesutils.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 16,
+				"fragment" : "-llua-5.1",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 16,
+				"fragment" : "-lm",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 16,
+				"fragment" : "-ldl",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 16,
+				"fragment" : "-ltolua++",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 18,
+				"fragment" : "-L/usr/lib64",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 18,
+				"fragment" : "-lmagic",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 20,
+				"fragment" : "-ldaemon",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 21,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkeslogging.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "/home/adas/fawkes-robotino/lib/libfawkescore.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "-lm",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 23,
+				"fragment" : "-lrt",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 21,
+				"fragment" : "-ldl",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 23,
+				"fragment" : "-lpthread",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "-lstdc++",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 21,
+				"fragment" : "-luuid",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 25,
+				"fragment" : "/usr/lib64/libboost_system.so.1.83.0",
+				"role" : "libraries"
+			}
+		],
+		"language" : "CXX"
+	},
+	"name" : "fflaser_deadspots",
+	"nameOnDisk" : "fflaser_deadspots",
+	"paths" : 
+	{
+		"build" : "fawkes/src/plugins/laser-filter/deadspots",
+		"source" : "fawkes/src/plugins/laser-filter/deadspots"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "fawkes/src/plugins/laser-filter/deadspots/deadspots.cpp",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "EXECUTABLE"
+}

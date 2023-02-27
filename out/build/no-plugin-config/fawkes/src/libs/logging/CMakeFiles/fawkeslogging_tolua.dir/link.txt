@@ -1,0 +1,1 @@
+/usr/lib64/ccache/c++ -fPIC -g -shared -Wl,-soname,fawkeslogging.so -o /home/adas/fawkes-robotino/lib/lua/fawkeslogging.so CMakeFiles/fawkeslogging_tolua.dir/fawkeslogging_tolua.cpp.o  -llua-5.1 -lm -ldl -ltolua++

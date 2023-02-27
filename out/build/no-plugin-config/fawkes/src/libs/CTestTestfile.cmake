@@ -1,0 +1,36 @@
+# CMake generated Testfile for 
+# Source directory: /home/adas/fawkes-robotino/fawkes/src/libs
+# Build directory: /home/adas/fawkes-robotino/out/build/no-plugin-config/fawkes/src/libs
+# 
+# This file includes the relevant testing commands required for 
+# testing this directory and lists subdirectories to be tested as well.
+subdirs("core")
+subdirs("utils")
+subdirs("logging")
+subdirs("interface")
+subdirs("netcomm")
+subdirs("blackboard")
+subdirs("interfaces")
+subdirs("config")
+subdirs("tf")
+subdirs("plugin")
+subdirs("lua")
+subdirs("aspect")
+subdirs("network_logger")
+subdirs("webview")
+subdirs("gui_utils")
+subdirs("baseapp")
+subdirs("navgraph")
+subdirs("fvutils")
+subdirs("fvcams")
+subdirs("fvmodels")
+subdirs("fvfilters")
+subdirs("fvclassifiers")
+subdirs("fvstereo")
+subdirs("fvwidgets")
+subdirs("kdl_parser")
+subdirs("protobuf_clips")
+subdirs("pcl_utils")
+subdirs("syncpoint")
+subdirs("protoboard")
+subdirs("execution_time_estimator")
