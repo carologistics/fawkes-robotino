@@ -522,6 +522,22 @@
 	        )
 )
 
+(:action fulfill-order-discard
+	:parameters (?ord - order ?wp - workpiece ?m - mps ?g - ds-gate)
+	:precondition (and (wp-at ?wp ?m INPUT)
+	                   (not (mps-side-free ?m INPUT))
+	                   (wp-usable ?wp)
+	                   (mps-type ?m DS)
+	                   (ds-prepared-order ?m ?ord)
+	              )
+	:effect (and (order-fulfilled ?ord)
+	             (not (wp-at ?wp ?m INPUT))
+	             (mps-side-free ?m INPUT)
+	             (not (ds-prepared-order ?m ?ord))
+	             (not (wp-usable ?wp))
+	        )
+)
+
 (:action fulfill-order-c0
 	:parameters (?ord - order ?wp - workpiece ?m - mps ?g - ds-gate
 	             ?basecol - base-color ?capcol - cap-color)

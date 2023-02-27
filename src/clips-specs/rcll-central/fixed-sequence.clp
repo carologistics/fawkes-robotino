@@ -282,7 +282,7 @@
 			)
 		)
 		(plan-assert-action prepare-ds ?target-mps O0)
-		(plan-assert-action fulfill-order-C0 (create$ O0 ?wp ?target-mps GATE1 BASE_BLACK CAP_BLACK))
+		(plan-assert-action fulfill-order-discard (create$ O0 ?wp ?target-mps GATE1))
 	)
 	(modify ?g (mode EXPANDED))
 )
