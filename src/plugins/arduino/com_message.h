@@ -63,6 +63,12 @@ public:
 	unsigned short get_data_size();
 	unsigned short get_cur_buffer_index();
 
+	/**
+	 * @return Returns the Position data of the current Buffer as a char.
+	 *  Formatting is the same as Serial communication.
+	*/
+	char get_position_data();
+
 	boost::asio::const_buffer buffer();
 
 	void         set_msecs_if_lower(unsigned int msecs);
