@@ -70,7 +70,7 @@
     ))
     (assert (goal-meta (goal-id ?goal-id-cs) (order-id ?ord) (root-for-order ?goal-id-root)))
 
-    ; Goal BS -> CS
+    ; Goal -> CS
     (assert (goal (class GOAL-TO-CS)
                 (id ?goal-id-tocs)
                 (type ACHIEVE)
@@ -93,42 +93,118 @@
     (assert (goal-meta (goal-id ?goal-id-csds) (order-id ?ord) (root-for-order ?goal-id-root)))
 )
 
-; (defrule assign-c1-order
-;     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-;     (not (and (domain-object (name ?robot) (type robot)) (not (domain-fact (name entered-field) (param-values ?robot)))))
+(defrule assign-c1-order
+    (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+    (not (and (domain-object (name ?robot) (type robot)) (not (domain-fact (name entered-field) (param-values ?robot)))))
     
-;     (domain-fact (name order-complexity) (param-values ?ord C1))
-;     (not (domain-fact (name order-fulfilled) (param-values ?ord)))
+    (domain-fact (name order-complexity) (param-values ?ord C1))
+    (not (domain-fact (name order-fulfilled) (param-values ?ord)))
 
-;     (not (goal-meta (order-id ?ord)))
-;     (not (goal (id ?some-goal-id) (class GOAL-ORDER-C0) (outcome ~COMPLETED)))
-;     (not (goal (id ?some-goal-id) (class GOAL-ORDER-C1) (outcome ~COMPLETED)))
-;     (not (goal (id ?some-goal-id) (class GOAL-ORDER-C2) (outcome ~COMPLETED)))
-;     (not (goal (id ?some-goal-id) (class GOAL-ORDER-C3) (outcome ~COMPLETED))) ;This has the effect, that always there is only one root-order which is not COMPLETED
+    (not (goal-meta (order-id ?ord)))
+    (not (goal (id ?some-goal-id) (class GOAL-ORDER-C0) (outcome ~COMPLETED)))
+    (not (goal (id ?some-goal-id) (class GOAL-ORDER-C1) (outcome ~COMPLETED)))
+    (not (goal (id ?some-goal-id) (class GOAL-ORDER-C2) (outcome ~COMPLETED)))
+    (not (goal (id ?some-goal-id) (class GOAL-ORDER-C3) (outcome ~COMPLETED))) ;This has the effect, that always there is only one root-order which is not COMPLETED
 
-;     =>
-;     (printout t "Building C1-Tree ..." crlf)
+    =>
+    (printout t "Building C1-Tree ..." crlf)
 
-;     (bind ?goal-id-root (sym-cat GOAL-ORDER-C1- ?ord ))
+    (bind ?goal-id-root (sym-cat GOAL-ORDER-C1- ?ord ))
+    (bind ?goal-id-rs (sym-cat GOAL-PAY-ONE-RING- ?ord )) ;needs expansion
+    (bind ?goal-id-bs (sym-cat GOAL-GET-BS- ?ord ))
+    (bind ?goal-id-parallel (sym-cat GOAL-PARALLEL-TO-RS-AND-GET-CS- ?ord ))
+    (bind ?goal-id-rs (sym-cat GOAL-TO-RS- ?ord )) ;needs expansion
+    (bind ?goal-id-cs (sym-cat GOAL-GET-CS- ?ord ))
+    (bind ?goal-id-tocs (sym-cat GOAL-TO-CS- ?ord ))
+    (bind ?goal-id-csds (sym-cat GOAL-DELIVER-C1- ?ord )) ;needs expansion (copy paste)
 
-;     (bind ?goal-id-bs (sym-cat GOAL-GET-BS- ?ord ))
-;     (bind ?goal-id-parallel (sym-cat GOAL-PARALLEL-BS-TO-RS-AND-GET-CS- ?ord ))
-;     (bind ?goal-id-bsrs (sym-cat GOAL-BS-TO-RS- ?ord ))
-;     (bind ?goal-id-cs (sym-cat GOAL-GET-CS- ?ord ))
-;     (bind ?goal-id-tocs (sym-cat GOAL-TO-CS- ?ord ))
-;     (bind ?goal-id-csds (sym-cat GOAL-DELIVER-C1- ?ord ))
+    ; Root Goal
+    (assert (goal (class GOAL-ORDER-C1)                     
+                (id ?goal-id-root)
+                (type ACHIEVE)
+                (sub-type CENTRAL-RUN-LINEAR)
+                (verbosity NOISY) (is-executable TRUE)
+                (meta-template goal-meta)
+    ))
+    (assert (goal-meta (goal-id ?goal-id-root) (order-id ?ord) (root-for-order ?goal-id-root)))
+    ; Goal Pay One Ring
+    (assert (goal (class GOAL-PAY-ONE-RING)
+                (id ?goal-id-rs)
+                (type ACHIEVE)
+                (sub-type SIMPLE)
+                (parent ?goal-id-root)
+                (verbosity NOISY) 
+                (priority 1.0)
+                (is-executable TRUE)
+                (meta-template goal-meta)
+    ))
+    (assert (goal-meta (goal-id ?goal-id-rs) (order-id ?ord) (root-for-order ?goal-id-root)))
+    ; Goal get BS
+    (assert (goal (class GOAL-GET-BS)
+                (id ?goal-id-bs)
+                (type ACHIEVE)
+                (sub-type SIMPLE)
+                (parent ?goal-id-root)
+                (priority 2.0)
+                (verbosity NOISY) (is-executable TRUE)
+                (meta-template goal-meta)
+    ))
+    (assert (goal-meta (goal-id ?goal-id-bs) (order-id ?ord) (root-for-order ?goal-id-root)))
 
-;     ; Root Goal
-;     (assert (goal (class GOAL-ORDER-C1)                     
-;                 (id ?goal-id-root)
-;                 (type ACHIEVE)
-;                 (sub-type CENTRAL-RUN-LINEAR)
-;                 (verbosity NOISY) (is-executable TRUE)
-;                 (meta-template goal-meta)
-;     ))
-;     (assert (goal-meta (goal-id ?goal-id-root) (order-id ?ord) (root-for-order ?goal-id-root)))
-    
-; )
+    ; Parallel part goal
+    (assert (goal (class GOAL-PARALLEL-TO-RS-AND-GET-CS)
+                (id ?goal-id-parallel)
+                (type ACHIEVE)
+                (sub-type CENTRAL-RUN-PARALLEL)
+                (parent ?goal-id-root)
+                (verbosity NOISY)
+                (priority 3.0) 
+                (is-executable TRUE)
+                (meta-template goal-meta)
+    ))
+    (assert (goal-meta (goal-id ?goal-id-parallel) (order-id ?ord) (root-for-order ?goal-id-root)))
+    ; Goal TO-RS
+    (assert (goal (class GOAL-TO-RS1)
+                (id ?goal-id-rs)
+                (type ACHIEVE)
+                (sub-type SIMPLE)
+                (parent ?goal-id-parallel)
+                (verbosity NOISY) (is-executable TRUE)
+                (meta-template goal-meta)
+    ))
+    (assert (goal-meta (goal-id ?goal-id-rs) (order-id ?ord) (root-for-order ?goal-id-root)))
+    ; Goal get CS
+    (assert (goal (class GOAL-GET-CS)
+                (id ?goal-id-cs)
+                (type ACHIEVE)
+                (sub-type SIMPLE)
+                (parent ?goal-id-parallel)
+                (verbosity NOISY) (is-executable TRUE)
+                (meta-template goal-meta)
+    ))
+    (assert (goal-meta (goal-id ?goal-id-cs) (order-id ?ord) (root-for-order ?goal-id-root)))
+    ; Goal to CS
+    (assert (goal (class GOAL-TO-CS)
+                (id ?goal-id-tocs)
+                (type ACHIEVE)
+                (sub-type SIMPLE)
+                (parent ?goal-id-root)
+                (verbosity NOISY) (priority 4.0) (is-executable TRUE)
+                (meta-template goal-meta)
+    ))
+    (assert (goal-meta (goal-id ?goal-id-tocs) (order-id ?ord) (root-for-order ?goal-id-root)))
+    ; Goal CS -> DS
+    (assert (goal (class GOAL-DELIVER-C1)
+                (id ?goal-id-csds)
+                (type ACHIEVE)
+                (sub-type SIMPLE)
+                (parent ?goal-id-root)
+                (verbosity NOISY) (priority 5.0) (is-executable TRUE)
+                (meta-template goal-meta)
+    ))
+    (assert (goal-meta (goal-id ?goal-id-csds) (order-id ?ord) (root-for-order ?goal-id-root)))
+
+)
 
 
 ; Goal executablity
@@ -214,8 +290,42 @@
 
 
 )
-;Expand Transport from any Station with fitting workpiece to CS
+; expansion rule for mounting first ring
+(defrule goal-expander-goal-to-rs1
+    ?g <- (goal (id ?goal-id) (class GOAL-TO-RS1) (mode SELECTED) (parent ?parent))
+    ?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
+    ?rw <- (domain-fact (name robot-waiting) (param-values ?robot))
 
+    (domain-fact (name order-base-color) (param-values ?ord ?basecol))
+    (domain-fact (name order-ring1-color) (param-values ?ord ?ring1col))
+    (domain-fact (name order-ring2-color) (param-values ?ord ?ring2col))
+    (domain-fact (name order-ring3-color) (param-values ?ord ?ring3col))
+    (domain-fact (name order-cap-color) (param-values ?ord ?capcol))
+
+    (domain-fact (name rs-ring-spec) (param-values ?rs ?ring1col ?ring1num))
+
+    (domain-fact (name wp-at) (param-values ?wp ?s ?side))
+    (domain-fact (name wp-base-color) (param-values ?wp ?basecol))
+    (domain-fact (name wp-ring1-color) (param-values ?wp RING_NONE))
+
+    (domain-fact (name at) (param-values ?robot ?fl1 ?fs1))
+
+    =>
+    (plan-assert-sequential TRANSPORT-TO-RS1-PLAN ?goal-id ?robot
+        (plan-assert-action move ?robot ?fl1 ?fs1 ?s ?side)
+        (plan-assert-action wp-get ?robot ?wp ?s ?side)
+        (plan-assert-action move ?robot ?s ?side ?rs INPUT)
+        (plan-assert-action prepare-rs ?rs ?ring1col )
+        (plan-assert-action wp-put ?robot ?wp ?cs INPUT)
+        (plan-assert-action cs-mount-cap ?cs ?wp ?capcol)
+    )
+
+
+    (printout t "Robot " ?robot " was assigned TO-RS-" ?ord crlf)
+    (retract ?rw)  ;We must insert this again when done executing!
+)
+
+;Expand Transport from any Station with fitting workpiece to CS
 (defrule goal-expander-goal-to-cs
     ?g <- (goal (id ?goal-id) (class GOAL-TO-CS) (mode SELECTED) (parent ?parent))
     ?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
