@@ -90,11 +90,19 @@
   "If there is a discard request that is not paired with a goal yet, create a discard goal."
   ?request <- (wm-fact (key request discard args? ord ?order-id cs ?cs prio ?prio) (value OPEN))
 
+	; MPS-Source CEs
+	(wm-fact (key refbox team-color) (value ?team-color))
+	(wm-fact (key domain fact mps-type args? m ?ds t DS))
+	(wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
+
   (goal (class SUPPORT-ROOT) (id ?root-id))
+  (goal (class INSTRUCTION-ROOT) (id ?i-root-id))
   =>
   (bind ?discard-goal (goal-production-assert-discard UNKNOWN ?cs OUTPUT ?order-id))
-  (modify ?request (value ACTIVE))
   (modify ?discard-goal (parent ?root-id) (priority ?prio))
+  (bind ?i-discard-goal (goal-production-assert-instruct-ds-discard UNKNOWN ?ds))
+  (modify ?i-discard-goal (parent ?i-root-id) (priority ?prio))
+  (modify ?request (value ACTIVE))
 )
 
 (defrule goal-request-assert-payment-goal
@@ -149,10 +157,11 @@
   "If there is a discard request that is not paired with a goal yet, use a discard offer."
   ?request <- (wm-fact (key request discard args? ord ?order-id cs ?cs prio ?prio) (value ACTIVE))
   ?request-offer <- (wm-fact (key request offer discard args? $? cs ?cs) (value ?discard-goal-id))
-  ?discard-goal <- (goal (class DISCARD) (mode FORMULATED) (params $? wp-loc ?cs $?))
+  ?discard-goal <- (goal (class DISCARD) (mode FORMULATED) (params wp ?wp wp-loc ?cs $?))
+  ?i-discard-goal <- (goal (class INSTRUCT-DS-DISCARD) (mode FORMULATED) (params wp ?wp $?))
   =>
   (modify ?request (value ?discard-goal-id))
-  (retract ?request-offer ?discard-goal)
+  (retract ?request-offer ?discard-goal ?i-discard-goal)
 )
 
 (defrule goal-request-accept-payment-offer

@@ -306,6 +306,19 @@
   (return ?goal)
 )
 
+(deffunction goal-production-assert-instruct-ds-discard
+  (?wp ?ds)
+
+  (bind ?goal (assert (goal (class INSTRUCT-DS-DISCARD)
+    (id (sym-cat INSTRUCT-DS-DISCARD- (gensym*))) (sub-type SIMPLE)
+    (verbosity NOISY) (is-executable FALSE)
+    (params wp ?wp
+            target-mps ?ds)
+  )))
+  (goal-meta-assert ?goal central nil nil)
+  (return ?goal)
+)
+
 (deffunction goal-production-assert-deliver
   "If there is a DS, do a normal delivery, otherwise do a RoboCup 2021 delivery. "
   (?wp ?order-id ?instruct-parent ?ds)
@@ -827,6 +840,8 @@
   "Fill in missing workpiece information into the discard goals"
   ?g <- (goal (id ?goal-id) (class DISCARD) (mode FORMULATED) (parent ?parent)
               (params wp UNKNOWN wp-loc ?mps wp-side ?mps-side))
+  ?i <- (goal (id ?i-goal-id) (class INSTRUCT-DS-DISCARD) (mode FORMULATED)
+	            (params wp UNKNOWN target-mps ?ds))
   (goal-meta (goal-id ?goal-id) (order-id ?order-id))
   (goal (id ?buffer-goal-id) (class BUFFER-CAP) (mode ~FORMULATED))
   (goal-meta (goal-id ?buffer-goal-id) (order-id ?order-id))
@@ -836,6 +851,7 @@
   (goal-meta (goal-id ?instruct-goal) (order-id ?order-id))
   =>
   (modify ?g (params wp ?wp wp-loc ?mps wp-side ?mps-side))
+  (modify ?i (params wp ?wp target-mps ?ds))
 )
 
 (defrule goal-production-create-enter-field

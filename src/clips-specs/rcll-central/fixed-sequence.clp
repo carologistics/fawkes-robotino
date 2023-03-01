@@ -281,8 +281,6 @@
 				(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
 			)
 		)
-		(plan-assert-action prepare-ds ?target-mps O0)
-		(plan-assert-action fulfill-order-discard (create$ O0 ?wp ?target-mps GATE1))
 	)
 	(modify ?g (mode EXPANDED))
 )
@@ -559,6 +557,17 @@
 	(modify ?g (mode EXPANDED))
 )
 
+(defrule goal-expander-instruct-ds-discard
+	?g <- (goal (id ?goal-id) (class INSTRUCT-DS-DISCARD) (mode SELECTED)
+	            (params wp ?wp target-mps ?mps))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	=>
+	(plan-assert-sequential INSTRUCT-DS-DISCARD-PLAN ?goal-id ?robot
+		(plan-assert-action prepare-ds ?mps O0)
+		(plan-assert-action fulfill-order-discard (create$ O0 ?wp ?mps GATE1))
+	)
+	(modify ?g (mode EXPANDED))
+)
 
 (defrule goal-expander-navigation-challenge-move
 	?g <- (goal (id ?goal-id) (class NAVIGATION-CHALLENGE-MOVE) (mode SELECTED)

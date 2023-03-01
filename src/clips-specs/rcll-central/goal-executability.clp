@@ -737,7 +737,7 @@ The workpiece remains in the output of the used ring station after
 	            (params wp ?wp target-mps ?mps)
 	            (is-executable FALSE))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	(not (goal (class INSTRUCT-DS-DELIVER) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
+	(not (goal (class INSTRUCT-DS-DELIVER|INSTRUCT-DS-DISCARD) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	(wm-fact (key domain fact mps-type args? m ?mps t DS))
 	(wm-fact (key domain fact mps-state args? m ?mps s IDLE))
@@ -752,6 +752,26 @@ The workpiece remains in the output of the used ring station after
 	(modify ?g (is-executable TRUE))
 )
 
+(defrule goal-production-instruct-discard-executable
+" Instruct the DS to consume the product to be discarded"
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class INSTRUCT-DS-DISCARD) (mode FORMULATED)
+	            (params wp ?wp target-mps ?mps) (is-executable FALSE))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(not (goal (class INSTRUCT-DS-DELIVER|INSTRUCT-DS-DISCARD) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
+
+	; Refbox CEs
+	(wm-fact (key refbox team-color) (value ?team-color))
+
+	; MPS-Source CEs
+	(wm-fact (key domain fact mps-type args? m ?mps t DS))
+	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
+	=>
+	(printout t "Goal INSTRUCT-DS-DISCARD executable for " ?robot crlf)
+	(modify ?g (is-executable TRUE))
+)
 
 (defrule goal-production-instruct-rs-mount-ring-executable
 " Instruct ring station to mount a ring on the product. "
