@@ -120,20 +120,41 @@
 ; ----------------------- MPS Instruction GOALS -------------------------------
 
 (defrule goal-expander-instruct-cs-mount-cap
-	?g <- (goal (id ?goal-id) (class INSTRUCT-CS-MOUNT-CAP) (mode SELECTED)
+	?g <- (goal (id ?goal-id) (class MOUNT-CAP-GOAL) (mode SELECTED)
 	            (params target-mps ?mps cap-color ?cap-color))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-loc side ?curr-side))
+	(wm-fact (key domain fact holding args? robot ?robot workpiece ?wp))
+	; fact: cap mounted
+	(wm-fact (key domain fact cs-buffered args? mps ?mps cap-color ?cap-color))
+
 	=>
 	(plan-assert-sequential INSTRUCT-TO-MOUNT-CAP-PLAN ?goal-id ?robot
-		(plan-assert-safe-move ?robot ?curr-loc ?curr-side ?mps ?side
-			(plan-assert-action wp-put ?robot ?cc ?cs INPUT)
+		(plan-assert-safe-move ?robot ?curr-loc ?curr-side ?mps INPUT
+			(plan-assert-action wp-put ?robot ?wp ?mps INPUT)
 			(plan-assert-action prepare-cs ?mps MOUNT_CAP)
+			; wp cc
 			(plan-assert-action cs-mount-cap ?mps ?wp ?cap-color)
 		)
 	)
 	(modify ?g (mode EXPANDED))
 )
+
+(defrule goal-expander-go-get-mounted-base
+	?g <- (goal (id ?goal-id) (class GET-MOUNTED-BASE-GOAL) (mode SELECTED)
+	            (params wp ?wp target-mps ?mps))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-loc side ?curr-side))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+	=>
+	(plan-assert-sequential INSTRUCT-TO-MOUNT-CAP-PLAN ?goal-id ?robot
+		(plan-assert-safe-move ?robot ?curr-loc ?curr-side ?mps OUTPUT
+			(plan-assert-action wp-get ?robot ?wp ?mps OUTPUT)
+		)
+	)
+	(modify ?g (mode EXPANDED))
+)
+
 
 (defrule goal-expander-instruct-bs-dispense-base
 	; ?p <- (goal (mode DISPATCHED) (id ?parent))
@@ -182,7 +203,7 @@
 		    (bind ?params (create$ ?order ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color ?ring2-color)))
 		(case C3 then
 		    (bind ?params (create$ ?order ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color ?ring2-color ?ring3-color)))
-)
+	)
 	(plan-assert-sequential INSTRUCT-DS-DELIVER-PLAN ?goal-id ?robot
 		(plan-assert-action prepare-ds ?mps ?order)
 		(plan-assert-action (sym-cat fulfill-order- (lowcase ?complexity)) ?params)
