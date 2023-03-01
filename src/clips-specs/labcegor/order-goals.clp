@@ -10,7 +10,10 @@
     (not (domain-fact (name order-fulfilled) (param-values ?ord)))
 
     (not (goal-meta (order-id ?ord)))
-    ;(not (goal (id ?some-goal-id) (class GOAL-ORDER-C0) (outcome ~COMPLETED))) ;This has the effect, that always there is only one C0 root-order which is not COMPLETED
+    (not (goal (id ?some-goal-id) (class GOAL-ORDER-C0) (outcome ~COMPLETED)))
+    (not (goal (id ?some-goal-id) (class GOAL-ORDER-C1) (outcome ~COMPLETED)))
+    (not (goal (id ?some-goal-id) (class GOAL-ORDER-C2) (outcome ~COMPLETED)))
+    (not (goal (id ?some-goal-id) (class GOAL-ORDER-C3) (outcome ~COMPLETED))) ;This has the effect, that always there is only one root-order which is not COMPLETED
     
     =>
     (printout t "Building C0-Tree ..." crlf)
@@ -19,11 +22,11 @@
     (bind ?goal-id-parallel (sym-cat GOAL-PARALLEL-BS-CS- ?ord ))
     (bind ?goal-id-bs (sym-cat GOAL-GET-BS- ?ord ))
     (bind ?goal-id-cs (sym-cat GOAL-GET-CS- ?ord ))
-    (bind ?goal-id-bscs (sym-cat GOAL-BS-TO-CS- ?ord ))
+    (bind ?goal-id-tocs (sym-cat GOAL-TO-CS- ?ord ))
     (bind ?goal-id-csds (sym-cat GOAL-DELIVER-C0- ?ord ))
 
     ; Root Goal
-    (assert (goal (class GOAL-ORDER-C0)                     ; This declares the class for this goal, which is a blocking precondition for executing another C0 order
+    (assert (goal (class GOAL-ORDER-C0)                     
                 (id ?goal-id-root)
                 (type ACHIEVE)
                 (sub-type CENTRAL-RUN-LINEAR)
@@ -68,15 +71,15 @@
     (assert (goal-meta (goal-id ?goal-id-cs) (order-id ?ord) (root-for-order ?goal-id-root)))
 
     ; Goal BS -> CS
-    (assert (goal (class GOAL-BS-TO-CS)
-                (id ?goal-id-bscs)
+    (assert (goal (class GOAL-TO-CS)
+                (id ?goal-id-tocs)
                 (type ACHIEVE)
                 (sub-type SIMPLE)
                 (parent ?goal-id-root)
                 (verbosity NOISY) (priority 2.0) (is-executable TRUE)
                 (meta-template goal-meta)
     ))
-    (assert (goal-meta (goal-id ?goal-id-bscs) (order-id ?ord) (root-for-order ?goal-id-root)))
+    (assert (goal-meta (goal-id ?goal-id-tocs) (order-id ?ord) (root-for-order ?goal-id-root)))
 
     ; Goal CS -> DS
     (assert (goal (class GOAL-DELIVER-C0)
@@ -89,6 +92,44 @@
     ))
     (assert (goal-meta (goal-id ?goal-id-csds) (order-id ?ord) (root-for-order ?goal-id-root)))
 )
+
+; (defrule assign-c1-order
+;     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+;     (not (and (domain-object (name ?robot) (type robot)) (not (domain-fact (name entered-field) (param-values ?robot)))))
+    
+;     (domain-fact (name order-complexity) (param-values ?ord C1))
+;     (not (domain-fact (name order-fulfilled) (param-values ?ord)))
+
+;     (not (goal-meta (order-id ?ord)))
+;     (not (goal (id ?some-goal-id) (class GOAL-ORDER-C0) (outcome ~COMPLETED)))
+;     (not (goal (id ?some-goal-id) (class GOAL-ORDER-C1) (outcome ~COMPLETED)))
+;     (not (goal (id ?some-goal-id) (class GOAL-ORDER-C2) (outcome ~COMPLETED)))
+;     (not (goal (id ?some-goal-id) (class GOAL-ORDER-C3) (outcome ~COMPLETED))) ;This has the effect, that always there is only one root-order which is not COMPLETED
+
+;     =>
+;     (printout t "Building C1-Tree ..." crlf)
+
+;     (bind ?goal-id-root (sym-cat GOAL-ORDER-C1- ?ord ))
+
+;     (bind ?goal-id-bs (sym-cat GOAL-GET-BS- ?ord ))
+;     (bind ?goal-id-parallel (sym-cat GOAL-PARALLEL-BS-TO-RS-AND-GET-CS- ?ord ))
+;     (bind ?goal-id-bsrs (sym-cat GOAL-BS-TO-RS- ?ord ))
+;     (bind ?goal-id-cs (sym-cat GOAL-GET-CS- ?ord ))
+;     (bind ?goal-id-tocs (sym-cat GOAL-TO-CS- ?ord ))
+;     (bind ?goal-id-csds (sym-cat GOAL-DELIVER-C1- ?ord ))
+
+;     ; Root Goal
+;     (assert (goal (class GOAL-ORDER-C1)                     
+;                 (id ?goal-id-root)
+;                 (type ACHIEVE)
+;                 (sub-type CENTRAL-RUN-LINEAR)
+;                 (verbosity NOISY) (is-executable TRUE)
+;                 (meta-template goal-meta)
+;     ))
+;     (assert (goal-meta (goal-id ?goal-id-root) (order-id ?ord) (root-for-order ?goal-id-root)))
+    
+; )
+
 
 ; Goal executablity
 ;----------------------------------------------------------------------------
@@ -173,35 +214,41 @@
 
 
 )
-;Expand Transport BS to CS
+;Expand Transport from any Station with fitting workpiece to CS
 
-(defrule goal-expander-goal-bs-to-cs
-    ?g <- (goal (id ?goal-id) (class GOAL-BS-TO-CS) (mode SELECTED) (parent ?parent))
+(defrule goal-expander-goal-to-cs
+    ?g <- (goal (id ?goal-id) (class GOAL-TO-CS) (mode SELECTED) (parent ?parent))
     ?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
     ?rw <- (domain-fact (name robot-waiting) (param-values ?robot))
+    
     (domain-object (name ?team-color) (type team-color)) ; This selects our team color, as this fact only exists for our own team
     (domain-fact (name order-base-color) (param-values ?ord ?basecol))
+    (domain-fact (name order-ring1-color) (param-values ?ord ?ring1col))
+    (domain-fact (name order-ring2-color) (param-values ?ord ?ring2col))
+    (domain-fact (name order-ring3-color) (param-values ?ord ?ring3col))
     (domain-fact (name order-cap-color) (param-values ?ord ?capcol))
 
-    (domain-fact (name wp-at) (param-values ?wp ?bs ?side))
+    (domain-fact (name wp-at) (param-values ?wp ?s ?side))
     (domain-fact (name wp-base-color) (param-values ?wp ?basecol))
-    (domain-fact (name mps-type) (param-values ?bs BS))
-    (domain-fact (name mps-team) (param-values ?bs ?team-color))
+    (domain-fact (name wp-ring1-color) (param-values ?wp ?ring1col))
+    (domain-fact (name wp-ring2-color) (param-values ?wp ?ring2col))
+    (domain-fact (name wp-ring3-color) (param-values ?wp ?ring3col))
+    (domain-fact (name mps-team) (param-values ?s ?team-color))
 
     (domain-fact (name cs-buffered) (param-values ?cs ?capcol)) ; PROBLEM:two robots on two different goals could go to the same cs
     (domain-fact (name at) (param-values ?robot ?fl1 ?fs1))
     =>
-    (plan-assert-sequential TRANSPORT-BS-TO-CS-PLAN ?goal-id ?robot
-        (plan-assert-action move ?robot ?fl1 ?fs1 ?bs ?side)
-        (plan-assert-action wp-get ?robot ?wp ?bs ?side)
-        (plan-assert-action move ?robot ?bs ?side ?cs INPUT)
+    (plan-assert-sequential TRANSPORT-TO-CS-PLAN ?goal-id ?robot
+        (plan-assert-action move ?robot ?fl1 ?fs1 ?s ?side)
+        (plan-assert-action wp-get ?robot ?wp ?s ?side)
+        (plan-assert-action move ?robot ?s ?side ?cs INPUT)
         (plan-assert-action prepare-cs ?cs MOUNT_CAP)
         (plan-assert-action wp-put ?robot ?wp ?cs INPUT)
         (plan-assert-action cs-mount-cap ?cs ?wp ?capcol)
     )
     (modify ?g (mode EXPANDED))
     (modify ?m (assigned-to ?robot))
-    (printout t "Robot " ?robot " was assigned BS-TO-CS-" ?ord crlf)
+    (printout t "Robot " ?robot " was assigned TO-CS-" ?ord crlf)
     (retract ?rw)  ;We must insert this again when done executing!
 
 )
@@ -216,6 +263,9 @@
     (domain-fact (name mps-type) (param-values ?ds DS))
 
     (domain-fact (name order-base-color) (param-values ?ord ?basecol))
+    (domain-fact (name order-ring1-color) (param-values ?ord ?ring1col))
+    (domain-fact (name order-ring2-color) (param-values ?ord ?ring2col))
+    (domain-fact (name order-ring3-color) (param-values ?ord ?ring3col))
     (domain-fact (name order-cap-color) (param-values ?ord ?capcol))
     (domain-fact (name order-gate) (param-values ?ord ?gate))
 
@@ -223,7 +273,9 @@
     (domain-fact (name wp-at) (param-values ?wp ?cs OUTPUT))
     (domain-fact (name wp-base-color) (param-values ?wp ?basecol))
     (domain-fact (name wp-cap-color) (param-values ?wp ?capcol))
-    (domain-fact (name wp-ring1-color) (param-values ?wp RING_NONE))
+    (domain-fact (name wp-ring1-color) (param-values ?wp ?ring1col))
+    (domain-fact (name wp-ring2-color) (param-values ?wp ?ring2col))
+    (domain-fact (name wp-ring3-color) (param-values ?wp ?ring3col))
     (domain-fact (name at) (param-values ?robot ?fl1 ?fs1))
     =>
     (plan-assert-sequential DELIVER-C0 ?goal-id ?robot
