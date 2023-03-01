@@ -81,16 +81,16 @@ POSITIONAL_ARGS=()
 
 CUSTOM_MONGO=0
 NUMBER_RUN=2
-NUMBER_TRAININGS=5
-EXPERIMENT_EVAL="rl"
+NUMBER_TRAININGS=1
+EXPERIMENT_EVAL="" #"rl"
 BASELINE_EVAL="central"
 EXPERIMENT_REFBOX_ARGS=$refbox_args
 BASELINE_REFBOX_ARGS=$refbox_args
 LOAD_GAME="rl_game_1.gz"
 TRAINING_MODE=0
-REFBOX_SPEED=4
+REFBOX_SPEED=2
 GAME_TIME=$((1200/$REFBOX_SPEED))
-GAMES_PER_TRAINING=10
+GAMES_PER_TRAINING=5
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -105,7 +105,6 @@ while [[ $# -gt 0 ]]; do
       ;;
     -n)
       NUMBER_RUN=$2
-      NUMBER_TRAININGS=$2
       shift # past argument
       shift
       ;;
@@ -198,6 +197,8 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+NUMBER_TRAININGS=$NUMBER_RUN
 
 stop_simulation () {
     killall gazsim-startup.
@@ -493,25 +494,25 @@ fi
 #fi
 
 if [ $TRAINING_MODE -eq 0 ]; then
-  for i in $(seq $NUMBER_RUN)
+  for k in $(seq $NUMBER_RUN)
   do
       echo "Training mode off!"
       #run experiment
-      run_simulation $name experiment$i "$EXPERIMENT_COMMAND" $EXPERIMENT_EVAL
-      dir_monitoring+=" experiment$i"
+      run_simulation $name experiment$k "$EXPERIMENT_COMMAND" $EXPERIMENT_EVAL
+      dir_monitoring+=" experiment$k"
       #if baseline configured, run baseline
       if ! [ -z ${BASELINE_COMMAND+x} ]; then
-        run_simulation $name baseline$i "$BASELINE_COMMAND" $BASELINE_EVAL
+        run_simulation $name baseline$k "$BASELINE_COMMAND" $BASELINE_EVAL
       fi
   done
 else
   dir_monitoring=""
   #start simulation (with fawkes) $NUMBER_TRAININGS times
-  for i in $(seq $NUMBER_TRAININGS)
+  for k in $(seq $NUMBER_TRAININGS)
   do
       #run training
-      run_rl_training $name training$i "$EXPERIMENT_COMMAND" $EXPERIMENT_EVAL
-      dir_monitoring+=" training$i"
+      run_rl_training $name training$k "$EXPERIMENT_COMMAND" $EXPERIMENT_EVAL
+      dir_monitoring+=" training$k"
   done
   echo "Monitoring dirs: " $dir_monitoring
   echo "path: " `pwd`/$name
