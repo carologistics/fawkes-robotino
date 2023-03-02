@@ -30,7 +30,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as patches
 from matplotlib.lines import Line2D
-from datetime import datetime
+from datetime import datetime, timedelta
 
 time_format = "%H:%M:%S.%f"
 
@@ -54,16 +54,26 @@ args = parser.parse_args(args=None if sys.argv[1:] else ['--help'])
 if args==None:
     parser.exit(1)
 
+
+# update day if time is between 23 and 00
+def check_day(start, end):
+  if start.hour == 23 and end.hour ==0:
+    end +=timedelta(days=1)
+  return start, end
+
 # difference in seconds between starttime given in datetime format and and endtime given string format
 def time_string_diff(start, end):
-  return -(start - datetime.strptime(end, time_format)).total_seconds()
+  start, end = check_day(start, datetime.strptime(end, time_format))
+  return -(start - end).total_seconds()
 
 # difference in seconds between start and endtime given in string format
 def string_string_diff(start, end):
-  return -(datetime.strptime(start, time_format) - datetime.strptime(end, time_format)).total_seconds()
+  start, end = check_day(datetime.strptime(start, time_format) , datetime.strptime(end, time_format))
+  return -(start - end).total_seconds()
 
 # difference in seconds between start and endtime given in datetime format
 def time_diff(start,end):
+  start, end = check_day(start, end)
   return -(start - end).total_seconds()
 
 # plot the given goals onto the given axis
@@ -78,7 +88,8 @@ def plot_goals(goals, ax, ps, pe, title):
       hatch = '//'
       edgecolor = (0.8, 0.2, 0.2, 0.3)
 
-    duration = -time_string_diff(pe, row['dispatched'])
+    # duration = -time_string_diff(pe, row['dispatched'])
+    duration = time_diff(datetime.strptime(row['dispatched'], time_format),pe)
     if row['outcome'] != 'UNKNOWN':
       duration = string_string_diff(row['dispatched'],row['finished'])
     ax.barh(0, duration, hatch=hatch, edgecolor=edgecolor, align='center',
