@@ -320,10 +320,13 @@
 	(modify ?g (mode SELECTED))
 )
 
-; goal 1-1-1
+; todo goal 1-1-1
 (defrule goal-reasoner-buffer-cap-goal-select
 	?g <- (goal (id ?goal-id) (class BUFFER-CAP-GOAL) (mode FORMULATED))
-	=>
+	; if avaliable robts
+  =>
+  ; assign robot
+  ;	modify (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(modify ?g (mode SELECTED))
 )
 (defrule goal-reasoner-discard-goal-select
