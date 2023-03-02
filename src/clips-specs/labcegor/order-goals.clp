@@ -10,10 +10,6 @@
     (not (domain-fact (name order-fulfilled) (param-values ?ord)))
 
     (not (goal-meta (order-id ?ord)))
-    (not (goal (id ?some-goal-id) (class GOAL-ORDER-C0) (outcome ~COMPLETED)))
-    (not (goal (id ?some-goal-id) (class GOAL-ORDER-C1) (outcome ~COMPLETED)))
-    (not (goal (id ?some-goal-id) (class GOAL-ORDER-C2) (outcome ~COMPLETED)))
-    (not (goal (id ?some-goal-id) (class GOAL-ORDER-C3) (outcome ~COMPLETED))) ;This has the effect, that always there is only one root-order which is not COMPLETED
     
     =>
     (printout t "Building C0-Tree ..." crlf)
@@ -101,19 +97,15 @@
     (not (domain-fact (name order-fulfilled) (param-values ?ord)))
 
     (not (goal-meta (order-id ?ord)))
-    (not (goal (id ?some-goal-id) (class GOAL-ORDER-C0) (outcome ~COMPLETED)))
-    (not (goal (id ?some-goal-id) (class GOAL-ORDER-C1) (outcome ~COMPLETED)))
-    (not (goal (id ?some-goal-id) (class GOAL-ORDER-C2) (outcome ~COMPLETED)))
-    (not (goal (id ?some-goal-id) (class GOAL-ORDER-C3) (outcome ~COMPLETED))) ;This has the effect, that always there is only one root-order which is not COMPLETED
 
     =>
     (printout t "Building C1-Tree ..." crlf)
 
     (bind ?goal-id-root (sym-cat GOAL-ORDER-C1- ?ord ))
-    (bind ?goal-id-rs (sym-cat GOAL-PAY-ONE-RING- ?ord )) ;needs expansion
+    (bind ?goal-id-payring (sym-cat GOAL-PAY-FIRST-RING- ?ord )) ;needs expansion
     (bind ?goal-id-bs (sym-cat GOAL-GET-BS- ?ord ))
     (bind ?goal-id-parallel (sym-cat GOAL-PARALLEL-TO-RS-AND-GET-CS- ?ord ))
-    (bind ?goal-id-rs (sym-cat GOAL-TO-RS- ?ord )) ;needs expansion
+    (bind ?goal-id-tors (sym-cat GOAL-TO-RS- ?ord )) ;needs expansion
     (bind ?goal-id-cs (sym-cat GOAL-GET-CS- ?ord ))
     (bind ?goal-id-tocs (sym-cat GOAL-TO-CS- ?ord ))
     (bind ?goal-id-csds (sym-cat GOAL-DELIVER-C1- ?ord )) ;needs expansion (copy paste)
@@ -128,8 +120,8 @@
     ))
     (assert (goal-meta (goal-id ?goal-id-root) (order-id ?ord) (root-for-order ?goal-id-root)))
     ; Goal Pay One Ring
-    (assert (goal (class GOAL-PAY-ONE-RING)
-                (id ?goal-id-rs)
+    (assert (goal (class GOAL-PAY-FIRST-RING)
+                (id ?goal-id-payring)
                 (type ACHIEVE)
                 (sub-type SIMPLE)
                 (parent ?goal-id-root)
@@ -138,7 +130,7 @@
                 (is-executable TRUE)
                 (meta-template goal-meta)
     ))
-    (assert (goal-meta (goal-id ?goal-id-rs) (order-id ?ord) (root-for-order ?goal-id-root)))
+    (assert (goal-meta (goal-id ?goal-id-payring) (order-id ?ord) (root-for-order ?goal-id-root)))
     ; Goal get BS
     (assert (goal (class GOAL-GET-BS)
                 (id ?goal-id-bs)
@@ -165,14 +157,14 @@
     (assert (goal-meta (goal-id ?goal-id-parallel) (order-id ?ord) (root-for-order ?goal-id-root)))
     ; Goal TO-RS
     (assert (goal (class GOAL-TO-RS1)
-                (id ?goal-id-rs)
+                (id ?goal-id-tors)
                 (type ACHIEVE)
                 (sub-type SIMPLE)
                 (parent ?goal-id-parallel)
                 (verbosity NOISY) (is-executable TRUE)
                 (meta-template goal-meta)
     ))
-    (assert (goal-meta (goal-id ?goal-id-rs) (order-id ?ord) (root-for-order ?goal-id-root)))
+    (assert (goal-meta (goal-id ?goal-id-tors) (order-id ?ord) (root-for-order ?goal-id-root)))
     ; Goal get CS
     (assert (goal (class GOAL-GET-CS)
                 (id ?goal-id-cs)
@@ -290,6 +282,105 @@
 
 
 )
+
+; expansion rule to pay for first ring (nothing)
+(defrule goal-expander-goal-pay-first-ring-cc0
+    ?g <- (goal (id ?goal-id) (class GOAL-PAY-FIRST-RING) (mode SELECTED) (parent ?parent))
+    ?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
+
+    (domain-fact (name order-ring1-color) (param-values ?ord ?ring1col))
+    (domain-fact (name rs-ring-spec) (param-values ?rs ?ring1col ZERO))
+
+    =>
+
+    (modify ?g (mode EVALUATED) (outcome COMPLETED))
+)
+
+; expansion rule to pay for first ring (one payment)
+(defrule goal-expander-goal-pay-first-ring-cc1
+    ?g <- (goal (id ?goal-id) (class GOAL-PAY-FIRST-RING) (mode SELECTED) (parent ?parent))
+    ?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
+    ?rw <- (domain-fact (name robot-waiting) (param-values ?robot))
+
+    (domain-fact (name mps-team) (param-values ?bs ?team-color))
+    (domain-fact (name mps-type) (param-values ?bs BS))
+
+    (domain-fact (name order-ring1-color) (param-values ?ord ?ring1col))
+    (domain-fact (name rs-ring-spec) (param-values ?rs ?ring1col ONE))
+    (domain-fact (name rs-filled-with) (param-values ?rs ?rs-before))
+    (domain-fact (name rs-inc) (param-values ?rs-before ?rs-after))
+
+    (domain-fact (name at) (param-values ?robot ?fl1 ?fs1))
+    
+
+    =>
+    (bind ?wp (sym-cat wp-1st-pay ?goal-id))
+    (plan-assert-sequential PAY-FIRST-RING-CC1 ?goal-id ?robot
+        (plan-assert-action prepare-bs ?bs INPUT BASE_BLACK)
+        (plan-assert-action spawn-wp ?wp ?robot)
+        (plan-assert-action bs-dispense ?bs INPUT ?wp BASE_BLACK)
+
+        (plan-assert-action move ?robot ?fl1 ?fs1 ?bs INPUT)
+        (plan-assert-action wp-get ?robot ?wp ?bs INPUT)
+        (plan-assert-action move ?robot ?bs INPUT ?rs INPUT)
+        (plan-assert-action wp-put-slide-cc ?robot ?wp ?rs ?rs-before ?rs-after)
+    )
+
+    (modify ?g (mode EXPANDED))
+    (modify ?m (assigned-to ?robot))
+
+    (printout t "Robot " ?robot " was assigned PAY-FIRST-RING-" ?ord crlf)
+    (retract ?rw)  ;We must insert this again when done executing!
+)
+
+; expansion rule to pay for first ring (two payments)
+(defrule goal-expander-goal-pay-first-ring-cc2
+    ?g <- (goal (id ?goal-id) (class GOAL-PAY-FIRST-RING) (mode SELECTED) (parent ?parent))
+    ?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
+    ?rw <- (domain-fact (name robot-waiting) (param-values ?robot))
+
+    (domain-fact (name mps-team) (param-values ?bs ?team-color))
+    (domain-fact (name mps-type) (param-values ?bs BS))
+
+    (domain-fact (name order-ring1-color) (param-values ?ord ?ring1col))
+    (domain-fact (name rs-ring-spec) (param-values ?rs ?ring1col TWO))
+    (domain-fact (name rs-filled-with) (param-values ?rs ?rs-before))
+    (domain-fact (name rs-inc) (param-values ?rs-before ?rs-after1))
+    (domain-fact (name rs-inc) (param-values ?rs-after1 ?rs-after2))
+
+    (domain-fact (name at) (param-values ?robot ?fl1 ?fs1))
+    
+
+    =>
+    (bind ?wp1 (sym-cat wp-1st-pay ?goal-id))
+    (bind ?wp2 (sym-cat wp-2nd-pay ?goal-id))
+    (plan-assert-sequential PAY-FIRST-RING-CC1 ?goal-id ?robot
+        (plan-assert-action prepare-bs ?bs INPUT BASE_BLACK)
+        (plan-assert-action spawn-wp ?wp1 ?robot)
+        (plan-assert-action bs-dispense ?bs INPUT ?wp1 BASE_BLACK)
+
+        (plan-assert-action move ?robot ?fl1 ?fs1 ?bs INPUT)
+        (plan-assert-action wp-get ?robot ?wp1 ?bs INPUT)
+        (plan-assert-action move ?robot ?bs INPUT ?rs INPUT)
+        (plan-assert-action wp-put-slide-cc ?robot ?wp1 ?rs ?rs-before ?rs-after1)
+
+        (plan-assert-action prepare-bs ?bs INPUT BASE_BLACK)
+        (plan-assert-action spawn-wp ?wp2 ?robot)
+        (plan-assert-action bs-dispense ?bs INPUT ?wp2 BASE_BLACK)
+
+        (plan-assert-action move ?robot ?rs INPUT ?bs INPUT)
+        (plan-assert-action wp-get ?robot ?wp2 ?bs INPUT)
+        (plan-assert-action move ?robot ?bs INPUT ?rs INPUT)
+        (plan-assert-action wp-put-slide-cc ?robot ?wp2 ?rs ?rs-after1 ?rs-after2)
+    )
+
+    (modify ?g (mode EXPANDED))
+    (modify ?m (assigned-to ?robot))
+
+    (printout t "Robot " ?robot " was assigned PAY-FIRST-RING-" ?ord crlf)
+    (retract ?rw)  ;We must insert this again when done executing!
+)
+
 ; expansion rule for mounting first ring
 (defrule goal-expander-goal-to-rs1
     ?g <- (goal (id ?goal-id) (class GOAL-TO-RS1) (mode SELECTED) (parent ?parent))
@@ -302,11 +393,13 @@
     (domain-fact (name order-ring3-color) (param-values ?ord ?ring3col))
     (domain-fact (name order-cap-color) (param-values ?ord ?capcol))
 
-    (domain-fact (name rs-ring-spec) (param-values ?rs ?ring1col ?ring1num))
-
     (domain-fact (name wp-at) (param-values ?wp ?s ?side))
     (domain-fact (name wp-base-color) (param-values ?wp ?basecol))
     (domain-fact (name wp-ring1-color) (param-values ?wp RING_NONE))
+
+    (domain-fact (name rs-filled-with) (param-values ?rs ?rs-before))
+    (domain-fact (name rs-ring-spec) (param-values ?rs ?ring1col ?rs-req))
+    (domain-fact (name rs-sub) (param-values ?rs-before ?rs-req ?rs-after))
 
     (domain-fact (name at) (param-values ?robot ?fl1 ?fs1))
 
@@ -315,13 +408,14 @@
         (plan-assert-action move ?robot ?fl1 ?fs1 ?s ?side)
         (plan-assert-action wp-get ?robot ?wp ?s ?side)
         (plan-assert-action move ?robot ?s ?side ?rs INPUT)
-        (plan-assert-action prepare-rs ?rs ?ring1col )
-        (plan-assert-action wp-put ?robot ?wp ?cs INPUT)
-        (plan-assert-action cs-mount-cap ?cs ?wp ?capcol)
+        (plan-assert-action prepare-rs ?rs ?ring1col ?rs-before ?rs-after ?rs-req)
+        (plan-assert-action wp-put ?robot ?wp ?rs INPUT)
+        (plan-assert-action rs-mount-ring1 ?rs ?wp ?ring1col ?rs-before ?rs-after ?rs-req)
     )
+    (modify ?g (mode EXPANDED))
+    (modify ?m (assigned-to ?robot))
 
-
-    (printout t "Robot " ?robot " was assigned TO-RS-" ?ord crlf)
+    (printout t "Robot " ?robot " was assigned TO-RS1-" ?ord crlf)
     (retract ?rw)  ;We must insert this again when done executing!
 )
 
@@ -399,6 +493,46 @@
     (modify ?g (mode EXPANDED))
     (modify ?m (assigned-to ?robot))
     (printout t "Robot " ?robot " was assigned DELIVER-C0-" ?ord crlf)
+    (retract ?rw)  ;We must insert this again when done executing!
+
+)
+
+;Expand Transport C1 to DS
+(defrule goal-expander-goal-deliver-c1
+    ?g <- (goal (id ?goal-id) (class GOAL-DELIVER-C1) (mode SELECTED) (parent ?parent))
+    ?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
+    ?rw <- (domain-fact (name robot-waiting) (param-values ?robot))
+    (domain-object (name ?team-color) (type team-color)) ; This selects our team color, as this fact only exists for our own team
+    (domain-fact (name mps-team) (param-values ?ds ?team-color))
+    (domain-fact (name mps-type) (param-values ?ds DS))
+
+    (domain-fact (name order-base-color) (param-values ?ord ?basecol))
+    (domain-fact (name order-ring1-color) (param-values ?ord ?ring1col))
+    (domain-fact (name order-ring2-color) (param-values ?ord ?ring2col))
+    (domain-fact (name order-ring3-color) (param-values ?ord ?ring3col))
+    (domain-fact (name order-cap-color) (param-values ?ord ?capcol))
+    (domain-fact (name order-gate) (param-values ?ord ?gate))
+
+    (domain-fact (name mps-type) (param-values ?cs CS))
+    (domain-fact (name wp-at) (param-values ?wp ?cs OUTPUT))
+    (domain-fact (name wp-base-color) (param-values ?wp ?basecol))
+    (domain-fact (name wp-cap-color) (param-values ?wp ?capcol))
+    (domain-fact (name wp-ring1-color) (param-values ?wp ?ring1col))
+    (domain-fact (name wp-ring2-color) (param-values ?wp ?ring2col))
+    (domain-fact (name wp-ring3-color) (param-values ?wp ?ring3col))
+    (domain-fact (name at) (param-values ?robot ?fl1 ?fs1))
+    =>
+    (plan-assert-sequential DELIVER-C1 ?goal-id ?robot
+        (plan-assert-action move ?robot ?fl1 ?fs1 ?cs OUTPUT)
+        (plan-assert-action wp-get ?robot ?wp ?cs OUTPUT)
+        (plan-assert-action move ?robot ?cs OUTPUT ?ds INPUT)
+        (plan-assert-action prepare-ds ?ds ?ord)
+        (plan-assert-action wp-put ?robot ?wp ?ds INPUT)
+        (plan-assert-action fulfill-order-c1 ?ord ?wp ?ds ?gate ?basecol ?capcol ?ring1col)
+    )
+    (modify ?g (mode EXPANDED))
+    (modify ?m (assigned-to ?robot))
+    (printout t "Robot " ?robot " was assigned DELIVER-C1-" ?ord crlf)
     (retract ?rw)  ;We must insert this again when done executing!
 
 )
