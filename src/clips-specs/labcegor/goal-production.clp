@@ -181,6 +181,100 @@
 ;   (modify ?g (mode SELECTED))
 ; )
 
+(deffunction goal-production-g1-c0-spawn-wp
+	(?rnd-id ?wp ?num)
+	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
+  
+  (bind ?g (assert (goal (class ORDER1)
+                (id ?goal-id)
+                (sub-type SIMPLE)
+                (verbosity NOISY) (is-executable FALSE) 
+                (params workpiece ?wp robot ?robot) 
+                (meta-template goal-meta)
+  )))
+  (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
+  (return ?g)
+)
+
+
+(deffunction goal-production-g1-c0-base
+	(?rnd-id ?bs ?base-clr ?wp ?num)
+	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
+  (bind ?g (assert (goal (class ORDER1)
+                (id ?goal-id)
+                (sub-type SIMPLE)
+                (verbosity NOISY) (is-executable FALSE) 
+                (params bs ?bs bs-side OUTPUT base-color ?base-clr workpiece ?wp) 
+                (meta-template goal-meta)
+  )))
+  (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
+  (return ?g)
+
+)
+
+
+(deffunction goal-production-g1-c0-transport-wp
+	(?rnd-id ?from ?from-side ?to ?to-side ?wp ?num)
+	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
+  (bind ?g (assert (goal (class ORDER1)
+                (id ?goal-id)
+                (sub-type SIMPLE)
+                (verbosity NOISY) (is-executable FALSE) 
+                (params from ?from from-side ?from-side to ?to to-side ?to-side workpiece ?wp) 
+                (meta-template goal-meta)
+  )))
+  (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
+  (return ?g)
+
+)
+
+(deffunction goal-production-g1-c1-cap-retrieve
+	(?rnd-id ?cs ?cap-clr ?wp ?robot ?num)
+	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
+  (bind ?g (assert (goal (class ORDER1)
+                (id ?goal-id)
+                (sub-type SIMPLE)
+                (verbosity NOISY) (is-executable FALSE) 
+                (params cap-carrier ?wp cap-color ?cap-clr cap-station ?cs)
+                (meta-template goal-meta)
+  )))
+  (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
+  (return ?g)
+
+)
+
+
+(deffunction goal-production-g1-c0-cap-mount
+	(?rnd-id ?cs ?cap-clr ?wp ?num)
+	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
+  (bind ?g (assert (goal (class ORDER1)
+                (id ?goal-id)
+                (sub-type SIMPLE)
+                (verbosity NOISY) (is-executable FALSE) 
+                (params order-carrier ?wp cap-color ?cap-clr cap-station ?cs)
+                (meta-template goal-meta)
+  )))
+  (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
+  (return ?g)
+
+)
+
+
+
+(deffunction goal-production-g1-c0-deliver
+	(?rnd-id ?ds ?ds-gate ?base-clr ?cap-clr ?wp ?ord ?num)
+	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
+  (bind ?g (assert (goal (class ORDER1)
+                (id ?goal-id)
+                (sub-type SIMPLE)
+                (verbosity NOISY) (is-executable FALSE) 
+                (params order ?ord workpiece ?wp delivery-station ?ds ds-gate ?ds-gate base-clr ?base-clr cap-clr ?cap-clr) 
+                (meta-template goal-meta)
+  )))
+  (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
+  (return ?g)
+
+)
 
 (deffunction goal-production-g1-c1-spawn-wp
 	(?rnd-id ?wp ?robot ?num)
@@ -317,17 +411,17 @@
 (deffunction g1-goal-production-assert-c0 
 	(?rnd-id ?base-clr ?cs ?cap-clr ?ds ?ds-gate ?ord ?wp ?robot)
   (bind ?base-station C-BS)
-	(bind ?goal 
-		(goal-tree-assert-central-run-all-sequence PRODUCE-C0
-      (goal-production-g1-c1-spawn-wp ?rnd-id ?wp ?robot 9)
-			(goal-production-g1-c1-base ?rnd-id ?base-station ?base-clr ?wp ?robot 8)
+	(bind ?goal-tree-1 
+		(goal-tree-assert-central-run-parallel PRODUCE-C0-ST
+      (goal-production-g1-c0-spawn-wp ?rnd-id ?wp 9)
+			(goal-production-g1-c0-base ?rnd-id ?base-station ?base-clr ?wp 8)
 			;(goal-production-g1-c1-transport-wp ?rnd-id ?base-station OUTPUT ?rs INPUT ?wp ?robot 7)
       ;(goal-production-g1-c1-rs ?rnd-id ?rs ?rng-clr ?wp ?robot 6)
-      (goal-production-g1-c1-cap-retrieve ?rnd-id ?cs ?cap-clr ?wp ?robot 5)
-			(goal-production-g1-c1-transport-wp ?rnd-id ?base-station OUTPUT ?cs INPUT ?wp ?robot 4)
-			(goal-production-g1-c1-cap-mount ?rnd-id ?cs ?cap-clr ?wp ?robot 3)
-      (goal-production-g1-c1-transport-wp ?rnd-id ?cs OUTPUT ?ds INPUT ?wp ?robot 2)
-			(goal-production-g1-c1-deliver ?rnd-id ?ds ?ds-gate ?base-clr ?cap-clr ?wp ?ord ?robot 1)
+      (goal-production-g1-c0-cap-retrieve ?rnd-id ?cs ?cap-clr ?wp 5)
+			(goal-production-g1-c0-transport-wp ?rnd-id ?base-station OUTPUT ?cs INPUT ?wp 4)
+			(goal-production-g1-c0-cap-mount ?rnd-id ?cs ?cap-clr ?wp 3)
+      (goal-production-g1-c0-transport-wp ?rnd-id ?cs OUTPUT ?ds INPUT ?wp 2)
+			(goal-production-g1-c0-deliver ?rnd-id ?ds ?ds-gate ?base-clr ?cap-clr ?wp ?ord 1)
 		)
 	)
 
