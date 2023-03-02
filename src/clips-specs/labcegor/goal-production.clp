@@ -314,7 +314,25 @@
 
 )
 
+(deffunction g1-goal-production-assert-c0 
+	(?rnd-id ?base-clr ?cs ?cap-clr ?ds ?ds-gate ?ord ?wp ?robot)
+  (bind ?base-station C-BS)
+	(bind ?goal 
+		(goal-tree-assert-central-run-all-sequence PRODUCE-C0
+      (goal-production-g1-c1-spawn-wp ?rnd-id ?wp ?robot 9)
+			(goal-production-g1-c1-base ?rnd-id ?base-station ?base-clr ?wp ?robot 8)
+			;(goal-production-g1-c1-transport-wp ?rnd-id ?base-station OUTPUT ?rs INPUT ?wp ?robot 7)
+      ;(goal-production-g1-c1-rs ?rnd-id ?rs ?rng-clr ?wp ?robot 6)
+      (goal-production-g1-c1-cap-retrieve ?rnd-id ?cs ?cap-clr ?wp ?robot 5)
+			(goal-production-g1-c1-transport-wp ?rnd-id ?base-station OUTPUT ?cs INPUT ?wp ?robot 4)
+			(goal-production-g1-c1-cap-mount ?rnd-id ?cs ?cap-clr ?wp ?robot 3)
+      (goal-production-g1-c1-transport-wp ?rnd-id ?cs OUTPUT ?ds INPUT ?wp ?robot 2)
+			(goal-production-g1-c1-deliver ?rnd-id ?ds ?ds-gate ?base-clr ?cap-clr ?wp ?ord ?robot 1)
+		)
+	)
 
+	(return ?goal)
+)
 
 (deffunction g1-goal-production-assert-c1 
 	(?rnd-id ?base-clr ?rs ?rng-clr ?cs ?cap-clr ?ds ?ds-gate ?ord ?wp ?robot)
@@ -360,6 +378,59 @@
 			                   (eq (wm-key-arg ?r-in:key r) robot3))
 			              (assert (robot3-in-field))
   )
+)
+
+
+(defrule g1-goal-production-create-from-order-complexity-C0
+	"Take goal from refbox"
+  ;(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ; (wm-fact (key central agent robot args? r ?robot))  
+  ; (wm-fact (key domain fact entered-field args? r ?robot)) 
+	(robot1-in-field)
+  (robot2-in-field)
+  (robot3-in-field)
+  (wm-fact (key domain fact order-complexity args?  ord ?ord com C0)) 
+	;(wm-fact (key domain fact order-ring1-color args? ord ?ord col ?rng-clr)) 
+	;(wm-fact (key domain fact order-complexity args?  ord  ?ord comp ?ord-cmplx))
+	(wm-fact (key domain fact order-base-color args? ord ?ord  col ?base-clr)) 
+	(wm-fact (key domain fact order-cap-color args? ord ?ord col ?cap-clr)) 
+	(wm-fact (key domain fact order-gate args? ord ?ord gate ?ds-gate)) 
+  (not (goal (id ?some-goal-id) (class ORDER1)))
+  (domain-facts-loaded) 
+  (wm-fact (key refbox team-color) (value ?team-color)) 
+  
+	=>
+	(bind ?ord-comp C0)     ; just for information
+  (bind ?rnd-id (sym-cat ?ord - (gensym*) ))
+  (bind ?wp (sym-cat WP - ?ord))
+  ; (assert (domain-object (name ?wp) (type workpiece)))
+
+
+	;(if (or (eq ?rng-clr RING_BLUE) (eq ?rng-clr RING_YELLOW))
+	;	then 
+	;		(bind ?rs C-RS2)
+	;	else 
+	;		(bind ?rs C-RS1)
+	;)
+
+  (if (eq ?cap-clr CAP_BLACK)
+		then 
+			(bind ?cs C-CS2)
+		else 
+			(bind ?cs C-CS1)
+	)
+
+  (if (not (do-for-fact ((?can-hold wm-fact))
+			              (and (wm-key-prefix ?can-hold:key (create$ domain fact can-hold))
+			                   (wm-key-arg ?can-hold:key r))
+			              (bind ?assn-robot (wm-key-arg ?can-hold:key r)))) then 
+                    
+                    (bind ?assn-robot nil) (printout t "assn-robot has been assigned as nil"))
+  
+  
+
+  (printout "Assigned variables are" ?wp ?assn-robot)
+	(bind ?goal-tree (g1-goal-production-assert-c0 ?rnd-id ?base-clr C-CS1 ?cap-clr C-DS ?ds-gate ?ord ?wp ?assn-robot))
 )
 
 
