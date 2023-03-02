@@ -121,7 +121,7 @@
 (defrule goal-reasoner-select-root
   "There is an exectuable simple goal assigned to central, propagate selection."
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
-  ?g <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
+  ?g <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil) (class ?class&~GOAL-ORDER-C0&~GOAL-ORDER-C1&~GOAL-ORDER-C2&~GOAL-ORDER-C3)
       (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
   (goal-meta (goal-id ?goal-id))
   (goal (id ?id) (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE))

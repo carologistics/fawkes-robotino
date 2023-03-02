@@ -120,6 +120,8 @@ clips-executive:
             file: labcegor/simtest.clp
           - name: order-goals
             file: labcegor/order-goals.clp
+          - name: selection-strategy
+            file: labcegor/selection-strategy.clp
 
       action-mapping:
         enter-field: >
