@@ -113,7 +113,7 @@
 ;Set assigned-to to "nil" in goal-meta after goal was completed
 (defrule goal-meta-reset-assigned
   ?m <- (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-  (goal (id ?goal-id) (outcome COMPLETED))
+  (goal (id ?goal-id) (mode EVALUATED) (outcome COMPLETED))
   =>
   (modify ?m (assigned-to nil))
 )
