@@ -110,10 +110,10 @@
   )
 )
 
-;Set assigned-to to "nil" in goal-meta after goal was completed
+;This must fire for enter field
 (defrule goal-meta-reset-assigned
   ?m <- (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-  (goal (id ?goal-id) (mode EVALUATED) (outcome COMPLETED))
+  (goal (id ?goal-id) (outcome COMPLETED))
   =>
   (modify ?m (assigned-to nil))
 )

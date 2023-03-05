@@ -54,12 +54,14 @@
 	(return t)
 )
 
+;Set assigned-to to "nil" in goal-meta after goal was completed and assert robot-waiting
 (defrule simple-set-robot-waiting
   (goal (id ?goal-id) (sub-type SIMPLE) (outcome COMPLETED))
-  (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+  ?m <- (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
   (not (domain-fact (name robot-waiting) (param-values ?robot)))
   =>
   (assert (domain-fact (name robot-waiting) (param-values ?robot)))
+  (modify ?m (assigned-to nil))
 )
 
 (defrule simple-goal-commit

@@ -33,6 +33,13 @@
   ;HARDCODED for Goals of Complexity C0:
   (domain-fact (name mps-team) (param-values ?bs ?team-color))
   (domain-fact (name mps-type) (param-values ?bs BS))
+  (not 
+    (and
+      (domain-fact (name mps-team) (param-values ?bs ?team-color))
+      (domain-fact (name mps-type) (param-values ?bs BS))
+      (machine-used (mps ?bs) (order-id ?some-order-id1))
+    )
+  )
 
   (domain-fact (name order-cap-color) (param-values ?ord1 ?capcol))
   (domain-fact (name mps-team) (param-values ?cs ?team-color))
@@ -40,8 +47,17 @@
   (domain-fact (name wp-on-shelf) (param-values ?wp ?cs ?spot))
   (domain-fact (name wp-cap-color) (param-values ?wp ?capcol))
 
-  (not (machine-used (mps ?bs) (order-id ?some-order-id1)))
-  (not (machine-used (mps ?cs) (order-id ?some-order-id2)))
+  (not 
+    (and 
+         (domain-fact (name order-cap-color) (param-values ?ord1 ?capcol))
+         (domain-fact (name mps-team) (param-values ?cs ?team-color))
+         (domain-fact (name mps-type) (param-values ?cs CS))
+         (domain-fact (name wp-on-shelf) (param-values ?wp ?cs ?spot))
+         (domain-fact (name wp-cap-color) (param-values ?wp ?capcol))
+         (machine-used (mps ?cs) (order-id ?some-order-id2))
+    )
+  )
+      
 
   =>
   (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
