@@ -316,13 +316,13 @@
     =>
     (bind ?wp (sym-cat wp-1st-pay ?goal-id))
     (plan-assert-sequential PAY-FIRST-RING-CC1 ?goal-id ?robot
-        (plan-assert-action prepare-bs ?bs INPUT BASE_BLACK)
+        (plan-assert-action prepare-bs ?bs OUTPUT BASE_BLACK)
         (plan-assert-action spawn-wp ?wp ?robot)
-        (plan-assert-action bs-dispense ?bs INPUT ?wp BASE_BLACK)
+        (plan-assert-action bs-dispense ?bs OUTPUT ?wp BASE_BLACK)
 
-        (plan-assert-action move ?robot ?fl1 ?fs1 ?bs INPUT)
-        (plan-assert-action wp-get ?robot ?wp ?bs INPUT)
-        (plan-assert-action move ?robot ?bs INPUT ?rs INPUT)
+        (plan-assert-action move ?robot ?fl1 ?fs1 ?bs OUTPUT)
+        (plan-assert-action wp-get ?robot ?wp ?bs OUTPUT)
+        (plan-assert-action move ?robot ?bs OUTPUT ?rs INPUT)
         (plan-assert-action wp-put-slide-cc ?robot ?wp ?rs ?rs-before ?rs-after)
     )
 
@@ -355,22 +355,22 @@
     (bind ?wp1 (sym-cat wp-1st-pay ?goal-id))
     (bind ?wp2 (sym-cat wp-2nd-pay ?goal-id))
     (plan-assert-sequential PAY-FIRST-RING-CC1 ?goal-id ?robot
-        (plan-assert-action prepare-bs ?bs INPUT BASE_BLACK)
+        (plan-assert-action prepare-bs ?bs OUTPUT BASE_BLACK)
         (plan-assert-action spawn-wp ?wp1 ?robot)
-        (plan-assert-action bs-dispense ?bs INPUT ?wp1 BASE_BLACK)
+        (plan-assert-action bs-dispense ?bs OUTPUT ?wp1 BASE_BLACK)
 
-        (plan-assert-action move ?robot ?fl1 ?fs1 ?bs INPUT)
-        (plan-assert-action wp-get ?robot ?wp1 ?bs INPUT)
-        (plan-assert-action move ?robot ?bs INPUT ?rs INPUT)
+        (plan-assert-action move ?robot ?fl1 ?fs1 ?bs OUTPUT)
+        (plan-assert-action wp-get ?robot ?wp1 ?bs OUTPUT)
+        (plan-assert-action move ?robot ?bs OUTPUT ?rs INPUT)
         (plan-assert-action wp-put-slide-cc ?robot ?wp1 ?rs ?rs-before ?rs-after1)
 
-        (plan-assert-action prepare-bs ?bs INPUT BASE_BLACK)
+        (plan-assert-action prepare-bs ?bs OUTPUT BASE_BLACK)
         (plan-assert-action spawn-wp ?wp2 ?robot)
-        (plan-assert-action bs-dispense ?bs INPUT ?wp2 BASE_BLACK)
+        (plan-assert-action bs-dispense ?bs OUTPUT ?wp2 BASE_BLACK)
 
-        (plan-assert-action move ?robot ?rs INPUT ?bs INPUT)
-        (plan-assert-action wp-get ?robot ?wp2 ?bs INPUT)
-        (plan-assert-action move ?robot ?bs INPUT ?rs INPUT)
+        (plan-assert-action move ?robot ?rs INPUT ?bs OUTPUT)
+        (plan-assert-action wp-get ?robot ?wp2 ?bs OUTPUT)
+        (plan-assert-action move ?robot ?bs OUTPUT ?rs INPUT)
         (plan-assert-action wp-put-slide-cc ?robot ?wp2 ?rs ?rs-after1 ?rs-after2)
     )
 

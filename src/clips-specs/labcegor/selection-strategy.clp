@@ -1,6 +1,8 @@
 ;(wm-fact (key refbox order ?order-id delivery-begin) (type UINT) (value ?begin) )
 ;(wm-fact (key refbox game-time) (is-list TRUE) (type UINT) (values ?sec (/ ?nsec 1000)))
 
+(deftemplate machine-used (slot mps) (slot order-id))
+
 (defrule select-orders
 
   ?g <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil) (class ?class&GOAL-ORDER-C0|GOAL-ORDER-C1|GOAL-ORDER-C2|GOAL-ORDER-C3)
@@ -28,8 +30,12 @@
 
 ;  (not (goal (id ~?sub-goal) (parent ?id) (type ACHIEVE) (outcome ?outcome&~COMPLETED)
 ;    (priority ?priority2&:(< ?priority2 ?priority)) (is-executable TRUE)))
+  
+  (domain-fact (name mps-team) (param-values ?bs ?team-color))
+  (domain-fact (name mps-type) (param-values ?bs BS))
 
   =>
   (printout (log-debug ?v) "Goal " ?goal-id " SELECTED" crlf)
   (modify ?g (mode SELECTED))
+  (assert (machine-used (mps ?bs) (order-id ?ord1)))
 )
