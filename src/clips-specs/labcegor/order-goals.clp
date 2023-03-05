@@ -499,7 +499,7 @@
     (retract ?rw)  ;We must insert this again when done executing!
 )
 
-; expansion rule to pay for second ring (one payment) (ATTENTION: THIS SELECTS AN ARBITRARY CAP STATION, TODO: ONLY SELECT NON-LOCKED STATION!)
+; expansion rule to pay for second ring (one payment) (ATTENTION: THIS SELECTS THE SAME CAP STATION AS WE NEED LATER FOR OUR CAP)
 (defrule goal-expander-goal-pay-second-ring-cc1
     ?g <- (goal (id ?goal-id) (class GOAL-PAY-SECOND-RING) (mode SELECTED) (parent ?parent))
     ?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
@@ -511,9 +511,12 @@
     (domain-fact (name wp-on-shelf) (param-values ?wp ?cs ?spot))
 
     (domain-fact (name order-ring2-color) (param-values ?ord ?ring2col))
+    (domain-fact (name order-cap-color) (param-values ?ord ?capcol))
     (domain-fact (name rs-ring-spec) (param-values ?rs ?ring2col ONE))
     (domain-fact (name rs-filled-with) (param-values ?rs ?rs-before))
     (domain-fact (name rs-inc) (param-values ?rs-before ?rs-after))
+
+    (domain-fact (name wp-cap-color) (param-values ?wp ?capcol)) ; We select a workpiece from the same shelf that we need later for our cap
 
     (domain-fact (name at) (param-values ?robot ?fl1 ?fs1))
 
@@ -581,7 +584,7 @@
     (retract ?rw)  ;We must insert this again when done executing!
 )
 
-; expansion rule to pay for second ring (two payments) (ATTENTION: THIS SELECTS TWO ARBITRARY CAP STATIONS, TODO: ONLY SELECT NON-LOCKED STATIONS!)
+; expansion rule to pay for second ring (two payments) (ATTENTION: THIS SELECTS THE SAME CAP STATION AS WE NEED LATER FOR OUR CAP)
 (defrule goal-expander-goal-pay-second-ring-cc2
     ?g <- (goal (id ?goal-id) (class GOAL-PAY-SECOND-RING) (mode SELECTED) (parent ?parent))
     ?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
@@ -599,10 +602,14 @@
     (not (eq ?wp1 ?wp2)) ; We need two separate shelf workpieces!
 
     (domain-fact (name order-ring2-color) (param-values ?ord ?ring2col))
+    (domain-fact (name order-cap-color) (param-values ?ord ?capcol))
     (domain-fact (name rs-ring-spec) (param-values ?rs ?ring2col TWO))
     (domain-fact (name rs-filled-with) (param-values ?rs ?rs-before))
     (domain-fact (name rs-inc) (param-values ?rs-before ?rs-after1))
     (domain-fact (name rs-inc) (param-values ?rs-after1 ?rs-after2))
+
+    (domain-fact (name wp-cap-color) (param-values ?wp1 ?capcol)) ; We select a workpiece from the same shelf that we need later for our cap
+    (domain-fact (name wp-cap-color) (param-values ?wp2 ?capcol))
 
     (domain-fact (name at) (param-values ?robot ?fl1 ?fs1))
     
