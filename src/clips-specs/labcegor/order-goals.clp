@@ -853,7 +853,7 @@
         (plan-assert-action move ?robot ?cs OUTPUT ?ds INPUT)
         (plan-assert-action prepare-ds ?ds ?ord)
         (plan-assert-action wp-put ?robot ?wp ?ds INPUT)
-        (plan-assert-action fulfill-order-c2 ?ord ?wp ?ds ?gate ?basecol ?capcol ?ring1col)
+        (plan-assert-action fulfill-order-c2 ?ord ?wp ?ds ?gate ?basecol ?capcol ?ring1col ?ring2col)
     )
     (modify ?g (mode EXPANDED))
     (modify ?m (assigned-to ?robot))
