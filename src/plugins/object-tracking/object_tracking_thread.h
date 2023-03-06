@@ -31,9 +31,9 @@
 #include <aspect/tf.h>
 #include <blackboard/interface_listener.h>
 #include <core/threading/thread.h>
+#include <interfaces/LaserLineInterface.h>
 #include <interfaces/ObjectTrackingInterface.h>
 #include <librealsense2/rsutil.h>
-#include <navgraph/aspect/navgraph.h>
 #include <tf/types.h>
 #include <utils/time/time.h>
 
@@ -61,7 +61,6 @@ class ObjectTrackingThread : public fawkes::Thread,
                              public fawkes::ConfigurableAspect,
                              public fawkes::BlackBoardAspect,
                              public fawkes::BlockedTimingAspect,
-                             public fawkes::NavGraphAspect,
                              public fawkes::TransformAspect
 {
 public:
@@ -81,22 +80,33 @@ private:
 	float belt_height_;
 	float belt_length_;
 	float belt_offset_side_;
+	float belt_offset_front_;
 
 	//slide values:
 	float slide_size_;
 	float slide_offset_side_;
+	float slide_offset_front_;
 	float slide_height_;
 
 	//shelf values:
 	float left_shelf_offset_side_;
 	float middle_shelf_offset_side_;
 	float right_shelf_offset_side_;
+	float shelf_offset_front_;
 	float shelf_height_;
 
 	//target frame offsets:
 	float gripper_offset_pick_;
 	float gripper_offset_put_;
 	float base_offset_;
+	float target_wp_offset_x_;
+	float conveyor_offset_coefficient_;
+	float slide_offset_coefficient_;
+
+	//expected pose offsets:
+	float x_offset_;
+	float y_offset_;
+	float z_offset_;
 
 	//camera params
 	int   camera_width_;
@@ -160,13 +170,16 @@ private:
 	std::string                          shm_id_res_;
 	firevision::SharedMemoryImageBuffer *shm_buffer_results_;
 
-	//MPS navgraph position:
-	float mps_x_;
-	float mps_y_;
-	float mps_ori_;
+	//laser-line fitting:
+	std::vector<std::string>                  laserlines_names_;
+	std::vector<fawkes::LaserLineInterface *> laserlines_;
+	float                                     ll_max_dist_;
+	int                                       ll_vs_hist_;
+	float                                     ll_max_angle_;
 
-	//expected object position based on navgraph
-	fawkes::tf::Stamped<fawkes::tf::Point> exp_pos_;
+	//laser-line:
+	fawkes::LaserLineInterface *ll_;
+	bool                        ll_found_;
 
 	//tracking values
 	fawkes::ObjectTrackingInterface::TARGET_OBJECT_TYPE current_object_type_;
@@ -174,16 +187,17 @@ private:
 	fawkes::ObjectTrackingInterface::EXPECTED_SIDE      current_expected_side_;
 	bool                                                tracking_;
 	int                                                 msgid_;
-	fawkes::tf::Stamped<fawkes::tf::Point>              weighted_object_pos_target_;
 
 	//timing
 	fawkes::Time starting_time_;
 	long         loop_count_;
 
-	//compute expected position and start tracking
-	void  compute_expected_position();
-	float compute_middle_x(float x_offset);
-	float compute_middle_y(float y_offset);
+	//compute expected position from laser line
+	void laserline_get_expected_position(fawkes::LaserLineInterface *            ll,
+	                                     fawkes::tf::Stamped<fawkes::tf::Point> &expected_pos_ll);
+	bool laserline_get_best_fit(fawkes::LaserLineInterface *&best_fit);
+	void
+	laserline_get_center_transformed(fawkes::LaserLineInterface *ll, float &x, float &y, float &z);
 
 	//set shared memory buffer to read only
 	void set_shm();
@@ -206,7 +220,7 @@ private:
 
 	//compute base and gripper target frame
 	void compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Point> object_pos,
-	                           float                                  mps_angle,
+	                           fawkes::LaserLineInterface *           ll,
 	                           double                                 gripper_target[3],
 	                           double                                 base_target[3]);
 };
