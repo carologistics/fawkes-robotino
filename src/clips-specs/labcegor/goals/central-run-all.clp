@@ -67,14 +67,45 @@
 )
 
 
+; (deffunction goal-production-find-a-robot (?task)
+;   "Find a free robot"
+;   (bind ?assn-robot nil)
+;   (if (eq ?assn-robot nil) then
+;     (if (not (do-for-all-facts ((?f goal-meta))
+; 			                (and (neq ?f:assigned-to robot1) (eq ?task PRIMARY_TASK))
+; 			                (bind ?assn-robot robot1)
+;              )
+;         ) then 
+;         (if (not (do-for-all-facts ((?f goal-meta))
+; 			                (and (neq ?f:assigned-to robot2) (eq ?task SECONDARY_TASK))
+; 			                (bind ?assn-robot robot2)
+;                  )
+;             ) then 
+;             (if (not (do-for-all-facts ((?f goal-meta))
+; 			                                  (and (neq ?f:assigned-to robot3)  (eq ?task SECONDARY_TASK))
+; 			                                  (bind ?assn-robot robot3)
+;                      )
+;                 ) then 
+;                   (bind ?assn-robot nil) (printout t "assn-robot has been assigned as nil")
+;             )
+;         )
+;     )
+;   )
+;   (return ?assn-robot)
+; )
+
+
+
 (defrule central-run-all-goal-select-sequential
 	?tree <- (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS) (meta sequence-mode))
 	?child <- (goal (id ?sub-goal) (parent ?id) (sub-type SIMPLE) (mode FORMULATED)
 	      (priority ?priority))
 	(not (goal (id ~?sub-goal) (parent ?id) (mode ~RETRACTED)
 	           (priority ?priority2&:(> ?priority2 ?priority))))
-	
+	?gm <- (goal-meta (goal-id ?sub-goal) (sub-task-type ?task) (assigned-to nil))
 	=>
+	(bind ?r (goal-production-find-a-robot ?task))
+	(modify ?gm (assigned-to ?r))
 	(modify ?child (mode SELECTED))
 )
 

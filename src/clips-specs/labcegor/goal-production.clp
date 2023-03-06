@@ -21,6 +21,65 @@
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
 
+
+; ----------------------- Maintenance Goals -------------------------------
+
+(deffunction goal-meta-assert (?goal ?robot ?order-id ?ring-nr)
+"Creates the goal-meta fact, assigns the goal to the robot and to its order"
+  (assert (goal-meta (goal-id (fact-slot-value ?goal id))
+                     (assigned-to ?robot)
+                     (order-id ?order-id)
+                     (ring-nr ?ring-nr)))
+  (return ?goal)
+)
+
+(defrule goal-production-create-refill-shelf-maintain
+" The parent goal to refill a shelf. Allows formulation of goals to refill
+  a shelf only if the game is in the production phase and the domain is loaded.
+"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (domain-facts-loaded)
+  (not (goal (class REFILL-SHELF-MAINTAIN)))
+  (wm-fact (key refbox phase) (value PRODUCTION))
+  =>
+  (bind ?goal (goal-tree-assert-run-endless REFILL-SHELF-MAINTAIN 1))
+  (modify ?goal (required-resources)
+                (params frequency 1 retract-on-REJECTED)
+                (verbosity QUIET))
+)
+
+(defrule goal-production-create-refill-shelf-achieve
+  "Refill a shelf whenever it is empty."
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ?g <- (goal (id ?maintain-id) (class REFILL-SHELF-MAINTAIN) (mode SELECTED))
+  (not (goal (class REFILL-SHELF)))
+  (wm-fact (key refbox phase) (value PRODUCTION))
+  (wm-fact (key game state) (value RUNNING))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+  (wm-fact (key domain fact mps-type args? m ?mps t CS))
+  (not (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot)))
+  =>
+  (bind ?goal (assert (goal (id (sym-cat REFILL-SHELF- (gensym*)))
+                (class REFILL-SHELF) (sub-type SIMPLE)
+                (parent ?maintain-id) (verbosity QUIET)
+                (params mps ?mps) (is-executable TRUE))))
+  (goal-meta-assert ?goal central nil nil)
+)
+
+; ----------------------- Robot Assignment -------------------------------
+
+(defrule goal-production-assign-robot-to-enter-field
+  (wm-fact (key central agent robot args? r ?robot))
+  (not (wm-fact (key domain fact entered-field args? r ?robot)))
+  (goal (id ?oid) (class ENTER-FIELD)  (sub-type SIMPLE) (mode FORMULATED) (is-executable FALSE))
+  ?gm <- (goal-meta (goal-id ?oid) (assigned-to nil))
+  (not (goal-meta (assigned-to ?robot)))
+  =>
+  (modify ?gm (assigned-to ?robot))
+)
+
+
 ; ----------------------- Util -------------------------------
 
 
@@ -134,206 +193,502 @@
   (retract ?gf ?gm)
 )
 
+
+
+
+
 ;;;;;;;;;;;;  CHANGES BY VISHWAS JAIN  ;;;;;;;;;;;
 
-;(defrule goal-production-create-testgoal
-;  "Enter the field (drive outside of the starting box)."
-;  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-;  (wm-fact (key central agent robot args? r ?robot))
-;  (wm-fact (key domain fact entered-field args? r ?robot))
-;  (not (goal (id ?some-goal-id) (class TESTGOAL)))
-;  (domain-facts-loaded)
-;  (wm-fact (key refbox team-color) (value ?team-color))
-;   =>
-;
-;  (bind ?goal-1-id (sym-cat TESTGOAL- (gensym*)))
-;  (assert (goal (class TESTGOAL)
-;                (id ?goal-1-id)
-;                (sub-type SIMPLE)
-;                (verbosity NOISY) (is-executable FALSE)
-;                (params bs C-BS)
-;                (meta-template goal-meta)
-;  ))
-;  (assert (goal-meta (goal-id ?goal-1-id) (assigned-to robot1)))
-;
-;
-;  (bind ?goal-2-id (sym-cat TESTGOAL- (gensym*)))
-;  (assert (goal (class TESTGOAL)
-;                (id ?goal-2-id)
-;                (sub-type SIMPLE)
-;				(parent ?goal-1-id)
-;                (verbosity NOISY) (is-executable FALSE)
-;                (params target-cs C-CS1 cc CCG1)
-;                (meta-template goal-meta)
-;  ))
-;  (assert (goal-meta (goal-id ?goal-2-id) (assigned-to robot1)))
-;
-;  (printout t "Goal " TESTGOAL " formulated" crlf)
-;
-;)
 
 
 
 
-; (defrule goal-production-g1-c1-selected
-;   ?g <- (goal (id ?id) (class ORDER1) (mode FORMULATED))
-;   =>
-;   (modify ?g (mode SELECTED))
+; (deffunction goal-production-find-a-robot (?task)
+;   "Find a free robot"
+;   (bind ?assn-robot nil)
+;   (if (eq ?assn-robot nil) then
+;     (if (not (do-for-all-facts ((?f goal-meta))
+; 			                (and (neq ?f:assigned-to robot1) (eq ?task PRIMARY_TASK))
+; 			                (bind ?assn-robot robot1)
+;              )
+;         ) then 
+;         (if (not (do-for-all-facts ((?f goal-meta))
+; 			                (and (neq ?f:assigned-to robot2) (eq ?task SECONDARY_TASK))
+; 			                (bind ?assn-robot robot2)
+;                  )
+;             ) then 
+;             (if (not (do-for-all-facts ((?f goal-meta))
+; 			                                  (and (neq ?f:assigned-to robot3)  (eq ?task SECONDARY_TASK))
+; 			                                  (bind ?assn-robot robot3)
+;                      )
+;                 ) then 
+;                   (bind ?assn-robot nil) (printout t "assn-robot has been assigned as nil")
+;             )
+;         )
+;     )
+;   )
+;   (return ?assn-robot)
 ; )
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;   GROUP-1 COMPLEXITY-1 PAYMENT-0 PARALLEL    ;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (deffunction goal-production-g1-c1-spawn-wp
-	(?rnd-id ?wp ?robot ?num)
-	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
+	(?ord ?wp ?task ?num)
+
+	(bind ?goal-id (sym-cat PRODUCT- ?ord -n ?num - (gensym*)))
+
+  (bind ?cls (sym-cat PRODUCT- ?ord -T-spawn-wp))
   
-  (bind ?g (assert (goal (class ORDER1)
+  ; (bind ?robot (goal-production-find-a-robot ?task))
+
+  (bind ?g (assert (goal (class ?cls)
                 (id ?goal-id)
                 (sub-type SIMPLE)
                 (verbosity NOISY) (is-executable FALSE) 
-                (params workpiece ?wp robot ?robot) 
+                (params workpiece ?wp) 
                 (meta-template goal-meta)
   )))
-  (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
+  (assert (goal-meta (goal-id ?goal-id) (assigned-to nil) (sub-task-type ?task)))
   (return ?g)
 )
 
 
-(deffunction goal-production-g1-c1-base
-	(?rnd-id ?bs ?base-clr ?wp ?robot ?num)
-	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
-  (bind ?g (assert (goal (class ORDER1)
+(deffunction goal-production-g1-c1-prepare-bs
+	(?ord ?bs ?bs-clr ?task ?num)
+
+	(bind ?goal-id (sym-cat PRODUCT- ?ord -n ?num - (gensym*)))
+
+  (bind ?cls (sym-cat PRODUCT- ?ord -T-prep-bs))
+  
+  ; (bind ?robot (goal-production-find-a-robot ?task))
+
+  (bind ?g (assert (goal (class ?cls)
                 (id ?goal-id)
                 (sub-type SIMPLE)
                 (verbosity NOISY) (is-executable FALSE) 
-                (params bs ?bs bs-side OUTPUT base-color ?base-clr workpiece ?wp) 
+                (params bs ?bs bs-side OUTPUT base-clr ?bs-clr) 
                 (meta-template goal-meta)
   )))
-  (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
+  (assert (goal-meta (goal-id ?goal-id) (assigned-to nil) (sub-task-type ?task)))
   (return ?g)
+)
 
+
+(deffunction goal-production-g1-c1-prepare-rs
+	(?ord ?rs ?rng-clr ?rng-req ?task ?num)
+
+	(bind ?goal-id (sym-cat PRODUCT- ?ord -n ?num - (gensym*)))
+
+  (bind ?cls (sym-cat PRODUCT- ?ord -T-prep-rs))
+  
+  ; (bind ?robot (goal-production-find-a-robot ?task))
+
+  (do-for-fact ((?rs-status wm-fact))
+			              (and (wm-key-prefix ?rs-status:key (create$ domain fact rs-filled-with))
+			                   (eq (wm-key-arg ?rs-status:key m) ?rs))
+			              (bind ?rng-before (wm-key-arg ?rs-status:key n))
+  )
+
+  (bind ?a (sym-to-int ?rng-before))
+  (bind ?b (sym-to-int ?rng-req))
+  (bind ?rng-after (int-to-sym (- ?a ?b)))
+
+
+  (bind ?g (assert (goal (class ?cls)
+                (id ?goal-id)
+                (sub-type SIMPLE)
+                (verbosity NOISY) (is-executable FALSE) 
+                (params rs ?rs ring-before ?rng-before ring-after ?rng-after ring-req ?rng-req) 
+                (meta-template goal-meta)
+  )))
+  (assert (goal-meta (goal-id ?goal-id) (assigned-to nil) (sub-task-type ?task)))
+  (return ?g)
+)
+
+
+(deffunction goal-production-g1-c1-cap-retrieve
+	(?ord ?cs ?cap-clr ?task ?num)
+
+	(bind ?goal-id (sym-cat PRODUCT- ?ord -n ?num - (gensym*)))
+
+  (bind ?cls (sym-cat PRODUCT- ?ord -T-cap-retrv))
+  
+  ; (bind ?robot (goal-production-find-a-robot ?task))
+
+  (bind ?g (assert (goal (class ?cls)
+                (id ?goal-id)
+                (sub-type SIMPLE)
+                (verbosity NOISY) (is-executable FALSE) 
+                (params cap-color ?cap-clr cap-station ?cs) 
+                (meta-template goal-meta)
+  )))
+  (assert (goal-meta (goal-id ?goal-id) (assigned-to nil) (sub-task-type ?task)))
+  (return ?g)
+)
+
+
+(deffunction goal-production-g1-c1-make-payment-cs
+	(?ord ?cs ?rs ?task ?num)
+
+	(bind ?goal-id (sym-cat PRODUCT- ?ord -n ?num - (gensym*)))
+
+  (bind ?cls (sym-cat PRODUCT- ?ord -T-pay-bs))
+  
+  ; (bind ?robot (goal-production-find-a-robot ?task))
+
+  (bind ?g (assert (goal (class ?cls)
+                (id ?goal-id)
+                (sub-type SIMPLE)
+                (verbosity NOISY) (is-executable FALSE) 
+                (params cs ?cs rs ?rs) 
+                (meta-template goal-meta)
+  )))
+  (assert (goal-meta (goal-id ?goal-id) (assigned-to nil) (sub-task-type ?task)))
+  (return ?g)
+)
+
+
+(deffunction goal-production-g1-c1-make-payment-bs
+	(?ord ?bs ?rs ?task ?num)
+
+	(bind ?goal-id (sym-cat PRODUCT- ?ord -n ?num - (gensym*)))
+
+  (bind ?cls (sym-cat PRODUCT- ?ord -T-pay-bs))
+  
+  ; (bind ?robot (goal-production-find-a-robot ?task))
+
+  (bind ?g (assert (goal (class ?cls)
+                (id ?goal-id)
+                (sub-type SIMPLE)
+                (verbosity NOISY) (is-executable FALSE) 
+                (params bs ?bs rs ?rs) 
+                (meta-template goal-meta)
+  )))
+  (assert (goal-meta (goal-id ?goal-id) (assigned-to nil) (sub-task-type ?task)))
+  (return ?g)
 )
 
 
 (deffunction goal-production-g1-c1-transport-wp
-	(?rnd-id ?from ?from-side ?to ?to-side ?wp ?robot ?num)
-	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
-  (bind ?g (assert (goal (class ORDER1)
+	(?ord ?from ?from-side ?to ?to-side ?wp ?task ?num)
+
+	(bind ?goal-id (sym-cat PRODUCT- ?ord -n ?num - (gensym*)))
+
+  (bind ?cls (sym-cat PRODUCT- ?ord -T-transport))
+  
+  ; (bind ?robot (goal-production-find-a-robot ?task))
+
+  (bind ?g (assert (goal (class ?cls)
                 (id ?goal-id)
                 (sub-type SIMPLE)
                 (verbosity NOISY) (is-executable FALSE) 
                 (params from ?from from-side ?from-side to ?to to-side ?to-side workpiece ?wp) 
                 (meta-template goal-meta)
   )))
-  (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
+  (assert (goal-meta (goal-id ?goal-id) (assigned-to nil) (sub-task-type ?task)))
   (return ?g)
 
 )
 
 
-(deffunction goal-production-g1-c1-rs
-	(?rnd-id ?rs ?rng-clr ?wp ?robot ?num)
-	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
+(deffunction goal-production-g1-c1-bs-dispense
+	(?ord ?bs ?bs-clr ?wp ?task ?num)
 
-  (do-for-fact ((?rs-status wm-fact))
-			              (and (wm-key-prefix ?rs-status:key (create$ domain fact rs-ring-spec))
-			                   (eq (wm-key-arg ?rs-status:key m) ?rs)
-                         (eq (wm-key-arg ?rs-status:key r) ?rng-clr))
-			              (bind ?rng-pay (wm-key-arg ?rs-status:key rn))
-  )
+	(bind ?goal-id (sym-cat PRODUCT- ?ord -n ?num - (gensym*)))
+
+  (bind ?cls (sym-cat PRODUCT- ?ord -T-bs-disp))
+  
+  ; (bind ?robot (goal-production-find-a-robot ?task))
+
+  (bind ?g (assert (goal (class ?cls)
+                (id ?goal-id)
+                (sub-type SIMPLE)
+                (verbosity NOISY) (is-executable FALSE) 
+                (params bs ?bs bs-clr ?bs-clr ?wp) 
+                (meta-template goal-meta)
+  )))
+  (assert (goal-meta (goal-id ?goal-id) (assigned-to nil) (sub-task-type ?task)))
+  (return ?g)
+
+)
+
+
+(deffunction goal-production-g1-c1-mount-ring1
+	(?ord ?rs ?rng-clr ?rng-req ?wp ?task ?num)
+
+	(bind ?goal-id (sym-cat PRODUCT- ?ord -n ?num - (gensym*)))
+
+  (bind ?cls (sym-cat PRODUCT- ?ord -T-mount-rng))
+  
+  ; (bind ?robot (goal-production-find-a-robot ?task))
 
   (do-for-fact ((?rs-status wm-fact))
 			              (and (wm-key-prefix ?rs-status:key (create$ domain fact rs-filled-with))
 			                   (eq (wm-key-arg ?rs-status:key m) ?rs))
-			              (bind ?rng-num (wm-key-arg ?rs-status:key n))
+			              (bind ?rng-before (wm-key-arg ?rs-status:key n))
   )
 
-  (bind ?a (sym-to-int ?rng-pay))
-  (bind ?b (sym-to-int ?rng-num))
-  (bind ?r-after (int-to-sym (- ?b ?a)))
+  (bind ?a (sym-to-int ?rng-before))
+  (bind ?b (sym-to-int ?rng-req))
+  (bind ?rng-after (int-to-sym (- ?a ?b)))
 
-
-  (bind ?g (assert (goal (class ORDER1)
+  (bind ?g (assert (goal (class ?cls)
                 (id ?goal-id)
                 (sub-type SIMPLE)
                 (verbosity NOISY) (is-executable FALSE) 
-                (params target-rs ?rs ring-color ?rng-clr ring-before ?rng-num ring-after ?r-after ring-req ?rng-pay workpiece ?wp)
+                (params rs ?rs ring-clr ?rng-clr ring-before ?rng-before ring-after ?rng-after ring-req ?rng-req workpiece ?wp) 
                 (meta-template goal-meta)
   )))
-  (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
+  (assert (goal-meta (goal-id ?goal-id) (assigned-to nil) (sub-task-type ?task)))
   (return ?g)
 
 )
 
-
-
-(deffunction goal-production-g1-c1-cap-retrieve
-	(?rnd-id ?cs ?cap-clr ?wp ?robot ?num)
-	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
-  (bind ?g (assert (goal (class ORDER1)
-                (id ?goal-id)
-                (sub-type SIMPLE)
-                (verbosity NOISY) (is-executable FALSE) 
-                (params cap-carrier ?wp cap-color ?cap-clr cap-station ?cs)
-                (meta-template goal-meta)
-  )))
-  (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
-  (return ?g)
-
-)
 
 
 (deffunction goal-production-g1-c1-cap-mount
-	(?rnd-id ?cs ?cap-clr ?wp ?robot ?num)
-	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
-  (bind ?g (assert (goal (class ORDER1)
+	(?ord ?cs ?cap-clr ?wp ?task ?num)
+
+	(bind ?goal-id (sym-cat PRODUCT- ?ord -n ?num - (gensym*)))
+
+  (bind ?cls (sym-cat PRODUCT- ?ord -T-cap-mount))
+  
+  ; (bind ?robot (goal-production-find-a-robot ?task))
+
+  (bind ?g (assert (goal (class ?cls)
                 (id ?goal-id)
                 (sub-type SIMPLE)
                 (verbosity NOISY) (is-executable FALSE) 
-                (params order-carrier ?wp cap-color ?cap-clr cap-station ?cs)
+                (params cs ?cs cap-clr ?cap-clr workpiece ?wp) 
                 (meta-template goal-meta)
   )))
-  (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
+  (assert (goal-meta (goal-id ?goal-id) (assigned-to nil) (sub-task-type ?task)))
   (return ?g)
 
 )
 
 
-
 (deffunction goal-production-g1-c1-deliver
-	(?rnd-id ?ds ?ds-gate ?base-clr ?cap-clr ?rng-clr ?wp ?ord ?robot ?num)
-	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
-  (bind ?g (assert (goal (class ORDER1)
+	(?ord ?ds ?ds-gate ?base-clr ?cap-clr ?rng-clr ?wp ?task ?num)
+
+	(bind ?goal-id (sym-cat PRODUCT- ?ord -n ?num - (gensym*)))
+
+  (bind ?cls (sym-cat PRODUCT- ?ord -T-deliver))
+  
+  ; (bind ?robot (goal-production-find-a-robot ?task))
+
+  (bind ?g (assert (goal (class ?cls)
                 (id ?goal-id)
                 (sub-type SIMPLE)
                 (verbosity NOISY) (is-executable FALSE) 
                 (params order ?ord workpiece ?wp delivery-station ?ds ds-gate ?ds-gate base-clr ?base-clr cap-clr ?cap-clr rng-clr ?rng-clr) 
                 (meta-template goal-meta)
   )))
-  (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
+  (assert (goal-meta (goal-id ?goal-id) (assigned-to nil) (sub-task-type ?task)))
   (return ?g)
 
 )
 
+;;;;;;;;;;;;;;   END OF PARALLELIZATION    ;;;;;;;;;;;;;;;;;;;;
+
+; LIST OF FUTURE TASKS
+; 1. For payments, create if else within goal-tree-2 and run make-payment more times with BS 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-(deffunction g1-goal-production-assert-c1 
-	(?rnd-id ?base-clr ?rs ?rng-clr ?cs ?cap-clr ?ds ?ds-gate ?ord ?wp ?robot)
-  (bind ?base-station C-BS)
-	(bind ?goal 
-		(goal-tree-assert-central-run-all-sequence PRODUCE-C1
-      (goal-production-g1-c1-spawn-wp ?rnd-id ?wp ?robot 9)
-			(goal-production-g1-c1-base ?rnd-id ?base-station ?base-clr ?wp ?robot 8)
-			(goal-production-g1-c1-transport-wp ?rnd-id ?base-station OUTPUT ?rs INPUT ?wp ?robot 7)
-      (goal-production-g1-c1-rs ?rnd-id ?rs ?rng-clr ?wp ?robot 6)
-      (goal-production-g1-c1-cap-retrieve ?rnd-id ?cs ?cap-clr ?wp ?robot 5)
-			(goal-production-g1-c1-transport-wp ?rnd-id ?rs OUTPUT ?cs INPUT ?wp ?robot 4)
-			(goal-production-g1-c1-cap-mount ?rnd-id ?cs ?cap-clr ?wp ?robot 3)
-      (goal-production-g1-c1-transport-wp ?rnd-id ?cs OUTPUT ?ds INPUT ?wp ?robot 2)
-			(goal-production-g1-c1-deliver ?rnd-id ?ds ?ds-gate ?base-clr ?cap-clr ?rng-clr ?wp ?ord ?robot 1)
-		)
-	)
 
-	(return ?goal)
+; (deffunction goal-production-g1-c1-base
+; 	(?rnd-id ?bs ?base-clr ?wp ?robot ?num)
+; 	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
+;   (bind ?g (assert (goal (class ORDER1)
+;                 (id ?goal-id)
+;                 (sub-type SIMPLE)
+;                 (verbosity NOISY) (is-executable FALSE) 
+;                 (params bs ?bs bs-side OUTPUT base-color ?base-clr workpiece ?wp) 
+;                 (meta-template goal-meta)
+;   )))
+;   (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
+;   (return ?g)
+
+; )
+
+
+; (deffunction goal-production-g1-c1-transport-wp
+; 	(?rnd-id ?from ?from-side ?to ?to-side ?wp ?robot ?num)
+; 	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
+;   (bind ?g (assert (goal (class ORDER1)
+;                 (id ?goal-id)
+;                 (sub-type SIMPLE)
+;                 (verbosity NOISY) (is-executable FALSE) 
+;                 (params from ?from from-side ?from-side to ?to to-side ?to-side workpiece ?wp) 
+;                 (meta-template goal-meta)
+;   )))
+;   (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
+;   (return ?g)
+
+; )
+
+
+; (deffunction goal-production-g1-c1-rs
+; 	(?rnd-id ?rs ?rng-clr ?wp ?robot ?num)
+; 	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
+
+;   (do-for-fact ((?rs-status wm-fact))
+; 			              (and (wm-key-prefix ?rs-status:key (create$ domain fact rs-ring-spec))
+; 			                   (eq (wm-key-arg ?rs-status:key m) ?rs)
+;                          (eq (wm-key-arg ?rs-status:key r) ?rng-clr))
+; 			              (bind ?rng-pay (wm-key-arg ?rs-status:key rn))
+;   )
+
+;   (do-for-fact ((?rs-status wm-fact))
+; 			              (and (wm-key-prefix ?rs-status:key (create$ domain fact rs-filled-with))
+; 			                   (eq (wm-key-arg ?rs-status:key m) ?rs))
+; 			              (bind ?rng-num (wm-key-arg ?rs-status:key n))
+;   )
+
+;   (bind ?a (sym-to-int ?rng-pay))
+;   (bind ?b (sym-to-int ?rng-num))
+;   (bind ?r-after (int-to-sym (- ?b ?a)))
+
+
+;   (bind ?g (assert (goal (class ORDER1)
+;                 (id ?goal-id)
+;                 (sub-type SIMPLE)
+;                 (verbosity NOISY) (is-executable FALSE) 
+;                 (params target-rs ?rs ring-color ?rng-clr ring-before ?rng-num ring-after ?r-after ring-req ?rng-pay workpiece ?wp)
+;                 (meta-template goal-meta)
+;   )))
+;   (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
+;   (return ?g)
+
+; )
+
+
+
+; (deffunction goal-production-g1-c1-cap-retrieve
+; 	(?rnd-id ?cs ?cap-clr ?wp ?robot ?num)
+; 	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
+;   (bind ?g (assert (goal (class ORDER1)
+;                 (id ?goal-id)
+;                 (sub-type SIMPLE)
+;                 (verbosity NOISY) (is-executable FALSE) 
+;                 (params cap-carrier ?wp cap-color ?cap-clr cap-station ?cs)
+;                 (meta-template goal-meta)
+;   )))
+;   (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
+;   (return ?g)
+
+; )
+
+
+; (deffunction goal-production-g1-c1-cap-mount
+; 	(?rnd-id ?cs ?cap-clr ?wp ?robot ?num)
+; 	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
+;   (bind ?g (assert (goal (class ORDER1)
+;                 (id ?goal-id)
+;                 (sub-type SIMPLE)
+;                 (verbosity NOISY) (is-executable FALSE) 
+;                 (params order-carrier ?wp cap-color ?cap-clr cap-station ?cs)
+;                 (meta-template goal-meta)
+;   )))
+;   (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
+;   (return ?g)
+
+; )
+
+
+
+; (deffunction goal-production-g1-c1-deliver
+; 	(?rnd-id ?ds ?ds-gate ?base-clr ?cap-clr ?rng-clr ?wp ?ord ?robot ?num)
+; 	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
+;   (bind ?g (assert (goal (class ORDER1)
+;                 (id ?goal-id)
+;                 (sub-type SIMPLE)
+;                 (verbosity NOISY) (is-executable FALSE) 
+;                 (params order ?ord workpiece ?wp delivery-station ?ds ds-gate ?ds-gate base-clr ?base-clr cap-clr ?cap-clr rng-clr ?rng-clr) 
+;                 (meta-template goal-meta)
+;   )))
+;   (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
+;   (return ?g)
+
+; )
+
+
+
+(deffunction g1-goal-production-assert-c1
+	(?base-clr ?rs ?rng-clr ?cs ?cap-clr ?ds ?ds-gate ?ord ?wp)
+  
+  (bind ?bs C-BS)
+
+  (do-for-fact ((?rs-status wm-fact))
+			              (and (wm-key-prefix ?rs-status:key (create$ domain fact rs-ring-spec))
+			                   (eq (wm-key-arg ?rs-status:key m) ?rs)
+                         (eq (wm-key-arg ?rs-status:key r) ?rng-clr))
+			              (bind ?r-req (wm-key-arg ?rs-status:key rn))
+  )
+
+	(bind ?goal-tree-1
+    (goal-tree-assert-central-run-parallel (sym-cat PRODUCT- ?ord -ST1) 
+      (goal-production-g1-c1-spawn-wp ?ord ?wp PRIMARY_TASK 1)
+      (goal-production-g1-c1-prepare-bs ?ord ?bs ?base-clr PRIMARY_TASK 2)
+      (goal-production-g1-c1-prepare-rs ?ord ?rs ?rng-clr ?r-req SECONDARY_TASK 3)
+      (goal-production-g1-c1-cap-retrieve ?ord ?cs ?cap-clr SECONDARY_TASK 4)
+      ;(goal-production-g1-c1-transport-wp ?ord ?rs OUTPUT ?cs INPUT ?wp ?robot 4)
+      ;(goal-production-g1-c1-make-payment ?ord ?cs OUTPUT ?rs INPUT ?wp ?robot 4)
+    )
+  )
+
+  (bind ?goal-tree-2
+    (if (neq ?r-req TWO) then
+      (create$
+        (goal-tree-assert-central-run-parallel (sym-cat PRODUCT- ?ord -ST2) 
+          (goal-production-g1-c1-make-payment-cs ?ord ?cs ?rs SECONDARY_TASK 5)
+        )
+      )
+    else
+      (create$
+        (goal-tree-assert-central-run-parallel (sym-cat PRODUCT- ?ord -ST2)
+          (goal-production-g1-c1-make-payment-cs ?ord ?cs ?rs SECONDARY_TASK 6)
+          (goal-production-g1-c1-make-payment-bs ?ord ?bs ?rs SECONDARY_TASK 7)
+        )
+      )
+    )
+  )
+
+  (bind ?goal-tree-3
+    (goal-tree-assert-central-run-all-sequence (sym-cat PRODUCT- ?ord -PT) 
+      (goal-production-g1-c1-bs-dispense ?ord ?bs ?base-clr ?wp PRIMARY_TASK 8)
+      (goal-production-g1-c1-transport-wp ?ord ?bs OUTPUT ?rs INPUT ?wp PRIMARY_TASK 9)
+      (goal-production-g1-c1-mount-ring1 ?ord ?rs ?rng-clr ?r-req ?wp PRIMARY_TASK 10)
+      (goal-production-g1-c1-transport-wp ?ord ?rs OUTPUT ?cs INPUT ?wp PRIMARY_TASK 11)
+      (goal-production-g1-c1-cap-mount ?ord ?cs ?cap-clr ?wp PRIMARY_TASK 12)
+      (goal-production-g1-c1-deliver ?ord ?ds ?ds-gate ?base-clr ?cap-clr ?rng-clr ?wp PRIMARY_TASK 13)
+    )
+  )
+
+  (bind ?goal-tree 
+    (goal-tree-assert-central-run-all-sequence (sym-cat PRODUCT- ?ord -C1)
+      ?goal-tree-1
+      ?goal-tree-2
+      ?goal-tree-3
+    ))
+
+  (do-for-all-facts ((?gq goal))
+			                (eq ?gq ?goal-tree)
+			                (bind ?g-id ?gq:id)
+  )
+
+  (do-for-all-facts ((?gmq goal-meta))
+			                (eq ?gmq:goal-id ?g-id)
+			                (modify ?gmq (ring-nr ONE))
+  )
+
+	(return ?goal-tree)
 )
 
 
@@ -377,7 +732,7 @@
 	(wm-fact (key domain fact order-base-color args? ord ?ord  col ?base-clr)) 
 	(wm-fact (key domain fact order-cap-color args? ord ?ord col ?cap-clr)) 
 	(wm-fact (key domain fact order-gate args? ord ?ord gate ?ds-gate)) 
-  (not (goal (id ?some-goal-id) (class ORDER1)))
+  (not (goal-meta (goal-id ?some-goal-id) (ring-nr ONE)))
   (domain-facts-loaded) 
   (wm-fact (key refbox team-color) (value ?team-color)) 
   
@@ -402,26 +757,7 @@
 			(bind ?cs C-CS1)
 	)
 
-  (if (not (do-for-fact ((?can-hold wm-fact))
-			              (and (wm-key-prefix ?can-hold:key (create$ domain fact can-hold))
-			                   (wm-key-arg ?can-hold:key r))
-			              (bind ?assn-robot (wm-key-arg ?can-hold:key r)))) then 
-                    
-                    (bind ?assn-robot nil) (printout t "assn-robot has been assigned as nil"))
-  
-  
-
-  (printout "Assigned variables are" ?wp ?assn-robot)
-	(bind ?goal-tree (g1-goal-production-assert-c1 ?rnd-id ?base-clr ?rs ?rng-clr C-CS1 ?cap-clr C-DS ?ds-gate ?ord ?wp ?assn-robot))
+	(bind ?goal-tree (g1-goal-production-assert-c1 ?base-clr ?rs ?rng-clr ?cs ?cap-clr C-DS ?ds-gate ?ord ?wp))
 )
 
 
-
-
-;;;;;;;;; NOTES FOR NEXT WORK (22nd Feb 2023)
-; 1. Understand the logic of ring bfore after and required
-      ; there is rng-num. Bind a variable to required number of payments for rig colour. 
-; 2. Need to assign robot when goal is created. Make a logic for that. 
-;
-;
-;

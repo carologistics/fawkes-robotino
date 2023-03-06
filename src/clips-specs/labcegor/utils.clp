@@ -18,6 +18,8 @@
 ;
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 
+
+
 (defglobal
   ?*PI* = 3.141592653589
   ?*2PI* = 6.2831853
@@ -78,6 +80,7 @@
 
 (deftemplate goal-meta
 	(slot goal-id (type SYMBOL))
+  (slot sub-task-type (type SYMBOL) (allowed-values PRIMARY_TASK SECONDARY_TASK))
 	(slot assigned-to (type SYMBOL)
 	                  (allowed-values nil robot1 robot2 robot3 central)
 	                  (default nil))
@@ -91,6 +94,44 @@
   (slot root-for-order (type SYMBOL))
   (slot run-all-ordering (default 1) (type INTEGER))
 )
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;   By Vishwas Jain   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(deffunction goal-production-find-a-robot (?task)
+  "Find a free robot"
+  (bind ?assn-robot nil)
+  (if (eq ?assn-robot nil) then
+    (if (not (do-for-all-facts ((?f goal-meta))
+			                (and (neq ?f:assigned-to robot1) (eq ?task PRIMARY_TASK))
+			                (bind ?assn-robot robot1)
+             )
+        ) then 
+        (if (not (do-for-all-facts ((?f goal-meta))
+			                (and (neq ?f:assigned-to robot2) (eq ?task SECONDARY_TASK))
+			                (bind ?assn-robot robot2)
+                 )
+            ) then 
+            (if (not (do-for-all-facts ((?f goal-meta))
+			                                  (and (neq ?f:assigned-to robot3)  (eq ?task SECONDARY_TASK))
+			                                  (bind ?assn-robot robot3)
+                     )
+                ) then 
+                  (bind ?assn-robot nil) (printout t "assn-robot has been assigned as nil")
+            )
+        )
+    )
+  )
+  (return ?assn-robot)
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+
+
 
 (deffunction tag-id-to-side (?tag-id ?output-odd)
 " Output the side that is associated with the given tag id.
