@@ -1289,3 +1289,128 @@
   =>
   (retract ?timer)
 )
+
+; ========================= Robot-Bound Order Selection =============================
+
+; assert supporter and producer roles to the robots
+(defrule production-stratgy-assert-support-role
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (wm-fact (key config rcll bound-robot-order-selection) (value TRUE))
+  (not (wm-fact (key strategy meta bound-selection support-role)))
+  (domain-object (name ?robot) (type robot))
+  =>
+  (assert (wm-fact (key strategy meta bound-selection support-role) (value ?robot)))
+)
+
+(defrule production-stratgy-assert-producer-role
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (wm-fact (key config rcll bound-robot-order-selection) (value TRUE))
+  (domain-object (name ?robot) (type robot))
+  (not (wm-fact (key strategy meta bound-selection producer-role args? robot ?robot)))
+  (not (wm-fact (key strategy meta bound-selection support-role) (value ?robot)))
+  =>
+  (assert (wm-fact (key strategy meta bound-selection producer-role args? robot ?robot) (value nil)))
+)
+
+; propagate restrictions from the root of a tree to the leaf goals
+(defrule production-strategy-propagate-restrictions-produce-goals
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (wm-fact (key config rcll bound-robot-order-selection) (value TRUE))
+  (goal (id ?goal-id)
+        (class MOUNT-RING|MOUNT-CAP|DELIVER)
+        (parent ?parent-goal)
+        (mode FORMULATED))
+  ?gm <- (goal-meta (goal-id ?goal-id) (restricted-to ?leaf-restriction) (order-id ?order-id&~nil))
+  (goal (id ?root-id) (class PRODUCE-ORDER))
+  (goal-meta (goal-id ?root-id) (root-for-order ?order-id) (restricted-to ?root-restriction&~?leaf-restriction))
+  =>
+  (modify ?gm (restricted-to ?root-restriction))
+)
+
+(defrule production-strategy-propagate-restrictions-support-goals
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (wm-fact (key config rcll bound-robot-order-selection) (value TRUE))
+  (goal (id ?goal-id)
+        (class BUFFER-CAP|DISCARD|PAY-FOR-RINGS-WITH-BASE|PAY-FOR-RINGS-WITH-CAP-CARRIER|PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
+        (parent ?parent-goal)
+        (mode FORMULATED))
+  ?gm <- (goal-meta (goal-id ?goal-id) (restricted-to nil) (order-id ?order-id))
+  (wm-fact (key strategy meta bound-selection support-role) (value ?robot))
+  =>
+  (modify ?gm (restricted-to ?robot))
+)
+
+; set and remove restrictions for root of production and support trees
+(defrule production-strategy-assert-restrictions-support-root
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (wm-fact (key config rcll bound-robot-order-selection) (value TRUE))
+  (wm-fact (key strategy meta bound-selection support-role) (value ?robot))
+  (goal (id ?root-id) (class SUPPORT-ROOT))
+  ?gm <- (goal-meta (goal-id ?root-id) (restricted-to nil))
+  =>
+  (modify ?gm (restricted-to ?robot))
+)
+
+(defrule production-strategy-assert-restrictions-produce-root
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (wm-fact (key config rcll bound-robot-order-selection) (value TRUE))
+  (goal (id ?root-id) (class PRODUCE-ORDER))
+  ?gm <- (goal-meta (goal-id ?root-id) (root-for-order ?order-id&~nil) (restricted-to nil))
+  (wm-fact (key strategy meta bound-selection producer-role args? robot ?robot) (value ?order-id))
+  =>
+  (modify ?gm (restricted-to ?robot))
+)
+
+; remove produce order restriction upon completion
+(defrule production-strategy-remove-restrictions-completed-order-tree
+  ?f <- (wm-fact (key strategy meta bound-selection producer-role args? robot ?robot) (value ?order-id))
+  (wm-fact (key config rcll bound-robot-order-selection) (value TRUE))
+  (goal (id ?root-id) (class PRODUCE-ORDER) (mode RETRACTED) (outcome COMPLETED))
+  (goal-meta (goal-id ?root-id) (root-for-order ?order-id) (restricted-to ?robot))
+  =>
+  (modify ?f (value nil))
+)
+
+; greedily assign orders to available robots and trigger goal tree creation
+(defrule production-strategy-greedy-pick
+  (goal (id ?root-id) (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+  (wm-fact (key config rcll bound-robot-order-selection) (value TRUE))
+  (not (wm-fact (key strategy meta bound-selection selected-order)))
+  ?asgn <- (wm-fact (key strategy meta bound-selection producer-role args? robot ?robot) (value nil))
+
+  ; get basic order CEs
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?order-comp))
+  (wm-fact (key refbox order ?order-id delivery-end) (value ?delivery-end))
+  (not (goal-meta (root-for-order ?order-id)))
+
+  ; the delivery end is in the future
+  (wm-fact (key refbox game-time) (values ?gt&:(<= ?gt ?delivery-end) ?))
+  ; there is no other open order with a higher complexity
+  (not
+    (and
+      (wm-fact (key domain fact order-complexity args? ord ?o-order-id&:(neq ?o-order-id ?order-id) com ?o-order-comp))
+      (wm-fact (key refbox order ?order-id delivery-end) (value ?o-delivery-end))
+      (not (goal-meta (root-for-order ?o-order-id)))
+      (wm-fact (key refbox game-time) (values ?gt&:(<= ?gt ?o-delivery-end) ?))
+      (test (< (str-compare ?order-comp ?o-order-comp) 0))
+    )
+  )
+  ; there is no other open order of same complexity with a later delivery time
+  (not
+    (and
+      (wm-fact (key domain fact order-complexity args? ord ?o-order-id&:(neq ?o-order-id ?order-id) com ?order-comp))
+      (wm-fact (key refbox order ?o-order-id delivery-end) (value ?o-delivery-end&:(> ?o-delivery-end ?delivery-end)))
+      (not (goal-meta (root-for-order ?o-order-id)))
+    )
+  )
+  =>
+  (modify ?asgn (value ?order-id))
+  (assert (wm-fact (key strategy meta bound-selection selected-order) (value ?order-id)))
+)
+
+(defrule production-strategy-retract-bound-selection
+  ?f <- (wm-fact (key strategy meta bound-selection selected-order) (value ?order-id))
+  (goal-meta (root-for-order ?order-id))
+  =>
+  (retract ?f)
+)

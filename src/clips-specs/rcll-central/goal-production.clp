@@ -189,6 +189,7 @@
 " Before checking SIMPLE goals for their executability, pick a waiting robot
   that should get a new goal assigned to it next. "
   (declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+  (wm-fact (key config rcll bound-robot-order-selection) (value FALSE))
 ;  "a simple unassigned goal"
   (goal (id ?oid) (sub-type SIMPLE) (mode FORMULATED) (is-executable FALSE))
   (goal-meta (goal-id ?oid) (assigned-to nil))
@@ -218,6 +219,28 @@
     (goal-meta-assign-robot-to-goal ?g ?robot)
   )
   (modify ?longest-waiting)
+)
+
+(defrule goal-production-bound-selection-assign-robot-to-simple-goal
+  (declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+  (wm-fact (key config rcll bound-robot-order-selection) (value TRUE))
+  (goal (id ?oid) (sub-type SIMPLE) (mode FORMULATED) (is-executable FALSE))
+  (goal-meta (goal-id ?oid) (assigned-to nil) (restricted-to ?robot))
+  (wm-fact (key central agent robot args? r ?robot))
+  (wm-fact (key domain fact entered-field args? r ?robot))
+  (not (goal-meta (assigned-to ?robot)))
+  (wm-fact (key central agent robot-waiting args? r ?robot))
+  =>
+  (delayed-do-for-all-facts ((?g goal))
+    (and (eq ?g:is-executable FALSE)
+         (eq ?g:sub-type SIMPLE) (eq ?g:mode FORMULATED)
+         (or (not (any-factp ((?gm  goal-meta))
+                            (eq ?gm:goal-id ?g:id)))
+             (any-factp ((?gm goal-meta))
+                (and (eq ?gm:goal-id ?g:id)
+                     (eq ?gm:assigned-to nil)))))
+    (goal-meta-assign-robot-to-goal ?g ?robot)
+  )
 )
 
 (defrule goal-production-unassign-robot-from-finished-goals
@@ -818,11 +841,20 @@
       (wm-fact (key domain fact rs-ring-spec args? m ?rs3 r ?col-ring3 $?)))
 
   (or
-    (wm-fact (key strategy meta selected-order args? cond filter) (value ?order-id))
     (and
-      (time $?now)
-      (timer (name production-strategy-nothing-executable-timer) (time $?t&:(timeout ?now ?t ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT*)))
-      (wm-fact (key strategy meta selected-order args? cond fallback) (value ?order-id))
+      (not (wm-fact (key config rcll bound-robot-order-selection) (value TRUE)))
+      (or
+        (wm-fact (key strategy meta selected-order args? cond filter) (value ?order-id))
+        (and
+          (time $?now)
+          (timer (name production-strategy-nothing-executable-timer) (time $?t&:(timeout ?now ?t ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT*)))
+          (wm-fact (key strategy meta selected-order args? cond fallback) (value ?order-id))
+        )
+      )
+    )
+    (and
+      (wm-fact (key config rcll bound-robot-order-selection) (value TRUE))
+      (wm-fact (key strategy meta bound-selection selected-order) (value ?order-id))
     )
   )
   ?os <- (wm-fact (key order meta started args? ord ?order) (value FALSE))

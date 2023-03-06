@@ -157,6 +157,8 @@ clips-executive:
           cipher: "aes-128-cbc"
           pick-and-place-challenge: false
 
+          bound-robot-order-selection: true
+
           challenge-flip-insertion: true
           use-static-navgraph: false
 

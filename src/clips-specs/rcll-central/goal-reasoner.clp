@@ -440,6 +440,16 @@
 	)
 )
 
+(defrule goal-reasoner-bound-strategy-production-root-selector
+  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  (wm-fact (key config rcll bound-robot-order-selection) (value TRUE))
+  ?g <- (goal (id ?goal-id) (mode FORMULATED) (verbosity ?v))
+  (goal-meta (goal-id ?goal-id) (root-for-order ?order&~nil))
+  =>
+  (printout (log-debug ?v) "Goal " (fact-slot-value ?g id) " SELECTED" crlf)
+  (modify ?g (mode SELECTED))
+)
+
 ; ============================== Goal Expander ===============================
 
 (defrule goal-reasoner-expand-goal-with-sub-type
