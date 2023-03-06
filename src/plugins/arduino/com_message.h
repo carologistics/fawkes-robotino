@@ -38,6 +38,7 @@ public:
 		CMD_Z_NEW_POS          = 'Z',
 		CMD_CLOSE              = 'G',
 		CMD_OPEN               = 'O',
+		CMD_STOP               = '.',
 		CMD_STATUS_REQ         = 'S',
 		CMD_SET_A_TOGGLE_STEPS = 'T',
 		CMD_X_NEW_SPEED        = 'x',
