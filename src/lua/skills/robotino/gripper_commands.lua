@@ -134,6 +134,10 @@ function COMMAND:init()
       theCloseMessage = arduino.CloseGripperMessage:new()
       arduino:msgq_enqueue(theCloseMessage)
 
+   elseif self.fsm.vars.command == "STOP" then
+        theStopMessage = arduino.StopMessage:new()
+        arduino:msgq_enqueue(theStopMessage)
+
    elseif self.fsm.vars.command == "MOVEABS" then
 
         x = self.fsm.vars.x

@@ -67,7 +67,7 @@ public:
 	 * @return Returns the Position data of the current Buffer as a char.
 	 *  Formatting is the same as Serial communication.
 	*/
-	char get_position_data();
+	const char *get_position_data();
 
 	boost::asio::const_buffer buffer();
 

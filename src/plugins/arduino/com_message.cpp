@@ -245,8 +245,9 @@ ArduinoComMessage::get_cur_buffer_index()
 	return cur_buffer_index_;
 }
 
-char
+const char *
 ArduinoComMessage::get_position_data()
 {
 	std::string s = data_;
+	return s.c_str();
 }
