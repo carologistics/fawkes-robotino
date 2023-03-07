@@ -126,7 +126,7 @@
 	(wm-fact (key domain fact at args? r ?robot m ?curr-loc side ?curr-side))
 	(wm-fact (key domain fact holding args? robot ?robot workpiece ?wp))
 	; fact: cap mounted
-	(wm-fact (key domain fact cs-buffered args? mps ?mps cap-color ?cap-color))
+	; (wm-fact (key domain fact cs-buffered args? mps ?mps cap-color ?cap-color))
 
 	=>
 	(plan-assert-sequential INSTRUCT-TO-MOUNT-CAP-PLAN ?goal-id ?robot

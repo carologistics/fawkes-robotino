@@ -145,6 +145,7 @@
   (not (goal (id ?some-goal-id) (class C0-ORDER)))
   (domain-facts-loaded)
   (wm-fact (key refbox team-color) (value ?team-color))
+
   =>
 
 ; c0 goal
@@ -198,14 +199,14 @@
                 (verbosity NOISY) (is-executable TRUE)
                 (meta-template goal-meta)
 	))
-	(assert (goal-meta (goal-id ?goal-id-3) (assigned-to robot1)))
+	(assert (goal-meta (goal-id ?goal-id-3) (assigned-to nil)))
 
 
 ; subgoal 1-1 buffer cap then discard base 
   (bind ?goal-id-1-1 (sym-cat BUFFER-CAP-DISCARD-GOAL- (gensym*)))
 	(assert (goal (class BUFFER-CAP-DISCARD-GOAL)
 					(id ?goal-id-1-1)
-					(sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)
+          (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
 					(parent ?goal-id-1)
 					(verbosity NOISY) (is-executable TRUE)
 					(meta-template goal-meta)
@@ -225,7 +226,7 @@
                 (meta-template goal-meta)
           )
   )
-	(assert (goal-meta (goal-id ?goal-id-1-2)))
+	(assert (goal-meta (goal-id ?goal-id-1-2) (assigned-to nil)))
 
 ; subgoal 2-1 mount cap upon base
   (bind ?goal-id-2-1 (sym-cat MOUNT-CAP-GOAL- (gensym*)))
@@ -237,7 +238,7 @@
                 (verbosity NOISY) (is-executable TRUE)
                 (meta-template goal-meta))
   )
-	(assert (goal-meta (goal-id ?goal-id-2-1) (assigned-to robot2)))
+	(assert (goal-meta (goal-id ?goal-id-2-1) (assigned-to nil)))
 
 ; subgoal 2-2 get mounted base
   (bind ?goal-id-2-2 (sym-cat GET-MOUNTED-BASE-GOAL- (gensym*)))
@@ -249,7 +250,7 @@
                 (verbosity NOISY) (is-executable TRUE)
                 (meta-template goal-meta))
 	)
-	(assert (goal-meta (goal-id ?goal-id-2-2) (assigned-to robot2)))
+	(assert (goal-meta (goal-id ?goal-id-2-2) (assigned-to nil)))
 
 
 ; subgoal 1-1-1 buffer cap
@@ -274,77 +275,72 @@
 					(params target-cs C-CS1 cc CCG1)
 					(meta-template goal-meta)
 	))
-	(assert (goal-meta (goal-id ?goal-id-1-1-2) (assigned-to robot1)))
+	(assert (goal-meta (goal-id ?goal-id-1-1-2) (assigned-to nil)))
 )
 
 ;-----------------------------------------selector--------------------------------
-(defrule goal-reasoner-mygoal-select
-	?g <- (goal (id ?goal-id) (class C0-ORDER) (mode FORMULATED))
-	=>
-	(modify ?g (mode SELECTED))
-)
-
-
-
-(defrule goal-reasoner-mygoal-1-select
-	?g <- (goal (id ?goal-id) (class BASE-CAP-READY) (mode FORMULATED))
-	=>
-	(modify ?g (mode SELECTED))
-)
-
-(defrule goal-reasoner-mygoal-2-select
-	?g <- (goal (id ?goal-id) (class MOUNT-CAP-THEN-GET-WP-GOAL) (mode FORMULATED))
-	=>
-	(modify ?g (mode SELECTED))
-)
 
 (defrule goal-reasoner-mygoal-3-select
 	?g <- (goal (id ?goal-id) (class INSTRUCT-DS-DELIVER) (mode FORMULATED))
+  ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
+  	; if avaliable robts ?
+  ;(not (goal-meta (assigned-to ?robot)))
 	=>
+  ; assign robot
+  (modify ?gm (assigned-to robot3))
 	(modify ?g (mode SELECTED))
 )
-
-
-; goal 1-1
-(defrule goal-reasoner-buffer-cap-discard-goal-select
-	?g <- (goal (id ?goal-id) (class BUFFER-CAP-DISCARD-GOAL) (mode FORMULATED))
-	=>
-	(modify ?g (mode SELECTED))
-)
-
 
 ; goal 1-2
 (defrule goal-reasoner-pre-get-base-goal-select
-	?g <- (goal (id ?goal-id) (class PRE-GET-BASE) (mode FORMULATED))
+	?g <- (goal (id ?goal-id) (class PRE-GET-BASE-GOAL) (mode FORMULATED))
+  ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
+  	; if avaliable robts ?
+  ;(not (goal-meta (assigned-to ?robot)))
 	=>
+  ; assign robot
+  (modify ?gm (assigned-to robot2))
 	(modify ?g (mode SELECTED))
 )
 
-; todo goal 1-1-1
+todo goal 1-1-1
 (defrule goal-reasoner-buffer-cap-goal-select
 	?g <- (goal (id ?goal-id) (class BUFFER-CAP-GOAL) (mode FORMULATED))
-	; if avaliable robts
   =>
-  ; assign robot
-  ;	modify (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(modify ?g (mode SELECTED))
 )
+
 (defrule goal-reasoner-discard-goal-select
 	?g <- (goal (id ?goal-id) (class DISCARD-GOAL) (mode FORMULATED))
+  ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
+  	; if avaliable robts ?
+  ;(not (goal-meta (assigned-to ?robot)))
 	=>
+  ; assign robot
+  (modify ?gm (assigned-to robot1))
 	(modify ?g (mode SELECTED))
 )
 
 ; goal 2-1
 (defrule goal-reasoner-mount-cap-goal-select
 	?g <- (goal (id ?goal-id) (class MOUNT-CAP-GOAL) (mode FORMULATED))
+  ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
+  	; if avaliable robts ?
+  ;(not (goal-meta (assigned-to ?robot)))
 	=>
+  ; assign robot
+  (modify ?gm (assigned-to robot2))
 	(modify ?g (mode SELECTED))
 )
 
 (defrule goal-reasoner-get-mounted-cap-goal-select
 	?g <- (goal (id ?goal-id) (class GET-MOUNTED-BASE-GOAL) (mode FORMULATED))
+  ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
+  	; if avaliable robts ?
+  ;(not (goal-meta (assigned-to ?robot)))
 	=>
+  ; assign robot
+  (modify ?gm (assigned-to robot2))
 	(modify ?g (mode SELECTED))
 )
 
