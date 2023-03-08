@@ -78,7 +78,7 @@
 (defrule goal-expander-buffer-cap-goal
 	?g <- (goal (id ?goal-id) (class BUFFER-CAP-GOAL) (mode SELECTED) (parent ?parent)
 	            (params target-cs ?cs cc ?cc))
-	?m <-(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(domain-fact (name robot-waiting) (param-values ?robot))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-loc side ?curr-side))
 	; ccg with color
 	(wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
@@ -104,7 +104,7 @@
 (defrule goal-expander-discard
 	?g <- (goal (id ?goal-id) (class DISCARD-GOAL) (mode SELECTED)
 	            (params target-cs ?cs cc ?cc))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(domain-fact (name robot-waiting) (param-values ?robot))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-loc side ?curr-side))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
 	=>
@@ -122,7 +122,7 @@
 (defrule goal-expander-instruct-cs-mount-cap
 	?g <- (goal (id ?goal-id) (class MOUNT-CAP-GOAL) (mode SELECTED)
 	            (params target-mps ?mps cap-color ?cap-color))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(domain-fact (name robot-waiting) (param-values ?robot))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-loc side ?curr-side))
 	(wm-fact (key domain fact holding args? robot ?robot workpiece ?wp))
 	; fact: cap mounted
@@ -143,7 +143,7 @@
 (defrule goal-expander-go-get-mounted-base
 	?g <- (goal (id ?goal-id) (class GET-MOUNTED-BASE-GOAL) (mode SELECTED)
 	            (params wp ?wp target-mps ?mps))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(domain-fact (name robot-waiting) (param-values ?robot))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-loc side ?curr-side))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
 	=>
@@ -160,7 +160,7 @@
 	; ?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class PRE-GET-BASE-GOAL) (mode SELECTED)
 	            (params wp ?wp target-mps ?mps  target-side ?side base-color ?base-color))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(domain-fact (name robot-waiting) (param-values ?robot))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-loc side ?curr-side))
 	=>
 	(plan-assert-sequential PRE-GET-BASE-GOAL-PLAN ?goal-id ?robot
@@ -177,7 +177,7 @@
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class INSTRUCT-DS-DELIVER) (mode SELECTED)
 	            (params wp ?wp target-mps ?mps))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(domain-fact (name robot-waiting) (param-values ?robot))
 	(wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
 	(wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
 	(wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
