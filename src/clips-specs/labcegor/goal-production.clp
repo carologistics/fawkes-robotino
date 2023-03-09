@@ -164,8 +164,10 @@
   (bind ?wp (sym-cat ABCDE- (gensym*)))
   (assert (domain-object (name ?wp) (type workpiece))
           (domain-fact (name wp-unused) (param-values ?wp))
-          (wm-fact (key domain fact wp-base-color args? wp ?wp col BASE_NONE) (type BOOL) (value TRUE))
-          )
+          (wm-fact (key domain fact wp-base-color args? wp ?wp col BASE_NONE)
+          (type BOOL) (value TRUE))
+          (domain-fact (name wp-cap-color) (param-values ?wp CAP_NONE))          )
+
 ; subgoal 1 holding Base and cap buffered
   (printout t "Goal " BASE-CAP-READY " formulated" crlf)
   (bind ?goal-id-1 (sym-cat BASE-CAP-READY- (gensym*)))
@@ -234,7 +236,7 @@
                 (id ?goal-id-2-1)
                 (sub-type SIMPLE)
                 (parent ?goal-id-2)
-                (params target-mps C-CS1 cap-color CCG1)
+                (params target-mps C-CS1 cap-color CAP_GREY wp ?wp)
                 (verbosity NOISY) (is-executable TRUE)
                 (meta-template goal-meta))
   )
@@ -253,7 +255,7 @@
 	(assert (goal-meta (goal-id ?goal-id-2-2) (assigned-to nil)))
 
 
-; subgoal 1-1-1 buffer cap
+; subgoal 1-1-1 buffer cap        todo  priority
   (bind ?goal-id-1-1-1 (sym-cat BUFFER-CAP-GOAL- (gensym*)))
 	(assert (goal (class BUFFER-CAP-GOAL)
 					(id ?goal-id-1-1-1)
@@ -265,7 +267,7 @@
 	))
 	(assert (goal-meta (goal-id ?goal-id-1-1-1) (assigned-to robot1)))
 
-; subgoal 1-1-2 discard          todo
+; subgoal 1-1-2 discard          todo  priority
   (bind ?goal-id-1-1-2 (sym-cat DISCARD-GOAL- (gensym*)))
 	(assert (goal (class DISCARD-GOAL)
 					(id ?goal-id-1-1-2)
@@ -273,8 +275,7 @@
 					(parent ?goal-id-1-1)
 					(verbosity NOISY) (is-executable TRUE)
 					(params target-cs C-CS1 cc CCG1)
-					(meta-template goal-meta)
-	))
+					(meta-template goal-meta)))
 	(assert (goal-meta (goal-id ?goal-id-1-1-2) (assigned-to nil)))
 )
 
@@ -288,6 +289,14 @@
 	=>
   ; assign robot
   (modify ?gm (assigned-to robot3))
+	(modify ?g (mode SELECTED))
+)
+
+; deliver to be selecte incorrectly
+(defrule goal-reasoner-deliver-select
+	?g <- (goal (id ?goal-id) (class INSTRUCT-DS-DELIVER) (mode FORMULATED))
+  (goal (class GET-MOUNTED-BASE-GOAL) (mode RETRACTED))
+  =>
 	(modify ?g (mode SELECTED))
 )
 
@@ -313,6 +322,7 @@ todo goal 1-1-1
 (defrule goal-reasoner-discard-goal-select
 	?g <- (goal (id ?goal-id) (class DISCARD-GOAL) (mode FORMULATED))
   ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
+  (goal (class BUFFER-CAP-GOAL) (mode RETRACTED))
   	; if avaliable robts ?
   ;(not (goal-meta (assigned-to ?robot)))
 	=>
@@ -325,6 +335,7 @@ todo goal 1-1-1
 (defrule goal-reasoner-mount-cap-goal-select
 	?g <- (goal (id ?goal-id) (class MOUNT-CAP-GOAL) (mode FORMULATED))
   ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
+  (goal (class DISCARD-GOAL) (mode RETRACTED))
   	; if avaliable robts ?
   ;(not (goal-meta (assigned-to ?robot)))
 	=>
@@ -336,6 +347,8 @@ todo goal 1-1-1
 (defrule goal-reasoner-get-mounted-cap-goal-select
 	?g <- (goal (id ?goal-id) (class GET-MOUNTED-BASE-GOAL) (mode FORMULATED))
   ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
+  (goal (class MOUNT-CAP-GOAL) (mode RETRACTED))
+
   	; if avaliable robts ?
   ;(not (goal-meta (assigned-to ?robot)))
 	=>

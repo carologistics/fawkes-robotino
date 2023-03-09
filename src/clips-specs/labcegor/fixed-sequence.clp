@@ -80,27 +80,24 @@
 	            (params target-cs ?cs cc ?cc))
 	?m <-(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-loc side ?curr-side))
-	; ccg with color
+	; ccg with color 
 	(wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
 	=>
 	(bind ?shelf-spot nil)
 	(do-for-fact ((?wp-on-shelf wm-fact)) (and (wm-key-prefix ?wp-on-shelf:key (create$ domain fact wp-on-shelf))
 	                                      (eq (wm-key-arg ?wp-on-shelf:key wp) ?cc)
 	                                      (eq (wm-key-arg ?wp-on-shelf:key m) ?cs))
-		(bind ?shelf-spot (wm-key-arg ?wp-on-shelf:key spot))
-	)
+		(bind ?shelf-spot (wm-key-arg ?wp-on-shelf:key spot)))
 	(plan-assert-sequential BUFFER-CAP-PLAN ?goal-id ?robot
 		(plan-assert-safe-move ?robot ?curr-loc ?curr-side ?cs INPUT
 			(plan-assert-action wp-get-shelf ?robot ?cc ?cs ?shelf-spot)
 			(plan-assert-action wp-put ?robot ?cc ?cs INPUT)
 			(plan-assert-action prepare-cs ?cs RETRIEVE_CAP)
-			(plan-assert-action cs-retrieve-cap ?cs ?cc ?cap-color)
-		)
-	)
+			(plan-assert-action cs-retrieve-cap ?cs ?cc ?cap-color)))
 	(modify ?g (mode EXPANDED))
 )
 
-;todo
+; todo
 (defrule goal-expander-discard
 	?g <- (goal (id ?goal-id) (class DISCARD-GOAL) (mode SELECTED)
 	            (params target-cs ?cs cc ?cc))
@@ -111,20 +108,18 @@
 	(plan-assert-sequential BUFFER-CAP-PLAN ?goal-id ?robot
 		(plan-assert-safe-move ?robot ?curr-loc ?curr-side ?cs OUTPUT
 			(plan-assert-action wp-get ?robot ?cc ?cs OUTPUT)
-			(plan-assert-action wp-discard ?robot ?cc)
-		)
-	)
+			(plan-assert-action wp-discard ?robot ?cc)))
 	(modify ?g (mode EXPANDED))
 )
 
 ; ----------------------- MPS Instruction GOALS -------------------------------
-
+; debug this mount expander            1
 (defrule goal-expander-instruct-cs-mount-cap
 	?g <- (goal (id ?goal-id) (class MOUNT-CAP-GOAL) (mode SELECTED)
-	            (params target-mps ?mps cap-color ?cap-color))
+	            (params target-mps ?mps cap-color ?cap-color wp ?wp))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-loc side ?curr-side))
-	(wm-fact (key domain fact holding args? robot ?robot workpiece ?wp))
+;	(wm-fact (key domain fact holding args? robot ?robot workpiece ?wp))
 	; fact: cap mounted
 	; (wm-fact (key domain fact cs-buffered args? mps ?mps cap-color ?cap-color))
 
@@ -134,9 +129,7 @@
 			(plan-assert-action wp-put ?robot ?wp ?mps INPUT)
 			(plan-assert-action prepare-cs ?mps MOUNT_CAP)
 			; wp cc
-			(plan-assert-action cs-mount-cap ?mps ?wp ?cap-color)
-		)
-	)
+			(plan-assert-action cs-mount-cap ?mps ?wp ?cap-color)))
 	(modify ?g (mode EXPANDED))
 )
 
@@ -149,9 +142,7 @@
 	=>
 	(plan-assert-sequential INSTRUCT-TO-MOUNT-CAP-PLAN ?goal-id ?robot
 		(plan-assert-safe-move ?robot ?curr-loc ?curr-side ?mps OUTPUT
-			(plan-assert-action wp-get ?robot ?wp ?mps OUTPUT)
-		)
-	)
+			(plan-assert-action wp-get ?robot ?wp ?mps OUTPUT)))
 	(modify ?g (mode EXPANDED))
 )
 
@@ -174,6 +165,7 @@
 )
 
 (defrule goal-expander-instruct-ds-deliver
+
 	;?p <- (goal (mode DISPATCHED) (id ?parent))
 	?g <- (goal (id ?goal-id) (class INSTRUCT-DS-DELIVER) (mode SELECTED)
 	            (params wp ?wp target-mps ?mps))
