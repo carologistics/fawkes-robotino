@@ -149,11 +149,7 @@
 	(wm-fact (key domain fact order-complexity args? ord ?order com C0))
 	; (wm-fact (key domain fact order-complexity args? ord ?order com C1))
 	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-	(wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
-	(wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
-	(wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
 	(wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
-	(wm-fact (key domain fact order-gate args? ord ?order gate ?gate))
 
   (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
   (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
@@ -176,10 +172,12 @@
   (bind ?wp (sym-cat ABCDE- (gensym*)))
   (assert (domain-object (name ?wp) (type workpiece))
           (domain-fact (name wp-unused) (param-values ?wp))
-          (wm-fact (key domain fact wp-base-color args? wp ?wp col BASE_NONE)
-          (type BOOL) (value TRUE))
+          (wm-fact (key domain fact wp-base-color args? wp ?wp col BASE_NONE) (type BOOL) (value TRUE))
+          (domain-fact (name wp-ring1-color) (param-values ?wp RING_NONE))
+          (domain-fact (name wp-ring2-color) (param-values ?wp RING_NONE))
+          (domain-fact (name wp-ring3-color) (param-values ?wp RING_NONE))
           (domain-fact (name wp-cap-color) (param-values ?wp CAP_NONE))
-          (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+          ; (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order) (type BOOL) (value TRUE))
   )
 
 ; subgoal 1 holding Base and cap buffered
@@ -298,19 +296,13 @@
 (defrule goal-reasoner-mygoal-3-select
 	?g <- (goal (id ?goal-id) (class INSTRUCT-DS-DELIVER) (mode FORMULATED))
   ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
+   (goal (class GET-MOUNTED-BASE-GOAL) (mode RETRACTED))
+
   	; if avaliable robts ?
   ;(not (goal-meta (assigned-to ?robot)))
 	=>
   ; assign robot
-  (modify ?gm (assigned-to robot3))
-	(modify ?g (mode SELECTED))
-)
-
-; deliver to be selecte incorrectly
-(defrule goal-reasoner-deliver-select
-	?g <- (goal (id ?goal-id) (class INSTRUCT-DS-DELIVER) (mode FORMULATED))
-  (goal (class GET-MOUNTED-BASE-GOAL) (mode RETRACTED))
-  =>
+  (modify ?gm (assigned-to robot2))
 	(modify ?g (mode SELECTED))
 )
 
