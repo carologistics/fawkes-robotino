@@ -146,6 +146,18 @@
   (domain-facts-loaded)
   (wm-fact (key refbox team-color) (value ?team-color))
 
+	(wm-fact (key domain fact order-complexity args? ord ?order com C0))
+	; (wm-fact (key domain fact order-complexity args? ord ?order com C1))
+	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+	(wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
+	(wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
+	(wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
+	(wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+	(wm-fact (key domain fact order-gate args? ord ?order gate ?gate))
+
+  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
+
   =>
 
 ; c0 goal
@@ -166,7 +178,9 @@
           (domain-fact (name wp-unused) (param-values ?wp))
           (wm-fact (key domain fact wp-base-color args? wp ?wp col BASE_NONE)
           (type BOOL) (value TRUE))
-          (domain-fact (name wp-cap-color) (param-values ?wp CAP_NONE))          )
+          (domain-fact (name wp-cap-color) (param-values ?wp CAP_NONE))
+          (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  )
 
 ; subgoal 1 holding Base and cap buffered
   (printout t "Goal " BASE-CAP-READY " formulated" crlf)
@@ -223,8 +237,7 @@
                 (sub-type SIMPLE)
                 (parent ?goal-id-1)
                 (verbosity NOISY) (is-executable TRUE)
-                ;wp base-color facts
-                (params wp ?wp target-mps C-BS target-side OUTPUT base-color BASE_RED)
+                (params wp ?wp target-mps C-BS target-side OUTPUT base-color ?base-color)
                 (meta-template goal-meta)
           )
   )
@@ -236,7 +249,7 @@
                 (id ?goal-id-2-1)
                 (sub-type SIMPLE)
                 (parent ?goal-id-2)
-                (params target-mps C-CS1 cap-color CAP_GREY wp ?wp)
+                (params target-mps ?mps cap-color ?cap-color wp ?wp)
                 (verbosity NOISY) (is-executable TRUE)
                 (meta-template goal-meta))
   )
@@ -248,7 +261,7 @@
                 (id ?goal-id-2-2)
                 (sub-type SIMPLE)
                 (parent ?goal-id-2)
-	              (params wp ?wp target-mps C-CS1)
+	              (params wp ?wp target-mps ?mps)
                 (verbosity NOISY) (is-executable TRUE)
                 (meta-template goal-meta))
 	)
@@ -262,7 +275,7 @@
 					(sub-type SIMPLE)
 					(parent ?goal-id-1-1)
 					(verbosity NOISY) (is-executable TRUE)
-					(params target-cs C-CS1 cc CCG1)
+					(params target-cs ?mps cc ?cc)
 					(meta-template goal-meta)
 	))
 	(assert (goal-meta (goal-id ?goal-id-1-1-1) (assigned-to robot1)))
@@ -274,8 +287,9 @@
 					(sub-type SIMPLE)
 					(parent ?goal-id-1-1)
 					(verbosity NOISY) (is-executable TRUE)
-					(params target-cs C-CS1 cc CCG1)
-					(meta-template goal-meta)))
+					(params target-cs ?mps cc ?cc)
+					(meta-template goal-meta)
+  ))
 	(assert (goal-meta (goal-id ?goal-id-1-1-2) (assigned-to nil)))
 )
 
