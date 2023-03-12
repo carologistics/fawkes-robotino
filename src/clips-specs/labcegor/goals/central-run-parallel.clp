@@ -12,6 +12,8 @@
 ; the parent is rejected. If all goals have been completed successfully,
 ; the parent goal succeeds.
 
+(deftemplate machine-used (slot mps) (slot order-id))
+
 (defrule central-run-parallel-expand ; 
 	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-PARALLEL) (mode SELECTED))
 	=>

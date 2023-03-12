@@ -8,7 +8,6 @@
 ; A CENTRAL-RUN-LINEAR parent goal will order the executable goals by priority and
 ; then start performing them in order.
 
-(deftemplate machine-used (slot mps) (slot order-id))
 
 (defrule central-run-linear-expand ; 
 	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-LINEAR) (mode SELECTED))
