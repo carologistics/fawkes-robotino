@@ -146,11 +146,29 @@
 )
 
 (defrule free-c2-rs1
+  ?mu <- (machine-used (mps ?rs) (order-id ?ord))
+  (domain-fact (name mps-type) (param-values ?rs RS))
+  (domain-fact (name order-ring1-color) (param-values ?ord ?ring1col))
+  (domain-fact (name order-ring2-color) (param-values ?ord ?ring2col))
+  (domain-fact (name rs-ring-spec) (param-values ?rs1 ?ring1col ?num1))
+  (domain-fact (name rs-ring-spec) (param-values ?rs2 ?ring2col ?num2))
+  (not (eq ?rs1 ?rs2))
 
+  (goal (id ?goal-id) (class GOAL-TO-RS2) (outcome COMPLETED))
+  (goal-meta (goal-id ?goal-id) (order-id ?ord) (root-for-order ?root-id))
+  (goal (id ?root-id) (class GOAL-ORDER-C2))
+  =>
+  (retract ?mu)
 )
 
 (defrule free-c2-rs2
-
+  ?mu <- (machine-used (mps ?rs) (order-id ?ord))
+  (domain-fact (name mps-type) (param-values ?rs RS))
+  (goal (id ?goal-id) (class GOAL-TO-CS) (outcome COMPLETED))
+  (goal-meta (goal-id ?goal-id) (order-id ?ord) (root-for-order ?root-id))
+  (goal (id ?root-id) (class GOAL-ORDER-C2))
+  =>
+  (retract ?mu)
 )
 
 

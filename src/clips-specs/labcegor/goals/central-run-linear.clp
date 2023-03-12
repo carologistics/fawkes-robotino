@@ -31,23 +31,26 @@
 ; Selection rule when no machine blockings are considered
 (defrule central-run-linear-subgoals-select ;
     (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-LINEAR) (mode DISPATCHED))
-    ?sg <- (goal (id ?sub-goal) (class ?subgoal-class&~GOAL-DELIVER-C0) (parent ?id) (type ACHIEVE) (mode FORMULATED)
+    ?sg <- (goal (id ?sub-goal) (class ?subgoal-class) (parent ?id) (type ACHIEVE) (mode FORMULATED)
 	      (priority ?priority) (is-executable TRUE))
     (goal-meta (goal-id ?sub-goal) (order-id ?ord) (root-for-order ?root-id))
     (goal (id ?root-id) (class ?root-class))
 	(not (goal (id ~?sub-goal) (parent ?id) (type ACHIEVE) (outcome ?outcome&~COMPLETED)
 	           (priority ?priority2&:(< ?priority2 ?priority)) (is-executable TRUE))) ; The goal with priority ?priority is the lowest-priority non-evaluated goal that is executable
 
+    (not (and (eq ?subgoal-class GOAL-DELIVER-C0) (eq ?root-class GOAL-ORDER-C0)))
+    (not (and (eq ?subgoal-class GOAL-DELIVER-C1) (eq ?root-class GOAL-ORDER-C1)))
+    (not (and (eq ?subgoal-class GOAL-DELIVER-C2) (eq ?root-class GOAL-ORDER-C2)))
     =>
     (modify ?sg (mode SELECTED))
 )
-; Selection rule for selection of deliver-c0 for c0 orders.
+; Selection rule for selection of deliver-c0/c1/c2 for c0/c1/c2 orders.
 (defrule central-run-linear-subgoals-select-deliver-c0
     (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-LINEAR) (mode DISPATCHED))
-    ?sg <- (goal (id ?sub-goal) (class GOAL-DELIVER-C0) (parent ?id) (type ACHIEVE) (mode FORMULATED)
+    ?sg <- (goal (id ?sub-goal) (class GOAL-DELIVER-C0|GOAL-DELIVER-C1|GOAL-DELIVER-C2) (parent ?id) (type ACHIEVE) (mode FORMULATED)
 	      (priority ?priority) (is-executable TRUE))
     (goal-meta (goal-id ?sub-goal) (order-id ?ord) (root-for-order ?root-id))
-    (goal (id ?root-id) (class GOAL-ORDER-C0))
+    (goal (id ?root-id) (class GOAL-ORDER-C0|GOAL-ORDER-C1|GOAL-ORDER-C2))
 	(not (goal (id ~?sub-goal) (parent ?id) (type ACHIEVE) (outcome ?outcome&~COMPLETED)
 	           (priority ?priority2&:(< ?priority2 ?priority)) (is-executable TRUE))) ; The goal with priority ?priority is the lowest-priority non-evaluated goal that is executable
     

@@ -30,13 +30,97 @@
 	(modify ?gf (mode DISPATCHED))
 )
 
+; Selection rule when no machine blockings are considered
 (defrule central-run-parallel-subgoals-select ;
     (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-PARALLEL) (mode DISPATCHED))
-    ?sg <- (goal (id ?sub-goal) (parent ?id) (type ACHIEVE) (mode FORMULATED)
+    ?sg <- (goal (id ?sub-goal) (parent ?id) (type ACHIEVE) (class ?sub-class) (mode FORMULATED)
 	      (is-executable TRUE))
+    (goal-meta (goal-id ?sub-goal) (order-id ?ord) (root-for-order ?root-id))
+    (goal (id ?root-id) (class ?root-class))
+
+    (not (and (eq ?root-class GOAL-ORDER-C1) (eq ?sub-class GOAL-GET-CS)))
+    (not (and (eq ?root-class GOAL-ORDER-C2) (eq ?sub-class GOAL-GET-CS)))
+    (not (and (eq ?root-class GOAL-ORDER-C2) (eq ?sub-class GOAL-PAY-SECOND-RING)))
     
     =>
 
+    (modify ?sg (mode SELECTED))
+)
+
+; Selection rule for selection of get-cs for c1 orders.
+(defrule central-run-parallel-subgoals-select-c1-get-cs ;
+    (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-PARALLEL) (mode DISPATCHED))
+    ?sg <- (goal (id ?sub-goal) (parent ?id) (type ACHIEVE) (class GOAL-GET-CS) (mode FORMULATED)
+	      (is-executable TRUE))
+    (goal-meta (goal-id ?sub-goal) (order-id ?ord) (root-for-order ?root-id))
+    (goal (id ?root-id) (class GOAL-ORDER-C1))
+
+    ;Facts for cap station:
+    (domain-object (name ?team-color) (type team-color))
+    (domain-fact (name mps-team) (param-values ?cs ?team-color))
+    (domain-fact (name mps-type) (param-values ?cs CS))
+    (domain-fact (name order-cap-color) (param-values ?ord ?capcol))
+    (domain-fact (name cs-buffered) (param-values ?cs ?capcol))
+    (not (machine-used (mps ?cs) (order-id ?some-order-id)))
+    =>
+    (assert (machine-used (mps ?cs) (order-id ?sub-goal)))
+    (modify ?sg (mode SELECTED))
+)
+
+; Selection rule for selection of pay-second-ring for c2 orders in case both ringstations needed are different
+(defrule central-run-parallel-subgoals-select-c2-pay-second-ring ;
+    (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-PARALLEL) (mode DISPATCHED))
+    ?sg <- (goal (id ?sub-goal) (parent ?id) (type ACHIEVE) (class GOAL-PAY-SECOND-RING) (mode FORMULATED)
+	      (is-executable TRUE))
+    (goal-meta (goal-id ?sub-goal) (order-id ?ord) (root-for-order ?root-id))
+    (goal (id ?root-id) (class GOAL-ORDER-C2))
+
+    ; Facts for cap station:
+    (domain-object (name ?team-color) (type team-color))
+    (domain-fact (name mps-team) (param-values ?rs ?team-color))
+    (domain-fact (name mps-type) (param-values ?rs RS))
+    (domain-fact (name order-ring1-color) (param-values ?ord ?ring1col))
+    (domain-fact (name order-ring1-color) (param-values ?ord ?ring2col))
+    (domain-fact (name rs-ring-spec) (param-values ?rs1 ?ring1col ?num1))
+    (domain-fact (name rs-ring-spec) (param-values ?rs2 ?ring2col ?num2))
+    (not (eq ?rs1 ?rs2))
+    (not (machine-used (mps ?rs2) (order-id ?some-order-id)))
+    ; Facts for cap station
+    (domain-fact (name mps-team) (param-values ?cs ?team-color))
+    (domain-fact (name mps-type) (param-values ?cs CS))
+    (domain-fact (name order-cap-color) (param-values ?ord ?capcol))
+    (domain-fact (name cs-buffered) (param-values ?cs ?capcol))
+    (not (machine-used (mps ?cs) (order-id ?some-order-id)))
+    =>
+    (assert (machine-used (mps ?cs) (order-id ?sub-goal)))
+    (assert (machine-used (mps ?rs2) (order-id ?sub-goal)))
+    (modify ?sg (mode SELECTED))
+)
+
+; Selection rule for selection of pay-second-ring for c2 orders in case both ringstations needed are the same
+(defrule central-run-parallel-subgoals-select-c2-pay-second-ring ;
+    (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-PARALLEL) (mode DISPATCHED))
+    ?sg <- (goal (id ?sub-goal) (parent ?id) (type ACHIEVE) (class GOAL-PAY-SECOND-RING) (mode FORMULATED)
+	      (is-executable TRUE))
+    (goal-meta (goal-id ?sub-goal) (order-id ?ord) (root-for-order ?root-id))
+    (goal (id ?root-id) (class GOAL-ORDER-C2))
+
+    ;Facts for ring station:
+    (domain-object (name ?team-color) (type team-color))
+    (domain-fact (name mps-team) (param-values ?rs ?team-color))
+    (domain-fact (name mps-type) (param-values ?rs RS))
+    (domain-fact (name order-ring1-color) (param-values ?ord ?ring1col))
+    (domain-fact (name order-ring1-color) (param-values ?ord ?ring2col))
+    (domain-fact (name rs-ring-spec) (param-values ?rs1 ?ring1col ?num1))
+    (domain-fact (name rs-ring-spec) (param-values ?rs1 ?ring2col ?num2))
+    ; Facts for cap station
+    (domain-fact (name mps-team) (param-values ?cs ?team-color))
+    (domain-fact (name mps-type) (param-values ?cs CS))
+    (domain-fact (name order-cap-color) (param-values ?ord ?capcol))
+    (domain-fact (name cs-buffered) (param-values ?cs ?capcol))
+    (not (machine-used (mps ?cs) (order-id ?some-order-id)))
+    =>
+    (assert (machine-used (mps ?cs) (order-id ?sub-goal)))
     (modify ?sg (mode SELECTED))
 )
 
