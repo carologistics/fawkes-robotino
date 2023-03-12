@@ -70,9 +70,11 @@
 
 ; Machine releases 
 
-;release bs in c0-order
+; Releases in c0-order:
+; release bs in c0-order
 (defrule free-c0-bs
   ?mu <- (machine-used (mps ?bs) (order-id ?ord))
+  (domain-fact (name mps-type) (param-values ?bs BS))
   (goal (id ?goal-id) (class GOAL-TO-CS) (outcome COMPLETED))
   (goal-meta (goal-id ?goal-id) (order-id ?ord) (root-for-order ?root-id))
   (goal (id ?root-id) (class GOAL-ORDER-C0))
@@ -80,23 +82,87 @@
   =>
   (retract ?mu)
 )
-;release cs in c0-order
-(defrule free-c0-cs
-  ?mu <- (machine-used (mps ?cs) (order-id ?ord))
+; release cs and ds in c0-order
+(defrule free-c0-cs-and-ds
+  ?mucs <- (machine-used (mps ?cs) (order-id ?ord))
+  (domain-fact (name mps-type) (param-values ?cs CS))
+  ?muds <- (machine-used (mps ?ds) (order-id ?ord))
+  (domain-fact (name mps-type) (param-values ?ds DS))
   (goal (id ?goal-id) (class GOAL-DELIVER-C0) (outcome COMPLETED))
   (goal-meta (goal-id ?goal-id) (order-id ?ord) (root-for-order ?root-id))
   (goal (id ?root-id) (class GOAL-ORDER-C0))
 
+  =>
+  (retract ?mucs)
+  (retract ?muds)
+)
+; release ds in c0-order
+
+; Releases in c1-order:
+
+(defrule free-c1-bs
+  ?mu <- (machine-used (mps ?bs) (order-id ?ord))
+  (domain-fact (name mps-type) (param-values ?bs BS))
+  (goal (id ?goal-id) (class GOAL-TO-RS1) (outcome COMPLETED))
+  (goal-meta (goal-id ?goal-id) (order-id ?ord) (root-for-order ?root-id))
+  (goal (id ?root-id) (class GOAL-ORDER-C1))
   =>
   (retract ?mu)
 )
-;release ds in c0-order
-(defrule free-c0-ds
-  ?mu <- (machine-used (mps ?ds) (order-id ?ord))
-  (goal (id ?goal-id) (class GOAL-DELIVER-C0) (outcome COMPLETED))
-  (goal-meta (goal-id ?goal-id) (order-id ?ord) (root-for-order ?root-id))
-  (goal (id ?root-id) (class GOAL-ORDER-C0))
 
+(defrule free-c1-rs
+  ?mu <- (machine-used (mps ?rs) (order-id ?ord))
+  (domain-fact (name mps-type) (param-values ?rs RS))
+  (goal (id ?goal-id) (class GOAL-TO-CS) (outcome COMPLETED))
+  (goal-meta (goal-id ?goal-id) (order-id ?ord) (root-for-order ?root-id))
+  (goal (id ?root-id) (class GOAL-ORDER-C1))
   =>
   (retract ?mu)
+)
+
+(defrule free-c1-cs-and-ds
+  ?mucs <- (machine-used (mps ?cs) (order-id ?ord))
+  (domain-fact (name mps-type) (param-values ?cs CS))
+  ?muds <- (machine-used (mps ?ds) (order-id ?ord))
+  (domain-fact (name mps-type) (param-values ?ds DS))
+  (goal (id ?goal-id) (class GOAL-DELIVER-C1) (outcome COMPLETED))
+  (goal-meta (goal-id ?goal-id) (order-id ?ord) (root-for-order ?root-id))
+  (goal (id ?root-id) (class GOAL-ORDER-C1))
+  =>
+  (retract ?mucs)
+  (retract ?muds)
+)
+
+; Releases in c2-order:
+
+(defrule free-c2-bs
+  ?mu <- (machine-used (mps ?bs) (order-id ?ord))
+  (domain-fact (name mps-type) (param-values ?bs BS))
+  (goal (id ?goal-id) (class GOAL-TO-RS1) (outcome COMPLETED))
+  (goal-meta (goal-id ?goal-id) (order-id ?ord) (root-for-order ?root-id))
+  (goal (id ?root-id) (class GOAL-ORDER-C2))
+  =>
+  (retract ?mu)
+)
+
+(defrule free-c2-rs1
+
+)
+
+(defrule free-c2-rs2
+
+)
+
+
+(defrule free-c2-cs-and-ds
+  ?mucs <- (machine-used (mps ?cs) (order-id ?ord))
+  (domain-fact (name mps-type) (param-values ?cs CS))
+  ?muds <- (machine-used (mps ?ds) (order-id ?ord))
+  (domain-fact (name mps-type) (param-values ?ds DS))
+  (goal (id ?goal-id) (class GOAL-DELIVER-C2) (outcome COMPLETED))
+  (goal-meta (goal-id ?goal-id) (order-id ?ord) (root-for-order ?root-id))
+  (goal (id ?root-id) (class GOAL-ORDER-C2))
+  =>
+  (retract ?mucs)
+  (retract ?muds)
 )
