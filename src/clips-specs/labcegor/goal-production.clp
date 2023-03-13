@@ -232,7 +232,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;;;;;;;;;;;;;   GROUP-1 COMPLEXITY-1 PAYMENT-0 PARALLEL    ;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;   GROUP-1 COMPLEXITY-1 PAYMENT PARALLEL    ;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -302,7 +302,7 @@
                 (id ?goal-id)
                 (sub-type SIMPLE)
                 (verbosity NOISY) (is-executable FALSE) 
-                (params rs ?rs ring-before ?rng-before ring-after ?rng-after ring-req ?rng-req) 
+                (params rs ?rs ring-color ?rng-clr ring-before ?rng-before ring-after ?rng-after ring-req ?rng-req) 
                 (meta-template goal-meta)
   )))
   (assert (goal-meta (goal-id ?goal-id) (assigned-to nil) (sub-task-type ?task)))
@@ -338,13 +338,20 @@
 
   (bind ?cls (sym-cat PRODUCT- ?ord -T-pay-bs))
   
-  ; (bind ?robot (goal-production-find-a-robot ?task))
+  (do-for-fact ((?rs-status wm-fact))
+			              (and (wm-key-prefix ?rs-status:key (create$ domain fact rs-filled-with))
+			                   (eq (wm-key-arg ?rs-status:key m) ?rs))
+			              (bind ?rng-before (wm-key-arg ?rs-status:key n))
+  )
+  (bind ?a (sym-to-int ?rng-before))
+  (bind ?b (sym-to-int 1))
+  (bind ?rng-after (int-to-sym (+ ?a ?b)))
 
   (bind ?g (assert (goal (class ?cls)
                 (id ?goal-id)
                 (sub-type SIMPLE)
                 (verbosity NOISY) (is-executable FALSE) 
-                (params cs ?cs rs ?rs) 
+                (params cs ?cs rs ?rs ring-before ?rng-before ring-after ?rng-after) 
                 (meta-template goal-meta)
   )))
   (assert (goal-meta (goal-id ?goal-id) (assigned-to nil) (sub-task-type ?task)))
@@ -408,7 +415,7 @@
                 (id ?goal-id)
                 (sub-type SIMPLE)
                 (verbosity NOISY) (is-executable FALSE) 
-                (params bs ?bs bs-clr ?bs-clr ?wp) 
+                (params bs ?bs bs-clr ?bs-clr workpiece ?wp) 
                 (meta-template goal-meta)
   )))
   (assert (goal-meta (goal-id ?goal-id) (assigned-to nil) (sub-task-type ?task)))
@@ -496,7 +503,6 @@
 ;;;;;;;;;;;;;;   END OF PARALLELIZATION    ;;;;;;;;;;;;;;;;;;;;
 
 ; LIST OF FUTURE TASKS
-; 1. For payments, create if else within goal-tree-2 and run make-payment more times with BS 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -636,6 +642,7 @@
     (goal-tree-assert-central-run-parallel (sym-cat PRODUCT- ?ord -ST1) 
       (goal-production-g1-c1-spawn-wp ?ord ?wp PRIMARY_TASK 1)
       (goal-production-g1-c1-prepare-bs ?ord ?bs ?base-clr PRIMARY_TASK 2)
+      (goal-production-g1-c1-bs-dispense ?ord ?bs ?base-clr ?wp PRIMARY_TASK 8)
       (goal-production-g1-c1-prepare-rs ?ord ?rs ?rng-clr ?r-req SECONDARY_TASK 3)
       (goal-production-g1-c1-cap-retrieve ?ord ?cs ?cap-clr SECONDARY_TASK 4)
       ;(goal-production-g1-c1-transport-wp ?ord ?rs OUTPUT ?cs INPUT ?wp ?robot 4)
@@ -662,7 +669,6 @@
 
   (bind ?goal-tree-3
     (goal-tree-assert-central-run-all-sequence (sym-cat PRODUCT- ?ord -PT) 
-      (goal-production-g1-c1-bs-dispense ?ord ?bs ?base-clr ?wp PRIMARY_TASK 8)
       (goal-production-g1-c1-transport-wp ?ord ?bs OUTPUT ?rs INPUT ?wp PRIMARY_TASK 9)
       (goal-production-g1-c1-mount-ring1 ?ord ?rs ?rng-clr ?r-req ?wp PRIMARY_TASK 10)
       (goal-production-g1-c1-transport-wp ?ord ?rs OUTPUT ?cs INPUT ?wp PRIMARY_TASK 11)

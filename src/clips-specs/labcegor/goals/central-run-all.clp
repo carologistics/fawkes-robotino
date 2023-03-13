@@ -96,16 +96,23 @@
 
 
 
+
 (defrule central-run-all-goal-select-sequential
-	?tree <- (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS) (meta sequence-mode))
-	?child <- (goal (id ?sub-goal) (parent ?id) (sub-type SIMPLE) (mode FORMULATED)
-	      (priority ?priority))
+	?tree <- (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS) (meta sequence-mode) (priority ?p-priority) (mode ~SELECTED&~RETRACTED))
+	?child <- (goal (id ?sub-goal) (parent ?id) (sub-type SIMPLE) (mode FORMULATED) (priority ?c-priority))
+	
 	(not (goal (id ~?sub-goal) (parent ?id) (mode ~RETRACTED)
-	           (priority ?priority2&:(> ?priority2 ?priority))))
+	           (priority ?c-priority2&:(> ?c-priority2 ?c-priority))))
+
+	(not (goal (id ~?id) (class ?class)
+	           (priority ?p-priority2&:(> ?p-priority2 ?p-priority))))
+
+	(wm-fact (key central agent robot args? r ?curr-robot))
 	?gm <- (goal-meta (goal-id ?sub-goal) (sub-task-type ?task) (assigned-to nil))
+	(test (or (and (eq ?task SECONDARY_TASK) (or (eq ?curr-robot robot2) (eq ?curr-robot robot3)))
+	          (and (eq ?task PRIMARY_TASK) (eq ?curr-robot robot1))))
 	=>
-	(bind ?r (goal-production-find-a-robot ?task))
-	(modify ?gm (assigned-to ?r))
+	(modify ?gm (assigned-to ?curr-robot))
 	(modify ?child (mode SELECTED))
 )
 

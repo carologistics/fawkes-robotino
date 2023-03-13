@@ -101,10 +101,12 @@
 (defrule central-run-parallel-goal-select
 	?tree <- (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL))
 	?child <- (goal (id ?sub-goal) (parent ?id) (sub-type SIMPLE) (mode FORMULATED))
+	(wm-fact (key central agent robot args? r ?curr-robot))
 	?gm <- (goal-meta (goal-id ?sub-goal) (sub-task-type ?task) (assigned-to nil))
+	(test (or (and (eq ?task SECONDARY_TASK) (or (eq ?curr-robot robot2) (eq ?curr-robot robot3)))
+	          (and (eq ?task PRIMARY_TASK) (eq ?curr-robot robot1))))
 	=>
-	(bind ?r (goal-production-find-a-robot ?task))
-	(modify ?gm (assigned-to ?r))
+	(modify ?gm (assigned-to ?curr-robot))
 	(modify ?child (mode SELECTED))
 	
 )
