@@ -512,6 +512,7 @@ void read_package() {
         break;
       case CMD_STOP:
         slow_stop_all();
+        set_new_acc(0);
         break;
       case CMD_FAST_STOP:
         fast_stop_all();
