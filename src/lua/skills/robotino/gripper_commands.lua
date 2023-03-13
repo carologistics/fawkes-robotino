@@ -50,6 +50,9 @@ function input_ok()
   if fsm.vars.command == "OPEN" or fsm.vars.command == "CLOSE" then
     return true
   end
+  if fsm.vars.command == "STOP" then
+    return true
+  end
   if fsm.vars.command == "MOVEABS" or fsm.vars.command == "MOVEREL" then
     if not fsm.vars.x or not fsm.vars.y or not fsm.vars.z then
       print("Missing coordinates " .. fsm.vars.x .. " " .. fsm.vars.y .. " " ..fsm.vars.z)
