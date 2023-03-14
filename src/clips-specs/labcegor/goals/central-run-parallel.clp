@@ -32,6 +32,7 @@
 	(modify ?gf (mode DISPATCHED))
 )
 
+
 ; Selection rule when no machine blockings are considered
 (defrule central-run-parallel-subgoals-select ;
     (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-PARALLEL) (mode DISPATCHED))
@@ -45,7 +46,7 @@
     (not (and (eq ?root-class GOAL-ORDER-C2) (eq ?sub-class GOAL-PAY-SECOND-RING)))
     
     =>
-
+    (printout t "test")
     (modify ?sg (mode SELECTED))
 )
 
@@ -66,8 +67,10 @@
     (not (machine-used (mps ?cs) (order-id ?some-order-id)))
     =>
     (assert (machine-used (mps ?cs) (order-id ?sub-goal)))
+    (printout t ?cs " is now in use for order " ?ord crlf)
     (modify ?sg (mode SELECTED))
 )
+
 
 ; Selection rule for selection of pay-second-ring for c2 orders in case both ringstations needed are different
 (defrule central-run-parallel-subgoals-select-c2-pay-second-ring ;
@@ -95,7 +98,9 @@
     (not (machine-used (mps ?cs) (order-id ?some-order-id)))
     =>
     (assert (machine-used (mps ?cs) (order-id ?sub-goal)))
+    (printout t ?cs " is now in use for order " ?ord crlf)
     (assert (machine-used (mps ?rs2) (order-id ?sub-goal)))
+    (printout t ?rs2 " is now in use for order " ?ord crlf)
     (modify ?sg (mode SELECTED))
 )
 
@@ -123,6 +128,7 @@
     (not (machine-used (mps ?cs) (order-id ?some-order-id)))
     =>
     (assert (machine-used (mps ?cs) (order-id ?sub-goal)))
+    (printout t ?cs " is now in use for order " ?ord crlf)
     (modify ?sg (mode SELECTED))
 )
 

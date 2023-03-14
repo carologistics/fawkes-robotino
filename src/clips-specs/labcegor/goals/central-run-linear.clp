@@ -61,6 +61,7 @@
     (not (machine-used (mps ?ds) (order-id ?some-order-id)))
     =>
     (assert (machine-used (mps ?ds) (order-id ?ord)))
+    (printout t ?ds " is now in use for order " ?ord crlf)
     (modify ?sg (mode SELECTED))
 )
 
