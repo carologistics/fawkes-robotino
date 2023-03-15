@@ -319,7 +319,7 @@
 todo goal 1-1-1
 (defrule goal-reasoner-buffer-cap-goal-select
 	?g <- (goal (id ?goal-id) (class BUFFER-CAP-GOAL) (mode FORMULATED))
-  ?gf <- (goal (class BUFFER-CAP-DISCARD-GOAL))
+  ; ?gf <- (goal (class BUFFER-CAP-DISCARD-GOAL))
   =>
 	(modify ?g (mode SELECTED))
 
