@@ -97,12 +97,9 @@
 	(modify ?g (mode EXPANDED))
 )
 
-; todo
 (defrule goal-expander-discard
 	?g <- (goal (id ?goal-id) (class DISCARD-GOAL) (mode SELECTED)
 	            (params target-cs ?cs cc ?cc))
-	?gf <- (goal (id ?id) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
-	             (mode FORMULATED))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-loc side ?curr-side))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
@@ -112,7 +109,6 @@
 			(plan-assert-action wp-get ?robot ?cc ?cs OUTPUT)
 			(plan-assert-action wp-discard ?robot ?cc)))
 	(modify ?g (mode EXPANDED))
-	(modify ?gf (mode EXPANDED))
 )
 
 ; ----------------------- MPS Instruction GOALS -------------------------------
@@ -223,3 +219,30 @@
 ;	)
 ;	(modify ?g (mode EXPANDED))
 ;)
+
+
+(defrule goal-expander-c0-order
+	?g <- (goal (id ?goal-id) (mode FORMULATED) (class C0-ORDER))
+	=>
+	(modify ?g (mode EXPANDED))
+)
+
+(defrule goal-expander-base-cap-ready
+
+	?g <- (goal (id ?goal-id) (mode FORMULATED) (class BASE-CAP-READY))
+	=>
+	(modify ?g (mode COMMITTED))
+)
+
+(defrule goal-expander-mount-cap-then-get-wp
+	?g <- (goal (id ?goal-id) (mode FORMULATED) (class MOUNT-CAP-THEN-GET-WP-GOAL))
+	=>
+	(modify ?g (mode EXPANDED))
+)
+
+(defrule goal-expander-buffer-cap-discard
+
+	?g <- (goal (id ?goal-id) (mode FORMULATED) (class BUFFER-CAP-DISCARD-GOAL))
+	=>
+	(modify ?g (mode EXPANDED))
+)

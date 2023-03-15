@@ -162,7 +162,6 @@
   (assert (goal (class C0-ORDER)
                 (id ?goal-id-c0)
                 (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
-                (mode EXPANDED)
                 (verbosity NOISY) (is-executable FALSE)
                 (meta-template goal-meta))
   )
@@ -189,7 +188,6 @@
                 (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)
                 (parent ?goal-id-c0)
                 (verbosity NOISY) (is-executable FALSE)
-                (mode COMMITTED)
                 (meta-template goal-meta))
   )
   (assert (goal-meta (goal-id ?goal-id-1)))
@@ -226,7 +224,6 @@
 					(parent ?goal-id-1)
 					(verbosity NOISY) (is-executable TRUE)
 					(meta-template goal-meta)
-          (mode EXPANDED)
 	))
 	(assert (goal-meta (goal-id ?goal-id-1-1)))
 
@@ -269,8 +266,6 @@
 	)
 	(assert (goal-meta (goal-id ?goal-id-2-2) (assigned-to nil)))
 
-
-; subgoal 1-1-1 buffer cap        todo  priority
   (bind ?goal-id-1-1-1 (sym-cat BUFFER-CAP-GOAL- (gensym*)))
 	(assert (goal (class BUFFER-CAP-GOAL)
 					(id ?goal-id-1-1-1)
@@ -282,7 +277,6 @@
 	))
 	(assert (goal-meta (goal-id ?goal-id-1-1-1) (assigned-to robot1)))
 
-; subgoal 1-1-2 discard          todo  priority
   (bind ?goal-id-1-1-2 (sym-cat DISCARD-GOAL- (gensym*)))
 	(assert (goal (class DISCARD-GOAL)
 					(id ?goal-id-1-1-2)
@@ -325,7 +319,7 @@
 todo goal 1-1-1
 (defrule goal-reasoner-buffer-cap-goal-select
 	?g <- (goal (id ?goal-id) (class BUFFER-CAP-GOAL) (mode FORMULATED))
-  ?gf <- (goal (class BUFFER-CAP-DISCARD-GOAL))
+  ; ?gf <- (goal (class BUFFER-CAP-DISCARD-GOAL))
   =>
 	(modify ?g (mode SELECTED))
 
