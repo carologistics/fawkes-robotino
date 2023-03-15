@@ -41,9 +41,9 @@
     (goal-meta (goal-id ?sub-goal) (order-id ?ord) (root-for-order ?root-id))
     (goal (id ?root-id) (class ?root-class))
 
-    (not (and (eq ?root-class GOAL-ORDER-C1) (eq ?sub-class GOAL-GET-CS)))
-    (not (and (eq ?root-class GOAL-ORDER-C2) (eq ?sub-class GOAL-GET-CS)))
-    (not (and (eq ?root-class GOAL-ORDER-C2) (eq ?sub-class GOAL-PAY-SECOND-RING)))
+    (test(not (and (eq ?root-class GOAL-ORDER-C1) (eq ?sub-class GOAL-GET-CS))))
+    (test(not (and (eq ?root-class GOAL-ORDER-C2) (eq ?sub-class GOAL-GET-CS))))
+    (test(not (and (eq ?root-class GOAL-ORDER-C2) (eq ?sub-class GOAL-PAY-SECOND-RING))))
     
     =>
     (printout t "test")
@@ -51,7 +51,7 @@
 )
 
 ; Selection rule for selection of get-cs for c1 orders.
-(defrule central-run-parallel-subgoals-select-c1-get-cs ;
+(defrule central-run-parallel-subgoals-select-c1-get-cs
     (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-PARALLEL) (mode DISPATCHED))
     ?sg <- (goal (id ?sub-goal) (parent ?id) (type ACHIEVE) (class GOAL-GET-CS) (mode FORMULATED)
 	      (is-executable TRUE))
@@ -59,14 +59,15 @@
     (goal (id ?root-id) (class GOAL-ORDER-C1))
 
     ;Facts for cap station:
-    (domain-object (name ?team-color) (type team-color))
+    (domain-object (name ?team-color) (type team-color)) ; This selects our team color, as this fact only exists for our own team
+    (domain-fact (name order-cap-color) (param-values ?ord ?capcol))
     (domain-fact (name mps-team) (param-values ?cs ?team-color))
     (domain-fact (name mps-type) (param-values ?cs CS))
-    (domain-fact (name order-cap-color) (param-values ?ord ?capcol))
-    (domain-fact (name cs-buffered) (param-values ?cs ?capcol))
-    (not (machine-used (mps ?cs) (order-id ?some-order-id)))
+    (domain-fact (name wp-on-shelf) (param-values ?wp ?cs ?spot))
+    (domain-fact (name wp-cap-color) (param-values ?wp ?capcol))
+    (not (machine-used (mps ?cs) (order-id ?some-order-id2)))
     =>
-    (assert (machine-used (mps ?cs) (order-id ?sub-goal)))
+    (assert (machine-used (mps ?cs) (order-id ?ord)))
     (printout t ?cs " is now in use for order " ?ord crlf)
     (modify ?sg (mode SELECTED))
 )
@@ -88,18 +89,19 @@
     (domain-fact (name order-ring1-color) (param-values ?ord ?ring2col))
     (domain-fact (name rs-ring-spec) (param-values ?rs1 ?ring1col ?num1))
     (domain-fact (name rs-ring-spec) (param-values ?rs2 ?ring2col ?num2))
-    (not (eq ?rs1 ?rs2))
+    (test(not (eq ?rs1 ?rs2)))
     (not (machine-used (mps ?rs2) (order-id ?some-order-id)))
     ; Facts for cap station
+    (domain-fact (name order-cap-color) (param-values ?ord ?capcol))
     (domain-fact (name mps-team) (param-values ?cs ?team-color))
     (domain-fact (name mps-type) (param-values ?cs CS))
-    (domain-fact (name order-cap-color) (param-values ?ord ?capcol))
-    (domain-fact (name cs-buffered) (param-values ?cs ?capcol))
+    (domain-fact (name wp-on-shelf) (param-values ?wp ?cs ?spot))
+    (domain-fact (name wp-cap-color) (param-values ?wp ?capcol))
     (not (machine-used (mps ?cs) (order-id ?some-order-id)))
     =>
-    (assert (machine-used (mps ?cs) (order-id ?sub-goal)))
+    (assert (machine-used (mps ?cs) (order-id ?ord)))
     (printout t ?cs " is now in use for order " ?ord crlf)
-    (assert (machine-used (mps ?rs2) (order-id ?sub-goal)))
+    (assert (machine-used (mps ?rs2) (order-id ?ord)))
     (printout t ?rs2 " is now in use for order " ?ord crlf)
     (modify ?sg (mode SELECTED))
 )
@@ -121,13 +123,14 @@
     (domain-fact (name rs-ring-spec) (param-values ?rs1 ?ring1col ?num1))
     (domain-fact (name rs-ring-spec) (param-values ?rs1 ?ring2col ?num2))
     ; Facts for cap station
+    (domain-fact (name order-cap-color) (param-values ?ord ?capcol))
     (domain-fact (name mps-team) (param-values ?cs ?team-color))
     (domain-fact (name mps-type) (param-values ?cs CS))
-    (domain-fact (name order-cap-color) (param-values ?ord ?capcol))
-    (domain-fact (name cs-buffered) (param-values ?cs ?capcol))
+    (domain-fact (name wp-on-shelf) (param-values ?wp ?cs ?spot))
+    (domain-fact (name wp-cap-color) (param-values ?wp ?capcol))
     (not (machine-used (mps ?cs) (order-id ?some-order-id)))
     =>
-    (assert (machine-used (mps ?cs) (order-id ?sub-goal)))
+    (assert (machine-used (mps ?cs) (order-id ?ord)))
     (printout t ?cs " is now in use for order " ?ord crlf)
     (modify ?sg (mode SELECTED))
 )

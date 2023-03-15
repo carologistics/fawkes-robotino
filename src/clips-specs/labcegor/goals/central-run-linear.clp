@@ -37,9 +37,9 @@
 	(not (goal (id ~?sub-goal) (parent ?id) (type ACHIEVE) (outcome ?outcome&~COMPLETED)
 	           (priority ?priority2&:(< ?priority2 ?priority)) (is-executable TRUE))) ; The goal with priority ?priority is the lowest-priority non-evaluated goal that is executable
 
-    (not (and (eq ?subgoal-class GOAL-DELIVER-C0) (eq ?root-class GOAL-ORDER-C0)))
-    (not (and (eq ?subgoal-class GOAL-DELIVER-C1) (eq ?root-class GOAL-ORDER-C1)))
-    (not (and (eq ?subgoal-class GOAL-DELIVER-C2) (eq ?root-class GOAL-ORDER-C2)))
+    (test(not (and (eq ?subgoal-class GOAL-DELIVER-C0) (eq ?root-class GOAL-ORDER-C0))))
+    (test(not (and (eq ?subgoal-class GOAL-DELIVER-C1) (eq ?root-class GOAL-ORDER-C1))))
+    (test(not (and (eq ?subgoal-class GOAL-DELIVER-C2) (eq ?root-class GOAL-ORDER-C2))))
     =>
     (modify ?sg (mode SELECTED))
 )
