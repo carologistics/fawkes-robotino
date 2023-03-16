@@ -599,7 +599,7 @@
     (domain-fact (name wp-on-shelf) (param-values ?wp1 ?cs1 ?spot1))
     (domain-fact (name wp-on-shelf) (param-values ?wp2 ?cs2 ?spot2))
 
-    (not (eq ?wp1 ?wp2)) ; We need two separate shelf workpieces!
+    (test(not (eq ?wp1 ?wp2))) ; We need two separate shelf workpieces!
 
     (domain-fact (name order-ring2-color) (param-values ?ord ?ring2col))
     (domain-fact (name order-cap-color) (param-values ?ord ?capcol))
@@ -621,7 +621,7 @@
         (plan-assert-action move ?robot ?cs1 INPUT ?rs INPUT)
         (plan-assert-action wp-put-slide-cc ?robot ?wp1 ?rs ?rs-before ?rs-after1)
 
-        (plan-assert-action move ?rs INPUT ?cs2 INPUT)
+        (plan-assert-action move ?robot ?rs INPUT ?cs2 INPUT)
         (plan-assert-action wp-get-shelf ?robot ?wp2 ?cs2 ?spot2)
         (plan-assert-action move ?robot ?cs2 INPUT ?rs INPUT)
         (plan-assert-action wp-put-slide-cc ?robot ?wp2 ?rs ?rs-after1 ?rs-after2)

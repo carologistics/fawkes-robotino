@@ -2,10 +2,10 @@
 (defrule assign-move-away-goal
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (not (and (domain-object (name ?robot) (type robot)) (not (domain-fact (name entered-field) (param-values ?robot)))))
-    (not (goal (class GOAL-MOVE-AWAY)))
     (machine-used (mps ?s) (order-id ?ord))
     (domain-fact (name at) (param-values ?robot ?s ?side))
     ?rw <- (domain-fact (name robot-waiting) (param-values ?robot))
+    (not (move-away-meta (goal-id ?goal-id) (robot ?robot) (mps ?s) (side ?side)))
     ; IDEA: Could also try to match robot at machine that not belongs to the order blocking it (instead of robot-waiting)
     =>
     (bind ?goal-id (gensym*))
