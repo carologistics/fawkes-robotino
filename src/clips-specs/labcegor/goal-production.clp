@@ -139,6 +139,7 @@
 ;--------------------------------------mygoal------------------------
 (defrule goal-production-create-mygoal
   "Enter the field (drive outside of the starting box)."
+  ; what this mean
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key central agent robot args? r ?robot))
   (wm-fact (key domain fact entered-field args? r ?robot))
@@ -146,11 +147,11 @@
   (domain-facts-loaded)
   (wm-fact (key refbox team-color) (value ?team-color))
 
+  ; info about base
 	(wm-fact (key domain fact order-complexity args? ord ?order com C0))
-	; (wm-fact (key domain fact order-complexity args? ord ?order com C1))
 	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+  ; info about cap
 	(wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
-
   (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
   (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
 
@@ -185,18 +186,19 @@
   (bind ?goal-id-1 (sym-cat BASE-CAP-READY- (gensym*)))
   (assert (goal (class BASE-CAP-READY)
                 (id ?goal-id-1)
-                (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)
+                (sub-type SIMPLE)
                 (parent ?goal-id-c0)
                 (verbosity NOISY) (is-executable FALSE)
-                (meta-template goal-meta))
-  )
+                (meta-template goal-meta)
+                (params wp ?wp target-mps C-BS target-side OUTPUT base-color ?base-color)
+          ))
   (assert (goal-meta (goal-id ?goal-id-1)))
 
 ; subgoal 2 mount cap upon base
   (bind ?goal-id-2 (sym-cat MOUNT-CAP-THEN-GET-WP-GOAL- (gensym*)))
 	(assert (goal (class MOUNT-CAP-THEN-GET-WP-GOAL)
                 (id ?goal-id-2)
-                (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
+                (sub-type SIMPLE)
                 (parent ?goal-id-c0)
                 (verbosity NOISY) (is-executable TRUE)
                 (meta-template goal-meta)
@@ -215,151 +217,96 @@
 	))
 	(assert (goal-meta (goal-id ?goal-id-3) (assigned-to nil)))
 
-
-; subgoal 1-1 buffer cap then discard base 
-  (bind ?goal-id-1-1 (sym-cat BUFFER-CAP-DISCARD-GOAL- (gensym*)))
-	(assert (goal (class BUFFER-CAP-DISCARD-GOAL)
-					(id ?goal-id-1-1)
-          (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
-					(parent ?goal-id-1)
-					(verbosity NOISY) (is-executable TRUE)
-					(meta-template goal-meta)
-	))
-	(assert (goal-meta (goal-id ?goal-id-1-1)))
-
-
-
-; subgoal 1-2 Prepare and get base
-  (bind ?goal-id-1-2 (sym-cat PRE-GET-BASE-GOAL- (gensym*)))
-	(assert (goal (class PRE-GET-BASE-GOAL)
-                (id ?goal-id-1-2)
-                (sub-type SIMPLE)
-                (parent ?goal-id-1)
-                (verbosity NOISY) (is-executable TRUE)
-                (params wp ?wp target-mps C-BS target-side OUTPUT base-color ?base-color)
-                (meta-template goal-meta)
-          )
-  )
-	(assert (goal-meta (goal-id ?goal-id-1-2) (assigned-to nil)))
-
-; subgoal 2-1 mount cap upon base
-  (bind ?goal-id-2-1 (sym-cat MOUNT-CAP-GOAL- (gensym*)))
-	(assert (goal (class MOUNT-CAP-GOAL)
-                (id ?goal-id-2-1)
-                (sub-type SIMPLE)
-                (parent ?goal-id-2)
-                (params target-mps ?mps cap-color ?cap-color wp ?wp)
-                (verbosity NOISY) (is-executable TRUE)
-                (meta-template goal-meta))
-  )
-	(assert (goal-meta (goal-id ?goal-id-2-1) (assigned-to nil)))
-
-; subgoal 2-2 get mounted base
-  (bind ?goal-id-2-2 (sym-cat GET-MOUNTED-BASE-GOAL- (gensym*)))
-	(assert (goal (class GET-MOUNTED-BASE-GOAL)
-                (id ?goal-id-2-2)
-                (sub-type SIMPLE)
-                (parent ?goal-id-2)
-	              (params wp ?wp target-mps ?mps)
-                (verbosity NOISY) (is-executable TRUE)
-                (meta-template goal-meta))
-	)
-	(assert (goal-meta (goal-id ?goal-id-2-2) (assigned-to nil)))
-
-  (bind ?goal-id-1-1-1 (sym-cat BUFFER-CAP-GOAL- (gensym*)))
-	(assert (goal (class BUFFER-CAP-GOAL)
-					(id ?goal-id-1-1-1)
-					(sub-type SIMPLE)
-					(parent ?goal-id-1-1)
-					(verbosity NOISY) (is-executable TRUE)
-					(params target-cs ?mps cc ?cc)
-					(meta-template goal-meta)
-	))
-	(assert (goal-meta (goal-id ?goal-id-1-1-1) (assigned-to robot1)))
-
-  (bind ?goal-id-1-1-2 (sym-cat DISCARD-GOAL- (gensym*)))
-	(assert (goal (class DISCARD-GOAL)
-					(id ?goal-id-1-1-2)
-					(sub-type SIMPLE)
-					(parent ?goal-id-1-1)
-					(verbosity NOISY) (is-executable TRUE)
-					(params target-cs ?mps cc ?cc)
-					(meta-template goal-meta)
-  ))
-	(assert (goal-meta (goal-id ?goal-id-1-1-2) (assigned-to nil)))
 )
 
-;-----------------------------------------selector--------------------------------
+(defrule goal-production-create-MyC1Goal
+  "Enter the field (drive outside of the starting box)."
+  ; what this mean
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (wm-fact (key central agent robot args? r ?robot))
+  (wm-fact (key domain fact entered-field args? r ?robot))
+  (not (goal (id ?some-goal-id) (class C1-ORDER)))
+  (domain-facts-loaded)
+  (wm-fact (key refbox team-color) (value ?team-color))
 
-(defrule goal-reasoner-mygoal-3-select
-	?g <- (goal (id ?goal-id) (class INSTRUCT-DS-DELIVER) (mode FORMULATED))
-  ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
-   (goal (class GET-MOUNTED-BASE-GOAL) (mode RETRACTED))
+  ; info about base
+	(wm-fact (key domain fact order-complexity args? ord ?order com C1))
+	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+  ; info about cap
+	(wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
 
-  	; if avaliable robts ?
-  ;(not (goal-meta (assigned-to ?robot)))
-	=>
-  ; assign robot
-  (modify ?gm (assigned-to robot2))
-	(modify ?g (mode SELECTED))
-)
-
-; goal 1-2
-(defrule goal-reasoner-pre-get-base-goal-select
-	?g <- (goal (id ?goal-id) (class PRE-GET-BASE-GOAL) (mode FORMULATED))
-  ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
-  	; if avaliable robts ?
-  ;(not (goal-meta (assigned-to ?robot)))
-	=>
-  ; assign robot
-  (modify ?gm (assigned-to robot2))
-	(modify ?g (mode SELECTED))
-)
-
-todo goal 1-1-1
-(defrule goal-reasoner-buffer-cap-goal-select
-	?g <- (goal (id ?goal-id) (class BUFFER-CAP-GOAL) (mode FORMULATED))
-  ; ?gf <- (goal (class BUFFER-CAP-DISCARD-GOAL))
   =>
-	(modify ?g (mode SELECTED))
-
+  (printout t "Goal " C1-ORDER " formulated" crlf)
+  (bind ?goal-id-c1 (sym-cat C1-ORDER- (gensym*)))
+  (assert (goal (class C1-ORDER)
+                (id ?goal-id-c1)
+                (sub-type SIMPLE)
+                (verbosity NOISY) (is-executable FALSE)
+                (meta-template goal-meta)
+                ))
+                
+  (assert (goal-meta (goal-id ?goal-id-c1)))
 )
 
-(defrule goal-reasoner-discard-goal-select
-	?g <- (goal (id ?goal-id) (class DISCARD-GOAL) (mode FORMULATED))
-  ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
-  (goal (class BUFFER-CAP-GOAL) (mode RETRACTED))
-  	; if avaliable robts ?
-  ;(not (goal-meta (assigned-to ?robot)))
-	=>
-  ; assign robot
-  (modify ?gm (assigned-to robot1))
-	(modify ?g (mode SELECTED))
+(defrule goal-production-create-MyC2Goal
+  "Enter the field (drive outside of the starting box)."
+  ; what this mean
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (wm-fact (key central agent robot args? r ?robot))
+  (wm-fact (key domain fact entered-field args? r ?robot))
+  (not (goal (id ?some-goal-id) (class C2-ORDER)))
+  (domain-facts-loaded)
+  (wm-fact (key refbox team-color) (value ?team-color))
+
+  ; info about base
+	(wm-fact (key domain fact order-complexity args? ord ?order com C2))
+	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+  ; info about cap
+	(wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
+
+  =>
+  (printout t "Goal " C2-ORDER " formulated" crlf)
+  (bind ?goal-id-c2 (sym-cat C2-ORDER- (gensym*)))
+  (assert (goal (class C2-ORDER)
+                (id ?goal-id-c2)
+                (sub-type SIMPLE)
+                (verbosity NOISY) (is-executable FALSE)
+                (meta-template goal-meta)
+                ))
+  (assert (goal-meta (goal-id ?goal-id-c2)))
 )
 
-; goal 2-1
-(defrule goal-reasoner-mount-cap-goal-select
-	?g <- (goal (id ?goal-id) (class MOUNT-CAP-GOAL) (mode FORMULATED))
-  ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
-  (goal (class DISCARD-GOAL) (mode RETRACTED))
-  	; if avaliable robts ?
-  ;(not (goal-meta (assigned-to ?robot)))
-	=>
-  ; assign robot
-  (modify ?gm (assigned-to robot2))
-	(modify ?g (mode SELECTED))
-)
+(defrule goal-production-create-MyC3Goal
+  "Enter the field (drive outside of the starting box)."
+  ; what this mean
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (wm-fact (key central agent robot args? r ?robot))
+  (wm-fact (key domain fact entered-field args? r ?robot))
+  (not (goal (id ?some-goal-id) (class C3-ORDER)))
+  (domain-facts-loaded)
+  (wm-fact (key refbox team-color) (value ?team-color))
 
-(defrule goal-reasoner-get-mounted-cap-goal-select
-	?g <- (goal (id ?goal-id) (class GET-MOUNTED-BASE-GOAL) (mode FORMULATED))
-  ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
-  (goal (class MOUNT-CAP-GOAL) (mode RETRACTED))
+  ; info about base
+	(wm-fact (key domain fact order-complexity args? ord ?order com C3))
+	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+  ; info about cap
+	(wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
 
-  	; if avaliable robts ?
-  ;(not (goal-meta (assigned-to ?robot)))
-	=>
-  ; assign robot
-  (modify ?gm (assigned-to robot2))
-	(modify ?g (mode SELECTED))
+  =>
+  (printout t "Goal " C3-ORDER " formulated" crlf)
+  (bind ?goal-id-c3 (sym-cat C3-ORDER- (gensym*)))
+  (assert (goal (class C3-ORDER)
+                (id ?goal-id-c3)
+                (sub-type SIMPLE)
+                (verbosity NOISY) (is-executable FALSE)
+                (meta-template goal-meta)
+                ))
+  (assert (goal-meta (goal-id ?goal-id-c3)))
 )
 
