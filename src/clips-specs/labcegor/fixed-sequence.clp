@@ -152,7 +152,7 @@
 		(plan-assert-action move ?robot ?at-mps ?at-side ?cs OUTPUT)
 		(plan-assert-action wp-get ?robot ?cc ?cs OUTPUT)
 		(plan-assert-action move ?robot ?cs OUTPUT ?rs INPUT)	
-		(plan-assert-action wp-put-slide-cc ?robot ?cc ?rng-before ?rng-after)
+		(plan-assert-action wp-put-slide-cc ?robot ?cc ?rs ?rng-before ?rng-after)
 		(plan-assert-action move ?robot ?rs INPUT ?rs WAIT)	
 	)	
 	(modify ?g (mode EXPANDED))

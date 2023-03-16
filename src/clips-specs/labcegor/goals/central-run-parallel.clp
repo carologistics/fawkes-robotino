@@ -99,7 +99,8 @@
 
 
 (defrule central-run-parallel-goal-select
-	?tree <- (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL))
+	?tree <- (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL) (mode ~FORMULATED&~RETRACTED) (priority ?p-priority) )
+
 	?child <- (goal (id ?sub-goal) (parent ?id) (sub-type SIMPLE) (mode FORMULATED))
 	(wm-fact (key central agent robot args? r ?curr-robot))
 	?gm <- (goal-meta (goal-id ?sub-goal) (sub-task-type ?task) (assigned-to nil))
@@ -110,6 +111,24 @@
 	(modify ?child (mode SELECTED))
 	
 )
+
+
+
+; (defrule central-run-parallel-goal-select
+; 	?tree <- (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL) (priority ?p-priority) )
+	
+; 	(not (goal (id ~?id) (mode ~RETRACTED) (priority ?p-priority2&:(> ?p-priority2 ?p-priority))))
+
+; 	?child <- (goal (id ?sub-goal) (parent ?id) (sub-type SIMPLE) (mode FORMULATED))
+; 	(wm-fact (key central agent robot args? r ?curr-robot))
+; 	?gm <- (goal-meta (goal-id ?sub-goal) (sub-task-type ?task) (assigned-to nil))
+; 	(test (or (and (eq ?task SECONDARY_TASK) (or (eq ?curr-robot robot2) (eq ?curr-robot robot3)))
+; 	          (and (eq ?task PRIMARY_TASK) (eq ?curr-robot robot1))))
+; 	=>
+; 	(modify ?gm (assigned-to ?curr-robot))
+; 	(modify ?child (mode SELECTED))
+	
+; )
 
 (defrule central-run-parallel-goal-dispatch
 	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)

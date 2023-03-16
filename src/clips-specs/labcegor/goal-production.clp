@@ -252,6 +252,7 @@
                 (params workpiece ?wp) 
                 (meta-template goal-meta)
   )))
+  ; (printout t ?g " -- " ?cls "--" ?goal-id crlf)  
   (assert (goal-meta (goal-id ?goal-id) (assigned-to nil) (sub-task-type ?task)))
   (return ?g)
 )
@@ -502,127 +503,12 @@
 
 ;;;;;;;;;;;;;;   END OF PARALLELIZATION    ;;;;;;;;;;;;;;;;;;;;
 
-; LIST OF FUTURE TASKS
+; Error in simulation : Action wp-put-slide-cc failed: Unsatisfied precondition
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 
-; (deffunction goal-production-g1-c1-base
-; 	(?rnd-id ?bs ?base-clr ?wp ?robot ?num)
-; 	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
-;   (bind ?g (assert (goal (class ORDER1)
-;                 (id ?goal-id)
-;                 (sub-type SIMPLE)
-;                 (verbosity NOISY) (is-executable FALSE) 
-;                 (params bs ?bs bs-side OUTPUT base-color ?base-clr workpiece ?wp) 
-;                 (meta-template goal-meta)
-;   )))
-;   (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
-;   (return ?g)
-
-; )
-
-
-; (deffunction goal-production-g1-c1-transport-wp
-; 	(?rnd-id ?from ?from-side ?to ?to-side ?wp ?robot ?num)
-; 	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
-;   (bind ?g (assert (goal (class ORDER1)
-;                 (id ?goal-id)
-;                 (sub-type SIMPLE)
-;                 (verbosity NOISY) (is-executable FALSE) 
-;                 (params from ?from from-side ?from-side to ?to to-side ?to-side workpiece ?wp) 
-;                 (meta-template goal-meta)
-;   )))
-;   (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
-;   (return ?g)
-
-; )
-
-
-; (deffunction goal-production-g1-c1-rs
-; 	(?rnd-id ?rs ?rng-clr ?wp ?robot ?num)
-; 	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
-
-;   (do-for-fact ((?rs-status wm-fact))
-; 			              (and (wm-key-prefix ?rs-status:key (create$ domain fact rs-ring-spec))
-; 			                   (eq (wm-key-arg ?rs-status:key m) ?rs)
-;                          (eq (wm-key-arg ?rs-status:key r) ?rng-clr))
-; 			              (bind ?rng-pay (wm-key-arg ?rs-status:key rn))
-;   )
-
-;   (do-for-fact ((?rs-status wm-fact))
-; 			              (and (wm-key-prefix ?rs-status:key (create$ domain fact rs-filled-with))
-; 			                   (eq (wm-key-arg ?rs-status:key m) ?rs))
-; 			              (bind ?rng-num (wm-key-arg ?rs-status:key n))
-;   )
-
-;   (bind ?a (sym-to-int ?rng-pay))
-;   (bind ?b (sym-to-int ?rng-num))
-;   (bind ?r-after (int-to-sym (- ?b ?a)))
-
-
-;   (bind ?g (assert (goal (class ORDER1)
-;                 (id ?goal-id)
-;                 (sub-type SIMPLE)
-;                 (verbosity NOISY) (is-executable FALSE) 
-;                 (params target-rs ?rs ring-color ?rng-clr ring-before ?rng-num ring-after ?r-after ring-req ?rng-pay workpiece ?wp)
-;                 (meta-template goal-meta)
-;   )))
-;   (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
-;   (return ?g)
-
-; )
-
-
-
-; (deffunction goal-production-g1-c1-cap-retrieve
-; 	(?rnd-id ?cs ?cap-clr ?wp ?robot ?num)
-; 	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
-;   (bind ?g (assert (goal (class ORDER1)
-;                 (id ?goal-id)
-;                 (sub-type SIMPLE)
-;                 (verbosity NOISY) (is-executable FALSE) 
-;                 (params cap-carrier ?wp cap-color ?cap-clr cap-station ?cs)
-;                 (meta-template goal-meta)
-;   )))
-;   (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
-;   (return ?g)
-
-; )
-
-
-; (deffunction goal-production-g1-c1-cap-mount
-; 	(?rnd-id ?cs ?cap-clr ?wp ?robot ?num)
-; 	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
-;   (bind ?g (assert (goal (class ORDER1)
-;                 (id ?goal-id)
-;                 (sub-type SIMPLE)
-;                 (verbosity NOISY) (is-executable FALSE) 
-;                 (params order-carrier ?wp cap-color ?cap-clr cap-station ?cs)
-;                 (meta-template goal-meta)
-;   )))
-;   (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
-;   (return ?g)
-
-; )
-
-
-
-; (deffunction goal-production-g1-c1-deliver
-; 	(?rnd-id ?ds ?ds-gate ?base-clr ?cap-clr ?rng-clr ?wp ?ord ?robot ?num)
-; 	(bind ?goal-id (sym-cat ?rnd-id -g ?num))
-;   (bind ?g (assert (goal (class ORDER1)
-;                 (id ?goal-id)
-;                 (sub-type SIMPLE)
-;                 (verbosity NOISY) (is-executable FALSE) 
-;                 (params order ?ord workpiece ?wp delivery-station ?ds ds-gate ?ds-gate base-clr ?base-clr cap-clr ?cap-clr rng-clr ?rng-clr) 
-;                 (meta-template goal-meta)
-;   )))
-;   (assert (goal-meta (goal-id ?goal-id) (assigned-to ?robot)))
-;   (return ?g)
-
-; )
 
 
 
@@ -639,7 +525,7 @@
   )
 
 	(bind ?goal-tree-1
-    (goal-tree-assert-central-run-parallel (sym-cat PRODUCT- ?ord -ST1) 
+    (goal-tree-assert-central-run-parallel (sym-cat PRODUCT- ?ord -ST1) 3 1
       (goal-production-g1-c1-spawn-wp ?ord ?wp PRIMARY_TASK 1)
       (goal-production-g1-c1-prepare-bs ?ord ?bs ?base-clr PRIMARY_TASK 2)
       (goal-production-g1-c1-bs-dispense ?ord ?bs ?base-clr ?wp PRIMARY_TASK 8)
@@ -653,13 +539,13 @@
   (bind ?goal-tree-2
     (if (neq ?r-req TWO) then
       (create$
-        (goal-tree-assert-central-run-parallel (sym-cat PRODUCT- ?ord -ST2) 
+        (goal-tree-assert-central-run-parallel (sym-cat PRODUCT- ?ord -ST2) 2 1
           (goal-production-g1-c1-make-payment-cs ?ord ?cs ?rs SECONDARY_TASK 5)
         )
       )
     else
       (create$
-        (goal-tree-assert-central-run-parallel (sym-cat PRODUCT- ?ord -ST2)
+        (goal-tree-assert-central-run-parallel (sym-cat PRODUCT- ?ord -ST2) 2 1
           (goal-production-g1-c1-make-payment-cs ?ord ?cs ?rs SECONDARY_TASK 6)
           (goal-production-g1-c1-make-payment-bs ?ord ?bs ?rs SECONDARY_TASK 7)
         )
@@ -668,7 +554,7 @@
   )
 
   (bind ?goal-tree-3
-    (goal-tree-assert-central-run-all-sequence (sym-cat PRODUCT- ?ord -PT) 
+    (goal-tree-assert-central-run-all-sequence (sym-cat PRODUCT- ?ord -PT) 1 1
       (goal-production-g1-c1-transport-wp ?ord ?bs OUTPUT ?rs INPUT ?wp PRIMARY_TASK 9)
       (goal-production-g1-c1-mount-ring1 ?ord ?rs ?rng-clr ?r-req ?wp PRIMARY_TASK 10)
       (goal-production-g1-c1-transport-wp ?ord ?rs OUTPUT ?cs INPUT ?wp PRIMARY_TASK 11)
@@ -677,24 +563,45 @@
     )
   )
 
-  (bind ?goal-tree 
-    (goal-tree-assert-central-run-all-sequence (sym-cat PRODUCT- ?ord -C1)
-      ?goal-tree-1
-      ?goal-tree-2
-      ?goal-tree-3
-    ))
+  ; (bind ?goal-tree 
+  ;   (goal-tree-assert-central-run-all-sequence (sym-cat PRODUCT- ?ord -C1)
+  ;     ?goal-tree-1
+  ;     ?goal-tree-2
+  ;     ?goal-tree-3
+  ;   ))
 
-  (do-for-all-facts ((?gq goal))
-			                (eq ?gq ?goal-tree)
-			                (bind ?g-id ?gq:id)
+  (do-for-fact ((?gq goal))
+			          (eq ?gq ?goal-tree-1)
+			          (bind ?g-id ?gq:id)
+  )
+  ;(bind ?g-id (fact-slot-value ?goal-tree-1 id))
+
+  (do-for-fact ((?gmq goal-meta))
+			          (eq ?gmq:goal-id ?g-id)
+			          (modify ?gmq (ring-nr ONE))
   )
 
-  (do-for-all-facts ((?gmq goal-meta))
-			                (eq ?gmq:goal-id ?g-id)
-			                (modify ?gmq (ring-nr ONE))
+  (do-for-fact ((?gq goal))
+			          (eq ?gq ?goal-tree-2)
+			          (bind ?g-id ?gq:id)
   )
-  (goal-tree-update-priority-at-end ?goal-tree)
-	(return ?goal-tree)
+
+  (do-for-fact ((?gmq goal-meta))
+			          (eq ?gmq:goal-id ?g-id)
+			          (modify ?gmq (ring-nr ONE))
+  )
+
+  (do-for-fact ((?gq goal))
+			          (eq ?gq ?goal-tree-3)
+			          (bind ?g-id ?gq:id)
+  )
+
+  (do-for-fact ((?gmq goal-meta))
+			          (eq ?gmq:goal-id ?g-id)
+			          (modify ?gmq (ring-nr ONE))
+  )
+ 
+	(return ?goal-tree-1)
 )
 
 

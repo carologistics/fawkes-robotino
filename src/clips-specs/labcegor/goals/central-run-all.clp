@@ -94,11 +94,19 @@
 ;   (return ?assn-robot)
 ; )
 
-
+(defrule central-run-goal-tree-select
+	?tree <- (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS|CENTRAL-RUN-SUBGOALS-IN-PARALLEL) 
+				   (priority ?p-priority) (mode FORMULATED))
+	
+	(not (goal (id ~?id) (mode ~RETRACTED) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS|CENTRAL-RUN-SUBGOALS-IN-PARALLEL)
+	           (priority ?p-priority2&:(>= ?p-priority2 ?p-priority))))
+	=>
+	(modify ?tree (mode SELECTED) )
+)
 
 
 (defrule central-run-all-goal-select-sequential
-	?tree <- (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS) (meta sequence-mode) (priority ?p-priority) )
+	?tree <- (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS) (mode ~FORMULATED&~RETRACTED) (priority ?p-priority) )
 	?child <- (goal (id ?sub-goal) (parent ?id) (sub-type SIMPLE) (mode FORMULATED) (priority ?c-priority))
 	
 	(not (goal (id ~?sub-goal) (parent ?id) (mode ~RETRACTED)
