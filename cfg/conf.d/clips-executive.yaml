@@ -118,6 +118,8 @@ clips-executive:
             file: labcegor/noop-actions.clp
           - name: simtest
             file: labcegor/simtest.clp
+          - name: util-goals
+            file: labcegor/util-goals.clp
           - name: order-goals
             file: labcegor/order-goals.clp
           - name: selection-strategy

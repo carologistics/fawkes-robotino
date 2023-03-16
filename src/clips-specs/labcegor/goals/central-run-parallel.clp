@@ -82,11 +82,8 @@
     (goal (id ?root-id) (class GOAL-ORDER-C2))
 
     ; Facts for cap station:
-    (domain-object (name ?team-color) (type team-color))
-    (domain-fact (name mps-team) (param-values ?rs ?team-color))
-    (domain-fact (name mps-type) (param-values ?rs RS))
     (domain-fact (name order-ring1-color) (param-values ?ord ?ring1col))
-    (domain-fact (name order-ring1-color) (param-values ?ord ?ring2col))
+    (domain-fact (name order-ring2-color) (param-values ?ord ?ring2col))
     (domain-fact (name rs-ring-spec) (param-values ?rs1 ?ring1col ?num1))
     (domain-fact (name rs-ring-spec) (param-values ?rs2 ?ring2col ?num2))
     (test(not (eq ?rs1 ?rs2)))
@@ -115,13 +112,10 @@
     (goal (id ?root-id) (class GOAL-ORDER-C2))
 
     ;Facts for ring station:
-    (domain-object (name ?team-color) (type team-color))
-    (domain-fact (name mps-team) (param-values ?rs ?team-color))
-    (domain-fact (name mps-type) (param-values ?rs RS))
     (domain-fact (name order-ring1-color) (param-values ?ord ?ring1col))
-    (domain-fact (name order-ring1-color) (param-values ?ord ?ring2col))
-    (domain-fact (name rs-ring-spec) (param-values ?rs1 ?ring1col ?num1))
-    (domain-fact (name rs-ring-spec) (param-values ?rs1 ?ring2col ?num2))
+    (domain-fact (name order-ring2-color) (param-values ?ord ?ring2col))
+    (domain-fact (name rs-ring-spec) (param-values ?rs ?ring1col ?num1))
+    (domain-fact (name rs-ring-spec) (param-values ?rs ?ring2col ?num2))
     ; Facts for cap station
     (domain-fact (name order-cap-color) (param-values ?ord ?capcol))
     (domain-fact (name mps-team) (param-values ?cs ?team-color))
