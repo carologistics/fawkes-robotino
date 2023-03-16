@@ -42,7 +42,6 @@
     (goal (id ?root-id) (class ?root-class))
 
     (test(not (and (eq ?root-class GOAL-ORDER-C1) (eq ?sub-class GOAL-GET-CS))))
-    (test(not (and (eq ?root-class GOAL-ORDER-C2) (eq ?sub-class GOAL-GET-CS))))
     (test(not (and (eq ?root-class GOAL-ORDER-C2) (eq ?sub-class GOAL-PAY-SECOND-RING))))
     
     =>
@@ -74,7 +73,7 @@
 
 
 ; Selection rule for selection of pay-second-ring for c2 orders in case both ringstations needed are different
-(defrule central-run-parallel-subgoals-select-c2-pay-second-ring ;
+(defrule central-run-parallel-subgoals-select-c2-pay-second-ring-different-ringstation ;
     (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-PARALLEL) (mode DISPATCHED))
     ?sg <- (goal (id ?sub-goal) (parent ?id) (type ACHIEVE) (class GOAL-PAY-SECOND-RING) (mode FORMULATED)
 	      (is-executable TRUE))
@@ -104,7 +103,7 @@
 )
 
 ; Selection rule for selection of pay-second-ring for c2 orders in case both ringstations needed are the same
-(defrule central-run-parallel-subgoals-select-c2-pay-second-ring ;
+(defrule central-run-parallel-subgoals-select-c2-pay-second-ring-same-ringstation ;
     (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-PARALLEL) (mode DISPATCHED))
     ?sg <- (goal (id ?sub-goal) (parent ?id) (type ACHIEVE) (class GOAL-PAY-SECOND-RING) (mode FORMULATED)
 	      (is-executable TRUE))
