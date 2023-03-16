@@ -98,14 +98,11 @@
 
 
 (defrule central-run-all-goal-select-sequential
-	?tree <- (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS) (meta sequence-mode) (priority ?p-priority) (mode ~SELECTED&~RETRACTED))
+	?tree <- (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS) (meta sequence-mode) (priority ?p-priority) )
 	?child <- (goal (id ?sub-goal) (parent ?id) (sub-type SIMPLE) (mode FORMULATED) (priority ?c-priority))
 	
 	(not (goal (id ~?sub-goal) (parent ?id) (mode ~RETRACTED)
 	           (priority ?c-priority2&:(> ?c-priority2 ?c-priority))))
-
-	(not (goal (id ~?id) (class ?class)
-	           (priority ?p-priority2&:(> ?p-priority2 ?p-priority))))
 
 	(wm-fact (key central agent robot args? r ?curr-robot))
 	?gm <- (goal-meta (goal-id ?sub-goal) (sub-task-type ?task) (assigned-to nil))

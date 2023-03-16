@@ -199,15 +199,15 @@
   (return ?goal)
 )
 
-(deffunction goal-tree-assert-central-run-all-sequence (?class $?fact-addresses)
+(deffunction goal-tree-assert-central-run-all-sequence (?class ?tree-prio ?start-prio $?fact-addresses)
   (bind ?id (sym-cat CENTRAL-RUN-ALL- ?class - (gensym*)))
   (bind ?goal
     (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
-                  (meta sequence-mode) (parent NONE)))
+                  (meta sequence-mode) (parent NONE) (priority ?tree-prio) ))
   )
   (assert (goal-meta (goal-id ?id)))
   (foreach ?f ?fact-addresses
-    (goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
+    (goal-tree-update-child ?f ?id (+ ?start-prio (- (length$ ?fact-addresses) ?f-index))))
   (return ?goal)
 )
 
@@ -224,14 +224,16 @@
   (return ?goal)
 )
 
-(deffunction goal-tree-assert-central-run-parallel (?class $?fact-addresses )
+(deffunction goal-tree-assert-central-run-parallel (?class ?tree-prio ?start-prio $?fact-addresses)
   (bind ?id (sym-cat CENTRAL-RUN-PARALLEL- ?class - (gensym*)))
   (bind ?goal
-    (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL) (parent NONE)))
+    (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL) (parent NONE) (priority ?tree-prio) ))
   )
   (assert (goal-meta (goal-id ?id)))
   (foreach ?f ?fact-addresses
-    (goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
+    ; (goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
+    (goal-tree-update-child ?f ?id ?start-prio)
+  )
   (return ?goal)
 )
 
@@ -258,6 +260,33 @@
   )
   (return ?goal)
 )
+
+; =========================== Vishwas jain ===================================
+; (deffunction goal-tree-update-priority-at-end ?f-main
+;   (bind ?g-l1 (goal (id ?p-id) (priority ?p-prio) (parent ?f-main)))
+  
+;   (bind ?g-l2 (goal (id ?c-id) (priority ?c-prio (parent ?p-id))))
+
+;   (bind ?updated-prio (+ (?c-prio) (* 10 ?p-prio)))
+;   (goal-tree-update-child ?g-l2 ?p-id ?updated-prio)
+; )
+
+
+(deffunction goal-tree-update-priority-at-end ?f-main
+  (bind $?g1 (goal (id ?p-id) (priority ?p-prio) (parent ?f-main)))
+   
+  (foreach ?g-l1 ?g1
+    (bind ?p-id (fact-slot-value ?g-l1 id))
+    (bind $?g2 (goal (id ?c-id) (priority ?c-prio) (parent ?p-id)))
+    
+    (foreach ?g-l2 ?g2
+      (bind ?g-id (fact-slot-value ?g-l2 id))
+      (bind ?updated-prio (+ (?c-prio) (* 10 ?p-prio)))
+      (goal-tree-update-child ?g-id ?p-id ?updated-prio)
+    )
+  )
+)
+
 
 ; =========================== Goal Executability =============================
 

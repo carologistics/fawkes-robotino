@@ -693,7 +693,7 @@
 			                (eq ?gmq:goal-id ?g-id)
 			                (modify ?gmq (ring-nr ONE))
   )
-
+  (goal-tree-update-priority-at-end ?goal-tree)
 	(return ?goal-tree)
 )
 
