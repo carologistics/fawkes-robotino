@@ -162,8 +162,9 @@
   (bind ?goal-id-c0 (sym-cat C0-ORDER- (gensym*)))
   (assert (goal (class C0-ORDER)
                 (id ?goal-id-c0)
-                (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
+                (sub-type SIMPLE)
                 (verbosity NOISY) (is-executable FALSE)
+                (params wp ?wp base-color ?base-color cap-color ?cap-color cc ?cc)
                 (meta-template goal-meta))
   )
   (assert (goal-meta (goal-id ?goal-id-c0)))
@@ -179,44 +180,7 @@
           (domain-fact (name wp-ring3-color) (param-values ?wp RING_NONE))
           (domain-fact (name wp-cap-color) (param-values ?wp CAP_NONE))
           ; (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order) (type BOOL) (value TRUE))
-  )
-
-; subgoal 1 holding Base and cap buffered
-  (printout t "Goal " BASE-CAP-READY " formulated" crlf)
-  (bind ?goal-id-1 (sym-cat BASE-CAP-READY- (gensym*)))
-  (assert (goal (class BASE-CAP-READY)
-                (id ?goal-id-1)
-                (sub-type SIMPLE)
-                (parent ?goal-id-c0)
-                (verbosity NOISY) (is-executable FALSE)
-                (meta-template goal-meta)
-                (params wp ?wp target-mps C-BS target-side OUTPUT base-color ?base-color)
-          ))
-  (assert (goal-meta (goal-id ?goal-id-1)))
-
-; subgoal 2 mount cap upon base
-  (bind ?goal-id-2 (sym-cat MOUNT-CAP-THEN-GET-WP-GOAL- (gensym*)))
-	(assert (goal (class MOUNT-CAP-THEN-GET-WP-GOAL)
-                (id ?goal-id-2)
-                (sub-type SIMPLE)
-                (parent ?goal-id-c0)
-                (verbosity NOISY) (is-executable TRUE)
-                (meta-template goal-meta)
-	))
-	(assert (goal-meta (goal-id ?goal-id-2)))
-
-; subgoal 3 deliver
-  (bind ?goal-id-3 (sym-cat INSTRUCT-DS-DELIVER- (gensym*)))
-	(assert (goal (class INSTRUCT-DS-DELIVER)
-                (id ?goal-id-3)
-                (sub-type SIMPLE)
-                (parent ?goal-id-c0)
-	              (params wp ?wp target-mps C-DS)
-                (verbosity NOISY) (is-executable TRUE)
-                (meta-template goal-meta)
-	))
-	(assert (goal-meta (goal-id ?goal-id-3) (assigned-to nil)))
-
+      )
 )
 
 (defrule goal-production-create-MyC1Goal
