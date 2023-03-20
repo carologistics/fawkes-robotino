@@ -422,6 +422,7 @@
         (plan-assert-action move ?robot ?fl1 ?fs1 ?cs INPUT)
         (plan-assert-action prepare-cs ?cs RETRIEVE_CAP)
         (plan-assert-action wp-get-shelf ?robot ?wp ?cs ?spot)
+        (plan-assert-action refill-shelf ?cs ?spot (gensym*) ?capcol)
         (plan-assert-action wp-put ?robot ?wp ?cs INPUT)
         (plan-assert-action cs-retrieve-cap ?cs ?wp ?capcol)
         (plan-assert-action move ?robot ?cs INPUT ?cs OUTPUT)
@@ -525,6 +526,7 @@
     (plan-assert-sequential PAY-SECOND-RING-CC1 ?goal-id ?robot
         (plan-assert-action move ?robot ?fl1 ?fs1 ?cs INPUT)
         (plan-assert-action wp-get-shelf ?robot ?wp ?cs ?spot)
+        (plan-assert-action refill-shelf ?cs ?spot (gensym*) ?capcol)
         (plan-assert-action move ?robot ?cs INPUT ?rs INPUT)
         (plan-assert-action wp-put-slide-cc ?robot ?wp ?rs ?rs-before ?rs-after)
     )
@@ -618,11 +620,13 @@
     (plan-assert-sequential PAY-SECOND-RING-CC2 ?goal-id ?robot
         (plan-assert-action move ?robot ?fl1 ?fs1 ?cs1 INPUT)
         (plan-assert-action wp-get-shelf ?robot ?wp1 ?cs1 ?spot1)
+        (plan-assert-action refill-shelf ?cs1 ?spot1 (gensym*) ?capcol)
         (plan-assert-action move ?robot ?cs1 INPUT ?rs INPUT)
         (plan-assert-action wp-put-slide-cc ?robot ?wp1 ?rs ?rs-before ?rs-after1)
 
         (plan-assert-action move ?robot ?rs INPUT ?cs2 INPUT)
         (plan-assert-action wp-get-shelf ?robot ?wp2 ?cs2 ?spot2)
+        (plan-assert-action refill-shelf ?cs2 ?spot2 (gensym*) ?capcol)
         (plan-assert-action move ?robot ?cs2 INPUT ?rs INPUT)
         (plan-assert-action wp-put-slide-cc ?robot ?wp2 ?rs ?rs-after1 ?rs-after2)
     )
