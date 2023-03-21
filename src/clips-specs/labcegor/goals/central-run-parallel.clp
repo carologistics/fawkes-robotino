@@ -110,7 +110,10 @@
     (goal-meta (goal-id ?sub-goal) (order-id ?ord) (root-for-order ?root-id))
     (goal (id ?root-id) (class GOAL-ORDER-C2))
 
-    ;Facts for ring station:
+    ; First ring must be mounted:
+    (goal (id ?to-rs-id) (parent ?id) (class GOAL-TO-RS1) (outcome COMPLETED))
+
+    ; Facts for ring station:
     (domain-fact (name order-ring1-color) (param-values ?ord ?ring1col))
     (domain-fact (name order-ring2-color) (param-values ?ord ?ring2col))
     (domain-fact (name rs-ring-spec) (param-values ?rs ?ring1col ?num1))
