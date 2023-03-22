@@ -232,9 +232,9 @@
 (defrule goal-production-remove-c0
   "Enter the field (drive outside of the starting box)."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  ?gf <- (goal (id ?some-goal-id) (class C0-ORDER) (mode RETRACTED))
+  ?gf <- (goal (id ?some-goal-id) (mode RETRACTED))
   ?gm <- (goal-meta (goal-id ?some-goal-id))
   =>
-  (printout t "Goal " ENTER-FIELD " removed after c0 complete" crlf)
+  (printout t "Goal removed after c0 complete" crlf)
   (retract ?gf ?gm)
 )

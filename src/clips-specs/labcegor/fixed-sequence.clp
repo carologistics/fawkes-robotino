@@ -430,42 +430,17 @@
 			(params wp ?wp base-color ?base-color cap-color ?cap-color cc ?cc target-mps ?mps) 
 			)
 	=>
-	; subgoal 1 holding Base and cap buffered
-	(printout t "Goal " BASE-CAP-READY " formulated" crlf)
-	(bind ?goal-id-1 (sym-cat BASE-CAP-READY- (gensym*)))
-	(assert (goal (class BASE-CAP-READY)
-					(id ?goal-id-1)
-					(sub-type SIMPLE)
-					(parent ?goal-id)
-					(verbosity NOISY) (is-executable FALSE)
-					(meta-template goal-meta)
-					(params wp ?wp base-color ?base-color cap-color ?cap-color cc ?cc target-mps ?mps)
-			))
-	(assert (goal-meta (goal-id ?goal-id-1)))
-
-	; subgoal 2 mount cap upon base
-	(bind ?goal-id-2 (sym-cat MOUNT-CAP-THEN-GET-WP-GOAL- (gensym*)))
-		(assert (goal (class MOUNT-CAP-THEN-GET-WP-GOAL)
-					(id ?goal-id-2)
-					(sub-type SIMPLE)
-					(parent ?goal-id)
-					(verbosity NOISY) (is-executable TRUE)
-					(meta-template goal-meta)
-					(params target-mps ?mps cap-color ?cap-color wp ?wp)
-		))
-	(assert (goal-meta (goal-id ?goal-id-2)))
-
-	; subgoal 3 deliver
-	(bind ?goal-id-3 (sym-cat INSTRUCT-DS-DELIVER- (gensym*)))
-		(assert (goal (class INSTRUCT-DS-DELIVER)
-					(id ?goal-id-3)
-					(sub-type SIMPLE)
-					(parent ?goal-id)
-					(params wp ?wp target-mps C-DS)
-					(verbosity NOISY) (is-executable TRUE)
-					(meta-template goal-meta)
-		))
-	(assert (goal-meta (goal-id ?goal-id-3) (assigned-to nil)))
+	; leafgoal 1-2 Prepare and get base
+	(bind ?goal-id-1 (sym-cat PRE-GET-BASE-GOAL- (gensym*)))
+	(assert (goal (class PRE-GET-BASE-GOAL)
+                (id ?goal-id-1-2)
+                (sub-type SIMPLE)
+                (parent ?goal-id)
+                (verbosity NOISY) (is-executable TRUE)
+                (meta-template goal-meta)
+                (params wp ?wp target-mps C-BS target-side OUTPUT base-color ?base-color)
+          ))
+	(assert (goal-meta (goal-id ?goal-id-1) (assigned-to nil)))
 
 
 	(modify ?g (mode EXPANDED) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS))
@@ -477,14 +452,10 @@
 
 (defrule goal-reasoner-mygoal-3-select
 	?g <- (goal (id ?goal-id) (class INSTRUCT-DS-DELIVER) (mode FORMULATED))
-  ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
-   (goal (class GET-MOUNTED-BASE-GOAL) (mode RETRACTED))
-
-  	; if avaliable robts ?
-  ;(not (goal-meta (assigned-to ?robot)))
+	?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
+	(goal (class GET-MOUNTED-BASE-GOAL) (mode FINISHED))
 	=>
-  ; assign robot
-  (modify ?gm (assigned-to robot2))
+	(modify ?gm (assigned-to robot2))
 	(modify ?g (mode SELECTED))
 )
 
@@ -511,39 +482,32 @@ todo goal 1-1-1
 
 (defrule goal-reasoner-discard-goal-select
 	?g <- (goal (id ?goal-id) (class DISCARD-GOAL) (mode FORMULATED))
-  ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
-  (goal (class BUFFER-CAP-GOAL) (mode RETRACTED))
-  	; if avaliable robts ?
-  ;(not (goal-meta (assigned-to ?robot)))
+  	?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
+  	(goal (class BUFFER-CAP-GOAL) (mode FINISHED))
+
 	=>
-  ; assign robot
-  (modify ?gm (assigned-to robot1))
+ 	 ; assign robot
+  	(modify ?gm (assigned-to robot1))
 	(modify ?g (mode SELECTED))
 )
 
 ; goal 2-1
 (defrule goal-reasoner-mount-cap-goal-select
 	?g <- (goal (id ?goal-id) (class MOUNT-CAP-GOAL) (mode FORMULATED))
-  ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
-  (goal (class DISCARD-GOAL) (mode RETRACTED))
-  	; if avaliable robts ?
-  ;(not (goal-meta (assigned-to ?robot)))
+	?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
+	(goal (class DISCARD-GOAL) (mode FINISHED))
 	=>
-  ; assign robot
-  (modify ?gm (assigned-to robot2))
+	(modify ?gm (assigned-to robot2))
 	(modify ?g (mode SELECTED))
 )
 
 (defrule goal-reasoner-get-mounted-cap-goal-select
 	?g <- (goal (id ?goal-id) (class GET-MOUNTED-BASE-GOAL) (mode FORMULATED))
-  ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
-  (goal (class MOUNT-CAP-GOAL) (mode RETRACTED))
+	?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
+	(goal (class MOUNT-CAP-GOAL) (mode FINISHED))
 
-  	; if avaliable robts ?
-  ;(not (goal-meta (assigned-to ?robot)))
-	=>
-  ; assign robot
-  (modify ?gm (assigned-to robot2))
+		=>
+ 	(modify ?gm (assigned-to robot2))
 	(modify ?g (mode SELECTED))
 )
 
