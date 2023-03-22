@@ -165,7 +165,7 @@
           (domain-fact (name wp-ring2-color) (param-values ?wp RING_NONE))
           (domain-fact (name wp-ring3-color) (param-values ?wp RING_NONE))
           (domain-fact (name wp-cap-color) (param-values ?wp CAP_NONE))
-          ; (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order) (type BOOL) (value TRUE))
+          (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order) (type BOOL) (value TRUE))
       )
 
   ; c0 goal
@@ -212,7 +212,7 @@
           (domain-fact (name wp-ring2-color) (param-values ?wp RING_NONE))
           (domain-fact (name wp-ring3-color) (param-values ?wp RING_NONE))
           (domain-fact (name wp-cap-color) (param-values ?wp CAP_NONE))
-          ; (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order) (type BOOL) (value TRUE))
+          (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order) (type BOOL) (value TRUE))
       )
 
   (printout t "Goal " C1-ORDER " formulated" crlf)
@@ -228,3 +228,13 @@
   (assert (goal-meta (goal-id ?goal-id-c1)))
 )
 
+
+(defrule goal-production-remove-c0
+  "Enter the field (drive outside of the starting box)."
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ?gf <- (goal (id ?some-goal-id) (class C0-ORDER) (mode RETRACTED))
+  ?gm <- (goal-meta (goal-id ?some-goal-id))
+  =>
+  (printout t "Goal " ENTER-FIELD " removed after c0 complete" crlf)
+  (retract ?gf ?gm)
+)

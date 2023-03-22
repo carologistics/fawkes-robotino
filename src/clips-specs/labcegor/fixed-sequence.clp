@@ -170,10 +170,13 @@
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 
 	(wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+	(wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
+	(wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
+	(wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
 	(wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
 	; Order-CEs
-	; (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
-	(wm-fact (key domain fact order-complexity args? ord ?order com C0))
+	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+	(wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
 	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
 	(wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
 	(wm-fact (key domain fact order-gate args? ord ?order gate ?gate))
@@ -181,14 +184,64 @@
 	(wm-fact (key domain fact at args? r ?robot m ?curr-loc side ?curr-side))
 
 	=>
+	(bind ?params (create$))
+	(switch ?complexity
+		(case C0 then
+		    (bind ?params (create$ ?order ?wp ?mps ?gate ?base-color ?cap-color)))
+		(case C1 then
+		    (bind ?params (create$ ?order ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color)))
+		(case C2 then
+		    (bind ?params (create$ ?order ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color ?ring2-color)))
+		(case C3 then
+		    (bind ?params (create$ ?order ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color ?ring2-color ?ring3-color)))
+)
+
 	(plan-assert-sequential INSTRUCT-DS-DELIVER-PLAN ?goal-id ?robot
 		(plan-assert-safe-move ?robot ?curr-loc ?curr-side ?mps INPUT
 			(plan-assert-action wp-put ?robot ?wp ?mps INPUT)
 			(plan-assert-action prepare-ds ?mps ?order)
-			(plan-assert-action fulfill-order-c0 ?order ?wp ?mps ?gate ?base-color ?cap-color)
+			(plan-assert-action (sym-cat fulfill-order- (lowcase ?complexity)) ?params)
 	))
 	(modify ?g (mode EXPANDED))
 )
+
+;(defrule goal-expander-instruct-ds-deliver
+;	;?p <- (goal (mode DISPATCHED) (id ?parent))
+;	?g <- (goal (id ?goal-id) (class INSTRUCT-DS-DELIVER) (mode SELECTED)
+;	            (params wp ?wp target-mps ?mps))
+;	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+;	(wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+;	(wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
+;	(wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
+;	(wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
+;	(wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
+;	; Order-CEs
+;	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+;	(wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
+;	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+;	(wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
+;	(wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
+;	(wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
+;	(wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+;	(wm-fact (key domain fact order-gate args? ord ?order gate ?gate))
+;	=>
+;	(bind ?params (create$))
+;	(switch ?complexity
+;		(case C0 then
+;		    (bind ?params (create$ ?order ?wp ?mps ?gate ?base-color ?cap-color)))
+;		(case C1 then
+;		    (bind ?params (create$ ?order ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color)))
+;		(case C2 then
+;		    (bind ?params (create$ ?order ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color ?ring2-color)))
+;		(case C3 then
+;		    (bind ?params (create$ ?order ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color ?ring2-color ?ring3-color)))
+; )
+;	(plan-assert-sequential INSTRUCT-DS-DELIVER-PLAN ?goal-id ?robot
+;		(plan-assert-action prepare-ds ?mps ?order)
+;		(plan-assert-action (sym-cat fulfill-order- (lowcase ?complexity)) ?params)
+;	)
+;	(modify ?g (mode EXPANDED))
+;)
 
 ;(defrule goal-expander-instruct-rs-mount-ring
 ;	?g <- (goal (id ?goal-id) (class INSTRUCT-RS-MOUNT-RING) (mode SELECTED)
