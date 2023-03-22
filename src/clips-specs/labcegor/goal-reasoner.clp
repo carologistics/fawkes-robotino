@@ -207,7 +207,7 @@
   )
   (assert (goal-meta (goal-id ?id)))
   (foreach ?f ?fact-addresses
-    (goal-tree-update-child ?f ?id (+ ?start-prio ?f-index)))
+    (goal-tree-update-child ?f ?id (+ ?start-prio (- (length$ ?fact-addresses) ?f-index))))
   (return ?goal)
 )
 

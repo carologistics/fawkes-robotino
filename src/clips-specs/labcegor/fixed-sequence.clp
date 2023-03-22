@@ -80,7 +80,7 @@
 "Spawn a WP"
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
  	            (params workpiece ?wp))
- 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (sub-task-type PRIMARY_TASK))
+ 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) )
  	=>
 	(bind ?action-class (sym-cat SPAWN-WP- (gensym*)))
 	(plan-assert-sequential ?action-class ?goal-id ?robot
@@ -94,7 +94,7 @@
 "Prepare BS"
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
  	            (params bs ?bs bs-side ?bs-side base-clr ?bs-clr))
- 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (sub-task-type PRIMARY_TASK))
+ 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) )
  	=>
 	(bind ?action-class (sym-cat RETRIEVE-BASE- (gensym*)))
 	(plan-assert-sequential ?action-class ?goal-id ?robot
@@ -106,9 +106,16 @@
 (defrule goal-expander-g1-c1-prepare-rs
 "Prepare RS"
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
- 	            (params rs ?rs ring-color ?rng-clr ring-before ?rng-before ring-after ?rng-after ring-req ?rng-req))
- 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (sub-task-type SECONDARY_TASK))
+ 	            (params rs ?rs ring-color ?rng-clr ring-req ?rng-req))
+ 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(wm-fact (key domain fact mps-state args? m ?rs s ?m-state ))
+	(wm-fact (key domain fact rs-filled-with args? m ?rs n ?rng-before ))
+
  	=>
+	(bind ?a (sym-to-int ?rng-before))
+  	(bind ?b (sym-to-int ?rng-req))
+  	(bind ?rng-after (int-to-sym (- ?a ?b)))
+
 	(bind ?action-class (sym-cat PREPARE-RS- (gensym*)))
 	(plan-assert-sequential ?action-class ?goal-id ?robot
 		(plan-assert-action prepare-rs ?rs ?rng-clr ?rng-before ?rng-after ?rng-req)
@@ -121,7 +128,7 @@
 "Prepare CS and retrieve a cap"
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
  	            (params cap-color ?cap-clr cap-station ?cs))
- 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (sub-task-type SECONDARY_TASK))
+ 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) )
 	(wm-fact (key domain fact at args?  r ?robot m ?at-mps side ?at-side )) 
 	(wm-fact (key domain fact wp-on-shelf args?  wp ?cc m ?cs spot ?cc-spot)) 
 	=>
@@ -142,7 +149,7 @@
 "Make one payment using already ready cap station"
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
  	            (params cs ?cs rs ?rs ring-before ?rng-before ring-after ?rng-after))
- 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (sub-task-type SECONDARY_TASK))
+ 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) )
 	(wm-fact (key domain fact at args?  r ?robot m ?at-mps side ?at-side )) 
 	(wm-fact (key domain fact wp-at args?  wp ?cc m ?cs side OUTPUT)) 
 	(wm-fact (key domain fact rs-filled-with args? m ?rs n ?rs-before))
@@ -163,7 +170,7 @@
 "Make one payment using base station"
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
  	            (params bs ?bs rs ?rs ring-before ?rng-before ring-after ?rng-after))
- 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (sub-task-type SECONDARY_TASK))
+ 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) )
 	(wm-fact (key domain fact at args?  r ?robot m ?at-mps side ?at-side )) 
 	(wm-fact (key domain fact wp-at args?  wp ?cc m ?cs side OUTPUT)) 
 	(wm-fact (key domain fact rs-filled-with args? m ?rs n ?rs-before))
@@ -189,7 +196,7 @@
 "Transport WP"
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
  	            (params from ?from from-side ?from-side to ?to to-side ?to-side workpiece ?wp))
- 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (sub-task-type ?task))
+ 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args?  r ?robot m ?at-mps side ?at-side )) 
 	=>
 	(bind ?action-class (sym-cat TRANSPORT-WP- (gensym*)))
@@ -219,7 +226,7 @@
 "Dispatch a base"
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
  	            (params bs ?bs bs-clr ?bs-clr workpiece ?wp))
- 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (sub-task-type ?task))
+ 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) )
 
 	=>
 	(bind ?action-class (sym-cat BASE-DISPENSE- (gensym*)))
@@ -233,10 +240,18 @@
 (defrule goal-expander-g1-c1-mount-ring1
 "Mount one ring"
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
- 	            (params rs ?rs ring-clr ?rng-clr ring-before ?rng-before ring-after ?rng-after ring-req ?rng-req workpiece ?wp))
- 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (sub-task-type ?task))
+ 	            (params rs ?rs ring-clr ?rng-clr ring-req ?rng-req workpiece ?wp))
+ 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(wm-fact (key domain fact rs-filled-with args? m ?rs n ?rng-before ))
+
 	=>
+
 	(bind ?action-class (sym-cat MOUNT-RING1- (gensym*)))
+	
+	(bind ?a (sym-to-int ?rng-before))
+  	(bind ?b (sym-to-int ?rng-req))
+  	(bind ?rng-after (int-to-sym (- ?a ?b)))
+
 	(plan-assert-sequential ?action-class ?goal-id ?robot
 		(plan-assert-action rs-mount-ring1 ?rs ?wp ?rng-clr ?rng-before ?rng-after ?rng-req)
 	)	
@@ -248,7 +263,7 @@
 "Prepare CS and mount the cap"
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
  	            (params cs ?cs cap-clr ?cap-clr workpiece ?wp))
- 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (sub-task-type ?task))
+ 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) )
 	=>
 	(bind ?action-class (sym-cat CAP-MOUNT- (gensym*)))
 	(plan-assert-sequential ?action-class ?goal-id ?robot
@@ -264,7 +279,7 @@
 "Prepare DS and deliver the order"
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
  	            (params order ?ord workpiece ?wp delivery-station ?ds ds-gate ?ds-gate base-clr ?base-clr cap-clr ?cap-clr rng-clr ?rng-clr))
- 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (sub-task-type ?task))
+ 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) )
 	=>
 	(bind ?action-class (sym-cat DELIVER- (gensym*)))
 	(plan-assert-sequential ?action-class ?goal-id ?robot
