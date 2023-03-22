@@ -145,6 +145,18 @@
 	(modify ?g (mode EXPANDED))
 )
 
+(defrule goal-expander-go-get-ring-mounted-base
+	?g <- (goal (id ?goal-id) (class GET-RING-MOUNTED-BASE-GOAL) (mode SELECTED)
+	            (params wp ?wp target-mps ?mps))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-loc side ?curr-side))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+	=>
+	(plan-assert-sequential INSTRUCT-TO-GET-MOUNTED-BASE-PLAN ?goal-id ?robot
+		(plan-assert-safe-move ?robot ?curr-loc ?curr-side ?mps OUTPUT
+			(plan-assert-action wp-get ?robot ?wp ?mps OUTPUT)))
+	(modify ?g (mode EXPANDED))
+)
 
 (defrule goal-expander-instruct-bs-dispense-base
 	; ?p <- (goal (mode DISPATCHED) (id ?parent))
@@ -173,9 +185,10 @@
 	(wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
 	; Order-CEs
 	; (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
-	(wm-fact (key domain fact order-complexity args? ord ?order com C0))
+	(wm-fact (key domain fact order-complexity args? ord ?order com C1))
 	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
 	(wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+	(wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
 	(wm-fact (key domain fact order-gate args? ord ?order gate ?gate))
 
 	(wm-fact (key domain fact at args? r ?robot m ?curr-loc side ?curr-side))
@@ -185,44 +198,46 @@
 		(plan-assert-safe-move ?robot ?curr-loc ?curr-side ?mps INPUT
 			(plan-assert-action wp-put ?robot ?wp ?mps INPUT)
 			(plan-assert-action prepare-ds ?mps ?order)
-			(plan-assert-action fulfill-order-c0 ?order ?wp ?mps ?gate ?base-color ?cap-color)
+			(plan-assert-action fulfill-order-c1 ?order ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color)
 	))
 	(modify ?g (mode EXPANDED))
 )
 
-;(defrule goal-expander-instruct-rs-mount-ring
-;	?g <- (goal (id ?goal-id) (class INSTRUCT-RS-MOUNT-RING) (mode SELECTED)
-;	            (params target-mps ?mps
-;	                    ring-color ?ring-color))
-;	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-;	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
-;	(wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring-color rn ?req))
-;	(wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before))
-;	(wm-fact (key domain fact rs-sub args? minuend ?rs-before subtrahend
-;	                                       ?req difference ?rs-after))
-;	(wm-fact (key wp meta next-step args? wp ?wp) (value ?step&RING1|RING2|RING3))
-;	=>
-;	(bind ?num (string-to-field ( sub-string 5 5 ?step) ))
-;	(bind ?prev-rings (create$ ))
-;	(loop-for-count (?count 1 (- ?num 1))
-;	   (do-for-fact ((?ring wm-fact))
-;	      (and (wm-key-prefix ?ring:key (create$ domain fact (sym-cat wp-ring ?count -color)))
-;	           (eq (wm-key-arg ?ring:key wp) ?wp))
-;	      (bind ?prev-rings (append$ ?prev-rings (wm-key-arg ?ring:key col)))
-;	))
-;	(plan-assert-sequential INSTRUCT-TO-MOUNT-RING-PLAN ?goal-id ?robot
-;		(plan-assert-action prepare-rs
-;		      ?mps ?ring-color ?rs-before ?rs-after ?req )
-;		(plan-assert-action
-;		      (sym-cat rs-mount-ring (sub-string 5 5 ?step) )
-;		      ?mps ?wp ?ring-color ?prev-rings ?rs-before ?rs-after ?req )
-;	)
-;	(modify ?g (mode EXPANDED))
-;)
+(defrule goal-expander-instruct-rs-mount-ring
+	?g <- (goal (id ?goal-id) (class INSTRUCT-RS-MOUNT-RING) (mode SELECTED)
+	            (params target-mps ?mps
+	                    ring-color ?ring-color wp ?wp))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-loc side ?curr-side))
+	(wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring-color rn ?req))
+	(wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before))
+	(wm-fact (key domain fact rs-sub args? minuend ?rs-before subtrahend
+	                                       ?req difference ?rs-after))
+	(wm-fact (key wp meta next-step args? wp ?wp) (value ?step&RING1|RING2|RING3))
+	=>
+	(bind ?num (string-to-field ( sub-string 5 5 ?step) ))
+	(bind ?prev-rings (create$ ))
+	(loop-for-count (?count 1 (- ?num 1))
+	   (do-for-fact ((?ring wm-fact))
+	      (and (wm-key-prefix ?ring:key (create$ domain fact (sym-cat wp-ring ?count -color)))
+	           (eq (wm-key-arg ?ring:key wp) ?wp))
+	      (bind ?prev-rings (append$ ?prev-rings (wm-key-arg ?ring:key col)))
+	))
+	(plan-assert-sequential INSTRUCT-TO-MOUNT-RING-PLAN ?goal-id ?robot
+		(plan-assert-safe-move ?robot ?curr-loc ?curr-side ?mps INPUT
+			(plan-assert-action wp-put ?robot ?wp ?mps INPUT)
+			(plan-assert-action prepare-rs
+				?mps ?ring-color ?rs-before ?rs-after ?req )
+			(plan-assert-action
+				(sym-cat rs-mount-ring (sub-string 5 5 ?step) )
+				?mps ?wp ?ring-color ?prev-rings ?rs-before ?rs-after ?req )))
+	(modify ?g (mode EXPANDED))
+)
 
 
-(defrule goal-expander-c0-order
-	?g <- (goal (id ?goal-id) (mode FORMULATED) (class C0-ORDER))
+(defrule goal-expander-c1-order
+	?g <- (goal (id ?goal-id) (mode FORMULATED) (class C1-ORDER))
 	=>
 	(modify ?g (mode EXPANDED))
 )
@@ -232,6 +247,12 @@
 	?g <- (goal (id ?goal-id) (mode FORMULATED) (class BASE-CAP-READY))
 	=>
 	(modify ?g (mode COMMITTED))
+)
+
+(defrule goal-expander-mount-ring-then-get-wp
+	?g <- (goal (id ?goal-id) (mode FORMULATED) (class MOUNT-RING-THEN-GET-WP-GOAL))
+	=>
+	(modify ?g (mode EXPANDED))
 )
 
 (defrule goal-expander-mount-cap-then-get-wp

@@ -142,30 +142,35 @@
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key central agent robot args? r ?robot))
   (wm-fact (key domain fact entered-field args? r ?robot))
-  (not (goal (id ?some-goal-id) (class C0-ORDER)))
+  (not (goal (id ?some-goal-id) (class C1-ORDER)))
   (domain-facts-loaded)
   (wm-fact (key refbox team-color) (value ?team-color))
 
-	(wm-fact (key domain fact order-complexity args? ord ?order com C0))
-	; (wm-fact (key domain fact order-complexity args? ord ?order com C1))
+	(wm-fact (key domain fact order-complexity args? ord ?order com C1))
 	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-	(wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
 
+  ;find the ring station for r1
+  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
+  (wm-fact (key domain fact rs-ring-spec args? m ?rs1 r ?ring1-color rn ?req))
+
+
+  ;find the cap station 
+	(wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
   (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
   (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
 
   =>
 
-; c0 goal
-  (printout t "Goal " C0-ORDER " formulated" crlf)
-  (bind ?goal-id-c0 (sym-cat C0-ORDER- (gensym*)))
-  (assert (goal (class C0-ORDER)
-                (id ?goal-id-c0)
+; c1 goal
+  (printout t "Goal " C1-ORDER " formulated" crlf)
+  (bind ?goal-id-c1 (sym-cat C1-ORDER- (gensym*)))
+  (assert (goal (class C1-ORDER)
+                (id ?goal-id-c1)
                 (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
                 (verbosity NOISY) (is-executable FALSE)
                 (meta-template goal-meta))
   )
-  (assert (goal-meta (goal-id ?goal-id-c0)))
+  (assert (goal-meta (goal-id ?goal-id-c1)))
 
 
 ; init base wp
@@ -186,7 +191,7 @@
   (assert (goal (class BASE-CAP-READY)
                 (id ?goal-id-1)
                 (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL)
-                (parent ?goal-id-c0)
+                (parent ?goal-id-c1)
                 (verbosity NOISY) (is-executable FALSE)
                 (meta-template goal-meta))
   )
@@ -197,23 +202,34 @@
 	(assert (goal (class MOUNT-CAP-THEN-GET-WP-GOAL)
                 (id ?goal-id-2)
                 (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
-                (parent ?goal-id-c0)
+                (parent ?goal-id-c1)
                 (verbosity NOISY) (is-executable TRUE)
                 (meta-template goal-meta)
 	))
 	(assert (goal-meta (goal-id ?goal-id-2)))
 
-; subgoal 3 deliver
-  (bind ?goal-id-3 (sym-cat INSTRUCT-DS-DELIVER- (gensym*)))
-	(assert (goal (class INSTRUCT-DS-DELIVER)
+; subgoal 3 mount ring upon base
+  (bind ?goal-id-3 (sym-cat MOUNT-RING-THEN-GET-WP-GOAL- (gensym*)))
+	(assert (goal (class MOUNT-RING-THEN-GET-WP-GOAL)
                 (id ?goal-id-3)
+                (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
+                (parent ?goal-id-c1)
+                (verbosity NOISY) (is-executable TRUE)
+                (meta-template goal-meta)
+	))
+	(assert (goal-meta (goal-id ?goal-id-3)))
+
+; subgoal 4 deliver
+  (bind ?goal-id-4 (sym-cat INSTRUCT-DS-DELIVER- (gensym*)))
+	(assert (goal (class INSTRUCT-DS-DELIVER)
+                (id ?goal-id-4)
                 (sub-type SIMPLE)
-                (parent ?goal-id-c0)
+                (parent ?goal-id-c1)
 	              (params wp ?wp target-mps C-DS)
                 (verbosity NOISY) (is-executable TRUE)
                 (meta-template goal-meta)
 	))
-	(assert (goal-meta (goal-id ?goal-id-3) (assigned-to nil)))
+	(assert (goal-meta (goal-id ?goal-id-4) (assigned-to nil)))
 
 
 ; subgoal 1-1 buffer cap then discard base 
@@ -266,6 +282,31 @@
 	)
 	(assert (goal-meta (goal-id ?goal-id-2-2) (assigned-to nil)))
 
+  ; subgoal 3-1 mount ring upon base
+  (bind ?goal-id-3-1 (sym-cat INSTRUCT-RS-MOUNT-RING- (gensym*)))
+	(assert (goal (class INSTRUCT-RS-MOUNT-RING)
+                (id ?goal-id-3-1)
+                (sub-type SIMPLE)
+                (parent ?goal-id-3)
+                (params target-mps ?rs1 ring-color ?ring1-color wp ?wp)
+                (verbosity NOISY) (is-executable TRUE)
+                (meta-template goal-meta))
+  )
+	(assert (goal-meta (goal-id ?goal-id-3-1) (assigned-to nil)))
+
+; subgoal 3-2 get the ring-mounted base
+  (bind ?goal-id-3-2 (sym-cat GET-RING-MOUNTED-BASE-GOAL- (gensym*)))
+	(assert (goal (class GET-RING-MOUNTED-BASE-GOAL)
+                (id ?goal-id-3-2)
+                (sub-type SIMPLE)
+                (parent ?goal-id-3)
+	              (params wp ?wp target-mps ?rs1)
+                (verbosity NOISY) (is-executable TRUE)
+                (meta-template goal-meta))
+	)
+	(assert (goal-meta (goal-id ?goal-id-3-2) (assigned-to nil)))
+
+;buffer  1-1-1 buffer the cap
   (bind ?goal-id-1-1-1 (sym-cat BUFFER-CAP-GOAL- (gensym*)))
 	(assert (goal (class BUFFER-CAP-GOAL)
 					(id ?goal-id-1-1-1)
@@ -277,6 +318,7 @@
 	))
 	(assert (goal-meta (goal-id ?goal-id-1-1-1) (assigned-to robot1)))
 
+;buffer  1-1-2 discard the wp
   (bind ?goal-id-1-1-2 (sym-cat DISCARD-GOAL- (gensym*)))
 	(assert (goal (class DISCARD-GOAL)
 					(id ?goal-id-1-1-2)
@@ -291,7 +333,7 @@
 
 ;-----------------------------------------selector--------------------------------
 
-(defrule goal-reasoner-mygoal-3-select
+(defrule goal-reasoner-mygoal-4-select
 	?g <- (goal (id ?goal-id) (class INSTRUCT-DS-DELIVER) (mode FORMULATED))
   ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
    (goal (class GET-MOUNTED-BASE-GOAL) (mode RETRACTED))
@@ -316,7 +358,7 @@
 	(modify ?g (mode SELECTED))
 )
 
-todo goal 1-1-1
+;todo goal 1-1-1
 (defrule goal-reasoner-buffer-cap-goal-select
 	?g <- (goal (id ?goal-id) (class BUFFER-CAP-GOAL) (mode FORMULATED))
   ; ?gf <- (goal (class BUFFER-CAP-DISCARD-GOAL))
@@ -337,11 +379,10 @@ todo goal 1-1-1
 	(modify ?g (mode SELECTED))
 )
 
-; goal 2-1
 (defrule goal-reasoner-mount-cap-goal-select
 	?g <- (goal (id ?goal-id) (class MOUNT-CAP-GOAL) (mode FORMULATED))
   ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
-  (goal (class DISCARD-GOAL) (mode RETRACTED))
+  (goal (class GET-RING-MOUNTED-BASE-GOAL) (mode RETRACTED))
   	; if avaliable robts ?
   ;(not (goal-meta (assigned-to ?robot)))
 	=>
@@ -349,6 +390,19 @@ todo goal 1-1-1
   (modify ?gm (assigned-to robot2))
 	(modify ?g (mode SELECTED))
 )
+
+(defrule goal-reasoner-mount-ring-goal-select
+	?g <- (goal (id ?goal-id) (class INSTRUCT-RS-MOUNT-RING) (mode FORMULATED))
+  ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
+  (goal (class PRE-GET-BASE-GOAL) (mode RETRACTED))
+  	; if avaliable robts ?
+  ;(not (goal-meta (assigned-to ?robot)))
+	=>
+  ; assign robot
+  (modify ?gm (assigned-to robot2))
+	(modify ?g (mode SELECTED))
+)
+
 
 (defrule goal-reasoner-get-mounted-cap-goal-select
 	?g <- (goal (id ?goal-id) (class GET-MOUNTED-BASE-GOAL) (mode FORMULATED))
@@ -363,3 +417,15 @@ todo goal 1-1-1
 	(modify ?g (mode SELECTED))
 )
 
+(defrule goal-reasoner-get-mounted-ring-goal-select
+	?g <- (goal (id ?goal-id) (class GET-RING-MOUNTED-BASE-GOAL) (mode FORMULATED))
+  ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
+  (goal (class INSTRUCT-RS-MOUNT-RING) (mode RETRACTED))
+
+  	; if avaliable robts ?
+  ;(not (goal-meta (assigned-to ?robot)))
+	=>
+  ; assign robot
+  (modify ?gm (assigned-to robot2))
+	(modify ?g (mode SELECTED))
+)
