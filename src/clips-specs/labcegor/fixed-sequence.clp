@@ -223,7 +223,7 @@
 
 (defrule goal-expander-c0-order
 	?g <- (goal (id ?goal-id) (mode FORMULATED) (class C0-ORDER)
-				(params wp ?wp base-color ?base-color cap-color ?cap-color cc ?cc)
+				(params wp ?wp base-color ?base-color cap-color ?cap-color cc ?cc target-mps ?mps) 
 			)
 	=>
 
@@ -233,10 +233,10 @@
 	(assert (goal (class BASE-CAP-READY)
 					(id ?goal-id-1)
 					(sub-type SIMPLE)
-					(parent ?goal-id-c0)
+					(parent ?goal-id)
 					(verbosity NOISY) (is-executable FALSE)
 					(meta-template goal-meta)
-					(params wp ?wp base-color ?base-color cap-color ?cap-color cc ?cc)
+					(params wp ?wp base-color ?base-color cap-color ?cap-color cc ?cc target-mps ?mps)
 			))
 	(assert (goal-meta (goal-id ?goal-id-1)))
 
@@ -245,7 +245,7 @@
 		(assert (goal (class MOUNT-CAP-THEN-GET-WP-GOAL)
 					(id ?goal-id-2)
 					(sub-type SIMPLE)
-					(parent ?goal-id-c0)
+					(parent ?goal-id)
 					(verbosity NOISY) (is-executable TRUE)
 					(meta-template goal-meta)
 					(params target-mps ?mps cap-color ?cap-color wp ?wp)
@@ -257,7 +257,7 @@
 		(assert (goal (class INSTRUCT-DS-DELIVER)
 					(id ?goal-id-3)
 					(sub-type SIMPLE)
-					(parent ?goal-id-c0)
+					(parent ?goal-id)
 					(params wp ?wp target-mps C-DS)
 					(verbosity NOISY) (is-executable TRUE)
 					(meta-template goal-meta)
@@ -271,7 +271,7 @@
 ; 1 prepare base and buffer cap
 (defrule goal-expander-base-cap-ready
 	?g <- (goal (id ?goal-id) (mode FORMULATED) (class BASE-CAP-READY)
-				(params wp ?wp  base-color ?base-color cap-color ?cap-color cc ?cc)
+				(params wp ?wp  base-color ?base-color cap-color ?cap-color cc ?cc target-mps ?mps)
 			)
 	=>
 	; subgoal 1-1 buffer cap then discard base 
@@ -373,10 +373,10 @@
 
 
 (defrule goal-expander-c1
-	?g <- (goal (id ?goal-id) (mode FORMULATED) (class C1-ORDER))
-
+	?g <- (goal (id ?goal-id) (mode FORMULATED) (class C1-ORDER)
+			(params wp ?wp base-color ?base-color cap-color ?cap-color cc ?cc target-mps ?mps) 
+			)
 	=>
-
 	; subgoal 1 holding Base and cap buffered
 	(printout t "Goal " BASE-CAP-READY " formulated" crlf)
 	(bind ?goal-id-1 (sym-cat BASE-CAP-READY- (gensym*)))
@@ -386,79 +386,37 @@
 					(parent ?goal-id)
 					(verbosity NOISY) (is-executable FALSE)
 					(meta-template goal-meta)
+					(params wp ?wp base-color ?base-color cap-color ?cap-color cc ?cc target-mps ?mps)
 			))
 	(assert (goal-meta (goal-id ?goal-id-1)))
 
 	; subgoal 2 mount cap upon base
 	(bind ?goal-id-2 (sym-cat MOUNT-CAP-THEN-GET-WP-GOAL- (gensym*)))
-	(assert (goal (class MOUNT-CAP-THEN-GET-WP-GOAL)
-				(id ?goal-id-2)
-				(sub-type SIMPLE)
-				(parent ?goal-id)
-				(verbosity NOISY) (is-executable TRUE)
-				(meta-template goal-meta)
-			))
-	(assert (goal-meta (goal-id ?goal-id-2)))
-
-	; subgoal 3 deliver
-	(bind ?goal-id-3 (sym-cat INSTRUCT-DS-DELIVER- (gensym*)))
-	(assert (goal (class INSTRUCT-DS-DELIVER)
-				(id ?goal-id-3)
-				(sub-type SIMPLE)
-				(parent ?goal-id)
-				; (params wp ?wp target-mps C-DS)
-				(verbosity NOISY) (is-executable TRUE)
-				(meta-template goal-meta)
-			))
-	(assert (goal-meta (goal-id ?goal-id-3) (assigned-to nil)))
-
-	(modify ?g (mode EXPANDED) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS))
-)
-
-
-(defrule goal-expander-c2
-	?g <- (goal (id ?goal-id) (mode FORMULATED) (class C2-ORDER))
-
-	=>
-
-	; subgoal 1 holding Base and cap buffered
-	(printout t "Goal " BASE-CAP-READY " formulated" crlf)
-	(bind ?goal-id-1 (sym-cat BASE-CAP-READY- (gensym*)))
-	(assert (goal (class BASE-CAP-READY)
-					(id ?goal-id-1)
+		(assert (goal (class MOUNT-CAP-THEN-GET-WP-GOAL)
+					(id ?goal-id-2)
 					(sub-type SIMPLE)
 					(parent ?goal-id)
-					(verbosity NOISY) (is-executable FALSE)
+					(verbosity NOISY) (is-executable TRUE)
 					(meta-template goal-meta)
-			))
-	(assert (goal-meta (goal-id ?goal-id-1)))
-
-	; subgoal 2 mount cap upon base
-	(bind ?goal-id-2 (sym-cat MOUNT-CAP-THEN-GET-WP-GOAL- (gensym*)))
-	(assert (goal (class MOUNT-CAP-THEN-GET-WP-GOAL)
-				(id ?goal-id-2)
-					(sub-type SIMPLE)
-				(parent ?goal-id)
-				(verbosity NOISY) (is-executable TRUE)
-				(meta-template goal-meta)
-				))
+					(params target-mps ?mps cap-color ?cap-color wp ?wp)
+		))
 	(assert (goal-meta (goal-id ?goal-id-2)))
 
 	; subgoal 3 deliver
 	(bind ?goal-id-3 (sym-cat INSTRUCT-DS-DELIVER- (gensym*)))
-	(assert (goal (class INSTRUCT-DS-DELIVER)
-				(id ?goal-id-3)
-				(sub-type SIMPLE)
-				(parent ?goal-id)
-				; (params wp ?wp target-mps C-DS)
-				(verbosity NOISY) (is-executable TRUE)
-				(meta-template goal-meta)
-			))
+		(assert (goal (class INSTRUCT-DS-DELIVER)
+					(id ?goal-id-3)
+					(sub-type SIMPLE)
+					(parent ?goal-id)
+					(params wp ?wp target-mps C-DS)
+					(verbosity NOISY) (is-executable TRUE)
+					(meta-template goal-meta)
+		))
 	(assert (goal-meta (goal-id ?goal-id-3) (assigned-to nil)))
+
 
 	(modify ?g (mode EXPANDED) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS))
 )
-
 
 
 

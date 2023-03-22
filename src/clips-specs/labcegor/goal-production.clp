@@ -156,21 +156,7 @@
   (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
 
   =>
-
-; c0 goal
-  (printout t "Goal " C0-ORDER " formulated" crlf)
-  (bind ?goal-id-c0 (sym-cat C0-ORDER- (gensym*)))
-  (assert (goal (class C0-ORDER)
-                (id ?goal-id-c0)
-                (sub-type SIMPLE)
-                (verbosity NOISY) (is-executable FALSE)
-                (params wp ?wp base-color ?base-color cap-color ?cap-color cc ?cc)
-                (meta-template goal-meta))
-  )
-  (assert (goal-meta (goal-id ?goal-id-c0)))
-
-
-; init base wp
+  ; init base wp
   (bind ?wp (sym-cat ABCDE- (gensym*)))
   (assert (domain-object (name ?wp) (type workpiece))
           (domain-fact (name wp-unused) (param-values ?wp))
@@ -181,6 +167,18 @@
           (domain-fact (name wp-cap-color) (param-values ?wp CAP_NONE))
           ; (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order) (type BOOL) (value TRUE))
       )
+
+  ; c0 goal
+  (printout t "Goal " C0-ORDER " formulated" crlf)
+  (bind ?goal-id-c0 (sym-cat C0-ORDER- (gensym*)))
+  (assert (goal (class C0-ORDER)
+                (id ?goal-id-c0)
+                (sub-type SIMPLE)
+                (verbosity NOISY) (is-executable FALSE)
+                (params wp ?wp base-color ?base-color cap-color ?cap-color cc ?cc target-mps  ?mps)
+                (meta-template goal-meta))
+  )
+  (assert (goal-meta (goal-id ?goal-id-c0)))
 )
 
 (defrule goal-production-create-MyC1Goal
@@ -196,12 +194,27 @@
   ; info about base
 	(wm-fact (key domain fact order-complexity args? ord ?order com C1))
 	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+
+  ; ring todo
+
   ; info about cap
 	(wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
   (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
   (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
 
   =>
+  ; init base wp
+  (bind ?wp (sym-cat ABCDE- (gensym*)))
+  (assert (domain-object (name ?wp) (type workpiece))
+          (domain-fact (name wp-unused) (param-values ?wp))
+          (wm-fact (key domain fact wp-base-color args? wp ?wp col BASE_NONE) (type BOOL) (value TRUE))
+          (domain-fact (name wp-ring1-color) (param-values ?wp RING_NONE))
+          (domain-fact (name wp-ring2-color) (param-values ?wp RING_NONE))
+          (domain-fact (name wp-ring3-color) (param-values ?wp RING_NONE))
+          (domain-fact (name wp-cap-color) (param-values ?wp CAP_NONE))
+          ; (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order) (type BOOL) (value TRUE))
+      )
+
   (printout t "Goal " C1-ORDER " formulated" crlf)
   (bind ?goal-id-c1 (sym-cat C1-ORDER- (gensym*)))
   (assert (goal (class C1-ORDER)
@@ -209,68 +222,9 @@
                 (sub-type SIMPLE)
                 (verbosity NOISY) (is-executable FALSE)
                 (meta-template goal-meta)
+                (params wp ?wp base-color ?base-color cap-color ?cap-color cc ?cc target-mps ?mps) 
                 ))
                 
   (assert (goal-meta (goal-id ?goal-id-c1)))
-)
-
-(defrule goal-production-create-MyC2Goal
-  "Enter the field (drive outside of the starting box)."
-  ; what this mean
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (wm-fact (key central agent robot args? r ?robot))
-  (wm-fact (key domain fact entered-field args? r ?robot))
-  (not (goal (id ?some-goal-id) (class C2-ORDER)))
-  (domain-facts-loaded)
-  (wm-fact (key refbox team-color) (value ?team-color))
-
-  ; info about base
-	(wm-fact (key domain fact order-complexity args? ord ?order com C2))
-	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-  ; info about cap
-	(wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
-  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
-
-  =>
-  (printout t "Goal " C2-ORDER " formulated" crlf)
-  (bind ?goal-id-c2 (sym-cat C2-ORDER- (gensym*)))
-  (assert (goal (class C2-ORDER)
-                (id ?goal-id-c2)
-                (sub-type SIMPLE)
-                (verbosity NOISY) (is-executable FALSE)
-                (meta-template goal-meta)
-                ))
-  (assert (goal-meta (goal-id ?goal-id-c2)))
-)
-
-(defrule goal-production-create-MyC3Goal
-  "Enter the field (drive outside of the starting box)."
-  ; what this mean
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (wm-fact (key central agent robot args? r ?robot))
-  (wm-fact (key domain fact entered-field args? r ?robot))
-  (not (goal (id ?some-goal-id) (class C3-ORDER)))
-  (domain-facts-loaded)
-  (wm-fact (key refbox team-color) (value ?team-color))
-
-  ; info about base
-	(wm-fact (key domain fact order-complexity args? ord ?order com C3))
-	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-  ; info about cap
-	(wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
-  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
-
-  =>
-  (printout t "Goal " C3-ORDER " formulated" crlf)
-  (bind ?goal-id-c3 (sym-cat C3-ORDER- (gensym*)))
-  (assert (goal (class C3-ORDER)
-                (id ?goal-id-c3)
-                (sub-type SIMPLE)
-                (verbosity NOISY) (is-executable FALSE)
-                (meta-template goal-meta)
-                ))
-  (assert (goal-meta (goal-id ?goal-id-c3)))
 )
 
