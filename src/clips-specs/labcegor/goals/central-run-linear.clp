@@ -40,16 +40,17 @@
     (test(not (and (eq ?subgoal-class GOAL-DELIVER-C0) (eq ?root-class GOAL-ORDER-C0))))
     (test(not (and (eq ?subgoal-class GOAL-DELIVER-C1) (eq ?root-class GOAL-ORDER-C1))))
     (test(not (and (eq ?subgoal-class GOAL-DELIVER-C2) (eq ?root-class GOAL-ORDER-C2))))
+    (test(not (and (eq ?subgoal-class GOAL-DELIVER-C3) (eq ?root-class GOAL-ORDER-C3))))
     =>
     (modify ?sg (mode SELECTED))
 )
-; Selection rule for selection of deliver-c0/c1/c2 for c0/c1/c2 orders.
+; Selection rule for selection of deliver-c0/c1/c2/c3 for c0/c1/c2/c3 orders.
 (defrule central-run-linear-subgoals-select-deliver-c0
     (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-LINEAR) (mode DISPATCHED))
-    ?sg <- (goal (id ?sub-goal) (class GOAL-DELIVER-C0|GOAL-DELIVER-C1|GOAL-DELIVER-C2) (parent ?id) (type ACHIEVE) (mode FORMULATED)
+    ?sg <- (goal (id ?sub-goal) (class GOAL-DELIVER-C0|GOAL-DELIVER-C1|GOAL-DELIVER-C2|GOAL-DELIVER-C3) (parent ?id) (type ACHIEVE) (mode FORMULATED)
 	      (priority ?priority) (is-executable TRUE))
     (goal-meta (goal-id ?sub-goal) (order-id ?ord) (root-for-order ?root-id))
-    (goal (id ?root-id) (class GOAL-ORDER-C0|GOAL-ORDER-C1|GOAL-ORDER-C2))
+    (goal (id ?root-id) (class GOAL-ORDER-C0|GOAL-ORDER-C1|GOAL-ORDER-C2|GOAL-DELIVER-C3))
 	(not (goal (id ~?sub-goal) (parent ?id) (type ACHIEVE) (outcome ?outcome&~COMPLETED)
 	           (priority ?priority2&:(< ?priority2 ?priority)) (is-executable TRUE))) ; The goal with priority ?priority is the lowest-priority non-evaluated goal that is executable
     
