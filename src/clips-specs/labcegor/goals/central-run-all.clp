@@ -99,7 +99,7 @@
 				   (priority ?p-priority) (mode FORMULATED))
 	
 	(not (goal (id ~?id) (mode ~RETRACTED) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS|CENTRAL-RUN-SUBGOALS-IN-PARALLEL)
-	           (priority ?p-priority2&:(>= ?p-priority2 ?p-priority))))
+	           (priority ?p-priority2&:(<= ?p-priority2 ?p-priority))))
 	=>
 	(modify ?tree (mode SELECTED) )
 )
@@ -110,7 +110,7 @@
 	?child <- (goal (id ?sub-goal) (parent ?id) (sub-type SIMPLE) (mode FORMULATED) (priority ?c-priority))
 	
 	(not (goal (id ~?sub-goal) (parent ?id) (mode ~RETRACTED)
-	           (priority ?c-priority2&:(> ?c-priority2 ?c-priority))))
+	           (priority ?c-priority2&:(< ?c-priority2 ?c-priority))))
 
 	(wm-fact (key central agent robot args? r ?curr-robot))
 	?gm <- (goal-meta (goal-id ?sub-goal) (sub-task-type ?task) (assigned-to nil))

@@ -87,47 +87,13 @@
 	(slot restricted-to (type SYMBOL)
 	                    (allowed-values nil robot1 robot2 robot3 central)
 	                    (default nil))
-	(slot order-id (type SYMBOL))
+	(slot order-id (type SYMBOL) (default nil))
 	(slot ring-nr (type SYMBOL)
 	              (allowed-values nil ONE TWO THREE)
 	              (default nil))
   (slot root-for-order (type SYMBOL))
   (slot run-all-ordering (default 1) (type INTEGER))
 )
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;   By Vishwas Jain   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(deffunction goal-production-find-a-robot (?task)
-  "Find a free robot"
-  (bind ?assn-robot nil)
-  (if (eq ?assn-robot nil) then
-    (if (not (do-for-all-facts ((?f goal-meta))
-			                (and (neq ?f:assigned-to robot1) (eq ?task PRIMARY_TASK))
-			                (bind ?assn-robot robot1)
-             )
-        ) then 
-        (if (not (do-for-all-facts ((?f goal-meta))
-			                (and (neq ?f:assigned-to robot2) (eq ?task SECONDARY_TASK))
-			                (bind ?assn-robot robot2)
-                 )
-            ) then 
-            (if (not (do-for-all-facts ((?f goal-meta))
-			                                  (and (neq ?f:assigned-to robot3)  (eq ?task SECONDARY_TASK))
-			                                  (bind ?assn-robot robot3)
-                     )
-                ) then 
-                  (bind ?assn-robot nil) (printout t "assn-robot has been assigned as nil")
-            )
-        )
-    )
-  )
-  (return ?assn-robot)
-)
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 
@@ -1332,3 +1298,55 @@
   )
   (return ?rs-interactions)
 )
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;   By Vishwas Jain   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(deffunction goal-production-find-a-robot (?task)
+  "Find a free robot"
+  (bind ?assn-robot nil)
+  (if (eq ?assn-robot nil) then
+    (if (not (do-for-all-facts ((?f goal-meta))
+			                (and (neq ?f:assigned-to robot1) (eq ?task PRIMARY_TASK))
+			                (bind ?assn-robot robot1)
+             )
+        ) then 
+        (if (not (do-for-all-facts ((?f goal-meta))
+			                (and (neq ?f:assigned-to robot2) (eq ?task SECONDARY_TASK))
+			                (bind ?assn-robot robot2)
+                 )
+            ) then 
+            (if (not (do-for-all-facts ((?f goal-meta))
+			                                  (and (neq ?f:assigned-to robot3)  (eq ?task SECONDARY_TASK))
+			                                  (bind ?assn-robot robot3)
+                     )
+                ) then 
+                  (bind ?assn-robot nil) (printout t "assn-robot has been assigned as nil")
+            )
+        )
+    )
+  )
+  (return ?assn-robot)
+)
+
+
+
+(deffunction order-to-ring-number (?ord)
+  (do-for-fact ((?f wm-fact))
+			              (and (wm-key-prefix ?f:key (create$ domain fact order-complexity))
+			                   (eq (wm-key-arg ?f:key ord) ?ord))
+			              (bind ?ord-com (wm-key-arg ?f:key com))
+  )
+
+  (return (int-to-sym (integer (string-to-field (sub-string 2 (length$ ?ord-com) ?ord-com)))))
+)
+
+
+(deftemplate order-priority-info
+  (slot order (type SYMBOL) (default nil))
+  (slot next-prio (type INTEGER) (default 0))
+)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

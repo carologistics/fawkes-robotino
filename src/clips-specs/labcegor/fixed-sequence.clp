@@ -290,6 +290,22 @@
 )
 
 
+
+(defrule goal-expander-g1-c0-deliver
+"Prepare DS and deliver the order"
+	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
+ 	            (params order ?ord workpiece ?wp delivery-station ?ds ds-gate ?ds-gate base-clr ?base-clr cap-clr ?cap-clr))
+ 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) )
+	=>
+	(bind ?action-class (sym-cat DELIVER- (gensym*)))
+	(plan-assert-sequential ?action-class ?goal-id ?robot
+		(plan-assert-action prepare-ds ?ds ?ord)
+		(plan-assert-action fulfill-order-c0 ?ord ?wp ?ds ?ds-gate ?base-clr ?cap-clr)
+	)	
+	(modify ?g (mode EXPANDED))
+)
+	
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  GROUP 1 SERIAL EXECUTION ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; (defrule goal-expander-g1-c1-spawn-wp

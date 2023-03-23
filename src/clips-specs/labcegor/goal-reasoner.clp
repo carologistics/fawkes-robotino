@@ -199,15 +199,15 @@
   (return ?goal)
 )
 
-(deffunction goal-tree-assert-central-run-all-sequence (?class ?tree-prio ?start-prio $?fact-addresses)
+(deffunction goal-tree-assert-central-run-all-sequence (?class ?ord ?tree-prio ?start-prio $?fact-addresses)
   (bind ?id (sym-cat CENTRAL-RUN-ALL- ?class - (gensym*)))
   (bind ?goal
     (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
                   (meta sequence-mode) (priority ?tree-prio) (mode FORMULATED) ))
   )
-  (assert (goal-meta (goal-id ?id)))
+  (assert (goal-meta (goal-id ?id) (order-id ?ord) (ring-nr (order-to-ring-number ?ord))))
   (foreach ?f ?fact-addresses
-    (goal-tree-update-child ?f ?id (+ ?start-prio (- (length$ ?fact-addresses) ?f-index))))
+    (goal-tree-update-child ?f ?id (+ ?start-prio ?f-index)))
   (return ?goal)
 )
 
@@ -224,12 +224,12 @@
   (return ?goal)
 )
 
-(deffunction goal-tree-assert-central-run-parallel (?class ?tree-prio ?start-prio $?fact-addresses)
+(deffunction goal-tree-assert-central-run-parallel (?class ?ord ?tree-prio ?start-prio $?fact-addresses)
   (bind ?id (sym-cat CENTRAL-RUN-PARALLEL- ?class - (gensym*)))
   (bind ?goal
     (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL) (priority ?tree-prio) (mode FORMULATED)))
   )
-  (assert (goal-meta (goal-id ?id)))
+  (assert (goal-meta (goal-id ?id) (order-id ?ord) (ring-nr (order-to-ring-number ?ord))))
   (foreach ?f ?fact-addresses
     ; (goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
     (goal-tree-update-child ?f ?id ?start-prio)

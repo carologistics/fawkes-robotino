@@ -500,111 +500,33 @@
   (return ?g)
 
 )
+                
 
+(deffunction goal-production-g1-c0-deliver
+	(?ord ?ds ?ds-gate ?base-clr ?cap-clr ?wp ?task ?num)
+
+	(bind ?goal-id (sym-cat PRODUCT- ?ord -n ?num - (gensym*)))
+
+  (bind ?cls (sym-cat PRODUCT- ?ord -T-deliver))
+  
+  ; (bind ?robot (goal-production-find-a-robot ?task))
+
+  (bind ?g (assert (goal (class ?cls)
+                (id ?goal-id)
+                (sub-type SIMPLE)
+                (verbosity NOISY) (is-executable FALSE) 
+                (params order ?ord workpiece ?wp delivery-station ?ds ds-gate ?ds-gate base-clr ?base-clr cap-clr ?cap-clr) 
+                (meta-template goal-meta)
+  )))
+  (assert (goal-meta (goal-id ?goal-id) (assigned-to nil) (sub-task-type ?task)))
+  (return ?g)
+)
 ;;;;;;;;;;;;;;   END OF PARALLELIZATION    ;;;;;;;;;;;;;;;;;;;;
 
 ; Error in simulation : Action wp-put-slide-cc failed: Unsatisfied precondition
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
-
-
-
-
-(deffunction g1-goal-production-assert-c1
-	(?base-clr ?rs ?rng-clr ?cs ?cap-clr ?ds ?ds-gate ?ord ?wp)
-  
-  (bind ?bs C-BS)
-
-  (do-for-fact ((?rs-status wm-fact))
-			              (and (wm-key-prefix ?rs-status:key (create$ domain fact rs-ring-spec))
-			                   (eq (wm-key-arg ?rs-status:key m) ?rs)
-                         (eq (wm-key-arg ?rs-status:key r) ?rng-clr))
-			              (bind ?r-req (wm-key-arg ?rs-status:key rn))
-  )
-
-	(bind ?goal-tree-1
-    (goal-tree-assert-central-run-parallel (sym-cat PRODUCT- ?ord -ST1) 3 1
-      (goal-production-g1-c1-spawn-wp ?ord ?wp PRIMARY_TASK 1)
-      (goal-production-g1-c1-prepare-bs ?ord ?bs ?base-clr PRIMARY_TASK 2)
-      (goal-production-g1-c1-bs-dispense ?ord ?bs ?base-clr ?wp PRIMARY_TASK 3)
-      ;(goal-production-g1-c1-prepare-rs ?ord ?rs ?rng-clr ?r-req SECONDARY_TASK 3)
-      (goal-production-g1-c1-cap-retrieve ?ord ?cs ?cap-clr SECONDARY_TASK 4)
-      ;(goal-production-g1-c1-transport-wp ?ord ?rs OUTPUT ?cs INPUT ?wp ?robot 4)
-      ;(goal-production-g1-c1-make-payment ?ord ?cs OUTPUT ?rs INPUT ?wp ?robot 4)
-    )
-  )
-
-  (bind ?goal-tree-2
-    (if (neq ?r-req TWO) then
-      (create$
-        (goal-tree-assert-central-run-parallel (sym-cat PRODUCT- ?ord -ST2) 2 1
-          (goal-production-g1-c1-make-payment-cs ?ord ?cs ?rs SECONDARY_TASK 5)
-        )
-      )
-    else
-      (create$
-        (goal-tree-assert-central-run-parallel (sym-cat PRODUCT- ?ord -ST2) 2 1
-          (goal-production-g1-c1-make-payment-cs ?ord ?cs ?rs SECONDARY_TASK 5)
-          (goal-production-g1-c1-make-payment-bs ?ord ?bs ?rs SECONDARY_TASK 6)
-        )
-      )
-    )
-  )
-
-  (bind ?goal-tree-3
-    (goal-tree-assert-central-run-all-sequence (sym-cat PRODUCT- ?ord -PT) 1 1
-      (goal-production-g1-c1-transport-wp ?ord ?bs OUTPUT ?rs INPUT ?wp PRIMARY_TASK 7)
-      (goal-production-g1-c1-prepare-rs ?ord ?rs ?rng-clr ?r-req PRIMARY_TASK 8)
-      (goal-production-g1-c1-mount-ring1 ?ord ?rs ?rng-clr ?r-req ?wp PRIMARY_TASK 9)
-      (goal-production-g1-c1-transport-wp ?ord ?rs OUTPUT ?cs INPUT ?wp PRIMARY_TASK 10)
-      (goal-production-g1-c1-cap-mount ?ord ?cs ?cap-clr ?wp PRIMARY_TASK 11)
-      (goal-production-g1-c1-transport-wp ?ord ?cs OUTPUT ?ds INPUT ?wp PRIMARY_TASK 12)
-      (goal-production-g1-c1-deliver ?ord ?ds ?ds-gate ?base-clr ?cap-clr ?rng-clr ?wp PRIMARY_TASK 13)
-    )
-  )
-
-  ; (bind ?goal-tree 
-  ;   (goal-tree-assert-central-run-all-sequence (sym-cat PRODUCT- ?ord -C1)
-  ;     ?goal-tree-1
-  ;     ?goal-tree-2
-  ;     ?goal-tree-3
-  ;   ))
-
-  (do-for-fact ((?gq goal))
-			          (eq ?gq ?goal-tree-1)
-			          (bind ?g-id ?gq:id)
-  )
-  ;(bind ?g-id (fact-slot-value ?goal-tree-1 id))
-
-  (do-for-fact ((?gmq goal-meta))
-			          (eq ?gmq:goal-id ?g-id)
-			          (modify ?gmq (ring-nr ONE))
-  )
-
-  (do-for-fact ((?gq goal))
-			          (eq ?gq ?goal-tree-2)
-			          (bind ?g-id ?gq:id)
-  )
-
-  (do-for-fact ((?gmq goal-meta))
-			          (eq ?gmq:goal-id ?g-id)
-			          (modify ?gmq (ring-nr ONE))
-  )
-
-  (do-for-fact ((?gq goal))
-			          (eq ?gq ?goal-tree-3)
-			          (bind ?g-id ?gq:id)
-  )
-
-  (do-for-fact ((?gmq goal-meta))
-			          (eq ?gmq:goal-id ?g-id)
-			          (modify ?gmq (ring-nr ONE))
-  )
- 
-	(return ?goal-tree-1)
-)
 
 
 (defrule g1-verify-robots-in-field
@@ -633,30 +555,119 @@
 )
 
 
+;;;;;;;;;;;;;;;;;   ORDER COMPLEXITY C1    ;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+
+(deffunction g1-goal-production-assert-c1
+	(?base-clr ?rs ?rng-clr ?cs ?cap-clr ?ds ?ds-gate ?ord ?wp)
+  
+  (bind ?bs C-BS)
+
+  (do-for-fact ((?rs-status wm-fact))
+			              (and (wm-key-prefix ?rs-status:key (create$ domain fact rs-ring-spec))
+			                   (eq (wm-key-arg ?rs-status:key m) ?rs)
+                         (eq (wm-key-arg ?rs-status:key r) ?rng-clr))
+			              (bind ?r-req (wm-key-arg ?rs-status:key rn))
+  )
+
+  (bind ?p-start 0)
+  (do-for-all-facts ((?f order-priority-info))
+			          (neq ?f:order nil)
+                (if (> ?p-start ?f:next-prio) then
+                  (bind ?p-start ?f:next-prio)
+                )
+  )
+
+	(bind ?goal-tree-1
+    (goal-tree-assert-central-run-parallel (sym-cat PRODUCT- ?ord -ST1) ?ord ?p-start 1
+      (goal-production-g1-c1-spawn-wp ?ord ?wp PRIMARY_TASK 1)
+      (goal-production-g1-c1-prepare-bs ?ord ?bs ?base-clr PRIMARY_TASK 2)
+      (goal-production-g1-c1-bs-dispense ?ord ?bs ?base-clr ?wp PRIMARY_TASK 3)
+      ;(goal-production-g1-c1-prepare-rs ?ord ?rs ?rng-clr ?r-req SECONDARY_TASK 3)
+      (goal-production-g1-c1-cap-retrieve ?ord ?cs ?cap-clr SECONDARY_TASK 4)
+      ;(goal-production-g1-c1-transport-wp ?ord ?rs OUTPUT ?cs INPUT ?wp ?robot 4)
+      ;(goal-production-g1-c1-make-payment ?ord ?cs OUTPUT ?rs INPUT ?wp ?robot 4)
+    )
+  )
+
+  (bind ?goal-tree-2
+    (if (eq ?r-req TWO) then
+      (create$
+        (goal-tree-assert-central-run-parallel (sym-cat PRODUCT- ?ord -ST2) ?ord (+ 1 ?p-start) 1
+          (goal-production-g1-c1-make-payment-cs ?ord ?cs ?rs SECONDARY_TASK 5)
+          (goal-production-g1-c1-make-payment-bs ?ord ?bs ?rs SECONDARY_TASK 6)
+        )
+      )
+    else
+      (if (eq ?r-req ONE) then
+        (create$
+          (goal-tree-assert-central-run-parallel (sym-cat PRODUCT- ?ord -ST2) ?ord (+ 1 ?p-start) 1
+            (goal-production-g1-c1-make-payment-cs ?ord ?cs ?rs SECONDARY_TASK 5)
+          )
+        )
+      )
+    )
+  )
+
+  (bind ?goal-tree-3
+    (goal-tree-assert-central-run-all-sequence (sym-cat PRODUCT- ?ord -PT) ?ord (+ 2 ?p-start) 1
+      (goal-production-g1-c1-transport-wp ?ord ?bs OUTPUT ?rs INPUT ?wp PRIMARY_TASK 7)
+      (goal-production-g1-c1-prepare-rs ?ord ?rs ?rng-clr ?r-req PRIMARY_TASK 8)
+      (goal-production-g1-c1-mount-ring1 ?ord ?rs ?rng-clr ?r-req ?wp PRIMARY_TASK 9)
+      (goal-production-g1-c1-transport-wp ?ord ?rs OUTPUT ?cs INPUT ?wp PRIMARY_TASK 10)
+      (goal-production-g1-c1-cap-mount ?ord ?cs ?cap-clr ?wp PRIMARY_TASK 11)
+      (goal-production-g1-c1-transport-wp ?ord ?cs OUTPUT ?ds INPUT ?wp PRIMARY_TASK 12)
+      (goal-production-g1-c1-deliver ?ord ?ds ?ds-gate ?base-clr ?cap-clr ?rng-clr ?wp PRIMARY_TASK 13)
+    )
+  )
+
+  (assert (order-priority-info (order ?ord) (next-prio (+ 2 ?p-start))))
+	(return ?goal-tree-1)
+)
+
+
+
 (defrule g1-goal-production-create-from-order-complexity-C1
 	"Take goal from refbox"
-  ;(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  ; (wm-fact (key central agent robot args? r ?robot))  
-  ; (wm-fact (key domain fact entered-field args? r ?robot)) 
+  
+  ;; All robots are in the field
 	(robot1-in-field)
   (robot2-in-field)
   (robot3-in-field)
+
+  ;; Taking C1 complexity order and its end-time
   (wm-fact (key domain fact order-complexity args?  ord ?ord com C1)) 
+  (wm-fact (key refbox game-time) (type UINT) (value ?curr-time))  
+  (wm-fact (key refbox order ?ord delivery-end) (type UINT) (value ?deli-end&:(> ?deli-end ?curr-time)))
+
+  ;; Order/Product details
 	(wm-fact (key domain fact order-ring1-color args? ord ?ord col ?rng-clr)) 
-	;(wm-fact (key domain fact order-complexity args?  ord  ?ord comp ?ord-cmplx))
 	(wm-fact (key domain fact order-base-color args? ord ?ord  col ?base-clr)) 
 	(wm-fact (key domain fact order-cap-color args? ord ?ord col ?cap-clr)) 
 	(wm-fact (key domain fact order-gate args? ord ?ord gate ?ds-gate)) 
-  (not (goal-meta (goal-id ?some-goal-id) (ring-nr ONE)))
   (domain-facts-loaded) 
-  (wm-fact (key refbox team-color) (value ?team-color)) 
+  (wm-fact (key refbox team-color) (value ?team-color))
+
+  ;; Check there's no other pending order with earlier delivery time
+  (wm-fact (key domain fact order-complexity args? ord ?another-ord&~?ord com ?another-com))
+  (not (wm-fact (key domain fact order-fulfilled args? ord ?another-ord)))
+  (wm-fact (key refbox order ?another-ord delivery-end) (type UINT) (value ?another-deli-end&:(and (< ?deli-end ?another-deli-end) (> ?another-deli-end ?curr-time))))
+
+  ;; Check if there's less than 2 orders active
+  (not (and 
+             (goal-meta (order-id ?some-ord-1&~nil))
+             (goal-meta (order-id ?some-ord-2&:(and (neq ?some-ord-2 nil) (neq ?some-ord-1 ?some-ord-2))))
+        )
+  )
   
 	=>
 	(bind ?ord-comp C1)     ; just for information
   (bind ?rnd-id (sym-cat ?ord - (gensym*) ))
   (bind ?wp (sym-cat WP - ?ord))
-  ; (assert (domain-object (name ?wp) (type workpiece)))
-
 
 	(if (or (eq ?rng-clr RING_BLUE) (eq ?rng-clr RING_YELLOW))
 		then 
@@ -676,3 +687,90 @@
 )
 
 
+
+
+;;;;;;;;;;;;;;;;;   ORDER COMPLEXITY C0    ;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(deffunction g1-goal-production-assert-c0
+	(?base-clr ?cs ?cap-clr ?ds ?ds-gate ?ord ?wp)
+  
+  (bind ?bs C-BS)
+  (bind ?p-start 0)
+  (do-for-all-facts ((?f order-priority-info))
+			          (neq ?f:order nil)
+                (if (> ?p-start ?f:next-prio) then
+                  (bind ?p-start ?f:next-prio)
+                )
+  )
+
+	(bind ?goal-tree-1
+    (goal-tree-assert-central-run-parallel (sym-cat PRODUCT- ?ord -ST1) ?ord ?p-start 1
+      (goal-production-g1-c1-spawn-wp ?ord ?wp PRIMARY_TASK 1)
+      (goal-production-g1-c1-prepare-bs ?ord ?bs ?base-clr PRIMARY_TASK 2)
+      (goal-production-g1-c1-cap-retrieve ?ord ?cs ?cap-clr SECONDARY_TASK 3)
+    )
+  )
+
+  (bind ?goal-tree-2
+    (goal-tree-assert-central-run-all-sequence (sym-cat PRODUCT- ?ord -PT) ?ord (+ 1 ?p-start) 1
+      (goal-production-g1-c1-bs-dispense ?ord ?bs ?base-clr ?wp PRIMARY_TASK 4)
+      (goal-production-g1-c1-transport-wp ?ord ?bs OUTPUT ?cs INPUT ?wp PRIMARY_TASK 5)
+      (goal-production-g1-c1-cap-mount ?ord ?cs ?cap-clr ?wp PRIMARY_TASK 6)
+      (goal-production-g1-c0-deliver ?ord ?ds ?ds-gate ?base-clr ?cap-clr ?wp PRIMARY_TASK 7)
+    )
+  )
+
+   (assert (order-priority-info (order ?ord) (next-prio (+ 1 ?p-start))))
+
+	(return ?goal-tree-1)
+)
+
+
+
+(defrule g1-goal-production-create-from-order-complexity-C0
+	"Take goal from refbox"
+  (robot1-in-field)
+  (robot2-in-field)
+  (robot3-in-field)
+  (wm-fact (key domain fact order-complexity args?  ord ?ord com C0))
+  (wm-fact (key refbox game-time) (type UINT) (value ?curr-time))  
+  (wm-fact (key refbox order ?ord delivery-end) (type UINT) (value ?deli-end&:(> ?deli-end ?curr-time)))
+
+	(wm-fact (key domain fact order-base-color args? ord ?ord  col ?base-clr)) 
+	(wm-fact (key domain fact order-cap-color args? ord ?ord col ?cap-clr)) 
+	(wm-fact (key domain fact order-gate args? ord ?ord gate ?ds-gate)) 
+  (domain-facts-loaded) 
+  (wm-fact (key refbox team-color) (value ?team-color)) 
+  
+  ;; Check there's no other pending order with earlier delivery time
+  (wm-fact (key domain fact order-complexity args? ord ?another-ord&~?ord com ?another-com))
+  (not (wm-fact (key domain fact order-fulfilled args? ord ?another-ord)))
+  (wm-fact (key refbox order ?another-ord delivery-end) (type UINT) (value ?another-deli-end&:(and (< ?deli-end ?another-deli-end) (> ?another-deli-end ?curr-time))))
+
+  ;; Check if there's less than 2 orders active
+  (not (and 
+             (goal-meta (order-id ?some-ord-1&~nil))
+             (goal-meta (order-id ?some-ord-2&:(and (neq ?some-ord-2 nil) (neq ?some-ord-1 ?some-ord-2))))
+        )
+  )
+
+	=>
+
+	(bind ?ord-comp C0)     ; just for information
+  (bind ?rnd-id (sym-cat ?ord - (gensym*) ))
+  (bind ?wp (sym-cat WP - ?ord))
+ 
+
+  (if (eq ?cap-clr CAP_BLACK)
+		then 
+			(bind ?cs C-CS2)
+		else 
+			(bind ?cs C-CS1)
+	)
+
+
+	(bind ?goal-tree (g1-goal-production-assert-c0 ?base-clr ?cs ?cap-clr C-DS ?ds-gate ?ord ?wp))
+)
