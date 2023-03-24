@@ -50,7 +50,7 @@
     ?sg <- (goal (id ?sub-goal) (class GOAL-DELIVER-C0|GOAL-DELIVER-C1|GOAL-DELIVER-C2|GOAL-DELIVER-C3) (parent ?id) (type ACHIEVE) (mode FORMULATED)
 	      (priority ?priority) (is-executable TRUE))
     (goal-meta (goal-id ?sub-goal) (order-id ?ord) (root-for-order ?root-id))
-    (goal (id ?root-id) (class GOAL-ORDER-C0|GOAL-ORDER-C1|GOAL-ORDER-C2|GOAL-DELIVER-C3))
+    (goal (id ?root-id) (class GOAL-ORDER-C0|GOAL-ORDER-C1|GOAL-ORDER-C2|GOAL-ORDER-C3))
 	(not (goal (id ~?sub-goal) (parent ?id) (type ACHIEVE) (outcome ?outcome&~COMPLETED)
 	           (priority ?priority2&:(< ?priority2 ?priority)) (is-executable TRUE))) ; The goal with priority ?priority is the lowest-priority non-evaluated goal that is executable
     
