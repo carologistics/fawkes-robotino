@@ -82,8 +82,10 @@
   (goal (id ?oid) (class ENTER-FIELD)  (sub-type SIMPLE) (mode FORMULATED) (is-executable FALSE))
   ?gm <- (goal-meta (goal-id ?oid) (assigned-to nil))
   (not (goal-meta (assigned-to ?robot)))
+  ?rw <- (domain-fact (name robot-waiting) (param-values ?robot))
   =>
   (modify ?gm (assigned-to ?robot))
+  (retract ?rw)
 )
 
 

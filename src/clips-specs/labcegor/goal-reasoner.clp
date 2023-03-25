@@ -111,12 +111,12 @@
 )
 
 ;This must fire for enter field
-(defrule goal-meta-reset-assigned
-  ?m <- (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-  (goal (id ?goal-id) (outcome COMPLETED))
-  =>
-  (modify ?m (assigned-to nil))
-)
+;(defrule goal-meta-reset-assigned
+;  ?m <- (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+;  (goal (id ?goal-id) (outcome COMPLETED))
+;  =>
+;  (modify ?m (assigned-to nil))
+;)
 
 (defrule goal-reasoner-select-root
   "There is an exectuable simple goal assigned to central, propagate selection."
