@@ -5,27 +5,10 @@
       (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
   (goal-meta (goal-id ?goal-id) (order-id ?ord1))
 
-; There are not already two goals running
-  ; (not
-  ;   (and 
-  ;     (goal (id ?goal-idr1) (class ?rclass1&GOAL-ORDER-C0|GOAL-ORDER-C1|GOAL-ORDER-C2) (mode ~FORMULATED) (outcome ~COMPLETED)) ; Running goal1
-  ;     (goal (id ?goal-idr2&:(not (eq ?goal-idr1 ?goal-idr2))) (class ?rclass2&GOAL-ORDER-C0|GOAL-ORDER-C1|GOAL-ORDER-C2) (mode ~FORMULATED) (outcome ~COMPLETED)) ; Running goal2
-  ;   )
-  ; )
-
 ; Goal is in sliding window 
   (wm-fact (key refbox game-time) (is-list TRUE) (type UINT) (values ?sec ?nsec))
   (wm-fact (key refbox order ?ord1 delivery-begin) (type UINT) (value ?begin&:(or (and (>= ?begin 100) (> ?sec (- ?begin 100) )) (and (< ?begin 100) (>= ?sec ?begin )))))
   (wm-fact (key refbox order ?ord1 delivery-end) (type UINT) (value ?end1&:(< ?sec (- ?end1 120) )))
-; Earliest (modified) Deadline First
-
-  ; (not (and 
-  ;           (goal (id ?goal-id2) (mode FORMULATED) (parent nil) (type ACHIEVE) (sub-type ~nil) (class ?class2&GOAL-ORDER-C0|GOAL-ORDER-C1|GOAL-ORDER-C2))
-  ;           (goal-meta (goal-id ?goal-id2) (order-id ?ord2))
-  ;           (wm-fact (key refbox order ?ord2 delivery-begin) (type UINT) (value ?begin2&:(or (and (>= ?begin2 60) (> ?sec (- ?begin2 60) )) (and (< ?begin2 60) (>= ?sec ?begin2 )))))
-  ;           (wm-fact (key refbox order ?ord2 delivery-end) (type UINT) (value ?end2&:(and (< ?end2 ?end1) (< ?sec (- ?end2 120) ))))
-  ;       )
-  ; )
 
 ; Check for BS availability 
 (domain-fact (name mps-team) (param-values ?bs ?team-color))
@@ -56,7 +39,6 @@
 )
 
 
-
 (defrule select-c1-orders
 
 ; Goal to select
@@ -64,29 +46,10 @@
       (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
   (goal-meta (goal-id ?goal-id) (order-id ?ord1))
 
-; There are not already two goals running
-  ; (not
-  ;   (and 
-  ;     (goal (id ?goal-idr1) (class ?rclass1&GOAL-ORDER-C0|GOAL-ORDER-C1|GOAL-ORDER-C2) (mode ~FORMULATED) (outcome ~COMPLETED)) ; Running goal1
-  ;     (goal (id ?goal-idr2) (class ?rclass2&GOAL-ORDER-C0|GOAL-ORDER-C1|GOAL-ORDER-C2) (mode ~FORMULATED) (outcome ~COMPLETED)) ; Running goal2
-  ;     (not (eq ?goal-idr1 ?goal-idr2))                                                                                          ; and these are not the same
-  ;   )
-  ; )
-
 ; Goal is in sliding window 
   (wm-fact (key refbox game-time) (is-list TRUE) (type UINT) (values ?sec ?nsec))
   (wm-fact (key refbox order ?ord1 delivery-begin) (type UINT) (value ?begin&:(or (and (>= ?begin 100) (> ?sec (- ?begin 100) )) (and (< ?begin 100) (>= ?sec ?begin )))))
   (wm-fact (key refbox order ?ord1 delivery-end) (type UINT) (value ?end1&:(< ?sec (- ?end1 120) )))
-
-; Earliest (modified) Deadline First
-
-; (not (and 
-;           (goal (id ?goal-id2) (mode FORMULATED) (parent nil) (type ACHIEVE) (sub-type ~nil) (class ?class2&GOAL-ORDER-C0|GOAL-ORDER-C1|GOAL-ORDER-C2))
-;           (goal-meta (goal-id ?goal-id2) (order-id ?ord2))
-;           (wm-fact (key refbox order ?ord2 delivery-begin) (type UINT) (value ?begin2&:(or (and (>= ?begin2 60) (> ?sec (- ?begin2 60) )) (and (< ?begin2 60) (>= ?sec ?begin2 )))))
-;           (wm-fact (key refbox order ?ord2 delivery-end) (type UINT) (value ?end2&:(and (< ?end2 ?end1) (< ?sec (- ?end2 120) ))))
-;       )
-; )
 
 ; Check for BS availability 
 (domain-fact (name mps-team) (param-values ?bs ?team-color))
@@ -112,23 +75,12 @@
 )
 
 
-
-
 (defrule select-c2-orders
 
 ; Goal to select
   ?g <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil) (class ?class&GOAL-ORDER-C2)
       (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
   (goal-meta (goal-id ?goal-id) (order-id ?ord1))
-
-; There are not already two goals running
-  ; (not
-  ;   (and 
-  ;     (goal (id ?goal-idr1) (class ?rclass1&GOAL-ORDER-C0|GOAL-ORDER-C1|GOAL-ORDER-C2) (mode ~FORMULATED) (outcome ~COMPLETED)) ; Running goal1
-  ;     (goal (id ?goal-idr2) (class ?rclass2&GOAL-ORDER-C0|GOAL-ORDER-C1|GOAL-ORDER-C2) (mode ~FORMULATED) (outcome ~COMPLETED)) ; Running goal2
-  ;     (not (eq ?goal-idr1 ?goal-idr2))                                                                                          ; and these are not the same
-  ;   )
-  ; )
 
   ; There is not already a C2 goal running
   (not (goal (id ?goal-idr3) (class ?rclass1&GOAL-ORDER-C2) (mode ~FORMULATED) (outcome ~COMPLETED)))
@@ -139,16 +91,6 @@
   (wm-fact (key refbox game-time) (is-list TRUE) (type UINT) (values ?sec ?nsec))
   (wm-fact (key refbox order ?ord1 delivery-begin) (type UINT) (value ?begin&:(or (and (>= ?begin 100) (> ?sec (- ?begin 100) )) (and (< ?begin 100) (>= ?sec ?begin )))))
   (wm-fact (key refbox order ?ord1 delivery-end) (type UINT) (value ?end1&:(< ?sec (- ?end1 120) )))
-
-; Earliest (modified) Deadline First
-
-; (not (and 
-;           (goal (id ?goal-id2) (mode FORMULATED) (parent nil) (type ACHIEVE) (sub-type ~nil) (class ?class2&GOAL-ORDER-C0|GOAL-ORDER-C1|GOAL-ORDER-C2))
-;           (goal-meta (goal-id ?goal-id2) (order-id ?ord2))
-;           (wm-fact (key refbox order ?ord2 delivery-begin) (type UINT) (value ?begin2&:(or (and (>= ?begin2 60) (> ?sec (- ?begin2 60) )) (and (< ?begin2 60) (>= ?sec ?begin2 )))))
-;           (wm-fact (key refbox order ?ord2 delivery-end) (type UINT) (value ?end2&:(and (< ?end2 ?end1) (< ?sec (- ?end2 120) ))))
-;       )
-; )
 
 ; Check for BS availability 
 (domain-fact (name mps-team) (param-values ?bs ?team-color))
@@ -173,21 +115,13 @@
 (printout (log-debug ?v) ?rs " is in use now for order " ?ord1 crlf)
 )
 
+
 (defrule select-c3-orders
 
 ; Goal to select
   ?g <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil) (class ?class&GOAL-ORDER-C3)
       (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
   (goal-meta (goal-id ?goal-id) (order-id ?ord1))
-
-; There are not already two goals running
-  ; (not
-  ;   (and 
-  ;     (goal (id ?goal-idr1) (class ?rclass1&GOAL-ORDER-C0|GOAL-ORDER-C1|GOAL-ORDER-C2) (mode ~FORMULATED) (outcome ~COMPLETED)) ; Running goal1
-  ;     (goal (id ?goal-idr2) (class ?rclass2&GOAL-ORDER-C0|GOAL-ORDER-C1|GOAL-ORDER-C2) (mode ~FORMULATED) (outcome ~COMPLETED)) ; Running goal2
-  ;     (not (eq ?goal-idr1 ?goal-idr2))                                                                                          ; and these are not the same
-  ;   )
-  ; )
 
   ; There is not already a C2 goal running
   (not (goal (id ?goal-idr3) (class ?rclass1&GOAL-ORDER-C2) (mode ~FORMULATED) (outcome ~COMPLETED)))
@@ -198,16 +132,6 @@
   (wm-fact (key refbox game-time) (is-list TRUE) (type UINT) (values ?sec ?nsec))
   (wm-fact (key refbox order ?ord1 delivery-begin) (type UINT) (value ?begin&:(or (and (>= ?begin 180) (> ?sec (- ?begin 180) )) (and (< ?begin 180) (>= ?sec ?begin )))))
   (wm-fact (key refbox order ?ord1 delivery-end) (type UINT) (value ?end1&:(< ?sec (- ?end1 200) )))
-
-; Earliest (modified) Deadline First
-
-; (not (and 
-;           (goal (id ?goal-id2) (mode FORMULATED) (parent nil) (type ACHIEVE) (sub-type ~nil) (class ?class2&GOAL-ORDER-C0|GOAL-ORDER-C1|GOAL-ORDER-C2))
-;           (goal-meta (goal-id ?goal-id2) (order-id ?ord2))
-;           (wm-fact (key refbox order ?ord2 delivery-begin) (type UINT) (value ?begin2&:(or (and (>= ?begin2 60) (> ?sec (- ?begin2 60) )) (and (< ?begin2 60) (>= ?sec ?begin2 )))))
-;           (wm-fact (key refbox order ?ord2 delivery-end) (type UINT) (value ?end2&:(and (< ?end2 ?end1) (< ?sec (- ?end2 120) ))))
-;       )
-; )
 
 ; Check for BS availability 
 (domain-fact (name mps-team) (param-values ?bs ?team-color))
