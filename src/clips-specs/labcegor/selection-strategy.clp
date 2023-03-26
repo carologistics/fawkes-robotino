@@ -15,7 +15,7 @@
 
 ; Goal is in sliding window 
   (wm-fact (key refbox game-time) (is-list TRUE) (type UINT) (values ?sec ?nsec))
-  (wm-fact (key refbox order ?ord1 delivery-begin) (type UINT) (value ?begin&:(or (and (>= ?begin 60) (> ?sec (- ?begin 60) )) (and (< ?begin 60) (>= ?sec ?begin )))))
+  (wm-fact (key refbox order ?ord1 delivery-begin) (type UINT) (value ?begin&:(or (and (>= ?begin 100) (> ?sec (- ?begin 100) )) (and (< ?begin 100) (>= ?sec ?begin )))))
   (wm-fact (key refbox order ?ord1 delivery-end) (type UINT) (value ?end1&:(< ?sec (- ?end1 120) )))
 ; Earliest (modified) Deadline First
 
@@ -75,7 +75,7 @@
 
 ; Goal is in sliding window 
   (wm-fact (key refbox game-time) (is-list TRUE) (type UINT) (values ?sec ?nsec))
-  (wm-fact (key refbox order ?ord1 delivery-begin) (type UINT) (value ?begin&:(or (and (>= ?begin 60) (> ?sec (- ?begin 60) )) (and (< ?begin 60) (>= ?sec ?begin )))))
+  (wm-fact (key refbox order ?ord1 delivery-begin) (type UINT) (value ?begin&:(or (and (>= ?begin 100) (> ?sec (- ?begin 100) )) (and (< ?begin 100) (>= ?sec ?begin )))))
   (wm-fact (key refbox order ?ord1 delivery-end) (type UINT) (value ?end1&:(< ?sec (- ?end1 120) )))
 
 ; Earliest (modified) Deadline First
@@ -137,8 +137,8 @@
 
 ; Goal is in sliding window 
   (wm-fact (key refbox game-time) (is-list TRUE) (type UINT) (values ?sec ?nsec))
-  (wm-fact (key refbox order ?ord1 delivery-begin) (type UINT) (value ?begin&:(or (and (>= ?begin 120) (> ?sec (- ?begin 120) )) (and (< ?begin 120) (>= ?sec ?begin )))))
-  (wm-fact (key refbox order ?ord1 delivery-end) (type UINT) (value ?end1&:(< ?sec (- ?end1 200) )))
+  (wm-fact (key refbox order ?ord1 delivery-begin) (type UINT) (value ?begin&:(or (and (>= ?begin 100) (> ?sec (- ?begin 100) )) (and (< ?begin 100) (>= ?sec ?begin )))))
+  (wm-fact (key refbox order ?ord1 delivery-end) (type UINT) (value ?end1&:(< ?sec (- ?end1 120) )))
 
 ; Earliest (modified) Deadline First
 
@@ -196,8 +196,8 @@
 
 ; Goal is in sliding window 
   (wm-fact (key refbox game-time) (is-list TRUE) (type UINT) (values ?sec ?nsec))
-  (wm-fact (key refbox order ?ord1 delivery-begin) (type UINT) (value ?begin&:(or (and (>= ?begin 60) (> ?sec (- ?begin 60) )) (and (< ?begin 60) (>= ?sec ?begin )))))
-  (wm-fact (key refbox order ?ord1 delivery-end) (type UINT) (value ?end1&:(< ?sec (- ?end1 120) )))
+  (wm-fact (key refbox order ?ord1 delivery-begin) (type UINT) (value ?begin&:(or (and (>= ?begin 180) (> ?sec (- ?begin 180) )) (and (< ?begin 180) (>= ?sec ?begin )))))
+  (wm-fact (key refbox order ?ord1 delivery-end) (type UINT) (value ?end1&:(< ?sec (- ?end1 200) )))
 
 ; Earliest (modified) Deadline First
 
