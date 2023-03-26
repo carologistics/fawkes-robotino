@@ -61,7 +61,7 @@
     (domain-fact (name mps-team) (param-values ?cs ?team-color))
     (domain-fact (name mps-type) (param-values ?cs CS))
     (domain-fact (name cs-color) (param-values ?cs ?col))
-    (not domain-fact (name wp-on-shelf) (param-values ?wp ?cs ?spot))
+    (not (domain-fact (name wp-on-shelf) (param-values ?wp ?cs ?spot)))
 
     (not (and
         (goal (class GOAL-REFILL-SHELF) (id ?goal-id) (outcome ~COMPLETED))
