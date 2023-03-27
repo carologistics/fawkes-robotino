@@ -99,7 +99,7 @@
 				   (priority ?p-priority) (mode FORMULATED))
 	
 	(not (goal (id ~?id) (mode ~RETRACTED) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS|CENTRAL-RUN-SUBGOALS-IN-PARALLEL)
-	           (priority ?p-priority2&:(<= ?p-priority2 ?p-priority))))
+	           (priority ?p-priority2&:(< ?p-priority2 ?p-priority))))
 	=>
 	(modify ?tree (mode SELECTED) )
 )

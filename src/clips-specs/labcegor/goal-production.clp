@@ -574,13 +574,15 @@
 			              (bind ?r-req (wm-key-arg ?rs-status:key rn))
   )
 
-  (bind ?p-start 0)
+  (bind ?p-start 1)
   (do-for-all-facts ((?f order-priority-info))
 			          (neq ?f:order nil)
-                (if (> ?p-start ?f:next-prio) then
+                (if (< ?p-start ?f:next-prio) then
                   (bind ?p-start ?f:next-prio)
                 )
   )
+
+  (printout t "priority-starting is " ?p-start " for ord " ?ord)
 
 	(bind ?goal-tree-1
     (goal-tree-assert-central-run-parallel (sym-cat PRODUCT- ?ord -ST1) ?ord ?p-start 1
@@ -635,13 +637,14 @@
 	"Take goal from refbox"
   
   ;; All robots are in the field
-	(robot1-in-field)
+  (robot1-in-field)
   (robot2-in-field)
   (robot3-in-field)
 
   ;; Taking C1 complexity order and its end-time
   (wm-fact (key domain fact order-complexity args?  ord ?ord com C1)) 
-  (wm-fact (key refbox game-time) (type UINT) (value ?curr-time))  
+  (not (goal-meta (goal-id ?gmid) (order-id ?ord)))
+  (wm-fact (key refbox game-time) (type UINT) (values ?curr-time ?t1))  
   (wm-fact (key refbox order ?ord delivery-end) (type UINT) (value ?deli-end&:(> ?deli-end ?curr-time)))
 
   ;; Order/Product details
@@ -653,9 +656,10 @@
   (wm-fact (key refbox team-color) (value ?team-color))
 
   ;; Check there's no other pending order with earlier delivery time
-  (wm-fact (key domain fact order-complexity args? ord ?another-ord&~?ord com ?another-com))
+  ; (wm-fact (key domain fact order-complexity args? ord ?another-ord&~?ord com ?another-com))
+  (wm-fact (key refbox order ?another-ord&~?ord delivery-end) (type UINT) (value ?another-deli-end))
   (not (wm-fact (key domain fact order-fulfilled args? ord ?another-ord)))
-  (wm-fact (key refbox order ?another-ord delivery-end) (type UINT) (value ?another-deli-end&:(and (< ?deli-end ?another-deli-end) (> ?another-deli-end ?curr-time))))
+  (test (and (<= ?deli-end ?another-deli-end) (> ?another-deli-end ?curr-time)))
 
   ;; Check if there's less than 2 orders active
   (not (and 
@@ -663,9 +667,13 @@
              (goal-meta (order-id ?some-ord-2&:(and (neq ?some-ord-2 nil) (neq ?some-ord-1 ?some-ord-2))))
         )
   )
-  
+
+  (not (one-rule-in-progress))
 	=>
-	(bind ?ord-comp C1)     ; just for information
+	(bind ?orip (assert (one-rule-in-progress)))
+  (printout t "value of orip is " ?orip)
+
+  (bind ?ord-comp C1)     ; just for information
   (bind ?rnd-id (sym-cat ?ord - (gensym*) ))
   (bind ?wp (sym-cat WP - ?ord))
 
@@ -684,6 +692,9 @@
 	)
 
 	(bind ?goal-tree (g1-goal-production-assert-c1 ?base-clr ?rs ?rng-clr ?cs ?cap-clr C-DS ?ds-gate ?ord ?wp))
+  (if (neq ?orip nil) then
+    (retract ?orip)
+  )
 )
 
 
@@ -736,8 +747,8 @@
   (robot2-in-field)
   (robot3-in-field)
   (wm-fact (key domain fact order-complexity args?  ord ?ord com C0))
-  (wm-fact (key refbox game-time) (type UINT) (value ?curr-time))  
-  (wm-fact (key refbox order ?ord delivery-end) (type UINT) (value ?deli-end&:(> ?deli-end ?curr-time)))
+  (wm-fact (key refbox game-time) (type UINT) (values ?curr-time ?t1))  
+  (wm-fact (key refbox order ?ord delivery-end) (type UINT) (values ?deli-end&:(> ?deli-end ?curr-time) ?t2))
 
 	(wm-fact (key domain fact order-base-color args? ord ?ord  col ?base-clr)) 
 	(wm-fact (key domain fact order-cap-color args? ord ?ord col ?cap-clr)) 
@@ -746,19 +757,22 @@
   (wm-fact (key refbox team-color) (value ?team-color)) 
   
   ;; Check there's no other pending order with earlier delivery time
-  (wm-fact (key domain fact order-complexity args? ord ?another-ord&~?ord com ?another-com))
+  ; (wm-fact (key domain fact order-complexity args? ord ?another-ord&~?ord com ?another-com))
+  (wm-fact (key refbox order ?another-ord&~?ord delivery-end) (type UINT) (values ?another-deli-end ?t3))
   (not (wm-fact (key domain fact order-fulfilled args? ord ?another-ord)))
-  (wm-fact (key refbox order ?another-ord delivery-end) (type UINT) (value ?another-deli-end&:(and (< ?deli-end ?another-deli-end) (> ?another-deli-end ?curr-time))))
+  (test (and (<= ?deli-end ?another-deli-end) (> ?another-deli-end ?curr-time)))
+
 
   ;; Check if there's less than 2 orders active
-  (not (and 
-             (goal-meta (order-id ?some-ord-1&~nil))
-             (goal-meta (order-id ?some-ord-2&:(and (neq ?some-ord-2 nil) (neq ?some-ord-1 ?some-ord-2))))
-        )
-  )
-
+  ; (not (and 
+  ;            (goal-meta (order-id ?some-ord-1&~nil))
+  ;            (goal-meta (order-id ?some-ord-2&:(and (neq ?some-ord-2 nil) (neq ?some-ord-1 ?some-ord-2))))
+  ;       )
+  ; )
+  (not (one-rule-in-progress))
 	=>
-
+  (assert (one-rule-in-prpgress))
+  (printout -t "All CE works for C0")
 	(bind ?ord-comp C0)     ; just for information
   (bind ?rnd-id (sym-cat ?ord - (gensym*) ))
   (bind ?wp (sym-cat WP - ?ord))
@@ -773,4 +787,11 @@
 
 
 	(bind ?goal-tree (g1-goal-production-assert-c0 ?base-clr ?cs ?cap-clr C-DS ?ds-gate ?ord ?wp))
+  (retract one-rule-in-progress)
 )
+
+
+; ;;
+; TASK TO DO
+; 1. Add conditions at plan-action to check mps-state, delivery-time, etc etc. Because 2 C1 order failed as CS was in PROCESSSING mode and other wants it IDLE
+; ;;
