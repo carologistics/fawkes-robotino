@@ -110,3 +110,12 @@
     =>
     (retract ?gm)
 )
+
+(defrule goal-expander-GOAL-NOOP
+    ?g <- (goal (id ?goal-id) (class GOAL-NOOP) (mode SELECTED) (parent ?parent))
+    ?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
+
+    =>
+
+    (modify ?g (mode EVALUATED) (outcome COMPLETED))
+)
