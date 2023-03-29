@@ -200,35 +200,12 @@
 ;;;;;;;;;;;;  CHANGES BY VISHWAS JAIN  ;;;;;;;;;;;
 
 
-
-
-
-; (deffunction goal-production-find-a-robot (?task)
-;   "Find a free robot"
-;   (bind ?assn-robot nil)
-;   (if (eq ?assn-robot nil) then
-;     (if (not (do-for-all-facts ((?f goal-meta))
-; 			                (and (neq ?f:assigned-to robot1) (eq ?task PRIMARY_TASK))
-; 			                (bind ?assn-robot robot1)
-;              )
-;         ) then 
-;         (if (not (do-for-all-facts ((?f goal-meta))
-; 			                (and (neq ?f:assigned-to robot2) (eq ?task SECONDARY_TASK))
-; 			                (bind ?assn-robot robot2)
-;                  )
-;             ) then 
-;             (if (not (do-for-all-facts ((?f goal-meta))
-; 			                                  (and (neq ?f:assigned-to robot3)  (eq ?task SECONDARY_TASK))
-; 			                                  (bind ?assn-robot robot3)
-;                      )
-;                 ) then 
-;                   (bind ?assn-robot nil) (printout t "assn-robot has been assigned as nil")
-;             )
-;         )
-;     )
-;   )
-;   (return ?assn-robot)
-; )
+(defrule remove-goal-meta-upon-completion-g1
+  ?gm <- (goal-meta (goal-id ?id) (order-id ~nil))
+  ?g <- (goal (id ?id) (mode RETRACTED))
+  =>
+  (retract ?gm)
+)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -304,6 +281,27 @@
                 (sub-type SIMPLE)
                 (verbosity NOISY) (is-executable FALSE) 
                 (params rs ?rs ring-color ?rng-clr ring-req ?rng-req) 
+                (meta-template goal-meta)
+  )))
+  (assert (goal-meta (goal-id ?goal-id) (assigned-to nil) (sub-task-type ?task)))
+  (return ?g)
+)
+
+
+(deffunction goal-production-g1-c1-prepare-cs
+	(?ord ?cs ?op ?task ?num)
+
+	(bind ?goal-id (sym-cat PRODUCT- ?ord -n ?num - (gensym*)))
+
+  (bind ?cls (sym-cat PRODUCT- ?ord -T-prep-cs))
+  
+  ; (bind ?robot (goal-production-find-a-robot ?task))
+
+  (bind ?g (assert (goal (class ?cls)
+                (id ?goal-id)
+                (sub-type SIMPLE)
+                (verbosity NOISY) (is-executable FALSE) 
+                (params cs ?cs operation ?op) 
                 (meta-template goal-meta)
   )))
   (assert (goal-meta (goal-id ?goal-id) (assigned-to nil) (sub-task-type ?task)))
@@ -582,33 +580,45 @@
                 )
   )
 
-  (printout t "priority-starting is " ?p-start " for ord " ?ord)
-
-	(bind ?goal-tree-1
-    (goal-tree-assert-central-run-parallel (sym-cat PRODUCT- ?ord -ST1) ?ord ?p-start 1
-      (goal-production-g1-c1-spawn-wp ?ord ?wp PRIMARY_TASK 1)
-      (goal-production-g1-c1-prepare-bs ?ord ?bs ?base-clr PRIMARY_TASK 2)
-      (goal-production-g1-c1-bs-dispense ?ord ?bs ?base-clr ?wp PRIMARY_TASK 3)
-      ;(goal-production-g1-c1-prepare-rs ?ord ?rs ?rng-clr ?r-req SECONDARY_TASK 3)
-      (goal-production-g1-c1-cap-retrieve ?ord ?cs ?cap-clr SECONDARY_TASK 4)
-      ;(goal-production-g1-c1-transport-wp ?ord ?rs OUTPUT ?cs INPUT ?wp ?robot 4)
-      ;(goal-production-g1-c1-make-payment ?ord ?cs OUTPUT ?rs INPUT ?wp ?robot 4)
-    )
-  )
+	; (bind ?goal-tree-1
+  ;   (goal-tree-assert-central-run-parallel (sym-cat PRODUCT- ?ord -ST1) ?ord ?p-start 1
+  ;     (goal-production-g1-c1-spawn-wp ?ord ?wp PRIMARY_TASK 1)
+  ;     (goal-production-g1-c1-prepare-bs ?ord ?bs ?base-clr PRIMARY_TASK 2)
+  ;     (goal-production-g1-c1-bs-dispense ?ord ?bs ?base-clr ?wp PRIMARY_TASK 3)
+  ;     (goal-production-g1-c1-cap-retrieve ?ord ?cs ?cap-clr SECONDARY_TASK 5)
+  ;   )
+  ; )
 
   (bind ?goal-tree-2
     (if (eq ?r-req TWO) then
       (create$
-        (goal-tree-assert-central-run-parallel (sym-cat PRODUCT- ?ord -ST2) ?ord (+ 1 ?p-start) 1
-          (goal-production-g1-c1-make-payment-cs ?ord ?cs ?rs SECONDARY_TASK 5)
-          (goal-production-g1-c1-make-payment-bs ?ord ?bs ?rs SECONDARY_TASK 6)
+        (goal-tree-assert-central-run-parallel (sym-cat PRODUCT- ?ord -ST2) ?ord ?p-start 1
+          (goal-production-g1-c1-spawn-wp ?ord ?wp PRIMARY_TASK 1)
+          (goal-production-g1-c1-prepare-bs ?ord ?bs ?base-clr PRIMARY_TASK 2)
+          (goal-production-g1-c1-bs-dispense ?ord ?bs ?base-clr ?wp PRIMARY_TASK 3)
+          (goal-production-g1-c1-cap-retrieve ?ord ?cs ?cap-clr SECONDARY_TASK 5)
+          (goal-production-g1-c1-make-payment-cs ?ord ?cs ?rs SECONDARY_TASK 6)
+          (goal-production-g1-c1-make-payment-bs ?ord ?bs ?rs SECONDARY_TASK 7)
         )
       )
     else
       (if (eq ?r-req ONE) then
         (create$
-          (goal-tree-assert-central-run-parallel (sym-cat PRODUCT- ?ord -ST2) ?ord (+ 1 ?p-start) 1
-            (goal-production-g1-c1-make-payment-cs ?ord ?cs ?rs SECONDARY_TASK 5)
+          (goal-tree-assert-central-run-parallel (sym-cat PRODUCT- ?ord -ST2) ?ord ?p-start 1
+            (goal-production-g1-c1-spawn-wp ?ord ?wp PRIMARY_TASK 1)
+            (goal-production-g1-c1-prepare-bs ?ord ?bs ?base-clr PRIMARY_TASK 2)
+            (goal-production-g1-c1-bs-dispense ?ord ?bs ?base-clr ?wp PRIMARY_TASK 3)
+            (goal-production-g1-c1-cap-retrieve ?ord ?cs ?cap-clr SECONDARY_TASK 5)
+            (goal-production-g1-c1-make-payment-cs ?ord ?cs ?rs SECONDARY_TASK 6)
+          )
+        )
+        else
+        (create$
+          (goal-tree-assert-central-run-parallel (sym-cat PRODUCT- ?ord -ST2) ?ord ?p-start 1
+            (goal-production-g1-c1-spawn-wp ?ord ?wp PRIMARY_TASK 1)
+            (goal-production-g1-c1-prepare-bs ?ord ?bs ?base-clr PRIMARY_TASK 2)
+            (goal-production-g1-c1-bs-dispense ?ord ?bs ?base-clr ?wp PRIMARY_TASK 3)
+            (goal-production-g1-c1-cap-retrieve ?ord ?cs ?cap-clr SECONDARY_TASK 5)
           )
         )
       )
@@ -616,19 +626,20 @@
   )
 
   (bind ?goal-tree-3
-    (goal-tree-assert-central-run-all-sequence (sym-cat PRODUCT- ?ord -PT) ?ord (+ 2 ?p-start) 1
+    (goal-tree-assert-central-run-all-sequence (sym-cat PRODUCT- ?ord -PT) ?ord (+ 1 ?p-start) 1
       (goal-production-g1-c1-transport-wp ?ord ?bs OUTPUT ?rs INPUT ?wp PRIMARY_TASK 7)
       (goal-production-g1-c1-prepare-rs ?ord ?rs ?rng-clr ?r-req PRIMARY_TASK 8)
       (goal-production-g1-c1-mount-ring1 ?ord ?rs ?rng-clr ?r-req ?wp PRIMARY_TASK 9)
       (goal-production-g1-c1-transport-wp ?ord ?rs OUTPUT ?cs INPUT ?wp PRIMARY_TASK 10)
-      (goal-production-g1-c1-cap-mount ?ord ?cs ?cap-clr ?wp PRIMARY_TASK 11)
-      (goal-production-g1-c1-transport-wp ?ord ?cs OUTPUT ?ds INPUT ?wp PRIMARY_TASK 12)
-      (goal-production-g1-c1-deliver ?ord ?ds ?ds-gate ?base-clr ?cap-clr ?rng-clr ?wp PRIMARY_TASK 13)
+      ; (goal-production-g1-c1-prepare-cs ?ord ?cs MOUNT_CAP SECONDARY_TASK 11)
+      (goal-production-g1-c1-cap-mount ?ord ?cs ?cap-clr ?wp PRIMARY_TASK 12)
+      (goal-production-g1-c1-transport-wp ?ord ?cs OUTPUT ?ds INPUT ?wp PRIMARY_TASK 13)
+      (goal-production-g1-c1-deliver ?ord ?ds ?ds-gate ?base-clr ?cap-clr ?rng-clr ?wp PRIMARY_TASK 14)
     )
   )
 
-  (assert (order-priority-info (order ?ord) (next-prio (+ 2 ?p-start))))
-	(return ?goal-tree-1)
+  (assert (order-priority-info (order ?ord) (next-prio (+ 1 ?p-start))))
+	(return ?goal-tree-3)
 )
 
 
@@ -646,6 +657,7 @@
   (not (goal-meta (goal-id ?gmid) (order-id ?ord)))
   (wm-fact (key refbox game-time) (type UINT) (values ?curr-time ?t1))  
   (wm-fact (key refbox order ?ord delivery-end) (type UINT) (value ?deli-end&:(> ?deli-end ?curr-time)))
+  (not (wm-fact (key domain fact order-fulfilled args? ord ?ord)))
 
   ;; Order/Product details
 	(wm-fact (key domain fact order-ring1-color args? ord ?ord col ?rng-clr)) 
@@ -667,6 +679,7 @@
              (goal-meta (order-id ?some-ord-2&:(and (neq ?some-ord-2 nil) (neq ?some-ord-1 ?some-ord-2))))
         )
   )
+
 
   (not (one-rule-in-progress))
 	=>
@@ -726,15 +739,15 @@
   )
 
   (bind ?goal-tree-2
-    (goal-tree-assert-central-run-all-sequence (sym-cat PRODUCT- ?ord -PT) ?ord (+ 1 ?p-start) 1
-      (goal-production-g1-c1-bs-dispense ?ord ?bs ?base-clr ?wp PRIMARY_TASK 4)
-      (goal-production-g1-c1-transport-wp ?ord ?bs OUTPUT ?cs INPUT ?wp PRIMARY_TASK 5)
-      (goal-production-g1-c1-cap-mount ?ord ?cs ?cap-clr ?wp PRIMARY_TASK 6)
-      (goal-production-g1-c0-deliver ?ord ?ds ?ds-gate ?base-clr ?cap-clr ?wp PRIMARY_TASK 7)
+    (goal-tree-assert-central-run-all-sequence (sym-cat PRODUCT- ?ord -PT) ?ord (+ 2 ?p-start) 1
+      (goal-production-g1-c1-bs-dispense ?ord ?bs ?base-clr ?wp PRIMARY_TASK 5)
+      (goal-production-g1-c1-transport-wp ?ord ?bs OUTPUT ?cs INPUT ?wp PRIMARY_TASK 6)
+      (goal-production-g1-c1-cap-mount ?ord ?cs ?cap-clr ?wp PRIMARY_TASK 7)
+      (goal-production-g1-c0-deliver ?ord ?ds ?ds-gate ?base-clr ?cap-clr ?wp PRIMARY_TASK 8)
     )
   )
 
-   (assert (order-priority-info (order ?ord) (next-prio (+ 1 ?p-start))))
+   (assert (order-priority-info (order ?ord) (next-prio (+ 2 ?p-start))))
 
 	(return ?goal-tree-1)
 )
@@ -793,5 +806,5 @@
 
 ; ;;
 ; TASK TO DO
-; 1. Add conditions at plan-action to check mps-state, delivery-time, etc etc. Because 2 C1 order failed as CS was in PROCESSSING mode and other wants it IDLE
+; 1. The problem is, from O3-ST, the CS is prepared for cap_mount. But before cap can be mount, the O1-ST starts cap_retrieve which is not possible.
 ; ;;
