@@ -151,8 +151,9 @@
 
     (goal (id ?parent) (class GOAL-PAY-RING3))
 
+    (domain-fact (name order-ring3-color ) (param-values ?ord ?r3col))
     (domain-fact (name rs-ring-spec) (param-values ?rs ?r3col ?r3cost))
-    (domain-fact (name order-ring2-color ) (param-values ?ord ?r3col))
+    
 
     (domain-fact (name mps-team) (param-values ?cs ?team-color))
     (domain-fact (name mps-type) (param-values ?cs CS))
