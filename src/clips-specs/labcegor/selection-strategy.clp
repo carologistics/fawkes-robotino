@@ -8,7 +8,7 @@
 ; Goal is in sliding window 
   (wm-fact (key refbox game-time) (is-list TRUE) (type UINT) (values ?sec ?nsec))
   (wm-fact (key refbox order ?ord1 delivery-begin) (type UINT) (value ?begin&:(or (and (>= ?begin 100) (> ?sec (- ?begin 100) )) (and (< ?begin 100) (>= ?sec ?begin )))))
-  (wm-fact (key refbox order ?ord1 delivery-end) (type UINT) (value ?end1&:(< ?sec (- ?end1 120) )))
+  (wm-fact (key refbox order ?ord1 delivery-end) (type UINT) (value ?end1&:(< ?sec (- ?end1 80) )))
 
 ; Check for BS availability 
 (domain-fact (name mps-team) (param-values ?bs ?team-color))
@@ -49,7 +49,7 @@
 ; Goal is in sliding window 
   (wm-fact (key refbox game-time) (is-list TRUE) (type UINT) (values ?sec ?nsec))
   (wm-fact (key refbox order ?ord1 delivery-begin) (type UINT) (value ?begin&:(or (and (>= ?begin 100) (> ?sec (- ?begin 100) )) (and (< ?begin 100) (>= ?sec ?begin )))))
-  (wm-fact (key refbox order ?ord1 delivery-end) (type UINT) (value ?end1&:(< ?sec (- ?end1 120) )))
+  (wm-fact (key refbox order ?ord1 delivery-end) (type UINT) (value ?end1&:(< ?sec (- ?end1 100) )))
 
 ; Check for BS availability 
 (domain-fact (name mps-team) (param-values ?bs ?team-color))
@@ -90,7 +90,7 @@
 ; Goal is in sliding window 
   (wm-fact (key refbox game-time) (is-list TRUE) (type UINT) (values ?sec ?nsec))
   (wm-fact (key refbox order ?ord1 delivery-begin) (type UINT) (value ?begin&:(or (and (>= ?begin 100) (> ?sec (- ?begin 100) )) (and (< ?begin 100) (>= ?sec ?begin )))))
-  (wm-fact (key refbox order ?ord1 delivery-end) (type UINT) (value ?end1&:(< ?sec (- ?end1 120) )))
+  (wm-fact (key refbox order ?ord1 delivery-end) (type UINT) (value ?end1&:(< ?sec (- ?end1 110) )))
 
 ; Check for BS availability 
 (domain-fact (name mps-team) (param-values ?bs ?team-color))
@@ -131,7 +131,7 @@
 ; Goal is in sliding window 
   (wm-fact (key refbox game-time) (is-list TRUE) (type UINT) (values ?sec ?nsec))
   (wm-fact (key refbox order ?ord1 delivery-begin) (type UINT) (value ?begin&:(or (and (>= ?begin 180) (> ?sec (- ?begin 180) )) (and (< ?begin 180) (>= ?sec ?begin )))))
-  (wm-fact (key refbox order ?ord1 delivery-end) (type UINT) (value ?end1&:(< ?sec (- ?end1 200) )))
+  (wm-fact (key refbox order ?ord1 delivery-end) (type UINT) (value ?end1&:(< ?sec (- ?end1 160) )))
 
 ; Check for BS availability 
 (domain-fact (name mps-team) (param-values ?bs ?team-color))
