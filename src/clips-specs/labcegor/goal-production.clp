@@ -139,16 +139,19 @@
 ;--------------------------------------mygoal------------------------
 (defrule goal-production-create-mygoal
   "Enter the field (drive outside of the starting box)."
-  ; what this mean
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key central agent robot args? r ?robot))
   (wm-fact (key domain fact entered-field args? r ?robot))
-  (not (goal (id ?some-goal-id) (class C0-ORDER)))
   (domain-facts-loaded)
   (wm-fact (key refbox team-color) (value ?team-color))
 
-  ; info about base
 	(wm-fact (key domain fact order-complexity args? ord ?order com C0))
+  ; order not done yet (avoid duplicate deliver
+  (not (wm-fact (key domain fact order-fulfilled args? ord ?order)))
+  ; no C0 goal doing
+  (not (goal (id ?some-goal-id) (class C0-ORDER)))
+
+  ; info about base
 	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   ; info about cap
 	(wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))

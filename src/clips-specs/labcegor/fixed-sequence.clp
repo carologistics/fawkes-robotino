@@ -194,7 +194,7 @@
 		    (bind ?params (create$ ?order ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color ?ring2-color)))
 		(case C3 then
 		    (bind ?params (create$ ?order ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color ?ring2-color ?ring3-color)))
-)
+	)
 
 	(plan-assert-sequential INSTRUCT-DS-DELIVER-PLAN ?goal-id ?robot
 		(plan-assert-safe-move ?robot ?curr-loc ?curr-side ?mps INPUT
@@ -423,28 +423,6 @@
 	(modify ?g (mode EXPANDED) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS))
 )
 
-
-
-(defrule goal-expander-c1
-	?g <- (goal (id ?goal-id) (mode FORMULATED) (class C1-ORDER)
-			(params wp ?wp base-color ?base-color cap-color ?cap-color cc ?cc target-mps ?mps) 
-			)
-	=>
-	; leafgoal 1-2 Prepare and get base
-	(bind ?goal-id-1 (sym-cat PRE-GET-BASE-GOAL- (gensym*)))
-	(assert (goal (class PRE-GET-BASE-GOAL)
-                (id ?goal-id-1-2)
-                (sub-type SIMPLE)
-                (parent ?goal-id)
-                (verbosity NOISY) (is-executable TRUE)
-                (meta-template goal-meta)
-                (params wp ?wp target-mps C-BS target-side OUTPUT base-color ?base-color)
-          ))
-	(assert (goal-meta (goal-id ?goal-id-1) (assigned-to nil)))
-
-
-	(modify ?g (mode EXPANDED) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS))
-)
 
 
 
