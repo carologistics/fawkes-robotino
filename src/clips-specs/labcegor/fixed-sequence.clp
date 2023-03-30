@@ -249,7 +249,7 @@
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
  	            (params bs ?bs bs-clr ?bs-clr workpiece ?wp))
  	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) )
-
+	(wm-fact (key domain fact mps-state args? m ?bs s PROCESSING|READY-AT-OUTPUT))
 	=>
 	(bind ?action-class (sym-cat BASE-DISPENSE- (gensym*)))
 	(plan-assert-sequential ?action-class ?goal-id ?robot
@@ -268,7 +268,7 @@
 	(wm-fact (key domain fact mps-state args? m ?rs s PROCESSING|READY-AT-OUTPUT))
 
 	=>
-
+	(printout t "Ring-requirement is " ?rs ?rng-clr ?rng-req)
 	(bind ?action-class (sym-cat MOUNT-RING1- (gensym*)))
 	(bind ?a (sym-to-int ?rng-before))
   	(bind ?b (sym-to-int ?rng-req))
@@ -276,6 +276,28 @@
 
 	(plan-assert-sequential ?action-class ?goal-id ?robot
 		(plan-assert-action rs-mount-ring1 ?rs ?wp ?rng-clr ?rng-before ?rng-after ?rng-req)
+	)	
+	(modify ?g (mode EXPANDED))
+)
+
+(defrule goal-expander-g1-c1-mount-ring2
+"Mount one ring"
+	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
+ 	            (params rs ?rs ring-clr1 ?rng-clr1 ring-clr2 ?rng-clr2 ring-req ?rng-req workpiece ?wp))
+ 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(wm-fact (key domain fact rs-filled-with args? m ?rs n ?rng-before ))
+	(wm-fact (key domain fact mps-state args? m ?rs s PROCESSING|READY-AT-OUTPUT))
+
+	=>
+		(printout t "Ring-requirement is " ?rs ?rng-clr ?rng-req)
+
+	(bind ?action-class (sym-cat MOUNT-RING2- (gensym*)))
+	(bind ?a (sym-to-int ?rng-before))
+  	(bind ?b (sym-to-int ?rng-req))
+  	(bind ?rng-after (int-to-sym (- ?a ?b)))
+
+	(plan-assert-sequential ?action-class ?goal-id ?robot
+		(plan-assert-action rs-mount-ring2 ?rs ?wp ?rng-clr1 ?rng-clr2 ?rng-before ?rng-after ?rng-req)
 	)	
 	(modify ?g (mode EXPANDED))
 )
@@ -311,7 +333,7 @@
   	(wm-fact (key refbox order ?ord delivery-begin) (type UINT) (value ?deli-begin))
 	(test (or (> ?curr-time ?deli-end) (and (> ?curr-time ?deli-begin) (< ?curr-time ?deli-end))))
 	=>
-	(bind ?action-class (sym-cat DELIVER- (gensym*)))
+	(bind ?action-class (sym-cat DELIVER-C1- (gensym*)))
 	(plan-assert-sequential ?action-class ?goal-id ?robot
 		(plan-assert-action prepare-ds ?ds ?ord)
 		(plan-assert-action fulfill-order-c1 ?ord ?wp ?ds ?ds-gate ?base-clr ?cap-clr ?rng-clr)
@@ -329,14 +351,15 @@
 	(wm-fact (key domain fact mps-state args? m ?ds s IDLE))
 	(wm-fact (key domain fact order-delivery-begin args? ord ?ord))
 	=>
-	(bind ?action-class (sym-cat DELIVER- (gensym*)))
+	(bind ?action-class (sym-cat DELIVER-C0 (gensym*)))
 	(plan-assert-sequential ?action-class ?goal-id ?robot
 		(plan-assert-action prepare-ds ?ds ?ord)
 		(plan-assert-action fulfill-order-c0 ?ord ?wp ?ds ?ds-gate ?base-clr ?cap-clr)
 	)	
 	(modify ?g (mode EXPANDED))
 )
-	
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  GROUP 1 SERIAL EXECUTION ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
