@@ -120,8 +120,10 @@ clips-executive:
             file: labcegor/simtest.clp
           - name: util-goals
             file: labcegor/util-goals.clp
-          - name: order-goals
-            file: labcegor/order-goals.clp
+          - name: order-goals-expansion
+            file: labcegor/order-goals-expansion.clp
+          - name: order-goals-formulation
+            file: labcegor/order-goals-formulation.clp
           - name: selection-strategy
             file: labcegor/selection-strategy.clp
 
