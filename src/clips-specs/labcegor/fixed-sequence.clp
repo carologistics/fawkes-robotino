@@ -208,33 +208,70 @@
 	            (params target-mps ?mps
 	                    ring-color ?ring-color wp ?wp))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-loc side ?curr-side))
 	(wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring-color rn ?req))
 	(wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before))
 	(wm-fact (key domain fact rs-sub args? minuend ?rs-before subtrahend
 	                                       ?req difference ?rs-after))
-	(wm-fact (key wp meta next-step args? wp ?wp) (value ?step&RING1|RING2|RING3))
+	;(wm-fact (key wp meta next-step args? wp ?wp) (value ?step&RING1|RING2|RING3))
 	=>
-	(bind ?num (string-to-field ( sub-string 5 5 ?step) ))
-	(bind ?prev-rings (create$ ))
-	(loop-for-count (?count 1 (- ?num 1))
-	   (do-for-fact ((?ring wm-fact))
-	      (and (wm-key-prefix ?ring:key (create$ domain fact (sym-cat wp-ring ?count -color)))
-	           (eq (wm-key-arg ?ring:key wp) ?wp))
-	      (bind ?prev-rings (append$ ?prev-rings (wm-key-arg ?ring:key col)))
-	))
+	;(bing ?rs-after (int-to-sym (- (sym-to-int ?rs-before) (sym-to-int ?req))))
 	(plan-assert-sequential INSTRUCT-TO-MOUNT-RING-PLAN ?goal-id ?robot
 		(plan-assert-safe-move ?robot ?curr-loc ?curr-side ?mps INPUT
 			(plan-assert-action wp-put ?robot ?wp ?mps INPUT)
 			(plan-assert-action prepare-rs
 				?mps ?ring-color ?rs-before ?rs-after ?req )
-			(plan-assert-action
-				(sym-cat rs-mount-ring (sub-string 5 5 ?step) )
-				?mps ?wp ?ring-color ?prev-rings ?rs-before ?rs-after ?req )))
+			(plan-assert-action rs-mount-ring1 ?mps ?wp ?ring-color ?rs-before ?rs-after ?req )))
 	(modify ?g (mode EXPANDED))
 )
 
+(defrule goal-expander-rs-payment
+	?g <- (goal (id ?goal-id) (class RS-PAYMENT) (mode SELECTED)
+	            (params rs ?rs cs ?cs bs ?bs
+	                    ring-color ?ring-color))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(wm-fact (key domain fact wp-on-shelf args?  wp ?cc m ?cs spot ?cc-spot))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-loc side ?curr-side))
+	(wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring-color rn ?req))
+	(wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before))
+	=>
+	
+	(bind ?rs-after1 (int-to-sym (+ (sym-to-int ?rs-before) 1)))
+	(if (eq ?req TWO)
+	then
+		(bind ?rs-after2 (int-to-sym (+ (sym-to-int ?rs-before) 2)))
+	 	(bind ?wp-for-pyament(sym-cat AB- (gensym*)) )
+	 	(plan-assert-sequential RING-PAYMENT-TWO ?goal-id ?robot
+			(plan-assert-safe-move ?robot ?curr-loc ?curr-side ?cs INPUT
+				(plan-assert-action wp-get-shelf ?robot ?cc ?cs ?cc-spot)
+				(plan-assert-action move ?robot ?cs INPUT ?rs INPUT)	
+				(plan-assert-action wp-put-slide-cc ?robot ?cc ?rs ?rs-before ?rs-after1)
+
+				(plan-assert-action spawn-wp ?wp-for-pyament ?robot)
+				(plan-assert-action prepare-bs ?bs OUTPUT BASE_CLEAR)
+				(plan-assert-action bs-dispense ?bs OUTPUT ?wp-for-pyament  BASE_CLEAR)
+				(plan-assert-action move ?robot ?rs INPUT ?bs OUTPUT)
+				(plan-assert-action wp-get ?robot ?wp-for-pyament  ?bs OUTPUT)
+				(plan-assert-action move ?robot ?bs OUTPUT ?rs INPUT)	
+				(plan-assert-action wp-put-slide-cc ?robot ?wp-for-pyament ?rs-after1 ?rs-after2)
+			)
+	 	)
+	 else
+		(if (eq ?req ONE)
+		then
+			(plan-assert-sequential RING-PAYMENT-ONE ?goal-id ?robot
+				(plan-assert-safe-move ?robot ?curr-loc ?curr-side ?cs INPUT
+					(plan-assert-action wp-get-shelf ?robot ?cc ?cs ?cc-spot)
+					(plan-assert-action move ?robot ?cs INPUT ?rs INPUT)	
+					(plan-assert-action wp-put-slide-cc ?robot ?cc ?rs ?rs-before ?rs-after1)
+				)
+			)
+		 else
+			 (plan-assert-safe-move ?robot ?curr-loc ?curr-side START INPUT)
+	 	)
+	 )
+	(modify ?g (mode RETRACTED))
+)
 
 (defrule goal-expander-c1-order
 	?g <- (goal (id ?goal-id) (mode FORMULATED) (class C1-ORDER))

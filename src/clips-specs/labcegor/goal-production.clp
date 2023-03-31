@@ -282,29 +282,41 @@
 	)
 	(assert (goal-meta (goal-id ?goal-id-2-2) (assigned-to nil)))
 
-  ; subgoal 3-1 mount ring upon base
-  (bind ?goal-id-3-1 (sym-cat INSTRUCT-RS-MOUNT-RING- (gensym*)))
-	(assert (goal (class INSTRUCT-RS-MOUNT-RING)
+  ; subgoal 3-1 pay for the ring
+  (bind ?goal-id-3-1 (sym-cat RS-PAYMENT- (gensym*)))
+	(assert (goal (class RS-PAYMENT)
                 (id ?goal-id-3-1)
+                (sub-type SIMPLE)
+                (parent ?goal-id-3)
+                (params rs ?rs1 cs ?mps  bs C-BS ring-color ?ring1-color)
+                (verbosity NOISY) (is-executable TRUE)
+                (meta-template goal-meta))
+  )
+	(assert (goal-meta (goal-id ?goal-id-3-1) (assigned-to nil)))
+
+  ; subgoal 3-2 mount ring upon base
+  (bind ?goal-id-3-2 (sym-cat INSTRUCT-RS-MOUNT-RING- (gensym*)))
+	(assert (goal (class INSTRUCT-RS-MOUNT-RING)
+                (id ?goal-id-3-2)
                 (sub-type SIMPLE)
                 (parent ?goal-id-3)
                 (params target-mps ?rs1 ring-color ?ring1-color wp ?wp)
                 (verbosity NOISY) (is-executable TRUE)
                 (meta-template goal-meta))
   )
-	(assert (goal-meta (goal-id ?goal-id-3-1) (assigned-to nil)))
+	(assert (goal-meta (goal-id ?goal-id-3-2) (assigned-to nil)))
 
 ; subgoal 3-2 get the ring-mounted base
-  (bind ?goal-id-3-2 (sym-cat GET-RING-MOUNTED-BASE-GOAL- (gensym*)))
+  (bind ?goal-id-3-3 (sym-cat GET-RING-MOUNTED-BASE-GOAL- (gensym*)))
 	(assert (goal (class GET-RING-MOUNTED-BASE-GOAL)
-                (id ?goal-id-3-2)
+                (id ?goal-id-3-3)
                 (sub-type SIMPLE)
                 (parent ?goal-id-3)
 	              (params wp ?wp target-mps ?rs1)
                 (verbosity NOISY) (is-executable TRUE)
                 (meta-template goal-meta))
 	)
-	(assert (goal-meta (goal-id ?goal-id-3-2) (assigned-to nil)))
+	(assert (goal-meta (goal-id ?goal-id-3-3) (assigned-to nil)))
 
 ;buffer  1-1-1 buffer the cap
   (bind ?goal-id-1-1-1 (sym-cat BUFFER-CAP-GOAL- (gensym*)))
@@ -391,10 +403,20 @@
 	(modify ?g (mode SELECTED))
 )
 
+(defrule goal-reasoner-ring-payment-select
+	?g <- (goal (id ?goal-id) (class RS-PAYMENT) (mode FORMULATED))
+  ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
+  (goal (class PRE-GET-BASE-GOAL) (mode RETRACTED))
+	=>
+  ; assign robot
+  (modify ?gm (assigned-to robot3))
+	(modify ?g (mode SELECTED))
+)
+
 (defrule goal-reasoner-mount-ring-goal-select
 	?g <- (goal (id ?goal-id) (class INSTRUCT-RS-MOUNT-RING) (mode FORMULATED))
   ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
-  (goal (class PRE-GET-BASE-GOAL) (mode RETRACTED))
+  (goal (class RS-PAYMENT) (mode RETRACTED))
   	; if avaliable robts ?
   ;(not (goal-meta (assigned-to ?robot)))
 	=>
@@ -402,7 +424,6 @@
   (modify ?gm (assigned-to robot2))
 	(modify ?g (mode SELECTED))
 )
-
 
 (defrule goal-reasoner-get-mounted-cap-goal-select
 	?g <- (goal (id ?goal-id) (class GET-MOUNTED-BASE-GOAL) (mode FORMULATED))
