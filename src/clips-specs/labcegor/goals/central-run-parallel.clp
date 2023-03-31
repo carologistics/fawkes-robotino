@@ -102,8 +102,9 @@
 	?tree <- (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL) (mode ~FORMULATED&~RETRACTED) (priority ?p-priority) )
 
 	?child <- (goal (id ?sub-goal) (parent ?id) (sub-type SIMPLE) (mode FORMULATED))
-	(wm-fact (key central agent robot args? r ?curr-robot))
 	?gm <- (goal-meta (goal-id ?sub-goal) (sub-task-type ?task) (assigned-to nil))
+
+	(wm-fact (key central agent robot args? r ?curr-robot))
 	(test (or (and (eq ?task SECONDARY_TASK) (or (eq ?curr-robot robot2) (eq ?curr-robot robot3)))
 	          (and (eq ?task PRIMARY_TASK) (eq ?curr-robot robot1))))
 	=>

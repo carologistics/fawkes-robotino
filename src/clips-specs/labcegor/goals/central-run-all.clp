@@ -112,8 +112,8 @@
 	(not (goal (id ~?sub-goal) (parent ?id) (mode ~RETRACTED)
 	           (priority ?c-priority2&:(< ?c-priority2 ?c-priority))))
 
-	(wm-fact (key central agent robot args? r ?curr-robot))
 	?gm <- (goal-meta (goal-id ?sub-goal) (sub-task-type ?task) (assigned-to nil))
+	(wm-fact (key central agent robot args? r ?curr-robot))
 	(test (or (and (eq ?task SECONDARY_TASK) (or (eq ?curr-robot robot2) (eq ?curr-robot robot3)))
 	          (and (eq ?task PRIMARY_TASK) (eq ?curr-robot robot1))))
 	=>

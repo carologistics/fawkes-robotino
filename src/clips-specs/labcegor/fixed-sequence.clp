@@ -80,6 +80,8 @@
 "Spawn a WP"
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
  	            (params workpiece ?wp))
+
+	
  	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) )
  	=>
 	(bind ?action-class (sym-cat SPAWN-WP- (gensym*)))
@@ -148,34 +150,54 @@
 	(wm-fact (key domain fact at args?  r ?robot m ?at-mps side ?at-side )) 
 	(wm-fact (key domain fact wp-on-shelf args?  wp ?cc m ?cs spot ?cc-spot)) 
 	(wm-fact (key domain fact cs-can-perform args? m ?cs op RETRIEVE_CAP))
+	; (wm-fact (key domain fact mps-side-free args? m ?cs side INPUT))
 	=>
 	(bind ?action-class (sym-cat CAP-RETRIEVE- (gensym*)))
 	(plan-assert-sequential ?action-class ?goal-id ?robot
-		(plan-assert-action move ?robot ?at-mps ?at-side ?cs INPUT)
-		(plan-assert-action wp-get-shelf ?robot ?cc ?cs ?cc-spot)
-		(plan-assert-action wp-put ?robot ?cc ?cs INPUT)
-		(plan-assert-action prepare-cs ?cs RETRIEVE_CAP)
-		(plan-assert-action cs-retrieve-cap ?cs ?cc ?cap-clr)
-		(plan-assert-action move ?robot ?cs INPUT ?cs OUTPUT)
-		(plan-assert-action wp-get ?robot ?cc ?cs OUTPUT)
-		(plan-assert-action wp-discard ?robot ?cc)
-		(plan-assert-action move ?robot ?cs OUTPUT ?cs WAIT)
-
+		(if (or (neq ?at-mps ?cs) (neq ?at-side INPUT)) then 
+		(create$
+			(plan-assert-action move ?robot ?at-mps ?at-side ?cs INPUT)
+			(plan-assert-action wp-get-shelf ?robot ?cc ?cs ?cc-spot)
+			(plan-assert-action wp-put ?robot ?cc ?cs INPUT)
+			(plan-assert-action prepare-cs ?cs RETRIEVE_CAP)
+			(plan-assert-action cs-retrieve-cap ?cs ?cc ?cap-clr)
+			(plan-assert-action move ?robot ?cs INPUT ?cs OUTPUT)
+			(plan-assert-action wp-get ?robot ?cc ?cs OUTPUT)
+			(plan-assert-action wp-discard ?robot ?cc)
+			(plan-assert-action move ?robot ?cs OUTPUT ?cs WAIT)
+		)
+		else 
+		(create$
+			; (plan-assert-action move ?robot ?at-mps ?at-side ?cs INPUT)
+			(plan-assert-action wp-get-shelf ?robot ?cc ?cs ?cc-spot)
+			(plan-assert-action wp-put ?robot ?cc ?cs INPUT)
+			(plan-assert-action prepare-cs ?cs RETRIEVE_CAP)
+			(plan-assert-action cs-retrieve-cap ?cs ?cc ?cap-clr)
+			(plan-assert-action move ?robot ?cs INPUT ?cs OUTPUT)
+			(plan-assert-action wp-get ?robot ?cc ?cs OUTPUT)
+			(plan-assert-action wp-discard ?robot ?cc)
+			(plan-assert-action move ?robot ?cs OUTPUT ?cs WAIT)
+		)
+		)
 	)	
 	(modify ?g (mode EXPANDED))
 )
 
 
+
+
 (defrule goal-expander-g1-c1-make-payment-cs
 "Make one payment using already ready cap station"
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
- 	            (params cs ?cs rs ?rs ring-before ?rng-before ring-after ?rng-after))
+ 	            (params cs ?cs rs ?rs))
  	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) )
 	(wm-fact (key domain fact at args?  r ?robot m ?at-mps side ?at-side )) 
 	(wm-fact (key domain fact wp-on-shelf args?  wp ?cc m ?cs spot ?cc-spot)) 
-	; (wm-fact (key domain fact wp-at args?  wp ?cc m ?cs side OUTPUT)) 
-	(wm-fact (key domain fact rs-filled-with args? m ?rs n ?rs-before))
+	(wm-fact (key domain fact rs-filled-with args? m ?rs n ?rng-before))
 	=>
+	(bind ?a (sym-to-int ?rng-before))
+	(bind ?b  1)
+	(bind ?rng-after (int-to-sym (+ ?a ?b)))
 	(bind ?action-class (sym-cat PAYMENT-CS- (gensym*)))
 	(plan-assert-sequential ?action-class ?goal-id ?robot
 		(plan-assert-action move ?robot ?at-mps ?at-side ?cs INPUT)
@@ -191,12 +213,15 @@
 (defrule goal-expander-g1-c1-make-payment-bs
 "Make one payment using base station"
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
- 	            (params bs ?bs rs ?rs ring-before ?rng-before ring-after ?rng-after))
+ 	            (params bs ?bs rs ?rs))
  	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) )
 	(wm-fact (key domain fact at args?  r ?robot m ?at-mps side ?at-side )) 
 	(wm-fact (key domain fact wp-at args?  wp ?cc m ?cs side OUTPUT)) 
-	(wm-fact (key domain fact rs-filled-with args? m ?rs n ?rs-before))
+	(wm-fact (key domain fact rs-filled-with args? m ?rs n ?rng-before))
 	=>
+	(bind ?a (sym-to-int ?rng-before))
+	(bind ?b  1)
+	(bind ?rng-after (int-to-sym (+ ?a ?b)))
 	(bind ?action-class (sym-cat PAYMENT-BS- (gensym*)))
 	(bind ?p-cc (sym-cat CC- (gensym*)))
 	(plan-assert-sequential ?action-class ?goal-id ?robot
@@ -265,7 +290,7 @@
  	            (params rs ?rs ring-clr ?rng-clr ring-req ?rng-req workpiece ?wp))
  	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact rs-filled-with args? m ?rs n ?rng-before ))
-	(wm-fact (key domain fact mps-state args? m ?rs s PROCESSING|READY-AT-OUTPUT))
+	(wm-fact (key domain fact mps-state args? m ?rs s IDLE))
 
 	=>
 	(printout t "Ring-requirement is " ?rs ?rng-clr ?rng-req)
@@ -275,6 +300,7 @@
   	(bind ?rng-after (int-to-sym (- ?a ?b)))
 
 	(plan-assert-sequential ?action-class ?goal-id ?robot
+		(plan-assert-action prepare-rs ?rs ?rng-clr ?rng-before ?rng-after ?rng-req)
 		(plan-assert-action rs-mount-ring1 ?rs ?wp ?rng-clr ?rng-before ?rng-after ?rng-req)
 	)	
 	(modify ?g (mode EXPANDED))
@@ -286,10 +312,10 @@
  	            (params rs ?rs ring-clr1 ?rng-clr1 ring-clr2 ?rng-clr2 ring-req ?rng-req workpiece ?wp))
  	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact rs-filled-with args? m ?rs n ?rng-before ))
-	(wm-fact (key domain fact mps-state args? m ?rs s PROCESSING|READY-AT-OUTPUT))
+	(wm-fact (key domain fact mps-state args? m ?rs s IDLE))
 
 	=>
-		(printout t "Ring-requirement is " ?rs ?rng-clr ?rng-req)
+		; (printout t "Ring-requirement is " ?rs ?rng-clr ?rng-req)
 
 	(bind ?action-class (sym-cat MOUNT-RING2- (gensym*)))
 	(bind ?a (sym-to-int ?rng-before))
@@ -297,7 +323,32 @@
   	(bind ?rng-after (int-to-sym (- ?a ?b)))
 
 	(plan-assert-sequential ?action-class ?goal-id ?robot
-		(plan-assert-action rs-mount-ring2 ?rs ?wp ?rng-clr1 ?rng-clr2 ?rng-before ?rng-after ?rng-req)
+		(plan-assert-action prepare-rs ?rs ?rng-clr2 ?rng-before ?rng-after ?rng-req)
+		(plan-assert-action rs-mount-ring2 ?rs ?wp ?rng-clr2 ?rng-clr1 ?rng-before ?rng-after ?rng-req)
+	)	
+	(modify ?g (mode EXPANDED))
+)
+
+
+(defrule goal-expander-g1-c1-mount-ring3
+"Mount one ring"
+	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
+ 	            (params rs ?rs ring-clr1 ?rng-clr1 ring-clr2 ?rng-clr2 ring-clr3 ?rng-clr3 ring-req ?rng-req workpiece ?wp))
+ 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(wm-fact (key domain fact rs-filled-with args? m ?rs n ?rng-before ))
+	(wm-fact (key domain fact mps-state args? m ?rs s IDLE))
+
+	=>
+		; (printout t "Ring-requirement is " ?rs ?rng-clr ?rng-req)
+
+	(bind ?action-class (sym-cat MOUNT-RING3- (gensym*)))
+	(bind ?a (sym-to-int ?rng-before))
+  	(bind ?b (sym-to-int ?rng-req))
+  	(bind ?rng-after (int-to-sym (- ?a ?b)))
+
+	(plan-assert-sequential ?action-class ?goal-id ?robot
+		(plan-assert-action prepare-rs ?rs ?rng-clr3 ?rng-before ?rng-after ?rng-req)
+		(plan-assert-action rs-mount-ring3 ?rs ?wp ?rng-clr3 ?rng-clr1 ?rng-clr2 ?rng-before ?rng-after ?rng-req)
 	)	
 	(modify ?g (mode EXPANDED))
 )
@@ -359,6 +410,47 @@
 	(modify ?g (mode EXPANDED))
 )
 
+
+(defrule goal-expander-g1-c2-deliver
+"Prepare DS and deliver the order"
+	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
+ 	            (params order ?ord workpiece ?wp delivery-station ?ds ds-gate ?ds-gate base-clr ?base-clr cap-clr ?cap-clr rng-clr1 ?rng-clr1 rng-clr2 ?rng-clr2))
+ 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) )
+	(wm-fact (key domain fact mps-state args? m ?ds s IDLE))
+	; (or (wm-fact (key domain fact order-delivery-begin args? ord ?ord)) ((wm-fact (key domain fact order-delivery-end args? ord ?ord))))
+	(wm-fact (key refbox game-time) (type UINT) (values ?curr-time ?t1))  
+  	(wm-fact (key refbox order ?ord delivery-end) (type UINT) (value ?deli-end))
+  	(wm-fact (key refbox order ?ord delivery-begin) (type UINT) (value ?deli-begin))
+	(test (or (> ?curr-time ?deli-end) (and (> ?curr-time ?deli-begin) (< ?curr-time ?deli-end))))
+	=>
+	(bind ?action-class (sym-cat DELIVER-C1- (gensym*)))
+	(plan-assert-sequential ?action-class ?goal-id ?robot
+		(plan-assert-action prepare-ds ?ds ?ord)
+		(plan-assert-action fulfill-order-c2 ?ord ?wp ?ds ?ds-gate ?base-clr ?cap-clr ?rng-clr1 ?rng-clr2)
+	)	
+	(modify ?g (mode EXPANDED))
+)
+
+
+(defrule goal-expander-g1-c3-deliver
+"Prepare DS and deliver the order"
+	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
+ 	            (params order ?ord workpiece ?wp delivery-station ?ds ds-gate ?ds-gate base-clr ?base-clr cap-clr ?cap-clr rng-clr1 ?rng-clr1 rng-clr2 ?rng-clr2 rng-clr3 ?rng-clr3))
+ 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) )
+	(wm-fact (key domain fact mps-state args? m ?ds s IDLE))
+	; (or (wm-fact (key domain fact order-delivery-begin args? ord ?ord)) ((wm-fact (key domain fact order-delivery-end args? ord ?ord))))
+	(wm-fact (key refbox game-time) (type UINT) (values ?curr-time ?t1))  
+  	(wm-fact (key refbox order ?ord delivery-end) (type UINT) (value ?deli-end))
+  	(wm-fact (key refbox order ?ord delivery-begin) (type UINT) (value ?deli-begin))
+	(test (or (> ?curr-time ?deli-end) (and (> ?curr-time ?deli-begin) (< ?curr-time ?deli-end))))
+	=>
+	(bind ?action-class (sym-cat DELIVER-C1- (gensym*)))
+	(plan-assert-sequential ?action-class ?goal-id ?robot
+		(plan-assert-action prepare-ds ?ds ?ord)
+		(plan-assert-action fulfill-order-c3 ?ord ?wp ?ds ?ds-gate ?base-clr ?cap-clr ?rng-clr1 ?rng-clr2 ?rng-clr3)
+	)	
+	(modify ?g (mode EXPANDED))
+)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  GROUP 1 SERIAL EXECUTION ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
