@@ -7,7 +7,6 @@
     (domain-fact (name at) (param-values ?robot ?s ?side))
     ?rw <- (domain-fact (name robot-waiting) (param-values ?robot))
     (not (move-away-meta (goal-id ?goal-id) (robot ?robot) (mps ?s) (side ?side)))
-    ; IDEA: Could also try to match robot at machine that not belongs to the order blocking it (instead of robot-waiting)
     =>
     (bind ?goal-id (gensym*))
     (assert (goal (class GOAL-MOVE-AWAY)

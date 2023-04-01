@@ -8,7 +8,7 @@
 	?g <- (goal (id ?goal-id) (class GOAL-GET-BS) (mode SELECTED) (parent ?parent))
 	?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
     ?rw <- (domain-fact (name robot-waiting) (param-values ?robot))
-    (domain-object (name ?team-color) (type team-color)) ; This selects our team color, as this fact only exists for our own team
+    (domain-object (name ?team-color) (type team-color))
 
     (domain-fact (name order-base-color) (param-values ?ord ?basecol))
     (domain-fact (name mps-team) (param-values ?bs ?team-color))
@@ -32,7 +32,7 @@
     ?g <- (goal (id ?goal-id) (class GOAL-GET-CS) (mode SELECTED) (parent ?parent))
     ?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
     ?rw <- (domain-fact (name robot-waiting) (param-values ?robot))
-    (domain-object (name ?team-color) (type team-color)) ; This selects our team color, as this fact only exists for our own team
+    (domain-object (name ?team-color) (type team-color))
 
     (domain-fact (name order-cap-color) (param-values ?ord ?capcol))
 
@@ -57,7 +57,7 @@
     (modify ?g (mode EXPANDED))
     (modify ?m (assigned-to ?robot))
     (printout t "Robot " ?robot " was assigned GET-CS-" ?ord crlf)
-    (retract ?rw)  ;We must insert this again when done executing!
+    (retract ?rw)  
 
 
 )
@@ -100,7 +100,7 @@
     (modify ?m (assigned-to ?robot))
 
     (printout t "Robot " ?robot " was assigned to do a payment for GOAL-PAY-RING1-" ?ord crlf)
-    (retract ?rw)  ;We must insert this again when done executing!
+    (retract ?rw)  
 )
 
 ; expansion rule to do a payment for RING2 from CS
@@ -140,7 +140,7 @@
     (modify ?m (assigned-to ?robot))
 
     (printout t "Robot " ?robot " was assigned to do a payment for GOAL-PAY-RING2-" ?ord crlf)
-    (retract ?rw)  ;We must insert this again when done executing!
+    (retract ?rw)  
 )
 
 ; expansion rule to do a payment for RING3 from CS
@@ -181,7 +181,7 @@
     (modify ?m (assigned-to ?robot))
 
     (printout t "Robot " ?robot " was assigned to do a payment for GOAL-PAY-RING3-" ?ord crlf)
-    (retract ?rw)  ;We must insert this again when done executing!
+    (retract ?rw)  
 )
 
 ; expansion rule for mounting first ring
@@ -219,7 +219,7 @@
     (modify ?m (assigned-to ?robot))
 
     (printout t "Robot " ?robot " was assigned TO-RS1-" ?ord crlf)
-    (retract ?rw)  ;We must insert this again when done executing!
+    (retract ?rw)  
 )
 
 ; expansion rule for mounting second ring
@@ -258,7 +258,7 @@
     (modify ?m (assigned-to ?robot))
 
     (printout t "Robot " ?robot " was assigned TO-RS2-" ?ord crlf)
-    (retract ?rw)  ;We must insert this again when done executing!
+    (retract ?rw)  
 )
 
 ; expansion rule for mounting third ring
@@ -298,7 +298,7 @@
     (modify ?m (assigned-to ?robot))
 
     (printout t "Robot " ?robot " was assigned TO-RS3-" ?ord crlf)
-    (retract ?rw)  ;We must insert this again when done executing!
+    (retract ?rw)  
 )
 
 ;Expand Transport from any Station with fitting workpiece to CS
@@ -307,7 +307,7 @@
     ?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
     ?rw <- (domain-fact (name robot-waiting) (param-values ?robot))
     
-    (domain-object (name ?team-color) (type team-color)) ; This selects our team color, as this fact only exists for our own team
+    (domain-object (name ?team-color) (type team-color))
     (domain-fact (name order-base-color) (param-values ?ord ?basecol))
     (domain-fact (name order-ring1-color) (param-values ?ord ?ring1col))
     (domain-fact (name order-ring2-color) (param-values ?ord ?ring2col))
@@ -335,7 +335,7 @@
     (modify ?g (mode EXPANDED))
     (modify ?m (assigned-to ?robot))
     (printout t "Robot " ?robot " was assigned TO-CS-" ?ord crlf)
-    (retract ?rw)  ;We must insert this again when done executing!
+    (retract ?rw)  
 
 )
 
@@ -344,7 +344,7 @@
     ?g <- (goal (id ?goal-id) (class GOAL-DELIVER-C0) (mode SELECTED) (parent ?parent))
     ?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
     ?rw <- (domain-fact (name robot-waiting) (param-values ?robot))
-    (domain-object (name ?team-color) (type team-color)) ; This selects our team color, as this fact only exists for our own team
+    (domain-object (name ?team-color) (type team-color))
     (domain-fact (name mps-team) (param-values ?ds ?team-color))
     (domain-fact (name mps-type) (param-values ?ds DS))
 
@@ -375,7 +375,7 @@
     (modify ?g (mode EXPANDED))
     (modify ?m (assigned-to ?robot))
     (printout t "Robot " ?robot " was assigned DELIVER-C0-" ?ord crlf)
-    (retract ?rw)  ;We must insert this again when done executing!
+    (retract ?rw)  
 
 )
 
@@ -384,7 +384,7 @@
     ?g <- (goal (id ?goal-id) (class GOAL-DELIVER-C1) (mode SELECTED) (parent ?parent))
     ?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
     ?rw <- (domain-fact (name robot-waiting) (param-values ?robot))
-    (domain-object (name ?team-color) (type team-color)) ; This selects our team color, as this fact only exists for our own team
+    (domain-object (name ?team-color) (type team-color))
     (domain-fact (name mps-team) (param-values ?ds ?team-color))
     (domain-fact (name mps-type) (param-values ?ds DS))
 
@@ -415,7 +415,7 @@
     (modify ?g (mode EXPANDED))
     (modify ?m (assigned-to ?robot))
     (printout t "Robot " ?robot " was assigned DELIVER-C1-" ?ord crlf)
-    (retract ?rw)  ;We must insert this again when done executing!
+    (retract ?rw)  
 
 )
 
@@ -424,7 +424,7 @@
     ?g <- (goal (id ?goal-id) (class GOAL-DELIVER-C2) (mode SELECTED) (parent ?parent))
     ?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
     ?rw <- (domain-fact (name robot-waiting) (param-values ?robot))
-    (domain-object (name ?team-color) (type team-color)) ; This selects our team color, as this fact only exists for our own team
+    (domain-object (name ?team-color) (type team-color))
     (domain-fact (name mps-team) (param-values ?ds ?team-color))
     (domain-fact (name mps-type) (param-values ?ds DS))
 
@@ -455,7 +455,7 @@
     (modify ?g (mode EXPANDED))
     (modify ?m (assigned-to ?robot))
     (printout t "Robot " ?robot " was assigned DELIVER-C2-" ?ord crlf)
-    (retract ?rw)  ;We must insert this again when done executing!
+    (retract ?rw)  
 )
 
 ; Expand Transport C3 to DS
@@ -463,7 +463,7 @@
     ?g <- (goal (id ?goal-id) (class GOAL-DELIVER-C3) (mode SELECTED) (parent ?parent))
     ?m <- (goal-meta (goal-id ?goal-id) (order-id ?ord))
     ?rw <- (domain-fact (name robot-waiting) (param-values ?robot))
-    (domain-object (name ?team-color) (type team-color)) ; This selects our team color, as this fact only exists for our own team
+    (domain-object (name ?team-color) (type team-color))
     (domain-fact (name mps-team) (param-values ?ds ?team-color))
     (domain-fact (name mps-type) (param-values ?ds DS))
 
@@ -494,5 +494,5 @@
     (modify ?g (mode EXPANDED))
     (modify ?m (assigned-to ?robot))
     (printout t "Robot " ?robot " was assigned DELIVER-C3-" ?ord crlf)
-    (retract ?rw)  ;We must insert this again when done executing!
+    (retract ?rw)  
 )

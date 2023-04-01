@@ -2,6 +2,7 @@
 ; Assert goals
 ;----------------------------------------------------------------------------
 
+; Function to assert the correct amount of do-payment goals
 (deffunction assert-payment-goals (?goal-id-payring ?cost ?ord ?goal-id-root)
 
     (printout t "Calculated cost of " ?cost " for " ?goal-id-payring crlf)
@@ -52,6 +53,7 @@
     )
 )
 
+; Assert the goal-tree
 (defrule assign-order
     (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (not (and (domain-object (name ?robot) (type robot)) (not (domain-fact (name entered-field) (param-values ?robot)))))
