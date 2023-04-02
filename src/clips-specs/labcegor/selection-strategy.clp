@@ -19,6 +19,35 @@
   (wm-fact (key refbox order ?ord1 delivery-begin) (type UINT) (value ?begin&:(or (and (>= ?begin ?*C0_start*) (> ?sec (- ?begin ?*C0_start*) )) (and (< ?begin ?*C0_start*) (>= ?sec ?begin )))))
   (wm-fact (key refbox order ?ord1 delivery-end) (type UINT) (value ?end1&:(< ?sec (- ?end1 ?*C0_end*) )))
 
+  ; Earliest (modified) Deadline First - Does not consider machine-usage
+  (not (and 
+            (goal (id ?goal-id2) (mode FORMULATED) (parent nil) (type ACHIEVE) (sub-type ~nil) (class ?class1&GOAL-ORDER-C0))
+            (goal-meta (goal-id ?goal-id2) (order-id ?ord2))
+            (wm-fact (key refbox order ?ord2 delivery-begin) (type UINT) (value ?begin2&:(or (and (>= ?begin2 ?*C0_start*) (> ?sec (- ?begin2 ?*C0_start*) )) (and (< ?begin2 ?*C0_start*) (>= ?sec ?begin2 )))))
+            (wm-fact (key refbox order ?ord2 delivery-end) (type UINT) (value ?end2&:(and (< ?end2 ?end1) (< ?sec (- ?end2 ?*C0_end*) ))))
+        )
+  )
+  (not (and 
+            (goal (id ?goal-id3) (mode FORMULATED) (parent nil) (type ACHIEVE) (sub-type ~nil) (class ?class2&GOAL-ORDER-C1))
+            (goal-meta (goal-id ?goal-id3) (order-id ?ord3))
+            (wm-fact (key refbox order ?ord3 delivery-begin) (type UINT) (value ?begin3&:(or (and (>= ?begin3 ?*C1_start*) (> ?sec (- ?begin3 ?*C1_start*) )) (and (< ?begin3 ?*C1_start*) (>= ?sec ?begin3 )))))
+            (wm-fact (key refbox order ?ord3 delivery-end) (type UINT) (value ?end3&:(and (< ?end3 ?end1) (< ?sec (- ?end3 ?*C1_end*) ))))
+        )
+  )
+  (not (and 
+            (goal (id ?goal-id4) (mode FORMULATED) (parent nil) (type ACHIEVE) (sub-type ~nil) (class ?class3&GOAL-ORDER-C2))
+            (goal-meta (goal-id ?goal-id4) (order-id ?ord4))
+            (wm-fact (key refbox order ?ord4 delivery-begin) (type UINT) (value ?begin4&:(or (and (>= ?begin4 ?*C2_start*) (> ?sec (- ?begin4 ?*C2_start*) )) (and (< ?begin4 ?*C2_start*) (>= ?sec ?begin4 )))))
+            (wm-fact (key refbox order ?ord4 delivery-end) (type UINT) (value ?end4&:(and (< ?end4 ?end1) (< ?sec (- ?end4 ?*C2_end*) ))))
+        )
+  )
+  (not (and 
+            (goal (id ?goal-id5) (mode FORMULATED) (parent nil) (type ACHIEVE) (sub-type ~nil) (class ?class4&GOAL-ORDER-C3))
+            (goal-meta (goal-id ?goal-id5) (order-id ?ord5))
+            (wm-fact (key refbox order ?ord5 delivery-begin) (type UINT) (value ?begin5&:(or (and (>= ?begin5 ?*C3_start*) (> ?sec (- ?begin5 ?*C3_start*) )) (and (< ?begin5 ?*C3_start*) (>= ?sec ?begin5 )))))
+            (wm-fact (key refbox order ?ord5 delivery-end) (type UINT) (value ?end5&:(and (< ?end5 ?end1) (< ?sec (- ?end5 ?*C3_end*) ))))
+        )
+  )
 
 ; Check for BS availability 
 (domain-fact (name mps-team) (param-values ?bs ?team-color))
@@ -61,6 +90,36 @@
   (wm-fact (key refbox order ?ord1 delivery-begin) (type UINT) (value ?begin&:(or (and (>= ?begin ?*C1_start*) (> ?sec (- ?begin ?*C1_start*) )) (and (< ?begin ?*C1_start*) (>= ?sec ?begin )))))
   (wm-fact (key refbox order ?ord1 delivery-end) (type UINT) (value ?end1&:(< ?sec (- ?end1 ?*C1_end*) )))
 
+  ; Earliest (modified) Deadline First - Does not consider machine-usage
+  (not (and 
+            (goal (id ?goal-id2) (mode FORMULATED) (parent nil) (type ACHIEVE) (sub-type ~nil) (class ?class1&GOAL-ORDER-C0))
+            (goal-meta (goal-id ?goal-id2) (order-id ?ord2))
+            (wm-fact (key refbox order ?ord2 delivery-begin) (type UINT) (value ?begin2&:(or (and (>= ?begin2 ?*C0_start*) (> ?sec (- ?begin2 ?*C0_start*) )) (and (< ?begin2 ?*C0_start*) (>= ?sec ?begin2 )))))
+            (wm-fact (key refbox order ?ord2 delivery-end) (type UINT) (value ?end2&:(and (< ?end2 ?end1) (< ?sec (- ?end2 ?*C0_end*) ))))
+        )
+  )
+  (not (and 
+            (goal (id ?goal-id3) (mode FORMULATED) (parent nil) (type ACHIEVE) (sub-type ~nil) (class ?class2&GOAL-ORDER-C1))
+            (goal-meta (goal-id ?goal-id3) (order-id ?ord3))
+            (wm-fact (key refbox order ?ord3 delivery-begin) (type UINT) (value ?begin3&:(or (and (>= ?begin3 ?*C1_start*) (> ?sec (- ?begin3 ?*C1_start*) )) (and (< ?begin3 ?*C1_start*) (>= ?sec ?begin3 )))))
+            (wm-fact (key refbox order ?ord3 delivery-end) (type UINT) (value ?end3&:(and (< ?end3 ?end1) (< ?sec (- ?end3 ?*C1_end*) ))))
+        )
+  )
+  (not (and 
+            (goal (id ?goal-id4) (mode FORMULATED) (parent nil) (type ACHIEVE) (sub-type ~nil) (class ?class3&GOAL-ORDER-C2))
+            (goal-meta (goal-id ?goal-id4) (order-id ?ord4))
+            (wm-fact (key refbox order ?ord4 delivery-begin) (type UINT) (value ?begin4&:(or (and (>= ?begin4 ?*C2_start*) (> ?sec (- ?begin4 ?*C2_start*) )) (and (< ?begin4 ?*C2_start*) (>= ?sec ?begin4 )))))
+            (wm-fact (key refbox order ?ord4 delivery-end) (type UINT) (value ?end4&:(and (< ?end4 ?end1) (< ?sec (- ?end4 ?*C2_end*) ))))
+        )
+  )
+  (not (and 
+            (goal (id ?goal-id5) (mode FORMULATED) (parent nil) (type ACHIEVE) (sub-type ~nil) (class ?class4&GOAL-ORDER-C3))
+            (goal-meta (goal-id ?goal-id5) (order-id ?ord5))
+            (wm-fact (key refbox order ?ord5 delivery-begin) (type UINT) (value ?begin5&:(or (and (>= ?begin5 ?*C3_start*) (> ?sec (- ?begin5 ?*C3_start*) )) (and (< ?begin5 ?*C3_start*) (>= ?sec ?begin5 )))))
+            (wm-fact (key refbox order ?ord5 delivery-end) (type UINT) (value ?end5&:(and (< ?end5 ?end1) (< ?sec (- ?end5 ?*C3_end*) ))))
+        )
+  )
+
 ; Check for BS availability 
 (domain-fact (name mps-team) (param-values ?bs ?team-color))
 (domain-fact (name mps-type) (param-values ?bs BS))
@@ -102,6 +161,36 @@
   (wm-fact (key refbox order ?ord1 delivery-begin) (type UINT) (value ?begin&:(or (and (>= ?begin ?*C2_start*) (> ?sec (- ?begin ?*C2_start*) )) (and (< ?begin ?*C2_start*) (>= ?sec ?begin )))))
   (wm-fact (key refbox order ?ord1 delivery-end) (type UINT) (value ?end1&:(< ?sec (- ?end1 ?*C2_end*) )))
 
+  ; Earliest (modified) Deadline First - Does not consider machine-usage
+  (not (and 
+            (goal (id ?goal-id2) (mode FORMULATED) (parent nil) (type ACHIEVE) (sub-type ~nil) (class ?class1&GOAL-ORDER-C0))
+            (goal-meta (goal-id ?goal-id2) (order-id ?ord2))
+            (wm-fact (key refbox order ?ord2 delivery-begin) (type UINT) (value ?begin2&:(or (and (>= ?begin2 ?*C0_start*) (> ?sec (- ?begin2 ?*C0_start*) )) (and (< ?begin2 ?*C0_start*) (>= ?sec ?begin2 )))))
+            (wm-fact (key refbox order ?ord2 delivery-end) (type UINT) (value ?end2&:(and (< ?end2 ?end1) (< ?sec (- ?end2 ?*C0_end*) ))))
+        )
+  )
+  (not (and 
+            (goal (id ?goal-id3) (mode FORMULATED) (parent nil) (type ACHIEVE) (sub-type ~nil) (class ?class2&GOAL-ORDER-C1))
+            (goal-meta (goal-id ?goal-id3) (order-id ?ord3))
+            (wm-fact (key refbox order ?ord3 delivery-begin) (type UINT) (value ?begin3&:(or (and (>= ?begin3 ?*C1_start*) (> ?sec (- ?begin3 ?*C1_start*) )) (and (< ?begin3 ?*C1_start*) (>= ?sec ?begin3 )))))
+            (wm-fact (key refbox order ?ord3 delivery-end) (type UINT) (value ?end3&:(and (< ?end3 ?end1) (< ?sec (- ?end3 ?*C1_end*) ))))
+        )
+  )
+  (not (and 
+            (goal (id ?goal-id4) (mode FORMULATED) (parent nil) (type ACHIEVE) (sub-type ~nil) (class ?class3&GOAL-ORDER-C2))
+            (goal-meta (goal-id ?goal-id4) (order-id ?ord4))
+            (wm-fact (key refbox order ?ord4 delivery-begin) (type UINT) (value ?begin4&:(or (and (>= ?begin4 ?*C2_start*) (> ?sec (- ?begin4 ?*C2_start*) )) (and (< ?begin4 ?*C2_start*) (>= ?sec ?begin4 )))))
+            (wm-fact (key refbox order ?ord4 delivery-end) (type UINT) (value ?end4&:(and (< ?end4 ?end1) (< ?sec (- ?end4 ?*C2_end*) ))))
+        )
+  )
+  (not (and 
+            (goal (id ?goal-id5) (mode FORMULATED) (parent nil) (type ACHIEVE) (sub-type ~nil) (class ?class4&GOAL-ORDER-C3))
+            (goal-meta (goal-id ?goal-id5) (order-id ?ord5))
+            (wm-fact (key refbox order ?ord5 delivery-begin) (type UINT) (value ?begin5&:(or (and (>= ?begin5 ?*C3_start*) (> ?sec (- ?begin5 ?*C3_start*) )) (and (< ?begin5 ?*C3_start*) (>= ?sec ?begin5 )))))
+            (wm-fact (key refbox order ?ord5 delivery-end) (type UINT) (value ?end5&:(and (< ?end5 ?end1) (< ?sec (- ?end5 ?*C3_end*) ))))
+        )
+  )
+
 ; Check for BS availability 
 (domain-fact (name mps-team) (param-values ?bs ?team-color))
 (domain-fact (name mps-type) (param-values ?bs BS))
@@ -142,6 +231,36 @@
   (wm-fact (key refbox game-time) (is-list TRUE) (type UINT) (values ?sec ?nsec))
   (wm-fact (key refbox order ?ord1 delivery-begin) (type UINT) (value ?begin&:(or (and (>= ?begin ?*C3_start*) (> ?sec (- ?begin ?*C3_start*) )) (and (< ?begin ?*C3_start*) (>= ?sec ?begin )))))
   (wm-fact (key refbox order ?ord1 delivery-end) (type UINT) (value ?end1&:(< ?sec (- ?end1 ?*C3_end*) )))
+
+  ; Earliest (modified) Deadline First - Does not consider machine-usage
+  (not (and 
+          (goal (id ?goal-id2) (mode FORMULATED) (parent nil) (type ACHIEVE) (sub-type ~nil) (class ?class1&GOAL-ORDER-C0))
+          (goal-meta (goal-id ?goal-id2) (order-id ?ord2))
+          (wm-fact (key refbox order ?ord2 delivery-begin) (type UINT) (value ?begin2&:(or (and (>= ?begin2 ?*C0_start*) (> ?sec (- ?begin2 ?*C0_start*) )) (and (< ?begin2 ?*C0_start*) (>= ?sec ?begin2 )))))
+          (wm-fact (key refbox order ?ord2 delivery-end) (type UINT) (value ?end2&:(and (< ?end2 ?end1) (< ?sec (- ?end2 ?*C0_end*) ))))
+      )
+  )
+  (not (and 
+          (goal (id ?goal-id3) (mode FORMULATED) (parent nil) (type ACHIEVE) (sub-type ~nil) (class ?class2&GOAL-ORDER-C1))
+          (goal-meta (goal-id ?goal-id3) (order-id ?ord3))
+          (wm-fact (key refbox order ?ord3 delivery-begin) (type UINT) (value ?begin3&:(or (and (>= ?begin3 ?*C1_start*) (> ?sec (- ?begin3 ?*C1_start*) )) (and (< ?begin3 ?*C1_start*) (>= ?sec ?begin3 )))))
+          (wm-fact (key refbox order ?ord3 delivery-end) (type UINT) (value ?end3&:(and (< ?end3 ?end1) (< ?sec (- ?end3 ?*C1_end*) ))))
+      )
+  )
+  (not (and 
+          (goal (id ?goal-id4) (mode FORMULATED) (parent nil) (type ACHIEVE) (sub-type ~nil) (class ?class3&GOAL-ORDER-C2))
+          (goal-meta (goal-id ?goal-id4) (order-id ?ord4))
+          (wm-fact (key refbox order ?ord4 delivery-begin) (type UINT) (value ?begin4&:(or (and (>= ?begin4 ?*C2_start*) (> ?sec (- ?begin4 ?*C2_start*) )) (and (< ?begin4 ?*C2_start*) (>= ?sec ?begin4 )))))
+          (wm-fact (key refbox order ?ord4 delivery-end) (type UINT) (value ?end4&:(and (< ?end4 ?end1) (< ?sec (- ?end4 ?*C2_end*) ))))
+      )
+  )
+  (not (and 
+          (goal (id ?goal-id5) (mode FORMULATED) (parent nil) (type ACHIEVE) (sub-type ~nil) (class ?class4&GOAL-ORDER-C3))
+          (goal-meta (goal-id ?goal-id5) (order-id ?ord5))
+          (wm-fact (key refbox order ?ord5 delivery-begin) (type UINT) (value ?begin5&:(or (and (>= ?begin5 ?*C3_start*) (> ?sec (- ?begin5 ?*C3_start*) )) (and (< ?begin5 ?*C3_start*) (>= ?sec ?begin5 )))))
+          (wm-fact (key refbox order ?ord5 delivery-end) (type UINT) (value ?end5&:(and (< ?end5 ?end1) (< ?sec (- ?end5 ?*C3_end*) ))))
+      )
+  )
 
 ; Check for BS availability 
 (domain-fact (name mps-team) (param-values ?bs ?team-color))

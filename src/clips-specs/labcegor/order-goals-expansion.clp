@@ -321,7 +321,7 @@
     (domain-fact (name wp-ring3-color) (param-values ?wp ?ring3col))
     (domain-fact (name mps-team) (param-values ?s ?team-color))
 
-    (domain-fact (name cs-buffered) (param-values ?cs ?capcol)) ; PROBLEM:two robots on two different goals could go to the same cs
+    (domain-fact (name cs-buffered) (param-values ?cs ?capcol))
     (domain-fact (name at) (param-values ?robot ?fl1 ?fs1))
     =>
     (plan-assert-sequential TRANSPORT-TO-CS-PLAN ?goal-id ?robot
