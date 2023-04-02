@@ -237,40 +237,45 @@
 	=>
 	
 	(bind ?rs-after1 (int-to-sym (+ (sym-to-int ?rs-before) 1)))
-	(if (eq ?req TWO)
-	then
+	(if (eq ?req TWO) then
 		(bind ?rs-after2 (int-to-sym (+ (sym-to-int ?rs-before) 2)))
 	 	(bind ?wp-for-pyament(sym-cat AB- (gensym*)) )
 	 	(plan-assert-sequential RING-PAYMENT-TWO ?goal-id ?robot
 			(plan-assert-safe-move ?robot ?curr-loc ?curr-side ?cs INPUT
 				(plan-assert-action wp-get-shelf ?robot ?cc ?cs ?cc-spot)
+				
+				;zheli meige move douyao zuocheng yige subgoal
 				(plan-assert-action move ?robot ?cs INPUT ?rs INPUT)	
 				(plan-assert-action wp-put-slide-cc ?robot ?cc ?rs ?rs-before ?rs-after1)
-
 				(plan-assert-action spawn-wp ?wp-for-pyament ?robot)
 				(plan-assert-action prepare-bs ?bs OUTPUT BASE_CLEAR)
 				(plan-assert-action bs-dispense ?bs OUTPUT ?wp-for-pyament  BASE_CLEAR)
+				
 				(plan-assert-action move ?robot ?rs INPUT ?bs OUTPUT)
 				(plan-assert-action wp-get ?robot ?wp-for-pyament  ?bs OUTPUT)
+				
 				(plan-assert-action move ?robot ?bs OUTPUT ?rs INPUT)	
 				(plan-assert-action wp-put-slide-cc ?robot ?wp-for-pyament ?rs-after1 ?rs-after2)
 			)
 	 	)
-	 else
-		(if (eq ?req ONE)
-		then
+	else
+		(if (eq ?req ONE) then
 			(plan-assert-sequential RING-PAYMENT-ONE ?goal-id ?robot
 				(plan-assert-safe-move ?robot ?curr-loc ?curr-side ?cs INPUT
 					(plan-assert-action wp-get-shelf ?robot ?cc ?cs ?cc-spot)
+					
 					(plan-assert-action move ?robot ?cs INPUT ?rs INPUT)	
 					(plan-assert-action wp-put-slide-cc ?robot ?cc ?rs ?rs-before ?rs-after1)
 				)
 			)
-		 else
-			 (plan-assert-safe-move ?robot ?curr-loc ?curr-side START INPUT)
-	 	)
-	 )
-	(modify ?g (mode RETRACTED))
+		else
+			(plan-assert-sequential RING-PAYMENT-ZERO ?goal-id ?robot
+				(plan-assert-safe-move ?robot ?curr-loc ?curr-side ?cs INPUT
+				)
+			)
+		)
+	)
+	(modify ?g (mode EXPANDED))
 )
 
 (defrule goal-expander-c1-order
@@ -287,7 +292,7 @@
 )
 
 (defrule goal-expander-mount-ring-then-get-wp
-	?g <- (goal (id ?goal-id) (mode FORMULATED) (class MOUNT-RING-THEN-GET-WP-GOAL))
+	?g <- (goal (id ?goal-id) (mode FORMULATED) (class MOUNT-RING-GOAL))
 	=>
 	(modify ?g (mode EXPANDED))
 )

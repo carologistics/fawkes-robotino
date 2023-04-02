@@ -209,8 +209,8 @@
 	(assert (goal-meta (goal-id ?goal-id-2)))
 
 ; subgoal 3 mount ring upon base
-  (bind ?goal-id-3 (sym-cat MOUNT-RING-THEN-GET-WP-GOAL- (gensym*)))
-	(assert (goal (class MOUNT-RING-THEN-GET-WP-GOAL)
+  (bind ?goal-id-3 (sym-cat MOUNT-RING-GOAL- (gensym*)))
+	(assert (goal (class MOUNT-RING-GOAL)
                 (id ?goal-id-3)
                 (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
                 (parent ?goal-id-c1)
@@ -348,7 +348,7 @@
 (defrule goal-reasoner-mygoal-4-select
 	?g <- (goal (id ?goal-id) (class INSTRUCT-DS-DELIVER) (mode FORMULATED))
   ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
-   (goal (class GET-MOUNTED-BASE-GOAL) (mode RETRACTED))
+   (goal (class GET-MOUNTED-BASE-GOAL) (mode FINISHED))
 
   	; if avaliable robts ?
   ;(not (goal-meta (assigned-to ?robot)))
@@ -382,7 +382,7 @@
 (defrule goal-reasoner-discard-goal-select
 	?g <- (goal (id ?goal-id) (class DISCARD-GOAL) (mode FORMULATED))
   ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
-  (goal (class BUFFER-CAP-GOAL) (mode RETRACTED))
+  (goal (class BUFFER-CAP-GOAL) (mode FINISHED))
   	; if avaliable robts ?
   ;(not (goal-meta (assigned-to ?robot)))
 	=>
@@ -394,7 +394,7 @@
 (defrule goal-reasoner-mount-cap-goal-select
 	?g <- (goal (id ?goal-id) (class MOUNT-CAP-GOAL) (mode FORMULATED))
   ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
-  (goal (class GET-RING-MOUNTED-BASE-GOAL) (mode RETRACTED))
+  (goal (class GET-RING-MOUNTED-BASE-GOAL) (mode FINISHED))
   	; if avaliable robts ?
   ;(not (goal-meta (assigned-to ?robot)))
 	=>
@@ -406,7 +406,7 @@
 (defrule goal-reasoner-ring-payment-select
 	?g <- (goal (id ?goal-id) (class RS-PAYMENT) (mode FORMULATED))
   ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
-  (goal (class PRE-GET-BASE-GOAL) (mode RETRACTED))
+  (goal (class PRE-GET-BASE-GOAL) (mode FINISHED))
 	=>
   ; assign robot
   (modify ?gm (assigned-to robot3))
@@ -416,7 +416,7 @@
 (defrule goal-reasoner-mount-ring-goal-select
 	?g <- (goal (id ?goal-id) (class INSTRUCT-RS-MOUNT-RING) (mode FORMULATED))
   ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
-  (goal (class RS-PAYMENT) (mode RETRACTED))
+  (goal (class RS-PAYMENT) (mode FINISHED))
   	; if avaliable robts ?
   ;(not (goal-meta (assigned-to ?robot)))
 	=>
@@ -428,7 +428,7 @@
 (defrule goal-reasoner-get-mounted-cap-goal-select
 	?g <- (goal (id ?goal-id) (class GET-MOUNTED-BASE-GOAL) (mode FORMULATED))
   ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
-  (goal (class MOUNT-CAP-GOAL) (mode RETRACTED))
+  (goal (class MOUNT-CAP-GOAL) (mode FINISHED))
 
   	; if avaliable robts ?
   ;(not (goal-meta (assigned-to ?robot)))
@@ -441,7 +441,7 @@
 (defrule goal-reasoner-get-mounted-ring-goal-select
 	?g <- (goal (id ?goal-id) (class GET-RING-MOUNTED-BASE-GOAL) (mode FORMULATED))
   ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to nil))
-  (goal (class INSTRUCT-RS-MOUNT-RING) (mode RETRACTED))
+  (goal (class INSTRUCT-RS-MOUNT-RING) (mode FINISHED))
 
   	; if avaliable robts ?
   ;(not (goal-meta (assigned-to ?robot)))
@@ -449,4 +449,13 @@
   ; assign robot
   (modify ?gm (assigned-to robot2))
 	(modify ?g (mode SELECTED))
+)
+
+(defrule goal-production-remove-c1
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ?gf <- (goal (id ?some-goal-id) (mode RETRACTED))
+  ?gm <- (goal-meta (goal-id ?some-goal-id))
+  =>
+  (printout t "Goal removed after c1 complete" crlf)
+  (retract ?gf ?gm)
 )
