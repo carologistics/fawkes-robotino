@@ -1308,27 +1308,13 @@
 (deffunction goal-production-find-a-robot (?task)
   "Find a free robot"
   (bind ?assn-robot nil)
-  (if (eq ?assn-robot nil) then
-    (if (not (do-for-all-facts ((?f goal-meta))
-			                (and (neq ?f:assigned-to robot1) (eq ?task PRIMARY_TASK))
-			                (bind ?assn-robot robot1)
-             )
-        ) then 
-        (if (not (do-for-all-facts ((?f goal-meta))
-			                (and (neq ?f:assigned-to robot2) (eq ?task SECONDARY_TASK))
-			                (bind ?assn-robot robot2)
-                 )
-            ) then 
-            (if (not (do-for-all-facts ((?f goal-meta))
-			                                  (and (neq ?f:assigned-to robot3)  (eq ?task SECONDARY_TASK))
-			                                  (bind ?assn-robot robot3)
-                     )
-                ) then 
-                  (bind ?assn-robot nil) (printout t "assn-robot has been assigned as nil")
-            )
-        )
-    )
+  (do-for-fact ((?robot-avl wm-fact))
+			              (wm-key-prefix ?robot-avl:key (create$ central agent robot))
+			              (bind ?robot (wm-key-arg ?robot-avl:key r))
   )
+  
+	(bind ?assn-robot&:(or (and (eq ?task SECONDARY_TASK) (or (eq ?curr-robot robot2) (eq ?curr-robot robot3)))
+	          (and (eq ?task PRIMARY_TASK) (eq ?curr-robot robot1))))
   (return ?assn-robot)
 )
 

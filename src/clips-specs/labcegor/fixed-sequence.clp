@@ -80,9 +80,15 @@
 "Spawn a WP"
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
  	            (params workpiece ?wp))
-
+	
 	
  	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) )
+	(not 
+		(and
+			(goal (id ?other-goal) (mode EXPANDED|DISPATCHED))
+			(goal-meta (goal-id ?other-goal) (assigned-to ?robot))
+		)
+	)
  	=>
 	(bind ?action-class (sym-cat SPAWN-WP- (gensym*)))
 	(plan-assert-sequential ?action-class ?goal-id ?robot
@@ -96,8 +102,15 @@
 "Prepare BS"
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
  	            (params bs ?bs bs-side ?bs-side base-clr ?bs-clr))
- 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) )
-	(wm-fact (key domain fact mps-state args? m ?bs s IDLE))
+ 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(wm-fact (key domain fact mps-state args? m ?bs s IDLE&~DOWN))
+	(not 
+		(and
+			(goal (id ?other-goal) (mode EXPANDED|DISPATCHED))
+			(goal-meta (goal-id ?other-goal) (assigned-to ?robot))
+		)
+	)
+
  	=>
 	(bind ?action-class (sym-cat RETRIEVE-BASE- (gensym*)))
 	(plan-assert-sequential ?action-class ?goal-id ?robot
@@ -111,7 +124,13 @@
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
  	            (params rs ?rs ring-color ?rng-clr ring-req ?rng-req))
  	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	(wm-fact (key domain fact mps-state args? m ?rs s IDLE ))
+	(not 
+		(and
+			(goal (id ?other-goal) (mode EXPANDED|DISPATCHED))
+			(goal-meta (goal-id ?other-goal) (assigned-to ?robot))
+		)
+	)
+	(wm-fact (key domain fact mps-state args? m ?rs s IDLE&~DOWN ))
 	(wm-fact (key domain fact rs-filled-with args? m ?rs n ?rng-before ))
 
  	=>
@@ -147,6 +166,12 @@
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
  	            (params cap-color ?cap-clr cap-station ?cs))
  	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) )
+	(not 
+		(and
+			(goal (id ?other-goal) (mode EXPANDED|DISPATCHED))
+			(goal-meta (goal-id ?other-goal) (assigned-to ?robot))
+		)
+	)
 	(wm-fact (key domain fact at args?  r ?robot m ?at-mps side ?at-side )) 
 	(wm-fact (key domain fact wp-on-shelf args?  wp ?cc m ?cs spot ?cc-spot)) 
 	(wm-fact (key domain fact cs-can-perform args? m ?cs op RETRIEVE_CAP))
@@ -160,6 +185,7 @@
 			(plan-assert-action wp-get-shelf ?robot ?cc ?cs ?cc-spot)
 			(plan-assert-action wp-put ?robot ?cc ?cs INPUT)
 			(plan-assert-action prepare-cs ?cs RETRIEVE_CAP)
+			(plan-assert-action go-wait ?robot ?cs INPUT (wait-pos ?cs OUTPUT))
 			(plan-assert-action cs-retrieve-cap ?cs ?cc ?cap-clr)
 			(plan-assert-action move ?robot ?cs INPUT ?cs OUTPUT)
 			(plan-assert-action wp-get ?robot ?cc ?cs OUTPUT)
@@ -191,6 +217,12 @@
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
  	            (params cs ?cs rs ?rs))
  	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) )
+	(not 
+		(and
+			(goal (id ?other-goal) (mode EXPANDED|DISPATCHED))
+			(goal-meta (goal-id ?other-goal) (assigned-to ?robot))
+		)
+	)
 	(wm-fact (key domain fact at args?  r ?robot m ?at-mps side ?at-side )) 
 	(wm-fact (key domain fact wp-on-shelf args?  wp ?cc m ?cs spot ?cc-spot)) 
 	(wm-fact (key domain fact rs-filled-with args? m ?rs n ?rng-before))
@@ -215,9 +247,16 @@
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
  	            (params bs ?bs rs ?rs))
  	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) )
+	(not 
+		(and
+			(goal (id ?other-goal) (mode EXPANDED|DISPATCHED))
+			(goal-meta (goal-id ?other-goal) (assigned-to ?robot))
+		)
+	)
 	(wm-fact (key domain fact at args?  r ?robot m ?at-mps side ?at-side )) 
 	(wm-fact (key domain fact wp-at args?  wp ?cc m ?cs side OUTPUT)) 
 	(wm-fact (key domain fact rs-filled-with args? m ?rs n ?rng-before))
+	(wm-fact (key domain fact mps-state args? m ?rs s IDLE&~DOWN ))
 	=>
 	(bind ?a (sym-to-int ?rng-before))
 	(bind ?b  1)
@@ -244,6 +283,12 @@
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
  	            (params from ?from from-side ?from-side to ?to to-side ?to-side workpiece ?wp))
  	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(not 
+		(and
+			(goal (id ?other-goal) (mode EXPANDED|DISPATCHED))
+			(goal-meta (goal-id ?other-goal) (assigned-to ?robot))
+		)
+	)
 	(wm-fact (key domain fact at args?  r ?robot m ?at-mps side ?at-side )) 
 	=>
 	(bind ?action-class (sym-cat TRANSPORT-WP- (gensym*)))
@@ -274,7 +319,14 @@
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
  	            (params bs ?bs bs-clr ?bs-clr workpiece ?wp))
  	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) )
+	(not 
+		(and
+			(goal (id ?other-goal) (mode EXPANDED|DISPATCHED))
+			(goal-meta (goal-id ?other-goal) (assigned-to ?robot))
+		)
+	)
 	(wm-fact (key domain fact mps-state args? m ?bs s PROCESSING|READY-AT-OUTPUT))
+
 	=>
 	(bind ?action-class (sym-cat BASE-DISPENSE- (gensym*)))
 	(plan-assert-sequential ?action-class ?goal-id ?robot
@@ -289,8 +341,14 @@
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
  	            (params rs ?rs ring-clr ?rng-clr ring-req ?rng-req workpiece ?wp))
  	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(not 
+		(and
+			(goal (id ?other-goal) (mode EXPANDED|DISPATCHED))
+			(goal-meta (goal-id ?other-goal) (assigned-to ?robot))
+		)
+	)
 	(wm-fact (key domain fact rs-filled-with args? m ?rs n ?rng-before ))
-	(wm-fact (key domain fact mps-state args? m ?rs s IDLE))
+	(wm-fact (key domain fact mps-state args? m ?rs s IDLE&~BROKEN))
 
 	=>
 	(printout t "Ring-requirement is " ?rs ?rng-clr ?rng-req)
@@ -311,8 +369,14 @@
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
  	            (params rs ?rs ring-clr1 ?rng-clr1 ring-clr2 ?rng-clr2 ring-req ?rng-req workpiece ?wp))
  	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(not 
+		(and
+			(goal (id ?other-goal) (mode EXPANDED|DISPATCHED))
+			(goal-meta (goal-id ?other-goal) (assigned-to ?robot))
+		)
+	)
 	(wm-fact (key domain fact rs-filled-with args? m ?rs n ?rng-before ))
-	(wm-fact (key domain fact mps-state args? m ?rs s IDLE))
+	(wm-fact (key domain fact mps-state args? m ?rs s IDLE&~BROKEN))
 
 	=>
 		; (printout t "Ring-requirement is " ?rs ?rng-clr ?rng-req)
@@ -335,8 +399,14 @@
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
  	            (params rs ?rs ring-clr1 ?rng-clr1 ring-clr2 ?rng-clr2 ring-clr3 ?rng-clr3 ring-req ?rng-req workpiece ?wp))
  	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(not 
+		(and
+			(goal (id ?other-goal) (mode EXPANDED|DISPATCHED))
+			(goal-meta (goal-id ?other-goal) (assigned-to ?robot))
+		)
+	)
 	(wm-fact (key domain fact rs-filled-with args? m ?rs n ?rng-before ))
-	(wm-fact (key domain fact mps-state args? m ?rs s IDLE))
+	(wm-fact (key domain fact mps-state args? m ?rs s IDLE&~BROKEN))
 
 	=>
 		; (printout t "Ring-requirement is " ?rs ?rng-clr ?rng-req)
@@ -359,7 +429,13 @@
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
  	            (params cs ?cs cap-clr ?cap-clr workpiece ?wp))
  	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) )
-	(wm-fact (key domain fact mps-state args? m ?cs s IDLE))
+	(not 
+		(and
+			(goal (id ?other-goal) (mode EXPANDED|DISPATCHED))
+			(goal-meta (goal-id ?other-goal) (assigned-to ?robot))
+		)
+	)
+	(wm-fact (key domain fact mps-state args? m ?cs s IDLE&~BROKEN))
 	(wm-fact (key domain fact cs-can-perform args? m ?cs op MOUNT_CAP))
 	=>
 	(bind ?action-class (sym-cat CAP-MOUNT- (gensym*)))
@@ -377,7 +453,13 @@
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
  	            (params order ?ord workpiece ?wp delivery-station ?ds ds-gate ?ds-gate base-clr ?base-clr cap-clr ?cap-clr rng-clr ?rng-clr))
  	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) )
-	(wm-fact (key domain fact mps-state args? m ?ds s IDLE))
+	(not 
+		(and
+			(goal (id ?other-goal) (mode EXPANDED|DISPATCHED))
+			(goal-meta (goal-id ?other-goal) (assigned-to ?robot))
+		)
+	)
+	(wm-fact (key domain fact mps-state args? m ?ds s IDLE&~BROKEN))
 	; (or (wm-fact (key domain fact order-delivery-begin args? ord ?ord)) ((wm-fact (key domain fact order-delivery-end args? ord ?ord))))
 	(wm-fact (key refbox game-time) (type UINT) (values ?curr-time ?t1))  
   	(wm-fact (key refbox order ?ord delivery-end) (type UINT) (value ?deli-end))
@@ -399,7 +481,13 @@
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
  	            (params order ?ord workpiece ?wp delivery-station ?ds ds-gate ?ds-gate base-clr ?base-clr cap-clr ?cap-clr))
  	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) )
-	(wm-fact (key domain fact mps-state args? m ?ds s IDLE))
+	(not 
+		(and
+			(goal (id ?other-goal) (mode EXPANDED|DISPATCHED))
+			(goal-meta (goal-id ?other-goal) (assigned-to ?robot))
+		)
+	)
+	(wm-fact (key domain fact mps-state args? m ?ds s IDLE&~BROKEN))
 	(wm-fact (key domain fact order-delivery-begin args? ord ?ord))
 	=>
 	(bind ?action-class (sym-cat DELIVER-C0 (gensym*)))
@@ -416,7 +504,13 @@
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
  	            (params order ?ord workpiece ?wp delivery-station ?ds ds-gate ?ds-gate base-clr ?base-clr cap-clr ?cap-clr rng-clr1 ?rng-clr1 rng-clr2 ?rng-clr2))
  	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) )
-	(wm-fact (key domain fact mps-state args? m ?ds s IDLE))
+	(not 
+		(and
+			(goal (id ?other-goal) (mode EXPANDED|DISPATCHED))
+			(goal-meta (goal-id ?other-goal) (assigned-to ?robot))
+		)
+	)
+	(wm-fact (key domain fact mps-state args? m ?ds s IDLE&~BROKEN))
 	; (or (wm-fact (key domain fact order-delivery-begin args? ord ?ord)) ((wm-fact (key domain fact order-delivery-end args? ord ?ord))))
 	(wm-fact (key refbox game-time) (type UINT) (values ?curr-time ?t1))  
   	(wm-fact (key refbox order ?ord delivery-end) (type UINT) (value ?deli-end))
@@ -437,7 +531,13 @@
 	?g <- (goal (id ?goal-id) (class ?cls) (mode SELECTED) 
  	            (params order ?ord workpiece ?wp delivery-station ?ds ds-gate ?ds-gate base-clr ?base-clr cap-clr ?cap-clr rng-clr1 ?rng-clr1 rng-clr2 ?rng-clr2 rng-clr3 ?rng-clr3))
  	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) )
-	(wm-fact (key domain fact mps-state args? m ?ds s IDLE))
+	(not 
+		(and
+			(goal (id ?other-goal) (mode EXPANDED|DISPATCHED))
+			(goal-meta (goal-id ?other-goal) (assigned-to ?robot))
+		)
+	)
+	(wm-fact (key domain fact mps-state args? m ?ds s IDLE&~BROKEN))
 	; (or (wm-fact (key domain fact order-delivery-begin args? ord ?ord)) ((wm-fact (key domain fact order-delivery-end args? ord ?ord))))
 	(wm-fact (key refbox game-time) (type UINT) (values ?curr-time ?t1))  
   	(wm-fact (key refbox order ?ord delivery-end) (type UINT) (value ?deli-end))
