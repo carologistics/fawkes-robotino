@@ -28,7 +28,8 @@ fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"product_put", "drive_to_machine_point", "conveyor_align"}
 depends_interfaces = {
    {v = "laserline_switch", type = "SwitchInterface", id="laser-lines"},
-   {v = "robotino_sensor", type = "RobotinoSensorInterface", id="Robotino"} -- Interface to read I/O ports
+   {v = "robotino_sensor", type = "RobotinoSensorInterface", id="Robotino"}, -- Interface to read I/O ports
+   {v = "arduino", type = "ArduinoInterface", id="Arduino"},
  }
 
 documentation      = [==[ 
@@ -49,20 +50,21 @@ skillenv.skill_module(_M)
 -- Constants
 -- If this matches the desired x distance of conveyor align, conveyor align has the chance
 -- of not needing to move at all.
-local X_AT_MPS = 0.28
+local X_AT_MPS = 0.26
 
 
 -- function to evaluate sensor data
 function is_grabbed()
- if not robotino_sensor:has_writer() then
-   print_warn("No robotino sensor writer to check sensor")
    return true
- end
- if robotino_sensor:is_digital_in(0) == false and robotino_sensor:is_digital_in(1) == true then -- white cable on DI1 and black on DI2
-    return true
- else
-   return false
- end
+-- if not robotino_sensor:has_writer() then
+--   print_warn("No robotino sensor writer to check sensor")
+--   return true
+-- end
+-- if robotino_sensor:is_digital_in(0) == false and robotino_sensor:is_digital_in(1) == true then -- white cable on DI1 and black on DI2
+--    return true
+-- else
+--   return false
+-- end
 end
 
 
@@ -151,11 +153,26 @@ function PRODUCT_PUT:init()
 end
 
 function FINAL:init()
+  local move_abs_message = arduino.MoveXYZAbsMessage:new()
+  move_abs_message:set_x(0)
+  move_abs_message:set_y(0)
+  move_abs_message:set_z(0)
+  move_abs_message:set_target_frame("gripper_home")
+  arduino:msgq_enqueue_copy(move_abs_message)
   laserline_switch:msgq_enqueue(laserline_switch.DisableSwitchMessage:new())
 end
 
 function FAILED:init()
+  local move_abs_message = arduino.MoveXYZAbsMessage:new()
+  move_abs_message:set_x(0)
+  move_abs_message:set_y(0)
+  move_abs_message:set_z(0)
+  move_abs_message:set_target_frame("gripper_home")
+  arduino:msgq_enqueue_copy(move_abs_message)
   laserline_switch:msgq_enqueue(laserline_switch.DisableSwitchMessage:new())
+  if self.fsm.vars.error then
+    self.fsm:set_error(self.fsm.vars.error)
+  end
 end
 
 function PRODUCT_PUT:exit()
@@ -166,10 +183,4 @@ function PRODUCT_PUT:exit()
 
   local now = fawkes.Time:new():in_msec()
   print_info("[ICP] Routine took " .. now - self.fsm.vars.time_start .. " milliseconds")
-end
-
-function FAILED:init()
-  if self.fsm.vars.error then
-    self.fsm:set_error(self.fsm.vars.error)
-  end
 end

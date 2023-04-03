@@ -33,6 +33,9 @@ fawkes/meta_plugins:
     - m-base-ros
     - laser-cluster
     - laser-lines
+  m-base-icp:
+    - conveyor-plane
+    - conveyor-pose
   m-base-full:
     - m-base-bare
     - m-base-laser
