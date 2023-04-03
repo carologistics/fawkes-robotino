@@ -120,12 +120,18 @@
 
     (delayed-do-for-all-facts ((?workload-fact wm-fact)) (and (wm-key-prefix ?workload-fact:key (create$ mps workload order))
                                                 (eq ?m (wm-key-arg ?workload-fact:key m)))
-      ;the order has been started
-      (if (not (any-factp ((?wp-for-order wm-fact)) (and (wm-key-prefix ?wp-for-order:key (create$ domain fact order-fulfilled))
+      ;the order has been started and not fulfilled yet
+      (if (any-factp ((?order-started wm-fact)) (and (wm-key-prefix ?order-started:key (create$ order meta started))
                                                     (eq (wm-key-arg ?workload-fact:key ord)
-                                                        (wm-key-arg ?wp-for-order:key ord)))))
-       then
-          (bind ?sum (+ ?sum ?workload-fact:value))
+                                                        (wm-key-arg ?order-started:key ord))
+                                                    (eq ?order-started:value TRUE)))
+        then
+        (if (not (any-factp ((?order-fulfilled wm-fact)) (and (wm-key-prefix ?order-fulfilled:key (create$ domain fact order-fulfilled))
+                                                      (eq (wm-key-arg ?workload-fact:key ord)
+                                                          (wm-key-arg ?order-fulfilled:key ord)))))
+        then
+            (bind ?sum (+ ?sum ?workload-fact:value))
+        )
       )
     )
     (modify ?overall-fact (value ?sum))
@@ -224,7 +230,8 @@
                    (type INT) (is-list FALSE) (value 0))
           (wm-fact (key order meta estimated-time-steps args? ord ?order)
                    (type INT) (is-list TRUE)
-                   (values (create$ 0 0 0 0 ?*TIME-DELIVER*))))
+                   (values (create$ 0 0 0 0 ?*TIME-DELIVER*)))
+          (wm-fact (key order meta started args? ord ?order) (type BOOL) (is-list FALSE) (value FALSE)))
 )
 
 
@@ -269,6 +276,14 @@
 
 
 ;------------------------- Point/Time Step Updates ---------------------------
+
+(defrule production-strategy-order-started
+  ?os <- (wm-fact (key order meta started args? ord ?order) (value FALSE))
+  (goal (id ?root) (mode DISPATCHED))
+  (goal-meta (goal-id ?root) (root-for-order ?order))
+  =>
+  (modify ?os (value TRUE))
+)
 
 
 (defrule production-strategy-update-time-steps-mount-ring
