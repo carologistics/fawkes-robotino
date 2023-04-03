@@ -621,7 +621,7 @@ void loop() {
     return;
   }
 
-  if(loop_nr > 3000) {
+  if(loop_nr > 1000) {
     send_status();
     loop_nr = 0;
   } else {
