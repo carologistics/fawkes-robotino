@@ -1048,8 +1048,8 @@
   (not
     (and
       (wm-fact (key strategy meta possible-orders) (values $? ?o-order-id&:(neq ?o-order-id ?order-id) $?))
-      (wm-fact (key domain fact order-complexity args? ord ?o-order-id com ?comp-comp))
-      (test (> 0 (str-compare ?comp-comp ?comp)))
+      (wm-fact (key domain fact order-complexity args? ord ?o-order-id com ?o-comp))
+      (test (< 0 (str-compare ?o-comp ?comp)))
     )
   )
 
