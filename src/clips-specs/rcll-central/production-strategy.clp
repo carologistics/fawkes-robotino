@@ -1163,7 +1163,7 @@
   (time $?now)
   (not (timer (name production-strategy-nothing-executable-timer)))
 
-  (goal (id ?goal-id) (class MOVE-OUT-OF-WAY) (mode DISPATCHED) (sub-type SIMPLE))
+  (goal (id ?goal-id) (class MOVE-OUT-OF-WAY|WAIT-NOTHING-EXECUTABLE) (mode DISPATCHED) (sub-type SIMPLE))
   =>
   (assert (timer (name production-strategy-nothing-executable-timer) (time ?now)))
 )
@@ -1172,7 +1172,7 @@
   "At leats one robots has a goal assigned, remove the timer"
   (forall
     (wm-fact (key central agent robot args? r ?robot))
-    (goal (mode DISPATCHED) (id ?goal-id) (class ~MOVE-OUT-OF-WAY) (sub-type SIMPLE))
+    (goal (mode DISPATCHED) (id ?goal-id) (class ~MOVE-OUT-OF-WAY&~WAIT-NOTHING-EXECUTABLE) (sub-type SIMPLE))
     (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
   )
 
