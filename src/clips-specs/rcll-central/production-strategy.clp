@@ -277,15 +277,6 @@
 
 ;------------------------- Point/Time Step Updates ---------------------------
 
-(defrule production-strategy-order-started
-  ?os <- (wm-fact (key order meta started args? ord ?order) (value FALSE))
-  (goal (id ?root) (mode DISPATCHED))
-  (goal-meta (goal-id ?root) (root-for-order ?order))
-  =>
-  (modify ?os (value TRUE))
-)
-
-
 (defrule production-strategy-update-time-steps-mount-ring
 " Tracks how long the mount ring step for a given order might take.
   This is influenced by:

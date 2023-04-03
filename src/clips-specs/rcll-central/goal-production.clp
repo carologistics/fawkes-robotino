@@ -772,6 +772,7 @@
       (wm-fact (key strategy meta selected-order args? cond fallback) (value ?order-id))
     )
   )
+  ?os <- (wm-fact (key order meta started args? ord ?order) (value FALSE))
   (wm-fact (key mps workload needs-update) (value FALSE))
   =>
   ;find the necessary ringstations
@@ -820,6 +821,9 @@
     ((?update-fact wm-fact)) (wm-key-prefix ?update-fact:key (create$ mps workload needs-update))
     (retract ?update-fact)
   )
+
+  (modify ?os (value TRUE))
+
   (assert (wm-fact (key mps workload needs-update) (is-list FALSE) (type BOOL) (value TRUE)))
 )
 
