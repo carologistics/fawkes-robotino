@@ -817,14 +817,20 @@
                 ?rs1 ?rs2 ?rs3 ?col-cap ?col-base ?col-ring1 ?col-ring2 ?col-ring3)
   )
 
+  ;clean-up needs update facts
   (delayed-do-for-all-facts
     ((?update-fact wm-fact)) (wm-key-prefix ?update-fact:key (create$ mps workload needs-update))
     (retract ?update-fact)
   )
+  (assert (wm-fact (key mps workload needs-update) (is-list FALSE) (type BOOL) (value TRUE)))
 
   (modify ?os (value TRUE))
 
-  (assert (wm-fact (key mps workload needs-update) (is-list FALSE) (type BOOL) (value TRUE)))
+  ;if a timer exists, retract it to avoid goal creation spamming
+  (delayed-do-for-all-facts
+    ((?timer timer)) (eq ?timer:name production-strategy-nothing-executable-timer)
+    (retract ?timer)
+  )
 )
 
 (defrule goal-production-fill-in-unknown-wp-discard
