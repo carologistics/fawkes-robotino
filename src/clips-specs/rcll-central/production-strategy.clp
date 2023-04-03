@@ -679,6 +679,7 @@
   =>
   (assert
     (wm-fact (key strategy meta possible-orders) (is-list TRUE) (type SYMBOL))
+    (wm-fact (key strategy meta active-orders) (is-list TRUE) (type SYMBOL))
     (wm-fact (key strategy meta filtered-orders args? filter delivery-ahead) (is-list TRUE) (type SYMBOL))
     (wm-fact (key strategy meta filtered-orders args? filter delivery-limit) (is-list TRUE) (type SYMBOL))
     (wm-fact (key strategy meta filtered-orders args? filter workload) (is-list TRUE) (type SYMBOL))
@@ -691,6 +692,30 @@
     (wm-fact (key strategy meta selected-order args? cond possible) (is-list FALSE) (type SYMBOL) (value nil))
     (wm-fact (key strategy meta selected-order args? cond fallback) (is-list FALSE) (type SYMBOL) (value nil))
   )
+)
+
+(defrule production-strategy-append-active-orders
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
+  ?active <- (wm-fact (key strategy meta active-orders) (values $?values))
+  ;there is a root goal for an existing order
+  (goal (id ?root) (mode ~RETRACTED))
+  (goal-meta (goal-id ?root) (root-for-order ?order-id))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id $?))
+  ;it is not in the active list yet
+  (test (not (member$ ?order-id ?values)))
+  =>
+  (modify ?active (values $?values ?order-id))
+)
+
+(defrule production-strategy-remove-from-active-orders
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
+  ;there is a retracted root goal
+  (goal (id ?root) (mode RETRACTED))
+  (goal-meta (goal-id ?root) (root-for-order ?order-id))
+  ;the order is in the active list
+  ?active <- (wm-fact (key strategy meta active-orders) (values $?values&:(member$ ?order-id ?values)))
+  =>
+  (modify ?active (values (delete-member$ ?values ?order-id)))
 )
 
 (defrule production-strategy-append-possible-orders
@@ -807,6 +832,7 @@
   "Add an order to this filter its workload doesn't push the summed workload over any machine's limit."
   (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
+  (wm-fact (key strategy meta active-orders))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter workload)
                         (values $?values&:(not (member$ ?order-id ?values))))
   ;filter condition
@@ -844,6 +870,7 @@
   "Add an order to this filter if there is less than the threshold of active C0 orders"
   (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
+  (wm-fact (key strategy meta active-orders))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c0-limit)
                         (values $?values&:(not (member$ ?order-id ?values))))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
@@ -885,6 +912,7 @@
   "Add an order to this filter if there is less than the threshold of active c1 orders"
   (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
+  (wm-fact (key strategy meta active-orders))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c1-limit)
                         (values $?values&:(not (member$ ?order-id ?values))))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
@@ -926,6 +954,7 @@
   "Add an order to this filter if there is less than the threshold of active c2 orders"
   (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
+  (wm-fact (key strategy meta active-orders))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c2-limit)
                         (values $?values&:(not (member$ ?order-id ?values))))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
@@ -967,6 +996,7 @@
   "Add an order to this filter if there is less than the threshold of active c3 orders"
   (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
+  (wm-fact (key strategy meta active-orders))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c3-limit)
                         (values $?values&:(not (member$ ?order-id ?values))))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
@@ -1009,6 +1039,7 @@
   "Add an order to this filter if there is less than the threshold of active total orders"
   (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
+  (wm-fact (key strategy meta active-orders))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter total-limit)
                         (values $?values&:(not (member$ ?order-id ?values))))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
