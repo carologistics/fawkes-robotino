@@ -875,7 +875,7 @@
   (wm-fact (key domain fact order-complexity args? ord ?order-id com C0))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c0-limit)
                         (values $?values&:(member$ ?order-id ?values)))
-  (test (< ?*C0-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders-of-complexity C0)))
+  (test (<= ?*C0-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders-of-complexity C0)))
   =>
   (modify ?filtered (values ))
 )
@@ -916,7 +916,7 @@
   (wm-fact (key domain fact order-complexity args? ord ?order-id com C1))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c1-limit)
                         (values $?values&:(member$ ?order-id ?values)))
-  (test (< ?*C1-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders-of-complexity C1)))
+  (test (<= ?*C1-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders-of-complexity C1)))
   =>
   (modify ?filtered (values ))
 )
@@ -957,7 +957,7 @@
   (wm-fact (key domain fact order-complexity args? ord ?order-id com C2))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c2-limit)
                         (values $?values&:(member$ ?order-id ?values)))
-  (test (< ?*C2-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders-of-complexity C2)))
+  (test (<= ?*C2-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders-of-complexity C2)))
   =>
   (modify ?filtered (values ))
 )
@@ -998,7 +998,7 @@
   (wm-fact (key domain fact order-complexity args? ord ?order-id com C3))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c3-limit)
                         (values $?values&:(member$ ?order-id ?values)))
-  (test (< ?*C3-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders-of-complexity C3)))
+  (test (<= ?*C3-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders-of-complexity C3)))
   =>
   (modify ?filtered (values ))
 )
@@ -1034,7 +1034,7 @@
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter total-limit)
                         (values $?values&:(member$ ?order-id ?values)))
-  (test (< ?*TOTAL-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders)))
+  (test (<= ?*TOTAL-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders)))
   =>
   (modify ?filtered (values ))
 )
