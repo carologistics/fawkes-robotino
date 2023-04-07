@@ -1,0 +1,14 @@
+project(fawkes-robotino)
+set(FAWKES_DIR 1)
+cmake_minimum_required(VERSION 3.5)
+# make local cmake modules available
+set(FAWKES_CORE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/fawkes)
+include_directories(${FAWKES_CORE_DIR}/src)
+add_subdirectory(fawkes)
+include_directories(${FAWKES_CORE_DIR}/src/libs)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${FAWKES_CORE_DIR}/cmake")
+message(${CMAKE_MODULE_PATH})
+include(base)
+add_subdirectory(src)
+
+set_common_properties_of_targets(all_targets)
