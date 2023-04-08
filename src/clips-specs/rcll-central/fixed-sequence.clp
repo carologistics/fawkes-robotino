@@ -564,7 +564,7 @@
 	=>
 	(plan-assert-sequential INSTRUCT-DS-DISCARD-PLAN ?goal-id ?robot
 		(plan-assert-action prepare-ds ?mps O0)
-		(plan-assert-action fulfill-order-discard (create$ O0 ?wp ?mps GATE1))
+		(plan-assert-action fulfill-order-discard (create$ O0 ?wp ?mps))
 	)
 	(modify ?g (mode EXPANDED))
 )

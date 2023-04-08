@@ -523,7 +523,7 @@
 )
 
 (:action fulfill-order-discard
-	:parameters (?ord - order ?wp - workpiece ?m - mps ?g - ds-gate)
+	:parameters (?ord - order ?wp - workpiece ?m - mps)
 	:precondition (and (wp-at ?wp ?m INPUT)
 	                   (not (mps-side-free ?m INPUT))
 	                   (wp-usable ?wp)
