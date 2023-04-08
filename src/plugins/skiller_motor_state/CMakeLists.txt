@@ -14,7 +14,10 @@ if(PLUGIN_skiller_motor_state)
       fawkesaspects
       fawkesbaseapp
       fawkesblackboard
-      fawkesinterface)
+      fawkesinterface
+      SkillerInterface
+      RobotinoSensorInterface
+      MotorInterface)
 
     target_compile_features(skiller_motor_state PUBLIC cxx_std_11)
   else()

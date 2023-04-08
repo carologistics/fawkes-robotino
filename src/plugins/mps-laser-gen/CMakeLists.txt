@@ -23,7 +23,8 @@ if(PLUGIN_mps-laser-gen)
       fawkesbaseapp
       fawkesblackboard
       fawkesinterface
-      fawkesrosaspect)
+      fawkesrosaspect
+      LaserBoxFilterInterface)
   else()
     if(NOT EIGEN3_FOUND)
       build_skipped_message("mps-laser-gen" "eigen3 dependencies")

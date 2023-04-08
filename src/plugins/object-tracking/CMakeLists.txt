@@ -18,7 +18,8 @@ if(PLUGIN_object-tracking)
       fawkesblackboard
       ObjectTrackingInterface
       fvutils
-      fawkestf)
+      fawkestf
+      LaserLineInterface)
 
   else()
     if(NOT TF_FOUND)
