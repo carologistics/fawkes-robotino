@@ -367,7 +367,7 @@ ArduinoComThread::loop()
 					append_message_to_queue(ArduinoComMessage::command_id_t::CMD_OPEN, 0, 10000);
 				} else if (arduino_if_->msgq_first_is<ArduinoInterface::StopMessage>()) {
 					ArduinoInterface::StopMessage *msg = arduino_if_->msgq_first(msg);
-					logger->log_warn(name(), "Open Gripper");
+					logger->log_debug(name(), "Stop Movement");
 					append_message_to_queue(ArduinoComMessage::command_id_t::CMD_STOP, 0, 10000);
 				} else if (arduino_if_->msgq_first_is<ArduinoInterface::StatusUpdateMessage>()) {
 					ArduinoInterface::StatusUpdateMessage *msg = arduino_if_->msgq_first(msg);

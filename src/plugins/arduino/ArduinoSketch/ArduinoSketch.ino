@@ -400,6 +400,7 @@ void read_package() {
         cur_cmd == CMD_Z_NEW_ACC ||
         cur_cmd == CMD_A_NEW_ACC ||
         cur_cmd == CMD_SET_SPEED ||
+        cur_cmd == CMD_STOP ||
         cur_cmd == CMD_SET_ACCEL) {
       if(sscanf (buffer_ + (cur_i_cmd + 1),"%ld",&new_value)<=0){buf_i_ = 0; return;} // flush and return if parsing error
     }
