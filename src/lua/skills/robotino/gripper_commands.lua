@@ -32,7 +32,7 @@ depends_interfaces = {
 }
 
 documentation      = [==[
-    @param command    can be : ( OPEN | CLOSE | MOVEABS | MOVEREL | CALIBRATE )
+    @param command    can be : ( OPEN | CLOSE | STOP | MOVEABS | MOVEREL | CALIBRATE )
     @param x   x position for gripper move
     @param y   y position for gripper move
     @param z   z position for gripper move
@@ -138,8 +138,8 @@ function COMMAND:init()
       arduino:msgq_enqueue(theCloseMessage)
 
    elseif self.fsm.vars.command == "STOP" then
-        theStopMessage = arduino.StopMessage:new()
-        arduino:msgq_enqueue(theStopMessage)
+      theStopMessage = arduino.StopMessage:new()
+      arduino:msgq_enqueue(theStopMessage)
 
    elseif self.fsm.vars.command == "MOVEABS" then
 

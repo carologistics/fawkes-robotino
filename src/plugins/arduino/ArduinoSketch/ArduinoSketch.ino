@@ -446,27 +446,36 @@ read_package()
 #ifdef DEBUG_MODE
 		    cur_cmd == CMD_A_NEW_POS ||
 #endif
-		    cur_cmd == CMD_X_NEW_SPEED || cur_cmd == CMD_Y_NEW_SPEED || cur_cmd == CMD_Z_NEW_SPEED
-		    || cur_cmd == CMD_A_NEW_SPEED || cur_cmd == CMD_X_NEW_ACC || cur_cmd == CMD_Y_NEW_ACC
-		    || cur_cmd == CMD_Z_NEW_ACC || cur_cmd == CMD_A_NEW_ACC || cur_cmd == CMD_SET_SPEED
-		    || cur_cmd == CMD_SET_ACCEL) {
-			if (sscanf(buffer_ + (cur_i_cmd + 1), "%ld", &new_value) <= 0) {
-				buf_i_ = 0;
-				return;
-			} // flush and return if parsing error
-		}
-		float opening_speed = motor_A.get_speed(); //get current openening speed
-		bool
-		  assumed_gripper_state_local; // this is used to store the assumed gripper state locally, to reduce calls to the function get_assumed_gripper_state
-		switch (cur_cmd) {
-		case CMD_X_NEW_POS: set_new_pos(-new_value, motor_X); break;
-		case CMD_Y_NEW_POS: set_new_pos(-new_value, motor_Y); break;
-		case CMD_Z_NEW_POS: set_new_pos(-new_value, motor_Z); break;
-		case CMD_A_SET_TOGGLE_STEPS:
-			a_toggle_steps = new_value;
-			send_status();
-			send_status();
-			break;
+        cur_cmd == CMD_X_NEW_SPEED ||
+        cur_cmd == CMD_Y_NEW_SPEED ||
+        cur_cmd == CMD_Z_NEW_SPEED ||
+        cur_cmd == CMD_A_NEW_SPEED ||
+        cur_cmd == CMD_X_NEW_ACC ||
+        cur_cmd == CMD_Y_NEW_ACC ||
+        cur_cmd == CMD_Z_NEW_ACC ||
+        cur_cmd == CMD_A_NEW_ACC ||
+        cur_cmd == CMD_SET_SPEED ||
+        cur_cmd == CMD_STOP ||
+        cur_cmd == CMD_SET_ACCEL) {
+      if(sscanf (buffer_ + (cur_i_cmd + 1),"%ld",&new_value)<=0){buf_i_ = 0; return;} // flush and return if parsing error
+    }
+    float opening_speed = motor_A.get_speed(); //get current openening speed
+    bool assumed_gripper_state_local; // this is used to store the assumed gripper state locally, to reduce calls to the function get_assumed_gripper_state
+    switch (cur_cmd) {
+      case CMD_X_NEW_POS:
+        set_new_pos(-new_value, motor_X);
+        break;
+      case CMD_Y_NEW_POS:
+        set_new_pos(-new_value, motor_Y);
+        break;
+      case CMD_Z_NEW_POS:
+        set_new_pos(-new_value, motor_Z);
+        break;
+      case CMD_A_SET_TOGGLE_STEPS:
+        a_toggle_steps = new_value;
+        send_status();
+        send_status();
+        break;
 #ifdef DEBUG_MODE
 		case CMD_A_NEW_POS: set_new_pos(new_value, motor_A); break;
 #endif
