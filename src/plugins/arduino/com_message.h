@@ -68,7 +68,7 @@ public:
 	 * @return Returns the Position data of the current Buffer as a char.
 	 *  Formatting is the same as Serial communication.
 	*/
-	const char *get_position_data();
+	void get_position_data(int (&gripperr_position)[3], bool &is_gripper_open);
 
 	boost::asio::const_buffer buffer();
 
@@ -87,6 +87,13 @@ public:
 	{
 		return i > 0 ? (int)log10((double)i) + 1 : 1;
 	}
+
+	/**
+	 * @brief All variables that define the position of the gripper
+	 * X,Y,Z position of the axis
+	 * A position of the motor, that controls the gripper
+	 */
+	typedef enum { X, Y, Z, A } gripper_pose_t;
 
 private:
 	void ctor();
