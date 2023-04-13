@@ -135,12 +135,12 @@ ArduinoComMessage::add_command(command_id_t cmd, unsigned int value)
 	if (cmd == command_id_t::CMD_CALIBRATE || cmd == command_id_t::CMD_X_NEW_POS
 	    || cmd == command_id_t::CMD_Y_NEW_POS || cmd == command_id_t::CMD_Z_NEW_POS
 	    || cmd == command_id_t::CMD_OPEN || cmd == command_id_t::CMD_SET_A_TOGGLE_STEPS
-      || cmd == command_id_t::CMD_STOP
-	    || cmd == command_id_t::CMD_CLOSE || cmd == command_id_t::CMD_STATUS_REQ
-	    || cmd == command_id_t::CMD_X_NEW_SPEED || cmd == command_id_t::CMD_Y_NEW_SPEED
-	    || cmd == command_id_t::CMD_Z_NEW_SPEED || cmd == command_id_t::CMD_A_NEW_SPEED
-	    || cmd == command_id_t::CMD_X_NEW_ACC || cmd == command_id_t::CMD_Y_NEW_ACC
-	    || cmd == command_id_t::CMD_Z_NEW_ACC || cmd == command_id_t::CMD_A_NEW_ACC) {
+	    || cmd == command_id_t::CMD_STOP || cmd == command_id_t::CMD_CLOSE
+	    || cmd == command_id_t::CMD_STATUS_REQ || cmd == command_id_t::CMD_X_NEW_SPEED
+	    || cmd == command_id_t::CMD_Y_NEW_SPEED || cmd == command_id_t::CMD_Z_NEW_SPEED
+	    || cmd == command_id_t::CMD_A_NEW_SPEED || cmd == command_id_t::CMD_X_NEW_ACC
+	    || cmd == command_id_t::CMD_Y_NEW_ACC || cmd == command_id_t::CMD_Z_NEW_ACC
+	    || cmd == command_id_t::CMD_A_NEW_ACC) {
 		valid_command = true;
 	}
 
@@ -194,7 +194,7 @@ ArduinoComMessage::buffer()
 		std::cout << data_[i];
 	}
 	std::cout << std::endl;
-//  printf("\n");
+	//  printf("\n");
 
 	return boost::asio::buffer(data_, data_size_);
 }
@@ -247,34 +247,34 @@ ArduinoComMessage::get_cur_buffer_index()
 void
 ArduinoComMessage::get_position_data(int (&gripperr_position)[3], bool &(is_gripper_open))
 {
-	std::string s = data_;
-	size_t pos = s.find("AT ");
-	if(pos == std::string::npos) {
+	std::string s   = data_;
+	size_t      pos = s.find("AT ");
+	if (pos == std::string::npos) {
 		//Not a valid command. This command will be ignored
 		return;
 	}
 	std::stringstream ss(s.substr(pos + 3));
-	std::string i;
-	while(ss>>i) {
+	std::string       i;
+	while (ss >> i) {
 		char leading = i[0];
-		if(leading == static_cast<char>(ArduinoComMessage::command_id_t::CMD_CLOSE)) {
+		if (leading == static_cast<char>(ArduinoComMessage::command_id_t::CMD_CLOSE)) {
 			std::cout << i << " DAM DAM DAM" << std::endl;
 			is_gripper_open = false;
 		}
-		if(leading == static_cast<char>(ArduinoComMessage::command_id_t::CMD_OPEN)) {
+		if (leading == static_cast<char>(ArduinoComMessage::command_id_t::CMD_OPEN)) {
 			std::cout << i << " DAM DAM DAM" << std::endl;
 			is_gripper_open = true;
 		}
-		if(leading == static_cast<char>(ArduinoComMessage::command_id_t::CMD_Y_NEW_POS)) {
-			int y = std::stoi(i.substr(1));
+		if (leading == static_cast<char>(ArduinoComMessage::command_id_t::CMD_Y_NEW_POS)) {
+			int y                = std::stoi(i.substr(1));
 			gripperr_position[1] = y;
 		}
-		if(leading == static_cast<char>(ArduinoComMessage::command_id_t::CMD_X_NEW_POS)) {
-			int x = std::stoi(i.substr(1));
+		if (leading == static_cast<char>(ArduinoComMessage::command_id_t::CMD_X_NEW_POS)) {
+			int x                = std::stoi(i.substr(1));
 			gripperr_position[0] = x;
 		}
-		if(leading == static_cast<char>(ArduinoComMessage::command_id_t::CMD_Z_NEW_POS)) {
-			int z = std::stoi(i.substr(1));
+		if (leading == static_cast<char>(ArduinoComMessage::command_id_t::CMD_Z_NEW_POS)) {
+			int z                = std::stoi(i.substr(1));
 			gripperr_position[2] = z;
 		}
 	}
