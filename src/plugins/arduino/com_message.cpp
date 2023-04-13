@@ -244,9 +244,38 @@ ArduinoComMessage::get_cur_buffer_index()
 	return cur_buffer_index_;
 }
 
-const char *
-ArduinoComMessage::get_position_data()
+void
+ArduinoComMessage::get_position_data(int (&gripperr_position)[3], bool &(is_gripper_open))
 {
 	std::string s = data_;
-	return s.c_str();
+	size_t pos = s.find("AT ");
+	if(pos == std::string::npos) {
+		//Not a valid command. This command will be ignored
+		return;
+	}
+	std::stringstream ss(s.substr(pos + 3));
+	std::string i;
+	while(ss>>i) {
+		char leading = i[0];
+		if(leading == static_cast<char>(ArduinoComMessage::command_id_t::CMD_CLOSE)) {
+			std::cout << i << " DAM DAM DAM" << std::endl;
+			is_gripper_open = false;
+		}
+		if(leading == static_cast<char>(ArduinoComMessage::command_id_t::CMD_OPEN)) {
+			std::cout << i << " DAM DAM DAM" << std::endl;
+			is_gripper_open = true;
+		}
+		if(leading == static_cast<char>(ArduinoComMessage::command_id_t::CMD_Y_NEW_POS)) {
+			int y = std::stoi(i.substr(1));
+			gripperr_position[1] = y;
+		}
+		if(leading == static_cast<char>(ArduinoComMessage::command_id_t::CMD_X_NEW_POS)) {
+			int x = std::stoi(i.substr(1));
+			gripperr_position[0] = x;
+		}
+		if(leading == static_cast<char>(ArduinoComMessage::command_id_t::CMD_Z_NEW_POS)) {
+			int z = std::stoi(i.substr(1));
+			gripperr_position[2] = z;
+		}
+	}
 }

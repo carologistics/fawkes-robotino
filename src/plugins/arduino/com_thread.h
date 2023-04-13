@@ -146,7 +146,9 @@ private:
 
 	// gripper pose to be stored in X, Y, Z
 	// TODO: setup proper values!
-	int gripper_pose_[3] = {100000, 100000, 100000};
+	int gripper_pose_[4] = {100000, 100000, 100000, 100000};
+	int cur_demanded_gripper_pose[3] = {0, 0, 0};
+	bool cur_demanded_is_gripper_open = false;
 
 	size_t bytes_read_;
 	bool   read_pending_;
