@@ -31,6 +31,7 @@
                         |rs-mount-ring2
                         |rs-mount-ring3
                         |ss-retrieve-c0
+                        |fulfill-order-discard
                         |fulfill-order-c0
                         |fulfill-order-c1
                         |fulfill-order-c2
