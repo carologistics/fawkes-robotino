@@ -25,11 +25,11 @@
 ; steps.
 (defglobal
   ?*SALIENCE-PRODUCTION-STRATEGY* = -1
-  ?*RS-WORKLOAD-THRESHOLD* = 6
-  ?*C0-PRODUCTION-THRESHOLD* = 2
-  ?*C1-PRODUCTION-THRESHOLD* = 2
-  ?*C2-PRODUCTION-THRESHOLD* = 2
-  ?*C3-PRODUCTION-THRESHOLD* = 2
+  ?*RS-WORKLOAD-THRESHOLD* = 8
+  ?*C0-PRODUCTION-THRESHOLD* = 1
+  ?*C1-PRODUCTION-THRESHOLD* = 1
+  ?*C2-PRODUCTION-THRESHOLD* = 1
+  ?*C3-PRODUCTION-THRESHOLD* = 1
   ?*TOTAL-PRODUCTION-THRESHOLD* = 3
   ?*SALIENCE-ORDER-SELECTION* = ?*SALIENCE-HIGH*
 )
@@ -120,12 +120,18 @@
 
     (delayed-do-for-all-facts ((?workload-fact wm-fact)) (and (wm-key-prefix ?workload-fact:key (create$ mps workload order))
                                                 (eq ?m (wm-key-arg ?workload-fact:key m)))
-      ;the order has been started
-      (if (not (any-factp ((?wp-for-order wm-fact)) (and (wm-key-prefix ?wp-for-order:key (create$ domain fact order-fulfilled))
+      ;the order has been started and not fulfilled yet
+      (if (any-factp ((?order-started wm-fact)) (and (wm-key-prefix ?order-started:key (create$ order meta started))
                                                     (eq (wm-key-arg ?workload-fact:key ord)
-                                                        (wm-key-arg ?wp-for-order:key ord)))))
-       then
-          (bind ?sum (+ ?sum ?workload-fact:value))
+                                                        (wm-key-arg ?order-started:key ord))
+                                                    (eq ?order-started:value TRUE)))
+        then
+        (if (not (any-factp ((?order-fulfilled wm-fact)) (and (wm-key-prefix ?order-fulfilled:key (create$ domain fact order-fulfilled))
+                                                      (eq (wm-key-arg ?workload-fact:key ord)
+                                                          (wm-key-arg ?order-fulfilled:key ord)))))
+        then
+            (bind ?sum (+ ?sum ?workload-fact:value))
+        )
       )
     )
     (modify ?overall-fact (value ?sum))
@@ -224,7 +230,8 @@
                    (type INT) (is-list FALSE) (value 0))
           (wm-fact (key order meta estimated-time-steps args? ord ?order)
                    (type INT) (is-list TRUE)
-                   (values (create$ 0 0 0 0 ?*TIME-DELIVER*))))
+                   (values (create$ 0 0 0 0 ?*TIME-DELIVER*)))
+          (wm-fact (key order meta started args? ord ?order) (type BOOL) (is-list FALSE) (value FALSE)))
 )
 
 
@@ -269,7 +276,6 @@
 
 
 ;------------------------- Point/Time Step Updates ---------------------------
-
 
 (defrule production-strategy-update-time-steps-mount-ring
 " Tracks how long the mount ring step for a given order might take.
@@ -673,6 +679,7 @@
   =>
   (assert
     (wm-fact (key strategy meta possible-orders) (is-list TRUE) (type SYMBOL))
+    (wm-fact (key strategy meta active-orders) (is-list TRUE) (type SYMBOL))
     (wm-fact (key strategy meta filtered-orders args? filter delivery-ahead) (is-list TRUE) (type SYMBOL))
     (wm-fact (key strategy meta filtered-orders args? filter delivery-limit) (is-list TRUE) (type SYMBOL))
     (wm-fact (key strategy meta filtered-orders args? filter workload) (is-list TRUE) (type SYMBOL))
@@ -685,6 +692,30 @@
     (wm-fact (key strategy meta selected-order args? cond possible) (is-list FALSE) (type SYMBOL) (value nil))
     (wm-fact (key strategy meta selected-order args? cond fallback) (is-list FALSE) (type SYMBOL) (value nil))
   )
+)
+
+(defrule production-strategy-append-active-orders
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
+  ?active <- (wm-fact (key strategy meta active-orders) (values $?values))
+  ;there is a root goal for an existing order
+  (goal (id ?root) (mode ~RETRACTED))
+  (goal-meta (goal-id ?root) (root-for-order ?order-id))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id $?))
+  ;it is not in the active list yet
+  (test (not (member$ ?order-id ?values)))
+  =>
+  (modify ?active (values $?values ?order-id))
+)
+
+(defrule production-strategy-remove-from-active-orders
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
+  ;there is a retracted root goal
+  (goal (id ?root) (mode RETRACTED))
+  (goal-meta (goal-id ?root) (root-for-order ?order-id))
+  ;the order is in the active list
+  ?active <- (wm-fact (key strategy meta active-orders) (values $?values&:(member$ ?order-id ?values)))
+  =>
+  (modify ?active (values (delete-member$ ?values ?order-id)))
 )
 
 (defrule production-strategy-append-possible-orders
@@ -801,6 +832,7 @@
   "Add an order to this filter its workload doesn't push the summed workload over any machine's limit."
   (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
+  (wm-fact (key strategy meta active-orders))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter workload)
                         (values $?values&:(not (member$ ?order-id ?values))))
   ;filter condition
@@ -838,6 +870,7 @@
   "Add an order to this filter if there is less than the threshold of active C0 orders"
   (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
+  (wm-fact (key strategy meta active-orders))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c0-limit)
                         (values $?values&:(not (member$ ?order-id ?values))))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
@@ -869,7 +902,7 @@
   (wm-fact (key domain fact order-complexity args? ord ?order-id com C0))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c0-limit)
                         (values $?values&:(member$ ?order-id ?values)))
-  (test (< ?*C0-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders-of-complexity C0)))
+  (test (<= ?*C0-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders-of-complexity C0)))
   =>
   (modify ?filtered (values ))
 )
@@ -879,6 +912,7 @@
   "Add an order to this filter if there is less than the threshold of active c1 orders"
   (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
+  (wm-fact (key strategy meta active-orders))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c1-limit)
                         (values $?values&:(not (member$ ?order-id ?values))))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
@@ -910,7 +944,7 @@
   (wm-fact (key domain fact order-complexity args? ord ?order-id com C1))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c1-limit)
                         (values $?values&:(member$ ?order-id ?values)))
-  (test (< ?*C1-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders-of-complexity C1)))
+  (test (<= ?*C1-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders-of-complexity C1)))
   =>
   (modify ?filtered (values ))
 )
@@ -920,6 +954,7 @@
   "Add an order to this filter if there is less than the threshold of active c2 orders"
   (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
+  (wm-fact (key strategy meta active-orders))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c2-limit)
                         (values $?values&:(not (member$ ?order-id ?values))))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
@@ -951,7 +986,7 @@
   (wm-fact (key domain fact order-complexity args? ord ?order-id com C2))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c2-limit)
                         (values $?values&:(member$ ?order-id ?values)))
-  (test (< ?*C2-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders-of-complexity C2)))
+  (test (<= ?*C2-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders-of-complexity C2)))
   =>
   (modify ?filtered (values ))
 )
@@ -961,6 +996,7 @@
   "Add an order to this filter if there is less than the threshold of active c3 orders"
   (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
+  (wm-fact (key strategy meta active-orders))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c3-limit)
                         (values $?values&:(not (member$ ?order-id ?values))))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
@@ -992,7 +1028,7 @@
   (wm-fact (key domain fact order-complexity args? ord ?order-id com C3))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c3-limit)
                         (values $?values&:(member$ ?order-id ?values)))
-  (test (< ?*C3-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders-of-complexity C3)))
+  (test (<= ?*C3-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders-of-complexity C3)))
   =>
   (modify ?filtered (values ))
 )
@@ -1003,6 +1039,7 @@
   "Add an order to this filter if there is less than the threshold of active total orders"
   (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
+  (wm-fact (key strategy meta active-orders))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter total-limit)
                         (values $?values&:(not (member$ ?order-id ?values))))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
@@ -1028,7 +1065,7 @@
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter total-limit)
                         (values $?values&:(member$ ?order-id ?values)))
-  (test (< ?*TOTAL-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders)))
+  (test (<= ?*TOTAL-PRODUCTION-THRESHOLD* (production-strategy-count-active-orders)))
   =>
   (modify ?filtered (values ))
 )
@@ -1042,8 +1079,8 @@
   (not
     (and
       (wm-fact (key strategy meta possible-orders) (values $? ?o-order-id&:(neq ?o-order-id ?order-id) $?))
-      (wm-fact (key domain fact order-complexity args? ord ?o-order-id com ?comp-comp))
-      (test (> 0 (str-compare ?comp-comp ?comp)))
+      (wm-fact (key domain fact order-complexity args? ord ?o-order-id com ?o-comp))
+      (test (< 0 (str-compare ?o-comp ?comp)))
     )
   )
 
@@ -1081,8 +1118,9 @@
   (not
     (and
       (wm-fact (key strategy meta possible-orders) (values $? ?o-order-id&:(neq ?order-id ?o-order-id) $?))
-      (wm-fact (key domain fact order-complexity args? ord ?o-order-id com ?comp-comp))
-      (test (> 0 (str-compare ?comp-comp ?comp)))
+      (not (wm-fact (key strategy meta filtered-orders $?) (values $?values&:(not (member$ ?o-order-id ?values)))))
+      (wm-fact (key domain fact order-complexity args? ord ?o-order-id com ?o-comp))
+      (test (< 0 (str-compare ?o-comp ?comp)))
     )
   )
 
@@ -1148,18 +1186,22 @@
   (time $?now)
   (not (timer (name production-strategy-nothing-executable-timer)))
 
-  (goal (id ?goal-id) (class MOVE-OUT-OF-WAY) (mode DISPATCHED) (sub-type SIMPLE))
+  (not
+    (and
+      (wm-fact (key central agent robot args? r ?robot))
+      (goal (mode DISPATCHED) (id ?goal-id) (class ~MOVE-OUT-OF-WAY&~WAIT-NOTHING-EXECUTABLE) (sub-type SIMPLE))
+      (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+    )
+  )
   =>
   (assert (timer (name production-strategy-nothing-executable-timer) (time ?now)))
 )
 
 (defrule production-strategy-nothing-executable-timer-remove
   "At leats one robots has a goal assigned, remove the timer"
-  (forall
-    (wm-fact (key central agent robot args? r ?robot))
-    (goal (mode DISPATCHED) (id ?goal-id) (class ~MOVE-OUT-OF-WAY) (sub-type SIMPLE))
-    (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
-  )
+  (wm-fact (key central agent robot args? r ?robot))
+  (goal (mode DISPATCHED) (id ?goal-id) (class ~MOVE-OUT-OF-WAY&~WAIT-NOTHING-EXECUTABLE) (sub-type SIMPLE))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 
   ?timer <- (timer (name production-strategy-nothing-executable-timer))
   =>
