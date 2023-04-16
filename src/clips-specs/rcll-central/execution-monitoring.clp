@@ -323,9 +323,27 @@
 	   (state FORMULATED|PENDING)
 	   (param-values $? ?mps $?)
 	   (action-name ?an&~move&~go-wait&~wait))
-	(not (wm-fact (key monitoring fail-goal args? g ?goal-id)))
+	(not (wm-fact (key monitoring fail-goal args? g ?goal-id r ?)))
 	=>
-	(assert (wm-fact (key monitoring fail-goal args? g ?goal-id)))
+	(assert (wm-fact (key monitoring fail-goal args? g ?goal-id r BROKEN-MPS)))
+)
+
+(defrule execution-monitoring-broken-mps-running-skill-add-fail-goal-flag
+" If an action is currently being executed which utilizes a broken machine,
+  this can have various outcomes, in either way the goal needs to be failed
+  for now.
+"
+	(declare (salience ?*MONITORING-SALIENCE*))
+	(wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
+	?g <- (goal (id ?goal-id) (mode DISPATCHED))
+	(plan (id ?plan-id) (goal-id ?goal-id))
+	(plan-action (id ?id) (plan-id ?plan-id) (goal-id ?goal-id)
+	   (state WAITING|RUNNING)
+	   (param-values $? ?mps $?)
+	   (action-name ?an&~move&~go-wait&~wait))
+	(not (wm-fact (key monitoring fail-goal args? g ?goal-id r ?)))
+	=>
+	(assert (wm-fact (key monitoring fail-goal args? g ?goal-id r INTERACTED-WITH-BROKEN-MPS)))
 )
 
 
@@ -334,13 +352,26 @@
   set the goal to finished and failed
 "
 	(declare (salience ?*MONITORING-SALIENCE*))
-	?fg <-(wm-fact (key monitoring fail-goal args? g ?goal-id) )
-	?g <- (goal (id ?goal-id) (mode DISPATCHED))
+	?fg <-(wm-fact (key monitoring fail-goal args? g ?goal-id r ?reason))
+	?g <- (goal (id ?goal-id) (outcome UNKNOWN))
 	(not (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (state ~FORMULATED&~PENDING&~FINAL&~FAILED)))
 	=>
-	(printout t "Fail goal " ?goal-id " because it operates operates on a broken mps." crlf)
 	(retract ?fg)
-	(modify ?g (mode FINISHED) (outcome FAILED))
+	(bind ?msg "")
+	(switch ?reason
+		(case BROKEN-MPS then
+			(bind ?msg "Needs to use a broken MPS")
+		)
+		(case WP-LOST then
+			(bind ?msg "Workpiece lost")
+		)
+		(case INTERACTED-WITH-BROKEN-MPS then
+			(bind ?msg "Interacted with MPS that was broken")
+		)
+	)
+	(printout t "Fail goal " ?goal-id " (" ?msg ")" crlf)
+	(modify ?g (mode FINISHED) (outcome FAILED) (error ?reason)
+	          (message ?msg))
 )
 
 (defrule execution-monitoring-broken-mps-remove-facts
@@ -412,6 +443,10 @@
 	  (retract ?wf)
 	)
 	(assert (wm-fact (key wp-unused args? wp ?wp)))
+	(do-for-all-facts ((?g goal))
+		(and (eq ?g:outcome UNKNOWN) (member$ ?wp ?g:params))
+		(assert (wm-fact (key monitoring fail-goal args? g ?g:id r WP-LOST)))
+	)
 	(retract ?cleanup)
 )
 
