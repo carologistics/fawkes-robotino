@@ -201,14 +201,19 @@
 ;
 
 (deffunction should-retry (?an ?error)
-	(if (or (eq ?error "Conveyor Align Failed") (eq ?error "Drive To Machine Point Failed")) then
+	(if (or (eq ?error "Conveyor Align Failed")
+	        (eq ?error "Drive To Machine Point Failed")
+	        (eq ?error "Motor Move failed")
+	    )
+	 then
 	  (return TRUE)
 	)
-	(if (eq ?error "Unsatisfied precondition") then (return FALSE))
-	(if (and (or (eq ?an wp-put) (eq ?an wp-put-slide-cc))
-	         (any-factp ((?if RobotinoSensorInterface))
-	                    (and (not (nth$ 1 ?if:digital_in)) (nth$ 2 ?if:digital_in)))) then
-	  (return TRUE)
+	(if (or (eq ?error "Unsatisfied precondition")
+	        (eq ?error "Invalid parameters")
+	        (eq ?error "Object not found") ; this one needs to be added to the respective skill
+	    )
+	 then
+	  (return FALSE)
 	)
 	(if (or (eq ?an move) (eq ?an go-wait)) then
 	  (return TRUE)
