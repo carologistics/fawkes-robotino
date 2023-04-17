@@ -721,10 +721,11 @@
 )
 
 (defrule goal-reasoner-clean-goals-separated-from-parent
-  ?g <- (goal (parent ?pid&~nil))
+  ?g <- (goal (id ?gid) (class ?class) (parent ?pid&~nil))
   (not (goal (id ?pid)))
   =>
   (retract ?g)
+  (printout error ?gid " of class " ?class " has a non-existing parent and was removed" crlf)
 )
 
 (deffunction is-goal-running (?mode)
