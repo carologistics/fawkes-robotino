@@ -64,6 +64,8 @@ Parameters:
       @param target  the type of the target object: (WORKPIECE | CONVEYOR | SLIDE)
       @param mps     the name of the MPS (e.g. C-CS1, see navgraph)
       @param side    the side of the mps: (INPUT | OUTPUT | SHELF-LEFT | SHELF-MIDDLE | SHELF-RIGHT | SLIDE)
+      @param dry_run true, if the gripper should not interact with the workpiece and only need to check if
+                     the workpiece is there (optional, bool)
 ]==]
 
 local LASER_BASE_OFFSET    = 0.35 -- distance between robotino middle point and laser-line
@@ -233,6 +235,11 @@ function move_gripper_default_pose()
 end
 
 function input_invalid()
+  -- handle optional dry run
+  if fsm.dry_run == nil then
+    fsm.dry_run = false
+  end
+ 
   if fsm.vars.target_object_type == nil then
     print_error("That is not a valid target!")
     return true
@@ -279,6 +286,10 @@ function object_tracker_active()
   return object_tracking_if:has_writer() and object_tracking_if:msgid() > 0
 end
 
+function dry_object_found()
+  return fsm.vars.consecutive_detections > 2 and fsm.vars.dry_run
+end
+
 fsm:define_states{ export_to=_M, closure={MISSING_MAX=MISSING_MAX},
    {"INIT",                  JumpState},
    {"START_TRACKING",        JumpState},
@@ -302,7 +313,8 @@ fsm:add_transitions{
    {"FIND_LASER_LINE", "DRIVE_BACK",              timeout=1, desc="Could not find laser-line, drive back"},
    {"SEARCH_LASER_LINE", "DRIVE_TO_LASER_LINE",   cond=laser_line_found},
    {"SEARCH_LASER_LINE", "FAILED",                cond="vars.search_attemps > 10", desc="Tried 10 times, could not find laser-line"},
-   {"SEARCH_LASER_LINE", "SPIN",                  timeout=1, desc="Could not find laser-line, spin"},
+   {"SEARCH_LASER_LINE", "MPS_ALIGN",             timeout=1, desc="Could not find laser-line, spin"},
+   {"AT_LASER_LINE", "FINAL",                     cond=dry_object_found, desc="Found Object"},
    {"AT_LASER_LINE", "MOVE_BASE_AND_GRIPPER",     cond="vars.consecutive_detections > 2", desc="Found Object"},
    {"AT_LASER_LINE", "FAILED",                    timeout=2, desc="Object not found"},
    {"FINE_TUNE_GRIPPER", "GRIPPER_ROUTINE",       cond=gripper_aligned, desc="Gripper aligned"},
@@ -394,14 +406,6 @@ end
 
 function DRIVE_BACK:init()
   self.args["motor_move"].x = drive_back_x
-end
-
-function SEARCH_LASER_LINE:init()
-  fsm.vars.search_attemps = fsm.vars.search_attemps + 1
-end
-
-function SPIN:init()
-  self.args["motor_move"].ori = math.pi / 5
 end
 
 function DRIVE_TO_LASER_LINE:init()
