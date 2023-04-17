@@ -65,6 +65,8 @@ Parameters:
       @param mps     the name of the MPS (e.g. C-CS1, see navgraph)
       @param side    the side of the mps: (INPUT | OUTPUT | SHELF-LEFT | SHELF-MIDDLE | SHELF-RIGHT | SLIDE)
       @param c       the complexity of the workpiece to grab/ in hand (optional, C0 | C1 | C2 | C3)
+      @param dry_run true, if the gripper should not interact with the workpiece and only need to check if
+                     the workpiece is there (optional, bool)
 ]==]
 
 local LASER_BASE_OFFSET    = 0.35 -- distance between robotino middle point and laser-line
@@ -241,6 +243,11 @@ function move_gripper_default_pose()
 end
 
 function input_invalid()
+  -- handle optional dry run
+  if fsm.dry_run == nil then
+    fsm.dry_run = false
+  end
+ 
   if (fsm.vars.target_object_type == nil or string.gsub(fsm.vars.target_object_type, "^%s*(.-)%s*$", "%1") == 0) then
     print_error("That is not a valid target!")
     return true
@@ -291,6 +298,10 @@ function ready_for_gripper_movement()
   return z_max - fsm.vars.missing_c3_height < arduino:z_position()
 end
 
+function dry_object_found()
+  return fsm.vars.consecutive_detections > 2 and fsm.vars.dry_run
+end
+
 fsm:define_states{ export_to=_M, closure={MISSING_MAX=MISSING_MAX},
    {"INIT",                  JumpState},
    {"START_TRACKING",        JumpState},
@@ -317,7 +328,8 @@ fsm:add_transitions{
    {"SEARCH_LASER_LINE", "FAILED",                cond="vars.search_attemps > 10", desc="Tried 10 times, could not find laser-line"},
    {"SEARCH_LASER_LINE", "MPS_ALIGN",             timeout=1, desc="Could not find laser-line, spin"},
    {"WAIT_FOR_GRIPPER", "AT_LASER_LINE",          cond=ready_for_gripper_movement, desc="Found Object"},
-   {"AT_LASER_LINE", "MOVE_BASE_AND_GRIPPER",     cond="vars.consecutive_detections > 2" , desc="Found Object"},
+   {"AT_LASER_LINE", "FINAL",                     cond=dry_object_found, desc="Found Object"},
+   {"AT_LASER_LINE", "MOVE_BASE_AND_GRIPPER",     cond="vars.consecutive_detections > 2", desc="Found Object"},
    {"AT_LASER_LINE", "FAILED",                    timeout=2, desc="Object not found"},
    {"FINE_TUNE_GRIPPER", "GRIPPER_ROUTINE",       cond=gripper_aligned, desc="Gripper aligned"},
    {"FINE_TUNE_GRIPPER", "MOVE_BASE_AND_GRIPPER", cond="vars.out_of_reach", desc="Gripper out of reach"},
@@ -468,7 +480,8 @@ function DRIVE_TO_LASER_LINE:init()
                                y = laser_target.y,
                                frame = "/odom",
                                ori = fawkes.tf.get_yaw(laser_target.ori),
-                               end_early = true}
+                               end_early = true,
+                               dry_run = fsm.vars.dry_run}
   else
     print_error("Transform Error: matched_line to odom")
   end
