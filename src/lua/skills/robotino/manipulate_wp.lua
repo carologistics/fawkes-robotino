@@ -414,6 +414,10 @@ function INIT:init()
   fsm.vars.gripper_wait         = 0
 end
 
+function INIT:exit()
+  fsm.vars.error = "invalid input"
+end
+
 function MPS_ALIGN:init()
   self.args["mps_align"].tag_id = fsm.vars.tag_id
   self.args["mps_align"].x = 0.5
@@ -435,9 +439,17 @@ function START_TRACKING:init()
   move_gripper_default_pose()
 end
 
+function START_TRACKING:exit()
+  fsm.vars.error = "OT interface closed"
+end
+
 function FIND_LASER_LINE:init()
   -- start searching for laser line
   fsm.vars.search_attemps = 0
+end
+
+function SEARCH_LASER_LINE:exit()
+  fsm.vars.error = "laser-line not found"
 end
 
 function DRIVE_BACK:init()
@@ -507,6 +519,10 @@ function AT_LASER_LINE:loop()
       fsm.vars.consecutive_detections = 0
     end
   end
+end
+
+function AT_LASER_LINE:exit()
+  fsm.vars.error = "object not found"
 end
 
 function MOVE_BASE_AND_GRIPPER:init()
@@ -598,4 +614,7 @@ end
 function FAILED:init()
   move_gripper_default_pose()
   object_tracking_if:msgq_enqueue(object_tracking_if.StopTrackingMessage:new())
+
+  -- keep track of error
+  fsm:set_error(fsm.vars.error)
 end
