@@ -6,12 +6,7 @@ add_subdirectory(interfaces)
 
 if(PLUGIN_conveyor-pose)
   pkg_check_modules(BULLET bullet>=2.82)
-  check_deps_pcl_extra_libs(filters kdtree recognition)
-  if(ROS_FOUND
-     AND BULLET_FOUND
-     AND NOT PCL_WARNING)
-
-    add_library(
+  add_library(
       conveyor-pose MODULE conveyor_pose_plugin.cpp conveyor_pose_thread.cpp
                            recognition_thread.cpp)
 
@@ -34,19 +29,6 @@ if(PLUGIN_conveyor-pose)
       SwitchInterface
       ConveyorPoseInterface
       LaserLineInterface)
-  else()
-    if(NOT ROS_FOUND)
-      build_skipped_message("conveyor-pose" "ROS dependencies")
-    endif()
-    if(NOT BULLET_FOUND)
-      build_skipped_message("conveyor-pose" "bullet dependencies")
-    endif()
-    if(PCL_WARNING)
-      foreach(pcl_warn ${PCL_WARNING})
-        message(WARNING "${pcl_warn}")
-      endforeach()
-    endif()
-  endif()
 else()
   plugin_disabled_message("conveyor-pose")
 endif()
