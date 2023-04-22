@@ -4,10 +4,6 @@ set(PLUGIN_navgraph-generator-mps
 add_subdirectory(interfaces)
 if(PLUGIN_navgraph-generator-mps)
   pkg_check_modules(pddl_parser pddl_parser)
-  if(EIGEN3_FOUND
-     AND TF_FOUND
-     AND NAVGRAPH_FOUND
-     AND CGAL_LIBS_FOUND)
     add_library(navgraph-generator-mps MODULE navgraph_generator_mps_plugin.cpp
                                               navgraph_generator_mps_thread.cpp)
     depend_on_eigen3(navgraph-generator-mps)
@@ -27,21 +23,6 @@ if(PLUGIN_navgraph-generator-mps)
       Position3DInterface
       NavGraphGeneratorInterface
       NavGraphWithMPSGeneratorInterface)
-
-  else()
-    if(NOT EIGEN3_FOUND)
-      build_skipped_message("navgraph-generator-mps" "eigen3 dependencies")
-    endif()
-    if(NOT TF_FOUND)
-      build_skipped_message("navgraph-generator-mps" "TF dependencies")
-    endif()
-    if(NOT NAVGRAPH_FOUND)
-      build_skipped_message("navgraph-generator-mps" "navgraph dependencies")
-    endif()
-    if(NOT CGAL_LIBS_FOUND)
-      build_skipped_message("navgraph-generator-mps" "CGAL dependencies")
-    endif()
-  endif()
 else()
   plugin_disabled_message("navgraph-generator-mps")
 endif()
