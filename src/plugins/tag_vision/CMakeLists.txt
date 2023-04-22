@@ -8,12 +8,6 @@ if(PLUGIN_tag_vision)
   pkg_check_modules(ALVAR alvar)
   pkg_check_modules(ALVAR-ROS ar_track_alvar)
 
-  if(BOOST_FOUND
-     AND TF_FOUND
-     AND OPENCV_FOUND
-     AND ROS_FOUND
-     AND ALVAR_FOUND
-     OR ALVAR-ROS_FOUND)
     add_library(
       tag_vision MODULE tag_vision_plugin.cpp tag_vision_thread.cpp
                         tag_position_list.cpp tag_position_interface_helper.cpp)
@@ -45,23 +39,6 @@ if(PLUGIN_tag_vision)
       fvfilters
       fawkesconfig
       TagVisionInterface)
-  else()
-    if(NOT BOOST_FOUND)
-      build_skipped_message("tag_vision" "BOOST dependencies")
-    endif()
-    if(NOT TF_FOUND)
-      build_skipped_message("tag_vision" "TF dependencies")
-    endif()
-    if(NOT OPENCV_FOUND)
-      build_skipped_message("tag_vision" "OpenCV dependencies")
-    endif()
-    if(NOT ROS_FOUND)
-      build_skipped_message("tag_vision" "ROS dependencies")
-    endif()
-    if(NOT ALVAR_FOUND)
-      build_skipped_message("tag_vision" "ALVAR dependencies")
-    endif()
-  endif()
 else()
   plugin_disabled_message("tag_vision")
 endif()
