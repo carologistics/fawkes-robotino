@@ -7,11 +7,6 @@ add_subdirectory(interfaces)
 if(PLUGIN_arduino)
   pkg_check_modules(LIBUDEV libudev)
 
-  if(ROS_FOUND
-     AND TF_FOUND
-     AND PCL_FOUND
-     AND LIBUDEV_FOUND)
-
     add_library(arduino MODULE arduino_plugin.cpp com_thread.cpp tf_thread.cpp
                                com_message.cpp)
     depend_on_ros(arduino)
@@ -38,20 +33,6 @@ if(PLUGIN_arduino)
     else()
       add_custom_target(flash_arduino echo "No arduino connected, can't flash")
     endif()
-  else()
-    if(NOT TF_FOUND)
-      build_skipped_message("arduino" "TF dependencies")
-    endif()
-    if(NOT ROS_FOUND)
-      build_skipped_message("arduino" "ROS dependencies")
-    endif()
-    if(NOT PCL_FOUND)
-      build_skipped_message("arduino" "PCL dependencies")
-    endif()
-    if(NOT LIBUDEV_FOUND)
-      build_skipped_message("arduino" "LIBUDEV dependencies")
-    endif()
-  endif()
 else()
   plugin_disabled_message("arduino")
 endif()
