@@ -12,7 +12,6 @@ if(PLUGIN_arduino)
 
   add_library(arduino MODULE arduino_plugin.cpp com_thread.cpp tf_thread.cpp
                              com_message.cpp)
-  depend_on_ros(arduino)
   depend_on_pcl(arduino)
   depend_on_tf(arduino)
   target_compile_options(arduino PUBLIC ${LIBUDEV_CFLAGS})
