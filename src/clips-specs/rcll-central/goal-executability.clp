@@ -703,7 +703,7 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; MPS CEs
 	(wm-fact (key domain fact mps-type args? m ?mps t CS))
-	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~DOWN))
+	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~DOWN&~PROCESSED))
 	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
 	(wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
 	(wm-fact (key domain fact cs-buffered args? m ?mps col ?any-cap-color))
