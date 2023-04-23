@@ -248,7 +248,7 @@
 )
 
 (defrule refbox-action-mps-prepare-send-signal
-  (time $?now)
+  (declare (salience ?*SALIENCE-LOW*))
   ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (id ?id)
                       (state RUNNING)
                       (action-name prepare-bs|
@@ -263,12 +263,9 @@
                                                          ?param-names
                                                          ?param-values))
                          mps)
-  ?st <- (timer (name ?n&:(eq ?n (sym-cat prepare- ?goal-id - ?plan-id
-                                          - ?id -send-timer)))
-                (time $?t&:(timeout ?now ?t ?*PREPARE-PERIOD*))
-                (seq ?seq))
   (metadata-prepare-mps ?mps ?team-color ?peer-id $?instruction_info)
   (wm-fact (key domain fact mps-type args? m ?mps t ?mps-type) (value TRUE))
+  (protobuf-msg (type "llsf_msgs.MachineInfo"))
   =>
   (bind ?machine-instruction (pb-create "llsf_msgs.PrepareMachine"))
   (pb-set-field ?machine-instruction "team_color" ?team-color)
@@ -314,8 +311,6 @@
   (pb-broadcast ?peer-id ?machine-instruction)
   (pb-destroy ?machine-instruction)
   (printout t "Sent Prepare Msg for " ?mps " with " ?instruction_info  crlf)
-
-  (modify ?st (time ?now) (seq (+ ?seq 1)))
 )
 
 
