@@ -26,12 +26,15 @@
   "If there is an unfulfilled buffer request, create buffer goal."
   ?request <- (wm-fact (key request buffer args? ord ?order-id col ?cap-col prio ?prio) (value OPEN))
   (wm-fact (key domain fact cs-color args? m ?cs col ?cap-col))
+  (goal (class INSTRUCTION-ROOT) (id ?instruct-root-id))
 
   (goal (class SUPPORT-ROOT) (id ?root-id))
   =>
   (bind ?buffer-goal (goal-production-assert-buffer-cap ?cs ?cap-col ?order-id))
+  (bind ?instruct-goal (goal-production-assert-instruct-cs-buffer-cap ?cs ?cap-col ?order-id))
   (modify ?request (value ACTIVE))
   (modify ?buffer-goal (parent ?root-id) (priority ?prio))
+  (modify ?instruct-goal (parent ?instruct-root-id) (priority ?prio))
 )
 
 (defrule goal-request-assert-pay-with-cap-carrier
