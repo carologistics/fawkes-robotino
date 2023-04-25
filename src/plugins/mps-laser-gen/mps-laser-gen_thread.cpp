@@ -115,16 +115,50 @@ MPSLaserGenThread::loop()
 			if (n.has_property("orientation")) {
 				ori = n.property_as_float("orientation");
 			}
+			if (n.name().find("SS") != std::string::npos) {
+				continue;
+			}
 			if (cfg_enable_mps_laser_gen_ || (cfg_enable_mps_box_filter_ && mpses.count(n.name()) == 0)) {
 				MPS mps;
-				mps.center = transform * Eigen::Vector2f(n.x(), n.y());
+				mps.center    = Eigen::Vector2f(n.x(), n.y());
+				mps.center[0] = static_cast<float>(static_cast<int>(n.x()) + 0.5 * (n.x() / fabs(n.x())));
+				mps.center[1] = static_cast<float>(static_cast<int>(n.y()) + 0.5 * (n.y() / fabs(n.y())));
 
+				mps.corners[0] = Eigen::Vector2f(mps_width_2, -mps_length_2);
+				mps.corners[1] = Eigen::Vector2f(-mps_width_2, -mps_length_2);
+				mps.corners[2] = Eigen::Vector2f(-mps_width_2, mps_length_2);
+				mps.corners[3] = Eigen::Vector2f(mps_width_2, mps_length_2);
+
+				Eigen::Rotation2Df rot(ori);
+				mps.corners[0] = (rot * mps.corners[0]) + mps.center;
+				mps.corners[1] = (rot * mps.corners[1]) + mps.center;
+				mps.corners[2] = (rot * mps.corners[2]) + mps.center;
+				mps.corners[3] = (rot * mps.corners[3]) + mps.center;
+
+				// send a message to the box_filter laser filter if needed
+				if (cfg_enable_mps_box_filter_ && mpses.count(n.name()) == 0) {
+					LaserBoxFilterInterface::CreateNewBoxFilterMessage *box_filter_msg =
+					  new LaserBoxFilterInterface::CreateNewBoxFilterMessage();
+
+					box_filter_msg->set_p1(0, mps.center[0] - 0.5);
+					box_filter_msg->set_p1(1, mps.center[1] + 0.5);
+					box_filter_msg->set_p2(0, mps.center[0] + 0.5);
+					box_filter_msg->set_p2(1, mps.center[1] + 0.5);
+					box_filter_msg->set_p3(0, mps.center[0] - 0.5);
+					box_filter_msg->set_p3(1, mps.center[1] - 0.5);
+					box_filter_msg->set_p4(0, mps.center[0] + 0.5);
+					box_filter_msg->set_p4(1, mps.center[1] - 0.5);
+
+					laser_box_filter_if_->read();
+					laser_box_filter_if_->msgq_enqueue(box_filter_msg);
+				}
+
+				mps.center     = transform * Eigen::Vector2f(n.x(), n.y());
 				mps.corners[0] = sensor_rotation * Eigen::Vector2f(mps_width_2, -mps_length_2);
 				mps.corners[1] = sensor_rotation * Eigen::Vector2f(-mps_width_2, -mps_length_2);
 				mps.corners[2] = sensor_rotation * Eigen::Vector2f(-mps_width_2, mps_length_2);
 				mps.corners[3] = sensor_rotation * Eigen::Vector2f(mps_width_2, mps_length_2);
 
-				Eigen::Rotation2Df rot(ori);
 				mps.corners[0] = (rot * mps.corners[0]) + mps.center;
 				mps.corners[1] = (rot * mps.corners[1]) + mps.center;
 				mps.corners[2] = (rot * mps.corners[2]) + mps.center;
@@ -159,23 +193,6 @@ MPSLaserGenThread::loop()
 				                  mps.corners[2][0],
 				                  mps.corners[2][1]);
 				mpses[n.name()] = mps;
-
-				// send a message to the box_filter laser filter if needed
-				if (cfg_enable_mps_box_filter_ && mpses.count(n.name()) == 0) {
-					LaserBoxFilterInterface::CreateNewBoxFilterMessage *box_filter_msg =
-					  new LaserBoxFilterInterface::CreateNewBoxFilterMessage();
-					box_filter_msg->set_p1(0, mps.corners[0][0]);
-					box_filter_msg->set_p1(1, mps.corners[0][1]);
-					box_filter_msg->set_p2(0, mps.corners[1][0]);
-					box_filter_msg->set_p2(1, mps.corners[1][1]);
-					box_filter_msg->set_p3(0, mps.corners[2][0]);
-					box_filter_msg->set_p3(1, mps.corners[2][1]);
-					box_filter_msg->set_p4(0, mps.corners[3][0]);
-					box_filter_msg->set_p4(1, mps.corners[3][1]);
-
-					laser_box_filter_if_->read();
-					laser_box_filter_if_->msgq_enqueue(box_filter_msg);
-				}
 			}
 		}
 	}
