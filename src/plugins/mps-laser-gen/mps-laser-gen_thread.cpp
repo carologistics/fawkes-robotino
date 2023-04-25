@@ -193,7 +193,6 @@ MPSLaserGenThread::loop()
 				                  mps.corners[2][0],
 				                  mps.corners[2][1]);
 				mpses[n.name()] = mps;
-
 			}
 		}
 	}
