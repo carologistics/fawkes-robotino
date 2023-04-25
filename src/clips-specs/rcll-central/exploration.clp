@@ -52,7 +52,7 @@
 " Exploration is not needed anymore, as all machines were found.
   Remove assignments and retract goal/goal-meta facts."
 	?gf <-(goal (id ?id) (class EXPLORE-ZONE|EXPLORATION-MOVE) (mode FORMULATED))
-  	?gm <- (goal-meta (goal-id ?id) (assigned-to nil))
+  	?gm <- (goal-meta (goal-id ?id) (assigned-to ~nil))
 	(wm-fact (key exploration active) (type BOOL) (value FALSE))
 	=>
 	(remove-robot-assignment-from-goal-meta ?gf)
@@ -61,7 +61,8 @@
 
 (defrule exp-fail-goals
 " Exploration is not needed anymore as all machines were found."
-	?g <-(goal (class EXPLORE-ZONE|EXPLORATION-MOVE) (mode DISPATCHED))
+	?g <-(goal (id ?id) (class EXPLORE-ZONE|EXPLORATION-MOVE) (mode DISPATCHED))
+  	?gm <- (goal-meta (goal-id ?id) (assigned-to nil))
 	(wm-fact (key exploration active) (type BOOL) (value FALSE))
 	=>
 	(modify ?g (mode FINISHED) (outcome FAILED))
