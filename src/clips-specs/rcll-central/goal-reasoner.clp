@@ -473,10 +473,10 @@
 
 (deffunction goal-reasoner-get-goal-category (?goal-class)
   (bind ?production-goals (create$ MOUNT-CAP MOUNT-RING DELIVER-RC21 DELIVER))
-  (bind ?maintenance-goals (create$ BUFFER-CAP DISCARD PAY-FOR-RINGS-WITH-BASE PAY-FOR-RINGS-WITH-CAP-CARRIER PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF))
+  (bind ?maintenance-goals (create$ BUFFER-CAP PAY-FOR-RINGS-WITH-BASE PAY-FOR-RINGS-WITH-CAP-CARRIER PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF))
   (bind ?maintenance-instruct-goals (create$ INSTRUCT-RS-MOUNT-RING INSTRUCT-CS-MOUNT-CAP INSTRUCT-DS-DELIVER))
   (bind ?production-instruct-goals (create$ INSTRUCT-CS-BUFFER-CAP INSTRUCT-DS-DISCARD))
-  (bind ?other-goals (create$ MOVE MOVE-OUT-OF-WAY ENTER-FIELD))
+  (bind ?other-goals (create$ MOVE MOVE-OUT-OF-WAY ENTER-FIELD DISCARD))
   (bind ?other-instruct-goals (create$ INSTRUCT-BS-DISPENSE-BASE))
 
   (if (member$ ?goal-class ?production-goals) then (return PRODUCTION))
@@ -727,7 +727,6 @@
 
   (goal-reasoner-retract-plan-action ?goal-id)
 )
-
 
 (defrule goal-reasoner-evaluate-maintenance-goal-discard-failed
   "If a discard goal fails, reformulate it in DISPATCHED with a new plan that
