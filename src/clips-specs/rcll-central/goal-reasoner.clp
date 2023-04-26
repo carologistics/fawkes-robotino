@@ -60,6 +60,7 @@
   ?*SALIENCE-GOAL-EXPAND* = 300
   ?*SALIENCE-GOAL-PRE-SELECT* = 250
   ?*SALIENCE-GOAL-SELECT* = 200
+  ?*SALIENCE-GOAL-REFORMULATE* = 100
   ?*SALIENCE-GOAL-EVALUATE-GENERIC* = -1
 )
 
@@ -438,6 +439,24 @@
 			(retract ?waiting)
 		)
 	)
+)
+
+; ============================== Goal Rejection ==============================
+(defrule goal-reasoner-reject-bs-wp-in-use
+  (declare (salience ?*SALIENCE-GOAL-REJECT*))
+  ?g <- (goal (params $? wp ?wp $?) (mode FORMULATED) (is-executable TRUE))
+  (goal (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED) (params $? wp ?wp $?))
+  (wm-fact (key domain fact mps-type args? m ?bs t BS))
+  (wm-fact (key domain fact wp-at args? wp ?other-wp&:(neq ?wp ?other-wp) m ?bs side ?))
+  =>
+  (modify ?g (mode FINISHED) (outcome REJECTED))
+)
+
+(defrule goal-reasoner-reformulate-rejected goal
+  (declare (salience ?*SALIENCE-GOAL-REFORMULATE*))
+  ?g <- (goal (mode FINISHED) (outcome REJECTED))
+  =>
+  (modify ?g (mode FORMULATED) (outcome UNKNOWN))
 )
 
 ; ============================== Goal Expander ===============================

@@ -715,17 +715,24 @@
   (modify ?g (priority (- ?p 2)))
 )
 
-(defrule goal-production-create-empty-discard
-	"Creates an empty discard goal to get rid of WPs that do not belong to any order,
-  or step in the production chain e.g. a workpiece left from stopping to pursue an
-  order."
-	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-	(goal (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
-	(goal (id ?root-id) (class WAIT-ROOT))
-	(not (goal (class EMPTY-DISCARD)))
-	=>
-	(bind ?g (goal-tree-assert-central-run-parallel EMPTY-DISCARD))
-	(modify ?g (parent ?root-id) (priority 0))
+(defrule goal-production-create-discard-wp-not-used
+  "Creates a move out of way goal. As soon as it is completed it's reset"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+  (goal (id ?root-id) (class SUPPORT-ROOT))
+  ;bind default values
+  (wm-fact (key domain fact mps-type args? m ?mps $?))
+  (domain-object (name ?side) (type mps-side))
+  (or
+    (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side))
+    (wm-fact (key domain fact holding args? $? wp ?wp $?))
+  )
+  (not (goal (params $? ?wp $?) (mode ~EVALUATED|~RETRACTED)))
+  =>
+  (bind ?id (sym-cat DISCARD-(gensym*)))
+  (assert (goal (id ?id) (class DISCARD)
+          (params wp ?wp wp-loc ?mps side ?side)))
+  (assert (goal-meta (goal-id ?id)))
 )
 
 (defrule goal-production-debug-cap
