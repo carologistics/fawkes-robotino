@@ -31,7 +31,7 @@ plugins/execution-time-estimator:
 
       enter-field:
         name: drive_into_field
-        exec-time: 12.68
+        exec-time: 0 #12.68
 
       discard:
         name: discard
