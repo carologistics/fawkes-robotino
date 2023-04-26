@@ -18,6 +18,14 @@ fawkes/meta_plugins:
     - joystick-teleop
   m-base-gripper:
     - arduino
+  m-base-ros:
+    - ros
+    - ros-pcl
+    - ros-odometry
+    - ros-tf
+    - ros-laserscan
+    - ros-cmdvel
+    - ros-navigator
   m-base-ros2:
     - ros2
     - ros2-odometry
@@ -34,6 +42,7 @@ fawkes/meta_plugins:
   m-base-full:
     - m-base-bare
     - m-base-laser
+    - m-base-ros
     - m-base-gripper
     - amcl
     - m-base-joy
@@ -43,6 +52,6 @@ fawkes/meta_plugins:
     - m-base-laser
     - m-base-gripper
     - m-base-ros2
-    - amcl
+    - amcl2
     - m-base-joy
     - laser_front_dist
