@@ -28,7 +28,6 @@
   ?*PRODUCTION-C1-PRIORITY* = 40
   ?*PRODUCTION-C2-PRIORITY* = 50
   ?*PRODUCTION-C3-PRIORITY* = 60
-  ?*EXEC-MON-GOAL-PRIORITY* = 100
   ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT* = 30
 )
 
@@ -736,8 +735,7 @@
   =>
   (bind ?id (sym-cat DISCARD-(gensym*)))
   (assert (goal (id ?id) (class DISCARD)
-          (params wp ?wp wp-loc ?mps side ?side)
-          (priority ?*EXEC-MON-GOAL-PRIORITY*)))
+          (params wp ?wp wp-loc ?mps side ?side)))
   (assert (goal-meta (goal-id ?id)))
 )
 
