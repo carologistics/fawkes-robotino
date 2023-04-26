@@ -53,3 +53,7 @@ laser-lines:
   moving_avg_enabled: true
   # The size (number of elements) of the moving average window
   moving_avg_window_size: 5
+
+  # Create additional LaserLineInterfaces transformed to a custom frame.
+  transform_to_frame_enabled: true
+  transform_to_frame_id: "map"
