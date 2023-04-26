@@ -28,6 +28,7 @@
   ?*PRODUCTION-C1-PRIORITY* = 40
   ?*PRODUCTION-C2-PRIORITY* = 50
   ?*PRODUCTION-C3-PRIORITY* = 60
+  ?*EXEC-MON-GOAL-PRIORITY* = 100
   ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT* = 30
 )
 
@@ -717,6 +718,27 @@
   =>
   (printout t "modify priority of " ?goal-id crlf)
   (modify ?g (priority (- ?p 2)))
+)
+
+(defrule goal-production-create-discard-wp-not-used
+  "Creates a move out of way goal. As soon as it is completed it's reset"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+  (goal (id ?root-id) (class SUPPORT-ROOT))
+  ;bind default values
+  (wm-fact (key domain fact mps-type args? m ?mps $?))
+  (domain-object (name ?side) (type mps-side))
+  (or
+    (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side))
+    (wm-fact (key domain fact holding args? $? wp ?wp $?))
+  )
+  (not (goal (params $? ?wp $?) (mode ~EVALUATED|~RETRACTED)))
+  =>
+  (bind ?id (sym-cat DISCARD-(gensym*)))
+  (assert (goal (id ?id) (class DISCARD)
+          (params wp ?wp wp-loc ?mps side ?side)
+          (priority ?*EXEC-MON-GOAL-PRIORITY*)))
+  (assert (goal-meta (goal-id ?id)))
 )
 
 (defrule goal-production-debug-cap
