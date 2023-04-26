@@ -257,3 +257,28 @@
   =>
   (modify ?request (values status OPEN assigned-to))
 )
+
+
+; -------------------- Handle orphaned workpieces ------------------------
+
+(defrule goal-request-take-over-orphaned-workpiece
+  "If there is an unhandled payment request that has associated pay-with-base
+  goals redo to them to take over orphaned workpieces.t"
+  (wm-fact (key request pay args? ord ?order-id m ?rs $?) (values status ACTIVE assigned-to ?payment-goal-id ?instruct-goal-id))
+  ?instruct-goal <- (goal (id ?instruct-goal-id) (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED))
+  ?payment-goal <- (goal (id ?payment-goal-id) (class PAY-FOR-RINGS-WITH-BASE) (mode FORMULATED) (params wp ?wp wp-loc ?bs wp-side ?wp-side target-mps ?target target-side ?target-side))
+
+  (wm-fact (key domain fact wp-at args? wp ?existing-wp m ?bs side ?any-side))
+  (not (goal (mode ~RETRACTED) (params $? ?existing-wp $?)))
+
+  ;gather wp facts for cleanup
+  ?wp-fact <- (domain-object (name ?wp) (type workpiece))
+  ?wp-unused-fact <- (domain-fact (name wp-unused) (param-values ?wp))
+  ?wp-color-fact <- (wm-fact (key domain fact wp-base-color args? wp ?wp $?))
+  =>
+  ;modify the request-associated goals
+  (modify ?payment-goal (params wp ?existing-wp wp-loc ?bs wp-side ?wp-side target-mps ?target target-side ?target-side))
+  (modify ?instruct-goal (mode FINISHED) (outcome COMPLETED))
+  ;clean up the wp facts
+  (retract ?wp-fact ?wp-unused-fact ?wp-color-fact)
+)
