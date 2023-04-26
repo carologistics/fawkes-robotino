@@ -1,0 +1,5 @@
+generate_interface_from_xml(ObjectTrackingInterface.xml)
+generate_interface_from_xml(RobotinoAmpelInterface.xml)
+generate_interface_from_xml(ZoneInterface.xml)
+generate_interface_from_xml(PuckVisionInterface.xml)
+generate_interface_from_xml(RobotinoLightInterface.xml)
