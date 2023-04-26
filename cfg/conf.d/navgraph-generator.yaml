@@ -101,7 +101,7 @@ navgraph-generator-mps:
 
   bounding-box:
     p1: [-7, 0]
-    p2: [7, 8]
+    p2: [7, 5]
 
   # Number of wait zones per half-field
   # i.e. generate X wait zones for x < 0 and X wait zones for x > 0
