@@ -240,14 +240,13 @@ function cam_frame_visible(frame)
    return pos_iface and pos_iface:visibility_history() > 0
 end
 
-function object_tracker_inactive()
-   return (fsm.vars.end_early or fsm.vars.visual_servoing) and
-      (not object_tracking_if:has_writer() or object_tracking_if:msgid() == 0)
+function object_tracker_active()
+   return object_tracking_if:has_writer() and not object_tracking_if:msgid() == 0
 end
 
 fsm:define_states{ export_to=_M,
    closure={motor=motor, navigator=navigator, pos3d_iface=pos3d_iface, cam_frame_visible=cam_frame_visible,
-      STUCK_MAX=STUCK_MAX, MISSING_MAX=MISSING_MAX, object_tracker_inactive=object_tracker_inactive,
+      STUCK_MAX=STUCK_MAX, MISSING_MAX=MISSING_MAX, object_tracker_active=object_tracker_active,
       early_endable=early_endable, drive_done=drive_done},
    {"INIT", JumpState},
    {"DRIVE", JumpState},
@@ -265,10 +264,13 @@ fsm:add_transitions{
    {"INIT", "FAILED", cond="not vars.target", desc="target TF failed"},
    {"INIT", "FAILED", cond="vars.stop_attempts > 5", desc="Navigator won't stop"},
    {"INIT", "STOP_NAVIGATOR", cond="navigator:has_writer() and not navigator:is_final()"},
-   {"INIT", "FAILED", cond=object_tracker_inactive, desc="Object tracker inactive"},
-   {"INIT", "DRIVE_VS", cond="vars.visual_servoing"},
    {"INIT", "DRIVE_CAM", cond="pos3d_iface(vars.frame)"},
+   {"INIT", "WAIT_OTI", cond="vars.visual_servoing or vars.end_early"},
    {"INIT", "DRIVE", cond=true},
+
+   {"WAIT_OTI", "DRIVE_VS", cond="vars.visual_servoing and object_tracker_active()"}
+   {"WAIT_OTI", "DRIVE", cond="object_tracker_active()"}
+   {"WAIT_OTI", "FAILED", timeout=0.5, desc="Object tracker inactive"}
 
    {"STOP_NAVIGATOR", "INIT", cond="navigator:is_final()"},
 
