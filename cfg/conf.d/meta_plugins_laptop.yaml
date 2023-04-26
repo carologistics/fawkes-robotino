@@ -32,7 +32,6 @@ fawkes/meta_plugins:
     - clips-executive
     - clips-executive-rest-api
   m-skiller:
-    - ros
     - m-fv-vision
     - navgraph
     - navgraph-generator

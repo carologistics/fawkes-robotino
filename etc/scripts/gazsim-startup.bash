@@ -58,7 +58,7 @@ GDB=
 SKIP_EXPLORATION=
 GAZEBO_WORLD=$GAZEBO_WORLD_PATH
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvi:tw:" -l "debug,ros,ros-launch:" -- "$@")
+OPTS=$(getopt -o "hx:c:lr::ksn:e:dm:aof:p:gvi:tw:" -l "debug,ros,ros2,ros-launch:" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
@@ -81,8 +81,20 @@ while true; do
          -x)
 	     COMMAND=$OPTARG
              ;;
-	 -r|--ros)
+	 -r)
+             if [ "$OPTARG" == "2" ] ; then
+                 ROS=-ros2
+                 ROS_LAUNCH_NAV2=yes
+             else
+                 ROS=-ros
+                 ROS_LAUNCH_MOVE_BASE=yes
+             fi
+                ;;
+	 --ros)
 	     ROS=-ros
+	     ;;
+	 --ros2)
+	     ROS=-ros2
 	     ;;
 	 --ros-launch)
 	     ROS_LAUNCH="$OPTARG"
@@ -186,7 +198,7 @@ case $COMMAND in
 	export LC_ALL="C"
 	#use optirun if available
 	#opti=$(command -v optirun)
-	$opti gzclient $@
+	$opti xrun gzclient $@
 	;;
     fawkes )
 	ulimit -c unlimited
