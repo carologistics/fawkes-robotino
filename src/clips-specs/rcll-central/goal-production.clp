@@ -498,13 +498,13 @@
       (bind ?price (sym-to-int (wm-key-arg ?rs-ring-spec:key rn)))
     )
     (loop-for-count ?price
-      (assert (wm-fact (key request pay args? ord ?order m (nth$ ?index ?rs) ring (sym-cat RING ?index) seq ?seq prio ?prio) (is-list FALSE) (type SYMBOL) (value OPEN)))
+      (assert (wm-fact (key request pay args? ord ?order m (nth$ ?index ?rs) ring (sym-cat RING ?index) seq ?seq prio ?prio) (is-list TRUE) (type SYMBOL) (values status OPEN assigned-to)))
       (bind ?seq (+ ?seq 1))
     )
     (bind ?index (+ ?index 1))
   )
-  (assert (wm-fact (key request buffer args? ord ?order col ?col-cap prio ?prio) (is-list FALSE) (type SYMBOL) (value OPEN)))
-  (assert (wm-fact (key request discard args? ord ?order cs ?cs prio ?prio) (is-list FALSE) (type SYMBOL) (value OPEN)))
+  (assert (wm-fact (key request buffer args? ord ?order col ?col-cap prio ?prio) (is-list TRUE) (type SYMBOL) (values status OPEN assigned-to)))
+  (assert (wm-fact (key request discard args? ord ?order cs ?cs prio ?prio) (is-list TRUE) (type SYMBOL) (values status OPEN assigned-to)))
 )
 
 
@@ -515,7 +515,6 @@
   (bind ?instruct-goals
     (goal-tree-assert-central-run-parallel-prio INSTRUCT-ORDER ?*PRODUCTION-C0-PRIORITY*
       (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id ?bs)
-      (goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap ?order-id)
       (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
     )
   )
@@ -542,7 +541,6 @@
   (bind ?instruct-goals
     (goal-tree-assert-central-run-parallel-prio INSTRUCT-ORDER ?*PRODUCTION-C1-PRIORITY*
       (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id ?bs)
-      (goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap ?order-id)
       (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
       (goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
     )
@@ -570,7 +568,6 @@
   (bind ?instruct-goals
     (goal-tree-assert-central-run-parallel-prio INSTRUCT-ORDER ?*PRODUCTION-C2-PRIORITY*
       (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id ?bs)
-      (goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap ?order-id)
       (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
       (goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
       (goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2 ?order-id TWO)
@@ -599,7 +596,6 @@
   (bind ?instruct-goals
     (goal-tree-assert-central-run-parallel-prio INSTRUCT-ORDER ?*PRODUCTION-C3-PRIORITY*
       (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id ?bs)
-      (goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap ?order-id)
       (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
       (goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
       (goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2 ?order-id TWO)
@@ -717,6 +713,19 @@
   =>
   (printout t "modify priority of " ?goal-id crlf)
   (modify ?g (priority (- ?p 2)))
+)
+
+(defrule goal-production-create-empty-discard
+	"Creates an empty discard goal to get rid of WPs that do not belong to any order,
+  or step in the production chain e.g. a workpiece left from stopping to pursue an
+  order."
+	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	(goal (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+	(goal (id ?root-id) (class WAIT-ROOT))
+	(not (goal (class EMPTY-DISCARD)))
+	=>
+	(bind ?g (goal-tree-assert-central-run-parallel EMPTY-DISCARD))
+	(modify ?g (parent ?root-id) (priority 0))
 )
 
 (defrule goal-production-debug-cap
