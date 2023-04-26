@@ -440,42 +440,6 @@
 	)
 )
 
-(defrule goal-reasoner-balance-payment-goals
-  "If there are multiple orders being fulfilled in parallel and one of them contains
-  a DISCARD-CC goal, try to replace it with a payment goal instead."
-  (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
-      (id ?goal1) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED) (verbosity ?v1))
-  (goal-meta (goal-id ?goal1) (root-for-order ?order1))
-  (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
-      (id ?goal2) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED) (verbosity ?v2))
-  (goal-meta (goal-id ?goal2) (root-for-order ?order2))
-  (wm-fact (key domain fact order-complexity args? ord ?order1 com C0))
-  (wm-fact (key domain fact order-complexity args? ord ?order2 com C2|C3))
-  ?d <- (goal (id ?discard-goal) (class DISCARD) (mode FORMULATED) (params wp ?wp&~UNKNOWN wp-loc ?source-loc wp-side ?source-side))
-  ?p1 <- (goal (id ?payment-goal) (class PAY-FOR-RINGS-WITH-BASE) (mode FORMULATED) (parent ?pay-base-parent) (params $? target-mps ?target-loc target-side ?target-side))
-  ?p2 <- (goal (id ?payment-instruct) (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED) (parent ?pay-base-parent))
-  ?p3 <- (goal (id ?pay-base-parent) (class PAY-FOR-RING-GOAL) (mode FORMULATED) (parent ?payment-parent))
-  (test (is-parent-of ?goal1 ?discard-goal))
-  (test (is-parent-of ?goal2 ?payment-goal))
-  =>
-  (retract ?d)
-  (retract ?p1)
-  (retract ?p2)
-  (retract ?p3)
-  (assert
-    (goal (class PAY-FOR-RINGS-WITH-CAP-CARRIER)
-      (id (sym-cat PAY-FOR-RINGS-WITH-CAP-CARRIER- (gensym*))) (sub-type SIMPLE)
-      (verbosity NOISY) (is-executable FALSE) (meta-template goal-meta) (parent ?payment-parent)
-      (params  wp ?wp
-                wp-loc ?source-loc
-                wp-side ?source-side
-                target-mps ?target-loc
-                target-side ?target-side
-      )
-    )
-  )
-)
-
 ; ============================== Goal Expander ===============================
 
 (defrule goal-reasoner-expand-goal-with-sub-type
@@ -505,6 +469,326 @@
 ; goal outcomes or plan and action status.
 
 
+; ----------------------- EVALUATE GOALS ---------------------------
+
+(deffunction goal-reasoner-get-goal-category (?goal-class)
+  (bind ?production-goals (create$ MOUNT-CAP MOUNT-RING DELIVER-RC21 DELIVER))
+  (bind ?maintenance-goals (create$ BUFFER-CAP PAY-FOR-RINGS-WITH-BASE PAY-FOR-RINGS-WITH-CAP-CARRIER PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF))
+  (bind ?maintenance-instruct-goals (create$ INSTRUCT-RS-MOUNT-RING INSTRUCT-CS-MOUNT-CAP INSTRUCT-DS-DELIVER))
+  (bind ?production-instruct-goals (create$ INSTRUCT-CS-BUFFER-CAP INSTRUCT-DS-DISCARD))
+  (bind ?other-goals (create$ MOVE MOVE-OUT-OF-WAY ENTER-FIELD DISCARD))
+  (bind ?other-instruct-goals (create$ INSTRUCT-BS-DISPENSE-BASE))
+
+  (if (member$ ?goal-class ?production-goals) then (return PRODUCTION))
+  (if (member$ ?goal-class ?maintenance-goals) then (return MAINTENANCE))
+  (if (member$ ?goal-class ?production-instruct-goals) then (return PRODUCTION-INSTRUCT))
+  (if (member$ ?goal-class ?maintenance-instruct-goals) then (return MAINTENANCE-INSTRUCT))
+  (if (member$ ?goal-class ?other-instruct-goals) then (return OTHER-INSTRUCT))
+  (if (member$ ?goal-class ?other-goals) then (return OTHER))
+
+  (return UNKNOWN)
+)
+
+(deffunction goal-reasoner-retract-plan-action (?goal-id)
+  (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
+    (delayed-do-for-all-facts ((?a plan-action)) (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
+      (retract ?a)
+    )
+    (retract ?p)
+  )
+)
+
+
+(defrule goal-reasoner-evaluate-clean-up-failed-order-root
+  "Once all requests have been removed, a failed order tree root can be safely
+  cleaned up, thus freeing capacity for starting new orders."
+  (declare (salience ?*MONITORING-SALIENCE*))
+  (goal (id ?root-id) (outcome FAILED) (mode FINISHED))
+  ?gm <- (goal-meta (goal-id ?root-id) (root-for-order ?order-id&~nil))
+  (not (wm-fact (key request ? args? ord ?order-id $?)))
+  =>
+  (modify ?gm (root-for-order nil))
+)
+
+(defrule goal-reasoner-evaluate-production-and-maintenance-wp-still-usable
+  "If a production or maintenance goal failed but the WP is still usable "
+  (declare (salience ?*MONITORING-SALIENCE*))
+  ?g <- (goal (class ?class&:(or (eq (goal-reasoner-get-goal-category ?class) PRODUCTION)
+                           (eq (goal-reasoner-get-goal-category ?class) MAINTENANCE)
+                           (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
+                           (eq (goal-reasoner-get-goal-category ?class) MAINTENANCE-INSTRUCT)
+                       ))
+              (error ~WP-LOST&~BORKEN-MPS&~INTERACTED-WITH-BROKEN-MPS);exclude special cases
+              (id ?goal-id)
+              (mode FINISHED)
+              (outcome FAILED)
+              (verbosity ?v))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+  (or (wm-fact (key domain fact wp-usable args? wp ?wp))
+      (wm-fact (key domain fact wp-on-shelf args? wp ?wp $?))
+      (wm-fact (key domain fact wp-at args? wp ?wp $?))
+  )
+  =>
+  (set-robot-to-waiting ?robot)
+  (remove-robot-assignment-from-goal-meta ?g)
+  (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as workpiece is still usable after fail" crlf)
+  (modify ?g (mode FORMULATED) (outcome UNKNOWN))
+
+  (goal-reasoner-retract-plan-action ?goal-id)
+)
+
+(defrule goal-reasoner-evaluate-production-goal-failed-wp-lost
+  "If a production goal was failed because the WP was lost,
+  clean-up the goal tree and requests
+  and let the production selector re-decide which order to pursue."
+  (declare (salience ?*MONITORING-SALIENCE*))
+  ?g <- (goal (class ?class&:(or (eq (goal-reasoner-get-goal-category ?class) PRODUCTION)
+                           (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
+                       ))
+        (id ?goal-id)
+        (error WP-LOST)
+        (mode FINISHED)
+        (outcome FAILED)
+        (verbosity ?v)
+  )
+  (goal-meta (goal-id ?goal-id) (order-id ?order-id) (assigned-to ?robot))
+  ?order-root <- (goal (id ?root-id) (outcome ~FAILED))
+  (goal-meta (goal-id ?root-id) (root-for-order ?order-id))
+  =>
+  (set-robot-to-waiting ?robot)
+  (remove-robot-assignment-from-goal-meta ?g)
+  (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, aborting order as the WP was lost." crlf)
+  ;first fail the order root and the production/production-instruct goals
+  ;this operation should be save, since only one production goal is gonna
+  ;run at at time. Failing the order root will also trigger a clean-up of requests
+  ;and thus of maintenance goals and their instructs.
+  (modify ?order-root (mode FINISHED) (outcome FAILED) (error WP-LOST))
+  (do-for-all-facts ((?goal goal) (?goal-meta goal-meta))
+    (and
+      (eq ?goal:id ?goal-meta:goal-id)
+      (eq ?goal-meta:order-id ?order-id)
+      (or
+        (eq (goal-reasoner-get-goal-category ?class) PRODUCTION)
+        (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
+      )
+      (member$ ?goal:mode (create$ FORMULATED SELECTED EXPANDED))
+    )
+    (modify ?goal (mode FINISHED) (outcome FAILED) (error WP-LOST))
+  )
+  ;next gracefully stop all dispatched production and production-instruct goals
+  ;by marking them for failure which will cause them to fail once no action
+  ;of their plan is running
+  (do-for-all-facts ((?goal goal) (?goal-meta goal-meta))
+    (and
+      (eq ?goal:id ?goal-meta:goal-id)
+      (eq ?goal-meta:order-id ?order-id)
+      (or
+        (eq (goal-reasoner-get-goal-category ?class) PRODUCTION)
+        (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
+      )
+      (member$ ?goal:mode (create$ DISPACTHED))
+      (eq ?goal:outcome UNKNOWN)
+    )
+	  (assert (wm-fact (key monitoring fail-goal args? g ?goal:id)))
+  )
+
+  (goal-reasoner-retract-plan-action ?goal-id)
+)
+
+(defrule goal-reasoner-evaluate-production-goal-failed-broken-retry
+  "If a production goal was failed because it interacted with a broken mps,
+  and we are late in the production process, we reformulate the goal."
+  (declare (salience ?*MONITORING-SALIENCE*))
+  ?g <- (goal (class ?class&:(or (eq (goal-reasoner-get-goal-category ?class) PRODUCTION)
+                           (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
+                       ))
+        (id ?goal-id)
+        (error BROKEN-MPS)
+        (mode FINISHED)
+        (outcome FAILED)
+        (verbosity ?v)
+  )
+  (goal-meta (goal-id ?goal-id) (order-id ?order-id) (assigned-to ?robot))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id comp ?comp))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
+  (wm-fact (key wp meta next-step args? wp ?wp) (value ?step))
+  (test
+    (or
+      (and
+        (eq ?comp C0)
+        (or
+          (eq ?step CAP)
+          (eq ?step DELIVER)
+        )
+      )
+      (and
+        (eq ?comp C1)
+        (or
+          (eq ?step CAP)
+          (eq ?step DELIVER)
+        )
+      )
+      (and
+        (eq ?comp C2)
+        (or
+          (eq ?step RING1)
+          (eq ?step CAP)
+          (eq ?step DELIVER)
+        )
+      )
+      (and
+        (eq ?comp C3)
+        (or
+          (eq ?step RING1)
+          (eq ?step RING2)
+          (eq ?step CAP)
+          (eq ?step DELIVER)
+        )
+      )
+    )
+  )
+  =>
+  (set-robot-to-waiting ?robot)
+  (remove-robot-assignment-from-goal-meta ?g)
+  (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, failed due to broken mps. Reformulate as we already progressed far." crlf)
+  (goal-reasoner-retract-plan-action ?goal-id)
+  (modify ?g (mode FORMULATED) (outcome UNKNOWN))
+)
+
+(defrule goal-reasoner-evaluate-production-goal-failed-broken-abort
+  "If a production goal was failed because it interacted with a broken mps,
+  and we are late in the production process, we reformulate the goal."
+  (declare (salience ?*MONITORING-SALIENCE*))
+  ?g <- (goal (class ?class&:(or (eq (goal-reasoner-get-goal-category ?class) PRODUCTION)
+                           (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
+                       ))
+        (id ?goal-id)
+        (error ?error&:(or (eq ?error INTERACTED-WITH-BROKEN-MPS) (eq ?error BROKEN-MPS)))
+        (mode FINISHED)
+        (outcome FAILED)
+        (verbosity ?v)
+  )
+  (goal-meta (goal-id ?goal-id) (order-id ?order-id) (assigned-to ?robot))
+  ?order-root <- (goal (id ?root-id) (outcome ~FAILED))
+  (goal-meta (goal-id ?root-id) (root-for-order ?order-id))
+  =>
+  (set-robot-to-waiting ?robot)
+  (remove-robot-assignment-from-goal-meta ?g)
+  (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, aborting order as we are early in the production process." crlf)
+  ;first fail the order root and the production/production-instruct goals
+  ;this operation should be save, since only one production goal is gonna
+  ;run at at time. Failing the order root will also trigger a clean-up of requests
+  ;and thus of maintenance goals and their instructs.
+  (modify ?order-root (mode FINISHED) (outcome FAILED) (error ?error))
+  (do-for-all-facts ((?goal goal) (?goal-meta goal-meta))
+    (and
+      (eq ?goal:id ?goal-meta:goal-id)
+      (eq ?goal-meta:order-id ?order-id)
+      (or
+        (eq (goal-reasoner-get-goal-category ?class) PRODUCTION)
+        (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
+      )
+      (member$ ?goal:mode (create$ FORMULATED SELECTED EXPANDED))
+    )
+    (modify ?goal (mode FINISHED) (outcome FAILED) (error WP-LOST))
+  )
+  ;next gracefully stop all dispatched production and production-instruct goals
+  ;by marking them for failure which will cause them to fail once no action
+  ;of their plan is running
+  (do-for-all-facts ((?goal goal) (?goal-meta goal-meta))
+    (and
+      (eq ?goal:id ?goal-meta:goal-id)
+      (eq ?goal-meta:order-id ?order-id)
+      (or
+        (eq (goal-reasoner-get-goal-category ?class) PRODUCTION)
+        (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
+      )
+      (member$ ?goal:mode (create$ DISPACTHED))
+      (eq ?goal:outcome UNKNOWN)
+    )
+	  (assert (wm-fact (key monitoring fail-goal args? g ?goal:id)))
+  )
+  (goal-reasoner-retract-plan-action ?goal-id)
+)
+
+(defrule goal-reasoner-evaluate-maintenance-goal-failed-wp-lost-retry
+  "If a maintenance goal was failed because the WP was lost, a cap-carrier, base,
+  or similar was lost. Reformulate the goal."
+  (declare (salience ?*MONITORING-SALIENCE*))
+  ?g <- (goal (class ?class&:(or (eq (goal-reasoner-get-goal-category ?class) MAINTENANCE)
+                           (eq (goal-reasoner-get-goal-category ?class) MAINTENANCE-INSTRUCT)
+                       ))
+        (id ?goal-id)
+        (error ?error&:(eq ?error WP-LOST))
+        (mode FINISHED)
+        (outcome FAILED)
+        (verbosity ?v)
+  )
+  (goal-meta (goal-id ?goal-id) (order-id ?order-id) (assigned-to ?robot))
+  =>
+  (set-robot-to-waiting ?robot)
+  (remove-robot-assignment-from-goal-meta ?g)
+  (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as the support WP was lost" crlf)
+  (modify ?g (mode FORMULATED) (outcome UNKNOWN))
+
+  (goal-reasoner-retract-plan-action ?goal-id)
+)
+
+(defrule goal-reasoner-evaluate-maintenance-goal-discard-failed
+  "If a discard goal fails, reformulate it in DISPATCHED with a new plan that
+  just contains an old-school discard action."
+  (declare (salience ?*MONITORING-SALIENCE*))
+  ?g <- (goal (id ?goal-id) (class DISCARD) (mode FINISHED) (outcome FAILED)
+              (verbosity ?v) (params wp ?wp $?))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+  =>
+  (set-robot-to-waiting ?robot)
+  (remove-robot-assignment-from-goal-meta ?g)
+  (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate and dispatch with classical drop discard" crlf)
+  (modify ?g (mode DISPATCHED) (outcome UNKNOWN))
+  (goal-reasoner-retract-plan-action ?goal-id)
+
+  (bind ?plan-id (sym-cat DISCARD-PLAN (gensym*)))
+	(assert (plan (id ?plan-id) (goal-id ?goal-id)))
+	(assert (plan-action (id 1) (plan-id ?plan-id) (action-name wp-discard) (param-values ?robot ?wp) (skiller (remote-skiller ?robot))))
+)
+
+(defrule goal-reasoner-evaluate-failed-goto
+  "Re-formulate a failed goal if the reason was a failed go-to action as the
+  best course of action is to just retry from the agent's perspective."
+  (declare (salience ?*MONITORING-SALIENCE*))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED) (meta $?meta)
+              (verbosity ?v))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (plan-action (action-name ?action&move|go-wait|wait-for-wp|wait-for-free-side)
+               (goal-id ?goal-id) (plan-id ?plan-id) (state FAILED))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+  =>
+  (set-robot-to-waiting ?robot)
+  (remove-robot-assignment-from-goal-meta ?g)
+  (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as only a " ?action " action failed" crlf)
+  (modify ?g (mode FORMULATED) (outcome UNKNOWN))
+
+  (goal-reasoner-retract-plan-action ?goal-id)
+)
+
+(defrule goal-reasoner-evaluate-move-out-of-way-empty-discard
+" Sets a finished move-out-of-way or empty discard goal to formulated."
+  (declare (salience ?*MONITORING-SALIENCE*))
+  ?g <- (goal (id ?goal-id) (class MOVE-OUT-OF-WAY|EMPTY-DISCARD) (mode FINISHED)
+              (outcome ?outcome) (verbosity ?v))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+  =>
+  (printout (log-debug ?v) "Evaluate move-out-of-way/empty discard goal " ?goal-id crlf)
+  (set-robot-to-waiting ?robot)
+  (remove-robot-assignment-from-goal-meta ?g)
+
+  ; delete plans of the goal
+  (goal-reasoner-retract-plan-action ?goal-id)
+  (modify ?g (mode FORMULATED) (outcome UNKNOWN) (is-executable FALSE))
+  (printout (log-debug ?v) "Goal " ?goal-id " FORMULATED" crlf)
+)
+
 ; ----------------------- EVALUATE COMMON ------------------------------------
 
 (defrule goal-reasoner-evaluate-common
@@ -521,230 +805,10 @@
   (modify ?g (mode EVALUATED))
 )
 
-; ----------------------- EVALUATE SPECIFIC GOALS ---------------------------
-
-
-(defrule goal-reasoner-evaluate-mount-or-payment
-" Sets a finished mount or payment goal to evaluated"
-  ?g <- (goal (id ?goal-id) (class MOUNT-CAP|PAY-FOR-RINGS-WITH-BASE|PAY-FOR-RINGS-WITH-CAP-CARRIER|PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF) (mode FINISHED) (outcome COMPLETED)
-              (verbosity ?v) (params $? ?mn $? ?rc))
-  (goal-meta (goal-id ?goal-id) (assigned-to ?robot)(order-id ?order-id))
-=>
-  (set-robot-to-waiting ?robot)
-  (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" ?mn  crlf)
-  (modify ?g (mode EVALUATED))
-)
-
-(defrule goal-reasoner-evaluate-mount-goal-mps-workload
-" Evaluate a MOUNT-RING goal and reduce mps workload counter based on completed plan-actions"
- ?g <- (goal (id ?goal-id) (class MOUNT-RING) (mode FINISHED) (verbosity ?v))
-  (goal-meta (goal-id ?goal-id) (assigned-to ?robot) (order-id ?order-id))
-  (plan-action (action-name rs-mount-ring1|rs-mount-ring2|rs-mount-ring3) (goal-id ?goal-id)
-               (param-values ?rs ?wp $?) (state FINAL))
-  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
-  ?wmf-order <- (wm-fact (key mps workload order args? m ?rs ord ?order-id))
-  ?update-fact <- (wm-fact (key mps workload needs-update) (value ?value))
-  =>
-  (modify ?wmf-order (value (- (fact-slot-value ?wmf-order value) 1)))
-  (if (eq ?value FALSE) then
-    (modify ?update-fact (value TRUE))
-  )
-  (set-robot-to-waiting ?robot)
-  (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" crlf)
-  (modify ?g (mode EVALUATED))
-)
-
-(defrule goal-reasoner-evaluate-move-out-of-way
-" Sets a finished move out of way goal independent of the outcome to formulated."
-  ?g <- (goal (id ?goal-id) (class MOVE-OUT-OF-WAY) (mode FINISHED)
-              (outcome ?outcome) (verbosity ?v))
-  (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-=>
-  (printout (log-debug ?v) "Evaluate move-out-of-way goal " ?goal-id crlf)
-  (set-robot-to-waiting ?robot)
-  (remove-robot-assignment-from-goal-meta ?g)
-
-  ; delete plans of the goal
-  (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
-    (delayed-do-for-all-facts ((?a plan-action))
-                              (and (eq ?a:plan-id ?p:id)
-                                   (eq ?a:goal-id ?goal-id))
-      (retract ?a))
-    (retract ?p)
-  )
-  (modify ?g (mode FORMULATED) (outcome UNKNOWN) (is-executable FALSE))
-  (printout (log-debug ?v) "Goal " ?goal-id " FORMULATED" crlf)
-)
-
-(defrule goal-reasoner-evaluate-failed-goto
-" Re-formulate a failed goal if the workpiece it processes is still usable
-"
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED) (meta $?meta)
-              (verbosity ?v))
-  (plan (id ?plan-id) (goal-id ?goal-id))
-  (plan-action (action-name ?action&move|go-wait|wait-for-wp|wait-for-free-side)
-               (goal-id ?goal-id) (plan-id ?plan-id) (state FAILED))
-  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
-  =>
-  (set-robot-to-waiting ?robot)
-  (remove-robot-assignment-from-goal-meta ?g)
-  (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as only a " ?action " action failed" crlf)
-  (modify ?g (mode FORMULATED) (outcome UNKNOWN))
-
-  (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
-    (delayed-do-for-all-facts ((?a plan-action)) (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
-      (retract ?a)
-    )
-    (retract ?p)
-  )
-)
-
-(defrule goal-reasoner-evaluate-failed-discard
-" Re-formulate a failed discard goal"
-	?g <- (goal (id ?goal-id) (class DISCARD) (mode FINISHED) (outcome FAILED)
-	            (verbosity ?v))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot))
-	=>
-	(set-robot-to-waiting ?robot)
-	(remove-robot-assignment-from-goal-meta ?g)
-	(printout (log-debug ?v) "Goal " ?goal-id " EVALUATED and reformulated as only a discard failed" crlf)
-	(modify ?g (mode FORMULATED) (outcome UNKNOWN))
-	(delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
-		(delayed-do-for-all-facts ((?a plan-action))
-		   (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
-			(retract ?a)
-		)
-		(retract ?p)
-	)
-)
-
-(defrule goal-reasoner-evaluate-failed-workpiece-usable
-" Re-formulate a failed goal if the workpiece it processes is still usable
-"
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED) (meta $?meta)
-              (verbosity ?v))
-  (plan (id ?plan-id) (goal-id ?goal-id))
-  (plan-action (action-name ?action&wp-get|wp-put|wp-put-slide-cc|wp-get-shelf)
-               (goal-id ?goal-id) (plan-id ?plan-id) (state FAILED)
-               (param-values $? ?wp $?))
-  (or (wm-fact (key domain fact wp-usable args? wp ?wp))
-      (wm-fact (key domain fact wp-on-shelf args? wp ?wp $?))
-  )
-  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
-  =>
-  (set-robot-to-waiting ?robot)
-  (remove-robot-assignment-from-goal-meta ?g)
-  (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as workpiece is still usable after failed " ?action crlf)
-  (modify ?g (mode FORMULATED) (outcome UNKNOWN))
-
-  (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
-    (delayed-do-for-all-facts ((?a plan-action)) (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
-      (retract ?a)
-    )
-    (retract ?p)
-  )
-)
-(defrule goal-reasoner-evaluate-failed-preparation-goal
-  "A carrier was lost for a preparation goal, reformulate the goal."
-  ?g <- (goal (id ?goal-id) (class BUFFER-CAP|DISCARD) (mode FINISHED) (outcome FAILED))
-  ?p <- (plan (goal-id ?goal-id) (id ?plan-id))
-  (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (action-name wp-get-shelf|wp-get|wp-put) (state FAILED) (param-values ? ? ?mps $?))
-  =>
-  ;remove the plan
-  (delayed-do-for-all-facts ((?pa plan-action)) (and (eq ?pa:goal-id ?goal-id) (eq ?pa:plan-id ?plan-id))
-    (retract ?pa)
-  )
-  (retract ?p)
-
-  ;reassert the goal
-  (modify ?g (mode FORMULATED) (outcome UNKNOWN))
-)
-
-(defrule goal-reasoner-evaluate-failed-payment-goal
-  "A ring payment was lost, reformulate the goal"
-  ?g <- (goal (id ?goal-id) (class ?class&PAY-FOR-RINGS-WITH-CAP-CARRIER|PAY-FOR-RINGS-WITH-BASE) (mode FINISHED) (outcome FAILED))
-  ?p <- (plan (goal-id ?goal-id) (id ?plan-id))
-  (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (action-name wp-get-shelf|wp-get|wp-put-slide-cc) (state FAILED) (param-values ? ? ?mps $?))
-  =>
-  ;remove the plan
-  (delayed-do-for-all-facts ((?pa plan-action)) (and (eq ?pa:goal-id ?goal-id) (eq ?pa:plan-id ?plan-id))
-    (retract ?pa)
-  )
-  (retract ?p)
-
-  ;reassert the goal
-  (modify ?g (mode FORMULATED) (outcome UNKNOWN))
-  (if (eq ?class PAY-FOR-RINGS-WITH-CAP-CARRIER) then
-    (modify ?g (class PAY-FOR-RINGS-WITH-BASE))
-  )
-)
-
-(defrule goal-reasoner-evaluate-failed-production-goal
-  "The goal failed and was not reformulated because the workpiece was lost. Escalate the error."
-  ?g <- (goal (id ?goal-id) (class ?goal-class&DELIVER|MOUNT-RING|MOUNT-CAP) (mode FINISHED) (outcome FAILED))
-  (goal-meta (goal-id ?goal-id) (order-id ?order-id))
-  (plan (goal-id ?goal-id) (id ?plan-id))
-  (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (action-name wp-get|wp-put) (state FAILED) (param-values ? ? ?mps $?))
-  =>
-  ;fail the entire tree
-  (delayed-do-for-all-facts ((?tree-goal goal) (?tree-goal-meta goal-meta))
-                            (and (eq ?tree-goal:id ?tree-goal-meta:goal-id)
-                                 (eq ?tree-goal-meta:order-id ?order-id)
-                                 (neq ?tree-goal:mode RETRACTED))
-      (modify ?tree-goal (mode FINISHED) (outcome FAILED))
-
-      (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?tree-goal:id)
-        (delayed-do-for-all-facts ((?pa plan-action)) (and (eq ?pa:goal-id ?tree-goal:id)  (eq ?pa:plan-id ?plan-id))
-          (retract ?pa)
-        )
-        (retract ?p)
-    )
-  )
-)
-
-(defrule goal-reasoner-evaluate-failed-order-tree
-  "If the root of an order tree fails, take care of open and fulfilled payments/buffered caps and
-  clean up the tree."
-  ?root <- (goal (id ?root-id) (mode FINISHED) (outcome FAILED))
-  (goal-meta (goal-id ?root-id) (root-for-order ?order-id))
-
-  ;wait until no requests for the order are
-  (not (wm-fact (key request $? args? ord ?order-id $?) (value ~ACTIVE)))
-
-  ?instruct-root <- (goal (class INSTRUCT-ORDER) (id ?instruct-root-id))
-  (goal (parent ?instruct-root-id) (id ?instruct-root-child))
-  (goal-meta (order-id ?order-id) (goal-id ?instruct-root-child))
-
-  ;goals to handle
-  (goal (id ?buffer-goal) (class BUFFER-CAP) (mode ?buffer-goal-mode) (outcome ?buffer-goal-outcome) (params target-mps ?cs $?))
-  (goal-meta (goal-id ?buffer-goal) (order-id ?order-id))
-  (goal (id ?discard-goal) (class  DISCARD) (mode ?discard-goal-mode) (outcome ?discard-goal-outcome))
-  (goal-meta (goal-id ?discard-goal) (order-id ?order-id))
-
-  (wm-fact (key order meta wp-for-order args? wp ?wp-for-order ord ?order-id))
-  (wm-fact (key domain fact wp-cap-color args? wp ?wp-for-order col ?cap-color $?))
-  (wm-fact (key domain fact order-cap-color args? ord ?order-id col ?order-cap-color))
-  (wm-fact (key domain fact cs-can-perform args? m ?cs op ?cs-op))
-  =>
-  ;nuke the production tree
-  (goal-reasoner-nuke-subtree ?root)
-  ;nuke the instruction tree
-  (goal-reasoner-nuke-subtree ?instruct-root)
-)
-
-(defrule goal-reasoner-remove-wp-facts-on-removed-order-parent
-  "When the root of an order is removed, remove the facts describing the wp for the order"
-  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
-  (not (goal-meta (root-for-order ?order-id)))
-  =>
-	(assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))
-)
-
 ; ================================= Goal Clean up ============================
 
 (defrule goal-reasoner-retract-achieve
-" Retract a goal if all sub-goals are retracted. Clean up any plans and plan
-  actions attached to it.
+" Retract a goal if all sub-goals are retracted.
 "
   ?g <-(goal (id ?goal-id) (type ACHIEVE) (mode EVALUATED)
              (acquired-resources) (verbosity ?v))
@@ -752,31 +816,6 @@
 =>
   (printout (log-debug ?v) "Goal " ?goal-id " RETRACTED" crlf)
   (modify ?g (mode RETRACTED))
-)
-
-
-(defrule goal-reasoner-remove-retracted-goal-common
-" Remove a retracted goal if it has no child (anymore).
-  Goal trees are retracted recursively from bottom to top. This has to be done
-  with low priority to avoid races with the sub-type goal lifecycle.
-"
-  (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
-  ?g <- (goal (id ?goal-id) (verbosity ?v)
-        (mode RETRACTED) (acquired-resources) (parent ?parent))
-  (not (goal (parent ?goal-id)))
-  (goal (id ?parent) (type MAINTAIN))
-=>
-  (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
-    (delayed-do-for-all-facts ((?a plan-action)) (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
-      (retract ?a)
-    )
-    (retract ?p)
-  )
-  (delayed-do-for-all-facts ((?f goal-meta)) (eq ?f:goal-id ?goal-id)
-    (retract ?f)
-  )
-  (retract ?g)
-  (printout (log-debug ?v) "Goal " ?goal-id " removed" crlf)
 )
 
 (defrule goal-reasoner-error-goal-without-sub-type-detected
@@ -790,10 +829,11 @@
 )
 
 (defrule goal-reasoner-clean-goals-separated-from-parent
-  ?g <- (goal (parent ?pid&~nil))
+  ?g <- (goal (id ?gid) (class ?class) (parent ?pid&~nil))
   (not (goal (id ?pid)))
   =>
   (retract ?g)
+  (printout error ?gid " of class " ?class " has a non-existing parent and was removed" crlf)
 )
 
 (deffunction is-goal-running (?mode)

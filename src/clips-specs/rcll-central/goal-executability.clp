@@ -88,6 +88,21 @@
   (modify ?g (is-executable TRUE))
 )
 
+(defrule goal-production-empty-discard-executable
+	(declare (salience (- ?*SALIENCE-GOAL-EXECUTABLE-CHECK* 1)))
+	?g <- (goal (id ?id) (class EMPTY-DISCARD) (sub-type SIMPLE)
+				(mode FORMULATED) (is-executable FALSE)
+
+	)
+	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
+	(wm-fact (key domain fact holding args? r ?robot wp ?wp))
+	(not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?any-order)))
+	(not (goal (params $? ?wp $?)))
+	=>
+	(printout t "Goal EMPTY-DISCARD executable for " ?robot " and WP " ?wp  crlf)
+ 	(modify ?g (is-executable TRUE))
+)
+
 (defrule goal-production-pick-and-place-executable
 "Check executability for pick and place
  Picks a wp from the output of the given mps
@@ -688,7 +703,7 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; MPS CEs
 	(wm-fact (key domain fact mps-type args? m ?mps t CS))
-	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~DOWN))
+	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~DOWN&~PROCESSED))
 	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
 	(wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
 	(wm-fact (key domain fact cs-buffered args? m ?mps col ?any-cap-color))
