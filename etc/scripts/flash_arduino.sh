@@ -6,7 +6,7 @@
 
 compile_command="arduino-cli compile -b arduino:avr:uno $1/ArduinoSketch/ --build-path $1/ArduinoSketch/Compiled"
 check_command="avrdude -c arduino -p ATmega328P -P $2 -B 10 -F -U flash:v:$1/ArduinoSketch/Compiled/ArduinoSketch.ino.hex"
-flash_command="arduino-cli upload -b arduino:avr:uno $1/ArduinoSketch --input-dir $1/ArduinoSketch/Compiled --port $2 --log-level debug -v"
+flash_command="avrdude -p atmega328p -carduino -P $2 -B 10 -F -U flash:w:$1/ArduinoSketch/Compiled/ArduinoSketch.ino.hex:i"
 
 if [ -e $2 ]
 then

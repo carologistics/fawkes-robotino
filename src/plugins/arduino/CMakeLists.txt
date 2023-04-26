@@ -29,9 +29,9 @@ if(PLUGIN_arduino)
     JoystickInterface)
 
   add_custom_target(
-    flash_arduino ALL echo "ARDUINO FLASHING IS DISABLED!")
-    #/bin/sh ${PROJECT_SOURCE_DIR}/etc/scripts/flash_arduino.sh
-    #${CMAKE_CURRENT_SOURCE_DIR} ${DEV_ARDUINO})
+    flash_arduino ALL
+    /bin/sh ${PROJECT_SOURCE_DIR}/etc/scripts/flash_arduino.sh
+    ${CMAKE_CURRENT_SOURCE_DIR} ${DEV_ARDUINO})
   add_dependencies(arduino flash_arduino)
 else()
   plugin_disabled_message("arduino")
