@@ -503,7 +503,7 @@
   "Once all requests have been removed, a failed order tree root can be safely
   cleaned up, thus freeing capacity for starting new orders."
   (goal (id ?root-id) (outcome FAILED) (mode FINISHED))
-  ?gm <- (goal-meta (goal-id ?root-id) (root-for-order ?order-id))
+  ?gm <- (goal-meta (goal-id ?root-id) (root-for-order ?order-id&~nil))
   (not (wm-fact (key request ? args? ord ?order-id $?)))
   =>
   (modify ?gm (root-for-order nil))
