@@ -502,6 +502,7 @@
 (defrule goal-reasoner-evaluate-clean-up-failed-order-root
   "Once all requests have been removed, a failed order tree root can be safely
   cleaned up, thus freeing capacity for starting new orders."
+  (declare (salience ?*MONITORING-SALIENCE*))
   (goal (id ?root-id) (outcome FAILED) (mode FINISHED))
   ?gm <- (goal-meta (goal-id ?root-id) (root-for-order ?order-id&~nil))
   (not (wm-fact (key request ? args? ord ?order-id $?)))
@@ -511,6 +512,7 @@
 
 (defrule goal-reasoner-evaluate-production-and-maintenance-wp-still-usable
   "If a production or maintenance goal failed but the WP is still usable "
+  (declare (salience ?*MONITORING-SALIENCE*))
   ?g <- (goal (class ?class&:(or (eq (goal-reasoner-get-goal-category ?class) PRODUCTION)
                            (eq (goal-reasoner-get-goal-category ?class) MAINTENANCE)
                            (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
@@ -539,6 +541,7 @@
   "If a production goal was failed because the WP was lost,
   clean-up the goal tree and requests
   and let the production selector re-decide which order to pursue."
+  (declare (salience ?*MONITORING-SALIENCE*))
   ?g <- (goal (class ?class&:(or (eq (goal-reasoner-get-goal-category ?class) PRODUCTION)
                            (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
                        ))
@@ -595,6 +598,7 @@
 (defrule goal-reasoner-evaluate-production-goal-failed-broken-retry
   "If a production goal was failed because it interacted with a broken mps,
   and we are late in the production process, we reformulate the goal."
+  (declare (salience ?*MONITORING-SALIENCE*))
   ?g <- (goal (class ?class&:(or (eq (goal-reasoner-get-goal-category ?class) PRODUCTION)
                            (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
                        ))
@@ -654,6 +658,7 @@
 (defrule goal-reasoner-evaluate-production-goal-failed-broken-abort
   "If a production goal was failed because it interacted with a broken mps,
   and we are late in the production process, we reformulate the goal."
+  (declare (salience ?*MONITORING-SALIENCE*))
   ?g <- (goal (class ?class&:(or (eq (goal-reasoner-get-goal-category ?class) PRODUCTION)
                            (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
                        ))
@@ -709,6 +714,7 @@
 (defrule goal-reasoner-evaluate-maintenance-goal-failed-wp-lost-retry
   "If a maintenance goal was failed because the WP was lost, a cap-carrier, base,
   or similar was lost. Reformulate the goal."
+  (declare (salience ?*MONITORING-SALIENCE*))
   ?g <- (goal (class ?class&:(or (eq (goal-reasoner-get-goal-category ?class) MAINTENANCE)
                            (eq (goal-reasoner-get-goal-category ?class) MAINTENANCE-INSTRUCT)
                        ))
@@ -731,6 +737,7 @@
 (defrule goal-reasoner-evaluate-maintenance-goal-discard-failed
   "If a discard goal fails, reformulate it in DISPATCHED with a new plan that
   just contains an old-school discard action."
+  (declare (salience ?*MONITORING-SALIENCE*))
   ?g <- (goal (id ?goal-id) (class DISCARD) (mode FINISHED) (outcome FAILED)
               (verbosity ?v) (params wp ?wp $?))
   (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
@@ -749,6 +756,7 @@
 (defrule goal-reasoner-evaluate-failed-goto
   "Re-formulate a failed goal if the reason was a failed go-to action as the
   best course of action is to just retry from the agent's perspective."
+  (declare (salience ?*MONITORING-SALIENCE*))
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED) (meta $?meta)
               (verbosity ?v))
   (plan (id ?plan-id) (goal-id ?goal-id))
@@ -766,6 +774,7 @@
 
 (defrule goal-reasoner-evaluate-move-out-of-way-empty-discard
 " Sets a finished move-out-of-way or empty discard goal to formulated."
+  (declare (salience ?*MONITORING-SALIENCE*))
   ?g <- (goal (id ?goal-id) (class MOVE-OUT-OF-WAY|EMPTY-DISCARD) (mode FINISHED)
               (outcome ?outcome) (verbosity ?v))
   (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
