@@ -580,27 +580,6 @@
 
 ; ----------------------- RESTORE FROM BACKUP -------------------------------
 
-(defrule execution-monitoring-detect-disconnected-robot
-	(declare (salience ?*MONITORING-SALIENCE*))
-	(wm-fact (key central agent robot args? r ?robot))
-	(HeartbeatInterface (id ?id&:(str-index ?robot ?id)) (alive FALSE))
-	(or (wm-fact (key central agent robot-waiting args? r ?robot))
-	    (goal-meta (assigned-to ?robot)))
-	(not (wm-fact (key central agent robot-lost args? r ?robot)))
-	; TODO: We could disable this as MAINTENANCE INFO SHOULD BE ENOUGH
-	=>
-	(printout error "Robot " ?robot  " lost, removing from worldmodel" crlf)
-	;(blackboard-close "HeartbeatInterface" ?id)
-	(do-for-fact ((?si SkillerInterface)) (str-index ?robot ?si:id)
-		(retract ?si)
-	)
-	(assert (wm-fact (key central agent robot-lost args? r ?robot)))
-	;(do-for-all-facts ((?bif blackboard-interface)) (str-index ?robot ?bif:id)
-	;	(blackboard-close ?bif:type ?bif:id)
-	;	(retract ?bif)
-	;)
-	(assert (reset-robot-in-wm ?robot))
-)
 (defrule execution-monitoring-remove-waiting-robot
 	(declare (salience ?*SALIENCE-HIGH*))
 	(wm-fact (key central agent robot args? r ?robot))
@@ -759,19 +738,13 @@
 	; TODO: We could disable this as MAINTENANCE INFO SHOULD BE ENOUGH
 	=>
 	(printout error "Robot " ?robot  " lost, removing from worldmodel" crlf)
-	(blackboard-close "HeartbeatInterface" ?id)
+	;(blackboard-close "HeartbeatInterface" ?id)
 	(do-for-fact ((?si SkillerInterface)) (str-index ?robot ?si:id)
 		(retract ?si)
 	)
-	(do-for-all-facts ((?bif blackboard-interface)) (str-index ?robot ?bif:id)
-		(blackboard-close ?bif:type ?bif:id)
-		(retract ?bif)
-	)
+	;(do-for-all-facts ((?bif blackboard-interface)) (str-index ?robot ?bif:id)
+	;	(blackboard-close ?bif:type ?bif:id)
+	;	(retract ?bif)
+	;)
 	(assert (reset-robot-in-wm ?robot))
-)
-
-(defrule execution-monitoring-clean-wm-from-robot
-  (declare (salience ?*MONITORING-SALIENCE*))
-	(domain-facts-loaded)
-	(reset-robot-in-wm ?robot)
 )
