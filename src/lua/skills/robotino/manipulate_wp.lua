@@ -473,6 +473,10 @@ function DRIVE_TO_LASER_LINE:loop()
   end
 end
 
+function DRIVE_TO_LASER_LINE:exit()
+  fsm.vars.error = "object not found"
+end
+
 function AT_LASER_LINE:loop()
   if fsm.vars.tracking_msgid ~= object_tracking_if:msgid() then
     fsm.vars.tracking_msgid = object_tracking_if:msgid()
