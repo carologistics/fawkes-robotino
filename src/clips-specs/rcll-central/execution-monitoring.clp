@@ -34,23 +34,6 @@
 	(return (modify ?action (state EXECUTION-FAILED) (error-msg ?error-msg)))
 )
 
-(deffunction fail-action (?action ?error-msg)
-	(do-for-fact ((?sae skill-action-execinfo))
-		(and (eq ?sae:goal-id (fact-slot-value ?action goal-id))
-		     (eq ?sae:plan-id (fact-slot-value ?action plan-id))
-		     (eq ?sae:action-id (fact-slot-value ?action id))
-		)
-		(do-for-fact ((?skill skill))
-			(and (eq ?skill:id ?sae:skill-id)
-			     (eq ?skill:skiller ?sae:skiller)
-			)
-			(retract ?skill)
-		)
-		(retract ?sae)
-	)
-	(return (modify ?action (state EXECUTION-FAILED) (error-msg ?error-msg)))
-)
-
 (defrule execution-monitoring-stop-dependency-waits
 " If a move action is stuck because another robot waits on that position,
   that robot should stop waiting there. "
@@ -165,9 +148,9 @@
     (printout t "   Aborting action " ?action-name " on interface" ?skiller crlf)
     (bind ?m (blackboard-create-msg (str-cat "SkillerInterface::" ?skiller) "StopExecMessage"))
     (blackboard-send-msg ?m)
-    (modify ?p (state FAILED) (error-msg "Stuck on RUNNING"))
+    (bind ?p (modify ?p (state FAILED) (error-msg "Stuck on RUNNING")))
    else
-    (modify ?p (state FAILED) (error-msg "Unsatisfied precondition"))
+    (bind ?p (modify ?p (state FAILED) (error-msg "Unsatisfied precondition")))
   )
   (fail-action ?p "Unsatisfied precondition")
   (retract ?pt)
