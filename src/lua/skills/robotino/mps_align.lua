@@ -161,7 +161,7 @@ fsm:add_transitions{
    {"FIND_TAG",      "SEARCH_LINES",    cond="want_search() and #vars.interesting_lines > 0", desc="search 4 tag"},
    {"FIND_TAG",      "MATCH_LINE",      cond="tag_visible(MIN_VIS_HIST_TAG)", desc="found tag"},
    {"FIND_TAG",      "TURN_AROUND",     timeout=1, desc="no interesting lines"},
-   {"FIND_TAG",      "FAILED",          cond="not want_search()"},
+   {"FIND_TAG",      "FAILED",          cond="not want_search() or vars.search_idx > 3"},
 
    {"SEARCH_LINES",  "MATCH_LINE",      cond="tag_visible(MIN_VIS_HIST_TAG)", desc="found tag"},
 
@@ -331,6 +331,11 @@ end
 
 function TURN_AROUND:init()
    print("TURN_AROUND search_idx: " .. self.fsm.vars.search_idx)
+   if self.fsm.vars.search_idx >= 3 then
+      print("GOING TO FAIL TURN_AROUND: because search index reached 3")
+   end
+
+
    self.args["motor_move"] = TURN_MOVES[math.mod(self.fsm.vars.search_idx, #TURN_MOVES)+1]
    self.fsm.vars.search_idx = self.fsm.vars.search_idx + 1
 
