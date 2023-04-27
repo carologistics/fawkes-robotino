@@ -54,7 +54,7 @@ local drive_back_x = -0.1
 
 local gripper_default_pose_x = 0.00   -- conveyor pose offset in x direction
 local gripper_default_pose_y = 0.00   -- conveyor_pose offset in y direction
-local gripper_default_pose_z = 0.056  -- conveyor_pose offset in z direction
+local gripper_default_pose_z = 0.045  -- conveyor_pose offset in z direction
 
 local x_max = 0.115  -- gripper max value in x direction
 local y_max = 0.075  -- gripper max value in y direction
