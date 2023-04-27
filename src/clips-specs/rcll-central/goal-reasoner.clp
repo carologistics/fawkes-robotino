@@ -789,6 +789,28 @@
   (printout (log-debug ?v) "Goal " ?goal-id " FORMULATED" crlf)
 )
 
+(defrule goal-reasoner-evaluate-buffer-cap-wrong-slot
+" Sets a finished move-out-of-way or empty discard goal to formulated."
+  (declare (salience ?*MONITORING-SALIENCE*))
+  ?g <- (goal (id ?goal-id) (class BUFFER-CAP) (mode FINISHED)
+              (outcome FAILED) (verbosity ?v))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+  (plan-action (goal-id ?goal-id) (state FAILED) (error-msg "Unsatisfied precondition") (action-name wp-get-shelf) (param-values ?robot ? ?cs ?spot))
+  ?wp-on-shelf-fact <- (wm-fact  (key domain fact wp-on-shelf args? wp ? m ?cs spot ?spot))
+  (wm-fact  (key domain fact wp-on-shelf args? wp ? m ?cs spot ?other-spot&:(neq ?other-spot ?spot)))
+  =>
+  (printout (log-debug ?v) "Evaluate buffer-cap goal " ?goal-id ". Retrying as we can just try a different slot." crlf)
+  (set-robot-to-waiting ?robot)
+  (remove-robot-assignment-from-goal-meta ?g)
+
+  ; delete plans of the goal
+  (goal-reasoner-retract-plan-action ?goal-id)
+  (modify ?g (mode FORMULATED) (outcome UNKNOWN) (is-executable FALSE))
+  (printout (log-debug ?v) "Goal " ?goal-id " FORMULATED" crlf)
+  (retract ?wp-on-shelf-fact)
+  (printout (log-debug ?v) "Removed WP from shelf on " ?cs " slot " ?spot crlf)
+)
+
 ; ----------------------- EVALUATE COMMON ------------------------------------
 
 (defrule goal-reasoner-evaluate-common
