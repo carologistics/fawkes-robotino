@@ -503,7 +503,7 @@
   "Once all requests have been removed, a failed order tree root can be safely
   cleaned up, thus freeing capacity for starting new orders."
   (declare (salience ?*MONITORING-SALIENCE*))
-  (goal (id ?root-id) (outcome FAILED) (mode FINISHED))
+  (goal (id ?root-id) (outcome FAILED) (mode FINISHED|EVALUATED|RETRACTED))
   ?gm <- (goal-meta (goal-id ?root-id) (root-for-order ?order-id&~nil))
   (not (wm-fact (key request ? args? ord ?order-id $?)))
   =>
@@ -512,7 +512,7 @@
 
 (defrule goal-reasoner-evaluate-production-and-maintenance-wp-still-usable
   "If a production or maintenance goal failed but the WP is still usable "
-  (declare (salience ?*MONITORING-SALIENCE*))
+  (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
   ?g <- (goal (class ?class&:(or (eq (goal-reasoner-get-goal-category ?class) PRODUCTION)
                            (eq (goal-reasoner-get-goal-category ?class) MAINTENANCE)
                            (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
@@ -520,13 +520,13 @@
                        ))
               (error ~WP-LOST&~BORKEN-MPS&~INTERACTED-WITH-BROKEN-MPS);exclude special cases
               (id ?goal-id)
-              (mode FINISHED)
+              (mode FINISHED|EVALUATED|RETRACTED)
               (outcome FAILED)
               (verbosity ?v))
   (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
   (or (wm-fact (key domain fact wp-usable args? wp ?wp))
       (wm-fact (key domain fact wp-on-shelf args? wp ?wp $?))
-      (wm-fact (key domain fact wp-at args? wp ?wp $?))
+      (wm-fact (key domain fact wp-at args? r ?robot wp ?wp $?))
   )
   =>
   (set-robot-to-waiting ?robot)
