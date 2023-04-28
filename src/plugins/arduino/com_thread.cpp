@@ -368,7 +368,7 @@ ArduinoComThread::loop()
 				} else if (arduino_if_->msgq_first_is<ArduinoInterface::OpenHalfGripperMessage>()) {
 					ArduinoInterface::OpenHalfGripperMessage *msg = arduino_if_->msgq_first(msg);
 					logger->log_debug(name(), "Open Half Gripper");
-					append_message_to_queue(ArduinoComMessage::command_id_t::CMD_OPEN, 0, 10000);
+					append_message_to_queue(ArduinoComMessage::command_id_t::CMD_HALF_OPEN, 0, 10000);
 				} else if (arduino_if_->msgq_first_is<ArduinoInterface::StatusUpdateMessage>()) {
 					ArduinoInterface::StatusUpdateMessage *msg = arduino_if_->msgq_first(msg);
 					logger->log_debug(name(), "Request Status");

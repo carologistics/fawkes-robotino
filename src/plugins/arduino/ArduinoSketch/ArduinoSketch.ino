@@ -125,7 +125,7 @@ long a_half_toggle_steps = 120;
 
 #define STATUS_OPEN 2
 #define STATUS_HALF_OPEN 1
-#define STATUS_CLOSED 1
+#define STATUS_CLOSED 0
 
 char status_array_[] = {'M', 'I', 'E'};
 
@@ -397,8 +397,8 @@ void read_package() {
         cur_cmd == CMD_Z_NEW_POS ||
         cur_cmd == CMD_A_SET_TOGGLE_STEPS ||
 #ifdef DEBUG_MODE
-        cur_cmd == CMD_A_NEW_POS ||
-#endif
+		    cur_cmd == CMD_A_NEW_POS ||
+#endif	
 		    cur_cmd == CMD_X_NEW_SPEED || cur_cmd == CMD_Y_NEW_SPEED || cur_cmd == CMD_Z_NEW_SPEED
 		    || cur_cmd == CMD_A_NEW_SPEED || cur_cmd == CMD_X_NEW_ACC || cur_cmd == CMD_Y_NEW_ACC
 		    || cur_cmd == CMD_Z_NEW_ACC || cur_cmd == CMD_A_NEW_ACC || cur_cmd == CMD_SET_SPEED
@@ -471,7 +471,7 @@ void read_package() {
 			send_status();
 			break;
 		case CMD_OPEN:
-			if(gripper_state == STATUS_OPEN) {
+			if(gripper_state == STATUS_CLOSED) {
 				set_new_rel_pos(-a_toggle_steps, motor_A);
 			} else if(gripper_state == STATUS_HALF_OPEN) {
 				set_new_rel_pos(-(a_toggle_steps - a_half_toggle_steps), motor_A);
@@ -517,14 +517,22 @@ void read_package() {
 			break;
 		case CMD_CLOSE:
 			if(gripper_state == STATUS_OPEN) {
+				set_new_speed_acc(opening_speed / 8,
+				                  0.0,
+				                  motor_A); //slow down closing speed to an eighth of opening speed
 				set_new_rel_pos(a_toggle_steps, motor_A);
+				set_new_speed_acc(opening_speed, 0.0, motor_A); //reset speed
 			} else if (gripper_state == STATUS_HALF_OPEN) {
+				set_new_speed_acc(opening_speed / 8,
+				                  0.0,
+				                  motor_A); //slow down closing speed to an eighth of opening speed
 				set_new_rel_pos(a_half_toggle_steps, motor_A);
+				set_new_speed_acc(opening_speed, 0.0, motor_A); //reset speed
 			} else {
 				send_status();
 				send_status();
 			}
-			gripper_state = STATUS_HALF_OPEN;
+			gripper_state = STATUS_CLOSED;
 			open_gripper = true;
 			// check_gripper_endstop();
 			// assumed_gripper_state_local = get_assumed_gripper_state(false);
@@ -540,7 +548,7 @@ void read_package() {
 			// 	send_status();
 			// }
 			break;
-		case CMD_STATUS_REQ: send_status(); break;
+		cae CMD_STATUS_REQ: send_status(); break;
 		case CMD_CALIBRATE: calibrate(); break;
 		case CMD_DOUBLE_CALIBRATE: double_calibrate(); break;
 		case CMD_SET_SPEED:
