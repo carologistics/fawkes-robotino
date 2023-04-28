@@ -49,6 +49,8 @@
 #define MOTOR_A_DIR_PIN 13
 #define MOTOR_A_OPEN_LIMIT_PIN A4
 
+#define MOTOR_HOLD_PIN A4
+
 /*
  * The current time tick is extracted from the TCNT1 register.
  * As this is a two byte register, but the data bus is only one byte wide
@@ -241,51 +243,68 @@ void double_calibrate()
 
 void calibrate()
 {
-  // while the x axis is not done calibrating, the gripper is not moving in y
-  // and z direction, else this could be dangerous if a workpiece is placed
-  // near the gripper
-  bool x_done = false, y_done = false, z_done = false;
-  do { //repeat calibration as long as not successfull
-    motor_X.enableOutputs();
-    noInterrupts();
-    if(!x_done) motor_X.move(20000L);
-    movement_done_flag = false;
-    interrupts();
-    // due to high step count, reaching end stops is guaranteed!
-    set_status(STATUS_MOVING); // status is always only changed on no interrupt code level, hence no race condition occurs here
-    // This while loop controls permanently the state of the respective end stops and handles crashing into them
-    // When all end stops are triggered simulatenously, additional latency is introduced.
-    // The latency is maily due to the planning of the back movement.
-    // One work around is to calibrate twice, the first time fast and the second time slowly.
-    // (again inspired from grbl)
-    // Additionally, the backwards movement should use different numbers of steps
-    // to ensure that the end stops will not be triggerend simulatenously at the second calibration.
-    while(!movement_done_flag && (!x_done)){
-      if(!x_done && digitalRead(MOTOR_X_LIMIT_PIN)==LOW){ x_done=true; reach_end_handle(motor_X,0);}
-    }
-    movement_done_flag = false;
-  } while(!x_done);
-  do { //repeat calibration as long as not successfull
-    noInterrupts();
-    if(!y_done) motor_Y.move(20000L);
-    if(!z_done) motor_Z.move(20000L);
-    movement_done_flag = false;
-    interrupts();
-    // due to high step count, reaching end stops is guaranteed!
-    set_status(STATUS_MOVING); // status is always only changed on no interrupt code level, hence no race condition occurs here
-    // This while loop controls permanently the state of the respective end stops and handles crashing into them
-    // When all end stops are triggered simulatenously, additional latency is introduced.
-    // The latency is maily due to the planning of the back movement.
-    // One work around is to calibrate twice, the first time fast and the second time slowly.
-    // (again inspired from grbl)
-    // Additionally, the backwards movement should use different numbers of steps
-    // to ensure that the end stops will not be triggerend simulatenously at the second calibration.
-    while(!movement_done_flag && (!y_done || !z_done)){
-      if(!y_done && digitalRead(MOTOR_Y_LIMIT_PIN)==LOW){ y_done=true; reach_end_handle(motor_Y,100);}
-      if(!z_done && digitalRead(MOTOR_Z_LIMIT_PIN)==LOW){ z_done=true; reach_end_handle(motor_Z,200);}
-    }
-    movement_done_flag = false;
-  } while(!x_done || !y_done || !z_done);
+	// while the x axis is not done calibrating, the gripper is not moving in y
+	// and z direction, else this could be dangerous if a workpiece is placed
+	// near the gripper
+	bool x_done = false, y_done = false, z_done = false;
+	do { //repeat calibration as long as not successfull
+		motor_X.enableOutputs();
+		motor_Y.enableOutputs();
+		motor_Z.enableOutputs();
+		motor_A.enableOutputs();
+		noInterrupts();
+		if (!x_done)
+			motor_X.move(20000L);
+		movement_done_flag = false;
+		interrupts();
+		// due to high step count, reaching end stops is guaranteed!
+		set_status(
+		  STATUS_MOVING); // status is always only changed on no interrupt code level, hence no race condition occurs here
+		// This while loop controls permanently the state of the respective end stops and handles crashing into them
+		// When all end stops are triggered simulatenously, additional latency is introduced.
+		// The latency is maily due to the planning of the back movement.
+		// One work around is to calibrate twice, the first time fast and the second time slowly.
+		// (again inspired from grbl)
+		// Additionally, the backwards movement should use different numbers of steps
+		// to ensure that the end stops will not be triggerend simulatenously at the second calibration.
+		while (!movement_done_flag && (!x_done)) {
+			if (!x_done && digitalRead(MOTOR_X_LIMIT_PIN) == LOW) {
+				x_done = true;
+				reach_end_handle(motor_X, 0);
+			}
+		}
+		movement_done_flag = false;
+	} while (!x_done);
+	do { //repeat calibration as long as not successfull
+		noInterrupts();
+		if (!y_done)
+			motor_Y.move(20000L);
+		if (!z_done)
+			motor_Z.move(20000L);
+		movement_done_flag = false;
+		interrupts();
+		// due to high step count, reaching end stops is guaranteed!
+		set_status(
+		  STATUS_MOVING); // status is always only changed on no interrupt code level, hence no race condition occurs here
+		// This while loop controls permanently the state of the respective end stops and handles crashing into them
+		// When all end stops are triggered simulatenously, additional latency is introduced.
+		// The latency is maily due to the planning of the back movement.
+		// One work around is to calibrate twice, the first time fast and the second time slowly.
+		// (again inspired from grbl)
+		// Additionally, the backwards movement should use different numbers of steps
+		// to ensure that the end stops will not be triggerend simulatenously at the second calibration.
+		while (!movement_done_flag && (!y_done || !z_done)) {
+			if (!y_done && digitalRead(MOTOR_Y_LIMIT_PIN) == LOW) {
+				y_done = true;
+				reach_end_handle(motor_Y, 100);
+			}
+			if (!z_done && digitalRead(MOTOR_Z_LIMIT_PIN) == LOW) {
+				z_done = true;
+				reach_end_handle(motor_Z, 200);
+			}
+		}
+		movement_done_flag = false;
+	} while (!x_done || !y_done || !z_done);
 }
 
 
@@ -295,20 +314,31 @@ void reach_end_handle(AccelStepper &motor, byte extra){
   motor.move(-400-extra);
 }
 
-void set_new_pos(long new_pos, AccelStepper &motor) {
-  motor.enableOutputs();
-  noInterrupts(); // shortly disable interrupts to preverent stepping while changing target position (this is actually only a problem when cur_status == STATUS_MOVING)
-  motor.moveTo(new_pos);
-  interrupts(); // activate interrupts again
-  set_status(STATUS_MOVING); // status is always only changed on no interrupt code level, hence no race condition occurs here
+void
+set_new_pos(long new_pos, AccelStepper &motor)
+{
+	motor.enableOutputs();
+	motor_Y.enableOutputs();
+	motor_Z.enableOutputs();
+	motor_A.enableOutputs();
+	noInterrupts(); // shortly disable interrupts to preverent stepping while changing target position (this is actually only a problem when cur_status == STATUS_MOVING)
+	motor.moveTo(new_pos);
+	interrupts(); // activate interrupts again
+	set_status(
+	  STATUS_MOVING); // status is always only changed on no interrupt code level, hence no race condition occurs here
 }
 
-void set_new_rel_pos(long new_rel_pos, AccelStepper &motor) {
-  motor.enableOutputs();
-  noInterrupts();
-  motor.move(new_rel_pos);
-  interrupts();
-  set_status(STATUS_MOVING);
+void
+set_new_rel_pos(long new_rel_pos, AccelStepper &motor)
+{
+	motor.enableOutputs();
+	motor_Y.enableOutputs();
+	motor_Z.enableOutputs();
+	motor_A.enableOutputs();
+	noInterrupts();
+	motor.move(new_rel_pos);
+	interrupts();
+	set_status(STATUS_MOVING);
 }
 
 void set_new_speed(float new_speed) {
@@ -386,53 +416,147 @@ void read_package() {
     return;
   }
 
-  // this point is only reached when package was successfully located
-  
-  byte cur_i_cmd = package_start + 3;
-  while (cur_i_cmd < buf_i_) {
-    char cur_cmd = buffer_[cur_i_cmd];
-    long new_value = 0;
-    if (cur_cmd == CMD_X_NEW_POS ||
-        cur_cmd == CMD_Y_NEW_POS ||
-        cur_cmd == CMD_Z_NEW_POS ||
-        cur_cmd == CMD_A_SET_TOGGLE_STEPS ||
+	// this point is only reached when package was successfully located
+
+	byte cur_i_cmd = package_start + 3;
+	while (cur_i_cmd < buf_i_) {
+		char cur_cmd   = buffer_[cur_i_cmd];
+		long new_value = 0;
+		if (cur_cmd == CMD_X_NEW_POS || cur_cmd == CMD_Y_NEW_POS || cur_cmd == CMD_Z_NEW_POS
+		    || cur_cmd == CMD_A_SET_TOGGLE_STEPS || CMD_A_HALF_SET_TOGGLE_STEPS ||
 #ifdef DEBUG_MODE
-        cur_cmd == CMD_A_NEW_POS ||
+		    cur_cmd == CMD_A_NEW_POS ||
+#endif	
+		    cur_cmd == CMD_X_NEW_SPEED || cur_cmd == CMD_Y_NEW_SPEED || cur_cmd == CMD_Z_NEW_SPEED
+		    || cur_cmd == CMD_A_NEW_SPEED || cur_cmd == CMD_X_NEW_ACC || cur_cmd == CMD_Y_NEW_ACC
+		    || cur_cmd == CMD_Z_NEW_ACC || cur_cmd == CMD_A_NEW_ACC || cur_cmd == CMD_SET_SPEED
+		    || cur_cmd == CMD_SET_ACCEL) {
+			if (sscanf(buffer_ + (cur_i_cmd + 1), "%ld", &new_value) <= 0) {
+				buf_i_ = 0;
+				return;
+			} // flush and return if parsing error
+		}
+		float opening_speed = motor_A.get_speed(); //get current openening speed
+		bool
+		  assumed_gripper_state_local; // this is used to store the assumed gripper state locally, to reduce calls to the function get_assumed_gripper_state
+		switch (cur_cmd) {
+		case CMD_X_NEW_POS: set_new_pos(-new_value, motor_X); break;
+		case CMD_Y_NEW_POS: set_new_pos(-new_value, motor_Y); break;
+		case CMD_Z_NEW_POS: set_new_pos(-new_value, motor_Z); break;
+		case CMD_A_SET_TOGGLE_STEPS:
+			a_toggle_steps = new_value;
+			send_status();
+			send_status();
+			break;
+		case CMD_A_HALF_SET_TOGGLE_STEPS:
+			a_half_toggle_steps = new_value;
+			Serial.println(new_value);
+			send_status();
+			send_status();
+			break;
+#ifdef DEBUG_MODE
+		case CMD_A_NEW_POS: set_new_pos(new_value, motor_A); break;
 #endif
-        cur_cmd == CMD_X_NEW_SPEED ||
-        cur_cmd == CMD_Y_NEW_SPEED ||
-        cur_cmd == CMD_Z_NEW_SPEED ||
-        cur_cmd == CMD_A_NEW_SPEED ||
-        cur_cmd == CMD_X_NEW_ACC ||
-        cur_cmd == CMD_Y_NEW_ACC ||
-        cur_cmd == CMD_Z_NEW_ACC ||
-        cur_cmd == CMD_A_NEW_ACC ||
-        cur_cmd == CMD_SET_SPEED ||
-        cur_cmd == CMD_SET_ACCEL) {
-      if(sscanf (buffer_ + (cur_i_cmd + 1),"%ld",&new_value)<=0){buf_i_ = 0; return;} // flush and return if parsing error
-    }
-    float opening_speed = motor_A.get_speed(); //get current openening speed
-    bool assumed_gripper_state_local; // this is used to store the assumed gripper state locally, to reduce calls to the function get_assumed_gripper_state
-    switch (cur_cmd) {
-      case CMD_X_NEW_POS:
-        set_new_pos(-new_value, motor_X);
-        break;
-      case CMD_Y_NEW_POS:
-        set_new_pos(-new_value, motor_Y);
-        break;
-      case CMD_Z_NEW_POS:
-        set_new_pos(-new_value, motor_Z);
-        break;
-      case CMD_A_SET_TOGGLE_STEPS:
-        a_toggle_steps = new_value;
-        send_status();
-        send_status();
-        break;
-      case CMD_A_HALF_SET_TOGGLE_STEPS:
-        a_half_toggle_steps = new_value;
-        send_status();
-        send_status();
-        break;
+		case CMD_X_NEW_SPEED:
+			set_new_speed_acc(new_value, 0.0, motor_X);
+			send_status();
+			send_status();
+			break;
+		case CMD_Y_NEW_SPEED:
+			set_new_speed_acc(new_value, 0.0, motor_Y);
+			send_status();
+			send_status();
+			break;
+		case CMD_Z_NEW_SPEED:
+			set_new_speed_acc(new_value, 0.0, motor_Z);
+			send_status();
+			send_status();
+			break;
+		case CMD_A_NEW_SPEED:
+			set_new_speed_acc(new_value, 0.0, motor_A);
+			send_status();
+			send_status();
+			break;
+		case CMD_X_NEW_ACC:
+			set_new_speed_acc(0.0, new_value, motor_X);
+			send_status();
+			send_status();
+			break;
+		case CMD_Y_NEW_ACC:
+			set_new_speed_acc(0.0, new_value, motor_Y);
+			send_status();
+			send_status();
+			break;
+		case CMD_Z_NEW_ACC:
+			set_new_speed_acc(0.0, new_value, motor_Z);
+			send_status();
+			send_status();
+			break;
+		case CMD_A_NEW_ACC:
+			set_new_speed_acc(0.0, new_value, motor_A);
+			send_status();
+			send_status();
+			break;
+		case CMD_OPEN:
+			if(gripper_state == STATUS_CLOSED) {
+				set_new_rel_pos(-a_toggle_steps, motor_A);
+			} else if(gripper_state == STATUS_HALF_OPEN) {
+				set_new_rel_pos(-(a_toggle_steps - a_half_toggle_steps), motor_A);
+			} else {
+				send_status();
+				send_status();
+			}
+			gripper_state = STATUS_OPEN;
+			open_gripper = true;
+			break;
+		case CMD_HALF_OPEN:
+			if(gripper_state == STATUS_OPEN) {
+				set_new_rel_pos((a_toggle_steps - a_half_toggle_steps), motor_A);
+			} else if (gripper_state == STATUS_CLOSED) {
+				set_new_rel_pos(-a_half_toggle_steps, motor_A);
+			} else {
+				send_status();
+				send_status();
+			}
+			gripper_state = STATUS_HALF_OPEN;
+			open_gripper = true;
+			break;
+		case CMD_CLOSE:
+			if(gripper_state == STATUS_OPEN) {
+				set_new_speed_acc(opening_speed / 8,
+				                  0.0,
+				                  motor_A); //slow down closing speed to an eighth of opening speed
+				set_new_rel_pos(a_toggle_steps, motor_A);
+				set_new_speed_acc(opening_speed, 0.0, motor_A); //reset speed
+			} else if (gripper_state == STATUS_HALF_OPEN) {
+				set_new_speed_acc(opening_speed / 8,
+				                  0.0,
+				                  motor_A); //slow down closing speed to an eighth of opening speed
+				set_new_rel_pos(120, motor_A);
+				set_new_speed_acc(opening_speed, 0.0, motor_A); //reset speed
+			} else {
+				send_status();
+				send_status();
+			}
+			gripper_state = STATUS_CLOSED;
+			open_gripper = true;
+			break;
+		case CMD_STATUS_REQ: send_status(); break;
+		case CMD_CALIBRATE: calibrate(); break;
+		case CMD_DOUBLE_CALIBRATE: double_calibrate(); break;
+		case CMD_SET_SPEED:
+			set_new_speed(new_value);
+			send_status();
+			send_status();
+			break;
+		case CMD_SET_ACCEL:
+			set_new_acc(new_value);
+			send_status();
+			send_status();
+			break;
+		case CMD_STOP: slow_stop_all(); break;
+		case CMD_FAST_STOP: fast_stop_all(); break;
+		default:
 #ifdef DEBUG_MODE
       case CMD_A_NEW_POS:
         set_new_pos(new_value, motor_A);
@@ -622,17 +746,19 @@ void setup() {
   pinMode(MOTOR_Z_DIR_PIN, OUTPUT);
   pinMode(MOTOR_A_DIR_PIN, OUTPUT);
 
-  motor_X.setEnablePin(MOTOR_X_ENABLE_PIN, true);
-  motor_Y.setEnablePin(MOTOR_Y_ENABLE_PIN, true);
-  motor_Z.setEnablePin(MOTOR_Z_ENABLE_PIN, true);
-  motor_A.setEnablePin(MOTOR_A_ENABLE_PIN, true);
-  motor_X.disableOutputs(); // same pin for all of them
+	motor_X.setEnablePin(MOTOR_X_ENABLE_PIN, true);
+	motor_Y.setEnablePin(MOTOR_Y_ENABLE_PIN, true);
+	motor_Z.setEnablePin(MOTOR_Z_ENABLE_PIN, true);
+	motor_A.setEnablePin(MOTOR_A_ENABLE_PIN, true);
+	motor_X.disableOutputs(); // same pin for all of them
+	motor_Y.disableOutputs(); // same pin for all of them
+	motor_Z.disableOutputs(); // same pin for all of them
+	motor_A.disableOutputs(); // same pin for all of them
 
   set_new_speed_acc(DEFAULT_MAX_SPEED_X, DEFAULT_MAX_ACCEL_X, motor_X);
   set_new_speed_acc(DEFAULT_MAX_SPEED_Y, DEFAULT_MAX_ACCEL_Y, motor_Y);
   set_new_speed_acc(DEFAULT_MAX_SPEED_Z, DEFAULT_MAX_ACCEL_Z, motor_Z);
   set_new_speed_acc(DEFAULT_MAX_SPEED_A, DEFAULT_MAX_ACCEL_A, motor_A);
-
 
   Serial.println("AT HELLO");
   set_status(STATUS_IDLE);
@@ -666,11 +792,16 @@ void
 loop()
 {
 	if (movement_done_flag) {
-		if(cur_status == STATUS_HALF_OPEN) {
+		if(gripper_state == STATUS_HALF_OPEN) {
 			motor_X.enableOutputs();
+			digitalWrite(MOTOR_HOLD_PIN, HIGH);
 		} else {
-			motor_X.disableOutputs(); // Since all motors share the enable pin, disabling one is sufficient
+			motor_X.disableOutputs(); // same pin for all of them
+			digitalWrite(MOTOR_HOLD_PIN, LOW);
 		}
+		// motor_X.disableOutputs(); // Since all motors share the enable pin, disabling one is sufficient
+		// motor_Y.disableOutputs(); // same pin for all of them
+		// motor_Z.disableOutputs(); // same pin for all of them
 		movement_done_flag = false;
 		set_status(STATUS_IDLE);
 	}
