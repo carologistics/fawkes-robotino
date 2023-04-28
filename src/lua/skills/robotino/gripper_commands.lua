@@ -32,7 +32,7 @@ depends_interfaces = {
 }
 
 documentation      = [==[
-    @param command    can be : ( OPEN | CLOSE | STOP | MOVEABS | MOVEREL | CALIBRATE )
+    @param command    can be : ( OPEN | HALFOPEN | CLOSE | STOP | MOVEABS | MOVEREL | CALIBRATE )
     @param x   x position for gripper move
     @param y   y position for gripper move
     @param z   z position for gripper move
@@ -47,7 +47,7 @@ documentation      = [==[
 skillenv.skill_module(_M)
 
 function input_ok()
-  if fsm.vars.command == "OPEN" or fsm.vars.command == "STOP" or fsm.vars.command == "CLOSE" then
+  if fsm.vars.command == "OPEN" or fsm.vars.command == "HALFOPEN" or fsm.vars.command == "STOP" or fsm.vars.command == "CLOSE" then
     return true
   end
   if fsm.vars.command == "STOP" then
@@ -132,6 +132,10 @@ function COMMAND:init()
    if self.fsm.vars.command == "OPEN" then
       theOpenMessage = arduino.OpenGripperMessage:new()
       arduino:msgq_enqueue(theOpenMessage)
+
+    elseif self.fsm.vars.command == "HALFOPEN" then
+      theOpenHalfMessage = arduino.OpenHalfGripperMessage:new()
+      arduino:msgq_enqueue(theOpenHalfMessage)
 
    elseif self.fsm.vars.command == "CLOSE" then
       theCloseMessage = arduino.CloseGripperMessage:new()
