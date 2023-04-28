@@ -518,7 +518,7 @@
                            (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
                            (eq (goal-reasoner-get-goal-category ?class) MAINTENANCE-INSTRUCT)
                        ))
-              (error ~WP-LOST&~BORKEN-MPS&~INTERACTED-WITH-BROKEN-MPS);exclude special cases
+              (error $?errors&:(not (or (member$ WP-LOST ?errors) (member$ BROKEN-MPS ?errors) (member$ INTERACTED-WITH-BROKEN-MPS ?errors))));exclude special cases
               (id ?goal-id)
               (mode FINISHED|EVALUATED|RETRACTED)
               (outcome FAILED)
