@@ -238,6 +238,7 @@
   ?request <- (wm-fact (key request buffer args? ord ?order-id col ?cap-col prio ?prio) (values status ACTIVE assigned-to $?buffer-goals))
   (wm-fact (key domain fact cs-color args? m ?cs col ?cap-col))
   (wm-fact (key domain fact mps-state args? m ?cs s BROKEN))
+  (goal (id ?buffer-goal&:(member$ ?buffer-goal ?buffer-goals)) (mode ~FORMULATED))
   =>
   (modify ?request (values status OPEN assigned-to))
 )
@@ -246,6 +247,7 @@
   "Assuming the breaking of the machine leads to graceful termination of all goals, we can simply reset the requests"
   ?request <- (wm-fact (key request discard args? ord ?order-id cs ?cs prio ?prio-discard) (values status ACTIVE assigned-to $?discard-goals))
   (wm-fact (key domain fact mps-state args? m ?cs s BROKEN))
+  (goal (id ?discard-goal&:(member$ ?discard-goal ?discard-goals)) (mode ~FORMULATED))
   =>
   (modify ?request (values status OPEN assigned-to))
 )
@@ -254,6 +256,7 @@
   "Assuming the breaking of the machine leads to graceful termination of all goals, we can simply reset the requests"
   ?request <- (wm-fact (key request pay args? ord ?order-id m ?rs ring ?ring seq ?seq prio ?prio-payment) (values status ACTIVE assigned-to $?payment-goals))
   (wm-fact (key domain fact mps-state args? m ?rs s BROKEN))
+  (goal (id ?payment-goal&:(member$ ?payment-goal ?payment-goals)) (mode ~FORMULATED))
   =>
   (modify ?request (values status OPEN assigned-to))
 )
