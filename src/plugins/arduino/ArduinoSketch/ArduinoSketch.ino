@@ -455,12 +455,12 @@ void read_package() {
 		case CMD_Y_NEW_POS: set_new_pos(-new_value, motor_Y); break;
 		case CMD_Z_NEW_POS: set_new_pos(-new_value, motor_Z); break;
 		case CMD_A_SET_TOGGLE_STEPS:
-			a_toggle_steps = new_value;
+			//a_toggle_steps = new_value;
 			send_status();
 			send_status();
 			break;
 		case CMD_A_HALF_SET_TOGGLE_STEPS:
-			a_half_toggle_steps = new_value;
+			//a_half_toggle_steps = new_value;
 			send_status();
 			send_status();
 			break;
@@ -627,7 +627,7 @@ void read_package() {
 			send_status();
 			break;
 		case CMD_A_NEW_SPEED:
-			set_new_speed_acc(new_value, 0.0, motor_A);
+			//set_new_speed_acc(new_value, 0.0, motor_A);
 			send_status();
 			send_status();
 			break;
@@ -647,7 +647,7 @@ void read_package() {
 			send_status();
 			break;
 		case CMD_A_NEW_ACC:
-			set_new_speed_acc(0.0, new_value, motor_A);
+			//set_new_speed_acc(0.0, new_value, motor_A);
 			send_status();
 			send_status();
 			break;
@@ -707,7 +707,7 @@ void read_package() {
 				set_new_speed_acc(opening_speed / 8,
 				                  0.0,
 				                  motor_A); //slow down closing speed to an eighth of opening speed
-				set_new_rel_pos(a_half_toggle_steps, motor_A);
+				set_new_rel_pos(120, motor_A);
 				set_new_speed_acc(opening_speed, 0.0, motor_A); //reset speed
 			} else {
 				send_status();
@@ -729,7 +729,7 @@ void read_package() {
 			// 	send_status();
 			// }
 			break;
-		cae CMD_STATUS_REQ: send_status(); break;
+		case CMD_STATUS_REQ: send_status(); break;
 		case CMD_CALIBRATE: calibrate(); break;
 		case CMD_DOUBLE_CALIBRATE: double_calibrate(); break;
 		case CMD_SET_SPEED:

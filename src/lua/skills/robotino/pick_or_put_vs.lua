@@ -148,6 +148,7 @@ function OPEN_GRIPPER:init()
     self.args["gripper_commands"].command= "HALFOPEN" -- Closes by only half, to not touch the laser of the machine and close again
   else
     self.args["gripper_commands"].command= "OPEN"
+  end
 end
 
 function MOVE_GRIPPER_UP:init()
