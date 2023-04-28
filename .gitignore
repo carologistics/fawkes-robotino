@@ -8,6 +8,7 @@
 *.swo
 
 # Specific paths, _ variants for cross compilation environments
+/build/
 /bin/
 /bin_*/
 /bin/debug.log
