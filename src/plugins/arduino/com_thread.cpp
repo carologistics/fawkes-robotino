@@ -838,7 +838,8 @@ ArduinoComThread::load_config()
 		cfg_steps_per_mm_[Z] = 200.0 * cfg_z_microstep / 1.5;
 
 		cfg_a_toggle_steps_ = config->get_int(cfg_prefix_ + "/hardware_settings/a_toggle_steps");
-		cfg_a_toggle_steps_ = config->get_int(cfg_prefix_ + "/hardware_settings/a_half_toggle_steps");
+		cfg_a_half_toggle_steps_ =
+		  config->get_int(cfg_prefix_ + "/hardware_settings/a_half_toggle_steps");
 
 		set_speed_pending_        = false;
 		set_acceleration_pending_ = false;
