@@ -46,7 +46,7 @@ plugins/object_tracking:
 
   target_frame_offsets:
     gripper_offset_pick: 0.025
-    gripper_offset_put: 0.015
+    gripper_offset_put: 0.01
     base_offset: 0.28
     target_wp_offset_x: 0.00
     conveyor_offset_coefficient: 1.0
