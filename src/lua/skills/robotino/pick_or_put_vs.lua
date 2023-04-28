@@ -47,7 +47,7 @@ local tfm = require("fawkes.tfutils")
 
 -- Constant
 local gripper_down_z_pick = -0.05  -- distance to move gripper down after driving over product
-local gripper_down_z_put = -0.018  -- distance to move gripper down after driving over product
+local gripper_down_z_put = -0.028  -- distance to move gripper down after driving over product
 
 local gripper_up_z_pick = 0.01   -- distance to move gripper up after closing gripper
 local gripper_up_z_put = 0.015   -- distance to move gripper up after opening gripper
