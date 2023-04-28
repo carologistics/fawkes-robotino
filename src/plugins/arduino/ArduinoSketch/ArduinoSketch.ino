@@ -654,12 +654,18 @@ void setup() {
 
 }
 
-void loop() {
-  if(movement_done_flag) {
-    motor_X.disableOutputs(); // Since all motors share the enable pin, disabling one is sufficient
-    movement_done_flag = false;
-    set_status(STATUS_IDLE);
-  }
+void
+loop()
+{
+	if (movement_done_flag) {
+		if(cur_status == STATUS_HALF_OPEN) {
+			motor_X.enableOutputs();
+		} else {
+			motor_X.disableOutputs(); // Since all motors share the enable pin, disabling one is sufficient
+		}
+		movement_done_flag = false;
+		set_status(STATUS_IDLE);
+	}
 
   read_package();
 
