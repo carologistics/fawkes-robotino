@@ -241,6 +241,10 @@
   (goal (id ?buffer-goal&:(member$ ?buffer-goal ?buffer-goals)) (mode ~FORMULATED))
   =>
   (modify ?request (values status OPEN assigned-to))
+  (delayed-do-for-all-facts ((?g goal))
+    (member$ ?g:id ?buffer-goals)
+    (modify ?g (outcome FAILED) (mode RETRACTED))
+  )
 )
 
 (defrule goal-request-discard-reset-broken-mps

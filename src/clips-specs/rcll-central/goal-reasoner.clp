@@ -529,8 +529,16 @@
       (wm-fact (key domain fact wp-at args? r ?robot wp ?wp $?))
   )
   =>
-  (set-robot-to-waiting ?robot)
-  (remove-robot-assignment-from-goal-meta ?g)
+  (if (not
+        (or
+          (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
+          (eq (goal-reasoner-get-goal-category ?class) MAINTENANCE-INSTRUCT)
+        )
+      )
+      then
+        (set-robot-to-waiting ?robot)
+        (remove-robot-assignment-from-goal-meta ?g)
+  )
   (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as workpiece is still usable after fail" crlf)
   (modify ?g (mode FORMULATED) (outcome UNKNOWN))
 
@@ -555,8 +563,13 @@
   ?order-root <- (goal (id ?root-id) (outcome ~FAILED))
   (goal-meta (goal-id ?root-id) (root-for-order ?order-id))
   =>
-  (set-robot-to-waiting ?robot)
-  (remove-robot-assignment-from-goal-meta ?g)
+  (if (not
+          (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
+      )
+      then
+        (set-robot-to-waiting ?robot)
+        (remove-robot-assignment-from-goal-meta ?g)
+  )
   (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, aborting order as the WP was lost." crlf)
   ;first fail the order root and the production/production-instruct goals
   ;this operation should be save, since only one production goal is gonna
@@ -648,8 +661,13 @@
     )
   )
   =>
-  (set-robot-to-waiting ?robot)
-  (remove-robot-assignment-from-goal-meta ?g)
+  (if (not
+          (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
+      )
+      then
+        (set-robot-to-waiting ?robot)
+        (remove-robot-assignment-from-goal-meta ?g)
+  )
   (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, failed due to broken mps. Reformulate as we already progressed far." crlf)
   (goal-reasoner-retract-plan-action ?goal-id)
   (modify ?g (mode FORMULATED) (outcome UNKNOWN))
@@ -672,8 +690,13 @@
   ?order-root <- (goal (id ?root-id) (outcome ~FAILED))
   (goal-meta (goal-id ?root-id) (root-for-order ?order-id))
   =>
-  (set-robot-to-waiting ?robot)
-  (remove-robot-assignment-from-goal-meta ?g)
+  (if (not
+          (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
+      )
+      then
+        (set-robot-to-waiting ?robot)
+        (remove-robot-assignment-from-goal-meta ?g)
+  )
   (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, aborting order as we are early in the production process." crlf)
   ;first fail the order root and the production/production-instruct goals
   ;this operation should be save, since only one production goal is gonna
@@ -726,8 +749,13 @@
   )
   (goal-meta (goal-id ?goal-id) (order-id ?order-id) (assigned-to ?robot))
   =>
-  (set-robot-to-waiting ?robot)
-  (remove-robot-assignment-from-goal-meta ?g)
+  (if (not
+          (eq (goal-reasoner-get-goal-category ?class) MAINTENANCE-INSTRUCT)
+      )
+      then
+        (set-robot-to-waiting ?robot)
+        (remove-robot-assignment-from-goal-meta ?g)
+  )
   (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as the support WP was lost" crlf)
   (modify ?g (mode FORMULATED) (outcome UNKNOWN))
 
