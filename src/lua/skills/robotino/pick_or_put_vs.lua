@@ -49,8 +49,8 @@ local tfm = require("fawkes.tfutils")
 local gripper_down_z_pick = -0.05  -- distance to move gripper down after driving over product
 local gripper_down_z_put = -0.028  -- distance to move gripper down after driving over product
 
-local gripper_up_z_pick = 0.0125   -- distance to move gripper up after closing gripper
-local gripper_up_z_put_slide = 0.015   -- distance to move gripper up after slide put
+local gripper_up_z_pick = 0.01   -- distance to move gripper up after closing gripper
+local gripper_up_z_put = 0.03   -- distance to move gripper up after opening gripper
 
 local drive_back_x = -0.1
 
@@ -96,7 +96,9 @@ fsm:define_states{ export_to=_M, closure={},
    {"CHOOSE_ACTION",     JumpState},
    {"CLOSE_GRIPPER",     SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_GRIPPER_UP", fail_to="FAILED"},
    {"OPEN_GRIPPER",      SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_GRIPPER_UP", fail_to="FAILED"},
-   {"MOVE_GRIPPER_UP",   SkillJumpState, skills={{gripper_commands}}, final_to="GRIPPER_DEFAULT", fail_to="FAILED"},
+   {"MOVE_GRIPPER_UP",   SkillJumpState, skills={{gripper_commands}}, final_to="CHECK_HALF", fail_to="FAILED"},
+   {"CHECK_HALF",        JumpState},
+   {"OPEN_COMPLETELY",   SkillJumpState, skills={{gripper_commands}}, final_to="GRIPPER_DEFAULT", fail_to="FAILED"},
    {"GRIPPER_DEFAULT",   SkillJumpState, skills={{gripper_commands}}, final_to="DRIVE_BACK", fail_to="FAILED"},
    {"DRIVE_BACK",        SkillJumpState, skills={{motor_move}}, final_to="DECIDE_CLOSE", fail_to="FAILED"},
    {"DECIDE_CLOSE",      JumpState},
@@ -109,6 +111,8 @@ fsm:add_transitions{
    {"CHOOSE_ACTION", "CLOSE_GRIPPER", cond="vars.pick_wp", desc="Picking Up Workpiece"},
    {"CHOOSE_ACTION", "OPEN_GRIPPER",  cond="not vars.pick_wp", desc="Putting Down Workpiece"},
    {"CHOOSE_ACTION", "FAILED",        true, desc="Instructions Unclear"},
+   {"CHECK_HALF", "OPEN_COMPLETELY",  cond="not vars.pick_wp and vars.half", desc="Open Gripper Completely"},
+   {"CHECK_HALF", "GRIPPER_DEFAULT",  true, desc="Move Gripper To Default Pose"},
    {"DECIDE_CLOSE", "CLOSE_DEFAULT",  cond="not vars.pick_wp", desc="Close Gripper"},
    {"DECIDE_CLOSE", "FINAL",          true},
 }
@@ -180,6 +184,10 @@ function GRIPPER_DEFAULT:init()
   self.args["gripper_commands"].z = gripper_default_pose_z
   self.args["gripper_commands"].command = "MOVEABS"
   self.args["gripper_commands"].wait = false
+end
+
+function OPEN_COMPLETELY:init()
+  self.args["gripper_commands"].command= "OPEN" -- to not push the workpiece after placing it
 end
 
 function DRIVE_BACK:init()
