@@ -568,7 +568,7 @@ The workpiece remains in the output of the used ring station after
 	                                   ring-color ?ring-color
 	                                   $?)
 	                          (is-executable FALSE))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (ring-nr ?nr))
 	; Robot CEs
 	(wm-fact (key refbox team-color) (value ?team-color))
 	(not (and (wm-fact (key domain fact mps-type args? m ?wp-loc t BS))
@@ -590,6 +590,7 @@ The workpiece remains in the output of the used ring station after
 	         (sym-cat order-ring (sub-string 5 5 ?ring) -color))
 	          args? ord ?order col ?ring-color ))
 	(wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C1|C2|C3))
+	(test (eq (sym-cat (sub-string 5 5 ?ring)) (sym-cat (sym-to-int ?nr))))
 	; Ring spec & costs
 	;(wm-fact (key domain fact rs-ring-spec
 	;          args? m ?target-mps r ?ring-color&~RING_NONE rn ?bases-needed))
