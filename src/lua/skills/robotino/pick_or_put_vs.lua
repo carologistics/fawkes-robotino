@@ -102,7 +102,8 @@ fsm:define_states{ export_to=_M, closure={},
    {"GRIPPER_DEFAULT",   SkillJumpState, skills={{gripper_commands}}, final_to="DRIVE_BACK", fail_to="FAILED"},
    {"DRIVE_BACK",        SkillJumpState, skills={{motor_move}}, final_to="DECIDE_CLOSE", fail_to="FAILED"},
    {"DECIDE_CLOSE",      JumpState},
-   {"CLOSE_DEFAULT",     SkillJumpState, skills={{gripper_commands}}, final_to="FINAL", fail_to="FAILED"},
+   {"CLOSE_DEFAULT",     SkillJumpState, skills={{gripper_commands}}, final_to="CALIBRATE", fail_to="FAILED"},
+   {"CALIBRATE",         SkillJumpState, skills={{gripper_commands}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
@@ -196,4 +197,8 @@ end
 
 function CLOSE_DEFAULT:init()
   self.args["gripper_commands"].command= "CLOSE"
+end
+
+function CALIBRATE:init()
+  self.args["gripper_commands"].command= "CALIBRATE"
 end
