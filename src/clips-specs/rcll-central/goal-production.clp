@@ -514,7 +514,7 @@
   ;assert the instruct goals
   (bind ?instruct-goals
     (goal-tree-assert-central-run-parallel-prio INSTRUCT-ORDER ?*PRODUCTION-C0-PRIORITY*
-      (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id ?bs)
+      (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base INPUT ?order-id ?bs)
       (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
     )
   )
@@ -525,7 +525,7 @@
   (bind ?goal
     (goal-tree-assert-central-run-all-prio PRODUCE-ORDER ?*PRODUCTION-C0-PRIORITY*
       (goal-production-assert-deliver ?wp-for-order ?order-id ?instruct-parent ?ds)
-      (goal-production-assert-mount-cap ?wp-for-order ?cs ?bs OUTPUT ?order-id)
+      (goal-production-assert-mount-cap ?wp-for-order ?cs ?bs INPUT ?order-id)
     )
   )
 
@@ -540,7 +540,7 @@
   ;assert the instruct goals
   (bind ?instruct-goals
     (goal-tree-assert-central-run-parallel-prio INSTRUCT-ORDER ?*PRODUCTION-C1-PRIORITY*
-      (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id ?bs)
+      (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base INPUT ?order-id ?bs)
       (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
       (goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
     )
@@ -553,7 +553,7 @@
     (goal-tree-assert-central-run-all-prio PRODUCE-ORDER ?*PRODUCTION-C1-PRIORITY*
       (goal-production-assert-deliver ?wp-for-order ?order-id ?instruct-parent ?ds)
       (goal-production-assert-mount-cap ?wp-for-order ?cs ?rs1 OUTPUT ?order-id)
-      (goal-production-assert-mount-ring ?wp-for-order ?rs1 ?bs OUTPUT ?col-ring1 ?order-id ONE)
+      (goal-production-assert-mount-ring ?wp-for-order ?rs1 ?bs INPUT ?col-ring1 ?order-id ONE)
     )
   )
 
@@ -567,7 +567,7 @@
 
   (bind ?instruct-goals
     (goal-tree-assert-central-run-parallel-prio INSTRUCT-ORDER ?*PRODUCTION-C2-PRIORITY*
-      (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id ?bs)
+      (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base INPUT ?order-id ?bs)
       (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
       (goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
       (goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2 ?order-id TWO)
@@ -581,7 +581,7 @@
       (goal-production-assert-deliver ?wp-for-order ?order-id ?instruct-parent ?ds)
       (goal-production-assert-mount-cap ?wp-for-order ?cs ?rs2 OUTPUT ?order-id)
       (goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT ?col-ring2 ?order-id TWO)
-      (goal-production-assert-mount-ring ?wp-for-order ?rs1 ?bs OUTPUT ?col-ring1 ?order-id ONE)
+      (goal-production-assert-mount-ring ?wp-for-order ?rs1 ?bs INPUT ?col-ring1 ?order-id ONE)
     )
   )
 
@@ -595,7 +595,7 @@
 
   (bind ?instruct-goals
     (goal-tree-assert-central-run-parallel-prio INSTRUCT-ORDER ?*PRODUCTION-C3-PRIORITY*
-      (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id ?bs)
+      (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base INPUT ?order-id ?bs)
       (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
       (goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
       (goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2 ?order-id TWO)
@@ -611,7 +611,7 @@
       (goal-production-assert-mount-cap ?wp-for-order ?cs ?rs3 OUTPUT ?order-id)
       (goal-production-assert-mount-ring ?wp-for-order ?rs3 ?rs2 OUTPUT ?col-ring3 ?order-id THREE)
       (goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT ?col-ring2 ?order-id TWO)
-      (goal-production-assert-mount-ring ?wp-for-order ?rs1 ?bs OUTPUT ?col-ring1 ?order-id ONE)
+      (goal-production-assert-mount-ring ?wp-for-order ?rs1 ?bs INPUT ?col-ring1 ?order-id ONE)
     )
   )
 

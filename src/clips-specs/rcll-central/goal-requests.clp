@@ -136,8 +136,8 @@
   (goal (class INSTRUCTION-ROOT) (id ?instruct-root-id))
   =>
   (bind ?wp-base-pay (sym-cat BASE-PAY- (gensym*)))
-  (bind ?payment-goal (goal-production-assert-pay-for-rings-with-base ?wp-base-pay ?bs OUTPUT ?rs INPUT ?order-id))
-  (bind ?instruct-goal (goal-production-assert-instruct-bs-dispense-base ?wp-base-pay BASE_RED OUTPUT ?order-id ?bs))
+  (bind ?payment-goal (goal-production-assert-pay-for-rings-with-base ?wp-base-pay ?bs INPUT ?rs INPUT ?order-id))
+  (bind ?instruct-goal (goal-production-assert-instruct-bs-dispense-base ?wp-base-pay BASE_RED INPUT ?order-id ?bs))
   (assert
       (domain-object (name ?wp-base-pay) (type workpiece))
       (domain-fact (name wp-unused) (param-values ?wp-base-pay))
