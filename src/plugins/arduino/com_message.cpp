@@ -258,11 +258,9 @@ ArduinoComMessage::get_position_data(int (&gripperr_position)[3], bool &(is_grip
 	while (ss >> i) {
 		char leading = i[0];
 		if (leading == static_cast<char>(ArduinoComMessage::command_id_t::CMD_CLOSE)) {
-			std::cout << i << " DAM DAM DAM" << std::endl;
 			is_gripper_open = false;
 		}
 		if (leading == static_cast<char>(ArduinoComMessage::command_id_t::CMD_OPEN)) {
-			std::cout << i << " DAM DAM DAM" << std::endl;
 			is_gripper_open = true;
 		}
 		if (leading == static_cast<char>(ArduinoComMessage::command_id_t::CMD_Y_NEW_POS)) {
