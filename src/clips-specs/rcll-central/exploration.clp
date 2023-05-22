@@ -502,7 +502,8 @@
 
 (defrule exp-stop-when-all-found
 	?exp-active <- (wm-fact (key exploration active) (type BOOL) (value TRUE))
-	(not (and (wm-fact (key domain fact mps-type args? m ?target-mps $?))
+	(wm-fact (key refbox team-color) (value ?color))
+	(not (and (wm-fact (key domain fact mps-team args? m ?target-mps col ?color))
 	          (not (domain-fact (name zone-content)
 	                            (param-values ?zz ?target-mps))
 	)))
