@@ -697,11 +697,11 @@
     (wm-fact (key strategy meta selected-order args? cond filter) (is-list FALSE) (type SYMBOL) (value nil))
     (wm-fact (key strategy meta selected-order args? cond possible) (is-list FALSE) (type SYMBOL) (value nil))
     (wm-fact (key strategy meta selected-order args? cond fallback) (is-list FALSE) (type SYMBOL) (value nil))
-    (wm-fact (key strategy meta production-order-time-limit args? comp C0) (value ?*C0-PRODUCTION-THRESHOLD*) (type INT))
-    (wm-fact (key strategy meta production-order-time-limit args? comp C1) (value ?*C1-PRODUCTION-THRESHOLD*) (type INT))
-    (wm-fact (key strategy meta production-order-time-limit args? comp C2) (value ?*C2-PRODUCTION-THRESHOLD*) (type INT))
-    (wm-fact (key strategy meta production-order-time-limit args? comp C3) (value ?*C3-PRODUCTION-THRESHOLD*) (type INT))
-    (wm-fact (key strategy meta production-order-limit args? comp TOTAL) (value ?*TOTAL-PRODUCTION-THRESHOLD*) (type INT))
+    (wm-fact (key strategy meta production-order-time-limit args? com C0) (value ?*C0-PRODUCTION-THRESHOLD*) (type INT))
+    (wm-fact (key strategy meta production-order-time-limit args? com C1) (value ?*C1-PRODUCTION-THRESHOLD*) (type INT))
+    (wm-fact (key strategy meta production-order-time-limit args? com C2) (value ?*C2-PRODUCTION-THRESHOLD*) (type INT))
+    (wm-fact (key strategy meta production-order-time-limit args? com C3) (value ?*C3-PRODUCTION-THRESHOLD*) (type INT))
+    (wm-fact (key strategy meta production-order-limit args? com TOTAL) (value ?*TOTAL-PRODUCTION-THRESHOLD*) (type INT))
     (wm-fact (key strategy meta robot-active-count args?) (value 0) (type INT))
   )
 )
@@ -741,7 +741,7 @@
 )
 
 (defrule production-strategy-adapt-total-order-limit
-  ?limit <- (wm-fact (key strategy meta production-order-limit args? comp TOTAL) (value ?threshold))
+  ?limit <- (wm-fact (key strategy meta production-order-limit args? com TOTAL) (value ?threshold))
   (wm-fact (key strategy meta robot-active-count args?) (value ?value))
   =>
   (if (and (eq ?value 3) (neq ?threshold  ?*TOTAL-PRODUCTION-THRESHOLD*)) then
@@ -759,7 +759,7 @@
 )
 
 (defrule production-strategy-reduce-order-time-limit
-  ?limit <- (wm-fact (key strategy meta production-order-time-limit args? comp ?comp) (value ~0)) 
+  ?limit <- (wm-fact (key strategy meta production-order-time-limit args? com ?comp) (value ~0))
   (wm-fact (key refbox game-time) (values ?gt&:(eq (* 60 (production-strategy-get-cutoff-complexity ?comp)) ?gt)))
   => 
   (modify ?limit (value 0))
@@ -945,7 +945,7 @@
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c0-limit)
                         (values $?values&:(not (member$ ?order-id ?values))))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
- (wm-fact (key strategy meta production-order-time-limit args? comp C0) (value ?limit))
+ (wm-fact (key strategy meta production-order-time-limit args? com C0) (value ?limit))
  ;filter condition
   (or
     (and
@@ -974,7 +974,7 @@
   (wm-fact (key domain fact order-complexity args? ord ?order-id com C0))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c0-limit)
                         (values $?values&:(member$ ?order-id ?values)))
-  (wm-fact (key strategy meta production-order-time-limit args? comp C0) (value ?limit))
+  (wm-fact (key strategy meta production-order-time-limit args? com C0) (value ?limit))
   (test (<= ?limit (production-strategy-count-active-orders-of-complexity C0)))
   =>
   (modify ?filtered (values ))
@@ -989,7 +989,7 @@
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c1-limit)
                         (values $?values&:(not (member$ ?order-id ?values))))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
-  (wm-fact (key strategy meta production-order-time-limit args? comp C1) (value ?limit))
+  (wm-fact (key strategy meta production-order-time-limit args? com C1) (value ?limit))
   ;filter condition
   (or
     (and
@@ -1018,7 +1018,7 @@
   (wm-fact (key domain fact order-complexity args? ord ?order-id com C1))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c1-limit)
                         (values $?values&:(member$ ?order-id ?values)))
-  (wm-fact (key strategy meta production-order-time-limit args? comp C1) (value ?limit))
+  (wm-fact (key strategy meta production-order-time-limit args? com C1) (value ?limit))
   (test (<= ?limit (production-strategy-count-active-orders-of-complexity C1)))
   =>
   (modify ?filtered (values ))
@@ -1033,7 +1033,7 @@
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c2-limit)
                         (values $?values&:(not (member$ ?order-id ?values))))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
-  (wm-fact (key strategy meta production-order-time-limit args? comp C2) (value ?limit))
+  (wm-fact (key strategy meta production-order-time-limit args? com C2) (value ?limit))
   ;filter condition
   (or
     (and
@@ -1062,7 +1062,7 @@
   (wm-fact (key domain fact order-complexity args? ord ?order-id com C2))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c2-limit)
                         (values $?values&:(member$ ?order-id ?values)))
-   (wm-fact (key strategy meta production-order-time-limit args? comp C2) (value ?limit))
+   (wm-fact (key strategy meta production-order-time-limit args? com C2) (value ?limit))
   (test (<= ?limit (production-strategy-count-active-orders-of-complexity C2)))
   =>
   (modify ?filtered (values ))
@@ -1077,7 +1077,7 @@
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c3-limit)
                         (values $?values&:(not (member$ ?order-id ?values))))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
-  (wm-fact (key strategy meta production-order-time-limit args? comp C3) (value ?limit))
+  (wm-fact (key strategy meta production-order-time-limit args? com C3) (value ?limit))
   ;filter condition
   (or
     (and
@@ -1106,7 +1106,7 @@
   (wm-fact (key domain fact order-complexity args? ord ?order-id com C3))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c3-limit)
                         (values $?values&:(member$ ?order-id ?values)))
-  (wm-fact (key strategy meta production-order-time-limit args? comp C3) (value ?limit))
+  (wm-fact (key strategy meta production-order-time-limit args? com C3) (value ?limit))
   (test (<= ?limit (production-strategy-count-active-orders-of-complexity C3)))
   =>
   (modify ?filtered (values ))
@@ -1123,7 +1123,7 @@
                         (values $?values&:(not (member$ ?order-id ?values))))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
 
-  (wm-fact (key strategy meta production-order-limit args? comp TOTAL) (value ?threshold))
+  (wm-fact (key strategy meta production-order-limit args? com TOTAL) (value ?threshold))
   ;filter condition
   (test (> ?threshold (production-strategy-count-active-orders)))
   =>
@@ -1146,7 +1146,7 @@
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter total-limit)
                         (values $?values&:(member$ ?order-id ?values)))
-  (wm-fact (key strategy meta production-order-limit args? comp TOTAL) (value ?threshold))
+  (wm-fact (key strategy meta production-order-limit args? com TOTAL) (value ?threshold))
   (test (<= ?threshold (production-strategy-count-active-orders)))
   =>
   (modify ?filtered (values ))
