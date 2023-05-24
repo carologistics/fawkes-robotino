@@ -582,7 +582,7 @@
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED) (meta $?meta)
               (verbosity ?v))
   (plan (id ?plan-id) (goal-id ?goal-id))
-  (plan-action (action-name ?action&move|go-wait|wait-for-wp|wait-for-free-side)
+  (plan-action (action-name ?action&move|go-wait|wait-for-wp)
                (goal-id ?goal-id) (plan-id ?plan-id) (state FAILED))
   (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
   =>

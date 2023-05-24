@@ -177,7 +177,7 @@
   ?pa <- (plan-action (id ?action-id)
                       (plan-id ?plan-id)
                       (goal-id ?goal-id)
-                      (action-name ?a-name&wait-for-wp|wait-for-free-side)
+                      (action-name ?a-name&wait-for-wp)
                       (state PENDING)
                       (executable TRUE))
   (time $?now)
@@ -225,41 +225,6 @@
   =>
   (printout info "Goal " ?goal-id " finished wait-for-wp" crlf)
   (modify ?pa (state EXECUTION-SUCCEEDED))
-)
-
-(defrule action-finish-execute-wait-for-free-side-action
-  ?pa <- (plan-action (id ?action-id)
-                      (plan-id ?plan-id)
-                      (goal-id ?goal-id)
-                      (action-name wait-for-free-side)
-                      (state RUNNING)
-                      (executable TRUE))
-  ; check if every wait-for-free-side dependency-goal is executed successfully
-  (not (and (dependency-assignment (goal-id ?goal-id)
-                                   (wait-for FREE-SIDE)
-                                   (grounded-with ?dependency-id))
-            (goal (id ?dependency-id) (outcome ~COMPLETED))))
-  =>
-  (printout info "Goal " ?goal-id " finished wait-for-free-side" crlf)
-  (modify ?pa (state EXECUTION-SUCCEEDED))
-)
-
-(defrule action-fail-execute-wait-for-dependencies-action
-  ?pa <- (plan-action (id ?action-id)
-                      (plan-id ?plan-id)
-                      (goal-id ?goal-id)
-                      (action-name ?a-name&wait-for-wp|wait-for-free-side)
-                      (state RUNNING)
-                      (executable TRUE))
-  ; check if a dependency-goal failed
-  (dependency-assignment (goal-id ?goal-id)
-                              (grounded-with ?dependency-id))
-  (goal (id ?dependency-id) (outcome FAILED) (mode EVALUATED))
-  =>
-  (printout warn "Goal " ?goal-id
-                       " failed waiting, because dependency-goal "
-                       ?dependency-id " failed" crlf)
-  (modify ?pa (state EXECUTION-FAILED))
 )
 
 ; ROBOCUP 2021 NAVIGATION CHALLENGE
