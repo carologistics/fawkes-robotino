@@ -692,7 +692,6 @@
   (declare (salience ?*MONITORING-SALIENCE*))
 	(wm-fact (key central agent robot args? r ?robot))
 	?hbi <- (HeartbeatInterface (id ?id&:(str-index ?robot ?id)) (alive FALSE))
-	; TODO: We could disable this as MAINTENANCE INFO SHOULD BE ENOUGH
 	=>
 	(printout error "Robot " ?robot  " lost, removing from worldmodel" crlf)
 	;(blackboard-close "HeartbeatInterface" ?id)
