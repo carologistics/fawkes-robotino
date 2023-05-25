@@ -81,6 +81,7 @@
   (return (or (eq ?goal-type TRY-ONE-OF-SUBGOALS)
               (eq ?goal-type TIMEOUT-SUBGOAL)
               (eq ?goal-type RUN-ONE-OF-SUBGOALS)
+              (eq ?goal-type RUN-ALL-OF-SUBGOALS)
               (eq ?goal-type RETRY-SUBGOAL)
               (eq ?goal-type RUN-ENDLESS)))
 )
@@ -111,6 +112,9 @@
               (eq ?goal-class FULFILL-ORDERS)
               (eq ?goal-class DELIVER-PRODUCTS)
               (eq ?goal-class INTERMEDEATE-STEPS)
+              (eq ?goal-class DO-FOR-ORDER)
+              (eq ?goal-class PREPARE-RINGS-FOR-ORDER)
+              (eq ?goal-class GET-TO-FILL-RS)
               (eq ?goal-class CLEAR)
               (eq ?goal-class WAIT-FOR-PROCESS)
               (eq ?goal-class PREPARE-RESOURCES)
@@ -505,6 +509,33 @@
            (value ?other-begin&:(< ?other-begin (nth$ 1 ?game-time))))
   =>
   (assert (wm-fact (key wp meta wait-for-delivery args? wp ?wp wait-for ?other-wp)))
+  (modify ?g (mode EVALUATED))
+)
+
+(defrule goal-reasoner-evaluate-get-to-fill
+  ?g <- (goal (class GET-TO-FILL-RS)
+              (parent ?parent)
+              (params robot ?robot
+                      mps ?mps
+                      $?)
+              (mode FINISHED)
+              (outcome COMPLETED))
+  (wm-fact (key domain fact mps-type args? m ?mps t RS))
+  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+  (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
+  (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
+  =>
+  (printout t "Goal " FILL-RS " formulated on Evaluation of " GET-TO-FILL-RS crlf)
+   (assert (goal (id (sym-cat FILL-RS- (gensym*)))
+                 (class FILL-RS) (sub-type SIMPLE)
+                 (parent ?parent)
+                 (params robot ?robot
+                         mps ?mps
+                         wp ?wp
+                         rs-before ?rs-before
+                         rs-after ?rs-after)
+                 (required-resources ?mps ?wp)))
+
   (modify ?g (mode EVALUATED))
 )
 
