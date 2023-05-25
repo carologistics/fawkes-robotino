@@ -855,19 +855,22 @@
   )
 )
 
-(defrule goal-production-fill-in-unknown-wp-discard
-  "Fill in missing workpiece information into the discard goals"
+(defrule goal-production-fill-in-unknown-wp-discard-from-cs
+  "Fill in missing workpiece information into the discard goals from CS"
+  ; there is a discard goal for a CS with formulated assigned goals
+  (wm-fact (key request discard args? ord ?order-id cs ?cs prio ?prio) (values status ACTIVE assigned-to ?goal-id ?i-goal-id))
+
   ?g <- (goal (id ?goal-id) (class DISCARD) (mode FORMULATED) (parent ?parent)
               (params wp UNKNOWN wp-loc ?mps wp-side ?mps-side))
   ?i <- (goal (id ?i-goal-id) (class INSTRUCT-DS-DISCARD) (mode FORMULATED)
 	            (params wp UNKNOWN target-mps ?ds))
-  (goal-meta (goal-id ?goal-id) (order-id ?order-id))
-  (goal (id ?buffer-goal-id) (class BUFFER-CAP) (mode ~FORMULATED))
-  (goal-meta (goal-id ?buffer-goal-id) (order-id ?order-id))
+
+  ; there is a wp at the machine
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?mps-side))
-  (not (wm-fact (key order meta wp-for-order args? wp ?wp $?)))
-  (goal (id ?instruct-goal) (class INSTRUCT-CS-BUFFER-CAP) (mode DISPATCHED|FINISHED|RETRACTED))
-  (goal-meta (goal-id ?instruct-goal) (order-id ?order-id))
+  (not (wm-fact (key domain fact wp-for-order args? wp ?wp $?)))
+
+  ; there is not another discard goal bound to this wp
+  (not (goal (id ?other-goal-id) (class DISCARD) (outcome ~FAILED) (params wp ?wp wp-loc ?mps wp-side ?mps-side)))
   =>
   (modify ?g (params wp ?wp wp-loc ?mps wp-side ?mps-side))
   (modify ?i (params wp ?wp target-mps ?ds))
