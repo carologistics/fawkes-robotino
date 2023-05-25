@@ -268,7 +268,7 @@ SkillerMotorStateThread::interruptable_timeout(fawkes::Time *wait_until)
 }
 
 void
-SkillerMotorStateThread::bb_interface_data_changed(fawkes::Interface *interface) throw()
+SkillerMotorStateThread::bb_interface_data_refreshed(fawkes::Interface *interface) throw()
 {
 	if (*interface == *skiller_if_) {
 		fawkes::MutexLocker scoped_timeout_mutex(timeout_wait_mutex_);
