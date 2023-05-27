@@ -524,10 +524,6 @@
               (outcome FAILED)
               (verbosity ?v))
   (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
-  (or (wm-fact (key domain fact wp-usable args? wp ?wp))
-      (wm-fact (key domain fact wp-on-shelf args? wp ?wp $?))
-      (wm-fact (key domain fact wp-at args? r ?robot wp ?wp $?))
-  )
   =>
   (if (not
         (or
