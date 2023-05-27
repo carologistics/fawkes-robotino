@@ -618,7 +618,7 @@
         (verbosity ?v)
   )
   (goal-meta (goal-id ?goal-id) (order-id ?order-id) (assigned-to ?robot))
-  (wm-fact (key domain fact order-complexity args? ord ?order-id comp ?comp))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
   (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
   (wm-fact (key wp meta next-step args? wp ?wp) (value ?step))
   (test
