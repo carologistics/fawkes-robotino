@@ -606,7 +606,8 @@
 
 (defrule goal-reasoner-evaluate-production-goal-failed-broken-retry
   "If a production goal was failed because it interacted with a broken mps,
-  and we are late in the production process, we reformulate the goal."
+  and we are late in the production process, we reformulate the goal to not lose
+  our progress."
   (declare (salience ?*MONITORING-SALIENCE*))
   ?g <- (goal (class ?class&:(or (eq (goal-reasoner-get-goal-category ?class) PRODUCTION)
                            (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
@@ -625,22 +626,15 @@
     (or
       (and
         (eq ?comp C0)
-        (or
-          (eq ?step CAP)
-          (eq ?step DELIVER)
-        )
+        (eq ?step DELIVER)
       )
       (and
         (eq ?comp C1)
-        (or
-          (eq ?step CAP)
-          (eq ?step DELIVER)
-        )
+        (eq ?step DELIVER)
       )
       (and
         (eq ?comp C2)
         (or
-          (eq ?step RING1)
           (eq ?step CAP)
           (eq ?step DELIVER)
         )
@@ -648,8 +642,7 @@
       (and
         (eq ?comp C3)
         (or
-          (eq ?step RING1)
-          (eq ?step RING2)
+          (eq ?step RING3)
           (eq ?step CAP)
           (eq ?step DELIVER)
         )
