@@ -763,8 +763,7 @@
 )
 
 (defrule goal-reasoner-evaluate-maintenance-goal-discard-failed
-  "If a discard goal fails, reformulate it in DISPATCHED with a new plan that
-  just contains an old-school discard action."
+  "If a discard goal fails, reformulate it as formulated."
   (declare (salience ?*MONITORING-SALIENCE*))
   ?g <- (goal (id ?goal-id) (class DISCARD) (mode FINISHED) (outcome FAILED)
               (verbosity ?v) (params wp ?wp $?))
@@ -773,12 +772,8 @@
   (set-robot-to-waiting ?robot)
   (remove-robot-assignment-from-goal-meta ?g)
   (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate and dispatch with classical drop discard" crlf)
-  (modify ?g (mode DISPATCHED) (outcome UNKNOWN))
+  (modify ?g (mode FORMULATED) (outcome UNKNOWN))
   (goal-reasoner-retract-plan-action ?goal-id)
-
-  (bind ?plan-id (sym-cat DISCARD-PLAN (gensym*)))
-	(assert (plan (id ?plan-id) (goal-id ?goal-id)))
-	(assert (plan-action (id 1) (plan-id ?plan-id) (action-name wp-discard) (param-values ?robot ?wp) (skiller (remote-skiller ?robot))))
 )
 
 (defrule goal-reasoner-evaluate-failed-goto
