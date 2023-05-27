@@ -89,8 +89,8 @@
   (goal-meta (goal-id ?instruct-mount-goal-id) (order-id ?order-id))
 
   ;the buffer cap request was completed
-  (goal (id ?buffer-goal-id) (mode FINISHED) (outcome COMPLETED))
-  (goal (id ?instruct-goal-id) (mode FINISHED) (outcome COMPLETED))
+  (goal (id ?buffer-goal-id) (mode RETRACTED) (outcome COMPLETED))
+  (goal (id ?instruct-goal-id) (mode RETRACTED) (outcome COMPLETED))
   =>
   (assert (wm-fact (key request offer buffer args? ord ?order-id col ?cap-col) (values assigned-to ?buffer-goal-id ?instruct-goal-id)))
   (retract ?request)
