@@ -867,7 +867,7 @@
 
   ; there is a wp at the machine
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?mps-side))
-  (not (wm-fact (key domain fact wp-for-order args? wp ?wp $?)))
+  (not (wm-fact (key order meta wp-for-order args? wp ?wp $?)))
 
   ; there is not another discard goal bound to this wp
   (not (goal (id ?other-goal-id) (class DISCARD) (outcome ~FAILED) (params wp ?wp wp-loc ?mps wp-side ?mps-side)))
