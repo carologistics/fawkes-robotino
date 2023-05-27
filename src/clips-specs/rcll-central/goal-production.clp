@@ -715,16 +715,16 @@
   (modify ?g (priority (- ?p 2)))
 )
 
-(defrule goal-production-create-empty-discard
-	"Creates an empty discard goal to get rid of WPs that do not belong to any order,
+(defrule goal-production-create-cleanup-wp
+	"Creates a cleanup-wp goal to get rid of WPs that do not belong to any order,
   or step in the production chain e.g. a workpiece left from stopping to pursue an
   order."
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(goal (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
 	(goal (id ?root-id) (class WAIT-ROOT))
-	(not (goal (class EMPTY-DISCARD)))
+	(not (goal (class CLEANUP-WP)))
 	=>
-	(bind ?g (goal-tree-assert-central-run-parallel EMPTY-DISCARD))
+	(bind ?g (goal-tree-assert-central-run-parallel CLEANUP-WP))
 	(modify ?g (parent ?root-id) (priority 0))
 )
 

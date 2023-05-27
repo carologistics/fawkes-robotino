@@ -148,8 +148,8 @@
 	(modify ?g (mode EXPANDED))
 )
 
-(defrule goal-expander-empty-discard
-	?g <- (goal (id ?goal-id) (mode SELECTED) (class EMPTY-DISCARD))
+(defrule goal-expander-cleanup-wp
+	?g <- (goal (id ?goal-id) (mode SELECTED) (class CLEANUP-WP))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact holding args? r ?robot wp ?wp))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
@@ -157,7 +157,7 @@
 	(wm-fact (key domain fact mps-team args? m ?target-mps col ?col))
 	(wm-fact (key refbox team-color) (value ?col))
 	=>
-	(plan-assert-sequential (sym-cat EMPTY-DISCARD-PLAN- (gensym*)) ?goal-id ?robot
+	(plan-assert-sequential (sym-cat CLEANUP-WP-PLAN- (gensym*)) ?goal-id ?robot
 		(plan-assert-safe-move-wait-for-free-side ?robot ?curr-location ?curr-side ?target-mps INPUT
 			(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
 		)

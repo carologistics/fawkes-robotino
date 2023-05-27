@@ -88,9 +88,9 @@
   (modify ?g (is-executable TRUE))
 )
 
-(defrule goal-production-empty-discard-executable
+(defrule goal-production-cleanup-wp-executable
 	(declare (salience (- ?*SALIENCE-GOAL-EXECUTABLE-CHECK* 1)))
-	?g <- (goal (id ?id) (class EMPTY-DISCARD) (sub-type SIMPLE)
+	?g <- (goal (id ?id) (class CLEANUP-WP) (sub-type SIMPLE)
 				(mode FORMULATED) (is-executable FALSE)
 
 	)
@@ -99,7 +99,7 @@
 	(not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?any-order)))
 	(not (goal (params $? ?wp $?)))
 	=>
-	(printout t "Goal EMPTY-DISCARD executable for " ?robot " and WP " ?wp  crlf)
+	(printout t "Goal CLEANUP-WP executable for " ?robot " and WP " ?wp  crlf)
  	(modify ?g (is-executable TRUE))
 )
 

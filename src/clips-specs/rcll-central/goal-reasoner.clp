@@ -800,10 +800,10 @@
   (goal-reasoner-retract-plan-action ?goal-id)
 )
 
-(defrule goal-reasoner-evaluate-move-out-of-way-empty-discard
+(defrule goal-reasoner-evaluate-move-out-of-way-cleanup-wp
 " Sets a finished move-out-of-way or empty discard goal to formulated."
   (declare (salience ?*MONITORING-SALIENCE*))
-  ?g <- (goal (id ?goal-id) (class MOVE-OUT-OF-WAY|EMPTY-DISCARD) (mode FINISHED)
+  ?g <- (goal (id ?goal-id) (class MOVE-OUT-OF-WAY|CLEANUP-WP) (mode FINISHED)
               (outcome ?outcome) (verbosity ?v))
   (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
   =>
