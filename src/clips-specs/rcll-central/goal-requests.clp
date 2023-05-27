@@ -302,7 +302,7 @@
 
 (defrule goal-request-take-over-orphaned-workpiece
   "If there is an unhandled payment request that has associated pay-with-base
-  goals redo to them to take over orphaned workpieces.t"
+  goals update the parameters s.t. orphaned workpieces are used to pay."
   (wm-fact (key request pay args? ord ?order-id m ?rs $?) (values status ACTIVE assigned-to ?payment-goal-id ?instruct-goal-id))
   ?instruct-goal <- (goal (id ?instruct-goal-id) (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED))
   ?payment-goal <- (goal (id ?payment-goal-id) (class PAY-FOR-RINGS-WITH-BASE) (mode FORMULATED) (params wp ?wp wp-loc ?bs wp-side ?wp-side target-mps ?target target-side ?target-side))
