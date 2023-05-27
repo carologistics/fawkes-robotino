@@ -36,6 +36,8 @@
   (wm-fact (key domain fact cs-color args? m ?cs col ?cap-col))
   (goal (class INSTRUCTION-ROOT) (id ?instruct-root-id))
   (goal (class SUPPORT-ROOT) (id ?root-id))
+  ; and there is no offer
+  (not (wm-fact (key request offer buffer args? $? col ?cap-col) (values assigned-to $?)))
   =>
   (bind ?buffer-goal (goal-production-assert-buffer-cap ?cs ?cap-col ?order-id))
   (bind ?instruct-goal (goal-production-assert-instruct-cs-buffer-cap ?cs ?cap-col ?order-id))
@@ -134,6 +136,8 @@
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
   (goal (class SUPPORT-ROOT) (id ?root-id))
   (goal (class INSTRUCTION-ROOT) (id ?instruct-root-id))
+  ;and there is no payment offer
+  (not (wm-fact (key request offer pay args? $? m ?rs $?) (values assigned-to $?)))
   =>
   (bind ?wp-base-pay (sym-cat BASE-PAY- (gensym*)))
   (bind ?payment-goal (goal-production-assert-pay-for-rings-with-base ?wp-base-pay ?bs INPUT ?rs INPUT ?order-id))
@@ -158,6 +162,8 @@
 
   (goal (class SUPPORT-ROOT) (id ?root-id))
   (goal (class INSTRUCTION-ROOT) (id ?instruct-root-id))
+  ;and there is no discard offer
+  (not (wm-fact (key request offer discard args? $? cs ?cs $?) (values assigned-to $?)))
   =>
   (bind ?discard-goal (goal-production-assert-discard UNKNOWN ?cs OUTPUT ?order-id))
   (bind ?instruct-goal (goal-production-assert-instruct-ds-discard UNKNOWN ?ds))
