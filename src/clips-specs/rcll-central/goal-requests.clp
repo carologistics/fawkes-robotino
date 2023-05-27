@@ -166,6 +166,32 @@
   (modify ?instruct-goal (parent ?instruct-root-id) (priority ?prio))
 )
 
+(defrule goal-request-remap-discard-to-pay-with-cc
+  "If there is an active request for discard and an active request for payment-with-base
+  but the goals have not been started yet, we can remap them to a pay-with-cc goal."
+  ?request-pay <- (wm-fact (key request pay args? ord ?order-id-pay m ?rs ring ?ring seq ?seq prio ?prio-payment) (values status ACTIVE assigned-to $?payment-goals))
+  ?request-dis <- (wm-fact (key request discard args? ord ?order-id-discard cs ?cs prio ?prio-discard) (values status ACTIVE assigned-to $?discard-goals))
+
+  ;the assigned goals have not been started yet
+  (not (goal (id ?request-goal&:(or (member$ ?request-goal ?payment-goals) (member$ ?request-goal ?discard-goals))) (mode ~FORMULATED)))
+  ;the mapping is currently on distinct discard and pay-with-base goals
+  (goal (id ?discard-goal&:(member$ ?discard-goal ?discard-goals)) (class DISCARD))
+  (goal (id ?payment-goal&:(member$ ?payment-goal ?payment-goals)) (class PAY-FOR-RINGS-WITH-BASE))
+
+  (goal (class SUPPORT-ROOT) (id ?root-id))
+  =>
+  (do-for-all-facts ((?goal goal) (?goal-meta goal-meta))
+    (and (or (member$ ?goal:id ?payment-goals) (member$ ?goal:id ?discard-goals)) (eq ?goal:id ?goal-meta:goal-id))
+    (retract ?goal)
+    (retract ?goal-meta)
+  )
+
+  (bind ?pay-with-cc-goal (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN ?cs UNKNOWN ?rs INPUT ?order-id-pay))
+  (modify ?request-pay (values status ACTIVE assigned-to (fact-slot-value ?pay-with-cc-goal id)))
+  (modify ?request-dis (values status ACTIVE assigned-to (fact-slot-value ?pay-with-cc-goal id)))
+  (modify ?pay-with-cc-goal (parent ?root-id) (priority ?prio-discard))
+)
+
 (defrule goal-request-map-pay-completed
   "If there is a completed mount ring goal that used up a payment associatable with a fulfilled request, mark the request as completed."
   ?request <- (wm-fact (key request pay args? ord ?order-id m ?rs ring ?ring seq ?seq prio ?prio-payment) (values status ACTIVE assigned-to $?payment-goals))
