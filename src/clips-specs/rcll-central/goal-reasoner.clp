@@ -471,24 +471,6 @@
 
 ; ----------------------- EVALUATE GOALS ---------------------------
 
-(deffunction goal-reasoner-get-goal-category (?goal-class)
-  (bind ?production-goals (create$ MOUNT-CAP MOUNT-RING DELIVER-RC21 DELIVER))
-  (bind ?maintenance-goals (create$ BUFFER-CAP PAY-FOR-RINGS-WITH-BASE PAY-FOR-RINGS-WITH-CAP-CARRIER PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF))
-  (bind ?maintenance-instruct-goals (create$ INSTRUCT-RS-MOUNT-RING INSTRUCT-CS-MOUNT-CAP INSTRUCT-DS-DELIVER))
-  (bind ?production-instruct-goals (create$ INSTRUCT-CS-BUFFER-CAP INSTRUCT-DS-DISCARD))
-  (bind ?other-goals (create$ MOVE MOVE-OUT-OF-WAY ENTER-FIELD DISCARD))
-  (bind ?other-instruct-goals (create$ INSTRUCT-BS-DISPENSE-BASE))
-
-  (if (member$ ?goal-class ?production-goals) then (return PRODUCTION))
-  (if (member$ ?goal-class ?maintenance-goals) then (return MAINTENANCE))
-  (if (member$ ?goal-class ?production-instruct-goals) then (return PRODUCTION-INSTRUCT))
-  (if (member$ ?goal-class ?maintenance-instruct-goals) then (return MAINTENANCE-INSTRUCT))
-  (if (member$ ?goal-class ?other-instruct-goals) then (return OTHER-INSTRUCT))
-  (if (member$ ?goal-class ?other-goals) then (return OTHER))
-
-  (return UNKNOWN)
-)
-
 (deffunction goal-reasoner-retract-plan-action (?goal-id)
   (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
     (delayed-do-for-all-facts ((?a plan-action)) (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
@@ -513,22 +495,19 @@
 (defrule goal-reasoner-evaluate-production-and-maintenance-wp-still-usable
   "If a production or maintenance goal failed but the WP is still usable "
   (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
-  ?g <- (goal (class ?class&:(or (eq (goal-reasoner-get-goal-category ?class) PRODUCTION)
-                           (eq (goal-reasoner-get-goal-category ?class) MAINTENANCE)
-                           (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
-                           (eq (goal-reasoner-get-goal-category ?class) MAINTENANCE-INSTRUCT)
-                       ))
+  ?g <- (goal (class ?class)
               (error $?errors&:(not (or (member$ WP-LOST ?errors) (member$ BROKEN-MPS ?errors) (member$ INTERACTED-WITH-BROKEN-MPS ?errors))));exclude special cases
               (id ?goal-id)
               (mode FINISHED|EVALUATED|RETRACTED)
               (outcome FAILED)
               (verbosity ?v))
-  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot)
+             (category ?category&PRODUCTION|MAINTENANCE|PRODUCTION-INSTRUCT|MAINTENANCE-INSTRUCT))
   =>
   (if (not
         (or
-          (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
-          (eq (goal-reasoner-get-goal-category ?class) MAINTENANCE-INSTRUCT)
+          (eq ?category PRODUCTION-INSTRUCT)
+          (eq ?category MAINTENANCE-INSTRUCT)
         )
       )
       then
@@ -546,21 +525,20 @@
   clean-up the goal tree and requests
   and let the production selector re-decide which order to pursue."
   (declare (salience ?*MONITORING-SALIENCE*))
-  ?g <- (goal (class ?class&:(or (eq (goal-reasoner-get-goal-category ?class) PRODUCTION)
-                           (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
-                       ))
+  ?g <- (goal (class ?class)
         (id ?goal-id)
         (error WP-LOST)
         (mode FINISHED)
         (outcome FAILED)
         (verbosity ?v)
   )
-  (goal-meta (goal-id ?goal-id) (order-id ?order-id) (assigned-to ?robot))
+  (goal-meta (goal-id ?goal-id) (order-id ?order-id) (assigned-to ?robot)
+             (category ?category&PRODUCTION|PRODUCTION-INSTRUCT))
   ?order-root <- (goal (id ?root-id) (outcome ~FAILED))
   (goal-meta (goal-id ?root-id) (root-for-order ?order-id))
   =>
   (if (not
-          (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
+          (eq ?category PRODUCTION-INSTRUCT)
       )
       then
         (set-robot-to-waiting ?robot)
@@ -577,8 +555,8 @@
       (eq ?goal:id ?goal-meta:goal-id)
       (eq ?goal-meta:order-id ?order-id)
       (or
-        (eq (goal-reasoner-get-goal-category ?class) PRODUCTION)
-        (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
+        (eq ?category PRODUCTION)
+        (eq ?category PRODUCTION-INSTRUCT)
       )
       (member$ ?goal:mode (create$ FORMULATED SELECTED EXPANDED))
     )
@@ -592,8 +570,8 @@
       (eq ?goal:id ?goal-meta:goal-id)
       (eq ?goal-meta:order-id ?order-id)
       (or
-        (eq (goal-reasoner-get-goal-category ?class) PRODUCTION)
-        (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
+        (eq ?category PRODUCTION)
+        (eq ?category PRODUCTION-INSTRUCT)
       )
       (member$ ?goal:mode (create$ DISPACTHED))
       (eq ?goal:outcome UNKNOWN)
@@ -609,16 +587,15 @@
   and we are late in the production process, we reformulate the goal to not lose
   our progress."
   (declare (salience ?*MONITORING-SALIENCE*))
-  ?g <- (goal (class ?class&:(or (eq (goal-reasoner-get-goal-category ?class) PRODUCTION)
-                           (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
-                       ))
+  ?g <- (goal (class ?class)
         (id ?goal-id)
         (error BROKEN-MPS)
         (mode FINISHED)
         (outcome FAILED)
         (verbosity ?v)
   )
-  (goal-meta (goal-id ?goal-id) (order-id ?order-id) (assigned-to ?robot))
+  (goal-meta (goal-id ?goal-id) (order-id ?order-id) (assigned-to ?robot)
+             (category ?category&PRODUCTION|PRODUCTION-INSTRUCT))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
   (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
   (wm-fact (key wp meta next-step args? wp ?wp) (value ?step))
@@ -651,7 +628,7 @@
   )
   =>
   (if (not
-          (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
+          (eq ?category PRODUCTION-INSTRUCT)
       )
       then
         (set-robot-to-waiting ?robot)
@@ -666,21 +643,20 @@
   "If a production goal was failed because it interacted with a broken mps,
   and gently abort the order, as we probably lost the WP."
   (declare (salience ?*MONITORING-SALIENCE*))
-  ?g <- (goal (class ?class&:(or (eq (goal-reasoner-get-goal-category ?class) PRODUCTION)
-                           (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
-                       ))
+  ?g <- (goal (class ?class)
         (id ?goal-id)
         (error ?error&:(or (eq ?error INTERACTED-WITH-BROKEN-MPS) (eq ?error BROKEN-MPS)))
         (mode FINISHED)
         (outcome FAILED)
         (verbosity ?v)
   )
-  (goal-meta (goal-id ?goal-id) (order-id ?order-id) (assigned-to ?robot))
+  (goal-meta (goal-id ?goal-id) (order-id ?order-id) (assigned-to ?robot)
+             (category ?category&PRODUCTION|PRODUCTION-INSTRUCT))
   ?order-root <- (goal (id ?root-id) (outcome ~FAILED))
   (goal-meta (goal-id ?root-id) (root-for-order ?order-id))
   =>
   (if (not
-          (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
+          (eq ?category PRODUCTION-INSTRUCT)
       )
       then
         (set-robot-to-waiting ?robot)
@@ -697,8 +673,8 @@
       (eq ?goal:id ?goal-meta:goal-id)
       (eq ?goal-meta:order-id ?order-id)
       (or
-        (eq (goal-reasoner-get-goal-category ?class) PRODUCTION)
-        (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
+        (eq ?category PRODUCTION)
+        (eq ?category PRODUCTION-INSTRUCT)
       )
       (member$ ?goal:mode (create$ FORMULATED SELECTED EXPANDED COMMITTED))
     )
@@ -712,8 +688,8 @@
       (eq ?goal:id ?goal-meta:goal-id)
       (eq ?goal-meta:order-id ?order-id)
       (or
-        (eq (goal-reasoner-get-goal-category ?class) PRODUCTION)
-        (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
+        (eq ?category PRODUCTION)
+        (eq ?category PRODUCTION-INSTRUCT)
       )
       (member$ ?goal:mode (create$ DISPACTHED))
       (eq ?goal:outcome UNKNOWN)
@@ -727,19 +703,18 @@
   "If a maintenance goal was failed because the WP was lost, a cap-carrier, base,
   or similar was lost. Reformulate the goal."
   (declare (salience ?*MONITORING-SALIENCE*))
-  ?g <- (goal (class ?class&:(or (eq (goal-reasoner-get-goal-category ?class) MAINTENANCE)
-                           (eq (goal-reasoner-get-goal-category ?class) MAINTENANCE-INSTRUCT)
-                       ))
+  ?g <- (goal (class ?class)
         (id ?goal-id)
         (error ?error&:(eq ?error WP-LOST))
         (mode FINISHED)
         (outcome FAILED)
         (verbosity ?v)
   )
-  (goal-meta (goal-id ?goal-id) (order-id ?order-id) (assigned-to ?robot))
+  (goal-meta (goal-id ?goal-id) (order-id ?order-id) (assigned-to ?robot)
+             (category ?category&MAINTENANCE|MAINTENANCE-INSTRUCT))
   =>
   (if (not
-          (eq (goal-reasoner-get-goal-category ?class) MAINTENANCE-INSTRUCT)
+          (eq ?category MAINTENANCE-INSTRUCT)
       )
       then
         (set-robot-to-waiting ?robot)
