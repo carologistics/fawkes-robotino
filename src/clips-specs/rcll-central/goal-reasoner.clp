@@ -671,7 +671,7 @@
 
 (defrule goal-reasoner-evaluate-production-goal-failed-broken-abort
   "If a production goal was failed because it interacted with a broken mps,
-  and we are late in the production process, we reformulate the goal."
+  and gently abort the order, as we probably lost the WP."
   (declare (salience ?*MONITORING-SALIENCE*))
   ?g <- (goal (class ?class&:(or (eq (goal-reasoner-get-goal-category ?class) PRODUCTION)
                            (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
