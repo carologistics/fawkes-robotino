@@ -707,7 +707,7 @@
         (eq (goal-reasoner-get-goal-category ?class) PRODUCTION)
         (eq (goal-reasoner-get-goal-category ?class) PRODUCTION-INSTRUCT)
       )
-      (member$ ?goal:mode (create$ FORMULATED SELECTED EXPANDED))
+      (member$ ?goal:mode (create$ FORMULATED SELECTED EXPANDED COMMITTED))
     )
     (modify ?goal (mode FINISHED) (outcome FAILED) (error WP-LOST))
   )
