@@ -65,6 +65,12 @@ clips-agent:
     magenta-send-port: 4483
 
     
+ros2:
+  node-name: "robotino3"
+  namespace: "robotino3"
+  tf:
+    tf_prefix: "robotino3"
+
 plugins/tag_vision:
   shm_image_id: "tag_vision_robotino_3"
   camera: shmem:gazsim_cam:image_id=robotino3/gazsim_tag:deep_copy=true
@@ -117,3 +123,51 @@ plugins/mongodb:
       port: 27023
     robot-memory-distributed:
       port: 27033
+
+fawkes/meta_plugins:
+  gazsim-meta-robotino:
+    - gazebo
+    - static-transforms
+    - gazsim-robotino
+    - gazsim-laser
+    - laser-filter
+    - laser-pointclouds
+    - laser-cluster
+    - gazsim-timesource
+    - gazsim-gripper
+    - gazsim-meta-robotino-vision-high-level
+    - laser_front_dist
+    - webview
+  gazsim-meta-robotino-ros:
+    - gazsim-meta-robotino
+    - ros
+#    - ros-clock
+    - robotino-ros-joints
+    - ros-odometry
+    - ros-tf
+    - ros-laserscan
+    - amcl
+    - navgraph
+    - navgraph-generator
+    - navgraph-generator-mps
+    - laser-lines
+    - gazsim-vis-localization
+    - skiller
+    - mps-laser-gen
+  gazsim-meta-robotino-ros2:
+    - gazsim-meta-robotino
+    - ros2
+#    - ros2-clock
+#    - robotino-ros-joints
+    - ros2-odometry
+    - ros2-tf2
+    - ros2-laserscan
+    - ros2-cmdvel
+    - amcl
+    - navgraph
+    - navgraph-generator
+    - navgraph-generator-mps
+    - laser-lines
+    - gazsim-vis-localization
+    - skiller
+#    - mps-laser-gen

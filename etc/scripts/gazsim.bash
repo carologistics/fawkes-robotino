@@ -9,47 +9,50 @@ usage: $0 options
 This script starts or kills the a Gazebo-simulation
 
 OPTIONS:
-   -h                Show this message
-   -x start|kill     Start or kill simulation
-   -c arg            Use a specific configuration-folder
-                     in cfg/gazsim-configurations/
-   -n arg            Specify number Robotinos
-   -m arg            load fawkes with the specified (meta-)plugin
-   -a                Run with default CLIPS-agent (don't mix with -m)
-   --central-agent p Run an additional fawkes instance with plugin p
-   -l                Run Gazebo headless
-   -k                Keep started shells open after finish
-   -s                Keep statistics and shutdown after game
-   -r|--ros          Start with ROS support
-   --ros-launch-main Run ROS launch file once for main (non-robot) master
-                     Argument: package:file.launch
-                     Calls: roslaunch package file.launch
-   --ros-launch      Run launch file for each robot (on their roscore)
-   -e arg            Record replay
-   -d|--debug        Run Fawkes with debug output enabled
-   --detailed        Detailed simulation (e.g. simulated webcam)
-   -o                Omitt starting gazebo (necessary when starting
-                     different teams)
-   -f arg            First Robotino Number (default 1, choose 4 when
-                     starting as magenta)
-   -p arg            Path to the fawkes folder
-                     ($FAWKES_DIR/bin by default)
-   -g                Run Fawkes in gdb
-   -v                Run Fawkes in valgrind
-   -t                Skip Exploration and add all navgraph points
-   --team-cyan       Set cyan team name
-   --team-magenta		 Set magenta team name
-   --start-game      Automatically run game after initialization
-                     (if used with -t go into PRODUCTION phase,
-                      otherwise the phase will be EXPLORATION,
-                      optionally, "--start-game=PHASE" may be given
-                      to set the phase explicitly)
-                     Typically requires at least --team-cyan.
-   --mongodb         Start central mongodb instance
-   --keep-tmpfiles   Do not delete tmp files on exit
-   --asp             Run with ASP agent and global planner
-   --challenge       Start refbox challenge script instead of refbox
-   --refbox-args     Pass options to the refbox
+   -h                 Show this message
+   -x start|kill      Start or kill simulation
+   -c arg             Use a specific configuration-folder
+                      in cfg/gazsim-configurations/
+   -n arg             Specify number Robotinos
+   -m arg             load fawkes with the specified (meta-)plugin
+   -a                 Run with default CLIPS-agent (don't mix with -m)
+   --central-agent p  Run an additional fawkes instance with plugin p
+   -l                 Run Gazebo headless
+   -k                 Keep started shells open after finish
+   -s                 Keep statistics and shutdown after game
+   -r|--ros           Start with ROS support
+   -r2|--ros2         Start with ROS 2 support
+   --ros-launch-main  Run ROS launch file once for main (non-robot) master
+   --ros2-launch-main Run ROS launch file once for main (non-robot) master
+                      Argument: package:file.launch
+                      Calls: roslaunch package file.launch
+   --ros-launch       Run launch file for each robot (on their roscore)
+   --ros2-launch      Run ROS 2 launch file for each robot
+   -e arg             Record replay
+   -d|--debug         Run Fawkes with debug output enabled
+   --detailed         Detailed simulation (e.g. simulated webcam)
+   -o                 Omitt starting gazebo (necessary when starting
+                      different teams)
+   -f arg             First Robotino Number (default 1, choose 4 when
+                      starting as magenta)
+   -p arg             Path to the fawkes folder
+                      ($FAWKES_DIR/bin by default)
+   -g                 Run Fawkes in gdb
+   -v                 Run Fawkes in valgrind
+   -t                 Skip Exploration and add all navgraph points
+   --team-cyan        Set cyan team name
+   --team-magenta	      Set magenta team name
+   --start-game       Automatically run game after initialization
+                      (if used with -t go into PRODUCTION phase,
+                       otherwise the phase will be EXPLORATION,
+                       optionally, "--start-game=PHASE" may be given
+                       to set the phase explicitly)
+                      Typically requires at least --team-cyan.
+   --mongodb          Start central mongodb instance
+   --keep-tmpfiles    Do not delete tmp files on exit
+   --asp              Run with ASP agent and global planner
+   --challenge        Start refbox challenge script instead of refbox
+   --refbox-args      Pass options to the refbox
 EOF
 }
 
@@ -66,6 +69,10 @@ ROS=
 ROS_LAUNCH_MAIN=
 ROS_LAUNCH_ROBOT=
 ROS_LAUNCH_MOVEBASE=
+ROS_2=
+ROS_2_LAUNCH_MAIN=
+ROS_2_LAUNCH_ROBOT=
+ROS_2_LAUNCH_MOVEBASE=
 AGENT=
 DEBUG=
 DETAILED=
@@ -135,7 +142,7 @@ echo "Using $TERMINAL"
 ROS_MASTER_PORT=${ROS_MASTER_URI##*:}
 ROS_MASTER_PORT=${ROS_MASTER_PORT%%/*}
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "debug,ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:,keep-tmpfiles,challenge,refbox-args:" -- "$@")
+OPTS=$(getopt -o "hx:c:lr::ksn:e:dm:aof:p:gvt" -l "debug,ros,ros2,ros-launch-main:,ros-launch:,ros2,ros2-launch-main:,ros2-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:,keep-tmpfiles,challenge,refbox-args:" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
@@ -143,6 +150,7 @@ then
     exit 1
 fi
 
+echo $OPTS
 eval set -- "$OPTS"
 while true; do
      OPTION=$1
@@ -169,8 +177,13 @@ while true; do
         fi
              ;;
          -r)
-           ROS=-r
-           ROS_LAUNCH_MOVE_BASE=yes
+          if [ "$OPTARG" == "2" ] ; then
+              ROS=-r2
+              ROS_LAUNCH_NAV2=yes
+          else
+              ROS=-r
+              ROS_LAUNCH_MOVE_BASE=yes
+          fi
              ;;
          -g)
 	     if [ -n "$GDB" ]; then
@@ -239,14 +252,23 @@ while true; do
 	 -o)
 	     START_GAZEBO=false
 	     ;;
-	 -r|--ros)
-	     ROS=-r
-	     ;;
+#	 -r|--ros)
+#	     ROS=-r
+#	     ;;
 	 --ros-launch-main)
 	     ROS_LAUNCH_MAIN="--ros-launch $OPTARG"
 	     ;;
 	 --ros-launch-robot)
 	     ROS_LAUNCH_ROBOT="--ros-launch $OPTARG"
+	     ;;
+#	 -r2|--ros2)
+#	     ROS_2=-r
+#	     ;;
+	 --ros2-launch-main)
+	     ROS_2_LAUNCH_MAIN="--ros2-launch $OPTARG"
+	     ;;
+	 --ros2-launch-robot)
+	     ROS_2_LAUNCH_ROBOT="--ros2-launch $OPTARG"
 	     ;;
 	 --team-cyan)
 	     TEAM_CYAN="$OPTARG"
@@ -377,6 +399,28 @@ if [  $COMMAND  == start ]; then
 	    #run headless
         COMMANDS+=("bash -i -c \"$startup_script_location -x gzserver $REPLAY $KEEP $@\"")
 	fi
+    fi
+
+    if [  "$ROS_2"  == "-r2" ]; then
+    	#start roscores
+	# main roscore (non-robot)
+#    COMMANDS+=("bash -i -c \"$startup_script_location -x roscore -p $ROS_MASTER_PORT $KEEP $@\"")
+    echo "LAUNCH WITH ROS 2"
+	if [ -n "$ROS_2_LAUNCH_MAIN" ]; then
+		COMMANDS+=("bash -i -c \"$startup_script_location -x ros2 $ROS_LAUNCH_MAIN -p $ROS_MASTER_PORT $KEEP $@\"")
+	fi
+    	for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
+    	do
+				# robot roscore
+#				COMMANDS+=("bash -i -c \"$startup_script_location -x roscore -p 1132$ROBO $KEEP $@\"")
+        # move_base
+				if $START_GAZEBO && [ -n "$ROS_2_LAUNCH_MOVE_BASE" ]; then
+					COMMANDS+=("bash -i -c \"$startup_script_location -x navigation2 -p 1132$ROBO $KEEP $@\"")
+				fi
+	if [ -n "$ROS_2_LAUNCH_ROBOT" ]; then
+	    COMMANDS+=("bash -i -c \"$startup_script_location -x roslaunch $ROS_2_LAUNCH_ROBOT $KEEP $@\"")
+	fi
+    	done
     fi
 
     if [  "$ROS"  == "-r" ]; then
