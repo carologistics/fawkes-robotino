@@ -88,11 +88,11 @@
 	"Fail the goal if any of the child goals fail to propagate error handling."
 	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)
 	             (mode DISPATCHED))
-	?sg <- (goal (id ?sg-id) (parent ?id) (type ACHIEVE) (mode FINISHED) (outcome FAILED))
+	?sg <- (goal (parent ?id) (id ?sub-goal-id) (type ACHIEVE) (mode FINISHED) (outcome FAILED))
 	=>
 	(modify ?gf (mode FINISHED) (outcome FAILED)
-	            (error SUB-GOAL-FAILED ?sg-id)
-	            (message (str-cat "Sub-goal '" (fact-slot-value ?sg id) "' of CENTRAL-RUN-ALL goal '" ?id "' has failed")))
+	            (error SUB-GOAL-FAILED ?sub-goal-id)
+	            (message (str-cat "Sub-goal '" ?sub-goal-id "' of CENTRAL-RUN-ALL goal '" ?id "' has failed")))
 )
 
 (defrule central-run-all-goal-finish-all-subgoals-finished-completed

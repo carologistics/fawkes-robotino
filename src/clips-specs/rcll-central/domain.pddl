@@ -402,12 +402,6 @@
 	:effect (at ?r ?mps ?side)
 )
 
-(:action wait-for-free-side
-	:parameters (?r - robot ?point - waitpoint)
-	:precondition (at ?r ?point WAIT)
-	:effect (at ?r ?point WAIT)
-)
-
 (:action move
 	:parameters (?r - robot ?from - location ?from-side - mps-side
 	             ?to - mps ?to-side - mps-side)
