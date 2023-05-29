@@ -90,6 +90,9 @@
 	              (default nil))
   (slot root-for-order (type SYMBOL))
   (slot run-all-ordering (default 1) (type INTEGER))
+  (slot category (type SYMBOL)
+                      (allowed-values nil PRODUCTION MAINTENANCE PRODUCTION-INSTRUCT MAINTENANCE-INSTRUCT OTHER OTHER-INSTRUCT UNKNOWN)
+                      (default nil))
 )
 
 (deffunction tag-id-to-side (?tag-id ?output-odd)

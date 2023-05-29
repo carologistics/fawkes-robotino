@@ -31,7 +31,6 @@
   ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT* = 30
 )
 
-
 (deffunction goal-meta-assign-robot-to-goal (?goal ?robot)
 "Changes an existing goal-meta fact and assign it to the given robot"
   (if (eq (fact-slot-value ?goal id) FALSE) then
@@ -104,6 +103,38 @@
   (delayed-do-for-all-facts ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ central agent robot))
     (assert (wm-fact (key central agent robot-waiting args? r (wm-key-arg ?wm:key r))))
   )
+)
+(deffunction goal-meta-get-goal-category (?goal-class)
+  (bind ?production-goals (create$ MOUNT-CAP MOUNT-RING DELIVER-RC21 DELIVER))
+  (bind ?maintenance-goals (create$ BUFFER-CAP PAY-FOR-RINGS-WITH-BASE PAY-FOR-RINGS-WITH-CAP-CARRIER PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF))
+  (bind ?maintenance-instruct-goals (create$ INSTRUCT-RS-MOUNT-RING INSTRUCT-CS-MOUNT-CAP INSTRUCT-DS-DELIVER))
+  (bind ?production-instruct-goals (create$ INSTRUCT-CS-BUFFER-CAP INSTRUCT-DS-DISCARD))
+  (bind ?other-goals (create$ MOVE MOVE-OUT-OF-WAY ENTER-FIELD DISCARD WAIT-NOTHING-EXECUTABLE))
+  (bind ?other-instruct-goals (create$ INSTRUCT-BS-DISPENSE-BASE))
+
+  (if (member$ ?goal-class ?production-goals) then (return PRODUCTION))
+  (if (member$ ?goal-class ?maintenance-goals) then (return MAINTENANCE))
+  (if (member$ ?goal-class ?production-instruct-goals) then (return PRODUCTION-INSTRUCT))
+  (if (member$ ?goal-class ?maintenance-instruct-goals) then (return MAINTENANCE-INSTRUCT))
+  (if (member$ ?goal-class ?other-instruct-goals) then (return OTHER-INSTRUCT))
+  (if (member$ ?goal-class ?other-goals) then (return OTHER))
+
+  (return UNKNOWN)
+)
+
+(defrule goal-meta-assign-category
+  "Assign the category of a simple goal based on its class"
+  (goal (id ?goal-id) (sub-type SIMPLE) (class ?class))
+  ?gm <- (goal-meta (goal-id ?goal-id) (category nil))
+  =>
+  (modify ?gm (category (goal-meta-get-goal-category ?class)))
+)
+
+(defrule goal-meta-print-error-unknown-category
+  (goal (id ?goal-id) (class ?class))
+  (goal-meta (goal-id ?goal-id) (category UNKNOWN))
+  =>
+  (printout error "Simple goal " ?goal-id " of class " ?class " has UNKNOWN category!" crlf)
 )
 
 ; ----------------------- Maintenance Goals -------------------------------
@@ -498,13 +529,13 @@
       (bind ?price (sym-to-int (wm-key-arg ?rs-ring-spec:key rn)))
     )
     (loop-for-count ?price
-      (assert (wm-fact (key request pay args? ord ?order m (nth$ ?index ?rs) ring (sym-cat RING ?index) seq ?seq prio ?prio) (is-list FALSE) (type SYMBOL) (value OPEN)))
+      (assert (wm-fact (key request pay args? ord ?order m (nth$ ?index ?rs) ring (sym-cat RING ?index) seq ?seq prio ?prio) (is-list TRUE) (type SYMBOL) (values status OPEN assigned-to)))
       (bind ?seq (+ ?seq 1))
     )
     (bind ?index (+ ?index 1))
   )
-  (assert (wm-fact (key request buffer args? ord ?order col ?col-cap prio ?prio) (is-list FALSE) (type SYMBOL) (value OPEN)))
-  (assert (wm-fact (key request discard args? ord ?order cs ?cs prio ?prio) (is-list FALSE) (type SYMBOL) (value OPEN)))
+  (assert (wm-fact (key request buffer args? ord ?order col ?col-cap prio ?prio) (is-list TRUE) (type SYMBOL) (values status OPEN assigned-to)))
+  (assert (wm-fact (key request discard args? ord ?order cs ?cs prio ?prio) (is-list TRUE) (type SYMBOL) (values status OPEN assigned-to)))
 )
 
 
@@ -514,8 +545,7 @@
   ;assert the instruct goals
   (bind ?instruct-goals
     (goal-tree-assert-central-run-parallel-prio INSTRUCT-ORDER ?*PRODUCTION-C0-PRIORITY*
-      (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id ?bs)
-      (goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap ?order-id)
+      (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base INPUT ?order-id ?bs)
       (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
     )
   )
@@ -526,7 +556,7 @@
   (bind ?goal
     (goal-tree-assert-central-run-all-prio PRODUCE-ORDER ?*PRODUCTION-C0-PRIORITY*
       (goal-production-assert-deliver ?wp-for-order ?order-id ?instruct-parent ?ds)
-      (goal-production-assert-mount-cap ?wp-for-order ?cs ?bs OUTPUT ?order-id)
+      (goal-production-assert-mount-cap ?wp-for-order ?cs ?bs INPUT ?order-id)
     )
   )
 
@@ -541,8 +571,7 @@
   ;assert the instruct goals
   (bind ?instruct-goals
     (goal-tree-assert-central-run-parallel-prio INSTRUCT-ORDER ?*PRODUCTION-C1-PRIORITY*
-      (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id ?bs)
-      (goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap ?order-id)
+      (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base INPUT ?order-id ?bs)
       (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
       (goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
     )
@@ -555,7 +584,7 @@
     (goal-tree-assert-central-run-all-prio PRODUCE-ORDER ?*PRODUCTION-C1-PRIORITY*
       (goal-production-assert-deliver ?wp-for-order ?order-id ?instruct-parent ?ds)
       (goal-production-assert-mount-cap ?wp-for-order ?cs ?rs1 OUTPUT ?order-id)
-      (goal-production-assert-mount-ring ?wp-for-order ?rs1 ?bs OUTPUT ?col-ring1 ?order-id ONE)
+      (goal-production-assert-mount-ring ?wp-for-order ?rs1 ?bs INPUT ?col-ring1 ?order-id ONE)
     )
   )
 
@@ -569,8 +598,7 @@
 
   (bind ?instruct-goals
     (goal-tree-assert-central-run-parallel-prio INSTRUCT-ORDER ?*PRODUCTION-C2-PRIORITY*
-      (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id ?bs)
-      (goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap ?order-id)
+      (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base INPUT ?order-id ?bs)
       (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
       (goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
       (goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2 ?order-id TWO)
@@ -584,7 +612,7 @@
       (goal-production-assert-deliver ?wp-for-order ?order-id ?instruct-parent ?ds)
       (goal-production-assert-mount-cap ?wp-for-order ?cs ?rs2 OUTPUT ?order-id)
       (goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT ?col-ring2 ?order-id TWO)
-      (goal-production-assert-mount-ring ?wp-for-order ?rs1 ?bs OUTPUT ?col-ring1 ?order-id ONE)
+      (goal-production-assert-mount-ring ?wp-for-order ?rs1 ?bs INPUT ?col-ring1 ?order-id ONE)
     )
   )
 
@@ -598,8 +626,7 @@
 
   (bind ?instruct-goals
     (goal-tree-assert-central-run-parallel-prio INSTRUCT-ORDER ?*PRODUCTION-C3-PRIORITY*
-      (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base OUTPUT ?order-id ?bs)
-      (goal-production-assert-instruct-cs-buffer-cap ?cs ?col-cap ?order-id)
+      (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base INPUT ?order-id ?bs)
       (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
       (goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
       (goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2 ?order-id TWO)
@@ -615,7 +642,7 @@
       (goal-production-assert-mount-cap ?wp-for-order ?cs ?rs3 OUTPUT ?order-id)
       (goal-production-assert-mount-ring ?wp-for-order ?rs3 ?rs2 OUTPUT ?col-ring3 ?order-id THREE)
       (goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT ?col-ring2 ?order-id TWO)
-      (goal-production-assert-mount-ring ?wp-for-order ?rs1 ?bs OUTPUT ?col-ring1 ?order-id ONE)
+      (goal-production-assert-mount-ring ?wp-for-order ?rs1 ?bs INPUT ?col-ring1 ?order-id ONE)
     )
   )
 
@@ -717,6 +744,19 @@
   =>
   (printout t "modify priority of " ?goal-id crlf)
   (modify ?g (priority (- ?p 2)))
+)
+
+(defrule goal-production-create-cleanup-wp
+	"Creates a cleanup-wp goal to get rid of WPs that do not belong to any order,
+  or step in the production chain e.g. a workpiece left from stopping to pursue an
+  order."
+	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+	(goal (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+	(goal (id ?root-id) (class WAIT-ROOT))
+	(not (goal (class CLEANUP-WP)))
+	=>
+	(bind ?g (goal-tree-assert-central-run-parallel CLEANUP-WP))
+	(modify ?g (parent ?root-id) (priority 0))
 )
 
 (defrule goal-production-debug-cap
@@ -846,22 +886,40 @@
   )
 )
 
-(defrule goal-production-fill-in-unknown-wp-discard
-  "Fill in missing workpiece information into the discard goals"
+(defrule goal-production-fill-in-unknown-wp-discard-from-cs
+  "Fill in missing workpiece information into the discard goals from CS"
+  ; there is a discard goal for a CS with formulated assigned goals
+  (wm-fact (key request discard args? ord ?order-id cs ?cs prio ?prio) (values status ACTIVE assigned-to ?goal-id ?i-goal-id))
+
   ?g <- (goal (id ?goal-id) (class DISCARD) (mode FORMULATED) (parent ?parent)
               (params wp UNKNOWN wp-loc ?mps wp-side ?mps-side))
   ?i <- (goal (id ?i-goal-id) (class INSTRUCT-DS-DISCARD) (mode FORMULATED)
 	            (params wp UNKNOWN target-mps ?ds))
-  (goal-meta (goal-id ?goal-id) (order-id ?order-id))
-  (goal (id ?buffer-goal-id) (class BUFFER-CAP) (mode ~FORMULATED))
-  (goal-meta (goal-id ?buffer-goal-id) (order-id ?order-id))
+
+  ; there is a wp at the machine
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?mps-side))
   (not (wm-fact (key order meta wp-for-order args? wp ?wp $?)))
-  (goal (id ?instruct-goal) (class INSTRUCT-CS-BUFFER-CAP) (mode DISPATCHED|FINISHED|RETRACTED))
-  (goal-meta (goal-id ?instruct-goal) (order-id ?order-id))
+
+  ; there is not another discard goal bound to this wp
+  (not (goal (id ?other-goal-id) (class DISCARD) (outcome ~FAILED) (params wp ?wp wp-loc ?mps wp-side ?mps-side)))
   =>
   (modify ?g (params wp ?wp wp-loc ?mps wp-side ?mps-side))
   (modify ?i (params wp ?wp target-mps ?ds))
+)
+
+(defrule goal-production-remove-grounding-from-discard-wp-moved
+  "If a DISCARD goal is grounded on a certain WP, but the WP moved, unground it."
+  (wm-fact (key request discard args? ord ?order-id cs ?cs prio ?prio) (values status ACTIVE assigned-to ?goal-id ?i-goal-id))
+
+  ?g <- (goal (id ?goal-id) (class DISCARD) (mode FORMULATED) (parent ?parent)
+              (params wp ?wp wp-loc ?mps wp-side ?mps-side))
+  ?i <- (goal (id ?i-goal-id) (class INSTRUCT-DS-DISCARD) (mode FORMULATED)
+	            (params wp ?wp target-mps ?ds))
+  (not (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?mps-side)))
+  (test (neq ?wp UNKNOWN))
+  =>
+  (modify ?g (params wp UNKNOWN wp-loc ?mps wp-side ?mps-side))
+  (modify ?i (params wp UNKNOWN target-mps ?ds))
 )
 
 (defrule goal-production-create-enter-field
