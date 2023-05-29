@@ -53,6 +53,7 @@ fawkes/meta_plugins:
     - skiller-rest-api
     - skiller_motor_state
     - box_detect
+    - mps-laser-gen-ros2
     - object-tracking
   m-robot-memory:
     - mongodb
