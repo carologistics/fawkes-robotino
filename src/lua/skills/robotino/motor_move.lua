@@ -64,6 +64,7 @@ local V_MAX_CAM =     { x=0.06, y=0.06, ori=0.3 }
 local V_MIN =         { x=0.006, y=0.006, ori=0.02 }   -- below the motor won't even start
 local TOLERANCE =     { x=0.02, y=0.02, ori=0.025 } -- accuracy
 local TOLERANCE_VS =  { x=0.01, y=0.005, ori=0.01 }
+local TOLERANCE_EE =  { x=0.15, y=0.04, ori=0.03} -- tolerance for end_early condition
 local TOLERANCE_CAM = { x=0.005, y=0.0015, ori=0.01 }
 local D_DECEL =       { x=0.035, y=0.035, ori=0.15 }    -- deceleration distance
 local ACCEL =         { x=0.06, y=0.06, ori=0.21 }   -- accelerate by this factor every loop
@@ -213,9 +214,9 @@ function close_enough(self)
    local dist_target = tfm.transform6D(
       self.fsm.vars.target,
       self.fsm.vars.target_frame, "/base_link")
-   return math.abs(dist_target.x) < self.fsm.vars.tolerance_arg.x
-      and math.abs(dist_target.y) < self.fsm.vars.tolerance_arg.y
-      and math.abs(scalar(dist_target.ori)) < self.fsm.vars.tolerance_arg.ori
+   return math.abs(dist_target.x) < TOLERANCE_EE.x
+      and math.abs(dist_target.y) < TOLERANCE_EE.y
+      and math.abs(scalar(dist_target.ori)) < TOLERANCE_EE.ori
 end
 
 function early_endable(self)
@@ -240,16 +241,16 @@ function cam_frame_visible(frame)
    return pos_iface and pos_iface:visibility_history() > 0
 end
 
-function object_tracker_inactive()
-   return (fsm.vars.end_early or fsm.vars.visual_servoing) and
-      (not object_tracking_if:has_writer() or object_tracking_if:msgid() == 0)
+function object_tracker_active()
+   return object_tracking_if:has_writer()
 end
 
 fsm:define_states{ export_to=_M,
    closure={motor=motor, navigator=navigator, pos3d_iface=pos3d_iface, cam_frame_visible=cam_frame_visible,
-      STUCK_MAX=STUCK_MAX, MISSING_MAX=MISSING_MAX, object_tracker_inactive=object_tracker_inactive,
+      STUCK_MAX=STUCK_MAX, MISSING_MAX=MISSING_MAX, object_tracker_active=object_tracker_active,
       early_endable=early_endable, drive_done=drive_done},
    {"INIT", JumpState},
+   {"WAIT_OTI", JumpState},
    {"DRIVE", JumpState},
    {"DRIVE_VS", JumpState},
    {"DRIVE_CAM", JumpState},
@@ -265,10 +266,13 @@ fsm:add_transitions{
    {"INIT", "FAILED", cond="not vars.target", desc="target TF failed"},
    {"INIT", "FAILED", cond="vars.stop_attempts > 5", desc="Navigator won't stop"},
    {"INIT", "STOP_NAVIGATOR", cond="navigator:has_writer() and not navigator:is_final()"},
-   {"INIT", "FAILED", cond=object_tracker_inactive, desc="Object tracker inactive"},
-   {"INIT", "DRIVE_VS", cond="vars.visual_servoing"},
    {"INIT", "DRIVE_CAM", cond="pos3d_iface(vars.frame)"},
+   {"INIT", "WAIT_OTI", cond="vars.visual_servoing or vars.end_early"},
    {"INIT", "DRIVE", cond=true},
+
+   {"WAIT_OTI", "DRIVE_VS", cond="vars.visual_servoing and object_tracker_active()"},
+   {"WAIT_OTI", "DRIVE", cond="object_tracker_active()"},
+   {"WAIT_OTI", "FAILED", timeout=0.5, desc="Object tracker inactive"},
 
    {"STOP_NAVIGATOR", "INIT", cond="navigator:is_final()"},
 
