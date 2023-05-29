@@ -148,7 +148,8 @@ fsm:define_states{ export_to=_M, closure={
    {"ALIGN_FAST",             SkillJumpState, skills={{"motor_move"}}, final_to="MATCH_AVG_LINE", fail_to="FAILED"},
    {"MATCH_AVG_LINE",         JumpState},
    {"ALIGN_PRECISE",          SkillJumpState, skills={{"motor_move"}}, final_to="ALIGN_TURN", fail_to="ALIGN_FAST"},
-   {"ALIGN_TURN",             SkillJumpState, skills={{"motor_move"}}, final_to="FINAL", fail_to="FAILED"}
+   {"ALIGN_TURN",             SkillJumpState, skills={{"motor_move"}}, final_to="FINAL", fail_to="FAILED"},
+   {"MOVE_OFFSET",             SkillJumpState, skills={{"motor_move"}}, final_to="TURN_AROUND", fail_to="FAILED"}
 }
 
 fsm:add_transitions{
@@ -160,7 +161,7 @@ fsm:add_transitions{
 
    {"FIND_TAG",      "SEARCH_LINES",    cond="want_search() and #vars.interesting_lines > 0", desc="search 4 tag"},
    {"FIND_TAG",      "MATCH_LINE",      cond="tag_visible(MIN_VIS_HIST_TAG)", desc="found tag"},
-   {"FIND_TAG",      "TURN_AROUND",     timeout=1, desc="no interesting lines"},
+   {"FIND_TAG",      "MOVE_OFFSET",     timeout=1, desc="no interesting lines"},
    {"FIND_TAG",      "FAILED",          cond="not want_search() or vars.search_idx > 3"},
 
    {"SEARCH_LINES",  "MATCH_LINE",      cond="tag_visible(MIN_VIS_HIST_TAG)", desc="found tag"},
@@ -340,8 +341,15 @@ function TURN_AROUND:init()
    self.fsm.vars.search_idx = self.fsm.vars.search_idx + 1
 
    for k,v in pairs(self.fsm.vars.lines_visited) do
-      self.fsm.vars.lines_visited[k] = 0
+      self.fsm.vars.lines_visited[k] = 1
    end
+end
+
+
+function MOVE_OFFSET:init()
+   print("MOVE_OFFSET called! ")
+   self.args["motor_move"] = {x = -0.1,
+                             y = 0.1}
 end
 
 
