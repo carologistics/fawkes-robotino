@@ -326,12 +326,12 @@
 						(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
 							(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
 						)
-						(plan-assert-safe-move-wait-for-free-side ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps ?target-side
+						(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps ?target-side
 							(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
 						)
 					)
 				else
-					(plan-assert-safe-move-wait-for-free-side ?robot ?curr-location ?curr-side ?target-mps ?target-side
+					(plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps ?target-side
 						(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
 					)
 				)
@@ -358,7 +358,7 @@
 	                   (eq (wm-key-arg ?wp-at:key wp) ?wp))
 	              (bind ?wp-loc (wm-key-arg ?wp-at:key m))
 	              (bind ?wp-side (wm-key-arg ?wp-at:key side))
-	         )
+	         ))
 	    )
 	then
 		(bind ?wp-loc (multifield-key-value ?params wp-loc))
