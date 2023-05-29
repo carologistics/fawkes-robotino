@@ -629,7 +629,6 @@
 	)
 	(retract ?reset)
 )
-)
 
 ; ----------------------- BS TRACKING -------------------------------
 (defrule execution-monitoring-bs-in-use
