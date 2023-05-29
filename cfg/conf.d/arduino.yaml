@@ -65,3 +65,4 @@ arduino:
     # a good starting value is 120*a where a
     # is the microstepping mode of the A motor
     a_toggle_steps: 225
+    a_half_toggle_steps: 120

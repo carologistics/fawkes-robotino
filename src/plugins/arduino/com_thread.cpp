@@ -365,6 +365,10 @@ ArduinoComThread::loop()
 					ArduinoInterface::OpenGripperMessage *msg = arduino_if_->msgq_first(msg);
 					logger->log_debug(name(), "Open Gripper");
 					append_message_to_queue(ArduinoComMessage::command_id_t::CMD_OPEN, 0, 10000);
+				} else if (arduino_if_->msgq_first_is<ArduinoInterface::OpenHalfGripperMessage>()) {
+					ArduinoInterface::OpenHalfGripperMessage *msg = arduino_if_->msgq_first(msg);
+					logger->log_debug(name(), "Open Half Gripper");
+					append_message_to_queue(ArduinoComMessage::command_id_t::CMD_HALF_OPEN, 0, 10000);
 				} else if (arduino_if_->msgq_first_is<ArduinoInterface::StatusUpdateMessage>()) {
 					ArduinoInterface::StatusUpdateMessage *msg = arduino_if_->msgq_first(msg);
 					logger->log_debug(name(), "Request Status");
@@ -427,6 +431,9 @@ ArduinoComThread::loop()
 				append_message_to_queue(ArduinoComMessage::command_id_t::CMD_CALIBRATE, 0, 50000);
 				append_message_to_queue(ArduinoComMessage::command_id_t::CMD_SET_A_TOGGLE_STEPS,
 				                        cfg_a_toggle_steps_,
+				                        1000);
+				append_message_to_queue(ArduinoComMessage::command_id_t::CMD_SET_A_HALF_TOGGLE_STEPS,
+				                        cfg_a_half_toggle_steps_,
 				                        1000);
 			}
 		} else {
@@ -831,6 +838,8 @@ ArduinoComThread::load_config()
 		cfg_steps_per_mm_[Z] = 200.0 * cfg_z_microstep / 1.5;
 
 		cfg_a_toggle_steps_ = config->get_int(cfg_prefix_ + "/hardware_settings/a_toggle_steps");
+		cfg_a_half_toggle_steps_ =
+		  config->get_int(cfg_prefix_ + "/hardware_settings/a_half_toggle_steps");
 
 		set_speed_pending_        = false;
 		set_acceleration_pending_ = false;

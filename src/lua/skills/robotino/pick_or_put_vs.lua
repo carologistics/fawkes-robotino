@@ -36,6 +36,8 @@ It is independent of the workpiece location or its target location.
 
 Parameters:
       @param action   decides if a pick or put action is performed: (PICK | PUT)
+      @param half     opens the gripper half to handle lasers at the maschines better after
+                      placing the workpiece (only relevant for PUT)
 ]==]
 
 
@@ -45,10 +47,10 @@ local tfm = require("fawkes.tfutils")
 
 -- Constant
 local gripper_down_z_pick = -0.05  -- distance to move gripper down after driving over product
-local gripper_down_z_put = -0.018  -- distance to move gripper down after driving over product
+local gripper_down_z_put = -0.033  -- distance to move gripper down after driving over product
 
 local gripper_up_z_pick = 0.01   -- distance to move gripper up after closing gripper
-local gripper_up_z_put = 0.015   -- distance to move gripper up after opening gripper
+local gripper_up_z_put = 0.035   -- distance to move gripper up after opening gripper
 
 local drive_back_x = -0.1
 
@@ -73,6 +75,9 @@ end
 
 
 function input_invalid()
+  if fsm.vars.half == nil then
+    fsm.vars.half = false
+  end
   if fsm.vars.action == "PICK" then
     fsm.vars.pick_wp = true
   elseif fsm.vars.action == "PUT" then
@@ -89,11 +94,14 @@ fsm:define_states{ export_to=_M, closure={},
    {"CHOOSE_ACTION",     JumpState},
    {"CLOSE_GRIPPER",     SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_GRIPPER_UP", fail_to="FAILED"},
    {"OPEN_GRIPPER",      SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_GRIPPER_UP", fail_to="FAILED"},
-   {"MOVE_GRIPPER_UP",   SkillJumpState, skills={{gripper_commands}}, final_to="GRIPPER_DEFAULT", fail_to="FAILED"},
+   {"MOVE_GRIPPER_UP",   SkillJumpState, skills={{gripper_commands}}, final_to="CHECK_HALF", fail_to="FAILED"},
+   {"CHECK_HALF",        JumpState},
+   {"OPEN_COMPLETELY",   SkillJumpState, skills={{gripper_commands}}, final_to="GRIPPER_DEFAULT", fail_to="FAILED"},
    {"GRIPPER_DEFAULT",   SkillJumpState, skills={{gripper_commands}}, final_to="DRIVE_BACK", fail_to="FAILED"},
    {"DRIVE_BACK",        SkillJumpState, skills={{motor_move}}, final_to="DECIDE_CLOSE", fail_to="FAILED"},
    {"DECIDE_CLOSE",      JumpState},
-   {"CLOSE_DEFAULT",     SkillJumpState, skills={{gripper_commands}}, final_to="FINAL", fail_to="FAILED"},
+   {"CLOSE_DEFAULT",     SkillJumpState, skills={{gripper_commands}}, final_to="CALIBRATE", fail_to="FAILED"},
+   {"CALIBRATE",         SkillJumpState, skills={{gripper_commands}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
@@ -102,6 +110,8 @@ fsm:add_transitions{
    {"CHOOSE_ACTION", "CLOSE_GRIPPER", cond="vars.pick_wp", desc="Picking Up Workpiece"},
    {"CHOOSE_ACTION", "OPEN_GRIPPER",  cond="not vars.pick_wp", desc="Putting Down Workpiece"},
    {"CHOOSE_ACTION", "FAILED",        true, desc="Instructions Unclear"},
+   {"CHECK_HALF", "OPEN_COMPLETELY",  cond="not vars.pick_wp and vars.half", desc="Open Gripper Completely"},
+   {"CHECK_HALF", "GRIPPER_DEFAULT",  true, desc="Move Gripper To Default Pose"},
    {"DECIDE_CLOSE", "CLOSE_DEFAULT",  cond="not vars.pick_wp", desc="Close Gripper"},
    {"DECIDE_CLOSE", "FINAL",          true},
 }
@@ -139,7 +149,11 @@ function CLOSE_GRIPPER:init()
 end
 
 function OPEN_GRIPPER:init()
-  self.args["gripper_commands"].command = "OPEN"
+  if fsm.vars.half then
+    self.args["gripper_commands"].command= "HALFOPEN" -- Closes by only half, to not touch the laser of the machine and close again
+  else
+    self.args["gripper_commands"].command= "OPEN"
+  end
 end
 
 function MOVE_GRIPPER_UP:init()
@@ -164,10 +178,18 @@ function GRIPPER_DEFAULT:init()
   self.args["gripper_commands"].wait = false
 end
 
+function OPEN_COMPLETELY:init()
+  self.args["gripper_commands"].command= "OPEN" -- to not push the workpiece after placing it
+end
+
 function DRIVE_BACK:init()
   self.args["motor_move"].x = drive_back_x
 end
 
 function CLOSE_DEFAULT:init()
   self.args["gripper_commands"].command= "CLOSE"
+end
+
+function CALIBRATE:init()
+  self.args["gripper_commands"].command= "CALIBRATE"
 end
