@@ -907,6 +907,21 @@
   (modify ?i (params wp ?wp target-mps ?ds))
 )
 
+(defrule goal-production-remove-grounding-from-discard-wp-moved
+  "If a DISCARD goal is grounded on a certain WP, but the WP moved, unground it."
+  (wm-fact (key request discard args? ord ?order-id cs ?cs prio ?prio) (values status ACTIVE assigned-to ?goal-id ?i-goal-id))
+
+  ?g <- (goal (id ?goal-id) (class DISCARD) (mode FORMULATED) (parent ?parent)
+              (params wp ?wp wp-loc ?mps wp-side ?mps-side))
+  ?i <- (goal (id ?i-goal-id) (class INSTRUCT-DS-DISCARD) (mode FORMULATED)
+	            (params wp ?wp target-mps ?ds))
+  (not (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?mps-side)))
+  (test (neq ?wp UNKNOWN))
+  =>
+  (modify ?g (params wp UNKNOWN wp-loc ?mps wp-side ?mps-side))
+  (modify ?i (params wp UNKNOWN target-mps ?ds))
+)
+
 (defrule goal-production-create-enter-field
   "Enter the field (drive outside of the starting box)."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
