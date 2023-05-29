@@ -158,7 +158,7 @@
 	(wm-fact (key refbox team-color) (value ?col))
 	=>
 	(plan-assert-sequential (sym-cat CLEANUP-WP-PLAN- (gensym*)) ?goal-id ?robot
-		(plan-assert-safe-move-wait-for-free-side ?robot ?curr-location ?curr-side ?target-mps INPUT
+		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps INPUT
 			(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
 		)
 	)
@@ -619,21 +619,11 @@
 			(bind ?wp-loc nil)
 			(bind ?wp-side nil)
 
-			(if (not (do-for-fact ((?da dependency-assignment))
-			         (and (neq ?da:grounded-with nil)
-			              (member$ wp ?da:params)
-			              (member$ wp-loc ?da:params)
-			              (member$ wp-side ?da:params)
-			              (eq ?da:goal-id ?goal-id))
-			         (bind ?wp-loc (multifield-key-value ?da:params wp-loc))
-			         (bind ?wp-side (multifield-key-value ?da:params wp-side))))
-			then
-				(do-for-fact ((?wp-at wm-fact))
-			              (and (wm-key-prefix ?wp-at:key (create$ domain fact wp-at))
-			                   (eq (wm-key-arg ?wp-at:key wp) ?wp))
-			              (bind ?wp-loc (wm-key-arg ?wp-at:key m))
-			              (bind ?wp-side (wm-key-arg ?wp-at:key side)))
-			)
+			(do-for-fact ((?wp-at wm-fact))
+						(and (wm-key-prefix ?wp-at:key (create$ domain fact wp-at))
+							(eq (wm-key-arg ?wp-at:key wp) ?wp))
+						(bind ?wp-loc (wm-key-arg ?wp-at:key m))
+						(bind ?wp-side (wm-key-arg ?wp-at:key side)))
 
 			(create$
 				(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side

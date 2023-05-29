@@ -97,7 +97,6 @@ clips-executive:
               - rcll-central/goals/central-run-one.clp
               - rcll-central/goals/central-run-parallel.clp
               - rcll-central/goal-reasoner.clp
-              - rcll-central/goal-dependencies.clp
               - rcll-central/goal-executability.clp
               - rcll-central/goal-production.clp
               - rcll-central/goal-requests.clp
