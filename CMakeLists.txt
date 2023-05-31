@@ -4,7 +4,6 @@ cmake_minimum_required(VERSION 3.5)
 # make local cmake modules available
 set(FAWKES_CORE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/fawkes)
 include_directories(${FAWKES_CORE_DIR}/src)
-set(FAWKES_CUSTOM_TARGETS fawkes-robotino_uninstall)
 add_subdirectory(fawkes)
 include_directories(${FAWKES_CORE_DIR}/src/libs)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${FAWKES_CORE_DIR}/cmake")
