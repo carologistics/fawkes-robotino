@@ -5,7 +5,7 @@ set(PLUGIN_conveyor-plane
 add_subdirectory(interfaces)
 
 if(PLUGIN_conveyor-plane)
-  pkg_check_modules(BULLET bullet>=2.82)
+  # pkg_check_modules(BULLET bullet>=2.82)
   add_library(conveyor-plane MODULE conveyor_plane_plugin.cpp
                                     conveyor_plane_thread.cpp)
 

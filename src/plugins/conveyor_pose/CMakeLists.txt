@@ -5,7 +5,7 @@ set(PLUGIN_conveyor-pose
 add_subdirectory(interfaces)
 
 if(PLUGIN_conveyor-pose)
-  pkg_check_modules(BULLET bullet>=2.82)
+  # pkg_check_modules(BULLET bullet>=2.82)
   add_library(
     conveyor-pose MODULE conveyor_pose_plugin.cpp conveyor_pose_thread.cpp
                          recognition_thread.cpp)
