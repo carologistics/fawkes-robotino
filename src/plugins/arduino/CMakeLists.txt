@@ -12,10 +12,9 @@ if(PLUGIN_arduino)
 
   add_library(arduino MODULE arduino_plugin.cpp com_thread.cpp tf_thread.cpp
                              com_message.cpp)
+  depend_on_pkgconfig_libs(arduino libudev)
   depend_on_pcl(arduino)
   depend_on_tf(arduino)
-  target_compile_options(arduino PUBLIC ${LIBUDEV_CFLAGS})
-  target_link_libraries(arduino ${LIBUDEV_LDFLAGS})
   target_link_libraries(
     arduino
     m

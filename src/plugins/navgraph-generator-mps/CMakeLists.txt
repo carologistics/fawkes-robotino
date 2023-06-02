@@ -1,9 +1,8 @@
 set(PLUGIN_navgraph-generator-mps
     ON
-    CACHE BOOL ON)
+    CACHE BOOL Build navgraph-generator-mps plugin)
 add_subdirectory(interfaces)
 if(PLUGIN_navgraph-generator-mps)
-  pkg_check_modules(pddl_parser pddl_parser)
   add_library(navgraph-generator-mps MODULE navgraph_generator_mps_plugin.cpp
                                             navgraph_generator_mps_thread.cpp)
   depend_on_eigen3(navgraph-generator-mps)

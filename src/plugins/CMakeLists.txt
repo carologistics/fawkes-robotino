@@ -1,7 +1,6 @@
 set_output_directory_plugins()
 
 set(CMAKE_SHARED_MODULE_PREFIX "")
-# include_directories(${PROJECT_SOURCE_DIR}/src)
 add_subdirectory(clips-motor-switch)
 add_subdirectory(navgraph-generator-mps)
 add_subdirectory(skiller_motor_state)
