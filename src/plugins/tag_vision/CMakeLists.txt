@@ -1,6 +1,6 @@
 set(PLUGIN_tag_vision
     ON
-    CACHE BOOL ON)
+    CACHE BOOL Build tag_vision plugin)
 
 add_subdirectory(interfaces)
 

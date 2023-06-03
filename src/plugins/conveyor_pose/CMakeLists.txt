@@ -1,6 +1,6 @@
 set(PLUGIN_conveyor-pose
     ON
-    CACHE BOOL ON)
+    CACHE BOOL Build conveyor-pose)
 
 add_subdirectory(interfaces)
 

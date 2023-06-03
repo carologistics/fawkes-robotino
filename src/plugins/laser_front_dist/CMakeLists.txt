@@ -1,6 +1,6 @@
 set(PLUGIN_laser_front_dist
     ON
-    CACHE BOOL ON)
+    CACHE BOOL Build laser_front_dist plugin)
 
 if(PLUGIN_laser_front_dist)
   add_library(laser_front_dist MODULE laser_front_dist_plugin.cpp

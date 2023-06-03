@@ -1,6 +1,6 @@
 set(PLUGIN_conveyor-plane
     ON
-    CACHE BOOL ON)
+    CACHE BOOL Build conveyor-plane)
 
 add_subdirectory(interfaces)
 

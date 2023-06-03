@@ -1,6 +1,6 @@
 set(PLUGIN_object-tracking
     ON
-    CACHE BOOL ON)
+    CACHE BOOL Build object-tracking plugin)
 
 if(PLUGIN_object-tracking)
   add_library(object-tracking MODULE object_tracking_plugin.cpp

@@ -1,6 +1,6 @@
 set(PLUGIN_clips-motor-switch
     ON
-    CACHE BOOL ON)
+    CACHE BOOL Build clips-motor-switch)
 
 if(PLUGIN_clips-motor-switch)
   add_library(clips-motor-switch MODULE clips-motor-switch-plugin.cpp

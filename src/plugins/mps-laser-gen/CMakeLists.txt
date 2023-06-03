@@ -1,6 +1,6 @@
 set(PLUGIN_mps-laser-gen
     ON
-    CACHE BOOL ON)
+    CACHE BOOL Build mps-laser-gen plugin)
 
 if(PLUGIN_mps-laser-gen)
   add_library(mps-laser-gen MODULE mps-laser-gen_plugin.cpp
