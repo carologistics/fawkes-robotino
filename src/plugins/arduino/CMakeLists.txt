@@ -1,6 +1,6 @@
 set(PLUGIN_arduino
     ON
-    CACHE BOOL ON)
+    CACHE BOOL Build arduino plugin)
 set(DEV_ARDUINO
     /dev/arduino
     CACHE STRING Arduino_Location)

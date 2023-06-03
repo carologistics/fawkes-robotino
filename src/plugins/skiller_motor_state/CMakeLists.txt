@@ -1,6 +1,6 @@
 set(PLUGIN_skiller_motor_state
     ON
-    CACHE BOOL ON)
+    CACHE BOOL Build skiller_motor_state plugin)
 
 if(PLUGIN_skiller_motor_state)
   add_library(skiller_motor_state MODULE skiller_motor_state_plugin.cpp
