@@ -98,6 +98,7 @@ send_status()
 		Serial.print(" ");
 		send_gripper_status();
 	}
+    Serial.print("+");
 	Serial.print("\r\n");
 }
 
@@ -594,9 +595,10 @@ setup()
 	set_new_speed_acc(DEFAULT_MAX_SPEED_Z, DEFAULT_MAX_ACCEL_Z, motor_Z);
 	set_new_speed_acc(DEFAULT_MAX_SPEED_A, DEFAULT_MAX_ACCEL_A, motor_A);
 
-	Serial.println("AT HELLO");
+	Serial.println("AT HELLO +");
 	set_status(STATUS_IDLE);
 	motor_X.disableOutputs();
+
 
 	// configure the pulse interrupt
 

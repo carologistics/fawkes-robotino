@@ -30,10 +30,8 @@ set(DEV_ARDUINO
 add_subdirectory(interfaces)
 
 if(PLUGIN_arduino)
-  pkg_check_modules(LIBUDEV libudev)
-
   add_library(arduino MODULE arduino_plugin.cpp com_thread.cpp tf_thread.cpp
-                             com_message.cpp)
+                             com_message.cpp serialport.cpp)
   depend_on_pkgconfig_libs(arduino libudev)
   depend_on_pcl(arduino)
   depend_on_tf(arduino)
@@ -47,6 +45,7 @@ if(PLUGIN_arduino)
     fawkesblackboard
     fawkesinterface
     ArduinoInterface
+    Boost::thread
     JoystickInterface)
 
   add_custom_target(
