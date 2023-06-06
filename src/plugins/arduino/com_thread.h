@@ -24,6 +24,7 @@
 #define __PLUGINS_ARDUINO_COM_THREAD_H_
 
 #include "com_message.h"
+#include "serialport.h"
 #include "tf_thread.h"
 
 #include <aspect/blackboard.h>
@@ -104,6 +105,7 @@ public:
    * A position of the motor, that controls the gripper
    */
 	typedef enum { X, Y, Z, A } gripper_pose_t;
+	void receive(const std::string &buff);
 
 private:
 	void open_device();
@@ -166,8 +168,10 @@ private:
 	bool                            new_msg_;
 	fawkes::Time                    expected_finish_time_;
 
-	boost::asio::io_service     io_service_;
-	boost::asio::serial_port    serial_;
+	boost::asio::io_service io_service_;
+	//boost::asio::serial_port    serial_;
+
+	std::unique_ptr<SerialPort> port_;
 	boost::asio::deadline_timer deadline_;
 	boost::asio::streambuf      input_buffer_;
 

@@ -24,6 +24,7 @@
 #include "com_thread.h"
 
 #include "ArduinoSketch/commands.h"
+#include "serialport.h"
 
 #include <baseapp/run.h>
 #include <core/threading/mutex.h>
@@ -32,11 +33,19 @@
 #include <utils/math/angle.h>
 #include <utils/time/wait.h>
 
+#include <boost/bind/placeholders.hpp>
 #include <boost/lambda/bind.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/thread/thread.hpp>
+#include <functional>
 #include <libudev.h>
+#include <memory>
+#include <mutex>
 #include <unistd.h>
+#define BOOST_BIND_GLOBAL_PLACEHOLDERS
+#include <boost/bind.hpp>
+#include <iostream>
+#include <memory>
 
 using namespace fawkes;
 
@@ -53,7 +62,7 @@ ArduinoComThread::ArduinoComThread(std::string     &cfg_name,
   BlackBoardInterfaceListener("ArduinoThread(%s)", cfg_prefix.c_str()),
   fawkes::TransformAspect(),
   ConfigurationChangeHandler(cfg_prefix.c_str()),
-  serial_(io_service_),
+  //serial_(io_service_),
   deadline_(io_service_),
   tf_thread_(tf_thread)
 {
@@ -61,10 +70,17 @@ ArduinoComThread::ArduinoComThread(std::string     &cfg_name,
 	cfg_prefix_ = cfg_prefix;
 	cfg_name_   = cfg_name;
 }
-
 /** Destructor. */
 ArduinoComThread::~ArduinoComThread()
 {
+}
+
+void
+ArduinoComThread::receive(const std::string &buf)
+{
+	logger->log_info(name(), "received %s", buf.c_str());
+
+	port_->write("AT x 1000 +");
 }
 
 void
@@ -78,7 +94,11 @@ ArduinoComThread::init()
 
 	initInterface();
 
-
+	std::shared_ptr<boost::mutex> mutexObj = std::make_shared<boost::mutex>();
+	const char                   *test     = "/dev/ttyACM0";
+	port_                                  = std::make_unique<SerialPort>(
+    test, boost::bind(&ArduinoComThread::receive, this, boost::placeholders::_1), mutexObj);
+	//port_ = std::make_unique(test, boost::bind(&receive, boost::placeholders::_1), mutexObj);
 
 	joystick_if_ =
 	  blackboard->open_for_reading<JoystickInterface>("Joystick", cfg_ifid_joystick_.c_str());
@@ -522,13 +542,13 @@ ArduinoComThread::gripper_update()
 bool
 ArduinoComThread::is_connected()
 {
-	return serial_.is_open();
+	//return serial_.is_open();
 }
 
 void
 ArduinoComThread::open_device()
 {
-	if (!opened_) {
+	/*	if (!opened_) {
 		logger->log_debug(name(), "Open device");
 		try {
 			input_buffer_.consume(input_buffer_.size());
@@ -565,22 +585,22 @@ ArduinoComThread::open_device()
 		} catch (boost::system::system_error &e) {
 			throw Exception("Arduino failed I/O: %s", e.what());
 		}
-	}
+	} */
 }
 
 void
 ArduinoComThread::close_device()
 {
 	boost::mutex::scoped_lock lock(io_mutex_);
-	serial_.cancel();
-	serial_.close();
+	//serial_.cancel();
+	//serial_.close();
 	opened_ = false;
 }
 
 void
 ArduinoComThread::flush_device()
 {
-	if (serial_.is_open()) {
+	/*	if (serial_.is_open()) {
 		try {
 			boost::system::error_code ec = boost::asio::error::would_block;
 			bytes_read_                  = 0;
@@ -609,23 +629,25 @@ ArduinoComThread::flush_device()
 			// ignore, just assume done, if there really is an error we'll
 			// catch it later on
 		}
-	}
+	}*/
 }
 
 void
 ArduinoComThread::send_message(ArduinoComMessage &msg)
 {
+	/*
 	try {
 		msg.get_position_data(cur_demanded_gripper_pose, cur_demanded_is_gripper_open);
 		boost::asio::write(serial_, boost::asio::const_buffers_1(msg.buffer()));
 	} catch (boost::system::system_error &e) {
 		logger->log_error(name(), "ERROR on send message! %s", e.what());
-	}
+	}*/
 }
 
 bool
 ArduinoComThread::sync_with_arduino()
 {
+	/*
 	std::string  s;
 	std::size_t  found;
 	fawkes::Time start_time;
@@ -650,11 +672,13 @@ ArduinoComThread::sync_with_arduino()
 		logger->log_info(name(), "Synchronization with Arduino successful");
 		return true;
 	}
+	*/
 }
 
 bool
 ArduinoComThread::send_message_from_queue()
 {
+	/*
 	boost::mutex::scoped_lock lock(io_mutex_);
 	if (messages_.size() > 0) {
 		ArduinoComMessage *cur_msg = messages_.front();
@@ -673,11 +697,13 @@ ArduinoComThread::send_message_from_queue()
 	} else {
 		return false;
 	}
+	*/
 }
 
 bool
 ArduinoComThread::send_one_message()
 {
+	/*
 	boost::mutex::scoped_lock lock(io_mutex_);
 	if (new_msg_) {
 		send_message(*next_msg_);
@@ -690,11 +716,13 @@ ArduinoComThread::send_one_message()
 	} else {
 		return false;
 	}
+	*/
 }
 
 void
 ArduinoComThread::handle_nodata(const boost::system::error_code &ec)
 {
+	/*
 	// ec may be set if the timer is cancelled, i.e., updated
 	if (!ec) {
 		serial_.cancel();
@@ -712,12 +740,13 @@ ArduinoComThread::handle_nodata(const boost::system::error_code &ec)
 		close_device();
 		sleep(1);
 		open_device();
-	}
+	}*/
 }
 
 std::string
 ArduinoComThread::read_packet(unsigned int timeout)
 {
+	/*
 	boost::system::error_code ec = boost::asio::error::would_block;
 	bytes_read_                  = 0;
 
@@ -786,7 +815,7 @@ ArduinoComThread::read_packet(unsigned int timeout)
 		current_arduino_status_ = 'E';
 	}
 	//    read_pending_ = false;
-	return s;
+	return s; */
 }
 
 void
