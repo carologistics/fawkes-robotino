@@ -79,6 +79,7 @@ public:
 
 	virtual void init();
 	virtual void loop();
+	void         initInterface();
 	virtual void finalize();
 
 	/**

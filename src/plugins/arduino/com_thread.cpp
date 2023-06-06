@@ -76,6 +76,10 @@ ArduinoComThread::init()
 
 	arduino_if_ = blackboard->open_for_writing<ArduinoInterface>("Arduino", cfg_name_.c_str());
 
+	initInterface();
+
+
+
 	joystick_if_ =
 	  blackboard->open_for_reading<JoystickInterface>("Joystick", cfg_ifid_joystick_.c_str());
 
@@ -105,6 +109,16 @@ ArduinoComThread::init()
 	arduino_if_->set_status(ArduinoInterface::IDLE);
 	arduino_if_->write();
 	wakeup();
+}
+
+//@brief Writes the config values to the Interface
+void
+ArduinoComThread::initInterface()
+{
+	arduino_if_->set_x_max(cfg_x_max_);
+	arduino_if_->set_y_max(cfg_y_max_);
+	arduino_if_->set_z_max(cfg_z_max_);
+	arduino_if_->write();
 }
 
 void
@@ -200,9 +214,6 @@ ArduinoComThread::handle_queue()
 			arduino_if_->write();
 
 			if (calibrated_ == false) {
-				arduino_if_->set_x_max(cfg_x_max_);
-				arduino_if_->set_y_max(cfg_y_max_);
-				arduino_if_->set_z_max(cfg_z_max_);
 				calibrated_ = true;
 				if (home_pending_ == true) {
 					wakeup();
@@ -655,7 +666,7 @@ ArduinoComThread::send_message_from_queue()
 
 		std::string s = read_packet(1000); // read receipt
 		logger->log_debug(name(), "Read receipt: %s", s.c_str());
-		s = read_packet(msecs_to_wait_); // read
+		s = read_packet(msecs_to_wait_);   // read
 		logger->log_debug(name(), "Read status: %s", s.c_str());
 
 		return true;
