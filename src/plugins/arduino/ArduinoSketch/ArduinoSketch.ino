@@ -71,40 +71,6 @@ AccelStepper motor_A(MOTOR_A_STEP_SHIFT, MOTOR_A_DIR_SHIFT);
 long a_toggle_steps = 240;
 long a_half_toggle_steps = 120;
 
-#define AT "AT "
-#define TERMINATOR '+'
-
-#define CMD_CALIBRATE 'c'
-#define CMD_DOUBLE_CALIBRATE 'C'
-
-#define CMD_X_NEW_POS 'X'
-#define CMD_Y_NEW_POS 'Y'
-#define CMD_Z_NEW_POS 'Z'
-#ifdef DEBUG_MODE
-  #define CMD_A_NEW_POS 'A'
-#endif
-#define CMD_OPEN 'O'
-#define CMD_HALF_OPEN 'H'
-#define CMD_CLOSE 'G'
-#define CMD_STATUS_REQ 'S'
-#define CMD_SET_ACCEL '7'
-#define CMD_SET_SPEED '9'
-#define CMD_STOP '.'
-#define CMD_FAST_STOP ':'
-
-#define CMD_A_SET_TOGGLE_STEPS 'T'
-#define CMD_A_HALF_SET_TOGGLE_STEPS 'Q'
-
-#define CMD_X_NEW_SPEED 'x'
-#define CMD_Y_NEW_SPEED 'y'
-#define CMD_Z_NEW_SPEED 'z'
-#define CMD_A_NEW_SPEED 'a'
-
-#define CMD_X_NEW_ACC 'm'
-#define CMD_Y_NEW_ACC 'n'
-#define CMD_Z_NEW_ACC 'o'
-#define CMD_A_NEW_ACC 'p'
-
 #define DEFAULT_MAX_SPEED_X 2000
 #define DEFAULT_MAX_ACCEL_X 5000
 
@@ -422,14 +388,23 @@ void read_package() {
 	while (cur_i_cmd < buf_i_) {
 		char cur_cmd   = buffer_[cur_i_cmd];
 		long new_value = 0;
-		if (cur_cmd == CMD_X_NEW_POS || cur_cmd == CMD_Y_NEW_POS || cur_cmd == CMD_Z_NEW_POS
-		    || cur_cmd == CMD_A_SET_TOGGLE_STEPS || CMD_A_HALF_SET_TOGGLE_STEPS ||
+		if (cur_cmd == CMD_X_NEW_POS
+        || cur_cmd == CMD_Y_NEW_POS
+        || cur_cmd == CMD_Z_NEW_POS
+		    || cur_cmd == CMD_A_SET_TOGGLE_STEPS
+        || CMD_A_SET_HALF_TOGGLE_STEPS
 #ifdef DEBUG_MODE
-		    cur_cmd == CMD_A_NEW_POS ||
+		    || cur_cmd == CMD_A_NEW_POS
 #endif	
-		    cur_cmd == CMD_X_NEW_SPEED || cur_cmd == CMD_Y_NEW_SPEED || cur_cmd == CMD_Z_NEW_SPEED
-		    || cur_cmd == CMD_A_NEW_SPEED || cur_cmd == CMD_X_NEW_ACC || cur_cmd == CMD_Y_NEW_ACC
-		    || cur_cmd == CMD_Z_NEW_ACC || cur_cmd == CMD_A_NEW_ACC || cur_cmd == CMD_SET_SPEED
+		    || cur_cmd == CMD_X_NEW_SPEED
+        || cur_cmd == CMD_Y_NEW_SPEED
+        || cur_cmd == CMD_Z_NEW_SPEED
+		    || cur_cmd == CMD_A_NEW_SPEED
+        || cur_cmd == CMD_X_NEW_ACC
+        || cur_cmd == CMD_Y_NEW_ACC
+		    || cur_cmd == CMD_Z_NEW_ACC
+        || cur_cmd == CMD_A_NEW_ACC
+        || cur_cmd == CMD_SET_SPEED
 		    || cur_cmd == CMD_SET_ACCEL) {
 			if (sscanf(buffer_ + (cur_i_cmd + 1), "%ld", &new_value) <= 0) {
 				buf_i_ = 0;
@@ -439,38 +414,6 @@ void read_package() {
 		float opening_speed = motor_A.get_speed(); //get current openening speed
 		bool
 		  assumed_gripper_state_local; // this is used to store the assumed gripper state locally, to reduce calls to the function get_assumed_gripper_state
-		switch (cur_cmd) {
-		case CMD_X_NEW_POS: set_new_pos(-new_value, motor_X); break;
-		case CMD_Y_NEW_POS: set_new_pos(-new_value, motor_Y); break;
-		case CMD_Z_NEW_POS: set_new_pos(-new_value, motor_Z); break;
-		case CMD_A_SET_TOGGLE_STEPS:
-			a_toggle_steps = new_value;
-			send_status();
-			send_status();
-			break;
-		case CMD_A_HALF_SET_TOGGLE_STEPS:
-			a_half_toggle_steps = new_value;
-			Serial.println(new_value);
-			send_status();
-			send_status();
-			break;
-#ifdef DEBUG_MODE
-		case CMD_A_NEW_POS: set_new_pos(new_value, motor_A); break;
-#endif
-        cur_cmd == CMD_X_NEW_SPEED ||
-        cur_cmd == CMD_Y_NEW_SPEED ||
-        cur_cmd == CMD_Z_NEW_SPEED ||
-        cur_cmd == CMD_A_NEW_SPEED ||
-        cur_cmd == CMD_X_NEW_ACC ||
-        cur_cmd == CMD_Y_NEW_ACC ||
-        cur_cmd == CMD_Z_NEW_ACC ||
-        cur_cmd == CMD_A_NEW_ACC ||
-        cur_cmd == CMD_SET_SPEED ||
-        cur_cmd == CMD_STOP ||
-        cur_cmd == CMD_SET_ACCEL) {
-      if(sscanf (buffer_ + (cur_i_cmd + 1),"%ld",&new_value)<=0){buf_i_ = 0; return;} // flush and return if parsing error
-    }
-    float opening_speed = motor_A.get_speed(); //get current openening speed
     bool assumed_gripper_state_local; // this is used to store the assumed gripper state locally, to reduce calls to the function get_assumed_gripper_state
     switch (cur_cmd) {
       case CMD_X_NEW_POS:
@@ -487,7 +430,7 @@ void read_package() {
         send_status();
         send_status();
         break;
-      case CMD_A_HALF_SET_TOGGLE_STEPS:
+      case CMD_A_SET_HALF_TOGGLE_STEPS:
         a_half_toggle_steps = new_value;
         send_status();
         send_status();
