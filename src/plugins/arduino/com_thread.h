@@ -137,6 +137,7 @@ private:
 	float cfg_steps_per_mm_[3];
 
 	unsigned int cfg_a_toggle_steps_;
+	unsigned int cfg_a_half_toggle_steps_;
 
 	bool movement_pending_;
 	bool calibrated_;
