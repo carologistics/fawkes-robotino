@@ -67,6 +67,7 @@ AccelStepper motor_Z(MOTOR_Z_STEP_SHIFT, MOTOR_Z_DIR_SHIFT);
 AccelStepper motor_A(MOTOR_A_STEP_SHIFT, MOTOR_A_DIR_SHIFT);
 
 long a_toggle_steps = 240;
+long a_half_toggle_steps = 120;
 
 #define AT "AT "
 #define TERMINATOR '+'
@@ -81,6 +82,7 @@ long a_toggle_steps = 240;
   #define CMD_A_NEW_POS 'A'
 #endif
 #define CMD_OPEN 'O'
+#define CMD_HALF_OPEN 'H'
 #define CMD_CLOSE 'G'
 #define CMD_STATUS_REQ 'S'
 #define CMD_SET_ACCEL '7'
@@ -89,6 +91,7 @@ long a_toggle_steps = 240;
 #define CMD_FAST_STOP ':'
 
 #define CMD_A_SET_TOGGLE_STEPS 'T'
+#define CMD_A_HALF_SET_TOGGLE_STEPS 'Q'
 
 #define CMD_X_NEW_SPEED 'x'
 #define CMD_Y_NEW_SPEED 'y'
@@ -119,6 +122,10 @@ long a_toggle_steps = 240;
 #define STATUS_MOVING 0
 #define STATUS_IDLE 1
 #define STATUS_ERROR 2
+
+#define STATUS_OPEN 2
+#define STATUS_HALF_OPEN 1
+#define STATUS_CLOSED 1
 
 char status_array_[] = {'M', 'I', 'E'};
 
@@ -197,6 +204,7 @@ void set_status(int status_) {
 }
 
 bool assumed_gripper_state;
+int gripper_state = STATUS_CLOSED;
 
 // @Return True if gripper is assumed to be open
 // This helper function is necessary to set the assumed_gripper_state initially
@@ -421,6 +429,11 @@ void read_package() {
         send_status();
         send_status();
         break;
+      case CMD_A_HALF_SET_TOGGLE_STEPS:
+        a_half_toggle_steps = new_value;
+        send_status();
+        send_status();
+        break;
 #ifdef DEBUG_MODE
       case CMD_A_NEW_POS:
         set_new_pos(new_value, motor_A);
@@ -467,40 +480,78 @@ void read_package() {
         send_status();
         break;
       case CMD_OPEN:
-        check_gripper_endstop();
-        assumed_gripper_state_local = get_assumed_gripper_state(true);
-        if(!assumed_gripper_state_local && open_gripper || !open_gripper)
-        { // we do it
-          set_new_rel_pos(-a_toggle_steps,motor_A);
-          assumed_gripper_state = true;
-        } else { // we don't do it
+        if(gripper_state == STATUS_OPEN) {
+          set_new_rel_pos(-a_toggle_steps, motor_A);
+        } else if(gripper_state == STATUS_HALF_OPEN) {
+          set_new_rel_pos(-(a_toggle_steps - a_half_toggle_steps), motor_A);
+        } else {
           send_status();
           send_status();
         }
+        gripper_state = STATUS_OPEN;
+        open_gripper = true;
+        // check_gripper_endstop();
+        // assumed_gripper_state_local = get_assumed_gripper_state(true);
+        // if (!assumed_gripper_state_local && open_gripper || !open_gripper) { // we do it
+        // 	if(half_open)
+        // 	set_new_rel_pos(-a_toggle_steps, motor_A);
+        // 	set_new_rel_pos(-a_toggle_steps, motor_A);
+        // 	assumed_gripper_state = true;
+        // } else { // we don't do it
+        // 	send_status();
+        // 	send_status();
+        // }
+        break;
+      case CMD_HALF_OPEN:
+        if(gripper_state == STATUS_OPEN) {
+          set_new_rel_pos((a_toggle_steps - a_half_toggle_steps), motor_A);
+        } else if (gripper_state == STATUS_CLOSED) {
+          set_new_rel_pos(-a_half_toggle_steps, motor_A);
+        } else {
+          send_status();
+          send_status();
+        }
+        gripper_state = STATUS_HALF_OPEN;
+        open_gripper = true;
+
+        // check_gripper_endstop();
+        // assumed_gripper_state_local = get_assumed_gripper_state(true);
+        // if (!assumed_gripper_state_local && open_gripper || !open_gripper) { // we do it
+          // set_new_rel_pos(-a_toggle_steps / 2, motor_A);
+          // assumed_gripper_state = true;
+        // } else { // we don't do it
+          // send_status();
+          // send_status();
+        // }
         break;
       case CMD_CLOSE:
-        check_gripper_endstop();
-        assumed_gripper_state_local = get_assumed_gripper_state(false);
-        if(assumed_gripper_state_local)
-        { // we do it
-          set_new_speed_acc(opening_speed/8, 0.0, motor_A); //slow down closing speed to an eighth of opening speed
-          set_new_rel_pos(a_toggle_steps,motor_A);
-          assumed_gripper_state = false;
-          set_new_speed_acc(opening_speed, 0.0, motor_A); //reset speed
-        } else { // we don't do it
+        if(gripper_state == STATUS_OPEN) {
+          set_new_rel_pos(a_toggle_steps, motor_A);
+        } else if (gripper_state == STATUS_HALF_OPEN) {
+          set_new_rel_pos(a_half_toggle_steps, motor_A);
+        } else {
           send_status();
           send_status();
         }
+        gripper_state = STATUS_HALF_OPEN;
+        open_gripper = true;
+        // check_gripper_endstop();
+        // assumed_gripper_state_local = get_assumed_gripper_state(false);
+        // if (assumed_gripper_state_local) { // we do it
+        // 	set_new_speed_acc(opening_speed / 8,
+        // 	                  0.0,
+        // 	                  motor_A); //slow down closing speed to an eighth of opening speed
+        // 	set_new_rel_pos(a_toggle_steps, motor_A);
+        // 	assumed_gripper_state = false;
+        // 	set_new_speed_acc(opening_speed, 0.0, motor_A); //reset speed
+        // } else {                                          // we don't do it
+        // 	send_status();
+        // 	send_status();
+        // }
         break;
-      case CMD_STATUS_REQ:
-        send_status();
-        break;
-      case CMD_CALIBRATE:
-        calibrate();
-        break;
-      case CMD_DOUBLE_CALIBRATE:
-        double_calibrate();
-        break;
+      case CMD_STATUS_REQ: send_status(); break;
+      case CMD_CALIBRATE: calibrate(); break;
+      case CMD_DOUBLE_CALIBRATE: double_calibrate(); break;
       case CMD_SET_SPEED:
         set_new_speed(new_value);
         send_status();
@@ -522,11 +573,11 @@ void read_package() {
         fast_stop_all();
         break;
       default:
-        #ifdef DEBUG_MODE
-           send_packet(STATUS_ERROR, 15);
-        #endif
+  #ifdef DEBUG_MODE
+        send_packet(STATUS_ERROR, 15);
+  #endif
         break;
-    }
+      }
 
     // move to next command
     while (cur_i_cmd < buf_i_) {
