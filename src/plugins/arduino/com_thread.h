@@ -178,17 +178,15 @@ private:
 
 	void load_config();
 
-	void append_message_to_queue(ArduinoComMessage::command_id_t cmd,
-	                             unsigned int                    value   = 0,
-	                             unsigned int                    timeout = 1000);
+	void append_message_to_queue(char cmd, unsigned int value = 0, unsigned int timeout = 1000);
 	void append_message_to_queue(ArduinoComMessage *msg);
-	void set_message(ArduinoComMessage::command_id_t cmd,
-	                 unsigned int                    value   = 0,
-	                 unsigned int                    timeout = 1000);
+	void set_message(char cmd, unsigned int value = 0, unsigned int timeout = 1000);
 	void set_message(ArduinoComMessage *msg);
-	bool add_command_to_message(ArduinoComMessage              *msg,
-	                            ArduinoComMessage::command_id_t command,
-	                            unsigned int                    value);
+	bool add_command_to_message(ArduinoComMessage *msg, char command, unsigned int value);
+
+	void append_config_messages();
+
+	void handle_queue();
 
 	float inline round_to_2nd_dec(float f);
 	void pose_publish_tf();

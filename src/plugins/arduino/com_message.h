@@ -22,6 +22,8 @@
 #ifndef __PLUGINS_ARDUINO_COM_MESSAGE_H_
 #define __PLUGINS_ARDUINO_COM_MESSAGE_H_
 
+#include <aspect/logging.h>
+
 #include <boost/asio.hpp>
 #include <cstdint>
 
@@ -29,40 +31,15 @@ class ArduinoComMessage
 {
 public:
 	/**
-   * @brief Mapping for all possible commands, that can be send to the arduino
-   */
-	enum class command_id_t : char {
-		CMD_CALIBRATE               = 'C',
-		CMD_X_NEW_POS               = 'X',
-		CMD_Y_NEW_POS               = 'Y',
-		CMD_Z_NEW_POS               = 'Z',
-		CMD_CLOSE                   = 'G',
-		CMD_OPEN                    = 'O',
-		CMD_HALF_OPEN               = 'H',
-		CMD_STOP                    = '.',
-		CMD_STATUS_REQ              = 'S',
-		CMD_A_SET_TOGGLE_STEPS      = 'T',
-		CMD_A_SET_HALF_TOGGLE_STEPS = 'Q',
-		CMD_X_NEW_SPEED             = 'x',
-		CMD_Y_NEW_SPEED             = 'y',
-		CMD_Z_NEW_SPEED             = 'z',
-		CMD_A_NEW_SPEED             = 'a',
-		CMD_X_NEW_ACC               = 'm',
-		CMD_Y_NEW_ACC               = 'n',
-		CMD_Z_NEW_ACC               = 'o',
-		CMD_A_NEW_ACC               = 'p'
-	};
-
-	/**
    * @brief The prefix of each message to the arduino
    */
 	static const char MSG_HEAD[3];
 
 	ArduinoComMessage();
 	~ArduinoComMessage();
-	ArduinoComMessage(command_id_t cmdid, unsigned int value);
+	ArduinoComMessage(char cmdid, unsigned int value);
 
-	bool           add_command(command_id_t cmd, unsigned int number);
+	bool           add_command(char cmd, unsigned int number);
 	unsigned short get_data_size();
 	unsigned short get_cur_buffer_index();
 
