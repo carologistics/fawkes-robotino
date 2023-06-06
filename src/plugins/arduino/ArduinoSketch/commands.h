@@ -23,6 +23,9 @@
 #ifndef __ARDUINO_COMMANDS_HEADER_H_
 #define __ARDUINO_COMMANDS_HEADER_H_
 
+/**
+ * @brief Mapping for all possible commands, that can be send to the arduino
+ */
 #define CMD_CALIBRATE 'C'
 #define CMD_DOUBLE_CALIBRATE 'c'
 #define CMD_X_NEW_POS 'X'
@@ -52,5 +55,25 @@
 
 #define AT "AT "
 #define TERMINATOR '+'
+class ArduinoHelper
+{
+public:
+	static bool
+	isValidSerialCommand(char cmd)
+	{
+		if (cmd == CMD_X_NEW_POS || cmd == CMD_Y_NEW_POS || cmd == CMD_Z_NEW_POS
+		    || cmd == CMD_A_SET_TOGGLE_STEPS || CMD_A_SET_HALF_TOGGLE_STEPS
+#ifdef DEBUG_MODE
+		    || cmd == CMD_A_NEW_POS
+#endif
+		    || cmd == CMD_X_NEW_SPEED || cmd == CMD_Y_NEW_SPEED || cmd == CMD_Z_NEW_SPEED
+		    || cmd == CMD_A_NEW_SPEED || cmd == CMD_X_NEW_ACC || cmd == CMD_Y_NEW_ACC
+		    || cmd == CMD_Z_NEW_ACC || cmd == CMD_A_NEW_ACC || cmd == CMD_SET_SPEED
+		    || cmd == CMD_SET_ACCEL) {
+			return true;
+		}
+		return false;
+	}
+};
 
 #endif

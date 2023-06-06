@@ -17,8 +17,9 @@
  *
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
-
 #include "com_message.h"
+
+#include "ArduinoSketch/commands.h"
 
 #include <core/exception.h>
 
@@ -76,8 +77,12 @@ ArduinoComMessage::ArduinoComMessage()
  * @param cmdid message ID of command to add
  * @param value message value to be passed
  */
-ArduinoComMessage::ArduinoComMessage(command_id_t cmdid, unsigned int value)
+ArduinoComMessage::ArduinoComMessage(char cmdid, unsigned int value)
 {
+	if (!ArduinoHelper::isValidSerialCommand(cmdid)) {
+		std::cerr << "The cmdid %s is not valid!" << std::endl;
+		return;
+	}
 	ctor();
 	add_command(cmdid, value);
 }
@@ -125,34 +130,20 @@ ArduinoComMessage::ctor()
  * @return true if command was successfully added
  */
 bool
-ArduinoComMessage::add_command(command_id_t cmd, unsigned int value)
+ArduinoComMessage::add_command(char cmd, unsigned int value)
 {
-	// TODO: Test if "home" command also works if a "value" was accidentially
-	// appended!
-	bool valid_command = false;
-	char char_cmd      = static_cast<char>(cmd);
-
-	if (cmd == command_id_t::CMD_CALIBRATE || cmd == command_id_t::CMD_X_NEW_POS
-	    || cmd == command_id_t::CMD_Y_NEW_POS || cmd == command_id_t::CMD_Z_NEW_POS
-	    || cmd == command_id_t::CMD_HALF_OPEN || cmd == command_id_t::CMD_OPEN
-	    || cmd == command_id_t::CMD_A_SET_TOGGLE_STEPS || cmd == command_id_t::CMD_STOP
-	    || cmd == command_id_t::CMD_A_SET_HALF_TOGGLE_STEPS || cmd == command_id_t::CMD_Y_NEW_SPEED
-	    || cmd == command_id_t::CMD_Z_NEW_SPEED || cmd == command_id_t::CMD_A_NEW_SPEED
-	    || cmd == command_id_t::CMD_X_NEW_ACC || cmd == command_id_t::CMD_Y_NEW_ACC
-	    || cmd == command_id_t::CMD_Z_NEW_ACC || cmd == command_id_t::CMD_A_NEW_ACC) {
-		valid_command = true;
+	bool valid_command = ArduinoHelper::isValidSerialCommand(cmd);
+	if (!valid_command) {
+		return false;
 	}
-
-	if (valid_command == true) {
-		//    std::cout << "Buffer valid?: ";
-		// skip the AT header, therefore start at index 3
-		for (int i = 3; i < data_size_; i++) {
-			//      std::cout << (int) data_[i] << ' ';
-			// cancel when the command was already set
-			if (data_[i] == char_cmd) {
-				valid_command = false;
-				break;
-			}
+	//    std::cout << "Buffer valid?: ";
+	// skip the AT header, therefore start at index 3
+	for (int i = 3; i < data_size_; i++) {
+		//      std::cout << (int) data_[i] << ' ';
+		// cancel when the command was already set
+		if (data_[i] == cmd) {
+			valid_command = false;
+			break;
 		}
 	}
 	//  std::cout << std::endl;
@@ -160,11 +151,11 @@ ArduinoComMessage::add_command(command_id_t cmd, unsigned int value)
 	// check whether we're exceeding the data_size_
 	valid_command &= cur_buffer_index_ + 1 + num_digits(value) < data_size_ - 1;
 
-	if (valid_command == false) {
+	if (!valid_command) {
 		return false;
 	}
 
-	data_[cur_buffer_index_] = char_cmd;
+	data_[cur_buffer_index_] = cmd;
 	cur_buffer_index_++;
 
 	cur_buffer_index_ += sprintf(data_ + cur_buffer_index_, "%u", value);
@@ -256,21 +247,21 @@ ArduinoComMessage::get_position_data(int (&gripperr_position)[3], bool &(is_grip
 	std::string       i;
 	while (ss >> i) {
 		char leading = i[0];
-		if (leading == static_cast<char>(ArduinoComMessage::command_id_t::CMD_CLOSE)) {
+		if (leading == CMD_CLOSE) {
 			is_gripper_open = false;
 		}
-		if (leading == static_cast<char>(ArduinoComMessage::command_id_t::CMD_OPEN)) {
+		if (leading == CMD_OPEN) {
 			is_gripper_open = true;
 		}
-		if (leading == static_cast<char>(ArduinoComMessage::command_id_t::CMD_Y_NEW_POS)) {
+		if (leading == CMD_Y_NEW_POS) {
 			int y                = std::stoi(i.substr(1));
 			gripperr_position[1] = y;
 		}
-		if (leading == static_cast<char>(ArduinoComMessage::command_id_t::CMD_X_NEW_POS)) {
+		if (leading == CMD_X_NEW_POS) {
 			int x                = std::stoi(i.substr(1));
 			gripperr_position[0] = x;
 		}
-		if (leading == static_cast<char>(ArduinoComMessage::command_id_t::CMD_Z_NEW_POS)) {
+		if (leading == CMD_Z_NEW_POS) {
 			int z                = std::stoi(i.substr(1));
 			gripperr_position[2] = z;
 		}
