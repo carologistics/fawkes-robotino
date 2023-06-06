@@ -433,10 +433,10 @@ ArduinoComThread::loop()
 				                        cfg_speeds_[A],
 				                        1000);
 				append_message_to_queue(ArduinoComMessage::command_id_t::CMD_CALIBRATE, 0, 50000);
-				append_message_to_queue(ArduinoComMessage::command_id_t::CMD_SET_A_TOGGLE_STEPS,
+				append_message_to_queue(ArduinoComMessage::command_id_t::CMD_A_SET_TOGGLE_STEPS,
 				                        cfg_a_toggle_steps_,
 				                        1000);
-				append_message_to_queue(ArduinoComMessage::command_id_t::CMD_SET_A_HALF_TOGGLE_STEPS,
+				append_message_to_queue(ArduinoComMessage::command_id_t::CMD_A_SET_HALF_TOGGLE_STEPS,
 				                        cfg_a_half_toggle_steps_,
 				                        1000);
 			}
