@@ -137,6 +137,7 @@ private:
 	float cfg_steps_per_mm_[3];
 
 	unsigned int cfg_a_toggle_steps_;
+	unsigned int cfg_a_half_toggle_steps_;
 
 	bool movement_pending_;
 	bool calibrated_;
@@ -146,7 +147,7 @@ private:
 
 	// gripper pose to be stored in X, Y, Z
 	// TODO: setup proper values!
-	int gripper_pose_[3] = {100000, 100000, 100000};
+	int gripper_pose_[4] = {100000, 100000, 100000, 100000};
 
 	size_t bytes_read_;
 	bool   read_pending_;
