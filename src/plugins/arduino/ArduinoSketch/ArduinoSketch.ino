@@ -130,10 +130,7 @@ set_status(int status_)
 
 bool assumed_gripper_state;
 
-// @Return True if gripper is assumed to be open
-// This helper function is necessary to set the assumed_gripper_state initially
-bool
-get_assumed_gripper_state(bool is_open_command)
+void double_calibrate()
 {
 	static bool initialized = false;
 	if (!initialized) {
@@ -480,9 +477,8 @@ read_package()
 			} // flush and return if parsing error
 		}
 		float opening_speed = motor_A.get_speed(); //get current openening speed
-		bool
-		  assumed_gripper_state_local; // this is used to store the assumed gripper state locally, to reduce calls to the function get_assumed_gripper_state
-    bool assumed_gripper_state_local; // this is used to store the assumed gripper state locally, to reduce calls to the function get_assumed_gripper_state
+		bool assumed_gripper_state_local; 
+    // this is used to store the assumed gripper state locally, to reduce calls to the function get_assumed_gripper_state
     switch (cur_cmd) {
       case CMD_X_NEW_POS:
         set_new_pos(-new_value, motor_X);
