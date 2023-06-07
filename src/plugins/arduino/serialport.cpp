@@ -19,6 +19,7 @@
  */
 
 #include "serialport.h"
+#include <sys/types.h>
 
 #include <boost/bind.hpp>
 #include <boost/thread/pthread/mutex.hpp>
@@ -31,6 +32,7 @@
 #include <mutex>
 #include <ostream>
 #include <string>
+#include <cstdint>
 
 using serial_port_base = boost::asio::serial_port_base;
 
@@ -108,6 +110,31 @@ SerialPort::write(const char *buf, const int &size)
 	return port_->write_some(boost::asio::buffer(buf, size), ec);
 }
 
+inline bool check_checksum(int offset, std::string checksum_str, char buf[], size_t bytes_transferred) {
+	if(offset > 250) {
+		return false;
+	}
+	bool state = false;
+	for(int i = 0; i < checksum_str.size() && i + offset < bytes_transferred; ++i) {
+		state = true;
+		if(checksum_str[i] != buf[i + offset]) {
+			return false;
+		}
+	}
+	//state garantees to be false when for never runs only once
+	return state;
+}
+
+std::string checksum(const std::string buf) {
+	uint8_t sum = 0;
+	for(int b = 0; b< buf.size(); b++)
+	{
+		sum += buf[b];
+	}
+	uint8_t low_byte = sum & 0xff;
+	return std::to_string(low_byte);
+}
+
 void
 SerialPort::on_receive_(const boost::system::error_code &ec, size_t bytes_transferred)
 {
@@ -134,6 +161,11 @@ SerialPort::on_receive_(const boost::system::error_code &ec, size_t bytes_transf
 			has_started = true;
 		}
 
+		if(has_started && is_starting) {
+			//last message is mixed up with new
+			read_buf_str_.clear();
+		}
+
 		if (has_started) {
 			read_buf_str_ += read_buf_raw_[i];
 		}
@@ -143,7 +175,10 @@ SerialPort::on_receive_(const boost::system::error_code &ec, size_t bytes_transf
 			for (int j = 1; j < end_of_command_.size(); ++j) {
 				read_buf_str_ += read_buf_raw_[i + j];
 			}
-			receive_callback_(read_buf_str_);
+			std::string checksum_ = checksum(read_buf_str_);
+			if(check_checksum(i + end_of_command_.size(), checksum_, read_buf_raw_, bytes_transferred)){
+				receive_callback_(read_buf_str_);
+			}
 			read_buf_str_.clear();
 		}
 	}

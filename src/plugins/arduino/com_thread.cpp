@@ -92,18 +92,14 @@ ArduinoComThread::receive(const std::string &buf)
 		append_config_messages();
 		return;
 	}
-	std::cout << current_arduino_status_ << "nasdf " << std::endl;
 	if (current_arduino_status_ == 'E') {
 		logger->log_error(name(), "Arduino error: %s", buf.c_str());
 	}
-	if (!is_open) {
-		arduino_if_->set_gripper_closed(true);
-		arduino_if_->write();
-	}
-	if (!is_open) {
-		arduino_if_->set_gripper_closed(false);
-		arduino_if_->write();
-	}
+	arduino_if_->set_x_position(gripper_pose_[X]);
+	arduino_if_->set_y_position(gripper_pose_[Y]);
+	arduino_if_->set_z_position(gripper_pose_[Z]);
+	arduino_if_->set_gripper_closed(is_open);
+	arduino_if_->write();
 }
 
 void
@@ -528,7 +524,8 @@ ArduinoComThread::loop()
 void
 ArduinoComThread::timer_callback(const boost::system::error_code &ec)
 {
-	port_->write("AT X 1000 +");
+	if(port_)
+		port_->write("AT X 1000 +");
 	std::cout << "nashorn" << std::endl;
 	if (!port_) {
 		open_device();

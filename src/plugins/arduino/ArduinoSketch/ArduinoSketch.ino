@@ -79,37 +79,88 @@ send_packet(int status_, int value_to_send)
 	Serial.print("\r\n");
 }
 
+inline int
+convert_to_check_sum(int i)
+{
+	//using asci table to convert in to the number it would be casted to
+	int sum = 0;
+	if (i == 0) {
+		return 48; // if 0 then is it just the aci offset
+	}
+
+	if (i < 0) {
+		sum += 45;  //add the offset for the minus sign
+		i = i * -1; //remove the minus
+	}
+
+	int digitCount = 0;
+	while (i != 0) {
+		sum += i % 10;
+		i /= 10;
+		digitCount++;
+	}
+
+	sum += 48 * digitCount;
+
+	return sum;
+}
+
 void
 send_status()
 {
-	Serial.print(AT);
+	uint8_t checksum = 0;
+	Serial.print(AT); //checksum = 191
+	checksum += 181;
 	Serial.print(status_array_[cur_status]);
-	Serial.print(" ");
+	checksum += (byte)status_array_[cur_status];
+	Serial.print(" "); //checksum = 32
+	checksum += 32;
 	if (cur_status == STATUS_ERROR) {
 		Serial.print(errormessage);
 	} else { // send all the information while moving and while idle
 		Serial.print(-motor_X.currentPosition());
-		Serial.print(" ");
+		checksum += convert_to_check_sum(-motor_X.currentPosition());
+
+		Serial.print(" "); //checksum = 32
+		checksum += 32;
+
 		Serial.print(-motor_Y.currentPosition());
-		Serial.print(" ");
+		checksum += convert_to_check_sum(-motor_Y.currentPosition());
+
+		Serial.print(" "); //checksum = 32
+		checksum += 32;
+
 		Serial.print(-motor_Z.currentPosition());
-		Serial.print(" ");
+		checksum += convert_to_check_sum(-motor_Y.currentPosition());
+
+		Serial.print(" "); //checksum = 32
+		checksum += 32;
+
 		Serial.print(motor_A.currentPosition());
-		Serial.print(" ");
-		send_gripper_status();
+		checksum += convert_to_check_sum(-motor_A.currentPosition());
+
+		Serial.print(" "); //checksum = 32
+		checksum += 32;
+
+		checksum += send_gripper_status();
 	}
-    Serial.print("+");
+	Serial.print("+"); //checksum = 43
+	checksum += 43;
+	Serial.print(lowByte(checksum));
 	Serial.print("\r\n");
 }
 
-void
+int
 send_gripper_status()
 {
 	check_gripper_endstop();
-	if (open_gripper)
-		Serial.print("OPEN");
-	else
-		Serial.print("CLOSED");
+	if (open_gripper){
+		Serial.print("OPEN"); //checksum = 50
+		return 50;
+	}
+
+	Serial.print("CLOSED"); //checksum = 186
+	return 186;
 }
 
 void
@@ -379,11 +430,9 @@ read_package()
 		case CMD_A_SET_TOGGLE_STEPS:
 			a_toggle_steps = new_value;
 			send_status();
-			send_status();
 			break;
 		case CMD_A_SET_HALF_TOGGLE_STEPS:
 			a_half_toggle_steps = new_value;
-			send_status();
 			send_status();
 			break;
 #ifdef DEBUG_MODE
@@ -392,41 +441,33 @@ read_package()
 		case CMD_X_NEW_SPEED:
 			set_new_speed_acc(new_value, 0.0, motor_X);
 			send_status();
-			send_status();
 			break;
 		case CMD_Y_NEW_SPEED:
 			set_new_speed_acc(new_value, 0.0, motor_Y);
-			send_status();
 			send_status();
 			break;
 		case CMD_Z_NEW_SPEED:
 			set_new_speed_acc(new_value, 0.0, motor_Z);
 			send_status();
-			send_status();
 			break;
 		case CMD_A_NEW_SPEED:
 			//set_new_speed_acc(new_value, 0.0, motor_A);
-			send_status();
 			send_status();
 			break;
 		case CMD_X_NEW_ACC:
 			set_new_speed_acc(0.0, new_value, motor_X);
 			send_status();
-			send_status();
 			break;
 		case CMD_Y_NEW_ACC:
 			set_new_speed_acc(0.0, new_value, motor_Y);
-			send_status();
 			send_status();
 			break;
 		case CMD_Z_NEW_ACC:
 			set_new_speed_acc(0.0, new_value, motor_Z);
 			send_status();
-			send_status();
 			break;
 		case CMD_A_NEW_ACC:
 			//set_new_speed_acc(0.0, new_value, motor_A);
-			send_status();
 			send_status();
 			break;
 		case CMD_OPEN:
@@ -435,7 +476,6 @@ read_package()
 			} else if (gripper_state == STATUS_HALF_OPEN) {
 				set_new_rel_pos(-(a_toggle_steps - a_half_toggle_steps), motor_A);
 			} else {
-				send_status();
 				send_status();
 			}
 			gripper_state = STATUS_OPEN;
@@ -449,7 +489,6 @@ read_package()
 			// 	assumed_gripper_state = true;
 			// } else { // we don't do it
 			// 	send_status();
-			// 	send_status();
 			// }
 			break;
 		case CMD_HALF_OPEN:
@@ -458,7 +497,6 @@ read_package()
 			} else if (gripper_state == STATUS_CLOSED) {
 				set_new_rel_pos(-a_half_toggle_steps, motor_A);
 			} else {
-				send_status();
 				send_status();
 			}
 			gripper_state = STATUS_HALF_OPEN;
@@ -470,7 +508,6 @@ read_package()
 			// set_new_rel_pos(-a_toggle_steps / 2, motor_A);
 			// assumed_gripper_state = true;
 			// } else { // we don't do it
-			// send_status();
 			// send_status();
 			// }
 			break;
@@ -489,7 +526,6 @@ read_package()
 				set_new_speed_acc(opening_speed, 0.0, motor_A); //reset speed
 			} else {
 				send_status();
-				send_status();
 			}
 			gripper_state = STATUS_CLOSED;
 			open_gripper  = true;
@@ -504,7 +540,6 @@ read_package()
 			// 	set_new_speed_acc(opening_speed, 0.0, motor_A); //reset speed
 			// } else {                                          // we don't do it
 			// 	send_status();
-			// 	send_status();
 			// }
 			break;
 		case CMD_STATUS_REQ: send_status(); break;
@@ -513,18 +548,15 @@ read_package()
 		case CMD_SET_SPEED:
 			set_new_speed(new_value);
 			send_status();
-			send_status();
 			break;
 		case CMD_SET_ACCEL:
 			set_new_acc(new_value);
-			send_status();
 			send_status();
 			break;
 		case CMD_STOP:
 			slow_stop_all();
 			set_status(STATUS_IDLE);
 			movement_done_flag = true;
-			send_status();
 			send_status();
 			break;
 		case CMD_FAST_STOP: fast_stop_all(); break;
@@ -595,10 +627,15 @@ setup()
 	set_new_speed_acc(DEFAULT_MAX_SPEED_Z, DEFAULT_MAX_ACCEL_Z, motor_Z);
 	set_new_speed_acc(DEFAULT_MAX_SPEED_A, DEFAULT_MAX_ACCEL_A, motor_A);
 
-	Serial.println("AT HELLO +");
-	set_status(STATUS_IDLE);
-	motor_X.disableOutputs();
+	//CHECK SUM of "AT HELLO +" = 628
+	//lowByte(628) = 116
+	Serial.println("AT HELLO +116");
 
+	set_status(STATUS_IDLE);
+
+	send_status();
+
+	motor_X.disableOutputs();
 
 	// configure the pulse interrupt
 
