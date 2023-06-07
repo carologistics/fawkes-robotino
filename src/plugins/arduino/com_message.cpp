@@ -226,7 +226,7 @@ ArduinoComMessage::parse_message_from_arduino(int (&gripperr_position)[3],
 				gripperr_position[1] = y;
 			}
 			if (i == 3) {
-				int z                = std::stoi(s);
+				int z = std::stoi(s);
 				//std::cout << "asdf dsf " << z << std::endl;
 				gripperr_position[2] = z;
 			}
@@ -254,30 +254,27 @@ ArduinoComMessage::get_position_data(int (&gripperr_position)[3], bool &(is_grip
 		return false;
 	}
 
-	try {
-		std::string i;
-		while (ss >> i) {
-			char leading = i[0];
-			if (leading == CMD_CLOSE) {
-				is_gripper_open = false;
-			}
-			if (leading == CMD_OPEN) {
-				is_gripper_open = true;
-			}
-			if (leading == CMD_X_NEW_POS) {
-				int x                = std::stoi(i.substr(1));
-				gripperr_position[0] = x;
-			}
-			if (leading == CMD_Y_NEW_POS) {
-				int y                = std::stoi(i.substr(1));
-				gripperr_position[1] = y;
-			}
-			if (leading == CMD_Z_NEW_POS) {
-				int z                = std::stoi(i.substr(1));
-				gripperr_position[2] = z;
-			}
+	std::string i;
+	while (ss >> i) {
+		char leading = i[0];
+		if (leading == CMD_CLOSE) {
+			is_gripper_open = false;
 		}
-	} catch (const std::exception &e) {
+		if (leading == CMD_OPEN) {
+			is_gripper_open = true;
+		}
+		if (leading == CMD_X_NEW_POS) {
+			int x                = std::stoi(i.substr(1));
+			gripperr_position[0] = x;
+		}
+		if (leading == CMD_Y_NEW_POS) {
+			int y                = std::stoi(i.substr(1));
+			gripperr_position[1] = y;
+		}
+		if (leading == CMD_Z_NEW_POS) {
+			int z                = std::stoi(i.substr(1));
+			gripperr_position[2] = z;
+		}
 	}
 
 	return true;

@@ -103,6 +103,7 @@ public:
 
 private:
 	void open_device();
+	void open_device_handle(const boost::system::error_code &ec);
 	void close_device();
 
 	bool sync_with_arduino();
@@ -157,8 +158,10 @@ private:
 	fawkes::Time                    expected_finish_time_;
 
 	std::unique_ptr<SerialPort>                  port_;
-	std::unique_ptr<boost::asio::deadline_timer> deadline_timer;
-	std::unique_ptr<boost::asio::io_context>     io_context_;
+	// boost::asio::io_context                      io_context_;
+	boost::asio::io_service     io_service_;
+    std::thread io_service_thread_;
+	boost::asio::deadline_timer deadline_timer;
 	std::shared_ptr<boost::mutex>                io_mutex_;
 	fawkes::ArduinoInterface                    *arduino_if_;
 	fawkes::JoystickInterface                   *joystick_if_;
