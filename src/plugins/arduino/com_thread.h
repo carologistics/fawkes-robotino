@@ -41,6 +41,7 @@
 #include <utils/time/time.h>
 
 #include <boost/asio.hpp>
+#include <boost/asio/io_context.hpp>
 #include <boost/thread/mutex.hpp>
 #include <memory>
 
@@ -83,13 +84,6 @@ public:
 	void         initInterface();
 	virtual void finalize();
 
-	/**
-   * @brief Checks if the serial connection is open
-   *
-   * @return True if the serial connection is open
-   */
-	virtual bool is_connected();
-
 	// For BlackBoardInterfaceListener
 	virtual bool bb_interface_message_received(fawkes::Interface *interface,
 	                                           fawkes::Message   *message) throw();
@@ -110,11 +104,9 @@ public:
 private:
 	void open_device();
 	void close_device();
-	void flush_device();
 
-	bool        sync_with_arduino();
-	std::string read_packet(unsigned int timeout);
-	void        send_message(ArduinoComMessage &msg);
+	bool sync_with_arduino();
+	void send_message(ArduinoComMessage &msg);
 
 	void handle_nodata(const boost::system::error_code &ec);
 	bool send_one_message();
@@ -144,40 +136,32 @@ private:
 
 	bool movement_pending_;
 	bool calibrated_;
-	char current_arduino_status_;
 
 	unsigned int msecs_to_wait_;
+	unsigned int no_data_count;
 
 	// gripper pose to be stored in X, Y, Z
 	// TODO: setup proper values!
-	int  gripper_pose_[4]             = {100000, 100000, 100000, 100000};
+	char current_arduino_status_;
+	int  gripper_pose_[3]             = {100000, 100000, 100000};
 	int  cur_demanded_gripper_pose[3] = {0, 0, 0};
 	bool cur_demanded_is_gripper_open = false;
 
-	size_t bytes_read_;
-	bool   read_pending_;
-	bool   set_speed_pending_;
-	bool   set_acceleration_pending_;
-	bool   home_pending_;
+	bool home_pending_;
 
-	bool         opened_;
-	unsigned int open_tries_;
+	void reset_timer();
 
 	std::queue<ArduinoComMessage *> messages_;
 	ArduinoComMessage              *next_msg_;
 	bool                            new_msg_;
 	fawkes::Time                    expected_finish_time_;
 
-	boost::asio::io_service io_service_;
-	//boost::asio::serial_port    serial_;
-
-	std::unique_ptr<SerialPort> port_;
-	boost::asio::deadline_timer deadline_;
-	boost::asio::streambuf      input_buffer_;
-
-	boost::mutex               io_mutex_;
-	fawkes::ArduinoInterface  *arduino_if_;
-	fawkes::JoystickInterface *joystick_if_;
+	std::unique_ptr<SerialPort>                  port_;
+	std::unique_ptr<boost::asio::deadline_timer> deadline_timer;
+	std::unique_ptr<boost::asio::io_context>     io_context_;
+	std::shared_ptr<boost::mutex>                io_mutex_;
+	fawkes::ArduinoInterface                    *arduino_if_;
+	fawkes::JoystickInterface                   *joystick_if_;
 
 	ArduinoTFThread *tf_thread_;
 
@@ -195,8 +179,6 @@ private:
 
 	float inline round_to_2nd_dec(float f);
 	void pose_publish_tf();
-
-	void gripper_update();
 
 protected:
 	/** Mutex to protect data_. Lock whenever accessing it. */

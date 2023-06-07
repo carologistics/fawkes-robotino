@@ -26,6 +26,7 @@
 
 #include <boost/asio.hpp>
 #include <cstdint>
+#include <string>
 
 class ArduinoComMessage
 {
@@ -40,16 +41,16 @@ public:
 	ArduinoComMessage(char cmdid, unsigned int value);
 
 	bool           add_command(char cmd, unsigned int number);
-	unsigned short get_data_size();
 	unsigned short get_cur_buffer_index();
 
 	/**
 	 * @return Returns the Position data of the current Buffer as a char.
 	 *  Formatting is the same as Serial communication.
 	*/
-	void get_position_data(int (&gripperr_position)[3], bool &is_gripper_open);
+	bool get_position_data(int (&gripperr_position)[3], bool &is_gripper_open);
+	static bool parse_message_from_arduino(int (&gripperr_position)[3], bool &is_gripper_open, char &arduino_status, std::string buffer);
 
-	boost::asio::const_buffer buffer();
+	std::string buffer();
 
 	void         set_msecs_if_lower(unsigned int msecs);
 	unsigned int get_msecs();
@@ -79,8 +80,7 @@ private:
 	void dtor();
 
 private:
-	char          *data_;
-	unsigned short data_size_;
+	std::string    data_ = "AT ";
 	unsigned short cur_buffer_index_; // index of next data field
 
 	unsigned int msecs_to_wait_;

@@ -21,7 +21,8 @@
 #include "serialport.h"
 
 #include <boost/bind.hpp>
-#include <boost/thread.hpp>
+#include <boost/thread/pthread/mutex.hpp>
+#include <boost/thread/thread.hpp>
 #include <cstddef>
 #include <cstring>
 #include <iostream>
@@ -33,25 +34,24 @@
 
 using serial_port_base = boost::asio::serial_port_base;
 
-SerialPort::SerialPort(const char                                *port,
+SerialPort::SerialPort(std::string                                port,
                        boost::function<void(const std::string &)> receive_callback,
                        std::shared_ptr<boost::mutex>              port_mutex,
                        unsigned int                               baud_rate,
-                       const char                                *start_of_command,
-                       const char                                *end_of_command)
+                       std::string                                start_of_command,
+                       std::string                                end_of_command)
 {
 	receive_callback_ = receive_callback;
 
-	mutex_ = port_mutex;
-	std::lock_guard<boost::mutex> lock(*mutex_);
+	// mutex_ = boost::mutex;
 
-	start_of_command_ = (char *)start_of_command;
-	end_of_command_   = (char *)end_of_command;
+	start_of_command_ = start_of_command;
+	end_of_command_   = end_of_command;
 
 	boost::system::error_code ec;
 
 	port_ = serial_port_ptr(new boost::asio::serial_port(io_service_));
-	port_->open(port, ec);
+	port_->open(port.c_str(), ec);
 	if (ec) {
 		throw ec;
 	}
@@ -91,26 +91,31 @@ start_with_pattern(const char *pattern, const char buf[], size_t bytes_transferr
 	return true;
 }
 
-int
+bool
 SerialPort::write(const std::string &buf)
 {
 	return write(buf.c_str(), buf.size());
 }
 
-int
+bool
 SerialPort::write(const char *buf, const int &size)
 {
+	std::cout << "nah" << std::endl;
+
+	std::cout << "neh" << std::endl;
 	boost::system::error_code ec;
 	if (!port_)
-		return -1;
+		return false;
 	if (size == 0)
-		return 0;
+		return false;
 	return port_->write_some(boost::asio::buffer(buf, size), ec);
 }
 
 void
 SerialPort::on_receive_(const boost::system::error_code &ec, size_t bytes_transferred)
 {
+	boost::mutex::scoped_lock lock(mutex_);
+	//TODO check for active port and request messsage
 	if (port_.get() == NULL)
 		return;
 
@@ -123,8 +128,10 @@ SerialPort::on_receive_(const boost::system::error_code &ec, size_t bytes_transf
 
 	bool has_started = false;
 	for (unsigned int i = 0; i < bytes_transferred; ++i) {
-		bool is_starting = start_with_pattern(start_of_command_, read_buf_raw_, bytes_transferred, i);
-		bool is_ending   = start_with_pattern(end_of_command_, read_buf_raw_, bytes_transferred, i);
+		bool is_starting =
+		  start_with_pattern(start_of_command_.c_str(), read_buf_raw_, bytes_transferred, i);
+		bool is_ending =
+		  start_with_pattern(end_of_command_.c_str(), read_buf_raw_, bytes_transferred, i);
 
 		if (has_started || is_starting) {
 			has_started = true;
@@ -136,7 +143,7 @@ SerialPort::on_receive_(const boost::system::error_code &ec, size_t bytes_transf
 
 		if (has_started && is_ending) {
 			has_started = false;
-			for (int j = 1; j < strlen(end_of_command_); ++j) {
+			for (int j = 1; j < end_of_command_.size(); ++j) {
 				read_buf_str_ += read_buf_raw_[i + j];
 			}
 			receive_callback_(read_buf_str_);
@@ -152,7 +159,7 @@ SerialPort::~SerialPort()
 	port_->cancel();
 	port_->close();
 	port_.reset();
-	mutex_->unlock();
+	mutex_.unlock();
 	io_service_.stop();
 	io_service_.reset();
 }
