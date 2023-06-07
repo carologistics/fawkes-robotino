@@ -36,6 +36,7 @@
 #include <utils/time/wait.h>
 
 #include <boost/asio/io_context.hpp>
+#include <boost/asio/placeholders.hpp>
 #include <boost/bind/bind.hpp>
 #include <boost/bind/placeholders.hpp>
 #include <boost/lambda/bind.hpp>
@@ -48,7 +49,6 @@
 #include <unistd.h>
 
 using namespace fawkes;
-
 /** @class ArduinoComThread "com_thread.h"
  * Thread to communicate with an Arduino Uno via boost::asio
  * @author Tim Niemueller, Nicolas Limpert, Matteo Tschesche
@@ -78,19 +78,21 @@ ArduinoComThread::~ArduinoComThread()
 void
 ArduinoComThread::receive(const std::string &buf)
 {
-	reset_timer();
+	// reset_timer(
+	//   boost::bind(&ArduinoComThread::handle_nodata, this, boost::asio::placeholders::error));
 	logger->log_info(name(), "received %s", buf.c_str());
 
-	port_->write("AT x 1000 +");
 
 	logger->log_debug(name(), "read_packet: %s", buf.c_str());
 
 	bool is_open;
-	if (ArduinoComMessage::parse_message_from_arduino(
+	if (!ArduinoComMessage::parse_message_from_arduino(
 	      gripper_pose_, is_open, current_arduino_status_, buf)) {
-		logger->log_error(name(), "Accepted package that is not valied %s", buf.c_str());
+		logger->log_error(name(), "Arduino relaunched needed to be reconfigured %s", buf.c_str());
+		append_config_messages();
 		return;
 	}
+	std::cout << current_arduino_status_ << "nasdf " << std::endl;
 	if (current_arduino_status_ == 'E') {
 		logger->log_error(name(), "Arduino error: %s", buf.c_str());
 	}
@@ -110,6 +112,12 @@ ArduinoComThread::init()
 	arduino_if_ = blackboard->open_for_writing<ArduinoInterface>("Arduino", cfg_name_.c_str());
 
 	initInterface();
+	deadline_timer.expires_from_now(boost::posix_time::seconds(5));
+	deadline_timer.async_wait(
+	  [this](const boost::system::error_code &error) { timer_callback(error); });
+	io_service_thread_ = std::thread([this]() { io_service_.run(); }); // io_service_.run();
+
+	movement_pending_ = false;
 
 	joystick_if_ =
 	  blackboard->open_for_reading<JoystickInterface>("Joystick", cfg_ifid_joystick_.c_str());
@@ -117,16 +125,6 @@ ArduinoComThread::init()
 	load_config();
 
 	io_mutex_ = std::make_shared<boost::mutex>();
-	// deadline_timer = std::make_unique<boost::asio::deadline_timer>(io_context_);
-	// deadline_timer.expires_at(boost::posix_time::pos_infin);
-	deadline_timer.expires_from_now(boost::posix_time::seconds(5));
-	deadline_timer.async_wait([this](const boost::system::error_code &error) {
-		if (!error) {
-			std::cout << "Deadline timer expired!" << std::endl;
-		}
-	});
-	// io_service_.run();
-	io_service_thread_ = std::thread([this]() { io_service_.run(); });
 
 	movement_pending_ = false;
 
@@ -223,7 +221,7 @@ ArduinoComThread::append_config_messages()
 	append_message_to_queue(CMD_Y_NEW_SPEED, cfg_speeds_[Y], 1000);
 	append_message_to_queue(CMD_Z_NEW_SPEED, cfg_speeds_[Z], 1000);
 	append_message_to_queue(CMD_A_NEW_SPEED, cfg_speeds_[A], 1000);
-	append_message_to_queue(CMD_CALIBRATE, 0, 50000);
+	// append_message_to_queue(CMD_CALIBRATE, 0, 50000);
 	append_message_to_queue(CMD_A_SET_TOGGLE_STEPS, cfg_a_toggle_steps_, 1000);
 	append_message_to_queue(CMD_A_SET_HALF_TOGGLE_STEPS, cfg_a_half_toggle_steps_, 1000);
 }
@@ -528,26 +526,21 @@ ArduinoComThread::loop()
 }
 
 void
-ArduinoComThread::reset_timer()
+ArduinoComThread::timer_callback(const boost::system::error_code &ec)
 {
-	// deadline_timer.cancel();
-	// //TODO cfg value
-	// deadline_timer.expires_from_now(boost::posix_time::seconds(20));
-	// deadline_timer.async_wait(boost::bind(&ArduinoComThread::handle_nodata, this, boost::asio::placeholders::error));
-}
-
-void
-ArduinoComThread::open_device_handle(const boost::system::error_code &ec)
-{
-	std::cout << "NASFH D FASD F" << std::endl;
-	open_device();
+	port_->write("AT X 1000 +");
+	std::cout << "nashorn" << std::endl;
+	if (!port_) {
+		open_device();
+	}
+	deadline_timer.expires_from_now(boost::posix_time::seconds(5));
+	deadline_timer.async_wait(
+	  [this](const boost::system::error_code &error) { timer_callback(error); });
 }
 
 void
 ArduinoComThread::open_device()
 {
-	std::cout << "asdf D FASD F" << std::endl;
-	reset_timer();
 	if (port_) {
 		port_.reset();
 	}
@@ -562,19 +555,6 @@ ArduinoComThread::open_device()
 		                  "Could now open PORT: %s, %s",
 		                  cfg_device_.c_str(),
 		                  ec.what().c_str());
-		// deadline_timer.cancel();
-		// //TODO cfg value
-		// deadline_timer.expires_from_now(boost::posix_time::seconds(1));
-		// deadline_timer.async_wait(boost::bind(&ArduinoComThread::open_device_handle, this, boost::asio::placeholders::error));
-
-		// deadline_timer.expires_from_now(boost::posix_time::seconds(5));
-		// deadline_timer.async_wait([](const boost::system::error_code& error) {
-		// if (!error) {
-		//     std::cout << "Deadline timer expired!" << std::endl;
-		// }
-		// });
-
-		// Run the io_service_ object to process asynchronous operations
 	}
 	append_config_messages();
 	calibrated_ = false;
@@ -628,6 +608,7 @@ ArduinoComThread::sync_with_arduino()
 		return true;
 	}
 	*/
+	return true;
 }
 
 bool
@@ -651,6 +632,7 @@ ArduinoComThread::send_message_from_queue()
 		return false;
 	}
 	*/
+	return true;
 }
 
 bool
@@ -676,7 +658,8 @@ ArduinoComThread::handle_nodata(const boost::system::error_code &ec)
 
 	++no_data_count;
 
-	reset_timer();
+	// reset_timer(
+	//   boost::bind(&ArduinoComThread::handle_nodata, this, boost::asio::placeholders::error));
 	//TODO add cfg
 	if (no_data_count > 100) {
 		close_device();
