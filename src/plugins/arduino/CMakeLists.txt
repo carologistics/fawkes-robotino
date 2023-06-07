@@ -46,7 +46,6 @@ if(PLUGIN_arduino)
     fawkesblackboard
     fawkesinterface
     ArduinoInterface
-    Boost::thread
     JoystickInterface)
 
   add_custom_target(
