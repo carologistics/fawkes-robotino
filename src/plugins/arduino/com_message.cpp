@@ -214,14 +214,12 @@ ArduinoComMessage::parse_message_from_arduino(int (&gripperr_position)[3],
 			}
 			if (i == 0) {
 				if (s == "I" || s == "M") {
-					printf("\nDoch: %i, Value %s \n", i, s.c_str());
 					arduino_status = s[0];
 					continue;
 				}
 				arduino_status = 'E';
 			}
 			if (i == 1) {
-				std::cout << s.substr(1) << std::endl;
 				int x                = std::stoi(s);
 				gripperr_position[0] = x;
 			}
@@ -242,7 +240,6 @@ ArduinoComMessage::parse_message_from_arduino(int (&gripperr_position)[3],
 				}
 			}
 		}
-				printf("\nDsdfa, Value %s \n", s.c_str());
 		return true;
 	} catch (const std::exception &e) {
 	}
