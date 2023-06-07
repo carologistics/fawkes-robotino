@@ -27,6 +27,8 @@
 #include <iomanip>
 #include <iostream>
 #include <math.h>
+#include <ostream>
+#include <sstream>
 #include <string>
 
 using namespace fawkes;
@@ -91,31 +93,11 @@ ArduinoComMessage::ArduinoComMessage(char cmdid, unsigned int value)
  */
 ArduinoComMessage::~ArduinoComMessage()
 {
-	dtor();
-}
-
-void
-ArduinoComMessage::dtor()
-{
-	free(data_);
 }
 
 void
 ArduinoComMessage::ctor()
 {
-	// always allocate 128 bytes, increase if necessary
-	data_size_ = 128;
-	data_      = (char *)malloc(data_size_);
-
-	// init buffer with zeros
-	memset(data_, 0, data_size_);
-
-	// append header
-	memcpy(data_, MSG_HEAD, 3);
-
-	// start first command after header
-	cur_buffer_index_ = 3;
-
 	// setup a minimum of 1 second to wait
 	msecs_to_wait_ = 1000;
 }
@@ -136,34 +118,15 @@ ArduinoComMessage::add_command(char cmd, unsigned int value)
 	if (!valid_command) {
 		return false;
 	}
-	//    std::cout << "Buffer valid?: ";
-	// skip the AT header, therefore start at index 3
-	for (int i = 3; i < data_size_; i++) {
-		//      std::cout << (int) data_[i] << ' ';
-		// cancel when the command was already set
-		if (data_[i] == cmd) {
-			valid_command = false;
-			break;
-		}
-	}
-	//  std::cout << std::endl;
 
-	// check whether we're exceeding the data_size_
-	valid_command &= cur_buffer_index_ + 1 + num_digits(value) < data_size_ - 1;
-
-	if (!valid_command) {
-		return false;
-	}
-
-	data_[cur_buffer_index_] = cmd;
-	cur_buffer_index_++;
-
-	cur_buffer_index_ += sprintf(data_ + cur_buffer_index_, "%u", value);
-	data_[cur_buffer_index_] = ' ';
-	cur_buffer_index_++;
+	data_ += cmd;
+	data_ += value;
+	data_ += " ";
 
 	return true;
 }
+
+#define DEBUG
 
 /** Get access to buffer for sending.
  * This implies packing. Note that after calling this methods later
@@ -171,22 +134,15 @@ ArduinoComMessage::add_command(char cmd, unsigned int value)
  * on the destruction of the message.
  * @return buffer of escaped data.
  */
-boost::asio::const_buffer
+std::string
 ArduinoComMessage::buffer()
 {
+#ifdef DEBUG
+	std::cout << "Buffer: " << data_ << std::endl;
+#endif
+
 	// Add terminator character to the end
-	data_[data_size_ - 1] = '+';
-
-	std::cout << "Buffer: ";
-	//  printf("Buffer: ");
-	for (size_t i = 0; i < data_size_; ++i) {
-		//      printf("%c", data_[i]);
-		std::cout << data_[i];
-	}
-	std::cout << std::endl;
-	//  printf("\n");
-
-	return boost::asio::buffer(data_, data_size_);
+	return data_ + "+";
 }
 
 /** Set the number of msecs the associated action of this
@@ -214,16 +170,6 @@ ArduinoComMessage::get_msecs()
 	return msecs_to_wait_;
 }
 
-/** Get the data size of the message
- * this is only used for error reporting
- * @return data size of the message
- */
-unsigned short
-ArduinoComMessage::get_data_size()
-{
-	return data_size_;
-}
-
 /** Get the current buffer index
  * this is only used for error reporting
  * @return current buffer index
@@ -234,36 +180,105 @@ ArduinoComMessage::get_cur_buffer_index()
 	return cur_buffer_index_;
 }
 
-void
-ArduinoComMessage::get_position_data(int (&gripperr_position)[3], bool &(is_gripper_open))
+bool
+base_parse(std::stringstream &stream, std::string buffer)
 {
-	std::string s   = data_;
+	std::string s   = buffer;
 	size_t      pos = s.find("AT ");
 	if (pos == std::string::npos) {
 		//Not a valid command. This command will be ignored
-		return;
+		return false;
 	}
-	std::stringstream ss(s.substr(pos + 3));
-	std::string       i;
-	while (ss >> i) {
-		char leading = i[0];
-		if (leading == CMD_CLOSE) {
-			is_gripper_open = false;
-		}
-		if (leading == CMD_OPEN) {
-			is_gripper_open = true;
-		}
-		if (leading == CMD_Y_NEW_POS) {
-			int y                = std::stoi(i.substr(1));
-			gripperr_position[1] = y;
-		}
-		if (leading == CMD_X_NEW_POS) {
-			int x                = std::stoi(i.substr(1));
-			gripperr_position[0] = x;
-		}
-		if (leading == CMD_Z_NEW_POS) {
-			int z                = std::stoi(i.substr(1));
-			gripperr_position[2] = z;
-		}
+	stream << buffer.substr(pos + 3);
+	return true;
+}
+
+bool
+ArduinoComMessage::parse_message_from_arduino(int (&gripperr_position)[3],
+                                              bool       &is_gripper_open,
+                                              char       &arduino_status,
+                                              std::string buffer)
+{
+	std::stringstream ss;
+	if (!base_parse(ss, buffer)) {
+		return false;
 	}
+
+	std::string s;
+	try {
+		for (int i = 0; ss >> s; ++i) {
+			if (s == "HELLO") {
+				break;
+			}
+			if (i == 0) {
+				if (s == "I" || s == "M") {
+					arduino_status = i;
+				}
+				arduino_status = 'E';
+			}
+			if (i == 1) {
+				std::cout << s.substr(1) << std::endl;
+				int x                = std::stoi(s);
+				gripperr_position[0] = x;
+			}
+			if (i == 2) {
+				int y                = std::stoi(s);
+				gripperr_position[1] = y;
+			}
+			if (i == 3) {
+				int z                = std::stoi(s);
+				//std::cout << "asdf dsf " << z << std::endl;
+				gripperr_position[2] = z;
+			}
+			if (i == 5) {
+				if (s == "CLOSE") {
+					is_gripper_open = false;
+				}
+				if (s == "OPEN") {
+					is_gripper_open = true;
+				}
+			}
+		}
+		return true;
+	} catch (const std::exception &e) {
+	}
+
+	return false;
+}
+
+bool
+ArduinoComMessage::get_position_data(int (&gripperr_position)[3], bool &(is_gripper_open))
+{
+	std::stringstream ss;
+	if (!base_parse(ss, data_)) {
+		return false;
+	}
+
+	try {
+		std::string i;
+		while (ss >> i) {
+			char leading = i[0];
+			if (leading == CMD_CLOSE) {
+				is_gripper_open = false;
+			}
+			if (leading == CMD_OPEN) {
+				is_gripper_open = true;
+			}
+			if (leading == CMD_X_NEW_POS) {
+				int x                = std::stoi(i.substr(1));
+				gripperr_position[0] = x;
+			}
+			if (leading == CMD_Y_NEW_POS) {
+				int y                = std::stoi(i.substr(1));
+				gripperr_position[1] = y;
+			}
+			if (leading == CMD_Z_NEW_POS) {
+				int z                = std::stoi(i.substr(1));
+				gripperr_position[2] = z;
+			}
+		}
+	} catch (const std::exception &e) {
+	}
+
+	return true;
 }

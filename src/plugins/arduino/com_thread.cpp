@@ -24,6 +24,7 @@
 #include "com_thread.h"
 
 #include "ArduinoSketch/commands.h"
+#include "com_message.h"
 #include "serialport.h"
 
 #include <baseapp/run.h>
@@ -33,19 +34,17 @@
 #include <utils/math/angle.h>
 #include <utils/time/wait.h>
 
+#include <boost/asio/io_context.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/bind/placeholders.hpp>
 #include <boost/lambda/bind.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/thread/thread.hpp>
 #include <functional>
+#include <iostream>
 #include <libudev.h>
 #include <memory>
-#include <mutex>
 #include <unistd.h>
-#define BOOST_BIND_GLOBAL_PLACEHOLDERS
-#include <boost/bind.hpp>
-#include <iostream>
-#include <memory>
 
 using namespace fawkes;
 
@@ -63,10 +62,8 @@ ArduinoComThread::ArduinoComThread(std::string     &cfg_name,
   fawkes::TransformAspect(),
   ConfigurationChangeHandler(cfg_prefix.c_str()),
   //serial_(io_service_),
-  deadline_(io_service_),
   tf_thread_(tf_thread)
 {
-	data_mutex_ = new Mutex();
 	cfg_prefix_ = cfg_prefix;
 	cfg_name_   = cfg_name;
 }
@@ -78,48 +75,61 @@ ArduinoComThread::~ArduinoComThread()
 void
 ArduinoComThread::receive(const std::string &buf)
 {
+	reset_timer();
 	logger->log_info(name(), "received %s", buf.c_str());
 
 	port_->write("AT x 1000 +");
+
+	logger->log_debug(name(), "read_packet: %s", buf.c_str());
+
+	bool is_open;
+	if (ArduinoComMessage::parse_message_from_arduino(
+	      gripper_pose_, is_open, current_arduino_status_, buf)) {
+		logger->log_error(name(), "Accepted package that is not valied %s", buf.c_str());
+		return;
+	}
+	if (current_arduino_status_ == 'E') {
+		logger->log_error(name(), "Arduino error: %s", buf.c_str());
+	}
+	if (!is_open) {
+		arduino_if_->set_gripper_closed(true);
+		arduino_if_->write();
+	}
+	if (!is_open) {
+		arduino_if_->set_gripper_closed(false);
+		arduino_if_->write();
+	}
 }
 
 void
 ArduinoComThread::init()
 {
-	// --------------------------------------------------------------------------
-	// //
-	load_config();
-
 	arduino_if_ = blackboard->open_for_writing<ArduinoInterface>("Arduino", cfg_name_.c_str());
 
 	initInterface();
 
-	std::shared_ptr<boost::mutex> mutexObj = std::make_shared<boost::mutex>();
-	const char                   *test     = "/dev/ttyACM0";
-	port_                                  = std::make_unique<SerialPort>(
-    test, boost::bind(&ArduinoComThread::receive, this, boost::placeholders::_1), mutexObj);
-	//port_ = std::make_unique(test, boost::bind(&receive, boost::placeholders::_1), mutexObj);
-
 	joystick_if_ =
 	  blackboard->open_for_reading<JoystickInterface>("Joystick", cfg_ifid_joystick_.c_str());
 
-	deadline_.expires_at(boost::posix_time::pos_infin);
-	opened_ = false;
+	load_config();
 
-	open_device();
+	io_mutex_ = std::make_shared<boost::mutex>();
 
-	open_tries_       = 0;
+	io_context_    = std::make_unique<boost::asio::io_context>();
+	deadline_timer = std::make_unique<boost::asio::deadline_timer>(*io_context_);
+	deadline_timer->expires_at(boost::posix_time::pos_infin);
+
+	io_context_->run();
+
 	movement_pending_ = false;
 
 	// initially calibrate the gripper on startup
-	calibrated_ = false;
-
 	// move to home position on startup
+	open_device();
 
 	home_pending_ = true;
 
-	set_acceleration_pending_ = false;
-	new_msg_                  = false;
+	new_msg_ = false;
 
 	bbil_add_message_interface(arduino_if_);
 
@@ -144,9 +154,6 @@ ArduinoComThread::initInterface()
 void
 ArduinoComThread::finalize()
 {
-	// TODO: 18:05:21.526199 PluginNetworkHandler: [EXCEPTION]
-	// Thread[ArduinoComThread]::finalize() threw unsupported exception
-
 	blackboard->unregister_listener(this);
 	blackboard->close(arduino_if_);
 	close_device();
@@ -188,10 +195,9 @@ ArduinoComThread::add_command_to_message(ArduinoComMessage *msg, char command, u
 	// unsigned int?
 	if (!msg->add_command(command, value)) {
 		logger->log_error(name(),
-		                  "Faulty command! id: %c value: %u size: %u msg_len: %u, index: %u",
+		                  "Faulty command! id: %c value: %u size: %u , index: %u",
 		                  command,
 		                  value,
-		                  msg->get_data_size(),
 		                  ArduinoComMessage::num_digits(value) + 1,
 		                  msg->get_cur_buffer_index());
 		return false;
@@ -264,6 +270,7 @@ ArduinoComThread::handle_queue()
 void
 ArduinoComThread::loop()
 {
+	/*
 	do {
 		if (opened_) {
 			if (calibrated_ && !arduino_if_->is_final()) {
@@ -510,137 +517,49 @@ ArduinoComThread::loop()
 
 		handle_queue();
 	} while (!arduino_if_->is_final());
+	*/
 }
 
-/// @brief Reads the messages from the arduino and sets the Interfaces to this possitions
 void
-ArduinoComThread::gripper_update()
+ArduinoComThread::reset_timer()
 {
-	std::string s = read_packet(7000);
-	logger->log_debug(name(), "Read status: %s", s.c_str());
-	movement_pending_ = current_arduino_status_ != 'I';
-
-	if (current_arduino_status_ == 'I') {
-		// Update gripper pose in iface
-		arduino_if_->set_status(ArduinoInterface::IDLE);
-	} else if (current_arduino_status_ == 'M') {
-		arduino_if_->set_status(ArduinoInterface::MOVING);
-	} else {
-		return;
-	}
-	arduino_if_->set_x_position(gripper_pose_[X] / cfg_steps_per_mm_[X] / 1000.);
-	arduino_if_->set_y_position(gripper_pose_[Y] / cfg_steps_per_mm_[Y] / 1000.);
-	arduino_if_->set_z_position(gripper_pose_[Z] / cfg_steps_per_mm_[Z] / 1000.);
-	arduino_if_->set_final(!movement_pending_);
-	arduino_if_->write();
-
-	tf_thread_->set_position(arduino_if_->x_position(),
-	                         arduino_if_->y_position(),
-	                         arduino_if_->z_position());
-}
-
-bool
-ArduinoComThread::is_connected()
-{
-	//return serial_.is_open();
+	deadline_timer->cancel();
+	//TODO cfg value
+	deadline_timer->expires_from_now(boost::posix_time::seconds(20));
+    deadline_timer->async_wait(boost::bind(&ArduinoComThread::handle_nodata, this, boost::asio::placeholders::error));
 }
 
 void
 ArduinoComThread::open_device()
 {
-	/*	if (!opened_) {
-		logger->log_debug(name(), "Open device");
-		try {
-			input_buffer_.consume(input_buffer_.size());
+	if (port_) {
+		port_.reset();
+	}
+	port_ = std::make_unique<SerialPort>(cfg_device_,
+	                         boost::bind(&ArduinoComThread::receive, this, boost::placeholders::_1),
+	                         io_mutex_);
+	append_config_messages();
+	calibrated_ = false;
 
-			boost::mutex::scoped_lock lock(io_mutex_);
-
-			serial_.open(cfg_device_);
-
-			boost::asio::serial_port::parity         PARITY(boost::asio::serial_port::parity::none);
-			boost::asio::serial_port::baud_rate      BAUD(115200);
-			boost::asio::serial_port::character_size thecsize(
-			  boost::asio::serial_port::character_size(8U));
-			boost::asio::serial_port::stop_bits STOP(boost::asio::serial_port::stop_bits::one);
-
-			serial_.set_option(PARITY);
-			serial_.set_option(BAUD);
-			serial_.set_option(thecsize);
-			serial_.set_option(STOP);
-
-			{
-				struct termios param;
-				if (tcgetattr(serial_.native_handle(), &param) == 0) {
-					// set blocking mode, seemingly needed to make Asio work properly
-					param.c_cc[VMIN]  = 1;
-					param.c_cc[VTIME] = 0;
-					if (tcsetattr(serial_.native_handle(), TCSANOW, &param) != 0) {
-						// another reason to fail...
-					}
-				} // else: BANG, cannot set VMIN/VTIME, fail
-			}
-
-			opened_ = sync_with_arduino();
-
-		} catch (boost::system::system_error &e) {
-			throw Exception("Arduino failed I/O: %s", e.what());
-		}
-	} */
+	reset_timer();
 }
 
 void
 ArduinoComThread::close_device()
 {
-	boost::mutex::scoped_lock lock(io_mutex_);
-	//serial_.cancel();
-	//serial_.close();
-	opened_ = false;
-}
-
-void
-ArduinoComThread::flush_device()
-{
-	/*	if (serial_.is_open()) {
-		try {
-			boost::system::error_code ec = boost::asio::error::would_block;
-			bytes_read_                  = 0;
-			do {
-				ec          = boost::asio::error::would_block;
-				bytes_read_ = 0;
-
-				deadline_.expires_from_now(boost::posix_time::milliseconds(200));
-				boost::asio::async_read(serial_,
-				                        input_buffer_,
-				                        boost::asio::transfer_at_least(1),
-				                        (boost::lambda::var(ec)          = boost::lambda::_1,
-				                         boost::lambda::var(bytes_read_) = boost::lambda::_2));
-
-				do
-					io_service_.run_one();
-				while (ec == boost::asio::error::would_block);
-
-				if (bytes_read_ > 0) {
-					logger->log_warn(name(), "Flushing %zu bytes\n", bytes_read_);
-				}
-
-			} while (bytes_read_ > 0);
-			deadline_.expires_from_now(boost::posix_time::pos_infin);
-		} catch (boost::system::system_error &e) {
-			// ignore, just assume done, if there really is an error we'll
-			// catch it later on
-		}
-	}*/
+	port_.reset();
 }
 
 void
 ArduinoComThread::send_message(ArduinoComMessage &msg)
 {
 	/*
-	try {
-		msg.get_position_data(cur_demanded_gripper_pose, cur_demanded_is_gripper_open);
-		boost::asio::write(serial_, boost::asio::const_buffers_1(msg.buffer()));
-	} catch (boost::system::system_error &e) {
-		logger->log_error(name(), "ERROR on send message! %s", e.what());
+	if (!port_)
+		sync_with_arduino()
+
+		  msg.get_position_data(cur_demanded_gripper_pose, cur_demanded_is_gripper_open);
+	if (!port_->write(msg.buffer())) {
+		logger->log_error(name(), "Error while trying to send data to Arduino!");
 	}*/
 }
 
@@ -678,9 +597,7 @@ ArduinoComThread::sync_with_arduino()
 bool
 ArduinoComThread::send_message_from_queue()
 {
-	/*
-	boost::mutex::scoped_lock lock(io_mutex_);
-	if (messages_.size() > 0) {
+/*	if (messages_.size() > 0) {
 		ArduinoComMessage *cur_msg = messages_.front();
 		messages_.pop();
 		msecs_to_wait_ = cur_msg->get_msecs();
@@ -690,7 +607,7 @@ ArduinoComThread::send_message_from_queue()
 
 		std::string s = read_packet(1000); // read receipt
 		logger->log_debug(name(), "Read receipt: %s", s.c_str());
-		s = read_packet(msecs_to_wait_);   // read
+		s = read_packet(msecs_to_wait_); // read
 		logger->log_debug(name(), "Read status: %s", s.c_str());
 
 		return true;
@@ -703,119 +620,35 @@ ArduinoComThread::send_message_from_queue()
 bool
 ArduinoComThread::send_one_message()
 {
-	/*
-	boost::mutex::scoped_lock lock(io_mutex_);
 	if (new_msg_) {
 		send_message(*next_msg_);
-
-		std::string s = read_packet(1000); // read receipt
-		logger->log_debug(name(), "Read receipt: %s", s.c_str());
-
 		new_msg_ = false;
 		return true;
 	} else {
 		return false;
 	}
-	*/
 }
 
 void
 ArduinoComThread::handle_nodata(const boost::system::error_code &ec)
 {
-	/*
-	// ec may be set if the timer is cancelled, i.e., updated
-	if (!ec) {
-		serial_.cancel();
-		logger->log_error(name(), "No data received for too long, re-establishing connection");
-		//        printf("No data received for too long, re-establishing
-		//        connection\n");
-		logger->log_debug(name(), "BufSize: %zu\n", input_buffer_.size());
-		std::string s(boost::asio::buffer_cast<const char *>(input_buffer_.data()),
-		              input_buffer_.size());
-		logger->log_debug(name(), "Received: %zu  %s\n", s.size(), s.c_str());
+	if (ec)
+		return;
 
-		io_mutex_.unlock();
-
-		calibrated_ = false;
-		close_device();
-		sleep(1);
+	if (!port_)
 		open_device();
-	}*/
-}
 
-std::string
-ArduinoComThread::read_packet(unsigned int timeout)
-{
-	/*
-	boost::system::error_code ec = boost::asio::error::would_block;
-	bytes_read_                  = 0;
+	++no_data_count;
 
-	logger->log_debug(name(), "read_packet with timeout: %u", timeout);
-
-	deadline_.expires_from_now(boost::posix_time::milliseconds(timeout));
-	deadline_.async_wait(
-	  boost::bind(&ArduinoComThread::handle_nodata, this, boost::asio::placeholders::error));
-
-	boost::asio::async_read_until(serial_,
-	                              input_buffer_,
-	                              "\r\n",
-	                              (boost::lambda::var(ec)          = boost::lambda::_1,
-	                               boost::lambda::var(bytes_read_) = boost::lambda::_2));
-
-	//    do io_service_.run_one(); while (ec == boost::asio::error::would_block);
-
-	do {
-		io_service_.run_one();
-		if (ec == boost::asio::error::would_block) {
-			usleep(10000);
-		}
-	} while (ec == boost::asio::error::would_block);
-
-	if (ec) {
-		if (ec.value() == boost::system::errc::operation_canceled) {
-			logger->log_error(name(), "Arduino read operation cancelled: %s", ec.message().c_str());
-		}
+	reset_timer();
+	//TODO add cfg
+	if (no_data_count > 100) {
+		close_device();
+		open_device();
+		no_data_count = 0;
+		return;
 	}
-
-	// Package received - analyze package
-	std::string s(boost::asio::buffer_cast<const char *>(input_buffer_.data()), bytes_read_);
-	input_buffer_.consume(bytes_read_);
-	deadline_.cancel();
-
-	if (s.find("AT ") == std::string::npos) {
-		logger->log_error(name(), "Package error - bytes read: %zu, %s", bytes_read_, s.c_str());
-		// TODO: after re-opening the device it fails to be used again - fix this!
-		return "";
-	}
-	if (bytes_read_ > 4) {
-		logger->log_debug(name(), "Package received: %s:", s.c_str());
-		//        if (s.find("AT OK") == std::string::npos) {
-		// Package is no receipt for the previous sent package
-		current_arduino_status_ = s.at(3);
-		//        }
-	}
-	if (current_arduino_status_ == 'E') {
-		logger->log_error(name(), "Arduino error: %s", s.substr(4).c_str());
-	} else if (current_arduino_status_ == 'I' || current_arduino_status_ == 'M') {
-		// TODO: setup absolute pose reporting!
-
-		std::stringstream ss(s.substr(4));
-		std::string       gripper_status;
-		ss >> gripper_pose_[X] >> gripper_pose_[Y] >> gripper_pose_[Z] >> gripper_pose_[A]
-		  >> gripper_status;
-		if (gripper_status == "CLOSED") {
-			arduino_if_->set_gripper_closed(true);
-			arduino_if_->write();
-		} else if (gripper_status == "OPEN") {
-			arduino_if_->set_gripper_closed(false);
-			arduino_if_->write();
-		}
-	} else {
-		// Probably something went wrong with communication
-		current_arduino_status_ = 'E';
-	}
-	//    read_pending_ = false;
-	return s; */
+	append_message_to_queue(CMD_STATUS_REQ, 0, 1000);
 }
 
 void
@@ -835,7 +668,7 @@ ArduinoComThread::load_config()
 		cfg_z_max_ = config->get_float(cfg_prefix_ + "/z_max");
 
 		cfg_speeds_[X] =
-		  config->get_float_or_default((cfg_prefix_ + "/firmware_settings/speed_x").c_str(), 0.f);
+		    config->get_float_or_default((cfg_prefix_ + "/firmware_settings/speed_x").c_str(), 0.f);
 		cfg_speeds_[Y] =
 		  config->get_float_or_default((cfg_prefix_ + "/firmware_settings/speed_y").c_str(), 0.f);
 		cfg_speeds_[Z] =
@@ -861,13 +694,9 @@ ArduinoComThread::load_config()
 		cfg_steps_per_mm_[Y] = 200.0 * cfg_y_microstep / 2.0;
 		cfg_steps_per_mm_[Z] = 200.0 * cfg_z_microstep / 1.5;
 
-		cfg_a_toggle_steps_ = config->get_int(cfg_prefix_ + "/hardware_settings/a_toggle_steps");
+		cfg_a_toggle_steps_      = config->get_int(cfg_prefix_ + "/hardware_settings/a_toggle_steps");
 		cfg_a_half_toggle_steps_ =
 		  config->get_int(cfg_prefix_ + "/hardware_settings/a_half_toggle_steps");
-
-		set_speed_pending_        = false;
-		set_acceleration_pending_ = false;
-
 		// 2mm / rotation
 	} catch (Exception &e) {
 	}
