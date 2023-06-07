@@ -141,30 +141,28 @@ private:
 	unsigned int msecs_to_wait_;
 	unsigned int no_data_count;
 
-	// gripper pose to be stored in X, Y, Z
-	// TODO: setup proper values!
 	char current_arduino_status_;
-	int  gripper_pose_[3]             = {100000, 100000, 100000};
+	int  gripper_pose_[3]             = {0, 0, 0};
 	int  cur_demanded_gripper_pose[3] = {0, 0, 0};
 	bool cur_demanded_is_gripper_open = false;
 
 	bool home_pending_;
 
-	void reset_timer();
+	void timer_callback(const boost::system::error_code &ec);
 
 	std::queue<ArduinoComMessage *> messages_;
 	ArduinoComMessage              *next_msg_;
 	bool                            new_msg_;
 	fawkes::Time                    expected_finish_time_;
 
-	std::unique_ptr<SerialPort>                  port_;
-	// boost::asio::io_context                      io_context_;
+	std::unique_ptr<SerialPort> port_;
 	boost::asio::io_service     io_service_;
-    std::thread io_service_thread_;
+	std::thread                 io_service_thread_;
 	boost::asio::deadline_timer deadline_timer;
-	std::shared_ptr<boost::mutex>                io_mutex_;
-	fawkes::ArduinoInterface                    *arduino_if_;
-	fawkes::JoystickInterface                   *joystick_if_;
+
+	std::shared_ptr<boost::mutex> io_mutex_;
+	fawkes::ArduinoInterface     *arduino_if_;
+	fawkes::JoystickInterface    *joystick_if_;
 
 	ArduinoTFThread *tf_thread_;
 

@@ -193,6 +193,7 @@ base_parse(std::stringstream &stream, std::string buffer)
 	return true;
 }
 
+// @brief if the return is false then the arduino reconed and we need to restart everything
 bool
 ArduinoComMessage::parse_message_from_arduino(int (&gripperr_position)[3],
                                               bool       &is_gripper_open,
@@ -208,11 +209,14 @@ ArduinoComMessage::parse_message_from_arduino(int (&gripperr_position)[3],
 	try {
 		for (int i = 0; ss >> s; ++i) {
 			if (s == "HELLO") {
+				return false;
 				break;
 			}
 			if (i == 0) {
 				if (s == "I" || s == "M") {
-					arduino_status = i;
+					printf("\nDoch: %i, Value %s \n", i, s.c_str());
+					arduino_status = s[0];
+					continue;
 				}
 				arduino_status = 'E';
 			}
@@ -227,22 +231,23 @@ ArduinoComMessage::parse_message_from_arduino(int (&gripperr_position)[3],
 			}
 			if (i == 3) {
 				int z = std::stoi(s);
-				//std::cout << "asdf dsf " << z << std::endl;
 				gripperr_position[2] = z;
 			}
 			if (i == 5) {
-				if (s == "CLOSE") {
+				if (s == "CLOSED+") {
 					is_gripper_open = false;
 				}
-				if (s == "OPEN") {
+				if (s == "OPEN+") {
 					is_gripper_open = true;
 				}
 			}
 		}
+				printf("\nDsdfa, Value %s \n", s.c_str());
 		return true;
 	} catch (const std::exception &e) {
 	}
 
+	//catched exeption
 	return false;
 }
 
