@@ -100,9 +100,6 @@ SerialPort::write(const std::string &buf)
 bool
 SerialPort::write(const char *buf, const int &size)
 {
-	std::cout << "nah" << std::endl;
-
-	std::cout << "neh" << std::endl;
 	boost::system::error_code ec;
 	if (!port_)
 		return false;

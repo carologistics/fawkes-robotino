@@ -28,6 +28,7 @@
 #include "serialport.h"
 
 #include <baseapp/run.h>
+#include <bits/types/struct_iovec.h>
 #include <core/threading/mutex.h>
 #include <core/threading/mutex_locker.h>
 #include <interfaces/ArduinoInterface.h>
@@ -62,6 +63,8 @@ ArduinoComThread::ArduinoComThread(std::string     &cfg_name,
   fawkes::TransformAspect(),
   ConfigurationChangeHandler(cfg_prefix.c_str()),
   //serial_(io_service_),
+  io_service_(),
+  deadline_timer(io_service_),
   tf_thread_(tf_thread)
 {
 	cfg_prefix_ = cfg_prefix;
@@ -114,12 +117,16 @@ ArduinoComThread::init()
 	load_config();
 
 	io_mutex_ = std::make_shared<boost::mutex>();
-
-	io_context_    = std::make_unique<boost::asio::io_context>();
-	deadline_timer = std::make_unique<boost::asio::deadline_timer>(*io_context_);
-	deadline_timer->expires_at(boost::posix_time::pos_infin);
-
-	io_context_->run();
+	// deadline_timer = std::make_unique<boost::asio::deadline_timer>(io_context_);
+	// deadline_timer.expires_at(boost::posix_time::pos_infin);
+	deadline_timer.expires_from_now(boost::posix_time::seconds(5));
+	deadline_timer.async_wait([this](const boost::system::error_code &error) {
+		if (!error) {
+			std::cout << "Deadline timer expired!" << std::endl;
+		}
+	});
+	// io_service_.run();
+	io_service_thread_ = std::thread([this]() { io_service_.run(); });
 
 	movement_pending_ = false;
 
@@ -523,25 +530,54 @@ ArduinoComThread::loop()
 void
 ArduinoComThread::reset_timer()
 {
-	deadline_timer->cancel();
-	//TODO cfg value
-	deadline_timer->expires_from_now(boost::posix_time::seconds(20));
-    deadline_timer->async_wait(boost::bind(&ArduinoComThread::handle_nodata, this, boost::asio::placeholders::error));
+	// deadline_timer.cancel();
+	// //TODO cfg value
+	// deadline_timer.expires_from_now(boost::posix_time::seconds(20));
+	// deadline_timer.async_wait(boost::bind(&ArduinoComThread::handle_nodata, this, boost::asio::placeholders::error));
+}
+
+void
+ArduinoComThread::open_device_handle(const boost::system::error_code &ec)
+{
+	std::cout << "NASFH D FASD F" << std::endl;
+	open_device();
 }
 
 void
 ArduinoComThread::open_device()
 {
+	std::cout << "asdf D FASD F" << std::endl;
+	reset_timer();
 	if (port_) {
 		port_.reset();
 	}
-	port_ = std::make_unique<SerialPort>(cfg_device_,
-	                         boost::bind(&ArduinoComThread::receive, this, boost::placeholders::_1),
-	                         io_mutex_);
+	try {
+		port_ = std::make_unique<SerialPort>(cfg_device_,
+		                                     boost::bind(&ArduinoComThread::receive,
+		                                                 this,
+		                                                 boost::placeholders::_1),
+		                                     io_mutex_);
+	} catch (boost::system::error_code ec) {
+		logger->log_error(name(),
+		                  "Could now open PORT: %s, %s",
+		                  cfg_device_.c_str(),
+		                  ec.what().c_str());
+		// deadline_timer.cancel();
+		// //TODO cfg value
+		// deadline_timer.expires_from_now(boost::posix_time::seconds(1));
+		// deadline_timer.async_wait(boost::bind(&ArduinoComThread::open_device_handle, this, boost::asio::placeholders::error));
+
+		// deadline_timer.expires_from_now(boost::posix_time::seconds(5));
+		// deadline_timer.async_wait([](const boost::system::error_code& error) {
+		// if (!error) {
+		//     std::cout << "Deadline timer expired!" << std::endl;
+		// }
+		// });
+
+		// Run the io_service_ object to process asynchronous operations
+	}
 	append_config_messages();
 	calibrated_ = false;
-
-	reset_timer();
 }
 
 void
@@ -597,7 +633,7 @@ ArduinoComThread::sync_with_arduino()
 bool
 ArduinoComThread::send_message_from_queue()
 {
-/*	if (messages_.size() > 0) {
+	/*	if (messages_.size() > 0) {
 		ArduinoComMessage *cur_msg = messages_.front();
 		messages_.pop();
 		msecs_to_wait_ = cur_msg->get_msecs();
@@ -668,7 +704,7 @@ ArduinoComThread::load_config()
 		cfg_z_max_ = config->get_float(cfg_prefix_ + "/z_max");
 
 		cfg_speeds_[X] =
-		    config->get_float_or_default((cfg_prefix_ + "/firmware_settings/speed_x").c_str(), 0.f);
+		  config->get_float_or_default((cfg_prefix_ + "/firmware_settings/speed_x").c_str(), 0.f);
 		cfg_speeds_[Y] =
 		  config->get_float_or_default((cfg_prefix_ + "/firmware_settings/speed_y").c_str(), 0.f);
 		cfg_speeds_[Z] =
@@ -694,7 +730,7 @@ ArduinoComThread::load_config()
 		cfg_steps_per_mm_[Y] = 200.0 * cfg_y_microstep / 2.0;
 		cfg_steps_per_mm_[Z] = 200.0 * cfg_z_microstep / 1.5;
 
-		cfg_a_toggle_steps_      = config->get_int(cfg_prefix_ + "/hardware_settings/a_toggle_steps");
+		cfg_a_toggle_steps_ = config->get_int(cfg_prefix_ + "/hardware_settings/a_toggle_steps");
 		cfg_a_half_toggle_steps_ =
 		  config->get_int(cfg_prefix_ + "/hardware_settings/a_half_toggle_steps");
 		// 2mm / rotation
