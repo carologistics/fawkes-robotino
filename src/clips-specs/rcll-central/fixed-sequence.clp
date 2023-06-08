@@ -721,10 +721,8 @@
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	=>
 	(plan-assert-sequential EXPLORATION-MOVE-PLAN ?goal-id ?robot
-		(plan-assert-action go-wait
+		(plan-assert-action explore-and-turn
 			?robot ?curr-location ?curr-side ?zone)
-		(plan-assert-action turn-to-search
-			?robot ?zone WAIT)
 	)
 	(modify ?g (mode EXPANDED))
 )

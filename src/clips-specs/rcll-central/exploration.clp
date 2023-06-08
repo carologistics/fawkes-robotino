@@ -152,10 +152,16 @@
 
 (defrule exp-setup-create-targets
 	"Create exploration targets, a list of zones that is targeted in order."
-	(not (wm-fact (key exploration targets $?)))
+	(or
+		(not (wm-fact (key exploration targets $?)))
+		(and
+			(wm-fact (key exploration targets $?) (values )))
+			(not (goal (class EXPLORATION-MOVE)))
+		)
+	)
 	(wm-fact (key exploration active) (value TRUE))
 	=>
-	(bind ?zones (create$ M-Z12  M-Z52 M-Z56 M-Z16 M-Z32 M-Z36 M-Z14 M-Z54))
+	(bind ?zones (create$ M-Z12 M-Z52 M-Z56 M-Z16 M-Z33))
 	(assert (wm-fact (key exploration targets args?)
 	                 (is-list TRUE)
 	                 (values (randomize$ ?zones)))
