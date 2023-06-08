@@ -32,11 +32,11 @@
 #include <blackboard/interface_listener.h>
 #include <blackboard/interface_observer.h>
 #include <core/threading/thread.h>
-#include <interfaces/TransformInterface.h>
 #include <interfaces/SwitchInterface.h>
+#include <interfaces/TransformInterface.h>
+#include <plugins/ros2/aspect/ros2.h>
 
 #include <vector>
-#include <plugins/ros2/aspect/ros2.h>
 // config handling
 #include <config/change_handler.h>
 #include <interfaces/BoxInterface.h>
@@ -53,7 +53,7 @@ class BoxDetectThread : public fawkes::Thread,
                         public fawkes::TransformAspect,
                         public fawkes::BlackBoardInterfaceObserver,
                         public fawkes::BlackBoardInterfaceListener,
-						public fawkes::ROS2Aspect
+                        public fawkes::ROS2Aspect
 {
 public:
 	BoxDetectThread();
@@ -83,8 +83,8 @@ private:
 	std::vector<fawkes::BoxInterface *>    *box_detect_ifs_;
 	std::list<fawkes::TransformInterface *> tfifs_;
 	void                                    conditional_close(fawkes::Interface *interface) throw();
-	fawkes::SwitchInterface 			  *switch_if_;
-	bool 								  enabled_;
+	fawkes::SwitchInterface                *switch_if_;
+	bool                                    enabled_;
 	rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr client_;
 };
 #endif

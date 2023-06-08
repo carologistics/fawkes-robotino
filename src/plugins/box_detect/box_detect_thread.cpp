@@ -70,7 +70,6 @@ BoxDetectThread::init()
 	blackboard->register_observer(this);
 
 	client_ = node_handle->create_client<std_srvs::srv::SetBool>("/enable_box_detect");
-
 }
 
 void
@@ -84,7 +83,6 @@ BoxDetectThread::finalize()
 	blackboard->unregister_listener(this);
 	blackboard->unregister_observer(this);
 
-
 	std::list<TransformInterface *>::iterator i;
 	for (i = tfifs_.begin(); i != tfifs_.end(); ++i) {
 		blackboard->close(*i);
@@ -96,47 +94,45 @@ void
 BoxDetectThread::bb_interface_data_refreshed(fawkes::Interface *interface) throw()
 {
 	TransformInterface *tfif = dynamic_cast<TransformInterface *>(interface);
-	if (!tfif){
+	if (!tfif) {
 		SwitchInterface *swif = dynamic_cast<SwitchInterface *>(interface);
 		if (!swif)
 			return;
 		swif->read();
-		if(swif->is_enabled()){
+		if (swif->is_enabled()) {
 			logger->log_warn(name(), "Box detect enabled");
-			enabled_ = true;
-			auto request = std::make_shared<std_srvs::srv::SetBool::Request>();
+			enabled_      = true;
+			auto request  = std::make_shared<std_srvs::srv::SetBool::Request>();
 			request->data = true;
 			// Call the service
 			auto future = client_->async_send_request(request);
-			}
-		else {
+		} else {
 			logger->log_warn(name(), "Box detect disabled");
-			enabled_ = false;
-			auto request = std::make_shared<std_srvs::srv::SetBool::Request>();
+			enabled_      = false;
+			auto request  = std::make_shared<std_srvs::srv::SetBool::Request>();
 			request->data = false;
 			// Call the service
 			auto future = client_->async_send_request(request);
 		}
 		return;
 	}
-		
 
 	tfif->read();
 	string child_frame_id = tfif->child_frame();
-	// log child_frame 
+	// log child_frame
 	logger->log_warn(name(), "Got update from transform interface: %s", child_frame_id.c_str());
 
 	string box_type = child_frame_id.substr(4, 2);
 	string zone     = child_frame_id.substr(7, 4);
 
 	const char *b_type = box_type.c_str();
-	const char *z = zone.c_str();
-	int  rot   = stoi(child_frame_id.substr(12, child_frame_id.length() - 12));
-	bool found = false;
+	const char *z      = zone.c_str();
+	int         rot    = stoi(child_frame_id.substr(12, child_frame_id.length() - 12));
+	bool        found  = false;
 
 	// go through all box_detect_ifs_ and check if the box is already in there
 	for (int i = 0; i < box_detect_ifs_->size(); i++) {
-		if (box_detect_ifs_->at(i)->box_type() == box_type && box_detect_ifs_->at(i)->zone()== zone) {
+		if (box_detect_ifs_->at(i)->box_type() == box_type && box_detect_ifs_->at(i)->zone() == zone) {
 			logger->log_warn(name(), "Found box_detect_if at %d", i);
 			found = true;
 			box_detect_ifs_->at(i)->set_orientation(rot);
@@ -145,8 +141,7 @@ BoxDetectThread::bb_interface_data_refreshed(fawkes::Interface *interface) throw
 	}
 	if (!found) {
 		for (int i = 0; i < box_detect_ifs_->size(); i++) {
-			if(strcmp(box_detect_ifs_->at(i)->box_type(), "") == 0)
-			{
+			if (strcmp(box_detect_ifs_->at(i)->box_type(), "") == 0) {
 				logger->log_warn(name(), "Found empty box_detect_if at %d", i);
 				found = true;
 				box_detect_ifs_->at(i)->set_box_type(b_type);
