@@ -680,7 +680,10 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key domain fact wp-at args? wp ?cc m ?mps side INPUT))
 	(wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
 	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side OUTPUT)))
-	(wm-fact (key game found-tag zone args? m ?mps));we have information of the machine
+	(or
+		(wm-fact (key game found-tag zone args? m ?mps));we have information of the machine
+		(wm-fact (key refbox explored-machine args? m ?mps))
+	)
 	=>
 	(printout t "Goal INSTRUCT-CS-BUFFER-CAP executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -788,6 +791,8 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
 	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
+	
+	(domain-fact (name zone-content) (param-values ?mpsz ?mps))
 	=>
 	(printout t "Goal INSTRUCT-DS-DISCARD executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
