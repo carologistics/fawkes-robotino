@@ -25,6 +25,8 @@
 #include <boost/asio/serial_port.hpp>
 #include <boost/function.hpp>
 #include <boost/thread/mutex.hpp>
+#include <boost/thread/thread.hpp>
+#include <memory>
 #include <string>
 
 typedef boost::shared_ptr<boost::asio::serial_port> serial_port_ptr;
@@ -34,9 +36,10 @@ typedef boost::shared_ptr<boost::asio::serial_port> serial_port_ptr;
 class SerialPort
 {
 protected:
-	boost::asio::io_service io_service_;
-	serial_port_ptr         port_;
-	boost::mutex            mutex_;
+		boost::thread serial_service_thread_;
+	boost::asio::io_service       io_service_;
+	serial_port_ptr               port_;
+	std::shared_ptr<boost::mutex> mutex_;
 
 	char        read_buf_raw_[SERIAL_PORT_READ_BUF_SIZE];
 	std::string read_buf_str_;
@@ -45,10 +48,12 @@ protected:
 	std::string end_of_command_;
 
 	boost::function<void(const std::string &)> receive_callback_;
+	bool                                       has_started = false;
 
 public:
 	SerialPort(std::string                                port,
 	           boost::function<void(const std::string &)> receive_callback,
+	           std::shared_ptr<boost::mutex>              mutex,
 	           unsigned int                               baud_rate        = 115200,
 	           std::string                                start_of_command = "AT ",
 	           std::string                                end_of_command   = "+");

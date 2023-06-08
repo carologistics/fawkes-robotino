@@ -35,7 +35,7 @@ if(PLUGIN_arduino)
   depend_on_pkgconfig_libs(arduino libudev)
   depend_on_pcl(arduino)
   depend_on_tf(arduino)
-  depend_on_boost_libs(arduino thread)
+  depend_on_boost_libs(arduino "thread;chrono")
   target_link_libraries(
     arduino
     m

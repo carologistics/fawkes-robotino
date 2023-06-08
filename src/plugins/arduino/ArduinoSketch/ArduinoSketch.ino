@@ -4,7 +4,7 @@
 #include <AccelStepper.h>
 #include <Wire.h>
 
-// #define DEBUG_MODE
+//#define DEBUG_MODE
 
 /*
  * The current time tick is extracted from the TCNT1 register.
@@ -61,12 +61,16 @@ int cur_status = STATUS_IDLE;
 
 int loop_nr = 0;
 
+bool calibrated = false;
+
 #define BUFFER_SIZE 128
 char   buffer_[BUFFER_SIZE];
 byte   buf_i_ = 0;
 String errormessage;
 
-void home() {
+void
+home()
+{
 	set_new_pos(-X_HOME, motor_X);
 	set_new_pos(-Y_HOME, motor_Y);
 	set_new_pos(-Z_HOME, motor_Z);
@@ -122,6 +126,15 @@ convert_to_check_sum(int i)
 void
 send_status()
 {
+	Wire.beginTransmission(4);
+	Wire.write(" STATUS X: ");
+	Wire.write(String(-motor_X.currentPosition()).c_str());
+	Wire.write(" Y: ");
+	Wire.write(String(-motor_Y.currentPosition()).c_str());
+	Wire.write(" Z: ");
+	Wire.write(String(-motor_Z.currentPosition()).c_str());
+	Wire.write(731);              // sends one byte
+	Wire.endTransmission();      // stop transmitting
 	byte checksum = 0;
 	Serial.print(AT); //checksum = 181
 	Serial.print(status_array_[cur_status]);
@@ -143,7 +156,7 @@ send_status()
 		Serial.print(-motor_Z.currentPosition());
 		checksum += convert_to_check_sum(-motor_Z.currentPosition());
 
-		Serial.print(" ");//checksum = 32
+		Serial.print(" "); //checksum = 32
 
 		Serial.print(motor_A.currentPosition());
 		checksum += convert_to_check_sum(-motor_A.currentPosition());
@@ -163,7 +176,7 @@ int
 send_gripper_status()
 {
 	check_gripper_endstop();
-	if (open_gripper){
+	if (open_gripper) {
 		Serial.print("OPEN"); //checksum = 50
 		return 50;
 	}
@@ -285,6 +298,7 @@ calibrate()
 		}
 		movement_done_flag = false;
 	} while (!x_done || !y_done || !z_done);
+	calibrated = true;
 }
 
 void
@@ -432,10 +446,23 @@ read_package()
 		float opening_speed = motor_A.get_speed(); //get current openening speed
 		bool  assumed_gripper_state_local;
 		// this is used to store the assumed gripper state locally, to reduce calls to the function get_assumed_gripper_state
+
+		Wire.beginTransmission(4);
+		Wire.write(String(cur_cmd).c_str());
+		Wire.write(" : ");
+		Wire.write(String(new_value).c_str());
+		Wire.write(445);              // sends one byte
+		Wire.endTransmission();      // stop transmitting
+
 		switch (cur_cmd) {
 		case CMD_X_NEW_POS: set_new_pos(-new_value, motor_X); break;
 		case CMD_Y_NEW_POS: set_new_pos(-new_value, motor_Y); break;
 		case CMD_Z_NEW_POS: set_new_pos(-new_value, motor_Z); break;
+		case CMD_STATUS_REQ:
+			send_status();
+			delay(100);
+			send_status();
+			break;
 		case CMD_A_SET_TOGGLE_STEPS:
 			a_toggle_steps = new_value;
 			send_status();
@@ -551,7 +578,6 @@ read_package()
 			// 	send_status();
 			// }
 			break;
-		case CMD_STATUS_REQ: send_status(); break;
 		case CMD_CALIBRATE: calibrate(); break;
 		case CMD_DOUBLE_CALIBRATE: double_calibrate(); break;
 		case CMD_SET_SPEED:
@@ -593,6 +619,11 @@ read_package()
 void
 setup()
 {
+	Wire.begin();
+	Wire.beginTransmission(4);   // transmit to device #4
+	Wire.write("Setup"); // sends five bytes
+	Wire.write(615);              // sends one byte
+	Wire.endTransmission();      // stop transmitting
 	Serial.begin(115200);
 	// Serial.setTimeout(0);
 
@@ -639,7 +670,7 @@ setup()
 	//CHECK SUM of "AT HELLO +" = 628
 	//lowByte(628) = 116
 	Serial.println("AT HELLO +116");
-	while(!Serial.available()) {};
+	// while(!Serial.available()) {};
 
 	set_status(STATUS_IDLE);
 
@@ -690,15 +721,15 @@ loop()
 		movement_done_flag = false;
 		set_status(STATUS_IDLE);
 	}
-
-	read_package();
+	if (calibrated)
+		read_package();
 
 	if (cur_status != STATUS_MOVING) {
 		loop_nr = 0;
 		return;
 	}
 
-	if (loop_nr > 1000) {
+	if (loop_nr > 20000) {
 		send_status();
 		loop_nr = 0;
 	} else {
