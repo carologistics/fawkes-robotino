@@ -61,15 +61,18 @@ public:
 	static bool
 	isValidSerialCommand(char cmd)
 	{
-		if (cmd == CMD_X_NEW_POS || cmd == CMD_Y_NEW_POS || cmd == CMD_Z_NEW_POS
-		    || cmd == CMD_A_SET_TOGGLE_STEPS || CMD_A_SET_HALF_TOGGLE_STEPS
-#ifdef DEBUG_MODE
+		if (cmd == CMD_CALIBRATE || cmd == CMD_DOUBLE_CALIBRATE || cmd == CMD_X_NEW_POS
+		    || cmd == CMD_Y_NEW_POS || cmd == CMD_Z_NEW_POS || cmd == CMD_CLOSE || cmd == CMD_OPEN
+		    || cmd == CMD_HALF_OPEN || cmd == CMD_STOP || cmd == CMD_FAST_STOP || cmd == CMD_STATUS_REQ
+		    || cmd == CMD_A_SET_TOGGLE_STEPS || cmd == CMD_A_SET_HALF_TOGGLE_STEPS
+		    || cmd == CMD_X_NEW_SPEED || cmd == CMD_Y_NEW_SPEED || cmd == CMD_Z_NEW_SPEED
+		    || cmd == CMD_A_NEW_SPEED || cmd == CMD_SET_SPEED || cmd == CMD_X_NEW_ACC
+		    || cmd == CMD_Y_NEW_ACC || cmd == CMD_Z_NEW_ACC || cmd == CMD_A_NEW_ACC
+		    || cmd == CMD_SET_ACCEL
+#ifdef DEBUG
 		    || cmd == CMD_A_NEW_POS
 #endif
-		    || cmd == CMD_X_NEW_SPEED || cmd == CMD_Y_NEW_SPEED || cmd == CMD_Z_NEW_SPEED
-		    || cmd == CMD_A_NEW_SPEED || cmd == CMD_X_NEW_ACC || cmd == CMD_Y_NEW_ACC
-		    || cmd == CMD_Z_NEW_ACC || cmd == CMD_A_NEW_ACC || cmd == CMD_SET_SPEED
-		    || cmd == CMD_SET_ACCEL) {
+		) {
 			return true;
 		}
 		return false;

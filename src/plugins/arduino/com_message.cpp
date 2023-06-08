@@ -93,11 +93,13 @@ ArduinoComMessage::ArduinoComMessage(char cmdid, unsigned int value)
  */
 ArduinoComMessage::~ArduinoComMessage()
 {
+	ctor();
 }
 
 void
 ArduinoComMessage::ctor()
 {
+	data_ << "AT ";
 	// setup a minimum of 1 second to wait
 	msecs_to_wait_ = 1000;
 }
@@ -119,14 +121,10 @@ ArduinoComMessage::add_command(char cmd, unsigned int value)
 		return false;
 	}
 
-	data_ += cmd;
-	data_ += value;
-	data_ += " ";
+	data_ << cmd << value << " ";
 
 	return true;
 }
-
-#define DEBUG
 
 /** Get access to buffer for sending.
  * This implies packing. Note that after calling this methods later
@@ -140,9 +138,8 @@ ArduinoComMessage::buffer()
 #ifdef DEBUG
 	std::cout << "Buffer: " << data_ << std::endl;
 #endif
-
 	// Add terminator character to the end
-	return data_ + "+";
+	return data_.str().append("+");
 }
 
 /** Set the number of msecs the associated action of this
@@ -252,7 +249,7 @@ bool
 ArduinoComMessage::get_position_data(int (&gripperr_position)[3], bool &(is_gripper_open))
 {
 	std::stringstream ss;
-	if (!base_parse(ss, data_)) {
+	if (!base_parse(ss, data_.str())) {
 		return false;
 	}
 
