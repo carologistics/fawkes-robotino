@@ -21,6 +21,7 @@
 
 (defglobal
  ?*WAIT-DURATION* = 6
+ ?*WAIT-DURATION-MOVE-OUT-OF-WAY* = 2
 )
 
 (defrule action-start-execute-wait-action
@@ -38,6 +39,19 @@
   (time $?now)
   ?timer <- (timer (name ?name &:(eq ?name (sym-cat ?goal-id - ?plan-id - ?action-id)))
                    (time $?t&:(timeout ?now ?t ?*WAIT-DURATION*)))
+  =>
+  (printout info "Finished waiting" crlf)
+  (modify ?pa (state EXECUTION-SUCCEEDED))
+  (retract ?timer)
+)
+
+(defrule action-finish-execute-wait-action-move-out-of-way
+  ?pa <- (plan-action (id ?action-id) (plan-id ?plan-id) (goal-id ?goal-id)
+                      (action-name wait) (state RUNNING))
+  (goal (id ?goal-id) (class MOVE-OUT-OF-WAY))
+  (time $?now)
+  ?timer <- (timer (name ?name &:(eq ?name (sym-cat ?goal-id - ?plan-id - ?action-id)))
+                   (time $?t&:(timeout ?now ?t ?*WAIT-DURATION-MOVE-OUT-OF-WAY*)))
   =>
   (printout info "Finished waiting" crlf)
   (modify ?pa (state EXECUTION-SUCCEEDED))

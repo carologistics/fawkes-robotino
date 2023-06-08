@@ -37,6 +37,25 @@
 ;
 ; =============================== Timeouts ===============================
 ;
+(defrule execution-monitoring-create-action-timeout-move-out-of-way
+	(declare (salience ?*MONITORING-SALIENCE*))
+	(plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+	    (id ?id)
+	    (state ?status&~FORMULATED&~FAILED&~FINAL)
+	    (action-name ?action-name)
+	    (param-values $?param-values))
+	(plan (id ?plan-id) (goal-id ?goal-id))
+	(goal (id ?goal-id) (mode DISPATCHED) (class MOVE-OUT-OF-WAY))
+	(not (action-timer (plan-id ?plan-id) (action-id ?id) (status ?status)))
+	(wm-fact (key refbox game-time) (values $?now))
+	=>
+	(assert (action-timer (plan-id ?plan-id)
+	            (action-id ?id)
+	            (timeout-duration ?*MOVE-OUT-OF-WAY-TIMEOUT-DURATION*)
+	            (status ?status)
+	            (start-time ?now)))
+)
+
 (defrule execution-monitoring-create-action-timeout
 " For every state of an action that should not take long (pending, waiting for sensed effects),
   create a timeout to prohibit getting stuck at these volatile states
@@ -237,7 +256,7 @@
   retry, add a action-retried counter and set the action to FORMULATED
 "
 	(declare (salience ?*MONITORING-SALIENCE*))
-	(goal (id ?goal-id) (mode DISPATCHED))
+	(goal (id ?goal-id) (mode DISPATCHED) (class ~MOVE-OUT-OF-WAY))
 	(plan (id ?plan-id) (goal-id ?goal-id))
 	?pa <- (plan-action
 	            (id ?id)
