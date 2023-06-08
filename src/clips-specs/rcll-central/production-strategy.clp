@@ -115,6 +115,16 @@
   )
 )
 
+(defrule production-strategy-finished-order-update-workload
+  "Trigger an update to to the mps-workload when an order is finished"
+  (declare (salience ?*SALIENCE-LOW*))
+  ?update-fact <- (wm-fact (key mps-workload needs-update) (value FALSE))
+  (goal (id ?root-id) (mode RETRACTED) (outcome COMPLETED))
+  (goal-meta (goal-id ?root-id) (root-for-order ~nil))
+  =>
+  (modify ?update-fact (value TRUE))
+)
+
 (defrule production-strategy-sum-workload
   "Summing up the workload of a mps base on all started order productions"
   (declare (salience ?*SALIENCE-LOW*))
