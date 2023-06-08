@@ -218,9 +218,8 @@
                       (action-name wait-for-wp)
                       (state RUNNING)
                       (executable TRUE)
-                      (param-values ? ?m ?side)
+                      (param-values ? ?m ?side ?wp)
           )
-  (goal (id ?goal-id) (params wp ?wp $?))
   (wm-fact (key domain fact wp-at args? wp ?wp m ?m side ?side))
   =>
   (printout info "Goal " ?goal-id " finished wait-for-wp" crlf)

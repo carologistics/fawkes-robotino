@@ -150,7 +150,7 @@
 	(not (goal (class BUFFER-CAP)
 	            (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	            (params target-mps ?mps
-	                    cap-color ?cap-color
+	                    cap-color ?
 	            )))
 	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -167,7 +167,7 @@
 	(or (and
 	        (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
 	        (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
-	        (not (plan-action (action-name wp-get-shelf) (param-values $? ?wp $?)))
+	        (not (plan-action (action-name wp-get-shelf) (param-values $? ?mps $?)))
 	        (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
 	    )
 	    (and
@@ -464,12 +464,17 @@
 
 	;check wp has no cap and is at the output of the CS
 	(wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+	(domain-object (name ?wp) (type cap-carrier))
 	(or (and ; Either the workpiece needs to picked up...
 	         (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
 	         (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side OUTPUT))
 	    )
 	    ; or the workpiece is already being held
-	    (wm-fact (key domain fact holding args? r ?robot wp ?wp&:(eq ?wp ?preset-wp)))
+	    (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+	)
+	(not (goal (class DISCARD|PAY-FOR-RINGS-WITH-CAP-CARRIER)
+			   (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+			   (params wp ?wp $?))
 	)
 	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
 	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
@@ -480,13 +485,8 @@
 	                  (eq (wm-key-arg ?wp-at:key wp) ?wp))
 	             (bind ?wp-side (wm-key-arg ?wp-at:key side))
 	)
-	(printout t "Goal "  PAY-FOR-RINGS-WITH-CAP-CARRIER " executable" crlf)
-	(modify ?g (is-executable TRUE)(params wp ?wp
-	                                       wp-loc ?wp-loc
-	                                       wp-side ?wp-side
-	                                       target-mps ?target-mps
-	                                       target-side ?target-side)
-	)
+	(printout t "Goal "  PAY-FOR-RINGS-WITH-CAP-CARRIER " executable for WP " ?wp crlf)
+	(modify ?g (is-executable TRUE))
 )
 
 (defrule goal-production-pay-ring-with-carrier-from-shelf-executable
@@ -738,10 +738,9 @@ The workpiece remains in the output of the used ring station after
 	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps $?)))
 	(wm-fact (key domain fact wp-unused args? wp ?wp))
 	; wait until a robot actually needs the base before proceeding
-	(plan-action (action-name wait-for-wp) (param-values ?robot ?mps ?side)
+	(plan-action (action-name wait-for-wp) (param-values ?robot ?mps ?side ?wp)
 	             (goal-id ?oid) (state PENDING|RUNNING)
 	             (precondition ?precondition-id))
-	(goal (id ?oid) (params $? wp ?wp $?))
 	(goal-meta (goal-id ?oid) (order-id ?order-id))
 	(not (goal (class INSTRUCT-BS-DISPENSE-BASE) (mode SELECTED|DISPATCHED|COMMITTED|EXPANDED)))
 	(domain-fact (name zone-content) (param-values ?mpsz ?mps))
