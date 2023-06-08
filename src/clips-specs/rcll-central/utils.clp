@@ -67,13 +67,14 @@
 
 (deftemplate exploration-result
 " Template for storing a exploration result. Stores the machine name, zone, orientation and the team this machine belongs to"
-  (slot machine (type SYMBOL) (allowed-symbols C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS C-SS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS M-SS))
+  (slot machine (type SYMBOL) (allowed-symbols BS CS RS SS DS C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS C-SS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS M-SS))
   (slot zone (type SYMBOL))
   (multislot trans (type FLOAT))
   (multislot rot (type FLOAT))
   (slot tag-id (type INTEGER))
   (slot orientation (type INTEGER) (default -1))
-  (slot team (type SYMBOL) (allowed-symbols CYAN MAGENTA))
+  (slot team (type SYMBOL) (allowed-symbols UNKNOWN CYAN MAGENTA))
+  (slot status (type SYMBOL) (allowed-symbols REPORTED PARTIAL_CORRECT UNREPORTED) (default UNREPORTED))
 )
 
 (deftemplate goal-meta
@@ -717,6 +718,20 @@
   "
   (bind ?interface (remote-if "SwitchInterface" ?robot "laser-lines"))
   (bind ?msg (blackboard-create-msg ?interface "EnableSwitchMessage"))
+  (blackboard-send-msg ?msg)
+)
+
+(deffunction exploration-camera-enable (?robot)
+  "Use the SwitchInterface to turn on the camera for exploration."
+  (bind ?interface (remote-if "SwitchInterface" ?robot "switch/box_detect_enabled"))
+  (bind ?msg (blackboard-create-msg ?interface "EnableSwitchMessage"))
+  (blackboard-send-msg ?msg)
+)
+
+(deffunction exploration-camera-disable (?robot)
+  "Use the SwitchInterface to turn off the camera for exploration."
+  (bind ?interface (remote-if "SwitchInterface" ?robot "switch/box_detect_enabled"))
+  (bind ?msg (blackboard-create-msg ?interface "DisableSwitchMessage"))
   (blackboard-send-msg ?msg)
 )
 

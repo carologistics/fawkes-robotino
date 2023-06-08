@@ -397,7 +397,7 @@
 )
 
 (:action wait-for-wp
-	:parameters (?r - robot ?mps - location ?side - mps-side)
+	:parameters (?r - robot ?mps - location ?side - mps-side ?wp - workpiece)
 	:precondition (at ?r ?mps ?side)
 	:effect (at ?r ?mps ?side)
 )
@@ -445,6 +445,12 @@
 	             (wp-usable ?cc)
 	             (spot-free ?m ?spot)
 	        )
+)
+
+(:action turn-to-search
+	:parameters (?r - robot ?point - location ?side - mps-side)
+	:precondition (at ?r ?point ?side)
+	:effect (at ?r ?point ?side)
 )
 
 (:action refill-shelf

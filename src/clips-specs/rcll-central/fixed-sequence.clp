@@ -714,7 +714,6 @@
 	(modify ?g (mode EXPANDED))
 )
 
-
 (defrule goal-expander-exploration-challenge-move
 	?g <- (goal (id ?goal-id) (class EXPLORATION-MOVE) (mode SELECTED)
 	            (params zone ?zone))
@@ -724,6 +723,8 @@
 	(plan-assert-sequential EXPLORATION-MOVE-PLAN ?goal-id ?robot
 		(plan-assert-action go-wait
 			?robot ?curr-location ?curr-side ?zone)
+		(plan-assert-action turn-to-search
+			?robot ?zone WAIT)
 	)
 	(modify ?g (mode EXPANDED))
 )

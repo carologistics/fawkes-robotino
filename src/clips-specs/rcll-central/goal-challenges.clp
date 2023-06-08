@@ -80,22 +80,6 @@
   (goal-production-navigation-challenge-assert-root ?root-id ?waypoints)
 )
 
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;
-; EXPLORATION CHALLENGE ;
-;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;
-(defrule goal-production-exploration-challenge-remove-empty-targets
-" If no more target are available, remove the fact, this triggers the
-  creation of new targets.
-"
-	?targets <- (wm-fact (key exploration targets args? $?) (values))
-	=>
-	(retract ?targets)
-)
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; PICK-AND-PLACE CHALLENGE ;

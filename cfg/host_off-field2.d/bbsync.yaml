@@ -86,6 +86,20 @@ fawkes/bbsync:
         ll-switch: SwitchInterface::/laser-lines=/robot1/laser-lines
         zone: ZoneInterface::/explore-zone/info=/robot1/explore-zone/info
         tag-info: TagVisionInterface::/tag-vision/info=/robot1/tag-vision/info
+        box1: BoxInterface::/box_detect_1=/robot1/box_detect_1
+        box2: BoxInterface::/box_detect_2=/robot1/box_detect_2
+        box3: BoxInterface::/box_detect_3=/robot1/box_detect_3
+        box4: BoxInterface::/box_detect_4=/robot1/box_detect_4
+        box5: BoxInterface::/box_detect_5=/robot1/box_detect_5
+        box6: BoxInterface::/box_detect_6=/robot1/box_detect_6
+        box7: BoxInterface::/box_detect_7=/robot1/box_detect_7
+        box8: BoxInterface::/box_detect_8=/robot1/box_detect_8
+        box9: BoxInterface::/box_detect_9=/robot1/box_detect_9
+        box10: BoxInterface::/box_detect_10=/robot1/box_detect_10
+        box11: BoxInterface::/box_detect_11=/robot1/box_detect_11
+        box12: BoxInterface::/box_detect_12=/robot1/box_detect_12
+        box13: BoxInterface::/box_detect_13=/robot1/box_detect_13
+        box14: BoxInterface::/box_detect_14=/robot1/box_detect_14
 
 
     robot2:
@@ -127,6 +141,20 @@ fawkes/bbsync:
         ll-switch: SwitchInterface::/laser-lines=/robot2/laser-lines
         zone: ZoneInterface::/explore-zone/info=/robot2/explore-zone/info
         tag-info: TagVisionInterface::/tag-vision/info=/robot2/tag-vision/info
+        box1: BoxInterface::/box_detect_1=/robot2/box_detect_1
+        box2: BoxInterface::/box_detect_2=/robot2/box_detect_2
+        box3: BoxInterface::/box_detect_3=/robot2/box_detect_3
+        box4: BoxInterface::/box_detect_4=/robot2/box_detect_4
+        box5: BoxInterface::/box_detect_5=/robot2/box_detect_5
+        box6: BoxInterface::/box_detect_6=/robot2/box_detect_6
+        box7: BoxInterface::/box_detect_7=/robot2/box_detect_7
+        box8: BoxInterface::/box_detect_8=/robot2/box_detect_8
+        box9: BoxInterface::/box_detect_9=/robot2/box_detect_9
+        box10: BoxInterface::/box_detect_10=/robot2/box_detect_10
+        box11: BoxInterface::/box_detect_11=/robot2/box_detect_11
+        box12: BoxInterface::/box_detect_12=/robot2/box_detect_12
+        box13: BoxInterface::/box_detect_13=/robot2/box_detect_13
+        box14: BoxInterface::/box_detect_14=/robot2/box_detect_14
 
     robot3:
       #active: true (set via the off-field startup)
@@ -167,3 +195,17 @@ fawkes/bbsync:
         ll-switch: SwitchInterface::/laser-lines=/robot3/laser-lines
         zone: ZoneInterface::/explore-zone/info=/robot3/explore-zone/info
         tag-info: TagVisionInterface::/tag-vision/info=/robot3/tag-vision/info
+        box1: BoxInterface::/box_detect_1=/robot3/box_detect_1
+        box2: BoxInterface::/box_detect_2=/robot3/box_detect_2
+        box3: BoxInterface::/box_detect_3=/robot3/box_detect_3
+        box4: BoxInterface::/box_detect_4=/robot3/box_detect_4
+        box5: BoxInterface::/box_detect_5=/robot3/box_detect_5
+        box6: BoxInterface::/box_detect_6=/robot3/box_detect_6
+        box7: BoxInterface::/box_detect_7=/robot3/box_detect_7
+        box8: BoxInterface::/box_detect_8=/robot3/box_detect_8
+        box9: BoxInterface::/box_detect_9=/robot3/box_detect_9
+        box10: BoxInterface::/box_detect_10=/robot3/box_detect_10
+        box11: BoxInterface::/box_detect_11=/robot3/box_detect_11
+        box12: BoxInterface::/box_detect_12=/robot3/box_detect_12
+        box13: BoxInterface::/box_detect_13=/robot3/box_detect_13
+        box14: BoxInterface::/box_detect_14=/robot3/box_detect_14
