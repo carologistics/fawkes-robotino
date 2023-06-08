@@ -147,6 +147,7 @@ private:
 
 	std::unique_ptr<SerialPort> port_;
 	boost::asio::io_service     io_service_;
+	std::shared_ptr<boost::mutex> mutex_;
 	boost::thread               io_service_thread_;
 	boost::asio::deadline_timer deadline_timer;
 
@@ -173,7 +174,9 @@ private:
 
 	bool handle_xyz_message(fawkes::ArduinoInterface::MoveXYZAbsMessage *message);
 
-	bool handle_rel_xyz_messag(fawkes::ArduinoInterface::MoveXYZRelMessage *msg);
+	bool         handle_rel_xyz_messag(fawkes::ArduinoInterface::MoveXYZRelMessage *msg);
+	inline float to_arduino_units(float in_meter, ArduinoComThread::gripper_pose_t axis);
+	inline float from_arduino_units(float in_steps, ArduinoComThread::gripper_pose_t axis);
 
 protected:
 	/** Mutex to protect data_. Lock whenever accessing it. */
