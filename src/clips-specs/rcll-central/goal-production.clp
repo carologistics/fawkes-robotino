@@ -481,7 +481,7 @@
 )
 
 (deffunction goal-production-assert-enter-field
-  (?team-color)
+  (?team-color ?robot)
 
   (bind ?goal (assert (goal (class ENTER-FIELD)
               (id (sym-cat ENTER-FIELD- (gensym*)))
@@ -490,6 +490,7 @@
               (params team-color ?team-color)
               (meta-template goal-meta)
   )))
+  (goal-meta-assert-restricted ?goal ?robot)
   (return ?goal)
 )
 
@@ -927,12 +928,18 @@
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key central agent robot args? r ?robot))
   (not (wm-fact (key domain fact entered-field args? r ?robot)))
-  (not (goal (id ?some-goal-id) (class ENTER-FIELD) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED)))
+  (not
+    (and
+      (goal (id ?enter-field) (class ENTER-FIELD))
+      (goal-meta (goal-id ?enter-field) (restricted-to ?robot))
+    )
+  )
   (domain-facts-loaded)
   (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key refbox phase) (value PRODUCTION))
   =>
   (printout t "Goal " ENTER-FIELD " formulated" crlf)
-  (goal-production-assert-enter-field ?team-color)
+  (goal-production-assert-enter-field ?team-color ?robot)
 )
 
 (defrule goal-production-remove-enter-field
