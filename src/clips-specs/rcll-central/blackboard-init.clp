@@ -112,12 +112,64 @@
   (navgraph-compute ?robot)
 )
 
+(defrule blackboard-init-compute-navgraph-from-refbox-value
+  (or (wm-fact (key central agent robot args? r ?robot))
+      (wm-fact (key central agent laptop args? r ?robot)))
+  (blackboard-interface (id ?id&:(str-index ?robot ?id))
+                        (type "NavGraphWithMPSGeneratorInterface"))
+  (blackboard-interface (id ?id2&:(str-index ?robot ?id2))
+                        (type "NavGraphGeneratorInterface"))
+  (wm-fact (key config rcll use-static-navgraph) (type BOOL) (value FALSE))
+  (wm-fact (key refbox field height) (value ?field-height&~NOT-SET))
+  (wm-fact (key refbox field width) (value ?field-width&~NOT-SET))
+  (wm-fact (key refbox field mirrored) (value ?mirrored&~NOT-SET))
+  =>
+  (bind ?p1_x (- 0 ?field-width))
+  (bind ?p1_y 0)
+  (bind ?p2_x ?field-width)
+  (bind ?p2_y ?field-height)
+  (if ?mirrored
+    then
+    (bind ?p2_x 0)
+  )
+  (navgraph-set-field-size-freely ?robot ?p1_x ?p1_y ?p2_x ?p2_y)
+  (navgraph-compute ?robot)
+)
+
 (defrule blackboard-init-compute-navgraph-central
   (blackboard-interface (id "/navgraph-generator-mps")
                         (type "NavGraphWithMPSGeneratorInterface"))
   (blackboard-interface (id "/navgraph-generator")
                         (type "NavGraphGeneratorInterface"))
   =>
+  (navgraph-compute FALSE)
+)
+
+(defrule blackboard-init-compute-navgraph-central-from-refbox-value
+  (blackboard-interface (id "/navgraph-generator-mps")
+                        (type "NavGraphWithMPSGeneratorInterface"))
+  (blackboard-interface (id "/navgraph-generator")
+                        (type "NavGraphGeneratorInterface"))
+  (wm-fact (key refbox field height) (value ?field-height&~NOT-SET))
+  (wm-fact (key refbox field width) (value ?field-width&~NOT-SET))
+  (wm-fact (key refbox field mirrored) (value ?mirrored&~NOT-SET))
+  =>
+  (bind ?p1_x (- 0 ?field-width))
+  (bind ?p1_y 0)
+  (bind ?p2_x ?field-width)
+  (bind ?p2_y ?field-height)
+  (if ?mirrored
+    then
+    (bind ?p2_x 0)
+  )
+  (bind ?interface "NavGraphGeneratorInterface::navgraph-generator")
+  (bind ?msg (blackboard-create-msg ?interface "SetBoundingBoxMessage"))
+  (blackboard-set-msg-field ?msg "p1_x" ?p1_x)
+  (blackboard-set-msg-field ?msg "p1_y" ?p1_y)
+  (blackboard-set-msg-field ?msg "p2_x" ?p2_x)
+  (blackboard-set-msg-field ?msg "p2_y" ?p2_y)
+  (bind ?msg (blackboard-create-msg ?interface "SetBoundingBoxMessage"))
+  (blackboard-send-msg ?msg)
   (navgraph-compute FALSE)
 )
 

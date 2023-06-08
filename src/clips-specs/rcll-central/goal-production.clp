@@ -109,7 +109,7 @@
   (bind ?maintenance-goals (create$ BUFFER-CAP PAY-FOR-RINGS-WITH-BASE PAY-FOR-RINGS-WITH-CAP-CARRIER PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF))
   (bind ?maintenance-instruct-goals (create$ INSTRUCT-RS-MOUNT-RING INSTRUCT-CS-MOUNT-CAP INSTRUCT-DS-DELIVER))
   (bind ?production-instruct-goals (create$ INSTRUCT-CS-BUFFER-CAP INSTRUCT-DS-DISCARD))
-  (bind ?other-goals (create$ MOVE MOVE-OUT-OF-WAY ENTER-FIELD DISCARD WAIT-NOTHING-EXECUTABLE EXPLORATION-MOVE))
+  (bind ?other-goals (create$ MOVE MOVE-OUT-OF-WAY ENTER-FIELD DISCARD WAIT-NOTHING-EXECUTABLE EXPLORATION-MOVE REFILL-SHELF))
   (bind ?other-instruct-goals (create$ INSTRUCT-BS-DISPENSE-BASE))
 
   (if (member$ ?goal-class ?production-goals) then (return PRODUCTION))
@@ -903,6 +903,9 @@
 
   ; there is not another discard goal bound to this wp
   (not (goal (id ?other-goal-id) (class DISCARD) (outcome ~FAILED) (params wp ?wp wp-loc ?mps wp-side ?mps-side)))
+
+  ; there is not a payment goal bound to this wp
+  (not (goal (class PAY-FOR-RINGS-WITH-CAP-CARRIER) (params wp ?wp wp-loc ?mps wp-side ?mps-side $?)))
   =>
   (modify ?g (params wp ?wp wp-loc ?mps wp-side ?mps-side))
   (modify ?i (params wp ?wp target-mps ?ds))
