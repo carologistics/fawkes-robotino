@@ -49,7 +49,6 @@ protected:
 public:
 	SerialPort(std::string                                port,
 	           boost::function<void(const std::string &)> receive_callback,
-	           std::shared_ptr<boost::mutex>              port_mutex,
 	           unsigned int                               baud_rate        = 115200,
 	           std::string                                start_of_command = "AT ",
 	           std::string                                end_of_command   = "+");

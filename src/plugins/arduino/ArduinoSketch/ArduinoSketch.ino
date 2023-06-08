@@ -47,6 +47,10 @@ long a_half_toggle_steps = 120;
 #define STATUS_HALF_OPEN 1
 #define STATUS_CLOSED 0
 
+#define X_HOME 0
+#define Y_HOME 7500
+#define Z_HOME 0
+
 char status_array_[] = {'M', 'I', 'E'};
 
 volatile bool movement_done_flag = false;
@@ -61,6 +65,12 @@ int loop_nr = 0;
 char   buffer_[BUFFER_SIZE];
 byte   buf_i_ = 0;
 String errormessage;
+
+void home() {
+	set_new_pos(-X_HOME, motor_X);
+	set_new_pos(-Y_HOME, motor_Y);
+	set_new_pos(-Z_HOME, motor_Z);
+}
 
 void
 enable_step_interrupt()
@@ -87,7 +97,7 @@ inline int
 convert_to_check_sum(int i)
 {
 	//using asci table to convert in to the number it would be casted to
-	int sum = 0;
+	byte sum = 0;
 	if (i == 0) {
 		return 48; // if 0 then is it just the aci offset
 	}
@@ -101,7 +111,7 @@ convert_to_check_sum(int i)
 	while (i != 0) {
 		sum += i % 10;
 		i /= 10;
-		digitCount++;
+		++digitCount;
 	}
 
 	sum += 48 * digitCount;
@@ -112,13 +122,11 @@ convert_to_check_sum(int i)
 void
 send_status()
 {
-	uint8_t checksum = 0;
-	Serial.print(AT); //checksum = 191
-	checksum += 181;
+	byte checksum = 0;
+	Serial.print(AT); //checksum = 181
 	Serial.print(status_array_[cur_status]);
-	checksum += (byte)status_array_[cur_status];
+	checksum += status_array_[cur_status];
 	Serial.print(" "); //checksum = 32
-	checksum += 32;
 	if (cur_status == STATUS_ERROR) {
 		Serial.print(errormessage);
 	} else { // send all the information while moving and while idle
@@ -126,30 +134,27 @@ send_status()
 		checksum += convert_to_check_sum(-motor_X.currentPosition());
 
 		Serial.print(" "); //checksum = 32
-		checksum += 32;
 
 		Serial.print(-motor_Y.currentPosition());
 		checksum += convert_to_check_sum(-motor_Y.currentPosition());
 
 		Serial.print(" "); //checksum = 32
-		checksum += 32;
 
 		Serial.print(-motor_Z.currentPosition());
-		checksum += convert_to_check_sum(-motor_Y.currentPosition());
+		checksum += convert_to_check_sum(-motor_Z.currentPosition());
 
-		Serial.print(" "); //checksum = 32
-		checksum += 32;
+		Serial.print(" ");//checksum = 32
 
 		Serial.print(motor_A.currentPosition());
 		checksum += convert_to_check_sum(-motor_A.currentPosition());
 
 		Serial.print(" "); //checksum = 32
-		checksum += 32;
 
 		checksum += send_gripper_status();
 	}
 	Serial.print("+"); //checksum = 43
-	checksum += 43;
+	//SUM of all checksum =384 - 256 = 128;
+	checksum += 128;
 	Serial.print(lowByte(checksum));
 	Serial.print("\r\n");
 }
@@ -634,6 +639,7 @@ setup()
 	//CHECK SUM of "AT HELLO +" = 628
 	//lowByte(628) = 116
 	Serial.println("AT HELLO +116");
+	while(!Serial.available()) {};
 
 	set_status(STATUS_IDLE);
 
@@ -662,6 +668,9 @@ setup()
 	enable_step_interrupt();
 
 	interrupts();
+	//default behavior should be to calibrate and home on serial port open
+	calibrate();
+	home();
 }
 
 void

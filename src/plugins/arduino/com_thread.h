@@ -24,6 +24,7 @@
 #define __PLUGINS_ARDUINO_COM_THREAD_H_
 
 #include "com_message.h"
+#include "interfaces/ArduinoInterface.h"
 #include "serialport.h"
 #include "tf_thread.h"
 
@@ -43,6 +44,7 @@
 #include <boost/asio.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/thread/mutex.hpp>
+#include <boost/thread/thread.hpp>
 #include <memory>
 
 #define NEMA_STEPS_PER_REVOLUTION 200.0 * 4.0
@@ -99,19 +101,10 @@ public:
    * A position of the motor, that controls the gripper
    */
 	typedef enum { X, Y, Z, A } gripper_pose_t;
-	void receive(const std::string &buff);
 
 private:
 	void open_device();
-	void open_device_handle(const boost::system::error_code &ec);
 	void close_device();
-
-	bool sync_with_arduino();
-	void send_message(ArduinoComMessage &msg);
-
-	void handle_nodata(const boost::system::error_code &ec);
-	bool send_one_message();
-	bool send_message_from_queue();
 
 	std::string  cfg_device_;
 	unsigned int cfg_speed_;
@@ -136,33 +129,29 @@ private:
 	unsigned int cfg_a_half_toggle_steps_;
 
 	bool movement_pending_;
-	bool calibrated_;
 
 	unsigned int msecs_to_wait_;
 	unsigned int no_data_count;
 
 	char current_arduino_status_;
-	int  gripper_pose_[3]             = {0, 0, 0};
-	int  cur_demanded_gripper_pose[3] = {0, 0, 0};
-	bool cur_demanded_is_gripper_open = false;
-
-	bool home_pending_;
+	int  gripper_pose_[3]     = {0, 0, 0};
+	int  goal_gripper_pose[3] = {0, 0, 0};
+	bool goal_gripper_is_open = false;
 
 	void timer_callback(const boost::system::error_code &ec);
+	void handle_nodata(const boost::system::error_code &ec);
+	void receive(const std::string &buff);
 
 	std::queue<ArduinoComMessage *> messages_;
-	ArduinoComMessage              *next_msg_;
-	bool                            new_msg_;
 	fawkes::Time                    expected_finish_time_;
 
 	std::unique_ptr<SerialPort> port_;
 	boost::asio::io_service     io_service_;
-	std::thread                 io_service_thread_;
+	boost::thread               io_service_thread_;
 	boost::asio::deadline_timer deadline_timer;
 
-	std::shared_ptr<boost::mutex> io_mutex_;
-	fawkes::ArduinoInterface     *arduino_if_;
-	fawkes::JoystickInterface    *joystick_if_;
+	fawkes::ArduinoInterface  *arduino_if_;
+	fawkes::JoystickInterface *joystick_if_;
 
 	ArduinoTFThread *tf_thread_;
 
@@ -170,16 +159,21 @@ private:
 
 	void append_message_to_queue(char cmd, unsigned int value = 0, unsigned int timeout = 1000);
 	void append_message_to_queue(ArduinoComMessage *msg);
-	void set_message(char cmd, unsigned int value = 0, unsigned int timeout = 1000);
-	void set_message(ArduinoComMessage *msg);
+	// void set_message(char cmd, unsigned int value = 0, unsigned int timeout = 1000);
+	// void set_message(ArduinoComMessage *msg);
 	bool add_command_to_message(ArduinoComMessage *msg, char command, unsigned int value);
-
+	bool send_message(ArduinoComMessage &msg);
+	bool send_message_from_queue();
 	void append_config_messages();
 
 	void handle_queue();
 
 	float inline round_to_2nd_dec(float f);
 	void pose_publish_tf();
+
+	bool handle_xyz_message(fawkes::ArduinoInterface::MoveXYZAbsMessage *message);
+
+	bool handle_rel_xyz_messag(fawkes::ArduinoInterface::MoveXYZRelMessage *msg);
 
 protected:
 	/** Mutex to protect data_. Lock whenever accessing it. */

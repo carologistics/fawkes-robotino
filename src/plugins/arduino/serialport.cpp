@@ -19,9 +19,8 @@
  */
 
 #include "serialport.h"
-#include <sys/types.h>
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/thread/pthread/mutex.hpp>
 #include <boost/thread/thread.hpp>
 #include <cstddef>
@@ -29,7 +28,6 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
-#include <mutex>
 #include <ostream>
 #include <string>
 #include <cstdint>
@@ -38,14 +36,11 @@ using serial_port_base = boost::asio::serial_port_base;
 
 SerialPort::SerialPort(std::string                                port,
                        boost::function<void(const std::string &)> receive_callback,
-                       std::shared_ptr<boost::mutex>              port_mutex,
                        unsigned int                               baud_rate,
                        std::string                                start_of_command,
                        std::string                                end_of_command)
 {
 	receive_callback_ = receive_callback;
-
-	// mutex_ = boost::mutex;
 
 	start_of_command_ = start_of_command;
 	end_of_command_   = end_of_command;
@@ -127,7 +122,7 @@ inline bool check_checksum(int offset, std::string checksum_str, char buf[], siz
 
 std::string checksum(const std::string buf) {
 	uint8_t sum = 0;
-	for(int b = 0; b< buf.size(); b++)
+	for(uint8_t b = 0; b< buf.size(); b++)
 	{
 		sum += buf[b];
 	}
@@ -191,7 +186,6 @@ SerialPort::~SerialPort()
 	port_->cancel();
 	port_->close();
 	port_.reset();
-	mutex_.unlock();
 	io_service_.stop();
 	io_service_.reset();
 }

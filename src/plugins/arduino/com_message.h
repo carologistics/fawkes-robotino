@@ -26,6 +26,7 @@
 
 #include <boost/asio.hpp>
 #include <cstdint>
+#include <sstream>
 #include <string>
 
 class ArduinoComMessage
@@ -80,7 +81,7 @@ private:
 	void dtor();
 
 private:
-	std::string    data_ = "AT ";
+	std::stringstream    data_;
 	unsigned short cur_buffer_index_; // index of next data field
 
 	unsigned int msecs_to_wait_;
