@@ -120,9 +120,9 @@ ArduinoComMessage::add_command(char cmd, unsigned int value)
 	if (!valid_command) {
 		return false;
 	}
-
-	data_ << cmd << value << " ";
-
+	data_ << cmd;
+	data_ << value;
+	data_ << " ";
 	return true;
 }
 
@@ -225,7 +225,7 @@ ArduinoComMessage::parse_message_from_arduino(int (&gripperr_position)[3],
 				gripperr_position[1] = y;
 			}
 			if (i == 3) {
-				int z = std::stoi(s);
+				int z                = std::stoi(s);
 				gripperr_position[2] = z;
 			}
 			if (i == 5) {
@@ -265,6 +265,7 @@ ArduinoComMessage::get_position_data(int (&gripperr_position)[3], bool &(is_grip
 		if (leading == CMD_X_NEW_POS) {
 			int x                = std::stoi(i.substr(1));
 			gripperr_position[0] = x;
+			printf("New x goal is %i", x);
 		}
 		if (leading == CMD_Y_NEW_POS) {
 			int y                = std::stoi(i.substr(1));

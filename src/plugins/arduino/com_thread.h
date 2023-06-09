@@ -135,7 +135,7 @@ private:
 
 	char current_arduino_status_;
 	int  gripper_pose_[3]     = {0, 0, 0};
-	int  goal_gripper_pose[3] = {0, 0, 0};
+	int  goal_gripper_pose[3] = {0, 7500, 0};
 	bool goal_gripper_is_open = false;
 
 	void timer_callback(const boost::system::error_code &ec);
@@ -147,7 +147,7 @@ private:
 
 	std::unique_ptr<SerialPort> port_;
 	boost::asio::io_service     io_service_;
-	std::shared_ptr<boost::mutex> mutex_;
+	// std::shared_ptr<boost::mutex> mutex_;
 	boost::thread               io_service_thread_;
 	boost::asio::deadline_timer deadline_timer;
 
@@ -180,7 +180,7 @@ private:
 
 protected:
 	/** Mutex to protect data_. Lock whenever accessing it. */
-	fawkes::Mutex *data_mutex_;
+	// fawkes::Mutex *data_mutex_;
 };
 
 #endif
