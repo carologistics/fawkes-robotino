@@ -36,7 +36,7 @@ typedef boost::shared_ptr<boost::asio::serial_port> serial_port_ptr;
 class SerialPort
 {
 protected:
-		boost::thread serial_service_thread_;
+	std::thread serial_service_thread_;
 	boost::asio::io_service       io_service_;
 	serial_port_ptr               port_;
 	// std::shared_ptr<boost::mutex> mutex_;

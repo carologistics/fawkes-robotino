@@ -88,13 +88,13 @@ ArduinoComThread::~ArduinoComThread()
 inline float
 ArduinoComThread::from_arduino_units(float in_meter, ArduinoComThread::gripper_pose_t axis)
 {
-	return in_meter / cfg_steps_per_mm_[axis] / 1000.0;
+	return in_meter * cfg_steps_per_mm_[axis] * 1000.0;
 }
 
 inline float
 ArduinoComThread::to_arduino_units(float in_steps, ArduinoComThread::gripper_pose_t axis)
 {
-	return in_steps * cfg_steps_per_mm_[axis] * 1000.0;
+	return in_steps / cfg_steps_per_mm_[axis] / 1000.0;
 }
 
 void
@@ -306,7 +306,7 @@ ArduinoComThread::send_message(ArduinoComMessage &msg)
 {
 	printf("SENDING %s\n", msg.buffer().c_str());
 	//TODO: Check of is open
-	msg.get_position_data(goal_gripper_pose, goal_gripper_is_open);
+	// msg.get_position_data(goal_gripper_pose, goal_gripper_is_open);
 	printf("NEW_MSG: X: %i Y: %i Z: %i\n", goal_gripper_pose[X], goal_gripper_pose[Y], goal_gripper_pose[Z]);
 	if(!port_){
 		printf("DAS DUMM \n");
@@ -463,6 +463,11 @@ ArduinoComThread::handle_xyz_message(ArduinoInterface::MoveXYZAbsMessage *msg)
 	float goal_x = tf_pose_target.getOrigin().getX() + msg->x();
 	float goal_y = tf_pose_target.getOrigin().getY() + msg->y() + cfg_y_max_ / 2.;
 	float goal_z = tf_pose_target.getOrigin().getZ() + msg->z();
+
+	goal_gripper_pose[X] = goal_x;
+	goal_gripper_pose[Y] = goal_y;
+	goal_gripper_pose[Z] = goal_z;
+
 	logger->log_debug(name(), "Transformed target axis values: %f,%f,%f", goal_x, goal_y, goal_z);
 
 	bool msg_has_data = false;
@@ -535,6 +540,7 @@ ArduinoComThread::handle_rel_xyz_messag(ArduinoInterface::MoveXYZRelMessage *msg
 	                  cur_z);
 	if (msg->x() + cur_x >= 0. && msg->x() + cur_x <= arduino_if_->x_max()) {
 		int new_abs_x = round_to_2nd_dec((msg->x() + cur_x) * cfg_steps_per_mm_[X] * 1000.0);
+		goal_gripper_pose[X] = new_abs_x;
 		logger->log_info(name(), "Set new X: %u", new_abs_x);
 		add_command_to_message(arduino_msg, CMD_X_NEW_POS, new_abs_x);
 
@@ -550,6 +556,7 @@ ArduinoComThread::handle_rel_xyz_messag(ArduinoInterface::MoveXYZRelMessage *msg
 
 	if (msg->y() + cur_y >= 0. && msg->y() + cur_y <= arduino_if_->y_max()) {
 		int new_abs_y = round_to_2nd_dec((msg->y() + cur_y) * cfg_steps_per_mm_[Y] * 1000.0);
+		goal_gripper_pose[Y] = new_abs_y;
 		logger->log_debug(name(), "Set new Y: %u", new_abs_y);
 		add_command_to_message(arduino_msg, CMD_Y_NEW_POS, new_abs_y);
 
@@ -564,6 +571,7 @@ ArduinoComThread::handle_rel_xyz_messag(ArduinoInterface::MoveXYZRelMessage *msg
 	}
 	if (msg->z() + cur_z >= 0. && msg->z() + cur_z <= arduino_if_->z_max()) {
 		int new_abs_z = round_to_2nd_dec((msg->z() + cur_z) * cfg_steps_per_mm_[Z] * 1000.0);
+		goal_gripper_pose[Z] = new_abs_z;
 		logger->log_debug(name(), "Set new Z: %u", new_abs_z);
 		add_command_to_message(arduino_msg, CMD_Z_NEW_POS, new_abs_z);
 
