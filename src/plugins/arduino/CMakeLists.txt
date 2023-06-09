@@ -57,3 +57,10 @@ if(PLUGIN_arduino)
 else()
   plugin_disabled_message("arduino")
 endif()
+
+target_compile_features(arduino PUBLIC cxx_std_20)
+target_compile_options(arduino
+    PRIVATE
+    $<$<CONFIG:DEBUG>:-g -O0>
+    $<$<CONFIG:RELEASE>:-O3>
+)

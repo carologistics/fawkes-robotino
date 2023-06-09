@@ -35,7 +35,7 @@
 #include <baseapp/run.h>
 #include <bits/types/struct_iovec.h>
 #include <core/threading/mutex.h>
-#include <core/threading/mutex_locker.h>
+// #include <core/threading/mutex_locker.h>
 #include <interfaces/ArduinoInterface.h>
 #include <utils/math/angle.h>
 #include <utils/time/wait.h>
@@ -49,6 +49,7 @@
 #include <boost/lambda/lambda.hpp>
 #include <boost/thread/pthread/mutex.hpp>
 #include <boost/thread/pthread/thread_data.hpp>
+#include <cstdio>
 #include <functional>
 #include <iostream>
 #include <libudev.h>
@@ -73,7 +74,7 @@ ArduinoComThread::ArduinoComThread(std::string     &cfg_name,
   fawkes::TransformAspect(),
   ConfigurationChangeHandler(cfg_prefix.c_str()), //serial_(io_service_), io_service_(),
   deadline_timer(io_service_),
-  mutex_(new boost::mutex()),
+  // mutex_(new boost::mutex()),
   tf_thread_(tf_thread)
 {
 	cfg_prefix_ = cfg_prefix;
@@ -125,7 +126,6 @@ ArduinoComThread::receive(const std::string &buf)
 		if (gripper_pose_[X] != goal_gripper_pose[X] || gripper_pose_[Y] != goal_gripper_pose[Y]
 		    || gripper_pose_[Z] != goal_gripper_pose[Z]) {
 			ArduinoComMessage *arduino_msg = new ArduinoComMessage();
-
 			add_command_to_message(arduino_msg, CMD_X_NEW_POS, from_arduino_units(goal_gripper_pose[X], X));
 			add_command_to_message(arduino_msg, CMD_Y_NEW_POS, from_arduino_units(goal_gripper_pose[Y], Y));
 			add_command_to_message(arduino_msg, CMD_Z_NEW_POS, from_arduino_units(goal_gripper_pose[Z], Z));
@@ -279,12 +279,13 @@ ArduinoComThread::loop()
 void
 ArduinoComThread::open_device()
 {
+	printf("hallo hier bin ich \n");
 	if (port_) {
 		close_device();
 	}
 	try {
 		port_ = std::make_unique<SerialPort>(
-		  cfg_device_, boost::bind(&ArduinoComThread::receive, this, boost::placeholders::_1), mutex_);
+		  cfg_device_, boost::bind(&ArduinoComThread::receive, this, boost::placeholders::_1));
 	} catch (boost::system::error_code ec) {
 		logger->log_error(name(),
 		                  "Could now open PORT: %s, %s",
@@ -303,10 +304,12 @@ ArduinoComThread::close_device()
 bool
 ArduinoComThread::send_message(ArduinoComMessage &msg)
 {
+	printf("SENDING %s\n", msg.buffer().c_str());
 	//TODO: Check of is open
-	printf("sendin: %s\n", msg.buffer().c_str());
 	msg.get_position_data(goal_gripper_pose, goal_gripper_is_open);
+	printf("NEW_MSG: X: %i Y: %i Z: %i\n", goal_gripper_pose[X], goal_gripper_pose[Y], goal_gripper_pose[Z]);
 	if(!port_){
+		printf("DAS DUMM \n");
 		return false;
 	}
 	if (!port_->write(msg.buffer())) {
@@ -367,7 +370,7 @@ ArduinoComThread::handle_nodata(const boost::system::error_code &ec)
 	++no_data_count;
 
 	//TODO add cfg
-	if (no_data_count > 4) {
+	if (no_data_count > 10) {
 		close_device();
 		open_device();
 		no_data_count = 0;
@@ -466,7 +469,7 @@ ArduinoComThread::handle_xyz_message(ArduinoInterface::MoveXYZAbsMessage *msg)
 	int  d            = 0;
 	if (goal_x >= 0. && goal_x <= arduino_if_->x_max()) {
 		int new_abs_x = round_to_2nd_dec(goal_x * cfg_steps_per_mm_[X] * 1000.0);
-		logger->log_debug(name(), "Set new X: %u", new_abs_x);
+		logger->log_info(name(), "Set new X: %u", new_abs_x);
 		add_command_to_message(arduino_msg, CMD_X_NEW_POS, new_abs_x);
 
 		// calculate millseconds needed for this movement
@@ -532,7 +535,7 @@ ArduinoComThread::handle_rel_xyz_messag(ArduinoInterface::MoveXYZRelMessage *msg
 	                  cur_z);
 	if (msg->x() + cur_x >= 0. && msg->x() + cur_x <= arduino_if_->x_max()) {
 		int new_abs_x = round_to_2nd_dec((msg->x() + cur_x) * cfg_steps_per_mm_[X] * 1000.0);
-		logger->log_debug(name(), "Set new X: %u", new_abs_x);
+		logger->log_info(name(), "Set new X: %u", new_abs_x);
 		add_command_to_message(arduino_msg, CMD_X_NEW_POS, new_abs_x);
 
 		// calculate millseconds needed for this movement
@@ -591,6 +594,7 @@ ArduinoComThread::bb_interface_message_received(Interface *interface, Message *m
 		status = handle_rel_xyz_messag((ArduinoInterface::MoveXYZRelMessage *)message);
 	} else if (message->is_of_type<ArduinoInterface::ToHomeMessage>()) {
 		ArduinoComMessage *msg = new ArduinoComMessage();
+		printf("joa\n");
 		add_command_to_message(msg, CMD_X_NEW_POS, 0);
 		add_command_to_message(msg, CMD_Y_NEW_POS, (cfg_y_max_ / 2) * cfg_steps_per_mm_[Y] * 1000);
 		add_command_to_message(msg, CMD_Z_NEW_POS, 0);

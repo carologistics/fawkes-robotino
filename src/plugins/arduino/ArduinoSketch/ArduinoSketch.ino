@@ -61,7 +61,6 @@ int cur_status = STATUS_IDLE;
 
 int loop_nr = 0;
 
-bool calibrated = false;
 
 #define BUFFER_SIZE 128
 char   buffer_[BUFFER_SIZE];
@@ -126,15 +125,15 @@ convert_to_check_sum(int i)
 void
 send_status()
 {
-	Wire.beginTransmission(4);
-	Wire.write(" STATUS X: ");
-	Wire.write(String(-motor_X.currentPosition()).c_str());
-	Wire.write(" Y: ");
-	Wire.write(String(-motor_Y.currentPosition()).c_str());
-	Wire.write(" Z: ");
-	Wire.write(String(-motor_Z.currentPosition()).c_str());
-	Wire.write(731);              // sends one byte
-	Wire.endTransmission();      // stop transmitting
+	// Wire.beginTransmission(4);
+	// Wire.write(" STATUS X: ");
+	// Wire.write(String(-motor_X.currentPosition()).c_str());
+	// Wire.write(" Y: ");
+	// Wire.write(String(-motor_Y.currentPosition()).c_str());
+	// Wire.write(" Z: ");
+	// Wire.write(String(-motor_Z.currentPosition()).c_str());
+	// Wire.write(731);              // sends one byte
+	// Wire.endTransmission();      // stop transmitting
 	byte checksum = 0;
 	Serial.print(AT); //checksum = 181
 	Serial.print(status_array_[cur_status]);
@@ -298,7 +297,6 @@ calibrate()
 		}
 		movement_done_flag = false;
 	} while (!x_done || !y_done || !z_done);
-	calibrated = true;
 }
 
 void
@@ -447,12 +445,12 @@ read_package()
 		bool  assumed_gripper_state_local;
 		// this is used to store the assumed gripper state locally, to reduce calls to the function get_assumed_gripper_state
 
-		Wire.beginTransmission(4);
-		Wire.write(String(cur_cmd).c_str());
-		Wire.write(" : ");
-		Wire.write(String(new_value).c_str());
-		Wire.write(445);              // sends one byte
-		Wire.endTransmission();      // stop transmitting
+		// Wire.beginTransmission(4);
+		// Wire.write(String(cur_cmd).c_str());
+		// Wire.write(" : ");
+		// Wire.write(String(new_value).c_str());
+		// Wire.write(445);              // sends one byte
+		// Wire.endTransmission();      // stop transmitting
 
 		switch (cur_cmd) {
 		case CMD_X_NEW_POS: set_new_pos(-new_value, motor_X); break;
@@ -619,11 +617,11 @@ read_package()
 void
 setup()
 {
-	Wire.begin();
-	Wire.beginTransmission(4);   // transmit to device #4
-	Wire.write("Setup"); // sends five bytes
-	Wire.write(615);              // sends one byte
-	Wire.endTransmission();      // stop transmitting
+	// Wire.begin();
+	// Wire.beginTransmission(4);   // transmit to device #4
+	// Wire.write("Setup"); // sends five bytes
+	// Wire.write(615);              // sends one byte
+	// Wire.endTransmission();      // stop transmitting
 	Serial.begin(115200);
 	// Serial.setTimeout(0);
 
@@ -672,9 +670,10 @@ setup()
 	Serial.println("AT HELLO +116");
 	// while(!Serial.available()) {};
 
+	send_status();
+
 	set_status(STATUS_IDLE);
 
-	send_status();
 
 	motor_X.disableOutputs();
 
@@ -701,7 +700,6 @@ setup()
 	interrupts();
 	//default behavior should be to calibrate and home on serial port open
 	calibrate();
-	home();
 }
 
 void
@@ -721,8 +719,7 @@ loop()
 		movement_done_flag = false;
 		set_status(STATUS_IDLE);
 	}
-	if (calibrated)
-		read_package();
+	read_package();
 
 	if (cur_status != STATUS_MOVING) {
 		loop_nr = 0;

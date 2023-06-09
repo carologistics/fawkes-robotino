@@ -21,11 +21,13 @@
 #include "serialport.h"
 
 #include <boost/bind/bind.hpp>
+#include <boost/exception/exception.hpp>
 #include <boost/thread/pthread/mutex.hpp>
 #include <boost/thread/thread.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <exception>
 #include <iostream>
 #include <iterator>
 #include <memory>
@@ -37,12 +39,13 @@ using serial_port_base = boost::asio::serial_port_base;
 
 SerialPort::SerialPort(std::string                                port,
                        boost::function<void(const std::string &)> receive_callback,
-                       std::shared_ptr<boost::mutex>              mutex,
-                       unsigned int                               baud_rate,
-                       std::string                                start_of_command,
-                       std::string                                end_of_command) : mutex_(mutex)
+                       // std::shared_ptr<boost::mutex>              mutex,
+                       unsigned int baud_rate,
+                       std::string  start_of_command,
+                       std::string  end_of_command)
+// : mutex_(mutex)
 {
-		printf("CONST \n");
+	printf("CONST \n");
 	receive_callback_ = receive_callback;
 
 	start_of_command_ = start_of_command;
@@ -101,10 +104,15 @@ bool
 SerialPort::write(const char *buf, const int &size)
 {
 	boost::system::error_code ec;
-	if (!port_)
+	if (!port_) {
+		std::cout << "Licht dumm" << buf << std::endl;
 		return false;
-	if (size == 0)
+	}
+	if (size == 0) {
+		std::cout << "serh dumm" << buf << std::endl;
 		return false;
+	}
+	std::cout << "sehr schlau" << buf << std::endl;
 	return port_->write_some(boost::asio::buffer(buf, size), ec);
 }
 
@@ -139,64 +147,75 @@ checksum(const std::string buf)
 void
 SerialPort::on_receive_(const boost::system::error_code &ec, size_t bytes_transferred)
 {
-	boost::mutex::scoped_lock lock(*mutex_);
-	if (port_ == nullptr || !port_->is_open()) {
-		this->~SerialPort(); //If port is closed then just dissolve this instance
-		return;
-	}
-	if (ec) {
-		printf("ec: %s\n", ec.what().c_str());
-		this->~SerialPort(); //If port is closed then just dissolve this instance
-		return;
-	}
-
-	for (unsigned int i = 0; i < bytes_transferred; ++i) {
-		bool is_starting =
-		  start_with_pattern(start_of_command_.c_str(), read_buf_raw_, bytes_transferred, i);
-		bool is_ending =
-		  start_with_pattern(end_of_command_.c_str(), read_buf_raw_, bytes_transferred, i);
-
-		if (has_started || is_starting) {
-			has_started = true;
+	try {
+		boost::mutex::scoped_lock lock(mutex_);
+		if (port_ == nullptr || !port_->is_open()) {
+			this->~SerialPort(); //If port is closed then just dissolve this instance
+			return;
+		}
+		if (ec) {
+			printf("ec: %s\n", ec.what().c_str());
+			this->~SerialPort(); //If port is closed then just dissolve this instance
+			return;
 		}
 
-		if (has_started && is_starting) {
-			//last message is mixed up with new
-			read_buf_str_.clear();
-		}
+		for (unsigned int i = 0; i < bytes_transferred; ++i) {
+			bool is_starting =
+			  start_with_pattern(start_of_command_.c_str(), read_buf_raw_, bytes_transferred, i);
+			bool is_ending =
+			  start_with_pattern(end_of_command_.c_str(), read_buf_raw_, bytes_transferred, i);
 
-		if (has_started) {
-			read_buf_str_ += read_buf_raw_[i];
-		}
-
-		if (!has_started) {
-			read_buf_str_.clear();
-		}
-
-		if (has_started && is_ending) {
-			has_started = false;
-			for (int j = 1; j < end_of_command_.size(); ++j) {
-				read_buf_str_ += read_buf_raw_[i + j];
+			if (has_started || is_starting) {
+				has_started = true;
 			}
-			std::string checksum_ = checksum(read_buf_str_);
-			if (check_checksum(i + end_of_command_.size(), checksum_, read_buf_raw_, bytes_transferred)) {
-				receive_callback_(read_buf_str_);
-			}
-			read_buf_str_.clear();
-		}
-	}
 
+			if (has_started && is_starting) {
+				//last message is mixed up with new
+				read_buf_str_.clear();
+			}
+
+			if (has_started) {
+				read_buf_str_ += read_buf_raw_[i];
+			}
+
+			if (!has_started) {
+				read_buf_str_.clear();
+			}
+
+			if (has_started && is_ending) {
+				has_started = false;
+				for (int j = 1; j < end_of_command_.size(); ++j) {
+					read_buf_str_ += read_buf_raw_[i + j];
+				}
+				std::string checksum_ = checksum(read_buf_str_);
+				if (check_checksum(
+				      i + end_of_command_.size(), checksum_, read_buf_raw_, bytes_transferred)) {
+					receive_callback_(read_buf_str_);
+				}
+				read_buf_str_.clear();
+			}
+		}
+
+	} catch (std::exception& e) {
+		printf("HALLO DU HAST EIN CORE DUMP VERHINDERT %s\n", e.what());
+        return;
+	}
 	async_read_some_();
 }
 
 SerialPort::~SerialPort()
 {
-	boost::mutex::scoped_lock lock(*mutex_);
-	serial_service_thread_.interrupt();
-	if(port_) {
+	boost::mutex::scoped_lock lock(mutex_);
+    
+	if (port_) {
 		port_->cancel();
 		port_->close();
 	}
+
+    if (serial_service_thread_.joinable())
+        serial_service_thread_.join();
+
+	serial_service_thread_.interrupt();
 	port_.reset();
 	io_service_.stop();
 	io_service_.reset();
