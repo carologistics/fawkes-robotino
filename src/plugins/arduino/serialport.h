@@ -36,7 +36,7 @@ typedef boost::shared_ptr<boost::asio::serial_port> serial_port_ptr;
 class SerialPort
 {
 protected:
-	std::thread serial_service_thread_;
+	boost::thread serial_service_thread_;
 	boost::asio::io_service       io_service_;
 	serial_port_ptr               port_;
 	// std::shared_ptr<boost::mutex> mutex_;
@@ -65,6 +65,7 @@ public:
 private:
 	void         async_read_some_();
 	virtual void on_receive_(const boost::system::error_code &ec, size_t bytes_transferred);
+	bool terminate_thread = false;
 };
 
 #endif /* _SERIALPORT_H */

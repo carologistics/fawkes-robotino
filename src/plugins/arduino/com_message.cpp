@@ -238,10 +238,6 @@ ArduinoComMessage::parse_message_from_arduino(int (&gripperr_position)[3],
 				}
 			}
 		}
-		std::printf("SOSO ALSO %i %i %i\n",
-		            gripperr_position[X],
-		            gripperr_position[Y],
-		            gripperr_position[Z]);
 		return true;
 	} catch (const std::exception &e) {
 	}

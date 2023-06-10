@@ -2,6 +2,10 @@
 //TODO CHECK IF COREDUMPS ARE GONE
 //TODO IF PORT CLOSE TRY TO OPEN INSTANTLY
 //TODO FIX MAJOR CACHE ISSUES ON THE ROBOTINO AS WELL AS CMAKE CHRONO ISSUES *  com_thread.cpp - Arduino com thread
+//TODO HANLDE HAF
+//TODO HANDLE STOP
+//TODO SOME TIMES CONNECTION DIES
+//TODO When unpugging the deadline_timer stops.
  /***************************************************************************
  *  Created: Thu Sep 11 13:18:00 2014
  *  Copyright  2011-2014  Tim Niemueller [www.niemueller.de]
@@ -122,11 +126,14 @@ ArduinoComThread::receive(const std::string &buf)
 		arduino_if_->set_final(true);
 		arduino_if_->set_status(ArduinoInterface::IDLE);
 		if (gripper_pose_[X] != goal_gripper_pose[X] || gripper_pose_[Y] != goal_gripper_pose[Y]
-		    || gripper_pose_[Z] != goal_gripper_pose[Z]) {
+		    || gripper_pose_[Z] != goal_gripper_pose[Z] || is_open != goal_gripper_is_open ) {
 			ArduinoComMessage *arduino_msg = new ArduinoComMessage();
 			add_command_to_message(arduino_msg, CMD_X_NEW_POS, goal_gripper_pose[X]);
 			add_command_to_message(arduino_msg, CMD_Y_NEW_POS, goal_gripper_pose[Y]);
 			add_command_to_message(arduino_msg, CMD_Z_NEW_POS, goal_gripper_pose[Z]);
+			if(goal_gripper_pose) {
+				// add_command_to_message(arduino_msg, , goal_gripper_pose[Z]) //TODO handle half
+			}
 
 			append_message_to_queue(arduino_msg);
 
@@ -154,8 +161,9 @@ ArduinoComThread::init()
 	io_service_thread_ = boost::thread([this]() {
 		while (true) {
 			io_service_.run_one();
-			// boost::this_thread::sleep_for(boost::chrono::seconds(1));
+			boost::this_thread::sleep_for(boost::chrono::seconds(1));
 		}
+		printf("NAH DAS LIEF JA NICHT SO GUT");
 	});
 
 	movement_pending_ = false;
@@ -297,6 +305,7 @@ void
 ArduinoComThread::close_device()
 {
 	port_.reset();
+	printf("NANA NAH\n");
 }
 
 bool
@@ -340,15 +349,15 @@ ArduinoComThread::send_message_from_queue()
 void
 ArduinoComThread::timer_callback(const boost::system::error_code &ec)
 {
-	if (!port_) {
-		open_device();
-	}
-	handle_nodata(ec);
-
 	//TODO add CFG
 	deadline_timer.expires_from_now(boost::posix_time::seconds(5));
 	deadline_timer.async_wait(
 	  [this](const boost::system::error_code &error) { timer_callback(error); });
+
+	if (!port_) {
+		open_device();
+	}
+	handle_nodata(ec);
 }
 
 void
@@ -367,7 +376,7 @@ ArduinoComThread::handle_nodata(const boost::system::error_code &ec)
 	++no_data_count;
 
 	//TODO add cfg
-	if (no_data_count > 10) {
+	if (no_data_count > 1) {
 		close_device();
 		open_device();
 		no_data_count = 0;
