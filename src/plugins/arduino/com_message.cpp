@@ -23,6 +23,7 @@
 
 #include <core/exception.h>
 
+#include <cstdio>
 #include <cstdlib>
 #include <iomanip>
 #include <iostream>
@@ -218,15 +219,15 @@ ArduinoComMessage::parse_message_from_arduino(int (&gripperr_position)[3],
 			}
 			if (i == 1) {
 				int x                = std::stoi(s);
-				gripperr_position[0] = x;
+				gripperr_position[X] = x;
 			}
 			if (i == 2) {
 				int y                = std::stoi(s);
-				gripperr_position[1] = y;
+				gripperr_position[Y] = y;
 			}
 			if (i == 3) {
 				int z                = std::stoi(s);
-				gripperr_position[2] = z;
+				gripperr_position[Z] = z;
 			}
 			if (i == 5) {
 				if (s == "CLOSED+") {
@@ -237,6 +238,10 @@ ArduinoComMessage::parse_message_from_arduino(int (&gripperr_position)[3],
 				}
 			}
 		}
+		std::printf("SOSO ALSO %i %i %i\n",
+		            gripperr_position[X],
+		            gripperr_position[Y],
+		            gripperr_position[Z]);
 		return true;
 	} catch (const std::exception &e) {
 	}

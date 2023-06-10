@@ -59,8 +59,5 @@ else()
 endif()
 
 target_compile_features(arduino PUBLIC cxx_std_20)
-target_compile_options(arduino
-    PRIVATE
-    $<$<CONFIG:DEBUG>:-g -O0>
-    $<$<CONFIG:RELEASE>:-O3>
-)
+target_compile_options(arduino PRIVATE -g -O0)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0")
