@@ -66,7 +66,7 @@ SerialPort::SerialPort(std::string                                port,
 	port_->set_option(serial_port_base::parity(serial_port_base::parity::none));
 	port_->set_option(serial_port_base::flow_control(serial_port_base::flow_control::none));
 
-	serial_service_thread_ = boost::thread(boost::bind(&boost::asio::io_service::run, &io_service_));
+	serial_service_thread_ = std::thread(boost::bind(&boost::asio::io_service::run, &io_service_));
 
 	async_read_some_();
 }
@@ -105,14 +105,11 @@ SerialPort::write(const char *buf, const int &size)
 {
 	boost::system::error_code ec;
 	if (!port_) {
-		std::cout << "Licht dumm" << buf << std::endl;
 		return false;
 	}
 	if (size == 0) {
-		std::cout << "serh dumm" << buf << std::endl;
 		return false;
 	}
-	std::cout << "sehr schlau" << buf << std::endl;
 	return port_->write_some(boost::asio::buffer(buf, size), ec);
 }
 
@@ -191,6 +188,8 @@ SerialPort::on_receive_(const boost::system::error_code &ec, size_t bytes_transf
 				if (check_checksum(
 				      i + end_of_command_.size(), checksum_, read_buf_raw_, bytes_transferred)) {
 					receive_callback_(read_buf_str_);
+				} else {
+					printf("CHECK CHECK SUM FAILED \n");
 				}
 				read_buf_str_.clear();
 			}
@@ -215,7 +214,7 @@ SerialPort::~SerialPort()
     if (serial_service_thread_.joinable())
         serial_service_thread_.join();
 
-	serial_service_thread_.interrupt();
+	// serial_service_thread_.interrupt();
 	port_.reset();
 	io_service_.stop();
 	io_service_.reset();

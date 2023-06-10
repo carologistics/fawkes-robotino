@@ -1,10 +1,8 @@
 //TODO PARSING OF RETURN TO GOAL AND INTERFACE IS NOT WOKRING
 //TODO CHECK IF COREDUMPS ARE GONE
 //TODO IF PORT CLOSE TRY TO OPEN INSTANTLY
-//TODO FIX MAJOR CACHE ISSUES ON THE ROBOTINO AS WELL AS CMAKE CHRONO ISSUES
-/***************************************************************************
- *  com_thread.cpp - Arduino com thread
- *
+//TODO FIX MAJOR CACHE ISSUES ON THE ROBOTINO AS WELL AS CMAKE CHRONO ISSUES *  com_thread.cpp - Arduino com thread
+ /***************************************************************************
  *  Created: Thu Sep 11 13:18:00 2014
  *  Copyright  2011-2014  Tim Niemueller [www.niemueller.de]
  *                  2016  Nicolas Limpert
@@ -126,9 +124,9 @@ ArduinoComThread::receive(const std::string &buf)
 		if (gripper_pose_[X] != goal_gripper_pose[X] || gripper_pose_[Y] != goal_gripper_pose[Y]
 		    || gripper_pose_[Z] != goal_gripper_pose[Z]) {
 			ArduinoComMessage *arduino_msg = new ArduinoComMessage();
-			add_command_to_message(arduino_msg, CMD_X_NEW_POS, from_arduino_units(goal_gripper_pose[X], X));
-			add_command_to_message(arduino_msg, CMD_Y_NEW_POS, from_arduino_units(goal_gripper_pose[Y], Y));
-			add_command_to_message(arduino_msg, CMD_Z_NEW_POS, from_arduino_units(goal_gripper_pose[Z], Z));
+			add_command_to_message(arduino_msg, CMD_X_NEW_POS, goal_gripper_pose[X]);
+			add_command_to_message(arduino_msg, CMD_Y_NEW_POS, goal_gripper_pose[Y]);
+			add_command_to_message(arduino_msg, CMD_Z_NEW_POS, goal_gripper_pose[Z]);
 
 			append_message_to_queue(arduino_msg);
 
@@ -156,7 +154,7 @@ ArduinoComThread::init()
 	io_service_thread_ = boost::thread([this]() {
 		while (true) {
 			io_service_.run_one();
-			boost::this_thread::sleep_for(boost::chrono::seconds(1));
+			// boost::this_thread::sleep_for(boost::chrono::seconds(1));
 		}
 	});
 
@@ -307,7 +305,6 @@ ArduinoComThread::send_message(ArduinoComMessage &msg)
 	printf("SENDING %s\n", msg.buffer().c_str());
 	//TODO: Check of is open
 	// msg.get_position_data(goal_gripper_pose, goal_gripper_is_open);
-	printf("NEW_MSG: X: %i Y: %i Z: %i\n", goal_gripper_pose[X], goal_gripper_pose[Y], goal_gripper_pose[Z]);
 	if(!port_){
 		printf("DAS DUMM \n");
 		return false;

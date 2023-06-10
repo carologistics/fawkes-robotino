@@ -122,6 +122,7 @@ convert_to_check_sum(int i)
 	return sum;
 }
 
+int cur_pos;
 void
 send_status()
 {
@@ -137,28 +138,32 @@ send_status()
 	byte checksum = 0;
 	Serial.print(AT); //checksum = 181
 	Serial.print(status_array_[cur_status]);
-	checksum += status_array_[cur_status];
+	checksum += (byte)status_array_[cur_status];
 	Serial.print(" "); //checksum = 32
 	if (cur_status == STATUS_ERROR) {
 		Serial.print(errormessage);
 	} else { // send all the information while moving and while idle
-		Serial.print(-motor_X.currentPosition());
-		checksum += convert_to_check_sum(-motor_X.currentPosition());
+		cur_pos = -motor_X.currentPosition();
+		Serial.print(cur_pos);
+		checksum += convert_to_check_sum(cur_pos);
 
 		Serial.print(" "); //checksum = 32
 
-		Serial.print(-motor_Y.currentPosition());
-		checksum += convert_to_check_sum(-motor_Y.currentPosition());
+		cur_pos = -motor_Y.currentPosition();
+		Serial.print(cur_pos);
+		checksum += convert_to_check_sum(cur_pos);
 
 		Serial.print(" "); //checksum = 32
 
-		Serial.print(-motor_Z.currentPosition());
-		checksum += convert_to_check_sum(-motor_Z.currentPosition());
+		cur_pos = -motor_Z.currentPosition();
+		Serial.print(cur_pos);
+		checksum += convert_to_check_sum(cur_pos);
 
 		Serial.print(" "); //checksum = 32
 
-		Serial.print(motor_A.currentPosition());
-		checksum += convert_to_check_sum(-motor_A.currentPosition());
+		cur_pos = -motor_A.currentPosition();
+		Serial.print(cur_pos);
+		checksum += convert_to_check_sum(cur_pos);
 
 		Serial.print(" "); //checksum = 32
 
@@ -167,7 +172,7 @@ send_status()
 	Serial.print("+"); //checksum = 43
 	//SUM of all checksum =384 - 256 = 128;
 	checksum += 128;
-	Serial.print(lowByte(checksum));
+	Serial.print(checksum);
 	Serial.print("\r\n");
 }
 
@@ -726,7 +731,7 @@ loop()
 		return;
 	}
 
-	if (loop_nr > 20000) {
+	if (loop_nr > 3000) {
 		send_status();
 		loop_nr = 0;
 	} else {
