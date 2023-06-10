@@ -20,6 +20,7 @@
 
 #include "serialport.h"
 
+#include <boost/asio/io_service.hpp>
 #include <boost/bind/bind.hpp>
 #include <boost/exception/exception.hpp>
 #include <boost/thread/pthread/mutex.hpp>
@@ -66,7 +67,13 @@ SerialPort::SerialPort(std::string                                port,
 	port_->set_option(serial_port_base::parity(serial_port_base::parity::none));
 	port_->set_option(serial_port_base::flow_control(serial_port_base::flow_control::none));
 
-	serial_service_thread_ = std::thread(boost::bind(&boost::asio::io_service::run, &io_service_));
+	serial_service_thread_ = boost::thread(
+	  [&](boost::asio::io_service &io_service) {
+		  while (!terminate_thread) {
+			  io_service.run_one();
+		  }
+	  },
+	  std::ref(io_service_));
 
 	async_read_some_();
 }
@@ -195,9 +202,9 @@ SerialPort::on_receive_(const boost::system::error_code &ec, size_t bytes_transf
 			}
 		}
 
-	} catch (std::exception& e) {
+	} catch (std::exception &e) {
 		printf("HALLO DU HAST EIN CORE DUMP VERHINDERT %s\n", e.what());
-        return;
+		return;
 	}
 	async_read_some_();
 }
@@ -205,16 +212,17 @@ SerialPort::on_receive_(const boost::system::error_code &ec, size_t bytes_transf
 SerialPort::~SerialPort()
 {
 	boost::mutex::scoped_lock lock(mutex_);
-    
+	terminate_thread = true;
+
 	if (port_) {
 		port_->cancel();
 		port_->close();
 	}
 
-    if (serial_service_thread_.joinable())
-        serial_service_thread_.join();
+	if (serial_service_thread_.joinable())
+		serial_service_thread_.join();
 
-	// serial_service_thread_.interrupt();
+	serial_service_thread_.interrupt();
 	port_.reset();
 	io_service_.stop();
 	io_service_.reset();
