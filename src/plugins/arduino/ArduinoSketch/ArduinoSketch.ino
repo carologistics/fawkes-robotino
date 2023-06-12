@@ -4,6 +4,8 @@
 #include <AccelStepper.h>
 #include <Wire.h>
 
+//TODO ESTIMATE GRIPER POSE
+
 //#define DEBUG_MODE
 
 /*
@@ -60,7 +62,6 @@ bool open_gripper = false;
 int cur_status = STATUS_IDLE;
 
 int loop_nr = 0;
-
 
 #define BUFFER_SIZE 128
 char   buffer_[BUFFER_SIZE];
@@ -179,7 +180,6 @@ send_status()
 int
 send_gripper_status()
 {
-	check_gripper_endstop();
 	if (open_gripper) {
 		Serial.print("OPEN"); //checksum = 50
 		return 50;
@@ -187,17 +187,6 @@ send_gripper_status()
 
 	Serial.print("CLOSED"); //checksum = 186
 	return 186;
-}
-
-void
-check_gripper_endstop()
-{
-	byte open_button = digitalRead(MOTOR_A_OPEN_LIMIT_PIN);
-	if (open_button == LOW) { // definetely OPEN
-		open_gripper = true;
-	} else {                  // gripper should be closed
-		open_gripper = false;
-	}
 }
 
 void
@@ -393,20 +382,18 @@ read_package()
 	char next_char;
 	while (true) {
 		next_char = Serial.read();
-		if (next_char
-		    == TERMINATOR) { // if we find the terminator character we can analyze the package now
-			buffer_[buf_i_] =
-			  0; // Set null character to get no trouble with sscanf // buf_i_ points now onto 0
+		if (next_char == TERMINATOR) {
+			// if we find the terminator character we can analyze the package now
+			buffer_[buf_i_] = 0;
+			// Set null character to get no trouble with sscanf // buf_i_ points now onto 0
 			break;
-		} else if (
-		  next_char
-		  == -1) { // if no serial data is available anymore, but package terminator not found yet:
-			return;  // cannot do anything now
+		} else if (next_char == -1) {
+			// if no serial data is available anymore, but package terminator not found yet:
+			return;                      // cannot do anything now
 		}
 		buffer_[buf_i_++] = next_char; // other characters are added to the buffer
-		if (
-		  buf_i_
-		  >= BUFFER_SIZE) { // Buffer overflow. Strategy: flush buffer and start new. (This should not happen normally)
+		if (buf_i_ >= BUFFER_SIZE) {
+			// Buffer overflow. Strategy: flush buffer and start new. (This should not happen normally)
 			buf_i_ = 0;
 			return;
 		}
@@ -462,8 +449,6 @@ read_package()
 		case CMD_Y_NEW_POS: set_new_pos(-new_value, motor_Y); break;
 		case CMD_Z_NEW_POS: set_new_pos(-new_value, motor_Z); break;
 		case CMD_STATUS_REQ:
-			send_status();
-			delay(100);
 			send_status();
 			break;
 		case CMD_A_SET_TOGGLE_STEPS:
@@ -678,7 +663,6 @@ setup()
 	send_status();
 
 	set_status(STATUS_IDLE);
-
 
 	motor_X.disableOutputs();
 
