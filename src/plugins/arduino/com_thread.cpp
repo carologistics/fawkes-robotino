@@ -4,9 +4,10 @@
 //TODO FIX MAJOR CACHE ISSUES ON THE ROBOTINO AS WELL AS CMAKE CHRONO ISSUES *  com_thread.cpp - Arduino com thread
 //TODO HANLDE HAF
 //TODO HANDLE STOP
+//TODO GRIPPER CLICKING
 //TODO SOME TIMES CONNECTION DIES
 //TODO When unpugging the deadline_timer stops.
- /***************************************************************************
+/***************************************************************************
  *  Created: Thu Sep 11 13:18:00 2014
  *  Copyright  2011-2014  Tim Niemueller [www.niemueller.de]
  *                  2016  Nicolas Limpert
@@ -51,6 +52,8 @@
 #include <boost/lambda/lambda.hpp>
 #include <boost/thread/pthread/mutex.hpp>
 #include <boost/thread/pthread/thread_data.hpp>
+#include <boost/thread/thread.hpp>
+#include <chrono>
 #include <cstdio>
 #include <functional>
 #include <iostream>
@@ -58,7 +61,6 @@
 #include <memory>
 #include <thread>
 #include <unistd.h>
-#include <chrono>
 
 using namespace fawkes;
 
@@ -112,13 +114,13 @@ ArduinoComThread::receive(const std::string &buf)
 	bool is_open;
 	if (!ArduinoComMessage::parse_message_from_arduino(
 	      gripper_pose_, is_open, current_arduino_status_, buf)) {
-		logger->log_error(name(), "Arduino relaunched needed to be reconfigured %s", buf.c_str());
 		append_config_messages();
+		logger->log_error(name(), "Arduino relaunched needed to be reconfigured %s", buf.c_str());
 		return;
 	}
 	if (current_arduino_status_ == 'E') {
 		logger->log_error(name(), "Arduino error: %s", buf.c_str());
-		close_device();
+		port_.reset();
 	}
 
 	arduino_if_->set_final(false);
@@ -126,12 +128,14 @@ ArduinoComThread::receive(const std::string &buf)
 		arduino_if_->set_final(true);
 		arduino_if_->set_status(ArduinoInterface::IDLE);
 		if (gripper_pose_[X] != goal_gripper_pose[X] || gripper_pose_[Y] != goal_gripper_pose[Y]
-		    || gripper_pose_[Z] != goal_gripper_pose[Z] || is_open != goal_gripper_is_open ) {
+		    || gripper_pose_[Z] != goal_gripper_pose[Z] || is_open != goal_gripper_is_open) {
+			arduino_if_->set_final(false);
 			ArduinoComMessage *arduino_msg = new ArduinoComMessage();
 			add_command_to_message(arduino_msg, CMD_X_NEW_POS, goal_gripper_pose[X]);
 			add_command_to_message(arduino_msg, CMD_Y_NEW_POS, goal_gripper_pose[Y]);
 			add_command_to_message(arduino_msg, CMD_Z_NEW_POS, goal_gripper_pose[Z]);
-			if(goal_gripper_pose) {
+
+			if (goal_gripper_pose) {
 				// add_command_to_message(arduino_msg, , goal_gripper_pose[Z]) //TODO handle half
 			}
 
@@ -156,11 +160,13 @@ ArduinoComThread::init()
 
 	initInterface();
 	deadline_timer.expires_from_now(boost::posix_time::seconds(5));
-	deadline_timer.async_wait(
-	  [this](const boost::system::error_code &error) { timer_callback(error); });
+	// deadline_timer.async_wait(
+	//   [this](const boost::system::error_code &error) { timer_callback(error); });
 	io_service_thread_ = boost::thread([this]() {
 		while (true) {
-			io_service_.run_one();
+			timer_callback();
+			// io_service_.run_for(std::chrono::seconds(2));
+			wakeup();
 			boost::this_thread::sleep_for(boost::chrono::seconds(1));
 		}
 		printf("NAH DAS LIEF JA NICHT SO GUT");
@@ -175,7 +181,7 @@ ArduinoComThread::init()
 
 	// initially calibrate the gripper on startup
 	// move to home position on startup
-	open_device();
+	// open_device();
 
 	bbil_add_message_interface(arduino_if_);
 
@@ -185,6 +191,12 @@ ArduinoComThread::init()
 	arduino_if_->set_status(ArduinoInterface::IDLE);
 	arduino_if_->write();
 	wakeup();
+}
+
+void
+ArduinoComThread::disconnect_callback()
+{
+	port_disconnected = true;
 }
 
 //@brief Writes the config values to the Interface
@@ -204,7 +216,7 @@ ArduinoComThread::finalize()
 	io_service_thread_.interrupt();
 	blackboard->unregister_listener(this);
 	blackboard->close(arduino_if_);
-	close_device();
+	port_.reset();
 }
 
 void
@@ -218,6 +230,12 @@ ArduinoComThread::append_message_to_queue(char cmd, unsigned int value, unsigned
 void
 ArduinoComThread::append_message_to_queue(ArduinoComMessage *msg)
 {
+	printf("STATRTED\n");
+	if (*msg == messages_) {
+		printf("EQ\n");
+		return;
+	}
+	printf("ENDED\n");
 	messages_.push(msg);
 }
 
@@ -241,19 +259,20 @@ ArduinoComThread::add_command_to_message(ArduinoComMessage *msg, char command, u
 void
 ArduinoComThread::append_config_messages()
 {
+	printf("HALLO WAS GEHT\n");
 	ArduinoComMessage *msg = new ArduinoComMessage();
 
-	add_command_to_message(msg,CMD_X_NEW_ACC, cfg_accs_[X]);
-	add_command_to_message(msg,CMD_Y_NEW_ACC, cfg_accs_[Y]);
-	add_command_to_message(msg,CMD_Z_NEW_ACC, cfg_accs_[Z]);
-	add_command_to_message(msg,CMD_A_NEW_ACC, cfg_accs_[A]);
-	add_command_to_message(msg,CMD_X_NEW_SPEED, cfg_speeds_[X]);
-	add_command_to_message(msg,CMD_Y_NEW_SPEED, cfg_speeds_[Y]);
-	add_command_to_message(msg,CMD_Z_NEW_SPEED, cfg_speeds_[Z]);
-	add_command_to_message(msg,CMD_A_NEW_SPEED, cfg_speeds_[A]);
+	add_command_to_message(msg, CMD_X_NEW_ACC, cfg_accs_[X]);
+	add_command_to_message(msg, CMD_Y_NEW_ACC, cfg_accs_[Y]);
+	add_command_to_message(msg, CMD_Z_NEW_ACC, cfg_accs_[Z]);
+	add_command_to_message(msg, CMD_A_NEW_ACC, cfg_accs_[A]);
+	add_command_to_message(msg, CMD_X_NEW_SPEED, cfg_speeds_[X]);
+	add_command_to_message(msg, CMD_Y_NEW_SPEED, cfg_speeds_[Y]);
+	add_command_to_message(msg, CMD_Z_NEW_SPEED, cfg_speeds_[Z]);
+	add_command_to_message(msg, CMD_A_NEW_SPEED, cfg_speeds_[A]);
 	// ue(CMD_CALIBRATE, 0, 50000); //now done on arduino
-	add_command_to_message(msg,CMD_A_SET_TOGGLE_STEPS, cfg_a_toggle_steps_);
-	add_command_to_message(msg,CMD_A_SET_HALF_TOGGLE_STEPS, cfg_a_half_toggle_steps_);
+	add_command_to_message(msg, CMD_A_SET_TOGGLE_STEPS, cfg_a_toggle_steps_);
+	add_command_to_message(msg, CMD_A_SET_HALF_TOGGLE_STEPS, cfg_a_half_toggle_steps_);
 
 	append_message_to_queue(msg);
 }
@@ -261,11 +280,13 @@ ArduinoComThread::append_config_messages()
 void
 ArduinoComThread::handle_queue()
 {
-	while (messages_.size() > 0) {
+	int i = 0;
+	while (messages_.size() > 0 && i < 10) {
 		arduino_if_->set_final(false);
 		arduino_if_->set_status(ArduinoInterface::MOVING);
 		arduino_if_->write();
 
+		printf("starting done%i\n", i);
 		send_message_from_queue();
 
 		arduino_if_->write();
@@ -273,39 +294,33 @@ ArduinoComThread::handle_queue()
 		tf_thread_->set_position(arduino_if_->x_position(),
 		                         arduino_if_->y_position(),
 		                         arduino_if_->z_position());
+		++i;
+		printf("not done%i\n", i);
 	}
 }
 
 void
 ArduinoComThread::loop()
 {
+	if (!port_ || port_disconnected) {
+		printf("GOING TO SHUTDOWN\n");
+		port_.reset();
+		port_disconnected = false;
+		try {
+			printf("Opening the device\n");
+			port_ = std::make_unique<SerialPort>(
+			  cfg_device_,
+			  boost::bind(&ArduinoComThread::receive, this, boost::placeholders::_1),
+			  boost::bind(&ArduinoComThread::disconnect_callback, this));
+		} catch (boost::system::error_code ec) {
+			logger->log_error(name(),
+			                  "Could now open PORT: %s, %s",
+			                  cfg_device_.c_str(),
+			                  ec.what().c_str());
+		}
+	}
+	printf("Loop\n");
 	handle_queue();
-}
-
-void
-ArduinoComThread::open_device()
-{
-	printf("hallo hier bin ich \n");
-	if (port_) {
-		close_device();
-	}
-	try {
-		port_ = std::make_unique<SerialPort>(
-		  cfg_device_, boost::bind(&ArduinoComThread::receive, this, boost::placeholders::_1));
-	} catch (boost::system::error_code ec) {
-		logger->log_error(name(),
-		                  "Could now open PORT: %s, %s",
-		                  cfg_device_.c_str(),
-		                  ec.what().c_str());
-	}
-	append_config_messages();
-}
-
-void
-ArduinoComThread::close_device()
-{
-	port_.reset();
-	printf("NANA NAH\n");
 }
 
 bool
@@ -314,12 +329,14 @@ ArduinoComThread::send_message(ArduinoComMessage &msg)
 	printf("SENDING %s\n", msg.buffer().c_str());
 	//TODO: Check of is open
 	// msg.get_position_data(goal_gripper_pose, goal_gripper_is_open);
-	if(!port_){
+	if (!port_) {
 		printf("DAS DUMM \n");
 		return false;
 	}
 	if (!port_->write(msg.buffer())) {
 		logger->log_error(name(), "Error while trying to send data to Arduino!");
+		// port_.reset();
+		printf("TJDSFKLJ\n");
 		return false;
 	}
 	usleep(100);
@@ -330,15 +347,19 @@ bool
 ArduinoComThread::send_message_from_queue()
 {
 	if (!port_) {
+		printf("NONONO\n");
 		return false; //Let the timer handle that
 	}
 	if (messages_.size() > 0) {
+		printf("sending\n");
 		ArduinoComMessage *cur_msg = messages_.front();
 		msecs_to_wait_             = cur_msg->get_msecs();
 		if (!send_message(*cur_msg)) {
+			printf("not send\n");
 			return false;
 		}
 
+		printf("send\n");
 		messages_.pop();
 		delete cur_msg;
 		return true;
@@ -347,42 +368,23 @@ ArduinoComThread::send_message_from_queue()
 }
 
 void
-ArduinoComThread::timer_callback(const boost::system::error_code &ec)
+ArduinoComThread::timer_callback()
 {
-	//TODO add CFG
-	deadline_timer.expires_from_now(boost::posix_time::seconds(5));
-	deadline_timer.async_wait(
-	  [this](const boost::system::error_code &error) { timer_callback(error); });
-
-	if (!port_) {
-		open_device();
-	}
-	handle_nodata(ec);
-}
-
-void
-ArduinoComThread::handle_nodata(const boost::system::error_code &ec)
-{
-	if (ec) {
-		// logger->log_error(name(), "Some read error happened %s", ec.what().c_str());
-		return;
-	}
-
 	printf("round: %i port %d\n", no_data_count, !!port_);
 
 	if (!port_)
-		open_device();
+		return;
 
 	++no_data_count;
 
 	//TODO add cfg
-	if (no_data_count > 1) {
-		close_device();
-		open_device();
+	if (no_data_count > 60) {
+		// port_.reset();
 		no_data_count = 0;
 		return;
 	}
-	append_message_to_queue(CMD_STATUS_REQ, 0, 1000);;
+	append_message_to_queue(CMD_STATUS_REQ, 0, 1000);
+	;
 
 	wakeup();
 }
@@ -545,7 +547,7 @@ ArduinoComThread::handle_rel_xyz_messag(ArduinoInterface::MoveXYZRelMessage *msg
 	                  cur_y,
 	                  cur_z);
 	if (msg->x() + cur_x >= 0. && msg->x() + cur_x <= arduino_if_->x_max()) {
-		int new_abs_x = round_to_2nd_dec((msg->x() + cur_x) * cfg_steps_per_mm_[X] * 1000.0);
+		int new_abs_x        = round_to_2nd_dec((msg->x() + cur_x) * cfg_steps_per_mm_[X] * 1000.0);
 		goal_gripper_pose[X] = new_abs_x;
 		logger->log_info(name(), "Set new X: %u", new_abs_x);
 		add_command_to_message(arduino_msg, CMD_X_NEW_POS, new_abs_x);
@@ -561,7 +563,7 @@ ArduinoComThread::handle_rel_xyz_messag(ArduinoInterface::MoveXYZRelMessage *msg
 	}
 
 	if (msg->y() + cur_y >= 0. && msg->y() + cur_y <= arduino_if_->y_max()) {
-		int new_abs_y = round_to_2nd_dec((msg->y() + cur_y) * cfg_steps_per_mm_[Y] * 1000.0);
+		int new_abs_y        = round_to_2nd_dec((msg->y() + cur_y) * cfg_steps_per_mm_[Y] * 1000.0);
 		goal_gripper_pose[Y] = new_abs_y;
 		logger->log_debug(name(), "Set new Y: %u", new_abs_y);
 		add_command_to_message(arduino_msg, CMD_Y_NEW_POS, new_abs_y);
@@ -576,7 +578,7 @@ ArduinoComThread::handle_rel_xyz_messag(ArduinoInterface::MoveXYZRelMessage *msg
 		arduino_if_->write();
 	}
 	if (msg->z() + cur_z >= 0. && msg->z() + cur_z <= arduino_if_->z_max()) {
-		int new_abs_z = round_to_2nd_dec((msg->z() + cur_z) * cfg_steps_per_mm_[Z] * 1000.0);
+		int new_abs_z        = round_to_2nd_dec((msg->z() + cur_z) * cfg_steps_per_mm_[Z] * 1000.0);
 		goal_gripper_pose[Z] = new_abs_z;
 		logger->log_debug(name(), "Set new Z: %u", new_abs_z);
 		add_command_to_message(arduino_msg, CMD_Z_NEW_POS, new_abs_z);

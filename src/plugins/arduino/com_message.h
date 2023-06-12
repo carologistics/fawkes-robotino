@@ -28,6 +28,7 @@
 #include <cstdint>
 #include <sstream>
 #include <string>
+#include <queue>
 
 class ArduinoComMessage
 {
@@ -69,12 +70,24 @@ public:
 		return i > 0 ? (int)log10((double)i) + 1 : 1;
 	}
 
+	bool operator==(const std::queue<ArduinoComMessage*>& q) {
+		std::queue<ArduinoComMessage*> tmpQueue = q;
+		while(!tmpQueue.empty()) {
+			if(tmpQueue.front()->buffer() == buffer()){
+				return true;
+			}
+			tmpQueue.pop();
+		}
+		return false;
+	}
+
 	/**
 	 * @brief All variables that define the position of the gripper
 	 * X,Y,Z position of the axis
 	 * A position of the motor, that controls the gripper
 	 */
 	typedef enum { X, Y, Z, A } gripper_pose_t;
+
 
 private:
 	void ctor();

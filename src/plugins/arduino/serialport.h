@@ -36,6 +36,7 @@ typedef boost::shared_ptr<boost::asio::serial_port> serial_port_ptr;
 class SerialPort
 {
 protected:
+	bool terminate_thread = false;
 	boost::thread serial_service_thread_;
 	boost::asio::io_service       io_service_;
 	serial_port_ptr               port_;
@@ -49,11 +50,13 @@ protected:
 	std::string end_of_command_;
 
 	boost::function<void(const std::string &)> receive_callback_;
+	boost::function<void()> deconstruct_callback_;
 	bool                                       has_started = false;
 
 public:
 	SerialPort(std::string                                port,
 	           boost::function<void(const std::string &)> receive_callback,
+               boost::function<void()> deconstruct_callback,
 	           // std::shared_ptr<boost::mutex>              mutex,
 	           unsigned int                               baud_rate        = 115200,
 	           std::string                                start_of_command = "AT ",
@@ -65,7 +68,6 @@ public:
 private:
 	void         async_read_some_();
 	virtual void on_receive_(const boost::system::error_code &ec, size_t bytes_transferred);
-	bool terminate_thread = false;
 };
 
 #endif /* _SERIALPORT_H */

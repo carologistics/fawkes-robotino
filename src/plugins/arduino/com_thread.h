@@ -103,8 +103,8 @@ public:
 	typedef enum { X, Y, Z, A } gripper_pose_t;
 
 private:
-	void open_device();
-	void close_device();
+	bool port_disconnected = false;
+	void disconnect_callback();
 
 	std::string  cfg_device_;
 	unsigned int cfg_speed_;
@@ -131,15 +131,15 @@ private:
 	bool movement_pending_;
 
 	unsigned int msecs_to_wait_;
-	unsigned int no_data_count;
+	unsigned int no_data_count = 0;
 
 	char current_arduino_status_;
 	int  gripper_pose_[3]     = {0, 0, 0};
 	int  goal_gripper_pose[3] = {0, 7500, 0};
 	bool goal_gripper_is_open = false;
 
-	void timer_callback(const boost::system::error_code &ec);
-	void handle_nodata(const boost::system::error_code &ec);
+	void timer_callback();
+	void handle_nodata();
 	void receive(const std::string &buff);
 
 	std::queue<ArduinoComMessage *> messages_;
