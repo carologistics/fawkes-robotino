@@ -47,10 +47,7 @@ documentation      = [==[
 skillenv.skill_module(_M)
 
 function input_ok()
-  if fsm.vars.command == "OPEN" or fsm.vars.command == "HALFOPEN" or fsm.vars.command == "CLOSE" then
-    return true
-  end
-  if fsm.vars.command == "STOP" then
+  if fsm.vars.command == "OPEN" or fsm.vars.command == "STOP" or fsm.vars.command == "CLOSE" then
     return true
   end
   if fsm.vars.command == "MOVEABS" or fsm.vars.command == "MOVEREL" then

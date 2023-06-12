@@ -26,11 +26,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iomanip>
-#include <iostream>
 #include <math.h>
-#include <ostream>
-#include <sstream>
-#include <string>
 
 using namespace fawkes;
 
@@ -83,7 +79,6 @@ ArduinoComMessage::ArduinoComMessage()
 ArduinoComMessage::ArduinoComMessage(char cmdid, unsigned int value)
 {
 	if (!ArduinoHelper::isValidSerialCommand(cmdid)) {
-		std::cerr << "The cmdid %s is not valid!" << std::endl;
 		return;
 	}
 	ctor();
@@ -97,12 +92,10 @@ ArduinoComMessage::~ArduinoComMessage()
 	ctor();
 }
 
-void
+inline void
 ArduinoComMessage::ctor()
 {
 	data_ << "AT ";
-	// setup a minimum of 1 second to wait
-	msecs_to_wait_ = 1000;
 }
 
 /** Add a command.
@@ -143,53 +136,6 @@ ArduinoComMessage::buffer()
 	return data_.str().append("+");
 }
 
-/** Set the number of msecs the associated action of this
- * message is probably going to need to be executed (as
- * long as the last value is smaller than the new value).
- * @param msecs milliseconds
- */
-void
-ArduinoComMessage::set_msecs_if_lower(unsigned int msecs)
-{
-	// TODO: Do we have to wait for each axis alone or just the longest running
-	// one?
-	if (msecs_to_wait_ < msecs) {
-		msecs_to_wait_ = msecs;
-	}
-}
-
-/** Get the number of msecs the associated action of this
- * message is probably going to need to be executed
- * @return msecs milliseconds
- */
-unsigned int
-ArduinoComMessage::get_msecs()
-{
-	return msecs_to_wait_;
-}
-
-/** Get the current buffer index
- * this is only used for error reporting
- * @return current buffer index
- */
-unsigned short
-ArduinoComMessage::get_cur_buffer_index()
-{
-	return cur_buffer_index_;
-}
-
-bool
-base_parse(std::stringstream &stream, std::string buffer)
-{
-	std::string s   = buffer;
-	size_t      pos = s.find("AT ");
-	if (pos == std::string::npos) {
-		//Not a valid command. This command will be ignored
-		return false;
-	}
-	stream << buffer.substr(pos + 3);
-	return true;
-}
 
 // @brief if the return is false then the arduino reconed and we need to restart everything
 bool
@@ -199,11 +145,14 @@ ArduinoComMessage::parse_message_from_arduino(int (&gripperr_position)[3],
                                               std::string buffer)
 {
 	std::stringstream ss;
-	if (!base_parse(ss, buffer)) {
+	std::string s   = buffer;
+	size_t      pos = s.find("AT ");
+	if (pos == std::string::npos) {
+		//Not a valid command. This command will be ignored
 		return false;
 	}
+	ss << buffer.substr(pos + 3);
 
-	std::string s;
 	try {
 		for (int i = 0; ss >> s; ++i) {
 			if (s == "HELLO") {
@@ -244,39 +193,4 @@ ArduinoComMessage::parse_message_from_arduino(int (&gripperr_position)[3],
 
 	//catched exeption
 	return false;
-}
-
-bool
-ArduinoComMessage::get_position_data(int (&gripperr_position)[3], bool &(is_gripper_open))
-{
-	std::stringstream ss;
-	if (!base_parse(ss, data_.str())) {
-		return false;
-	}
-
-	std::string i;
-	while (ss >> i) {
-		char leading = i[0];
-		if (leading == CMD_CLOSE) {
-			is_gripper_open = false;
-		}
-		if (leading == CMD_OPEN) {
-			is_gripper_open = true;
-		}
-		if (leading == CMD_X_NEW_POS) {
-			int x                = std::stoi(i.substr(1));
-			gripperr_position[0] = x;
-			printf("New x goal is %i", x);
-		}
-		if (leading == CMD_Y_NEW_POS) {
-			int y                = std::stoi(i.substr(1));
-			gripperr_position[1] = y;
-		}
-		if (leading == CMD_Z_NEW_POS) {
-			int z                = std::stoi(i.substr(1));
-			gripperr_position[2] = z;
-		}
-	}
-
-	return true;
 }

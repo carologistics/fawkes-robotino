@@ -43,32 +43,10 @@ public:
 	ArduinoComMessage(char cmdid, unsigned int value);
 
 	bool           add_command(char cmd, unsigned int number);
-	unsigned short get_cur_buffer_index();
 
-	/**
-	 * @return Returns the Position data of the current Buffer as a char.
-	 *  Formatting is the same as Serial communication.
-	*/
-	bool get_position_data(int (&gripperr_position)[3], bool &is_gripper_open);
 	static bool parse_message_from_arduino(int (&gripperr_position)[3], bool &is_gripper_open, char &arduino_status, std::string buffer);
 
 	std::string buffer();
-
-	void         set_msecs_if_lower(unsigned int msecs);
-	unsigned int get_msecs();
-
-	/**
-   * @brief Calculates the number of digits an integer consists of
-   *
-   * @param i The number of which the number of digits should be calculated
-   *
-   * @return The amount of digits i consists of
-   */
-	static inline unsigned short
-	num_digits(unsigned int i)
-	{
-		return i > 0 ? (int)log10((double)i) + 1 : 1;
-	}
 
 	bool operator==(const std::queue<ArduinoComMessage*>& q) {
 		std::queue<ArduinoComMessage*> tmpQueue = q;
@@ -90,14 +68,12 @@ public:
 
 
 private:
-	void ctor();
+	inline void ctor();
 	void dtor();
 
 private:
 	std::stringstream    data_;
-	unsigned short cur_buffer_index_; // index of next data field
 
-	unsigned int msecs_to_wait_;
 };
 
 #endif
