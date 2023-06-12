@@ -115,14 +115,15 @@
   )
 )
 
-(defrule production-strategy-finished-order-update-workload
-  "Trigger an update to to the mps-workload when an order is finished"
+(defrule production-strategy-update-workload-timeout
+  "Trigger an update to to the mps-workload after 2s"
   (declare (salience ?*SALIENCE-LOW*))
-  ?update-fact <- (wm-fact (key mps-workload needs-update) (value FALSE))
-  (goal (id ?root-id) (mode RETRACTED) (outcome COMPLETED))
-  (goal-meta (goal-id ?root-id) (root-for-order ~nil))
+  (time $?now)
+  ?update-fact <- (wm-fact (key mps workload needs-update) (value FALSE))
+  ?timer <- (timer (name workload-update-timer) (time $?t&:(timeout ?now ?t 2)) (seq ?seq))
   =>
   (modify ?update-fact (value TRUE))
+  (modify ?timer (time ?now) (seq (+ ?seq 1)))
 )
 
 (defrule production-strategy-sum-workload
