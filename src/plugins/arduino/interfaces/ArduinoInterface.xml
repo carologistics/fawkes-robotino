@@ -70,9 +70,6 @@
   <message name="OpenGripper">
     <comment>Open Gripper</comment>
   </message>
-  <message name="OpenHalfGripper">
-    <comment>Open Gripper</comment>
-  </message>
   <message name="StatusUpdate">
     <comment>Request a status of the arduino</comment>
   </message>
