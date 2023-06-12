@@ -33,12 +33,10 @@
 #define CMD_Z_NEW_POS 'Z'
 #define CMD_CLOSE 'G'
 #define CMD_OPEN 'O'
-#define CMD_HALF_OPEN 'H'
 #define CMD_STOP '.'
 #define CMD_FAST_STOP ':'
 #define CMD_STATUS_REQ 'S'
 #define CMD_A_SET_TOGGLE_STEPS 'T'
-#define CMD_A_SET_HALF_TOGGLE_STEPS 'Q'
 #define CMD_X_NEW_SPEED 'x'
 #define CMD_Y_NEW_SPEED 'y'
 #define CMD_Z_NEW_SPEED 'z'
@@ -63,12 +61,11 @@ public:
 	{
 		if (cmd == CMD_CALIBRATE || cmd == CMD_DOUBLE_CALIBRATE || cmd == CMD_X_NEW_POS
 		    || cmd == CMD_Y_NEW_POS || cmd == CMD_Z_NEW_POS || cmd == CMD_CLOSE || cmd == CMD_OPEN
-		    || cmd == CMD_HALF_OPEN || cmd == CMD_STOP || cmd == CMD_FAST_STOP || cmd == CMD_STATUS_REQ
-		    || cmd == CMD_A_SET_TOGGLE_STEPS || cmd == CMD_A_SET_HALF_TOGGLE_STEPS
-		    || cmd == CMD_X_NEW_SPEED || cmd == CMD_Y_NEW_SPEED || cmd == CMD_Z_NEW_SPEED
-		    || cmd == CMD_A_NEW_SPEED || cmd == CMD_SET_SPEED || cmd == CMD_X_NEW_ACC
-		    || cmd == CMD_Y_NEW_ACC || cmd == CMD_Z_NEW_ACC || cmd == CMD_A_NEW_ACC
-		    || cmd == CMD_SET_ACCEL
+		    || cmd == CMD_STOP || cmd == CMD_FAST_STOP || cmd == CMD_STATUS_REQ
+		    || cmd == CMD_A_SET_TOGGLE_STEPS || cmd == CMD_X_NEW_SPEED || cmd == CMD_Y_NEW_SPEED
+		    || cmd == CMD_Z_NEW_SPEED || cmd == CMD_A_NEW_SPEED || cmd == CMD_SET_SPEED
+		    || cmd == CMD_X_NEW_ACC || cmd == CMD_Y_NEW_ACC || cmd == CMD_Z_NEW_ACC
+		    || cmd == CMD_A_NEW_ACC || cmd == CMD_SET_ACCEL
 #ifdef DEBUG
 		    || cmd == CMD_A_NEW_POS
 #endif

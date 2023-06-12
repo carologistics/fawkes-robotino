@@ -39,12 +39,7 @@
 #include <core/threading/thread.h>
 #include <interfaces/JoystickInterface.h>
 #include <tf/types.h>
-#include <utils/time/time.h>
 
-#include <boost/asio.hpp>
-#include <boost/asio/io_context.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/thread.hpp>
 #include <memory>
 
 #define NEMA_STEPS_PER_REVOLUTION 200.0 * 4.0
@@ -146,10 +141,7 @@ private:
 	fawkes::Time                    expected_finish_time_;
 
 	std::unique_ptr<SerialPort> port_;
-	boost::asio::io_service     io_service_;
-	// std::shared_ptr<boost::mutex> mutex_;
-	boost::thread               io_service_thread_;
-	boost::asio::deadline_timer deadline_timer;
+	boost::thread               timer_thread;
 
 	fawkes::ArduinoInterface  *arduino_if_;
 	fawkes::JoystickInterface *joystick_if_;
@@ -158,10 +150,8 @@ private:
 
 	void load_config();
 
-	void append_message_to_queue(char cmd, unsigned int value = 0, unsigned int timeout = 1000);
+	void append_message_to_queue(char cmd, unsigned int value = 0);
 	void append_message_to_queue(ArduinoComMessage *msg);
-	// void set_message(char cmd, unsigned int value = 0, unsigned int timeout = 1000);
-	// void set_message(ArduinoComMessage *msg);
 	bool add_command_to_message(ArduinoComMessage *msg, char command, unsigned int value);
 	bool send_message(ArduinoComMessage &msg);
 	bool send_message_from_queue();
@@ -175,12 +165,7 @@ private:
 	bool handle_xyz_message(fawkes::ArduinoInterface::MoveXYZAbsMessage *message);
 
 	bool         handle_rel_xyz_messag(fawkes::ArduinoInterface::MoveXYZRelMessage *msg);
-	inline float to_arduino_units(float in_meter, ArduinoComThread::gripper_pose_t axis);
 	inline float from_arduino_units(float in_steps, ArduinoComThread::gripper_pose_t axis);
-
-protected:
-	/** Mutex to protect data_. Lock whenever accessing it. */
-	// fawkes::Mutex *data_mutex_;
 };
 
 #endif

@@ -4,8 +4,6 @@
 #include <AccelStepper.h>
 #include <Wire.h>
 
-//TODO ESTIMATE GRIPER POSE
-
 //#define DEBUG_MODE
 
 /*
@@ -24,7 +22,6 @@ AccelStepper motor_Z(MOTOR_Z_STEP_SHIFT, MOTOR_Z_DIR_SHIFT);
 AccelStepper motor_A(MOTOR_A_STEP_SHIFT, MOTOR_A_DIR_SHIFT);
 
 long a_toggle_steps      = 240;
-long a_half_toggle_steps = 120;
 
 #define DEFAULT_MAX_SPEED_X 2000
 #define DEFAULT_MAX_ACCEL_X 5000
@@ -45,13 +42,8 @@ long a_half_toggle_steps = 120;
 #define STATUS_IDLE 1
 #define STATUS_ERROR 2
 
-#define STATUS_OPEN 2
-#define STATUS_HALF_OPEN 1
+#define STATUS_OPEN 1
 #define STATUS_CLOSED 0
-
-#define X_HOME 0
-#define Y_HOME 7500
-#define Z_HOME 0
 
 char status_array_[] = {'M', 'I', 'E'};
 
@@ -67,14 +59,6 @@ int loop_nr = 0;
 char   buffer_[BUFFER_SIZE];
 byte   buf_i_ = 0;
 String errormessage;
-
-void
-home()
-{
-	set_new_pos(-X_HOME, motor_X);
-	set_new_pos(-Y_HOME, motor_Y);
-	set_new_pos(-Z_HOME, motor_Z);
-}
 
 void
 enable_step_interrupt()
@@ -127,15 +111,6 @@ int cur_pos;
 void
 send_status()
 {
-	// Wire.beginTransmission(4);
-	// Wire.write(" STATUS X: ");
-	// Wire.write(String(-motor_X.currentPosition()).c_str());
-	// Wire.write(" Y: ");
-	// Wire.write(String(-motor_Y.currentPosition()).c_str());
-	// Wire.write(" Z: ");
-	// Wire.write(String(-motor_Z.currentPosition()).c_str());
-	// Wire.write(731);              // sends one byte
-	// Wire.endTransmission();      // stop transmitting
 	byte checksum = 0;
 	Serial.print(AT); //checksum = 181
 	Serial.print(status_array_[cur_status]);
@@ -197,9 +172,6 @@ set_status(int status_)
 		send_status();
 	}
 }
-
-bool assumed_gripper_state;
-int  gripper_state = STATUS_CLOSED;
 
 void
 double_calibrate()
@@ -310,7 +282,7 @@ set_new_pos(long new_pos, AccelStepper &motor)
 	motor_A.enableOutputs();
 	noInterrupts(); // shortly disable interrupts to preverent stepping while changing target position (this is actually only a problem when cur_status == STATUS_MOVING)
 	motor.moveTo(new_pos);
-	interrupts();   // activate interrupts again
+	interrupts(); // activate interrupts again
 	set_status(
 	  STATUS_MOVING); // status is always only changed on no interrupt code level, hence no race condition occurs here
 }
@@ -389,7 +361,7 @@ read_package()
 			break;
 		} else if (next_char == -1) {
 			// if no serial data is available anymore, but package terminator not found yet:
-			return;                      // cannot do anything now
+			return; // cannot do anything now
 		}
 		buffer_[buf_i_++] = next_char; // other characters are added to the buffer
 		if (buf_i_ >= BUFFER_SIZE) {
@@ -431,32 +403,19 @@ read_package()
 			if (sscanf(buffer_ + (cur_i_cmd + 1), "%ld", &new_value) <= 0) {
 				buf_i_ = 0;
 				return;
-			}                                        // flush and return if parsing error
+			} // flush and return if parsing error
 		}
 		float opening_speed = motor_A.get_speed(); //get current openening speed
 		bool  assumed_gripper_state_local;
 		// this is used to store the assumed gripper state locally, to reduce calls to the function get_assumed_gripper_state
 
-		// Wire.beginTransmission(4);
-		// Wire.write(String(cur_cmd).c_str());
-		// Wire.write(" : ");
-		// Wire.write(String(new_value).c_str());
-		// Wire.write(445);              // sends one byte
-		// Wire.endTransmission();      // stop transmitting
-
 		switch (cur_cmd) {
 		case CMD_X_NEW_POS: set_new_pos(-new_value, motor_X); break;
 		case CMD_Y_NEW_POS: set_new_pos(-new_value, motor_Y); break;
 		case CMD_Z_NEW_POS: set_new_pos(-new_value, motor_Z); break;
-		case CMD_STATUS_REQ:
-			send_status();
-			break;
+		case CMD_STATUS_REQ: send_status(); break;
 		case CMD_A_SET_TOGGLE_STEPS:
 			a_toggle_steps = new_value;
-			send_status();
-			break;
-		case CMD_A_SET_HALF_TOGGLE_STEPS:
-			a_half_toggle_steps = new_value;
 			send_status();
 			break;
 #ifdef DEBUG_MODE
@@ -475,7 +434,7 @@ read_package()
 			send_status();
 			break;
 		case CMD_A_NEW_SPEED:
-			//set_new_speed_acc(new_value, 0.0, motor_A);
+			set_new_speed_acc(new_value, 0.0, motor_A);
 			send_status();
 			break;
 		case CMD_X_NEW_ACC:
@@ -491,80 +450,20 @@ read_package()
 			send_status();
 			break;
 		case CMD_A_NEW_ACC:
-			//set_new_speed_acc(0.0, new_value, motor_A);
+			set_new_speed_acc(0.0, new_value, motor_A);
 			send_status();
 			break;
 		case CMD_OPEN:
-			if (gripper_state == STATUS_CLOSED) {
 				set_new_rel_pos(-a_toggle_steps, motor_A);
-			} else if (gripper_state == STATUS_HALF_OPEN) {
-				set_new_rel_pos(-(a_toggle_steps - a_half_toggle_steps), motor_A);
-			} else {
-				send_status();
-			}
-			gripper_state = STATUS_OPEN;
-			open_gripper  = true;
-			// check_gripper_endstop();
-			// assumed_gripper_state_local = get_assumed_gripper_state(true);
-			// if (!assumed_gripper_state_local && open_gripper || !open_gripper) { // we do it
-			// 	if(half_open)
-			// 	set_new_rel_pos(-a_toggle_steps, motor_A);
-			// 	set_new_rel_pos(-a_toggle_steps, motor_A);
-			// 	assumed_gripper_state = true;
-			// } else { // we don't do it
-			// 	send_status();
-			// }
-			break;
-		case CMD_HALF_OPEN:
-			if (gripper_state == STATUS_OPEN) {
-				set_new_rel_pos((a_toggle_steps - a_half_toggle_steps), motor_A);
-			} else if (gripper_state == STATUS_CLOSED) {
-				set_new_rel_pos(-a_half_toggle_steps, motor_A);
-			} else {
-				send_status();
-			}
-			gripper_state = STATUS_HALF_OPEN;
-			open_gripper  = true;
-
-			// check_gripper_endstop();
-			// assumed_gripper_state_local = get_assumed_gripper_state(true);
-			// if (!assumed_gripper_state_local && open_gripper || !open_gripper) { // we do it
-			// set_new_rel_pos(-a_toggle_steps / 2, motor_A);
-			// assumed_gripper_state = true;
-			// } else { // we don't do it
-			// send_status();
-			// }
+				open_gripper = true;
 			break;
 		case CMD_CLOSE:
-			if (gripper_state == STATUS_OPEN) {
-				set_new_speed_acc(opening_speed / 8,
-				                  0.0,
-				                  motor_A); //slow down closing speed to an eighth of opening speed
-				set_new_rel_pos(a_toggle_steps, motor_A);
-				set_new_speed_acc(opening_speed, 0.0, motor_A); //reset speed
-			} else if (gripper_state == STATUS_HALF_OPEN) {
-				set_new_speed_acc(opening_speed / 8,
-				                  0.0,
-				                  motor_A); //slow down closing speed to an eighth of opening speed
-				set_new_rel_pos(120, motor_A);
-				set_new_speed_acc(opening_speed, 0.0, motor_A); //reset speed
-			} else {
-				send_status();
-			}
-			gripper_state = STATUS_CLOSED;
-			open_gripper  = true;
-			// check_gripper_endstop();
-			// assumed_gripper_state_local = get_assumed_gripper_state(false);
-			// if (assumed_gripper_state_local) { // we do it
-			// 	set_new_speed_acc(opening_speed / 8,
-			// 	                  0.0,
-			// 	                  motor_A); //slow down closing speed to an eighth of opening speed
-			// 	set_new_rel_pos(a_toggle_steps, motor_A);
-			// 	assumed_gripper_state = false;
-			// 	set_new_speed_acc(opening_speed, 0.0, motor_A); //reset speed
-			// } else {                                          // we don't do it
-			// 	send_status();
-			// }
+			set_new_speed_acc(opening_speed / 8,
+			                  0.0,
+			                  motor_A); //slow down closing speed to an eighth of opening speed
+			set_new_rel_pos(a_toggle_steps, motor_A);
+			set_new_speed_acc(opening_speed, 0.0, motor_A); //reset speed
+			open_gripper = false;
 			break;
 		case CMD_CALIBRATE: calibrate(); break;
 		case CMD_DOUBLE_CALIBRATE: double_calibrate(); break;
@@ -607,11 +506,6 @@ read_package()
 void
 setup()
 {
-	// Wire.begin();
-	// Wire.beginTransmission(4);   // transmit to device #4
-	// Wire.write("Setup"); // sends five bytes
-	// Wire.write(615);              // sends one byte
-	// Wire.endTransmission();      // stop transmitting
 	Serial.begin(115200);
 	// Serial.setTimeout(0);
 
@@ -646,9 +540,9 @@ setup()
 	motor_Z.setEnablePin(MOTOR_Z_ENABLE_PIN, true);
 	motor_A.setEnablePin(MOTOR_A_ENABLE_PIN, true);
 	motor_X.disableOutputs(); // same pin for all of them
-	motor_Y.disableOutputs(); // same pin for all of them
-	motor_Z.disableOutputs(); // same pin for all of them
-	motor_A.disableOutputs(); // same pin for all of them
+	/* motor_Y.disableOutputs(); // same pin for all of them */
+	/* motor_Z.disableOutputs(); // same pin for all of them */
+	/* motor_A.disableOutputs(); // same pin for all of them */
 
 	set_new_speed_acc(DEFAULT_MAX_SPEED_X, DEFAULT_MAX_ACCEL_X, motor_X);
 	set_new_speed_acc(DEFAULT_MAX_SPEED_Y, DEFAULT_MAX_ACCEL_Y, motor_Y);
@@ -695,19 +589,11 @@ void
 loop()
 {
 	if (movement_done_flag) {
-		if (gripper_state == STATUS_HALF_OPEN) {
-			motor_X.enableOutputs();
-			digitalWrite(MOTOR_HOLD_PIN, HIGH);
-		} else {
-			motor_X.disableOutputs(); // same pin for all of them
-			digitalWrite(MOTOR_HOLD_PIN, LOW);
-		}
-		// motor_X.disableOutputs(); // Since all motors share the enable pin, disabling one is sufficient
-		// motor_Y.disableOutputs(); // same pin for all of them
-		// motor_Z.disableOutputs(); // same pin for all of them
+		motor_X.disableOutputs(); // same pin for all of them
 		movement_done_flag = false;
 		set_status(STATUS_IDLE);
 	}
+
 	read_package();
 
 	if (cur_status != STATUS_MOVING) {
@@ -731,7 +617,7 @@ ISR(TIMER0_COMPA_vect) // this is called every overflow of the timer 0
 {
 	static volatile bool occupied = false;
 	if (occupied)
-		return;     // this interrupt is already called
+		return; // this interrupt is already called
 	occupied = true;
 	interrupts(); // we need interrupts here to catch all the incoming serial data and finish the pulse
 	if (cur_status == STATUS_MOVING) {
@@ -757,7 +643,7 @@ ISR(TIMER0_COMPA_vect) // this is called every overflow of the timer 0
 			MOTOR_XYZ_DIR_OUT =
 			  (MOTOR_XYZ_DIR_OUT & MOTOR_XYZ_DIR_INV_MASK) | dir; // set the direction pins right
 			MOTOR_A_DIR_OUT =
-			  (MOTOR_A_DIR_OUT & MOTOR_A_DIR_INV_MASK) | dir_a;   // set the direction pins right
+			  (MOTOR_A_DIR_OUT & MOTOR_A_DIR_INV_MASK) | dir_a; // set the direction pins right
 			step_bits_xyz = step;
 			step_bits_a   = step_a;
 
