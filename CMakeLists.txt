@@ -11,5 +11,6 @@ add_subdirectory(fawkes)
 
 include_directories(${FAWKES_CORE_DIR}/src/libs)
 add_subdirectory(src)
+add_subdirectory(etc)
 
 set_common_properties_of_targets(all_targets)
