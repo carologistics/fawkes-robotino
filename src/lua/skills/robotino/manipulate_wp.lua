@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "manipulate_wp"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"goto","motor_move","pick_or_put_vs"}
+depends_skills     = {"goto","motor_move","pick_or_put_vs","mps_align"}
 depends_interfaces = {
    {v = "line1", type="LaserLineInterface", id="/laser-lines/1"},
    {v = "line2", type="LaserLineInterface", id="/laser-lines/2"},
@@ -285,12 +285,12 @@ fsm:define_states{ export_to=_M, closure={MISSING_MAX=MISSING_MAX},
    {"FIND_LASER_LINE",       JumpState},
    {"DRIVE_BACK",            SkillJumpState, skills={{motor_move}},      final_to="SEARCH_LASER_LINE", fail_to="SEARCH_LASER_LINE"},
    {"SEARCH_LASER_LINE",     JumpState},
-   {"SPIN",                  SkillJumpState, skills={{motor_move}},      final_to="SEARCH_LASER_LINE", fail_to="SEARCH_LASER_LINE"},
+   {"MPS_ALIGN",             SkillJumpState, skills={{mps_align}},       final_to="SEARCH_LASER_LINE", fail_to="FAILED"},
    {"DRIVE_TO_LASER_LINE",   SkillJumpState, skills={{motor_move}},      final_to="AT_LASER_LINE", fail_to="FAILED"},
    {"AT_LASER_LINE",         JumpState},
    {"MOVE_BASE_AND_GRIPPER", SkillJumpState, skills={{motor_move}},      final_to="FINE_TUNE_GRIPPER", fail_to="FIND_LASER_LINE"},
    {"FINE_TUNE_GRIPPER",     JumpState},
-   {"GRIPPER_ROUTINE",       SkillJumpState, skills={{pick_or_put_vs}}, final_to="FINAL", fail_to="FINE_TUNE_GRIPPER"},
+   {"GRIPPER_ROUTINE",       SkillJumpState, skills={{pick_or_put_vs}},  final_to="FINAL", fail_to="FINE_TUNE_GRIPPER"},
 }
 
 fsm:add_transitions{
@@ -302,7 +302,7 @@ fsm:add_transitions{
    {"FIND_LASER_LINE", "DRIVE_BACK",              timeout=1, desc="Could not find laser-line, drive back"},
    {"SEARCH_LASER_LINE", "DRIVE_TO_LASER_LINE",   cond=laser_line_found},
    {"SEARCH_LASER_LINE", "FAILED",                cond="vars.search_attemps > 10", desc="Tried 10 times, could not find laser-line"},
-   {"SEARCH_LASER_LINE", "SPIN",                  timeout=1, desc="Could not find laser-line, spin"},
+   {"SEARCH_LASER_LINE", "MPS_ALIGN",             timeout=1, desc="Could not find laser-line, spin"},
    {"AT_LASER_LINE", "MOVE_BASE_AND_GRIPPER",     cond="vars.consecutive_detections > 2", desc="Found Object"},
    {"AT_LASER_LINE", "FAILED",                    timeout=2, desc="Object not found"},
    {"FINE_TUNE_GRIPPER", "GRIPPER_ROUTINE",       cond=gripper_aligned, desc="Gripper aligned"},
@@ -371,6 +371,11 @@ function INIT:init()
   fsm.vars.gripper_wait       = 0
 end
 
+function MPS_ALIGN:init()
+  self.args["mps_align"].tag_id = fsm.vars.tag_id
+  self.args["mps_align"].x = 0.5
+end
+
 function START_TRACKING:init()
   -- start object tracking
   local msg = object_tracking_if.StartTrackingMessage:new(
@@ -398,10 +403,6 @@ end
 
 function SEARCH_LASER_LINE:init()
   fsm.vars.search_attemps = fsm.vars.search_attemps + 1
-end
-
-function SPIN:init()
-  self.args["motor_move"].ori = math.pi / 5
 end
 
 function DRIVE_TO_LASER_LINE:init()
