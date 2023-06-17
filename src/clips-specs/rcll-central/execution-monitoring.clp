@@ -681,7 +681,7 @@
 	)
 
 	(assert (domain-fact (name at) (param-values ?robot START INPUT))
-	        (domain-fact (name can-hold) (param-values robot1))
+	        (domain-fact (name can-hold) (param-values ?robot))
 	        (domain-object (name ?robot) (type robot))
 	        (wm-fact (key central agent robot args? r ?robot))
 	        (wm-fact (key central agent robot-lost args? r ?robot))
