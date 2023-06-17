@@ -53,5 +53,5 @@ fawkes/meta_plugins:
   m-distributed-clips-executive:
     - m-robot-memory
     - m-clips
-    - clips_robot_memory
+    - clips-robot-memory
     - m-clips-executive
