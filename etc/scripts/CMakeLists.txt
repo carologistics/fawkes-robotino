@@ -20,7 +20,6 @@
 #
 # *****************************************************************************
 
-create_symlink(cx-simtest-check.bash ${FAWKES_EXECUTABLE_DIR})
 create_symlink(cx-simtest-check.py ${FAWKES_EXECUTABLE_DIR})
 create_symlink(extract_game_report_data.py ${FAWKES_EXECUTABLE_DIR})
 create_symlink(flash_arduino.sh ${FAWKES_EXECUTABLE_DIR})
