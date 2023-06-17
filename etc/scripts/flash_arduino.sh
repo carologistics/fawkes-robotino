@@ -14,7 +14,7 @@ then
 else
 	echo -e "\e[31mArduino device does not exist: $2\n" + \
 	"Set the DEV_ARDUINO cmake variable to the arduino device!\e[0m"
-	exit 1
+	exit 0
 fi
 
 eval $compile_command > /dev/null 2>&1
