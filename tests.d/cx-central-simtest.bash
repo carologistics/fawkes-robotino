@@ -43,15 +43,13 @@ stop_test () {
 
 trap stop_test $TRAP_SIGNALS
 ulimit -c 0
-if timeout 60 $SCRIPT_PATH/gazsim.bash -o -r -n 3 --mongodb \
+if timeout 60 $SCRIPT_PATH/gazsim.bash -o -r -n 3 \
   -m m-skill-sim --central-agent m-central-clips-exec \
-  --team-cyan Carologistics --start-game=PRODUCTION \
-  --refbox-args "--cfg-mps mps/mockup_mps.yaml\
-     --cfg-simulation simulation/fast_simulation.yaml \
-     --cfg-game game/buildtest_game.yaml";
+  --no-refbox --no-refbox-frontend;
 then
+	sleep 2
   echo "Waiting for results..."
-  if timeout 360 $SCRIPT_PATH/cx-simtest-check.bash ./robot11_latest.log
+  if timeout 360 python3 $SCRIPT_PATH/cx-simtest-check.py ./robot11_latest.log
   then
     echo "Simtest over."
     exit 0

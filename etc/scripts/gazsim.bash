@@ -59,6 +59,8 @@ EOF
 COMMAND=start
 CONF=
 HEADLESS=
+NO_REFBOX=
+NO_REFBOX_FRONTEND=
 REFBOX=refbox
 # Default to gazebo simulation.
 REFBOX_ARGS="--cfg-simulation simulation/gazebo_simulation.yaml"
@@ -135,7 +137,7 @@ echo "Using $TERMINAL"
 ROS_MASTER_PORT=${ROS_MASTER_URI##*:}
 ROS_MASTER_PORT=${ROS_MASTER_PORT%%/*}
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "debug,ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:,keep-tmpfiles,challenge,refbox-args:" -- "$@")
+OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "debug,ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:,keep-tmpfiles,challenge,no-refbox,no-refbox-frontend,refbox-args:" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
@@ -219,6 +221,12 @@ while true; do
          ;;
      --challenge)
          REFBOX=refbox-challenge
+         ;;
+     --no-refbox)
+         NO_REFBOX=true
+         ;;
+     --no-refbox-frontend)
+         NO_REFBOX_FRONTEND=true
          ;;
      --refbox-args)
          REFBOX_ARGS="$OPTARG"
@@ -399,10 +407,14 @@ if [  $COMMAND  == start ]; then
 	fi
     	done
     fi
-    #start refbox
-    COMMANDS+=("bash -i -c \"$startup_script_location -x $REFBOX  $KEEP $@ -- $REFBOX_ARGS\"")
+    if ! [ -n "$NO_REFBOX" ]; then
+      #start refbox
+      COMMANDS+=("bash -i -c \"$startup_script_location -x $REFBOX  $KEEP $@ -- $REFBOX_ARGS\"")
+    fi
+    if ! [ -n "$NO_REFBOX_FRONTEND" ]; then
     #start refbox frontend
-    COMMANDS+=("bash -i -c \"$startup_script_location -x refbox-frontend $KEEP $@\"")
+      COMMANDS+=("bash -i -c \"$startup_script_location -x refbox-frontend $KEEP $@\"")
+    fi
 
     # start mongodb central instance
     if $START_MONGODB ; then
