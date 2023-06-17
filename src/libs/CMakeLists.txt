@@ -21,3 +21,4 @@
 # *****************************************************************************
 
 add_subdirectory(interfaces)
+add_subdirectory(llsf_msgs)
