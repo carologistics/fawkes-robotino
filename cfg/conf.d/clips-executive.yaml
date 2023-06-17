@@ -183,7 +183,6 @@ clips-executive:
         - NavGraphWithMPSGeneratorInterface
         - NavGraphGeneratorInterface
         - NavigatorInterface
-        - AX12GripperInterface
         - MotorInterface
         - LaserLineInterface
         - TagVisionInterface
@@ -307,7 +306,6 @@ clips-executive:
         - NavGraphWithMPSGeneratorInterface
         - NavGraphGeneratorInterface
         - NavigatorInterface
-        - AX12GripperInterface
         - MotorInterface
         - LaserLineInterface
         - TagVisionInterface
