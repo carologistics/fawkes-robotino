@@ -448,15 +448,8 @@ function START_TRACKING:init()
 
   -- open gripper
   if fsm.vars.target == "WORKPIECE" then
-    if fsm.vars.side == "SHELF-LEFT"
-     or fsm.vars.side == "SHELF-MIDDLE"
-     or fsm.vars.side == "SHELF-RIGHT" then
-      local open_msg = arduino.OpenGripperMessage:new()
-      arduino:msgq_enqueue(open_msg)
-    else 
-      local half_open_msg = arduino.OpenHalfGripperMessage:new()
-      arduino:msgq_enqueue(half_open_msg)
-    end
+    local open_msg = arduino.OpenGripperMessage:new()
+    arduino:msgq_enqueue(open_msg)
   end
 
   -- move to default pose
@@ -628,12 +621,8 @@ function GRIPPER_ROUTINE:init()
     print("Pick")
   else
     self.args["pick_or_put_vs"].action = "PUT"
-<<<<<<< HEAD
     self.args["pick_or_put_vs"].missing_c3_height = tostring(fsm.vars.missing_c3_height)
     print("Put")
-=======
-    self.args["pick_or_put_vs"].half = true
->>>>>>> 54346d8ef (skills/manipulate_wp: allow use of half open commands)
   end
 end
 
