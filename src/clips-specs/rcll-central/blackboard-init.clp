@@ -127,7 +127,7 @@
     (and
       (neq ?field-height NOT-SET) (neq ?field-height DOES-NOT-EXIST)
       (neq ?field-width NOT-SET) (neq ?field-width DOES-NOT-EXIST)
-      (neq ?field-mirrored NOT-SET) (neq ?mirrored DOES-NOT-EXIST)
+      (neq ?mirrored NOT-SET) (neq ?mirrored DOES-NOT-EXIST)
     )
   )
   =>
@@ -164,7 +164,7 @@
     (and
       (neq ?field-height NOT-SET) (neq ?field-height DOES-NOT-EXIST)
       (neq ?field-width NOT-SET) (neq ?field-width DOES-NOT-EXIST)
-      (neq ?field-mirrored NOT-SET) (neq ?mirrored DOES-NOT-EXIST)
+      (neq ?mirrored NOT-SET) (neq ?mirrored DOES-NOT-EXIST)
     )
   )
   =>

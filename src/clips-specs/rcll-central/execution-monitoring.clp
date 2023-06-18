@@ -16,6 +16,15 @@
   (multislot start-time)
   (slot status)
 )
+;A timeout for a move action
+(deftemplate progress-timer
+  (slot plan-id (type SYMBOL))
+  (slot action-id (type NUMBER))
+  (slot timeout-duration)
+  (multislot start-time)
+  (multislot last-pose)
+  (slot counter (type NUMBER))
+)
 
 (deffunction fail-action (?action ?error-msg)
 	(do-for-fact ((?sae skill-action-execinfo))
@@ -215,7 +224,99 @@
   (modify ?pt (start-time ?now))
 )
 
-;
+(defrule execution-monitoring-set-timeout-move-action-progress
+" Set a timeout that measures the progress of actions that move the agent. Should the agent not make progress
+  beyond a certain delta threshold within the specified time span, the action will be failed.
+"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  (goal (id ?goal-id))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+
+  (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+	   (id ?id) (state RUNNING)
+	   (action-name move|go-wait)
+  )
+
+  (Position3DInterface (id ?if-id&:(eq ?if-id (remote-if-id ?robot "Pose"))) (translation $?pose))
+
+  (not (progress-timer (plan-id ?plan-id) (action-id ?id)))
+  (wm-fact (key refbox game-time) (values $?now))
+  =>
+  (assert
+    (progress-timer
+      (plan-id ?plan-id)
+	  (action-id ?id)
+	  (timeout-duration ?*MOVE-PROGRESS-TIMEOUT*)
+	  (start-time ?now)
+	  (last-pose ?pose)
+	  (counter 0)
+    )
+  )
+)
+
+(defrule execution-monitoring-update-timeout-move-action-progress
+" Update the progress-timer of a move action
+"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  (goal (id ?goal-id))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+
+  ?p <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+	   (id ?id) (state RUNNING)
+       (skiller ?skiller)
+	   (action-name ?action-name)
+  )
+
+  (wm-fact (key refbox game-time) (values $?now))
+
+  (Position3DInterface (id ?if-id&:(eq ?if-id (remote-if-id ?robot "Pose"))) (translation $?pose))
+
+  ?pt <- (progress-timer (plan-id ?plan-id)
+					     (action-id ?id)
+						 (start-time $?st)
+						 (timeout-duration ?timeout&:(timeout ?now ?st ?timeout))
+   						 (last-pose ?last-pose)
+						 (counter ?counter))
+  =>
+  (printout t "Checking progress of move action "  ?action-name  crlf)
+
+  (bind ?last-x (nth$ 1 ?last-pose))
+  (bind ?last-y (nth$ 2 ?last-pose))
+  (bind ?curr-x (nth$ 1 ?pose))
+  (bind ?curr-y (nth$ 2 ?pose))
+  (bind ?delta (+ (abs (- ?last-y ?curr-y)) (abs (- ?last-x ?curr-x))))
+
+  (if (> ?delta 0.5) then
+  	(printout t "Robot " ?robot " made sufficient progress on "  ?action-name  crlf)
+	(modify ?pt (counter 0) (last-pose ?pose) (start-time ?now))
+  else
+	(if (eq ?counter ?*MOVE-PROGRESS-COUNTER*) then
+	  (printout t "   Aborting action " ?action-name " on interface after stuck on small delta" ?skiller crlf)
+	  (bind ?m (blackboard-create-msg (str-cat "SkillerInterface::" ?skiller) "StopExecMessage"))
+      (bind ?p (modify ?p (state FAILED) (error-msg "Stuck on RUNNING")))
+      (fail-action ?p "Unsatisfied precondition")
+	else
+  	  (printout t "Robot " ?robot " did not make sufficient progress on "  ?action-name  crlf)
+	  (modify ?pt (counter (+ 1 ?counter)) (start-time ?now))
+	)
+  )
+)
+
+(defrule execution-monitoring-remove-timeout-move-action-progress
+" Remove the progress-timer of a move action if the action is not running anymore
+"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  (goal (id ?goal-id))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+
+  (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+	   (id ?id) (state ~RUNNING)
+  )
+  ?pt <- (progress-timer (plan-id ?plan-id) (action-id ?id))
+  =>
+  (retract ?pt)
+)
+
 ;======================================Retries=========================================
 ;
 
