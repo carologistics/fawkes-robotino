@@ -399,7 +399,7 @@ function START_TRACKING:init()
   object_tracking_if:msgq_enqueue_copy(msg)
 
   -- open gripper
-  if fsm.vars.target == "WORKPIECE" then
+  if fsm.vars.target == "WORKPIECE" and not fsm.vars.dry_run then
     local open_msg = arduino.OpenGripperMessage:new()
     arduino:msgq_enqueue(open_msg)
   end
