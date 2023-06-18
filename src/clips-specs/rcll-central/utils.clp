@@ -66,7 +66,7 @@
   ?*HOLDING-MONITORING* = 60
 
   ?*MOVE-PROGRESS-COUNTER* = 6
-  ?*MOVE-PROGRESS-TIMEOUT* = 15
+  ?*MOVE-PROGRESS-TIMEOUT* = 5
 )
 
 (deftemplate exploration-result

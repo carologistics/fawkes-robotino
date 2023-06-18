@@ -642,11 +642,14 @@ The workpiece remains in the output of the used ring station after
 	             ; ... and it is a fresh base located in a base station
 	         (or (and (wm-fact (key domain fact mps-type args? m ?wp-loc t BS))
 	                  (wm-fact (key domain fact wp-unused args? wp ?wp))
+					  (not (wm-fact (key domain fact wp-at args? wp ?wp m ?any-wp-loc side ?any-wp-side)))
 	                  (wm-fact (key domain fact wp-base-color
 	                            args? wp ?wp col BASE_NONE)))
 	             ; ... or is already at some machine
-	             (wm-fact (key domain fact wp-at
+	             (and (wm-fact (key domain fact wp-at
 	                       args? wp ?wp m ?wp-loc side ?wp-side))
+					  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+				 )
 	         )
 	    )
 	    ; or the workpiece is already being held
