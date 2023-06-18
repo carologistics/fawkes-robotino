@@ -6,6 +6,10 @@
 *_tolua.pkg
 *.swp
 *.swo
+/src/clips-specs/clips-executive
+/src/clips-specs/clips
+/src/clips-specs/clips-navgraph
+/src/clips-specs/clips-protobuf
 
 # Specific paths, _ variants for cross compilation environments
 /build/

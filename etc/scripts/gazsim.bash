@@ -144,7 +144,6 @@ echo "Using $TERMINAL"
 ROS_MASTER_PORT=${ROS_MASTER_URI##*:}
 ROS_MASTER_PORT=${ROS_MASTER_PORT%%/*}
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "debug,ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:,keep-tmpfiles,challenge,no-refbox,no-refbox-frontend,refbox-args:" -- "$@")
 OPTS=$(getopt -o "hx:c:lr::ksn:e:dm:aof:p:gvt" -l "debug,ros,ros2,ros-launch-main:,ros-launch:,ros2,ros2-launch-main:,ros2-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:,keep-tmpfiles,challenge,no-refbox,no-refbox-frontend,refbox-args:" -- "$@")
 if [ $? != 0 ]
 then
