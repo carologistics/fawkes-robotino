@@ -36,8 +36,6 @@ It is independent of the workpiece location or its target location.
 
 Parameters:
       @param action   decides if a pick or put action is performed: (PICK | PUT)
-      @param half     opens the gripper half to handle lasers at the maschines better after
-                      placing the workpiece (only relevant for PUT)
 ]==]
 
 
@@ -75,9 +73,6 @@ end
 
 
 function input_invalid()
-  if fsm.vars.half == nil then
-    fsm.vars.half = false
-  end
   if fsm.vars.action == "PICK" then
     fsm.vars.pick_wp = true
   elseif fsm.vars.action == "PUT" then
@@ -100,8 +95,7 @@ fsm:define_states{ export_to=_M, closure={},
    {"GRIPPER_DEFAULT",   SkillJumpState, skills={{gripper_commands}}, final_to="DRIVE_BACK", fail_to="FAILED"},
    {"DRIVE_BACK",        SkillJumpState, skills={{motor_move}}, final_to="DECIDE_CLOSE", fail_to="FAILED"},
    {"DECIDE_CLOSE",      JumpState},
-   {"CLOSE_DEFAULT",     SkillJumpState, skills={{gripper_commands}}, final_to="CALIBRATE", fail_to="FAILED"},
-   {"CALIBRATE",         SkillJumpState, skills={{gripper_commands}}, final_to="FINAL", fail_to="FAILED"},
+   {"CLOSE_DEFAULT",     SkillJumpState, skills={{gripper_commands}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
@@ -152,11 +146,7 @@ function CLOSE_GRIPPER:init()
 end
 
 function OPEN_GRIPPER:init()
-  if fsm.vars.half then
-    self.args["gripper_commands"].command= "HALFOPEN" -- Closes by only half, to not touch the laser of the machine and close again
-  else
-    self.args["gripper_commands"].command= "OPEN"
-  end
+  self.args["gripper_commands"].command = "OPEN"
 end
 
 function MOVE_GRIPPER_UP:init()
@@ -189,8 +179,4 @@ end
 
 function CLOSE_DEFAULT:init()
   self.args["gripper_commands"].command= "CLOSE"
-end
-
-function CALIBRATE:init()
-  self.args["gripper_commands"].command= "CALIBRATE"
 end
