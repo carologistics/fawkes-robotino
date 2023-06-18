@@ -1,0 +1,63 @@
+version: "3.4"
+services:
+
+#base_image
+  fawkes-robotino:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: base_image
+
+      #  mongo-container:
+      #    image: mongo:4.0
+      #    network_mode: host
+      #    command: mongod --bind_ip_all
+      #    healthcheck:
+      #      test: ["CMD","mongo", "--eval", "db.adminCommand('ping')"]
+      #      interval: 10s
+      #      timeout: 10s
+      #      retries: 5
+      #    volumes:
+      #      - "./mnt:/run:z"
+      #
+      #  refbox:
+      #    image: quay.io/robocup-logistics/rcll-refbox:latest
+      #    working_dir: /run
+      #    command: llsf-refbox --cfg-mps mps/mockup_mps.yaml --cfg-mongodb mongodb/enable_mongodb.yaml --cfg-simulation simulation/fast_simulation.yaml --cfg-game game/buildtest_game.yaml --dump-cfg
+      #    network_mode: host
+      #    depends_on:
+      #      mongo-container:
+      #        condition: service_healthy
+      #    volumes:
+      #      - "./mnt:/run:z"
+      #      - "refboxcfg:/etc/rcll-refbox"
+      #  refbox_instruct:
+      #    image: quay.io/robocup-logistics/rcll-refbox:latest
+      #    command:
+      #      - /bin/sh
+      #      - -c
+      #      - |
+      #        rcll-refbox-instruct -w 60
+      #        rcll-refbox-instruct -p SETUP -s RUNNING -c Carologistics
+      #        sleep 10
+      #        rcll-refbox-instruct -p PRODUCTION
+      #    network_mode: host
+      #    volumes:
+      #      - "./mnt:/run:z"
+      #      - "refboxcfg:/etc/rcll-refbox"
+      #        #rcll-refbox-instruct -n 3 -W 60
+      #  central-agent:
+      #    image: base_image
+      #    network_mode: host
+      #    depends_on:
+      #      mongo-container:
+      #        condition: service_healthy
+      #    command: ./tests.d/cx-central-simtest.bash
+      #    volumes:
+      #      - "./mnt:/workdir/tests.out.d/:z"
+      #
+      #
+      #volumes:
+      #  refboxcfg:
+      #    driver: local
+

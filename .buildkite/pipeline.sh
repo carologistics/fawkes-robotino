@@ -13,6 +13,7 @@ SCRIPT_PATH=$(dirname $(readlink -f ${BASH_SOURCE[0]}))
 
 sed $SCRIPT_PATH/../fawkes/.buildkite/pipeline.yml \
 	-e 's|\.buildkite/|fawkes/.buildkite/|g' \
+	-e 's|run: fawkes|run: fawkes-robotino |g' \
 	-e 's/SSH_DEPLOY_PRIVKEY_COMMITTERS/SSH_DEPLOY_PRIVKEY_COMMITTERS\n            - SSH_DEPLOY_PRIVKEY_FAWKES_ROBOTINO/g'
 
 # Example to add more steps:

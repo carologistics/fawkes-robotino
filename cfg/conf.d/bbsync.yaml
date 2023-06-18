@@ -115,7 +115,6 @@ fawkes/bbsync:
         pose: Position3DInterface::Pose
         laserswitch: SwitchInterface::/laser-cluster/ampel
         navigator: NavigatorInterface::Navigator
-        gripper: AX12GripperInterface::Gripper AX12
         laser-lines: SwitchInterface::laser-lines
         arduino: ArduinoInterface::Arduino
         laser_front_dist: Position3DInterface::front_dist
