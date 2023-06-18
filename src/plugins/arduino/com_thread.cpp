@@ -104,10 +104,13 @@ ArduinoComThread::receive(const std::string &buf)
 	}
 
 	arduino_if_->set_x_position(from_arduino_units(gripper_pose_[X], X));
-	arduino_if_->set_y_position(from_arduino_units(gripper_pose_[Y], Y) - (cfg_y_max_ / 2));
+	arduino_if_->set_y_position(from_arduino_units(gripper_pose_[Y], Y)); // - (cfg_y_max_ / 2));
 	arduino_if_->set_z_position(from_arduino_units(gripper_pose_[Z], Z));
 	arduino_if_->set_gripper_closed(is_open);
 	arduino_if_->write();
+  tf_thread_->set_position(arduino_if_->x_position(),
+                           arduino_if_->y_position(),
+                           arduino_if_->z_position());
 }
 
 void
@@ -229,9 +232,6 @@ ArduinoComThread::handle_queue()
 
 		arduino_if_->write();
 
-		tf_thread_->set_position(arduino_if_->x_position(),
-		                         arduino_if_->y_position(),
-		                         arduino_if_->z_position());
 		++i;
 	}
 }

@@ -562,7 +562,6 @@ function GRIPPER_ROUTINE:init()
     self.args["pick_or_put_vs"].action = "PICK"
   else
     self.args["pick_or_put_vs"].action = "PUT"
-    self.args["pick_or_put_vs"].half = true
   end
 end
 
