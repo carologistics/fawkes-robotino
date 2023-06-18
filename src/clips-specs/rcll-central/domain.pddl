@@ -397,7 +397,7 @@
 )
 
 (:action wait-for-wp
-	:parameters (?r - robot ?mps - location ?side - mps-side)
+	:parameters (?r - robot ?mps - location ?side - mps-side ?wp - workpiece)
 	:precondition (at ?r ?mps ?side)
 	:effect (at ?r ?mps ?side)
 )
@@ -444,6 +444,22 @@
 	             (not (wp-on-shelf ?cc ?m ?spot))
 	             (wp-usable ?cc)
 	             (spot-free ?m ?spot)
+	        )
+)
+
+(:action turn-to-search
+	:parameters (?r - robot ?point - location ?side - mps-side)
+	:precondition (at ?r ?point ?side)
+	:effect (at ?r ?point ?side)
+)
+
+(:action explore-and-turn
+	:parameters (?r - robot ?from - location ?from-side - mps-side
+	             ?place - waitpoint)
+	:precondition (at ?r ?from ?from-side)
+	:effect (and (not (at ?r ?from ?from-side))
+	             (mps-side-approachable ?from ?from-side)
+	             (at ?r ?place WAIT)
 	        )
 )
 
