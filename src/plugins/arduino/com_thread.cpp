@@ -70,6 +70,7 @@ ArduinoComThread::receive(const std::string &buf)
 	      gripper_pose_, is_open, current_arduino_status_, buf)) {
 		append_config_messages();
 		logger->log_error(name(), "Arduino relaunched needed to be reconfigured %s", buf.c_str());
+		is_homed = false;
 		return;
 	}
 	if (current_arduino_status_ == 'E') {
@@ -81,8 +82,24 @@ ArduinoComThread::receive(const std::string &buf)
 	if (current_arduino_status_ == 'I') {
 		arduino_if_->set_final(true);
 		arduino_if_->set_status(ArduinoInterface::IDLE);
-		if (gripper_pose_[X] != goal_gripper_pose[X] || gripper_pose_[Y] != goal_gripper_pose[Y]
-		    || gripper_pose_[Z] != goal_gripper_pose[Z] || is_open != goal_gripper_is_open) {
+		if(!is_homed) {
+			if (gripper_pose_[X] != home_gripper_pose[X] || gripper_pose_[Y] != home_gripper_pose[Y]
+				|| gripper_pose_[Z] != home_gripper_pose[Z]) {
+				ArduinoComMessage *arduino_msg = new ArduinoComMessage();
+				add_command_to_message(arduino_msg, CMD_X_NEW_POS, home_gripper_pose[X]);
+				add_command_to_message(arduino_msg, CMD_Y_NEW_POS, home_gripper_pose[Y]);
+				add_command_to_message(arduino_msg, CMD_Z_NEW_POS, home_gripper_pose[Z]);
+				append_message_to_queue(arduino_msg);
+
+				arduino_if_->set_status(ArduinoInterface::MOVING);
+				arduino_if_->set_final(false);
+			}
+			else {
+				is_homed = true;
+			}
+		}
+		if (is_homed && (gripper_pose_[X] != goal_gripper_pose[X] || gripper_pose_[Y] != goal_gripper_pose[Y]
+		    || gripper_pose_[Z] != goal_gripper_pose[Z] || is_open != goal_gripper_is_open)) {
 			arduino_if_->set_final(false);
 			ArduinoComMessage *arduino_msg = new ArduinoComMessage();
 			add_command_to_message(arduino_msg, CMD_X_NEW_POS, goal_gripper_pose[X]);
