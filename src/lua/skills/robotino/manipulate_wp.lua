@@ -398,17 +398,9 @@ function START_TRACKING:init()
     fsm.vars.target_object_type, fsm.vars.expected_mps, fsm.vars.expected_side)
   object_tracking_if:msgq_enqueue_copy(msg)
 
-  -- open gripper
-  if fsm.vars.target == "WORKPIECE" then
-    if fsm.vars.side == "SHELF-LEFT"
-     or fsm.vars.side == "SHELF-MIDDLE"
-     or fsm.vars.side == "SHELF-RIGHT" then
-      local open_msg = arduino.OpenGripperMessage:new()
-      arduino:msgq_enqueue(open_msg)
-    else 
-      local half_open_msg = arduino.OpenHalfGripperMessage:new()
-      arduino:msgq_enqueue(half_open_msg)
-    end
+  if fsm.vars.target == "WORKPIECE" and not fsm.vars.dry_run then
+    local open_msg = arduino.OpenGripperMessage:new()
+    arduino:msgq_enqueue(open_msg)
   end
 
   -- move to default pose
