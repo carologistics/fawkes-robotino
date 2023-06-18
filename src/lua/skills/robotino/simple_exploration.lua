@@ -36,7 +36,7 @@ documentation      = [==[Simple exploration for evaluation of danielhonies thesi
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-local TIMEOUT_UPPER_LIMIT = 30
+local TIMEOUT_UPPER_LIMIT = 60
 
 fsm:define_states{ export_to=_M,
    {"INIT",             JumpState},
