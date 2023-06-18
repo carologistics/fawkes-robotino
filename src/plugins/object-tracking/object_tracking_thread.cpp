@@ -658,9 +658,9 @@ ObjectTrackingThread::laserline_get_best_fit(fawkes::LaserLineInterface *&best_f
 
 void
 ObjectTrackingThread::laserline_get_center_transformed(fawkes::LaserLineInterface *ll,
-                                                       float &                     x,
-                                                       float &                     y,
-                                                       float &                     z)
+                                                       float                      &x,
+                                                       float                      &y,
+                                                       float                      &z)
 {
 	fawkes::tf::Stamped<fawkes::tf::Point> tf_in, tf_out;
 	tf_in.stamp    = ll->timestamp();
@@ -683,7 +683,7 @@ ObjectTrackingThread::laserline_get_center_transformed(fawkes::LaserLineInterfac
 
 void
 ObjectTrackingThread::laserline_get_expected_position(
-  fawkes::LaserLineInterface *            ll,
+  fawkes::LaserLineInterface             *ll,
   fawkes::tf::Stamped<fawkes::tf::Point> &expected_pos)
 {
 	fawkes::tf::Stamped<fawkes::tf::Point> tf_in;
@@ -789,8 +789,8 @@ ObjectTrackingThread::closest_position(std::vector<std::array<float, 4>>      bo
                                        fawkes::tf::Stamped<fawkes::tf::Point> ref_pos,
                                        float                                  mps_angle,
                                        float                                  closest_pos[3],
-                                       Rect &                                 closest_box,
-                                       float &                                additional_height)
+                                       Rect                                  &closest_box,
+                                       float                                 &additional_height)
 {
 	float  min_dist = max_acceptable_dist_;
 	size_t box_id   = 0;
@@ -834,7 +834,7 @@ void
 ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
                                        float                mps_angle,
                                        float                point[3],
-                                       float &              wp_additional_height)
+                                       float               &wp_additional_height)
 {
 	//compute bounding box values
 	float bb_left    = bounding_box[0] - bounding_box[2] / 2;
@@ -887,7 +887,7 @@ ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
 
 void
 ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Point> object_pos,
-                                            fawkes::LaserLineInterface *           ll,
+                                            fawkes::LaserLineInterface            *ll,
                                             double gripper_target[3],
                                             double base_target[3])
 {
