@@ -400,8 +400,15 @@ function START_TRACKING:init()
 
   -- open gripper
   if fsm.vars.target == "WORKPIECE" then
-    local open_msg = arduino.OpenGripperMessage:new()
-    arduino:msgq_enqueue(open_msg)
+    if fsm.vars.side == "SHELF-LEFT"
+     or fsm.vars.side == "SHELF-MIDDLE"
+     or fsm.vars.side == "SHELF-RIGHT" then
+      local open_msg = arduino.OpenGripperMessage:new()
+      arduino:msgq_enqueue(open_msg)
+    else 
+      local half_open_msg = arduino.OpenHalfGripperMessage:new()
+      arduino:msgq_enqueue(half_open_msg)
+    end
   end
 
   -- move to default pose
@@ -563,6 +570,7 @@ function GRIPPER_ROUTINE:init()
     self.args["pick_or_put_vs"].action = "PICK"
   else
     self.args["pick_or_put_vs"].action = "PUT"
+    self.args["pick_or_put_vs"].half = true
   end
 end
 

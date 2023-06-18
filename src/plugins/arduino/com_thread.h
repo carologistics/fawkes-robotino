@@ -24,6 +24,8 @@
 #define __PLUGINS_ARDUINO_COM_THREAD_H_
 
 #include "com_message.h"
+#include "interfaces/ArduinoInterface.h"
+#include "serialport.h"
 #include "tf_thread.h"
 
 #include <aspect/blackboard.h>
@@ -37,10 +39,7 @@
 #include <core/threading/thread.h>
 #include <interfaces/JoystickInterface.h>
 #include <tf/types.h>
-#include <utils/time/time.h>
 
-#include <boost/asio.hpp>
-#include <boost/thread/mutex.hpp>
 #include <memory>
 
 #define NEMA_STEPS_PER_REVOLUTION 200.0 * 4.0
@@ -79,14 +78,8 @@ public:
 
 	virtual void init();
 	virtual void loop();
+	void         initInterface();
 	virtual void finalize();
-
-	/**
-   * @brief Checks if the serial connection is open
-   *
-   * @return True if the serial connection is open
-   */
-	virtual bool is_connected();
 
 	// For BlackBoardInterfaceListener
 	virtual bool bb_interface_message_received(fawkes::Interface *interface,
@@ -105,17 +98,8 @@ public:
 	typedef enum { X, Y, Z, A } gripper_pose_t;
 
 private:
-	void open_device();
-	void close_device();
-	void flush_device();
-
-	bool        sync_with_arduino();
-	std::string read_packet(unsigned int timeout);
-	void        send_message(ArduinoComMessage &msg);
-
-	void handle_nodata(const boost::system::error_code &ec);
-	bool send_one_message();
-	bool send_message_from_queue();
+	bool port_disconnected = false;
+	void disconnect_callback();
 
 	std::string  cfg_device_;
 	unsigned int cfg_speed_;
@@ -137,37 +121,28 @@ private:
 	float cfg_steps_per_mm_[3];
 
 	unsigned int cfg_a_toggle_steps_;
+	unsigned int cfg_a_half_toggle_steps_;
 
 	bool movement_pending_;
-	bool calibrated_;
-	char current_arduino_status_;
 
 	unsigned int msecs_to_wait_;
+	unsigned int no_data_count = 0;
 
-	// gripper pose to be stored in X, Y, Z
-	// TODO: setup proper values!
-	int gripper_pose_[3] = {100000, 100000, 100000};
+	char current_arduino_status_;
+	int  gripper_pose_[3]     = {0, 0, 0};
+	int  goal_gripper_pose[3] = {0, 7500, 0};
+	bool goal_gripper_is_open = false;
 
-	size_t bytes_read_;
-	bool   read_pending_;
-	bool   set_speed_pending_;
-	bool   set_acceleration_pending_;
-	bool   home_pending_;
-
-	bool         opened_;
-	unsigned int open_tries_;
+	void timer_callback();
+	void handle_nodata();
+	void receive(const std::string &buff);
 
 	std::queue<ArduinoComMessage *> messages_;
-	ArduinoComMessage              *next_msg_;
-	bool                            new_msg_;
 	fawkes::Time                    expected_finish_time_;
 
-	boost::asio::io_service     io_service_;
-	boost::asio::serial_port    serial_;
-	boost::asio::deadline_timer deadline_;
-	boost::asio::streambuf      input_buffer_;
+	std::unique_ptr<SerialPort> port_;
+	boost::thread               timer_thread;
 
-	boost::mutex               io_mutex_;
 	fawkes::ArduinoInterface  *arduino_if_;
 	fawkes::JoystickInterface *joystick_if_;
 
@@ -175,26 +150,22 @@ private:
 
 	void load_config();
 
-	void append_message_to_queue(ArduinoComMessage::command_id_t cmd,
-	                             unsigned int                    value   = 0,
-	                             unsigned int                    timeout = 1000);
+	void append_message_to_queue(char cmd, unsigned int value = 0);
 	void append_message_to_queue(ArduinoComMessage *msg);
-	void set_message(ArduinoComMessage::command_id_t cmd,
-	                 unsigned int                    value   = 0,
-	                 unsigned int                    timeout = 1000);
-	void set_message(ArduinoComMessage *msg);
-	bool add_command_to_message(ArduinoComMessage              *msg,
-	                            ArduinoComMessage::command_id_t command,
-	                            unsigned int                    value);
+	bool add_command_to_message(ArduinoComMessage *msg, char command, unsigned int value);
+	bool send_message(ArduinoComMessage &msg);
+	bool send_message_from_queue();
+	void append_config_messages();
+
+	void handle_queue();
 
 	float inline round_to_2nd_dec(float f);
 	void pose_publish_tf();
 
-	void gripper_update();
+	bool handle_xyz_message(fawkes::ArduinoInterface::MoveXYZAbsMessage *message);
 
-protected:
-	/** Mutex to protect data_. Lock whenever accessing it. */
-	fawkes::Mutex *data_mutex_;
+	bool         handle_rel_xyz_messag(fawkes::ArduinoInterface::MoveXYZRelMessage *msg);
+	inline float from_arduino_units(float in_steps, ArduinoComThread::gripper_pose_t axis);
 };
 
 #endif

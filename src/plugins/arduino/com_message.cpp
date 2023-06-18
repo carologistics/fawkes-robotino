@@ -17,16 +17,16 @@
  *
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
-
 #include "com_message.h"
+
+#include "ArduinoSketch/commands.h"
 
 #include <core/exception.h>
 
+#include <cstdio>
 #include <cstdlib>
 #include <iomanip>
-#include <iostream>
 #include <math.h>
-#include <string>
 
 using namespace fawkes;
 
@@ -76,8 +76,11 @@ ArduinoComMessage::ArduinoComMessage()
  * @param cmdid message ID of command to add
  * @param value message value to be passed
  */
-ArduinoComMessage::ArduinoComMessage(command_id_t cmdid, unsigned int value)
+ArduinoComMessage::ArduinoComMessage(char cmdid, unsigned int value)
 {
+	if (!ArduinoHelper::isValidSerialCommand(cmdid)) {
+		return;
+	}
 	ctor();
 	add_command(cmdid, value);
 }
@@ -86,33 +89,13 @@ ArduinoComMessage::ArduinoComMessage(command_id_t cmdid, unsigned int value)
  */
 ArduinoComMessage::~ArduinoComMessage()
 {
-	dtor();
+	ctor();
 }
 
-void
-ArduinoComMessage::dtor()
-{
-	free(data_);
-}
-
-void
+inline void
 ArduinoComMessage::ctor()
 {
-	// always allocate 128 bytes, increase if necessary
-	data_size_ = 128;
-	data_      = (char *)malloc(data_size_);
-
-	// init buffer with zeros
-	memset(data_, 0, data_size_);
-
-	// append header
-	memcpy(data_, MSG_HEAD, 3);
-
-	// start first command after header
-	cur_buffer_index_ = 3;
-
-	// setup a minimum of 1 second to wait
-	msecs_to_wait_ = 1000;
+	data_ << "AT ";
 }
 
 /** Add a command.
@@ -125,52 +108,15 @@ ArduinoComMessage::ctor()
  * @return true if command was successfully added
  */
 bool
-ArduinoComMessage::add_command(command_id_t cmd, unsigned int value)
+ArduinoComMessage::add_command(char cmd, unsigned int value)
 {
-	// TODO: Test if "home" command also works if a "value" was accidentially
-	// appended!
-	bool valid_command = false;
-	char char_cmd      = static_cast<char>(cmd);
-
-	if (cmd == command_id_t::CMD_CALIBRATE || cmd == command_id_t::CMD_X_NEW_POS
-	    || cmd == command_id_t::CMD_Y_NEW_POS || cmd == command_id_t::CMD_Z_NEW_POS
-	    || cmd == command_id_t::CMD_OPEN || cmd == command_id_t::CMD_SET_A_TOGGLE_STEPS
-	    || cmd == command_id_t::CMD_CLOSE || cmd == command_id_t::CMD_STATUS_REQ
-	    || cmd == command_id_t::CMD_X_NEW_SPEED || cmd == command_id_t::CMD_Y_NEW_SPEED
-	    || cmd == command_id_t::CMD_Z_NEW_SPEED || cmd == command_id_t::CMD_A_NEW_SPEED
-	    || cmd == command_id_t::CMD_X_NEW_ACC || cmd == command_id_t::CMD_Y_NEW_ACC
-	    || cmd == command_id_t::CMD_Z_NEW_ACC || cmd == command_id_t::CMD_A_NEW_ACC) {
-		valid_command = true;
-	}
-
-	if (valid_command == true) {
-		//    std::cout << "Buffer valid?: ";
-		// skip the AT header, therefore start at index 3
-		for (int i = 3; i < data_size_; i++) {
-			//      std::cout << (int) data_[i] << ' ';
-			// cancel when the command was already set
-			if (data_[i] == char_cmd) {
-				valid_command = false;
-				break;
-			}
-		}
-	}
-	//  std::cout << std::endl;
-
-	// check whether we're exceeding the data_size_
-	valid_command &= cur_buffer_index_ + 1 + num_digits(value) < data_size_ - 1;
-
-	if (valid_command == false) {
+	bool valid_command = ArduinoHelper::isValidSerialCommand(cmd);
+	if (!valid_command) {
 		return false;
 	}
-
-	data_[cur_buffer_index_] = char_cmd;
-	cur_buffer_index_++;
-
-	cur_buffer_index_ += sprintf(data_ + cur_buffer_index_, "%u", value);
-	data_[cur_buffer_index_] = ' ';
-	cur_buffer_index_++;
-
+	data_ << cmd;
+	data_ << value;
+	data_ << " ";
 	return true;
 }
 
@@ -180,67 +126,71 @@ ArduinoComMessage::add_command(command_id_t cmd, unsigned int value)
  * on the destruction of the message.
  * @return buffer of escaped data.
  */
-boost::asio::const_buffer
+std::string
 ArduinoComMessage::buffer()
 {
-	// Add terminator character to the end
-	data_[data_size_ - 1] = '+';
-
 #ifdef DEBUG
-	std::cout << "Buffer: ";
-	//  printf("Buffer: ");
-	for (size_t i = 0; i < data_size_; ++i) {
-		//      printf("%c", data_[i]);
-		std::cout << data_[i];
-	}
-	std::cout << std::endl;
-//  printf("\n");
+	std::cout << "Buffer: " << data_ << std::endl;
 #endif
-
-	return boost::asio::buffer(data_, data_size_);
+	// Add terminator character to the end
+	return data_.str().append("+");
 }
 
-/** Set the number of msecs the associated action of this
- * message is probably going to need to be executed (as
- * long as the last value is smaller than the new value).
- * @param msecs milliseconds
- */
-void
-ArduinoComMessage::set_msecs_if_lower(unsigned int msecs)
+
+// @brief if the return is false then the arduino reconed and we need to restart everything
+bool
+ArduinoComMessage::parse_message_from_arduino(int (&gripperr_position)[3],
+                                              bool       &is_gripper_open,
+                                              char       &arduino_status,
+                                              std::string buffer)
 {
-	// TODO: Do we have to wait for each axis alone or just the longest running
-	// one?
-	if (msecs_to_wait_ < msecs) {
-		msecs_to_wait_ = msecs;
+	std::stringstream ss;
+	std::string s   = buffer;
+	size_t      pos = s.find("AT ");
+	if (pos == std::string::npos) {
+		//Not a valid command. This command will be ignored
+		return false;
 	}
-}
+	ss << buffer.substr(pos + 3);
 
-/** Get the number of msecs the associated action of this
- * message is probably going to need to be executed
- * @return msecs milliseconds
- */
-unsigned int
-ArduinoComMessage::get_msecs()
-{
-	return msecs_to_wait_;
-}
+	try {
+		for (int i = 0; ss >> s; ++i) {
+			if (s == "HELLO") {
+				return false;
+				break;
+			}
+			if (i == 0) {
+				if (s == "I" || s == "M") {
+					arduino_status = s[0];
+					continue;
+				}
+				arduino_status = 'E';
+			}
+			if (i == 1) {
+				int x                = std::stoi(s);
+				gripperr_position[X] = x;
+			}
+			if (i == 2) {
+				int y                = std::stoi(s);
+				gripperr_position[Y] = y;
+			}
+			if (i == 3) {
+				int z                = std::stoi(s);
+				gripperr_position[Z] = z;
+			}
+			if (i == 5) {
+				if (s == "CLOSED+") {
+					is_gripper_open = false;
+				}
+				if (s == "OPEN+") {
+					is_gripper_open = true;
+				}
+			}
+		}
+		return true;
+	} catch (const std::exception &e) {
+	}
 
-/** Get the data size of the message
- * this is only used for error reporting
- * @return data size of the message
- */
-unsigned short
-ArduinoComMessage::get_data_size()
-{
-	return data_size_;
-}
-
-/** Get the current buffer index
- * this is only used for error reporting
- * @return current buffer index
- */
-unsigned short
-ArduinoComMessage::get_cur_buffer_index()
-{
-	return cur_buffer_index_;
+	//catched exeption
+	return false;
 }

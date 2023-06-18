@@ -30,13 +30,12 @@ set(DEV_ARDUINO
 add_subdirectory(interfaces)
 
 if(PLUGIN_arduino)
-  pkg_check_modules(LIBUDEV libudev)
-
   add_library(arduino MODULE arduino_plugin.cpp com_thread.cpp tf_thread.cpp
-                             com_message.cpp)
+                             com_message.cpp serialport.cpp)
   depend_on_pkgconfig_libs(arduino libudev)
   depend_on_pcl(arduino)
   depend_on_tf(arduino)
+  depend_on_boost_libs(arduino "thread;chrono")
   target_link_libraries(
     arduino
     m
@@ -58,3 +57,7 @@ if(PLUGIN_arduino)
 else()
   plugin_disabled_message("arduino")
 endif()
+
+target_compile_features(arduino PUBLIC cxx_std_20)
+# target_compile_options(arduino PRIVATE -ggdb3 -O0)
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0")

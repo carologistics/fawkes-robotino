@@ -658,9 +658,9 @@ ObjectTrackingThread::laserline_get_best_fit(fawkes::LaserLineInterface *&best_f
 
 void
 ObjectTrackingThread::laserline_get_center_transformed(fawkes::LaserLineInterface *ll,
-                                                       float &                     x,
-                                                       float &                     y,
-                                                       float &                     z)
+                                                       float                      &x,
+                                                       float                      &y,
+                                                       float                      &z)
 {
 	fawkes::tf::Stamped<fawkes::tf::Point> tf_in, tf_out;
 	tf_in.stamp    = ll->timestamp();
@@ -683,7 +683,7 @@ ObjectTrackingThread::laserline_get_center_transformed(fawkes::LaserLineInterfac
 
 void
 ObjectTrackingThread::laserline_get_expected_position(
-  fawkes::LaserLineInterface *            ll,
+  fawkes::LaserLineInterface             *ll,
   fawkes::tf::Stamped<fawkes::tf::Point> &expected_pos)
 {
 	fawkes::tf::Stamped<fawkes::tf::Point> tf_in;
@@ -887,7 +887,7 @@ ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
 
 void
 ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Point> object_pos,
-                                            fawkes::LaserLineInterface *           ll,
+                                            fawkes::LaserLineInterface            *ll,
                                             double gripper_target[3],
                                             double base_target[3])
 {
