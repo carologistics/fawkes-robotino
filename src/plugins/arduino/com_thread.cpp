@@ -220,20 +220,17 @@ ArduinoComThread::add_command_to_message(ArduinoComMessage *msg, char command, u
 void
 ArduinoComThread::append_config_messages()
 {
-	ArduinoComMessage *msg = new ArduinoComMessage();
+	append_message_to_queue(CMD_X_NEW_ACC, cfg_accs_[X]);
+	append_message_to_queue(CMD_Y_NEW_ACC, cfg_accs_[Y]);
+	append_message_to_queue(CMD_Z_NEW_ACC, cfg_accs_[Z]);
+	append_message_to_queue(CMD_A_NEW_ACC, cfg_accs_[A]);
 
-	add_command_to_message(msg, CMD_X_NEW_ACC, cfg_accs_[X]);
-	add_command_to_message(msg, CMD_Y_NEW_ACC, cfg_accs_[Y]);
-	add_command_to_message(msg, CMD_Z_NEW_ACC, cfg_accs_[Z]);
-	add_command_to_message(msg, CMD_A_NEW_ACC, cfg_accs_[A]);
-	add_command_to_message(msg, CMD_X_NEW_SPEED, cfg_speeds_[X]);
-	add_command_to_message(msg, CMD_Y_NEW_SPEED, cfg_speeds_[Y]);
-	add_command_to_message(msg, CMD_Z_NEW_SPEED, cfg_speeds_[Z]);
-	add_command_to_message(msg, CMD_A_NEW_SPEED, cfg_speeds_[A]);
+	append_message_to_queue(CMD_X_NEW_SPEED, cfg_speeds_[X]);
+	append_message_to_queue(CMD_Y_NEW_SPEED, cfg_speeds_[Y]);
+	append_message_to_queue(CMD_Z_NEW_SPEED, cfg_speeds_[Z]);
+	append_message_to_queue(CMD_A_NEW_SPEED, cfg_speeds_[A]);
 	// ue(CMD_CALIBRATE, 0, 50000); //now done on arduino
-	add_command_to_message(msg, CMD_A_SET_TOGGLE_STEPS, cfg_a_toggle_steps_);
-
-	append_message_to_queue(msg);
+	append_message_to_queue(CMD_A_SET_TOGGLE_STEPS, cfg_a_toggle_steps_);
 }
 
 void
