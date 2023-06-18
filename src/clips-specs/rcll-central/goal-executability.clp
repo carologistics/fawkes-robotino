@@ -82,7 +82,7 @@
 	            (is-executable FALSE))
 	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
 	; check if target position is free
-	(test (is-free ?pos))
+	(not (wm-fact (key domain fact at args? r ?any-robot&:(neq ?robot ?any-robot) m ?pos side WAIT)))
 	=>
 	(printout t "Goal MOVE-OUT-OF-WAY executable for " ?robot " to pos " ?pos  crlf)
   (modify ?g (is-executable TRUE))
