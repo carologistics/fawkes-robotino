@@ -120,9 +120,16 @@
   (blackboard-interface (id ?id2&:(str-index ?robot ?id2))
                         (type "NavGraphGeneratorInterface"))
   (wm-fact (key config rcll use-static-navgraph) (type BOOL) (value FALSE))
-  (wm-fact (key refbox field height) (value ?field-height&~NOT-SET))
-  (wm-fact (key refbox field width) (value ?field-width&~NOT-SET))
-  (wm-fact (key refbox field mirrored) (value ?mirrored&~NOT-SET))
+  (wm-fact (key refbox field height) (value ?field-height))
+  (wm-fact (key refbox field width) (value ?field-width))
+  (wm-fact (key refbox field mirrored) (value ?mirrored))
+  (test
+    (and
+      (neq ?field-height NOT-SET) (neq ?field-height DOES-NOT-EXIST)
+      (neq ?field-width NOT-SET) (neq ?field-width DOES-NOT-EXIST)
+      (neq ?field-mirrored NOT-SET) (neq ?mirrored DOES-NOT-EXIST)
+    )
+  )
   =>
   (bind ?p1_x (- 0 ?field-width))
   (bind ?p1_y 0)
@@ -150,9 +157,16 @@
                         (type "NavGraphWithMPSGeneratorInterface"))
   (blackboard-interface (id "/navgraph-generator")
                         (type "NavGraphGeneratorInterface"))
-  (wm-fact (key refbox field height) (value ?field-height&~NOT-SET))
-  (wm-fact (key refbox field width) (value ?field-width&~NOT-SET))
-  (wm-fact (key refbox field mirrored) (value ?mirrored&~NOT-SET))
+  (wm-fact (key refbox field height) (value ?field-height))
+  (wm-fact (key refbox field width) (value ?field-width))
+  (wm-fact (key refbox field mirrored) (value ?mirrored))
+  (test
+    (and
+      (neq ?field-height NOT-SET) (neq ?field-height DOES-NOT-EXIST)
+      (neq ?field-width NOT-SET) (neq ?field-width DOES-NOT-EXIST)
+      (neq ?field-mirrored NOT-SET) (neq ?mirrored DOES-NOT-EXIST)
+    )
+  )
   =>
   (bind ?p1_x (- 0 ?field-width))
   (bind ?p1_y 0)
