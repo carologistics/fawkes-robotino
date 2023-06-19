@@ -47,6 +47,7 @@ local MIN_X_MAP = -5
 local MAX_X_MAP = 0
 local MIN_Y_MAP = 0
 local MAX_Y_MAP = 6
+local turn = 4
 
 fsm:define_states{ export_to=_M,
    {"INIT",             JumpState},
@@ -61,8 +62,9 @@ fsm:add_transitions{
 
 
 function TURN:init()
+
    self.args["motor_move"] = {
-      ori = 1.570795,
+      ori = 1.570795 * turn,
       vel_rot = 0.2,
 	  
    }
@@ -95,13 +97,44 @@ function GOTO_CORNER:init()
         end
       end 
    end
-   if self.fsm.vars.x + 1 > MAX_X_MAP and self.fsm.vars.y + 1 > MAX_Y_MAP then
+   
+   if self.fsm.vars.x + 1 > MAX_X_MAP and self.fsm.vars.y - 2 > MIN_Y_MAP and self.fsm.vars.y + 1 < MAX_Y_MAP then
+      -- 1,y
       index = 2;
-   elseif self.fsm.vars.x + 1 > MAX_X_MAP and self.fsm.vars.y - 2 < MIN_Y_MAP then
+      turn = 2;
+   elseif self.fsm.vars.x - 1 > MIN_X_MAP and self.fsm.vars.y - 2 > MIN_Y_MAP and  self.fsm.vars.y + 1 < MAX_Y_MAP then
+      -- 0,y
       index = 1;
-   elseif self.fsm.vars.x - 1 < MIN_X_MAP and self.fsm.vars.y + 1 > MAX_Y_MAP then
+      turn = 2;
+   elseif self.fsm.vars.x - 1 > MIN_X_MAP and self.fsm.vars.x + 1 < MAX_X_MAP and self.self.fsm.vars.y + 1 > MAX_Y_MAP then
+      -- x,1
       index = 3;
+      turn = 2;
+   elseif self.fsm.vars.x - 1 > MIN_X_MAP and self.fsm.vars.x + 1 < MAX_X_MAP and self.self.fsm.vars.y - 2 < MIN_Y_MAP then
+      -- x,0
+      index = 0;
+      turn = 2;
    end
+
+   if self.fsm.vars.x + 1 > MAX_X_MAP and self.fsm.vars.y + 1 > MAX_Y_MAP then
+      -- 1,1
+      index = 2;
+      turn = 1;
+   elseif self.fsm.vars.x + 1 > MAX_X_MAP and self.fsm.vars.y - 2 < MIN_Y_MAP then
+      -- 1,0
+      index = 1;
+      turn = 1;
+   elseif self.fsm.vars.x - 1 < MIN_X_MAP and self.fsm.vars.y + 1 > MAX_Y_MAP then
+      -- 0,1
+      index = 3;
+      turn = 1;
+   elseif self.fsm.vars.x - 1 < MIN_X_MAP and self.fsm.vars.y - 2 < MIN_Y_MAP then
+      -- 0,0
+      index = 0;
+      turn = 1;
+   end
+
+   
    self.args["goto"] = {
 	  ori = 1.570795 * index,
 	  x = self.fsm.vars.x,
