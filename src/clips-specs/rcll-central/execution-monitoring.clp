@@ -90,6 +90,10 @@
 	 then
 		(bind ?timeout-duration ?*RUNNING-TIMEOUT-DURATION*)
 	)
+	(if (member$ ?action-name (create$ cs-mount-cap cs-buffer-cap rs-mount-ring1 rs-mount-ring2 rs-mount-ring3))
+	 then
+		(bind ?timeout-duration ?*PREPARE-WAIT-TIMEOUT-DURATION*)
+	)
 	(assert (action-timer (plan-id ?plan-id)
 	            (action-id ?id)
 	            (timeout-duration ?timeout-duration)

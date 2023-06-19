@@ -59,6 +59,7 @@
   ?*MONITORING-SALIENCE* = 1
   ?*COMMON-TIMEOUT-DURATION* = 30
   ?*MOVE-OUT-OF-WAY-TIMEOUT-DURATION* = 15
+  ?*PREPARE-WAIT-TIMEOUT-DURATION* = 60
   ; The waiting timeout duration needs to be smaller than the common one above!
   ?*WAITING-TIMEOUT-DURATION* = 25
   ?*RUNNING-TIMEOUT-DURATION* = 120
