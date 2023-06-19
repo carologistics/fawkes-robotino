@@ -61,10 +61,6 @@
             (param-values ?r ?mps ?wp ?capcol))
   =>
   (modify ?pa (state EXECUTION-SUCCEEDED))
-  (assert
-    (wm-fact (key mps-handling prepare prepare-cs ?mps args? m ?mps op MOUNT_CAP))
-    (wm-fact (key mps-handling process cs-mount-cap ?mps args? m ?mps wp ?wp capcol ?capcol))
-  )
 )
 
 (defrule action-execute-request-cs-retrieve-cap
@@ -72,10 +68,6 @@
             (param-values ?r ?mps ?cc ?capcol))
   =>
   (modify ?pa (state EXECUTION-SUCCEEDED))
-  (assert
-    (wm-fact (key mps-handling prepare prepare-cs ?mps args? m ?mps op RETRIEVE_CAP))
-    (wm-fact (key mps-handling process cs-retrieve-cap ?mps args? m ?mps cc ?cc capcol ?capcol))
-  )
 )
 
 (defrule action-execute-request-rs-mount-ring
@@ -97,11 +89,6 @@
         (bind ?mount-ring-param-values ?rs ?wp ?rc ?rc1 ?rc2 ?rs-req))
      (default
         (printout t "ERROR, plan-action params of request-rs-mount-ring are wrong" crlf)))
-  (assert
-    (wm-fact (key mps-handling prepare prepare-rs ?rs args? m ?rs rc ?rc r-req ?rs-req))
-    (wm-fact (key mps-handling process ?mount-ring-action-name ?rs args?
-                        (merge-params ?mount-ring-param-names ?mount-ring-param-values)))
-  )
 )
 
 (defrule action-execute-request-ds-deliver
@@ -132,10 +119,6 @@
       (bind ?params (create$ ord ?order wp ?wp m ?ds g ?gate basecol ?base-color capcol ?cap-color ring1col ?ring1-color ring2col ?ring2-color ring3col ?ring3-color)))
  )
   (modify ?pa (state EXECUTION-SUCCEEDED))
-  (assert
-    (wm-fact (key mps-handling prepare prepare-ds ?ds args? m ?ds ord ?order))
-    (wm-fact (key mps-handling process (sym-cat fulfill-order- (lowcase ?complexity)) ?ds args? ?params))
-  )
 )
 
 (defrule action-execute-wp-spawn
