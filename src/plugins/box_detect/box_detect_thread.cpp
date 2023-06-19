@@ -44,7 +44,7 @@ BoxDetectThread::init()
 {
 	box_detect_ifs_ = new std::vector<fawkes::BoxInterface *>();
 	for (int i = 1; i <= 15; i++) {
-		std::string name = "box_detect_" + std::to_string(i);
+		std::string name = "/box_detect_" + std::to_string(i);
 
 		fawkes::BoxInterface *box_detect_if =
 		  blackboard->open_for_writing<fawkes::BoxInterface>(name.c_str());
