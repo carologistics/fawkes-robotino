@@ -100,23 +100,21 @@ function GOTO_CORNER:init()
    
    if self.fsm.vars.x + 1 > MAX_X_MAP and self.fsm.vars.y - 2 > MIN_Y_MAP and self.fsm.vars.y + 1 < MAX_Y_MAP then
       -- 1,y
-      index = 2;
-      turn = 2;
-   elseif self.fsm.vars.x - 1 > MIN_X_MAP and self.fsm.vars.y - 2 > MIN_Y_MAP and  self.fsm.vars.y + 1 < MAX_Y_MAP then
-      -- 0,y
       index = 1;
+      turn = 2;
+   elseif self.fsm.vars.x - 1 < MIN_X_MAP and self.fsm.vars.y - 2 > MIN_Y_MAP and  self.fsm.vars.y + 1 < MAX_Y_MAP then
+      -- 0,y
+      index = 3;
       turn = 2;
    elseif self.fsm.vars.x - 1 > MIN_X_MAP and self.fsm.vars.x + 1 < MAX_X_MAP and self.self.fsm.vars.y + 1 > MAX_Y_MAP then
       -- x,1
-      index = 3;
+      index = 2;
       turn = 2;
    elseif self.fsm.vars.x - 1 > MIN_X_MAP and self.fsm.vars.x + 1 < MAX_X_MAP and self.self.fsm.vars.y - 2 < MIN_Y_MAP then
       -- x,0
       index = 0;
       turn = 2;
-   end
-
-   if self.fsm.vars.x + 1 > MAX_X_MAP and self.fsm.vars.y + 1 > MAX_Y_MAP then
+   elseif self.fsm.vars.x + 1 > MAX_X_MAP and self.fsm.vars.y + 1 > MAX_Y_MAP then
       -- 1,1
       index = 2;
       turn = 1;
