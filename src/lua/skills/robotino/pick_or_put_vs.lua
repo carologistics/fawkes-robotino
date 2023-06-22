@@ -35,7 +35,9 @@ Skill to pick a product and to put it down based on param action.
 It is independent of the workpiece location or its target location.
 
 Parameters:
-      @param action   decides if a pick or put action is performed: (PICK | PUT)
+      @param action             decides if a pick or put action is performed: (PICK | PUT)
+      @param slide              true if target is slide (true | false)
+      @param missing_c3_height  distance between C3 height and current wp height
 ]==]
 
 
@@ -47,8 +49,8 @@ local tfm = require("fawkes.tfutils")
 local gripper_down_z_pick = -0.05  -- distance to move gripper down after driving over product
 local gripper_down_z_put = -0.018  -- distance to move gripper down after driving over product
 
-local gripper_up_z_pick = 0.01   -- distance to move gripper up after closing gripper
-local gripper_up_z_put = 0.015   -- distance to move gripper up after opening gripper
+local gripper_up_z_pick = 0.0125   -- distance to move gripper up after closing gripper
+local gripper_up_z_put_slide = 0.015   -- distance to move gripper up after slide put
 
 local drive_back_x = -0.1
 
@@ -77,6 +79,8 @@ function input_invalid()
     fsm.vars.pick_wp = true
   elseif fsm.vars.action == "PUT" then
     fsm.vars.pick_wp = false
+  elseif fsm.vars.slide ~= true and fsm.vars.slide ~= false then
+    return false
   else
     return true
   end
@@ -146,8 +150,10 @@ function MOVE_GRIPPER_UP:init()
   local z_given = 0
   if fsm.vars.pick_wp then
     z_given = fsm.vars.target_z + gripper_up_z_pick
+  else if fsm.vars.slide
+    z_given = fsm.vars.target_z + gripper_up_z_put_slide
   else
-    z_given = fsm.vars.target_z + gripper_up_z_put
+    z_given = z_max - fsm.vars.missing_c3_height
   end
 
   self.args["gripper_commands"].x = arduino:x_position()

@@ -64,6 +64,7 @@ Parameters:
       @param target  the type of the target object: (WORKPIECE | CONVEYOR | SLIDE)
       @param mps     the name of the MPS (e.g. C-CS1, see navgraph)
       @param side    the side of the mps: (INPUT | OUTPUT | SHELF-LEFT | SHELF-MIDDLE | SHELF-RIGHT | SLIDE)
+      @param c       the type of workpiece to grab/ in hand (optional, C0 | C1 | C2 | C3)
 ]==]
 
 local LASER_BASE_OFFSET    = 0.35 -- distance between robotino middle point and laser-line
@@ -90,6 +91,8 @@ local slide_offset_side = -0.225
 local left_shelf_offset_side   = -0.075
 local middle_shelf_offset_side = -0.175
 local right_shelf_offset_side  = -0.275
+
+local ring_height = 0.01
 
 local drive_back_x = -0.1
 
@@ -125,9 +128,6 @@ if config:exists("plugins/object_tracking/shelf_values/right_shelf_offset_side")
 end
 
 -- read wp config
-if config:exists("plugins/object_tracking/puck_values/puck_height") then
-  puck_height = config:get_float("plugins/object_tracking/puck_values/puck_height")
-end
 if config:exists("plugins/object_tracking/puck_values/ring_height") then
   ring_height = config:get_float("plugins/object_tracking/puck_values/ring_height")
 end
@@ -252,6 +252,15 @@ function input_invalid()
     return true
   end
 
+  -- set c if unset
+  if fsm.vars.c = nil then
+    if string.find(fsm.vars.side, "SHELF-") then
+      fsm.vars.c = "C0"
+    else -- assume highest possible workpiece if unknown
+      fsm.vars.c = "C3"
+    end
+  end
+
   -- sanity check
   if fsm.vars.target == "WORKPIECE" then
     if fsm.vars.side ~= "INPUT" and fsm.vars.side ~= "OUTPUT" then
@@ -367,16 +376,24 @@ function INIT:init()
                       ["SHELF-MIDDLE"] = object_tracking_if.SHELF_MIDDLE,
                       ["SHELF-RIGHT"]  = object_tracking_if.SHELF_RIGHT,
                       ["SLIDE"]        = object_tracking_if.SLIDE}
+  -- missing wp height compared to C3
+  local MISSING_C3_HEIGHT = {["C0"] = ring_height * 3,
+                             ["C1"] = ring_height * 2,
+                             ["C2"] = ring_height,
+                             ["C3"] = 0}
 
   -- get ENUM of input variables
   fsm.vars.target_object_type = TARGET_NAMES[fsm.vars.target]
   fsm.vars.expected_mps = MPS_NAMES[fsm.vars.mps]
   fsm.vars.expected_side = SIDE_NAMES[fsm.vars.side]
 
+  -- get wp height
+  fsm.vars.missing_c3_height = MISSING_C3_HEIGHT[fsm.vars.c]
+
   fsm.vars.gripper_target_pos_x = 0
   fsm.vars.gripper_target_pos_y = 0
   fsm.vars.gripper_target_pos_z = 0
-  fsm.vars.gripper_wait       = 0
+  fsm.vars.gripper_wait         = 0
 end
 
 function MPS_ALIGN:init()
@@ -500,7 +517,7 @@ function MOVE_BASE_AND_GRIPPER:init()
     "base_link", "end_effector_home")
 
   fsm.vars.gripper_wait = 10
-  set_gripper(gripper_target.x, 0, gripper_target.z)
+  set_gripper(gripper_target.x, 0, gripper_target.z - fsm.vars.missing_c3_height)
 end
 
 function FINE_TUNE_GRIPPER:init()
@@ -530,15 +547,24 @@ function FINE_TUNE_GRIPPER:loop()
 
   set_gripper(gripper_target.x,
               gripper_target.y,
-              gripper_target.z)
+              gripper_target.z - fsm.vars.missing_c3_height)
 end
 
 function GRIPPER_ROUTINE:init()
   -- perform pick or put routine
+  
+  if fsm.vars.target = "SLIDE" then
+    self.args["pick_or_put_vs"].slide = true
+  else 
+    self.args["pick_or_put_vs"].slide = false
+  end
+
   if fsm.vars.target == "WORKPIECE" then
     self.args["pick_or_put_vs"].action = "PICK"
+    self.args["pick_or_put_vs"].missing_c3_height = fsm.vars.missing_c3_height
   else
     self.args["pick_or_put_vs"].action = "PUT"
+    self.args["pick_or_put_vs"].missing_c3_height = fsm.vars.missing_c3_height
   end
 end
 

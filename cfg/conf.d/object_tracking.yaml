@@ -23,6 +23,7 @@ plugins/object_tracking:
   puck_values:
     puck_size: 0.02
     puck_height: 0.025
+    ring_height: 0.01
 
   belt_values:
     belt_height: 0.895
