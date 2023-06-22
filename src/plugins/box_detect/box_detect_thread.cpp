@@ -59,14 +59,12 @@ BoxDetectThread::init()
 		bbil_add_writer_interface(*i);
 	}
 
-	switch_if_ = blackboard->open_for_reading<SwitchInterface>("/switch/box_detect_enabled");
-	bbil_add_data_interface(switch_if_);
-	bbil_add_reader_interface(switch_if_);
-	bbil_add_writer_interface(switch_if_);
+	switch_if_ = blackboard->open_for_writing<SwitchInterface>("/switch/box_detect_enabled");
+	switch_if_->set_enabled(true);
+	switch_if_->write();
 
 	blackboard->register_listener(this);
 	bbio_add_observed_create("TransformInterface", "/tf/BOX*");
-	bbio_add_observed_create("SwitchInterface", "/switch/box_detect_enabled");
 	blackboard->register_observer(this);
 
 	client_ = node_handle->create_client<std_srvs::srv::SetBool>("/enable_box_detect");
@@ -75,6 +73,28 @@ BoxDetectThread::init()
 void
 BoxDetectThread::loop()
 {
+	// enable switch
+	switch_if_->read();
+	while (!switch_if_->msgq_empty()) {
+		logger->log_info(name(), "RECIEVED SWITCH MESSAGE");
+		if (switch_if_->msgq_first_is<SwitchInterface::DisableSwitchMessage>()) {
+			logger->log_warn(name(), "Box detect disabled");
+			enabled_      = false;
+			auto request  = std::make_shared<std_srvs::srv::SetBool::Request>();
+			request->data = false;
+			// Call the service
+			auto future = client_->async_send_request(request);
+		} else if (switch_if_->msgq_first_is<SwitchInterface::EnableSwitchMessage>()) {
+			logger->log_warn(name(), "Box detect enabled");
+			enabled_      = true;
+			auto request  = std::make_shared<std_srvs::srv::SetBool::Request>();
+			request->data = true;
+			// Call the service
+			auto future = client_->async_send_request(request);
+		}
+
+		switch_if_->msgq_pop();
+	}
 }
 
 void
@@ -82,7 +102,7 @@ BoxDetectThread::finalize()
 {
 	blackboard->unregister_listener(this);
 	blackboard->unregister_observer(this);
-
+	blackboard->close(switch_if_);
 	std::list<TransformInterface *>::iterator i;
 	for (i = tfifs_.begin(); i != tfifs_.end(); ++i) {
 		blackboard->close(*i);
@@ -95,25 +115,6 @@ BoxDetectThread::bb_interface_data_refreshed(fawkes::Interface *interface) throw
 {
 	TransformInterface *tfif = dynamic_cast<TransformInterface *>(interface);
 	if (!tfif) {
-		SwitchInterface *swif = dynamic_cast<SwitchInterface *>(interface);
-		if (!swif)
-			return;
-		swif->read();
-		if (swif->is_enabled()) {
-			logger->log_warn(name(), "Box detect enabled");
-			enabled_      = true;
-			auto request  = std::make_shared<std_srvs::srv::SetBool::Request>();
-			request->data = true;
-			// Call the service
-			auto future = client_->async_send_request(request);
-		} else {
-			logger->log_warn(name(), "Box detect disabled");
-			enabled_      = false;
-			auto request  = std::make_shared<std_srvs::srv::SetBool::Request>();
-			request->data = false;
-			// Call the service
-			auto future = client_->async_send_request(request);
-		}
 		return;
 	}
 
