@@ -52,7 +52,10 @@ local turn = 4
 fsm:define_states{ export_to=_M,
    {"INIT",             JumpState},
    {"GOTO_CORNER", SkillJumpState, skills={{goto}}, final_to="TURN"},
-   {"TURN", SkillJumpState, skills={{motor_move}}, final_to="FINAL"}
+   {"TURN", SkillJumpState, skills={{motor_move}}, final_to="TURN2"},
+   {"TURN2", SkillJumpState, skills={{motor_move}}, final_to="TURN3"},
+   {"TURN3", SkillJumpState, skills={{motor_move}}, final_to="FINAL"},
+
 }
 
 fsm:add_transitions{
@@ -65,11 +68,36 @@ function TURN:init()
 
    self.args["motor_move"] = {
       ori = 1.570795 * turn,
-      vel_rot = 0.2,
-	  
+      vel_rot = 0.16,
    }
+   -- if turn is 4 turn 180 twice
+   if turn == 4 then
+      self.args["motor_move"] = {
+         ori = 1.570795 * 1.33,
+         vel_rot = 0.16,
+      }
+   end
 end
 
+function TURN2:init()
+   -- if turn is 4 turn 180 twice
+   if turn == 4 then
+      self.args["motor_move"] = {
+         ori = 1.570795 * 1.33,
+         vel_rot = 0.16,
+      }
+   end
+end
+
+function TURN3:init()
+   -- if turn is 4 turn 180 twice
+   if turn == 4 then
+      self.args["motor_move"] = {
+         ori = 1.570795 * 1.33,
+         vel_rot = 0.16,
+      }
+   end
+end
 
 function GOTO_CORNER:init()
    local index = 0;
@@ -97,7 +125,7 @@ function GOTO_CORNER:init()
         end
       end 
    end
-   
+   turn = 4;
    if self.fsm.vars.x + 1 > MAX_X_MAP and self.fsm.vars.y - 2 > MIN_Y_MAP and self.fsm.vars.y + 1 < MAX_Y_MAP then
       -- 1,y
       index = 1;
@@ -106,11 +134,11 @@ function GOTO_CORNER:init()
       -- 0,y
       index = 3;
       turn = 2;
-   elseif self.fsm.vars.x - 1 > MIN_X_MAP and self.fsm.vars.x + 1 < MAX_X_MAP and self.self.fsm.vars.y + 1 > MAX_Y_MAP then
+   elseif self.fsm.vars.x - 1 > MIN_X_MAP and self.fsm.vars.x + 1 < MAX_X_MAP and self.fsm.vars.y + 1 > MAX_Y_MAP then
       -- x,1
       index = 2;
       turn = 2;
-   elseif self.fsm.vars.x - 1 > MIN_X_MAP and self.fsm.vars.x + 1 < MAX_X_MAP and self.self.fsm.vars.y - 2 < MIN_Y_MAP then
+   elseif self.fsm.vars.x - 1 > MIN_X_MAP and self.fsm.vars.x + 1 < MAX_X_MAP and self.fsm.vars.y - 2 < MIN_Y_MAP then
       -- x,0
       index = 0;
       turn = 2;
