@@ -106,22 +106,30 @@ end
 
 -- read config values for computing expected target position
 -- conveyor
-if config:exists("plugins/object_tracking/puck_values/belt_offset_side") then
-  belt_offset_side = config:get_float("plugins/object_tracking/puck_values/belt_offset_side")
+if config:exists("plugins/object_tracking/belt_values/belt_offset_side") then
+  belt_offset_side = config:get_float("plugins/object_tracking/belt_values/belt_offset_side")
 end
 -- slide
-if config:exists("plugins/object_tracking/puck_values/slide_offset_side") then
-  slide_offset_side = config:get_float("plugins/object_tracking/puck_values/slide_offset_side")
+if config:exists("plugins/object_tracking/slide_values/slide_offset_side") then
+  slide_offset_side = config:get_float("plugins/object_tracking/slide_values/slide_offset_side")
 end
 -- shelf
-if config:exists("plugins/object_tracking/puck_values/left_shelf_offset_side") then
-  left_shelf_offset_side = config:get_float("plugins/object_tracking/puck_values/left_shelf_offset_side")
+if config:exists("plugins/object_tracking/shelf_values/left_shelf_offset_side") then
+  left_shelf_offset_side = config:get_float("plugins/object_tracking/shelf_values/left_shelf_offset_side")
 end
-if config:exists("plugins/object_tracking/puck_values/middle_shelf_offset_side") then
-  middle_shelf_offset_side = config:get_float("plugins/object_tracking/puck_values/middle_shelf_offset_side")
+if config:exists("plugins/object_tracking/shelf_values/middle_shelf_offset_side") then
+  middle_shelf_offset_side = config:get_float("plugins/object_tracking/shelf_values/middle_shelf_offset_side")
 end
-if config:exists("plugins/object_tracking/puck_values/right_shelf_offset_side") then
-  right_shelf_offset_side = config:get_float("plugins/object_tracking/puck_values/right_shelf_offset_side")
+if config:exists("plugins/object_tracking/shelf_values/right_shelf_offset_side") then
+  right_shelf_offset_side = config:get_float("plugins/object_tracking/shelf_values/right_shelf_offset_side")
+end
+
+-- read wp config
+if config:exists("plugins/object_tracking/puck_values/puck_height") then
+  puck_height = config:get_float("plugins/object_tracking/puck_values/puck_height")
+end
+if config:exists("plugins/object_tracking/puck_values/ring_height") then
+  ring_height = config:get_float("plugins/object_tracking/puck_values/ring_height")
 end
 
 -- Match tag to navgraph point
