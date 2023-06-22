@@ -82,6 +82,7 @@ BoxDetectThread::loop()
 			enabled_      = false;
 			auto request  = std::make_shared<std_srvs::srv::SetBool::Request>();
 			request->data = false;
+			switch_if_->set_enabled(false);
 			// Call the service
 			auto future = client_->async_send_request(request);
 		} else if (switch_if_->msgq_first_is<SwitchInterface::EnableSwitchMessage>()) {
@@ -89,9 +90,11 @@ BoxDetectThread::loop()
 			enabled_      = true;
 			auto request  = std::make_shared<std_srvs::srv::SetBool::Request>();
 			request->data = true;
+			switch_if_->set_enabled(true);
 			// Call the service
 			auto future = client_->async_send_request(request);
 		}
+		switch_if_->write();
 
 		switch_if_->msgq_pop();
 	}
