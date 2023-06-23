@@ -820,6 +820,11 @@
 	(SkillerInterface (id ?skiller-id&:(str-index ?robot ?skiller-id)) (exclusive_controller ~""))
 	=>
 	(assert (wm-fact (key central agent robot-waiting args? r ?robot)))
+	;recompute navgraph after re-insertion
+	(navgraph-set-field-size ?robot)
+	(navgraph-compute ?robot)
+	(navgraph-add-all-new-tags)
+
 	(retract ?rl)
 )
 
@@ -951,19 +956,17 @@
 	(modify ?g (mode FORMULATED) (outcome UNKNOWN))
 	(retract ?p)
 )
+
 (defrule execution-monitoring-detect-disconnected-robot
   (declare (salience ?*MONITORING-SALIENCE*))
 	(wm-fact (key central agent robot args? r ?robot))
 	?hbi <- (HeartbeatInterface (id ?id&:(str-index ?robot ?id)) (alive FALSE))
+	(not (wm-fact (key central agent robot-lost args? r ?robot)))
 	=>
 	(printout error "Robot " ?robot  " lost, removing from worldmodel" crlf)
-	;(blackboard-close "HeartbeatInterface" ?id)
+
 	(do-for-fact ((?si SkillerInterface)) (str-index ?robot ?si:id)
 		(retract ?si)
 	)
-	;(do-for-all-facts ((?bif blackboard-interface)) (str-index ?robot ?bif:id)
-	;	(blackboard-close ?bif:type ?bif:id)
-	;	(retract ?bif)
-	;)
 	(assert (reset-robot-in-wm ?robot))
 )
