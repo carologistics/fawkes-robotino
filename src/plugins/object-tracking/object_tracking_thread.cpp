@@ -532,15 +532,15 @@ ObjectTrackingThread::loop()
 
 	//use weighted average to improve robustness of object position
 	double weighted_object_pos[3];
+	double sum_weights = 0;
 
 	if (detected) { //if undetected, continue with past responses
-		double sum_weights = filter_weights_[0];
+		sum_weights = filter_weights_[0];
 
 		weighted_object_pos[0] = filter_weights_[0] * cur_object_pos_target.getX();
 		weighted_object_pos[1] = filter_weights_[0] * cur_object_pos_target.getY();
 		weighted_object_pos[2] = filter_weights_[0] * cur_object_pos_target.getZ();
-	} else
-		double sum_weights = 0;
+	}
 
 	for (size_t i = 0; i < past_responses_.size(); i++) {
 		weighted_object_pos[0] += filter_weights_[1 + i] * past_responses_[i].getX();
