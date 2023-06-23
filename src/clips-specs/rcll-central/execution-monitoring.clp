@@ -288,6 +288,46 @@
   =>
   (retract ?timer)
 )
+
+
+;======================================Movement=========================================
+
+
+(defrule execution-monitoring-save-last-wait-position
+" Save the last wait position of the robot to a fact so that we can avoid moving
+ to this position again to not block a spot too long.
+"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  (goal (id ?goal-id) (class MOVE-OUT-OF-WAY) (mode DISPATCHED) (params target-pos ?pos))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+  (not (wm-fact (key monitoring robot last-wait-position args? r ?robot)))
+  =>
+  (assert (wm-fact (key monitoring robot last-wait-position args? r ?robot) (value ?pos)))
+)
+
+(defrule execution-monitoring-retract-last-wait-position
+" Retract the last wait position fact once the robot executes a different goal
+  or waits at a new position.
+"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  ?wf <- (wm-fact (key monitoring robot last-wait-position args? r ?robot) (value ?pos))
+
+  (goal (id ?goal-id) (class ?class) (mode DISPATCHED) (params $?params))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+
+  (test
+    (or
+      (neq ?class MOVE-OUT-OF-WAY)
+      (and
+        (eq ?class MOVE-OUT-OF-WAY)
+        (not (member$ ?pos ?params))
+      )
+    )
+  )
+  =>
+  (retract ?wf)
+)
+
 (defrule execution-monitoring-set-timeout-move-action-progress
 " Set a timeout that measures the progress of actions that move the agent. Should the agent not make progress
   beyond a certain delta threshold within the specified time span, the action will be failed.
