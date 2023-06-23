@@ -25,6 +25,13 @@
   (multislot last-pose)
   (slot counter (type NUMBER))
 )
+;A timeout for goals in mode FORMULATED
+(deftemplate selection-timer
+  (slot goal-id (type SYMBOL))
+  (slot robot (type SYMBOL))
+  (slot timeout-duration)
+  (multislot start-time)
+)
 
 (deffunction fail-action (?action ?error-msg)
 	(do-for-fact ((?sae skill-action-execinfo))
@@ -228,6 +235,59 @@
   (modify ?pt (start-time ?now))
 )
 
+(defrule execution-monitoring-set-timeout-goal-selection
+" Set a timeout when a goal is assigned to a robot and formulated to avoid
+  being stuck on formulated.
+"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  (goal (id ?goal-id) (mode FORMULATED) (sub-type SIMPLE))
+  (wm-fact (key central agent robot args? r ?robot))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+
+  (not (selection-timer (goal-id ?goal-id) (robot ?robot)))
+  (wm-fact (key refbox game-time) (values $?now))
+  =>
+  (assert
+    (selection-timer
+      (goal-id ?goal-id)
+	    (robot ?robot)
+	    (timeout-duration ?*GOAL-SELECTION-TIMEOUT*)
+	    (start-time ?now)
+    )
+  )
+)
+
+(defrule execution-monitoring-trigger-timeout-goal-selection
+" The timeout triggered, remove the assignment of the robot and set it to
+  waiting again.
+"
+  ?g <- (goal (id ?goal-id) (mode FORMULATED))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+
+  (wm-fact (key refbox game-time) (values $?now))
+  ?timer <- (selection-timer (goal-id ?goal-id) (robot ?robot)
+    (start-time $?st)
+		(timeout-duration ?timeout&:(timeout ?now ?st ?timeout)))
+  =>
+  (set-robot-to-waiting ?robot)
+  (remove-robot-assignment-from-goal-meta ?g)
+  (retract ?timer)
+)
+
+(defrule execution-monitoring-remove-timeout-goal-selection
+" The robot is executing a goal, so we can remove the timeout.
+"
+  ?g <- (goal (id ?goal-id) (mode ?mode))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?assigned-robot))
+
+  (wm-fact (key refbox game-time) (values $?now))
+  ?timer <- (selection-timer (goal-id ?goal-id) (robot ?robot)
+    (start-time $?st)
+		(timeout-duration ?timeout&:(timeout ?now ?st ?timeout)))
+  (test (or (neq ?mode FORMULATD) (neq ?assigned-robot ?robot)))
+  =>
+  (retract ?timer)
+)
 (defrule execution-monitoring-set-timeout-move-action-progress
 " Set a timeout that measures the progress of actions that move the agent. Should the agent not make progress
   beyond a certain delta threshold within the specified time span, the action will be failed.
