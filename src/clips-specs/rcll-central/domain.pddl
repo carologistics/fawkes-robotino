@@ -473,7 +473,7 @@
 )
 
 (:action wp-get
-	:parameters (?r - robot ?wp - workpiece ?m - mps ?side - mps-side)
+	:parameters (?r - robot ?wp - workpiece ?m - mps ?side - mps-side ?com - order-complexity-value)
 	:precondition (and (at ?r ?m ?side)
 	                   (can-hold ?r)
 	                   (wp-at ?wp ?m ?side)

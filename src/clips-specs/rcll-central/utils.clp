@@ -1077,6 +1077,18 @@
   (if (eq ?bool TRUE) then (return 1) else (return 0))
 )
 
+(deffunction get-wp-complexity (?wp)
+  (if (any-factp ((?ring1-color wp-ring1-color)) (eq ?ring1-color:wp (create$ param-values ?wp RING_NONE)))
+    (return C0)
+  )
+  (if (any-factp ((?ring1-color wp-ring2-color)) (eq ?ring1-color:wp (create$ param-values ?wp RING_NONE)))
+    (return C1)
+  )
+  (if (any-factp ((?ring1-color wp-ring3-color)) (eq ?ring1-color:wp (create$ param-values ?wp RING_NONE)))
+    (return C2)
+  )
+  (return C3)
+)
 
 (deffunction last-ring-points (?com)
 " @param ?com complexity of an order
