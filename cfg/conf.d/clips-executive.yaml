@@ -142,6 +142,8 @@ clips-executive:
         wp-discard: discard{}
         explore-and-turn: goto_corner_turn{place=?(place)S,
                                            min_x=-5, max_x=0, min_y=0, max_y=6}
+        wp-check: manipulate_wp{mps=?(m)S,dry_run=true,
+                          side=?(side)S,target="WORKPIECE",query=?(query)S}
       parameters:
         simtest:
           enabled: false

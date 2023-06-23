@@ -51,6 +51,7 @@
 	ss-slot - number
 	token - object
 	master-token - token
+	wp-query - object
 )
 
 (:constants
@@ -86,6 +87,7 @@
 	M-Z73 M-Z63 M-Z53 M-Z43 M-Z33 M-Z23 M-Z13 - zone
 	M-Z72 M-Z62 M-Z52 M-Z42 M-Z32 M-Z22 M-Z12 - zone
 	M-Z71 M-Z61 M-Z51 M-Z41 M-Z31 M-Z21 M-Z11 - zone
+	THERE ABSENT - wp-query
 )
 
 (:predicates
@@ -505,6 +507,12 @@
 	             (can-hold ?r)
 	             (not (mps-side-free ?m ?side))
 	        )
+)
+
+(:action wp-check
+	:parameters (?r - robot ?m - mps ?side - mps-side ?query - wp-query)
+	:precondition (at ?r ?m ?side)
+	:effect (at ?r ?m ?side)
 )
 
 (:action wp-put-slide-cc

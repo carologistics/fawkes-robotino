@@ -160,7 +160,9 @@
 	=>
 	(plan-assert-sequential (sym-cat CLEANUP-WP-PLAN- (gensym*)) ?goal-id ?robot
 		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps INPUT
+			(plan-assert-action wp-check ?robot ?target-mps INPUT ABSENT)
 			(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
+			(plan-assert-action wp-check ?robot ?target-mps INPUT THERE)
 		)
 	)
 	(modify ?g (mode EXPANDED))
@@ -182,7 +184,9 @@
 		(if (not (is-holding ?robot ?wp)) then
 			(create$
 			    (plan-assert-action move ?robot ?curr-location ?curr-side ?mps OUTPUT)
+				(plan-assert-action wp-check ?robot ?mps OUTPUT THERE)
 			    (plan-assert-action wp-get ?robot ?wp ?mps OUTPUT (get-wp-complexity ?wp))
+				(plan-assert-action wp-check ?robot ?mps OUTPUT ABSENT)
 			    (plan-assert-action move ?robot ?mps OUTPUT ?mps INPUT)
 			)
 		 else
@@ -191,7 +195,9 @@
 			)
 		)
 
+		(plan-assert-action wp-check ?robot ?mps INPUT ABSENT)
 		(plan-assert-action wp-put ?robot ?wp ?mps INPUT)
+		(plan-assert-action wp-check ?robot ?mps INPUT THERE)
 		(plan-assert-action move-wp-input-output ?mps ?wp)
 	)
 	(modify ?g (mode EXPANDED))
@@ -246,7 +252,9 @@
 				    (plan-assert-action wp-get-shelf ?robot ?cc ?mps ?shelf-spot)
 				)
 			)
+			(plan-assert-action wp-check ?robot ?mps INPUT ABSENT)
 			(plan-assert-action wp-put ?robot ?cc ?mps INPUT)
+			(plan-assert-action wp-check ?robot ?mps INPUT THERE)
 		)
 	)
 	(modify ?g (mode EXPANDED))
@@ -267,15 +275,21 @@
 		then
 			(create$ ; only last statement of if is returned
 				(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side ?wp
+					(plan-assert-action wp-check ?robot ?wp-loc ?wp-side THERE)
 					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side (get-wp-complexity ?wp))
+					(plan-assert-action wp-check ?robot ?wp-loc ?wp-side ABSENT)
 				)
 				(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps INPUT
+					(plan-assert-action wp-check ?robot ?target-mps INPUT ABSENT)
 					(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
+					(plan-assert-action wp-check ?robot ?target-mps INPUT THERE)
 				)
 			)
 		else
 			(plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps INPUT
+				(plan-assert-action wp-check ?robot ?target-mps INPUT ABSENT)
 				(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
+				(plan-assert-action wp-check ?robot ?target-mps INPUT THERE)
 			)
 		)
 	)
@@ -325,15 +339,21 @@
 				then
 					(create$ ; only last statement of if is returned
 						(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side ?wp
+							(plan-assert-action wp-check ?robot ?wp-loc ?wp-side THERE)
 							(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side (get-wp-complexity ?wp))
+							(plan-assert-action wp-check ?robot ?wp-loc ?wp-side ABSENT)
 						)
 						(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps ?target-side
+							(plan-assert-action wp-check ?robot ?target-mps INPUT ABSENT)
 							(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
+							(plan-assert-action wp-check ?robot ?target-mps INPUT THERE)
 						)
 					)
 				else
 					(plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps ?target-side
+						(plan-assert-action wp-check ?robot ?target-mps INPUT ABSENT)
 						(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
+						(plan-assert-action wp-check ?robot ?target-mps INPUT THERE)
 					)
 				)
 			)
@@ -373,15 +393,21 @@
 				then
 					(create$ ; only last statement of if is returned
 						(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side ?wp
+							(plan-assert-action wp-check ?robot ?wp-loc ?wp-side THERE)
 							(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side (get-wp-complexity ?wp))
+							(plan-assert-action wp-check ?robot ?wp-loc ?wp-side ABSENT)
 						)
 						(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps ?target-side
+							(plan-assert-action wp-check ?robot ?target-mps INPUT ABSENT)
 							(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
+							(plan-assert-action wp-check ?robot ?target-mps INPUT THERE)
 						)
 					)
 				else
 					(plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps ?target-side
+						(plan-assert-action wp-check ?robot ?target-mps INPUT ABSENT)
 						(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
+						(plan-assert-action wp-check ?robot ?target-mps INPUT THERE)
 					)
 				)
 			)
@@ -414,7 +440,9 @@
 		 then
 			(create$ ; only last statement of if is returned
 				(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side ?wp
+					(plan-assert-action wp-check ?robot ?wp-loc ?wp-side THERE)
 					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side (get-wp-complexity ?wp))
+					(plan-assert-action wp-check ?robot ?wp-loc ?wp-side ABSENT)
 				)
 				(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side)
 					 WAIT ?target-mps ?target-side
@@ -451,7 +479,9 @@
 		 then
 			(create$ ; only last statement of if is returned
 				(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side ?wp
+					(plan-assert-action wp-check ?robot ?wp-loc ?wp-side THERE)
 					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side (get-wp-complexity ?wp))
+					(plan-assert-action wp-check ?robot ?wp-loc ?wp-side ABSENT)
 				)
 				(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps ?target-side
 					(plan-assert-action wp-put-slide-cc ?robot
@@ -686,7 +716,9 @@
 
 			(create$
 				(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side ?wp
+					(plan-assert-action wp-check ?robot ?wp-loc ?wp-side THERE)
 					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side (get-wp-complexity ?wp))
+					(plan-assert-action wp-check ?robot ?wp-loc ?wp-side ABSENT)
 				)
 				(plan-assert-action go-wait
 					?robot (wait-pos ?wp-loc ?wp-side) WAIT ?dropzone)
