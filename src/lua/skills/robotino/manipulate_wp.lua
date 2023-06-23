@@ -179,7 +179,7 @@ function gripper_aligned()
 
   return math.abs(gripper_target.x - arduino:x_position()) < GRIPPER_TOLERANCE.x
      and math.abs(gripper_target.y - (arduino:y_position() - y_max/2)) < GRIPPER_TOLERANCE.y
-     and math.abs(math.min(gripper_target.z, z_max) - arduino:z_position()) < GRIPPER_TOLERANCE.z
+     and math.abs(math.min(gripper_target.z - fsm.vars.missing_c3_height, z_max) - arduino:z_position()) < GRIPPER_TOLERANCE.z
 end
 
 function set_gripper(x, y, z)
@@ -241,24 +241,15 @@ function move_gripper_default_pose()
 end
 
 function input_invalid()
-  if fsm.vars.target_object_type == nil then
+  if (fsm.vars.target_object_type == nil or string.gsub(fsm.vars.target_object_type, "^%s*(.-)%s*$", "%1") == 0) then
     print_error("That is not a valid target!")
     return true
-  elseif fsm.vars.expected_mps == nil then
+  elseif (fsm.vars.expected_mps == nil or string.gsub(fsm.vars.expected_mps, "^%s*(.-)%s*$", "%1") == 0) then
     print_error("That is not a valid mps!")
     return true
-  elseif fsm.vars.expected_side == nil then
+  elseif (fsm.vars.expected_side == nil or string.gsub(fsm.vars.expected_side, "^%s*(.-)%s*$", "%1") == 0) then
     print_error("That is not a valid side!")
     return true
-  end
-
-  -- set c if unset
-  if fsm.vars.c = nil then
-    if string.find(fsm.vars.side, "SHELF-") then
-      fsm.vars.c = "C0"
-    else -- assume highest possible workpiece if unknown
-      fsm.vars.c = "C3"
-    end
   end
 
   -- sanity check
@@ -376,6 +367,15 @@ function INIT:init()
                       ["SHELF-MIDDLE"] = object_tracking_if.SHELF_MIDDLE,
                       ["SHELF-RIGHT"]  = object_tracking_if.SHELF_RIGHT,
                       ["SLIDE"]        = object_tracking_if.SLIDE}
+  -- set c if unset
+  if (fsm.vars.c == nil or string.gsub(fsm.vars.c, "^%s*(.-)%s*$", "%1") == 0) then
+    if string.find(fsm.vars.side, "SHELF-") then
+      fsm.vars.c = "C0"
+    else -- assume highest possible workpiece if unknown
+      fsm.vars.c = "C3"
+    end
+  end
+
   -- missing wp height compared to C3
   local MISSING_C3_HEIGHT = {["C0"] = ring_height * 3,
                              ["C1"] = ring_height * 2,
@@ -552,8 +552,8 @@ end
 
 function GRIPPER_ROUTINE:init()
   -- perform pick or put routine
-  
-  if fsm.vars.target = "SLIDE" then
+  print("start routine")
+  if fsm.vars.target == "SLIDE" then
     self.args["pick_or_put_vs"].slide = true
   else 
     self.args["pick_or_put_vs"].slide = false
@@ -561,10 +561,12 @@ function GRIPPER_ROUTINE:init()
 
   if fsm.vars.target == "WORKPIECE" then
     self.args["pick_or_put_vs"].action = "PICK"
-    self.args["pick_or_put_vs"].missing_c3_height = fsm.vars.missing_c3_height
+    self.args["pick_or_put_vs"].missing_c3_height = tostring(fsm.vars.missing_c3_height)
+    print("Pick")
   else
     self.args["pick_or_put_vs"].action = "PUT"
-    self.args["pick_or_put_vs"].missing_c3_height = fsm.vars.missing_c3_height
+    self.args["pick_or_put_vs"].missing_c3_height = tostring(fsm.vars.missing_c3_height)
+    print("Put")
   end
 end
 

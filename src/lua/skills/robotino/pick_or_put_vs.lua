@@ -110,6 +110,11 @@ fsm:add_transitions{
    {"DECIDE_CLOSE", "FINAL",          true},
 }
 
+function INIT:init()
+  print(type(fsm.vars.missing_c3_height))
+  fsm.vars.missing_c3_height = tonumber(fsm.vars.missing_c3_height)
+end
+
 function MOVE_GRIPPER_DOWN:init()
   local gripper_target = tfm.transform6D(
     {x=object_tracking_if:gripper_frame(0),
@@ -150,7 +155,7 @@ function MOVE_GRIPPER_UP:init()
   local z_given = 0
   if fsm.vars.pick_wp then
     z_given = fsm.vars.target_z + gripper_up_z_pick
-  else if fsm.vars.slide
+  elseif fsm.vars.slide then
     z_given = fsm.vars.target_z + gripper_up_z_put_slide
   else
     z_given = z_max - fsm.vars.missing_c3_height
