@@ -158,6 +158,26 @@ NavGraphGeneratorMPSThread::init()
 	cfg_bounding_box_p2_[0] = p2[0];
 	cfg_bounding_box_p2_[1] = p2[1];
 
+	if (cfg_bounding_box_p1_[0] > 0) {
+		reserved_zones_ = {
+		  {cfg_bounding_box_p1_[0] + 2, 2},
+		  {cfg_bounding_box_p2_[0] - 2, 2},
+		  {cfg_bounding_box_p1_[0], 1},
+		  {cfg_bounding_box_p1_[0] + 1, 1},
+		  {cfg_bounding_box_p1_[0] + 2, 1},
+		  {cfg_bounding_box_p2_[0], 1},
+		  {cfg_bounding_box_p2_[0] - 1, 1},
+		  {cfg_bounding_box_p2_[0] - 2, 1},
+		};
+	} else {
+		reserved_zones_ = {
+		  {cfg_bounding_box_p1_[0] + 2, 2},
+		  {cfg_bounding_box_p1_[0], 1},
+		  {cfg_bounding_box_p1_[0] + 1, 1},
+		  {cfg_bounding_box_p1_[0] + 2, 1},
+		};
+	}
+
 	exp_zones_.resize(24, true);
 
 	navgen_if_ = blackboard->open_for_reading<NavGraphGeneratorInterface>("/navgraph-generator");
