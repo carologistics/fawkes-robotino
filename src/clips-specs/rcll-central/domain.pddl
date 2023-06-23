@@ -447,12 +447,6 @@
 	        )
 )
 
-(:action turn-to-search
-	:parameters (?r - robot ?point - location ?side - mps-side)
-	:precondition (at ?r ?point ?side)
-	:effect (at ?r ?point ?side)
-)
-
 (:action explore-and-turn
 	:parameters (?r - robot ?from - location ?from-side - mps-side
 	             ?place - waitpoint)
