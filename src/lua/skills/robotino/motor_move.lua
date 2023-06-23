@@ -56,6 +56,8 @@ documentation      = [==[Move on a (kind of) straight line to the given coordina
 @param vel_rot (Optional) Rotational top-speed. Upper limit: dito.
 @param end_early (Optional) Set true, if skill should final after object is close and detected.
 @param visual_servoing (Optional) Updates the target coordinates based on object tracking data.
+@param dry_run (Optional) Do not wait for object detection while using visual servoing. Needs to be set
+                          when using end_early.
 ]==]
 
 -- Tunables
@@ -280,7 +282,7 @@ fsm:add_transitions{
    {"DRIVE", "FAILED", cond="vars.tf_failed", desc="dist TF failed"},
    {"DRIVE", "FAILED", cond="vars.stuck_count > STUCK_MAX", desc="STUCK"},
    {"DRIVE", "FINAL", cond="vars.end_early and early_endable(self)"},
-   {"DRIVE", "WAIT_TRACKING", cond="vars.end_early and drive_done(self)"},
+   {"DRIVE", "WAIT_TRACKING", cond="vars.end_early and drive_done(self) and not vars.dry_run"},
    {"DRIVE", "FINAL", cond=drive_done},
 
    {"WAIT_TRACKING", "FINAL", cond=early_endable, desc="Target close enough and object detected"},
@@ -321,6 +323,11 @@ function INIT:init()
    -- If frame arg is specified, input coordinates are relative to it
    -- If unspecified, input coordinates are relative to /base_link
    self.fsm.vars.arg_frame = self.fsm.vars.frame or "/base_link"
+
+   -- set dry run if unset
+   if self.fsm.vars.dry_run == nil then
+      self.fsm.vars.dry_run = false
+   end
 
    -- Initialize unspecified arguments with default values
    if self.fsm.vars.frame then

@@ -67,6 +67,8 @@ Parameters:
       @param c       the complexity of the workpiece to grab/ in hand (optional, C0 | C1 | C2 | C3)
       @param dry_run true, if the gripper should not interact with the workpiece and only need to check if
                      the workpiece is there (optional, bool)
+      @param query   defines if dry_run expects a workpiece to be at the location or wet (optional, THERE | ABSENT)
+                     THERE by default
 ]==]
 
 local LASER_BASE_OFFSET    = 0.35 -- distance between robotino middle point and laser-line
@@ -244,9 +246,16 @@ end
 
 function input_invalid()
   -- handle optional dry run
-  if fsm.dry_run == nil then
-    fsm.dry_run = false
+  if fsm.vars.dry_run == nil then
+    fsm.vars.dry_run = false
   end
+
+  if fsm.vars.query == "ABSENT" then
+    fsm.vars.reverse_output = true
+  else
+    fsm.vars.reverse_output = false
+  end
+    
  
   if (fsm.vars.target_object_type == nil or string.gsub(fsm.vars.target_object_type, "^%s*(.-)%s*$", "%1") == 0) then
     print_error("That is not a valid target!")
@@ -298,8 +307,12 @@ function ready_for_gripper_movement()
   return z_max - fsm.vars.missing_c3_height < arduino:z_position()
 end
 
-function dry_object_found()
-  return fsm.vars.consecutive_detections > 2 and fsm.vars.dry_run
+function dry_expected_object_found()
+  return fsm.vars.consecutive_detections > 2 and fsm.vars.dry_run and not fsm.vars.reverse_output
+end
+
+function dry_unexpected_object_found()
+  return fsm.vars.consecutive_detections > 2 and fsm.vars.dry_run and fsm.vars.reverse_output
 end
 
 fsm:define_states{ export_to=_M, closure={MISSING_MAX=MISSING_MAX},
@@ -312,6 +325,7 @@ fsm:define_states{ export_to=_M, closure={MISSING_MAX=MISSING_MAX},
    {"DRIVE_TO_LASER_LINE",   SkillJumpState, skills={{motor_move}},      final_to="WAIT_FOR_GRIPPER", fail_to="FAILED"},
    {"WAIT_FOR_GRIPPER",      JumpState},
    {"AT_LASER_LINE",         JumpState},
+   {"DRY_RUN_ABSENT",        JumpState},
    {"MOVE_BASE_AND_GRIPPER", SkillJumpState, skills={{motor_move}},      final_to="FINE_TUNE_GRIPPER", fail_to="FIND_LASER_LINE"},
    {"FINE_TUNE_GRIPPER",     JumpState},
    {"GRIPPER_ROUTINE",       SkillJumpState, skills={{pick_or_put_vs}},  final_to="FINAL", fail_to="FINE_TUNE_GRIPPER"},
@@ -328,9 +342,12 @@ fsm:add_transitions{
    {"SEARCH_LASER_LINE", "FAILED",                cond="vars.search_attemps > 10", desc="Tried 10 times, could not find laser-line"},
    {"SEARCH_LASER_LINE", "MPS_ALIGN",             timeout=1, desc="Could not find laser-line, spin"},
    {"WAIT_FOR_GRIPPER", "AT_LASER_LINE",          cond=ready_for_gripper_movement, desc="Found Object"},
-   {"AT_LASER_LINE", "FINAL",                     cond=dry_object_found, desc="Found Object"},
+   {"AT_LASER_LINE", "FINAL",                     cond=dry_expected_object_found, desc="Found Object"},
+   {"AT_LASER_LINE", "DRY_RUN_ABSENT",            cond="vars.reverse_output", desc="dry run with no object expected"},
    {"AT_LASER_LINE", "MOVE_BASE_AND_GRIPPER",     cond="vars.consecutive_detections > 2", desc="Found Object"},
    {"AT_LASER_LINE", "FAILED",                    timeout=2, desc="Object not found"},
+   {"DRY_RUN_ABSENT", "FAILED",                   cond=dry_unexpected_object_found, desc="Found Object"},
+   {"DRY_RUN_ABSENT", "FINAL",                    timeout=2, desc="Object not found"},
    {"FINE_TUNE_GRIPPER", "GRIPPER_ROUTINE",       cond=gripper_aligned, desc="Gripper aligned"},
    {"FINE_TUNE_GRIPPER", "MOVE_BASE_AND_GRIPPER", cond="vars.out_of_reach", desc="Gripper out of reach"},
    {"FINE_TUNE_GRIPPER", "FIND_LASER_LINE",       cond="vars.missing_detections > MISSING_MAX", desc="Tracking lost target"},
