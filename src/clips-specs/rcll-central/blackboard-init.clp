@@ -108,7 +108,7 @@
                         (type "NavGraphGeneratorInterface"))
   (wm-fact (key config rcll use-static-navgraph) (type BOOL) (value FALSE))
   =>
-  (navgraph-set-field-size ?robot)
+  (navgraph-set-field-size-from-cfg ?robot)
   (navgraph-compute ?robot)
 )
 
@@ -139,7 +139,7 @@
     then
     (bind ?p2_x 0)
   )
-  (navgraph-set-field-size-freely ?robot ?p1_x ?p1_y ?p2_x ?p2_y)
+  (navgraph-set-field-size ?robot ?p1_x ?p1_y ?p2_x ?p2_y)
   (navgraph-compute ?robot)
 )
 

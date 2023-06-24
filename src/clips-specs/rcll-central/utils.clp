@@ -749,7 +749,7 @@
   (blackboard-send-msg ?msg)
 )
 
-(deffunction navgraph-set-field-size-freely (?robot ?p1_x ?p1_y ?p2_x ?p2_y)
+(deffunction navgraph-set-field-size (?robot ?p1_x ?p1_y ?p2_x ?p2_y)
   "Uses the NavGraphInterface to setup the bounding box on a robot to match
    the one from the central agent. If they have disagreeing bounding boxes,
    then the existence and positions of grid coordinates are not lining up.
@@ -765,13 +765,13 @@
   (blackboard-send-msg ?msg)
 )
 
-(deffunction navgraph-set-field-size (?robot)
+(deffunction navgraph-set-field-size-from-cfg (?robot)
   (bind ?prefix (str-cat ?*NAVGRAPH_GENERATOR_MPS_CONFIG* "bounding-box/"))
   (if (not (do-for-fact ((?cf1 confval) (?cf2 confval))
     (and (str-prefix (str-cat ?prefix "p1") ?cf1:path)
           (str-prefix (str-cat ?prefix "p2") ?cf2:path)
     )
-    (navgraph-set-field-size-freely ?robot (integer (nth$ 1 ?cf1:list-value))
+    (navgraph-set-field-size ?robot (integer (nth$ 1 ?cf1:list-value))
                                             (integer (nth$ 2 ?cf1:list-value))
                                             (integer (nth$ 1 ?cf2:list-value))
                                             (integer (nth$ 2 ?cf2:list-value)))

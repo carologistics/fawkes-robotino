@@ -808,7 +808,7 @@
 	=>
 	(assert (wm-fact (key central agent robot-waiting args? r ?robot)))
 	;recompute navgraph after re-insertion
-	(navgraph-set-field-size ?robot)
+	(navgraph-set-field-size-from-cfg ?robot)
 	(navgraph-compute ?robot)
 	(navgraph-add-all-new-tags)
 
