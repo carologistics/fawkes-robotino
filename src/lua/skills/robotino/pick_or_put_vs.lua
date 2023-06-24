@@ -115,7 +115,7 @@ function MOVE_GRIPPER_DOWN:init()
     "base_link", "end_effector_home")
 
   -- Clip to axis limits
-  local x_clipped = math.max(0, math.min(gripper_target.x + 0.005, x_max))
+  local x_clipped = math.max(0, math.min(gripper_target.x, x_max))
   local y_clipped = math.max(-y_max/2, math.min(gripper_target.y, y_max/2))
 
   local z_given = 0
