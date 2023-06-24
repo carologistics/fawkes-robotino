@@ -430,7 +430,7 @@
 	                                   wp-side ?wp-side
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
-	                                   $?)
+	                                   $?other-params)
 	                          (is-executable FALSE))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (order-id ?order))
 	(goal (id ?buffer-goal-id) (class BUFFER-CAP) (mode ~FORMULATED))
@@ -489,7 +489,7 @@
 	             (bind ?wp-side (wm-key-arg ?wp-at:key side))
 	)
 	(printout t "Goal "  PAY-FOR-RINGS-WITH-CAP-CARRIER " executable for WP " ?wp crlf)
-	(modify ?g (is-executable TRUE))
+	(modify ?g (is-executable TRUE) (params wp ?wp wp-loc ?wp-loc wp-side ?wp-side target-mps ?target-mps target-side ?target-side ?other-params))
 )
 
 (defrule goal-production-pay-ring-with-carrier-from-shelf-executable

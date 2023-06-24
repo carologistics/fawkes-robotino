@@ -435,7 +435,7 @@
 (defrule goal-expander-get-cap-carrier-to-fill-rs
 	?g <- (goal (id ?goal-id) (class ?class&PAY-FOR-RINGS-WITH-CAP-CARRIER)
 	                          (mode SELECTED) (parent ?parent)
-	                          (params  wp ?
+	                          (params  wp ?wp
 	                                   wp-loc ?wp-loc
 	                                   wp-side ?wp-side
 	                                   target-mps ?target-mps
@@ -445,14 +445,6 @@
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	(wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
 	(wm-fact (key domain fact rs-filled-with args? m ?target-mps n ?rs-before))
-
-	(domain-object (name ?wp) (type cap-carrier))
-	(or (and
-	         (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-	         (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side))
-	    )
-	    (wm-fact (key domain fact holding args? r ?robot wp ?wp))
-	)
 	=>
 	(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
 		(if (not (is-holding ?robot ?wp))
@@ -472,7 +464,7 @@
 			)
 		)
 	)
-	(modify ?g (mode EXPANDED) (params wp ?wp wp-loc ?wp-loc wp-side ?wp-side target-mps ?target-mps target-side ?target-side ?other-params))
+	(modify ?g (mode EXPANDED))
 )
 
 (defrule goal-expander-get-shelf-to-fill-rs
