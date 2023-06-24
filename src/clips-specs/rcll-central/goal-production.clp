@@ -709,7 +709,7 @@
 (defrule goal-production-assert-wait-nothing-executable
   "When the robot is stuck, assert a new goal that keeps it waiting"
   (goal (id ?p) (class WAIT-ROOT))
-  (not (goal (parent ?p) (mode FORMULATED)))
+  (not (goal (parent ?p) (class WAIT-NOTHING-EXECUTABLE) (mode FORMULATED)))
   =>
   (bind ?goal (assert (goal (class WAIT-NOTHING-EXECUTABLE)
               (id (sym-cat WAIT-NOTHING-EXECUTABLE- (gensym*)))
