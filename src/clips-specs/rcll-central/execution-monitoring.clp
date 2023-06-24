@@ -53,24 +53,6 @@
 ;
 ; =============================== Timeouts ===============================
 ;
-(defrule execution-monitoring-create-action-timeout-move-out-of-way
-	(declare (salience ?*MONITORING-SALIENCE*))
-	(plan-action (plan-id ?plan-id) (goal-id ?goal-id)
-	    (id ?id)
-	    (state ?status&~FORMULATED&~FAILED&~FINAL)
-	    (action-name ?action-name)
-	    (param-values $?param-values))
-	(plan (id ?plan-id) (goal-id ?goal-id))
-	(goal (id ?goal-id) (mode DISPATCHED) (class MOVE-OUT-OF-WAY))
-	(not (action-timer (plan-id ?plan-id) (action-id ?id) (status ?status)))
-	(wm-fact (key refbox game-time) (values $?now))
-	=>
-	(assert (action-timer (plan-id ?plan-id)
-	            (action-id ?id)
-	            (timeout-duration ?*MOVE-OUT-OF-WAY-TIMEOUT-DURATION*)
-	            (status ?status)
-	            (start-time ?now)))
-)
 
 (defrule execution-monitoring-create-action-timeout
 " For every state of an action that should not take long (pending, waiting for sensed effects),
@@ -83,7 +65,7 @@
 	    (action-name ?action-name)
 	    (param-values $?param-values))
 	(plan (id ?plan-id) (goal-id ?goal-id))
-	(goal (id ?goal-id) (mode DISPATCHED))
+	(goal (id ?goal-id) (mode DISPATCHED) (class ?goal-class))
 	(test (neq ?goal-id BEACONACHIEVE))
 	(not (action-timer (plan-id ?plan-id) (action-id ?id) (status ?status)))
 	(wm-fact (key refbox game-time) (values $?now))
@@ -100,6 +82,10 @@
 	(if (member$ ?action-name (create$ cs-mount-cap cs-buffer-cap rs-mount-ring1 rs-mount-ring2 rs-mount-ring3))
 	 then
 		(bind ?timeout-duration ?*PREPARE-WAIT-TIMEOUT-DURATION*)
+	)
+	(if (eq ?goal-class MOVE-OUT-OF-WAY)
+	 then
+		(bind ?timeout-duration ?*MOVE-OUT-OF-WAY-TIMEOUT-DURATION*)
 	)
 	(assert (action-timer (plan-id ?plan-id)
 	            (action-id ?id)
