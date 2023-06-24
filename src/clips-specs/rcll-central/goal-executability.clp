@@ -630,14 +630,11 @@ The workpiece remains in the output of the used ring station after
 	             ; ... and it is a fresh base located in a base station
 	         (or (and (wm-fact (key domain fact mps-type args? m ?wp-loc t BS))
 	                  (wm-fact (key domain fact wp-unused args? wp ?wp))
-	                  (not (wm-fact (key domain fact wp-at args? wp ?wp m ?any-wp-loc side ?any-wp-side)))
 	                  (wm-fact (key domain fact wp-base-color
 	                            args? wp ?wp col BASE_NONE)))
 	             ; ... or is already at some machine
-	             (and (wm-fact (key domain fact wp-at
+	             (wm-fact (key domain fact wp-at
 	                       args? wp ?wp m ?wp-loc side ?wp-side))
-	                  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
-	             )
 	         )
 	    )
 	    ; or the workpiece is already being held
@@ -686,10 +683,7 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key domain fact wp-at args? wp ?cc m ?mps side INPUT))
 	(wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
 	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side OUTPUT)))
-	(or
-		(wm-fact (key game found-tag zone args? m ?mps));we have information of the machine
-		(wm-fact (key refbox explored-machine args? m ?mps))
-	)
+	(domain-fact (name zone-content) (param-values ?mpsz ?mps))
 	=>
 	(printout t "Goal INSTRUCT-CS-BUFFER-CAP executable" crlf)
 	(modify ?g (is-executable TRUE))
