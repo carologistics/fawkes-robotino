@@ -119,7 +119,8 @@ clips-executive:
             file: rcll-central/noop-actions.clp
           - name: simtest
             file: rcll-central/simtest.clp
-
+      # the mapping syntax for parameters is defined in
+      # fawkes/src/libs/utils/misc/map_skill.cpp
       action-mapping:
         enter-field: >
           drive_into_field{team=?(team-color)S,
@@ -139,6 +140,8 @@ clips-executive:
         wp-get: manipulate_wp{mps=?(m)S,
                               side=?(side)S,target="WORKPIECE"}
         wp-discard: discard{}
+        explore-and-turn: goto_corner_turn{place=?(place)S,
+                                           min_x=-5, max_x=0, min_y=0, max_y=6}
       parameters:
         simtest:
           enabled: false
@@ -190,6 +193,8 @@ clips-executive:
         - RobotinoSensorInterface
         - RobotinoLightInterface
         - HeartbeatInterface
+        - BoxInterface
+        - SwitchInterface
 
     test:
       domain: test-scenario/test-domain.clp

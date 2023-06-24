@@ -712,7 +712,7 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
 	(wm-fact (key wp meta next-step args? wp ?wp) (value CAP))
 	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side OUTPUT)))
-	(wm-fact (key game found-tag zone args? m ?mps));we have information of the machine
+	(domain-fact (name zone-content) (param-values ?mpsz ?mps))
 	=>
 	(printout t "Goal INSTRUCT-CS-MOUNT-CAP executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -744,7 +744,7 @@ The workpiece remains in the output of the used ring station after
 	(goal (id ?oid) (params $? wp ?wp $?))
 	(goal-meta (goal-id ?oid) (order-id ?order-id))
 	(not (goal (class INSTRUCT-BS-DISPENSE-BASE) (mode SELECTED|DISPATCHED|COMMITTED|EXPANDED)))
-	(wm-fact (key game found-tag zone args? m ?mps));we have information of the machine
+	(domain-fact (name zone-content) (param-values ?mpsz ?mps))
 	=>
 	(printout t "Goal INSTRUCT-BS-DISPENSE executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -767,7 +767,7 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key refbox game-time) (values $?game-time))
 	(wm-fact (key refbox order ?order delivery-begin) (type UINT)
 	         (value ?begin&:(< ?begin (nth$ 1 ?game-time))))
-	(wm-fact (key game found-tag zone args? m ?mps));we have information of the machine
+	(domain-fact (name zone-content) (param-values ?mpsz ?mps))
 	=>
 	(printout t "Goal INSTRUCT-DS-DELIVER executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -830,7 +830,7 @@ The workpiece remains in the output of the used ring station after
 	          args? ord ?order col ?ring-color ))
 	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side OUTPUT)))
 	(not (goal (class INSTRUCT-RS-MOUNT-RING) (mode EXPANDED|SELECTED|DISPATCHED|COMMITTED)))
-	(wm-fact (key game found-tag zone args? m ?mps));we have information of the machine
+	(domain-fact (name zone-content) (param-values ?mpsz ?mps))
 	=>
 	(printout t "Goal INSTRUCT-RS-MOUNT-RING executable" crlf)
 	(modify ?g (is-executable TRUE))
