@@ -503,6 +503,14 @@ ObjectTrackingThread::loop()
 		object_pos_pub->send_transform(stf_object_pos);
 	} else {
 		pos_str = "X.XXX X.XXX X.XXX";
+
+		//handle case if first detection is unsuccessful
+		if (past_responses_.size() == 0) {
+			//use expected position as initialisation
+			//transform from map to target
+			tf_listener->transform_point(target_frame_, expected_pos, cur_object_pos_target);
+			detected = true;
+		}
 	}
 	cv::putText(image,
 	            pos_str,
