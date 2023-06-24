@@ -52,11 +52,11 @@ endif()
 
 if(PLUGIN_mps-laser-gen-ros2)
   add_library(mps-laser-gen-ros2 MODULE mps-laser-gen-ros2_plugin.cpp
-                                   mps-laser-gen_thread.cpp)
+                                        mps-laser-gen_thread.cpp)
   depend_on_eigen3(mps-laser-gen-ros2)
   depend_on_ros2(mps-laser-gen-ros2)
-	#find_package(visualization_msgs QUIET)
-  #remember_dependency(visualization_msgs)
+  # find_package(visualization_msgs QUIET)
+  # remember_dependency(visualization_msgs)
   depend_on_tf(mps-laser-gen-ros2)
   depend_on_navgraph(mps-laser-gen-ros2)
 
@@ -71,7 +71,7 @@ if(PLUGIN_mps-laser-gen-ros2)
     fawkesinterface
     LaserBoxFilterInterface
     fawkesros2aspect)
-	depend_on_ros2_libs(mps-laser-gen-ros2 "visualization_msgs")
+  depend_on_ros2_libs(mps-laser-gen-ros2 "visualization_msgs")
 else()
   plugin_disabled_message("mps-laser-gen-ros2")
 endif()
