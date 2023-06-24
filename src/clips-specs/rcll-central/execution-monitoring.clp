@@ -255,6 +255,7 @@
     (start-time $?st)
 		(timeout-duration ?timeout&:(timeout ?now ?st ?timeout)))
   =>
+  (printout error  "Goal "  ?goal-id " timed out on selection!" crlf)
   (set-robot-to-waiting ?robot)
   (remove-robot-assignment-from-goal-meta ?g)
   (retract ?timer)
@@ -270,7 +271,7 @@
   ?timer <- (selection-timer (goal-id ?goal-id) (robot ?robot)
     (start-time $?st)
 		(timeout-duration ?timeout&:(timeout ?now ?st ?timeout)))
-  (test (or (neq ?mode FORMULATD) (neq ?assigned-robot ?robot)))
+  (test (or (neq ?mode FORMULATED) (neq ?assigned-robot ?robot)))
   =>
   (retract ?timer)
 )
