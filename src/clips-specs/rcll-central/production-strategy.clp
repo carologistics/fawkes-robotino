@@ -38,6 +38,7 @@
   ?*TOTAL-PRODUCTION-THRESHOLD-2ROBOTS* = 2
   ?*TOTAL-PRODUCTION-THRESHOLD-1ROBOT* = 1
   ?*SALIENCE-ORDER-SELECTION* = ?*SALIENCE-HIGH*
+  ?*UPDATE-WORKLOAD-TIMEOUT* = 2
 )
 
 (deffunction production-strategy-produce-ahead-check (?gt ?start ?end ?complexity)
@@ -120,7 +121,7 @@
   (declare (salience ?*SALIENCE-LOW*))
   (time $?now)
   ?update-fact <- (wm-fact (key mps workload needs-update) (value FALSE))
-  ?timer <- (timer (name workload-update-timer) (time $?t&:(timeout ?now ?t 2)) (seq ?seq))
+  ?timer <- (timer (name workload-update-timer) (time $?t&:(timeout ?now ?t ?*UPDATE-WORKLOAD-TIMEOUT*)) (seq ?seq))
   =>
   (modify ?update-fact (value TRUE))
   (modify ?timer (time ?now) (seq (+ ?seq 1)))
