@@ -66,6 +66,7 @@
                                                 ?curr-side
                                                 ?mps
                                                 ?mps-side
+                                                ?wp
                                                 $?actions)
 	(return
 	  (create$
@@ -74,7 +75,7 @@
 	    (plan-assert-action move
 	      ?robot (wait-pos ?mps ?mps-side) WAIT ?mps ?mps-side)
 	    (plan-assert-action wait-for-wp
-	      ?robot ?mps ?mps-side)
+	      ?robot ?mps ?mps-side ?wp)
 	    $?actions
 	    (plan-assert-action go-wait
 	      ?robot ?mps ?mps-side (wait-pos ?mps ?mps-side))
@@ -265,7 +266,7 @@
 		(if (not (is-holding ?robot ?wp))
 		then
 			(create$ ; only last statement of if is returned
-				(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
+				(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side ?wp
 					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
 				)
 				(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps INPUT
@@ -323,7 +324,7 @@
 				(if (not (is-holding ?robot ?wp))
 				then
 					(create$ ; only last statement of if is returned
-						(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
+						(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side ?wp
 							(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
 						)
 						(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps ?target-side
@@ -371,7 +372,7 @@
 				(if (not (is-holding ?robot ?wp))
 				then
 					(create$ ; only last statement of if is returned
-						(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
+						(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side ?wp
 							(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
 						)
 						(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps ?target-side
@@ -412,7 +413,7 @@
 		(if (not (is-holding ?robot ?wp))
 		 then
 			(create$ ; only last statement of if is returned
-				(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
+				(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side ?wp
 					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
 				)
 				(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side)
@@ -439,7 +440,7 @@
 	                                   wp-side ?wp-side
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
-	                                   $?))
+	                                   $?other-params))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 	(wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
@@ -449,7 +450,7 @@
 		(if (not (is-holding ?robot ?wp))
 		 then
 			(create$ ; only last statement of if is returned
-				(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
+				(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side ?wp
 					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
 				)
 				(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps ?target-side
@@ -684,7 +685,7 @@
 						(bind ?wp-side (wm-key-arg ?wp-at:key side)))
 
 			(create$
-				(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side
+				(plan-assert-safe-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side ?wp
 					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side)
 				)
 				(plan-assert-action go-wait

@@ -331,6 +331,7 @@
   (not (wm-fact (key mps workload needs-update)))
   =>
   (assert (wm-fact (key mps workload needs-update) (value FALSE) (type BOOL)))
+  (assert (timer (name workload-update-timer)))
 )
 
 (defrule domain-restore-worldmodel-after-maintenance

@@ -116,20 +116,6 @@
   (retract ?request-offer)
 )
 
-(defrule goal-request-assert-pay-with-cc-goal
-  "If there are a payment and discard request, create a pay-with-cc goal."
-  ?request-pay <- (wm-fact (key request pay args? ord ?order-id m ?rs ring ?ring seq ?seq prio ?prio-payment) (values status OPEN assigned-to))
-  ?request-dis <- (wm-fact (key request discard args? ord ?order-id cs ?cs prio ?prio-discard) (values status OPEN assigned-to))
-  (wm-fact (key domain fact cs-color args? m ?cs col ?cap-col))
-  (goal (class SUPPORT-ROOT) (id ?root-id))
-  =>
-  (bind ?pay-with-cc-goal (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN ?cs UNKNOWN ?rs INPUT ?order-id))
-  (modify ?request-pay (values status ACTIVE assigned-to (fact-slot-value ?pay-with-cc-goal id)))
-  (modify ?request-dis (values status ACTIVE assigned-to (fact-slot-value ?pay-with-cc-goal id)))
-  (modify ?pay-with-cc-goal (parent ?root-id) (priority ?prio-payment))
-)
-
-
 (defrule goal-request-assert-pay-with-base-goal
   "If there is an unfulfilled payment request, create a pay-with-base-goal."
   ?request <- (wm-fact (key request pay args? ord ?order-id m ?rs ring ?ring seq ?seq prio ?prio) (values status OPEN assigned-to))
@@ -177,14 +163,15 @@
   but the goals have not been started yet, we can remap them to a pay-with-cc goal."
   ?request-pay <- (wm-fact (key request pay args? ord ?order-id-pay m ?rs ring ?ring seq ?seq prio ?prio-payment) (values status ACTIVE assigned-to $?payment-goals))
   ?request-dis <- (wm-fact (key request discard args? ord ?order-id-discard cs ?cs prio ?prio-discard) (values status ACTIVE assigned-to $?discard-goals))
+  (goal (class SUPPORT-ROOT) (id ?root-id))
 
   ;the assigned goals have not been started yet
   (not (goal (id ?request-goal&:(or (member$ ?request-goal ?payment-goals) (member$ ?request-goal ?discard-goals))) (mode ~FORMULATED)))
   ;the mapping is currently on distinct discard and pay-with-base goals
-  (goal (id ?discard-goal&:(member$ ?discard-goal ?discard-goals)) (class DISCARD))
+  (goal (id ?discard-goal&:(member$ ?discard-goal ?discard-goals)) (class DISCARD) (params wp ?wp $?))
   (goal (id ?payment-goal&:(member$ ?payment-goal ?payment-goals)) (class PAY-FOR-RINGS-WITH-BASE))
-
-  (goal (class SUPPORT-ROOT) (id ?root-id))
+  ;there is a buffer goal already running (so we can discard soon, to avoid slow-down in payments)
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?cs $?))
   =>
   (do-for-all-facts ((?goal goal) (?goal-meta goal-meta))
     (and (or (member$ ?goal:id ?payment-goals) (member$ ?goal:id ?discard-goals)) (eq ?goal:id ?goal-meta:goal-id))
@@ -192,7 +179,7 @@
     (retract ?goal-meta)
   )
 
-  (bind ?pay-with-cc-goal (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN ?cs UNKNOWN ?rs INPUT ?order-id-pay))
+  (bind ?pay-with-cc-goal (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN ?cs OUTPUT ?rs INPUT ?order-id-pay))
   (modify ?request-pay (values status ACTIVE assigned-to (fact-slot-value ?pay-with-cc-goal id)))
   (modify ?request-dis (values status ACTIVE assigned-to (fact-slot-value ?pay-with-cc-goal id)))
   (modify ?pay-with-cc-goal (parent ?root-id) (priority ?prio-discard))

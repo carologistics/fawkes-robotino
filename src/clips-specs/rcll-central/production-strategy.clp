@@ -25,19 +25,20 @@
 ; steps.
 (defglobal
   ?*SALIENCE-PRODUCTION-STRATEGY* = -1
-  ?*RS-WORKLOAD-THRESHOLD* = 8
+  ?*RS-WORKLOAD-THRESHOLD* = 6
   ?*C0-PRODUCTION-THRESHOLD* = 1
-  ?*C1-PRODUCTION-THRESHOLD* = 1
-  ?*C2-PRODUCTION-THRESHOLD* = 1
-  ?*C3-PRODUCTION-THRESHOLD* = 1
-  ?*C0-CUTOFF* = 19
-  ?*C1-CUTOFF* = 18
-  ?*C2-CUTOFF* = 17
-  ?*C3-CUTOFF* = 16
+  ?*C1-PRODUCTION-THRESHOLD* = 2
+  ?*C2-PRODUCTION-THRESHOLD* = 2
+  ?*C3-PRODUCTION-THRESHOLD* = 2
+  ?*C0-CUTOFF* = 17
+  ?*C1-CUTOFF* = 16
+  ?*C2-CUTOFF* = 16
+  ?*C3-CUTOFF* = 15
   ?*TOTAL-PRODUCTION-THRESHOLD* = 3
   ?*TOTAL-PRODUCTION-THRESHOLD-2ROBOTS* = 2
   ?*TOTAL-PRODUCTION-THRESHOLD-1ROBOT* = 1
   ?*SALIENCE-ORDER-SELECTION* = ?*SALIENCE-HIGH*
+  ?*UPDATE-WORKLOAD-TIMEOUT* = 2
 )
 
 (deffunction production-strategy-produce-ahead-check (?gt ?start ?end ?complexity)
@@ -113,6 +114,17 @@
         (is-list FALSE) (value 0))
     )
   )
+)
+
+(defrule production-strategy-update-workload-timeout
+  "Trigger an update to to the mps-workload after 2s"
+  (declare (salience ?*SALIENCE-LOW*))
+  (time $?now)
+  ?update-fact <- (wm-fact (key mps workload needs-update) (value FALSE))
+  ?timer <- (timer (name workload-update-timer) (time $?t&:(timeout ?now ?t ?*UPDATE-WORKLOAD-TIMEOUT*)) (seq ?seq))
+  =>
+  (modify ?update-fact (value TRUE))
+  (modify ?timer (time ?now) (seq (+ ?seq 1)))
 )
 
 (defrule production-strategy-sum-workload

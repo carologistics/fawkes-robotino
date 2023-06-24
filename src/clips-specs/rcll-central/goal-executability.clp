@@ -82,7 +82,9 @@
 	            (is-executable FALSE))
 	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
 	; check if target position is free
-	(test (is-free ?pos))
+	(not (wm-fact (key domain fact at args? r ?any-robot&:(neq ?robot ?any-robot) m ?pos side WAIT)))
+	; check if target position is not last position
+	(not (wm-fact (key monitoring robot last-wait-position args? r ?robot) (value ?pos)))
 	=>
 	(printout t "Goal MOVE-OUT-OF-WAY executable for " ?robot " to pos " ?pos  crlf)
   (modify ?g (is-executable TRUE))
@@ -150,7 +152,7 @@
 	(not (goal (class BUFFER-CAP)
 	            (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
 	            (params target-mps ?mps
-	                    cap-color ?cap-color
+	                    cap-color ?
 	            )))
 	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -167,7 +169,7 @@
 	(or (and
 	        (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
 	        (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
-	        (not (plan-action (action-name wp-get-shelf) (param-values $? ?wp $?)))
+	        (not (plan-action (action-name wp-get-shelf) (param-values $? ?mps $?)))
 	        (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
 	    )
 	    (and
@@ -194,6 +196,7 @@
 	                                   $?)
 	                          (is-executable FALSE))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (order-id ?order))
+	(wm-fact (key domain fact order-complexity args? ord ?order com ?order-complexity))
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -427,7 +430,7 @@
 	                                   wp-side ?wp-side
 	                                   target-mps ?target-mps
 	                                   target-side ?target-side
-	                                   $?)
+	                                   $?other-params)
 	                          (is-executable FALSE))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (order-id ?order))
 	(goal (id ?buffer-goal-id) (class BUFFER-CAP) (mode ~FORMULATED))
@@ -464,12 +467,17 @@
 
 	;check wp has no cap and is at the output of the CS
 	(wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+	(domain-object (name ?wp) (type cap-carrier))
 	(or (and ; Either the workpiece needs to picked up...
 	         (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
 	         (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side OUTPUT))
 	    )
 	    ; or the workpiece is already being held
-	    (wm-fact (key domain fact holding args? r ?robot wp ?wp&:(eq ?wp ?preset-wp)))
+	    (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+	)
+	(not (goal (class DISCARD|PAY-FOR-RINGS-WITH-CAP-CARRIER)
+			   (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)
+			   (params wp ?wp $?))
 	)
 	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
 	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
@@ -480,13 +488,8 @@
 	                  (eq (wm-key-arg ?wp-at:key wp) ?wp))
 	             (bind ?wp-side (wm-key-arg ?wp-at:key side))
 	)
-	(printout t "Goal "  PAY-FOR-RINGS-WITH-CAP-CARRIER " executable" crlf)
-	(modify ?g (is-executable TRUE)(params wp ?wp
-	                                       wp-loc ?wp-loc
-	                                       wp-side ?wp-side
-	                                       target-mps ?target-mps
-	                                       target-side ?target-side)
-	)
+	(printout t "Goal "  PAY-FOR-RINGS-WITH-CAP-CARRIER " executable for WP " ?wp crlf)
+	(modify ?g (is-executable TRUE) (params wp ?wp wp-loc ?wp-loc wp-side ?wp-side target-mps ?target-mps target-side ?target-side ?other-params))
 )
 
 (defrule goal-production-pay-ring-with-carrier-from-shelf-executable
@@ -680,7 +683,7 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key domain fact wp-at args? wp ?cc m ?mps side INPUT))
 	(wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
 	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side OUTPUT)))
-	(wm-fact (key game found-tag zone args? m ?mps));we have information of the machine
+	(domain-fact (name zone-content) (param-values ?mpsz ?mps))
 	=>
 	(printout t "Goal INSTRUCT-CS-BUFFER-CAP executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -738,10 +741,9 @@ The workpiece remains in the output of the used ring station after
 	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps $?)))
 	(wm-fact (key domain fact wp-unused args? wp ?wp))
 	; wait until a robot actually needs the base before proceeding
-	(plan-action (action-name wait-for-wp) (param-values ?robot ?mps ?side)
+	(plan-action (action-name wait-for-wp) (param-values ?robot ?mps ?side ?wp)
 	             (goal-id ?oid) (state PENDING|RUNNING)
 	             (precondition ?precondition-id))
-	(goal (id ?oid) (params $? wp ?wp $?))
 	(goal-meta (goal-id ?oid) (order-id ?order-id))
 	(not (goal (class INSTRUCT-BS-DISPENSE-BASE) (mode SELECTED|DISPATCHED|COMMITTED|EXPANDED)))
 	(domain-fact (name zone-content) (param-values ?mpsz ?mps))
@@ -789,6 +791,8 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
 	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
+	
+	(domain-fact (name zone-content) (param-values ?mpsz ?mps))
 	=>
 	(printout t "Goal INSTRUCT-DS-DISCARD executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
@@ -829,7 +833,7 @@ The workpiece remains in the output of the used ring station after
 	         (sym-cat order-ring (sub-string 5 5 ?ring) -color))
 	          args? ord ?order col ?ring-color ))
 	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side OUTPUT)))
-	(not (goal (class INSTRUCT-RS-MOUNT-RING) (mode EXPANDED|SELECTED|DISPATCHED|COMMITTED)))
+	(not (goal (class INSTRUCT-RS-MOUNT-RING) (mode EXPANDED|SELECTED|DISPATCHED|COMMITTED) (params target-mps ?mps $?)))
 	(domain-fact (name zone-content) (param-values ?mpsz ?mps))
 	=>
 	(printout t "Goal INSTRUCT-RS-MOUNT-RING executable" crlf)

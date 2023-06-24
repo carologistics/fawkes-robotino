@@ -80,6 +80,11 @@ message GameState {
   optional uint32 points_magenta = 8;
   // Name of the currently playing team
   optional string team_magenta = 9;
+
+  // the field height and width, and mirroring status
+  optional uint32 field_height = 10;
+  optional uint32 field_width = 11;
+  optional bool field_mirrored = 12;
 }
 
 // Request setting of a new game state

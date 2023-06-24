@@ -58,11 +58,18 @@
 
   ?*MONITORING-SALIENCE* = 1
   ?*COMMON-TIMEOUT-DURATION* = 30
+  ?*MOVE-OUT-OF-WAY-TIMEOUT-DURATION* = 15
+  ?*PREPARE-WAIT-TIMEOUT-DURATION* = 60
   ; The waiting timeout duration needs to be smaller than the common one above!
   ?*WAITING-TIMEOUT-DURATION* = 25
   ?*RUNNING-TIMEOUT-DURATION* = 120
   ?*MPS-DOWN-TIMEOUT-DURATION* = 120
   ?*HOLDING-MONITORING* = 60
+
+  ?*MOVE-PROGRESS-COUNTER* = 3
+  ?*MOVE-PROGRESS-TIMEOUT* = 5
+
+  ?*GOAL-SELECTION-TIMEOUT* = 10
 )
 
 (deftemplate exploration-result
@@ -742,30 +749,37 @@
   (blackboard-send-msg ?msg)
 )
 
-(deffunction navgraph-set-field-size (?robot)
+(deffunction navgraph-set-field-size (?robot ?p1_x ?p1_y ?p2_x ?p2_y)
   "Uses the NavGraphInterface to setup the bounding box on a robot to match
    the one from the central agent. If they have disagreeing bounding boxes,
    then the existence and positions of grid coordinates are not lining up.
   "
   (bind ?interface (remote-if "NavGraphGeneratorInterface" ?robot "navgraph-generator"))
+
+  (bind ?msg (blackboard-create-msg ?interface "SetBoundingBoxMessage"))
+  (blackboard-set-msg-field ?msg "p1_x" ?p1_x)
+  (blackboard-set-msg-field ?msg "p1_y" ?p1_y)
+  (blackboard-set-msg-field ?msg "p2_x" ?p2_x)
+  (blackboard-set-msg-field ?msg "p2_y" ?p2_y)
+  (bind ?msg (blackboard-create-msg ?interface "SetBoundingBoxMessage"))
+  (blackboard-send-msg ?msg)
+)
+
+(deffunction navgraph-set-field-size-from-cfg (?robot)
   (bind ?prefix (str-cat ?*NAVGRAPH_GENERATOR_MPS_CONFIG* "bounding-box/"))
   (if (not (do-for-fact ((?cf1 confval) (?cf2 confval))
-      (and (str-prefix (str-cat ?prefix "p1") ?cf1:path)
-           (str-prefix (str-cat ?prefix "p2") ?cf2:path)
-      )
-      (bind ?msg (blackboard-create-msg ?interface "SetBoundingBoxMessage"))
-      (blackboard-set-msg-field ?msg "p1_x" (integer (nth$ 1 ?cf1:list-value)))
-      (blackboard-set-msg-field ?msg "p1_y" (integer (nth$ 2 ?cf1:list-value)))
-      (blackboard-set-msg-field ?msg "p2_x" (integer (nth$ 1 ?cf2:list-value)))
-      (blackboard-set-msg-field ?msg "p2_y" (integer (nth$ 2 ?cf2:list-value)))
-      (bind ?msg (blackboard-create-msg ?interface "SetBoundingBoxMessage"))
-      (blackboard-send-msg ?msg)
-    ))
+    (and (str-prefix (str-cat ?prefix "p1") ?cf1:path)
+          (str-prefix (str-cat ?prefix "p2") ?cf2:path)
+    )
+    (navgraph-set-field-size ?robot (integer (nth$ 1 ?cf1:list-value))
+                                            (integer (nth$ 2 ?cf1:list-value))
+                                            (integer (nth$ 1 ?cf2:list-value))
+                                            (integer (nth$ 2 ?cf2:list-value)))
+  ))
    then
     (printout warn "Could not set field size, bounding box config not found" crlf)
   )
 )
-
 
 (deffunction navigator-set-speed (?robot ?max-velocity ?max-rotation)
   "Uses the NavigatorInterface to set the max velocity and speed"

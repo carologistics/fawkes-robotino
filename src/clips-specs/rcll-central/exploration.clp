@@ -370,7 +370,7 @@
 	the timeout has been triggered."
 	?exp-active <- (wm-fact (key exploration active) (type BOOL) (value TRUE))
 	(time $?now)
-	?ws <- (timer (name exploration-stop-timeout) (time $?t&:(timeout ?now ?t 10)) (seq ?seq))
+	?ws <- (timer (name exploration-stop-timeout) (time $?t&:(timeout ?now ?t 5)) (seq ?seq))
 	=>
 	(delayed-do-for-all-facts ((?exp wm-fact))
 		(wm-key-prefix ?exp:key (create$ exploration fact))
@@ -385,6 +385,17 @@
 	(wm-fact (key exploration active) (type BOOL) (value FALSE))
 	=>
 	(assert (wm-fact (key monitoring fail-goal args? g ?goal-id)))
+
+	(do-for-all-facts
+		((?plan-action plan-action))
+		(and (eq ?plan-action:goal-id ?goal-id)
+				(neq ?plan-action:state FORMULATED)
+				(neq ?plan-action:state FINAL)
+		)
+		(printout t "Stopping exploration, aborting action " ?plan-action:action-name " on interface" ?plan-action:skiller crlf)
+		(bind ?m (blackboard-create-msg (str-cat "SkillerInterface::" ?plan-action:skiller) "StopExecMessage"))
+		(blackboard-send-msg ?m)
+	)
 )
 
 (defrule exp-stop-disable-goals

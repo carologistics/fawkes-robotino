@@ -16,6 +16,22 @@
   (multislot start-time)
   (slot status)
 )
+;A timeout for a move action
+(deftemplate progress-timer
+  (slot plan-id (type SYMBOL))
+  (slot action-id (type NUMBER))
+  (slot timeout-duration)
+  (multislot start-time)
+  (multislot last-pose)
+  (slot counter (type NUMBER))
+)
+;A timeout for goals in mode FORMULATED
+(deftemplate selection-timer
+  (slot goal-id (type SYMBOL))
+  (slot robot (type SYMBOL))
+  (slot timeout-duration)
+  (multislot start-time)
+)
 
 (deffunction fail-action (?action ?error-msg)
 	(do-for-fact ((?sae skill-action-execinfo))
@@ -37,6 +53,7 @@
 ;
 ; =============================== Timeouts ===============================
 ;
+
 (defrule execution-monitoring-create-action-timeout
 " For every state of an action that should not take long (pending, waiting for sensed effects),
   create a timeout to prohibit getting stuck at these volatile states
@@ -48,7 +65,7 @@
 	    (action-name ?action-name)
 	    (param-values $?param-values))
 	(plan (id ?plan-id) (goal-id ?goal-id))
-	(goal (id ?goal-id) (mode DISPATCHED))
+	(goal (id ?goal-id) (mode DISPATCHED) (class ?goal-class))
 	(test (neq ?goal-id BEACONACHIEVE))
 	(not (action-timer (plan-id ?plan-id) (action-id ?id) (status ?status)))
 	(wm-fact (key refbox game-time) (values $?now))
@@ -61,6 +78,14 @@
 	(if (eq ?status RUNNING)
 	 then
 		(bind ?timeout-duration ?*RUNNING-TIMEOUT-DURATION*)
+	)
+	(if (member$ ?action-name (create$ cs-mount-cap cs-buffer-cap rs-mount-ring1 rs-mount-ring2 rs-mount-ring3))
+	 then
+		(bind ?timeout-duration ?*PREPARE-WAIT-TIMEOUT-DURATION*)
+	)
+	(if (eq ?goal-class MOVE-OUT-OF-WAY)
+	 then
+		(bind ?timeout-duration ?*MOVE-OUT-OF-WAY-TIMEOUT-DURATION*)
 	)
 	(assert (action-timer (plan-id ?plan-id)
 	            (action-id ?id)
@@ -196,7 +221,193 @@
   (modify ?pt (start-time ?now))
 )
 
-;
+(defrule execution-monitoring-set-timeout-goal-selection
+" Set a timeout when a goal is assigned to a robot and formulated to avoid
+  being stuck on formulated.
+"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  (goal (id ?goal-id) (mode FORMULATED) (sub-type SIMPLE))
+  (wm-fact (key central agent robot args? r ?robot))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+
+  (not (selection-timer (goal-id ?goal-id) (robot ?robot)))
+  (wm-fact (key refbox game-time) (values $?now))
+  =>
+  (assert
+    (selection-timer
+      (goal-id ?goal-id)
+	    (robot ?robot)
+	    (timeout-duration ?*GOAL-SELECTION-TIMEOUT*)
+	    (start-time ?now)
+    )
+  )
+)
+
+(defrule execution-monitoring-trigger-timeout-goal-selection
+" The timeout triggered, remove the assignment of the robot and set it to
+  waiting again.
+"
+  ?g <- (goal (id ?goal-id) (mode FORMULATED))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+
+  (wm-fact (key refbox game-time) (values $?now))
+  ?timer <- (selection-timer (goal-id ?goal-id) (robot ?robot)
+    (start-time $?st)
+		(timeout-duration ?timeout&:(timeout ?now ?st ?timeout)))
+  =>
+  (printout error  "Goal "  ?goal-id " timed out on selection!" crlf)
+  (set-robot-to-waiting ?robot)
+  (remove-robot-assignment-from-goal-meta ?g)
+  (retract ?timer)
+)
+
+(defrule execution-monitoring-remove-timeout-goal-selection
+" The robot is executing a goal, so we can remove the timeout.
+"
+  ?g <- (goal (id ?goal-id) (mode ?mode))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?assigned-robot))
+
+  (wm-fact (key refbox game-time) (values $?now))
+  ?timer <- (selection-timer (goal-id ?goal-id) (robot ?robot)
+    (start-time $?st)
+		(timeout-duration ?timeout&:(timeout ?now ?st ?timeout)))
+  (test (or (neq ?mode FORMULATED) (neq ?assigned-robot ?robot)))
+  =>
+  (retract ?timer)
+)
+
+
+;======================================Movement=========================================
+
+
+(defrule execution-monitoring-save-last-wait-position
+" Save the last wait position of the robot to a fact so that we can avoid moving
+ to this position again to not block a spot too long.
+"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  (goal (id ?goal-id) (class MOVE-OUT-OF-WAY) (mode DISPATCHED) (params target-pos ?pos))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+  (not (wm-fact (key monitoring robot last-wait-position args? r ?robot)))
+  =>
+  (assert (wm-fact (key monitoring robot last-wait-position args? r ?robot) (value ?pos)))
+)
+
+(defrule execution-monitoring-retract-last-wait-position
+" Retract the last wait position fact once the robot executes a different goal
+  or waits at a new position.
+"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  ?wf <- (wm-fact (key monitoring robot last-wait-position args? r ?robot) (value ?pos))
+
+  (goal (id ?goal-id) (class ?class) (mode DISPATCHED) (params $?params))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+
+  (test
+    (or
+      (neq ?class MOVE-OUT-OF-WAY)
+      (and
+        (eq ?class MOVE-OUT-OF-WAY)
+        (not (member$ ?pos ?params))
+      )
+    )
+  )
+  =>
+  (retract ?wf)
+)
+
+(defrule execution-monitoring-set-timeout-move-action-progress
+" Set a timeout that measures the progress of actions that move the agent. Should the agent not make progress
+  beyond a certain delta threshold within the specified time span, the action will be failed.
+"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  (goal (id ?goal-id))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+
+  (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+	   (id ?id) (state RUNNING)
+	   (action-name move|go-wait)
+  )
+
+  (Position3DInterface (id ?if-id&:(eq ?if-id (remote-if-id ?robot "Pose"))) (translation $?pose))
+
+  (not (progress-timer (plan-id ?plan-id) (action-id ?id)))
+  (wm-fact (key refbox game-time) (values $?now))
+  =>
+  (assert
+    (progress-timer
+      (plan-id ?plan-id)
+	  (action-id ?id)
+	  (timeout-duration ?*MOVE-PROGRESS-TIMEOUT*)
+	  (start-time ?now)
+	  (last-pose ?pose)
+	  (counter 0)
+    )
+  )
+)
+
+(defrule execution-monitoring-update-timeout-move-action-progress
+" Update the progress-timer of a move action
+"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  (goal (id ?goal-id))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+
+  ?p <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+	   (id ?id) (state RUNNING)
+       (skiller ?skiller)
+	   (action-name ?action-name)
+  )
+
+  (wm-fact (key refbox game-time) (values $?now))
+
+  (Position3DInterface (id ?if-id&:(eq ?if-id (remote-if-id ?robot "Pose"))) (translation $?pose))
+
+  ?pt <- (progress-timer (plan-id ?plan-id)
+					     (action-id ?id)
+						 (start-time $?st)
+						 (timeout-duration ?timeout&:(timeout ?now ?st ?timeout))
+   						 (last-pose $?last-pose)
+						 (counter ?counter))
+  =>
+  (printout t "Checking progress of move action "  ?action-name  crlf)
+
+  (bind ?last-x (nth$ 1 ?last-pose))
+  (bind ?last-y (nth$ 2 ?last-pose))
+  (bind ?curr-x (nth$ 1 ?pose))
+  (bind ?curr-y (nth$ 2 ?pose))
+  (bind ?delta (+ (abs (- ?last-y ?curr-y)) (abs (- ?last-x ?curr-x))))
+
+  (if (> ?delta 0.5) then
+  	(printout t "Robot " ?robot " made sufficient progress (" ?delta "m) on "  ?action-name  crlf)
+	(modify ?pt (counter 0) (last-pose ?pose) (start-time ?now))
+  else
+	(if (>= ?counter ?*MOVE-PROGRESS-COUNTER*) then
+	  (printout t "   Aborting action " ?action-name " on interface after stuck on small delta" ?skiller crlf)
+	  (bind ?m (blackboard-create-msg (str-cat "SkillerInterface::" ?skiller) "StopExecMessage"))
+      (bind ?p (modify ?p (state FAILED) (error-msg "Stuck on RUNNING")))
+      (fail-action ?p "Unsatisfied precondition")
+	else
+  	  (printout t "Robot " ?robot " did not make sufficient progress on "  ?action-name  crlf)
+	  (modify ?pt (counter (+ 1 ?counter)) (start-time ?now))
+	)
+  )
+)
+
+(defrule execution-monitoring-remove-timeout-move-action-progress
+" Remove the progress-timer of a move action if the action is not running anymore
+"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  (goal (id ?goal-id))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+
+  (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+	   (id ?id) (state ~RUNNING)
+  )
+  ?pt <- (progress-timer (plan-id ?plan-id) (action-id ?id))
+  =>
+  (retract ?pt)
+)
+
 ;======================================Retries=========================================
 ;
 
@@ -237,7 +448,7 @@
   retry, add a action-retried counter and set the action to FORMULATED
 "
 	(declare (salience ?*MONITORING-SALIENCE*))
-	(goal (id ?goal-id) (mode DISPATCHED))
+	(goal (id ?goal-id) (mode DISPATCHED) (class ~MOVE-OUT-OF-WAY))
 	(plan (id ?plan-id) (goal-id ?goal-id))
 	?pa <- (plan-action
 	            (id ?id)
@@ -596,6 +807,11 @@
 	(SkillerInterface (id ?skiller-id&:(str-index ?robot ?skiller-id)) (exclusive_controller ~""))
 	=>
 	(assert (wm-fact (key central agent robot-waiting args? r ?robot)))
+	;recompute navgraph after re-insertion
+	(navgraph-set-field-size-from-cfg ?robot)
+	(navgraph-compute ?robot)
+	(navgraph-add-all-new-tags)
+
 	(retract ?rl)
 )
 
@@ -662,7 +878,7 @@
 	)
 
 	(assert (domain-fact (name at) (param-values ?robot START INPUT))
-	        (domain-fact (name can-hold) (param-values robot1))
+	        (domain-fact (name can-hold) (param-values ?robot))
 	        (domain-object (name ?robot) (type robot))
 	        (wm-fact (key central agent robot args? r ?robot))
 	        (wm-fact (key central agent robot-lost args? r ?robot))
@@ -727,19 +943,17 @@
 	(modify ?g (mode FORMULATED) (outcome UNKNOWN))
 	(retract ?p)
 )
+
 (defrule execution-monitoring-detect-disconnected-robot
   (declare (salience ?*MONITORING-SALIENCE*))
 	(wm-fact (key central agent robot args? r ?robot))
 	?hbi <- (HeartbeatInterface (id ?id&:(str-index ?robot ?id)) (alive FALSE))
+	(not (wm-fact (key central agent robot-lost args? r ?robot)))
 	=>
 	(printout error "Robot " ?robot  " lost, removing from worldmodel" crlf)
-	;(blackboard-close "HeartbeatInterface" ?id)
+
 	(do-for-fact ((?si SkillerInterface)) (str-index ?robot ?si:id)
 		(retract ?si)
 	)
-	;(do-for-all-facts ((?bif blackboard-interface)) (str-index ?robot ?bif:id)
-	;	(blackboard-close ?bif:type ?bif:id)
-	;	(retract ?bif)
-	;)
 	(assert (reset-robot-in-wm ?robot))
 )

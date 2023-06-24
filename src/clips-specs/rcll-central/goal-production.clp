@@ -109,7 +109,7 @@
   (bind ?maintenance-goals (create$ BUFFER-CAP PAY-FOR-RINGS-WITH-BASE PAY-FOR-RINGS-WITH-CAP-CARRIER PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF))
   (bind ?maintenance-instruct-goals (create$ INSTRUCT-RS-MOUNT-RING INSTRUCT-CS-MOUNT-CAP INSTRUCT-DS-DELIVER))
   (bind ?production-instruct-goals (create$ INSTRUCT-CS-BUFFER-CAP INSTRUCT-DS-DISCARD))
-  (bind ?other-goals (create$ MOVE MOVE-OUT-OF-WAY ENTER-FIELD DISCARD WAIT-NOTHING-EXECUTABLE EXPLORATION-MOVE))
+  (bind ?other-goals (create$ MOVE MOVE-OUT-OF-WAY ENTER-FIELD DISCARD WAIT-NOTHING-EXECUTABLE EXPLORATION-MOVE REFILL-SHELF))
   (bind ?other-instruct-goals (create$ INSTRUCT-BS-DISPENSE-BASE))
 
   (if (member$ ?goal-class ?production-goals) then (return PRODUCTION))
@@ -481,7 +481,7 @@
 )
 
 (deffunction goal-production-assert-enter-field
-  (?team-color)
+  (?team-color ?robot)
 
   (bind ?goal (assert (goal (class ENTER-FIELD)
               (id (sym-cat ENTER-FIELD- (gensym*)))
@@ -490,6 +490,7 @@
               (params team-color ?team-color)
               (meta-template goal-meta)
   )))
+  (goal-meta-assert-restricted ?goal ?robot)
   (return ?goal)
 )
 
@@ -708,7 +709,7 @@
 (defrule goal-production-assert-wait-nothing-executable
   "When the robot is stuck, assert a new goal that keeps it waiting"
   (goal (id ?p) (class WAIT-ROOT))
-  (not (goal (parent ?p) (mode FORMULATED)))
+  (not (goal (parent ?p) (class WAIT-NOTHING-EXECUTABLE) (mode FORMULATED)))
   =>
   (bind ?goal (assert (goal (class WAIT-NOTHING-EXECUTABLE)
               (id (sym-cat WAIT-NOTHING-EXECUTABLE- (gensym*)))
@@ -902,6 +903,9 @@
 
   ; there is not another discard goal bound to this wp
   (not (goal (id ?other-goal-id) (class DISCARD) (outcome ~FAILED) (params wp ?wp wp-loc ?mps wp-side ?mps-side)))
+
+  ; there is not a payment goal bound to this wp
+  (not (goal (class PAY-FOR-RINGS-WITH-CAP-CARRIER) (params wp ?wp wp-loc ?mps wp-side ?mps-side $?)))
   =>
   (modify ?g (params wp ?wp wp-loc ?mps wp-side ?mps-side))
   (modify ?i (params wp ?wp target-mps ?ds))
@@ -922,17 +926,38 @@
   (modify ?i (params wp UNKNOWN target-mps ?ds))
 )
 
+(defrule goal-production-remove-grounding-from-discard-wp-assinged-to-pay
+  "If a DISCARD goal is grounded on a certain WP, but the WP is assigned to a payment goal, unground it."
+  (wm-fact (key request discard args? ord ?order-id cs ?cs prio ?prio) (values status ACTIVE assigned-to ?goal-id ?i-goal-id))
+
+  ?g <- (goal (id ?goal-id) (class DISCARD) (mode FORMULATED) (parent ?parent)
+              (params wp ?wp wp-loc ?mps wp-side ?mps-side))
+  ?i <- (goal (id ?i-goal-id) (class INSTRUCT-DS-DISCARD) (mode FORMULATED)
+	            (params wp ?wp target-mps ?ds))
+  (goal (class PAY-FOR-RINGS-WITH-CAP-CARRIER) (params wp ?wp wp-loc ?mps wp-side ?mps-side $?))
+  (test (neq ?wp UNKNOWN))
+  =>
+  (modify ?g (params wp UNKNOWN wp-loc ?mps wp-side ?mps-side))
+  (modify ?i (params wp UNKNOWN target-mps ?ds))
+)
+
 (defrule goal-production-create-enter-field
   "Enter the field (drive outside of the starting box)."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key central agent robot args? r ?robot))
   (not (wm-fact (key domain fact entered-field args? r ?robot)))
-  (not (goal (id ?some-goal-id) (class ENTER-FIELD) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED)))
+  (not
+    (and
+      (goal (id ?enter-field) (class ENTER-FIELD))
+      (goal-meta (goal-id ?enter-field) (restricted-to ?robot))
+    )
+  )
   (domain-facts-loaded)
   (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key refbox phase) (value PRODUCTION))
   =>
   (printout t "Goal " ENTER-FIELD " formulated" crlf)
-  (goal-production-assert-enter-field ?team-color)
+  (goal-production-assert-enter-field ?team-color ?robot)
 )
 
 (defrule goal-production-remove-enter-field
