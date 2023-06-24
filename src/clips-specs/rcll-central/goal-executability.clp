@@ -240,20 +240,6 @@
 		(goal (class MOUNT-CAP) (id ?oid&~?goal-id) (mode ~FORMULATED) (params $? target-mps ?target-mps $?))
 		(goal-meta (goal-id ?oid) (assigned-to ~nil))
 	))
-	(not
-		(and
-			(wm-fact (key order meta wp-for-order args? wp ?other-wp ord ?other-order-id&:(neq ?other-order-id ?order)))
-			(wm-fact (key wp meta next-step args? wp ?other-wp&:(neq ?wp ?other-wp)) (value CAP))
-			(wm-fact (key domain fact order-complexity args? ord ?other-order-id com ?other-order-complexity))
-			(wm-fact (key domain fact order-cap-color args? ord ?other-order-id col ?cap-color))
-			(test
-				(>
-					(string-to-field (sym-cat (sub-string 2 2 (str-cat ?other-order-complexity))))
-					(string-to-field (sym-cat (sub-string 2 2 (str-cat ?order-complexity))))
-				)
-			)
-		)
-	)
 	=>
 	(printout t "Goal MOUNT-CAP executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
