@@ -2,8 +2,8 @@
     "version": 3,
     "configurePresets": [
         {
-            "name": "central-agent-ros1",
-            "displayName": "robotino-base-plugin settings",
+            "name": "central-agent-base-config",
+            "displayName": "Base settings for the central agent",
             "cacheVariables": {
                 "PLUGIN_amcl": "OFF",
                 "PLUGIN_amcl2": "OFF",
@@ -53,7 +53,7 @@
                 "PLUGIN_pddl-robot-memory": "ON",
                 "PLUGIN_robot-memory": "ON",
                 "PLUGIN_robotino": "OFF",
-                "PLUGIN_ros": "ON",
+                "PLUGIN_ros": "OFF",
                 "PLUGIN_ros-clock": "OFF",
                 "PLUGIN_ros-cmdvel": "OFF",
                 "PLUGIN_ros-dynamic-reconfigure": "OFF",
@@ -90,13 +90,30 @@
                 "PLUGIN_ros2-talkerpub": "OFF",
                 "PLUGIN_ros2-tf2": "OFF",
                 "PLUGIN_rrd": "OFF",
-                "PLUGIN_skiller": "OFF",
+                "PLUGIN_skiller": "ON",
                 "PLUGIN_skiller-rest-api": "OFF",
                 "PLUGIN_skiller-simulator": "ON",
                 "PLUGIN_skiller_motor_state": "OFF",
                 "PLUGIN_static-transforms": "OFF",
                 "PLUGIN_tag_vision": "OFF",
                 "PLUGIN_webview": "ON"
+            }
+        },
+        {
+            "name": "central-agent-ros-1",
+            "displayName": "Plugin setting for ROS 1-based agent simulation",
+            "inherits": "central-agent-base-config",
+            "cacheVariables": {
+                "PLUGIN_ros": "ON",
+                "PLUGIN_skiller": "OFF"
+            }
+        },
+        {
+            "name": "central-agent-ros-2",
+            "displayName": "Plugin setting for ROS 2-based agent simulation",
+            "inherits": "central-agent-base-config",
+            "cacheVariables": {
+                "PLUGIN_skiller": "OFF"
             }
         }
     ]
