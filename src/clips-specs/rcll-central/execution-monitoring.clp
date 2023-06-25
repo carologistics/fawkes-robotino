@@ -965,7 +965,7 @@
 (defrule execution-monitoring-break-instruct-fails
 "When an INSTRUCT fails on an MPS (except BS|DS), break the machine."
 	(declare (salience ?*MONITORING-SALIENCE*))
-	?g <- (goal (class INSTRUCT-CS-BUFFER-CAP|INSTRUCT-CS-MOUNT-CAP|INSTRUCT-RS-MOUNT-RING) (mode EVALUATED) (outcome FAILED) (params $? target-mps ?mps $?))
+	?g <- (goal (class INSTRUCT-CS-BUFFER-CAP|INSTRUCT-CS-MOUNT-CAP|INSTRUCT-RS-MOUNT-RING) (mode EVALUATED) (outcome FAILED) (error ~WP-LOST) (params $? target-mps ?mps $?))
 	?wm <- (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
 	(not (goal (class RESET-MPS) (params mps ?mps) (mode ~RETRACTED)))
 	=>
