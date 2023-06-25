@@ -134,7 +134,7 @@ clips-executive:
         wp-get-shelf: manipulate_wp{mps=?(m)S,
                               side="SHELF-?(spot)Y",target="WORKPIECE"}
         wp-put: manipulate_wp{mps=?(m)S,
-                             side=?(side)S,target="CONVEYOR"}
+                             side=?(side)S,target="CONVEYOR",c=?(com)S}
         wp-put-slide-cc: manipulate_wp{mps=?(m)S,
                          side="SLIDE", target="SLIDE"}
         wp-get: manipulate_wp{mps=?(m)S,

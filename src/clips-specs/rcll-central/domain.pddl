@@ -496,7 +496,7 @@
 )
 
 (:action wp-put
-	:parameters (?r - robot ?wp - workpiece ?m - mps ?side - mps-side)
+	:parameters (?r - robot ?wp - workpiece ?m - mps ?side - mps-side ?com - order-complexity-value)
 	:precondition (and (at ?r ?m ?side)
 	                   (wp-usable ?wp)
 	                   (holding ?r ?wp)

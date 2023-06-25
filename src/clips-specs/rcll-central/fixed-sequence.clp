@@ -160,7 +160,7 @@
 	=>
 	(plan-assert-sequential (sym-cat CLEANUP-WP-PLAN- (gensym*)) ?goal-id ?robot
 		(plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps INPUT
-			(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
+			(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT (get-wp-complexity ?wp))
 			(plan-assert-action wp-check ?robot ?target-mps INPUT THERE)
 		)
 	)
@@ -193,7 +193,7 @@
 			)
 		)
 
-		(plan-assert-action wp-put ?robot ?wp ?mps INPUT)
+		(plan-assert-action wp-put ?robot ?wp ?mps INPUT (get-wp-complexity ?wp))
 		(plan-assert-action wp-check ?robot ?mps INPUT THERE)
 		(plan-assert-action move-wp-input-output ?mps ?wp)
 	)
@@ -249,7 +249,7 @@
 				    (plan-assert-action wp-get-shelf ?robot ?cc ?mps ?shelf-spot)
 				)
 			)
-			(plan-assert-action wp-put ?robot ?cc ?mps INPUT)
+			(plan-assert-action wp-put ?robot ?cc ?mps INPUT (get-wp-complexity ?cc))
 			(plan-assert-action wp-check ?robot ?mps INPUT THERE)
 		)
 	)
@@ -275,13 +275,13 @@
 					(plan-assert-action wp-check ?robot ?wp-loc ?wp-side ABSENT)
 				)
 				(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps INPUT
-					(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
+					(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT (get-wp-complexity ?wp))
 					(plan-assert-action wp-check ?robot ?target-mps INPUT THERE)
 				)
 			)
 		else
 			(plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps INPUT
-				(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
+				(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT (get-wp-complexity ?wp))
 				(plan-assert-action wp-check ?robot ?target-mps INPUT THERE)
 			)
 		)
@@ -336,13 +336,13 @@
 							(plan-assert-action wp-check ?robot ?wp-loc ?wp-side ABSENT)
 						)
 						(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps ?target-side
-							(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
+							(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT (get-wp-complexity ?wp))
 							(plan-assert-action wp-check ?robot ?target-mps INPUT THERE)
 						)
 					)
 				else
 					(plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps ?target-side
-						(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
+						(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT (get-wp-complexity ?wp))
 						(plan-assert-action wp-check ?robot ?target-mps INPUT THERE)
 					)
 				)
@@ -387,13 +387,13 @@
 							(plan-assert-action wp-check ?robot ?wp-loc ?wp-side ABSENT)
 						)
 						(plan-assert-safe-move ?robot (wait-pos ?wp-loc ?wp-side) WAIT ?target-mps ?target-side
-							(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
+							(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT (get-wp-complexity ?wp))
 							(plan-assert-action wp-check ?robot ?target-mps INPUT THERE)
 						)
 					)
 				else
 					(plan-assert-safe-move ?robot ?curr-location ?curr-side ?target-mps ?target-side
-						(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT)
+						(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT (get-wp-complexity ?wp))
 						(plan-assert-action wp-check ?robot ?target-mps INPUT THERE)
 					)
 				)
