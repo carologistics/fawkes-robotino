@@ -436,7 +436,8 @@ function DRIVE_TO_LASER_LINE:init()
     self.args["motor_move"] = {x = laser_target.x,
                                y = laser_target.y,
                                frame = "/odom",
-                               ori = fawkes.tf.get_yaw(laser_target.ori)}
+                               ori = fawkes.tf.get_yaw(laser_target.ori),
+                               end_early = true}
   else
     print_error("Transform Error: matched_line to odom")
   end
