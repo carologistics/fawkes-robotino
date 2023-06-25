@@ -36,7 +36,7 @@ fawkes/meta_plugins:
     - gazsim-meta-robotino
     - ros2
     - ros2-clock
-#    - robotino-ros-joints
+    # - robotino-ros-joints
     - ros2-odometry
     - ros2-tf2
     - ros2-laserscan

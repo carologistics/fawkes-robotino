@@ -19,8 +19,8 @@ ros2:
 
   pcl:
     # The time interval which is used to search for new pointclouds in ROS.
-    # This is the maximum time until a pointcloud from ROS is visible and usable
-    # in FAWKES.
+    # This is the maximum time until a pointcloud from ROS is visible and
+    # usable in FAWKES.
     ros-search-interval: 2.
 
   clock:
@@ -33,21 +33,23 @@ ros2:
     # static transforms to /tf_static.
     use_tf2: true
 
-    # To allow a single tf tree shared among multiple robot systems it is necessary to
-    # set ignore the namespace of the actual topics /tf and /tf_static and hence
-    # disable the use of the namespace. Otherwise the topic names are /<namespace>/tf
-    # and /<namespace>/tf_static
+    # To allow a single tf tree shared among multiple robot systems it is
+    # necessary to set ignore the namespace of the actual topics
+    # /tf and /tf_static and hence disable the use of the namespace.
+    # Otherwise the topic names are /<namespace>/tf and /<namespace>/tf_static
     use_namespace: false
 
     # Add a prefix to published transforms.
-    # Useful for multi-robot scenarios which should not interfere with each other
-    # (i.e. you wouldn't want multiple robots to publish an odom -> base_link transform).
-    # Can be set to $HOSTNAME to replace with the system's hostname.
+    # Useful for multi-robot scenarios which should not interfere with each
+    # other (i.e. you wouldn't want multiple robots to publish an
+    # odom -> base_link transform). Can be set to $HOSTNAME to replace with
+    # the system's hostname.
     tf_prefix: $HOSTNAME
 
     # Ignore the tf_prefix for the following set of frame_ids
-    # (i.e. "map" to allow a scenario like map -> robot1_odom -> robot1_base_link)
-    tf_prefix_exclusions: [ "map" ]
+    # (i.e. "map" to allow a scenario like
+    # map -> robot1_odom -> robot1_base_link)
+    tf_prefix_exclusions: ["map"]
 
     # Interval in which to post static transform updates; sec
     # This setting is only relevant is use_tf2 is set to false above.
