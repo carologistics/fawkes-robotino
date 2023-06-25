@@ -287,6 +287,10 @@ function object_tracker_active()
   return object_tracking_if:has_writer() and object_tracking_if:msgid() > 0
 end
 
+function ready_for_gripper_movement()
+  return z_max - fsm.vars.missing_c3_height < arduino:z_position()
+end
+
 fsm:define_states{ export_to=_M, closure={MISSING_MAX=MISSING_MAX},
    {"INIT",                  JumpState},
    {"START_TRACKING",        JumpState},
@@ -294,7 +298,8 @@ fsm:define_states{ export_to=_M, closure={MISSING_MAX=MISSING_MAX},
    {"DRIVE_BACK",            SkillJumpState, skills={{motor_move}},      final_to="SEARCH_LASER_LINE", fail_to="SEARCH_LASER_LINE"},
    {"SEARCH_LASER_LINE",     JumpState},
    {"MPS_ALIGN",             SkillJumpState, skills={{mps_align}},       final_to="SEARCH_LASER_LINE", fail_to="FAILED"},
-   {"DRIVE_TO_LASER_LINE",   SkillJumpState, skills={{motor_move}},      final_to="AT_LASER_LINE", fail_to="FAILED"},
+   {"DRIVE_TO_LASER_LINE",   SkillJumpState, skills={{motor_move}},      final_to="WAIT_FOR_GRIPPER", fail_to="FAILED"},
+   {"WAIT_FOR_GRIPPER",      JumpState},
    {"AT_LASER_LINE",         JumpState},
    {"MOVE_BASE_AND_GRIPPER", SkillJumpState, skills={{motor_move}},      final_to="FINE_TUNE_GRIPPER", fail_to="FIND_LASER_LINE"},
    {"FINE_TUNE_GRIPPER",     JumpState},
@@ -311,7 +316,8 @@ fsm:add_transitions{
    {"SEARCH_LASER_LINE", "DRIVE_TO_LASER_LINE",   cond=laser_line_found},
    {"SEARCH_LASER_LINE", "FAILED",                cond="vars.search_attemps > 10", desc="Tried 10 times, could not find laser-line"},
    {"SEARCH_LASER_LINE", "MPS_ALIGN",             timeout=1, desc="Could not find laser-line, spin"},
-   {"AT_LASER_LINE", "MOVE_BASE_AND_GRIPPER",     cond="vars.consecutive_detections > 2", desc="Found Object"},
+   {"WAIT_FOR_GRIPPER", "AT_LASER_LINE",          cond=ready_for_gripper_movement, desc="Found Object"},
+   {"AT_LASER_LINE", "MOVE_BASE_AND_GRIPPER",     cond="vars.consecutive_detections > 2" , desc="Found Object"},
    {"AT_LASER_LINE", "FAILED",                    timeout=2, desc="Object not found"},
    {"FINE_TUNE_GRIPPER", "GRIPPER_ROUTINE",       cond=gripper_aligned, desc="Gripper aligned"},
    {"FINE_TUNE_GRIPPER", "MOVE_BASE_AND_GRIPPER", cond="vars.out_of_reach", desc="Gripper out of reach"},
