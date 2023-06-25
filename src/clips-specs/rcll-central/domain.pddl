@@ -483,6 +483,7 @@
 	                   (or (mps-state ?m IDLE)
 	                       (mps-state ?m READY-AT-OUTPUT)
 	                       (mps-state ?m PROCESSED)
+	                       (mps-state ?m DOWN)
 	                   )
 	                   (not (mps-side-free ?m ?side))
 	              )
