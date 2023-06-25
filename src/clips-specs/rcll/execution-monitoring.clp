@@ -26,7 +26,10 @@
 
 
 (deffunction should-retry (?an ?error)
-  (if (or (eq ?error "Conveyor Align Failed") (eq ?error "Drive To Machine Point Failed")) then
+  (if (or (eq ?error "Conveyor Align Failed")
+          (eq ?error "Drive To Machine Point Failed")
+          (eq ?error "laser-line not found")
+      ) then
     (return TRUE)
   )
   (if (eq ?error "Unsatisfied precondition") then (return FALSE))
