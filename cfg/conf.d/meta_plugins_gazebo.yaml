@@ -107,11 +107,11 @@ fawkes/meta_plugins:
     - protoboard-rcll
     - gologpp
 
-  m-skill-sim:
+  m-skill-sim-ros1:
     - ros
-    - m-skill-sim-no-ros
+    - m-skill-sim
 
-  m-skill-sim-no-ros:
+  m-skill-sim:
     - execution-time-estimator
     - skiller-simulator
     - navgraph
@@ -129,7 +129,7 @@ fawkes/meta_plugins:
     - m-skill-sim-clips-exec
     - m-distributed-clips-executive
 
-  m-central-clips-exec-no-ros:
+  m-central-clips-exec:
     - bbsync
     - navgraph
     - navgraph-generator
@@ -137,9 +137,9 @@ fawkes/meta_plugins:
     - m-distributed-clips-executive
     - webview
 
-  m-central-clips-exec:
+  m-central-clips-exec-ros1:
     - ros
-    - m-central-clips-exec-no-ros:
+    - m-central-clips-exec
 
   rcll-sim-2016:
     - mps-laser-gen
