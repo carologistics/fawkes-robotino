@@ -64,6 +64,7 @@ Parameters:
       @param target  the type of the target object: (WORKPIECE | CONVEYOR | SLIDE)
       @param mps     the name of the MPS (e.g. C-CS1, see navgraph)
       @param side    the side of the mps: (INPUT | OUTPUT | SHELF-LEFT | SHELF-MIDDLE | SHELF-RIGHT | SLIDE)
+      @param c       the complexity of the workpiece to grab/ in hand (optional, C0 | C1 | C2 | C3)
 ]==]
 
 local LASER_BASE_OFFSET    = 0.35 -- distance between robotino middle point and laser-line
@@ -91,6 +92,8 @@ local left_shelf_offset_side   = -0.075
 local middle_shelf_offset_side = -0.175
 local right_shelf_offset_side  = -0.275
 
+local ring_height = 0.01
+
 local drive_back_x = -0.1
 
 -- read gripper config
@@ -106,22 +109,27 @@ end
 
 -- read config values for computing expected target position
 -- conveyor
-if config:exists("plugins/object_tracking/puck_values/belt_offset_side") then
-  belt_offset_side = config:get_float("plugins/object_tracking/puck_values/belt_offset_side")
+if config:exists("plugins/object_tracking/belt_values/belt_offset_side") then
+  belt_offset_side = config:get_float("plugins/object_tracking/belt_values/belt_offset_side")
 end
 -- slide
-if config:exists("plugins/object_tracking/puck_values/slide_offset_side") then
-  slide_offset_side = config:get_float("plugins/object_tracking/puck_values/slide_offset_side")
+if config:exists("plugins/object_tracking/slide_values/slide_offset_side") then
+  slide_offset_side = config:get_float("plugins/object_tracking/slide_values/slide_offset_side")
 end
 -- shelf
-if config:exists("plugins/object_tracking/puck_values/left_shelf_offset_side") then
-  left_shelf_offset_side = config:get_float("plugins/object_tracking/puck_values/left_shelf_offset_side")
+if config:exists("plugins/object_tracking/shelf_values/left_shelf_offset_side") then
+  left_shelf_offset_side = config:get_float("plugins/object_tracking/shelf_values/left_shelf_offset_side")
 end
-if config:exists("plugins/object_tracking/puck_values/middle_shelf_offset_side") then
-  middle_shelf_offset_side = config:get_float("plugins/object_tracking/puck_values/middle_shelf_offset_side")
+if config:exists("plugins/object_tracking/shelf_values/middle_shelf_offset_side") then
+  middle_shelf_offset_side = config:get_float("plugins/object_tracking/shelf_values/middle_shelf_offset_side")
 end
-if config:exists("plugins/object_tracking/puck_values/right_shelf_offset_side") then
-  right_shelf_offset_side = config:get_float("plugins/object_tracking/puck_values/right_shelf_offset_side")
+if config:exists("plugins/object_tracking/shelf_values/right_shelf_offset_side") then
+  right_shelf_offset_side = config:get_float("plugins/object_tracking/shelf_values/right_shelf_offset_side")
+end
+
+-- read wp config
+if config:exists("plugins/object_tracking/puck_values/ring_height") then
+  ring_height = config:get_float("plugins/object_tracking/puck_values/ring_height")
 end
 
 -- Match tag to navgraph point
@@ -171,7 +179,7 @@ function gripper_aligned()
 
   return math.abs(gripper_target.x - arduino:x_position()) < GRIPPER_TOLERANCE.x
      and math.abs(gripper_target.y - (arduino:y_position() - y_max/2)) < GRIPPER_TOLERANCE.y
-     and math.abs(math.min(gripper_target.z, z_max) - arduino:z_position()) < GRIPPER_TOLERANCE.z
+     and math.abs(math.min(gripper_target.z - fsm.vars.missing_c3_height, z_max) - arduino:z_position()) < GRIPPER_TOLERANCE.z
 end
 
 function set_gripper(x, y, z)
@@ -233,13 +241,13 @@ function move_gripper_default_pose()
 end
 
 function input_invalid()
-  if fsm.vars.target_object_type == nil then
+  if (fsm.vars.target_object_type == nil or string.gsub(fsm.vars.target_object_type, "^%s*(.-)%s*$", "%1") == 0) then
     print_error("That is not a valid target!")
     return true
-  elseif fsm.vars.expected_mps == nil then
+  elseif (fsm.vars.expected_mps == nil or string.gsub(fsm.vars.expected_mps, "^%s*(.-)%s*$", "%1") == 0) then
     print_error("That is not a valid mps!")
     return true
-  elseif fsm.vars.expected_side == nil then
+  elseif (fsm.vars.expected_side == nil or string.gsub(fsm.vars.expected_side, "^%s*(.-)%s*$", "%1") == 0) then
     print_error("That is not a valid side!")
     return true
   end
@@ -279,6 +287,10 @@ function object_tracker_active()
   return object_tracking_if:has_writer() and object_tracking_if:msgid() > 0
 end
 
+function ready_for_gripper_movement()
+  return z_max - fsm.vars.missing_c3_height < arduino:z_position()
+end
+
 fsm:define_states{ export_to=_M, closure={MISSING_MAX=MISSING_MAX},
    {"INIT",                  JumpState},
    {"START_TRACKING",        JumpState},
@@ -286,7 +298,8 @@ fsm:define_states{ export_to=_M, closure={MISSING_MAX=MISSING_MAX},
    {"DRIVE_BACK",            SkillJumpState, skills={{motor_move}},      final_to="SEARCH_LASER_LINE", fail_to="SEARCH_LASER_LINE"},
    {"SEARCH_LASER_LINE",     JumpState},
    {"MPS_ALIGN",             SkillJumpState, skills={{mps_align}},       final_to="SEARCH_LASER_LINE", fail_to="FAILED"},
-   {"DRIVE_TO_LASER_LINE",   SkillJumpState, skills={{motor_move}},      final_to="AT_LASER_LINE", fail_to="FAILED"},
+   {"DRIVE_TO_LASER_LINE",   SkillJumpState, skills={{motor_move}},      final_to="WAIT_FOR_GRIPPER", fail_to="FAILED"},
+   {"WAIT_FOR_GRIPPER",      JumpState},
    {"AT_LASER_LINE",         JumpState},
    {"MOVE_BASE_AND_GRIPPER", SkillJumpState, skills={{motor_move}},      final_to="FINE_TUNE_GRIPPER", fail_to="FIND_LASER_LINE"},
    {"FINE_TUNE_GRIPPER",     JumpState},
@@ -303,7 +316,8 @@ fsm:add_transitions{
    {"SEARCH_LASER_LINE", "DRIVE_TO_LASER_LINE",   cond=laser_line_found},
    {"SEARCH_LASER_LINE", "FAILED",                cond="vars.search_attemps > 10", desc="Tried 10 times, could not find laser-line"},
    {"SEARCH_LASER_LINE", "MPS_ALIGN",             timeout=1, desc="Could not find laser-line, spin"},
-   {"AT_LASER_LINE", "MOVE_BASE_AND_GRIPPER",     cond="vars.consecutive_detections > 2", desc="Found Object"},
+   {"WAIT_FOR_GRIPPER", "AT_LASER_LINE",          cond=ready_for_gripper_movement, desc="Found Object"},
+   {"AT_LASER_LINE", "MOVE_BASE_AND_GRIPPER",     cond="vars.consecutive_detections > 2" , desc="Found Object"},
    {"AT_LASER_LINE", "FAILED",                    timeout=2, desc="Object not found"},
    {"FINE_TUNE_GRIPPER", "GRIPPER_ROUTINE",       cond=gripper_aligned, desc="Gripper aligned"},
    {"FINE_TUNE_GRIPPER", "MOVE_BASE_AND_GRIPPER", cond="vars.out_of_reach", desc="Gripper out of reach"},
@@ -359,16 +373,33 @@ function INIT:init()
                       ["SHELF-MIDDLE"] = object_tracking_if.SHELF_MIDDLE,
                       ["SHELF-RIGHT"]  = object_tracking_if.SHELF_RIGHT,
                       ["SLIDE"]        = object_tracking_if.SLIDE}
+  -- set c if unset
+  if (fsm.vars.c == nil or string.gsub(fsm.vars.c, "^%s*(.-)%s*$", "%1") == 0) then
+    if string.find(fsm.vars.side, "SHELF-") then
+      fsm.vars.c = "C0"
+    else -- assume highest possible workpiece if unknown
+      fsm.vars.c = "C3"
+    end
+  end
+
+  -- difference in height of current product compared to a C3
+  local MISSING_C3_HEIGHT = {["C0"] = ring_height * 3,
+                             ["C1"] = ring_height * 2,
+                             ["C2"] = ring_height,
+                             ["C3"] = 0}
 
   -- get ENUM of input variables
   fsm.vars.target_object_type = TARGET_NAMES[fsm.vars.target]
   fsm.vars.expected_mps = MPS_NAMES[fsm.vars.mps]
   fsm.vars.expected_side = SIDE_NAMES[fsm.vars.side]
 
+  -- get wp height
+  fsm.vars.missing_c3_height = MISSING_C3_HEIGHT[fsm.vars.c]
+
   fsm.vars.gripper_target_pos_x = 0
   fsm.vars.gripper_target_pos_y = 0
   fsm.vars.gripper_target_pos_z = 0
-  fsm.vars.gripper_wait       = 0
+  fsm.vars.gripper_wait         = 0
 end
 
 function MPS_ALIGN:init()
@@ -492,7 +523,7 @@ function MOVE_BASE_AND_GRIPPER:init()
     "base_link", "end_effector_home")
 
   fsm.vars.gripper_wait = 10
-  set_gripper(gripper_target.x, 0, gripper_target.z)
+  set_gripper(gripper_target.x, 0, gripper_target.z - fsm.vars.missing_c3_height)
 end
 
 function FINE_TUNE_GRIPPER:init()
@@ -522,15 +553,26 @@ function FINE_TUNE_GRIPPER:loop()
 
   set_gripper(gripper_target.x,
               gripper_target.y,
-              gripper_target.z)
+              gripper_target.z - fsm.vars.missing_c3_height)
 end
 
 function GRIPPER_ROUTINE:init()
   -- perform pick or put routine
+  print("start routine")
+  if fsm.vars.target == "SLIDE" then
+    self.args["pick_or_put_vs"].slide = true
+  else 
+    self.args["pick_or_put_vs"].slide = false
+  end
+
   if fsm.vars.target == "WORKPIECE" then
     self.args["pick_or_put_vs"].action = "PICK"
+    self.args["pick_or_put_vs"].missing_c3_height = tostring(fsm.vars.missing_c3_height)
+    print("Pick")
   else
     self.args["pick_or_put_vs"].action = "PUT"
+    self.args["pick_or_put_vs"].missing_c3_height = tostring(fsm.vars.missing_c3_height)
+    print("Put")
   end
 end
 
