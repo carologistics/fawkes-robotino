@@ -426,7 +426,7 @@
 	 then
 	  (return FALSE)
 	)
-	(if (or (eq ?an move) (eq ?an go-wait)) then
+	(if (or (eq ?an move) (eq ?an go-wait) (eq ?an wp-check)) then
 	  (return TRUE)
 	)
 	(return FALSE)
@@ -497,6 +497,56 @@
 	(modify ?pa (state FORMULATED) (error-msg ""))
 	(printout error "Restarted: " ?tries crlf)
 	(modify ?wm (value ?tries))
+)
+
+
+; ----------------------- HANDLE WP CHECK FAIL  --------------------------------
+
+(defrule execution-monitoring-wp-check-there-add-fail-goal-flag
+" If a wp-check action with query THERE fails, assume that
+  the WP was lost and clean up accordingly.
+"
+	(declare (salience ?*MONITORING-SALIENCE*))
+	(goal (id ?goal-id) (mode DISPATCHED))
+	(plan (id ?plan-id) (goal-id ?goal-id))
+
+	(plan-action (id ?id) (goal-id ?goal-id) (plan-id ?plan-id)
+				 (action-name wp-check)
+				 (param-values ?robot ?mps ?side THERE)
+				 (state FAILED))
+
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side))
+	=>
+	(printout error "WP " ?wp " was expected to be at " ?mps " (" ?side") but could not be detected. Assume WP was lost.")
+	(assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))
+	(assert (wm-fact (key monitoring fail-goal args? g ?goal-id r WP-LOST)))
+)
+
+(defrule execution-monitoring-wp-check-absent-add-fail-goal-flag
+" If a wp-check action with query ABSENT fails, assume that
+  the WP wasn't gripped successfully. Restart the action.
+"
+	(declare (salience ?*MONITORING-SALIENCE*))
+	(goal (id ?goal-id) (mode DISPATCHED))
+	(plan (id ?plan-id) (goal-id ?goal-id))
+
+	(plan-action (id ?id) (goal-id ?goal-id) (plan-id ?plan-id)
+				 (action-name wp-check)
+				 (param-values ?robot ?mps ?side ABSENT)
+				 (state FAILED))
+	(plan-action (id ?) (goal-id ?goal-id) (plan-id ?plan-id)
+				 (action-name wp-get)
+				 (param-values ?robot ?wp ?mps ?side $?)
+				 (state FAILED))
+
+	(not (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side)))
+	?holding <- (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+	=>
+	(printout error "No WP was expected to be at " ?mps " (" ?side") but there was one detected, fail the goal.")
+	(assert (wm-fact (key monitoring fail-goal args? g ?goal-id r WP-NOT-PICKED)))
+	;fix the WM
+	(retract ?holding)
+	(assert (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side)))
 )
 
 
