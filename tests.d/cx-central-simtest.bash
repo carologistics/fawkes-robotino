@@ -43,7 +43,7 @@ stop_test () {
 
 trap stop_test $TRAP_SIGNALS
 ulimit -c 0
-if timeout 60 $SCRIPT_PATH/gazsim.bash -o -r -n 3 \
+if timeout 60 $SCRIPT_PATH/gazsim.bash -o -n 3 \
   -m m-skill-sim --central-agent m-central-clips-exec \
   --no-refbox --no-refbox-frontend;
 then
