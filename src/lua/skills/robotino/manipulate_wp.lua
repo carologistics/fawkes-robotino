@@ -64,7 +64,7 @@ Parameters:
       @param target  the type of the target object: (WORKPIECE | CONVEYOR | SLIDE)
       @param mps     the name of the MPS (e.g. C-CS1, see navgraph)
       @param side    the side of the mps: (INPUT | OUTPUT | SHELF-LEFT | SHELF-MIDDLE | SHELF-RIGHT | SLIDE)
-      @param c       the type of workpiece to grab/ in hand (optional, C0 | C1 | C2 | C3)
+      @param c       the complexity of the workpiece to grab/ in hand (optional, C0 | C1 | C2 | C3)
 ]==]
 
 local LASER_BASE_OFFSET    = 0.35 -- distance between robotino middle point and laser-line
@@ -382,7 +382,7 @@ function INIT:init()
     end
   end
 
-  -- missing wp height compared to C3
+  -- difference in height of current product compared to a C3
   local MISSING_C3_HEIGHT = {["C0"] = ring_height * 3,
                              ["C1"] = ring_height * 2,
                              ["C2"] = ring_height,
