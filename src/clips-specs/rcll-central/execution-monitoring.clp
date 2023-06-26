@@ -512,7 +512,7 @@
 
 	?pa-check <- (plan-action (id ?id-check) (goal-id ?goal-id) (plan-id ?plan-id)
 				 (action-name wp-check)
-				 (param-values ?robot ?mps ?side THERE)
+				 (param-values ?robot ?wp ?mps ?side THERE)
 				 (state FAILED))
 	?pa-put <- (plan-action (id ?id-put&:(eq (- ?id-check 1) ?id-put)) (goal-id ?goal-id) (plan-id ?plan-id)
 				 (action-name wp-put)
@@ -541,7 +541,7 @@
 
 	(plan-action (id ?id-check) (goal-id ?goal-id) (plan-id ?plan-id)
 				 (action-name wp-check)
-				 (param-values ?robot ?mps ?side THERE)
+				 (param-values ?robot ?wp ?mps ?side THERE)
 				 (state FAILED))
 	(plan-action (id ?id-put&:(eq (- ?id-check 1) ?id-put)) (goal-id ?goal-id) (plan-id ?plan-id)
 				 (action-name wp-put)

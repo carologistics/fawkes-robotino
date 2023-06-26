@@ -685,7 +685,7 @@ The workpiece remains in the output of the used ring station after
 	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side OUTPUT)))
 	(domain-fact (name zone-content) (param-values ?mpsz ?mps))
 
-	(not (plan-action (action-name wp-check) (param-values ? ?mps INPUT THERE) (state ~FINAL)))
+	(not (plan-action (action-name wp-check) (param-values ? ?cc ?mps INPUT THERE) (state ~FINAL)))
 	=>
 	(printout t "Goal INSTRUCT-CS-BUFFER-CAP executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -719,7 +719,7 @@ The workpiece remains in the output of the used ring station after
 	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side OUTPUT)))
 	(domain-fact (name zone-content) (param-values ?mpsz ?mps))
 
-	(not (plan-action (action-name wp-check) (param-values ? ?mps INPUT THERE) (state ~FINAL)))
+	(not (plan-action (action-name wp-check) (param-values ? ?wp ?mps INPUT THERE) (state ~FINAL)))
 	=>
 	(printout t "Goal INSTRUCT-CS-MOUNT-CAP executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -775,7 +775,7 @@ The workpiece remains in the output of the used ring station after
 	         (value ?begin&:(< ?begin (nth$ 1 ?game-time))))
 	(domain-fact (name zone-content) (param-values ?mpsz ?mps))
 
-	(not (plan-action (action-name wp-check) (param-values ? ?mps INPUT THERE) (state ~FINAL)))
+	(not (plan-action (action-name wp-check) (param-values ? ?wp ?mps INPUT THERE) (state ~FINAL)))
 	=>
 	(printout t "Goal INSTRUCT-DS-DELIVER executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -798,7 +798,7 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
 
-	(not (plan-action (action-name wp-check) (param-values ? ?mps INPUT THERE) (state ~FINAL)))
+	(not (plan-action (action-name wp-check) (param-values ? ?wp ?mps INPUT THERE) (state ~FINAL)))
 	
 	(domain-fact (name zone-content) (param-values ?mpsz ?mps))
 	=>
@@ -844,7 +844,7 @@ The workpiece remains in the output of the used ring station after
 	(not (goal (class INSTRUCT-RS-MOUNT-RING) (mode EXPANDED|SELECTED|DISPATCHED|COMMITTED) (params target-mps ?mps $?)))
 	(domain-fact (name zone-content) (param-values ?mpsz ?mps))
 
-	(not (plan-action (action-name wp-check) (param-values ? ?mps INPUT THERE) (state ~FINAL)))
+	(not (plan-action (action-name wp-check) (param-values ? ?wp ?mps INPUT THERE) (state ~FINAL)))
 	=>
 	(printout t "Goal INSTRUCT-RS-MOUNT-RING executable" crlf)
 	(modify ?g (is-executable TRUE))

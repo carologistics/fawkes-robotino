@@ -511,7 +511,7 @@
 )
 
 (:action wp-check
-	:parameters (?r - robot ?m - mps ?side - mps-side ?query - wp-query)
+	:parameters (?r - robot ?wp - workpiece ?m - mps ?side - mps-side ?query - wp-query)
 	:precondition (at ?r ?m ?side)
 	:effect (at ?r ?m ?side)
 )
