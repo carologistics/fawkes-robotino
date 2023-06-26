@@ -721,6 +721,7 @@
 	                                       (or
 	                                         (wm-key-prefix ?wf:key (create$ domain fact wp-usable))
 	                                         (wm-key-prefix ?wf:key (create$ monitoring cleanup-wp))
+	                                         (wm-key-prefix ?wf:key (create$ domain fact holding))
 	                                       )
 	                                  )
 	  (printout t "WP-fact " ?wf:key crlf " domain fact flushed!"  crlf)
