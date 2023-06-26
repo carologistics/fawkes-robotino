@@ -149,6 +149,10 @@
 	)
 )
 
+(deffunction com-to-int (?complexity)
+  (return (integer (string-to-field (sub-string 2 2 ?complexity))))
+)
+
 (deffunction random-id ()
   "Return a random task id"
   (return (random 0 1000000000))

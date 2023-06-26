@@ -533,6 +533,7 @@
 "
   (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
   (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key domain fact wp-at args? wp ?wp m ? side OUTPUT))
   ; WP CEs
   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?wp-col-r1))
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?wp-col-r2))
