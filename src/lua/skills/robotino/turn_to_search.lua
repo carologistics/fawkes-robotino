@@ -105,6 +105,8 @@ end
 function WAIT3:init()
     if self.fsm.vars.turns > 1 then
         self.timeout_time = 2
+    else 
+        self.timeout_time = 0.0
     end
 end
 
@@ -119,8 +121,9 @@ end
 function WAIT4:init()
     if self.fsm.vars.turns > 2 then
         self.timeout_time = 2
+    else 
+        self.timeout_time = 0.0
     end
-end
 end
 
 function TURN4:init()
@@ -134,15 +137,17 @@ end
 function WAIT5:init()
     if self.fsm.vars.turns > 3 then
         self.timeout_time = 2
+    else 
+        self.timeout_time = 0.0
     end
-end
 end
 
 function WAIT6:init()
     if self.fsm.vars.turns > 4 then
         self.timeout_time = 2
+    else 
+        self.timeout_time = 0.0
     end
-end
 end
 
 function TURN5:init()
@@ -156,8 +161,9 @@ end
 function WAIT7:init()
     if self.fsm.vars.turns > 5 then
         self.timeout_time = 2
+    else 
+        self.timeout_time = 0.0
     end
-end
 end
 
 function TURN6:init()
@@ -171,8 +177,9 @@ end
 function WAIT8:init()
     if self.fsm.vars.turns > 6 then
         self.timeout_time = 2
+    else 
+        self.timeout_time = 0.0
     end
-end
 end
 
 function TURN7:init()
@@ -186,8 +193,9 @@ end
 function WAIT9:init()
     if self.fsm.vars.turns > 7 then
         self.timeout_time = 2
+    else 
+        self.timeout_time = 0.0
     end
-end
 end
 
 function TURN8:init()
