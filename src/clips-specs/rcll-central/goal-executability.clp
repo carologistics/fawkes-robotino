@@ -212,7 +212,8 @@
 	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?wp-loc-type))
 	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
 	(not (and (test (eq ?wp-loc-type BS))
-	          (wm-fact (key domain fact wp-at args? m ~?wp side ?))))
+	          (wm-fact (key domain fact wp-at args? wp ~?wp m ?wp-loc side ?))))
+
 
 	(or (and ; Either the workpiece needs to picked up...
 	         (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
@@ -394,7 +395,7 @@
 	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?wp-loc-type))
 	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
 	(not (and (test (eq ?wp-loc-type BS))
-	          (wm-fact (key domain fact wp-at args? m ~?wp side ?))))
+	          (wm-fact (key domain fact wp-at args? wp ~?wp m ?wp-loc side ?))))
 
 	(or (and ; Either the workpiece needs to picked up...
 	         (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
@@ -575,7 +576,7 @@ The workpiece remains in the output of the used ring station after
 	; Robot CEs
 	(wm-fact (key refbox team-color) (value ?team-color))
 	(not (and (wm-fact (key domain fact mps-type args? m ?wp-loc t BS))
-	          (wm-fact (key domain fact wp-at args? m ~?wp side ?))))
+	          (wm-fact (key domain fact wp-at args? wp ~?wp m ?wp-loc side ?))))
 
 	; MPS-RS CEs
 	(wm-fact (key domain fact mps-type args?       m ?target-mps t RS))
