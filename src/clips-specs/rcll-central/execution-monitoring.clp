@@ -636,7 +636,7 @@
 	(plan-action (id ?id) (plan-id ?plan-id) (goal-id ?goal-id)
 	   (state WAITING|RUNNING)
 	   (param-values $? ?mps $?)
-	   (action-name ?an&~move&~go-wait&~wait))
+	   (action-name ?an&~move&~go-wait&~wait&~wp-check&~wp-get))
 	(not (wm-fact (key monitoring fail-goal args? g ?goal-id r ?)))
 	=>
 	(assert (wm-fact (key monitoring fail-goal args? g ?goal-id r INTERACTED-WITH-BROKEN-MPS)))
