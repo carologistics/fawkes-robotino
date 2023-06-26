@@ -846,6 +846,11 @@ The workpiece remains in the output of the used ring station after
 	(domain-fact (name zone-content) (param-values ?mpsz ?mps))
 
 	(not (plan-action (action-name wp-check) (param-values ? ?wp ?mps INPUT THERE) (state ~FINAL)))
+
+	(not (and
+		(points-timer (goal-id ?fill-goal-id) (action-name wp-put-slide-cc))
+		(goal (id ?fill-goal-id) (params $? target-mps ?mps $?))
+	))
 	=>
 	(printout t "Goal INSTRUCT-RS-MOUNT-RING executable" crlf)
 	(modify ?g (is-executable TRUE))

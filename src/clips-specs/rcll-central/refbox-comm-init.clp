@@ -28,8 +28,8 @@
   =>
   (assert
     (wm-fact (id "/refbox/team-color") )
-    (wm-fact (id "/refbox/points/magenta") (type UINT) (value 0) )
-    (wm-fact (id "/refbox/points/cyan") (type UINT) (value 0) )
+    (wm-fact (id "/refbox/points/MAGENTA") (type UINT) (value 0) )
+    (wm-fact (id "/refbox/points/CYAN") (type UINT) (value 0) )
     (wm-fact (id "/refbox/phase")  (value PRE_GAME) )
     (wm-fact (id "/refbox/state")  (value WAIT_START) )
     (wm-fact (id "/game/state")  (value WAIT_START) )

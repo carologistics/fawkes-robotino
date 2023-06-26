@@ -1043,3 +1043,46 @@
 	)
 	(assert (reset-robot-in-wm ?robot))
 )
+
+; ----------------------- Monitor points for plan-actions -----------------------------------
+(defrule execution-monitoring-add-point-change-detector-plan-action-running
+	(wm-fact (key refbox points ?team) (value ?points))
+	(wm-fact (key refbox team-color) (value ?team))
+
+	(plan-action (id ?action-id) (goal-id ?goal-id) (plan-id ?plan-id) (state RUNNING) (action-name ?action-name))
+	(not (wm-fact (key monitoring points-for-action args? goal-id ?goal-id plan-id ?plan-id action-id ?action-id-sym&:(eq (sym-cat ?action-id) ?action-id-sym) action-name ?action-name)))
+	=>
+	(assert (wm-fact (key monitoring points-for-action args? goal-id ?goal-id plan-id ?plan-id action-id (sym-cat ?action-id) action-name ?action-name) (type UINT) (value ?points)))
+)
+
+(defrule execution-monitoring-add-point-change-detector-plan-action-final-start-timer
+	(wm-fact (key monitoring points-for-action args? goal-id ?goal-id plan-id ?plan-id action-id ?action-id-sym action-name ?action-name) (value ?recorded-points))
+	(plan-action (id ?action-id&:(eq (sym-cat ?action-id) ?action-id-sym)) (goal-id ?goal-id) (plan-id ?plan-id) (action-name ?action-name) (state FINAL))
+	(not (points-timer (goal-id ?goal-id) (action-id ?action-id) (plan-id ?plan-id) (action-name ?action-name)))
+	(wm-fact (key refbox game-time) (values $?now))
+	=>
+	(assert (points-timer (goal-id ?goal-id) (action-id ?action-id) (plan-id ?plan-id) (action-name ?action-name) (start-time ?now) (timeout-duration ?*WAIT-FOR-POINTS-TIMEOUT*)))
+)
+
+(defrule execution-monitoring-add-point-change-detector-plan-action-final-end-timer
+	(wm-fact (key refbox game-time) (values $?now))
+	?pt <- (points-timer (goal-id ?goal-id) (action-id ?action-id) (plan-id ?plan-id) (action-name ?action-name)
+            (start-time $?st)
+            (timeout-duration ?timeout&:(timeout ?now ?st ?timeout)))
+	?wf <- (wm-fact (key monitoring points-for-action args? goal-id ?goal-id plan-id ?plan-id action-id ?action-id-sym&:(eq (sym-cat ?action-id) ?action-id-sym)  action-name ?action-name) (value ?recorded-points))
+	(wm-fact (key refbox points ?team) (value ?points))
+	=>
+	(retract ?pt ?wf)
+	(assert (wm-fact (key monitoring action-estimated-score args? goal-id ?goal-id plan-id ?plan-id action-id (sym-cat ?action-id)  action-name ?action-name) (value (- ?points ?recorded-points))))
+)
+
+(defrule execution-monitoring-correct-slide-counter
+	?monitoring-fact <- (wm-fact (key monitoring action-estimated-score args? goal-id ?goal-id plan-id ?plan-id action-id ?action-id action-name wp-put-slide-cc) (value 0))
+	(goal (id ?goal-id) (params $? target-mps ?rs $?))
+	?rs-filled <- (domain-fact (name rs-filled-with) (param-values ?rs ?bases-filled))
+	(domain-fact (name rs-inc) (param-values ?bases-now ?bases-filled))
+	=>
+	(printout t "Detected no point increase after put slide, re-issuing request and adjusting counter")
+	(retract ?monitoring-fact)
+	(modify ?rs-filled (param-values ?rs ?bases-now))
+)

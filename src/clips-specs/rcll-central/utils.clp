@@ -69,7 +69,19 @@
   ?*MOVE-PROGRESS-COUNTER* = 3
   ?*MOVE-PROGRESS-TIMEOUT* = 5
 
+  ?*WAIT-FOR-POINTS-TIMEOUT* = 5
+
   ?*GOAL-SELECTION-TIMEOUT* = 10
+)
+
+;A timeout for waiting for points
+(deftemplate points-timer
+  (slot goal-id (type SYMBOL))
+  (slot plan-id (type SYMBOL))
+  (slot action-id (type NUMBER))
+  (slot action-name (type SYMBOL))
+  (slot timeout-duration)
+  (multislot start-time)
 )
 
 (deftemplate exploration-result
