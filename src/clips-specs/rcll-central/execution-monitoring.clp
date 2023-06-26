@@ -502,7 +502,36 @@
 
 ; ----------------------- HANDLE WP CHECK FAIL  --------------------------------
 
-(defrule execution-monitoring-wp-check-there-add-fail-goal-flag
+(defrule execution-monitoring-wp-check-there-after-wp-put-retry
+" If a wp-check action with query THERE fails after a wp-put,
+  retry the wp-put as we might have had a gripper issue.
+"
+	(declare (salience ?*MONITORING-SALIENCE*))
+	(goal (id ?goal-id) (mode DISPATCHED))
+	(plan (id ?plan-id) (goal-id ?goal-id))
+
+	?pa-check <- (plan-action (id ?id-check) (goal-id ?goal-id) (plan-id ?plan-id)
+				 (action-name wp-check)
+				 (param-values ?robot ?mps ?side THERE)
+				 (state FAILED))
+	?pa-put <- (plan-action (id ?id-put&:(eq (- ?id-check 1) ?id-put)) (goal-id ?goal-id) (plan-id ?plan-id)
+				 (action-name wp-put)
+				 (param-values ?robot ?wp ?mps ?side ?complexity))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side))
+
+	(not (wm-fact (key monitoring action-retried wp-check args? r ?robot a wp-put id ?id-put-sym&:(eq ?id-put-sym (sym-cat ?id-put)) m ?mps g ?goal-id)))
+
+	=>
+	(printout error "WP " ?wp " was expected to be at " ?mps " (" ?side") but could not be detected. Restarting wp-put!")
+	(modify ?pa-check (state FORMULATED) (error-msg ""))
+	(modify ?pa-put (state FORMULATED) (error-msg ""))
+
+	(assert
+	  (wm-fact (key monitoring action-retried wp-check args? r ?robot a wp-put id (sym-cat ?id-put) m ?mps g ?goal-id))
+	)
+)
+
+(defrule execution-monitoring-wp-check-there-add-fail-goal-flag-after-retry
 " If a wp-check action with query THERE fails, assume that
   the WP was lost and clean up accordingly.
 "
@@ -510,12 +539,16 @@
 	(goal (id ?goal-id) (mode DISPATCHED))
 	(plan (id ?plan-id) (goal-id ?goal-id))
 
-	(plan-action (id ?id) (goal-id ?goal-id) (plan-id ?plan-id)
+	(plan-action (id ?id-check) (goal-id ?goal-id) (plan-id ?plan-id)
 				 (action-name wp-check)
 				 (param-values ?robot ?mps ?side THERE)
 				 (state FAILED))
+	(plan-action (id ?id-put&:(eq (- ?id-check 1) ?id-put)) (goal-id ?goal-id) (plan-id ?plan-id)
+				 (action-name wp-put)
+				 (param-values ?robot ?wp ?mps ?side ?complexity))
 
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side))
+	(wm-fact (key monitoring action-retried wp-check args? r ?robot a wp-put id ?id-put-sym&:(eq ?id-put-sym (sym-cat ?id-put)) m ?mps g ?goal-id))
 	=>
 	(printout error "WP " ?wp " was expected to be at " ?mps " (" ?side") but could not be detected. Assume WP was lost.")
 	(assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))
