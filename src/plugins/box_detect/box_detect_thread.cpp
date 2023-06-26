@@ -76,9 +76,9 @@ BoxDetectThread::loop()
 	// enable switch
 	switch_if_->read();
 	while (!switch_if_->msgq_empty()) {
-		logger->log_info(name(), "RECIEVED SWITCH MESSAGE");
+		//logger->log_info(name(), "RECIEVED SWITCH MESSAGE");
 		if (switch_if_->msgq_first_is<SwitchInterface::DisableSwitchMessage>()) {
-			logger->log_warn(name(), "Box detect disabled");
+			logger->log_info(name(), "Box detect disabled");
 			enabled_      = false;
 			auto request  = std::make_shared<std_srvs::srv::SetBool::Request>();
 			request->data = false;
@@ -86,7 +86,7 @@ BoxDetectThread::loop()
 			// Call the service
 			auto future = client_->async_send_request(request);
 		} else if (switch_if_->msgq_first_is<SwitchInterface::EnableSwitchMessage>()) {
-			logger->log_warn(name(), "Box detect enabled");
+			logger->log_info(name(), "Box detect enabled");
 			enabled_      = true;
 			auto request  = std::make_shared<std_srvs::srv::SetBool::Request>();
 			request->data = true;
@@ -124,7 +124,7 @@ BoxDetectThread::bb_interface_data_refreshed(fawkes::Interface *interface) throw
 	tfif->read();
 	string child_frame_id = tfif->child_frame();
 	// log child_frame
-	logger->log_warn(name(), "Got update from transform interface: %s", child_frame_id.c_str());
+	//logger->log_warn(name(), "Got update from transform interface: %s", child_frame_id.c_str());
 
 	string box_type = child_frame_id.substr(4, 2);
 	string zone     = child_frame_id.substr(7, 4);
@@ -137,7 +137,7 @@ BoxDetectThread::bb_interface_data_refreshed(fawkes::Interface *interface) throw
 	// go through all box_detect_ifs_ and check if the box is already in there
 	for (int i = 0; i < box_detect_ifs_->size(); i++) {
 		if (box_detect_ifs_->at(i)->box_type() == box_type && box_detect_ifs_->at(i)->zone() == zone) {
-			logger->log_warn(name(), "Found box_detect_if at %d", i);
+			//logger->log_warn(name(), "Found box_detect_if at %d", i);
 			found = true;
 			box_detect_ifs_->at(i)->set_orientation(rot);
 			box_detect_ifs_->at(i)->write();
@@ -146,7 +146,7 @@ BoxDetectThread::bb_interface_data_refreshed(fawkes::Interface *interface) throw
 	if (!found) {
 		for (int i = 0; i < box_detect_ifs_->size(); i++) {
 			if (strcmp(box_detect_ifs_->at(i)->box_type(), "") == 0) {
-				logger->log_warn(name(), "Found empty box_detect_if at %d", i);
+				//logger->log_warn(name(), "Found empty box_detect_if at %d", i);
 				found = true;
 				box_detect_ifs_->at(i)->set_box_type(b_type);
 				box_detect_ifs_->at(i)->set_zone(z);
