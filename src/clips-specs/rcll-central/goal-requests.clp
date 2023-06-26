@@ -316,3 +316,126 @@
   ;clean up the wp facts
   (retract ?wp-fact ?wp-unused-fact ?wp-color-fact)
 )
+
+
+
+; -------------------- Block Requests ------------------------
+(defrule goal-request-block-ds-almost-finished-product
+  " If there is a product that is soon going to be completed,
+    issue a request to keep the the delivery station free, if possible.
+  "
+  ;get wp and order information
+  (domain-object (name ?wp) (type workpiece))
+  (wm-fact (key wp meta next-step args? wp ?wp) (value DELIVER))
+  (wm-fact (key wp meta next-machine args? wp ?wp) (value ?ds))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key domain fact order-complexity args? ord ?order comp ?com))
+
+  ;either the wp is already at the output of a machine or the output is clear
+  (or
+    (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side OUTPUT))
+    (and
+      (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side INPUT))
+      (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?cs side OUTPUT)))
+    )
+  )
+  (wm-fact (key refbox game-time) (values $?now))
+  (not (wm-fact (key request block args? mps ?ds wp ?wp com ?com ord ?order) (values $?)))
+  =>
+  (assert (wm-fact (key request block args? mps ?ds wp ?wp com ?com ord ?order) (values ACTIVE ?now)))
+)
+
+(defrule goal-request-deactivate-block-ds
+  " If there is a block request and it either timed out or the WP was moved to
+    the DS, deactivate the block request.
+  "
+  (wm-fact (key refbox game-time) (values $?now))
+  ?br <- (wm-fact (key request block args? mps ?ds wp ?wp com ?com ord ?order) (values ACTIVE $?st))
+
+  (or
+    (wm-fact (key domain fact wp-at args? wp ?wp m ?ds side INPUT)) ;wp arrived at DS
+    (test (timeout ?now ?st ?*BLOCK-DURATION-DS*)) ;timeout occured
+    (not (wm-fact (key domain fact wp-usable args? wp ?wp))) ;the wp was flushed away or consumed
+  )
+  =>
+  (modify ?br (values INACTIVE))
+)
+
+(defrule goal-request-block-rs-almost-finished-product
+  " If there is a product that is soon going to a RS,
+    issue a request to keep the the RS free.
+  "
+  ;get wp and order information
+  (domain-object (name ?wp) (type workpiece))
+  (wm-fact (key wp meta next-step args? wp ?wp) (value ?ring&RING1|RING2|RING3))
+  (wm-fact (key wp meta next-machine args? wp ?wp) (value ?rs))
+  (wm-fact (key wp meta prev-machine args? wp ?wp) (value ?prev-mps))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key domain fact order-complexity args? ord ?order comp ?com))
+
+  ;the wp is already at the output of the previous machine
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?prev-mps side OUTPUT))
+  ;the input side of the target RS is free
+  (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?rs side INPUT)))
+
+  (wm-fact (key refbox game-time) (values $?now))
+  (not (wm-fact (key request block args? mps ?rs wp ?wp com ?com ord ?order) (values ? ?ring $?)))
+  =>
+  (assert (wm-fact (key request block args? mps ?rs wp ?wp com ?com ord ?order) (values ACTIVE ?ring ?now)))
+)
+
+(defrule goal-request-deactivate-block-rs
+  " If there is a block request and it either timed out or the WP was moved to
+    the target RS, deactivate the block request.
+  "
+  (wm-fact (key refbox game-time) (values $?now))
+  ?br <- (wm-fact (key request block args? mps ?rs wp ?wp com ?com ord ?order) (values ACTIVE ?ring $?st))
+
+  (or
+    (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side INPUT)) ;wp arrived at RS
+    (test (timeout ?now ?st ?*BLOCK-DURATION-RS*)) ;timeout occured
+    (not (wm-fact (key domain fact wp-usable args? wp ?wp))) ;the wp was flushed away or consumed
+  )
+  =>
+  (modify ?br (values INACTIVE))
+)
+
+(defrule goal-request-block-cs-almost-finished-product
+  " If there is a product that is soon going to need a CS,
+    issue a request to keep the the CS free.
+  "
+  ;get wp and order information
+  (domain-object (name ?wp) (type workpiece))
+  (wm-fact (key wp meta next-step args? wp ?wp) (value CAP))
+  (wm-fact (key wp meta next-machine args? wp ?wp) (value ?cs))
+  (wm-fact (key wp meta prev-machine args? wp ?wp) (value ?prev-mps))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key domain fact order-complexity args? ord ?order comp ?com))
+
+  ;the wp is already at the output of the previous machine
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?prev-mps side OUTPUT))
+  ;the input side of the target CS is free and there is a cap buffered
+  (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?cs side INPUT)))
+  (wm-fact (key domain fact cs-buffered args? m ?cs col ?any-cap-color))
+
+  (wm-fact (key refbox game-time) (values $?now))
+  (not (wm-fact (key request block args? mps ?cs wp ?wp com ?com ord ?order) (values $?)))
+  =>
+  (assert (wm-fact (key request block args? mps ?cs wp ?wp com ?com ord ?order) (values ACTIVE ?now)))
+)
+
+(defrule goal-request-deactivate-block-cs
+  " If there is a block request and it either timed out or the WP was moved to
+    the DS, deactivate the block request.
+  "
+  (wm-fact (key refbox game-time) (values $?now))
+  ?br <- (wm-fact (key request block args? mps ?cs wp ?wp com ?com ord ?order) (values ACTIVE $?st))
+
+  (or
+    (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side INPUT)) ;wp arrived at CS
+    (test (timeout ?now ?st ?*BLOCK-DURATION-CS*)) ;timeout occured
+    (not (wm-fact (key domain fact wp-usable args? wp ?wp))) ;the wp was flushed away or consumed
+  )
+  =>
+  (modify ?br (values INACTIVE))
+)
