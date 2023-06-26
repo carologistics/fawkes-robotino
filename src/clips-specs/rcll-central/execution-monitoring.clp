@@ -517,7 +517,7 @@
 	?pa-put <- (plan-action (id ?id-put&:(eq (- ?id-check 1) ?id-put)) (goal-id ?goal-id) (plan-id ?plan-id)
 				 (action-name wp-put)
 				 (param-values ?robot ?wp ?mps ?side ?complexity))
-	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side))
+	?wp-atf <- (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side))
 
 	(not (wm-fact (key monitoring action-retried wp-check args? r ?robot a wp-put id ?id-put-sym&:(eq ?id-put-sym (sym-cat ?id-put)) m ?mps g ?goal-id)))
 
@@ -529,6 +529,8 @@
 	(assert
 	  (wm-fact (key monitoring action-retried wp-check args? r ?robot a wp-put id (sym-cat ?id-put) m ?mps g ?goal-id))
 	)
+	(retract ?wp-atf)
+	(assert (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
 )
 
 (defrule execution-monitoring-wp-check-there-add-fail-goal-flag-after-retry
