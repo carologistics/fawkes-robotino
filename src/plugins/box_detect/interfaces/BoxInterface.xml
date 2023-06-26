@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="BoxInterface" author="Daniel Honies" year="2023">
+  
+  <data>
+    <comment>
+      detected box including type, zone and orientation
+    </comment>
+    <field type="string" name="box_type" length="3">
+      The ID of the tag, if set to -1 this means no TAG is known, e.g. MPS just found maybe (with laser-lines).
+    </field>
+    <field type="int32" name="orientation">
+      The discretized orientation of the MPS
+    </field>
+    <field type="string" name="zone" length="5">
+      The name of the zone we're investigating
+    </field>
+  </data>
+</interface>
