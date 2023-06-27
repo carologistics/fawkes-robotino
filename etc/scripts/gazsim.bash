@@ -448,10 +448,17 @@ if [  $COMMAND  == start ]; then
     if $PROTOBUF_SIM
     then
         mkdir -p $(pwd)/Simulator
-        COMMANDS+=("bash -c \"export TAB_START_TIME=$(date +%s); podman run --rm --name rcll-sim -v ${FAWKES_DIR}/cfg/rcll-simulator/:/simulator/caros-config/:z -v $(pwd)/Simulator:/simulator/logs/:z --net=host quay.io/robocup-logistics/rcll-simulator:tviehmann_protobuf-submodule dotnet run -cfg /simulator/caros-config/config.yaml\"")
+        COMMANDS+=("bash -c \"export TAB_START_TIME=$(date +%s); podman run -tid --rm --name rcll-sim -v ${FAWKES_DIR}/cfg/rcll-simulator/:/simulator/caros-config/:z -v $(pwd)/Simulator:/simulator/logs/:z --net=host quay.io/robocup-logistics/rcll-simulator:latest dotnet run -cfg /simulator/caros-config/config.yaml; trap '\''podman kill rcll-sim'\'' SIGHUP EXIT SIGTERM; podman logs -f rcll-sim; while true; do sleep 1; done\"")
+
         DESCRIPTIONS+=("simulator")
-	    COMMANDS+=("bash -c \"export TAB_START_TIME=$(date +%s); podman run --rm --name rcll-sim-gui --net=host quay.io/robocup-logistics/rcll-simulator-frontend:tviehmann_protobuf-submodule; podman kill rcll-sim-gui\"")
+	    COMMANDS+=("bash -c \"export TAB_START_TIME=$(date +%s); podman run -tid --rm --name rcll-sim-gui --net=host quay.io/robocup-logistics/rcll-simulator-frontend:latest; trap '\''podman kill rcll-sim-gui'\'' SIGHUP EXIT SIGTERM; podman logs -f rcll-sim-gui; while true; do sleep 1; done\"")
         DESCRIPTIONS+=("simulator-frontend")
+        for ((CURR_ROBO=$FIRST_ROBOTINO_NUMBER ; CURR_ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;CURR_ROBO++))
+        do
+            echo "  robot$CURR_ROBO/active: true" >> $FAWKES_DIR/cfg/robotino_${ROBO}_generated.yaml
+	        COMMANDS+=("bash -c \"export TAB_START_TIME=$(date +%s); tail -F $PWD/Simulator/${CURR_ROBO}_robot${CURR_ROBO}.log\"")
+            DESCRIPTIONS+=("simulator robot${CURR_ROBO}")
+        done
     fi
 
     if [  "$ROS"  == "-r" ]; then
