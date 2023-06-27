@@ -68,7 +68,7 @@ NO_REFBOX_FRONTEND=
 REFBOX=refbox
 # Default to default simulation.
 REFBOX_ARGS="--cfg-simulation simulation/default_simulation.yaml"
-PROTOBUF_SIM=
+PROTOBUF_SIM=false
 ROS=
 ROS_LAUNCH_MAIN=
 ROS_LAUNCH_ROBOT=
