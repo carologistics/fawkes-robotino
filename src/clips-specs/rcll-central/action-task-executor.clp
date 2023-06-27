@@ -114,7 +114,6 @@
     (if ?successful then (bind ?outcome EXECUTION-SUCCEEDED))
   )
   (modify ?pa (state ?outcome))
-  (printout t "Agent task " ?task " of robot " ?robot-num  " outcome " ?outcome crlf)
   (retract ?pf)
 )
 
