@@ -286,6 +286,37 @@
 
 ;======================================Movement=========================================
 
+(defrule execution-monitoring-suspend-plan-to-insert-wait
+	(goal (id ?goal-id) (class ?class))
+	?plan <- (plan (id ?plan-id) (goal-id ?goal-id) (suspended FALSE))
+	?plan-action <- (plan-action (id ?action-id)
+	             (goal-id ?goal-id)
+				 (plan-id ?plan-id)
+				 (skiller ?skiller)
+				 (state FORMULATED)
+				 (action-name move)
+				 (param-values ?robot ?robot-at ?robot-at-side ?robot-to ?robot-to-side))
+	(plan-action (id ?prev-action-id&:(eq (- ?action-id 1) ?prev-action-id)) (goal-id ?goal-id) (plan-id ?plan-id) (state EXECUTION-SUCCEEDED|SENSED-EFFECTS-WAIT|SENSED-EFFECTS-HOLD|EFFECTS-APPLIED|FINAL))
+	(or
+		(plan-action (skiller ~?skiller) (action-name move) (state ~FORMULATED&~FINAL) (param-values ~?robot ? ? ?robot-to ?robot-to-side))
+		(domain-fact (name at) (param-values ~?robot ?robot-to ?robot-to-side))
+	)
+	=>
+	(bind ?interleaved-id (sym-cat ?class -INTERLEAVED-PLAN-))
+	(bind ?interleaved-plan (plan-assert-sequential ?interleaved-id ?goal-id ?robot
+	    (plan-assert-action go-wait ?robot ?robot-at ?robot-at-side (wait-pos ?robot-to ?robot-to-side))
+	))
+	(modify ?plan-action (param-values ?robot (wait-pos ?robot-to ?robot-to-side) WAIT ?robot-to ?robot-to-side))
+	(modify ?plan (suspended TRUE) (suspension-reason (fact-slot-value ?interleaved-plan plan-id)))
+)
+
+(defrule execution-monitoring-stop-plan-suspension
+	?plan <- (plan (id ?plan-id) (goal-id ?goal-id) (suspended TRUE) (suspension-reason ?interleaved-plan))
+	(not (plan-action (plan-id ?interleaved-plan) (goal-id ?goal-id) (state ~FINAL)))
+	=>
+	(modify ?plan (suspended FALSE))
+)
+
 
 (defrule execution-monitoring-save-last-wait-position
 " Save the last wait position of the robot to a fact so that we can avoid moving
