@@ -3,7 +3,7 @@
                       (id ?id) (state FORMULATED)
                       (action-name ?action-name&:(neq ?action-name move))
                       (param-values $?param-values))
-	(plan (id ?plan-id) (goal-id ?goal-id))
+	(plan (id ?plan-id) (goal-id ?goal-id) (suspended FALSE))
 	(goal (id ?goal-id) (class ?class) (mode DISPATCHED) (verbosity ?verbosity))
 	(or (wm-fact (key game state) (value RUNNING))
 	    (test (eq ?action-name send-beacon))
@@ -39,7 +39,7 @@
 	                    (id ?id) (state FORMULATED)
 	                    (action-name ?action-name&move)
 	                    (param-values ?r ?from ?from-side ?to ?to-side))
-	(plan (id ?plan-id) (goal-id ?goal-id))
+	(plan (id ?plan-id) (goal-id ?goal-id) (suspended FALSE))
 	(goal (id ?goal-id) (class ?class) (mode DISPATCHED) (verbosity ?verbosity))
 
 	(not (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (state PENDING|WAITING|RUNNING|FAILED)))
