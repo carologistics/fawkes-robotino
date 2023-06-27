@@ -25,13 +25,20 @@
   (multislot last-pose)
   (slot counter (type NUMBER))
 )
-;A timeout for goals in mode FORMULATED
+;A timeout for assigned goals in mode FORMULATED
 (deftemplate selection-timer
   (slot goal-id (type SYMBOL))
   (slot robot (type SYMBOL))
   (slot timeout-duration)
   (multislot start-time)
 )
+;A timeout for goals who were retried too many times
+(deftemplate goal-retry-wait-timer
+  (slot goal-id (type SYMBOL))
+  (slot timeout-duration)
+  (multislot start-time)
+)
+
 
 (deffunction fail-action (?action ?error-msg)
 	(do-for-fact ((?sae skill-action-execinfo))
@@ -499,6 +506,27 @@
 	(modify ?wm (value ?tries))
 )
 
+(defrule execution-monitoring-repeated-goal-retry-timeout
+" If a goal fails a pre-determined number of times, give it a timeout for executability."
+	(declare (salience ?*MONITORING-SALIENCE*))
+	(goal (id ?goal-id) (mode FORMULATED))
+	?gm <- (goal-meta (goal-id ?goal-id) (retries ?retries&:(> ?retries ?*GOAL-RETRY-MAX*)))
+	(wm-fact (key refbox game-time) (values $?now))
+	=>
+	(printout error "Goal " ?goal-id " was retried " ?*GOAL-RETRY-MAX* " times, give it a timeout of " ?*GOAL-RETRY-TIMEOUT* "s." crlf)
+	(assert (goal-retry-wait-timer (goal-id ?goal-id) (timeout-duration ?*GOAL-RETRY-TIMEOUT*) (start-time ?now)))
+	(assert (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id)))
+	(modify ?gm (retries 0))
+)
+
+(defrule execution-monitoring-repeated-goal-retry-timeout-over
+	(wm-fact (key refbox game-time) (values $?now))
+	?gt <- (goal-retry-wait-timer (goal-id ?goal-id) (start-time $?st) (timeout-duration ?td&:(timeout ?now ?st ?td)))
+	?wf <- (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id))
+	=>
+	(retract ?gt ?wf)
+)
+
 
 ; ----------------------- HANDLE WP CHECK FAIL  --------------------------------
 
@@ -891,14 +919,29 @@
 	(not (wm-fact (key central agent robot-waiting args? r ?robot)))
 	(not (goal-meta (assigned-to ?robot)))
 	(SkillerInterface (id ?skiller-id&:(str-index ?robot ?skiller-id)) (exclusive_controller ~""))
+	(wm-fact (key refbox game-time) (values $?now))
 	=>
 	(assert (wm-fact (key central agent robot-waiting args? r ?robot)))
+	(assert (wm-fact (key monitoring robot-reinserted args? r ?robot) (values ?now)))
 	;recompute navgraph after re-insertion
 	(navgraph-set-field-size-from-cfg ?robot)
-	(navgraph-compute ?robot)
 	(navgraph-add-all-new-tags)
+	(navgraph-compute ?robot)
 
 	(retract ?rl)
+)
+
+(defrule execution-monitoring-set-navgraph-after-reinsertion
+	"Recompute the navgraph again after a certain time to make sure everything was set correctly"
+	?wf <- (wm-fact (key monitoring robot-reinserted args? r ?robot) (values $?start-time))
+	(wm-fact (key refbox game-time) (values $?now))
+	(test (timeout ?now ?start-time ?*REINSERTION-NAVGRAPH-TIMEOUT*))
+	=>
+	;recompute navgraph after re-insertion
+	(navgraph-set-field-size-from-cfg ?robot)
+	(navgraph-add-all-new-tags)
+	(navgraph-compute ?robot)
+	(retract ?wf)
 )
 
 (defrule execution-monitoring-clean-wm-from-robot
