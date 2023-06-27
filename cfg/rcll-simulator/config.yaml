@@ -104,14 +104,17 @@ robots:
     active: true
     jersey: 1
     team: cyan
+    connection: udp
   robot2:
     active: true
     jersey: 2
     team: cyan
+    connection: udp
   robot3:
     active: true
     jersey: 3
     team: cyan
+    connection: udp
   Heinz:
     active: false
     jersey: 1
