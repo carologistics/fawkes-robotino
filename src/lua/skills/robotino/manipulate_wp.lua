@@ -363,6 +363,7 @@ fsm:add_transitions{
    {"AT_LASER_LINE", "FAILED",                    timeout=2, desc="Object not found"},
    {"DRY_RUN_ABSENT", "FAILED",                   cond=dry_unexpected_object_found, desc="Found Object"},
    {"DRY_RUN_ABSENT", "FINAL",                    timeout=2, desc="Object not found"},
+   {"FINE_TUNE_GRIPPER", "START_TRACKING",        timeout=10, desc="Oscillating"},
    {"FINE_TUNE_GRIPPER", "GRIPPER_ROUTINE",       cond=gripper_aligned, desc="Gripper aligned"},
    {"FINE_TUNE_GRIPPER", "MOVE_BASE_AND_GRIPPER", cond="vars.out_of_reach", desc="Gripper out of reach"},
    {"FINE_TUNE_GRIPPER", "FIND_LASER_LINE",       cond="vars.missing_detections > MISSING_MAX", desc="Tracking lost target"},
