@@ -531,6 +531,10 @@ if [  $COMMAND  == start ]; then
         do
             echo "  robot$CURR_ROBO/active: false" >> $FAWKES_DIR/cfg/robotino_${ROBO}_generated.yaml
         done
+        if $PROTOBUF_SIM
+        then
+            echo "rcll-simulator/enabled: true" >> $FAWKES_DIR/cfg/robotino_${ROBO}_generated.yaml
+        fi
     fi
 
     if $START_ASP_PLANER

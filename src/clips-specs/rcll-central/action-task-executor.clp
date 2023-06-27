@@ -1,5 +1,6 @@
 (defrule action-task-connect-receiver-of-sim
   "Enable peer connection to the simulator"
+  (confval (path "/rcll-simulator/enabled") (value TRUE))
   (wm-fact (id "/config/rcll/sim-peer-address") (value ?peer-address))
   (wm-fact (id "/config/rcll/sim-peer-recv-port") (value ?peer-recv-port))
   (not (wm-fact (id "/simulator/comm/sim-peer-enabled") (value TRUE)))
@@ -24,6 +25,7 @@
 
 (defrule action-task-register
   (not (action-task-executor-enable))
+  (confval (path "/rcll-simulator/enabled") (value TRUE))
   =>
   (assert (action-task-executor-enable (name move))
           (action-task-executor-enable (name go-wait))
@@ -35,7 +37,8 @@
 )
 
 (defrule action-task-open-robot-peer
-  (declare (salience 1000))
+  (declare (salience ?*SALIENCE-HIGH*))
+  (confval (path "/rcll-simulator/enabled") (value TRUE))
   ?pf <- (protobuf-msg (type "llsf_msgs.BeaconSignal") (ptr ?p) (rcvd-from ?host ?robot-rcvd) (client-id ?client-id))
   (wm-fact (id "/simulator/comm/peer-id/public") (value ?client-id) (type INT))
   (wm-fact (id "/refbox/team-color") (value ?team-color&:(eq (pb-field-value ?p "team_color") ?team-color)))
@@ -112,7 +115,6 @@
   )
   (modify ?pa (state ?outcome))
   (printout t "Agent task " ?task " of robot " ?robot-num  " outcome " ?outcome crlf)
-  ; TODO: terminate the action that is done
   (retract ?pf)
 )
 

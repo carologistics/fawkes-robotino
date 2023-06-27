@@ -43,6 +43,7 @@
 ; Maximum distance between two points on the field
   ?*MAX-DISTANCE* = 16.124
 
+  ?*RCLL_SIMULATOR_CONFIG* = "/rcll-simulator/"
   ?*BBSYNC_PEER_CONFIG* = "/fawkes/bbsync/peers/"
   ?*NAVGRAPH_GENERATOR_MPS_CONFIG* = "/navgraph-generator-mps/"
   ?*TAG_VISION_CONFIG* = "/plugins/tag_vision/"
