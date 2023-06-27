@@ -9,47 +9,50 @@ usage: $0 options
 This script starts or kills the a Gazebo-simulation
 
 OPTIONS:
-   -h                Show this message
-   -x start|kill     Start or kill simulation
-   -c arg            Use a specific configuration-folder
-                     in cfg/gazsim-configurations/
-   -n arg            Specify number Robotinos
-   -m arg            load fawkes with the specified (meta-)plugin
-   -a                Run with default CLIPS-agent (don't mix with -m)
-   --central-agent p Run an additional fawkes instance with plugin p
-   -l                Run Gazebo headless
-   -k                Keep started shells open after finish
-   -s                Keep statistics and shutdown after game
-   -r|--ros          Start with ROS support
-   --ros-launch-main Run ROS launch file once for main (non-robot) master
-                     Argument: package:file.launch
-                     Calls: roslaunch package file.launch
-   --ros-launch      Run launch file for each robot (on their roscore)
-   -e arg            Record replay
-   -d|--debug        Run Fawkes with debug output enabled
-   --detailed        Detailed simulation (e.g. simulated webcam)
-   -o                Omitt starting gazebo (necessary when starting
-                     different teams)
-   -f arg            First Robotino Number (default 1, choose 4 when
-                     starting as magenta)
-   -p arg            Path to the fawkes folder
-                     ($FAWKES_DIR/bin by default)
-   -g                Run Fawkes in gdb
-   -v                Run Fawkes in valgrind
-   -t                Skip Exploration and add all navgraph points
-   --team-cyan       Set cyan team name
-   --team-magenta		 Set magenta team name
-   --start-game      Automatically run game after initialization
-                     (if used with -t go into PRODUCTION phase,
-                      otherwise the phase will be EXPLORATION,
-                      optionally, "--start-game=PHASE" may be given
-                      to set the phase explicitly)
-                     Typically requires at least --team-cyan.
-   --mongodb         Start central mongodb instance
-   --keep-tmpfiles   Do not delete tmp files on exit
-   --asp             Run with ASP agent and global planner
-   --challenge       Start refbox challenge script instead of refbox
-   --refbox-args     Pass options to the refbox
+   -h                 Show this message
+   -x start|kill      Start or kill simulation
+   -c arg             Use a specific configuration-folder
+                      in cfg/gazsim-configurations/
+   -n arg             Specify number Robotinos
+   -m arg             load fawkes with the specified (meta-)plugin
+   -a                 Run with default CLIPS-agent (don't mix with -m)
+   --central-agent p  Run an additional fawkes instance with plugin p
+   -l                 Run Gazebo headless
+   -k                 Keep started shells open after finish
+   -s                 Keep statistics and shutdown after game
+   -r|--ros           Start with ROS support
+   -r2|--ros2         Start with ROS 2 support
+   --ros-launch-main  Run ROS launch file once for main (non-robot) master
+   --ros2-launch-main Run ROS launch file once for main (non-robot) master
+                      Argument: package:file.launch
+                      Calls: roslaunch package file.launch
+   --ros-launch       Run launch file for each robot (on their roscore)
+   --ros2-launch      Run ROS 2 launch file for each robot
+   -e arg             Record replay
+   -d|--debug         Run Fawkes with debug output enabled
+   --detailed         Detailed simulation (e.g. simulated webcam)
+   -o                 Omitt starting gazebo (necessary when starting
+                      different teams)
+   -f arg             First Robotino Number (default 1, choose 4 when
+                      starting as magenta)
+   -p arg             Path to the fawkes folder
+                      ($FAWKES_DIR/bin by default)
+   -g                 Run Fawkes in gdb
+   -v                 Run Fawkes in valgrind
+   -t                 Skip Exploration and add all navgraph points
+   --team-cyan        Set cyan team name
+   --team-magenta	      Set magenta team name
+   --start-game       Automatically run game after initialization
+                      (if used with -t go into PRODUCTION phase,
+                       otherwise the phase will be EXPLORATION,
+                       optionally, "--start-game=PHASE" may be given
+                       to set the phase explicitly)
+                      Typically requires at least --team-cyan.
+   --mongodb          Start central mongodb instance
+   --keep-tmpfiles    Do not delete tmp files on exit
+   --asp              Run with ASP agent and global planner
+   --challenge        Start refbox challenge script instead of refbox
+   --refbox-args      Pass options to the refbox
 EOF
 }
 
@@ -68,6 +71,10 @@ ROS=
 ROS_LAUNCH_MAIN=
 ROS_LAUNCH_ROBOT=
 ROS_LAUNCH_MOVEBASE=
+ROS_2=
+ROS_2_LAUNCH_MAIN=
+ROS_2_LAUNCH_ROBOT=
+ROS_2_LAUNCH_MOVEBASE=
 AGENT=
 DEBUG=
 DETAILED=
@@ -109,12 +116,16 @@ case "$TERMINAL" in
     gnome-terminal)
         TERM_COMMAND="gnome-terminal --maximize -- bash -i -c '"
         TERM_COMMAND_END=" echo -e \"\n\n\nAll commands started. This tab may now be closed.\"'"
-        SUBTERM_PREFIX="gnome-terminal --tab -- "
+        SUBTERM_PREFIX="gnome-terminal --tab"
+        SUBTERM_DIFF=" -- "
+        SUBTERM_TABNAME=" -t "
         SUBTERM_SUFFIX=" ; "
         ;;
     screen)
         TERM_COMMAND="screen -A -d -m -S gazsim /usr/bin/sleep 1 ; "
         SUBTERM_PREFIX="screen -S gazsim -X screen "
+        SUBTERM_TABNAME=" -t "
+        SUBTERM_DIFF=
         SUBTERM_SUFFIX=" ; "
         ;;
     tmux)
@@ -125,6 +136,8 @@ case "$TERMINAL" in
         fi
         TERM_COMMAND_END=""
         SUBTERM_PREFIX="tmux new-window "
+        SUBTERM_DIFF=
+        SUBTERM_TABNAME=" -n "
         SUBTERM_SUFFIX=";"
         ;;
     *)
@@ -137,7 +150,7 @@ echo "Using $TERMINAL"
 ROS_MASTER_PORT=${ROS_MASTER_URI##*:}
 ROS_MASTER_PORT=${ROS_MASTER_PORT%%/*}
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "debug,ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:,keep-tmpfiles,challenge,no-refbox,no-refbox-frontend,refbox-args:" -- "$@")
+OPTS=$(getopt -o "hx:c:lr::ksn:e:dm:aof:p:gvt" -l "debug,ros,ros2,ros-launch-main:,ros-launch:,ros2,ros2-launch-main:,ros2-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:,keep-tmpfiles,challenge,no-refbox,no-refbox-frontend,refbox-args:" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
@@ -145,6 +158,7 @@ then
     exit 1
 fi
 
+echo $OPTS
 eval set -- "$OPTS"
 while true; do
      OPTION=$1
@@ -171,8 +185,13 @@ while true; do
         fi
              ;;
          -r)
-           ROS=-r
-           ROS_LAUNCH_MOVE_BASE=yes
+          if [ "$OPTARG" == "2" ] ; then
+              ROS=-r2
+              ROS_LAUNCH_NAV2=yes
+          else
+              ROS=-r
+              ROS_LAUNCH_MOVE_BASE=yes
+          fi
              ;;
          -g)
 	     if [ -n "$GDB" ]; then
@@ -247,14 +266,17 @@ while true; do
 	 -o)
 	     START_GAZEBO=false
 	     ;;
-	 -r|--ros)
-	     ROS=-r
-	     ;;
 	 --ros-launch-main)
 	     ROS_LAUNCH_MAIN="--ros-launch $OPTARG"
 	     ;;
 	 --ros-launch-robot)
 	     ROS_LAUNCH_ROBOT="--ros-launch $OPTARG"
+	     ;;
+	 --ros2-launch-main)
+	     ROS_2_LAUNCH_MAIN="--ros2-launch $OPTARG"
+	     ;;
+	 --ros2-launch-robot)
+	     ROS_2_LAUNCH_ROBOT="--ros2-launch $OPTARG"
 	     ;;
 	 --team-cyan)
 	     TEAM_CYAN="$OPTARG"
@@ -370,9 +392,12 @@ if [  $COMMAND  == start ]; then
 
     #construct command to open everything in one terminal window with multiple tabs instead of 10.000 windows
     COMMANDS=()
+    #Description of the commands
+    DESCRIPTIONS=()
 
     if [[ -z "$KEEP_TMPFILES" ]] ; then
       COMMANDS=("bash -i -c \"trap \\\"sleep 1; rm -rf $GAZSIM_TMPDIR\\\" EXIT; echo \\\"Cleanup on $GAZSIM_TMPDIR: Waiting for shutdown\\\"; while true; do sleep 1; done\"")
+      DESCRIPTIONS=("wait forever")
     fi
 
     if $START_GAZEBO
@@ -381,50 +406,86 @@ if [  $COMMAND  == start ]; then
 	if [[ -z $HEADLESS ]]
 	then
         COMMANDS+=("bash -i -c \"$startup_script_location -x gazebo $REPLAY $KEEP $@\"")
+        DESCRIPTIONS+=("gazebo")
 	else
 	    #run headless
         COMMANDS+=("bash -i -c \"$startup_script_location -x gzserver $REPLAY $KEEP $@\"")
+        DESCRIPTIONS+=("gzclient")
 	fi
+    fi
+
+    if [  "$ROS_2"  == "-r2" ]; then
+    	#start roscores
+	# main roscore (non-robot)
+#    COMMANDS+=("bash -i -c \"$startup_script_location -x roscore -p $ROS_MASTER_PORT $KEEP $@\"")
+    echo "LAUNCH WITH ROS 2"
+	if [ -n "$ROS_2_LAUNCH_MAIN" ]; then
+		COMMANDS+=("bash -i -c \"$startup_script_location -x ros2 $ROS_LAUNCH_MAIN -p $ROS_MASTER_PORT $KEEP $@\"")
+        DESCRIPTIONS+=("ros2 main")
+	fi
+    	for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
+    	do
+				# robot roscore
+#				COMMANDS+=("bash -i -c \"$startup_script_location -x roscore -p 1132$ROBO $KEEP $@\"")
+        # move_base
+				if $START_GAZEBO && [ -n "$ROS_2_LAUNCH_MOVE_BASE" ]; then
+					COMMANDS+=("bash -i -c \"$startup_script_location -x navigation2 -p 1132$ROBO $KEEP $@\"")
+                    DESCRIPTIONS+=("ros2 navigation robot$ROBO")
+				fi
+	if [ -n "$ROS_2_LAUNCH_ROBOT" ]; then
+	    COMMANDS+=("bash -i -c \"$startup_script_location -x roslaunch $ROS_2_LAUNCH_ROBOT $KEEP $@\"")
+        DESCRIPTIONS+=("ros2 robot$ROBO")
+	fi
+    	done
     fi
 
     if [  "$ROS"  == "-r" ]; then
     	#start roscores
 	# main roscore (non-robot)
     COMMANDS+=("bash -i -c \"$startup_script_location -x roscore -p $ROS_MASTER_PORT $KEEP $@\"")
+    DESCRIPTIONS+=("main roscore")
 	if [ -n "$ROS_LAUNCH_MAIN" ]; then
 		COMMANDS+=("bash -i -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_MAIN -p $ROS_MASTER_PORT $KEEP $@\"")
+        DESCRIPTIONS+=("main roslaunch")
 	fi
     	for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     	do
 				# robot roscore
 				COMMANDS+=("bash -i -c \"$startup_script_location -x roscore -p 1132$ROBO $KEEP $@\"")
+                DESCRIPTIONS+=("robot$ROBO roscore")
         # move_base
 				if $START_GAZEBO && [ -n "$ROS_LAUNCH_MOVE_BASE" ]; then
 					COMMANDS+=("bash -i -c \"$startup_script_location -x move_base -p 1132$ROBO $KEEP $@\"")
+                    DESCRIPTIONS+=("robot$ROBO move_base")
 				fi
 	if [ -n "$ROS_LAUNCH_ROBOT" ]; then
 	    COMMANDS+=("bash -i -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_ROBOT -p $ROS_MASTER_PORT $KEEP $@\"")
+        DESCRIPTIONS+=("robot$ROBO roslaunch")
 	fi
     	done
     fi
     if ! [ -n "$NO_REFBOX" ]; then
       #start refbox
       COMMANDS+=("bash -i -c \"$startup_script_location -x $REFBOX  $KEEP $@ -- $REFBOX_ARGS\"")
+      DESCRIPTIONS+=("refbox")
     fi
     if ! [ -n "$NO_REFBOX_FRONTEND" ]; then
     #start refbox frontend
       COMMANDS+=("bash -i -c \"$startup_script_location -x refbox-frontend $KEEP $@\"")
+      DESCRIPTIONS+=("refbox-frontend")
     fi
 
     # start mongodb central instance
     if $START_MONGODB ; then
         MONGODB_DBPATH=$(mktemp -d --tmpdir mongodb-27017-XXXXXXXXXXXX)
         COMMANDS+=("bash -i -c \"mongod --port 27017 --dbpath $MONGODB_DBPATH | tee mongodb.log \"")
+        DESCRIPTIONS+=("mongodb")
     fi
     #start fawkes for robotinos
     for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     do
 	COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x fawkes -p 1132$ROBO -i robotino$ROBO $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $META_PLUGIN $DEBUG $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
+    DESCRIPTIONS+=("fawkes robot$ROBO")
 	FAWKES_USED=true
     done
 
@@ -432,10 +493,12 @@ if [  $COMMAND  == start ]; then
         if [ $NUM_CYAN -gt 0 ] ; then
 		    ROBO=11
 		    COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x fawkes -i robotino$ROBO $KEEP $CONF $GDB -m $CENTRAL_AGENT $DEBUG $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
+            DESCRIPTIONS+=("fawkes main (cyan)")
         fi
         if [ $NUM_MAGENTA -gt 0 ] ; then
 		    ROBO=12
 		    COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x fawkes -i robotino$ROBO $KEEP $CONF $GDB -m $CENTRAL_AGENT $DEBUG $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
+            DESCRIPTIONS+=("fawkes main (magenta)")
         fi
         echo "fawkes/bbsync/peers:" > $FAWKES_DIR/cfg/robotino_${ROBO}_generated.yaml
         for ((CURR_ROBO=$FIRST_ROBOTINO_NUMBER ; CURR_ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;CURR_ROBO++))
@@ -451,6 +514,7 @@ if [  $COMMAND  == start ]; then
     if $START_ASP_PLANER
     then
 	COMMANDS+=("bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x asp -p ${ROS_MASTER_URI##*:} $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $DEBUG $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
+    DESCRIPTIONS+=("ASP planner")
     fi
 
     #start fawkes for communication, llsfrbcomm and eventually statistics
@@ -460,9 +524,15 @@ if [  $COMMAND  == start ]; then
         comm_plugin=comm-no-gazebo
     fi
 	COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 0; $startup_script_location -x $comm_plugin $DEBUG $KEEP $SHUTDOWN $@\"")
+    DESCRIPTIONS+=("fawkes comm utils")
 
-    PREFIXED_COMMANDS=("${COMMANDS[@]/#/${SUBTERM_PREFIX}}")
-    SUFFIXED_COMMANDS=("${PREFIXED_COMMANDS[@]/%/${SUBTERM_SUFFIX}}")
+    declare -a SUFFIXED_COMMANDS
+
+    # Iterate over the indices of the arrays
+    for ((i=0; i<${#COMMANDS[@]}; i++)); do
+        SUFFIXED_COMMANDS+=("${SUBTERM_PREFIX}${SUBTERM_TABNAME}\"${DESCRIPTIONS[i]}\" ${SUBTERM_DIFF}${COMMANDS[i]}${SUBTERM_SUFFIX}")
+    done
+
     echo "Executing $TERM_COMMAND ${SUFFIXED_COMMANDS[@]} ${TERM_COMMAND_END}"
     eval "$TERM_COMMAND ${SUFFIXED_COMMANDS[@]} ${TERM_COMMAND_END}"
 

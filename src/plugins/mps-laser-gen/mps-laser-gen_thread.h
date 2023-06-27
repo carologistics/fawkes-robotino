@@ -33,8 +33,16 @@
 #include <interfaces/Laser360Interface.h>
 #include <interfaces/LaserBoxFilterInterface.h>
 #include <navgraph/aspect/navgraph.h>
-#include <plugins/ros/aspect/ros.h>
-#include <ros/publisher.h>
+#ifdef HAVE_ROS2
+#	include <plugins/ros2/aspect/ros2.h>
+
+#	include <rclcpp/rclcpp.hpp>
+#	include <visualization_msgs/msg/marker_array.hpp>
+#endif
+#ifdef HAVE_ROS
+#	include <plugins/ros/aspect/ros.h>
+#	include <ros/publisher.h>
+#endif
 
 #include <Eigen/Geometry>
 #include <string>
@@ -50,7 +58,12 @@ class MPSLaserGenThread : public fawkes::Thread,
                           public fawkes::ConfigurableAspect,
                           public fawkes::BlackBoardAspect,
                           public fawkes::NavGraphAspect,
+#ifdef HAVE_ROS2
+                          public fawkes::ROS2Aspect,
+#endif
+#ifdef HAVE_ROS
                           public fawkes::ROSAspect,
+#endif
                           public fawkes::TransformAspect
 {
 	/// @cond INTERNAL
@@ -90,9 +103,14 @@ protected:
 private:
 	fawkes::Laser360Interface       *laser_if_;
 	fawkes::LaserBoxFilterInterface *laser_box_filter_if_;
-	ros::Publisher                   vispub_;
-	std::string                      mps_laser_gen_cfg_prefix;
-	std::map<std::string, MPS>       mpses;
+#ifdef HAVE_ROS
+	ros::Publisher vispub_;
+#endif
+#ifdef HAVE_ROS2
+	rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr vispub_;
+#endif
+	std::string                mps_laser_gen_cfg_prefix;
+	std::map<std::string, MPS> mpses;
 
 	bool  cfg_enable_mps_laser_gen_;
 	bool  cfg_enable_mps_box_filter_;

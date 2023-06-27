@@ -1,7 +1,8 @@
-FROM quay.io/fawkesrobotics/fawkes-builder:f37
+FROM quay.io/fawkesrobotics/fawkes-builder:f37-ros2
 COPY . /workdir
 WORKDIR /workdir
-RUN /bin/bash -c "source /etc/profile; mkdir build; cd build; cmake .. --preset central-agent-ros1 ; make -j$(nproc)"
+ENV FAWKES_DIR=/workdir
+RUN /bin/bash -l -c "mkdir build; cd build; cmake .. --preset central-agent ; make -j$(nproc)"
 ENTRYPOINT [ "/bin/bash", "-l", "-c" ]
 CMD ["echo HI"]
 

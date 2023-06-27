@@ -32,6 +32,23 @@ fawkes/meta_plugins:
     - gazsim-vis-localization
     - skiller
     - mps-laser-gen
+  gazsim-meta-robotino-ros2:
+    - gazsim-meta-robotino
+    - ros2
+    - ros2-clock
+    # - robotino-ros-joints
+    - ros2-odometry
+    - ros2-tf2
+    - ros2-laserscan
+    - ros2-cmdvel
+    - amcl
+    - navgraph
+    - navgraph-generator
+    - navgraph-generator-mps
+    - laser-lines
+    - gazsim-vis-localization
+    - skiller
+    - mps-laser-gen-ros2
   gazsim-meta-robotino-ros-movebase:
     - ros-cmdvel
     - ros-navigator
@@ -90,10 +107,13 @@ fawkes/meta_plugins:
     - protoboard-rcll
     - gologpp
 
+  m-skill-sim-ros1:
+    - ros
+    - m-skill-sim
+
   m-skill-sim:
     - execution-time-estimator
     - skiller-simulator
-    - ros
     - navgraph
     - navgraph-generator
     - navgraph-generator-mps
@@ -111,12 +131,15 @@ fawkes/meta_plugins:
 
   m-central-clips-exec:
     - bbsync
-    - ros
     - navgraph
     - navgraph-generator
     - navgraph-generator-mps
     - m-distributed-clips-executive
     - webview
+
+  m-central-clips-exec-ros1:
+    - ros
+    - m-central-clips-exec
 
   rcll-sim-2016:
     - mps-laser-gen

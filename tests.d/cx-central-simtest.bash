@@ -43,11 +43,23 @@ stop_test () {
 
 trap stop_test $TRAP_SIGNALS
 ulimit -c 0
-if timeout 60 $SCRIPT_PATH/gazsim.bash -o -r -n 3 \
+if timeout 60 $SCRIPT_PATH/gazsim.bash -o -n 3 \
   -m m-skill-sim --central-agent m-central-clips-exec \
   --no-refbox --no-refbox-frontend;
 then
-	sleep 2
+  wait_for_file=120
+  elapsed=0
+  file="robot11_latest.log"
+
+  # Loop until the file is created or timeout is reached
+  while [ ! -f "$file" ] && [ "$elapsed" -lt "$wait_for_file" ]; do
+      sleep 1  # Wait for 1 second
+      elapsed=$((elapsed + 1))
+  done
+  if [ ! -f "$file" ]; then
+    echo "$file missing, abort"
+    exit 1
+  fi
   echo "Waiting for results..."
   if timeout 360 python3 $SCRIPT_PATH/cx-simtest-check.py ./robot11_latest.log
   then

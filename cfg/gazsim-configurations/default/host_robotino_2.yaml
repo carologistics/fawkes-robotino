@@ -65,6 +65,12 @@ clips-agent:
     magenta-send-port: 4482
 
     
+ros2:
+  node-name: "robotino2"
+  namespace: "robotino2"
+  tf:
+    tf_prefix: "robotino2"
+
 plugins/tag_vision:
   shm_image_id: "tag_vision_robotino_2"
   camera: shmem:gazsim_cam:image_id=robotino2/gazsim_tag:deep_copy=true

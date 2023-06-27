@@ -24,12 +24,14 @@
 #include "mps-laser-gen_thread.h"
 
 #include <navgraph/navgraph.h>
-#include <ros/ros.h>
+#ifdef HAVE_ROS
+#	include <ros/ros.h>
+#	include <visualization_msgs/MarkerArray.h>
+#endif
 #include <tf/types.h>
 #include <utils/math/angle.h>
 #include <utils/math/lines.h>
 #include <utils/time/time.h>
-#include <visualization_msgs/MarkerArray.h>
 
 using namespace fawkes;
 
@@ -48,9 +50,15 @@ MPSLaserGenThread::MPSLaserGenThread()
 void
 MPSLaserGenThread::init()
 {
+#ifdef HAVE_ROS
 	vispub_ = rosnode->advertise<visualization_msgs::MarkerArray>("visualization_marker_array",
 	                                                              100,
 	                                                              /* latching */ true);
+#endif
+#ifdef HAVE_ROS2
+	vispub_ = node_handle->create_publisher<visualization_msgs::msg::MarkerArray>(
+	  "visualization_marker_array", 100);
+#endif
 
 	laser_if_            = blackboard->open_for_writing<Laser360Interface>("Laser MPS");
 	laser_box_filter_if_ = blackboard->open_for_reading<LaserBoxFilterInterface>("Laser Box Filter");
@@ -95,7 +103,12 @@ MPSLaserGenThread::loop()
 
 	Eigen::Transform<float, 2, Eigen::Affine> transform = sensor_translation * sensor_rotation;
 
+#ifdef HAVE_ROS
 	visualization_msgs::MarkerArray m;
+#endif
+#ifdef HAVE_ROS2
+	visualization_msgs::msg::MarkerArray m;
+#endif
 	// #if ROS_VERSION_MINIMUM(1,10,0)
 	//   {
 	// 	  visualization_msgs::Marker delop;
@@ -203,13 +216,23 @@ MPSLaserGenThread::loop()
 
 			for (const auto &mps : mpses) {
 				{
+#ifdef HAVE_ROS
 					visualization_msgs::Marker sphere;
+					sphere.header.stamp = ros::Time::now();
+					sphere.type         = visualization_msgs::Marker::SPHERE;
+					sphere.action       = visualization_msgs::Marker::ADD;
+					sphere.lifetime     = ros::Duration(0, 0);
+#endif
+#ifdef HAVE_ROS2
+					visualization_msgs::msg::Marker sphere;
+					sphere.header.stamp = node_handle->now();
+					sphere.type         = visualization_msgs::msg::Marker::SPHERE;
+					sphere.action       = visualization_msgs::msg::Marker::ADD;
+					sphere.lifetime     = rclcpp::Duration(0, 0);
+#endif
 					sphere.header.frame_id    = sensor_frame;
-					sphere.header.stamp       = ros::Time::now();
 					sphere.ns                 = "mps-laser-gen";
 					sphere.id                 = id_num++;
-					sphere.type               = visualization_msgs::Marker::SPHERE;
-					sphere.action             = visualization_msgs::Marker::ADD;
 					sphere.pose.position.x    = mps.second.center[0];
 					sphere.pose.position.y    = mps.second.center[1];
 					sphere.pose.position.z    = 0.;
@@ -219,18 +242,27 @@ MPSLaserGenThread::loop()
 					sphere.color.g                                   = 1.f;
 					sphere.color.b                                   = 0.f;
 					sphere.color.a                                   = 1.0;
-					sphere.lifetime                                  = ros::Duration(0, 0);
 					m.markers.push_back(sphere);
 				}
 
 				for (unsigned int i = 0; i < 4; ++i) {
+#ifdef HAVE_ROS
 					visualization_msgs::Marker sphere;
+					sphere.header.stamp = ros::Time::now();
+					sphere.type         = visualization_msgs::Marker::SPHERE;
+					sphere.action       = visualization_msgs::Marker::ADD;
+					sphere.lifetime     = ros::Duration(0, 0);
+#endif
+#ifdef HAVE_ROS2
+					visualization_msgs::msg::Marker sphere;
+					sphere.header.stamp = node_handle->now();
+					sphere.type         = visualization_msgs::msg::Marker::SPHERE;
+					sphere.action       = visualization_msgs::msg::Marker::ADD;
+					sphere.lifetime     = rclcpp::Duration(0, 0);
+#endif
 					sphere.header.frame_id    = sensor_frame;
-					sphere.header.stamp       = ros::Time::now();
 					sphere.ns                 = "mps-laser-gen";
 					sphere.id                 = id_num++;
-					sphere.type               = visualization_msgs::Marker::SPHERE;
-					sphere.action             = visualization_msgs::Marker::ADD;
 					sphere.pose.position.x    = mps.second.corners[i][0];
 					sphere.pose.position.y    = mps.second.corners[i][1];
 					sphere.pose.position.z    = 0.;
@@ -246,9 +278,8 @@ MPSLaserGenThread::loop()
 						sphere.color.r = 1.f;
 						sphere.color.b = 0.f;
 					}
-					sphere.color.g  = 0.f;
-					sphere.color.a  = 1.0;
-					sphere.lifetime = ros::Duration(0, 0);
+					sphere.color.g = 0.f;
+					sphere.color.a = 1.0;
 					m.markers.push_back(sphere);
 				}
 
@@ -284,7 +315,12 @@ MPSLaserGenThread::loop()
 		laser_if_->set_distances(data);
 		laser_if_->write();
 
+#ifdef HAVE_ROS
 		vispub_.publish(m);
+#endif
+#ifdef HAVE_ROS2
+		vispub_->publish(m);
+#endif
 	}
 }
 
@@ -298,7 +334,9 @@ MPSLaserGenThread::finalize()
 	laser_if_->set_distances(data);
 	laser_if_->write();
 
+#ifdef HAVE_ROS
 	vispub_.shutdown();
+#endif
 	blackboard->close(laser_if_);
 }
 
