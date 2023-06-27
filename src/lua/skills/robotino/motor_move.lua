@@ -73,7 +73,7 @@ local STUCK_MAX       = 120  -- STUCK timeout: Fail after being stuck for this m
 local STUCK_THRESHOLD = 0.6  -- STUCK threshold: Consider ourselves stuck if we moved less than
                              --                  this factor times V_MIN speed during the
                              --                  last MONITOR_LEN loops
-local MISSING_MAX     = 3    -- limit for missing object detections in a row
+local MISSING_MAX     = 5    -- limit for missing object detections in a row
 local SAFE_DIST       = 0.17 -- minimum distance between front laser and mps while manipulating
 
 -- Initialize as skill module

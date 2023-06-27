@@ -502,11 +502,15 @@ ObjectTrackingThread::loop()
 		tf::StampedTransform stf_object_pos(tf_object_pos, capture_time, cam_frame_, object_pos_frame_);
 		object_pos_pub->send_transform(stf_object_pos);
 	} else {
-		//if object is not detected, use expected position instead
 		pos_str = "X.XXX X.XXX X.XXX";
 
-		//transform from map to target
-		tf_listener->transform_point(target_frame_, expected_pos, cur_object_pos_target);
+		//handle case if first detection is unsuccessful
+		if (past_responses_.size() == 0) {
+			//use expected position as initialisation
+			//transform from map to target
+			tf_listener->transform_point(target_frame_, expected_pos, cur_object_pos_target);
+			detected = true;
+		}
 	}
 	cv::putText(image,
 	            pos_str,
@@ -536,11 +540,15 @@ ObjectTrackingThread::loop()
 
 	//use weighted average to improve robustness of object position
 	double weighted_object_pos[3];
-	double sum_weights = filter_weights_[0];
+	double sum_weights = 0;
 
-	weighted_object_pos[0] = filter_weights_[0] * cur_object_pos_target.getX();
-	weighted_object_pos[1] = filter_weights_[0] * cur_object_pos_target.getY();
-	weighted_object_pos[2] = filter_weights_[0] * cur_object_pos_target.getZ();
+	if (detected) { //if undetected, continue with past responses
+		sum_weights = filter_weights_[0];
+
+		weighted_object_pos[0] = filter_weights_[0] * cur_object_pos_target.getX();
+		weighted_object_pos[1] = filter_weights_[0] * cur_object_pos_target.getY();
+		weighted_object_pos[2] = filter_weights_[0] * cur_object_pos_target.getZ();
+	}
 
 	for (size_t i = 0; i < past_responses_.size(); i++) {
 		weighted_object_pos[0] += filter_weights_[1 + i] * past_responses_[i].getX();
@@ -553,9 +561,11 @@ ObjectTrackingThread::loop()
 	weighted_object_pos[1] /= sum_weights;
 	weighted_object_pos[2] /= sum_weights;
 
-	past_responses_.push_front(cur_object_pos_target);
-	if (past_responses_.size() == filter_size_) {
-		past_responses_.pop_back();
+	if (detected) {
+		past_responses_.push_front(cur_object_pos_target);
+		if (past_responses_.size() == filter_size_) {
+			past_responses_.pop_back();
+		}
 	}
 
 	//update weighted object pos transform
@@ -658,9 +668,9 @@ ObjectTrackingThread::laserline_get_best_fit(fawkes::LaserLineInterface *&best_f
 
 void
 ObjectTrackingThread::laserline_get_center_transformed(fawkes::LaserLineInterface *ll,
-                                                       float &                     x,
-                                                       float &                     y,
-                                                       float &                     z)
+                                                       float                      &x,
+                                                       float                      &y,
+                                                       float                      &z)
 {
 	fawkes::tf::Stamped<fawkes::tf::Point> tf_in, tf_out;
 	tf_in.stamp    = ll->timestamp();
@@ -683,7 +693,7 @@ ObjectTrackingThread::laserline_get_center_transformed(fawkes::LaserLineInterfac
 
 void
 ObjectTrackingThread::laserline_get_expected_position(
-  fawkes::LaserLineInterface *            ll,
+  fawkes::LaserLineInterface             *ll,
   fawkes::tf::Stamped<fawkes::tf::Point> &expected_pos)
 {
 	fawkes::tf::Stamped<fawkes::tf::Point> tf_in;
@@ -887,7 +897,7 @@ ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
 
 void
 ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Point> object_pos,
-                                            fawkes::LaserLineInterface *           ll,
+                                            fawkes::LaserLineInterface            *ll,
                                             double gripper_target[3],
                                             double base_target[3])
 {

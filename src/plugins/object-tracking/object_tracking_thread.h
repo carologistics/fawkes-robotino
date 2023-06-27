@@ -193,7 +193,7 @@ private:
 	long         loop_count_;
 
 	//compute expected position from laser line
-	void laserline_get_expected_position(fawkes::LaserLineInterface *            ll,
+	void laserline_get_expected_position(fawkes::LaserLineInterface             *ll,
 	                                     fawkes::tf::Stamped<fawkes::tf::Point> &expected_pos_ll);
 	bool laserline_get_best_fit(fawkes::LaserLineInterface *&best_fit);
 	void
@@ -220,7 +220,7 @@ private:
 
 	//compute base and gripper target frame
 	void compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Point> object_pos,
-	                           fawkes::LaserLineInterface *           ll,
+	                           fawkes::LaserLineInterface            *ll,
 	                           double                                 gripper_target[3],
 	                           double                                 base_target[3]);
 };
