@@ -19,9 +19,9 @@
 )
 
 (defrule action-selection-done
-	(plan (id ?plan-id) (goal-id ?goal-id))
 	?g <- (goal (id ?goal-id) (class ~EXPLORATION) (mode DISPATCHED) (type ACHIEVE))
-	(not (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (state ~FINAL)))
+	(plan (id ?plan-id) (goal-id ?goal-id))
+	(not (plan-action (goal-id ?goal-id) (plan-id ?) (state ~FINAL)))
 	=>
 	(modify ?g (mode FINISHED) (outcome COMPLETED))
 )
