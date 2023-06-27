@@ -491,7 +491,6 @@
 	             (holding ?r ?wp)
 	             (not (can-hold ?r))
 	             (not (mps-state ?m READY-AT-OUTPUT))
-	             (mps-state ?m IDLE)
 	             (mps-side-free ?m ?side)
 	        )
 )
