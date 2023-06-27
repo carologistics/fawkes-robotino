@@ -557,8 +557,8 @@
 	  (wm-fact (key monitoring action-retried wp-check args? r ?robot a wp-put id (sym-cat ?id-put) m ?mps g ?goal-id))
 	)
 	(retract ?wp-atf)
-	(assert (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
-	(assert (wm-fact (key domain fact mps-side-free args? m ?mps side ?side)))
+	(assert (wm-fact (key domain fact holding args? r ?robot wp ?wp) (type BOOL) (value TRUE)))
+	(assert (wm-fact (key domain fact mps-side-free args? m ?mps side ?side) (type BOOL) (value TRUE)))
 )
 
 (defrule execution-monitoring-wp-check-there-add-fail-goal-flag-after-retry
