@@ -942,39 +942,6 @@
 	(retract ?rw)
 )
 
-(defrule execution-monitoring-add-waiting-robot
-	(declare (salience ?*SALIENCE-HIGH*))
-	(wm-fact (key central agent robot args? r ?robot))
-	?rl <- (wm-fact (key central agent robot-lost args? r ?robot))
-	(HeartbeatInterface (id ?id&:(str-index ?robot ?id)) (alive TRUE))
-	(not (wm-fact (key central agent robot-waiting args? r ?robot)))
-	(not (goal-meta (assigned-to ?robot)))
-	(SkillerInterface (id ?skiller-id&:(str-index ?robot ?skiller-id)) (exclusive_controller ~""))
-	(wm-fact (key refbox game-time) (values $?now))
-	=>
-	(assert (wm-fact (key central agent robot-waiting args? r ?robot)))
-	(assert (wm-fact (key monitoring robot-reinserted args? r ?robot) (values ?now)))
-	;recompute navgraph after re-insertion
-	(navgraph-set-field-size-from-cfg ?robot)
-	(navgraph-add-all-new-tags)
-	(navgraph-compute ?robot)
-
-	(retract ?rl)
-)
-
-(defrule execution-monitoring-set-navgraph-after-reinsertion
-	"Recompute the navgraph again after a certain time to make sure everything was set correctly"
-	?wf <- (wm-fact (key monitoring robot-reinserted args? r ?robot) (values $?start-time))
-	(wm-fact (key refbox game-time) (values $?now))
-	(test (timeout ?now ?start-time ?*REINSERTION-NAVGRAPH-TIMEOUT*))
-	=>
-	;recompute navgraph after re-insertion
-	(navgraph-set-field-size-from-cfg ?robot)
-	(navgraph-add-all-new-tags)
-	(navgraph-compute ?robot)
-	(retract ?wf)
-)
-
 (defrule execution-monitoring-clean-wm-from-robot
 	(declare (salience ?*MONITORING-SALIENCE*))
 	(domain-facts-loaded)
