@@ -418,10 +418,10 @@
 )
 
 (:action enter-field
-	:parameters (?r - robot ?team-color - team-color)
+	:parameters (?r - robot ?place - waitpoint)
 	:precondition (not (entered-field ?r))
 	:effect (and (entered-field ?r)
-	             (at ?r START INPUT)
+	             (at ?r ?place WAIT)
 	        )
 )
 

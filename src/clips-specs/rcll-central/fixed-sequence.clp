@@ -163,8 +163,10 @@
 	            (params team-color ?team-color))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	=>
+	(bind ?zone M-Z33)
+	(if (eq ?team-color CYAN) then (bind ?zone C-Z33))
 	(plan-assert-sequential ENTER-FIELD-PLAN ?goal-id ?robot
-		(plan-assert-action enter-field ?robot ?team-color)
+		(plan-assert-action enter-field ?robot ?zone)
 	)
 	(modify ?g (mode EXPANDED))
 )
