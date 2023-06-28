@@ -509,20 +509,20 @@
 (defrule execution-monitoring-repeated-goal-retry-timeout
 " If a goal fails a pre-determined number of times, give it a timeout for executability."
 	(declare (salience ?*MONITORING-SALIENCE*))
-	(goal (id ?goal-id) (mode FORMULATED))
-	?gm <- (goal-meta (goal-id ?goal-id) (retries ?retries&:(> ?retries ?*GOAL-RETRY-MAX*)))
+	(goal (id ?goal-id) (mode FINISHED|EVALUATED|RETRACTED) (outcome FAILED))
+	?gm <- (goal-meta (goal-id ?goal-id) (retries ?retries&:(> ?retries ?*GOAL-RETRY-MAX*) (assigned-to ?robot)))
 	(wm-fact (key refbox game-time) (values $?now))
 	=>
 	(printout error "Goal " ?goal-id " was retried " ?*GOAL-RETRY-MAX* " times, give it a timeout of " ?*GOAL-RETRY-TIMEOUT* "s." crlf)
 	(assert (goal-retry-wait-timer (goal-id ?goal-id) (timeout-duration ?*GOAL-RETRY-TIMEOUT*) (start-time ?now)))
-	(assert (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id)))
+	(assert (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot)))
 	(modify ?gm (retries 0))
 )
 
 (defrule execution-monitoring-repeated-goal-retry-timeout-over
 	(wm-fact (key refbox game-time) (values $?now))
 	?gt <- (goal-retry-wait-timer (goal-id ?goal-id) (start-time $?st) (timeout-duration ?td&:(timeout ?now ?st ?td)))
-	?wf <- (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id))
+	?wf <- (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot))
 	=>
 	(retract ?gt ?wf)
 )

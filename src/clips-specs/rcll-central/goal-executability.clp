@@ -155,7 +155,7 @@
 	                    cap-color ?
 	            )))
 	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
-	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id)))
+	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot)))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
@@ -197,7 +197,7 @@
 	                                   $?)
 	                          (is-executable FALSE))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (order-id ?order))
-	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id)))
+	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot)))
 	(wm-fact (key domain fact order-complexity args? ord ?order com ?order-complexity))
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
@@ -261,7 +261,7 @@
 	                                   $?)
 	                          (is-executable FALSE))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (order-id ?order))
-	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id)))
+	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot)))
 
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
@@ -303,7 +303,7 @@
 	                                   $?)
 	                          (is-executable FALSE))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id)))
+	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot)))
 
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
@@ -332,7 +332,7 @@
 	                          (params  wp ?wp&~UNKNOWN wp-loc ?wp-loc wp-side ?wp-side)
 	                          (is-executable FALSE))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id)))
+	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot)))
 
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
@@ -371,7 +371,7 @@
 	                                   $?)
 	                          (is-executable FALSE))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id)))
+	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot)))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	;MPS-RS CEs (a cap carrier can be used to fill a RS later)
 	(wm-fact (key domain fact mps-type args? m ?target-mps t RS))
@@ -440,7 +440,7 @@
 	                                   $?other-params)
 	                          (is-executable FALSE))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (order-id ?order))
-	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id)))
+	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot)))
 	(goal (id ?buffer-goal-id) (class BUFFER-CAP) (mode ~FORMULATED))
 	(goal-meta (goal-id ?buffer-goal-id) (order-id ?order))
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -511,7 +511,7 @@
 	                                   $?)
 	                          (is-executable FALSE))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id)))
+	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot)))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	;MPS-RS CEs
 	(wm-fact (key domain fact mps-type args? m ?target-mps t RS))
@@ -581,7 +581,7 @@ The workpiece remains in the output of the used ring station after
 	                                   $?)
 	                          (is-executable FALSE))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (ring-nr ?nr))
-	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id)))
+	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot)))
 	; Robot CEs
 	(wm-fact (key refbox team-color) (value ?team-color))
 	(not (and (wm-fact (key domain fact mps-type args? m ?wp-loc t BS))
