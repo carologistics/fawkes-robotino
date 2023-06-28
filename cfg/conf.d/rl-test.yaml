@@ -11,7 +11,7 @@ rl-agent:
   env_name: "blocks"  # "blockstower"
 
   # Name of saved rl agent after training
-  name: "MaskablePPO_RCLL_23-02-09_14-42.zip"
+  name: "MaskablePPO_RCLL_robotino1-partial.zip"
   # Directory where the rl agent is saved after training
   # And to look for trained agent files
   dir: "@FAWKES_BASEDIR@/src/plugins/rl-test/rl-agent"

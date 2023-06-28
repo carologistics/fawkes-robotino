@@ -65,8 +65,8 @@ clips-executive:
             files: ["BATCH|robmem-wait-init.clp"]
             wait-for: robmem-initialized
           - name: robot_memory
-          - name: rl-test
-          - name: clips_gym
+          - name: clips-executive-rl
+          - name: clips-gym
         stage-3:
           - name: utils
             file: rcll-central/utils.clp
