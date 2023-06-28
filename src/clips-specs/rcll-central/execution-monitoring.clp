@@ -547,14 +547,14 @@
 				 (param-values ?robot ?wp ?mps ?side ?complexity))
 	?wp-atf <- (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side))
 
-	(not (wm-fact (key monitoring action-retried wp-check args? r ?robot a wp-put id ?id-put-sym&:(eq ?id-put-sym (sym-cat ?id-put)) m ?mps g ?goal-id)))
+	(not (wm-fact (key monitoring retry-after-sensing args? r ?robot a wp-put id ?id-put-sym&:(eq ?id-put-sym (sym-cat ?id-put)) m ?mps g ?goal-id)))
 	=>
 	(printout error "WP " ?wp " was expected to be at " ?mps " (" ?side") but could not be detected. Restarting wp-put!")
 	(modify ?pa-check (state FORMULATED) (error-msg ""))
 	(modify ?pa-put (state FORMULATED) (error-msg ""))
 
 	(assert
-	  (wm-fact (key monitoring action-retried wp-check args? r ?robot a wp-put id (sym-cat ?id-put) m ?mps g ?goal-id))
+	  (wm-fact (key monitoring retry-after-sensing args? r ?robot a wp-put id (sym-cat ?id-put) m ?mps g ?goal-id))
 	)
 	(retract ?wp-atf)
 	(assert (wm-fact (key domain fact holding args? r ?robot wp ?wp) (type BOOL) (value TRUE)))
@@ -578,7 +578,7 @@
 				 (param-values ?robot ?wp ?mps ?side ?complexity))
 
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side))
-	(wm-fact (key monitoring action-retried wp-check args? r ?robot a wp-put id ?id-put-sym&:(eq ?id-put-sym (sym-cat ?id-put)) m ?mps g ?goal-id))
+	(wm-fact (key monitoring retry-after-sensing args? r ?robot a wp-put id ?id-put-sym&:(eq ?id-put-sym (sym-cat ?id-put)) m ?mps g ?goal-id))
 	=>
 	(printout error "WP " ?wp " was expected to be at " ?mps " (" ?side") but could not be detected. Assume WP was lost.")
 	(assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))
