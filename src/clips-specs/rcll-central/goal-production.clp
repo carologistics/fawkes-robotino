@@ -481,13 +481,13 @@
 )
 
 (deffunction goal-production-assert-enter-field
-  (?team-color ?robot)
+  (?robot ?zone)
 
   (bind ?goal (assert (goal (class ENTER-FIELD)
               (id (sym-cat ENTER-FIELD- (gensym*)))
               (sub-type SIMPLE)
               (verbosity NOISY) (is-executable FALSE)
-              (params team-color ?team-color)
+              (params zone ?zone)
               (meta-template goal-meta)
   )))
   (goal-meta-assert-restricted ?goal ?robot)
@@ -935,6 +935,18 @@
   (modify ?i (params wp UNKNOWN target-mps ?ds))
 )
 
+(defrule goal-production-assert-enter-field-zones
+  (not (wm-fact (key enter-field targets) (values $?zones)))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  =>
+	(if (eq ?team-color CYAN) then
+    (assert (wm-fact (key enter-field targets) (is-list TRUE) (type SYMBOL) (values C-Z33 C-Z23 C-Z43)))
+  else
+    (assert (wm-fact (key enter-field targets) (is-list TRUE) (type SYMBOL) (values M-Z33 M-Z23 M-Z43)))
+  )
+)
+
+
 (defrule goal-production-create-enter-field
   "Enter the field (drive outside of the starting box)."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
@@ -947,11 +959,11 @@
     )
   )
   (domain-facts-loaded)
-  (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key refbox phase) (value PRODUCTION))
+  ?targets <- (wm-fact (key enter-field targets) (values ?zone $?zones))
   =>
   (printout t "Goal " ENTER-FIELD " formulated" crlf)
-  (goal-production-assert-enter-field ?team-color ?robot)
+  (goal-production-assert-enter-field ?robot ?zone)
 )
 
 (defrule goal-production-remove-enter-field
