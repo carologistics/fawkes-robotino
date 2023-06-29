@@ -441,8 +441,6 @@
 	                          (is-executable FALSE))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (order-id ?order))
 	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot)))
-	(goal (id ?buffer-goal-id) (class BUFFER-CAP) (mode ~FORMULATED))
-	(goal-meta (goal-id ?buffer-goal-id) (order-id ?order))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	;MPS-RS CEs (a cap carrier can be used to fill a RS later)
 	(wm-fact (key domain fact mps-type args? m ?target-mps t RS))
