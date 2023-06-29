@@ -1,7 +1,7 @@
 # *****************************************************************************
 # CMake Build System for Fawkes
 # -------------------
-# Copyright (C) 2023 by Tarik Viehmann and Daniel Swoboda
+# Copyright (C) 2023 by Tarik Viehmann
 #
 # *****************************************************************************
 #
@@ -19,19 +19,29 @@
 # this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # *****************************************************************************
+set(PLUGIN_clips-gym-rcll
+    ON
+    CACHE BOOL "Build clips-gym-rcll")
 
-set_output_directory_plugins()
+if(PLUGIN_clips-gym-rcll)
+  add_library(clips-gym-rcll MODULE clips-gym-rcll-plugin.cpp
+                                    clips-gym-rcll-thread.cpp)
 
-set(CMAKE_SHARED_MODULE_PREFIX "")
-add_subdirectory(clips-motor-switch)
-add_subdirectory(clips-gym-rcll)
-add_subdirectory(navgraph-generator-mps)
-add_subdirectory(skiller_motor_state)
-add_subdirectory(mps-laser-gen)
-add_subdirectory(laser_front_dist)
-add_subdirectory(tag_vision)
-add_subdirectory(object-tracking)
-add_subdirectory(conveyor_pose)
-add_subdirectory(conveyor_plane)
-add_subdirectory(arduino)
-add_subdirectory(box_detect)
+  depend_on_clipsmm(clips-gym-rcll)
+  depend_on_cpp_version(clips-gym-rcll 17)
+  target_link_libraries(clips-gym-rcll pybind11::headers)
+  target_link_libraries(
+    clips-gym-rcll
+    fawkescore
+    fawkesutils
+    fawkesaspects
+    fawkesbaseapp
+    fawkesblackboard
+    fawkesinterface
+    fawkesclipsaspect
+    fawkeslogging
+    Python3::Module
+    Python3::Python)
+else()
+  plugin_disabled_message("clips-gym-rcll")
+endif()
