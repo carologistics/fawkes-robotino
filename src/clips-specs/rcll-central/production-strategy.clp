@@ -554,6 +554,7 @@
   (wm-fact (key domain fact rs-ring-spec args? m ?rs2 r ?col-r2 $?))
   (wm-fact (key domain fact rs-ring-spec args? m ?rs3 r ?col-r3 $?))
   (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact mps-type args? m ?ds t DS))
   ; WP Meta CEs
   ?ns <- (wm-fact (key wp meta points-current args? wp ?wp) (value ?p-curr))
   ?wm <- (wm-fact (key wp meta next-step args? wp ?wp)
@@ -587,11 +588,6 @@
                (not (eq ?curr-step DELIVER)))
 ))
 =>
-  (bind ?ds MOCKUP-DS)
-  (do-for-fact ((?wf wm-fact)) (wm-key-prefix ?wf:key (create$ domain fact mps-type))
-    (eq DS (wm-key-arg ?wf:key t))
-    (bind ?ds (wm-key-arg ?wf:key m))
-  )
   (bind ?new-step DELIVER)
   (bind ?new-machine ?ds)
   (if (not (eq ?wp-col-r1 ?col-r1))
