@@ -293,29 +293,77 @@
 )
 
 
-; -------------------- Handle orphaned workpieces ------------------------
+; -------------------- Clean-up Goals ------------------------
 
-(defrule goal-request-take-over-orphaned-workpiece
-  "If there is an unhandled payment request that has associated pay-with-base
-  goals update the parameters s.t. orphaned workpieces are used to pay."
-  (wm-fact (key request pay args? ord ?order-id m ?rs $?) (values status ACTIVE assigned-to ?payment-goal-id ?instruct-goal-id))
-  ?instruct-goal <- (goal (id ?instruct-goal-id) (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED))
-  ?payment-goal <- (goal (id ?payment-goal-id) (class PAY-FOR-RINGS-WITH-BASE) (mode FORMULATED) (params wp ?wp wp-loc ?bs wp-side ?wp-side target-mps ?target target-side ?target-side))
+(defrule goal-request-handler-clean-up-holding
+  " If there is an orphaned WP create a handling request."
+  (domain-object (name ?orphaned-wp) (type workpiece))
 
-  (wm-fact (key domain fact wp-at args? wp ?existing-wp m ?bs side ?any-side))
-  (not (goal (mode ~RETRACTED) (params $? ?existing-wp $?)))
-
-  ;gather wp facts for cleanup
-  ?wp-fact <- (domain-object (name ?wp) (type workpiece))
-  ?wp-unused-fact <- (domain-fact (name wp-unused) (param-values ?wp))
-  ?wp-color-fact <- (wm-fact (key domain fact wp-base-color args? wp ?wp $?))
+  (wm-fact (key domain fact holding args? r ?robot wp ?orphaned-wp))
+  ; it is orphaned, i.e. there is no clean-up request and it does not occur in any goal
+  (not (goal (mode ~RETRACTED) (params $? ?orphaned-wp $?)))
+  (not (wm-fact (key request clean-up args? wp ?orphaned-wp $?)))
   =>
-  ;modify the request-associated goals
-  (modify ?payment-goal (params wp ?existing-wp wp-loc ?bs wp-side ?wp-side target-mps ?target target-side ?target-side))
-  (modify ?instruct-goal (mode FINISHED) (outcome COMPLETED))
-  ;clean up the wp facts
-  (retract ?wp-fact ?wp-unused-fact ?wp-color-fact)
+  (assert (wm-fact (key request clean-up args? wp ?orphaned-wp  mps HOLDING side HOLDING ) (values status OPEN assigned-to)))
 )
+
+(defrule goal-request-handler-clean-up-at-machine
+  " If there is an orphaned WP at a machine create a handling request."
+  (domain-object (name ?orphaned-wp) (type workpiece))
+
+  (wm-fact (key domain fact wp-at args? wp ?orphaned-wp m ?mps side ?side))
+  ; it is orphaned, i.e. there is no clean-up request and it does not occur in any goal
+  (not (goal (mode ~RETRACTED) (params $? ?orphaned-wp $?)))
+  (not (wm-fact (key request clean-up args? wp ?orphaned-wp  $?)))
+  =>
+  (assert (wm-fact (key request clean-up args? wp ?orphaned-wp mps ?mps side ?side) (values status OPEN assigned-to)))
+)
+
+(defrule goal-request-handler-clean-up-activate-pay
+  " If there is an orphaned WP and there are empty slides create a payment goal.
+  "
+  ?request <- (wm-fact (key request clean-up args? wp ?wp mps ?mps side ?side) (values status OPEN assigned-to))
+  (domain-fact (name rs-filled-with) (param-values ?rs&:(< (compute-rs-total-payments ?rs) 3)))
+
+  (goal (class SUPPORT-ROOT) (id ?root-id))
+  =>
+  (bind ?payment-goal (goal-production-assert-pay-for-rings-with-base ?wp ?mps ?side ?rs INPUT nil))
+  (modify ?request (values status ACTIVE assigned-to (fact-slot-value ?payment-goal id)))
+  (modify ?payment-goal (parent ?root-id) (priority 100))
+)
+
+(defrule goal-request-handler-clean-up-activate-discard
+  " If there is an orphaned WP and there are no empty slides create a discard goal.
+  "
+  ?request <- (wm-fact (key request clean-up args? wp ?wp mps ?mps side ?side) (values status OPEN assigned-to))
+  (not (domain-fact (name rs-filled-with) (param-values ?rs&:(< (compute-rs-total-payments ?rs) 2))))
+
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact mps-type args? m ?ds t DS))
+  (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
+
+  (goal (class SUPPORT-ROOT) (id ?root-id))
+  (goal (class INSTRUCTION-ROOT) (id ?instruct-root-id))
+  =>
+  (bind ?discard-goal (goal-production-assert-discard ?wp ?mps ?side nil))
+  (bind ?instruct-goal (goal-production-assert-instruct-ds-discard ?wp ?ds))
+  (modify ?request (values status ACTIVE assigned-to (fact-slot-value ?discard-goal id) (fact-slot-value ?instruct-goal id)))
+  (modify ?discard-goal (parent ?root-id) (priority 100))
+  (modify ?instruct-goal (parent ?instruct-root-id) (priority 100))
+)
+
+
+(defrule goal-request-handler-convert-clean-up
+  "If the clean-up goals for payment were finished, convert them to an offer "
+  ?request <- (wm-fact (key request clean-up args? wp ?wp mps ?mps side ?side) (values status ACTIVE assigned-to $?clean-up-goals))
+
+  ;the associated goals were completed
+  (goal (class PAY-FOR-RINGS-WITH-BASE) (id ?id&:(member$ ?id ?clean-up-goals)) (mode RETRACTED) (outcome COMPLETED) (params $? target-mps ?rs $?))
+  =>
+  (retract ?request)
+  (assert (wm-fact (key request offer pay args? ord nil m ?rs) (values assigned-to ?clean-up-goals)))
+)
+
 
 
 
