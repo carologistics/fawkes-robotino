@@ -510,7 +510,7 @@
 " If a goal fails a pre-determined number of times, give it a timeout for executability."
 	(declare (salience ?*MONITORING-SALIENCE*))
 	(goal (id ?goal-id) (mode FINISHED|EVALUATED|RETRACTED) (outcome FAILED))
-	?gm <- (goal-meta (goal-id ?goal-id) (retries ?retries&:(> ?retries ?*GOAL-RETRY-MAX*) (assigned-to ?robot)))
+	?gm <- (goal-meta (goal-id ?goal-id) (retries ?retries&:(> ?retries ?*GOAL-RETRY-MAX*)) (assigned-to ?robot))
 	(wm-fact (key refbox game-time) (values $?now))
 	=>
 	(printout error "Goal " ?goal-id " was retried " ?*GOAL-RETRY-MAX* " times, give it a timeout of " ?*GOAL-RETRY-TIMEOUT* "s." crlf)
