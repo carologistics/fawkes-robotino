@@ -186,7 +186,7 @@
                   ?wp
                   ?mps
                   ?side $?)
-    (state WAITING|RUNNING) (goal-id ?goal-id) (plan-id ?plan-id)
+    (state RUNNING|WAITING) (goal-id ?goal-id) (plan-id ?plan-id)
   )
   (wm-fact (key domain fact mps-state args? m ?mps s PROCESSED|READY-AT-OUTPUT|IDLE))
   (not (refbox-agent-task (robot ?robot) (task-id ?seq)))
@@ -204,8 +204,8 @@
     (param-values ?robot
                   ?wp
                   ?mps
-                  ?shelf-spot  $?)
-    (state WAITING|RUNNING) (goal-id ?goal-id) (plan-id ?plan-id)
+                  ?shelf-spot $?)
+    (state RUNNING|WAITING) (goal-id ?goal-id) (plan-id ?plan-id)
   )
   (not (refbox-agent-task (robot ?robot) (task-id ?seq)))
   =>
@@ -225,7 +225,7 @@
                   ?wp
                   ?mps
                   ?side $?)
-    (state WAITING|RUNNING) (goal-id ?goal-id) (plan-id ?plan-id)
+    (state RUNNING|WAITING) (goal-id ?goal-id) (plan-id ?plan-id)
   )
   (not (refbox-agent-task (robot ?robot) (task-id ?seq)))
   =>
