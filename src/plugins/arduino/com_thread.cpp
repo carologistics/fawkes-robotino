@@ -197,11 +197,11 @@ ArduinoComThread::append_message_to_queue(char cmd, unsigned int value)
 void
 ArduinoComThread::append_message_to_queue(ArduinoComMessage *msg)
 {
+	std::scoped_lock lock(queue_mutex);
 	if (std::find(*messages_.begin(), *messages_.end(), msg) != *messages_.end()) {
 		//Checking if this one is already in the queue
 		return;
 	}
-	std::scoped_lock lock(queue_mutex);
 	messages_.push_back(msg);
 }
 
@@ -234,7 +234,8 @@ ArduinoComThread::append_config_messages()
 void
 ArduinoComThread::handle_queue()
 {
-	int i = 0;
+	std::scoped_lock lock(queue_mutex);
+	int              i = 0;
 	while (messages_.size() > 0 && i < 10) {
 		arduino_if_->set_final(false);
 		arduino_if_->set_status(ArduinoInterface::MOVING);
@@ -291,7 +292,6 @@ ArduinoComThread::send_message_from_queue()
 		return false; //Let the timer handle that
 	}
 	if (messages_.size() > 0) {
-		std::scoped_lock   lock(queue_mutex);
 		ArduinoComMessage *cur_msg = messages_.front();
 		if (!send_message(*cur_msg)) {
 			return false;
