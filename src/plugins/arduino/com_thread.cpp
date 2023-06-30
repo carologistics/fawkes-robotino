@@ -197,7 +197,7 @@ ArduinoComThread::append_message_to_queue(char cmd, unsigned int value)
 void
 ArduinoComThread::append_message_to_queue(ArduinoComMessage *msg)
 {
-	if (std::find(*messages_.begin(), *messages_.end(), msg) != vec.end()) {
+	if (std::find(*messages_.begin(), *messages_.end(), msg) != *messages_.end()) {
 		//Checking if this one is already in the queue
 		return;
 	}
