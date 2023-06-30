@@ -307,17 +307,17 @@
   (return (create$ ?x ?y 0.48))
 )
 
-(deffunction navgraph-add-tags-from-exploration (?output-odd)
+(deffunction navgraph-add-tags-from-exploration ()
   "Send all explored tags to the navgraph generator"
 	(bind ?any-tag-to-add FALSE)
 
 	(bind ?interfaces (get-interfaces "NavGraphWithMPSGeneratorInterface" "navgraph-generator-mps"))
 	(bind ?interfaces (append$ ?interfaces (get-laptop-interfaces "NavGraphWithMPSGeneratorInterface" "navgraph-generator-mps")))
-	(delayed-do-for-all-facts ((?res exploration-result)) TRUE
-		(bind ?side (tag-id-to-side ?res:tag-id ?output-odd))
+	(delayed-do-for-all-facts ((?res exploration-result)) (eq ?res:status PARTIAL_CORRECT)
+		(bind ?side INPUT)
 		(bind ?frame "map")
 		(bind ?trans ?res:trans)
-		(bind ?rot  ?res:rot)
+		(bind ?rot ?res:rot)
 		(bind ?zone ?res:zone)
 		(bind ?mps ?res:machine)
 		(bind ?any-tag-to-add TRUE)

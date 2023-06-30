@@ -10,6 +10,7 @@
 (defglobal
   ?*EXP-MOVEMENT-COMPENSATION* = 0.0
   ?*EXP-SEARCH-LIMIT* = 1
+  ?*MIRRORED-FIELD* = FALSE
 )
 
 (deffunction exp-assert-move
@@ -150,7 +151,7 @@
 	)
 	=>
 	(bind ?g (goal-tree-assert-central-run-parallel EXPLORATION-ROOT))
-	(modify ?g (meta do-not-finish) (priority 0.0))
+	(modify ?g (meta do-not-finish) (priority 0.0) (mode SELECTED))
 )
 
 (defrule exp-move-executable
@@ -286,6 +287,7 @@
 " Mark a zone as empty if there can not be a machine according to the rules
 "
   (exploration-result (zone ?zn) (machine ?machine) (orientation ?orientation) )
+  (domain-object (name ?machine) (type mps))
   ?wm <- (domain-fact (name zone-content) (param-values ?zn2 UNKNOWN))
   (test (eq TRUE (zone-is-blocked ?zn ?orientation ?zn2 ?machine)))
   =>
@@ -347,7 +349,7 @@
       (not (and (wm-fact (key exploration fact tag-vis args? zone ?zn2) (value ?tv2&:(> ?tv2 0)))
 		            (wm-fact (key exploration fact time-searched args? zone ?zn2) (value ?ts2&:(<= ?ts2 ?*EXP-SEARCH-LIMIT*)))
 		            (wm-fact (key domain fact zone-content args? z ?zn2 m UNKNOWN))
-	              (not (exploration-result (zone ?zn2)))
+	              (not (exploration-result (zone ?zn2-sub&:(eq ?zn2 (zone-string-to-sym-dash ?zn2-sub)))))
 	         )
       )
   )
@@ -357,7 +359,7 @@
 	          (wm-fact (key exploration fact tag-vis args? zone ?zn3) (value ?tv3& : (not (and (> ?tv 0) (= ?tv3 0)))))
 	          (wm-fact (key exploration fact time-searched  args? zone ?zn3) (value ?ts3&:(<= ?ts3 ?*EXP-SEARCH-LIMIT*)))
 	          (wm-fact (key domain fact zone-content args? z ?zn3 m UNKNOWN))
-            (not (exploration-result (zone ?zn3)))
+            (not (exploration-result (zone ?zn3-sub&:(eq ?zn3 (zone-string-to-sym-dash ?zn3-sub)))))
 	     )
   )
 
@@ -365,7 +367,7 @@
 
   ; Only start interrupting the EXPLORATION-PLAN if the first move action was finished.
   ; This prohibits, that all bots start exploring zones right in front of the insertion zone
-  (not (exploration-result (zone ?zn)))
+  (not (exploration-result (zone ?zn-sub&:(eq ?zn (zone-string-to-sym-dash ?zn-sub)))))
 	; TODO: set navigator speed to max when executing the plan
   ;(exp-navigator-vmax ?r ?vel ?rot)
   =>
@@ -444,61 +446,15 @@
              (eq ?machine (mirror-name ?some-machine)))
              t ?mtype))
   ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (value ?times-searched))
-  ?zm <- (domain-fact (name zone-content) (param-values ?zn2 ?))
+  ?zm <- (domain-fact (name zone-content) (param-values ?zn2 UNKNOWN))
   ; This is for a mirrored field
   ;?zm2 <- (domain-fact (name zone-content) (param-values ?zn3&:(eq (mirror-name ?zn2) ?zn3) ?))
-
-  (not (exploration-result (machine ?machine) (zone ?zn2)))
   =>
   (modify ?ze (value (+ 1 ?times-searched)))
   (modify ?zm (param-values ?zn2 ?machine))
-  ;(modify ?zm2 (param-values ?zn3 (mirror-name ?machine)))
-  (assert
-    (exploration-result
-      (machine ?machine) (zone ?zn2)
-      (orientation ?orientation)
-      (team ?team-color)
-      (trans ?trans)
-      (rot ?rot)
-      (tag-id ?tag-id)
-    )
-    (exploration-result
-      (machine (mirror-name ?machine)) (zone (mirror-name ?zn2))
-      (orientation (mirror-orientation ?mtype ?zn2 ?orientation))
-      (team (mirror-team ?team-color))
-    )
-  )
   (printout t "EXP exploration fact zone successful. Found " ?machine " in " ?zn2 crlf)
 )
 
-(defrule exp-report-to-refbox
-" Regularly send all found machines to the refbox"
-  (wm-fact (key refbox phase) (value EXPLORATION|PRODUCTION))
-  (wm-fact (key refbox team-color) (value ?color))
-  (exploration-result (team ?color) (machine ?machine) (zone ?zone)
-    (orientation ?orientation)
-  )
-  (time $?now)
-  ?ws <- (timer (name send-machine-reports) (time $?t&:(timeout ?now ?t 1)) (seq ?seq))
-  (wm-fact (key refbox game-time) (values $?game-time))
-  (wm-fact (id "/config/rcll/exploration/latest-send-last-report-time")
-    (value ?latest-report-time)
-  )
-  (wm-fact (key refbox team-color) (value ?team-color&~nil))
-  (wm-fact (key refbox comm peer-id private) (value ?peer))
-=>
-  (bind ?mr (pb-create "llsf_msgs.MachineReport"))
-  (pb-set-field ?mr "team_color" ?team-color)
-  (delayed-do-for-all-facts ((?er exploration-result)) (eq ?er:team ?team-color)
-      (bind ?mre (pb-create "llsf_msgs.MachineReportEntry"))
-      (pb-set-field ?mre "name" (str-cat ?er:machine))
-      (pb-set-field ?mre "zone" (protobuf-name ?er:zone))
-      (pb-set-field ?mre "rotation" ?er:orientation)
-      (pb-add-list ?mr "machines" ?mre)
-  )
-  (pb-broadcast ?peer ?mr)
-  (modify ?ws (time ?now) (seq (+ ?seq 1)))
-)
 
 (defrule exp-stop-when-all-found
 	?exp-active <- (wm-fact (key exploration active) (type BOOL) (value TRUE))
@@ -524,4 +480,161 @@
   (wm-fact (key exploration active) (type BOOL) (value FALSE))
   =>
   (modify ?g (mode FINISHED) (outcome COMPLETED))
+)
+
+(defrule exp-setup-enable-camera
+	"Enable the camera for machine detection at the beginning of exploration."
+	(wm-fact (key exploration active) (type BOOL) (value TRUE))
+	(wm-fact (key central agent robot args? r ?robot))
+	=>
+	(exploration-camera-enable ?robot)
+)
+
+(defrule exp-setup-create-exploration-timer
+	"Start the timer for reporting detected machines."
+	(wm-fact (key refbox phase) (value EXPLORATION|PRODUCTION))
+	(wm-fact (key game state) (value RUNNING))
+	=>
+	(assert (timer (name send-partial-machine-reports)))
+	(assert (timer (name send-full-machine-reports)))
+)
+
+(defrule exp-report-map-interface-to-exploration-result
+	"Take the information from the exploration interface and map it to a exploration-result fact."
+	(wm-fact (key exploration active) (value TRUE))
+	(BoxInterface
+		(box_type ?mps-string)
+		(orientation ?orientation)
+		(zone ?zone-string)
+	)
+
+	(not (exploration-result (zone ?zone&:(eq ?zone (zone-string-to-sym ?zone-string)))))
+	=>
+	(assert (exploration-result (team UNKNOWN) (machine (sym-cat ?mps-string)) (zone (zone-string-to-sym ?zone-string)) (orientation ?orientation)))
+)
+
+(defrule exp-report-send-partial
+	"Send exploration result if team unknown"
+	(wm-fact (key exploration active) (value TRUE))
+	(wm-fact (key refbox phase) (value EXPLORATION|PRODUCTION))
+	(wm-fact (key refbox team-color) (value ?team))
+
+	(time $?now)
+	(wm-fact (key refbox comm peer-id private) (value ?peer))
+	?ws <- (timer (name send-partial-machine-reports) (time $?t&:(timeout ?now ?t 1)) (seq ?seq))
+	=>
+	(modify ?ws (time ?now) (seq (+ ?seq 1)))
+	(bind ?mr (pb-create "llsf_msgs.MachineReport"))
+
+	(delayed-do-for-all-facts ((?er exploration-result)) (and (eq ?er:team UNKNOWN) (or (eq ?er:status REPORTED) (eq ?er:status UNREPORTED)))
+		(bind ?mre (pb-create "llsf_msgs.MachineReportEntry"))
+		(pb-set-field ?mre "type" (str-cat ?er:machine))
+		(pb-set-field ?mre "zone" (protobuf-name ?er:zone))
+		(pb-set-field ?mre "rotation" ?er:orientation)
+		(pb-add-list ?mr "machines" ?mre)
+		(modify ?er (status REPORTED))
+	)
+
+	(pb-set-field ?mr "team_color" ?team)
+	(pb-broadcast ?peer ?mr)
+)
+
+(defrule exp-report-send-full
+	"Send exploration result if we got feedback from the refbox about the specific machine name"
+	(wm-fact (key exploration active) (value TRUE))
+	(wm-fact (key refbox phase) (value EXPLORATION|PRODUCTION))
+	(wm-fact (key refbox team-color) (value ?team))
+
+	(time $?now)
+	(wm-fact (key refbox comm peer-id private) (value ?peer))
+	?ws <- (timer (name send-full-machine-reports) (time $?t&:(timeout ?now ?t 1)) (seq ?seq))
+	=>
+	(modify ?ws (time ?now) (seq (+ ?seq 1)))
+	(bind ?mr (pb-create "llsf_msgs.MachineReport"))
+
+	(delayed-do-for-all-facts ((?er exploration-result)) (and (eq ?er:team ?team) (eq ?er:status PARTIAL_CORRECT))
+		(bind ?mre (pb-create "llsf_msgs.MachineReportEntry"))
+		(pb-set-field ?mre "name" (str-cat ?er:machine))
+		(pb-set-field ?mre "type" (sub-string 3 4 (str-cat ?er:machine)))
+		(pb-set-field ?mre "zone" (protobuf-name ?er:zone))
+		(pb-set-field ?mre "rotation" ?er:orientation)
+		(pb-add-list ?mr "machines" ?mre)
+	)
+
+	(pb-set-field ?mr "team_color" ?team)
+	(pb-broadcast ?peer ?mr)
+)
+
+(defrule refbox-recv-MachineReportInfo
+  ?pb-msg <- (protobuf-msg (type "llsf_msgs.MachineReportInfo") (ptr ?p))
+  =>
+  (bind ?machines (create$))
+
+  (foreach ?m (pb-field-list ?p "reported_types")
+	(do-for-fact ((?er exploration-result))
+		(and
+				(eq ?er:zone (sym-cat (pb-field-value ?m "zone")))
+				(eq ?er:machine (sym-cat (pb-field-value ?m "type")))
+				(eq ?er:status REPORTED)
+		)
+		(bind ?m-name (sym-cat (pb-field-value ?m "name")))
+		(bind ?m-color (sym-cat (pb-field-value ?m "team_color")))
+		(bind ?m-zone (sym-cat (pb-field-value ?m "zone")))
+		(bind ?m-type (sym-cat (pb-field-value ?m "type")))
+
+		(if (not (any-factp ((?er2 exploration-result)) (eq ?er2:zone (mirror-name ?m-zone)))) then
+			(if ?*MIRRORED-FIELD* then
+				(assert
+					(exploration-result
+						(machine (mirror-name ?m-name))
+						(zone (mirror-name ?m-zone))
+						(orientation (mirror-orientation ?m-type ?m-zone ?er:orientation))
+						(team (mirror-team ?m-color))
+						(status PARTIAL_CORRECT)
+						(trans (tag-offset (zone-string-to-sym-dash (str-cat ?m-zone)) (deg-to-rad (mirror-orientation ?m-type ?m-zone ?er:orientation)) 0.17))
+						(rot (tf-quat-from-yaw (deg-to-rad (mirror-orientation ?m-type ?m-zone ?er:orientation))))
+					)
+				)
+			else
+				(assert
+					(exploration-result
+						(machine (mirror-name ?m-name))
+						(zone  ?m-zone)
+						(orientation ?er:orientation)
+						(team (mirror-team ?m-color))
+						(status PARTIAL_CORRECT)
+						(trans (tag-offset (zone-string-to-sym-dash (str-cat ?m-zone)) (deg-to-rad ?er:orientation) 0.17))
+						(rot (tf-quat-from-yaw (deg-to-rad ?er:orientation)))
+					)
+				)
+			)
+		)
+		(modify ?er (status PARTIAL_CORRECT)
+					(machine ?m-name)
+					(team ?m-color)
+					(trans (tag-offset (zone-string-to-sym-dash (str-cat ?er:zone)) (deg-to-rad ?er:orientation) 0.17))
+					(rot (tf-quat-from-yaw (deg-to-rad ?er:orientation)))
+		)
+		(navgraph-add-tags-from-exploration)
+  	)
+  )
+)
+
+(defrule exp-stop-disable-goals
+	"Exploration is not needed anymore, as all machines were found.
+  	 Remove assignments and retract goal/goal-meta facts."
+	(wm-fact (key exploration active) (type BOOL) (value FALSE))
+	?gf <-(goal (id ?id) (class EXPLORATION-MOVE) (mode FORMULATED))
+  	?gm <- (goal-meta (goal-id ?id) (assigned-to nil))
+	=>
+	(remove-robot-assignment-from-goal-meta ?gf)
+	(retract ?gf ?gm)
+)
+
+(defrule exp-stop-disable-camera
+	"Disable the camera once the exploration is over."
+	(wm-fact (key exploration active) (type BOOL) (value FALSE))
+	(wm-fact (key central agent robot args? r ?robot))
+	=>
+	(exploration-camera-disable ?robot)
 )
