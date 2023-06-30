@@ -123,7 +123,7 @@ private:
 	unsigned int cfg_a_toggle_steps_;
 	unsigned int cfg_a_half_toggle_steps_;
 
-	bool movement_pending_;
+	volatile bool movement_pending_;
 
 	unsigned int msecs_to_wait_;
 	unsigned int no_data_count = 0;

@@ -1,5 +1,5 @@
 /***************************************************************************
- *  com_thread.cpp - Arduino com thread
+ *  serialport.h - Serial Port handler
  *
  *  Created:  Tue 6 Jun 15:57:10 2023
  *  Copyright:	2023 Tim Wendt		
@@ -36,10 +36,10 @@ typedef boost::shared_ptr<boost::asio::serial_port> serial_port_ptr;
 class SerialPort
 {
 protected:
-	bool terminate_thread = false;
-	boost::thread serial_service_thread_;
-	boost::asio::io_service       io_service_;
-	serial_port_ptr               port_;
+	volatile bool           terminate_thread = false;
+	boost::thread           serial_service_thread_;
+	boost::asio::io_service io_service_;
+	serial_port_ptr         port_;
 	// std::shared_ptr<boost::mutex> mutex_;
 	boost::mutex mutex_;
 
@@ -50,17 +50,17 @@ protected:
 	std::string end_of_command_;
 
 	boost::function<void(const std::string &)> receive_callback_;
-	boost::function<void()> deconstruct_callback_;
+	boost::function<void()>                    deconstruct_callback_;
 	bool                                       has_started = false;
 
 public:
 	SerialPort(std::string                                port,
 	           boost::function<void(const std::string &)> receive_callback,
-               boost::function<void()> deconstruct_callback,
+	           boost::function<void()>                    deconstruct_callback,
 	           // std::shared_ptr<boost::mutex>              mutex,
-	           unsigned int                               baud_rate        = 115200,
-	           std::string                                start_of_command = "AT ",
-	           std::string                                end_of_command   = "+");
+	           unsigned int baud_rate        = 115200,
+	           std::string  start_of_command = "AT ",
+	           std::string  end_of_command   = "+");
 	~SerialPort();
 	bool write(const std::string &buf);
 	bool write(const char *buf, const int &size);
