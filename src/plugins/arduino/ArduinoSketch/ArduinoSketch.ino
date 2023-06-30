@@ -21,7 +21,7 @@ AccelStepper motor_Y(MOTOR_Y_STEP_SHIFT, MOTOR_Y_DIR_SHIFT);
 AccelStepper motor_Z(MOTOR_Z_STEP_SHIFT, MOTOR_Z_DIR_SHIFT);
 AccelStepper motor_A(MOTOR_A_STEP_SHIFT, MOTOR_A_DIR_SHIFT);
 
-long a_toggle_steps      = 240;
+long a_toggle_steps = 240;
 
 #define DEFAULT_MAX_SPEED_X 2000
 #define DEFAULT_MAX_ACCEL_X 5000
@@ -454,8 +454,8 @@ read_package()
 			send_status();
 			break;
 		case CMD_OPEN:
-				set_new_rel_pos(-a_toggle_steps, motor_A);
-				open_gripper = true;
+			set_new_rel_pos(-a_toggle_steps, motor_A);
+			open_gripper = true;
 			break;
 		case CMD_CLOSE:
 			set_new_speed_acc(opening_speed / 8,

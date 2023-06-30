@@ -24,12 +24,12 @@ using serial_port_base = boost::asio::serial_port_base;
 
 SerialPort::SerialPort(std::string                                port,
                        boost::function<void(const std::string &)> receive_callback,
-                       boost::function<void()> deconstruct_callback,
-                       unsigned int baud_rate,
-                       std::string  start_of_command,
-                       std::string  end_of_command)
+                       boost::function<void()>                    deconstruct_callback,
+                       unsigned int                               baud_rate,
+                       std::string                                start_of_command,
+                       std::string                                end_of_command)
 {
-	receive_callback_ = receive_callback;
+	receive_callback_     = receive_callback;
 	deconstruct_callback_ = deconstruct_callback;
 
 	start_of_command_ = start_of_command;
@@ -135,7 +135,7 @@ checksum(const std::string buf)
 void
 SerialPort::on_receive_(const boost::system::error_code &ec, size_t bytes_transferred)
 {
-	if(terminate_thread) {
+	if (terminate_thread) {
 		return;
 	}
 	try {
@@ -204,7 +204,7 @@ SerialPort::~SerialPort()
 		port_->close();
 	}
 
-	if(serial_service_thread_.joinable()) {
+	if (serial_service_thread_.joinable()) {
 		serial_service_thread_.join();
 	}
 

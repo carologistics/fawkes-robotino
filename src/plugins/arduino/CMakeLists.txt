@@ -54,9 +54,8 @@ if(PLUGIN_arduino)
     ${CMAKE_CURRENT_SOURCE_DIR} ${DEV_ARDUINO}
     COMMENT "flash the arduino")
   add_dependencies(arduino flash_arduino)
-  # target_compile_options(arduino PRIVATE -ggdb3 -O0)
-  # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0")
+  # target_compile_options(arduino PRIVATE -ggdb3 -O0) set(CMAKE_CXX_FLAGS
+  # "${CMAKE_CXX_FLAGS} -g -O0")
 else()
   plugin_disabled_message("arduino")
 endif()
-
