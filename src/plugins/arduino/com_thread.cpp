@@ -198,7 +198,7 @@ void
 ArduinoComThread::append_message_to_queue(ArduinoComMessage *msg)
 {
 	std::scoped_lock lock(queue_mutex);
-	if (std::find(*messages_.begin(), *messages_.end(), msg) != *messages_.end()) {
+	if (std::find(messages_.begin(), messages_.end(), msg) != messages_.end()) {
 		//Checking if this one is already in the queue
 		return;
 	}
