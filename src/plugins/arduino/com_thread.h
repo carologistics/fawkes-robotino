@@ -132,14 +132,14 @@ private:
 	int  gripper_pose_[3]     = {0, 0, 0};
 	int  goal_gripper_pose[3] = {0, 7500, 13000};
 	bool goal_gripper_is_open = false;
-	bool is_homed = false;
+	bool is_homed             = false;
 	int  home_gripper_pose[3] = {0, 7500, 13000};
 
 	void timer_callback();
 	void handle_nodata();
 	void receive(const std::string &buff);
 
-	std::queue<ArduinoComMessage *> messages_;
+	std::deque<ArduinoComMessage *> messages_;
 	fawkes::Time                    expected_finish_time_;
 
 	std::unique_ptr<SerialPort> port_;

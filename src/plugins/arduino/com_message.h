@@ -26,9 +26,9 @@
 
 #include <boost/asio.hpp>
 #include <cstdint>
+#include <queue>
 #include <sstream>
 #include <string>
-#include <queue>
 
 class ArduinoComMessage
 {
@@ -42,21 +42,19 @@ public:
 	~ArduinoComMessage();
 	ArduinoComMessage(char cmdid, unsigned int value);
 
-	bool           add_command(char cmd, unsigned int number);
+	bool add_command(char cmd, unsigned int number);
 
-	static bool parse_message_from_arduino(int (&gripperr_position)[3], bool &is_gripper_open, char &arduino_status, std::string buffer);
+	static bool parse_message_from_arduino(int (&gripperr_position)[3],
+	                                       bool       &is_gripper_open,
+	                                       char       &arduino_status,
+	                                       std::string buffer);
 
-	std::string buffer();
+	std::string buffer() const;
 
-	bool operator==(const std::queue<ArduinoComMessage*>& q) {
-		std::queue<ArduinoComMessage*> tmpQueue = q;
-		while(!tmpQueue.empty()) {
-			if(tmpQueue.front()->buffer() == buffer()){
-				return true;
-			}
-			tmpQueue.pop();
-		}
-		return false;
+	bool
+	operator==(const ArduinoComMessage *q)
+	{
+		return q->buffer() == buffer();
 	}
 
 	/**
@@ -66,14 +64,12 @@ public:
 	 */
 	typedef enum { X, Y, Z, A } gripper_pose_t;
 
-
 private:
 	inline void ctor();
-	void dtor();
+	void        dtor();
 
 private:
-	std::stringstream    data_;
-
+	std::stringstream data_;
 };
 
 #endif

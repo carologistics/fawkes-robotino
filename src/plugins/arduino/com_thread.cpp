@@ -82,9 +82,9 @@ ArduinoComThread::receive(const std::string &buf)
 	if (current_arduino_status_ == 'I') {
 		arduino_if_->set_final(true);
 		arduino_if_->set_status(ArduinoInterface::IDLE);
-		if(!is_homed) {
+		if (!is_homed) {
 			if (gripper_pose_[X] != home_gripper_pose[X] || gripper_pose_[Y] != home_gripper_pose[Y]
-				|| gripper_pose_[Z] != home_gripper_pose[Z]) {
+			    || gripper_pose_[Z] != home_gripper_pose[Z]) {
 				ArduinoComMessage *arduino_msg = new ArduinoComMessage();
 				add_command_to_message(arduino_msg, CMD_X_NEW_POS, home_gripper_pose[X]);
 				add_command_to_message(arduino_msg, CMD_Y_NEW_POS, home_gripper_pose[Y]);
@@ -93,13 +93,13 @@ ArduinoComThread::receive(const std::string &buf)
 
 				arduino_if_->set_status(ArduinoInterface::MOVING);
 				arduino_if_->set_final(false);
-			}
-			else {
+			} else {
 				is_homed = true;
 			}
 		}
-		if (is_homed && (gripper_pose_[X] != goal_gripper_pose[X] || gripper_pose_[Y] != goal_gripper_pose[Y]
-		    || gripper_pose_[Z] != goal_gripper_pose[Z] || is_open != goal_gripper_is_open)) {
+		if (is_homed
+		    && (gripper_pose_[X] != goal_gripper_pose[X] || gripper_pose_[Y] != goal_gripper_pose[Y]
+		        || gripper_pose_[Z] != goal_gripper_pose[Z] || is_open != goal_gripper_is_open)) {
 			arduino_if_->set_final(false);
 			ArduinoComMessage *arduino_msg = new ArduinoComMessage();
 			add_command_to_message(arduino_msg, CMD_X_NEW_POS, goal_gripper_pose[X]);
@@ -125,9 +125,9 @@ ArduinoComThread::receive(const std::string &buf)
 	arduino_if_->set_z_position(from_arduino_units(gripper_pose_[Z], Z));
 	arduino_if_->set_gripper_closed(is_open);
 	arduino_if_->write();
-  tf_thread_->set_position(arduino_if_->x_position(),
-                           arduino_if_->y_position(),
-                           arduino_if_->z_position());
+	tf_thread_->set_position(arduino_if_->x_position(),
+	                         arduino_if_->y_position(),
+	                         arduino_if_->z_position());
 }
 
 void
@@ -197,21 +197,18 @@ ArduinoComThread::append_message_to_queue(char cmd, unsigned int value)
 void
 ArduinoComThread::append_message_to_queue(ArduinoComMessage *msg)
 {
-	if (*msg == messages_) {
-        //Checking if this one is already in the queue
+	if (std::find(*messages_.begin(), *messages_.end(), msg) != vec.end()) {
+		//Checking if this one is already in the queue
 		return;
 	}
-	messages_.push(msg);
+	messages_.push_back(msg);
 }
 
 bool
 ArduinoComThread::add_command_to_message(ArduinoComMessage *msg, char command, unsigned int value)
 {
 	if (!msg->add_command(command, value)) {
-		logger->log_error(name(),
-		                  "Faulty command! id: %c value: %u",
-		                  command,
-		                  value);
+		logger->log_error(name(), "Faulty command! id: %c value: %u", command, value);
 		return false;
 	}
 	return true;
@@ -254,7 +251,7 @@ void
 ArduinoComThread::loop()
 {
 	if (!port_ || port_disconnected) {
-        logger->log_warn(name(), "Restarting arduino\n");
+		logger->log_warn(name(), "Restarting arduino\n");
 		port_.reset();
 		port_disconnected = false;
 		try {
@@ -298,7 +295,7 @@ ArduinoComThread::send_message_from_queue()
 			return false;
 		}
 
-		messages_.pop();
+		messages_.pop_front();
 		delete cur_msg;
 		return true;
 	}
@@ -412,8 +409,8 @@ ArduinoComThread::handle_xyz_message(ArduinoInterface::MoveXYZAbsMessage *msg)
 		logger->log_info(name(), "Set new X: %u", new_abs_x);
 		add_command_to_message(arduino_msg, CMD_X_NEW_POS, new_abs_x);
 
-        goal_gripper_pose[X] = new_abs_x;
-		msg_has_data = true;
+		goal_gripper_pose[X] = new_abs_x;
+		msg_has_data         = true;
 	} else {
 		logger->log_error(name(), "Motion exceeds X dimension: %f", msg->x());
 		arduino_if_->set_status(ArduinoInterface::ERROR_OUT_OF_RANGE_X);
@@ -425,8 +422,8 @@ ArduinoComThread::handle_xyz_message(ArduinoInterface::MoveXYZAbsMessage *msg)
 		logger->log_debug(name(), "Set new Y: %u", new_abs_y);
 		add_command_to_message(arduino_msg, CMD_Y_NEW_POS, new_abs_y);
 
-        goal_gripper_pose[Y] = new_abs_y;
-		msg_has_data = true;
+		goal_gripper_pose[Y] = new_abs_y;
+		msg_has_data         = true;
 	} else {
 		logger->log_error(name(), "Motion exceeds Y dimension: %f", msg->y());
 		arduino_if_->set_status(ArduinoInterface::ERROR_OUT_OF_RANGE_Y);
@@ -437,8 +434,8 @@ ArduinoComThread::handle_xyz_message(ArduinoInterface::MoveXYZAbsMessage *msg)
 		logger->log_debug(name(), "Set new Z: %u", new_abs_z);
 		add_command_to_message(arduino_msg, CMD_Z_NEW_POS, new_abs_z);
 
-        goal_gripper_pose[Z] = new_abs_z;
-		msg_has_data = true;
+		goal_gripper_pose[Z] = new_abs_z;
+		msg_has_data         = true;
 	} else {
 		logger->log_error(name(), "Motion exceeds Z dimension: %f", msg->z());
 		arduino_if_->set_status(ArduinoInterface::ERROR_OUT_OF_RANGE_Z);
@@ -541,9 +538,9 @@ ArduinoComThread::bb_interface_message_received(Interface *interface, Message *m
 		append_message_to_queue(CMD_STATUS_REQ);
 		status = true;
 	} else if (message->is_of_type<ArduinoInterface::StopMessage>()) {
-        goal_gripper_pose[X] = gripper_pose_[X];
-        goal_gripper_pose[Y] = gripper_pose_[Y];
-        goal_gripper_pose[Z] = gripper_pose_[Z];
+		goal_gripper_pose[X] = gripper_pose_[X];
+		goal_gripper_pose[Y] = gripper_pose_[Y];
+		goal_gripper_pose[Z] = gripper_pose_[Z];
 		append_message_to_queue(CMD_STOP);
 		status = true;
 	}

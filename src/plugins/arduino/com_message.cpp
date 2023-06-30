@@ -127,7 +127,7 @@ ArduinoComMessage::add_command(char cmd, unsigned int value)
  * @return buffer of escaped data.
  */
 std::string
-ArduinoComMessage::buffer()
+ArduinoComMessage::buffer() const
 {
 #ifdef DEBUG
 	std::cout << "Buffer: " << data_ << std::endl;
@@ -135,7 +135,6 @@ ArduinoComMessage::buffer()
 	// Add terminator character to the end
 	return data_.str().append("+");
 }
-
 
 // @brief if the return is false then the arduino reconed and we need to restart everything
 bool
@@ -145,8 +144,8 @@ ArduinoComMessage::parse_message_from_arduino(int (&gripperr_position)[3],
                                               std::string buffer)
 {
 	std::stringstream ss;
-	std::string s   = buffer;
-	size_t      pos = s.find("AT ");
+	std::string       s   = buffer;
+	size_t            pos = s.find("AT ");
 	if (pos == std::string::npos) {
 		//Not a valid command. This command will be ignored
 		return false;
@@ -194,4 +193,3 @@ ArduinoComMessage::parse_message_from_arduino(int (&gripperr_position)[3],
 	//catched exeption
 	return false;
 }
-
