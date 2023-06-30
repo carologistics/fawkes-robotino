@@ -55,7 +55,8 @@ if(PLUGIN_arduino)
     COMMENT "flash the arduino")
   add_dependencies(arduino flash_arduino)
   # target_compile_options(arduino PRIVATE -ggdb3 -O0) set(CMAKE_CXX_FLAGS
-  # "${CMAKE_CXX_FLAGS} -g -O0")
+  # "${CMAKE_CXX_FLAGS} -g -O0") Uncomment when using gdb and having trouble to
+  # connect to the serial port
 else()
   plugin_disabled_message("arduino")
 endif()
