@@ -69,7 +69,28 @@
   ?*MOVE-PROGRESS-COUNTER* = 3
   ?*MOVE-PROGRESS-TIMEOUT* = 5
 
+  ?*WAIT-FOR-POINTS-TIMEOUT* = 5
+
   ?*GOAL-SELECTION-TIMEOUT* = 10
+
+  ?*BLOCK-DURATION-CS* = 60
+  ?*BLOCK-DURATION-RS* = 30
+  ?*BLOCK-DURATION-DS* = 45
+
+  ?*REINSERTION-NAVGRAPH-TIMEOUT* = 5
+
+  ?*GOAL-RETRY-MAX* = 5
+  ?*GOAL-RETRY-TIMEOUT* = 10
+)
+
+;A timeout for waiting for points
+(deftemplate points-timer
+  (slot goal-id (type SYMBOL))
+  (slot plan-id (type SYMBOL))
+  (slot action-id (type NUMBER))
+  (slot action-name (type SYMBOL))
+  (slot timeout-duration)
+  (multislot start-time)
 )
 
 (deftemplate exploration-result
@@ -101,6 +122,7 @@
   (slot category (type SYMBOL)
                       (allowed-values nil PRODUCTION MAINTENANCE PRODUCTION-INSTRUCT MAINTENANCE-INSTRUCT OTHER OTHER-INSTRUCT UNKNOWN)
                       (default nil))
+  (slot retries (default 0) (type INTEGER))
 )
 
 (deffunction tag-id-to-side (?tag-id ?output-odd)
@@ -1077,6 +1099,18 @@
   (if (eq ?bool TRUE) then (return 1) else (return 0))
 )
 
+(deffunction get-wp-complexity (?wp)
+  (if (any-factp ((?ring1-color domain-fact)) (and (eq ?ring1-color:name wp-ring1-color) (eq ?ring1-color:param-values (create$ ?wp RING_NONE))))
+    then (return C0)
+  )
+  (if (any-factp ((?ring2-color domain-fact)) (and (eq ?ring2-color:name wp-ring2-color) (eq ?ring2-color:param-values (create$ ?wp RING_NONE))))
+    then (return C1)
+  )
+  (if (any-factp ((?ring3-color domain-fact)) (and (eq ?ring3-color:name wp-ring3-color) (eq ?ring3-color:param-values (create$ ?wp RING_NONE))))
+    then (return C2)
+  )
+  (return C3)
+)
 
 (deffunction last-ring-points (?com)
 " @param ?com complexity of an order

@@ -501,8 +501,8 @@
               (mode FINISHED|EVALUATED|RETRACTED)
               (outcome FAILED)
               (verbosity ?v))
-  (goal-meta (goal-id ?goal-id) (assigned-to ?robot)
-             (category ?category&PRODUCTION|MAINTENANCE|PRODUCTION-INSTRUCT|MAINTENANCE-INSTRUCT))
+  ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to ?robot)
+             (category ?category&PRODUCTION|MAINTENANCE|PRODUCTION-INSTRUCT|MAINTENANCE-INSTRUCT) (retries ?retries))
   =>
   (if (not
         (or
@@ -516,6 +516,7 @@
   )
   (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as workpiece is still usable after fail" crlf)
   (modify ?g (mode FORMULATED) (outcome UNKNOWN))
+  (modify ?gm (retries (+ 1 ?retries)))
 
   (goal-reasoner-retract-plan-action ?goal-id)
 )
@@ -594,8 +595,8 @@
         (outcome FAILED)
         (verbosity ?v)
   )
-  (goal-meta (goal-id ?goal-id) (order-id ?order-id) (assigned-to ?robot)
-             (category ?category&PRODUCTION|PRODUCTION-INSTRUCT))
+  ?gm <- (goal-meta (goal-id ?goal-id) (order-id ?order-id) (assigned-to ?robot)
+             (category ?category&PRODUCTION|PRODUCTION-INSTRUCT) (retries ?retries))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
   (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
   (wm-fact (key wp meta next-step args? wp ?wp) (value ?step))
@@ -637,6 +638,7 @@
   (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, failed due to broken mps. Reformulate as we already progressed far." crlf)
   (goal-reasoner-retract-plan-action ?goal-id)
   (modify ?g (mode FORMULATED) (outcome UNKNOWN))
+  (modify ?gm (retries (+ 1 ?retries)))
 )
 
 (defrule goal-reasoner-evaluate-production-goal-failed-broken-abort
@@ -710,8 +712,9 @@
         (outcome FAILED)
         (verbosity ?v)
   )
-  (goal-meta (goal-id ?goal-id) (order-id ?order-id) (assigned-to ?robot)
-             (category ?category&MAINTENANCE|MAINTENANCE-INSTRUCT))
+  ?gm <- (goal-meta (goal-id ?goal-id) (order-id ?order-id) (assigned-to ?robot)
+             (category ?category&MAINTENANCE|MAINTENANCE-INSTRUCT) (retries ?retries))
+  (test (neq ?class PAY-FOR-RINGS-WITH-CAP-CARRIER))
   =>
   (if (not
           (eq ?category MAINTENANCE-INSTRUCT)
@@ -722,6 +725,7 @@
   )
   (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as the support WP was lost" crlf)
   (modify ?g (mode FORMULATED) (outcome UNKNOWN))
+  (modify ?gm (retries (+ 1 ?retries)))
 
   (goal-reasoner-retract-plan-action ?goal-id)
 )
@@ -731,12 +735,13 @@
   (declare (salience ?*MONITORING-SALIENCE*))
   ?g <- (goal (id ?goal-id) (class DISCARD) (mode FINISHED) (outcome FAILED)
               (verbosity ?v) (params wp ?wp $?))
-  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+  ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to ?robot) (retries ?retries))
   =>
   (set-robot-to-waiting ?robot)
   (remove-robot-assignment-from-goal-meta ?g)
   (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate and dispatch with classical drop discard" crlf)
   (modify ?g (mode FORMULATED) (outcome UNKNOWN))
+  (modify ?gm (retries (+ 1 ?retries)))
   (goal-reasoner-retract-plan-action ?goal-id)
 )
 
@@ -749,12 +754,13 @@
   (plan (id ?plan-id) (goal-id ?goal-id))
   (plan-action (action-name ?action&move|go-wait|wait-for-wp|wait-for-free-side)
                (goal-id ?goal-id) (plan-id ?plan-id) (state FAILED))
-  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+  ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to ?robot) (retries ?retries))
   =>
   (set-robot-to-waiting ?robot)
   (remove-robot-assignment-from-goal-meta ?g)
   (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as only a " ?action " action failed" crlf)
   (modify ?g (mode FORMULATED) (outcome UNKNOWN))
+  (modify ?gm (retries (+ 1 ?retries)))
 
   (goal-reasoner-retract-plan-action ?goal-id)
 )
@@ -764,7 +770,7 @@
   (declare (salience ?*MONITORING-SALIENCE*))
   ?g <- (goal (id ?goal-id) (class MOVE-OUT-OF-WAY|CLEANUP-WP) (mode FINISHED)
               (outcome ?outcome) (verbosity ?v))
-  (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+  ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (retries ?retries))
   =>
   (printout (log-debug ?v) "Evaluate move-out-of-way/empty discard goal " ?goal-id crlf)
   (set-robot-to-waiting ?robot)
@@ -773,6 +779,7 @@
   ; delete plans of the goal
   (goal-reasoner-retract-plan-action ?goal-id)
   (modify ?g (mode FORMULATED) (outcome UNKNOWN) (is-executable FALSE))
+  (modify ?gm (retries (+ 1 ?retries)))
   (printout (log-debug ?v) "Goal " ?goal-id " FORMULATED" crlf)
 )
 
@@ -781,7 +788,7 @@
   (declare (salience ?*MONITORING-SALIENCE*))
   ?g <- (goal (id ?goal-id) (class BUFFER-CAP) (mode FINISHED)
               (outcome FAILED) (verbosity ?v))
-  (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+  ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (retries ?retries))
   (plan-action (goal-id ?goal-id) (state FAILED) (error-msg "Unsatisfied precondition") (action-name wp-get-shelf) (param-values ?robot ? ?cs ?spot))
   ?wp-on-shelf-fact <- (wm-fact  (key domain fact wp-on-shelf args? wp ? m ?cs spot ?spot))
   (wm-fact  (key domain fact wp-on-shelf args? wp ? m ?cs spot ?other-spot&:(neq ?other-spot ?spot)))
@@ -793,6 +800,7 @@
   ; delete plans of the goal
   (goal-reasoner-retract-plan-action ?goal-id)
   (modify ?g (mode FORMULATED) (outcome UNKNOWN) (is-executable FALSE))
+  (modify ?gm (retries (+ 1 ?retries)))
   (printout (log-debug ?v) "Goal " ?goal-id " FORMULATED" crlf)
   (retract ?wp-on-shelf-fact)
   (printout (log-debug ?v) "Removed WP from shelf on " ?cs " slot " ?spot crlf)

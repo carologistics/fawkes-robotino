@@ -134,14 +134,16 @@ clips-executive:
         wp-get-shelf: manipulate_wp{mps=?(m)S,
                               side="SHELF-?(spot)Y",target="WORKPIECE"}
         wp-put: manipulate_wp{mps=?(m)S,
-                             side=?(side)S,target="CONVEYOR"}
+                             side=?(side)S,target="CONVEYOR",c=?(com)S}
         wp-put-slide-cc: manipulate_wp{mps=?(m)S,
                          side="SLIDE", target="SLIDE"}
         wp-get: manipulate_wp{mps=?(m)S,
-                              side=?(side)S,target="WORKPIECE"}
+                              side=?(side)S,target="WORKPIECE",c=?(com)S}
         wp-discard: discard{}
         explore-and-turn: goto_corner_turn{place=?(place)S,
                                            min_x=-5, max_x=0, min_y=0, max_y=6}
+        wp-check: manipulate_wp{mps=?(m)S,dry_run=true,
+                          side=?(side)S,target="WORKPIECE",query=?(query)S}
       parameters:
         simtest:
           enabled: false

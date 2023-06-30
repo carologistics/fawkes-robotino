@@ -25,13 +25,20 @@
   (multislot last-pose)
   (slot counter (type NUMBER))
 )
-;A timeout for goals in mode FORMULATED
+;A timeout for assigned goals in mode FORMULATED
 (deftemplate selection-timer
   (slot goal-id (type SYMBOL))
   (slot robot (type SYMBOL))
   (slot timeout-duration)
   (multislot start-time)
 )
+;A timeout for goals who were retried too many times
+(deftemplate goal-retry-wait-timer
+  (slot goal-id (type SYMBOL))
+  (slot timeout-duration)
+  (multislot start-time)
+)
+
 
 (deffunction fail-action (?action ?error-msg)
 	(do-for-fact ((?sae skill-action-execinfo))
@@ -426,7 +433,7 @@
 	 then
 	  (return FALSE)
 	)
-	(if (or (eq ?an move) (eq ?an go-wait)) then
+	(if (or (eq ?an move) (eq ?an go-wait) (eq ?an wp-check)) then
 	  (return TRUE)
 	)
 	(return FALSE)
@@ -499,6 +506,112 @@
 	(modify ?wm (value ?tries))
 )
 
+(defrule execution-monitoring-repeated-goal-retry-timeout
+" If a goal fails a pre-determined number of times, give it a timeout for executability."
+	(declare (salience ?*MONITORING-SALIENCE*))
+	(goal (id ?goal-id) (mode FINISHED|EVALUATED|RETRACTED) (outcome FAILED))
+	?gm <- (goal-meta (goal-id ?goal-id) (retries ?retries&:(> ?retries ?*GOAL-RETRY-MAX*)) (assigned-to ?robot))
+	(wm-fact (key refbox game-time) (values $?now))
+	=>
+	(printout error "Goal " ?goal-id " was retried " ?*GOAL-RETRY-MAX* " times, give it a timeout of " ?*GOAL-RETRY-TIMEOUT* "s." crlf)
+	(assert (goal-retry-wait-timer (goal-id ?goal-id) (timeout-duration ?*GOAL-RETRY-TIMEOUT*) (start-time ?now)))
+	(assert (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot)))
+	(modify ?gm (retries 0))
+)
+
+(defrule execution-monitoring-repeated-goal-retry-timeout-over
+	(wm-fact (key refbox game-time) (values $?now))
+	?gt <- (goal-retry-wait-timer (goal-id ?goal-id) (start-time $?st) (timeout-duration ?td&:(timeout ?now ?st ?td)))
+	?wf <- (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot))
+	=>
+	(retract ?gt ?wf)
+)
+
+
+; ----------------------- HANDLE WP CHECK FAIL  --------------------------------
+
+(defrule execution-monitoring-wp-check-there-after-wp-put-retry
+" If a wp-check action with query THERE fails after a wp-put,
+  retry the wp-put as we might have had a gripper issue.
+"
+	(declare (salience ?*MONITORING-SALIENCE*))
+	(goal (id ?goal-id) (mode DISPATCHED))
+	(plan (id ?plan-id) (goal-id ?goal-id))
+
+	?pa-check <- (plan-action (id ?id-check) (goal-id ?goal-id) (plan-id ?plan-id)
+				 (action-name wp-check)
+				 (param-values ?robot ?wp ?mps ?side THERE)
+				 (state FAILED))
+	?pa-put <- (plan-action (id ?id-put&:(eq (- ?id-check 1) ?id-put)) (goal-id ?goal-id) (plan-id ?plan-id)
+				 (action-name wp-put)
+				 (param-values ?robot ?wp ?mps ?side ?complexity))
+	?wp-atf <- (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side))
+
+	(not (wm-fact (key monitoring retry-after-sensing args? r ?robot a wp-put id ?id-put-sym&:(eq ?id-put-sym (sym-cat ?id-put)) m ?mps g ?goal-id)))
+	=>
+	(printout error "WP " ?wp " was expected to be at " ?mps " (" ?side") but could not be detected. Restarting wp-put!")
+	(modify ?pa-check (state FORMULATED) (error-msg ""))
+	(modify ?pa-put (state FORMULATED) (error-msg ""))
+
+	(assert
+	  (wm-fact (key monitoring retry-after-sensing args? r ?robot a wp-put id (sym-cat ?id-put) m ?mps g ?goal-id))
+	)
+	(retract ?wp-atf)
+	(assert (wm-fact (key domain fact holding args? r ?robot wp ?wp) (type BOOL) (value TRUE)))
+	(assert (wm-fact (key domain fact mps-side-free args? m ?mps side ?side) (type BOOL) (value TRUE)))
+)
+
+(defrule execution-monitoring-wp-check-there-add-fail-goal-flag-after-retry
+" If a wp-check action with query THERE fails, assume that
+  the WP was lost and clean up accordingly.
+"
+	(declare (salience ?*MONITORING-SALIENCE*))
+	(goal (id ?goal-id) (mode DISPATCHED))
+	(plan (id ?plan-id) (goal-id ?goal-id))
+
+	(plan-action (id ?id-check) (goal-id ?goal-id) (plan-id ?plan-id)
+				 (action-name wp-check)
+				 (param-values ?robot ?wp ?mps ?side THERE)
+				 (state FAILED))
+	(plan-action (id ?id-put&:(eq (- ?id-check 1) ?id-put)) (goal-id ?goal-id) (plan-id ?plan-id)
+				 (action-name wp-put)
+				 (param-values ?robot ?wp ?mps ?side ?complexity))
+
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side))
+	(wm-fact (key monitoring retry-after-sensing args? r ?robot a wp-put id ?id-put-sym&:(eq ?id-put-sym (sym-cat ?id-put)) m ?mps g ?goal-id))
+	=>
+	(printout error "WP " ?wp " was expected to be at " ?mps " (" ?side") but could not be detected. Assume WP was lost.")
+	(assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))
+	(assert (wm-fact (key monitoring fail-goal args? g ?goal-id r WP-LOST)))
+)
+
+(defrule execution-monitoring-wp-check-absent-add-fail-goal-flag
+" If a wp-check action with query ABSENT fails, assume that
+  the WP wasn't gripped successfully. Restart the action.
+"
+	(declare (salience ?*MONITORING-SALIENCE*))
+	(goal (id ?goal-id) (mode DISPATCHED))
+	(plan (id ?plan-id) (goal-id ?goal-id))
+
+	(plan-action (id ?id) (goal-id ?goal-id) (plan-id ?plan-id)
+				 (action-name wp-check)
+				 (param-values ?robot ?mps ?side ABSENT)
+				 (state FAILED))
+	(plan-action (id ?) (goal-id ?goal-id) (plan-id ?plan-id)
+				 (action-name wp-get)
+				 (param-values ?robot ?wp ?mps ?side $?)
+				 (state FAILED))
+
+	(not (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side)))
+	?holding <- (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+	=>
+	(printout error "No WP was expected to be at " ?mps " (" ?side") but there was one detected, fail the goal.")
+	(assert (wm-fact (key monitoring fail-goal args? g ?goal-id r WP-NOT-PICKED)))
+	;fix the WM
+	(retract ?holding)
+	(assert (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side)))
+)
+
 
 ; ----------------------- HANDLE BROKEN MPS -----------------------------------
 
@@ -551,7 +664,7 @@
 	(plan-action (id ?id) (plan-id ?plan-id) (goal-id ?goal-id)
 	   (state WAITING|RUNNING)
 	   (param-values $? ?mps $?)
-	   (action-name ?an&~move&~go-wait&~wait))
+	   (action-name ?an&~move&~go-wait&~wait&~wp-check&~wp-get))
 	(not (wm-fact (key monitoring fail-goal args? g ?goal-id r ?)))
 	=>
 	(assert (wm-fact (key monitoring fail-goal args? g ?goal-id r INTERACTED-WITH-BROKEN-MPS)))
@@ -636,6 +749,7 @@
 	                                       (or
 	                                         (wm-key-prefix ?wf:key (create$ domain fact wp-usable))
 	                                         (wm-key-prefix ?wf:key (create$ monitoring cleanup-wp))
+	                                         (wm-key-prefix ?wf:key (create$ domain fact holding))
 	                                       )
 	                                  )
 	  (printout t "WP-fact " ?wf:key crlf " domain fact flushed!"  crlf)
@@ -805,14 +919,29 @@
 	(not (wm-fact (key central agent robot-waiting args? r ?robot)))
 	(not (goal-meta (assigned-to ?robot)))
 	(SkillerInterface (id ?skiller-id&:(str-index ?robot ?skiller-id)) (exclusive_controller ~""))
+	(wm-fact (key refbox game-time) (values $?now))
 	=>
 	(assert (wm-fact (key central agent robot-waiting args? r ?robot)))
+	(assert (wm-fact (key monitoring robot-reinserted args? r ?robot) (values ?now)))
 	;recompute navgraph after re-insertion
 	(navgraph-set-field-size-from-cfg ?robot)
-	(navgraph-compute ?robot)
 	(navgraph-add-all-new-tags)
+	(navgraph-compute ?robot)
 
 	(retract ?rl)
+)
+
+(defrule execution-monitoring-set-navgraph-after-reinsertion
+	"Recompute the navgraph again after a certain time to make sure everything was set correctly"
+	?wf <- (wm-fact (key monitoring robot-reinserted args? r ?robot) (values $?start-time))
+	(wm-fact (key refbox game-time) (values $?now))
+	(test (timeout ?now ?start-time ?*REINSERTION-NAVGRAPH-TIMEOUT*))
+	=>
+	;recompute navgraph after re-insertion
+	(navgraph-set-field-size-from-cfg ?robot)
+	(navgraph-add-all-new-tags)
+	(navgraph-compute ?robot)
+	(retract ?wf)
 )
 
 (defrule execution-monitoring-clean-wm-from-robot
@@ -915,7 +1044,7 @@
 (defrule execution-monitoring-break-instruct-fails
 "When an INSTRUCT fails on an MPS (except BS|DS), break the machine."
 	(declare (salience ?*MONITORING-SALIENCE*))
-	?g <- (goal (class INSTRUCT-CS-BUFFER-CAP|INSTRUCT-CS-MOUNT-CAP|INSTRUCT-RS-MOUNT-RING) (mode EVALUATED) (outcome FAILED) (params $? target-mps ?mps $?))
+	?g <- (goal (class INSTRUCT-CS-BUFFER-CAP|INSTRUCT-CS-MOUNT-CAP|INSTRUCT-RS-MOUNT-RING) (mode EVALUATED) (outcome FAILED) (error ~WP-LOST) (params $? target-mps ?mps $?))
 	?wm <- (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
 	(not (goal (class RESET-MPS) (params mps ?mps) (mode ~RETRACTED)))
 	=>
@@ -956,4 +1085,49 @@
 		(retract ?si)
 	)
 	(assert (reset-robot-in-wm ?robot))
+)
+
+; ----------------------- Monitor points for plan-actions -----------------------------------
+(defrule execution-monitoring-add-point-change-detector-plan-action-running
+	(wm-fact (key refbox points ?team) (value ?points))
+	(wm-fact (key refbox team-color) (value ?team))
+
+	(plan-action (id ?action-id) (goal-id ?goal-id) (plan-id ?plan-id) (state RUNNING) (action-name ?action-name))
+	(not (wm-fact (key monitoring points-for-action args? goal-id ?goal-id plan-id ?plan-id action-id ?action-id-sym&:(eq (sym-cat ?action-id) ?action-id-sym) action-name ?action-name)))
+	=>
+	(assert (wm-fact (key monitoring points-for-action args? goal-id ?goal-id plan-id ?plan-id action-id (sym-cat ?action-id) action-name ?action-name) (type UINT) (value ?points)))
+)
+
+(defrule execution-monitoring-add-point-change-detector-plan-action-final-start-timer
+	(wm-fact (key monitoring points-for-action args? goal-id ?goal-id plan-id ?plan-id action-id ?action-id-sym action-name ?action-name) (value ?recorded-points))
+	(plan-action (id ?action-id&:(eq (sym-cat ?action-id) ?action-id-sym)) (goal-id ?goal-id) (plan-id ?plan-id) (action-name ?action-name) (state FINAL))
+	(not (points-timer (goal-id ?goal-id) (action-id ?action-id) (plan-id ?plan-id) (action-name ?action-name)))
+	(wm-fact (key refbox game-time) (values $?now))
+	=>
+	(assert (points-timer (goal-id ?goal-id) (action-id ?action-id) (plan-id ?plan-id) (action-name ?action-name) (start-time ?now) (timeout-duration ?*WAIT-FOR-POINTS-TIMEOUT*)))
+)
+
+(defrule execution-monitoring-add-point-change-detector-plan-action-final-end-timer
+	(wm-fact (key refbox game-time) (values $?now))
+	?pt <- (points-timer (goal-id ?goal-id) (action-id ?action-id) (plan-id ?plan-id) (action-name ?action-name)
+            (start-time $?st)
+            (timeout-duration ?timeout&:(timeout ?now ?st ?timeout)))
+	?wf <- (wm-fact (key monitoring points-for-action args? goal-id ?goal-id plan-id ?plan-id action-id ?action-id-sym&:(eq (sym-cat ?action-id) ?action-id-sym)  action-name ?action-name) (value ?recorded-points))
+	(wm-fact (key refbox points ?team) (value ?points))
+	=>
+	(retract ?pt ?wf)
+	(assert (wm-fact (key monitoring action-estimated-score args? goal-id ?goal-id plan-id ?plan-id action-id (sym-cat ?action-id)  action-name ?action-name) (value (- ?points ?recorded-points))))
+)
+
+(defrule execution-monitoring-correct-slide-counter
+	?monitoring-fact <- (wm-fact (key monitoring action-estimated-score args? goal-id ?goal-id plan-id ?plan-id action-id ?action-id action-name wp-put-slide-cc) (value 0))
+	(goal (id ?goal-id) (params $? target-mps ?rs $?))
+	?request <- (wm-fact (key request pay args? ord ?order m ?rs ring ?ring seq ?seq prio ?prio) (values status ? assigned-to $?assigned-goals&:(member$ ?goal-id ?assigned-goals)))
+	?rs-filled <- (domain-fact (name rs-filled-with) (param-values ?rs ?bases-filled))
+	(domain-fact (name rs-inc) (param-values ?bases-now ?bases-filled))
+	=>
+	(printout t "Detected no point increase after put slide, re-issuing request and adjusting counter")
+	(retract ?monitoring-fact)
+	(modify ?rs-filled (param-values ?rs ?bases-now))
+	(modify ?request (values status OPEN assgined-to))
 )
