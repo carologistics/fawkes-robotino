@@ -1135,8 +1135,9 @@
 	(plan-action (id ?action-id&:(eq (sym-cat ?action-id) ?action-id-sym)) (goal-id ?goal-id) (plan-id ?plan-id) (action-name ?action-name) (state FINAL))
 	(not (points-timer (goal-id ?goal-id) (action-id ?action-id) (plan-id ?plan-id) (action-name ?action-name)))
 	(wm-fact (key refbox game-time) (values $?now))
+	(wm-fact (key config rcll feedback wait-for-points-slide) (value ?timeout-duration))
 	=>
-	(assert (points-timer (goal-id ?goal-id) (action-id ?action-id) (plan-id ?plan-id) (action-name ?action-name) (start-time ?now) (timeout-duration ?*WAIT-FOR-POINTS-TIMEOUT*)))
+	(assert (points-timer (goal-id ?goal-id) (action-id ?action-id) (plan-id ?plan-id) (action-name ?action-name) (start-time ?now) (timeout-duration ?timeout-duration)))
 )
 
 (defrule execution-monitoring-add-point-change-detector-plan-action-final-end-timer
