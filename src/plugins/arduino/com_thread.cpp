@@ -201,6 +201,7 @@ ArduinoComThread::append_message_to_queue(ArduinoComMessage *msg)
 		//Checking if this one is already in the queue
 		return;
 	}
+	std::scoped_lock lock(queue_mutex);
 	messages_.push_back(msg);
 }
 
@@ -290,6 +291,7 @@ ArduinoComThread::send_message_from_queue()
 		return false; //Let the timer handle that
 	}
 	if (messages_.size() > 0) {
+		std::scoped_lock   lock(queue_mutex);
 		ArduinoComMessage *cur_msg = messages_.front();
 		if (!send_message(*cur_msg)) {
 			return false;

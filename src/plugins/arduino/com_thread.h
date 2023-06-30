@@ -140,6 +140,7 @@ private:
 	void receive(const std::string &buff);
 
 	std::deque<ArduinoComMessage *> messages_;
+	std::mutex                      queue_mutex;
 	fawkes::Time                    expected_finish_time_;
 
 	std::unique_ptr<SerialPort> port_;
