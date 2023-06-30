@@ -287,6 +287,7 @@
 ;======================================Movement=========================================
 
 (defrule execution-monitoring-suspend-plan-to-insert-wait
+	(declare (salience ?*MONITORING-SALIENCE*))
 	(goal (id ?goal-id) (class ?class))
 	?plan <- (plan (id ?plan-id) (goal-id ?goal-id) (suspended FALSE))
 	?plan-action <- (plan-action (id ?action-id)
