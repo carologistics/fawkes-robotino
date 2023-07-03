@@ -476,14 +476,14 @@ function DRIVE_VS:init()
 
 	-- "Magic", i.e. heuristic multiplier that determines how much we brake
 	-- when approaching target. Important to avoid overshooting.
-	self.fsm.vars.decel_factor = 5
+	self.fsm.vars.decel_factor = 10
 	
 	set_speed(self)
 end
 
 function DRIVE_VS:loop()
    local a_x = V_MAX.x / D_DECEL.x
-   local v_x_dec = a_x / self.fsm.vars.decel_factor * math.max(0, if_front_dist:translation(0) - SAFE_DIST)
+   local v_x_dec = a_x / self.fsm.vars.decel_factor * math.abs(if_front_dist:translation(0) - SAFE_DIST)
    self.fsm.vars.vmax_arg.x = math.min(V_MAX.x, self.fsm.vars.vel_trans or V_MAX.x, v_x_dec)
 
    if self.fsm.vars.msgid ~= object_tracking_if:msgid() then
