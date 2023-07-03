@@ -53,6 +53,7 @@ OPTIONS:
    --asp              Run with ASP agent and global planner
    --challenge        Start refbox challenge script instead of refbox
    --refbox-args      Pass options to the refbox
+   --protobuf-sim    Launch the protobuf simulator via docker
 EOF
 }
 
@@ -65,8 +66,9 @@ HEADLESS=
 NO_REFBOX=
 NO_REFBOX_FRONTEND=
 REFBOX=refbox
-# Default to gazebo simulation.
-REFBOX_ARGS="--cfg-simulation simulation/gazebo_simulation.yaml"
+# Default to default simulation.
+REFBOX_ARGS="--cfg-simulation simulation/default_simulation.yaml"
+PROTOBUF_SIM=false
 ROS=
 ROS_LAUNCH_MAIN=
 ROS_LAUNCH_ROBOT=
@@ -150,7 +152,7 @@ echo "Using $TERMINAL"
 ROS_MASTER_PORT=${ROS_MASTER_URI##*:}
 ROS_MASTER_PORT=${ROS_MASTER_PORT%%/*}
 
-OPTS=$(getopt -o "hx:c:lr::ksn:e:dm:aof:p:gvt" -l "debug,ros,ros2,ros-launch-main:,ros-launch:,ros2,ros2-launch-main:,ros2-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:,keep-tmpfiles,challenge,no-refbox,no-refbox-frontend,refbox-args:" -- "$@")
+OPTS=$(getopt -o "hx:c:lr::ksn:e:dm:aof:p:gvt" -l "debug,ros,ros2,ros-launch-main:,ros-launch:,ros2,ros2-launch-main:,ros2-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:,keep-tmpfiles,challenge,no-refbox,no-refbox-frontend,protobuf-sim,refbox-args:" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
@@ -249,6 +251,9 @@ while true; do
          ;;
      --refbox-args)
          REFBOX_ARGS="$OPTARG"
+         ;;
+     --protobuf-sim)
+         PROTOBUF_SIM=true
          ;;
      --keep-tmpfiles)
          KEEP_TMPFILES=true
@@ -361,6 +366,8 @@ function stop_simulation {
       killall roscore
       killall llsf-refbox
       killall roslaunch
+      podman kill rcll-sim
+      podman kill rcll-sim-gui
   fi
 }
 
@@ -438,6 +445,21 @@ if [  $COMMAND  == start ]; then
 	fi
     	done
     fi
+    if $PROTOBUF_SIM
+    then
+        mkdir -p $(pwd)/Simulator
+        COMMANDS+=("bash -c \"export TAB_START_TIME=$(date +%s); podman run -tid --rm --name rcll-sim -v ${FAWKES_DIR}/cfg/rcll-simulator/:/simulator/caros-config/:z -v $(pwd)/Simulator:/simulator/logs/:z --net=host quay.io/robocup-logistics/rcll-simulator:latest dotnet run -cfg /simulator/caros-config/config.yaml; trap '\''podman kill rcll-sim'\'' SIGHUP EXIT SIGTERM; podman logs -f rcll-sim; while true; do sleep 1; done\"")
+
+        DESCRIPTIONS+=("simulator")
+	    COMMANDS+=("bash -c \"export TAB_START_TIME=$(date +%s); podman run -tid --rm --name rcll-sim-gui --net=host quay.io/robocup-logistics/rcll-simulator-frontend:latest; trap '\''podman kill rcll-sim-gui'\'' SIGHUP EXIT SIGTERM; podman logs -f rcll-sim-gui; while true; do sleep 1; done\"")
+        DESCRIPTIONS+=("simulator-frontend")
+        for ((CURR_ROBO=$FIRST_ROBOTINO_NUMBER ; CURR_ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;CURR_ROBO++))
+        do
+            echo "  robot$CURR_ROBO/active: true" >> $FAWKES_DIR/cfg/robotino_${ROBO}_generated.yaml
+	        COMMANDS+=("bash -c \"export TAB_START_TIME=$(date +%s); tail -F $PWD/Simulator/${CURR_ROBO}_robot${CURR_ROBO}.log\"")
+            DESCRIPTIONS+=("simulator robot${CURR_ROBO}")
+        done
+    fi
 
     if [  "$ROS"  == "-r" ]; then
     	#start roscores
@@ -509,6 +531,10 @@ if [  $COMMAND  == start ]; then
         do
             echo "  robot$CURR_ROBO/active: false" >> $FAWKES_DIR/cfg/robotino_${ROBO}_generated.yaml
         done
+        if $PROTOBUF_SIM
+        then
+            echo "rcll-simulator/enabled: true" >> $FAWKES_DIR/cfg/robotino_${ROBO}_generated.yaml
+        fi
     fi
 
     if $START_ASP_PLANER

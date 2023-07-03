@@ -116,14 +116,16 @@ clips-executive:
           - name: execution-monitoring
             file: rcll-central/execution-monitoring.clp
           - name: simulated-actions
-            file: rcll-central/noop-actions.clp
+            files:
+              - rcll-central/noop-actions.clp
+              - rcll-central/action-task-executor.clp
           - name: simtest
             file: rcll-central/simtest.clp
       # the mapping syntax for parameters is defined in
       # fawkes/src/libs/utils/misc/map_skill.cpp
       action-mapping:
         enter-field: >
-          drive_into_field{team=?(team-color)S,
+          drive_into_field{place="?(place)Y",
                            wait=?(r|/robot1/0.0/|/robot2/2.0/|/robot3/4.0/)f}
         explore-zone: explore_zone{zone=?(z)s}
         move-node: goto{place=?(z)s}
@@ -134,14 +136,16 @@ clips-executive:
         wp-get-shelf: manipulate_wp{mps=?(m)S,
                               side="SHELF-?(spot)Y",target="WORKPIECE"}
         wp-put: manipulate_wp{mps=?(m)S,
-                             side=?(side)S,target="CONVEYOR"}
+                             side=?(side)S,target="CONVEYOR",c=?(com)S}
         wp-put-slide-cc: manipulate_wp{mps=?(m)S,
                          side="SLIDE", target="SLIDE"}
         wp-get: manipulate_wp{mps=?(m)S,
-                              side=?(side)S,target="WORKPIECE"}
+                              side=?(side)S,target="WORKPIECE",c=?(com)S}
         wp-discard: discard{}
         explore-and-turn: goto_corner_turn{place=?(place)S,
                                            min_x=-5, max_x=0, min_y=0, max_y=6}
+        wp-check: manipulate_wp{mps=?(m)S,dry_run=true,
+                          side=?(side)S,target="WORKPIECE",query=?(query)S}
       parameters:
         simtest:
           enabled: false
@@ -180,6 +184,8 @@ clips-executive:
 
             zone-margin: 0.15
             latest-send-last-report-time: 180  # =3:00
+
+          wait-for-points: true
 
       blackboard-preload:
         - Position3DInterface

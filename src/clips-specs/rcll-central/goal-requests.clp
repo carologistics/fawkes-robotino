@@ -172,6 +172,14 @@
   (goal (id ?payment-goal&:(member$ ?payment-goal ?payment-goals)) (class PAY-FOR-RINGS-WITH-BASE))
   ;there is a buffer goal already running (so we can discard soon, to avoid slow-down in payments)
   (wm-fact (key domain fact wp-at args? wp ?wp m ?cs $?))
+  ;but there is no other payment goal mapped to the same CS to avoid queuing
+  (not (and
+    (wm-fact (key request pay args? ord ? m ? ring ? seq ? prio ?) (values status ACTIVE assigned-to $?other-payment-goals))
+    (goal (id ?other-payment-goal&:(member$ ?other-payment-goal ?other-payment-goals))
+          (mode ~RETRACTED)
+          (class PAY-FOR-RINGS-WITH-CAP-CARRIER)
+          (params $? wp-loc ?cs $?))
+  ))
   =>
   (do-for-all-facts ((?goal goal) (?goal-meta goal-meta))
     (and (or (member$ ?goal:id ?payment-goals) (member$ ?goal:id ?discard-goals)) (eq ?goal:id ?goal-meta:goal-id))

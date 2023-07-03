@@ -38,8 +38,8 @@
   ?gt <- (wm-fact (key refbox game-time))
   ?rp <- (wm-fact (id "/refbox/phase")  (value ?phase) )
   ?rs <- (wm-fact (id "/refbox/state")  (value ?state) )
-  ?pm <- (wm-fact (id "/refbox/points/magenta"))
-  ?pc <- (wm-fact (id "/refbox/points/cyan"))
+  ?pm <- (wm-fact (id "/refbox/points/MAGENTA"))
+  ?pc <- (wm-fact (id "/refbox/points/CYAN"))
   ?tc <- (wm-fact (id "/refbox/team-color")  (value ?team-color) )
   (wm-fact (key config agent team)  (value ?team-name) )
   =>
@@ -70,8 +70,8 @@
   (bind ?sec (pb-field-value ?time "sec"))
   (bind ?nsec (pb-field-value ?time "nsec"))
   (assert (wm-fact (key refbox game-time) (is-list TRUE) (type UINT) (values ?sec (/ ?nsec 1000))))
-  (assert (wm-fact (id "/refbox/points/magenta") (type UINT) (value (pb-field-value ?p "points_magenta")) ))
-  (assert (wm-fact (id "/refbox/points/cyan") (type UINT) (value (pb-field-value ?p "points_cyan")) ))
+  (assert (wm-fact (id "/refbox/points/MAGENTA") (type UINT) (value (pb-field-value ?p "points_magenta")) ))
+  (assert (wm-fact (id "/refbox/points/CYAN") (type UINT) (value (pb-field-value ?p "points_cyan")) ))
 
   ; assert the field height and width if it has not been asserted yet
   (if

@@ -34,12 +34,12 @@ documentation      = [==[Drives into field after given offset
 
 Parameters:
    wait: time to wait before start to drive into field
-   team: CYAN or MAGENTA
+   place: the position for the robot to drive to
 ]==]
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-local TIMEOUT_UPPER_LIMIT = 60
+local TIMEOUT_UPPER_LIMIT = 30
 
 function is_in_field(x)
    return pose:translation(1) > 3.0
@@ -63,8 +63,6 @@ end
 
 function DRIVE_INTO_FIELD:init()
    self.args["goto"] = {
-      x = 0,
-      y = 5,
-      ori = 0
+      place = self.fsm.vars.place
    }
 end

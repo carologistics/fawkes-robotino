@@ -98,37 +98,10 @@
                       (action-name ?a-name&wait-for-wp)
                       (state PENDING)
                       (executable TRUE))
-  (time $?now)
   =>
   (printout info "Goal " ?goal-id " started " ?a-name crlf)
   (modify ?pa (state RUNNING))
-	(assert (action-timer (plan-id ?plan-id)
-	            (action-id ?action-id)
-	            (timeout-duration ?*WAIT-FOR-WP-TIMER*)
-	            (status RUNNING)
-	            (start-time ?now)))
 )
-
-(defrule action-abort-execute-wait-for-wp-action
-  ?pa <- (plan-action (id ?action-id)
-                      (plan-id ?plan-id)
-                      (goal-id ?goal-id)
-                      (action-name wait-for-wp)
-                      (state RUNNING)
-                      (executable TRUE)
-                      (param-values ? ?m ?side)
-          )
-  (time $?now)
-	?pt <- (action-timer (plan-id ?plan-id) (status RUNNING)
-	                     (action-id ?action-id)
-	                     (start-time $?st)
-	                     (timeout-duration ?timeout&:(timeout ?now ?st ?timeout)))
-  =>
-  (printout info "Goal " ?goal-id " failed wait-for-wp after timeout" crlf)
-  (retract ?pt)
-  (modify ?pa (state FAILED))
-)
-
 (defrule action-finish-execute-wait-for-wp-action
   ?pa <- (plan-action (id ?action-id)
                       (plan-id ?plan-id)
