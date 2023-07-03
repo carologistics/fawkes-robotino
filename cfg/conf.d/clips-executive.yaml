@@ -183,6 +183,8 @@ clips-executive:
             zone-margin: 0.15
             latest-send-last-report-time: 180  # =3:00
 
+          wait-for-points: true
+
       blackboard-preload:
         - Position3DInterface
         - NavGraphWithMPSGeneratorInterface

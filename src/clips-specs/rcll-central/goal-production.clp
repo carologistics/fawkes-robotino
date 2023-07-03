@@ -158,7 +158,7 @@
   "Refill a shelf whenever it is empty."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ?g <- (goal (id ?maintain-id) (class REFILL-SHELF-MAINTAIN) (mode SELECTED))
-  (not (goal (class REFILL-SHELF)))
+  (not (goal (class REFILL-SHELF) (mode ~RETRACTED)))
   (wm-fact (key refbox phase) (value PRODUCTION))
   (wm-fact (key game state) (value RUNNING))
   (wm-fact (key refbox team-color) (value ?team-color))

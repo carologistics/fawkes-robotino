@@ -62,6 +62,7 @@ clips-executive/specs/rcll-central/parameters/rcll:
   magenta-recv-port: 4461
   cyan-send-port: 4471
   magenta-send-port: 4481
+  wait-for-points: false
 
 fawkes/bbsync:
   check_interval: 1000

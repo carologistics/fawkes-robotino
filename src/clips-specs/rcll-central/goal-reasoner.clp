@@ -480,6 +480,31 @@
   )
 )
 
+(defrule goal-reasoner-remove-maintain-refill-shelf
+  "Remove the maintain refill shelf goal if it is evaluated and has no children
+   to enable reformulation."
+  ?g <- (goal (id ?root-id)
+              (class MAINTAIN-REFILL-SHELF)
+              (mode EVALUATED)
+              (outcome COMPLETED)
+              (verbosity ?v))
+  (not (goal (parent ?root-id)))
+  =>
+  (printout (log-debug ?v) "Goal " ?root-id ", remove goal as it was completed" crlf)
+  (retract ?g)
+)
+
+(defrule goal-reasoner-remove-refill-shelf
+  "Remove the refill shelf goal if it is retracted for clean-up."
+  ?g <- (goal (id ?goal-id)
+              (class REFILL-SHELF)
+              (mode RETRACTED)
+              (outcome COMPLETED)
+              (verbosity ?v))
+  =>
+  (printout (log-debug ?v) "Goal " ?goal-id ", remove goal as it was completed" crlf)
+  (retract ?g)
+)
 
 (defrule goal-reasoner-evaluate-clean-up-failed-order-root
   "Once all requests have been removed, a failed order tree root can be safely
