@@ -761,8 +761,6 @@ The workpiece remains in the output of the used ring station after
 	(goal-meta (goal-id ?oid) (order-id ?order-id))
 	(not (goal (class INSTRUCT-BS-DISPENSE-BASE) (mode SELECTED|DISPATCHED|COMMITTED|EXPANDED)))
 	(domain-fact (name zone-content) (param-values ?mpsz ?mps))
-
-	(not (plan-action (action-name wp-check) (param-values $? ?mps $?) (state ~FINAL)))
 	=>
 	(printout t "Goal INSTRUCT-BS-DISPENSE executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -787,7 +785,7 @@ The workpiece remains in the output of the used ring station after
 	         (value ?begin&:(< ?begin (nth$ 1 ?game-time))))
 	(domain-fact (name zone-content) (param-values ?mpsz ?mps))
 
-	(not (plan-action (action-name wp-check) (param-values $? ?mps $?) (state ~FINAL)))
+	(not (plan-action (action-name wp-check) (param-values $? ?wp ?mps INPUT THERE) (state ~FINAL)))
 	=>
 	(printout t "Goal INSTRUCT-DS-DELIVER executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -810,7 +808,7 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
 
-	(not (plan-action (action-name wp-check) (param-values $? ?mps $?) (state ~FINAL)))
+	(not (plan-action (action-name wp-check) (param-values $? ?wp ?mps INPUT THERE) (state ~FINAL)))
 	
 	(domain-fact (name zone-content) (param-values ?mpsz ?mps))
 	=>
