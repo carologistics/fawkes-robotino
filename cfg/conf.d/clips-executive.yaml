@@ -123,7 +123,7 @@ clips-executive:
       # fawkes/src/libs/utils/misc/map_skill.cpp
       action-mapping:
         enter-field: >
-          drive_into_field{team=?(team-color)S,
+          drive_into_field{place="?(place)Y",
                            wait=?(r|/robot1/0.0/|/robot2/2.0/|/robot3/4.0/)f}
         explore-zone: explore_zone{zone=?(z)s}
         move-node: goto{place=?(z)s}

@@ -114,14 +114,6 @@
 	(wm-fact (key game state) (value RUNNING))
 	; the agent is ready
 	(domain-facts-loaded)
-
-	; all robots entered the field
-	(not
-	    (and
-	        (domain-object (name ?robot) (type robot))
-	        (not (wm-fact (key domain fact entered-field args? r ?robot)))
-	    )
-	)
 	=>
 	(assert (wm-fact (key exploration active) (type BOOL) (value TRUE)))
 )

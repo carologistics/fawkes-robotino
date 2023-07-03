@@ -47,12 +47,10 @@
  " ENTER-FIELD is executable for a robot if it has not entered the field yet."
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?id) (class ENTER-FIELD) (sub-type SIMPLE) (mode FORMULATED)
-	      (params team-color ?team-color)
 	      (is-executable FALSE))
 	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
 	(wm-fact (key refbox state) (value RUNNING))
 	(wm-fact (key refbox phase) (value PRODUCTION|EXPLORATION))
-	(wm-fact (key refbox team-color) (value ?team-color))
 	; (NavGraphGeneratorInterface (final TRUE))
 	(not (wm-fact (key domain fact entered-field
 	               args? r ?robot)))
@@ -441,8 +439,6 @@
 	                          (is-executable FALSE))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (order-id ?order))
 	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot)))
-	(goal (id ?buffer-goal-id) (class BUFFER-CAP) (mode ~FORMULATED))
-	(goal-meta (goal-id ?buffer-goal-id) (order-id ?order))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	;MPS-RS CEs (a cap carrier can be used to fill a RS later)
 	(wm-fact (key domain fact mps-type args? m ?target-mps t RS))

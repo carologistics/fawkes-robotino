@@ -160,11 +160,11 @@
 
 (defrule goal-expander-enter-field
 	?g <- (goal (id ?goal-id) (mode SELECTED) (class ENTER-FIELD)
-	            (params team-color ?team-color))
+	            (params zone ?zone))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	=>
 	(plan-assert-sequential ENTER-FIELD-PLAN ?goal-id ?robot
-		(plan-assert-action enter-field ?robot ?team-color)
+		(plan-assert-action enter-field ?robot ?zone)
 	)
 	(modify ?g (mode EXPANDED))
 )
