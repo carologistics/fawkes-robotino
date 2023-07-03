@@ -26,6 +26,7 @@ module(..., skillenv.module_init)
 name               = "manipulate_wp"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"goto","motor_move","pick_or_put_vs"}
+depends_skills     = {"goto","motor_move","pick_or_put_vs"}
 depends_interfaces = {
    {v = "line1", type="LaserLineInterface", id="/laser-lines/1"},
    {v = "line2", type="LaserLineInterface", id="/laser-lines/2"},
@@ -37,6 +38,7 @@ depends_interfaces = {
    {v = "line8", type="LaserLineInterface", id="/laser-lines/8"},
    {v = "laserline_switch", type = "SwitchInterface", id="laser-lines"},
    {v = "object_tracking_if", type = "ObjectTrackingInterface", id="object-tracking"},
+   {v = "arduino", type = "ArduinoInterface", id="Arduino"}
    {v = "arduino", type = "ArduinoInterface", id="Arduino"}
 }
 
@@ -60,6 +62,10 @@ local LASER_BASE_OFFSET    = 0.5 -- distance between robotino middle point and l
 local GRIPPER_TOLERANCE    = {x=0.005, y=0.001, z=0.001} -- accuracy
 local MISSING_MAX          = 5 -- limit for missing object detections in a row while fine-tuning gripper
 local MIN_VIS_HIST_LINE    = 5 -- minimum visibility history for laser-line before considering it
+local MIN_MAPPED_DIST      = 0.5 -- minimum distance of sensed laser data and navgraph data
+local MIN_ACTUAL_DIST      = 0.7 -- minimum distance b/w bot and laser center
+local MIN_MAPPED_ORI       = math.pi/6 -- minimum angle b/w sensed laser data and navgraph data
+local MIN_ACTUAL_ORI       = math.pi/6 -- minimum angle b/w bot and laser center
 local MIN_MAPPED_DIST      = 0.5 -- minimum distance of sensed laser data and navgraph data
 local MIN_ACTUAL_DIST      = 0.7 -- minimum distance b/w bot and laser center
 local MIN_MAPPED_ORI       = math.pi/6 -- minimum angle b/w sensed laser data and navgraph data
