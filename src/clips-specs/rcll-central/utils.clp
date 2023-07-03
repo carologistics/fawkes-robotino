@@ -43,6 +43,7 @@
 ; Maximum distance between two points on the field
   ?*MAX-DISTANCE* = 16.124
 
+  ?*RCLL_SIMULATOR_CONFIG* = "/rcll-simulator/"
   ?*BBSYNC_PEER_CONFIG* = "/fawkes/bbsync/peers/"
   ?*NAVGRAPH_GENERATOR_MPS_CONFIG* = "/navgraph-generator-mps/"
   ?*TAG_VISION_CONFIG* = "/plugins/tag_vision/"
@@ -91,6 +92,15 @@
   (slot action-name (type SYMBOL))
   (slot timeout-duration)
   (multislot start-time)
+)
+
+(deftemplate action-task-executor-enable
+" Define this for plan actions that should be handled by the protobuf
+  executor that sends agent task messages to a suitable simulator.
+  The messages are created based on the agent task descriptions that are used
+  in beacon signals.
+"
+  (slot name (type SYMBOL) (default ?NONE))
 )
 
 (deftemplate exploration-result

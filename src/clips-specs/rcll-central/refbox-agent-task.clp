@@ -115,7 +115,7 @@
                   ?from-side
                   ?mps
                   ?side&:(member$ ?side (create$ INPUT OUTPUT)))
-    (state RUNNING) (goal-id ?goal-id) (plan-id ?plan-id)
+    (state WAITING|RUNNING) (goal-id ?goal-id) (plan-id ?plan-id)
   )
   (test (or (neq ?from ?mps) (neq ?from-side ?side)))
   (not (refbox-agent-task (robot ?robot) (task-id ?seq)))
@@ -134,7 +134,7 @@
                   ?from
                   ?from-side
                   ?nav-node)
-    (state RUNNING) (goal-id ?goal-id) (plan-id ?plan-id)
+    (state WAITING|RUNNING) (goal-id ?goal-id) (plan-id ?plan-id)
   )
   (test (or (neq ?from ?nav-node) (neq ?from-side WAIT)))
   (not (refbox-agent-task (robot ?robot) (task-id ?seq)))
@@ -167,7 +167,7 @@
                   ?from
                   ?from-side
                   ?zone)
-    (state RUNNING) (goal-id ?goal-id) (plan-id ?plan-id)
+    (state WAITING|RUNNING) (goal-id ?goal-id) (plan-id ?plan-id)
   )
   (not (refbox-agent-task (robot ?robot) (task-id ?seq)))
   (domain-fact (name zone-content) (param-values ?zone ?))
@@ -186,7 +186,7 @@
                   ?wp
                   ?mps
                   ?side)
-    (state RUNNING) (goal-id ?goal-id) (plan-id ?plan-id)
+    (state WAITING|RUNNING) (goal-id ?goal-id) (plan-id ?plan-id)
   )
   (wm-fact (key domain fact mps-state args? m ?mps s PROCESSED|READY-AT-OUTPUT|IDLE))
   (not (refbox-agent-task (robot ?robot) (task-id ?seq)))
@@ -205,7 +205,7 @@
                   ?wp
                   ?mps
                   ?shelf-spot)
-    (state RUNNING) (goal-id ?goal-id) (plan-id ?plan-id)
+    (state WAITING|RUNNING) (goal-id ?goal-id) (plan-id ?plan-id)
   )
   (not (refbox-agent-task (robot ?robot) (task-id ?seq)))
   =>
@@ -225,7 +225,7 @@
                   ?wp
                   ?mps
                   ?side)
-    (state RUNNING) (goal-id ?goal-id) (plan-id ?plan-id)
+    (state WAITING|RUNNING) (goal-id ?goal-id) (plan-id ?plan-id)
   )
   (not (refbox-agent-task (robot ?robot) (task-id ?seq)))
   =>
@@ -243,7 +243,7 @@
                   ?wp
                   ?mps
                   $?)
-    (state RUNNING) (goal-id ?goal-id) (plan-id ?plan-id)
+    (state WAITING|RUNNING) (goal-id ?goal-id) (plan-id ?plan-id)
   )
   (not (refbox-agent-task (robot ?robot) (task-id ?seq)))
   =>

@@ -215,6 +215,7 @@
   =>
   (retract ?flushed)
   (bind ?self (sym-cat ?robot-name))
+  (config-load ?*RCLL_SIMULATOR_CONFIG*)
   (config-load ?*NAVGRAPH_GENERATOR_MPS_CONFIG*)
   (config-load ?*TAG_VISION_CONFIG*)
   (printout info "Initializing worldmodel" crlf)

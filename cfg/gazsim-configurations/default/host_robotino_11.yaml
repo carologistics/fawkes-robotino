@@ -58,6 +58,8 @@ clips-executive/specs/rcll-central/parameters/rcll:
   magenta-port: 0
   peer-recv-port: 4411
   peer-send-port: 4421
+  sim-peer-address: 127.0.0.1
+  sim-peer-recv-port: 2016
   cyan-recv-port: 4451
   magenta-recv-port: 4461
   cyan-send-port: 4471
