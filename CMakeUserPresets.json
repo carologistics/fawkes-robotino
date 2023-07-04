@@ -81,6 +81,7 @@
                 "PLUGIN_ros2-dynamic-reconfigure": "OFF",
                 "PLUGIN_ros2-images": "OFF",
                 "PLUGIN_ros2-imu": "OFF",
+                "PLUGIN_ros2-irscan": "OFF",
                 "PLUGIN_ros2-joint": "OFF",
                 "PLUGIN_ros2-laserscan": "OFF",
                 "PLUGIN_ros2-navigator": "OFF",
@@ -210,7 +211,8 @@
             ],
             "cacheVariables": {
                 "PLUGIN_amcl2": "ON",
-                "PLUGIN_laser_front_dist": "ON"
+                "PLUGIN_laser_front_dist": "ON",
+                "PLUGIN_ros2-irscan": "ON"
             }
         },
         {
