@@ -75,7 +75,19 @@
   ?gt-o <-(wm-fact (key refbox field-ground-truth orientation args? m ?mps) (value ?ori))
   (not (wm-fact (key game found-tag name args? m ?mps)))
 =>
-  (bind ?mirror-yaw (deg-to-rad (mirror-orientation ?mtype ?zone ?ori)))
+  (bind ?mirror-yaw ?yaw)
+  (bind ?mirror-name (mirror-name ?mps))
+  (bind ?mirror-rot (tf-quat-from-yaw ?mirror-yaw))
+  (bind ?mirror-zone ?zone)
+  (bind ?mirror-trans (tag-offset ?zone ?mirror-yaw 0.17))
+
+  (if TRUE then
+    (bind ?mirror-yaw (deg-to-rad (mirror-orientation ?mtype ?zone ?ori)))
+    (bind ?mirror-rot (tf-quat-from-yaw ?mirror-yaw))
+    (bind ?mirror-zone (mirror-name ?zone))
+    (bind ?mirror-trans (tag-offset (mirror-name ?zone) ?mirror-yaw 0.17))
+  )
+
   (assert
     (wm-fact (key game found-tag name args? m ?mps) (type BOOL) (value TRUE))
     (wm-fact (key game found-tag side args? m ?mps) (value INPUT))
@@ -84,14 +96,21 @@
     (wm-fact (key game found-tag rot args? m ?mps) (type FLOAT) (is-list TRUE) (values (tf-quat-from-yaw ?yaw )))
     (wm-fact (key game found-tag zone args? m ?mps) (value ?zone))
     ; add tags for the other team
-    ; removed mirroring for RC21, might be necessary to be reverted
-    (wm-fact (key game found-tag name args? m  ?mps) (type BOOL) (value TRUE))
-    (wm-fact (key game found-tag side args? m  ?mps) (value INPUT))
-    (wm-fact (key game found-tag frame args? m  ?mps) (type STRING) (value "map"))
-    (wm-fact (key game found-tag trans args? m  ?mps) (type FLOAT) (is-list TRUE) (values (tag-offset ?zone ?yaw 0.17)))
-    (wm-fact (key game found-tag rot args? m  ?mps) (type FLOAT) (is-list TRUE) (values (tf-quat-from-yaw ?yaw )))
-    (wm-fact (key game found-tag zone args? m  ?mps) (value ?zone))
+    (wm-fact (key game found-tag name args? m (mirror-name ?mps)) (type BOOL) (value TRUE))
+    (wm-fact (key game found-tag side args? m (mirror-name ?mps)) (value INPUT))
+    (wm-fact (key game found-tag frame args? m (mirror-name ?mps)) (type STRING) (value "map"))
+    (wm-fact (key game found-tag trans args? m (mirror-name ?mps)) (type FLOAT) (is-list TRUE) (values ?mirror-trans))
+    (wm-fact (key game found-tag rot args? m (mirror-name ?mps)) (type FLOAT) (is-list TRUE) (values ?mirror-rot))
+    (wm-fact (key game found-tag zone args? m (mirror-name ?mps)) (value ?mirror-zone))
   )
+
+  (tf-add-publisher (str-cat "mps"))
+  (tf-publish-pose-static "map" "mps" 0.0 0.0 0.0)
+  (tf-add-publisher (str-cat ?mps))
+  (tf-publish-pose-static "mps" (str-cat ?mps) ?yaw (nth$ 1 (zone-center ?zone)) (nth$ 2 (zone-center ?zone)))
+  (tf-add-publisher (str-cat ?mirror-name))
+  (tf-publish-pose-static "mps" (str-cat ?mirror-name) ?mirror-yaw (nth$ 1 (zone-center ?mirror-zone)) (nth$ 2 (zone-center ?mirror-zone)))
+
   (retract ?gt ?gt-t ?gt-z ?gt-y ?gt-o)
 )
 
