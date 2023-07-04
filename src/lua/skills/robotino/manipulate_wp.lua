@@ -52,6 +52,7 @@ Parameters:
                      the workpiece is there (optional, bool)
       @param query   defines if dry_run expects a workpiece to be at the location or wet (optional, THERE | ABSENT)
                      THERE by default
+      @param map_pos true, if MPS Pos is compared to Map Pos(optional,bool) True by default
 ]==]
 
 local LASER_BASE_OFFSET    = 0.35 -- distance between robotino middle point and laser-line
@@ -122,37 +123,47 @@ end
 
 -- Match laser line to navgraph point
 
-function match_line_new(lines)
+function match_line(lines)
   local matched_line = nil
+  local mapped_dist = 0
+  if fsm.vars.map_pos then
+    local navgraph_point= tfm.transform6D({
+      x = fsm.vars.mps_x,
+      y = fsm.vars.mps_y,
+      z = 0,
+      ori = fawkes.tf.create_quaternion_from_yaw(fsm.vars.mps_ori)
+      }, "/map", "/base_laser")
+  end
 
-  local navgraph_point= tfm.transform6D({
-    x = fsm.vars.mps_x,
-    y = fsm.vars.mps_y,
-    z = 0,
-    ori = fawkes.tf.create_quaternion_from_yaw(fsm.vars.ori)
-  }, "/map", "/base_laser")
   local min_dist = MIN_ACTUAL_DIST
   for k, line in pairs(lines) do
     local line_center = llutils.center(line, 0)
+    --printf('Ori:%f',line_center.ori)
+   
     local base_center =  tfm.transform6D({
       x=line_center.x,
       y=line_center.y,
       z=0,
-      ori = line_center.ori},"/base_laser","base_link")
-    local mapped_dist = math.vec_length(navgraph_point.x - line_center.x, navgraph_point.y - line_center.y)
-    local actual_dist = math.vec_length(base_center.x,base_center.y)
+      ori = fawkes.tf.create_quaternion_from_yaw(line_center.ori)},"/base_laser","base_link")
 
-    printf('Distance calculated from the Laser center to robotino base: %f and its threshold: %f',actual_dist,min_dist)
-    printf('Distance from expected map pos to laser line: %f and its threshold: %f',mapped_dist,MIN_MAPPED_DIST)
-    printf('Difference b/w actual orientation & expected orientation : %f and its threshold: %f',line_center.ori-navgraph_point.ori,MIN_MAPPED_ORI)
-    printf('Difference b/w Bot orientation & laser_line orientation : %f and its threshold: %f',base_center.ori,MIN_ACTUAL_ORI)
+    --printf(tostring(fawkes.tf.get_yaw(base_center.ori)))
     
-    if line:visibility_history() >= MIN_VIS_HIST_LINE and actual_dist < min_dist and base_center.ori<=MIN_ACTUAL_ORI and 
-        mapped_dist<=MIN_MAPPED_DIST and (line_center.ori-navgraph_point.ori)<=MIN_MAPPED_ORI
+    if fsm.vars.map_pos then 
+      mapped_dist = math.vec_length(navgraph_point.x - line_center.x, navgraph_point.y - line_center.y)
+      local orient_diff = line_center.ori - fawkes.tf.get_yaw(navgraph_point.ori)
+      --printf('Distance from expected map pos to laser line: %f and its threshold: %f',mapped_dist,MIN_MAPPED_DIST)
+      --printf('Difference b/w actual orientation & expected orientation : %f and its threshold: %f',orient_diff,MIN_MAPPED_ORI)
+    end
+    
+    local actual_dist = math.vec_length(base_center.x,base_center.y)
+    --printf('Distance calculated from the Laser center to robotino base: %f and its threshold: %f',actual_dist,min_dist)
+    --printf('Difference b/w Bot orientation & laser_line orientation : %s and its threshold: %f',fawkes.tf.get_yaw(base_center.ori),MIN_ACTUAL_ORI)
+    
+    if (line:visibility_history() >= MIN_VIS_HIST_LINE and actual_dist < min_dist and fawkes.tf.get_yaw(base_center.ori)<=MIN_ACTUAL_ORI) and 
+        ( not fsm.vars.map_pos or (mapped_dist<=MIN_MAPPED_DIST and (line_center.ori-fawkes.tf.get_yaw(navgraph_point.ori))<=MIN_MAPPED_ORI))
     then
         min_dist = actual_dist
         matched_line = line
-        printf("Line dist: %f", dist)
     end
   end
   return matched_line
@@ -361,7 +372,7 @@ function INIT:init()
   
   if fsm.vars.side == "INPUT" then
     fsm.vars.mps_ori = fsm.vars.mps_ori+math.pi
-  end 
+  end
   fsm.vars.missing_detections = 0
   fsm.vars.msgid              = 0
   fsm.vars.out_of_reach       = false
@@ -396,6 +407,9 @@ function INIT:init()
     else -- assume highest possible workpiece if unknown
       fsm.vars.c = "C3"
     end
+  end
+  if fsm.vars.map_pos ~= false then
+    fsm.vars.map_pos = true
   end
 
   -- difference in height of current product compared to a C3
