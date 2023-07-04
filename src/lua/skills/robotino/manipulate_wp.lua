@@ -78,7 +78,6 @@ local MISSING_MAX          = 5 -- limit for missing object detections in a row w
 local LINE_MATCH_TOLERANCE = 0.3 -- meter threshold of laserline center to tag
 local MIN_VIS_HIST_LINE    = 5 -- minimum visibility history for laser-line before considering it
 local MIN_VIS_HIST_TAG     = 5 -- minimum visibility history for tag before considering it
-local SAFE_DIST            = 0.03 -- extra distance in x direction to target position while moving base
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
@@ -100,6 +99,8 @@ local right_shelf_offset_side  = -0.275
 local ring_height = 0.01
 
 local drive_back_x = -0.1
+
+local safe_dist = 0.03 -- extra distance in x direction to target position while moving base
 
 -- read gripper config
 if config:exists("/arduino/x_max") then
@@ -135,6 +136,12 @@ end
 -- read wp config
 if config:exists("plugins/object_tracking/puck_values/ring_height") then
   ring_height = config:get_float("plugins/object_tracking/puck_values/ring_height")
+end
+
+-- read config values for target frame and routine adjustments
+-- save dist
+if config:exists("plugins/vs_offsets/workpiece/pick_target/save_dist") then
+  safe_dist = config:get_float("plugins/vs_offsets/workpiece/pick_target/save_dist")
 end
 
 -- Match tag to navgraph point
@@ -574,7 +581,7 @@ function MOVE_BASE_AND_GRIPPER:init()
     "base_link", "end_effector_home")
 
   fsm.vars.gripper_wait = 10
-  set_gripper(gripper_target.x - SAFE_DIST, 0, gripper_target.z - fsm.vars.missing_c3_height)
+  set_gripper(gripper_target.x - safe_dist, 0, gripper_target.z - fsm.vars.missing_c3_height)
 end
 
 function FINE_TUNE_GRIPPER:init()

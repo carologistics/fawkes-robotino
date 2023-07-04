@@ -1,0 +1,61 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/webview
+---
+plugins/vs_offsets:
+  # distance between object and target base pose
+  base_offset: 0.28
+
+  # offsets between object pose from the object tracking plugin and the target
+  #  frame before starting the routine (..._target), at the pick/put
+  #  position in the routine (..._routine), and at the end of the gripper
+  #  routine (..._end)
+  # z positions assume the wp is a C3 and reduce the height if its lower
+  # change y direction through host_specific static frame
+  workpiece:
+    pick_target:
+      # distance in x direction in front of target frame to be more save while
+      #  moving base
+      save_dist: 0.03
+      # pick_routine and pick_end is sharing the same x offset as its
+      #  pick_target
+      offset_x: 0.00
+      offset_z: 0.035
+
+    pick_routine:
+      offset_z: 0.00
+
+    pick_end:
+      offset_z: 0.0125
+
+  conveyor:
+    put_target:
+      offset_x: 0.01
+      offset_z: 0.045
+      # = distance_from_usual_wp_pos + belt_size_ / 2 + puck_height_ / 2
+      # = distance_from_usual_wp_pos + 0.035
+
+    put_routine:
+      offset_x: 0.01
+      offset_z: 0.035
+      # = belt_size_ / 2 + puck_height_ / 2
+      # = 0.035
+
+    put_end:
+      # put_end is sharing the same x offset as its pick_target
+      offset_z: 0.045
+
+  slide:
+    put_target:
+      offset_x: -0.03
+      offset_z: 0.025
+      # = distance_from_usual_wp_pos + puck_height_ / 2
+      # = distance_from_usual_wp_pos + 0.0125
+
+    put_routine:
+      offset_x: 0.01
+      offset_z: 0.01
+
+    put_end:
+      offset_z: 0.035
