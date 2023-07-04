@@ -377,7 +377,7 @@ function INIT:init()
   
   if fsm.vars.side == "INPUT" then
     fsm.vars.mps_ori = fsm.vars.mps_ori+math.pi
-
+  end 
   fsm.vars.missing_detections = 0
   fsm.vars.msgid              = 0
   fsm.vars.out_of_reach       = false
