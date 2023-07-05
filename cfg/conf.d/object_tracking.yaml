@@ -69,6 +69,8 @@ plugins/object_tracking:
     p2: 0
     k3: 0
 
+  rotate_image: false
+
   # frame to use for the weighted average and the target frames
   target_frame: "/odom"
   camera_frame: "cam_gripper"
