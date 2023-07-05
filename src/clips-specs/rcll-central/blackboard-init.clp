@@ -61,20 +61,6 @@
   (blackboard-open "SwitchInterface" (remote-if-id ?robot "switch/box_detect_enabled"))
 )
 
-(defrule blackboard-init-open-laptop-navgraph-interfaces
-  "Open the robot-specific Navgraph blackboard interfaces."
-  (domain-facts-loaded)
-  (ff-feature-loaded blackboard)
-  (wm-fact (key central agent laptop args? r ?robot))
-  =>
-  (blackboard-open "NavGraphWithMPSGeneratorInterface"
-                   (remote-if-id ?robot "navgraph-generator-mps"))
-  (blackboard-open "NavGraphGeneratorInterface"
-                   (remote-if-id ?robot "navgraph-generator"))
-  (blackboard-open "NavigatorInterface"
-                   (remote-if-id ?robot "Navigator"))
-)
-
 (defrule blackboard-init-open-liveliness-check
   "Open the robot-specific Heartbeat blackboard interface."
   (domain-facts-loaded)
@@ -82,65 +68,6 @@
   (wm-fact (key central agent robot args? r ?robot))
   =>
   (blackboard-open "HeartbeatInterface" (remote-if-id "heartbeat" ?robot))
-)
-
-
-(defrule blackboard-init-open-robot-navgraph-interfaces
-  "Open the robot-specific Navgraph blackboard interfaces."
-  (domain-facts-loaded)
-  (ff-feature-loaded blackboard)
-  (wm-fact (key central agent robot args? r ?robot))
-  =>
-  (blackboard-open "NavGraphWithMPSGeneratorInterface"
-                   (remote-if-id ?robot "navgraph-generator-mps"))
-  (blackboard-open "NavGraphGeneratorInterface"
-                   (remote-if-id ?robot "navgraph-generator"))
-  (blackboard-open "NavigatorInterface"
-                   (remote-if-id ?robot "Navigator"))
-)
-
-(defrule blackboard-init-compute-navgraph
-  (or (wm-fact (key central agent robot args? r ?robot))
-      (wm-fact (key central agent laptop args? r ?robot)))
-  (blackboard-interface (id ?id&:(str-index ?robot ?id))
-                        (type "NavGraphWithMPSGeneratorInterface"))
-  (blackboard-interface (id ?id2&:(str-index ?robot ?id2))
-                        (type "NavGraphGeneratorInterface"))
-  (wm-fact (key config rcll use-static-navgraph) (type BOOL) (value FALSE))
-  =>
-  (navgraph-set-field-size-from-cfg ?robot)
-  (navgraph-compute ?robot)
-)
-
-(defrule blackboard-init-compute-navgraph-from-refbox-value
-  (or (wm-fact (key central agent robot args? r ?robot))
-      (wm-fact (key central agent laptop args? r ?robot)))
-  (blackboard-interface (id ?id&:(str-index ?robot ?id))
-                        (type "NavGraphWithMPSGeneratorInterface"))
-  (blackboard-interface (id ?id2&:(str-index ?robot ?id2))
-                        (type "NavGraphGeneratorInterface"))
-  (wm-fact (key config rcll use-static-navgraph) (type BOOL) (value FALSE))
-  (wm-fact (key refbox field height) (value ?field-height))
-  (wm-fact (key refbox field width) (value ?field-width))
-  (wm-fact (key refbox field mirrored) (value ?mirrored))
-  (test
-    (and
-      (neq ?field-height NOT-SET) (neq ?field-height DOES-NOT-EXIST)
-      (neq ?field-width NOT-SET) (neq ?field-width DOES-NOT-EXIST)
-      (neq ?mirrored NOT-SET) (neq ?mirrored DOES-NOT-EXIST)
-    )
-  )
-  =>
-  (bind ?p1_x (- 0 ?field-width))
-  (bind ?p1_y 0)
-  (bind ?p2_x ?field-width)
-  (bind ?p2_y ?field-height)
-  (if ?mirrored
-    then
-    (bind ?p2_x 0)
-  )
-  (navgraph-set-field-size ?robot ?p1_x ?p1_y ?p2_x ?p2_y)
-  (navgraph-compute ?robot)
 )
 
 (defrule blackboard-init-compute-navgraph-central

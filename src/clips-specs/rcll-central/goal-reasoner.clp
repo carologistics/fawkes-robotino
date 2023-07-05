@@ -541,7 +541,9 @@
   )
   (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as workpiece is still usable after fail" crlf)
   (modify ?g (mode FORMULATED) (outcome UNKNOWN))
-  (modify ?gm (retries (+ 1 ?retries)))
+  (do-for-fact ((?gm goal-meta)) (eq ?gm:goal-id ?goal-id)
+    (modify ?gm (retries (+ 1 ?retries)))
+  )
 
   (goal-reasoner-retract-plan-action ?goal-id)
 )

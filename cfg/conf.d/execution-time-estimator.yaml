@@ -83,19 +83,22 @@ plugins/execution-time-estimator:
       99-default-put:
         name: bring_prodcut_to
         exec-time: 19.24
+      99-go-to:
+        name: goto
+        exec-time: 8
 
   # Estimates exec times of driving skills by taking distances from NavGraph
   # as reference.
   navgraph:
     # misc options
-    priority: 1
+    priority: -2
     speed: 0.5
 
     # global whitelist options
     target: place
 
     # whitelist and blacklist
-    whitelist:
+    blacklist:
       # defaults to target place as specified above
       movement:
         name: goto
