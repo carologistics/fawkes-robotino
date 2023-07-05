@@ -374,7 +374,7 @@ ObjectTrackingThread::loop()
 		//read from sharedMemoryBuffer and convert into Mat
 		image = Mat(camera_height_, camera_width_, CV_8UC3, shm_buffer_->buffer()).clone();
 		cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
-		capture_time = fawkes::Time(0.0);
+		capture_time = shm_buffer_->capture_time();
 	}
 
 	if (rotate_image_)
@@ -493,7 +493,15 @@ ObjectTrackingThread::loop()
 		cur_object_pos_cam.setX(cur_object_pos[0]);
 		cur_object_pos_cam.setY(cur_object_pos[1]);
 		cur_object_pos_cam.setZ(cur_object_pos[2]);
-		tf_listener->transform_point(target_frame_, cur_object_pos_cam, cur_object_pos_target);
+
+		try {
+			tf_listener->transform_point(target_frame_, cur_object_pos_cam, cur_object_pos_target);
+		} catch (tf::ExtrapolationException &e) {
+			logger->log_info(name(), "Extrapolation error: %s", e.what());
+			capture_time             = fawkes::Time(0.0);
+			cur_object_pos_cam.stamp = capture_time;
+			tf_listener->transform_point(target_frame_, cur_object_pos_cam, cur_object_pos_target);
+		}
 
 		//update object pos transform
 		tf::Quaternion       q(0.0, 0.0, 0.0);
@@ -581,7 +589,7 @@ ObjectTrackingThread::loop()
 	//transform weighted average into base_link
 	fawkes::tf::Stamped<fawkes::tf::Point> weighted_object_pos_base;
 	fawkes::tf::Stamped<fawkes::tf::Point> weighted_object_pos_target;
-	weighted_object_pos_target.stamp    = fawkes::Time(0.0);
+	weighted_object_pos_target.stamp    = capture_time;
 	weighted_object_pos_target.frame_id = target_frame_;
 	weighted_object_pos_target.setX(weighted_object_pos[0]);
 	weighted_object_pos_target.setY(weighted_object_pos[1]);
@@ -614,15 +622,17 @@ ObjectTrackingThread::loop()
 
 	fawkes::Time after_interface_update(clock);
 	loop_count_++;
-	//double average_loop = (after_interface_update - &starting_time_) / loop_count_;
+	double average_loop = (after_interface_update - &starting_time_) / loop_count_;
 
-	//logger->log_info("load image time ", std::to_string(before_detect - &start_time).c_str());
-	//logger->log_info("detection time  ", std::to_string(after_detect - &before_detect).c_str());
-	//logger->log_info("box time        ", std::to_string(after_projection - &after_detect).c_str());
-	//logger->log_info("interface time  ", std::to_string(after_interface_update - &after_projection).c_str());
-	//logger->log_info("overall time    ", std::to_string(after_interface_update - &start_time).c_str());
-	//logger->log_info("loop count      ", std::to_string(loop_count_).c_str());
-	//logger->log_info("average loop    ", std::to_string(average_loop).c_str());
+	logger->log_info("load image time ", std::to_string(before_detect - &start_time).c_str());
+	logger->log_info("detection time  ", std::to_string(after_detect - &before_detect).c_str());
+	logger->log_info("box time        ", std::to_string(after_projection - &after_detect).c_str());
+	logger->log_info("interface time  ",
+	                 std::to_string(after_interface_update - &after_projection).c_str());
+	logger->log_info("overall time    ",
+	                 std::to_string(after_interface_update - &start_time).c_str());
+	logger->log_info("loop count      ", std::to_string(loop_count_).c_str());
+	logger->log_info("average loop    ", std::to_string(average_loop).c_str());
 }
 
 bool
