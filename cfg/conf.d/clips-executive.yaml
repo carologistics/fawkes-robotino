@@ -134,18 +134,18 @@ clips-executive:
         move-wp-put: goto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
         go-wait: goto{place="?(to)Y"}
         wp-get-shelf: manipulate_wp{mps=?(m)S,
-                              side="SHELF-?(spot)Y",target="WORKPIECE", mps_pos=false}
+                              side="SHELF-?(spot)Y",target="WORKPIECE", map_pos=false}
         wp-put: manipulate_wp{mps=?(m)S,
-                             side=?(side)S,target="CONVEYOR",c=?(com)S, mps_pos=false}
+                             side=?(side)S,target="CONVEYOR",c=?(com)S, map_pos=false}
         wp-put-slide-cc: manipulate_wp{mps=?(m)S,
-                         side="SLIDE", target="SLIDE", mps_pos=false}
+                         side="SLIDE", target="SLIDE", map_pos=false}
         wp-get: manipulate_wp{mps=?(m)S,
-                              side=?(side)S,target="WORKPIECE",c=?(com)S, mps_pos=false}
+                              side=?(side)S,target="WORKPIECE",c=?(com)S, map_pos=false}
         wp-discard: discard{}
         explore-and-turn: goto_corner_turn{place=?(place)S,
                                            min_x=-5, max_x=0, min_y=0, max_y=6}
         wp-check: manipulate_wp{mps=?(m)S,dry_run=true,
-                          side=?(side)S,target="WORKPIECE",query=?(query)S, mps_pos=false}
+                          side=?(side)S,target="WORKPIECE",query=?(query)S, map_pos=false}
       parameters:
         simtest:
           enabled: false
