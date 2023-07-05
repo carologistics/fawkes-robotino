@@ -94,6 +94,10 @@ ObjectTrackingThread::init()
 	offset_x_put_conveyor_ = config->get_float("plugins/vs_offsets/conveyor/put_target/offset_x");
 	offset_z_put_conveyor_ = config->get_float("plugins/vs_offsets/conveyor/put_target/offset_z");
 
+	offset_x_routine_conveyor_ =
+	  config->get_float("plugins/vs_offsets/conveyor/put_routine/offset_x");
+	offset_x_routine_slide_ = config->get_float("plugins/vs_offsets/slide/put_routine/offset_x");
+
 	offset_x_put_slide_ = config->get_float("plugins/vs_offsets/slide/put_target/offset_x");
 	offset_z_put_slide_ = config->get_float("plugins/vs_offsets/slide/put_target/offset_z");
 
@@ -904,19 +908,31 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 	//compute target gripper frame first
 	float gripper_offset_x = 0;
 	float gripper_offset_z = 0;
+	float max_x_needed     = 0;
+	float max_y_needed     = 0;
 
 	switch (current_object_type_) {
 	case ObjectTrackingInterface::WORKPIECE:
 		gripper_offset_x = offset_x_pick_;
 		gripper_offset_z = offset_z_pick_;
+		max_x_needed     = object_pos.getX() + cos(mps_angle) * offset_x_pick_;
+		max_y_needed     = object_pos.getY() - sin(mps_angle) * offset_x_pick_;
 		break;
 	case ObjectTrackingInterface::CONVEYOR_BELT_FRONT:
 		gripper_offset_x = offset_x_put_conveyor_;
 		gripper_offset_z = offset_z_put_conveyor_;
+		max_x_needed =
+		  object_pos.getX() + cos(mps_angle) * max(offset_x_put_conveyor_, offset_x_routine_conveyor_);
+		max_y_needed =
+		  object_pos.getY() - sin(mps_angle) * max(offset_x_put_conveyor_, offset_x_routine_conveyor_);
 		break;
 	case ObjectTrackingInterface::SLIDE_FRONT:
 		gripper_offset_x = offset_x_put_slide_;
 		gripper_offset_z = offset_z_put_slide_;
+		max_x_needed =
+		  object_pos.getX() + cos(mps_angle) * max(offset_x_put_slide_, offset_x_routine_slide_);
+		max_y_needed =
+		  object_pos.getY() - sin(mps_angle) * max(offset_x_put_slide_, offset_x_routine_slide_);
 		break;
 	default:
 		logger->log_error(object_tracking_if_->enum_tostring("TARGET_OBJECT_TYPE",
@@ -929,7 +945,7 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 	gripper_target[1] = object_pos.getY() - sin(mps_angle) * gripper_offset_x;
 	gripper_target[2] = object_pos.getZ() + gripper_offset_z;
 
-	base_target[0] = gripper_target[0] - cos(mps_angle) * base_offset_;
-	base_target[1] = gripper_target[1] + sin(mps_angle) * base_offset_;
+	base_target[0] = max_x_needed - cos(mps_angle) * base_offset_;
+	base_target[1] = max_y_needed + sin(mps_angle) * base_offset_;
 	base_target[2] = mps_angle;
 }
