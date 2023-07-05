@@ -616,22 +616,8 @@ end
 
 function GRIPPER_ROUTINE:init()
   -- perform pick or put routine
-  print("start routine")
-  if fsm.vars.target == "SLIDE" then
-    self.args["pick_or_put_vs"].slide = true
-  else 
-    self.args["pick_or_put_vs"].slide = false
-  end
-
-  if fsm.vars.target == "WORKPIECE" then
-    self.args["pick_or_put_vs"].action = "PICK"
-    self.args["pick_or_put_vs"].missing_c3_height = tostring(fsm.vars.missing_c3_height)
-    print("Pick")
-  else
-    self.args["pick_or_put_vs"].action = "PUT"
-    self.args["pick_or_put_vs"].missing_c3_height = tostring(fsm.vars.missing_c3_height)
-    print("Put")
-  end
+  self.args["pick_or_put_vs"].target = fsm.vars.target
+  self.args["pick_or_put_vs"].missing_c3_height = tostring(fsm.vars.missing_c3_height)
 end
 
 -- end tracking afterwards

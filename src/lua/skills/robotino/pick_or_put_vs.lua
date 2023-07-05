@@ -35,8 +35,7 @@ Skill to pick a product and to put it down based on param action.
 It is independent of the workpiece location or its target location.
 
 Parameters:
-      @param action             decides if a pick or put action is performed: (PICK | PUT)
-      @param slide              true if target is slide (true | false)
+      @param target             target object (WORKPIECE | CONVEYOR | SLIDE)
       @param missing_c3_height  distance between C3 height and current wp height
 ]==]
 
@@ -135,16 +134,23 @@ if config:exists("plugins/vs_offsets/slide/put_end/offset_z") then
 end
 
 function input_invalid()
-  if fsm.vars.action == "PICK" then
-    fsm.vars.pick_wp = true
-  elseif fsm.vars.action == "PUT" then
-    fsm.vars.pick_wp = false
-  elseif fsm.vars.slide ~= true and fsm.vars.slide ~= false then
+  if fsm.vars.target == "WORKPIECE" or fsm.vars.target == "CONVEYOR"  or fsm.vars.target == "SLIDE" then
     return false
   else
     return true
   end
-  return false
+end
+
+function is_pick_action()
+  if fsm.vars.target == "WORKPIECE" then
+    return true
+  else
+    return false
+  end
+end
+
+function is_put_action()
+  return not is_pick_action()
 end
 
 fsm:define_states{ export_to=_M, closure={},
@@ -163,10 +169,10 @@ fsm:define_states{ export_to=_M, closure={},
 fsm:add_transitions{
    {"INIT", "FAILED",                 cond=input_invalid, desc="Invalid Input"},
    {"INIT", "MOVE_GRIPPER_DOWN",      true, desc="Start Routine"},
-   {"CHOOSE_ACTION", "CLOSE_GRIPPER", cond="vars.pick_wp", desc="Picking Up Workpiece"},
-   {"CHOOSE_ACTION", "OPEN_GRIPPER",  cond="not vars.pick_wp", desc="Putting Down Workpiece"},
+   {"CHOOSE_ACTION", "CLOSE_GRIPPER", cond=is_pick_action, desc="Picking Up Workpiece"},
+   {"CHOOSE_ACTION", "OPEN_GRIPPER",  cond=is_put_action, desc="Putting Down Workpiece"},
    {"CHOOSE_ACTION", "FAILED",        true, desc="Instructions Unclear"},
-   {"DECIDE_CLOSE", "CLOSE_DEFAULT",  cond="not vars.pick_wp", desc="Close Gripper"},
+   {"DECIDE_CLOSE", "CLOSE_DEFAULT",  cond=is_put_action, desc="Close Gripper"},
    {"DECIDE_CLOSE", "FINAL",          true},
 }
 
@@ -229,12 +235,12 @@ end
 
 function MOVE_GRIPPER_UP:init()
   local z_given = 0
-  if fsm.vars.pick_wp then
+  if fsm.vars.target == "WORKPIECE" then
     z_given = fsm.vars.target_z + offset_z_up_pick
-  elseif fsm.vars.slide then
-    z_given = fsm.vars.target_z + offset_z_up_put_slide
-  else
+  elseif fsm.vars.target == "CONVEYOR" then
     z_given = fsm.vars.target_z + offset_z_up_put_conveyor - fsm.vars.missing_c3_height
+  else -- SLIDE
+    z_given = fsm.vars.target_z + offset_z_up_put_slide
   end
 
   self.args["gripper_commands"].x = arduino:x_position()
