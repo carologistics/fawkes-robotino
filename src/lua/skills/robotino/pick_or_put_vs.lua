@@ -45,6 +45,10 @@ Parameters:
 skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
 
+local offset_x_pick_target_frame = 0.00
+local offset_x_put_conveyor_target_frame = 0.01
+local offset_x_put_slide_target_frame = -0.03
+
 local offset_z_pick_target_frame = 0.035
 local offset_z_put_conveyor_target_frame = 0.045
 local offset_z_put_slide_target_frame = 0.025
@@ -83,6 +87,16 @@ if config:exists("/arduino/z_max") then
 end
 
 -- read vs configs
+if config:exists("plugins/vs_offsets/workpiece/pick_target/offset_x") then
+  offset_x_pick_target_frame = config:get_float("plugins/vs_offsets/workpiece/pick_target/offset_x")
+end
+if config:exists("plugins/vs_offsets/conveyor/put_target/offset_x") then
+  offset_x_put_conveyor_target_frame = config:get_float("plugins/vs_offsets/conveyor/put_target/offset_x")
+end
+if config:exists("plugins/vs_offsets/slide/put_target/offset_x") then
+  offset_x_put_slide_target_frame = config:get_float("plugins/vs_offsets/slide/put_target/offset_x")
+end
+
 if config:exists("plugins/vs_offsets/workpiece/pick_target/offset_z") then
   offset_z_pick_target_frame = config:get_float("plugins/vs_offsets/workpiece/pick_target/offset_z")
 end
@@ -93,9 +107,6 @@ if config:exists("plugins/vs_offsets/slide/put_target/offset_z") then
   offset_z_put_slide_target_frame = config:get_float("plugins/vs_offsets/slide/put_target/offset_z")
 end
 
-if config:exists("plugins/vs_offsets/workpiece/pick_routine/offset_x") then
-  offset_x_pick_routine = config:get_float("plugins/vs_offsets/workpiece/pick_routine/offset_x")
-end
 if config:exists("plugins/vs_offsets/conveyor/pick_routine/offset_x") then
   offset_x_put_conveyor_routine = config:get_float("plugins/vs_offsets/conveyor/pick_routine/offset_x")
 end
@@ -174,11 +185,16 @@ function MOVE_GRIPPER_DOWN:init()
 
   -- Clip to axis limits
   local x_given = gripper_target.x
+  print("target:")
+  print(fsm.vars.target)
   if fsm.vars.target == "WORKPIECE" then
+    print("WP")
     x_given = gripper_target.x - offset_x_pick_target_frame + offset_x_pick_routine
   elseif fsm.vars.target == "CONVEYOR" then
+    print("CONVEYOR")
     x_given = gripper_target.x - offset_x_put_conveyor_target_frame + offset_x_put_conveyor_routine
   else -- SLIDE
+    print("SLIDE")
     x_given = gripper_target.x - offset_x_put_slide_target_frame + offset_x_put_slide_routine
   end
 
