@@ -32,7 +32,7 @@ plugins/vs_offsets:
   conveyor:
     put_target:
       offset_x: 0.01
-      offset_z: 0.045
+      offset_z: 0.055
       # = distance_from_usual_wp_pos + belt_size_ / 2 + puck_height_ / 2
       # = distance_from_usual_wp_pos + 0.035
 

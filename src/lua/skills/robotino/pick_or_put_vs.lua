@@ -66,20 +66,19 @@ if config:exists("/arduino/z_max") then
 end
 
 -- read vs configs
-local offset_x_pick_target_frame = config:get_float("plugins/vs_offsets/workpiece/pick_target/offset_x")
 local offset_x_put_conveyor_target_frame = config:get_float("plugins/vs_offsets/conveyor/put_target/offset_x")
 local offset_x_put_slide_target_frame = config:get_float("plugins/vs_offsets/slide/put_target/offset_x")
 
-local ffset_z_pick_target_frame = config:get_float("plugins/vs_offsets/workpiece/pick_target/offset_z")
+local offset_z_pick_target_frame = config:get_float("plugins/vs_offsets/workpiece/pick_target/offset_z")
 local offset_z_put_conveyor_target_frame = config:get_float("plugins/vs_offsets/conveyor/put_target/offset_z")
 local offset_z_put_slide_target_frame = config:get_float("plugins/vs_offsets/slide/put_target/offset_z")
 
-local offset_x_put_conveyor_routine = config:get_float("plugins/vs_offsets/conveyor/pick_routine/offset_x")
-local offset_x_put_slide_routine = config:get_float("plugins/vs_offsets/slide/pick_routine/offset_x")
+local offset_x_put_conveyor_routine = config:get_float("plugins/vs_offsets/conveyor/put_routine/offset_x")
+local offset_x_put_slide_routine = config:get_float("plugins/vs_offsets/slide/put_routine/offset_x")
 
 local offset_z_pick_routine = config:get_float("plugins/vs_offsets/workpiece/pick_routine/offset_z")
-local offset_z_put_conveyor_routine = config:get_float("plugins/vs_offsets/conveyor/pick_routine/offset_z")
-local offset_z_put_slide_routine = config:get_float("plugins/vs_offsets/slide/pick_routine/offset_z")
+local offset_z_put_conveyor_routine = config:get_float("plugins/vs_offsets/conveyor/put_routine/offset_z")
+local offset_z_put_slide_routine = config:get_float("plugins/vs_offsets/slide/put_routine/offset_z")
 
 local offset_z_up_pick = config:get_float("plugins/vs_offsets/workpiece/pick_end/offset_z")
 local offset_z_up_put_conveyor = config:get_float("plugins/vs_offsets/conveyor/put_end/offset_z")
@@ -142,16 +141,11 @@ function MOVE_GRIPPER_DOWN:init()
 
   -- Clip to axis limits
   local x_given = gripper_target.x
-  print("target:")
-  print(fsm.vars.target)
   if fsm.vars.target == "WORKPIECE" then
-    print("WP")
-    x_given = gripper_target.x - offset_x_pick_target_frame + offset_x_pick_routine
+    x_given = gripper_target.x
   elseif fsm.vars.target == "CONVEYOR" then
-    print("CONVEYOR")
     x_given = gripper_target.x - offset_x_put_conveyor_target_frame + offset_x_put_conveyor_routine
   else -- SLIDE
-    print("SLIDE")
     x_given = gripper_target.x - offset_x_put_slide_target_frame + offset_x_put_slide_routine
   end
 
@@ -162,7 +156,12 @@ function MOVE_GRIPPER_DOWN:init()
   if fsm.vars.target == "WORKPIECE" then
     z_given = gripper_target.z - offset_z_pick_target_frame + offset_z_pick_routine
   elseif fsm.vars.target == "CONVEYOR" then
+    print("CONVEYOR")
     z_given = gripper_target.z - offset_z_put_conveyor_target_frame + offset_z_put_conveyor_routine
+    print(gripper_target.z)
+    print(offset_z_put_conveyor_target_frame)
+    print(offset_z_put_conveyor_routine)
+    print(z_given)
   else -- SLIDE
     z_given = gripper_target.z - offset_z_put_slide_target_frame + offset_z_put_slide_routine
   end
@@ -177,6 +176,7 @@ function MOVE_GRIPPER_DOWN:init()
   self.args["gripper_commands"].y = y_clipped
   self.args["gripper_commands"].z = z_clipped
   self.args["gripper_commands"].command = "MOVEABS"
+  print(z_clipped)
 end
 
 function CLOSE_GRIPPER:init()
