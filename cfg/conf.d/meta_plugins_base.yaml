@@ -31,7 +31,6 @@ fawkes/meta_plugins:
     - ros2-odometry
     - ros2-tf2
     - ros2-laserscan
-    - ros2-irscan
     - ros2-cmdvel
     - ros2-navigator
   m-base-laser:
