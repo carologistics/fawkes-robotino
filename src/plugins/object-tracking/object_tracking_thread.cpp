@@ -88,14 +88,14 @@ ObjectTrackingThread::init()
 
 	base_offset_ = config->get_float("plugins/vs_offsets/base_offset");
 
-	offset_x_pick = config->get_float("plugins/vs_offsets/workpiece/pick_target/offset_x");
-	offset_z_pick = config->get_float("plugins/vs_offsets/workpiece/pick_target/offset_z");
+	offset_x_pick_ = config->get_float("plugins/vs_offsets/workpiece/pick_target/offset_x");
+	offset_z_pick_ = config->get_float("plugins/vs_offsets/workpiece/pick_target/offset_z");
 
-	offset_x_put_conveyor = config->get_float("plugins/vs_offsets/conveyor/put_target/offset_x");
-	offset_z_put_conveyor = config->get_float("plugins/vs_offsets/conveyor/put_target/offset_z");
+	offset_x_put_conveyor_ = config->get_float("plugins/vs_offsets/conveyor/put_target/offset_x");
+	offset_z_put_conveyor_ = config->get_float("plugins/vs_offsets/conveyor/put_target/offset_z");
 
-	offset_x_put_slide = config->get_float("plugins/vs_offsets/slide/put_target/offset_x");
-	offset_z_put_slide = config->get_float("plugins/vs_offsets/slide/put_target/offset_z");
+	offset_x_put_slide_ = config->get_float("plugins/vs_offsets/slide/put_target/offset_x");
+	offset_z_put_slide_ = config->get_float("plugins/vs_offsets/slide/put_target/offset_z");
 
 	//get camera params
 	camera_width_     = config->get_int("plugins/object_tracking/camera_intrinsics/width");
@@ -902,17 +902,21 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 	float mps_angle = ll->bearing();
 
 	//compute target gripper frame first
+	float gripper_offset_x = 0;
+	float gripper_offset_z = 0;
+
 	switch (current_object_type_) {
 	case ObjectTrackingInterface::WORKPIECE:
-		gripper_target[0] = object_pos.getX();
-		gripper_target[1] = object_pos.getY();
-		gripper_target[2] = object_pos.getZ() + offset_z_pick;
+		gripper_offset_x = offset_x_pick_;
+		gripper_offset_z = offset_z_pick_;
 		break;
 	case ObjectTrackingInterface::CONVEYOR_BELT_FRONT:
-		gripper_target[2] = object_pos.getZ() + offset_z_put_conveyor;
+		gripper_offset_x = offset_x_put_conveyor_;
+		gripper_offset_z = offset_z_put_conveyor_;
 		break;
 	case ObjectTrackingInterface::SLIDE_FRONT:
-		gripper_target[2] = object_pos.getZ() + offset_z_put_slide;
+		gripper_offset_x = offset_x_put_slide_;
+		gripper_offset_z = offset_z_put_slide_;
 		break;
 	default:
 		logger->log_error(object_tracking_if_->enum_tostring("TARGET_OBJECT_TYPE",
@@ -921,13 +925,9 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 		return;
 	}
 
-	if (current_object_type_ == ObjectTrackingInterface::CONVEYOR_BELT_FRONT) {
-		gripper_target[0] = object_pos.getX() + cos(mps_angle) * offset_x_put_conveyor;
-		gripper_target[1] = object_pos.getY() - sin(mps_angle) * offset_x_put_conveyor;
-	} else if (current_object_type_ == ObjectTrackingInterface::SLIDE_FRONT) {
-		gripper_target[0] = object_pos.getX() + cos(mps_angle) * offset_x_put_slide;
-		gripper_target[1] = object_pos.getY() - sin(mps_angle) * offset_x_put_slide;
-	}
+	gripper_target[0] = object_pos.getX() + cos(mps_angle) * gripper_offset_x;
+	gripper_target[1] = object_pos.getY() - sin(mps_angle) * gripper_offset_x;
+	gripper_target[2] = object_pos.getZ() + gripper_offset_z;
 
 	base_target[0] = gripper_target[0] - cos(mps_angle) * base_offset_;
 	base_target[1] = gripper_target[1] + sin(mps_angle) * base_offset_;
