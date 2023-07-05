@@ -123,11 +123,19 @@
   @param ?robot: robot1 robot2 robot3 central nil
 "
   (if (neq ?robot nil) then
+    (bind ?now (create$ ))
+    (do-for-fact ((?refbox-gt wm-fact)) (eq ?refbox-gt:key (create$ refbox game-time))
+      (bind ?now ?refbox-gt:values)
+    )
+
     (do-for-fact ((?r wm-fact))
       (and (wm-key-prefix ?r:key (create$ central agent robot))
            (eq ?robot (wm-key-arg ?r:key r)))
       (assert (wm-fact (key central agent robot-waiting
-                        args? r (wm-key-arg ?r:key r))))
+                        args? r (wm-key-arg ?r:key r)))
+              (timer (name (sym-cat ?robot -waiting-timer))
+	                   (time ?now))
+      )
     )
   )
 )
