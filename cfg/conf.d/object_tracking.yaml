@@ -103,6 +103,6 @@ plugins/object_tracking:
     frame: "cam_gripper"
 
   laser_line_fit:
-    max_dist: 0.8
+    max_dist: 3
     visibility_history: 3
-    max_angle: 0.35
+    max_angle: 0.7
