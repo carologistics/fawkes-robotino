@@ -5,7 +5,7 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/webview
 ---
 plugins/vs_offsets:
   # distance between object and target base pose
-  base_offset: 0.28
+  base_offset: 0.27
 
   # offsets between object pose from the object tracking plugin and the target
   #  frame before starting the routine (..._target), at the pick/put
@@ -17,45 +17,45 @@ plugins/vs_offsets:
     pick_target:
       # distance in x direction in front of target frame to be more save while
       #  moving base
-      save_dist: 0.03
+      save_dist: 0.0
       # pick_routine and pick_end is sharing the same x offset as its
       #  pick_target
-      offset_x: 0.00
+      offset_x: 0.005
       offset_z: 0.035
 
     pick_routine:
-      offset_z: 0.00
+      offset_z: -0.02
 
     pick_end:
-      offset_z: 0.0125
+      offset_z: -0.01
 
   conveyor:
     put_target:
-      offset_x: 0.01
-      offset_z: 0.055
+      offset_x: 0.03
+      offset_z: 0.0275
       # = distance_from_usual_wp_pos + belt_size_ / 2 + puck_height_ / 2
       # = distance_from_usual_wp_pos + 0.035
 
     put_routine:
-      offset_x: 0.01
-      offset_z: 0.035
+      offset_x: 0.03
+      offset_z: 0.015
       # = belt_size_ / 2 + puck_height_ / 2
       # = 0.035
 
     put_end:
       # put_end is sharing the same x offset as its pick_target
-      offset_z: 0.045
+      offset_z: 0.07
 
   slide:
     put_target:
-      offset_x: -0.03
-      offset_z: 0.025
+      offset_x: 0.00
+      offset_z: 0.015
       # = distance_from_usual_wp_pos + puck_height_ / 2
       # = distance_from_usual_wp_pos + 0.0125
 
     put_routine:
-      offset_x: 0.01
-      offset_z: 0.01
+      offset_x: 0.02
+      offset_z: 0.02
 
     put_end:
-      offset_z: 0.035
+      offset_z: 0.015
