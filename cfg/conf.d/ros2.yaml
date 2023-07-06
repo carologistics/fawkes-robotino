@@ -49,7 +49,23 @@ ros2:
     # Ignore the tf_prefix for the following set of frame_ids
     # (i.e. "map" to allow a scenario like
     # map -> robot1_odom -> robot1_base_link)
-    tf_prefix_exclusions: ["map"]
+    tf_prefix_exclusions:
+      - "map"
+      - "mps"
+      - "C-BS"
+      - "C-CS1"
+      - "C-CS2"
+      - "C-RS1"
+      - "C-RS2"
+      - "C-DS"
+      - "C-SS"
+      - "M-BS"
+      - "M-CS1"
+      - "M-CS2"
+      - "M-RS1"
+      - "M-RS2"
+      - "M-DS"
+      - "M-SS"
 
     # Interval in which to post static transform updates; sec
     # This setting is only relevant is use_tf2 is set to false above.
