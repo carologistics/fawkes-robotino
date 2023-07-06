@@ -21,24 +21,24 @@ plugins/vs_offsets:
       # pick_routine and pick_end is sharing the same x offset as its
       #  pick_target
       offset_x: 0.005
-      offset_z: 0.035
+      offset_z: 0.03
 
     pick_routine:
-      offset_z: -0.02
+      offset_z: -0.035
 
     pick_end:
-      offset_z: -0.01
+      offset_z: -0.015
 
   conveyor:
     put_target:
       offset_x: 0.03
-      offset_z: 0.0275
+      offset_z: 0.02
       # = distance_from_usual_wp_pos + belt_size_ / 2 + puck_height_ / 2
       # = distance_from_usual_wp_pos + 0.035
 
     put_routine:
       offset_x: 0.03
-      offset_z: 0.015
+      offset_z: 0.01
       # = belt_size_ / 2 + puck_height_ / 2
       # = 0.035
 
@@ -48,14 +48,14 @@ plugins/vs_offsets:
 
   slide:
     put_target:
-      offset_x: -0.3
+      offset_x: -0.03
       offset_z: 0.015
       # = distance_from_usual_wp_pos + puck_height_ / 2
       # = distance_from_usual_wp_pos + 0.0125
 
     put_routine:
-      offset_x: 0.02
-      offset_z: 0.02
+      offset_x: 0.015
+      offset_z: -0.03
 
     put_end:
-      offset_z: 0.015
+      offset_z: 0.02

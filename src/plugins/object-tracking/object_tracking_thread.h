@@ -106,6 +106,9 @@ private:
 	float offset_x_put_slide_;
 	float offset_z_put_slide_;
 
+	float offset_x_routine_conveyor_;
+	float offset_x_routine_slide_;
+
 	//expected pose offsets:
 	float x_offset_;
 	float y_offset_;
