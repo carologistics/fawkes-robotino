@@ -37,6 +37,8 @@ It is independent of the workpiece location or its target location.
 Parameters:
       @param target             target object (WORKPIECE | CONVEYOR | SLIDE)
       @param missing_c3_height  distance between C3 height and current wp height
+      @param safe_put          if true, put the wp on the conveyor in a way that it does not break the fingers even if there lies a wp
+                                ,used after failing dry_run, false by default (optional, boolean)
 ]==]
 
 
@@ -45,7 +47,6 @@ skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
 
 local drive_back_x = -0.1
-
 local gripper_default_pose_x = 0.00   -- conveyor pose offset in x direction
 local gripper_default_pose_y = 0.00   -- conveyor_pose offset in y direction
 local gripper_default_pose_z = 0.057  -- conveyor_pose offset in z direction
@@ -84,6 +85,9 @@ local offset_z_up_pick = config:get_float("plugins/vs_offsets/workpiece/pick_end
 local offset_z_up_put_conveyor = config:get_float("plugins/vs_offsets/conveyor/put_end/offset_z")
 local offset_z_up_put_slide = config:get_float("plugins/vs_offsets/slide/put_end/offset_z")
 
+local offset_x_safe_put_conveyor_target_frame = config:get_float("plugins/vs_offsets/conveyor/safe_put/offset_x")
+local offset_z_safe_put_conveyor_target_frame = config:get_float("plugins/vs_offsets/conveyor/safe_put/offset_z")
+
 function input_invalid()
   if fsm.vars.target == "WORKPIECE" or fsm.vars.target == "CONVEYOR"  or fsm.vars.target == "SLIDE" then
     return false
@@ -114,12 +118,15 @@ fsm:define_states{ export_to=_M, closure={},
    {"GRIPPER_DEFAULT",   SkillJumpState, skills={{gripper_commands}}, final_to="DRIVE_BACK", fail_to="FAILED"},
    {"DRIVE_BACK",        SkillJumpState, skills={{motor_move}}, final_to="DECIDE_CLOSE", fail_to="FAILED"},
    {"DECIDE_CLOSE",      JumpState},
+   {"SAFE_PUSH",         SkillJumpState, skills={{gripper_commands}},final_to="SAFE_PUT_DOWN", fail_to="FAILED"},
+   {"SAFE_PUT_DOWN",     SkillJumpState, skills={{gripper_commands}},final_to="OPEN_GRIPPER", fail_to="FAILED"},
    {"CLOSE_DEFAULT",     SkillJumpState, skills={{gripper_commands}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
    {"INIT", "FAILED",                 cond=input_invalid, desc="Invalid Input"},
    {"INIT", "MOVE_GRIPPER_DOWN",      true, desc="Start Routine"},
+   {"CHOOSE_ACTION", "SAFE_PUSH",     cond=fsm.vars.safe_put, desc="Safe Mode Active"},
    {"CHOOSE_ACTION", "CLOSE_GRIPPER", cond=is_pick_action, desc="Picking Up Workpiece"},
    {"CHOOSE_ACTION", "OPEN_GRIPPER",  cond=is_put_action, desc="Putting Down Workpiece"},
    {"CHOOSE_ACTION", "FAILED",        true, desc="Instructions Unclear"},
@@ -143,23 +150,34 @@ function MOVE_GRIPPER_DOWN:init()
   local x_given = gripper_target.x
   if fsm.vars.target == "WORKPIECE" then
     x_given = gripper_target.x
+  elseif fsm.vars.target == "CONVEYOR" and fsm.vars.safe_put then
+    x_given = gripper_target.x - offset_x_put_conveyor_target_frame + offset_x_safe_put_conveyor_target_frame
   elseif fsm.vars.target == "CONVEYOR" then
     x_given = gripper_target.x - offset_x_put_conveyor_target_frame + offset_x_put_conveyor_routine
   else -- SLIDE
     x_given = gripper_target.x - offset_x_put_slide_target_frame + offset_x_put_slide_routine
   end
-
-  local x_clipped = math.max(0, math.min(x_given, x_max))
-  local y_clipped = math.max(-y_max/2, math.min(gripper_target.y, y_max/2))
-
+  
   local z_given = 0
   if fsm.vars.target == "WORKPIECE" then
     z_given = gripper_target.z - offset_z_pick_target_frame + offset_z_pick_routine
+  elseif fsm.vars.target == "CONVEYOR" and fsm.vars.safe_put then
+    print("CONVEYOR")
+    z_given = gripper_target.z - offset_z_put_conveyor_target_frame + offset_z_safe_put_conveyor_target_frame #care
+    print(gripper_target.z)
+    print(offset_z_put_conveyor_target_frame)
+    print(offset_z_put_conveyor_routine)
+    print(z_given)
+    
   elseif fsm.vars.target == "CONVEYOR" then
     z_given = gripper_target.z - offset_z_put_conveyor_target_frame + offset_z_put_conveyor_routine
   else -- SLIDE
     z_given = gripper_target.z - offset_z_put_slide_target_frame + offset_z_put_slide_routine
   end
+
+  local x_clipped = math.max(0, math.min(x_given, x_max))
+  local y_clipped = math.max(-y_max/2, math.min(gripper_target.y, y_max/2))
+  local z_clipped = math.max(0, math.min(z_given, z_max))
 
   fsm.vars.target_x = x_clipped
   fsm.vars.target_y = y_clipped
@@ -211,4 +229,14 @@ end
 
 function CLOSE_DEFAULT:init()
   self.args["gripper_commands"].command= "CLOSE"
+end
+
+function SAFE_PUSH:init()
+  fsm.vars.target_x = math.max(0, math.min(fsm.vars.target_x - offset_x_safe_put_conveyor_target_frame + offset_x_put_conveyor_routine, x_max))
+  self.args["gripper_commands"].x = fsm.vars.target_x
+end
+
+function SAFE_PUT_DOWN:init()
+  fsm.vars.target_z = math.max(0, math.min(fsm.vars.target_z - offset_z_safe_put_conveyor_target_frame + offset_z_put_conveyor_routine, z_max)) #care
+  self.args["gripper_commands"].z = fsm.vars.target_z
 end

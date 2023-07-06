@@ -54,6 +54,8 @@ Parameters:
                      the workpiece is there (optional, bool)
       @param query   defines if dry_run expects a workpiece to be at the location or wet (optional, THERE | ABSENT)
                      THERE by default
+      @param safe_put if true, put the wp on the conveyor in a way that it does not break the fingers even if there lies a wp
+		     ,used after failing dry_run, false by default (optional, boolean)
       @param map_pos true, if MPS Pos is compared to Map Pos(optional,bool) True by default
 ]==]
 
@@ -68,7 +70,7 @@ local MIN_MAPPED_ORI       = math.pi/6 -- minimum angle b/w sensed laser data an
 local MIN_ACTUAL_ORI       = math.pi/6 -- minimum angle b/w bot and laser center
 
 -- Initialize as skill module
-skillenv.skill_module(_M)
+skillenv.skill_module(_M) self.args["pick_or_put_vs"].safe_put = fsm.vars.safe_put  
 local llutils = require("fawkes.laser-lines_utils")
 local tfm = require("fawkes.tfutils")
 
@@ -119,6 +121,9 @@ end
 if config:exists("plugins/object_tracking/shelf_values/right_shelf_offset_side") then
   right_shelf_offset_side = config:get_float("plugins/object_tracking/shelf_values/right_shelf_offset_side")
 end
+
+local offset_x_put_conveyor_target_frame = config:get_float("plugins/vs_offsets/conveyor/put_target/offset_x")
+local offset_x_safe_put_conveyor_target_frame = config:get_float("plugins/vs_offsets/conveyor/safe_put/offset_x")
 
 -- read wp config
 if config:exists("plugins/object_tracking/puck_values/ring_height") then
@@ -209,6 +214,10 @@ function gripper_aligned()
      ori=fawkes.tf.create_quaternion_from_yaw(0)},
     "base_link", "end_effector_home")
 
+  if fsm.vars.safe_put then
+    gripper_target.x = gripper_target.x - offset_x_put_conveyor_target_frame + offset_x_safe_put_conveyor_target_frame
+  end
+  
   if fsm.vars.target == "WORKPIECE" then
     return math.abs(gripper_target.x - arduino:x_position()) < GRIPPER_TOLERANCE.x
       and math.abs(gripper_target.y - (arduino:y_position() - y_max/2)) < GRIPPER_TOLERANCE.y
@@ -289,9 +298,11 @@ function input_invalid()
   else
     fsm.vars.reverse_output = false
   end
-    
+  if fsm.vars.safe_put == nil then
+	fsm.vars.safe_put = false
+  end
  
-  if (fsm.vars.target_object_type == nil or string.gsub(fsm.vars.target_object_type, "^%s*(.-)%s*$", "%1") == 0) then
+  ipick_or_put_vsf (fsm.vars.target_object_type == nil or string.gsub(fsm.vars.target_object_type, "^%s*(.-)%s*$", "%1") == 0) then
     print_error("That is not a valid target!")
     return true
   elseif (fsm.vars.expected_mps == nil or string.gsub(fsm.vars.expected_mps, "^%s*(.-)%s*$", "%1") == 0) then
@@ -587,6 +598,10 @@ function MOVE_BASE_AND_GRIPPER:init()
   local diff_y = (gripper_y - base_y) * (gripper_y - base_y)
   local forward_distance = math.sqrt(diff_x + diff_y)
 
+  if fsm.vars.safe_run then
+    forward_distance = forward_distance - offset_x_put_conveyor_target_frame + offset_x_safe_put_conveyor_target_frame
+  end
+
   local gripper_target = tfm.transform6D(
     {x=forward_distance,
      y=0,
@@ -603,7 +618,7 @@ function MOVE_BASE_AND_GRIPPER:init()
 end
 
 function FINE_TUNE_GRIPPER:init()
-  fsm.vars.missing_detections = 0
+ self.args["pick_or_put_vs"].safe_put = fsm.vars.safe_put    fsm.vars.missing_detections = 0
   fsm.vars.out_of_reach       = false
   fsm.vars.gripper_wait       = 10
 end
@@ -627,6 +642,10 @@ function FINE_TUNE_GRIPPER:loop()
      ori=fawkes.tf.create_quaternion_from_yaw(0)},
     "base_link", "end_effector_home")
 
+  if fsm.vars.safe_run then
+    gripper_target.x = gripper_target.x - offset_x_put_conveyor_target_frame + offset_x_safe_put_conveyor_target_frame
+  end
+
   if fsm.vars.target == "WORKPIECE" then
     set_gripper(gripper_target.x,
                 gripper_target.y,
@@ -642,6 +661,7 @@ function GRIPPER_ROUTINE:init()
   -- perform pick or put routine
   self.args["pick_or_put_vs"].target = fsm.vars.target
   self.args["pick_or_put_vs"].missing_c3_height = tostring(fsm.vars.missing_c3_height)
+  self.args["pick_or_put_vs"].safe_put = fsm.vars.safe_put 
 end
 
 -- end tracking afterwards
@@ -656,4 +676,4 @@ function FAILED:init()
 
   -- keep track of error
   fsm:set_error(fsm.vars.error)
-end
+end self.args["pick_or_put_vs"].safe_put = fsm.vars.safe_put  
