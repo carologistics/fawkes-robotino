@@ -476,7 +476,7 @@ function DRIVE_VS:init()
 
 	-- "Magic", i.e. heuristic multiplier that determines how much we brake
 	-- when approaching target. Important to avoid overshooting.
-	self.fsm.vars.decel_factor = 10
+	self.fsm.vars.decel_factor = 6.5
 	
 	set_speed(self)
 end
