@@ -15,10 +15,10 @@ fawkes/bbsync:
       active: true
 
       # Host name of remote peer; hostname
-      host: robotino-base
+      host: agent
 
       # Port of remote peer; TCP port
-      port: !tcp-port 1910
+      port: !tcp-port 1931
 
       # Interval in which to check for aliveness,
       # if omitted defaults to 5 seconds; ms
@@ -27,100 +27,20 @@ fawkes/bbsync:
       # Interface to synchronize, reading instance on remote,
       # mapped to remote instance locally
       reading:
-        motor: MotorInterface::Robotino
-        sensor: RobotinoSensorInterface::Robotino
-
         # Wildcard: sync every TransformInterface that starts with /tf/gripper_,
         # but not /tf/gripper itself.
-        tfGripper_x_dyn: TransformInterface::/tf/gripper_x_dyn
-        tfGripper_y_dyn: TransformInterface::/tf/gripper_y_dyn
-        tfGripper_z_dyn: TransformInterface::/tf/gripper_z_dyn
-
-        tfOdom: TransformInterface::/tf/Robotino Odometry
-        tfAmcl: TransformInterface::/tf/odom
-        line1_e1: TransformInterface::/tf/laser_line_1_e1
-        line1_e2: TransformInterface::/tf/laser_line_1_e2
-        line2_e1: TransformInterface::/tf/laser_line_2_e1
-        line2_e2: TransformInterface::/tf/laser_line_2_e2
-        line3_e1: TransformInterface::/tf/laser_line_3_e1
-        line3_e2: TransformInterface::/tf/laser_line_3_e2
-        line4_e1: TransformInterface::/tf/laser_line_4_e1
-        line4_e2: TransformInterface::/tf/laser_line_4_e2
-        line5_e1: TransformInterface::/tf/laser_line_5_e1
-        line5_e2: TransformInterface::/tf/laser_line_5_e2
-        line6_e1: TransformInterface::/tf/laser_line_6_e1
-        line6_e2: TransformInterface::/tf/laser_line_6_e2
-        line7_e1: TransformInterface::/tf/laser_line_7_e1
-        line7_e2: TransformInterface::/tf/laser_line_7_e2
-        line8_e1: TransformInterface::/tf/laser_line_8_e1
-        line8_e2: TransformInterface::/tf/laser_line_8_e2
-        line1_avg_e1: TransformInterface::/tf/laser_line_avg_1_e1
-        line1_avg_e2: TransformInterface::/tf/laser_line_avg_1_e2
-        line2_avg_e1: TransformInterface::/tf/laser_line_avg_2_e1
-        line2_avg_e2: TransformInterface::/tf/laser_line_avg_2_e2
-        line3_avg_e1: TransformInterface::/tf/laser_line_avg_3_e1
-        line3_avg_e2: TransformInterface::/tf/laser_line_avg_3_e2
-        line4_avg_e1: TransformInterface::/tf/laser_line_avg_4_e1
-        line4_avg_e2: TransformInterface::/tf/laser_line_avg_4_e2
-        line5_avg_e1: TransformInterface::/tf/laser_line_avg_5_e1
-        line5_avg_e2: TransformInterface::/tf/laser_line_avg_5_e2
-        line6_avg_e1: TransformInterface::/tf/laser_line_avg_6_e1
-        line6_avg_e2: TransformInterface::/tf/laser_line_avg_6_e2
-        line7_avg_e1: TransformInterface::/tf/laser_line_avg_7_e1
-        line7_avg_e2: TransformInterface::/tf/laser_line_avg_7_e2
-        line8_avg_e1: TransformInterface::/tf/laser_line_avg_8_e1
-        line8_avg_e2: TransformInterface::/tf/laser_line_avg_8_e2
-        line1_map_e1: TransformInterface::/tf/laser_line_map_1_e1
-        line1_map_e2: TransformInterface::/tf/laser_line_map_1_e2
-        line2_map_e1: TransformInterface::/tf/laser_line_map_2_e1
-        line2_map_e2: TransformInterface::/tf/laser_line_map_2_e2
-        line3_map_e1: TransformInterface::/tf/laser_line_map_3_e1
-        line3_map_e2: TransformInterface::/tf/laser_line_map_3_e2
-        line4_map_e1: TransformInterface::/tf/laser_line_map_4_e1
-        line4_map_e2: TransformInterface::/tf/laser_line_map_4_e2
-        line5_map_e1: TransformInterface::/tf/laser_line_map_5_e1
-        line5_map_e2: TransformInterface::/tf/laser_line_map_5_e2
-        line6_map_e1: TransformInterface::/tf/laser_line_map_6_e1
-        line6_map_e2: TransformInterface::/tf/laser_line_map_6_e2
-        line7_map_e1: TransformInterface::/tf/laser_line_map_7_e1
-        line7_map_e2: TransformInterface::/tf/laser_line_map_7_e2
-        line8_map_e1: TransformInterface::/tf/laser_line_map_8_e1
-        line8_map_e2: TransformInterface::/tf/laser_line_map_8_e2
-        tfLaserFrontDist: TransformInterface::/tf/laser-front-dist
-        motor-switch: SwitchInterface::Robotino Motor
-        line1: LaserLineInterface::/laser-lines/1
-        line2: LaserLineInterface::/laser-lines/2
-        line3: LaserLineInterface::/laser-lines/3
-        line4: LaserLineInterface::/laser-lines/4
-        line5: LaserLineInterface::/laser-lines/5
-        line6: LaserLineInterface::/laser-lines/6
-        line7: LaserLineInterface::/laser-lines/7
-        line8: LaserLineInterface::/laser-lines/8
-        line1avg: LaserLineInterface::/laser-lines/1/moving_avg
-        line2avg: LaserLineInterface::/laser-lines/2/moving_avg
-        line3avg: LaserLineInterface::/laser-lines/3/moving_avg
-        line4avg: LaserLineInterface::/laser-lines/4/moving_avg
-        line5avg: LaserLineInterface::/laser-lines/5/moving_avg
-        line6avg: LaserLineInterface::/laser-lines/6/moving_avg
-        line7avg: LaserLineInterface::/laser-lines/7/moving_avg
-        line8avg: LaserLineInterface::/laser-lines/8/moving_avg
-        line1map: LaserLineInterface::/laser-lines/1/to_map
-        line2map: LaserLineInterface::/laser-lines/2/to_map
-        line3map: LaserLineInterface::/laser-lines/3/to_map
-        line4map: LaserLineInterface::/laser-lines/4/to_map
-        line5map: LaserLineInterface::/laser-lines/5/to_map
-        line6map: LaserLineInterface::/laser-lines/6/to_map
-        line7map: LaserLineInterface::/laser-lines/7/to_map
-        line8map: LaserLineInterface::/laser-lines/8/to_map
-        pose: Position3DInterface::Pose
-        laserswitch: SwitchInterface::/laser-cluster/ampel
-        navigator: NavigatorInterface::Navigator
-        laser-lines: SwitchInterface::laser-lines
-        arduino: ArduinoInterface::Arduino
-        laser_front_dist: Position3DInterface::front_dist
-        laser_box_filter: LaserBoxFilterInterface::Laser Box Filter
-      writing:
-        tfTags: TransformInterface::TF tags
-        conveyor_pose: TransformInterface::/tf/conveyor_pose
-        conveyor_pose_init: TransformInterface::/tf/conveyor_pose_initial_guess
-        laser_non_static: Laser360Interface::Laser MPS
+        mps: TransformInterface::/tf/mps
+        C-BS: TransformInterface::/tf/C-BS
+        C-CS1: TransformInterface::/tf/C-CS1
+        C-CS2: TransformInterface::/tf/C-CS2
+        C-RS1: TransformInterface::/tf/C-RS1
+        C-RS2: TransformInterface::/tf/C-RS2
+        C-DS: TransformInterface::/tf/C-DS
+        C-SS: TransformInterface::/tf/C-SS
+        M-BS: TransformInterface::/tf/M-BS
+        M-CS1: TransformInterface::/tf/M-CS1
+        M-CS2: TransformInterface::/tf/M-CS2
+        M-RS1: TransformInterface::/tf/M-RS1
+        M-RS2: TransformInterface::/tf/M-RS2
+        M-DS: TransformInterface::/tf/M-DS
+        M-SS: TransformInterface::/tf/M-SS

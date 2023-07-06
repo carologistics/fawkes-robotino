@@ -49,6 +49,7 @@ fawkes/meta_plugins:
     - m-base-joy
     - laser_front_dist
   m-base-full-ros2:
+    - bbsync
     - m-base-bare
     - m-base-laser
     - m-base-gripper

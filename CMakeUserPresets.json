@@ -210,6 +210,7 @@
                 "m-base-joy"
             ],
             "cacheVariables": {
+                "PLUGIN_bbsync": "ON",
                 "PLUGIN_amcl2": "ON",
                 "PLUGIN_laser_front_dist": "ON",
                 "PLUGIN_ros2-irscan": "ON"
