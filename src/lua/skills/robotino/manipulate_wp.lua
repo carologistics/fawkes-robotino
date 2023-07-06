@@ -133,6 +133,8 @@ function match_line(lines)
       z = 0,
       ori = fawkes.tf.create_quaternion_from_yaw(0)
       }, fsm.vars.mps,"/map")
+    printf(mps_point.x)
+    printf(tostring(fawkes.tf.get_yaw(mps_point.ori)))
   end
 
   local min_dist = MIN_ACTUAL_DIST
