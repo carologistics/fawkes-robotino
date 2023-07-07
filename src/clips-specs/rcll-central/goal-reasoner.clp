@@ -709,10 +709,7 @@
     (and
       (eq ?goal:id ?goal-meta:goal-id)
       (eq ?goal-meta:order-id ?order-id)
-      (or
-        (eq ?category PRODUCTION)
-        (eq ?category PRODUCTION-INSTRUCT)
-      )
+      (eq ?category PRODUCTION)
       (member$ ?goal:mode (create$ FORMULATED SELECTED EXPANDED COMMITTED))
     )
     (modify ?goal (mode FINISHED) (outcome FAILED) (error WP-LOST))
@@ -724,10 +721,7 @@
     (and
       (eq ?goal:id ?goal-meta:goal-id)
       (eq ?goal-meta:order-id ?order-id)
-      (or
-        (eq ?category PRODUCTION)
-        (eq ?category PRODUCTION-INSTRUCT)
-      )
+      (eq ?category PRODUCTION)
       (member$ ?goal:mode (create$ DISPACTHED))
       (eq ?goal:outcome UNKNOWN)
     )
