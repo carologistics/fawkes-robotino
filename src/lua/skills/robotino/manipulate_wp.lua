@@ -67,7 +67,7 @@ local MIN_ACTUAL_DIST      = 0.7 -- minimum distance b/w bot and laser center
 local MIN_MAPPED_ORI       = math.pi/6 -- minimum angle b/w sensed laser data and navgraph data
 local MIN_ACTUAL_ORI       = math.pi/6 -- minimum angle b/w bot and laser center
 -- Initialize as skill module
-self.args["pick_or_put_vs"].safe_put = fsm.vars.safe_put  
+
 skillenv.skill_module(_M)
 local llutils = require("fawkes.laser-lines_utils")
 local tfm = require("fawkes.tfutils")
@@ -454,11 +454,6 @@ end
 
 function INIT:exit()
   fsm.vars.error = "invalid input"
-end
-
-function MPS_ALIGN:init()
-  self.args["mps_align"].tag_id = fsm.vars.tag_id
-  self.args["mps_align"].x = 0.5
 end
 
 function START_TRACKING:init()
