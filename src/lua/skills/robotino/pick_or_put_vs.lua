@@ -156,12 +156,7 @@ function MOVE_GRIPPER_DOWN:init()
   if fsm.vars.target == "WORKPIECE" then
     z_given = gripper_target.z - offset_z_pick_target_frame + offset_z_pick_routine
   elseif fsm.vars.target == "CONVEYOR" then
-    print("CONVEYOR")
     z_given = gripper_target.z - offset_z_put_conveyor_target_frame + offset_z_put_conveyor_routine
-    print(gripper_target.z)
-    print(offset_z_put_conveyor_target_frame)
-    print(offset_z_put_conveyor_routine)
-    print(z_given)
   else -- SLIDE
     z_given = gripper_target.z - offset_z_put_slide_target_frame + offset_z_put_slide_routine
   end
@@ -176,7 +171,6 @@ function MOVE_GRIPPER_DOWN:init()
   self.args["gripper_commands"].y = y_clipped
   self.args["gripper_commands"].z = z_clipped
   self.args["gripper_commands"].command = "MOVEABS"
-  print(z_clipped)
 end
 
 function CLOSE_GRIPPER:init()
