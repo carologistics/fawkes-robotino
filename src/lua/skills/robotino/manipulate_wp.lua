@@ -60,9 +60,9 @@ local LASER_BASE_OFFSET    = 0.35 -- distance between robotino middle point and 
 local GRIPPER_TOLERANCE    = {x=0.005, y=0.001, z=0.001} -- accuracy
 local MISSING_MAX          = 5 -- limit for missing object detections in a row while fine-tuning gripper
 local MIN_VIS_HIST_LINE    = 5 -- minimum visibility history for laser-line before considering it
-local MIN_MAPPED_DIST      = 0.5 -- minimum distance of sensed laser data and navgraph data
+local MIN_MAPPED_DIST      = 0.5 -- minimum distance of sensed laser data and tf-mps data
 local MIN_ACTUAL_DIST      = 0.7 -- minimum distance b/w bot and laser center
-local MIN_MAPPED_ORI       = math.pi/6 -- minimum angle b/w sensed laser data and navgraph data
+local MIN_MAPPED_ORI       = math.pi/6 -- minimum angle b/w sensed laser data and tf-mps data
 local MIN_ACTUAL_ORI       = math.pi/6 -- minimum angle b/w bot and laser center
 
 -- Initialize as skill module
@@ -121,18 +121,20 @@ if config:exists("plugins/object_tracking/puck_values/ring_height") then
   ring_height = config:get_float("plugins/object_tracking/puck_values/ring_height")
 end
 
--- Match laser line to navgraph point
+-- Match laser line to tf-mps point
 
 function match_line(lines)
   local matched_line = nil
   local mapped_dist = 0
   if fsm.vars.map_pos then
-    local navgraph_point= tfm.transform6D({
-      x = fsm.vars.mps_x,
-      y = fsm.vars.mps_y,
+    local mps_point= tfm.transform6D({
+      x = 0,
+      y = 0,
       z = 0,
-      ori = fawkes.tf.create_quaternion_from_yaw(fsm.vars.mps_ori)
-      }, "/map", "/base_laser")
+      ori = fawkes.tf.create_quaternion_from_yaw(0)
+      }, fsm.vars.mps,"/map")
+    printf(mps_point.x)
+    printf(tostring(fawkes.tf.get_yaw(mps_point.ori)))
   end
 
   local min_dist = MIN_ACTUAL_DIST
@@ -146,11 +148,12 @@ function match_line(lines)
       z=0,
       ori = fawkes.tf.create_quaternion_from_yaw(line_center.ori)},"/base_laser","base_link")
 
+      
     --printf(tostring(fawkes.tf.get_yaw(base_center.ori)))
     
     if fsm.vars.map_pos then 
-      mapped_dist = math.vec_length(navgraph_point.x - line_center.x, navgraph_point.y - line_center.y)
-      local orient_diff = line_center.ori - fawkes.tf.get_yaw(navgraph_point.ori)
+      mapped_dist = math.vec_length(mps_point.x - line_center.x, mps_point.y - line_center.y)
+      local orient_diff = line_center.ori - fawkes.tf.get_yaw(mps_point.ori)
       --printf('Distance from expected map pos to laser line: %f and its threshold: %f',mapped_dist,MIN_MAPPED_DIST)
       --printf('Difference b/w actual orientation & expected orientation : %f and its threshold: %f',orient_diff,MIN_MAPPED_ORI)
     end
@@ -160,7 +163,7 @@ function match_line(lines)
     --printf('Difference b/w Bot orientation & laser_line orientation : %s and its threshold: %f',fawkes.tf.get_yaw(base_center.ori),MIN_ACTUAL_ORI)
     
     if (line:visibility_history() >= MIN_VIS_HIST_LINE and actual_dist < min_dist and fawkes.tf.get_yaw(base_center.ori)<=MIN_ACTUAL_ORI) and 
-        ( not fsm.vars.map_pos or (mapped_dist<=MIN_MAPPED_DIST and (line_center.ori-fawkes.tf.get_yaw(navgraph_point.ori))<=MIN_MAPPED_ORI))
+        ( not fsm.vars.map_pos or (mapped_dist<=MIN_MAPPED_DIST and (line_center.ori-fawkes.tf.get_yaw(mps_point.ori))<=MIN_MAPPED_ORI))
     then
         min_dist = actual_dist
         matched_line = line
@@ -365,10 +368,10 @@ function INIT:init()
   fsm.vars.lines[line7:id()] = line7
   fsm.vars.lines[line8:id()] = line8
 
-  local node = navgraph:node(fsm.vars.mps)
-  fsm.vars.mps_x = node:x()
-  fsm.vars.mps_y = node:y()
-  fsm.vars.mps_ori = node:property_as_float("orientation")
+  -- local node = navgraph:node(fsm.vars.mps)
+  -- fsm.vars.mps_x = node:x()
+  -- fsm.vars.mps_y = node:y()
+  -- fsm.vars.mps_ori = node:property_as_float("orientation")
   
   if fsm.vars.side == "INPUT" then
     fsm.vars.mps_ori = fsm.vars.mps_ori+math.pi
@@ -430,6 +433,10 @@ function INIT:init()
   fsm.vars.gripper_target_pos_y = 0
   fsm.vars.gripper_target_pos_z = 0
   fsm.vars.gripper_wait         = 0
+end
+
+function INIT:exit()
+  fsm.vars.error = "invalid input"
 end
 
 function START_TRACKING:init()
