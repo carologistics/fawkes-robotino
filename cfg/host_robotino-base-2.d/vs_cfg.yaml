@@ -38,7 +38,7 @@ plugins/vs_offsets:
 
     put_routine:
       offset_x: 0.03
-      offset_z: 0.015
+      offset_z: 0.02
       # = belt_size_ / 2 + puck_height_ / 2
       # = 0.035
 
@@ -49,13 +49,13 @@ plugins/vs_offsets:
   slide:
     put_target:
       offset_x: -0.03
-      offset_z: 0.015
+      offset_z: 0.02
       # = distance_from_usual_wp_pos + puck_height_ / 2
       # = distance_from_usual_wp_pos + 0.0125
 
     put_routine:
-      offset_x: 0.02
-      offset_z: 0.02
+      offset_x: 0.04
+      offset_z: -0.02
 
     put_end:
       offset_z: 0.015
