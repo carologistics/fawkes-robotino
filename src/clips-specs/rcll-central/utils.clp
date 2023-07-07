@@ -149,6 +149,10 @@
 	)
 )
 
+(deffunction com-to-int (?complexity)
+  (return (integer (string-to-field (sub-string 2 2 ?complexity))))
+)
+
 (deffunction random-id ()
   "Return a random task id"
   (return (random 0 1000000000))
@@ -1150,6 +1154,19 @@
                    (allowed values: ZERO,ONE,TWO)" crlf)
   (return 0)
 )
+
+(deffunction compute-rs-total-payments (?rs)
+  (bind ?filled-with 0)
+  (do-for-fact ((?df domain-fact)) (and (eq ?df:name rs-filled-with) (member$ ?rs ?df:param-values))
+    (bind ?filled-with (sym-to-int (nth$ 2 ?df:param-values)))
+  )
+  (bind ?open-payments 0)
+  (do-for-all-facts ((?g goal)) (and (or (eq ?g:class PAY-FOR-RINGS-WITH-BASE) (eq ?g:class PAY-FOR-RINGS-WITH-CAP-CARRIER)) (neq ?g:mode RETRACTED) (member$ ?g:params ?rs))
+    (bind ?open-payments (+ 1 ?open-payments))
+  )
+  (return (+ ?filled-with ?open-payments))
+)
+
 
 (deffunction values-from-name-value-list ($?args)
 " @param $?args a list containing name value pairs. E.g. (m C-CS1 s IDLE)
