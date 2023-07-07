@@ -71,7 +71,7 @@ Parameters:
                      THERE by default
 ]==]
 
-local LASER_BASE_OFFSET    = 0.35 -- distance between robotino middle point and laser-line
+local LASER_BASE_OFFSET    = 0.5 -- distance between robotino middle point and laser-line
                                   -- used for DRIVE_TO_LASER_LINE
 local GRIPPER_TOLERANCE    = {x=0.005, y=0.001, z=0.001} -- accuracy
 local MISSING_MAX          = 5 -- limit for missing object detections in a row while fine-tuning gripper
