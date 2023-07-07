@@ -5,7 +5,7 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/webview
 ---
 plugins/vs_offsets:
   # distance between object and target base pose
-  base_offset: 0.27
+  base_offset: 0.28
 
   # offsets between object pose from the object tracking plugin and the target
   #  frame before starting the routine (..._target), at the pick/put
@@ -37,7 +37,7 @@ plugins/vs_offsets:
       # = distance_from_usual_wp_pos + 0.035
 
     put_routine:
-      offset_x: 0.035
+      offset_x: 0.03
       offset_z: 0.025
 
       # = belt_size_ / 2 + puck_height_ / 2
@@ -49,7 +49,7 @@ plugins/vs_offsets:
 
   slide:
     put_target:
-      offset_x: 0.00
+      offset_x: -0.03
       offset_z: 0.015
       # = distance_from_usual_wp_pos + puck_height_ / 2
       # = distance_from_usual_wp_pos + 0.0125
