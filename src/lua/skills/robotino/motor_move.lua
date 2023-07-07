@@ -286,7 +286,7 @@ fsm:add_transitions{
    {"DRIVE", "FINAL", cond=drive_done},
 
    {"WAIT_TRACKING", "FINAL", cond=early_endable, desc="Target close enough and object detected"},
-   {"WAIT_TRACKING", "FAILED", timeout=0.5},
+   {"WAIT_TRACKING", "FAILED", timeout=1},
 
    {"DRIVE_VS", "FAILED", cond="not motor:has_writer()", desc="No writer for motor"},
    {"DRIVE_VS", "FAILED", cond="vars.tf_failed", desc="dist TF failed"},
