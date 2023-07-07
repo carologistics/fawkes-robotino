@@ -303,7 +303,7 @@ struct hash<pair<T1, T2>>
    */
 	auto
 	operator()(const pair<T1, T2> &pair) const
-	  noexcept(noexcept(hash<T1>{}(pair.first) && noexcept(hash<T2>{}(pair.second))))
+	  noexcept(noexcept(hash<T1>{}(pair.first) &&noexcept(hash<T2>{}(pair.second))))
 	{
 		// Is this a good hash?
 		return hash<T1>{}(pair.first) << 16 ^ hash<T2>{}(pair.second);

@@ -18,7 +18,7 @@ plugins/object_tracking:
       "/laser-lines/8"
     ]
 
-  for_gazebo: false
+  # params for expected position
 
   puck_values:
     puck_size: 0.02
@@ -44,14 +44,6 @@ plugins/object_tracking:
     right_shelf_offset_side: -0.275
     shelf_offset_front: 0.01
     shelf_height: 0.89
-
-  target_frame_offsets:
-    gripper_offset_pick: 0.035
-    gripper_offset_put: 0.01
-    base_offset: 0.28
-    target_wp_offset_x: 0.00
-    conveyor_offset_coefficient: 1.0
-    slide_offset_coefficient: 0.8
 
   camera_intrinsics:
     # image size
@@ -111,6 +103,6 @@ plugins/object_tracking:
     frame: "cam_gripper"
 
   laser_line_fit:
-    max_dist: 0.8
+    max_dist: 3
     visibility_history: 3
-    max_angle: 0.35
+    max_angle: 0.7
