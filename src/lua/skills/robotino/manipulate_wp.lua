@@ -302,7 +302,7 @@ function input_invalid()
 	fsm.vars.safe_put = false
   end
  
-  ipick_or_put_vsf (fsm.vars.target_object_type == nil or string.gsub(fsm.vars.target_object_type, "^%s*(.-)%s*$", "%1") == 0) then
+  if (fsm.vars.target_object_type == nil or string.gsub(fsm.vars.target_object_type, "^%s*(.-)%s*$", "%1") == 0) then
     print_error("That is not a valid target!")
     return true
   elseif (fsm.vars.expected_mps == nil or string.gsub(fsm.vars.expected_mps, "^%s*(.-)%s*$", "%1") == 0) then
@@ -618,7 +618,8 @@ function MOVE_BASE_AND_GRIPPER:init()
 end
 
 function FINE_TUNE_GRIPPER:init()
- self.args["pick_or_put_vs"].safe_put = fsm.vars.safe_put    fsm.vars.missing_detections = 0
+  self.args["pick_or_put_vs"].safe_put = fsm.vars.safe_put    
+  fsm.vars.missing_detections = 0
   fsm.vars.out_of_reach       = false
   fsm.vars.gripper_wait       = 10
 end
@@ -676,4 +677,4 @@ function FAILED:init()
 
   -- keep track of error
   fsm:set_error(fsm.vars.error)
-end self.args["pick_or_put_vs"].safe_put = fsm.vars.safe_put  
+end
