@@ -38,8 +38,7 @@ depends_interfaces = {
    {v = "line8", type="LaserLineInterface", id="/laser-lines/8"},
    {v = "laserline_switch", type = "SwitchInterface", id="laser-lines"},
    {v = "object_tracking_if", type = "ObjectTrackingInterface", id="object-tracking"},
-   {v = "arduino", type = "ArduinoInterface", id="Arduino"}
-   {v = "arduino", type = "ArduinoInterface", id="Arduino"}
+   {v = "arduino", type = "ArduinoInterface", id="Arduino"},
 }
 
 documentation      = [==[
@@ -57,6 +56,7 @@ Parameters:
       @param safe_put if true, put the wp on the conveyor in a way that it does not break the fingers even if there lies a wp
 		     ,used after failing dry_run, false by default (optional, boolean)
       @param map_pos true, if MPS Pos is compared to Map Pos(optional,bool) True by default
+      @param map_pos true, if MPS Pos is compared to Map Pos(optional,bool) True by default
 ]==]
 
 local LASER_BASE_OFFSET    = 0.5 -- distance between robotino middle point and laser-line
@@ -70,9 +70,11 @@ local MIN_MAPPED_ORI       = math.pi/6 -- minimum angle b/w sensed laser data an
 local MIN_ACTUAL_ORI       = math.pi/6 -- minimum angle b/w bot and laser center
 
 -- Initialize as skill module
-skillenv.skill_module(_M) self.args["pick_or_put_vs"].safe_put = fsm.vars.safe_put  
+self.args["pick_or_put_vs"].safe_put = fsm.vars.safe_put  
+skillenv.skill_module(_M)
 local llutils = require("fawkes.laser-lines_utils")
 local tfm = require("fawkes.tfutils")
+
 
 -- Load config
 local x_max = 0.115
