@@ -49,3 +49,63 @@
 	=>
 	(modify ?pa (state PENDING))
 )
+
+(deffunction is-navgraph-node (?pos)
+	(if (any-factp ((?nn navgraph-node)) (eq (str-cat ?pos) ?nn:name))
+		then
+		(return TRUE)
+	)
+	(return FALSE)
+)
+
+(deffunction skill-call (?name ?param-names ?param-values $?opt-skiller)
+	(bind ?skiller "Skiller")
+	(if (> (length$ ?opt-skiller) 0) then (bind ?skiller (nth$ 1 ?opt-skiller)))
+	(if (> (length$ ?opt-skiller) 1)
+	 then
+	)
+
+	;re-map go-wait and move skill navgraph positions to coordinates from
+	(if (and (member$ ?name (create$ go-wait move))
+			 (is-navgraph-node (nth$ 4 ?param-values))
+			 (not (eq (sub-string 1 3 (str-cat (nth$ 4 ?param-values))) "M-Z"))
+			 (not (eq (sub-string 1 3 (str-cat (nth$ 4 ?param-values))) "C-Z"))
+	 	)
+	then
+		(bind ?location-name (str-cat (nth$ 4 ?param-values)))
+		(if (eq (nth$ 5 ?param-values) INPUT) then (bind ?location-name (sym-cat ?location-name -I)))
+		(if (eq (nth$ 5 ?param-values) OUTPUT) then (bind ?location-name (sym-cat ?location-name -O)))
+		(do-for-fact ((?nn navgraph-node)) (eq (str-cat ?location-name) ?nn:name)
+			(bind ?name (sym-cat ?name -xyo))
+			; get x, y and ori from navgraph. add a constant PI to the orientation because of 180 deg flip
+			(bind ?param-names (create$ ?param-names x y ori))
+			(bind ?ori (+ 0 (string-to-field (nth$ (+ 1 (member$ "orientation" ?nn:properties)) ?nn:properties))))
+			(bind ?param-values (create$ ?param-values (nth$ 1 ?nn:pos) (nth$ 2 ?nn:pos) ?ori))
+		)
+	)
+
+	; And here we rely on a function provided from the outside providing
+	; a more sophisticated mapping.
+	(bind ?sks (map-action-skill ?name ?param-names ?param-values))
+	(printout logwarn "sks='" ?sks "'" crlf)
+
+	(bind ?id UNKNOWN)
+	(if (eq ?sks "")
+			then
+		(bind ?id (sym-cat ?name (gensym*)))
+		(assert (skill (id ?id) (name (sym-cat ?name)) (status S_FAILED) (start-time (now))
+		        (error-msg (str-cat "Failed to convert action '" ?name "' to skill string"))))
+	else
+		(bind ?m (blackboard-create-msg (str-cat "SkillerInterface::" ?skiller) "ExecSkillMessage"))
+		(blackboard-set-msg-field ?m "skill_string" ?sks)
+
+		(printout logwarn "Calling skill '" ?sks "'" crlf)
+		(bind ?msgid (blackboard-send-msg ?m))
+		(bind ?status (if (eq ?msgid 0) then S_FAILED else S_IDLE))
+		(bind ?id (sym-cat ?name "-" ?msgid))
+		(assert (skill (id ?id) (name (sym-cat ?name)) (skill-string ?sks)
+		               (skiller ?skiller)
+		               (status ?status) (msgid ?msgid) (start-time (now))))
+	)
+	(return ?id)
+)

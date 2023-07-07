@@ -321,8 +321,7 @@
   "Send all explored tags to the navgraph generator"
 	(bind ?any-tag-to-add FALSE)
 
-	(bind ?interfaces (get-interfaces "NavGraphWithMPSGeneratorInterface" "navgraph-generator-mps"))
-	(bind ?interfaces (append$ ?interfaces (get-laptop-interfaces "NavGraphWithMPSGeneratorInterface" "navgraph-generator-mps")))
+  (bind ?interfaces (create$ (str-cat "NavGraphWithMPSGeneratorInterface" "::/" "navgraph-generator-mps")))
 	(delayed-do-for-all-facts ((?res exploration-result)) (eq ?res:status PARTIAL_CORRECT)
 		(bind ?side INPUT)
 		(bind ?frame "map")
@@ -374,7 +373,6 @@
   (bind ?any-tag-to-add FALSE)
 
   (bind ?interfaces (get-interfaces "NavGraphWithMPSGeneratorInterface" "navgraph-generator-mps"))
-  (bind ?interfaces (append$ ?interfaces (get-laptop-interfaces "NavGraphWithMPSGeneratorInterface" "navgraph-generator-mps")))
 
   (if (any-factp ((?static-nav wm-fact))
         (and (wm-key-prefix ?static-nav:key (create$ config rcll use-static-navgraph))
