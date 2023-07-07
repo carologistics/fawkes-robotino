@@ -55,7 +55,7 @@ Parameters:
       @param map_pos true, if MPS Pos is compared to Map Pos(optional,bool) True by default
 ]==]
 
-local LASER_BASE_OFFSET    = 0.35 -- distance between robotino middle point and laser-line
+local LASER_BASE_OFFSET    = 0.5 -- distance between robotino middle point and laser-line
                                   -- used for DRIVE_TO_LASER_LINE
 local GRIPPER_TOLERANCE    = {x=0.005, y=0.001, z=0.001} -- accuracy
 local MISSING_MAX          = 5 -- limit for missing object detections in a row while fine-tuning gripper
@@ -506,7 +506,7 @@ function DRIVE_TO_LASER_LINE:init()
                                y = laser_target.y,
                                frame = "/odom",
                                ori = fawkes.tf.get_yaw(laser_target.ori),
-                               end_early = true,
+                               end_early = false,
                                dry_run = fsm.vars.dry_run}
   else
     print_error("Transform Error: matched_line to odom")
