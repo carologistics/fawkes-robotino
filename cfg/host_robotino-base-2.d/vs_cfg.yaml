@@ -42,7 +42,7 @@ plugins/vs_offsets:
       # = belt_size_ / 2 + puck_height_ / 2
       # = 0.035
       
-    safe_put_target:
+    safe_put:
       offset_x: -0.01
       #usual put distance- diameter of puck
       offset_z: 0.01

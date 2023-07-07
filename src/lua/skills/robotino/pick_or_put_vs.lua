@@ -126,7 +126,7 @@ fsm:define_states{ export_to=_M, closure={},
 fsm:add_transitions{
    {"INIT", "FAILED",                 cond=input_invalid, desc="Invalid Input"},
    {"INIT", "MOVE_GRIPPER_DOWN",      true, desc="Start Routine"},
-   {"CHOOSE_ACTION", "SAFE_PUSH",     cond=fsm.vars.safe_put, desc="Safe Mode Active"},
+   {"CHOOSE_ACTION", "SAFE_PUSH",     cond="vars.safe_put", desc="Safe Mode Active"},
    {"CHOOSE_ACTION", "CLOSE_GRIPPER", cond=is_pick_action, desc="Picking Up Workpiece"},
    {"CHOOSE_ACTION", "OPEN_GRIPPER",  cond=is_put_action, desc="Putting Down Workpiece"},
    {"CHOOSE_ACTION", "FAILED",        true, desc="Instructions Unclear"},
@@ -163,7 +163,7 @@ function MOVE_GRIPPER_DOWN:init()
     z_given = gripper_target.z - offset_z_pick_target_frame + offset_z_pick_routine
   elseif fsm.vars.target == "CONVEYOR" and fsm.vars.safe_put then
     print("CONVEYOR")
-    z_given = gripper_target.z - offset_z_put_conveyor_target_frame + offset_z_safe_put_conveyor_target_frame #care
+    z_given = gripper_target.z - offset_z_put_conveyor_target_frame + offset_z_safe_put_conveyor_target_frame
     print(gripper_target.z)
     print(offset_z_put_conveyor_target_frame)
     print(offset_z_put_conveyor_routine)
@@ -237,6 +237,6 @@ function SAFE_PUSH:init()
 end
 
 function SAFE_PUT_DOWN:init()
-  fsm.vars.target_z = math.max(0, math.min(fsm.vars.target_z - offset_z_safe_put_conveyor_target_frame + offset_z_put_conveyor_routine, z_max)) #care
+  fsm.vars.target_z = math.max(0, math.min(fsm.vars.target_z - offset_z_safe_put_conveyor_target_frame + offset_z_put_conveyor_routine, z_max))
   self.args["gripper_commands"].z = fsm.vars.target_z
 end
