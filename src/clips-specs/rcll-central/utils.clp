@@ -82,6 +82,8 @@
 
   ?*GOAL-RETRY-MAX* = 5
   ?*GOAL-RETRY-TIMEOUT* = 10
+
+   ?*SALIENCE-OVERWRITE* = 10
 )
 
 ;A timeout for waiting for points
