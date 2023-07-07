@@ -70,7 +70,7 @@ local MIN_MAPPED_ORI       = math.pi/6 -- minimum angle b/w sensed laser data an
 local MIN_ACTUAL_ORI       = math.pi/6 -- minimum angle b/w bot and laser center
 
 -- Initialize as skill module
-self.args["pick_or_put_vs"].safe_put = fsm.vars.safe_put  
+
 skillenv.skill_module(_M)
 local llutils = require("fawkes.laser-lines_utils")
 local tfm = require("fawkes.tfutils")
@@ -474,6 +474,10 @@ function INIT:init()
   fsm.vars.gripper_target_pos_y = 0
   fsm.vars.gripper_target_pos_z = 0
   fsm.vars.gripper_wait         = 0
+end
+
+function INIT:exit()
+  fsm.vars.error = "invalid input"
 end
 
 function START_TRACKING:init()
