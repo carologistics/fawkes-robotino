@@ -78,6 +78,7 @@ local MISSING_MAX          = 5 -- limit for missing object detections in a row w
 local LINE_MATCH_TOLERANCE = 0.3 -- meter threshold of laserline center to tag
 local MIN_VIS_HIST_LINE    = 5 -- minimum visibility history for laser-line before considering it
 local MIN_VIS_HIST_TAG     = 5 -- minimum visibility history for tag before considering it
+local SAFE_DIST            = 0.03 -- extra distance in x direction to target position while moving base
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
@@ -573,7 +574,7 @@ function MOVE_BASE_AND_GRIPPER:init()
     "base_link", "end_effector_home")
 
   fsm.vars.gripper_wait = 10
-  set_gripper(gripper_target.x, 0, gripper_target.z - fsm.vars.missing_c3_height)
+  set_gripper(gripper_target.x - SAFE_DIST, 0, gripper_target.z - fsm.vars.missing_c3_height)
 end
 
 function FINE_TUNE_GRIPPER:init()

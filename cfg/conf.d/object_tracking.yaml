@@ -34,7 +34,7 @@ plugins/object_tracking:
     belt_size: 0.045
 
   slide_values:
-    slide_offset_side: -0.225
+    slide_offset_side: -0.28
     slide_offset_front: 0.01
     slide_height: 0.91
 
@@ -47,11 +47,11 @@ plugins/object_tracking:
 
   target_frame_offsets:
     gripper_offset_pick: 0.035
-    gripper_offset_put: 0.015
+    gripper_offset_put: 0.01
     base_offset: 0.28
-    target_wp_offset_x: 0.005
-    conveyor_offset_coefficient: 1.2
-    slide_offset_coefficient: 0.5
+    target_wp_offset_x: 0.00
+    conveyor_offset_coefficient: 1.0
+    slide_offset_coefficient: 0.8
 
   camera_intrinsics:
     # image size
