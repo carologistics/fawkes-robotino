@@ -532,6 +532,17 @@ function DRIVE_TO_LASER_LINE:init()
   end
 end
 
+function DRY_RUN_ABSENT:loop()
+  if fsm.vars.tracking_msgid ~= object_tracking_if:msgid() then
+    fsm.vars.tracking_msgid = object_tracking_if:msgid()
+    if object_tracking_if:is_detected() then
+      fsm.vars.consecutive_detections = fsm.vars.consecutive_detections + 1
+    else
+      fsm.vars.consecutive_detections = 0
+    end
+  end
+end
+
 function DRIVE_TO_LASER_LINE:loop()
   if fsm.vars.tracking_msgid ~= object_tracking_if:msgid() then
     fsm.vars.tracking_msgid = object_tracking_if:msgid()
