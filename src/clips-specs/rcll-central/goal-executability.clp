@@ -153,6 +153,7 @@
 	                    cap-color ?
 	            )))
 	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
+	(navgraph-node (name ?node-name&:(eq ?node-name (str-cat ?mps))))
 	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot)))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; Robot CEs
@@ -195,6 +196,7 @@
 	                                   $?)
 	                          (is-executable FALSE))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (order-id ?order))
+	(navgraph-node (name ?node-name&:(eq ?node-name (str-cat ?target-mps))))
 	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot)))
 	(wm-fact (key domain fact order-complexity args? ord ?order com ?order-complexity))
 	; Robot CEs
@@ -265,6 +267,7 @@
 	                                   $?)
 	                          (is-executable FALSE))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (order-id ?order))
+	(navgraph-node (name ?node-name&:(eq ?node-name (str-cat ?target-mps))))
 	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot)))
 
 	; Robot CEs
@@ -365,6 +368,7 @@
 	(domain-fact (name zone-content) (param-values ?zz ?wp-loc))
 	;consider block requests
 	(not (wm-fact (key request block args? mps ?ds wp ?other-wp&:(neq ?other-wp ?wp) $?) (values ACTIVE $?)))
+	(navgraph-node (name ?node-name&:(eq ?node-name (str-cat ?target-mps))))
 	=>
 	(printout t "Goal DISCARD executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
@@ -384,6 +388,7 @@
 	                                   $?)
 	                          (is-executable FALSE))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(navgraph-node (name ?node-name&:(eq ?node-name (str-cat ?target-mps))))
 	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot)))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	;MPS-RS CEs (a cap carrier can be used to fill a RS later)
@@ -455,6 +460,7 @@
 	                                   $?other-params)
 	                          (is-executable FALSE))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (order-id ?order))
+	(navgraph-node (name ?node-name&:(eq ?node-name (str-cat ?target-mps))))
 	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot)))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	;MPS-RS CEs (a cap carrier can be used to fill a RS later)
@@ -527,6 +533,7 @@
 	                                   $?)
 	                          (is-executable FALSE))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(navgraph-node (name ?node-name&:(eq ?node-name (str-cat ?target-mps))))
 	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot)))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	;MPS-RS CEs
@@ -597,6 +604,7 @@ The workpiece remains in the output of the used ring station after
 	                                   $?)
 	                          (is-executable FALSE))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (ring-nr ?nr))
+	(navgraph-node (name ?node-name&:(eq ?node-name (str-cat ?target-mps))))
 	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot)))
 	; Robot CEs
 	(wm-fact (key refbox team-color) (value ?team-color))

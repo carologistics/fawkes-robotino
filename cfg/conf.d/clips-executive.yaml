@@ -71,6 +71,7 @@ clips-executive:
           - name: worldmodel
             files:
               - wm-robmem-sync.clp
+              - skills-actions.clp
               - wm-template-facts.clp
               - rcll-central/wm-sync.clp
               - rcll-central/init.clp
@@ -110,7 +111,6 @@ clips-executive:
             file: rcll-central/action-selection.clp
           - name: action-execution
             files:
-              - skills-actions.clp
               - rcll-central/refbox-actions.clp
               - rcll-central/wait-actions.clp
           - name: execution-monitoring
