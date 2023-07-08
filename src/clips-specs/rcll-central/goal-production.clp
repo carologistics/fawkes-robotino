@@ -29,7 +29,6 @@
   ?*PRODUCTION-C2-PRIORITY* = 50
   ?*PRODUCTION-C3-PRIORITY* = 60
   ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT* = 30
-  ?*ROBOT-WAITING-TIMEOUT* = 2
 )
 
 (deffunction goal-meta-assign-robot-to-goal (?goal ?robot)
@@ -197,10 +196,6 @@
   (wm-fact (key domain fact entered-field args? r ?robot))
   (not (goal-meta (assigned-to ?robot)))
   (wm-fact (key central agent robot-waiting args? r ?robot))
-	(wm-fact (key refbox game-time) (values $?now))
-  ?wt <- (timer (name ?timer-name&:(eq ?timer-name
-                                (sym-cat ?robot -waiting-timer)))
-	        (time $?t&:(timeout ?now ?t ?*ROBOT-WAITING-TIMEOUT*)))
   =>
   (bind ?longest-waiting 0)
   (bind ?longest-waiting-robot ?robot)
@@ -223,7 +218,6 @@
     (goal-meta-assign-robot-to-goal ?g ?robot)
   )
   (modify ?longest-waiting)
-  (retract ?wt)
 )
 
 (defrule goal-production-unassign-robot-from-finished-goals

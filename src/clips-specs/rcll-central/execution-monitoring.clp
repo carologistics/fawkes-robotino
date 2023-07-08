@@ -311,28 +311,6 @@
 	(modify ?plan (suspended TRUE) (suspension-reason (fact-slot-value ?interleaved-plan plan-id)))
 )
 
-(defrule execution-monitoring-suspend-plan-to-insert-wait-after-restart
-	(declare (salience ?*MONITORING-SALIENCE*))
-	(goal (id ?goal-id) (class ?class))
-	(goal-meta (goal-id ?goal-id) (retries ~0))
-	?plan <- (plan (id ?plan-id) (goal-id ?goal-id) (suspended FALSE))
-	?plan-action <- (plan-action (id ?action-id)
-	             (goal-id ?goal-id)
-				 (plan-id ?plan-id)
-				 (skiller ?skiller)
-				 (state FORMULATED)
-				 (action-name move)
-				 (param-values ?robot ?robot-at ?robot-at-side ?robot-to ?robot-to-side))
-	(not (plan-action (id ?prev-action-id&:(eq (- ?action-id 1) ?prev-action-id)) (goal-id ?goal-id) (plan-id ?plan-id)))
-	=>
-	(bind ?interleaved-id (sym-cat ?class -INTERLEAVED-PLAN-))
-	(bind ?interleaved-plan (plan-assert-sequential ?interleaved-id ?goal-id ?robot
-	    (plan-assert-action go-wait ?robot ?robot-at ?robot-at-side (wait-pos ?robot-to ?robot-to-side))
-	))
-	(modify ?plan-action (param-values ?robot (wait-pos ?robot-to ?robot-to-side) WAIT ?robot-to ?robot-to-side))
-	(modify ?plan (suspended TRUE) (suspension-reason (fact-slot-value ?interleaved-plan plan-id)))
-)
-
 (defrule execution-monitoring-stop-plan-suspension
 	?plan <- (plan (id ?plan-id) (goal-id ?goal-id) (suspended TRUE) (suspension-reason ?interleaved-plan-id))
 	?interleaved-plan <- (plan (id ?interleaved-plan-id))
