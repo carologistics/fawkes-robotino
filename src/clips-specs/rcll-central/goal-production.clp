@@ -719,11 +719,20 @@
 	(goal (id ?root-id) (class WAIT-ROOT))
 	(not (goal (class MOVE-OUT-OF-WAY)))
 	(not (wm-fact (key config rcll pick-and-place-challenge) (value TRUE)))
-	(navgraph-node (name ?n&:(eq (str-index "-Z" ?n) 2)))
+	(or
+    (navgraph-node (name ?n&:(eq (str-index "-BS-O" ?n) 2)))
+  )
+  (wm-fact (key refbox team-color) (value ?color))
 	=>
   (bind ?wait-zones (create$))
   (do-for-all-facts ((?nav navgraph-node))
-                    (eq 2 (str-index "-Z" ?nav:name))
+                    (or
+                      (eq 2 (str-index "-SS-O" ?nav:name))
+                      (eq 2 (str-index "-SS-I" ?nav:name))
+                      (eq 2 (str-index "-DS-O" ?nav:name))
+                      (and (eq 1 (str-index "M-BS-O" ?nav:name)) (eq ?color MAGENTA))
+                      (and (eq 1 (str-index "C-BS-O" ?nav:name)) (eq ?color CYAN))
+                    )
     (bind ?wait-zones (insert$ ?wait-zones 1 (goal-production-assert-move-out-of-way  (sym-cat ?nav:name))))
   )
 	(bind ?g (goal-tree-assert-central-run-parallel MOVE-OUT-OF-WAY ?wait-zones))
