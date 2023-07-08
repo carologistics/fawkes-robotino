@@ -299,7 +299,7 @@
 				 (param-values ?robot ?robot-at ?robot-at-side ?robot-to ?robot-to-side))
 	(plan-action (id ?prev-action-id&:(eq (- ?action-id 1) ?prev-action-id)) (goal-id ?goal-id) (plan-id ?plan-id) (state EXECUTION-SUCCEEDED|SENSED-EFFECTS-WAIT|SENSED-EFFECTS-HOLD|EFFECTS-APPLIED|FINAL))
 	(or
-		(plan-action (skiller ~?skiller) (action-name move) (state ~FORMULATED&~FINAL) (param-values ~?robot ? ? ?robot-to ?robot-to-side))
+		(plan-action (skiller ?other-skiller&:(neq ?skiller ?other-skiller)) (action-name move) (state ~FORMULATED&~FINAL) (param-values ?other-robot&:(neq ?robot ?other-robot) ? ? ?robot-to ?robot-to-side))
 		(domain-fact (name at) (param-values ~?robot ?robot-to ?robot-to-side))
 	)
 	=>
