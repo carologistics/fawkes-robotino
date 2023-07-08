@@ -28,6 +28,7 @@
 #include <utils/math/angle.h>
 
 #include <boost/algorithm/string/predicate.hpp>
+#include <chrono>
 #include <iomanip>
 #include <iostream>
 #include <math.h>
@@ -476,14 +477,44 @@ ObjectTrackingThread::loop()
 	bool  detected          = closest_position(
     out_boxes, expected_pos_cam, mps_angle, cur_object_pos, closest_box, additional_height);
 
-	//save results
+	// Get timestamp to save image
+
+	// Get the current system time
+	std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+
+	// Convert the system time to a time_t object
+	std::time_t time = std::chrono::system_clock::to_time_t(now);
+
+	// Convert the time_t object to a tm struct
+	std::tm *localTime = std::localtime(&time);
+
+	// Get the remaining milliseconds
+	auto duration     = now.time_since_epoch();
+	auto seconds      = std::chrono::duration_cast<std::chrono::seconds>(duration);
+	auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(duration - seconds);
+
+	// Format the date and time
+	std::stringstream ss;
+	ss << std::put_time(localTime, "%Y_%m_%d_%H_%M_%S") << "_" << std::setfill('0') << std::setw(3)
+	   << milliseconds.count();
+
+	// //save results
+	// auto        currentTime   = std::chrono::system_clock::now();
+	// std::time_t currentTime_t = std::chrono::system_clock::to_time_t(currentTime);
+
+	// // Format the system time as a string
+	// std::stringstream ss;
+	// ss << std::put_time(std::localtime(&currentTime_t), "%T");
 	std::string new_img_name =
-	  "~/robotino/fawkes-robotino/etc/yolo_images_all/" + std::to_string(capture_time) + ".jpg";
+	  "/home/robotino/fawkes-robotino/etc/yolo_images_all/" + ss.str() + ".jpg";
+	std::replace(new_img_name.begin(), new_img_name.end(), ':', '_');
+	printf("file: location %s \n", new_img_name.c_str());
 	imwrite(new_img_name, image);
 
 	std::string                            pos_str;
 	fawkes::tf::Stamped<fawkes::tf::Point> cur_object_pos_target;
 	if (detected) {
+		logger->log_info(name(), "Object Detected");
 		//draw bounding box
 		rectangle(image, closest_box, Scalar(0, 255, 0), 2);
 
@@ -520,6 +551,7 @@ ObjectTrackingThread::loop()
 		tf::StampedTransform stf_object_pos(tf_object_pos, capture_time, cam_frame_, object_pos_frame_);
 		object_pos_pub->send_transform(stf_object_pos);
 	} else {
+		logger->log_info(name(), "Object NOT Detected!!!!!!!!!!!!!!!!!!!!!");
 		pos_str = "X.XXX X.XXX X.XXX";
 
 		//handle case if first detection is unsuccessful
