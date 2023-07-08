@@ -50,7 +50,7 @@ using namespace fawkes;
 
 constexpr char ClipsGymRCLLThread::cfg_prefix_[];
 
-ClipsGymRCLLThread::ClipsGymRCLLThread() : ClipsGymThread() // TODO: put as aspect instead?
+ClipsGymRCLLThread::ClipsGymRCLLThread() : ClipsGymThread("ClipsGymRCLLThread", "CLipsGymRCLL") // TODO: put as aspect instead?
 {
 }
 
