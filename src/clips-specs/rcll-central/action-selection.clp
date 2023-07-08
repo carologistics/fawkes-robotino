@@ -18,67 +18,12 @@
 	(modify ?pa (state PENDING))
 )
 
-(defrule action-selection-done
-	?g <- (goal (id ?goal-id) (class ~EXPLORATION) (mode DISPATCHED) (type ACHIEVE))
-	(plan (id ?plan-id) (goal-id ?goal-id))
-	(not (plan-action (goal-id ?goal-id) (plan-id ?) (state ~FINAL)))
-	=>
-	(modify ?g (mode FINISHED) (outcome COMPLETED))
-)
-
-(defrule action-selection-failed
-	(plan (id ?plan-id) (goal-id ?goal-id))
-	?g <- (goal (id ?goal-id) (class ?class& : (neq ?class EXPLORATION)) (mode DISPATCHED))
-	(plan-action (goal-id ?goal-id) (plan-id ?plan-id) (state FAILED))
-	=>
-	(modify ?g (mode FINISHED) (outcome FAILED))
-)
-
-(defrule action-selection-select-move
-	?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
-	                    (id ?id) (state FORMULATED)
-	                    (action-name ?action-name&move)
-	                    (param-values ?r ?from ?from-side ?to ?to-side))
-	(plan (id ?plan-id) (goal-id ?goal-id) (suspended FALSE))
-	(goal (id ?goal-id) (class ?class) (mode DISPATCHED) (verbosity ?verbosity))
-
-	(not (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (state PENDING|WAITING|RUNNING|FAILED)))
-	(not (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (state FORMULATED) (id ?oid&:(< ?oid ?id))))
-	(not (plan-action (state ~FORMULATED&~FAILED&~FINAL)
-	                  (param-values ? ? ? ?to ?to-side)))
-	=>
-	(modify ?pa (state PENDING))
-)
-
 (deffunction is-navgraph-node (?pos)
 	(if (any-factp ((?nn navgraph-node)) (eq (str-cat ?pos) ?nn:name))
 		then
 		(return TRUE)
 	)
 	(return FALSE)
-)
-
-(defrule skill-action-start-overwrite
-	(declare (salience ?*SALIENCE-OVERWRITE*))
-	?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id) (state PENDING)
-	                    (action-name ?action-name) (executable TRUE)
-	                    (skiller ?skiller)
-	                    (param-names $?params)
-	                    (param-values $?param-values))
-	(skill-action-mapping (name ?action-name))
-	(not (skill-action-execinfo (skiller ?skiller)))
-	(skiller-control (skiller ?skiller) (acquired TRUE))
-	=>
-	(bind ?skill-id (skill-call-overwrite ?action-name ?params ?param-values ?skiller))
-	(modify ?pa (state WAITING))
-	(bind ?args (create$))
-	(loop-for-count (?i (length$ ?params))
-		(bind ?args (append$ ?args (nth$ ?i ?params) (nth$ ?i ?param-values)))
-	)
-	(assert (skill-action-execinfo (goal-id ?goal-id) (plan-id ?plan-id)
-	                               (action-id ?id) (skill-id ?skill-id)
-	                               (skill-name ?action-name)
-	                               (skill-args ?args) (skiller ?skiller)))
 )
 
 (deffunction skill-call-overwrite (?name ?param-names ?param-values $?opt-skiller)
@@ -131,4 +76,59 @@
 		               (status ?status) (msgid ?msgid) (start-time (now))))
 	)
 	(return ?id)
+)
+
+(defrule action-selection-done
+	?g <- (goal (id ?goal-id) (class ~EXPLORATION) (mode DISPATCHED) (type ACHIEVE))
+	(plan (id ?plan-id) (goal-id ?goal-id))
+	(not (plan-action (goal-id ?goal-id) (plan-id ?) (state ~FINAL)))
+	=>
+	(modify ?g (mode FINISHED) (outcome COMPLETED))
+)
+
+(defrule action-selection-failed
+	(plan (id ?plan-id) (goal-id ?goal-id))
+	?g <- (goal (id ?goal-id) (class ?class& : (neq ?class EXPLORATION)) (mode DISPATCHED))
+	(plan-action (goal-id ?goal-id) (plan-id ?plan-id) (state FAILED))
+	=>
+	(modify ?g (mode FINISHED) (outcome FAILED))
+)
+
+(defrule action-selection-select-move
+	?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+	                    (id ?id) (state FORMULATED)
+	                    (action-name ?action-name&move)
+	                    (param-values ?r ?from ?from-side ?to ?to-side))
+	(plan (id ?plan-id) (goal-id ?goal-id) (suspended FALSE))
+	(goal (id ?goal-id) (class ?class) (mode DISPATCHED) (verbosity ?verbosity))
+
+	(not (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (state PENDING|WAITING|RUNNING|FAILED)))
+	(not (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (state FORMULATED) (id ?oid&:(< ?oid ?id))))
+	(not (plan-action (state ~FORMULATED&~FAILED&~FINAL)
+	                  (param-values ? ? ? ?to ?to-side)))
+	=>
+	(modify ?pa (state PENDING))
+)
+
+(defrule skill-action-start-overwrite
+	(declare (salience ?*SALIENCE-OVERWRITE*))
+	?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id) (state PENDING)
+	                    (action-name ?action-name) (executable TRUE)
+	                    (skiller ?skiller)
+	                    (param-names $?params)
+	                    (param-values $?param-values))
+	(skill-action-mapping (name ?action-name))
+	(not (skill-action-execinfo (skiller ?skiller)))
+	(skiller-control (skiller ?skiller) (acquired TRUE))
+	=>
+	(bind ?skill-id (skill-call-overwrite ?action-name ?params ?param-values ?skiller))
+	(modify ?pa (state WAITING))
+	(bind ?args (create$))
+	(loop-for-count (?i (length$ ?params))
+		(bind ?args (append$ ?args (nth$ ?i ?params) (nth$ ?i ?param-values)))
+	)
+	(assert (skill-action-execinfo (goal-id ?goal-id) (plan-id ?plan-id)
+	                               (action-id ?id) (skill-id ?skill-id)
+	                               (skill-name ?action-name)
+	                               (skill-args ?args) (skiller ?skiller)))
 )
