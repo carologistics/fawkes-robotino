@@ -449,16 +449,6 @@
 	        )
 )
 
-(:action explore-and-turn
-	:parameters (?r - robot ?from - location ?from-side - mps-side
-	             ?place - waitpoint)
-	:precondition (at ?r ?from ?from-side)
-	:effect (and (not (at ?r ?from ?from-side))
-	             (mps-side-approachable ?from ?from-side)
-	             (at ?r ?place WAIT)
-	        )
-)
-
 (:action refill-shelf
 	:parameters (?m - mps ?spot - shelf-spot ?cc - cap-carrier
 	             ?color - cap-color)

@@ -121,8 +121,7 @@ clips-executive:
               - rcll-central/action-task-executor.clp
           - name: simtest
             file: rcll-central/simtest.clp
-      # the mapping syntax for parameters is defined in
-      # fawkes/src/libs/utils/misc/map_skill.cpp
+
       action-mapping:
         enter-field: >
           drive_into_field{place="?(place)Y",
@@ -201,8 +200,6 @@ clips-executive:
         - RobotinoSensorInterface
         - RobotinoLightInterface
         - HeartbeatInterface
-        - BoxInterface
-        - SwitchInterface
 
     test:
       domain: test-scenario/test-domain.clp

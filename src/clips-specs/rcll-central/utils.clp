@@ -107,14 +107,13 @@
 
 (deftemplate exploration-result
 " Template for storing a exploration result. Stores the machine name, zone, orientation and the team this machine belongs to"
-  (slot machine (type SYMBOL) (allowed-symbols BS CS RS SS DS C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS C-SS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS M-SS))
+  (slot machine (type SYMBOL) (allowed-symbols C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS C-SS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS M-SS))
   (slot zone (type SYMBOL))
   (multislot trans (type FLOAT))
   (multislot rot (type FLOAT))
   (slot tag-id (type INTEGER))
   (slot orientation (type INTEGER) (default -1))
-  (slot team (type SYMBOL) (allowed-symbols UNKNOWN CYAN MAGENTA))
-  (slot status (type SYMBOL) (allowed-symbols REPORTED PARTIAL_CORRECT UNREPORTED) (default UNREPORTED))
+  (slot team (type SYMBOL) (allowed-symbols CYAN MAGENTA))
 )
 
 (deftemplate goal-meta
@@ -295,13 +294,6 @@
   (return (create$ ?x ?y))
 )
 
-(deffunction zone-string-to-sym (?zone-string)
-	(return (sym-cat (sub-string 1 1 ?zone-string) "_Z" (sub-string 3 4 ?zone-string)))
-)
-
-(deffunction zone-string-to-sym-dash (?zone-string)
-	(return (sym-cat (sub-string 1 1 ?zone-string) "-Z" (sub-string 4 5 ?zone-string)))
-)
 
 (deffunction tag-offset (?zone ?yaw ?width)
   "Calculates the offset of the position of a tag inside a zone
@@ -319,16 +311,17 @@
   (return (create$ ?x ?y 0.48))
 )
 
-(deffunction navgraph-add-tags-from-exploration ()
+(deffunction navgraph-add-tags-from-exploration (?output-odd)
   "Send all explored tags to the navgraph generator"
 	(bind ?any-tag-to-add FALSE)
 
-  (bind ?interfaces (create$ (str-cat "NavGraphWithMPSGeneratorInterface" "::/" "navgraph-generator-mps")))
-	(delayed-do-for-all-facts ((?res exploration-result)) (eq ?res:status PARTIAL_CORRECT)
-		(bind ?side INPUT)
+	(bind ?interfaces (get-interfaces "NavGraphWithMPSGeneratorInterface" "navgraph-generator-mps"))
+	(bind ?interfaces (append$ ?interfaces (get-laptop-interfaces "NavGraphWithMPSGeneratorInterface" "navgraph-generator-mps")))
+	(delayed-do-for-all-facts ((?res exploration-result)) TRUE
+		(bind ?side (tag-id-to-side ?res:tag-id ?output-odd))
 		(bind ?frame "map")
 		(bind ?trans ?res:trans)
-		(bind ?rot ?res:rot)
+		(bind ?rot  ?res:rot)
 		(bind ?zone ?res:zone)
 		(bind ?mps ?res:machine)
 		(bind ?any-tag-to-add TRUE)
@@ -768,20 +761,6 @@
   "
   (bind ?interface (remote-if "SwitchInterface" ?robot "laser-lines"))
   (bind ?msg (blackboard-create-msg ?interface "EnableSwitchMessage"))
-  (blackboard-send-msg ?msg)
-)
-
-(deffunction exploration-camera-enable (?robot)
-  "Use the SwitchInterface to turn on the camera for exploration."
-  (bind ?interface (remote-if "SwitchInterface" ?robot "switch/box_detect_enabled"))
-  (bind ?msg (blackboard-create-msg ?interface "EnableSwitchMessage"))
-  (blackboard-send-msg ?msg)
-)
-
-(deffunction exploration-camera-disable (?robot)
-  "Use the SwitchInterface to turn off the camera for exploration."
-  (bind ?interface (remote-if "SwitchInterface" ?robot "switch/box_detect_enabled"))
-  (bind ?msg (blackboard-create-msg ?interface "DisableSwitchMessage"))
   (blackboard-send-msg ?msg)
 )
 
