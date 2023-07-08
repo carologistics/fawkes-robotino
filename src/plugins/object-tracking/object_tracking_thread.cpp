@@ -471,6 +471,11 @@ ObjectTrackingThread::loop()
 	bool  detected          = closest_position(
     out_boxes, expected_pos_cam, mps_angle, cur_object_pos, closest_box, additional_height);
 
+	//save results
+	std::string new_img_name =
+	  "~/robotino/fawkes-robotino/etc/yolo_images_all/" + std::to_string(capture_time) + ".jpg";
+	imwrite(new_img_name, image);
+
 	std::string                            pos_str;
 	fawkes::tf::Stamped<fawkes::tf::Point> cur_object_pos_target;
 	if (detected) {
@@ -536,11 +541,6 @@ ObjectTrackingThread::loop()
 	                    shm_buffer_results_->buffer(),
 	                    camera_width_,
 	                    camera_height_);
-
-	//save results
-	//std::string new_img_name = "/tmp/yolo_results/" + std::to_string(name_it_) + ".jpg";
-	//imwrite(new_img_name, image);
-	//name_it_ ++;
 	fawkes::Time after_projection(clock);
 
 	//compute weighted average
