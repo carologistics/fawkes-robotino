@@ -184,3 +184,283 @@ plugins/static-transforms:
       rot_yaw: -1.57
       rot_pitch: 0
       rot_roll: -1.57
+
+    M-BS-I:
+      frame: !frame M-BS
+      child_frame: !frame M-BS-I
+      trans_x: 0.5
+      trans_y: 0
+      trans_z: 0
+      rot_yaw: 3.141592654
+      rot_pitch: 0
+      rot_roll: 0
+
+    M-BS-O:
+      frame: !frame M-BS
+      child_frame: !frame M-BS-O
+      trans_x: -0.5
+      trans_y: 0
+      trans_z: 0
+      rot_yaw: 0
+      rot_pitch: 0
+      rot_roll: 0
+
+    M-SS-I:
+      frame: !frame M-SS
+      child_frame: !frame M-SS-I
+      trans_x: 0.5
+      trans_y: 0
+      trans_z: 0
+      rot_yaw: 3.141592654
+      rot_pitch: 0
+      rot_roll: 0
+
+    M-SS-O:
+      frame: !frame M-SS
+      child_frame: !frame M-SS-O
+      trans_x: -0.5
+      trans_y: 0
+      trans_z: 0
+      rot_yaw: 0
+      rot_pitch: 0
+      rot_roll: 0
+
+    M-DS-I:
+      frame: !frame M-DS
+      child_frame: !frame M-DS-I
+      trans_x: 0.5
+      trans_y: 0
+      trans_z: 0
+      rot_yaw: 3.141592654
+      rot_pitch: 0
+      rot_roll: 0
+
+    M-DS-O:
+      frame: !frame M-DS
+      child_frame: !frame M-DS-O
+      trans_x: -0.5
+      trans_y: 0
+      trans_z: 0
+      rot_yaw: 0
+      rot_pitch: 0
+      rot_roll: 0
+
+    M-CS1-I:
+      frame: !frame M-CS1
+      child_frame: !frame M-CS1-I
+      trans_x: 0.5
+      trans_y: 0
+      trans_z: 0
+      rot_yaw: 3.141592654
+      rot_pitch: 0
+      rot_roll: 0
+
+    M-CS1-O:
+      frame: !frame M-CS1
+      child_frame: !frame M-CS1-O
+      trans_x: -0.5
+      trans_y: 0
+      trans_z: 0
+      rot_yaw: 0
+      rot_pitch: 0
+      rot_roll: 0
+
+    M-CS2-I:
+      frame: !frame M-CS2
+      child_frame: !frame M-CS2-I
+      trans_x: 0.5
+      trans_y: 0
+      trans_z: 0
+      rot_yaw: 3.141592654
+      rot_pitch: 0
+      rot_roll: 0
+
+    M-CS2-O:
+      frame: !frame M-CS2
+      child_frame: !frame M-CS2-O
+      trans_x: -0.5
+      trans_y: 0
+      trans_z: 0
+      rot_yaw: 0
+      rot_pitch: 0
+      rot_roll: 0
+
+    M-RS1-I:
+      frame: !frame M-RS1
+      child_frame: !frame M-RS1-I
+      trans_x: 0.5
+      trans_y: 0
+      trans_z: 0
+      rot_yaw: 3.141592654
+      rot_pitch: 0
+      rot_roll: 0
+
+    M-RS1-O:
+      frame: !frame M-RS1
+      child_frame: !frame M-RS1-O
+      trans_x: -0.5
+      trans_y: 0
+      trans_z: 0
+      rot_yaw: 0
+      rot_pitch: 0
+      rot_roll: 0
+
+    M-RS2-I:
+      frame: !frame M-RS2
+      child_frame: !frame M-RS2-I
+      trans_x: 0.5
+      trans_y: 0
+      trans_z: 0
+      rot_yaw: 3.141592654
+      rot_pitch: 0
+      rot_roll: 0
+
+    M-RS2-O:
+      frame: !frame M-RS2
+      child_frame: !frame M-RS1-O
+      trans_x: -0.5
+      trans_y: 0
+      trans_z: 0
+      rot_yaw: 0
+      rot_pitch: 0
+      rot_roll: 0
+
+    C-BS-I:
+      frame: !frame C-BS
+      child_frame: !frame C-BS-I
+      trans_x: 0.5
+      trans_y: 0
+      trans_z: 0
+      rot_yaw: 3.141592654
+      rot_pitch: 0
+      rot_roll: 0
+
+    C-BS-O:
+      frame: !frame C-BS
+      child_frame: !frame C-BS-O
+      trans_x: -0.5
+      trans_y: 0
+      trans_z: 0
+      rot_yaw: 0
+      rot_pitch: 0
+      rot_roll: 0
+
+    C-SS-I:
+      frame: !frame C-SS
+      child_frame: !frame C-SS-I
+      trans_x: 0.5
+      trans_y: 0
+      trans_z: 0
+      rot_yaw: 3.141592654
+      rot_pitch: 0
+      rot_roll: 0
+
+    C-SS-O:
+      frame: !frame C-SS
+      child_frame: !frame C-SS-O
+      trans_x: -0.5
+      trans_y: 0
+      trans_z: 0
+      rot_yaw: 0
+      rot_pitch: 0
+      rot_roll: 0
+
+    C-DS-I:
+      frame: !frame C-DS
+      child_frame: !frame C-DS-I
+      trans_x: 0.5
+      trans_y: 0
+      trans_z: 0
+      rot_yaw: 3.141592654
+      rot_pitch: 0
+      rot_roll: 0
+
+    C-DS-O:
+      frame: !frame C-DS
+      child_frame: !frame C-DS-O
+      trans_x: -0.5
+      trans_y: 0
+      trans_z: 0
+      rot_yaw: 0
+      rot_pitch: 0
+      rot_roll: 0
+
+    C-CS1-I:
+      frame: !frame C-CS1
+      child_frame: !frame C-CS1-I
+      trans_x: 0.5
+      trans_y: 0
+      trans_z: 0
+      rot_yaw: 3.141592654
+      rot_pitch: 0
+      rot_roll: 0
+
+    C-CS1-O:
+      frame: !frame C-CS1
+      child_frame: !frame C-CS1-O
+      trans_x: -0.5
+      trans_y: 0
+      trans_z: 0
+      rot_yaw: 0
+      rot_pitch: 0
+      rot_roll: 0
+
+    C-CS2-I:
+      frame: !frame C-CS2
+      child_frame: !frame C-CS2-I
+      trans_x: 0.5
+      trans_y: 0
+      trans_z: 0
+      rot_yaw: 3.141592654
+      rot_pitch: 0
+      rot_roll: 0
+
+    C-CS2-O:
+      frame: !frame C-CS2
+      child_frame: !frame C-CS2-O
+      trans_x: -0.5
+      trans_y: 0
+      trans_z: 0
+      rot_yaw: 0
+      rot_pitch: 0
+      rot_roll: 0
+
+    C-RS1-I:
+      frame: !frame C-RS1
+      child_frame: !frame C-RS1-I
+      trans_x: 0.5
+      trans_y: 0
+      trans_z: 0
+      rot_yaw: 3.141592654
+      rot_pitch: 0
+      rot_roll: 0
+
+    C-RS1-O:
+      frame: !frame C-RS1
+      child_frame: !frame C-RS1-O
+      trans_x: -0.5
+      trans_y: 0
+      trans_z: 0
+      rot_yaw: 0
+      rot_pitch: 0
+      rot_roll: 0
+
+    C-RS2-I:
+      frame: !frame C-RS2
+      child_frame: !frame C-RS2-I
+      trans_x: 0.5
+      trans_y: 0
+      trans_z: 0
+      rot_yaw: 3.141592654
+      rot_pitch: 0
+      rot_roll: 0
+
+    C-RS2-O:
+      frame: !frame C-RS2
+      child_frame: !frame C-RS1-O
+      trans_x: -0.5
+      trans_y: 0
+      trans_z: 0
+      rot_yaw: 0
+      rot_pitch: 0
+      rot_roll: 0
