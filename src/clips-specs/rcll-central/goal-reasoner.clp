@@ -777,6 +777,7 @@
   best course of action is to just retry from the agent's perspective."
   (declare (salience ?*MONITORING-SALIENCE*))
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED) (meta $?meta)
+              (class ~MOVE-OUT-OF-WAY)
               (verbosity ?v))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (plan-action (action-name ?action&move|go-wait|wait-for-wp|wait-for-free-side)
@@ -805,8 +806,8 @@
 
   ; delete plans of the goal
   (goal-reasoner-retract-plan-action ?goal-id)
-  (modify ?g (mode FORMULATED) (outcome UNKNOWN) (is-executable FALSE))
-  (printout (log-debug ?v) "Goal " ?goal-id " FORMULATED" crlf)
+  (retract ?g ?gm)
+  (printout (log-debug ?v) "Goal " ?goal-id " RETRACTED" crlf)
 )
 
 (defrule goal-reasoner-evaluate-buffer-cap-wrong-slot
