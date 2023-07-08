@@ -14,7 +14,7 @@ rl-agent:
   name: "MaskablePPO_RCLL_robotino1-partial.zip"
   # Directory where the rl agent is saved after training
   # And to look for trained agent files
-  dir: "@FAWKES_BASEDIR@/src/plugins/rl-test/rl-agent"
+  dir: "@FAWKES_BASEDIR@/fawkes/src/plugins/clips-executive-rl/rl-agent"
   # ,"@BASEDIR@/testagent"]
 
   # If set to true a new agent is created and trained and save at the
@@ -35,10 +35,10 @@ python:
   execution-script: "InitClipsWorld.py"  # "executingClipsWorld.py"
 
   # Directory where the python scripts are located
-  dir: "@FAWKES_BASEDIR@/src/plugins/rl-test/rl-agent"
+  dir: "@FAWKES_BASEDIR@/fawkes/src/plugins/clips-executive-rl/rl-agent"
 
   # Directory where the python env script is located
-  env-dir: "@FAWKES_BASEDIR@/src/plugins/clips-gym"
+  env-dir: "@FAWKES_BASEDIR@/src/plugins/clips-gym-rcll"
 
   env-script: "ClipsWorld.py"
   # training-dirs: ["@BASEDIR@/src/plugins/rl-test/rl-agent"]
