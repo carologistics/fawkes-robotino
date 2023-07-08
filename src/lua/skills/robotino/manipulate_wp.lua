@@ -52,8 +52,7 @@ Parameters:
                      the workpiece is there (optional, bool)
       @param query   defines if dry_run expects a workpiece to be at the location or wet (optional, THERE | ABSENT)
                      THERE by default
-      @param safe_put if true, put the wp on the conveyor in a way that it does not break the fingers even if there lies a wp
-		     ,used after failing dry_run, false by default (optional, boolean)
+      @param safe_put true, if we have to put the wp on the conveyor in a way that it does not break the fingers even if there is a wp, used after failing dry_run, false by default (optional, boolean)
       @param map_pos true, if MPS Pos is compared to Map Pos(optional,bool) True by default
 ]==]
 
@@ -569,7 +568,7 @@ function MOVE_BASE_AND_GRIPPER:init()
   local diff_y = (gripper_y - base_y) * (gripper_y - base_y)
   local forward_distance = math.sqrt(diff_x + diff_y)
 
-  if fsm.vars.safe_run then
+  if fsm.vars.safe_put then
     forward_distance = forward_distance - offset_x_put_conveyor_target_frame + offset_x_safe_put_conveyor_target_frame
   end
 
@@ -588,8 +587,7 @@ function MOVE_BASE_AND_GRIPPER:init()
   end
 end
 
-function FINE_TUNE_GRIPPER:init()
-  self.args["pick_or_put_vs"].safe_put = fsm.vars.safe_put    
+function FINE_TUNE_GRIPPER:init()    
   fsm.vars.missing_detections = 0
   fsm.vars.out_of_reach       = false
   fsm.vars.gripper_wait       = 10
@@ -613,8 +611,8 @@ function FINE_TUNE_GRIPPER:loop()
      z=object_tracking_if:gripper_frame(2),
      ori=fawkes.tf.create_quaternion_from_yaw(0)},
     "base_link", "end_effector_home")
-
-  if fsm.vars.safe_run then
+  print("fine tune gripper" .. gripper_target.z)
+  if fsm.vars.safe_put then
     gripper_target.x = gripper_target.x - offset_x_put_conveyor_target_frame + offset_x_safe_put_conveyor_target_frame
   end
 
