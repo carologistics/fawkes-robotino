@@ -79,7 +79,7 @@ navgraph-generator-mps:
 
   # The distance in which to place approach points from the machine (measured
   # from the outsite of the mps, not the center); m
-  approach-distance: 0.75
+  approach-distance: 0.25
 
   # Set to true to add the corners of an MPS as obstacles themselves.
   # Otherwise only the center point of the MPS is added as obstacles
