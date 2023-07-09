@@ -61,7 +61,7 @@ local GRIPPER_TOLERANCE    = {x=0.005, y=0.001, z=0.001} -- accuracy
 local MISSING_MAX          = 5 -- limit for missing object detections in a row while fine-tuning gripper
 local MIN_VIS_HIST_LINE    = 5 -- minimum visibility history for laser-line before considering it
 local MIN_MAPPED_DIST      = 0.5 -- minimum distance of sensed laser data and tf-mps data
-local MIN_ACTUAL_DIST      = 0.7 -- minimum distance b/w bot and laser center
+local MIN_ACTUAL_DIST      = 1.0 -- minimum distance b/w bot and laser center
 local MIN_MAPPED_ORI       = math.pi/6 -- minimum angle b/w sensed laser data and tf-mps data
 local MIN_ACTUAL_ORI       = math.pi/6 -- minimum angle b/w bot and laser center
 
