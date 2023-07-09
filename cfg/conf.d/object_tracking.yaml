@@ -86,7 +86,7 @@ plugins/object_tracking:
   yolo:
     weights_path: "../cfg/yolo/yolov4-tiny.weights"
     config_path: "../cfg/yolo/yolov4-tiny.cfg"
-    confThreshold: 0.7
+    confThreshold: 0.2
     nmsThreshold: 0.3
     # input size
     width: 352
