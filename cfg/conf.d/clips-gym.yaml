@@ -14,7 +14,7 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/clips-agent
 # dir: "@BASEDIR@/src/plugins/rl-test/rl-agent"
 
 # Directory where the python env script is located
-# env-dir: "@BASEDIR@/src/plugins/clips-gym"
+# env-dir: "@BASEDIR@/src/plugins/clips_gym"
 
 # env-script: "ClipsWorld.py"
 # training-dirs: ["@BASEDIR@/src/plugins/rl-test/rl-agent"]

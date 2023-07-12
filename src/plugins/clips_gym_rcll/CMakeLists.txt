@@ -19,19 +19,19 @@
 # this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # *****************************************************************************
-set(PLUGIN_clips-gym-rcll
+set(PLUGIN_clips_gym_rcll
     ON
-    CACHE BOOL "Build clips-gym-rcll")
+    CACHE BOOL "Build clips_gym_rcll")
 
-if(PLUGIN_clips-gym-rcll)
-  add_library(clips-gym-rcll MODULE clips-gym-rcll-plugin.cpp
-                                    clips-gym-rcll-thread.cpp)
+if(PLUGIN_clips_gym_rcll)
+  add_library(clips_gym_rcll MODULE clips_gym_rcll_plugin.cpp
+                                    clips_gym_rcll_thread.cpp)
 
-  depend_on_clipsmm(clips-gym-rcll)
-  depend_on_cpp_version(clips-gym-rcll 17)
-  target_link_libraries(clips-gym-rcll pybind11::headers)
+  depend_on_clipsmm(clips_gym_rcll)
+  depend_on_cpp_version(clips_gym_rcll 17)
+  target_link_libraries(clips_gym_rcll pybind11::headers)
   target_link_libraries(
-    clips-gym-rcll
+    clips_gym_rcll
     fawkescore
     fawkesutils
     fawkesaspects
@@ -43,5 +43,5 @@ if(PLUGIN_clips-gym-rcll)
     Python3::Module
     Python3::Python)
 else()
-  plugin_disabled_message("clips-gym-rcll")
+  plugin_disabled_message("clips_gym_rcll")
 endif()

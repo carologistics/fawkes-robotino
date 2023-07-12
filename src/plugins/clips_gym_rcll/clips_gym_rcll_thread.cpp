@@ -1,5 +1,5 @@
 /***************************************************************************
- *  clips-gym-thread.cpp -
+ *  clips_gym_rcll_thread.cpp -
  *
  *  Created:
  *  Copyright
@@ -18,7 +18,7 @@
    *  Read the full text in the LICENSE.GPL file in the doc directory.
    */
 
-#include "clips-gym-rcll-thread.h"
+#include "clips_gym_rcll_thread.h"
 
 #include <iostream>
 #include <regex>
@@ -68,7 +68,7 @@ ClipsGymRCLLThread::getInstance()
 	return rcll_thread_instance;
 }
 
-PYBIND11_MODULE(_rcllclips_gym_rcll, m)
+PYBIND11_MODULE(clips_gym_rcll, m)
 {
 	m.doc() = "ClipsGymRCLLThread"; // optional module docstring
 	py::class_<ClipsGymRCLLThread>(m, "ClipsGymThread")

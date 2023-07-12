@@ -21,7 +21,7 @@
 import sys
 from tokenize import String
 
-import clips_gym 
+import clips_gym
 
 import numpy as np
 import gym

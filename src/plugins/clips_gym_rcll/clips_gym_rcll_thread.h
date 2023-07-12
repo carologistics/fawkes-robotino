@@ -1,5 +1,5 @@
 /***************************************************************************
- *  clips-gym-thread.h -
+ *  clips_gym_rcll_thread.h -
  *
  *  Created:
  *  Copyright
@@ -24,7 +24,7 @@
 #include <aspect/logging.h>
 #include <blackboard/interface_listener.h>
 #include <core/threading/thread.h>
-#include <plugins/clips-gym/clips-gym-thread.h>
+#include <plugins/clips_gym/clips_gym_thread.h>
 #include <plugins/clips/aspect/clips_feature.h>
 
 #include <chrono>
@@ -76,7 +76,7 @@ public:
 private:
 	std::map<std::string, fawkes::LockPtr<CLIPS::Environment>> envs_;
 	std::string                                                clips_env_name;
-	constexpr static char cfg_prefix_[] = "/plugins/clips-gym/static/";
+	constexpr static char cfg_prefix_[] = "/plugins/clips_gym/static/";
 
 	//TODO extra Klasse auslagern
 	std::map<std::string, std::vector<std::string>> paramTypeDomainObjectsMap;

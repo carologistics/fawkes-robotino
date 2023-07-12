@@ -1,5 +1,5 @@
 /***************************************************************************
- *  clips_gym_plugin.cpp - 
+ *  clips_gym_rcll_plugin.cpp - 
  *
  *  Created: 
  *  Copyright  2022  
@@ -18,7 +18,7 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include "clips-gym-rcll-thread.h"
+#include "clips_gym_rcll_thread.h"
 
 #include <core/plugin.h>
 

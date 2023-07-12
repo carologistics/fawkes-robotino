@@ -24,7 +24,7 @@ set_output_directory_plugins()
 
 set(CMAKE_SHARED_MODULE_PREFIX "")
 add_subdirectory(clips-motor-switch)
-add_subdirectory(clips-gym-rcll)
+add_subdirectory(clips_gym_rcll)
 add_subdirectory(navgraph-generator-mps)
 add_subdirectory(skiller_motor_state)
 add_subdirectory(mps-laser-gen)
