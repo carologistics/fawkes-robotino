@@ -21,7 +21,7 @@
 import sys
 from tokenize import String
 
-import clips_gym
+import clips_gym_rcll
 
 import numpy as np
 import gym
@@ -39,7 +39,7 @@ def expand_grid(dictionary):
                        columns=dictionary.keys())
 
 
-#def generateActionSpace(clips_gym):
+#def generateActionSpace(clips_gym_rcll):
 		
 
 
@@ -58,10 +58,10 @@ class ClipsWorld(gym.Env):
     super(ClipsWorld, self).__init__()
 
     #generate action space
-    print("ClipsWorld init: before generateActionSpace")
-    p = clips_gym.ClipsGymThread.getInstance()
+    print("ClipsWorldRCLL init: before generateActionSpace")
+    p = clips_gym_rcll.ClipsGymRCLLThread.getInstance()
     action_space = p.generateActionSpace()
-    print("ClipsWorld init: after generateActionSpace\n action_space = ", action_space)
+    print("ClipsWorldRCLL init: after generateActionSpace\n action_space = ", action_space)
     """ 
     #-----------
     #Get Goal Class list
@@ -116,7 +116,7 @@ class ClipsWorld(gym.Env):
     #print("ClipsWorld init: after generateActionSpace\n action_space = ", action_space)
 
     #generate observation space
-    print("ClipsWorld init: before generateObservationSpace")
+    print("ClipsWorldRCLL init: before generateObservationSpace")
     obs_space = p.generateObservationSpace()
 
     #-----------------------------------------
@@ -219,22 +219,22 @@ class ClipsWorld(gym.Env):
     Important: the observation must be a numpy array
     :return: (np.array) 
     """
-    print("ClipsWorld: start reset function")
+    print("ClipsWorldRCLL: start reset function")
 
     #print("NOT IMPLEMENTED ",inspect.currentframe().f_code.co_name)
-    print("ClipsWorld: reset: before get ClipsGymThread instance")
-    p = clips_gym.ClipsGymThread.getInstance()
+    print("ClipsWorldRCLL: reset: before get ClipsGymRCLLThread instance")
+    p = clips_gym_rcll.ClipsGymRCLLThread.getInstance()
     result = p.resetCX()
-    print("ClipsWorld: reset: Finished resetCX ")
+    print("ClipsWorldRCLL: reset: Finished resetCX ")
 
-    print("ClipsWorld: reset: call create_rl_env_state_from_facts")
+    print("ClipsWorldRCLL: reset: call create_rl_env_state_from_facts")
     fact_string = p.create_rl_env_state_from_facts()
     raw_facts = ast.literal_eval(fact_string)
     state = self.get_state_from_facts(raw_facts)
     
     self.rewards = []
     self.needs_reset = False
-    p.log("ClipsWorld: end reset function")
+    p.log("ClipsWorldRCLL: end reset function")
     
     return np.array(state).astype(np.int_)
     #state #
@@ -245,8 +245,8 @@ class ClipsWorld(gym.Env):
     self.needs_reset = True
     ep_rew = sum(self.rewards)
     ep_len = len(self.rewards)
-    p = clips_gym.ClipsGymThread.getInstance()
-    p.log(f"\n\nClipsWorld: logOnEpisodeEnd Reward:{ep_rew} Length: {ep_len}\n\n")
+    p = clips_gym_rcll.ClipsGymRCLLThread.getInstance()
+    p.log(f"\n\nClipsWorldRCLL: logOnEpisodeEnd Reward:{ep_rew} Length: {ep_len}\n\n")
     ep_info = {"r": ep_rew, "l": ep_len, "t": round(time.time() - self.t_start, 6)}
     #for key in self.info_keywords:
     #    ep_info[key] = info[key]
@@ -261,13 +261,13 @@ class ClipsWorld(gym.Env):
 
   def step(self, action):
     goal = self.action_dict[action]
-    p = clips_gym.ClipsGymThread.getInstance()
-    p.log(f"ClipsWorld: step '{action}': '{goal}'")
+    p = clips_gym_rcll.ClipsGymRCLLThread.getInstance()
+    p.log(f"ClipsWorldRCLL: step '{action}': '{goal}'")
     result = p.step(goal) #+"#")
-    print("ClipsWorld: p.step result: ", result)
+    print("ClipsWorldRCLL: p.step result: ", result)
     #print("ClipsWorld: observation ", result.observation)
-    p.log(f"ClipsWorld: info  '{result.info}'")
-    p.log(f"ClipsWorld: reward '{result.reward}'")
+    p.log(f"ClipsWorldRCLL: info  '{result.info}'")
+    p.log(f"ClipsWorldRCLL: reward '{result.reward}'")
 
     #TODO check action valid (if not done - reward -1) (da durch action masking nur valide actions ausgesucht werden sollten, außer es gibt keine validen mehr)
 
@@ -280,24 +280,24 @@ class ClipsWorld(gym.Env):
     #  Flag that marks the termination of an episode
     # TODO if we use action masking check if there are valid action and switch to done if not
     executableGoals = p.getAllFormulatedExecutableGoals()
-    print ("ClipsWorld: getAllFormulatedExecutableGoals {} length: ", executableGoals, len(executableGoals))
+    print ("ClipsWorldRCLL: getAllFormulatedExecutableGoals {} length: ", executableGoals, len(executableGoals))
     
     time_sec =  p.getRefboxGameTime()
     phase = p.getRefboxGamePhase()
 
-    p.log(f"ClipsWorld: Time: '{time_sec}' Phase: '{phase}'")
+    p.log(f"ClipsWorldRCLL: Time: '{time_sec}' Phase: '{phase}'")
     game_time = 1200 #180 #in sec = normally 1200
 
     if phase == 'POST_GAME' or time_sec > game_time+100:
-      p.log(f"ClipsWorld: Done: due to POST_GAME or TIME")
+      p.log(f"ClipsWorldRCLL: Done: due to POST_GAME or TIME")
       # game over (e.g. if over 300 points you might won the game - extra check with refbox necessary / no logic for game extension!)
       done = True
     elif len(self.rewards) >= 149 and sum(self.rewards) < 100:
-      p.log(f"ClipsWorld: Done: due to rewards len over 200 and sum rewards < 100")
+      p.log(f"ClipsWorldRCLL: Done: due to rewards len over 200 and sum rewards < 100")
       # due to a machine reset some workpieces are lost
       done = True
     elif not executableGoals and time_sec < game_time:
-      p.log(f"ClipsWorld: no executable goals found - sleeping for 500 milliseconds")
+      p.log(f"ClipsWorldRCLL: no executable goals found - sleeping for 500 milliseconds")
       # there are no executable goals, but game didn't finished
       p.clipsGymSleep(500) #time in milliseconds
       done = False
@@ -309,7 +309,7 @@ class ClipsWorld(gym.Env):
     if result.info == "Game Over" and result.reward == 0:
       step_reward = 0
     #done = False if len(executableGoals) else True 
-    p.log(f"\n\nClipsWorld: done '{done}' step reward {step_reward} total reward {sum(self.rewards)+step_reward}\n")
+    p.log(f"\n\nClipsWorldRCLL: done '{done}' step reward {step_reward} total reward {sum(self.rewards)+step_reward}\n")
     
     # Optionally we can pass additional info, we are not using that for now
     info = {}
@@ -326,17 +326,17 @@ class ClipsWorld(gym.Env):
   # action_mask_fn: A function that takes a Gym environment and returns an action mask,
   #      or the name of such a method provided by the environment.
   def action_masks(self) -> np.ndarray:
-    print("ClipsWorld: in action_masks")
+    print("ClipsWorldRCLL: in action_masks")
   # Returns the action mask for the current env. 
   #def mask_fn(env: gym.Env) -> np.ndarray:
-    p = clips_gym.ClipsGymThread.getInstance()
+    p = clips_gym_rcll.ClipsGymRCLLThread.getInstance()
     executable_goals = p.getAllFormulatedExecutableGoals()
-    print("ClipsWorld: action_masks executable goals: ")
+    print("ClipsWorldRCLL: action_masks executable goals: ")
     import json
     p.log(json.dumps(self.inv_action_dict))
 
     valid_actions = np.zeros((self.n_actions), dtype=int)
-    print("ClipsWorld: action_masks size: {0} {1}".format(len(valid_actions), valid_actions[:5]))
+    print("ClipsWorldRCLL: action_masks size: {0} {1}".format(len(valid_actions), valid_actions[:5]))
     for g in executable_goals:
       goal = g.getGoalString()
       p.log("Executable goal: "+goal)
@@ -366,7 +366,7 @@ class ClipsWorld(gym.Env):
     pass
 
   def get_state_from_facts(self,obs_f):
-    print("ClipsWorld: in get_state_from_facts function")
+    print("ClipsWorldRCLL: in get_state_from_facts function")
     new_state = np.zeros(self.n_obs)
     #print("new state np array")
     #print("Obs space: ", self.obs_dict)
@@ -380,7 +380,7 @@ class ClipsWorld(gym.Env):
     return new_state
 
   def set_state_from_facts(self,obs_f):
-    print("ClipsWorld: set_state_from facts")
+    print("ClipsWorldRCLL: set_state_from facts")
     new_state = np.zeros(self.n_obs)
     for f in obs_f:
       if self.inv_obs_dict.get(f) is not None:
@@ -406,21 +406,21 @@ class ClipsWorld(gym.Env):
         #self.env.env.set_state(self.get_state().with_literals(literals))
 
   def getCurrentObs(self):
-    print(f"ClipsWorld: getCurrentObs ")
-    p = clips_gym.ClipsGymThread.getInstance()
+    print(f"ClipsWorldRCLL: getCurrentObs ")
+    p = clips_gym_rcll.ClipsGymRCLLThread.getInstance()
     fact_string = p.create_rl_env_state_from_facts()
-    print("ClipsWorld: fact_string: ", fact_string)
+    print("ClipsWorldRCLL: fact_string: ", fact_string)
     raw_facts = ast.literal_eval(fact_string)
-    print("ClipsWorld: getCurrentObs facts: ", raw_facts)
+    print("ClipsWorldRCLL: getCurrentObs facts: ", raw_facts)
     state = self.get_state_from_facts(raw_facts)
-    print("ClipsWorld: getCurrentObs new env state: ",state)
+    print("ClipsWorldRCLL: getCurrentObs new env state: ",state)
     return state
 
   def getGoalIdOfAction(self, discrete_action):
-    p = clips_gym.ClipsGymThread.getInstance()
-    p.log(f"ClipsWorld: getGoalIdOfAction ")
+    p = clips_gym_rcll.ClipsGymRCLLThread.getInstance()
+    p.log(f"ClipsWorldRCLL: getGoalIdOfAction ")
     executableGoals = p.getAllFormulatedExecutableGoals()
     goal_id = p.getGoalIdByString(executableGoals, discrete_action)
-    p.log(f"ClipsWorld: action {discrete_action} maps goal {goal_id} ")
+    p.log(f"ClipsWorldRCLL: action {discrete_action} maps goal {goal_id} ")
     return goal_id
     

@@ -71,7 +71,7 @@ ClipsGymRCLLThread::getInstance()
 PYBIND11_MODULE(clips_gym_rcll, m)
 {
 	m.doc() = "ClipsGymRCLLThread"; // optional module docstring
-	py::class_<ClipsGymRCLLThread>(m, "ClipsGymThread")
+	py::class_<ClipsGymRCLLThread>(m, "ClipsGymRCLLThread")
 	  .def(py::init<>())
 	  .def("getInstance", &ClipsGymRCLLThread::getInstance, py::return_value_policy::reference)
 	  .def("step", &ClipsGymRCLLThread::step)
@@ -106,7 +106,7 @@ ClipsGymRCLLThread::finalize()
 void
 ClipsGymRCLLThread::clipsGymRCLLSleep(int milliseconds)
 {
-	logger->log_info(name(), "ClipsGym Sleeping for %i ms", milliseconds);
+	logger->log_info(name(), "ClipsGymRCLL Sleeping for %i ms", milliseconds);
 	std::this_thread::sleep_for(milliseconds * 1ms);
 }
 
