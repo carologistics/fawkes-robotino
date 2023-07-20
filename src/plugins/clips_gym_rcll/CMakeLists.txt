@@ -32,6 +32,7 @@ if(PLUGIN_clips_gym_rcll)
   target_link_libraries(clips_gym_rcll pybind11::headers)
   target_link_libraries(
     clips_gym_rcll
+    fawkes_clips_gym
     fawkescore
     fawkesutils
     fawkesaspects
