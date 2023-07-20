@@ -50,7 +50,7 @@ using namespace fawkes;
 
 constexpr char ClipsGymRCLLThread::cfg_prefix_[];
 
-ClipsGymRCLLThread::ClipsGymRCLLThread() : ClipsGymThread("ClipsGymRCLLThread", "CLipsGymRCLL") // TODO: put as aspect instead?
+ClipsGymRCLLThread::ClipsGymRCLLThread() : ClipsGymThread("ClipsGymRCLLThread", "clips_gym_rcll") // TODO: put as aspect instead?
 {
 }
 
@@ -127,7 +127,7 @@ ClipsGymRCLLThread::step(std::string next_goal)
 	if (goalID == "") {
 		std::cout << "Goal id not found!" << std::endl;
 		std::string env_state = create_rl_env_state_from_facts();
-		std::cout << "End Clips Gym Thread step function" << std::endl;
+		std::cout << "End ClipsGymRCLLThread step function" << std::endl;
 
 		obs_info.observation = env_state;
 		return obs_info;
@@ -199,7 +199,7 @@ ClipsGymRCLLThread::step(std::string next_goal)
 	}
 	std::string env_state = create_rl_env_state_from_facts();
 
-	std::cout << "End Clips Gym Thread step function" << std::endl;
+	std::cout << "End ClipsGymRCLLThread step function" << std::endl;
 
 	obs_info.observation = env_state;
 	//ClipsObservationInfo obs_info = ClipsObservationInfo(env_state);
@@ -209,7 +209,7 @@ ClipsGymRCLLThread::step(std::string next_goal)
 py::list
 ClipsGymRCLLThread::generateActionSpace()
 {
-	std::cout << "Clips Gym Thread generateActionSpace start" << std::endl;
+	std::cout << "ClipsGymRCLLThread generateActionSpace start" << std::endl;
 	//TODO temporär drin
 	std::vector<std::string> formulated_goals = getAllFormulatedGoals();
 	for (std::string s : formulated_goals) {
