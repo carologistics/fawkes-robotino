@@ -137,7 +137,6 @@ fawkes/meta_plugins:
     - m-distributed-clips-executive
     - webview
     - clips-executive-rl
-    - clips_gym
     - clips_gym_rcll
 
   m-central-clips-exec-ros1:
