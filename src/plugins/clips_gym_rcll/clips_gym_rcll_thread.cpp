@@ -68,10 +68,12 @@ ClipsGymRCLLThread::getInstance()
 	return rcll_thread_instance;
 }
 
+
+
 PYBIND11_MODULE(clips_gym_rcll, m)
 {
 	m.doc() = "ClipsGymRCLLThread"; // optional module docstring
-	py::class_<ClipsGymRCLLThread>(m, "ClipsGymRCLLThread")
+	py::class_<ClipsGymRCLLThread, ClipsGymThread>(m, "ClipsGymRCLLThread")
 	  .def(py::init<>())
 	  .def("getInstance", &ClipsGymRCLLThread::getInstance, py::return_value_policy::reference)
 	  .def("step", &ClipsGymRCLLThread::step)

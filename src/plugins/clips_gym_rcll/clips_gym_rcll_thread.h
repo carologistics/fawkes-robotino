@@ -24,7 +24,7 @@
 #include <aspect/logging.h>
 #include <blackboard/interface_listener.h>
 #include <core/threading/thread.h>
-#include <plugins/clips_gym/clips_gym_thread.h>
+#include <libs/clips_gym/clips_gym_thread.h>
 #include <plugins/clips/aspect/clips_feature.h>
 
 #include <chrono>

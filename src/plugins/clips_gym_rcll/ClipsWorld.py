@@ -21,6 +21,7 @@
 import sys
 from tokenize import String
 
+import libfawkes_clips_gym
 import clips_gym_rcll
 
 import numpy as np
@@ -214,7 +215,7 @@ class ClipsWorld(gym.Env):
     #TODO add gametime
     
 
-  def reset(self):
+  def reset(self, seed = None, options = None):
     """
     Important: the observation must be a numpy array
     :return: (np.array) 
@@ -235,8 +236,11 @@ class ClipsWorld(gym.Env):
     self.rewards = []
     self.needs_reset = False
     p.log("ClipsWorldRCLL: end reset function")
+
+    #Optional reset information, not used here
+    info = {}
     
-    return np.array(state).astype(np.int_)
+    return np.array(state).astype(np.int_), info
     #state #
 
   def logOnEpisodeEnd(self):
@@ -311,7 +315,8 @@ class ClipsWorld(gym.Env):
     #done = False if len(executableGoals) else True 
     p.log(f"\n\nClipsWorldRCLL: done '{done}' step reward {step_reward} total reward {sum(self.rewards)+step_reward}\n")
     
-    # Optionally we can pass additional info, we are not using that for now
+    # Optionally we can pass additional info and a truncation condition, we are not using that for now
+    truncated = False
     info = {}
 
     self.rewards.append(step_reward)
@@ -319,7 +324,7 @@ class ClipsWorld(gym.Env):
       self.logOnEpisodeEnd()
     self.total_steps += 1
 
-    return state, step_reward, done, info
+    return state, step_reward, done, truncated, info
     #return np.array([self.n_obs]).astype(np.int_), reward, done, info
 
   #Exposes a method called action_masks(), which returns masks for the wrapped env.
