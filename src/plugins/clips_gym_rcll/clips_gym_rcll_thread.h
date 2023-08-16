@@ -84,6 +84,5 @@ private:
 	static ClipsGymRCLLThread *rcll_thread_instance;
 	static std::mutex          mutex;
 
-	std::vector<GoalAction> currentExecutableGoals;
 };
 //#endif

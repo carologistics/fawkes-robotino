@@ -123,7 +123,7 @@ ClipsGymRCLLThread::step(std::string next_goal)
 	//Transform string to goal
 	//std::string n_goal = "TOWER-C1#b#d#";
 	//std::string goalID = getGoalId(next_goal);
-
+    logger->log_info(name(), "currentExecutableGoals", currentExecutableGoals.size());
 	std::string goalID = getGoalIdByString(currentExecutableGoals, next_goal);
 
 	if (goalID == "") {
@@ -148,7 +148,7 @@ ClipsGymRCLLThread::step(std::string next_goal)
 	}
 	int  elapsed_time        = 0;
 	bool check_for_game_over = false;
-	while (!env_feedback && elapsed_time < max_time) {
+	while (!env_feedback && elapsed_time < max_time * 1000) {
 		std::this_thread::sleep_for(wait_time * 1000ms);
 		clips.lock();
 		clips->evaluate("(printout t \"In Sleeping Step Function \" crlf) ");

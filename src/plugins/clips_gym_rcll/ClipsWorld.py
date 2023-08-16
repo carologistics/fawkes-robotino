@@ -284,7 +284,7 @@ class ClipsWorld(gym.Env):
     #  Flag that marks the termination of an episode
     # TODO if we use action masking check if there are valid action and switch to done if not
     executableGoals = p.getAllFormulatedExecutableGoals()
-    print ("ClipsWorldRCLL: getAllFormulatedExecutableGoals {} length: ", executableGoals, len(executableGoals))
+    p.log(f"ClipsWorldRCLL: getAllFormulatedExecutableGoals {executableGoals} length: {len(executableGoals)}")
     
     time_sec =  p.getRefboxGameTime()
     phase = p.getRefboxGamePhase()
