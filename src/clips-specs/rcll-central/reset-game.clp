@@ -240,7 +240,7 @@
   )
 )
 
-(derule delete-monitoring-facts
+(defrule delete-monitoring-facts
   (declare (salience ?*SALIENCE-RESET-GAME-HIGH*))
   (reset-game (stage STAGE-2))
   (or (wm-fact (key monitoring action-retried ))

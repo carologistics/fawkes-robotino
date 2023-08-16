@@ -21,29 +21,6 @@
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
 
-(deftemplate refbox-agent-task
-  (slot task-id (type INTEGER))
-  (slot robot (type SYMBOL))
-  (slot task-type (type SYMBOL)
-    (allowed-values Move Retrieve Deliver BufferStation ExploreWaypoint))
-  (slot machine (type SYMBOL)
-   (allowed-values UNSET
-    C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS C-SS
-    M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS M-SS
-   )
-   (default UNSET))
-  (slot order (type SYMBOL))
-  (slot side (type SYMBOL)
-    (allowed-values UNSET INPUT OUTPUT LEFT MIDDLE RIGHT SLIDE)
-    (default UNSET))
-  (slot waypoint (type SYMBOL) (default UNSET))
-  (slot workpiece (type SYMBOL) (default nil))
-  (multislot workpiece-colors (type SYMBOL) (default (create$)))
-  (slot outcome (type SYMBOL) (allowed-values UNKNOWN FAILED CANCELLED SUCCESSFUL))
-  (slot goal-id (type SYMBOL))
-  (slot plan-id (type SYMBOL))
-  (slot action-id (type INTEGER))
-)
 
 (defrule task-set-wp-on-move-task
   (declare (salience ?*MONITORING-SALIENCE*))

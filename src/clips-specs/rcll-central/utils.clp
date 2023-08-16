@@ -108,6 +108,7 @@
   ?*SALIENCE-RESET-GAME* = 5000
 )
 
+
 (deftemplate refbox-agent-task
   (slot task-id (type INTEGER))
   (slot robot (type SYMBOL))
@@ -119,6 +120,7 @@
     M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS M-SS
    )
    (default UNSET))
+  (slot order (type SYMBOL))
   (slot side (type SYMBOL)
     (allowed-values UNSET INPUT OUTPUT LEFT MIDDLE RIGHT SLIDE)
     (default UNSET))
@@ -130,7 +132,6 @@
   (slot plan-id (type SYMBOL))
   (slot action-id (type INTEGER))
 )
-
 (deftemplate training-counter
   (slot num (type INTEGER))
 )
