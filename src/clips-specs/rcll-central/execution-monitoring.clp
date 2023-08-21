@@ -232,7 +232,9 @@
 " Set a timeout when a goal is assigned to a robot and formulated to avoid
   being stuck on formulated.
 "
+
   (declare (salience ?*MONITORING-SALIENCE*))
+	(disable)
   (goal (id ?goal-id) (mode FORMULATED) (sub-type SIMPLE))
   (wm-fact (key central agent robot args? r ?robot))
   (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
@@ -254,6 +256,7 @@
 " The timeout triggered, remove the assignment of the robot and set it to
   waiting again.
 "
+	(disable)
   ?g <- (goal (id ?goal-id) (mode FORMULATED))
   (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 

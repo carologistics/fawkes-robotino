@@ -197,8 +197,8 @@
   (declare (salience ?*SALIENCE-RL-SELECTION*))
 	?r <- (rl-goal-selection (next-goal-id ?goal-id))
 	(goal (id ?goal-id) (mode ?mode&FINISHED|EVALUATED) (outcome ?outcome))
-  ?pm <- (wm-fact (id "/refbox/points/magenta") (value ?mvalue))
-  ?pc <- (wm-fact (id "/refbox/points/cyan") (value ?cvalue) )
+  ?pm <- (wm-fact (id "/refbox/points/MAGENTA") (value ?mvalue))
+  ?pc <- (wm-fact (id "/refbox/points/CYAN") (value ?cvalue) )
   ?tc <- (wm-fact (id "/refbox/team-color")  (value ?team-color) )
 	=>
 	(printout t crlf "Goal: " ?goal-id " is " ?mode crlf )
