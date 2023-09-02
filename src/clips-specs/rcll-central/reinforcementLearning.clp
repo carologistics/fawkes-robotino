@@ -22,29 +22,29 @@
   (printout error "Sent refbox init " crlf)
 )
 
-; (defrule refbox-start-production-after-sartup
-;   (declare (salience ?*SALIENCE-RESET-GAME-LOW*))
-; 	;?r<-(reset-domain-facts)
-;   (not (reset-game (stage ?stage)))
-; 	(wm-fact (id "/refbox/comm/peer-id/public") (value ?peer-id) (type INT))
-;   (wm-fact (id "/refbox/phase")  (value SETUP) )
-;   (wm-fact (id "/refbox/state")  (value ?v) ) 
-;   (goal (class ENTER-FIELD) (id ?id) )
-;   (goal-meta (goal-id ?id) (assigned-to ?robot&~nil) )
-; =>
-; 	(printout t crlf "reset-game-refbox-production-running - current state: " ?v crlf)
-;   (bind ?prepare-phase (pb-create "llsf_msgs.SetGamePhase"))
-;   (bind ?prepare-state (pb-create "llsf_msgs.SetGameState"))
-;   (pb-set-field ?prepare-phase "phase" PRODUCTION)
-;   (pb-set-field ?prepare-state "state" RUNNING)
+(defrule refbox-start-production-after-startup
+  (declare (salience ?*SALIENCE-RESET-GAME-LOW*))
+  ;?r<-(reset-domain-facts)
+  (not (reset-game (stage ?stage)))
+  (wm-fact (id "/refbox/comm/peer-id/public") (value ?peer-id) (type INT))
+  (wm-fact (id "/refbox/phase")  (value SETUP) )
+  (wm-fact (id "/refbox/state")  (value ?v) ) 
+  (goal (class ENTER-FIELD) (id ?id) )
+  (goal-meta (goal-id ?id) (assigned-to ?robot&~nil) )
+  =>
+  (printout t crlf "reset-game-refbox-production-running - current state: " ?v crlf)
+  (bind ?prepare-phase (pb-create "llsf_msgs.SetGamePhase"))
+  (bind ?prepare-state (pb-create "llsf_msgs.SetGameState"))
+  (pb-set-field ?prepare-phase "phase" PRODUCTION)
+  (pb-set-field ?prepare-state "state" RUNNING)
 
-;   (pb-send ?peer-id ?prepare-phase)
-;   (pb-send ?peer-id ?prepare-state)
+  (pb-send ?peer-id ?prepare-phase)
+  (pb-send ?peer-id ?prepare-state)
 
-;   (pb-destroy ?prepare-phase)
-;   (pb-destroy ?prepare-state)
-;   (printout error "Sent refbox start production " crlf)
-; )
+  (pb-destroy ?prepare-phase)
+  (pb-destroy ?prepare-state)
+  (printout error "Sent refbox start production " crlf)
+)
 
 ; Defining templates and rules for goal selection with rl
 
