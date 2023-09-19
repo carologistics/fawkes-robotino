@@ -37,6 +37,14 @@ plugins/execution-time-estimator:
         name: discard
         exec-time: 8.25
       # shelf picks
+      00-check-wp-absent:
+        name: manipulate_wp
+        args: ["query=ABSENT"]
+        exec-time: 2.0
+      00-check-wp-present:
+        name: manipulate_wp
+        args: ["query=THERE"]
+        exec-time: 2.0
       01-get-shelf-new-left:
         name: maniuplate_wp
         args: ["side=SHELF-LEFT"]
