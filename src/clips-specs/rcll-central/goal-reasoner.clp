@@ -792,11 +792,11 @@
 (defrule goal-reasoner-evaluate-move-out-of-way-cleanup-wp
 " Sets a finished move-out-of-way or empty discard goal to formulated."
   (declare (salience ?*MONITORING-SALIENCE*))
-  ?g <- (goal (id ?goal-id) (class MOVE-OUT-OF-WAY|CLEANUP-WP) (mode FINISHED)
+  ?g <- (goal (id ?goal-id) (class ?class&MOVE-OUT-OF-WAY|CLEANUP-WP) (mode FINISHED)
               (outcome ?outcome) (verbosity ?v))
   ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (retries ?retries))
   =>
-  (printout (log-debug ?v) "Evaluate move-out-of-way/empty discard goal " ?goal-id crlf)
+  (printout (log-debug ?v) "Evaluate " ?class " goal " ?goal-id crlf)
   (set-robot-to-waiting ?robot)
   (modify ?gm (retries (+ 1 ?retries)))
   (remove-robot-assignment-from-goal-meta ?g)
