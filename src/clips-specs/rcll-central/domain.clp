@@ -303,7 +303,7 @@
 		(if (and (= (length$ ?r-active) 2) (eq (nth$ 2 ?r-active) active)
 		                                   (eq ?cf:value TRUE))
 		  then
-		    (printout error ?r-active crlf)
+		    (printout t ?r-active crlf)
 		    (bind ?curr-robot (nth$ 1 ?r-active))
 		    (if (neq ?curr-robot laptop1) then
 		      (assert (wm-fact (key central agent robot args? r ?curr-robot))

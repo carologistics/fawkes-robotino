@@ -409,6 +409,7 @@
 						 (timeout-duration ?timeout&:(timeout ?now ?st ?timeout))
    						 (last-pose $?last-pose)
 						 (counter ?counter))
+  ?at <- (action-timer (plan-id ?plan-id) (status ?status) (action-id ?id) (timeout-duration ?at-timeout))
   =>
   (printout t "Checking progress of move action "  ?action-name  crlf)
 
@@ -421,6 +422,7 @@
   (if (> ?delta 0.5) then
   	(printout t "Robot " ?robot " made sufficient progress (" ?delta "m) on "  ?action-name  crlf)
 	(modify ?pt (counter 0) (last-pose ?pose) (start-time ?now))
+	(modify ?at (timeout-duration (+ ?at-timeout ?*MOVE-PROGRESS-TIMEOUT*)))
   else
 	(if (>= ?counter ?*MOVE-PROGRESS-COUNTER*) then
 	  (printout t "   Aborting action " ?action-name " on interface after stuck on small delta" ?skiller crlf)

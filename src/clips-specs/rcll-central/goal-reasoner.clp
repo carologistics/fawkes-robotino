@@ -741,6 +741,7 @@
              (category ?category&MAINTENANCE|MAINTENANCE-INSTRUCT) (retries ?retries))
   (test (neq ?class PAY-FOR-RINGS-WITH-CAP-CARRIER))
   =>
+  (modify ?gm (retries (+ 1 ?retries)))
   (if (not
           (eq ?category MAINTENANCE-INSTRUCT)
       )
@@ -750,7 +751,6 @@
   )
   (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as the support WP was lost" crlf)
   (modify ?g (mode FORMULATED) (outcome UNKNOWN))
-  (modify ?gm (retries (+ 1 ?retries)))
 
   (goal-reasoner-retract-plan-action ?goal-id)
 )
@@ -763,10 +763,10 @@
   ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to ?robot) (retries ?retries))
   =>
   (set-robot-to-waiting ?robot)
+  (modify ?gm (retries (+ 1 ?retries)))
   (remove-robot-assignment-from-goal-meta ?g)
   (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate and dispatch with classical drop discard" crlf)
   (modify ?g (mode FORMULATED) (outcome UNKNOWN))
-  (modify ?gm (retries (+ 1 ?retries)))
   (goal-reasoner-retract-plan-action ?goal-id)
 )
 
@@ -782,29 +782,28 @@
   ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to ?robot) (retries ?retries))
   =>
   (set-robot-to-waiting ?robot)
+  (modify ?gm (retries (+ 1 ?retries)))
   (remove-robot-assignment-from-goal-meta ?g)
   (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as only a " ?action " action failed" crlf)
   (modify ?g (mode FORMULATED) (outcome UNKNOWN))
-  (modify ?gm (retries (+ 1 ?retries)))
-
   (goal-reasoner-retract-plan-action ?goal-id)
 )
 
 (defrule goal-reasoner-evaluate-move-out-of-way-cleanup-wp
 " Sets a finished move-out-of-way or empty discard goal to formulated."
   (declare (salience ?*MONITORING-SALIENCE*))
-  ?g <- (goal (id ?goal-id) (class MOVE-OUT-OF-WAY|CLEANUP-WP) (mode FINISHED)
+  ?g <- (goal (id ?goal-id) (class ?class&MOVE-OUT-OF-WAY|CLEANUP-WP) (mode FINISHED)
               (outcome ?outcome) (verbosity ?v))
   ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (retries ?retries))
   =>
-  (printout (log-debug ?v) "Evaluate move-out-of-way/empty discard goal " ?goal-id crlf)
+  (printout (log-debug ?v) "Evaluate " ?class " goal " ?goal-id crlf)
   (set-robot-to-waiting ?robot)
+  (modify ?gm (retries (+ 1 ?retries)))
   (remove-robot-assignment-from-goal-meta ?g)
 
   ; delete plans of the goal
   (goal-reasoner-retract-plan-action ?goal-id)
   (modify ?g (mode FORMULATED) (outcome UNKNOWN) (is-executable FALSE))
-  (modify ?gm (retries (+ 1 ?retries)))
   (printout (log-debug ?v) "Goal " ?goal-id " FORMULATED" crlf)
 )
 
