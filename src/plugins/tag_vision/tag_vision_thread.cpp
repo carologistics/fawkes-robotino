@@ -74,7 +74,7 @@ TagVisionThread::init()
 
 	if (marker_type_str.find("ARUCO") != std::string::npos
 	    || marker_type_str.find("APRILTAG") != std::string::npos) {
-		std::unordered_map<std::string, cv::aruco::PREDEFINED_DICTIONARY_NAME> aruco_tag_type_lookup = {
+		std::unordered_map<std::string, cv::aruco::PredefinedDictionaryType> aruco_tag_type_lookup = {
 		  {"ARUCO_4X4_50", cv::aruco::DICT_4X4_50},
 		  {"ARUCO_4X4_100", cv::aruco::DICT_4X4_100},
 		  {"ARUCO_4X4_250", cv::aruco::DICT_4X4_250},
@@ -335,12 +335,12 @@ TagVisionThread::get_marker()
 		break;
 	}
 	case MarkerType::ARUCO: {
-		std::vector<int>                       markerIds;
-		std::vector<std::vector<cv::Point2f>>  markerCorners, rejectedCandidates;
-		cv::Ptr<cv::aruco::DetectorParameters> parameters = cv::aruco::DetectorParameters::create();
-		cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(aruco_tag_type_);
-		cv::aruco::detectMarkers(
-		  ipl_image_, dictionary, markerCorners, markerIds, parameters, rejectedCandidates);
+		std::vector<int>                      markerIds;
+		std::vector<std::vector<cv::Point2f>> markerCorners, rejectedCandidates;
+		cv::aruco::DetectorParameters         parameters = cv::aruco::DetectorParameters();
+		cv::aruco::Dictionary    dictionary = cv::aruco::getPredefinedDictionary(aruco_tag_type_);
+		cv::aruco::ArucoDetector detector(dictionary, parameters);
+		detector.detectMarkers(ipl_image_, markerCorners, markerIds, rejectedCandidates);
 		// if at least one marker detected
 		if (markerIds.size() > 0) {
 			//logger->log_info(name(), "Tag Detected");
