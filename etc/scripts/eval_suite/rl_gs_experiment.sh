@@ -9,13 +9,15 @@
 # Runs are conducted in an alternating fashion
 
 refbox_args="--refbox-args \"--cfg-simulation simulation/fast_simulation.yaml --cfg-mps mps/mockup_mps.yaml --cfg-game game/game1.yaml --cfg-mongodb mongodb/enable_mongodb.yaml\""
-central_args="-x start -o -k -r -n 1 --mongodb --central-agent m-central-clips-exec -m m-skill-sim --keep-tmpfiles"
-rl_central_args="-x start -o -k -r -n 1 --mongodb --central-agent m-central-clips-exec -m m-skill-sim --keep-tmpfiles"
+#central_args="-x start -o -k -r -n 1 --mongodb --central-agent m-central-clips-exec -m m-skill-sim --keep-tmpfiles"
+central_args="-o -k -n 1 -m m-skill-sim --central-agent m-central-clips-exec"
+#rl_central_args="-x start -o -k -r -n 1 --mongodb --central-agent m-central-clips-exec -m m-skill-sim --keep-tmpfiles"
+rl_central_args="-o -k -n 1 -m m-skill-sim --central-agent m-central-clips-exec"
 decentral_args="-r -k -o --mongodb -m m-distributed-skill-sim-clips-exec"
 gazsim_path="$FAWKES_DIR/bin/./gazsim.bash"
 scripts_path=$FAWKES_DIR/etc/scripts/eval_suite
-rl_agent_path=$FAWKES_DIR/fawkes/src/plugins/rl-test/rl-agent 
-rl_log_path=$FAWKES_DIR/fawkes/src/plugins/rl-test/rl-agent/sb3_log
+rl_agent_path=$FAWKES_DIR/fawkes/src/plugins/clips-executive-rl/rl-agent 
+rl_log_path=$FAWKES_DIR/fawkes/src/plugins/clips-executive-rl/rl-agent/sb3_log
 rl_agent_name="MaskablePPO_RCLL_123"
 
 
@@ -88,9 +90,9 @@ EXPERIMENT_REFBOX_ARGS=$refbox_args
 BASELINE_REFBOX_ARGS=$refbox_args
 LOAD_GAME="rl_game_1.gz"
 TRAINING_MODE=0
-REFBOX_SPEED=2
+REFBOX_SPEED=4
 GAME_TIME=$((1200/$REFBOX_SPEED))
-GAMES_PER_TRAINING=5
+GAMES_PER_TRAINING=25
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -263,13 +265,14 @@ rcll-loadgame () {
 $LLSF_REFBOX_DIR/bin/./restore_reports.bash $1 #rl_game_1.gz 
 echo "Finished restore report starting refbox with loaded game"                                              
 $FAWKES_DIR/bin/./gazsim.bash -x kill; 
-$FAWKES_DIR/bin/./gazsim.bash -r -k -o --mongodb --central-agent m-central-clips-exec -m m-skill-sim -n 1 --refbox-args "--cfg-mps mps/mockup_mps.yaml --cfg-game game/game1.yaml --cfg-simulation simulation/fast_simulation.yaml --cfg-mongodb mongodb/enable_mongodb.yaml" "$@"
+#$FAWKES_DIR/bin/./gazsim.bash -o -k -n 1 -m m-skill-sim --central-agent m-central-clips-exec --refbox-args "--cfg-mps mps/mockup_mps.yaml --cfg-game game/game1.yaml --cfg-simulation simulation/fast_simulation.yaml --cfg-mongodb mongodb/enable_mongodb.yaml" "$@"
+$FAWKES_DIR/bin/./gazsim.bash -o -k -n 1 -m m-skill-sim --central-agent m-central-clips-exec --refbox-args "--cfg-mps mps/mockup_mps.yaml --cfg-simulation simulation/fast_simulation.yaml --cfg-mongodb mongodb/enable_mongodb.yaml" "$@"
 } 
 
 start_simulation () {
     echo "starting simulation $1"
     #eval $1
-    rcll-loadgame
+    rcll-loadgame #$LOAD_GAME
     sleep 20
 }
 
@@ -300,10 +303,10 @@ wait_simulation_ends () {
 
 wait_rl_training_ends () {
     echo "Waiting for POST_GAME..."
-    training_time=$(($GAMES_PER_TRAINING*$GAME_TIME+100))
+    training_time=$(($GAMES_PER_TRAINING*$GAME_TIME+10))
     echo $training_time
-    sleep $training_time
     $LLSF_REFBOX_DIR/bin/./rcll-refbox-instruct -W$training_time -p POST_GAME
+    sleep $training_time
     echo "Refbox in POST_GAME"
     sleep 60
     echo "Stopping simulation now"

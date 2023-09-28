@@ -268,7 +268,7 @@ class ClipsWorld(gym.Env):
     p = clips_gym_rcll.ClipsGymRCLLThread.getInstance()
     p.log(f"ClipsWorldRCLL: step '{action}': '{goal}'")
     result = p.step(goal) #+"#")
-    print("ClipsWorldRCLL: p.step result: ", result)
+    print(("ClipsWorldRCLL: p.step result: ", result))
     #print("ClipsWorld: observation ", result.observation)
     p.log(f"ClipsWorldRCLL: info  '{result.info}'")
     p.log(f"ClipsWorldRCLL: reward '{result.reward}'")

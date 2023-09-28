@@ -116,6 +116,7 @@ ClipsGymRCLLThread::clipsGymRCLLSleep(int milliseconds)
 ClipsObservationInfo
 ClipsGymRCLLThread::step(std::string next_goal)
 {
+	logger->log_info(name(), "RL: In ClipsGymRCLLThread step function ");
 	std::cout << "In ClipsGymRCLLThread step function" << std::endl;
 	std::cout << "next_goal from python: " << next_goal << std::endl;
 	ClipsObservationInfo obs_info = ClipsObservationInfo();
@@ -123,6 +124,7 @@ ClipsGymRCLLThread::step(std::string next_goal)
 	//Transform string to goal
 	//std::string n_goal = "TOWER-C1#b#d#";
 	//std::string goalID = getGoalId(next_goal);
+
     logger->log_info(name(), "currentExecutableGoals", currentExecutableGoals.size());
 	std::string goalID = getGoalIdByString(currentExecutableGoals, next_goal);
 
