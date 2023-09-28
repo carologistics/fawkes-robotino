@@ -314,6 +314,18 @@
   (retract ?r)
 )
 
+(defrule delete-order-quantity
+  (declare (salience ?*SALIENCE-RESET-GAME-HIGH*))
+  (reset-game (stage STAGE-2))
+  (or ?r <-(wm-fact (key domain fact quantity-delivered $? args? $?) )
+    ?r <-(wm-fact (key domain fact quantity-requested $? args? $?) )
+  )
+=>
+  (retract ?r)
+)
+
+
+
 (defrule delete-saved-flag
   (declare (salience ?*SALIENCE-RESET-GAME-HIGH*))
   (reset-game (stage STAGE-2))

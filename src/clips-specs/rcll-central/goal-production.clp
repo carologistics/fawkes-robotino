@@ -821,15 +821,14 @@
       (wm-fact (key domain fact rs-ring-spec args? m ?rs2 r ?col-ring2 $?)))
   (or (wm-fact (key domain fact order-ring3-color args? ord ?order-id col RING_NONE))
       (wm-fact (key domain fact rs-ring-spec args? m ?rs3 r ?col-ring3 $?)))
-
-  (or
-    (wm-fact (key strategy meta selected-order args? cond filter) (value ?order-id))
-    (and
-      (time $?now)
-      (timer (name production-strategy-nothing-executable-timer) (time $?t&:(timeout ?now ?t ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT*)))
-      (wm-fact (key strategy meta selected-order args? cond fallback) (value ?order-id))
-    )
-  )
+  ;(or
+  ;  (wm-fact (key strategy meta selected-order args? cond filter) (value ?order-id))
+  ;  (and
+  ;    (time $?now)
+  ;    (timer (name production-strategy-nothing-executable-timer) (time $?t&:(timeout ?now ?t ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT*)))
+  ;    (wm-fact (key strategy meta selected-order args? cond fallback) (value ?order-id))
+  ;  )
+  ;)
   ?os <- (wm-fact (key order meta started args? ord ?order) (value FALSE))
   (wm-fact (key mps workload needs-update) (value FALSE))
   =>
