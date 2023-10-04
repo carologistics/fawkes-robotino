@@ -8,7 +8,7 @@
 # files between baseline and experiment runs.
 # Runs are conducted in an alternating fashion
 
-refbox_args="--refbox-args \"--cfg-simulation simulation/fast_simulation.yaml --cfg-mps mps/mockup_mps.yaml --cfg-game game/game1.yaml --cfg-mongodb mongodb/enable_mongodb.yaml\""
+refbox_args="--refbox-args \"--cfg-simulation simulation/fast_simulation.yaml --cfg-mps mps/mockup_mps.yaml --cfg-game game/game_1.yaml --cfg-mongodb mongodb/enable_mongodb.yaml\""
 #central_args="-x start -o -k -r -n 1 --mongodb --central-agent m-central-clips-exec -m m-skill-sim --keep-tmpfiles"
 central_args="-o -k -n 1 -m m-skill-sim --central-agent m-central-clips-exec"
 #rl_central_args="-x start -o -k -r -n 1 --mongodb --central-agent m-central-clips-exec -m m-skill-sim --keep-tmpfiles"
@@ -82,17 +82,19 @@ EOF
 POSITIONAL_ARGS=()
 
 CUSTOM_MONGO=0
-NUMBER_RUN=2
+NUMBER_RUN=4
 NUMBER_TRAININGS=1
 EXPERIMENT_EVAL="" #"rl"
 BASELINE_EVAL="central"
 EXPERIMENT_REFBOX_ARGS=$refbox_args
 BASELINE_REFBOX_ARGS=$refbox_args
-LOAD_GAME="rl_game_1.gz"
+LOAD_GAME="game_1.gz"
+LOAD_AGENT=0
+LOAD_AGENT_NAME="RCLL_RL_SA"
 TRAINING_MODE=0
 REFBOX_SPEED=4
 GAME_TIME=$((1200/$REFBOX_SPEED))
-GAMES_PER_TRAINING=25
+GAMES_PER_TRAINING=15
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -118,6 +120,12 @@ while [[ $# -gt 0 ]]; do
     --load-game)
       LOAD_GAME=$2
       shift # past argument
+      shift
+      ;;
+    --load-agent)
+      LOAD_AGENT=1
+      LOAD_AGENT_NAME=$2
+      shift
       shift
       ;;
     --experiment)
@@ -266,7 +274,7 @@ $LLSF_REFBOX_DIR/bin/./restore_reports.bash $1 #rl_game_1.gz
 echo "Finished restore report starting refbox with loaded game"                                              
 $FAWKES_DIR/bin/./gazsim.bash -x kill; 
 #$FAWKES_DIR/bin/./gazsim.bash -o -k -n 1 -m m-skill-sim --central-agent m-central-clips-exec --refbox-args "--cfg-mps mps/mockup_mps.yaml --cfg-game game/game1.yaml --cfg-simulation simulation/fast_simulation.yaml --cfg-mongodb mongodb/enable_mongodb.yaml" "$@"
-$FAWKES_DIR/bin/./gazsim.bash -o -k -n 1 -m m-skill-sim --central-agent m-central-clips-exec --refbox-args "--cfg-mps mps/mockup_mps.yaml --cfg-simulation simulation/fast_simulation.yaml --cfg-mongodb mongodb/enable_mongodb.yaml" "$@"
+$FAWKES_DIR/bin/./gazsim.bash -o -k -n 1 -m m-skill-sim --central-agent m-central-clips-exec --refbox-args "--cfg-mps mps/mockup_mps.yaml --cfg-game game/game_1.yaml --cfg-simulation simulation/fast_simulation.yaml --cfg-mongodb mongodb/enable_mongodb.yaml" "$@"
 } 
 
 start_simulation () {
@@ -305,8 +313,8 @@ wait_rl_training_ends () {
     echo "Waiting for POST_GAME..."
     training_time=$(($GAMES_PER_TRAINING*$GAME_TIME+10))
     echo $training_time
-    $LLSF_REFBOX_DIR/bin/./rcll-refbox-instruct -W$training_time -p POST_GAME
     sleep $training_time
+    $LLSF_REFBOX_DIR/bin/./rcll-refbox-instruct -W$training_time -p POST_GAME
     echo "Refbox in POST_GAME"
     sleep 60
     echo "Stopping simulation now"
@@ -339,8 +347,28 @@ set_rl_agent_execution_mode_in_yaml()
 
 change_rl_agent_name_in_yaml()
 {
-    line=$(grep -n 'Maskable' $FAWKES_DIR/cfg/conf.d/rl-test.yaml | cut -d ':' -f1)
-    sed -i $line's/.*/  name: "'$rl_agent_name'"/' $FAWKES_DIR/cfg/conf.d/rl-test.yaml
+    line=$(grep -n 'save-agent-name' $FAWKES_DIR/cfg/conf.d/rl-test.yaml | cut -d ':' -f1)
+    echo ${line}
+    sed -i $line's/.*/  save-agent-name: "'$rl_agent_name'"/' $FAWKES_DIR/cfg/conf.d/rl-test.yaml
+}
+
+set_load_agent_mode_in_yaml()
+{
+    line=$(grep -n 'load-agent:' $FAWKES_DIR/cfg/conf.d/rl-test.yaml | cut -d ':' -f1)
+    sed -i $line's/.*/  load-agent: true/' $FAWKES_DIR/cfg/conf.d/rl-test.yaml
+}
+
+set_new_agent_mode_in_yaml()
+{
+    line=$(grep -n 'load-agent:' $FAWKES_DIR/cfg/conf.d/rl-test.yaml | cut -d ':' -f1)
+    echo $line
+    sed -i $line's/.*/  load-agent: false/' $FAWKES_DIR/cfg/conf.d/rl-test.yaml
+}
+
+change_load_agent_name_in_yaml()
+{
+    line=$(grep -n 'load-agent-name' $FAWKES_DIR/cfg/conf.d/rl-test.yaml | cut -d ':' -f1)
+    sed -i $line's/.*/  load-agent-name: "'$LOAD_AGENT_NAME'"/' $FAWKES_DIR/cfg/conf.d/rl-test.yaml
 }
 
 copy_game_files () {
@@ -392,7 +420,16 @@ run_simulation () {
 
     if [ "$4" = "rl" ]; then
       echo "Run agent with rl goal selection in execution mode!"
-      #change_rl_agent_name_in_yaml
+      change_rl_agent_name_in_yaml
+      if [ $LOAD_AGENT -eq 0 ];
+      then
+        echo "- generating new agent = ${LOAD_AGENT}" >> $name/configuration.txt
+        set_new_agent_mode_in_yaml
+      else
+        echo "- loading previous agent = ${LOAD_AGENT}" >> $name/configuration.txt
+        set_load_agent_mode_in_yaml
+        change_load_agent_name_in_yaml
+      fi
       activate_rl_agent_in_yaml
       set_rl_agent_execution_mode_in_yaml
       #line=$(grep -n 'Maskable' $FAWKES_DIR/cfg/conf.d/rl-test.yaml | cut -d ':' -f1)
@@ -419,6 +456,16 @@ run_rl_training () {
 
     echo "Run rl training!!!"
     echo `pwd`/$1/$2/
+    if [ $LOAD_AGENT -eq 0 ];
+    then
+      echo "test"
+      echo "- generating new agent = ${LOAD_AGENT}"
+      set_new_agent_mode_in_yaml
+    else
+      echo "- loading previous agent = ${LOAD_AGENT}"
+      set_load_agent_mode_in_yaml
+      change_load_agent_name_in_yaml
+    fi
     change_rl_agent_name_in_yaml
     activate_rl_agent_in_yaml
     set_rl_agent_training_mode_in_yaml

@@ -11,7 +11,7 @@ rl-agent:
   env_name: "blocks"  # "blockstower"
 
   # Name of saved rl agent after training
-  name: "MaskablePPO_RCLL_23-09-28_17-26.zip"
+  save-agent-name: "MaskablePPO_RCLL_23-10-04_14-51.zip"
   # Directory where the rl agent is saved after training
   # And to look for trained agent files
   dir: "@FAWKES_BASEDIR@/fawkes/src/plugins/clips-executive-rl/rl-agent"
@@ -26,6 +26,11 @@ rl-agent:
   # 5number games * 100 steps per game = 500
   # 70 games -> 7000 training-laps
   training-laps: 300
+
+  load-agent: true
+
+  load-agent-name: "RCLLRL_SA_1"
+
 
 python:
   # if trainings-mode is set to true the training script is executed
