@@ -23,6 +23,28 @@
 
 ; DANGERZONE: NEVER use a foreach on a pb-field-list. It will crash. Use progn$ instead.
 
+(defrule refbox-recv-BeaconSignal-robot
+  (declare (salience 1))
+  ?pf <- (protobuf-msg (type "llsf_msgs.BeaconSignal") (ptr ?p))
+  (wm-fact (key central agent robot args? r ?robot&:(eq (sym-cat (pb-field-value ?p "peer_name")) ?robot)))
+  (time $?now)
+  =>
+  (bind ?beacon-name (pb-field-value ?p "peer_name"))
+  (printout debug "Beacon Recieved from " ?beacon-name crlf)
+  (do-for-fact ((?pose Position3DInterface)) (eq ?pose:id (remote-if-id ?robot "Pose"))
+    (bind ?pose-msg (pb-field-value ?p "pose"))
+    (bind ?x (pb-field-value ?pose-msg "x"))
+    (bind ?y (pb-field-value ?pose-msg "y"))
+    ; currently the simulator does not send timestamps
+    ; (bind ?timestamp (pb-field-value ?p "timestamp"))
+    ; (bind ?t-sec (pb-field-value ?timestamp "sec"))
+    ; (bind ?t-nsec (pb-field-value ?timestamp "nsec"))
+    ; (modify ?pose (translation (create$ ?x ?y ?z)) (time (create$ ?t-sec ?t-nsec)))
+    (modify ?pose (translation (create$ ?x ?y 0)) (time $?now))
+  )
+  (retract ?pf)
+)
+
 (defrule refbox-recv-BeaconSignal
   ?pf <- (protobuf-msg (type "llsf_msgs.BeaconSignal") (ptr ?p))
   (time $?now)
