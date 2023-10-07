@@ -448,11 +448,18 @@ if [  $COMMAND  == start ]; then
     if $PROTOBUF_SIM
     then
         mkdir -p $(pwd)/Simulator
-        COMMANDS+=("bash -c \"export TAB_START_TIME=$(date +%s); podman run -tid --rm --name rcll-sim -v ${FAWKES_DIR}/cfg/rcll-simulator/:/simulator/caros-config/:z -v $(pwd)/Simulator:/simulator/logs/:z --net=host quay.io/robocup-logistics/rcll-simulator:latest dotnet run -cfg /simulator/caros-config/config.yaml; trap '\''podman kill rcll-sim'\'' SIGHUP EXIT SIGTERM; podman logs -f rcll-sim; while true; do sleep 1; done\"")
-
+        COMMANDS+=("bash -c \"export TAB_START_TIME=$(date +%s); podman run -tid --rm --name rcll-sim -v ${FAWKES_DIR}/cfg/rcll-simulator/:/simulator/caros-config/:z -v $(pwd)/Simulator:/simulator/logs/:z --net=host quay.io/robocup-logistics/rcll-simulator:mqtt-test dotnet run -cfg /simulator/caros-config/config.yaml; trap '\''podman kill rcll-sim'\'' SIGHUP EXIT SIGTERM; podman logs -f rcll-sim; while true; do sleep 1; done\"")
         DESCRIPTIONS+=("simulator")
-	    COMMANDS+=("bash -c \"export TAB_START_TIME=$(date +%s); podman run -tid --rm --name rcll-sim-gui --net=host quay.io/robocup-logistics/rcll-simulator-frontend:latest; trap '\''podman kill rcll-sim-gui'\'' SIGHUP EXIT SIGTERM; podman logs -f rcll-sim-gui; while true; do sleep 1; done\"")
+
+        mkdir -p $(pwd)/mosquitto/data
+        mkdir -p $(pwd)/mosquitto/config
+        mkdir -p $(pwd)/mosquitto/log
+        COMMANDS+=("bash -c \"export TAB_START_TIME=$(date +%s); podman run -tid --rm --name rcll-mosquitto -v ${FAWKES_DIR}/cfg/rcll-simulator/:/mosquitto/config/:z -v $(pwd)/mosquitto/log:/mosquitto/log/:z -v $(pwd)/mosquitto/data:/mosquitto/data/:z --net=host docker.io/library/eclipse-mosquitto:latest; trap '\''podman kill rcll-mosquitto'\'' SIGHUP EXIT SIGTERM; podman logs -f rcll-mosquitto; while true; do sleep 1; done\"")
+        DESCRIPTIONS+=("mqtt server")
+
+	    COMMANDS+=("bash -c \"export TAB_START_TIME=$(date +%s); podman run -tid --rm --name rcll-sim-gui --net=host quay.io/robocup-logistics/rcll-simulator-frontend:mqtt-test; trap '\''podman kill rcll-sim-gui'\'' SIGHUP EXIT SIGTERM; podman logs -f rcll-sim-gui; while true; do sleep 1; done\"")
         DESCRIPTIONS+=("simulator-frontend")
+
         for ((CURR_ROBO=$FIRST_ROBOTINO_NUMBER ; CURR_ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;CURR_ROBO++))
         do
             echo "  robot$CURR_ROBO/active: true" >> $FAWKES_DIR/cfg/robotino_${ROBO}_generated.yaml
