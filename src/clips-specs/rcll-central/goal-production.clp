@@ -969,7 +969,7 @@
 
 (defrule goal-production-assert-enter-field-zones
   (not (wm-fact (key enter-field targets) (values $?zones)))
-  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key refbox team-color) (value ?team-color&:(neq ?team-color nil)))
   =>
 	(if (eq ?team-color CYAN) then
     (assert (wm-fact (key enter-field targets) (is-list TRUE) (type SYMBOL) (values C-Z33 C-Z23 C-Z43)))

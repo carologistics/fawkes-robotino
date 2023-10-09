@@ -810,6 +810,16 @@
   (printout (log-debug ?v) "Goal " ?goal-id " RETRACTED" crlf)
 )
 
+(defrule goal-reasoner-evaluate-move-out-of-way-parent
+" Sets a finished move-out-of-way or empty discard goal to formulated."
+  (declare (salience ?*MONITORING-SALIENCE*))
+  ?g <- (goal (id ?goal-id) (class MOVE-OUT-OF-WAY) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL) (mode RETRACTED) (verbosity ?v))
+  ?gm <- (goal-meta (goal-id ?goal-id))
+  =>
+  (printout (log-debug ?v) "Evaluate move-out-of-way parent goal " ?goal-id crlf)
+  (retract ?g ?gm)
+)
+
 (defrule goal-reasoner-evaluate-buffer-cap-wrong-slot
 " Sets a finished move-out-of-way or empty discard goal to formulated."
   (declare (salience ?*MONITORING-SALIENCE*))
