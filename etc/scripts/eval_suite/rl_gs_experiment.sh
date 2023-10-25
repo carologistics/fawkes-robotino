@@ -82,7 +82,7 @@ EOF
 POSITIONAL_ARGS=()
 
 CUSTOM_MONGO=0
-NUMBER_RUN=4
+NUMBER_RUN=1
 NUMBER_TRAININGS=1
 EXPERIMENT_EVAL="" #"rl"
 BASELINE_EVAL="central"
@@ -94,7 +94,7 @@ LOAD_AGENT_NAME="RCLL_RL_SA"
 TRAINING_MODE=0
 REFBOX_SPEED=4
 GAME_TIME=$((1200/$REFBOX_SPEED))
-GAMES_PER_TRAINING=15
+GAMES_PER_TRAINING=20
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -274,13 +274,13 @@ $LLSF_REFBOX_DIR/bin/./restore_reports.bash $1 #rl_game_1.gz
 echo "Finished restore report starting refbox with loaded game"                                              
 $FAWKES_DIR/bin/./gazsim.bash -x kill; 
 #$FAWKES_DIR/bin/./gazsim.bash -o -k -n 1 -m m-skill-sim --central-agent m-central-clips-exec --refbox-args "--cfg-mps mps/mockup_mps.yaml --cfg-game game/game1.yaml --cfg-simulation simulation/fast_simulation.yaml --cfg-mongodb mongodb/enable_mongodb.yaml" "$@"
-$FAWKES_DIR/bin/./gazsim.bash -o -k -n 1 -m m-skill-sim --central-agent m-central-clips-exec --refbox-args "--cfg-mps mps/mockup_mps.yaml --cfg-game game/game_1.yaml --cfg-simulation simulation/fast_simulation.yaml --cfg-mongodb mongodb/enable_mongodb.yaml" "$@"
+$FAWKES_DIR/bin/./gazsim.bash -o -k -n 1 -m m-skill-sim --central-agent m-central-clips-exec --refbox-args "--cfg-mps mps/mockup_mps.yaml --cfg-game game/game_1.yaml --cfg-simulation simulation/fast_simulation.yaml --cfg-mongodb mongodb/enable_mongodb.yaml"
 } 
 
 start_simulation () {
     echo "starting simulation $1"
     #eval $1
-    rcll-loadgame #$LOAD_GAME
+    rcll-loadgame $LOAD_GAME
     sleep 20
 }
 
