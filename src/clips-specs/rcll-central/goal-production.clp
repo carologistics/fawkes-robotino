@@ -49,12 +49,13 @@
   )
 )
 
-(deffunction goal-meta-assert (?goal ?robot ?order-id ?ring-nr)
+(deffunction goal-meta-assert (?goal ?robot ?order-id ?ring-nr ?points)
 "Creates the goal-meta fact, assigns the goal to the robot and to its order"
   (assert (goal-meta (goal-id (fact-slot-value ?goal id))
                      (assigned-to ?robot)
                      (order-id ?order-id)
-                     (ring-nr ?ring-nr)))
+                     (ring-nr ?ring-nr)
+                     (points ?points)))
   (return ?goal)
 )
 
@@ -171,7 +172,7 @@
                 (class REFILL-SHELF) (sub-type SIMPLE)
                 (parent ?maintain-id) (verbosity QUIET)
                 (params mps ?mps) (is-executable TRUE))))
-  (goal-meta-assert ?goal central nil nil)
+  (goal-meta-assert ?goal central nil nil 0)
 )
 
 ; ----------------------- Robot Assignment -------------------------------
@@ -244,7 +245,7 @@
         (params target-mps ?mps
                 cap-color ?cap-color)
   )))
-  (goal-meta-assert ?goal nil ?order-id nil)
+  (goal-meta-assert ?goal nil ?order-id nil ?*POINTS-BUFFER-CAP*)
   (return ?goal)
 )
 
@@ -272,7 +273,11 @@
 
 (deffunction goal-production-assert-mount-cap
   (?wp ?mps ?wp-loc ?wp-side ?order-id)
-
+  
+  (bind ?p-steps nil)
+  (do-for-fact ((?wm-fact wm-fact)) (eq ?wm-fact:key (create$ order meta points-steps args? ord ?order-id))
+    (bind ?p-steps ?wm-fact:values))
+  (bind ?points (nth$ (order-steps-index CAP) ?p-steps))
   (bind ?goal (assert (goal (class MOUNT-CAP)
         (id (sym-cat MOUNT-CAP- (gensym*))) (sub-type SIMPLE)
          (verbosity NOISY) (is-executable FALSE)
@@ -282,12 +287,24 @@
                 wp-loc ?wp-loc
                 wp-side ?wp-side)
   )))
-  (goal-meta-assert ?goal nil ?order-id nil)
+  (goal-meta-assert ?goal nil ?order-id nil ?points)
   (return ?goal)
 )
 
 (deffunction goal-production-assert-mount-ring
   (?wp ?rs ?wp-loc ?wp-side ?ring-color ?order-id ?ring-nr)
+
+  (bind ?p-steps nil)
+  (do-for-fact ((?wm-fact wm-fact)) (eq ?wm-fact:key (create$ order meta points-steps args? ord ?order-id))
+    (bind ?p-steps ?wm-fact:values))
+
+  (switch ?ring-nr
+    (case ONE then (bind ?points (nth$ (order-steps-index RING1) ?p-steps)))
+    (case TWO then (bind ?points (nth$ (order-steps-index RING2) ?p-steps)))
+    (case THREE then (bind ?points (nth$ (order-steps-index RING3) ?p-steps)))
+    )
+  
+
   (bind ?goal (assert (goal (class MOUNT-RING)
         (id (sym-cat MOUNT-RING- (gensym*))) (sub-type SIMPLE)
         (verbosity NOISY) (is-executable FALSE)
@@ -299,7 +316,7 @@
                  ring-color ?ring-color
                  )
   )))
-  (goal-meta-assert ?goal nil ?order-id ?ring-nr)
+  (goal-meta-assert ?goal nil ?order-id ?ring-nr ?points)
   (return ?goal)
 )
 
@@ -311,7 +328,7 @@
         (verbosity NOISY) (is-executable FALSE)
         (params wp ?wp wp-loc ?cs wp-side ?side)
   )))
-  (goal-meta-assert ?goal nil ?order-id nil)
+  (goal-meta-assert ?goal nil ?order-id nil 0)
   (return ?goal)
 )
 
@@ -323,7 +340,7 @@
         (verbosity NOISY) (is-executable FALSE)
         (params wp ?wp)
   )))
-  (goal-meta-assert ?goal nil ?order-id nil)
+  (goal-meta-assert ?goal nil ?order-id nil 0)
   (return ?goal)
 )
 
@@ -336,7 +353,7 @@
     (params wp ?wp
             target-mps ?ds)
   )))
-  (goal-meta-assert ?goal central ?order-id nil)
+  (goal-meta-assert ?goal central ?order-id nil 0)
   (return ?goal)
 )
 
@@ -349,7 +366,7 @@
     (params wp ?wp
             target-mps ?ds)
   )))
-  (goal-meta-assert ?goal central nil nil)
+  (goal-meta-assert ?goal central nil nil 0)
   (return ?goal)
 )
 
@@ -366,6 +383,11 @@
     (bind ?instruct-goal (goal-production-assert-instruct-ds-deliver ?wp ?order-id ?ds))
     (modify ?instruct-goal (parent ?instruct-parent))
 
+    (bind ?p-steps nil)
+    (do-for-fact ((?wm-fact wm-fact)) (eq ?wm-fact:key (create$ order meta points-steps args? ord ?order-id))
+      (bind ?p-steps ?wm-fact:values))
+    (bind ?points (nth$ (order-steps-index DELIVER) ?p-steps))
+
     (bind ?goal
       (goal-meta-assert (assert (goal (class DELIVER)
         (id (sym-cat DELIVER- (gensym*))) (sub-type SIMPLE)
@@ -373,7 +395,7 @@
         (params wp ?wp
             target-mps ?ds
             target-side INPUT)
-      )) nil ?order-id nil)
+      )) nil ?order-id nil ?points)
     )
   else
     (bind ?goal (goal-production-assert-deliver-rc21 ?wp ?order-id))
@@ -394,7 +416,7 @@
                  target-side ?target-side
                  )
   )))
-  (goal-meta-assert ?goal nil ?order-id nil)
+  (goal-meta-assert ?goal nil ?order-id nil ?*POINTS-PAY-FOR-RING*)
   (return ?goal)
 )
 
@@ -411,7 +433,7 @@
                  target-side ?target-side
                  )
   )))
-  (goal-meta-assert ?goal nil ?order-id nil)
+  (goal-meta-assert ?goal nil ?order-id nil ?*POINTS-PAY-FOR-RING*)
   (return ?goal)
 )
 
@@ -426,7 +448,7 @@
                  target-side ?target-side
                  )
   )))
-  (goal-meta-assert ?goal nil ?order-id nil)
+  (goal-meta-assert ?goal nil ?order-id nil ?*POINTS-PAY-FOR-RING*)
   (return ?goal)
 )
 
@@ -439,7 +461,7 @@
         (params target-mps ?mps
                 cap-color ?cap-color)
   )))
-  (goal-meta-assert ?goal central ?order-id nil)
+  (goal-meta-assert ?goal central ?order-id nil 0)
   (return ?goal)
 )
 
@@ -454,7 +476,7 @@
                 target-side ?side
                 base-color ?base-color)
   )))
-  (goal-meta-assert ?goal central ?order-id nil)
+  (goal-meta-assert ?goal central ?order-id nil 0)
   (return ?goal)
 )
 
@@ -466,7 +488,7 @@
         (params target-mps ?mps
                 cap-color ?cap-color)
   )))
-  (goal-meta-assert ?goal central ?order-id nil)
+  (goal-meta-assert ?goal central ?order-id nil 0)
   (return ?goal)
 )
 
@@ -479,7 +501,7 @@
                       ring-color ?col-ring
                )
   )))
-  (goal-meta-assert ?goal central ?order-id ?ring-nr)
+  (goal-meta-assert ?goal central ?order-id ?ring-nr 0)
   (return ?goal)
 )
 

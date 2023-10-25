@@ -309,7 +309,7 @@ class ClipsWorld(gym.Env):
       #there are still executable goals (middle of the game)
       done = False
     
-    step_reward = result.reward - sum(self.rewards)
+    step_reward = result.reward
     if result.info == "Game Over" and result.reward == 0:
       step_reward = 0
     #done = False if len(executableGoals) else True 

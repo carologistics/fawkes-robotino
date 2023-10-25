@@ -160,7 +160,7 @@ ClipsGymRCLLThread::step(std::string next_goal)
 			CLIPS::Template::pointer tmpl    = fact->get_template();
 			std::size_t              found   = tmpl->name().find("rl-finished-goal");
 			std::size_t              wm_fact = tmpl->name().find("wm-fact");
-			if (found != std::string::npos) {
+			if (found != std::string::npos && getClipsSlotValuesAsString(fact->slot_value("goal-id")) == goalID) {
 				std::string goalID  = getClipsSlotValuesAsString(fact->slot_value("goal-id"));
 				std::string outcome = getClipsSlotValuesAsString(fact->slot_value("outcome"));
 				std::string result  = getClipsSlotValuesAsString(fact->slot_value("result"));

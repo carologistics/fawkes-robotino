@@ -185,6 +185,7 @@
                       (allowed-values nil PRODUCTION MAINTENANCE PRODUCTION-INSTRUCT MAINTENANCE-INSTRUCT OTHER OTHER-INSTRUCT UNKNOWN)
                       (default nil))
   (slot retries (default 0) (type INTEGER))
+  (slot points (default 0) (type INTEGER))
 )
 
 (deffunction tag-id-to-side (?tag-id ?output-odd)

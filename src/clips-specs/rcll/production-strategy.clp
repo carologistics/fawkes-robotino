@@ -32,7 +32,7 @@
 " Calculates the points for each production step, max points and initializes
   more order meta facts.
 "
-  (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
+  (declare (salience 501))
   ; Order CEs
   (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?col-r1))

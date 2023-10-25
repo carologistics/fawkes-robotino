@@ -202,13 +202,20 @@
   ?pm <- (wm-fact (id "/refbox/points/MAGENTA") (value ?mvalue))
   ?pc <- (wm-fact (id "/refbox/points/CYAN") (value ?cvalue) )
   ?tc <- (wm-fact (id "/refbox/team-color")  (value ?team-color) )
+  ?gm <- (goal-meta (goal-id ?goal-id) (points ?points))
 	=>
 	(printout t crlf "Goal: " ?goal-id " is " ?mode crlf )
-  (bind ?result 1)
-  (if (eq ?team-color CYAN)
-    then (bind ?result ?cvalue))
-  (if (eq ?team-color MAGENTA)
-    then (bind ?result ?mvalue))
+  (if (eq ?outcome COMPLETED) 
+  then
+    (bind ?result ?points)
+  else
+    (bind ?result 0)
+  )
+  
+  ;(if (eq ?team-color CYAN)
+  ;  then (bind ?result ?cvalue))
+  ;(if (eq ?team-color MAGENTA)
+  ;  then (bind ?result ?mvalue))
   
 	(printout t crlf "Points CYAN: " ?cvalue " Points MAGENTA: " ?mvalue " Result: " ?result crlf )
   (assert (rl-finished-goal (goal-id ?goal-id) (outcome ?outcome) (result ?result)))
