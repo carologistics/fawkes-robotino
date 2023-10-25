@@ -24,6 +24,7 @@ from tokenize import String
 import libfawkes_clips_gym
 import clips_gym_rcll
 
+import time
 import numpy as np
 import gym
 from gym import spaces
@@ -239,7 +240,7 @@ class ClipsWorld(gym.Env):
 
     #Optional reset information, not used here
     info = {}
-    
+    time.sleep(0.1)
     return np.array(state).astype(np.int_), info
     #state #
 
