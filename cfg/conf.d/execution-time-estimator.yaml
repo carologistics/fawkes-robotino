@@ -17,7 +17,7 @@ plugins/execution-time-estimator:
   # Does not work with empty whitelist
   static:
     priority: -1
-    speed: 12  # 1
+    speed: 4  # 1
 
     # global whitelist options
     exec-time: 5
@@ -95,7 +95,7 @@ plugins/execution-time-estimator:
   # Estimates exec times of driving skills by taking distances from NavGraph
   # as reference.
   navgraph:
-    pose-update: false
+    pose-update: true
     # misc options
     priority: 1
     speed: 6  # 0.5

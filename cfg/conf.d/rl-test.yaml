@@ -25,11 +25,11 @@ rl-agent:
   # Number of time the env reaches a final state * count of steps per game
   # 5number games * 100 steps per game = 500
   # 70 games -> 7000 training-laps
-  training-laps: 300
+  training-laps: 1000
 
-  load-agent: true
+  load-agent: false
 
-  load-agent-name: "RCLLRL_SA_1"
+  load-agent-name: "RCLL_RL_SA"
 
 
 python:
