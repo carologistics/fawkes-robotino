@@ -35,6 +35,7 @@ from itertools import product
 from stable_baselines3.common.monitor import ResultsWriter
 import time
 from typing import List
+import threading
 
 def expand_grid(dictionary):
    return pd.DataFrame([row for row in product(*dictionary.values())], 
@@ -197,6 +198,8 @@ class ClipsWorld(gym.Env):
     self.n_obs = len(sorted_obs)
     self.observation_space = gym.spaces.Box(0, 1, (self.n_obs,))
     
+    self.in_reset = False
+
     #logging
     self.t_start = time.time()
     self.results_writer = ResultsWriter()
@@ -222,7 +225,7 @@ class ClipsWorld(gym.Env):
     :return: (np.array) 
     """
     print("ClipsWorldRCLL: start reset function")
-
+    self.in_reset = True
     #print("NOT IMPLEMENTED ",inspect.currentframe().f_code.co_name)
     print("ClipsWorldRCLL: reset: before get ClipsGymRCLLThread instance")
     p = clips_gym_rcll.ClipsGymRCLLThread.getInstance()
@@ -241,6 +244,7 @@ class ClipsWorld(gym.Env):
     #Optional reset information, not used here
     info = {}
     time.sleep(0.1)
+    self.in_reset = False
     return np.array(state).astype(np.int_), info
     #state #
 
@@ -265,14 +269,27 @@ class ClipsWorld(gym.Env):
       
 
   def step(self, action):
+    current_thread = threading.get_ident()
+    print(f"ClipsWorldRCLL: in step function (Thread {current_thread})")
+    if self.in_reset:
+      state = np.zeros(self.n_obs)
+      step_reward = 0
+      done = False
+      truncated = False
+      info = {}
+      info['outcome'] = "FAILED"
+      return state, step_reward, done, truncated, info
+
     goal = self.action_dict[action]
+    print(f"ClipsWorldRCLL: Before getInstance (Thread {current_thread})")
     p = clips_gym_rcll.ClipsGymRCLLThread.getInstance()
-    p.log(f"ClipsWorldRCLL: step '{action}': '{goal}'")
+    
+    p.log(f"ClipsWorldRCLL: step '{action}': '{goal}' Thread {current_thread}")
     result = p.step(goal) #+"#")
     print(("ClipsWorldRCLL: p.step result: ", result))
     #print("ClipsWorld: observation ", result.observation)
-    p.log(f"ClipsWorldRCLL: info  '{result.info}'")
-    p.log(f"ClipsWorldRCLL: reward '{result.reward}'")
+    p.log(f"ClipsWorldRCLL: info  '{result.info}' Thread {current_thread}")
+    p.log(f"ClipsWorldRCLL: reward '{result.reward}'Thread {current_thread}")
 
     #TODO check action valid (if not done - reward -1) (da durch action masking nur valide actions ausgesucht werden sollten, außer es gibt keine validen mehr)
 
@@ -319,7 +336,8 @@ class ClipsWorld(gym.Env):
     # Optionally we can pass additional info and a truncation condition, we are not using that for now
     truncated = False
     info = {}
-
+    info['outcome'] = result.info.partition("Outcome ")[-1]
+    
     self.rewards.append(step_reward)
     if done:
       self.logOnEpisodeEnd()
@@ -336,7 +354,8 @@ class ClipsWorld(gym.Env):
   # Returns the action mask for the current env. 
   #def mask_fn(env: gym.Env) -> np.ndarray:
     p = clips_gym_rcll.ClipsGymRCLLThread.getInstance()
-    executable_goals = p.getAllFormulatedExecutableGoals()
+    p.waitForFreeRobot()
+    executable_goals = p.getExecutableGoalsForFreeRobot()
     print("ClipsWorldRCLL: action_masks executable goals: ")
     import json
     p.log(json.dumps(self.inv_action_dict))
