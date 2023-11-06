@@ -77,8 +77,8 @@ test/fast: test
 
 # Special rule for the target edit_cache
 edit_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
-	/home/frankpier/.local/lib/python3.11/site-packages/cmake/data/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake cache editor..."
+	/usr/bin/ccmake -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
 .PHONY : edit_cache
 
 # Special rule for the target edit_cache
@@ -97,14 +97,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	cd /home/frankpier/fawkes-robotino && $(CMAKE_COMMAND) -E cmake_progress_start /home/frankpier/fawkes-robotino/CMakeFiles /home/frankpier/fawkes-robotino/src/plugins/clips-gym-rcll//CMakeFiles/progress.marks
-	cd /home/frankpier/fawkes-robotino && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/plugins/clips-gym-rcll/all
+	cd /home/frankpier/fawkes-robotino && $(CMAKE_COMMAND) -E cmake_progress_start /home/frankpier/fawkes-robotino/CMakeFiles /home/frankpier/fawkes-robotino/src/plugins/clips_gym_rcll//CMakeFiles/progress.marks
+	cd /home/frankpier/fawkes-robotino && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/plugins/clips_gym_rcll/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/frankpier/fawkes-robotino/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /home/frankpier/fawkes-robotino && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/plugins/clips-gym-rcll/clean
+	cd /home/frankpier/fawkes-robotino && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/plugins/clips_gym_rcll/clean
 .PHONY : clean
 
 # The main clean target
@@ -113,12 +113,12 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /home/frankpier/fawkes-robotino && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/plugins/clips-gym-rcll/preinstall
+	cd /home/frankpier/fawkes-robotino && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/plugins/clips_gym_rcll/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /home/frankpier/fawkes-robotino && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/plugins/clips-gym-rcll/preinstall
+	cd /home/frankpier/fawkes-robotino && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/plugins/clips_gym_rcll/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
@@ -127,66 +127,66 @@ depend:
 .PHONY : depend
 
 # Convenience name for target.
-src/plugins/clips-gym-rcll/CMakeFiles/clips-gym-rcll.dir/rule:
-	cd /home/frankpier/fawkes-robotino && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/plugins/clips-gym-rcll/CMakeFiles/clips-gym-rcll.dir/rule
-.PHONY : src/plugins/clips-gym-rcll/CMakeFiles/clips-gym-rcll.dir/rule
+src/plugins/clips_gym_rcll/CMakeFiles/clips_gym_rcll.dir/rule:
+	cd /home/frankpier/fawkes-robotino && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/plugins/clips_gym_rcll/CMakeFiles/clips_gym_rcll.dir/rule
+.PHONY : src/plugins/clips_gym_rcll/CMakeFiles/clips_gym_rcll.dir/rule
 
 # Convenience name for target.
-clips-gym-rcll: src/plugins/clips-gym-rcll/CMakeFiles/clips-gym-rcll.dir/rule
-.PHONY : clips-gym-rcll
+clips_gym_rcll: src/plugins/clips_gym_rcll/CMakeFiles/clips_gym_rcll.dir/rule
+.PHONY : clips_gym_rcll
 
 # fast build rule for target.
-clips-gym-rcll/fast:
-	cd /home/frankpier/fawkes-robotino && $(MAKE) $(MAKESILENT) -f src/plugins/clips-gym-rcll/CMakeFiles/clips-gym-rcll.dir/build.make src/plugins/clips-gym-rcll/CMakeFiles/clips-gym-rcll.dir/build
-.PHONY : clips-gym-rcll/fast
+clips_gym_rcll/fast:
+	cd /home/frankpier/fawkes-robotino && $(MAKE) $(MAKESILENT) -f src/plugins/clips_gym_rcll/CMakeFiles/clips_gym_rcll.dir/build.make src/plugins/clips_gym_rcll/CMakeFiles/clips_gym_rcll.dir/build
+.PHONY : clips_gym_rcll/fast
 
-clips-gym-rcll-plugin.o: clips-gym-rcll-plugin.cpp.o
-.PHONY : clips-gym-rcll-plugin.o
-
-# target to build an object file
-clips-gym-rcll-plugin.cpp.o:
-	cd /home/frankpier/fawkes-robotino && $(MAKE) $(MAKESILENT) -f src/plugins/clips-gym-rcll/CMakeFiles/clips-gym-rcll.dir/build.make src/plugins/clips-gym-rcll/CMakeFiles/clips-gym-rcll.dir/clips-gym-rcll-plugin.cpp.o
-.PHONY : clips-gym-rcll-plugin.cpp.o
-
-clips-gym-rcll-plugin.i: clips-gym-rcll-plugin.cpp.i
-.PHONY : clips-gym-rcll-plugin.i
-
-# target to preprocess a source file
-clips-gym-rcll-plugin.cpp.i:
-	cd /home/frankpier/fawkes-robotino && $(MAKE) $(MAKESILENT) -f src/plugins/clips-gym-rcll/CMakeFiles/clips-gym-rcll.dir/build.make src/plugins/clips-gym-rcll/CMakeFiles/clips-gym-rcll.dir/clips-gym-rcll-plugin.cpp.i
-.PHONY : clips-gym-rcll-plugin.cpp.i
-
-clips-gym-rcll-plugin.s: clips-gym-rcll-plugin.cpp.s
-.PHONY : clips-gym-rcll-plugin.s
-
-# target to generate assembly for a file
-clips-gym-rcll-plugin.cpp.s:
-	cd /home/frankpier/fawkes-robotino && $(MAKE) $(MAKESILENT) -f src/plugins/clips-gym-rcll/CMakeFiles/clips-gym-rcll.dir/build.make src/plugins/clips-gym-rcll/CMakeFiles/clips-gym-rcll.dir/clips-gym-rcll-plugin.cpp.s
-.PHONY : clips-gym-rcll-plugin.cpp.s
-
-clips-gym-rcll-thread.o: clips-gym-rcll-thread.cpp.o
-.PHONY : clips-gym-rcll-thread.o
+clips_gym_rcll_plugin.o: clips_gym_rcll_plugin.cpp.o
+.PHONY : clips_gym_rcll_plugin.o
 
 # target to build an object file
-clips-gym-rcll-thread.cpp.o:
-	cd /home/frankpier/fawkes-robotino && $(MAKE) $(MAKESILENT) -f src/plugins/clips-gym-rcll/CMakeFiles/clips-gym-rcll.dir/build.make src/plugins/clips-gym-rcll/CMakeFiles/clips-gym-rcll.dir/clips-gym-rcll-thread.cpp.o
-.PHONY : clips-gym-rcll-thread.cpp.o
+clips_gym_rcll_plugin.cpp.o:
+	cd /home/frankpier/fawkes-robotino && $(MAKE) $(MAKESILENT) -f src/plugins/clips_gym_rcll/CMakeFiles/clips_gym_rcll.dir/build.make src/plugins/clips_gym_rcll/CMakeFiles/clips_gym_rcll.dir/clips_gym_rcll_plugin.cpp.o
+.PHONY : clips_gym_rcll_plugin.cpp.o
 
-clips-gym-rcll-thread.i: clips-gym-rcll-thread.cpp.i
-.PHONY : clips-gym-rcll-thread.i
+clips_gym_rcll_plugin.i: clips_gym_rcll_plugin.cpp.i
+.PHONY : clips_gym_rcll_plugin.i
 
 # target to preprocess a source file
-clips-gym-rcll-thread.cpp.i:
-	cd /home/frankpier/fawkes-robotino && $(MAKE) $(MAKESILENT) -f src/plugins/clips-gym-rcll/CMakeFiles/clips-gym-rcll.dir/build.make src/plugins/clips-gym-rcll/CMakeFiles/clips-gym-rcll.dir/clips-gym-rcll-thread.cpp.i
-.PHONY : clips-gym-rcll-thread.cpp.i
+clips_gym_rcll_plugin.cpp.i:
+	cd /home/frankpier/fawkes-robotino && $(MAKE) $(MAKESILENT) -f src/plugins/clips_gym_rcll/CMakeFiles/clips_gym_rcll.dir/build.make src/plugins/clips_gym_rcll/CMakeFiles/clips_gym_rcll.dir/clips_gym_rcll_plugin.cpp.i
+.PHONY : clips_gym_rcll_plugin.cpp.i
 
-clips-gym-rcll-thread.s: clips-gym-rcll-thread.cpp.s
-.PHONY : clips-gym-rcll-thread.s
+clips_gym_rcll_plugin.s: clips_gym_rcll_plugin.cpp.s
+.PHONY : clips_gym_rcll_plugin.s
 
 # target to generate assembly for a file
-clips-gym-rcll-thread.cpp.s:
-	cd /home/frankpier/fawkes-robotino && $(MAKE) $(MAKESILENT) -f src/plugins/clips-gym-rcll/CMakeFiles/clips-gym-rcll.dir/build.make src/plugins/clips-gym-rcll/CMakeFiles/clips-gym-rcll.dir/clips-gym-rcll-thread.cpp.s
-.PHONY : clips-gym-rcll-thread.cpp.s
+clips_gym_rcll_plugin.cpp.s:
+	cd /home/frankpier/fawkes-robotino && $(MAKE) $(MAKESILENT) -f src/plugins/clips_gym_rcll/CMakeFiles/clips_gym_rcll.dir/build.make src/plugins/clips_gym_rcll/CMakeFiles/clips_gym_rcll.dir/clips_gym_rcll_plugin.cpp.s
+.PHONY : clips_gym_rcll_plugin.cpp.s
+
+clips_gym_rcll_thread.o: clips_gym_rcll_thread.cpp.o
+.PHONY : clips_gym_rcll_thread.o
+
+# target to build an object file
+clips_gym_rcll_thread.cpp.o:
+	cd /home/frankpier/fawkes-robotino && $(MAKE) $(MAKESILENT) -f src/plugins/clips_gym_rcll/CMakeFiles/clips_gym_rcll.dir/build.make src/plugins/clips_gym_rcll/CMakeFiles/clips_gym_rcll.dir/clips_gym_rcll_thread.cpp.o
+.PHONY : clips_gym_rcll_thread.cpp.o
+
+clips_gym_rcll_thread.i: clips_gym_rcll_thread.cpp.i
+.PHONY : clips_gym_rcll_thread.i
+
+# target to preprocess a source file
+clips_gym_rcll_thread.cpp.i:
+	cd /home/frankpier/fawkes-robotino && $(MAKE) $(MAKESILENT) -f src/plugins/clips_gym_rcll/CMakeFiles/clips_gym_rcll.dir/build.make src/plugins/clips_gym_rcll/CMakeFiles/clips_gym_rcll.dir/clips_gym_rcll_thread.cpp.i
+.PHONY : clips_gym_rcll_thread.cpp.i
+
+clips_gym_rcll_thread.s: clips_gym_rcll_thread.cpp.s
+.PHONY : clips_gym_rcll_thread.s
+
+# target to generate assembly for a file
+clips_gym_rcll_thread.cpp.s:
+	cd /home/frankpier/fawkes-robotino && $(MAKE) $(MAKESILENT) -f src/plugins/clips_gym_rcll/CMakeFiles/clips_gym_rcll.dir/build.make src/plugins/clips_gym_rcll/CMakeFiles/clips_gym_rcll.dir/clips_gym_rcll_thread.cpp.s
+.PHONY : clips_gym_rcll_thread.cpp.s
 
 # Help Target
 help:
@@ -197,13 +197,13 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... test"
-	@echo "... clips-gym-rcll"
-	@echo "... clips-gym-rcll-plugin.o"
-	@echo "... clips-gym-rcll-plugin.i"
-	@echo "... clips-gym-rcll-plugin.s"
-	@echo "... clips-gym-rcll-thread.o"
-	@echo "... clips-gym-rcll-thread.i"
-	@echo "... clips-gym-rcll-thread.s"
+	@echo "... clips_gym_rcll"
+	@echo "... clips_gym_rcll_plugin.o"
+	@echo "... clips_gym_rcll_plugin.i"
+	@echo "... clips_gym_rcll_plugin.s"
+	@echo "... clips_gym_rcll_thread.o"
+	@echo "... clips_gym_rcll_thread.i"
+	@echo "... clips_gym_rcll_thread.s"
 .PHONY : help
 
 
