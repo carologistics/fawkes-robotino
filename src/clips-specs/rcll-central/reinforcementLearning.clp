@@ -223,3 +223,21 @@
 )
 
 
+(defrule delete-all-rl-selections
+  (declare (salience ?*SALIENCE-FIRST*))
+  (rl-delete-selections)
+  ?r <-(rl-goal-selection (next-goal-id ?goal-id))
+  =>
+  (assert (rl-finished-goal (goal-id ?goal-id) (outcome FAILED) (result 0)))
+  (retract ?r)
+)
+
+(defrule finished-deleting-rl-selections
+  (declare (salience ?*SALIENCE-FIRST*))
+  ?r <- (rl-delete-selections)
+  (not (rl-goal-selection))
+  =>
+  (retract ?r)
+)
+
+

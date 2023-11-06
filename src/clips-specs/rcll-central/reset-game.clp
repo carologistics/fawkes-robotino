@@ -104,7 +104,7 @@
 
   (pb-destroy ?prepare-phase)
   (pb-destroy ?prepare-state)
-
+  (assert (rl-delete-selections))
   (modify ?r (stage STAGE-1) (stage-time (time)))
   (modify ?rtimer (time ?now) (seq (+ ?seq 1)))
   (assert (changed-to-setup-phase))

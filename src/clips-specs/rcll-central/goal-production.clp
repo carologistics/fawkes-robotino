@@ -983,6 +983,7 @@
 (defrule goal-production-create-enter-field
   "Enter the field (drive outside of the starting box)."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal-selection-via-rl-inactive)
   (wm-fact (key central agent robot args? r ?robot))
   (not (wm-fact (key domain fact entered-field args? r ?robot)))
   (not
@@ -990,6 +991,23 @@
       (goal (id ?enter-field) (class ENTER-FIELD))
       (goal-meta (goal-id ?enter-field) (restricted-to ?robot))
     )
+  )
+  (domain-facts-loaded)
+  (wm-fact (key refbox phase) (value PRODUCTION))
+  ?targets <- (wm-fact (key enter-field targets) (values ?zone $?zones))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3|STAGE-4)))
+  =>
+  (printout t "Goal " ENTER-FIELD " formulated" crlf)
+  (goal-production-assert-enter-field ?robot ?zone)
+)
+
+(defrule goal-production-create-enter-field-rl
+  "Enter the field (drive outside of the starting box). TODO: Find better solution to avoid restricted-to"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (not (goal-selection-via-rl-inactive))
+  (wm-fact (key central agent robot args? r ?robot))
+  (not (wm-fact (key domain fact entered-field args? r ?robot)))
+  (not (goal (id ?enter-field) (class ENTER-FIELD))
   )
   (domain-facts-loaded)
   (wm-fact (key refbox phase) (value PRODUCTION))
