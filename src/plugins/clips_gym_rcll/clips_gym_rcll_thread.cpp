@@ -127,12 +127,13 @@ ClipsGymRCLLThread::step(std::string next_goal)
 
     logger->log_info(name(), "currentExecutableGoals", currentExecutableGoals.size());
 	std::string goalID = getGoalIdByString(currentExecutableGoals, next_goal);
+	unlockRobot();
 
 	if (goalID == "") {
 		std::cout << "Goal id not found!" << std::endl;
 		std::string env_state = create_rl_env_state_from_facts();
 		std::cout << "End ClipsGymRCLLThread step function" << std::endl;
-
+		obs_info.info = "Outcome FAILED";
 		obs_info.observation = env_state;
 		return obs_info;
 	}
@@ -150,8 +151,11 @@ ClipsGymRCLLThread::step(std::string next_goal)
 	}
 	int  elapsed_time        = 0;
 	bool check_for_game_over = false;
+	
 	while (!env_feedback && elapsed_time < max_time * 1000) {
+		py::gil_scoped_release release;
 		std::this_thread::sleep_for(wait_time * 1000ms);
+		py::gil_scoped_acquire acquire;
 		clips.lock();
 		clips->evaluate("(printout t \"In Sleeping Step Function \" crlf) ");
 		CLIPS::Fact::pointer fact = clips->get_facts();
