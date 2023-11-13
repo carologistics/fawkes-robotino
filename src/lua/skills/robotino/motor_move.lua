@@ -65,7 +65,7 @@ local V_MAX =         { x=0.35, y=0.35, ori=1.4 }    -- ultimate limit
 local V_MAX_CAM =     { x=0.06, y=0.06, ori=0.3 }
 local V_MIN =         { x=0.006, y=0.006, ori=0.02 }   -- below the motor won't even start
 local TOLERANCE =     { x=0.02, y=0.02, ori=0.025 } -- accuracy
-local TOLERANCE_VS =  { x=0.01, y=0.005, ori=0.01 }
+local TOLERANCE_VS =  { x=0.02, y=0.02, ori=0.01 }
 local TOLERANCE_EE =  { x=0.15, y=0.04, ori=0.03} -- tolerance for end_early condition
 local TOLERANCE_CAM = { x=0.005, y=0.0015, ori=0.01 }
 local D_DECEL =       { x=0.035, y=0.035, ori=0.15 }    -- deceleration distance
@@ -476,14 +476,14 @@ function DRIVE_VS:init()
 
 	-- "Magic", i.e. heuristic multiplier that determines how much we brake
 	-- when approaching target. Important to avoid overshooting.
-	self.fsm.vars.decel_factor = 5
+	self.fsm.vars.decel_factor = 6.5
 	
 	set_speed(self)
 end
 
 function DRIVE_VS:loop()
    local a_x = V_MAX.x / D_DECEL.x
-   local v_x_dec = a_x / self.fsm.vars.decel_factor * math.max(0, if_front_dist:translation(0) - SAFE_DIST)
+   local v_x_dec = a_x / self.fsm.vars.decel_factor * math.abs(if_front_dist:translation(0) - SAFE_DIST)
    self.fsm.vars.vmax_arg.x = math.min(V_MAX.x, self.fsm.vars.vel_trans or V_MAX.x, v_x_dec)
 
    if self.fsm.vars.msgid ~= object_tracking_if:msgid() then

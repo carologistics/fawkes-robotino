@@ -100,6 +100,8 @@ local ring_height = 0.01
 
 local drive_back_x = -0.1
 
+local safe_dist = 0.03 -- extra distance in x direction to target position while moving base
+
 -- read gripper config
 if config:exists("/arduino/x_max") then
   x_max = config:get_float("/arduino/x_max")
@@ -134,6 +136,12 @@ end
 -- read wp config
 if config:exists("plugins/object_tracking/puck_values/ring_height") then
   ring_height = config:get_float("plugins/object_tracking/puck_values/ring_height")
+end
+
+-- read config values for target frame and routine adjustments
+-- save dist
+if config:exists("plugins/vs_offsets/workpiece/pick_target/save_dist") then
+  safe_dist = config:get_float("plugins/vs_offsets/workpiece/pick_target/save_dist")
 end
 
 -- Match tag to navgraph point
@@ -181,9 +189,15 @@ function gripper_aligned()
      ori=fawkes.tf.create_quaternion_from_yaw(0)},
     "base_link", "end_effector_home")
 
-  return math.abs(gripper_target.x - arduino:x_position()) < GRIPPER_TOLERANCE.x
-     and math.abs(gripper_target.y - (arduino:y_position() - y_max/2)) < GRIPPER_TOLERANCE.y
-     and math.abs(math.min(gripper_target.z - fsm.vars.missing_c3_height, z_max) - arduino:z_position()) < GRIPPER_TOLERANCE.z
+  if fsm.vars.target == "WORKPIECE" then
+    return math.abs(gripper_target.x - arduino:x_position()) < GRIPPER_TOLERANCE.x
+      and math.abs(gripper_target.y - (arduino:y_position() - y_max/2)) < GRIPPER_TOLERANCE.y
+      and math.abs(math.min(gripper_target.z - fsm.vars.missing_c3_height, z_max) - arduino:z_position()) < GRIPPER_TOLERANCE.z
+  else
+    return math.abs(gripper_target.x - arduino:x_position()) < GRIPPER_TOLERANCE.x
+      and math.abs(gripper_target.y - (arduino:y_position() - y_max/2)) < GRIPPER_TOLERANCE.y
+      and math.abs(math.min(gripper_target.z, z_max) - arduino:z_position()) < GRIPPER_TOLERANCE.z
+  end
 end
 
 function set_gripper(x, y, z)
@@ -573,7 +587,11 @@ function MOVE_BASE_AND_GRIPPER:init()
     "base_link", "end_effector_home")
 
   fsm.vars.gripper_wait = 10
-  set_gripper(gripper_target.x, 0, gripper_target.z - fsm.vars.missing_c3_height)
+  if fsm.vars.target == "WORKPIECE" then
+    set_gripper(gripper_target.x - safe_dist, 0, gripper_target.z - fsm.vars.missing_c3_height)
+  else
+    set_gripper(gripper_target.x - safe_dist, 0, gripper_target.z)
+  end
 end
 
 function FINE_TUNE_GRIPPER:init()
@@ -601,29 +619,21 @@ function FINE_TUNE_GRIPPER:loop()
      ori=fawkes.tf.create_quaternion_from_yaw(0)},
     "base_link", "end_effector_home")
 
-  set_gripper(gripper_target.x,
-              gripper_target.y,
-              gripper_target.z - fsm.vars.missing_c3_height)
+  if fsm.vars.target == "WORKPIECE" then
+    set_gripper(gripper_target.x,
+                gripper_target.y,
+                gripper_target.z - fsm.vars.missing_c3_height)
+  else
+    set_gripper(gripper_target.x,
+                gripper_target.y,
+                gripper_target.z)
+  end
 end
 
 function GRIPPER_ROUTINE:init()
   -- perform pick or put routine
-  print("start routine")
-  if fsm.vars.target == "SLIDE" then
-    self.args["pick_or_put_vs"].slide = true
-  else 
-    self.args["pick_or_put_vs"].slide = false
-  end
-
-  if fsm.vars.target == "WORKPIECE" then
-    self.args["pick_or_put_vs"].action = "PICK"
-    self.args["pick_or_put_vs"].missing_c3_height = tostring(fsm.vars.missing_c3_height)
-    print("Pick")
-  else
-    self.args["pick_or_put_vs"].action = "PUT"
-    self.args["pick_or_put_vs"].missing_c3_height = tostring(fsm.vars.missing_c3_height)
-    print("Put")
-  end
+  self.args["pick_or_put_vs"].target = fsm.vars.target
+  self.args["pick_or_put_vs"].missing_c3_height = tostring(fsm.vars.missing_c3_height)
 end
 
 -- end tracking afterwards

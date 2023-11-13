@@ -96,12 +96,18 @@ private:
 	float shelf_height_;
 
 	//target frame offsets:
-	float gripper_offset_pick_;
-	float gripper_offset_put_;
 	float base_offset_;
-	float target_wp_offset_x_;
-	float conveyor_offset_coefficient_;
-	float slide_offset_coefficient_;
+	float offset_x_pick_;
+	float offset_z_pick_;
+
+	float offset_x_put_conveyor_;
+	float offset_z_put_conveyor_;
+
+	float offset_x_put_slide_;
+	float offset_z_put_slide_;
+
+	float offset_x_routine_conveyor_;
+	float offset_x_routine_slide_;
 
 	//expected pose offsets:
 	float x_offset_;
