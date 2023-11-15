@@ -298,11 +298,6 @@ class ClipsWorld(gym.Env):
     #print("\nfacts: ", raw_facts)
     state = self.get_state_from_facts(raw_facts)
     print("New env state from facts: ",state)
-
-    #  Flag that marks the termination of an episode
-    # TODO if we use action masking check if there are valid action and switch to done if not
-    executableGoals = p.getAllFormulatedExecutableGoals()
-    p.log(f"ClipsWorldRCLL: getAllFormulatedExecutableGoals {executableGoals} length: {len(executableGoals)}")
     
     time_sec =  p.getRefboxGameTime()
     phase = p.getRefboxGamePhase()
@@ -318,11 +313,6 @@ class ClipsWorld(gym.Env):
       p.log(f"ClipsWorldRCLL: Done: due to rewards len over 200 and sum rewards < 100")
       # due to a machine reset some workpieces are lost
       done = True
-    elif not executableGoals and time_sec < game_time:
-      p.log(f"ClipsWorldRCLL: no executable goals found - sleeping for 500 milliseconds")
-      # there are no executable goals, but game didn't finished
-      p.clipsGymSleep(500) #time in milliseconds
-      done = False
     else:
       #there are still executable goals (middle of the game)
       done = False
