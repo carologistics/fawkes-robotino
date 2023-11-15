@@ -200,6 +200,11 @@
   (wm-fact (key domain fact entered-field args? r ?robot))
   (not (goal-meta (assigned-to ?robot)))
   (wm-fact (key central agent robot-waiting args? r ?robot))
+  (not (and (wm-fact (key central agent robot-waiting args? r ?robot2&:(neq ?robot2 ?robot)))
+            (goal (id ?oid2) (sub-type SIMPLE) (mode FORMULATED))
+            (goal-meta (goal-id ?oid2) (assigned-to ?robot2))
+            )
+          )
   =>
   (bind ?longest-waiting 0)
   (bind ?longest-waiting-robot ?robot)
