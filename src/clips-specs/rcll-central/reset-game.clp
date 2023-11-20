@@ -202,6 +202,14 @@
   (retract ?p)
 )
 
+(defrule delete-metadata-prepare-mps
+  (declare (salience ?*SALIENCE-RESET-GAME-HIGH*))
+  (reset-game (stage STAGE-2))
+  ?p <- (metadata-prepare-mps)
+  =>
+  (retract ?p)
+)
+
 (defrule delete-rl-goal-selection-fact
   (declare (salience ?*SALIENCE-RESET-GAME-HIGH*))
   (reset-game (stage STAGE-2))
