@@ -133,8 +133,8 @@
   (wm-fact (key domain fact mps-type args? m ?rs t RS))
   (goal (class SUPPORT-ROOT) (id ?root-id))
   (goal (class INSTRUCTION-ROOT) (id ?instruct-root-id))
-  (not (and (goal (id ?some-id) (class PAY-FOR-RINGS-WITH-BASE) (params $? target-mps ?rs $?))
-      (goal (id ?some-other-id&:(neq ?some-id ?some-other-id)) (class PAY-FOR-RINGS-WITH-BASE) (params $? target-mps ?rs $?))))
+  (not (and (goal (id ?some-id) (class PAY-FOR-RINGS-WITH-BASE) (params $? target-mps ?rs $?) (mode ~RETRACTED))
+       (goal (id ?some-other-id&:(neq ?some-id ?some-other-id)) (class PAY-FOR-RINGS-WITH-BASE) (params $? target-mps ?rs $?))))
   =>
   (bind ?wp-base-pay (sym-cat BASE-PAY- (gensym*)))
   (bind ?payment-goal (goal-production-assert-pay-for-rings-with-base ?wp-base-pay ?bs INPUT ?rs INPUT nil))
