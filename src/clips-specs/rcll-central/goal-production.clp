@@ -29,6 +29,37 @@
   ?*PRODUCTION-C2-PRIORITY* = 50
   ?*PRODUCTION-C3-PRIORITY* = 60
   ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT* = 30
+  ?*PRODUCTION-TIME-INTERVAL* = 120
+)
+(deffunction generate-all-order-list ()
+    "generate a list containing all order-ids"
+    (bind ?order-list (create$))
+    (do-for-all-facts 
+        ((?order wm-fact))
+        (wm-key-prefix ?order:key (create$ domain fact order-complexity))
+        (bind ?order-list (insert$ ?order-list 1 (wm-key-arg ?order:key ord))))
+    (return ?order-list)
+)
+(deffunction generate-candidate-order-list ()
+    "generate a list containing all order-ids, whose order has not been worked on yet"
+    (bind ?order-list (create$))
+    (do-for-all-facts 
+        ((?order wm-fact))
+        (and (wm-key-prefix ?order:key (create$ domain fact order-complexity))
+            (not (any-factp 
+                    ((?or wm-fact))
+                    (and (wm-key-prefix ?or:key (create$ order meta wp-for-order))
+                        (eq (wm-key-arg ?order:key ord) (wm-key-arg ?or:key ord))
+            )))) 
+        (bind ?order-list (insert$ ?order-list 1 (wm-key-arg ?order:key ord))))
+    (return ?order-list)
+)
+(deffunction pick-random-order (?order-list)
+    "generate a random integer, return the order-id on this integer position"
+    (bind ?len (length$ ?order-list))
+    (if (> ?len 0) 
+    then (return (nth$ (random 1 ?len) ?order-list)))
+    (return nil)
 )
 
 (deffunction goal-meta-assign-robot-to-goal (?goal ?robot)
@@ -790,6 +821,22 @@
   (printout error "Can not build order " ?order-id " with ring-3 color " ?col-ring " because there is no ringstation for it" crlf)
 )
 
+(defrule ask-next-order-at-same-intervals
+    "determine a random next order to be processed every minute or other time interval"
+    ; (declare (salience ?*SALIENCE-GOAL-FORMULATE*)) (= (mod ?gt ?*PRODUCTION-TIME-INTERVAL*) 0)
+    (wm-fact (key refbox game-time) (values ?gt&:(= (mod ?gt ?*PRODUCTION-TIME-INTERVAL*) 0) ?)) 
+    ; (wm-fact (key refbox game-time) (values $?gt&:(= (mod (+ (float (nth$ 1 ?gt)) (/ (float (nth$ 2 ?gt)) 1000000.)) ?*PRODUCTION-TIME-INTERVAL*) 0))) 
+    ; ?f <- (wm-fact (key strategy meta selected-order args? cond random) (value ?ex-order-id))
+    =>
+    (printout t "Result1:" (generate-all-order-list) crlf)
+    (bind ?result (generate-candidate-order-list))
+    (printout t "Result2:" ?result crlf)
+    (bind ?order-id (pick-random-order ?result))
+    (printout t "Result3:" ?order-id crlf)
+    ; (modify ?f (value ?order-id))
+
+    (assert (wm-fact (key strategy meta selected-order args? cond random) (value ?order-id)))
+)
 (defrule goal-production-create-produce-for-order
   "Create for each incoming order a grounded production tree with the"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
@@ -812,17 +859,22 @@
   (or (wm-fact (key domain fact order-ring3-color args? ord ?order-id col RING_NONE))
       (wm-fact (key domain fact rs-ring-spec args? m ?rs3 r ?col-ring3 $?)))
 
-  (or
-    (wm-fact (key strategy meta selected-order args? cond filter) (value ?order-id))
-    (and
-      (time $?now)
-      (timer (name production-strategy-nothing-executable-timer) (time $?t&:(timeout ?now ?t ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT*)))
-      (wm-fact (key strategy meta selected-order args? cond fallback) (value ?order-id))
-    )
-  )
+  ; (or
+  ;   (wm-fact (key strategy meta selected-order args? cond filter) (value ?order-id))
+  ;   (and
+  ;     (time $?now)
+  ;     (timer (name production-strategy-nothing-executable-timer) (time $?t&:(timeout ?now ?t ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT*)))
+  ;     (wm-fact (key strategy meta selected-order args? cond fallback) (value ?order-id))
+  ;   )
+  ; )
+  (wm-fact (key strategy meta selected-order args? cond random) (value ?order-id))
+  ; (wm-fact (key refbox game-time) (values ?gt&:(= (mod ?gt ?*PRODUCTION-TIME-INTERVAL*) 0) $?)) 
+
   ?os <- (wm-fact (key order meta started args? ord ?order) (value FALSE))
   (wm-fact (key mps workload needs-update) (value FALSE))
   =>
+  (printout t "Result4:selected order" ?order-id crlf)
+
   ;find the necessary ringstations
   (bind ?rs1 (goal-production-get-machine-for-color ?col-ring1))
   (bind ?rs2 (goal-production-get-machine-for-color ?col-ring2))
