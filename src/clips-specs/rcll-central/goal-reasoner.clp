@@ -313,7 +313,7 @@
   "There is an exectuable simple goal assigned to central, propagate selection."
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
   ?g <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
-      (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
+      (id ?goal-id&:(not (str-prefix "ENTER-FIELD" ?goal-id))) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
   (goal-meta (goal-id ?goal-id) (root-for-order nil))
   (goal (id ?id) (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE))
   (goal-meta (goal-id ?id) (assigned-to central))
