@@ -199,7 +199,6 @@ class ClipsWorld(gym.Env):
     self.observation_space = gym.spaces.Box(0, 1, (self.n_obs,))
     
     self.in_reset = False
-
     #logging
     self.t_start = time.time()
     self.results_writer = ResultsWriter()
@@ -271,19 +270,11 @@ class ClipsWorld(gym.Env):
   def step(self, action):
     current_thread = threading.get_ident()
     print(f"ClipsWorldRCLL: in step function (Thread {current_thread})")
-    if self.in_reset:
-      state = np.zeros(self.n_obs)
-      step_reward = 0
-      done = False
-      truncated = False
-      info = {}
-      info['outcome'] = "FAILED"
-      return state, step_reward, done, truncated, info
 
     goal = self.action_dict[action]
     print(f"ClipsWorldRCLL: Before getInstance (Thread {current_thread})")
     p = clips_gym_rcll.ClipsGymRCLLThread.getInstance()
-    
+      
     p.log(f"ClipsWorldRCLL: step '{action}': '{goal}' Thread {current_thread}")
     result = p.step(goal) #+"#")
     print(("ClipsWorldRCLL: p.step result: ", result))
@@ -305,7 +296,7 @@ class ClipsWorld(gym.Env):
     p.log(f"ClipsWorldRCLL: Time: '{time_sec}' Phase: '{phase}'")
     game_time = 1200 #180 #in sec = normally 1200
 
-    if phase == 'POST_GAME' or time_sec > game_time+100:
+    if (phase == 'POST_GAME' or time_sec > game_time+100) and not self.needs_reset:
       p.log(f"ClipsWorldRCLL: Done: due to POST_GAME or TIME")
       # game over (e.g. if over 300 points you might won the game - extra check with refbox necessary / no logic for game extension!)
       done = True
@@ -317,21 +308,32 @@ class ClipsWorld(gym.Env):
       #there are still executable goals (middle of the game)
       done = False
     
+
+     # Optionally we can pass additional info and a truncation condition, we are not using that for now
+    truncated = False
+    info = {}
+ 
+
     step_reward = result.reward
     if result.info == "Game Over" and result.reward == 0:
       step_reward = 0
+      info['outcome'] = "Game Over"
+    else:
+      info['outcome'] = result.info.partition("Outcome ")[-1]
     #done = False if len(executableGoals) else True 
     p.log(f"\n\nClipsWorldRCLL: done '{done}' step reward {step_reward} total reward {sum(self.rewards)+step_reward}\n")
     
-    # Optionally we can pass additional info and a truncation condition, we are not using that for now
-    truncated = False
-    info = {}
-    info['outcome'] = result.info.partition("Outcome ")[-1]
+   
     
     self.rewards.append(step_reward)
     if done:
+      p.log(f"Episode done, Thread {current_thread}")
       self.logOnEpisodeEnd()
     self.total_steps += 1
+
+    if self.in_reset:
+      info['outcome'] = "FAILED"
+      time.sleep(10)
 
     return state, step_reward, done, truncated, info
     #return np.array([self.n_obs]).astype(np.int_), reward, done, info
