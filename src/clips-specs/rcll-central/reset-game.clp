@@ -205,7 +205,7 @@
 (defrule delete-metadata-prepare-mps
   (declare (salience ?*SALIENCE-RESET-GAME-HIGH*))
   (reset-game (stage STAGE-2))
-  ?p <- (metadata-prepare-mps)
+  ?p <- (metadata-prepare-mps ?mps ?team-color ?peer-id $?instruction_info)
   =>
   (retract ?p)
 )
@@ -213,7 +213,7 @@
 (defrule delete-rl-goal-selection-fact
   (declare (salience ?*SALIENCE-RESET-GAME-HIGH*))
   (reset-game (stage STAGE-2))
-  ?r <- (rl-goal-selection )
+  ?r <- (rl-goal-selection (next-goal-id ?id))
   =>
   (retract ?r)
 )
@@ -224,6 +224,14 @@
   ?r <- (rl-waiting)
   =>
   (retract ?r)
+)
+
+(defrule delete-confval-active-robots
+  (declare (salience ?*SALIENCE-RESET-GAME-HIGH*))
+  (reset-game (stage STAGE-2))
+  ?cf <- (confval (path ?p&:(str-prefix ?*BBSYNC_PEER_CONFIG* ?p)))
+  =>
+  (retract ?cf)
 )
 
 
