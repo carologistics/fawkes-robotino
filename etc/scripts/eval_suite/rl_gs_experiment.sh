@@ -311,7 +311,7 @@ wait_simulation_ends () {
 
 wait_rl_training_ends () {
     echo "Waiting for POST_GAME..."
-    training_time=$(($GAMES_PER_TRAINING*$GAME_TIME+10))
+    training_time=$(($GAMES_PER_TRAINING*$GAME_TIME+100))
     echo $training_time
     sleep $training_time
     $LLSF_REFBOX_DIR/bin/./rcll-refbox-instruct -W$training_time -p POST_GAME
