@@ -1250,7 +1250,7 @@
   (if (not (> ?qr ?qd-us))
     then
       (return 0))
-  (bind ?delivery-points 20)
+  (bind ?delivery-points ?*POINTS-DELIVER*)
   (if (> ?curr-time ?deadline)
     then
       (bind ?delivery-points 5)
