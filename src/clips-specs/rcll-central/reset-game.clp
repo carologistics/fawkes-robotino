@@ -226,6 +226,30 @@
   (retract ?r)
 )
 
+(defrule delete-wm-robmem-sync-map-entry
+  (declare (salience ?*SALIENCE-RESET-GAME-HIGH*))
+  (reset-game (stage STAGE-2))
+  ?f <- (wm-robmem-sync-map-entry (wm-fact-id ?id&:(str-prefix "/template/fact/" ?id))) 
+  =>
+  (retract ?f)
+)
+
+(defrule delete-grounded-pddl-formula
+  (declare (salience ?*SALIENCE-RESET-GAME-HIGH*))
+  (reset-game (stage STAGE-2))
+  ?f <- (grounded-pddl-formula (id ?id))
+  =>
+  (retract ?f)
+)
+
+(defrule delete-grounded-pddl-predicate
+  (declare (salience ?*SALIENCE-RESET-GAME-HIGH*))
+  (reset-game (stage STAGE-2))
+  ?f <- (grounded-pddl-predicate (id ?id))
+  =>
+  (retract ?f)
+)
+
 (defrule delete-confval-active-robots
   (declare (salience ?*SALIENCE-RESET-GAME-HIGH*))
   (reset-game (stage STAGE-2))
