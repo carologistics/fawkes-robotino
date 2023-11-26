@@ -58,6 +58,7 @@
 	(slot goal-id (type SYMBOL));
 	(slot outcome (type SYMBOL));
 	(slot result (type INTEGER));
+  (slot team-points (type INTEGER));
 )
 
 
@@ -199,7 +200,7 @@
 (defrule rl-selected-goal-finished
   (declare (salience ?*SALIENCE-RL-SELECTION*))
 	?r <- (rl-goal-selection (next-goal-id ?goal-id))
-	(goal (id ?goal-id) (mode ?mode&FINISHED|EVALUATED) (outcome ?outcome))
+	(goal (id ?goal-id) (class ?goal-class) (mode ?mode&FINISHED|EVALUATED) (outcome ?outcome))
   ?pm <- (wm-fact (id "/refbox/points/MAGENTA") (value ?mvalue))
   ?pc <- (wm-fact (id "/refbox/points/CYAN") (value ?cvalue) )
   ?tc <- (wm-fact (id "/refbox/team-color")  (value ?team-color) )
@@ -213,13 +214,19 @@
     (bind ?result 0)
   )
   
-  ;(if (eq ?team-color CYAN)
-  ;  then (bind ?result ?cvalue))
-  ;(if (eq ?team-color MAGENTA)
-  ;  then (bind ?result ?mvalue))
+  (if (eq "MOVE-OUT-OF-WAY" ?goal-class)
+  then
+    (bind ?result ?*POINTS-MOVE-OUT-OF-WAY*)
+  )
+  
+  (bind ?team-points 0)
+  (if (eq ?team-color CYAN)
+    then (bind ?team-points ?cvalue))
+  (if (eq ?team-color MAGENTA)
+    then (bind ?team-points ?mvalue))
   
 	(printout t crlf "Points CYAN: " ?cvalue " Points MAGENTA: " ?mvalue " Result: " ?result crlf )
-  (assert (rl-finished-goal (goal-id ?goal-id) (outcome ?outcome) (result ?result)))
+  (assert (rl-finished-goal (goal-id ?goal-id) (outcome ?outcome) (result ?result) (team-points ?team-points)))
 	(retract ?r)
 )
 
@@ -229,7 +236,7 @@
   (rl-delete-selections)
   ?r <-(rl-goal-selection (next-goal-id ?goal-id))
   =>
-  (assert (rl-finished-goal (goal-id ?goal-id) (outcome FAILED) (result 0)))
+  (assert (rl-finished-goal (goal-id ?goal-id) (outcome RESET) (result 0) (team-points 0)))
   (retract ?r)
 )
 

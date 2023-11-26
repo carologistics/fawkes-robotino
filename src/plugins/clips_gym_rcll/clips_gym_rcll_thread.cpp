@@ -121,6 +121,7 @@ ClipsGymRCLLThread::step(std::string next_goal)
 	std::cout << "next_goal from python: " << next_goal << std::endl;
 	ClipsObservationInfo obs_info = ClipsObservationInfo();
 	obs_info.reward               = 0;
+	obs_info.team_points		  = 0;
 	//Transform string to goal
 	//std::string n_goal = "TOWER-C1#b#d#";
 	//std::string goalID = getGoalId(next_goal);
@@ -133,7 +134,7 @@ ClipsGymRCLLThread::step(std::string next_goal)
 		std::cout << "Goal id not found!" << std::endl;
 		std::string env_state = create_rl_env_state_from_facts();
 		std::cout << "End ClipsGymRCLLThread step function" << std::endl;
-		obs_info.info = "Outcome FAILED";
+		obs_info.info = "Outcome NO-GOAL-ID";
 		obs_info.observation = env_state;
 		return obs_info;
 	}
@@ -168,6 +169,7 @@ ClipsGymRCLLThread::step(std::string next_goal)
 				std::string goalID  = getClipsSlotValuesAsString(fact->slot_value("goal-id"));
 				std::string outcome = getClipsSlotValuesAsString(fact->slot_value("outcome"));
 				std::string result  = getClipsSlotValuesAsString(fact->slot_value("result"));
+				std::string points 	= getClipsSlotValuesAsString(fact->slot_value("team-points"));
 				std::cout << "In ClipsGymRCLLThread step: Goal: " << goalID
 				          << " is evaluated with outcome: " << outcome << " result: " << result
 				          << std::endl;
@@ -176,6 +178,7 @@ ClipsGymRCLLThread::step(std::string next_goal)
 				//TODO check why its no valid syntax
 				obs_info.info = "Goal-id " + goalID + " Outcome " + outcome; //TODO add also goal-id to info
 				//TODO: check if goalID is the same
+				obs_info.team_points = fact->slot_value("team-points")[0].as_integer();
 				env_feedback = true;
 				fact->retract();
 				std::cout << "In ClipsGymRCLLThread step: after retracting rl-finished-goal fact"

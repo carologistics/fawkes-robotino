@@ -197,7 +197,7 @@ class ClipsWorld(gym.Env):
     # this can be described both by Discrete and Box space
     self.n_obs = len(sorted_obs)
     self.observation_space = gym.spaces.Box(0, 1, (self.n_obs,))
-    
+    self.team_points = 0
     self.in_reset = False
     #logging
     self.t_start = time.time()
@@ -208,6 +208,7 @@ class ClipsWorld(gym.Env):
     self.episode_lengths: List[int] = []
     self.episode_times: List[float] = []
     self.total_steps = 0
+    self.point_file_path = "game-points.txt"
 
     try:
       self.state = np.zeros(self.n_obs)
@@ -224,7 +225,10 @@ class ClipsWorld(gym.Env):
     :return: (np.array) 
     """
     print("ClipsWorldRCLL: start reset function")
-    self.in_reset = True
+    if self.team_points != 0:
+      with open(self.point_file_path, "a+") as f:
+        f.write(str(self.team_points)+"\n")
+    self.team_points = 0
     #print("NOT IMPLEMENTED ",inspect.currentframe().f_code.co_name)
     print("ClipsWorldRCLL: reset: before get ClipsGymRCLLThread instance")
     p = clips_gym_rcll.ClipsGymRCLLThread.getInstance()
@@ -281,7 +285,7 @@ class ClipsWorld(gym.Env):
     #print("ClipsWorld: observation ", result.observation)
     p.log(f"ClipsWorldRCLL: info  '{result.info}' Thread {current_thread}")
     p.log(f"ClipsWorldRCLL: reward '{result.reward}'Thread {current_thread}")
-
+    p.log(f"ClipsWorldRCLL: team-points '{result.team_points}'Thread {current_thread}")
     #TODO check action valid (if not done - reward -1) (da durch action masking nur valide actions ausgesucht werden sollten, außer es gibt keine validen mehr)
 
     # Create observation from clips
@@ -289,7 +293,7 @@ class ClipsWorld(gym.Env):
     #print("\nfacts: ", raw_facts)
     state = self.get_state_from_facts(raw_facts)
     print("New env state from facts: ",state)
-    
+    """
     time_sec =  p.getRefboxGameTime()
     phase = p.getRefboxGamePhase()
 
@@ -307,33 +311,39 @@ class ClipsWorld(gym.Env):
     else:
       #there are still executable goals (middle of the game)
       done = False
-    
+    """
 
      # Optionally we can pass additional info and a truncation condition, we are not using that for now
     truncated = False
     info = {}
  
 
+
     step_reward = result.reward
-    if result.info == "Game Over" and result.reward == 0:
+    if result.info == "Game Over" and not self.in_reset and result.reward == 0:
       step_reward = 0
       info['outcome'] = "Game Over"
+      done = True
+      self.in_reset = True
+    elif self.in_reset:
+      info['outcome'] = "RESET"
+      while self.in_reset:
+        done = False
+      
+      time.sleep(5)
     else:
       info['outcome'] = result.info.partition("Outcome ")[-1]
+      done = False
+      self.team_points = result.team_points
     #done = False if len(executableGoals) else True 
     p.log(f"\n\nClipsWorldRCLL: done '{done}' step reward {step_reward} total reward {sum(self.rewards)+step_reward}\n")
-    
-   
+  
     
     self.rewards.append(step_reward)
     if done:
       p.log(f"Episode done, Thread {current_thread}")
       self.logOnEpisodeEnd()
     self.total_steps += 1
-
-    if self.in_reset:
-      info['outcome'] = "FAILED"
-      time.sleep(10)
 
     return state, step_reward, done, truncated, info
     #return np.array([self.n_obs]).astype(np.int_), reward, done, info
