@@ -682,6 +682,16 @@
   (goal-production-assert-requests (create$ ?rs1 ?rs2 ?rs3) ?cs (create$ ?col-ring1 ?col-ring2 ?col-ring3) ?col-cap ?order-id ?*PRODUCTION-C3-PRIORITY*)
 )
 
+(defrule goal-production-update-gm-delivery-points
+  (declare (salience (+ ?*SALIENCE-HIGH* 1)))
+  (goal (id ?id) (class DELIVER))
+  ?gm <- (goal-meta (goal-id ?id) (order-id ?order) (points ?points))
+  (wm-fact (key order meta points-steps args? ord ?order) (values $?pointlist&:(neq (nth$ (order-steps-index DELIVER) ?pointlist) ?points)))
+  =>
+  (modify ?gm (points (nth$ (order-steps-index DELIVER) ?pointlist)))
+  
+)
+
 (defrule goal-production-create-instruction-root
   "Create the production root under which all instruction goal trees for the orders
   are asserted"
