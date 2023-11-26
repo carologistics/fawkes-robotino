@@ -24,6 +24,7 @@
 
 (defrule refbox-start-production-after-startup
   (declare (salience ?*SALIENCE-RESET-GAME-LOW*))
+  (wm-fact (key refbox game-time) (values ?sec&:(> ?sec 30) ?))
   ;?r<-(reset-domain-facts)
   (not (reset-game (stage ?stage)))
   (wm-fact (id "/refbox/comm/peer-id/public") (value ?peer-id) (type INT))
