@@ -770,7 +770,7 @@
 
 
 (deffunction sym-to-int (?sym)
-" @param ?sym domain representation of a number (ZERO|ONE|TWO|THREE)
+" @param ?sym domain representation of a number (ZERO|...|SEVEN)
 
   @return Integer value described in ?sym, or 0 if ?sym is not recognized
 "
@@ -778,13 +778,17 @@
   (if (eq ?sym ONE) then (return 1))
   (if (eq ?sym TWO) then (return 2))
   (if (eq ?sym THREE) then (return 3))
+  (if (eq ?sym FOUR) then (return 4))
+  (if (eq ?sym FIVE) then (return 5))
+  (if (eq ?sym SIX) then (return 6))
+  (if (eq ?sym SEVEN) then (return 7))
   (printout error "sym-to-int input " ?sym " is not a valid domain number
-                   (allowed values: ZERO,ONE,TWO,THREE)" crlf)
+                   (allowed values: ZERO,...,SEVEN)" crlf)
   (return 0)
 )
 
 (deffunction int-to-sym (?int)
-" @param ?int Number as Integer (0,1,2 or 3)
+" @param ?int Number as Integer (0-7)
 
   @return Domain representation of number (ZERO|ONE|TWO|THREE)
 "
@@ -797,6 +801,14 @@
       (return TWO))
     (case 3 then
       (return THREE))
+    (case 4 then
+      (return FOUR))
+    (case 5 then
+      (return FIVE))
+    (case 6 then
+      (return SIX))
+    (case 7 then
+      (return SEVEN))
   )
   (return nil)
 )

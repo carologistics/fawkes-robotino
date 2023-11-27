@@ -41,7 +41,7 @@
   (wm-robmem-sync-enable "/domain/fact/rs-filled-with")
   (wm-robmem-sync-enable "/domain/fact/ds-prepared-gate")
   (wm-robmem-sync-enable "/domain/fact/ss-stored-wp")
-  (wm-robmem-sync-enable "/domain/fact/ss-initialized")
+  (wm-robmem-sync-enable "/domain/fact/ss-shelf-slot-free")
   (wm-robmem-sync-enable "/domain/fact/ss-prepared-for")
   (wm-robmem-sync-enable "/domain/fact/mps-side-free")
   (wm-robmem-sync-enable "/domain/fact/wp-unused")

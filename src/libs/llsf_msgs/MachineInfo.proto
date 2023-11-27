@@ -66,6 +66,22 @@ enum ExplorationState {
 	WRONG_REPORT = 2;
 }
 
+// Shelf Information
+message ShelfSlotInfo {
+  enum CompType {
+    COMP_ID  = 2000;
+    MSG_TYPE = 121;
+  }
+  // shelf position (see MachineInstructons.proto)
+  required uint32 shelf = 1;
+  // slot position
+  required uint32 slot = 2;
+  // fill status
+  required bool is_filled = 3;
+  // additional information of the workpiece in that position
+  optional string description = 5;
+}
+
 message Machine {
   enum CompType {
     COMP_ID  = 2000;
@@ -99,10 +115,12 @@ message Machine {
   optional PrepareInstructionRS instruction_rs = 18;
   optional PrepareInstructionCS instruction_cs = 19;
 
-	// more fine-grained exploration (only clients)
-	optional ExplorationState exploration_zone_state = 22;
-	optional ExplorationState exploration_rotation_state = 21;
+  // more fine-grained exploration (only clients)
+  optional ExplorationState exploration_rotation_state = 21;
+  optional ExplorationState exploration_zone_state = 22;
 
+  // Status of the storage station shelf-slots
+  repeated ShelfSlotInfo status_ss = 25;
 }
 
 message MachineInfo {
