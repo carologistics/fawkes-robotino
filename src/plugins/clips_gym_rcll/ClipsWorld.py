@@ -57,7 +57,7 @@ class ClipsWorld(gym.Env):
   #LEFT = 0
   #RIGHT = 1
 
-  def __init__(self):
+  def __init__(self, agent_name=""):
     super(ClipsWorld, self).__init__()
 
     #generate action space
@@ -209,7 +209,7 @@ class ClipsWorld(gym.Env):
     self.episode_lengths: List[int] = []
     self.episode_times: List[float] = []
     self.total_steps = 0
-    self.point_file_path = "game-points.txt"
+    self.point_file_path = "game-points_"+agent_name+".txt"
 
     try:
       self.state = np.zeros(self.n_obs)
