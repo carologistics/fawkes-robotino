@@ -204,9 +204,23 @@
   ?pm <- (wm-fact (id "/refbox/points/MAGENTA") (value ?mvalue))
   ?pc <- (wm-fact (id "/refbox/points/CYAN") (value ?cvalue) )
   ?tc <- (wm-fact (id "/refbox/team-color")  (value ?team-color) )
-  ?gm <- (goal-meta (goal-id ?goal-id) (points ?points))
+  ?gm <- (goal-meta (goal-id ?goal-id) (order-id ?order-id) (points ?points))
 	=>
 	(printout t crlf "Goal: " ?goal-id " is " ?mode crlf )
+
+  (if (eq DELIVER ?goal-class)
+  then
+    (do-for-fact ((?wm-fact wm-fact)) (eq ?wm-fact:key (create$ order meta points-max args? ord ?order-id))
+      (bind ?maxpoints ?wm-fact:value)
+    )
+    (if (<= ?points 5)
+    then
+      (bind ?points (round (* 0.25 ?maxpoints)))
+    else
+      (bind ?points ?maxpoints)
+    )
+  )
+
   (if (eq ?outcome COMPLETED) 
   then
     (bind ?result ?points)
@@ -214,9 +228,9 @@
     (bind ?result 0)
   )
   
-  (if (eq "MOVE-OUT-OF-WAY" ?goal-class)
+  (if (eq MOVE-OUT-OF-WAY ?goal-class)
   then
-    (bind ?result ?*POINTS-MOVE-OUT-OF-WAY*)
+    (bind ?result 0)
   )
   
   (bind ?team-points 0)

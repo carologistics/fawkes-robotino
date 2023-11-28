@@ -32,9 +32,9 @@
   ?*POINTS-MOUNT-CAP* = 10
   ?*POINTS-BUFFER-CAP* = 0
   ?*POINTS-PAY-FOR-RING* = 0
-  ?*POINTS-DELIVER* = 100
+  ?*POINTS-DELIVER* = 20
   ?*POINTS-COMPETITIVE* = 10
-  ?*POINTS-MOVE-OUT-OF-WAY* = -10
+  ?*POINTS-MOVE-OUT-OF-WAY* = -2
 
   ?*TIME-MOUNT-RING* = 60
   ?*TIME-MOUNT-CAP* = 90
@@ -1254,7 +1254,7 @@
   (bind ?delivery-points ?*POINTS-DELIVER*)
   (if (> ?curr-time ?deadline)
     then
-      (bind ?delivery-points 50)
+      (bind ?delivery-points 5)
   )
   (if ?competitive
     then

@@ -282,7 +282,8 @@
   (bind ?p-steps nil)
   (do-for-fact ((?wm-fact wm-fact)) (eq ?wm-fact:key (create$ order meta points-steps args? ord ?order-id))
     (bind ?p-steps ?wm-fact:values))
-  (bind ?points (nth$ (order-steps-index CAP) ?p-steps))
+  ;(bind ?points (nth$ (order-steps-index CAP) ?p-steps))
+  (bind ?points 1)
   (bind ?goal (assert (goal (class MOUNT-CAP)
         (id (sym-cat MOUNT-CAP- (gensym*))) (sub-type SIMPLE)
          (verbosity NOISY) (is-executable FALSE)
@@ -292,7 +293,7 @@
                 wp-loc ?wp-loc
                 wp-side ?wp-side)
   )))
-  (goal-meta-assert ?goal nil ?order-id nil ?points)
+  (goal-meta-assert ?goal nil ?order-id nil 0)
   (return ?goal)
 )
 
@@ -303,10 +304,16 @@
   (do-for-fact ((?wm-fact wm-fact)) (eq ?wm-fact:key (create$ order meta points-steps args? ord ?order-id))
     (bind ?p-steps ?wm-fact:values))
 
+  ;(switch ?ring-nr
+  ;  (case ONE then (bind ?points (nth$ (order-steps-index RING1) ?p-steps)))
+  ;  (case TWO then (bind ?points (nth$ (order-steps-index RING2) ?p-steps)))
+  ;  (case THREE then (bind ?points (nth$ (order-steps-index RING3) ?p-steps)))
+  ;  )
+
   (switch ?ring-nr
-    (case ONE then (bind ?points (nth$ (order-steps-index RING1) ?p-steps)))
-    (case TWO then (bind ?points (nth$ (order-steps-index RING2) ?p-steps)))
-    (case THREE then (bind ?points (nth$ (order-steps-index RING3) ?p-steps)))
+    (case ONE then (bind ?points 5))
+    (case TWO then (bind ?points 10))
+    (case THREE then (bind ?points 15))
     )
   
 
@@ -321,7 +328,7 @@
                  ring-color ?ring-color
                  )
   )))
-  (goal-meta-assert ?goal nil ?order-id ?ring-nr ?points)
+  (goal-meta-assert ?goal nil ?order-id ?ring-nr 0)
   (return ?goal)
 )
 
