@@ -199,6 +199,7 @@ class ClipsWorld(gym.Env):
     self.observation_space = gym.spaces.Box(0, 1, (self.n_obs,))
     self.team_points = 0
     self.in_reset = False
+    self.first_after_reset = False
     #logging
     self.t_start = time.time()
     self.results_writer = ResultsWriter()
@@ -232,6 +233,7 @@ class ClipsWorld(gym.Env):
     #print("NOT IMPLEMENTED ",inspect.currentframe().f_code.co_name)
     print("ClipsWorldRCLL: reset: before get ClipsGymRCLLThread instance")
     p = clips_gym_rcll.ClipsGymRCLLThread.getInstance()
+    self.first_after_reset = True
     result = p.resetCX()
     print("ClipsWorldRCLL: reset: Finished resetCX ")
 
@@ -243,7 +245,6 @@ class ClipsWorld(gym.Env):
     self.rewards = []
     self.needs_reset = False
     p.log("ClipsWorldRCLL: end reset function")
-
     #Optional reset information, not used here
     info = {}
     time.sleep(0.1)
@@ -280,6 +281,9 @@ class ClipsWorld(gym.Env):
     p = clips_gym_rcll.ClipsGymRCLLThread.getInstance()
       
     p.log(f"ClipsWorldRCLL: step '{action}': '{goal}' Thread {current_thread}")
+    if self.first_after_reset:
+          p.getAllFormulatedExecutableGoals()
+          self.first_after_reset = False
     result = p.step(goal) #+"#")
     print(("ClipsWorldRCLL: p.step result: ", result))
     #print("ClipsWorld: observation ", result.observation)
@@ -357,6 +361,10 @@ class ClipsWorld(gym.Env):
   #def mask_fn(env: gym.Env) -> np.ndarray:
     p = clips_gym_rcll.ClipsGymRCLLThread.getInstance()
     p.waitForFreeRobot()
+    if self.first_after_reset:
+      p.unlockRobot()
+      p.waitForFreeRobot()
+      self.first_after_reset = False
     executable_goals = p.getExecutableGoalsForFreeRobot()
     print("ClipsWorldRCLL: action_masks executable goals: ")
     import json
