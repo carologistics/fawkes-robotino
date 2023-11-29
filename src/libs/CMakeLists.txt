@@ -21,4 +21,56 @@
 # *****************************************************************************
 
 add_subdirectory(interfaces)
-add_subdirectory(llsf_msgs)
+find_package(Protobuf REQUIRED)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS rcll-protobuf-msgs/AgentTask.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
+                      rcll-protobuf-msgs/AttentionMessage.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
+                      rcll-protobuf-msgs/BeaconSignal.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
+                      rcll-protobuf-msgs/ConveyorVisionResult.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
+                      rcll-protobuf-msgs/ExplorationInfo.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS rcll-protobuf-msgs/GameInfo.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS rcll-protobuf-msgs/GameState.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
+                      rcll-protobuf-msgs/LightSignals.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
+                      rcll-protobuf-msgs/LockMasterAnnounce.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
+                      rcll-protobuf-msgs/LockMessage.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
+                      rcll-protobuf-msgs/MachineCommands.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
+                      rcll-protobuf-msgs/MachineDescription.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
+                      rcll-protobuf-msgs/MachineInfo.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
+                      rcll-protobuf-msgs/MachineInstructions.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
+                      rcll-protobuf-msgs/MachineReport.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
+                      rcll-protobuf-msgs/NavigationChallenge.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS rcll-protobuf-msgs/OrderInfo.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS rcll-protobuf-msgs/Pose2D.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS rcll-protobuf-msgs/Pose3D.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
+                      rcll-protobuf-msgs/PreparedForProduction.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
+                      rcll-protobuf-msgs/ProductColor.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
+                      rcll-protobuf-msgs/PuckDetectionResult.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS rcll-protobuf-msgs/PuckInfo.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS rcll-protobuf-msgs/RingInfo.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
+                      rcll-protobuf-msgs/RobotCommands.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS rcll-protobuf-msgs/RobotInfo.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
+                      rcll-protobuf-msgs/SimTimeSync.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS rcll-protobuf-msgs/Sync.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS rcll-protobuf-msgs/Team.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS rcll-protobuf-msgs/Time.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
+                      rcll-protobuf-msgs/VersionInfo.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS rcll-protobuf-msgs/Worldmodel.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS rcll-protobuf-msgs/Zone.proto)

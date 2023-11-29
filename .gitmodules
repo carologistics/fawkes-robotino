@@ -1,3 +1,6 @@
 [submodule "fawkes"]
 	path = fawkes
 	url = https://github.com/fawkesrobotics/fawkes.git
+[submodule "src/libs/rcll-protobuf-msgs"]
+	path = src/libs/rcll-protobuf-msgs
+	url = https://github.com/robocup-logistics/rcll-protobuf-msgs
