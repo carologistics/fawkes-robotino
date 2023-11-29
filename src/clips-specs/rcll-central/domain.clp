@@ -33,7 +33,7 @@
     That means, the truth value of these predicates can be changed not directly but by some external trigger
   "
   (domain-loaded)
-  ?p <- (domain-predicate (name mps-state|zone-content) (sensed FALSE))
+  ?p <- (domain-predicate (name mps-state|zone-content|ss-stored-wp|ss-shelf-slot-free|ss-new-wp-at) (sensed FALSE))
 =>
   (modify ?p (sensed TRUE))
 )
@@ -49,7 +49,7 @@
 (defrule domain-nowait-actions
   " Mark some actions that have a sensed effect as non-waiting. That means the effect is applied without sensing for it "
   (domain-loaded)
-	?o <- (domain-operator (name wp-put|prepare-bs|prepare-rs|prepare-ds|prepare-cs|location-unlock) (wait-sensed ~FALSE))
+	?o <- (domain-operator (name wp-put|prepare-bs|prepare-rs|prepare-ds|prepare-cs|prepare-ss-to-store|prepare-ss-to-retrieve|location-unlock) (wait-sensed ~FALSE))
 =>
 	(modify ?o (wait-sensed FALSE))
 )
@@ -60,7 +60,7 @@
   ?op <- (domain-operator
     (name bs-dispense | cs-mount-cap | cs-retrieve-cap | rs-mount-ring1 |
           rs-mount-ring2 | rs-mount-ring3 | fulfill-order-c0 | fulfill-order-discard |
-          fulfill-order-c1 | fulfill-order-c2 | fulfill-order-c3 | ss-retrieve-c0)
+          fulfill-order-c1 | fulfill-order-c2 | fulfill-order-c3 | ss-retrieve-wp | ss-store-wp )
     (exogenous FALSE)
   )
 =>
@@ -106,6 +106,11 @@
         (bind ?ds M-DS)
         (bind ?ss M-SS)
   )
+  (foreach ?shelf (create$ ZERO ONE TWO THREE FOUR FIVE)
+    (foreach ?slot (create$ ZERO ONE TWO THREE FOUR FIVE SIX SEVEN)
+      (assert (domain-fact (name ss-shelf-slot-free) (param-values ?ss ?shelf ?slot)))
+    )
+  )
   (assert
     (domain-fact (name self) (param-values ?self))
     (domain-fact (name at) (param-values robot1 START INPUT))
@@ -149,8 +154,12 @@
     (domain-fact (name rs-inc) (param-values ZERO ONE))
     (domain-fact (name rs-inc) (param-values ONE TWO))
     (domain-fact (name rs-inc) (param-values TWO THREE))
+    (domain-fact (name bs-color) (param-values ?bs BASE_BLACK))
+    (domain-fact (name bs-color) (param-values ?bs BASE_RED))
+    (domain-fact (name bs-color) (param-values ?bs BASE_SILVER))
     (domain-fact (name cs-color) (param-values ?cs1 CAP_GREY))
     (domain-fact (name cs-color) (param-values ?cs2 CAP_BLACK))
+
 
     (domain-fact (name mirror-orientation) (param-values 0 180))
     (domain-fact (name mirror-orientation) (param-values 45 135))
@@ -160,6 +169,13 @@
     (domain-fact (name mirror-orientation) (param-values 225 315))
     (domain-fact (name mirror-orientation) (param-values 270 270))
     (domain-fact (name mirror-orientation) (param-values 315 225))
+
+    (domain-fact (name wp-base-color) (param-values UNKNOWN-WP BASE_NONE))
+    (domain-fact (name wp-cap-color) (param-values UNKNOWN-WP CAP_NONE))
+    (domain-fact (name wp-ring1-color) (param-values UNKNOWN-WP RING_NONE))
+    (domain-fact (name wp-ring2-color) (param-values UNKNOWN-WP RING_NONE))
+    (domain-fact (name wp-ring3-color) (param-values UNKNOWN-WP RING_NONE))
+    (domain-fact (name wp-unused) (param-values UNKNOWN-WP))
 
     (domain-object (name CCB1) (type cap-carrier))
     (domain-object (name CCB2) (type cap-carrier))

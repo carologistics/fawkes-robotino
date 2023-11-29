@@ -658,6 +658,61 @@ The workpiece remains in the output of the used ring station after
 )
 
 
+(defrule goal-executability-store-wp-executable
+" Bring a product to a storage station.
+  The workpiece remains in the output of the used ring station after.
+  The parameters of wp-loc and side might be outdated, this rule updates
+  them to the latest values if necessary.
+"
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class STORE-WP)
+	                          (mode FORMULATED)
+	                          (params  wp ?wp
+	                                   target-mps ?target-mps
+	                                   target-side ?target-side
+	                                   wp-loc ?old-wp-loc
+	                                   wp-side ?old-wp-side
+	                                   shelf ?shelf
+	                                   slot ?slot
+	                          )
+	                          (is-executable FALSE))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+
+	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot)))
+	; Robot CEs
+	(wm-fact (key refbox team-color) (value ?team-color))
+
+	; MPS-RS CEs
+	(wm-fact (key domain fact mps-type args?       m ?target-mps t SS))
+	(wm-fact (key domain fact mps-state args?      m ?target-mps s ~BROKEN))
+	(wm-fact (key domain fact mps-team args?       m ?target-mps col ?team-color))
+	; WP CEs
+	; Order CEs
+	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+
+	; MPS-Source CEs
+	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
+	(wm-fact (key domain fact mps-team args? m ?wp-loc col ?team-color))
+
+	(or (and ; Either the workpiece needs to picked up...
+	         (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+	         ; ... or is already at some machine
+	         (wm-fact (key domain fact wp-at
+	                   args? wp ?wp m ?wp-loc side ?wp-side))
+	         (domain-fact (name zone-content) (param-values ?z ?wp-loc))
+	    )
+	    (and ; or the workpiece is already being held
+	      (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+		  ; make sure ?wp-loc and ?wp-side-free are bound with something
+		  (goal (id ?goal-id) (params $? wp-loc ?wp-loc wp-side ?wp-side $?))
+		)
+	(domain-fact (name zone-content) (param-values ?z2 ?target-mps))
+	; Goal CEs
+	(not (goal (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED|FINISHED) (params $? wp ?wp $?)))
+	=>
+	(printout t "Goal STORE-WP executable for " ?robot crlf)
+	(modify ?g (params wp ?wp target-mps ?target-mps wp-loc ?wp-loc wp-side ?old-wp-side shelf ?shelf ?slot) (is-executable TRUE))
+)
 
 
 ; ----------------------- MPS Instruction GOALS -------------------------------
@@ -762,6 +817,31 @@ The workpiece remains in the output of the used ring station after
 	(modify ?g (is-executable TRUE))
 )
 
+(defrule goal-executability-instruct-ss-store-wp-executable
+" Instruct base station to dispense a base. "
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class INSTRUCT-SS-STORE-WP)
+	            (mode FORMULATED)
+	            (params  wp ?wp
+	                     target-mps ?target-mps
+	                     shelf ?shelf
+	                     slot ?slot)
+	            (is-executable FALSE))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(not (goal (class INSTRUCT-SS-STORE-WP|INSTRUCT-SS-RETRIEVE-WP) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED|FINISHED)))
+	(wm-fact (key refbox team-color) (value ?team-color))
+	(wm-fact (key domain fact mps-type args? m ?mps t SS))
+	(wm-fact (key domain fact mps-state args? m ?mps s IDLE))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
+	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+	(domain-fact (name zone-content) (param-values ?mpsz ?mps))
+
+	(not (plan-action (action-name wp-check) (param-values $? ?wp ?mps INPUT THERE) (state ~FINAL)))
+	=>
+	(printout t "Goal INSTRUCT-SS-STORE-WP executable" crlf)
+	(modify ?g (is-executable TRUE))
+)
+
 (defrule goal-production-instruct-ds-deliver-executable
 " Instruct base station to dispense a base. "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
@@ -805,7 +885,7 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
 
 	(not (plan-action (action-name wp-check) (param-values $? ?wp ?mps INPUT THERE) (state ~FINAL)))
-	
+
 	(domain-fact (name zone-content) (param-values ?mpsz ?mps))
 	=>
 	(printout t "Goal INSTRUCT-DS-DISCARD executable for " ?robot crlf)

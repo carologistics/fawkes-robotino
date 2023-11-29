@@ -30,7 +30,9 @@
                         |rs-mount-ring1
                         |rs-mount-ring2
                         |rs-mount-ring3
-                        |ss-retrieve-c0
+                        |assign-wp-to-order
+                        |ss-store-wp
+                        |ss-retrieve-wp
                         |fulfill-order-discard
                         |fulfill-order-c0
                         |fulfill-order-c1
@@ -74,13 +76,6 @@
 	(modify ?pa (state EXECUTION-SUCCEEDED))
 )
 
-(defrule action-execute-ss-store-wp
-	?pa <- (plan-action (plan-id ?plan-id) (state PENDING) (executable TRUE)
-	                    (action-name ss-store-wp) (param-values ?robot ?m ?wp ?base ?cap))
-	=>
-	(printout info "Init  " ?m " with " ?wp ": " ?base " " ?cap crlf)
-	(modify ?pa (state EXECUTION-SUCCEEDED))
-)
 
 (defrule action-execute-move-wp-input-output
 	?pa <- (plan-action (plan-id ?plan-id) (state PENDING) (executable TRUE)

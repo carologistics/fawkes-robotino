@@ -388,7 +388,7 @@
 
 (defrule goal-expander-transport-goals
 	?g <- (goal (id ?goal-id) (class ?class&MOUNT-CAP|
-	                                       MOUNT-RING)
+	                                       MOUNT-RING|STORE-WP|RETRIEVE-WP)
 	                          (mode SELECTED) (parent ?parent)
 	                          (params  wp ?wp
 	                                   target-mps ?target-mps
@@ -568,6 +568,22 @@
 )
 
 
+(defrule goal-expander-ss-assign-wp-to-order
+	?g <- (goal (id ?goal-id) (class SS-ASSIGN-WP) (mode SELECTED)
+	            (parent ?parent-id)
+	            (params mps ?ss old-wp ?old-wp wp ?wp order ?order
+	                    shelf ?shelf slot ?slot
+	                    base-col ?base-col ring1-col ?ring1-col
+	                    ring2-col ?ring2-col ring3-col ?ring3-col
+	                    cap-col ?cap-col))
+	(goal-meta(goal-id ?goal-id) (assigned-to central))
+	=>
+	(plan-assert-sequential SS-ASSIGN-WP-PLAN ?goal-id central
+		(plan-assert-action prepare-ss-to-assign-wp ?ss ?old-wp ?wp ?shelf ?slot ?base-col ?ring1-col ?ring2-col ?ring3-col ?cap-col)
+		(plan-assert-action assign-wp-to-order ?order ?wp ?base-col ?ring1-col ?ring2-col ?ring3-col ?cap-col)
+	)
+	(modify ?g (mode EXPANDED))
+)
 ; ----------------------- MPS Instruction GOALS -------------------------------
 
 (defrule goal-expander-instruct-cs-buffer-cap
@@ -606,6 +622,30 @@
 	(plan-assert-sequential INSTRUCT-BS-DISPENSE-BASE-PLAN ?goal-id ?robot
 		(plan-assert-action prepare-bs ?mps ?side ?base-color)
 		(plan-assert-action bs-dispense ?mps ?side ?wp ?base-color)
+	)
+	(modify ?g (mode EXPANDED))
+)
+
+(defrule goal-expander-instruct-ss-store-wp
+	?g <- (goal (id ?goal-id) (class INSTRUCT-SS-STORE-WP) (mode SELECTED)
+	            (params wp ?wp target-mps ?mps shelf ?shelf slot ?slot))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	=>
+	(plan-assert-sequential INSTRUCT-SS-STORE-WP ?goal-id ?robot
+		(plan-assert-action prepare-ss ?mps ?wp ?shelf ?slot)
+		(plan-assert-action ss-store-wp ?mps ?wp ?shelf ?slot)
+	)
+	(modify ?g (mode EXPANDED))
+)
+
+(defrule goal-expander-instruct-ss-retrieve-wp
+	?g <- (goal (id ?goal-id) (class INSTRUCT-SS-STORE-WP) (mode SELECTED)
+	            (params wp ?wp target-mps ?mps shelf ?shelf slot ?slot))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	=>
+	(plan-assert-sequential INSTRUCT-SS-STORE-WP ?goal-id ?robot
+		(plan-assert-action prepare-ss ?mps ?wp ?shelf ?slot)
+		(plan-assert-action ss-retrieve-wp ?mps ?wp ?shelf ?slot)
 	)
 	(modify ?g (mode EXPANDED))
 )

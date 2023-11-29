@@ -708,13 +708,12 @@
 )
 
 (:action prepare-ss-to-assign-wp
-	:parameters (?m - mps ?r - robot ?old-wp - workpiece ?wp - workpiece
+	:parameters (?m - mps ?old-wp - workpiece ?wp - workpiece
 	             ?shelf - ss-shelf ?slot - ss-slot
 	             ?base-col - base-color ?ring1-col - ring-color
 	             ?ring2-col - ring-color ?ring3-col - ring-color
 	             ?cap-col - cap-color)
 	:precondition (and (mps-type ?m SS)
-	                   (wp-spawned-for ?wp ?r)
 	                   (wp-unused ?wp)
 	                   (wp-base-color ?wp BASE_NONE)
 	                   (wp-ring1-color ?wp RING_NONE)
@@ -727,7 +726,6 @@
 	              )
 	:effect (and (not (ss-stored-wp ?m ?old-wp ?shelf ?slot))
 	             (ss-stored-wp ?m ?wp ?shelf ?slot)
-	             (not (wp-spawned-for ?wp ?r))
 	             (not (wp-base-color ?wp BASE_NONE))
 	             (not (wp-ring1-color ?wp RING_NONE))
 	             (not (wp-ring2-color ?wp RING_NONE))

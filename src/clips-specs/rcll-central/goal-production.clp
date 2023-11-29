@@ -29,6 +29,7 @@
   ?*PRODUCTION-C2-PRIORITY* = 50
   ?*PRODUCTION-C3-PRIORITY* = 60
   ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT* = 30
+  ?*PRODUCTION-STORE-AT-SS-THRESHOLD* = 120
 )
 
 (deffunction goal-meta-assign-robot-to-goal (?goal ?robot)
@@ -106,8 +107,8 @@
 )
 (deffunction goal-meta-get-goal-category (?goal-class)
   (bind ?production-goals (create$ MOUNT-CAP MOUNT-RING DELIVER-RC21 DELIVER))
-  (bind ?maintenance-goals (create$ BUFFER-CAP PAY-FOR-RINGS-WITH-BASE PAY-FOR-RINGS-WITH-CAP-CARRIER PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF))
-  (bind ?maintenance-instruct-goals (create$ INSTRUCT-RS-MOUNT-RING INSTRUCT-CS-MOUNT-CAP INSTRUCT-DS-DELIVER))
+  (bind ?maintenance-goals (create$ STORE-WP RETRIEVE-WP BUFFER-CAP PAY-FOR-RINGS-WITH-BASE PAY-FOR-RINGS-WITH-CAP-CARRIER PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF))
+  (bind ?maintenance-instruct-goals (create$ INSTRUCT-SS-STORE-WP INSTRUCT-SS-RETRIEVE-WP INSTRUCT-RS-MOUNT-RING INSTRUCT-CS-MOUNT-CAP INSTRUCT-DS-DELIVER))
   (bind ?production-instruct-goals (create$ INSTRUCT-CS-BUFFER-CAP INSTRUCT-DS-DISCARD))
   (bind ?other-goals (create$ MOVE MOVE-OUT-OF-WAY ENTER-FIELD DISCARD WAIT-NOTHING-EXECUTABLE EXPLORATION-MOVE REFILL-SHELF))
   (bind ?other-instruct-goals (create$ INSTRUCT-BS-DISPENSE-BASE))
@@ -245,6 +246,32 @@
   (return ?goal)
 )
 
+(deffunction goal-production-assert-store-wp
+  (?order-id ?mps ?wp ?shelf ?slot)
+
+  (bind ?goal (assert (goal (class STORE-WP)
+        (id (sym-cat STORE-WP- (gensym*))) (sub-type SIMPLE)
+        (verbosity NOISY) (is-executable FALSE)
+        (params wp ?wp target-mps ?mps target-side INPUT
+                wp-loc UNKNOWN wp-side UNKNOWN
+                shelf ?shelf slot ?slot)
+  )))
+  (goal-meta-assert ?goal nil ?order-id nil)
+  (return ?goal)
+)
+
+(deffunction goal-production-assert-retrieve-wp
+  (?order-id ?mps ?wp ?shelf ?slot)
+
+  (bind ?goal (assert (goal (class RETRIEVE-WP)
+        (id (sym-cat STORE-WP- (gensym*))) (sub-type SIMPLE)
+        (verbosity NOISY) (is-executable FALSE)
+        (params wp ?wp target-mps ?mps target-side OUTPUT shelf ?shelf slot ?slot)
+  )))
+  (goal-meta-assert ?goal nil ?order-id nil)
+  (return ?goal)
+)
+
 (deffunction goal-production-assert-pick-and-place
   (?mps ?robot)
   (bind ?goal (assert (goal (class PICK-AND-PLACE)
@@ -332,6 +359,32 @@
     (verbosity NOISY) (is-executable FALSE)
     (params wp ?wp
             target-mps ?ds)
+  )))
+  (goal-meta-assert ?goal central ?order-id nil)
+  (return ?goal)
+)
+
+(deffunction goal-production-assert-instruct-ss-store-wp
+  (?order-id ?wp ?mps ?shelf ?slot)
+
+  (bind ?goal (assert (goal (class INSTRUCT-SS-STORE-WP)
+    (id (sym-cat INSTRUCT-SS-STORE-WP- (gensym*))) (sub-type SIMPLE)
+    (verbosity NOISY) (is-executable FALSE)
+    (params wp ?wp
+            target-mps ?mps shelf ?shelf slot ?slot )
+  )))
+  (goal-meta-assert ?goal central ?order-id nil)
+  (return ?goal)
+)
+
+(deffunction goal-production-assert-instruct-ss-retrieve-wp
+  (?order-id ?wp ?mps ?shelf ?slot)
+
+  (bind ?goal (assert (goal (class INSTRUCT-SS-RETRIEVE-WP)
+    (id (sym-cat INSTRUCT-SS-RETRIEVE-WP- (gensym*))) (sub-type SIMPLE)
+    (verbosity NOISY) (is-executable FALSE)
+    (params wp ?wp
+            target-mps ?mps shelf ?shelf ?slot )
   )))
   (goal-meta-assert ?goal central ?order-id nil)
   (return ?goal)
@@ -879,6 +932,56 @@
     ((?timer timer)) (eq ?timer:name production-strategy-nothing-executable-timer)
     (retract ?timer)
   )
+)
+
+(defrule goal-production-assert-store-option-for-wp
+  "Create for each order workpiece a storage option"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?root-id) (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+  (wm-fact (key config rcll pick-and-place-challenge) (value FALSE))
+  (wm-fact (key order meta wp-for-order args? wp ?wp-for-order ord ?order-id))
+  (wm-fact (key domain fact ss-shelf-slot-free args? m ?ss shelf ?shelf slot ?slot))
+  (not (goal (class INSTRUCT-SS-STORE-WP|STORE-WP) (params wp ?wp-for-order $?) (mode ~RETRACTED)))
+  (wm-fact (key domain fact mps-type args? m ?ss t SS))
+  (not (wm-fact (key domain fact ss-stored-wp args? m ?ss wp ? shelf ?shelf slot ?slot)))
+  =>
+  (bind ?goal (goal-tree-assert-central-run-all-prio STORE-WP 9999
+    (goal-production-assert-store-wp ?order-id ?ss ?wp-for-order ?shelf ?slot)
+  ))
+  (goal-production-assign-order-and-prio-to-goal ?goal nil 9999)
+)
+
+(defrule goal-production-assert-instruct-ss-store-wp-on-demand
+  "Create for each order workpiece a storage option"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?root-id) (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+  (goal (class STORE-WP) (params wp ?wp target-mps ?mps target-side ?target-side $? shelf ?shelf slot ?slot))
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?target-side))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
+  (wm-fact (key domain fact mps-type args? m ?mps t SS))
+  (not (goal (class INSTRUCT-SS-STORE-WP) (mode ~RETRACTED) (params wp ?wp $?)))
+  =>
+  (bind ?goal (goal-tree-assert-central-run-parallel-prio INSTRUCT-STORE ?*PRODUCTION-C0-PRIORITY*
+    (goal-production-assert-instruct-ss-store-wp ?order-id ?mps ?wp ?shelf ?slot)
+  ))
+  (goal-production-assign-order-and-prio-to-goal ?goal nil 9999)
+)
+
+(defrule goal-production-assert-retrieve-option-for-wp
+  "Create for each order workpiece a storage option"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?root-id) (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+  (wm-fact (key config rcll pick-and-place-challenge) (value FALSE))
+  (wm-fact (key domain fact ss-stored-wp args? m ?ss wp ?wp shelf ?shelf slot ?slot))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
+  (not (goal (class INSTRUCT-SS-RETRIEVE-WP|RETRIEVE-WP) (params wp ?wp $? shelf ?shelf slot ?slot) (mode ~RETRACTED)))
+  (wm-fact (key domain fact mps-type args? m ?ss t SS))
+  =>
+  (bind ?goal
+  (goal-tree-assert-central-run-all-prio RERIEVE-WP 9999
+    (goal-production-assert-retrieve-wp ?order-id ?ss ?wp ?shelf ?slot)
+  ))
+  (goal-production-assign-order-and-prio-to-goal ?goal nil 9999)
 )
 
 (defrule goal-production-fill-in-unknown-wp-discard-from-cs
