@@ -293,7 +293,7 @@
                 wp-loc ?wp-loc
                 wp-side ?wp-side)
   )))
-  (goal-meta-assert ?goal nil ?order-id nil 0)
+  (goal-meta-assert ?goal nil ?order-id nil ?points)
   (return ?goal)
 )
 
@@ -311,9 +311,9 @@
   ;  )
 
   (switch ?ring-nr
-    (case ONE then (bind ?points 5))
-    (case TWO then (bind ?points 10))
-    (case THREE then (bind ?points 15))
+    (case ONE then (bind ?points 1))
+    (case TWO then (bind ?points 2))
+    (case THREE then (bind ?points 4))
     )
   
 
@@ -328,7 +328,7 @@
                  ring-color ?ring-color
                  )
   )))
-  (goal-meta-assert ?goal nil ?order-id ?ring-nr 0)
+  (goal-meta-assert ?goal nil ?order-id ?ring-nr ?points)
   (return ?goal)
 )
 
@@ -460,7 +460,7 @@
                  target-side ?target-side
                  )
   )))
-  (goal-meta-assert ?goal nil ?order-id nil ?*POINTS-PAY-FOR-RING*)
+  (goal-meta-assert ?goal nil ?order-id nil 0)
   (return ?goal)
 )
 

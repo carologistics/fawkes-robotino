@@ -215,7 +215,7 @@
     )
     (if (<= ?points 5)
     then
-      (bind ?points (round (* 0.25 ?maxpoints)))
+      (bind ?points (round (* 0.5 ?maxpoints)))
     else
       (bind ?points ?maxpoints)
     )
@@ -230,7 +230,7 @@
   
   (if (eq MOVE-OUT-OF-WAY ?goal-class)
   then
-    (bind ?result 0)
+    (bind ?result -1)
   )
   
   (bind ?team-points 0)
