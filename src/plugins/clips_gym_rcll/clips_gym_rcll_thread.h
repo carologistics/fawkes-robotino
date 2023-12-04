@@ -70,6 +70,7 @@ public:
 
 	int         getRefboxGameTime();
 	std::string getRefboxGamePhase();
+	int			getGamePointsForTeam(std::string team);
 
 	void clipsGymRCLLSleep(int milliseconds);
 

@@ -226,13 +226,14 @@ class ClipsWorld(gym.Env):
     :return: (np.array) 
     """
     print("ClipsWorldRCLL: start reset function")
+    print("ClipsWorldRCLL: reset: before get ClipsGymRCLLThread instance")
+    p = clips_gym_rcll.ClipsGymRCLLThread.getInstance()
     if self.team_points != 0:
+      self.team_points = p.getGamePointsForTeam("CYAN")
       with open(self.point_file_path, "a+") as f:
         f.write(str(self.team_points)+"\n")
     self.team_points = 0
     #print("NOT IMPLEMENTED ",inspect.currentframe().f_code.co_name)
-    print("ClipsWorldRCLL: reset: before get ClipsGymRCLLThread instance")
-    p = clips_gym_rcll.ClipsGymRCLLThread.getInstance()
     self.first_after_reset = True
     result = p.resetCX()
     print("ClipsWorldRCLL: reset: Finished resetCX ")
@@ -357,8 +358,8 @@ class ClipsWorld(gym.Env):
   #      or the name of such a method provided by the environment.
   def action_masks(self) -> np.ndarray:
     print("ClipsWorldRCLL: in action_masks")
-  # Returns the action mask for the current env. 
-  #def mask_fn(env: gym.Env) -> np.ndarray:
+    # Returns the action mask for the current env. 
+    #def mask_fn(env: gym.Env) -> np.ndarray:
     p = clips_gym_rcll.ClipsGymRCLLThread.getInstance()
     p.waitForFreeRobot()
     if self.first_after_reset:

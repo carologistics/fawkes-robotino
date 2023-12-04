@@ -81,7 +81,8 @@ PYBIND11_MODULE(clips_gym_rcll, m)
 	  .def("getRefboxGameTime", &ClipsGymRCLLThread::getRefboxGameTime)
 	  .def("getRefboxGamePhase", &ClipsGymRCLLThread::getRefboxGamePhase)
 	  .def("clipsGymRCLLSleep", &ClipsGymRCLLThread::clipsGymRCLLSleep)
-	  .def("log", &ClipsGymRCLLThread::log);
+	  .def("log", &ClipsGymRCLLThread::log)
+	  .def("getGamePointsForTeam", &ClipsGymRCLLThread::getGamePointsForTeam);
 }
 
 void
@@ -386,4 +387,31 @@ ClipsGymRCLLThread::getRefboxGamePhase()
 	}
 	clips.unlock();
 	return phase;
+}
+
+int
+ClipsGymRCLLThread::getGamePointsForTeam(std::string team)
+{
+	fawkes::LockPtr<CLIPS::Environment> clips = getClipsEnv();
+	clips.lock();
+	CLIPS::Fact::pointer fact  = clips->get_facts();
+	int 		points = 0;
+	while (fact) {
+		CLIPS::Template::pointer tmpl = fact->get_template();
+		//(wm-fact (id "/refbox/game-time") (key refbox game-time) (type UINT) (is-list TRUE) (value nil) (values 68 239942.0))
+		std::size_t found = tmpl->name().find("wm-fact");
+
+		if (found != std::string::npos) {
+			std::string key = getClipsSlotValuesAsString(fact->slot_value("key"));
+			if (key == "refbox#points#"+team) {
+				auto v = fact->slot_value("value").at(0);
+				points = int(v.as_integer());
+				break;
+			}
+		}
+
+		fact = fact->next();
+	}
+	clips.unlock();
+	return points;
 }
