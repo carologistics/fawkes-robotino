@@ -148,6 +148,10 @@
 	(slot next-goal-id (type SYMBOL))
 )
 
+(deftemplate rl-robot-selection-started
+  (slot robot (type SYMBOL))
+)
+
 (deffunction goal-reasoner-nuke-subtree (?goal)
   "Remove an entire subtree."
   (do-for-all-facts ((?child goal)) (eq ?child:parent (fact-slot-value ?goal id))

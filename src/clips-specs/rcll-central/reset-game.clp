@@ -226,6 +226,7 @@
   (retract ?r)
 )
 
+
 (defrule delete-wm-robmem-sync-map-entry
   (declare (salience ?*SALIENCE-RESET-GAME-HIGH*))
   (reset-game (stage STAGE-2))
@@ -462,6 +463,7 @@
   (modify ?r (stage STAGE-5))
   (retract ?s)
 )
+
 
 
 (defrule reset-game-refbox-production-running

@@ -93,32 +93,31 @@
   (declare (salience ?*SALIENCE-RL-SELECTION*))
 	;(rl-waiting)
 	(execution-mode)
-	(not (executing-rl-agent-started))
+	
 	; robot is waiting
 	(wm-fact (key central agent robot-waiting args? r ?robot))
+  (not (rl-robot-selection-started (robot ?robot)))
     ?g <- (goal (id ?goal-id) (class ?class&~EXPLORATION-MOVE) (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE)
                   (parent ?pid))
     (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~central&~nil))
 	(wm-fact (key refbox phase) (value PRODUCTION))
-	;?g <- (goal (class ENTER-FIELD| PRODUCE-ORDER) (id ?id)); CENTRAL-RUN-PARALLEL-SUPPORT-ROOT-gen205 buffer cap,
-	;mount-ring CENTRAL-RUN-ALL-PRODUCE-ORDER-gen235
 =>
 	(printout t crlf "Start rl test thread goal selection function in execution mode" crlf )
 	;(rl-goal-selection-start ?id " TEST-STRING-RL ") ;calling RL Plugin via CLIPS Feature function
 	(rl-call ?goal-id ?g)
-	(assert (executing-rl-agent-started))
+	(assert (rl-robot-selection-started (robot ?robot)))
 )
 
 
-(defrule executing-rl-agent-retract
+(defrule rl-robot-selection-started-retract
   (declare (salience ?*SALIENCE-RL-SELECTION*))
 	(execution-mode)
-	?e <- (executing-rl-agent-started)
-	(rl-goal-selection (next-goal-id ?id))
-	?g<-(goal (id ?id) (mode DISPATCHED|COMMITTED)(type ACHIEVE))
+	?r <- (rl-robot-selection-started (robot ?robot))
+	?f <- (rl-finished-goal (goal-id ?id))
+  (goal-meta (goal-id ?id)(assigned-to ?robot))
 	=>
-	(printout t crlf "Retracting executing-rl-agent " ?e crlf "Goal: " ?g " id: " ?id crlf crlf)
-	(retract ?e)
+	(retract ?r)
+  (retract ?f)
 )
 
 (defrule start-training-rl-agent

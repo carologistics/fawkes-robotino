@@ -846,6 +846,7 @@
 (defrule goal-production-create-produce-for-order
   "Create for each incoming order a grounded production tree with the"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal-selection-via-rl-inactive)
   (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3|STAGE-4)))
   (goal (id ?root-id) (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
   (wm-fact (key config rcll pick-and-place-challenge) (value FALSE))
@@ -865,14 +866,98 @@
       (wm-fact (key domain fact rs-ring-spec args? m ?rs2 r ?col-ring2 $?)))
   (or (wm-fact (key domain fact order-ring3-color args? ord ?order-id col RING_NONE))
       (wm-fact (key domain fact rs-ring-spec args? m ?rs3 r ?col-ring3 $?)))
-  ;(or
-  ;  (wm-fact (key strategy meta selected-order args? cond filter) (value ?order-id))
-  ;  (and
-  ;    (time $?now)
-  ;    (timer (name production-strategy-nothing-executable-timer) (time $?t&:(timeout ?now ?t ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT*)))
-  ;    (wm-fact (key strategy meta selected-order args? cond fallback) (value ?order-id))
-  ;  )
-  ;)
+  (or
+    (wm-fact (key strategy meta selected-order args? cond filter) (value ?order-id))
+    (and
+      (time $?now)
+      (timer (name production-strategy-nothing-executable-timer) (time $?t&:(timeout ?now ?t ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT*)))
+      (wm-fact (key strategy meta selected-order args? cond fallback) (value ?order-id))
+    )
+  )
+  ?os <- (wm-fact (key order meta started args? ord ?order) (value FALSE))
+  (wm-fact (key mps workload needs-update) (value FALSE))
+  =>
+  ;find the necessary ringstations
+  (bind ?rs1 (goal-production-get-machine-for-color ?col-ring1))
+  (bind ?rs2 (goal-production-get-machine-for-color ?col-ring2))
+  (bind ?rs3 (goal-production-get-machine-for-color ?col-ring3))
+
+  ;bind the ds to NONE - if there is none, or the actual DS - if there is one
+  (bind ?ds NONE)
+  (do-for-fact ((?do domain-object) (?df domain-fact))
+    (and (eq ?do:type mps) (member$ ?do:name ?df:param-values) (member$ DS ?df:param-values))
+    (bind ?ds ?do:name)
+  )
+
+  ;create facts for workpiece
+  (bind ?wp-for-order (sym-cat wp- ?order-id))
+  (assert (domain-object (name ?wp-for-order) (type workpiece))
+      (domain-fact (name wp-unused) (param-values ?wp-for-order))
+      (wm-fact (key domain fact wp-base-color args? wp ?wp-for-order col BASE_NONE) (type BOOL) (value TRUE))
+      (wm-fact (key domain fact wp-cap-color args? wp ?wp-for-order col CAP_NONE) (type BOOL) (value TRUE))
+      (wm-fact (key domain fact wp-ring1-color args? wp ?wp-for-order col RING_NONE) (type BOOL) (value TRUE))
+      (wm-fact (key domain fact wp-ring2-color args? wp ?wp-for-order col RING_NONE) (type BOOL) (value TRUE))
+      (wm-fact (key domain fact wp-ring3-color args? wp ?wp-for-order col RING_NONE) (type BOOL) (value TRUE))
+      (wm-fact (key order meta wp-for-order args? wp ?wp-for-order ord ?order-id))
+  )
+  (if (eq ?comp C0)
+    then
+    (goal-production-assert-c0 ?root-id ?order-id ?wp-for-order ?cs ?ds ?bs ?col-cap ?col-base)
+  )
+  (if (and (eq ?comp C1) ?rs1)
+    then
+    (goal-production-assert-c1 ?root-id ?order-id ?wp-for-order ?cs ?ds ?bs ?rs1 ?col-cap ?col-base ?col-ring1)
+  )
+  (if (and (eq ?comp C2) ?rs1 ?rs2)
+    then
+    (goal-production-assert-c2 ?root-id ?order-id ?wp-for-order ?cs ?ds ?bs
+                ?rs1 ?rs2 ?col-cap ?col-base ?col-ring1 ?col-ring2)
+  )
+  (if (and (eq ?comp C3) ?rs1 ?rs2 ?rs3)
+    then
+    (goal-production-assert-c3 ?root-id ?order-id ?wp-for-order ?cs ?ds ?bs
+                ?rs1 ?rs2 ?rs3 ?col-cap ?col-base ?col-ring1 ?col-ring2 ?col-ring3)
+  )
+
+  ;clean-up needs update facts
+  (delayed-do-for-all-facts
+    ((?update-fact wm-fact)) (wm-key-prefix ?update-fact:key (create$ mps workload needs-update))
+    (retract ?update-fact)
+  )
+  (assert (wm-fact (key mps workload needs-update) (is-list FALSE) (type BOOL) (value TRUE)))
+
+  (modify ?os (value TRUE))
+
+  ;if a timer exists, retract it to avoid goal creation spamming
+  (delayed-do-for-all-facts
+    ((?timer timer)) (eq ?timer:name production-strategy-nothing-executable-timer)
+    (retract ?timer)
+  )
+)
+
+(defrule goal-production-create-produce-for-order-rl
+  "Create for each incoming order a grounded production tree with the"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (not (goal-selection-via-rl-inactive))
+  (not (reset-game (stage STAGE-0|STAGE-1|STAGE-2|STAGE-3|STAGE-4)))
+  (goal (id ?root-id) (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+  (wm-fact (key config rcll pick-and-place-challenge) (value FALSE))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
+  (wm-fact (key domain fact order-base-color args? ord ?order-id col ?col-base))
+  (wm-fact (key domain fact order-cap-color  args? ord ?order-id col ?col-cap))
+  (wm-fact (key domain fact order-ring1-color args? ord ?order-id col ?col-ring1))
+  (wm-fact (key domain fact order-ring2-color args? ord ?order-id col ?col-ring2))
+  (wm-fact (key domain fact order-ring3-color args? ord ?order-id col ?col-ring3))
+  (wm-fact (key domain fact cs-color args? m ?cs col ?col-cap))
+  (wm-fact (key domain fact mps-type args? m ?cs t CS))
+  (wm-fact (key domain fact mps-type args? m ?bs t BS))
+  (not (wm-fact (key order meta wp-for-order args? wp ?something ord ?order-id)))
+  (or (wm-fact (key domain fact order-ring1-color args? ord ?order-id col RING_NONE))
+      (wm-fact (key domain fact rs-ring-spec args? m ?rs1 r ?col-ring1 $?)))
+  (or (wm-fact (key domain fact order-ring2-color args? ord ?order-id col RING_NONE))
+      (wm-fact (key domain fact rs-ring-spec args? m ?rs2 r ?col-ring2 $?)))
+  (or (wm-fact (key domain fact order-ring3-color args? ord ?order-id col RING_NONE))
+      (wm-fact (key domain fact rs-ring-spec args? m ?rs3 r ?col-ring3 $?)))
   ?os <- (wm-fact (key order meta started args? ord ?order) (value FALSE))
   (wm-fact (key mps workload needs-update) (value FALSE))
   =>
