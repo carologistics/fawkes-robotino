@@ -382,28 +382,32 @@ class ClipsWorld(gym.Env):
         valid_actions[pos]=1
     return valid_actions
 
-    def action_masks_exec(self) -> np.ndarray:
-      print("ClipsWorldRCLL: in action_masks")
-      # Returns the action mask for the current env. 
-      #def mask_fn(env: gym.Env) -> np.ndarray:
-      p = clips_gym_rcll.ClipsGymRCLLThread.getInstance()
-      p.waitForFreeRobot()
-      executable_goals = p.getExecutableGoalsForFreeRobot()
-      p.unlockRobot()
-      print("ClipsWorldRCLL: action_masks executable goals: ")
-      import json
-      p.log(json.dumps(self.inv_action_dict))
+  def action_masks_exec(self) -> np.ndarray:
+    print("ClipsWorldRCLL: in action_masks")
+    # Returns the action mask for the current env. 
+    #def mask_fn(env: gym.Env) -> np.ndarray:
+    p = clips_gym_rcll.ClipsGymRCLLThread.getInstance()
+    p.waitForFreeRobot()
+    executable_goals = p.getExecutableGoalsForFreeRobot()
+    p.unlockRobot()
+    print("ClipsWorldRCLL: action_masks executable goals: ")
+    import json
+    p.log(json.dumps(self.inv_action_dict))
 
-      valid_actions = np.zeros((self.n_actions), dtype=int)
-      print("ClipsWorldRCLL: action_masks size: {0} {1}".format(len(valid_actions), valid_actions[:5]))
-      for g in executable_goals:
-        goal = g.getGoalString()
-        p.log("Executable goal: "+goal)
-        pos = self.inv_action_dict.get(goal)
-        if (pos is not None):
-          print(pos)
-          valid_actions[pos]=1
-      return valid_actions
+    valid_actions = np.zeros((self.n_actions), dtype=int)
+    print("ClipsWorldRCLL: action_masks size: {0} {1}".format(len(valid_actions), valid_actions[:5]))
+    for g in executable_goals:
+      goal = g.getGoalString()
+      p.log("Executable goal: "+goal)
+      pos = self.inv_action_dict.get(goal)
+      if (pos is not None):
+        print(pos)
+        valid_actions[pos]=1
+    return valid_actions
+
+  def unlock_robot(self):
+    p = clips_gym_rcll.ClipsGymRCLLThread.getInstance()
+    p.unlockRobot()
 
   def close(self) -> None:
     """
