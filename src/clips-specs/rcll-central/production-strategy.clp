@@ -1298,3 +1298,83 @@
   =>
   (retract ?timer)
 )
+
+; ========================= Dynamic Priorities =============================
+(defrule production-strategy-increase-priority-to-free-cs
+  "If there is a WP at the output of a CS and there is a WP for an order
+   approaching the CS, increase the priority of a discard goal to free the CS."
+  (wm-fact (key domain fact wp-at args? wp ?cc m ?cs side OUTPUT))
+  (domain-object (name ?cc) (type cap-carrier))
+
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?ord))
+  (wm-fact (key domain fact order-complexity args? ord ?ord com ?com))
+
+  (or
+    (and
+      (wm-fact (key wp meta next-step args? wp ?wp) (value CAP))
+      (wm-fact (key wp meta next-machine args? wp ?wp) (value ?cs))
+    )
+    (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side INPUT))
+  )
+
+  =>
+  (bind ?priority ?*PRODUCTION-C0-PRIORITY*)
+  (if (eq ?com C1) then
+    (bind ?priority ?*PRODUCTION-C1-PRIORITY*)
+  )
+  (if (eq ?com C2) then
+    (bind ?priority ?*PRODUCTION-C2-PRIORITY*)
+  )
+  (if (eq ?com C3) then
+    (bind ?priority ?*PRODUCTION-C3-PRIORITY*)
+  )
+
+  (assert (wm-fact (key strategy meta priority increase free-cs args? wp ?cc mps ?cs) (value ?priority)))
+  (delayed-do-for-all-facts ((?goal goal))
+    (and
+      (eq ?goal:mode FORMULATED)
+      (or
+        (and
+          (eq ?goal:class DISCARD)
+          (member$ ?cs ?goal:params)
+          (member$ OUTPUT ?goal:params)
+        )
+        (and
+          (eq ?goal:class PAY-FOR-RINGS-WITH-CAP-CARRIER)
+          (member$ ?cs ?goal:params)
+          (member$ OUTPUT ?goal:params)
+        )
+      )
+    )
+    (modify ?goal (priority (+ ?goal:priority ?priority)))
+  )
+)
+
+(defrule production-strategy-revert-priority-to-free-cs
+  ?wf <- (wm-fact (key strategy meta priority increase free-cs args? wp ?wp mps ?cs) (value ?priority))
+  (not (wm-fact (key domain fact wp-at args? wp ?cc m ?cs side OUTPUT)))
+  =>
+  (delayed-do-for-all-facts ((?goal goal))
+    (and
+      (eq ?goal:mode FORMULATED)
+      (or
+        (and
+          (eq ?goal:class DISCARD)
+          (member$ ?cs ?goal:params)
+          (member$ OUTPUT ?goal:params)
+        )
+        (and
+          (eq ?goal:class PAY-FOR-RINGS-WITH-CAP-CARRIER)
+          (member$ ?cs ?goal:params)
+          (member$ OUTPUT ?goal:params)
+        )
+      )
+    )
+    (modify ?goal (priority (- ?goal:priority ?priority)))
+  )
+  (retract ?wf)
+)
+
+
+
+
