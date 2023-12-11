@@ -241,6 +241,12 @@
 		(goal (class MOUNT-CAP) (id ?oid&~?goal-id) (mode ~FORMULATED) (params $? target-mps ?target-mps $?))
 		(goal-meta (goal-id ?oid) (assigned-to ~nil))
 	))
+
+	;consider block requests of orders with higher complexity
+	(not (and
+		(wm-fact (key request block args? mps ?target-mps wp ?other-wp&:(neq ?other-wp ?wp) com ?other-com ord ?other-order) (values ACTIVE $?))
+		(test (> (com-to-int ?other-com) (com-to-int ?order-complexity)))
+	))
 	=>
 	(printout t "Goal MOUNT-CAP executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
@@ -280,6 +286,7 @@
 	         (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side)))
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
 	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+	(wm-fact (key domain fact order-complexity args? ord ?order com ?com))
 	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
 	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
 
@@ -287,6 +294,12 @@
   	(wm-fact (key refbox game-time) (values $?game-time))
 	(wm-fact (key refbox order ?order delivery-begin) (type UINT)
 	        (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*DELIVER-AHEAD-TIME*))))
+
+	;consider block requests of orders with higher complexity
+	(not (and
+		(wm-fact (key request block args? mps ?ds wp ?other-wp&:(neq ?other-wp ?wp) com ?other-com ord ?other-order) (values ACTIVE $?))
+		(test (> (com-to-int ?other-com) (com-to-int ?com)))
+	))
 	=>
 	(printout t "Goal DELIVER executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
@@ -350,6 +363,8 @@
 	         (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side)))
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
 	(domain-fact (name zone-content) (param-values ?zz ?wp-loc))
+	;consider block requests
+	(not (wm-fact (key request block args? mps ?ds wp ?other-wp&:(neq ?other-wp ?wp) $?) (values ACTIVE $?)))
 	=>
 	(printout t "Goal DISCARD executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))
@@ -420,6 +435,8 @@
 	(domain-fact (name zone-content) (param-values ?zz2 ?target-mps))
 	;the BS is not in use
 	(not (wm-fact (key mps meta bs-in-use args? bs ?wp-loc $?)))
+	;consider block requests
+	(not (wm-fact (key request block args? mps ?ds wp ?other-wp&:(neq ?other-wp ?wp) $?) (values ACTIVE $?)))
 	=>
 	(printout t "Goal " PAY-FOR-RINGS-WITH-BASE " executable" crlf)
 	(modify ?g (is-executable TRUE))
@@ -485,6 +502,9 @@
 	)
 	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
 	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
+
+	;consider block requests
+	(not (wm-fact (key request block args? mps ?target-mps wp ?other-wp&:(neq ?other-wp ?wp) $?) (values ACTIVE $?)))
 	=>
 	(bind ?wp-side nil)
 	(do-for-fact ((?wp-at wm-fact))
@@ -652,6 +672,12 @@ The workpiece remains in the output of the used ring station after
 
 	; Goal CEs
 	(not (goal (class MOUNT-RING) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED) (params $? target-mps ?target-mps $?)))
+
+	;consider block requests of orders with higher complexity
+	(not (and
+		(wm-fact (key request block args? mps ?target-mps wp ?other-wp&:(neq ?other-wp ?wp) com ?other-com ord ?other-order) (values ACTIVE $?))
+		(test (> (com-to-int ?other-com) (com-to-int ?complexity)))
+	))
 	=>
 	(printout t "Goal MOUNT-RING executable for " ?robot crlf)
 	(modify ?g (is-executable TRUE))

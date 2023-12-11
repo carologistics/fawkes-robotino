@@ -293,26 +293,169 @@
 )
 
 
-; -------------------- Handle orphaned workpieces ------------------------
+; -------------------- Clean-up Goals ------------------------
 
-(defrule goal-request-take-over-orphaned-workpiece
-  "If there is an unhandled payment request that has associated pay-with-base
-  goals update the parameters s.t. orphaned workpieces are used to pay."
-  (wm-fact (key request pay args? ord ?order-id m ?rs $?) (values status ACTIVE assigned-to ?payment-goal-id ?instruct-goal-id))
-  ?instruct-goal <- (goal (id ?instruct-goal-id) (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED))
-  ?payment-goal <- (goal (id ?payment-goal-id) (class PAY-FOR-RINGS-WITH-BASE) (mode FORMULATED) (params wp ?wp wp-loc ?bs wp-side ?wp-side target-mps ?target target-side ?target-side))
+(defrule goal-request-handler-clean-up-holding
+  " If there is an orphaned WP create a handling request."
+  (domain-object (name ?orphaned-wp) (type workpiece))
 
-  (wm-fact (key domain fact wp-at args? wp ?existing-wp m ?bs side ?any-side))
-  (not (goal (mode ~RETRACTED) (params $? ?existing-wp $?)))
-
-  ;gather wp facts for cleanup
-  ?wp-fact <- (domain-object (name ?wp) (type workpiece))
-  ?wp-unused-fact <- (domain-fact (name wp-unused) (param-values ?wp))
-  ?wp-color-fact <- (wm-fact (key domain fact wp-base-color args? wp ?wp $?))
+  (wm-fact (key domain fact holding args? r ?robot wp ?orphaned-wp))
+  ; it is orphaned, i.e. there is no clean-up request and it does not occur in any goal
+  (not (goal (mode ~RETRACTED) (params $? ?orphaned-wp $?)))
+  (not (wm-fact (key request clean-up args? wp ?orphaned-wp $?)))
   =>
-  ;modify the request-associated goals
-  (modify ?payment-goal (params wp ?existing-wp wp-loc ?bs wp-side ?wp-side target-mps ?target target-side ?target-side))
-  (modify ?instruct-goal (mode FINISHED) (outcome COMPLETED))
-  ;clean up the wp facts
-  (retract ?wp-fact ?wp-unused-fact ?wp-color-fact)
+  (assert (wm-fact (key request clean-up args? wp ?orphaned-wp  mps HOLDING side HOLDING ) (values status OPEN assigned-to)))
+)
+
+(defrule goal-request-handler-clean-up-at-machine
+  " If there is an orphaned WP at a machine create a handling request."
+  (domain-object (name ?orphaned-wp) (type workpiece))
+
+  (wm-fact (key domain fact wp-at args? wp ?orphaned-wp m ?mps side ?side))
+  ; it is orphaned, i.e. there is no clean-up request and it does not occur in any goal
+  (not (goal (mode ~RETRACTED) (params $? ?orphaned-wp $?)))
+  (not (wm-fact (key request clean-up args? wp ?orphaned-wp  $?)))
+  =>
+  (assert (wm-fact (key request clean-up args? wp ?orphaned-wp mps ?mps side ?side) (values status OPEN assigned-to)))
+)
+
+(defrule goal-request-handler-clean-up-activate-pay
+  " If there is an orphaned WP and there are empty slides create a payment goal.
+  "
+  ?request <- (wm-fact (key request clean-up args? wp ?wp mps ?mps side ?side) (values status OPEN assigned-to))
+  (domain-fact (name rs-filled-with) (param-values ?rs&:(< (compute-rs-total-payments ?rs) 3)))
+
+  (goal (class SUPPORT-ROOT) (id ?root-id))
+  =>
+  (bind ?payment-goal (goal-production-assert-pay-for-rings-with-base ?wp ?mps ?side ?rs INPUT nil))
+  (modify ?request (values status ACTIVE assigned-to (fact-slot-value ?payment-goal id)))
+  (modify ?payment-goal (parent ?root-id) (priority 100))
+)
+
+(defrule goal-request-handler-clean-up-activate-discard
+  " If there is an orphaned WP and there are no empty slides create a discard goal.
+  "
+  ?request <- (wm-fact (key request clean-up args? wp ?wp mps ?mps side ?side) (values status OPEN assigned-to))
+  (not (domain-fact (name rs-filled-with) (param-values ?rs&:(< (compute-rs-total-payments ?rs) 2))))
+
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact mps-type args? m ?ds t DS))
+  (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
+
+  (goal (class SUPPORT-ROOT) (id ?root-id))
+  (goal (class INSTRUCTION-ROOT) (id ?instruct-root-id))
+  =>
+  (bind ?discard-goal (goal-production-assert-discard ?wp ?mps ?side nil))
+  (bind ?instruct-goal (goal-production-assert-instruct-ds-discard ?wp ?ds))
+  (modify ?request (values status ACTIVE assigned-to (fact-slot-value ?discard-goal id) (fact-slot-value ?instruct-goal id)))
+  (modify ?discard-goal (parent ?root-id) (priority 100))
+  (modify ?instruct-goal (parent ?instruct-root-id) (priority 100))
+)
+
+
+(defrule goal-request-handler-convert-clean-up
+  "If the clean-up goals for payment were finished, convert them to an offer "
+  ?request <- (wm-fact (key request clean-up args? wp ?wp mps ?mps side ?side) (values status ACTIVE assigned-to $?clean-up-goals))
+
+  ;the associated goals were completed
+  (goal (class PAY-FOR-RINGS-WITH-BASE) (id ?id&:(member$ ?id ?clean-up-goals)) (mode RETRACTED) (outcome COMPLETED) (params $? target-mps ?rs $?))
+  =>
+  (retract ?request)
+  (assert (wm-fact (key request offer pay args? ord nil m ?rs) (values assigned-to ?clean-up-goals)))
+)
+
+
+
+
+; -------------------- Block Requests ------------------------
+(defrule goal-request-deactivate-block
+  " If there is a block request and it either timed out or the WP was moved to
+    the DS, deactivate the block request.
+  "
+  (wm-fact (key refbox game-time) (values ?now $?))
+  ?br <- (wm-fact (key request block args? mps ?ds wp ?wp com ?com ord ?order) (values ACTIVE ?st ?duration))
+
+  (or
+    (wm-fact (key domain fact wp-at args? wp ?wp m ?ds side INPUT)) ;wp arrived at DS
+    (test (> (- ?now ?st) ?duration))
+    (not (wm-fact (key domain fact wp-usable args? wp ?wp))) ;the wp was flushed away or consumed
+  )
+  =>
+  (modify ?br (values INACTIVE))
+)
+
+(defrule goal-request-block-ds-almost-finished-product
+  " If there is a product that is soon going to be completed,
+    issue a request to keep the the delivery station free, if possible.
+  "
+  ;get wp and order information
+  (domain-object (name ?wp) (type workpiece))
+  (wm-fact (key domain fact mps-type args? m ?ds t DS))
+  (or
+    (wm-fact (key wp meta next-step args? wp ?wp) (value DELIVER))
+    (wm-fact (key wp meta next-machine args? wp ?wp) (value ?ds))
+  )
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
+
+  ;either the wp is already at the output of a machine or the output is clear
+  (wm-fact (key domain fact mps-type args? m ?cs t CS))
+  (or
+    (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side OUTPUT))
+    (and
+      (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side INPUT))
+      (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?cs side OUTPUT)))
+    )
+  )
+  (wm-fact (key refbox game-time) (values ?now $?))
+  (not (wm-fact (key request block args? mps ?ds wp ?wp com ?com ord ?order) (values $?)))
+  =>
+  (assert (wm-fact (key request block args? mps ?ds wp ?wp com ?com ord ?order) (values ACTIVE ?now ?*BLOCK-DURATION-DS*)))
+)
+
+(defrule goal-request-block-rs-almost-finished-product
+  " If there is a product that is soon going to a RS,
+    issue a request to keep the the RS free.
+  "
+  ;get wp and order information
+  (domain-object (name ?wp) (type workpiece))
+  (wm-fact (key wp meta next-step args? wp ?wp) (value ?ring&RING1|RING2|RING3))
+  (wm-fact (key wp meta next-machine args? wp ?wp) (value ?rs))
+  (wm-fact (key wp meta prev-machine args? wp ?wp) (value ?prev-mps))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
+
+  ;the wp is already at the output of the previous machine
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?prev-mps side OUTPUT))
+  ;the input side of the target RS is free
+  (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?rs side INPUT)))
+
+  (wm-fact (key refbox game-time) (values ?now $?))
+  (not (wm-fact (key request block args? mps ?rs wp ?wp com ?com ord ?order) (values $? ?ring)))
+  =>
+  (assert (wm-fact (key request block args? mps ?rs wp ?wp com ?com ord ?order) (values ACTIVE ?now ?*BLOCK-DURATION-RS* ?ring )))
+)
+
+(defrule goal-request-block-cs-almost-finished-product
+  " If there is a product that is soon going to need a CS,
+    issue a request to keep the the CS free.
+  "
+  ;get wp and order information
+  (domain-object (name ?wp) (type workpiece))
+  (wm-fact (key wp meta next-step args? wp ?wp) (value CAP))
+  (wm-fact (key wp meta next-machine args? wp ?wp) (value ?cs))
+  (wm-fact (key wp meta prev-machine args? wp ?wp) (value ?prev-mps))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
+
+  ;the wp is already at the output of the previous machine
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?prev-mps side OUTPUT))
+  ;the input side of the target CS is free and there is a cap buffered
+  (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?cs side INPUT)))
+  (wm-fact (key domain fact cs-buffered args? m ?cs col ?any-cap-color))
+
+  (wm-fact (key refbox game-time) (values ?now $?))
+  (not (wm-fact (key request block args? mps ?cs wp ?wp com ?com ord ?order) (values $?)))
+  =>
+  (assert (wm-fact (key request block args? mps ?cs wp ?wp com ?com ord ?order) (values ACTIVE ?now ?*BLOCK-DURATION-CS*)))
 )
