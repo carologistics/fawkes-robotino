@@ -772,6 +772,7 @@
 	(plan-assert-sequential EXPLORATION-MOVE-PLAN ?goal-id ?robot
 		(plan-assert-action explore-and-turn
 			?robot ?curr-location ?curr-side ?zone)
+		(plan-assert-action wait ?robot ?zone WAIT)
 	)
 	(modify ?g (mode EXPANDED))
 )

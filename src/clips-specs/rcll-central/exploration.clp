@@ -11,7 +11,7 @@
 (defglobal
   ?*EXP-MOVEMENT-COMPENSATION* = 0.0
   ?*EXP-SEARCH-LIMIT* = 1
-  ?*MIRRORED-FIELD* = FALSE
+  ?*MIRRORED-FIELD* = TRUE
   ?*EXP-BASE-PRIO* = 10.0
 )
 
@@ -162,7 +162,7 @@
 
 	(wm-fact (key exploration active) (value TRUE))
 	=>
-	(bind ?zones (create$ M-Z14 M-Z36 M-Z53 M-Z22 M-Z33 M-Z12 M-Z52 M-Z56 M-Z16 M-Z33))
+	(bind ?zones (create$ M-Z33 C-Z33 M-Z63 C-Z63 M-Z36 C-Z36 M-Z66 C-Z66 M-Z15 C-Z15))
 	(modify ?targets (values (randomize$ ?zones)))
 	(modify ?iteration (value (+ ?n 1)))
 )

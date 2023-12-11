@@ -724,13 +724,39 @@
 	(goal (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
 	(goal (id ?root-id) (class WAIT-ROOT))
 	(not (goal (class MOVE-OUT-OF-WAY)))
-	(not (wm-fact (key config rcll pick-and-place-challenge) (value TRUE)))
-	(navgraph-node (name ?n&:(eq (str-index "-Z" ?n) 2)))
+	(or
+    (navgraph-node (name ?n&:(eq (str-index "-BS-O" ?n) 2)))
+  )
+  (wm-fact (key refbox team-color) (value ?color))
+
+  (wm-fact (key refbox field height) (value ?field-height))
+  (wm-fact (key refbox field width) (value ?field-width))
 	=>
   (bind ?wait-zones (create$))
   (do-for-all-facts ((?nav navgraph-node))
-                    (eq 2 (str-index "-Z" ?nav:name))
-    (bind ?wait-zones (insert$ ?wait-zones 1 (goal-production-assert-move-out-of-way  (sym-cat ?nav:name))))
+                    (or
+                      (eq 2 (str-index "-SS-O" ?nav:name))
+                      (eq 2 (str-index "-SS-I" ?nav:name))
+                      (eq 2 (str-index "-DS-O" ?nav:name))
+                      (and (eq 1 (str-index "M-BS-O" ?nav:name)) (eq ?color MAGENTA))
+                      (and (eq 1 (str-index "C-BS-O" ?nav:name)) (eq ?color CYAN))
+                      (and (eq 1 (str-index "M-CS1-O" ?nav:name)) (eq ?color MAGENTA))
+                      (and (eq 1 (str-index "C-CS1-O" ?nav:name)) (eq ?color CYAN))
+                      (and (eq 1 (str-index "M-CS2-O" ?nav:name)) (eq ?color MAGENTA))
+                      (and (eq 1 (str-index "C-CS2-O" ?nav:name)) (eq ?color CYAN))
+                      (and (eq 1 (str-index "M-RS1-O" ?nav:name)) (eq ?color MAGENTA))
+                      (and (eq 1 (str-index "C-RS1-O" ?nav:name)) (eq ?color CYAN))
+                      (and (eq 1 (str-index "M-RS2-O" ?nav:name)) (eq ?color MAGENTA))
+                      (and (eq 1 (str-index "C-RS2-O" ?nav:name)) (eq ?color CYAN))
+                    )
+    (if (or
+        (< (abs (nth$ 1 ?nav:pos)) (- ?field-width 1))
+        (> (nth$ 2 ?nav:pos) 1)
+      )
+
+      then
+      (bind ?wait-zones (insert$ ?wait-zones 1 (goal-production-assert-move-out-of-way  (sym-cat ?nav:name))))
+    )
   )
 	(bind ?g (goal-tree-assert-central-run-parallel MOVE-OUT-OF-WAY ?wait-zones))
 	(modify ?g (parent ?root-id) (priority 1.0))
@@ -943,7 +969,7 @@
 
 (defrule goal-production-assert-enter-field-zones
   (not (wm-fact (key enter-field targets) (values $?zones)))
-  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key refbox team-color) (value ?team-color&:(neq ?team-color nil)))
   =>
 	(if (eq ?team-color CYAN) then
     (assert (wm-fact (key enter-field targets) (is-list TRUE) (type SYMBOL) (values C-Z33 C-Z23 C-Z43)))
