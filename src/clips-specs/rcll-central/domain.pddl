@@ -747,10 +747,11 @@
 )
 
 (:action ss-retrieve-wp
-	:parameters (?m - mps ?old-wp - workpiece ?wp - workpiece
+	:parameters (?m - mps ?wp - workpiece
 	             ?shelf - ss-shelf ?slot - ss-slot)
 	:precondition (and (mps-type ?m SS)
 	                   (or (mps-state ?m PROCESSING)
+	                       (mps-state ?m PROCESSED)
 	                       (mps-state ?m READY-AT-OUTPUT)
 	                   )
 	                   (ss-prepared-for ?m RETRIEVE ?wp ?shelf ?slot)

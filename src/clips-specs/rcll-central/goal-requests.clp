@@ -53,11 +53,11 @@
   ; and there is no offer
   (not (wm-fact (key request offer buffer args? $? col ?cap-col) (values assigned-to $?)))
   =>
-  (bind ?buffer-goal (goal-production-assert-buffer-cap ?cs ?cap-col ?product-id))
-  (bind ?instruct-goal (goal-production-assert-instruct-cs-buffer-cap ?cs ?cap-col ?product-id))
+  (bind ?buffer-goal (goal-production-assert-buffer-cap ?cs ?cap-col nil))
+  (bind ?instruct-goal (goal-production-assert-instruct-cs-buffer-cap ?cs ?cap-col nil))
   (modify ?request (values status ACTIVE assigned-to (fact-slot-value ?buffer-goal id) (fact-slot-value ?instruct-goal id)))
-  (modify ?buffer-goal (parent ?root-id) (priority ?prio))
-  (modify ?instruct-goal (parent ?instruct-root-id) (priority ?prio))
+  (modify ?buffer-goal (priority ?prio))
+  (modify ?instruct-goal (priority ?prio))
 )
 
 (defrule goal-request-remap-buffer-offers

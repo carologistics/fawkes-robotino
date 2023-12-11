@@ -264,7 +264,7 @@
   (?product-id ?mps ?wp ?shelf ?slot)
 
   (bind ?goal (assert (goal (class RETRIEVE-WP)
-        (id (sym-cat STORE-WP- (gensym*))) (sub-type SIMPLE)
+        (id (sym-cat RETRIEVE-WP- (gensym*))) (sub-type SIMPLE)
         (verbosity NOISY) (is-executable FALSE)
         (params wp ?wp target-mps ?mps target-side OUTPUT shelf ?shelf slot ?slot)
   )))
@@ -384,7 +384,7 @@
     (id (sym-cat INSTRUCT-SS-RETRIEVE-WP- (gensym*))) (sub-type SIMPLE)
     (verbosity NOISY) (is-executable FALSE)
     (params wp ?wp
-            target-mps ?mps shelf ?shelf ?slot )
+            target-mps ?mps shelf ?shelf slot ?slot )
   )))
   (goal-meta-assert ?goal central ?product-id nil)
   (return ?goal)
@@ -945,7 +945,7 @@
   (wm-fact (key domain fact mps-type args? m ?ss t SS))
   (not (wm-fact (key domain fact ss-stored-wp args? m ?ss wp ? shelf ?shelf slot ?slot)))
   =>
-  (bind ?goal (goal-tree-assert-central-run-all-prio STORE-WP 9999
+  (bind ?goal (goal-tree-assert-central-run-all-prio STORAGE-STATION 9999
     (goal-production-assert-store-wp ?product-id ?ss ?wp-for-product ?shelf ?slot)
   ))
   (goal-production-assign-product-and-prio-to-goal ?goal nil 9999)
@@ -962,7 +962,7 @@
   (not (goal (class INSTRUCT-SS-STORE-WP) (mode ~RETRACTED) (params wp ?wp $?)))
   =>
   (bind ?goal (goal-tree-assert-central-run-parallel-prio INSTRUCT-STORE ?*PRODUCTION-C0-PRIORITY*
-    (goal-production-assert-instruct-ss-store-wp ?product-id ?mps ?wp ?shelf ?slot)
+    (goal-production-assert-instruct-ss-store-wp ?product-id ?wp ?mps ?shelf ?slot)
   ))
   (goal-production-assign-product-and-prio-to-goal ?goal nil 9999)
 )
@@ -978,8 +978,22 @@
   (wm-fact (key domain fact mps-type args? m ?ss t SS))
   =>
   (bind ?goal
-  (goal-tree-assert-central-run-all-prio RERIEVE-WP 9999
+  (goal-tree-assert-central-run-all-prio STORAGE-STATION 9999
     (goal-production-assert-retrieve-wp ?product-id ?ss ?wp ?shelf ?slot)
+  ))
+  (goal-production-assign-product-and-prio-to-goal ?goal nil 9999)
+)
+(defrule goal-production-assert-instruct-ss-retrieve-on-demand
+  "Create for each product workpiece a storage option"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?root-id) (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+  (goal (class RETRIEVE-WP) (params wp ?wp target-mps ?mps target-side ?target-side $? shelf ?shelf slot ?slot) (mode DISPATCHED))
+  (wm-fact (key product meta wp-for-product args? wp ?wp prod ?product-id))
+  (wm-fact (key domain fact mps-type args? m ?mps t SS))
+  (not (goal (class INSTRUCT-SS-RETRIEVE-WP) (mode ~RETRACTED) (params wp ?wp $?)))
+  =>
+  (bind ?goal (goal-tree-assert-central-run-parallel-prio INSTRUCT-RETRIEVE ?*PRODUCTION-C0-PRIORITY*
+    (goal-production-assert-instruct-ss-retrieve-wp ?product-id ?wp ?mps ?shelf ?slot)
   ))
   (goal-production-assign-product-and-prio-to-goal ?goal nil 9999)
 )

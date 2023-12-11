@@ -59,8 +59,8 @@
   "Mark all actions, that model state changes of the machines, as exogenous"
   ?op <- (domain-operator
     (name bs-dispense | cs-mount-cap | cs-retrieve-cap | rs-mount-ring1 |
-          rs-mount-ring2 | rs-mount-ring3 | fulfill-order-c0 | fulfill-order-discard |
-          fulfill-order-c1 | fulfill-order-c2 | fulfill-order-c3 | ss-retrieve-wp | ss-store-wp )
+          rs-mount-ring2 | rs-mount-ring3 | fulfill-product-c0 | fulfill-product-discard |
+          fulfill-product-c1 | fulfill-product-c2 | fulfill-product-c3 | ss-retrieve-wp | ss-store-wp )
     (exogenous FALSE)
   )
 =>

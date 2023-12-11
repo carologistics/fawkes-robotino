@@ -698,7 +698,7 @@ The workpiece remains in the output of the used ring station after
 	         (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
 	         ; ... or is already at some machine
 	         (wm-fact (key domain fact wp-at
-	                   args? wp ?wp m ?wp-loc side ?wp-side))
+	                   args? wp ?wp m ?wp-loc side ?wp-side&OUTPUT))
 	         (domain-fact (name zone-content) (param-values ?z ?wp-loc))
 	    )
 	    (and ; or the workpiece is already being held
@@ -707,12 +707,59 @@ The workpiece remains in the output of the used ring station after
 		  (goal (id ?goal-id) (params $? wp-loc ?wp-loc wp-side ?wp-side $?))
 		)
 	(domain-fact (name zone-content) (param-values ?z2 ?target-mps))
+	(test (neq ?wp-loc ?target-mps))
 	; Goal CEs
 	(not (goal (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED|FINISHED) (params $? wp ?wp $?)))
 	=>
 	(printout t "Goal STORE-WP executable for " ?robot crlf)
-	(modify ?g (params wp ?wp target-mps ?target-mps wp-loc ?wp-loc wp-side ?old-wp-side shelf ?shelf ?slot) (is-executable TRUE))
+	(modify ?g (params wp ?wp target-mps ?target-mps target-side ?target-side wp-loc ?wp-loc wp-side ?old-wp-side shelf ?shelf slot ?slot) (is-executable TRUE))
 )
+
+(defrule goal-executability-retrieve-wp-executable
+" Get a product from the storage station.
+  The workpiece remains in the gripper of the robot after executing this goal.
+"
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class RETRIEVE-WP)
+	                          (mode FORMULATED)
+	                          (params  wp ?wp
+	                                   target-mps ?target-mps
+	                                   target-side ?target-side
+	                                   shelf ?shelf
+	                                   slot ?slot
+	                          )
+	                          (is-executable FALSE))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+
+	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot)))
+	; Robot CEs
+	(wm-fact (key refbox team-color) (value ?team-color))
+
+	; MPS-RS CEs
+	(wm-fact (key domain fact mps-type args?       m ?target-mps t SS))
+	(wm-fact (key domain fact mps-state args?      m ?target-mps s ~BROKEN))
+	(wm-fact (key domain fact mps-team args?       m ?target-mps col ?team-color))
+	; WP CEs
+	; Order CEs
+	(wm-fact (key product meta wp-for-product args? wp ?wp prod ?product))
+
+	; MPS-Source CEs
+	(or (and ; Either the workpiece needs to picked up from the machine
+	         (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+	         (wm-fact (key domain fact wp-at
+	                   args? wp ?wp m ?wp-loc side ?wp-side))
+	         (domain-fact (name zone-content) (param-values ?z ?wp-loc))
+	    ) ; or it is still inside of the storage station
+	    (wm-fact (key domain fact ss-stored-wp args? m ?target-mps wp ?wp $?))
+	)
+	(domain-fact (name zone-content) (param-values ?z2 ?target-mps))
+	; Goal CEs
+	(not (goal (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED|FINISHED) (params $? wp ?wp $?)))
+	=>
+	(printout t "Goal RETRIEVE executable for " ?robot crlf)
+	(modify ?g (is-executable TRUE))
+)
+
 
 
 ; ----------------------- MPS Instruction GOALS -------------------------------
@@ -839,6 +886,36 @@ The workpiece remains in the output of the used ring station after
 	(not (plan-action (action-name wp-check) (param-values $? ?wp ?mps INPUT THERE) (state ~FINAL)))
 	=>
 	(printout t "Goal INSTRUCT-SS-STORE-WP executable" crlf)
+	(modify ?g (is-executable TRUE))
+)
+
+(defrule goal-production-instruct-ss-retrieve-wp-executable
+" Instruct base station to dispense a base. "
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class INSTRUCT-SS-RETRIEVE-WP)
+	            (mode FORMULATED)
+	            (params wp ?wp
+	                    target-mps ?mps
+	                    shelf ?shelf
+	                    slot ?slot)
+	            (is-executable FALSE))
+	(goal-meta (goal-id ?goal-id) (assigned-to ~nil) (product-id ?product-id))
+	(wm-fact (key refbox team-color) (value ?team-color))
+	; MPS CEs
+	(wm-fact (key domain fact mps-type args? m ?mps t SS))
+	(wm-fact (key domain fact mps-state args? m ?mps s IDLE))
+	(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+	; WP CEs
+	(wm-fact (key domain fact ss-stored-wp args? m ?mps wp ?wp $?))
+	; wait until a robot actually needs the base before proceeding
+	(plan-action (action-name wait-for-wp) (param-values ?robot ?mps ?side ?wp)
+	             (goal-id ?oid) (state PENDING|RUNNING)
+	             (precondition ?precondition-id))
+	(goal-meta (goal-id ?oid) (product-id ?product-id))
+	(not (goal (class INSTRUCT-BS-DISPENSE-BASE) (mode SELECTED|DISPATCHED|COMMITTED|EXPANDED)))
+	(domain-fact (name zone-content) (param-values ?mpsz ?mps))
+	=>
+	(printout t "Goal INSTRUCT-SS-RETRIEVE-WP executable" crlf)
 	(modify ?g (is-executable TRUE))
 )
 

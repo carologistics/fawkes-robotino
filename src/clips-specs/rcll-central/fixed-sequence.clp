@@ -386,9 +386,40 @@
 	)
 )
 
+(defrule goal-expander-retrieve-wp
+	?g <- (goal (id ?goal-id) (class ?class&RETRIEVE-WP)
+	                          (mode SELECTED) (parent ?parent)
+	                          (params  wp ?wp
+	                                   target-mps ?target-mps
+	                                   target-side ?target-side
+	                                   $?params))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
+	(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+	=>
+	(if (eq ?target-mps nil)
+		then
+			(printout error "The fields target-mps and target-side must either be set manually or there must be a wp-at fact!" crlf)
+		else
+			(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
+				(if (not (is-holding ?robot ?wp))
+				then
+					(create$ ; only last statement of if is returned
+						(plan-assert-move-wait-for-wp ?robot ?curr-location ?curr-side ?target-mps ?target-side ?wp
+							(plan-assert-action wp-get ?robot ?wp ?target-mps ?target-side (get-wp-complexity ?wp))
+							(plan-assert-action wp-check ?robot ?wp ?target-mps ?target-side ABSENT)
+						)
+					)
+				)
+			)
+			(modify ?g (mode EXPANDED)
+		)
+	)
+)
+
+
 (defrule goal-expander-transport-goals
 	?g <- (goal (id ?goal-id) (class ?class&MOUNT-CAP|
-	                                       MOUNT-RING|STORE-WP|RETRIEVE-WP)
+	                                       MOUNT-RING|STORE-WP)
 	                          (mode SELECTED) (parent ?parent)
 	                          (params  wp ?wp
 	                                   target-mps ?target-mps
@@ -632,19 +663,19 @@
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	=>
 	(plan-assert-sequential INSTRUCT-SS-STORE-WP ?goal-id ?robot
-		(plan-assert-action prepare-ss ?mps ?wp ?shelf ?slot)
+		(plan-assert-action prepare-ss-to-store ?mps ?wp ?shelf ?slot)
 		(plan-assert-action ss-store-wp ?mps ?wp ?shelf ?slot)
 	)
 	(modify ?g (mode EXPANDED))
 )
 
 (defrule goal-expander-instruct-ss-retrieve-wp
-	?g <- (goal (id ?goal-id) (class INSTRUCT-SS-STORE-WP) (mode SELECTED)
+	?g <- (goal (id ?goal-id) (class INSTRUCT-SS-RETRIEVE-WP) (mode SELECTED)
 	            (params wp ?wp target-mps ?mps shelf ?shelf slot ?slot))
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	=>
-	(plan-assert-sequential INSTRUCT-SS-STORE-WP ?goal-id ?robot
-		(plan-assert-action prepare-ss ?mps ?wp ?shelf ?slot)
+	(plan-assert-sequential INSTRUCT-SS-RETRIEVE-WP ?goal-id ?robot
+		(plan-assert-action prepare-ss-to-retrieve ?mps ?wp ?shelf ?slot)
 		(plan-assert-action ss-retrieve-wp ?mps ?wp ?shelf ?slot)
 	)
 	(modify ?g (mode EXPANDED))

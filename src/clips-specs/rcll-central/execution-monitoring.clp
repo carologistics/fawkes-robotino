@@ -872,7 +872,8 @@
                                    prepare-cs|
                                    prepare-ds|
                                    prepare-rs|
-                                   prepare-ss)
+                                   prepare-ss-to-store|
+								   prepare-ss-to-retrieve)
                       (param-names $?param-names)
                       (param-values $?param-values))
   (domain-obj-is-of-type ?mps&:(eq ?mps (plan-action-arg m
