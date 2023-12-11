@@ -77,6 +77,12 @@
 	(do-for-all-facts ((?df domain-fact)) TRUE
 	  (retract ?df)
 	)
+  (do-for-all-facts ((?df domain-object)) TRUE
+	  (retract ?df)
+	)
+  (do-for-all-facts ((?df domain-obj-is-of-type)) TRUE
+    (retract ?df)
+  )
 	(assert (domain-wm-flushed))
 )
 
