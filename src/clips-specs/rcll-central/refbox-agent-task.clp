@@ -32,7 +32,7 @@
     M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS M-SS
    )
    (default UNSET))
-  (slot order (type SYMBOL))
+  (slot product (type SYMBOL))
   (slot side (type SYMBOL)
     (allowed-values UNSET INPUT OUTPUT LEFT MIDDLE RIGHT SLIDE)
     (default UNSET))
@@ -66,26 +66,26 @@
   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?col-r3))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?col-cap))
   =>
-  (bind ?order-id nil)
-  (do-for-fact ((?wp-for-order wm-fact))
-    (and (wm-key-prefix ?wp-for-order:key (create$ order meta wp-for-order))
-         (eq (wm-key-arg ?wp-for-order:key wp) ?wp)
+  (bind ?product-id nil)
+  (do-for-fact ((?wp-for-product wm-fact))
+    (and (wm-key-prefix ?wp-for-product:key (create$ product meta wp-for-product))
+         (eq (wm-key-arg ?wp-for-product:key wp) ?wp)
     )
-    (bind ?order-id (wm-key-arg ?wp-for-order:key ord))
+    (bind ?product-id (wm-key-arg ?wp-for-product:key prod))
   )
   (modify ?task (workpiece-colors (create$ ?col-base ?col-r1 ?col-r2 ?col-r3 ?col-cap))
-                (order ?order-id)
+                (product ?product-id)
   )
 )
 
-(defrule task-set-order-info
+(defrule task-set-product-info
   (declare (salience ?*MONITORING-SALIENCE*))
   (wm-fact (key refbox robot task seq args? r ?robot) (value ?seq))
-  ?task <- (refbox-agent-task (task-id ?seq) (robot ?robot) (order nil))
+  ?task <- (refbox-agent-task (task-id ?seq) (robot ?robot) (product nil))
   (goal (id ?g-id) (mode DISPATCHED))
-  (goal-meta (goal-id ?g-id) (assigned-to ?robot) (order-id ?order-id&~nil))
+  (goal-meta (goal-id ?g-id) (assigned-to ?robot) (product-id ?product-id&~nil))
   =>
-  (modify ?task (order ?order-id))
+  (modify ?task (product ?product-id))
 )
 
 (defrule task-set-task-finished

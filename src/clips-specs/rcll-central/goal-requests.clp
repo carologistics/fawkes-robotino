@@ -23,7 +23,7 @@
 
 (defrule goal-request-accept-buffer-offers
   "If there is an unfulfilled buffer request, use a buffer offer."
-  ?request <- (wm-fact (key request buffer args? ord ?order-id col ?cap-col prio ?prio) (values status OPEN assigned-to))
+  ?request <- (wm-fact (key request buffer args? prod ?product-id col ?cap-col prio ?prio) (values status OPEN assigned-to))
   ?request-offer <- (wm-fact (key request offer buffer args? $? col ?cap-col) (values assigned-to ?buffer-goal-id ?instruct-goal-id))
   =>
   (modify ?request (values status ACTIVE assigned-to ?buffer-goal-id ?instruct-goal-id))
@@ -32,6 +32,7 @@
 
 (defrule goal-request-assert-buffer-goal
   "If there is an unfulfilled buffer request, create buffer goal."
+  ?request <- (wm-fact (key request buffer args? prod ?product-id col ?cap-col prio ?prio) (values status OPEN assigned-to))
   (wm-fact (key domain fact cs-color args? m ?cs col ?cap-col))
   (goal (class INSTRUCTION-ROOT) (id ?instruct-root-id))
   (goal (class SUPPORT-ROOT) (id ?root-id))
@@ -52,14 +53,16 @@
   ; and there is no offer
   (not (wm-fact (key request offer buffer args? $? col ?cap-col) (values assigned-to $?)))
   =>
-  (modify ?request (values status ACTIVE assigned-to ?buffer-id ?instruct-id))
-  (modify ?buffer-goal (priority ?prio))
-  (modify ?instruct-goal (priority ?prio))
+  (bind ?buffer-goal (goal-production-assert-buffer-cap ?cs ?cap-col ?product-id))
+  (bind ?instruct-goal (goal-production-assert-instruct-cs-buffer-cap ?cs ?cap-col ?product-id))
+  (modify ?request (values status ACTIVE assigned-to (fact-slot-value ?buffer-goal id) (fact-slot-value ?instruct-goal id)))
+  (modify ?buffer-goal (parent ?root-id) (priority ?prio))
+  (modify ?instruct-goal (parent ?instruct-root-id) (priority ?prio))
 )
 
 (defrule goal-request-remap-buffer-offers
   "If there is an unfulfilled buffer request, use a buffer offer."
-  ?request <- (wm-fact (key request buffer args? ord ?order-id col ?cap-col prio ?prio) (values status ACTIVE assigned-to ?buffer-goal-id ?instruct-goal-id))
+  ?request <- (wm-fact (key request buffer args? prod ?product-id col ?cap-col prio ?prio) (values status ACTIVE assigned-to ?buffer-goal-id ?instruct-goal-id))
   ?request-offer <- (wm-fact (key request offer buffer args? $? col ?cap-col) (values assigned-to ?offer-buffer-goal-id ?offer-instruct-goal-id))
 
   ?buffer-goal <- (goal (id ?buffer-goal-id) (mode FORMULATED))
@@ -75,35 +78,35 @@
 )
 
 (defrule goal-request-map-buffer-cap-completed-mount-cap
-  "If a MOUNT-CAP goal is completed and the buffer request for the same order is not mapped
+  "If a MOUNT-CAP goal is completed and the buffer request for the same product is not mapped
    to a fitting BUFFER-CAP goal, create the mapping."
-  ?request <- (wm-fact (key request buffer args? ord ?order-id col ?cap-col prio ?prio) (values status ACTIVE assigned-to ?buffer-goal-id ?instruct-goal-id))
+  ?request <- (wm-fact (key request buffer args? prod ?product-id col ?cap-col prio ?prio) (values status ACTIVE assigned-to ?buffer-goal-id ?instruct-goal-id))
   (goal (id ?buffer-goal-id) (mode RETRACTED) (outcome COMPLETED))
   (goal (id ?instruct-goal-id) (mode RETRACTED) (outcome COMPLETED))
 
   (goal (class MOUNT-CAP) (id ?mount-cap-goal) (mode RETRACTED) (outcome COMPLETED))
-  (goal-meta (goal-id ?mount-cap-goal) (order-id ?order-id))
+  (goal-meta (goal-id ?mount-cap-goal) (product-id ?product-id))
   =>
   (modify ?request (values status COMPLETED assigned-to ?buffer-goal-id ?instruct-goal-id))
 )
 
 (defrule goal-request-remove-buffer-failed
-  ;an order root has failed
+  ;an product root has failed
   (goal (id ?root-id) (mode FINISHED) (outcome FAILED))
-  (goal-meta (goal-id ?root-id) (root-for-order ?order-id&~nil))
+  (goal-meta (goal-id ?root-id) (root-for-product ?product-id&~nil))
 
   ;it has a request for buffering
-  ?request <- (wm-fact (key request buffer args? ord ?order-id col ?cap-col prio ?prio) (values status ACTIVE assigned-to ?buffer-goal-id ?instruct-goal-id))
+  ?request <- (wm-fact (key request buffer args? prod ?product-id col ?cap-col prio ?prio) (values status ACTIVE assigned-to ?buffer-goal-id ?instruct-goal-id))
 
   ;the instruct goal for mounting the cap was not used yet
   (goal (id ?instruct-mount-goal-id) (class INSTRUCT-CS-MOUNT-CAP) (mode FORMULATED))
-  (goal-meta (goal-id ?instruct-mount-goal-id) (order-id ?order-id))
+  (goal-meta (goal-id ?instruct-mount-goal-id) (product-id ?product-id))
 
   ;the buffer cap request was completed
   (goal (id ?buffer-goal-id) (mode RETRACTED) (outcome COMPLETED))
   (goal (id ?instruct-goal-id) (mode RETRACTED) (outcome COMPLETED))
   =>
-  (assert (wm-fact (key request offer buffer args? ord ?order-id col ?cap-col) (values assigned-to ?buffer-goal-id ?instruct-goal-id)))
+  (assert (wm-fact (key request offer buffer args? prod ?product-id col ?cap-col) (values assigned-to ?buffer-goal-id ?instruct-goal-id)))
   (retract ?request)
 )
 
@@ -111,7 +114,7 @@
 
 (defrule goal-request-accept-pay-offers
   "If there are unfulfilled payment offer, use it."
-  ?request <- (wm-fact (key request pay args? ord ?order-id m ?rs ring ?ring seq ?seq prio ?prio-payment) (values status OPEN assigned-to))
+  ?request <- (wm-fact (key request pay args? prod ?product-id m ?rs ring ?ring seq ?seq prio ?prio-payment) (values status OPEN assigned-to))
   ?request-offer <- (wm-fact (key request offer pay args? $? m ?rs $?) (values assigned-to $?payment-goals))
   =>
   (modify ?request (values status ACTIVE assigned-to ?payment-goals))
@@ -120,7 +123,7 @@
 
 (defrule goal-request-accept-discard-offers
   "If there are unfulfilled discard offer, use it."
-  ?request <- (wm-fact (key request discard args? ord ?order-id cs ?cs prio ?prio-discard) (values status OPEN assigned-to))
+  ?request <- (wm-fact (key request discard args? prod ?product-id cs ?cs prio ?prio-discard) (values status OPEN assigned-to))
   ?request-offer <- (wm-fact (key request offer discard args? $? cs ?cs $?) (values assigned-to $?discard-goals))
   =>
   (modify ?request (values status ACTIVE assigned-to ?discard-goals))
@@ -129,6 +132,7 @@
 
 (defrule goal-request-assert-pay-with-base-goal
   "If there is an unfulfilled payment request, create a pay-with-base-goal."
+  ?request <- (wm-fact (key request pay args? prod ?product-id m ?rs ring ?ring seq ?seq prio ?prio) (values status OPEN assigned-to))
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
   (wm-fact (key domain fact mps-type args? m ?rs t RS))
   (goal (class SUPPORT-ROOT) (id ?root-id))
@@ -137,7 +141,7 @@
        (goal (id ?some-other-id&:(neq ?some-id ?some-other-id)) (class PAY-FOR-RINGS-WITH-BASE) (params $? target-mps ?rs $?))))
   =>
   (bind ?wp-base-pay (sym-cat BASE-PAY- (gensym*)))
-  (bind ?payment-goal (goal-production-assert-pay-for-rings-with-base ?wp-base-pay ?bs INPUT ?rs INPUT nil))
+  (bind ?payment-goal (goal-production-assert-pay-for-rings-with-base ?wp-base-pay ?bs INPUT ?rs INPUT ?product-id))
   (bind ?instruct-goal (goal-production-assert-instruct-bs-dispense-base ?wp-base-pay (nth$ (random 1 3) (create$ BASE_RED BASE_BLACK BASE_SILVER)) INPUT nil ?bs))
   (assert
       (domain-object (name ?wp-base-pay) (type workpiece))
@@ -186,7 +190,7 @@
 
 (defrule goal-request-assign-request-to-discard-goal
   "If there is an unfulfilled discard request, create a discard goal."
-  ?request <- (wm-fact (key request discard args? ord ?order-id cs ?cs prio ?prio) (values status OPEN assigned-to))
+  ?request <- (wm-fact (key request discard args? prod ?product-id cs ?cs prio ?prio) (values status OPEN assigned-to))
 
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact mps-type args? m ?ds t DS))
@@ -197,16 +201,18 @@
   ;and there is no discard offer
   (not (wm-fact (key request offer discard args? $? cs ?cs $?) (values assigned-to $?)))
   =>
-  (modify ?request (values status ACTIVE assigned-to ?discard-id ?instruct-id))
-  (modify ?discard-goal (priority ?prio))
-  (modify ?instruct-goal (priority ?prio))
+  (bind ?discard-goal (goal-production-assert-discard UNKNOWN ?cs OUTPUT ?product-id))
+  (bind ?instruct-goal (goal-production-assert-instruct-ds-discard UNKNOWN ?ds))
+  (modify ?request (values status ACTIVE assigned-to (fact-slot-value ?discard-goal id) (fact-slot-value ?instruct-goal id)))
+  (modify ?discard-goal (parent ?root-id) (priority ?prio))
+  (modify ?instruct-goal (parent ?instruct-root-id) (priority ?prio))
 )
 
 (defrule goal-request-remap-discard-to-pay-with-cc
   "If there is an active request for discard and an active request for payment-with-base
   but the goals have not been started yet, we can remap them to a pay-with-cc goal."
-  ?request-pay <- (wm-fact (key request pay args? ord ?order-id-pay m ?rs ring ?ring seq ?seq prio ?prio-payment) (values status ACTIVE assigned-to $?payment-goals))
-  ?request-dis <- (wm-fact (key request discard args? ord ?order-id-discard cs ?cs prio ?prio-discard) (values status ACTIVE assigned-to $?discard-goals))
+  ?request-pay <- (wm-fact (key request pay args? prod ?product-id-pay m ?rs ring ?ring seq ?seq prio ?prio-payment) (values status ACTIVE assigned-to $?payment-goals))
+  ?request-dis <- (wm-fact (key request discard args? prod ?product-id-discard cs ?cs prio ?prio-discard) (values status ACTIVE assigned-to $?discard-goals))
   (goal (class SUPPORT-ROOT) (id ?root-id))
 
   ;the assigned goals have not been started yet
@@ -217,26 +223,35 @@
   ?pay-with-cc-fact <- (goal (id ?pay-with-cc-goal) (class PAY-FOR-RINGS-WITH-CAP-CARRIER) (params $? wp-loc ?cs $? ))
   ;there is a buffer goal already running (so we can discard soon, to avoid slow-down in payments)
   (wm-fact (key domain fact wp-at args? wp ?wp m ?cs $?))
+  ;but there is no other payment goal mapped to the same CS to avoid queuing
+  (not (and
+    (wm-fact (key request pay args? prod ? m ? ring ? seq ? prio ?) (values status ACTIVE assigned-to $?other-payment-goals))
+    (goal (id ?other-payment-goal&:(member$ ?other-payment-goal ?other-payment-goals))
+          (mode ~RETRACTED)
+          (class PAY-FOR-RINGS-WITH-CAP-CARRIER)
+          (params $? wp-loc ?cs $?))
+  ))
   =>
   (delayed-do-for-all-facts ((?goal goal))
   (or (member$ ?goal:id ?payment-goals) (member$ ?goal:id ?discard-goals))
     (modify ?goal (priority 0.0))
   )
 
-  (modify ?request-pay (values status ACTIVE assigned-to ?pay-with-cc-goal))
-  (modify ?request-dis (values status ACTIVE assigned-to ?pay-with-cc-goal))
-  (modify ?pay-with-cc-fact (priority ?prio-discard))
+  (bind ?pay-with-cc-goal (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN ?cs OUTPUT ?rs INPUT ?product-id-pay))
+  (modify ?request-pay (values status ACTIVE assigned-to (fact-slot-value ?pay-with-cc-goal id)))
+  (modify ?request-dis (values status ACTIVE assigned-to (fact-slot-value ?pay-with-cc-goal id)))
+  (modify ?pay-with-cc-goal (parent ?root-id) (priority ?prio-discard))
 )
 
 (defrule goal-request-map-pay-completed
   "If there is a completed mount ring goal that used up a payment associatable with a fulfilled request, mark the request as completed."
-  ?request <- (wm-fact (key request pay args? ord ?order-id m ?rs ring ?ring seq ?seq prio ?prio-payment) (values status ACTIVE assigned-to $?payment-goals))
+  ?request <- (wm-fact (key request pay args? prod ?product-id m ?rs ring ?ring seq ?seq prio ?prio-payment) (values status ACTIVE assigned-to $?payment-goals))
   (goal (class MOUNT-RING) (id ?mount-ring-goal) (mode RETRACTED) (outcome COMPLETED) (params $? target-mps ?rs $? ring-color ?ring-color))
-  (goal-meta (goal-id ?mount-ring-goal) (order-id ?order-id))
+  (goal-meta (goal-id ?mount-ring-goal) (product-id ?product-id))
   ; the goals associated with the request have been completed
   (not (goal (id ?id&:(member$ ?id ?payment-goals)) (mode ~RETRACTED) (outcome ~COMPLETED)))
   ; the payments have actually been consumed
-  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
+  (wm-fact (key product meta wp-for-product args? wp ?wp prod ?product-id))
   (wm-fact (key wp meta prev-step args? wp ?wp) (value ?prev-step))
   (test
     (or
@@ -253,9 +268,9 @@
 
 (defrule goal-request-map-discard-completed
   "If there is a completed mount cap goal or discard goal, mark the associated request as completed"
-  ?request <- (wm-fact (key request discard args? ord ?order-id cs ?cs prio ?prio-discard) (values status ACTIVE assigned-to $?discard-goals))
+  ?request <- (wm-fact (key request discard args? prod ?product-id cs ?cs prio ?prio-discard) (values status ACTIVE assigned-to $?discard-goals))
   (goal (class MOUNT-CAP) (id ?mount-cap-goal) (mode RETRACTED) (outcome COMPLETED) (params $? target-mps ?cs $?))
-  (goal-meta (goal-id ?mount-cap-goal) (order-id ?order-id))
+  (goal-meta (goal-id ?mount-cap-goal) (product-id ?product-id))
   ; the goals associated with the request have been completed
   (not (goal (id ?id&:(member$ ?id ?discard-goals)) (mode ~RETRACTED) (outcome ~COMPLETED)))
   =>
@@ -263,32 +278,32 @@
 )
 
 (defrule goal-request-remove-payment-failed
-  ;an order root has failed
+  ;an product root has failed
   (goal (id ?root-id) (mode FINISHED) (outcome FAILED))
-  (goal-meta (goal-id ?root-id) (root-for-order ?order-id&~nil))
+  (goal-meta (goal-id ?root-id) (root-for-product ?product-id&~nil))
 
   ;it has a request for discarding
-  ?request <- (wm-fact (key request pay args? ord ?order-id m ?rs ring ?ring seq ?seq prio ?prio-payment) (values status ACTIVE assigned-to $?payment-goals))
+  ?request <- (wm-fact (key request pay args? prod ?product-id m ?rs ring ?ring seq ?seq prio ?prio-payment) (values status ACTIVE assigned-to $?payment-goals))
 
   ;the associated goals were completed
   (not (goal (id ?id&:(member$ ?id ?payment-goals)) (mode ~RETRACTED) (outcome ~COMPLETED)))
   =>
-  (assert (wm-fact (key request offer pay args? ord ?order-id m ?rs) (values assigned-to ?payment-goals)))
+  (assert (wm-fact (key request offer pay args? prod ?product-id m ?rs) (values assigned-to ?payment-goals)))
   (retract ?request)
 )
 
 (defrule goal-request-remove-discard-failed
-  ;an order root has failed
+  ;an product root has failed
   (goal (id ?root-id) (mode FINISHED) (outcome FAILED))
-  (goal-meta (goal-id ?root-id) (root-for-order ?order-id&~nil))
+  (goal-meta (goal-id ?root-id) (root-for-product ?product-id&~nil))
 
   ;it has a request for discarding
-  ?request <- (wm-fact (key request discard args? ord ?order-id cs ?cs prio ?prio-discard) (values status ACTIVE assigned-to $?discard-goals))
+  ?request <- (wm-fact (key request discard args? prod ?product-id cs ?cs prio ?prio-discard) (values status ACTIVE assigned-to $?discard-goals))
 
   ;the associated goals were completed
   (not (goal (id ?id&:(member$ ?id ?discard-goals)) (mode ~RETRACTED) (outcome ~COMPLETED)))
   =>
-  (assert (wm-fact (key request offer discard args? ord ?order-id cs ?cs) (values assigned-to ?discard-goals)))
+  (assert (wm-fact (key request offer discard args? prod ?product-id cs ?cs) (values assigned-to ?discard-goals)))
   (retract ?request)
 )
 
@@ -297,7 +312,7 @@
 
 (defrule goal-request-buffer-reset-broken-mps
   "Assuming the breaking of the machine leads to graceful termination of all goals, we can simply reset the requests"
-  ?request <- (wm-fact (key request buffer args? ord ?order-id col ?cap-col prio ?prio) (values status ACTIVE assigned-to $?buffer-goals))
+  ?request <- (wm-fact (key request buffer args? prod ?product-id col ?cap-col prio ?prio) (values status ACTIVE assigned-to $?buffer-goals))
   (wm-fact (key domain fact cs-color args? m ?cs col ?cap-col))
   (wm-fact (key domain fact mps-state args? m ?cs s BROKEN))
   (goal (id ?buffer-goal&:(member$ ?buffer-goal ?buffer-goals)) (mode ~FORMULATED))
@@ -311,7 +326,7 @@
 
 (defrule goal-request-discard-reset-broken-mps
   "Assuming the breaking of the machine leads to graceful termination of all goals, we can simply reset the requests"
-  ?request <- (wm-fact (key request discard args? ord ?order-id cs ?cs prio ?prio-discard) (values status ACTIVE assigned-to $?discard-goals))
+  ?request <- (wm-fact (key request discard args? prod ?product-id cs ?cs prio ?prio-discard) (values status ACTIVE assigned-to $?discard-goals))
   (wm-fact (key domain fact mps-state args? m ?cs s BROKEN))
   (goal (id ?discard-goal&:(member$ ?discard-goal ?discard-goals)) (mode ~FORMULATED))
   =>
@@ -320,7 +335,7 @@
 
 (defrule goal-request-pay-reset-broken-mps
   "Assuming the breaking of the machine leads to graceful termination of all goals, we can simply reset the requests"
-  ?request <- (wm-fact (key request pay args? ord ?order-id m ?rs ring ?ring seq ?seq prio ?prio-payment) (values status ACTIVE assigned-to $?payment-goals))
+  ?request <- (wm-fact (key request pay args? prod ?product-id m ?rs ring ?ring seq ?seq prio ?prio-payment) (values status ACTIVE assigned-to $?payment-goals))
   (wm-fact (key domain fact mps-state args? m ?rs s BROKEN))
   (goal (id ?payment-goal&:(member$ ?payment-goal ?payment-goals)) (mode ~FORMULATED))
   =>
@@ -333,7 +348,7 @@
 (defrule goal-request-take-over-orphaned-workpiece
   "If there is an unhandled payment request that has associated pay-with-base
   goals update the parameters s.t. orphaned workpieces are used to pay."
-  (wm-fact (key request pay args? ord ?order-id m ?rs $?) (values status ACTIVE assigned-to ?payment-goal-id ?instruct-goal-id))
+  (wm-fact (key request pay args? prod ?product-id m ?rs $?) (values status ACTIVE assigned-to ?payment-goal-id ?instruct-goal-id))
   ?instruct-goal <- (goal (id ?instruct-goal-id) (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED))
   ?payment-goal <- (goal (id ?payment-goal-id) (class PAY-FOR-RINGS-WITH-BASE) (mode FORMULATED) (params wp ?wp wp-loc ?bs wp-side ?wp-side target-mps ?target target-side ?target-side))
 

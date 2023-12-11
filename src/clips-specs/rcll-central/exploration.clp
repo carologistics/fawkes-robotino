@@ -155,7 +155,7 @@
 )
 
 (defrule exp-setup-create-targets
-	"Create exploration targets, a list of zones that is targeted in order."
+	"Create exploration targets, a list of zones that is targeted in product."
 	?targets <- (wm-fact (key exploration targets args?) (values ))
 	?iteration <- (wm-fact (key exploration iteration args?) (value ?n))
 	(not (goal (class EXPLORATION-MOVE)))

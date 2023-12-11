@@ -40,8 +40,8 @@
 	ss-operation - object
 	cs-operation - object
 	cs-statename - object
-	order - object
-	order-complexity-value - object
+	product - object
+	product-complexity-value - object
 	workpiece - object
 	cap-carrier - workpiece
 	shelf-spot - object
@@ -66,7 +66,7 @@
 	RING_NONE RING_BLUE RING_GREEN RING_ORANGE RING_YELLOW - ring-color
 	RETRIEVE_CAP MOUNT_CAP - cs-operation
 	RETRIEVE STORE - ss-operation
-	C0 C1 C2 C3 - order-complexity-value
+	C0 C1 C2 C3 - product-complexity-value
 	LEFT MIDDLE RIGHT - shelf-spot
 	NA ZERO ONE TWO THREE - ring-num
 	ZERO ONE TWO THREE FOUR FIVE - ss-shelf
@@ -117,17 +117,17 @@
 	;rs-sub and rs-inc are static predicates stating the legal ring-num operations
 	(rs-sub ?minuend - ring-num ?subtrahend - ring-num ?difference - ring-num)
 	(rs-inc ?summand - ring-num ?sum - ring-num)
-	(ds-prepared-order ?m - mps ?ord - order)
-	(order-complexity ?ord - order ?com - order-complexity-value)
-	(order-base-color ?ord - order ?col - base-color)
-	(order-ring1-color ?ord - order ?col - ring-color)
-	(order-ring2-color ?ord - order ?col - ring-color)
-	(order-ring3-color ?ord - order ?col - ring-color)
-	(order-cap-color ?ord - order ?col - cap-color)
-	(order-fulfilled ?ord - order)
-	(order-delivery-begin ?ord - order)
-	(order-delivery-end ?ord - order)
-	(order-gate ?ord - order ?gate - ds-gate)
+	(ds-prepared-product ?m - mps ?prod - product)
+	(product-complexity ?prod - product ?com - product-complexity-value)
+	(product-base-color ?prod - product ?col - base-color)
+	(product-ring1-color ?prod - product ?col - ring-color)
+	(product-ring2-color ?prod - product ?col - ring-color)
+	(product-ring3-color ?prod - product ?col - ring-color)
+	(product-cap-color ?prod - product ?col - cap-color)
+	(product-fulfilled ?prod - product)
+	(product-delivery-begin ?prod - product)
+	(product-delivery-end ?prod - product)
+	(product-gate ?prod - product ?gate - ds-gate)
 	(wp-unused ?wp - workpiece)
 	(wp-usable ?wp - workpiece)
 	(wp-at ?wp - workpiece ?m - mps ?side - mps-side)
@@ -173,13 +173,13 @@
 )
 
 (:action prepare-ds
-	:parameters (?m - mps ?ord - order)
+	:parameters (?m - mps ?prod - product)
 	:precondition (and (mps-type ?m DS)
 	                   (mps-state ?m IDLE)
 	              )
 	:effect (and (not (mps-state ?m IDLE))
 	             (mps-state ?m PREPARED)
-	             (ds-prepared-order ?m ?ord)
+	             (ds-prepared-product ?m ?prod)
 	        )
 )
 
@@ -475,7 +475,7 @@
 )
 
 (:action wp-get
-	:parameters (?r - robot ?wp - workpiece ?m - mps ?side - mps-side ?com - order-complexity-value)
+	:parameters (?r - robot ?wp - workpiece ?m - mps ?side - mps-side ?com - product-complexity-value)
 	:precondition (and (at ?r ?m ?side)
 	                   (can-hold ?r)
 	                   (wp-at ?wp ?m ?side)
@@ -496,7 +496,7 @@
 )
 
 (:action wp-put
-	:parameters (?r - robot ?wp - workpiece ?m - mps ?side - mps-side ?com - order-complexity-value)
+	:parameters (?r - robot ?wp - workpiece ?m - mps ?side - mps-side ?com - product-complexity-value)
 	:precondition (and (at ?r ?m ?side)
 	                   (wp-usable ?wp)
 	                   (holding ?r ?wp)
@@ -534,100 +534,100 @@
 	        )
 )
 
-(:action fulfill-order-discard
-	:parameters (?ord - order ?wp - workpiece ?m - mps)
+(:action fulfill-product-discard
+	:parameters (?prod - product ?wp - workpiece ?m - mps)
 	:precondition (and (wp-at ?wp ?m INPUT)
 	                   (not (mps-side-free ?m INPUT))
 	                   (wp-usable ?wp)
 	                   (mps-type ?m DS)
-	                   (ds-prepared-order ?m ?ord)
+	                   (ds-prepared-product ?m ?prod)
 	              )
-	:effect (and (order-fulfilled ?ord)
+	:effect (and (product-fulfilled ?prod)
 	             (not (wp-at ?wp ?m INPUT))
 	             (mps-side-free ?m INPUT)
-	             (not (ds-prepared-order ?m ?ord))
+	             (not (ds-prepared-product ?m ?prod))
 	             (not (wp-usable ?wp))
 	        )
 )
 
-(:action fulfill-order-c0
-	:parameters (?ord - order ?wp - workpiece ?m - mps ?g - ds-gate
+(:action fulfill-product-c0
+	:parameters (?prod - product ?wp - workpiece ?m - mps ?g - ds-gate
 	             ?basecol - base-color ?capcol - cap-color)
 	:precondition (and (wp-at ?wp ?m INPUT)
 	                   (not (mps-side-free ?m INPUT))
 	                   (wp-usable ?wp)
 	                   (mps-type ?m DS)
-	                   (ds-prepared-order ?m ?ord)
-	                   (order-complexity ?ord C0)
-	                   (order-base-color ?ord ?basecol)
+	                   (ds-prepared-product ?m ?prod)
+	                   (product-complexity ?prod C0)
+	                   (product-base-color ?prod ?basecol)
 	                   (wp-base-color ?wp ?basecol)
-	                   (order-cap-color ?ord ?capcol)
+	                   (product-cap-color ?prod ?capcol)
 	                   (wp-cap-color ?wp ?capcol)
 	                   (wp-ring1-color ?wp RING_NONE)
 	                   (wp-ring2-color ?wp RING_NONE)
 	                   (wp-ring3-color ?wp RING_NONE)
 	              )
-	:effect (and (order-fulfilled ?ord)
+	:effect (and (product-fulfilled ?prod)
 	             (not (wp-at ?wp ?m INPUT))
 	             (mps-side-free ?m INPUT)
-	             (not (ds-prepared-order ?m ?ord))
+	             (not (ds-prepared-product ?m ?prod))
 	             (not (wp-usable ?wp))
 	             (not (wp-base-color ?wp ?basecol))
 	             (not (wp-cap-color ?wp ?capcol))
 	        )
 )
 
-(:action fulfill-order-c1
-	:parameters (?ord - order ?wp - workpiece ?m - mps ?g - ds-gate
+(:action fulfill-product-c1
+	:parameters (?prod - product ?wp - workpiece ?m - mps ?g - ds-gate
 	             ?basecol - base-color ?capcol - cap-color
 				 ?ring1col - ring-color)
 	:precondition (and (wp-at ?wp ?m INPUT)
 	                   (not (mps-side-free ?m INPUT))
 	                   (wp-usable ?wp)
 	                   (mps-type ?m DS)
-	                   (ds-prepared-order ?m ?ord)
-	                   (order-complexity ?ord C1)
-	                   (order-base-color ?ord ?basecol)
+	                   (ds-prepared-product ?m ?prod)
+	                   (product-complexity ?prod C1)
+	                   (product-base-color ?prod ?basecol)
 	                   (wp-base-color ?wp ?basecol)
-	                   (order-ring1-color ?ord ?ring1col)
+	                   (product-ring1-color ?prod ?ring1col)
 	                   (wp-ring1-color ?wp ?ring1col)
-	                   (order-cap-color ?ord ?capcol)
+	                   (product-cap-color ?prod ?capcol)
 	                   (wp-cap-color ?wp ?capcol)
 	              )
-	:effect (and (order-fulfilled ?ord)
+	:effect (and (product-fulfilled ?prod)
 	             (not (wp-at ?wp ?m INPUT))
 	             (mps-side-free ?m INPUT)
-	             (not (ds-prepared-order ?m ?ord))
+	             (not (ds-prepared-product ?m ?prod))
 	             (not (wp-usable ?wp))
 	             (not (wp-base-color ?wp ?basecol))
 	             (not (wp-cap-color ?wp ?capcol))
 	        )
 )
 
-(:action fulfill-order-c2
-	:parameters (?ord - order ?wp - workpiece ?m - mps ?g - ds-gate
+(:action fulfill-product-c2
+	:parameters (?prod - product ?wp - workpiece ?m - mps ?g - ds-gate
 	             ?basecol - base-color ?capcol - cap-color
 	             ?ring1col - ring-color ?ring2col - ring-color)
 	:precondition (and (wp-at ?wp ?m INPUT)
 	                   (not (mps-side-free ?m INPUT))
 	                   (wp-usable ?wp)
 	                   (mps-type ?m DS)
-	                   (ds-prepared-order ?m ?ord)
-	                   (order-complexity ?ord C2)
-	                   (order-base-color ?ord ?basecol)
+	                   (ds-prepared-product ?m ?prod)
+	                   (product-complexity ?prod C2)
+	                   (product-base-color ?prod ?basecol)
 	                   (wp-base-color ?wp ?basecol)
-	                   (order-ring1-color ?ord ?ring1col)
+	                   (product-ring1-color ?prod ?ring1col)
 	                   (wp-ring1-color ?wp ?ring1col)
-	                   (order-ring2-color ?ord ?ring2col)
+	                   (product-ring2-color ?prod ?ring2col)
 	                   (wp-ring2-color ?wp ?ring2col)
 	                   (wp-ring3-color ?wp RING_NONE)
-	                   (order-cap-color ?ord ?capcol)
+	                   (product-cap-color ?prod ?capcol)
 	                   (wp-cap-color ?wp ?capcol)
 	              )
-	:effect (and (order-fulfilled ?ord)
+	:effect (and (product-fulfilled ?prod)
 	             (not (wp-at ?wp ?m INPUT))
 	             (mps-side-free ?m INPUT)
-	             (not (ds-prepared-order ?m ?ord))
+	             (not (ds-prepared-product ?m ?prod))
 	             (not (wp-usable ?wp))
 	             (not (wp-base-color ?wp ?basecol))
 	             (not (wp-cap-color ?wp ?capcol))
@@ -635,8 +635,8 @@
 
 )
 
-(:action fulfill-order-c3
-	:parameters (?ord - order ?wp - workpiece ?m - mps ?g - ds-gate
+(:action fulfill-product-c3
+	:parameters (?prod - product ?wp - workpiece ?m - mps ?g - ds-gate
 	             ?basecol - base-color ?capcol - cap-color
 	             ?ring1col - ring-color ?ring2col - ring-color
 	             ?ring3col - ring-color)
@@ -644,23 +644,23 @@
 	                   (not (mps-side-free ?m INPUT))
 	                   (wp-usable ?wp)
 	                   (mps-type ?m DS)
-	                   (ds-prepared-order ?m ?ord)
-	                   (order-complexity ?ord C3)
-	                   (order-base-color ?ord ?basecol)
+	                   (ds-prepared-product ?m ?prod)
+	                   (product-complexity ?prod C3)
+	                   (product-base-color ?prod ?basecol)
 	                   (wp-base-color ?wp ?basecol)
-	                   (order-ring1-color ?ord ?ring1col)
+	                   (product-ring1-color ?prod ?ring1col)
 	                   (wp-ring1-color ?wp ?ring1col)
-	                   (order-ring2-color ?ord ?ring2col)
+	                   (product-ring2-color ?prod ?ring2col)
 	                   (wp-ring2-color ?wp ?ring2col)
-	                   (order-ring3-color ?ord ?ring3col)
+	                   (product-ring3-color ?prod ?ring3col)
 	                   (wp-ring3-color ?wp ?ring3col)
-	                   (order-cap-color ?ord ?capcol)
+	                   (product-cap-color ?prod ?capcol)
 	                   (wp-cap-color ?wp ?capcol)
 	              )
-	:effect (and (order-fulfilled ?ord)
+	:effect (and (product-fulfilled ?prod)
 	             (not (wp-at ?wp ?m INPUT))
 	             (mps-side-free ?m INPUT)
-	             (not (ds-prepared-order ?m ?ord))
+	             (not (ds-prepared-product ?m ?prod))
 	             (not (wp-usable ?wp))
 	             (not (wp-base-color ?wp ?basecol))
 	             (not (wp-cap-color ?wp ?capcol))

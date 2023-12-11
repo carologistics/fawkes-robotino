@@ -254,78 +254,83 @@
 )
 
 
-(defrule refbox-recv-order
-  "Assert orders sent by the refbox."
+(defrule refbox-recv-product
+  "Assert products sent by the refbox."
   ?pf <- (protobuf-msg (type "llsf_msgs.OrderInfo") (ptr ?ptr))
   (wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
   =>
   (foreach ?o (pb-field-list ?ptr "orders")
-    (bind ?id (pb-field-value ?o "id"))
-    (bind ?order-id (sym-cat O ?id))
-    ;check if the order is new
-    (if (not (any-factp ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ domain fact order-complexity) )
-                                                  (eq ?order-id (wm-key-arg ?wm-fact:key ord)))))
-                                                  ; (eq ?order-id (nth$ (+ (member$ order ?wm-fact:key) 1) ?wm-fact:key))
-        then
-          (bind ?complexity (pb-field-value ?o "complexity"))
-          (bind ?competitive (pb-field-value ?o "competitive"))
-          (bind ?delivery-gate (pb-field-value ?o "delivery_gate"))
-          (bind ?quantity-requested (pb-field-value ?o "quantity_requested"))
-          (bind ?begin (pb-field-value ?o "delivery_period_begin"))
-          (bind ?end (pb-field-value ?o "delivery_period_end"))
-          (if (pb-has-field ?o "base_color") then
-            (bind ?base (pb-field-value ?o "base_color"))
-          else
-            (bind ?base UNKNOWN)
-          )
-          (bind ?cap (pb-field-value ?o "cap_color"))
-          (bind ?rings-count 0)
-          (progn$ (?p (pb-field-list ?o "ring_colors"))
-            (assert (wm-fact (key domain fact (sym-cat order- ring ?p-index -color) args? ord ?order-id col ?p) (type BOOL) (value TRUE) ))
-            (bind ?rings-count ?p-index)
-          )
-          (loop-for-count (?c (+ 1 ?rings-count) 3) do
-            (assert (wm-fact (key domain fact (sym-cat order- ring ?c -color) args? ord ?order-id col RING_NONE) (type BOOL) (value TRUE) ))
-          )
-          (assert
-            (wm-fact (key domain fact order-complexity args? ord ?order-id comp ?complexity) (type BOOL) (value TRUE) )
-            (wm-fact (key domain fact order-base-color args? ord ?order-id col ?base) (type BOOL) (value TRUE) )
-            (wm-fact (key domain fact order-cap-color  args? ord ?order-id col ?cap) (type BOOL) (value TRUE) )
-            (wm-fact (key domain fact order-gate  args? ord ?order-id gate (sym-cat GATE- ?delivery-gate)) (type BOOL) (value TRUE) )
-            (wm-fact (key refbox order ?order-id quantity-requested) (type UINT) (value ?quantity-requested) )
-            (wm-fact (key domain fact quantity-delivered args? ord ?order-id team CYAN)
-                     (type UINT) (value 0))
-            (wm-fact (key domain fact quantity-delivered args? ord ?order-id team MAGENTA)
-                     (type UINT) (value 0))
-            (wm-fact (key refbox order ?order-id delivery-begin) (type UINT) (value ?begin) )
-            (wm-fact (key refbox order ?order-id delivery-end) (type UINT) (value ?end) )
+    (foreach ?p (pb-field-list ?o "products")
+      (bind ?id (pb-field-value ?p "oid"))
+      (bind ?order-id (sym-cat O ?id))
+      (bind ?id (pb-field-value ?p "pid"))
+      (bind ?product-id (sym-cat ?order-id P ?id))
+      ;check if the product is new
+      (if (not (any-factp ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ domain fact product-complexity) )
+                                                    (eq ?product-id (wm-key-arg ?wm-fact:key prod)))))
+                                                    ; (eq ?product-id (nth$ (+ (member$ product ?wm-fact:key) 1) ?wm-fact:key))
+          then
+            (bind ?complexity (pb-field-value ?p "complexity"))
+            (bind ?competitive (pb-field-value ?o "competitive"))
+            (bind ?delivery-gate (pb-field-value ?o "delivery_gate"))
+            (bind ?quantity-requested (pb-field-value ?o "quantity_requested"))
+            (bind ?begin (pb-field-value ?o "delivery_period_begin"))
+            (bind ?end (pb-field-value ?o "delivery_period_end"))
+            (if (pb-has-field ?p "base_color") then
+              (bind ?base (pb-field-value ?p "base_color"))
+            else
+              (bind ?base UNKNOWN)
             )
-          (assert (wm-fact (key order meta competitive args? ord ?order-id)
-                           (type BOOL) (is-list FALSE) (value ?competitive)))
-          (printout t "Added order " ?id " with " (pb-field-value ?o "cap_color") crlf)
-      else
-          (if (eq ?team-color CYAN) then
-            (bind ?qd-them (pb-field-value ?o "quantity_delivered_magenta"))
-            (bind ?qd-us (pb-field-value ?o "quantity_delivered_cyan"))
-          else
-            (bind ?qd-them (pb-field-value ?o "quantity_delivered_cyan"))
-            (bind ?qd-us (pb-field-value ?o "quantity_delivered_magenta"))
-          )
-          (do-for-fact ((?old-qd-them wm-fact))
-            (and (wm-key-prefix ?old-qd-them:key
-                   (create$ domain fact quantity-delivered args? ord ?order-id
-                    team (mirror-team ?team-color)))
-                 (neq ?old-qd-them:value ?qd-them))
-              (modify ?old-qd-them (value ?qd-them))
-          )
-          (do-for-fact ((?old-qd-us wm-fact))
-            (and (wm-key-prefix ?old-qd-us:key
-                   (create$ domain fact quantity-delivered args? ord ?order-id
-                    team ?team-color))
-                 (neq ?old-qd-us:value ?qd-us))
-              (modify ?old-qd-us (value ?qd-us))
-          )
-    )
+            (bind ?cap (pb-field-value ?p "cap_color"))
+            (bind ?rings-count 1)
+            (progn$ (?rc (pb-field-list ?p "ring_colors"))
+			  (printout t "I have " ?rings-count " ring " ?rc crlf)
+              (assert (wm-fact (key domain fact (sym-cat product- ring ?rings-count -color) args? prod ?product-id col ?rc) (type BOOL) (value TRUE) ))
+              (bind ?rings-count (+ 1 ?rings-count))
+            )
+            (loop-for-count (?c ?rings-count 3) do
+              (assert (wm-fact (key domain fact (sym-cat product- ring ?c -color) args? prod ?product-id col RING_NONE) (type BOOL) (value TRUE) ))
+            )
+            (assert
+              (wm-fact (key domain fact product-complexity args? prod ?product-id comp ?complexity) (type BOOL) (value TRUE) )
+              (wm-fact (key domain fact product-base-color args? prod ?product-id col ?base) (type BOOL) (value TRUE) )
+              (wm-fact (key domain fact product-cap-color  args? prod ?product-id col ?cap) (type BOOL) (value TRUE) )
+              (wm-fact (key domain fact product-gate  args? prod ?product-id gate (sym-cat GATE- ?delivery-gate)) (type BOOL) (value TRUE) )
+              (wm-fact (key refbox product ?product-id quantity-requested) (type UINT) (value ?quantity-requested) )
+              (wm-fact (key domain fact quantity-delivered args? prod ?product-id team CYAN)
+                       (type UINT) (value 0))
+              (wm-fact (key domain fact quantity-delivered args? prod ?product-id team MAGENTA)
+                       (type UINT) (value 0))
+              (wm-fact (key refbox product ?product-id delivery-begin) (type UINT) (value ?begin) )
+              (wm-fact (key refbox product ?product-id delivery-end) (type UINT) (value ?end) )
+              )
+            (assert (wm-fact (key product meta competitive args? prod ?product-id)
+                             (type BOOL) (is-list FALSE) (value ?competitive)))
+            (printout t "Added product " ?id " with " (pb-field-value ?p "cap_color") crlf)
+        else
+            (if (eq ?team-color CYAN) then
+              (bind ?qd-them (pb-field-value ?o "quantity_delivered_magenta"))
+              (bind ?qd-us (pb-field-value ?o "quantity_delivered_cyan"))
+            else
+              (bind ?qd-them (pb-field-value ?o "quantity_delivered_cyan"))
+              (bind ?qd-us (pb-field-value ?o "quantity_delivered_magenta"))
+            )
+            (do-for-fact ((?old-qd-them wm-fact))
+              (and (wm-key-prefix ?old-qd-them:key
+                     (create$ domain fact quantity-delivered args? prod ?product-id
+                      team (mirror-team ?team-color)))
+                   (neq ?old-qd-them:value ?qd-them))
+                (modify ?old-qd-them (value ?qd-them))
+            )
+            (do-for-fact ((?old-qd-us wm-fact))
+              (and (wm-key-prefix ?old-qd-us:key
+                     (create$ domain fact quantity-delivered args? prod ?product-id
+                      team ?team-color))
+                   (neq ?old-qd-us:value ?qd-us))
+                (modify ?old-qd-us (value ?qd-us))
+            )
+      )
+	)
   )
   (retract ?pf)
 )

@@ -568,10 +568,10 @@
 )
 
 
-(defrule goal-expander-ss-assign-wp-to-order
+(defrule goal-expander-ss-assign-wp-to-product
 	?g <- (goal (id ?goal-id) (class SS-ASSIGN-WP) (mode SELECTED)
 	            (parent ?parent-id)
-	            (params mps ?ss old-wp ?old-wp wp ?wp order ?order
+	            (params mps ?ss old-wp ?old-wp wp ?wp product ?product
 	                    shelf ?shelf slot ?slot
 	                    base-col ?base-col ring1-col ?ring1-col
 	                    ring2-col ?ring2-col ring3-col ?ring3-col
@@ -580,7 +580,7 @@
 	=>
 	(plan-assert-sequential SS-ASSIGN-WP-PLAN ?goal-id central
 		(plan-assert-action prepare-ss-to-assign-wp ?ss ?old-wp ?wp ?shelf ?slot ?base-col ?ring1-col ?ring2-col ?ring3-col ?cap-col)
-		(plan-assert-action assign-wp-to-order ?order ?wp ?base-col ?ring1-col ?ring2-col ?ring3-col ?cap-col)
+		(plan-assert-action assign-wp-to-product ?product ?wp ?base-col ?ring1-col ?ring2-col ?ring3-col ?cap-col)
 	)
 	(modify ?g (mode EXPANDED))
 )
@@ -661,29 +661,29 @@
 	(wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
 	(wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
 	; Order-CEs
-	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
-	(wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
-	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-	(wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
-	(wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
-	(wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
-	(wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
-	(wm-fact (key domain fact order-gate args? ord ?order gate ?gate))
+	(wm-fact (key product meta wp-for-product args? wp ?wp prod ?product))
+	(wm-fact (key domain fact product-complexity args? prod ?product com ?complexity))
+	(wm-fact (key domain fact product-base-color args? prod ?product col ?base-color))
+	(wm-fact (key domain fact product-ring1-color args? prod ?product col ?ring1-color))
+	(wm-fact (key domain fact product-ring2-color args? prod ?product col ?ring2-color))
+	(wm-fact (key domain fact product-ring3-color args? prod ?product col ?ring3-color))
+	(wm-fact (key domain fact product-cap-color args? prod ?product col ?cap-color))
+	(wm-fact (key domain fact product-gate args? prod ?product gate ?gate))
 	=>
 	(bind ?params (create$))
 	(switch ?complexity
 		(case C0 then
-		    (bind ?params (create$ ?order ?wp ?mps ?gate ?base-color ?cap-color)))
+		    (bind ?params (create$ ?product ?wp ?mps ?gate ?base-color ?cap-color)))
 		(case C1 then
-		    (bind ?params (create$ ?order ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color)))
+		    (bind ?params (create$ ?product ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color)))
 		(case C2 then
-		    (bind ?params (create$ ?order ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color ?ring2-color)))
+		    (bind ?params (create$ ?product ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color ?ring2-color)))
 		(case C3 then
-		    (bind ?params (create$ ?order ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color ?ring2-color ?ring3-color)))
+		    (bind ?params (create$ ?product ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color ?ring2-color ?ring3-color)))
  )
 	(plan-assert-sequential INSTRUCT-DS-DELIVER-PLAN ?goal-id ?robot
-		(plan-assert-action prepare-ds ?mps ?order)
-		(plan-assert-action (sym-cat fulfill-order- (lowcase ?complexity)) ?params)
+		(plan-assert-action prepare-ds ?mps ?product)
+		(plan-assert-action (sym-cat fulfill-product- (lowcase ?complexity)) ?params)
 	)
 	(modify ?g (mode EXPANDED))
 )
@@ -694,8 +694,8 @@
 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
 	=>
 	(plan-assert-sequential INSTRUCT-DS-DISCARD-PLAN ?goal-id ?robot
-		(plan-assert-action prepare-ds ?mps O0)
-		(plan-assert-action fulfill-order-discard (create$ O0 ?wp ?mps))
+		(plan-assert-action prepare-ds ?mps O0P0)
+		(plan-assert-action fulfill-product-discard (create$ O0P0 ?wp ?mps))
 	)
 	(modify ?g (mode EXPANDED))
 )

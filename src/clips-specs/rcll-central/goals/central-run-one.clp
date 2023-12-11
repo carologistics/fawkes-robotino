@@ -9,12 +9,12 @@
 ;---------------------------------------------------------------------------
 
 ; Sub-type: CENTRAL-RUN-ONE-OF-SUBGOALS
-; Perform: one goal at a time, ordered by goal priority
+; Perform: one goal at a time, producted by goal priority
 ; Succeed: if exactly one sub-goal succeeds
 ; Fail:    if exactly one sub-goal fails
 ;
-; A CENTRAL-RUN-ONE parent goal will order the executable goals by priority and
-; then start performing them in order.  If any goal succeeds or fails, the
+; A CENTRAL-RUN-ONE parent goal will product the executable goals by priority and
+; then start performing them in product.  If any goal succeeds or fails, the
 ; parent succeeds or fails respectively.
 ;
 ; Interactions:

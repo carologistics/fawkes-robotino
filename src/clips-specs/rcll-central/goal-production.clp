@@ -50,11 +50,11 @@
   )
 )
 
-(deffunction goal-meta-assert (?goal ?robot ?order-id ?ring-nr)
-"Creates the goal-meta fact, assigns the goal to the robot and to its order"
+(deffunction goal-meta-assert (?goal ?robot ?product-id ?ring-nr)
+"Creates the goal-meta fact, assigns the goal to the robot and to its product"
   (assert (goal-meta (goal-id (fact-slot-value ?goal id))
                      (assigned-to ?robot)
-                     (order-id ?order-id)
+                     (product-id ?product-id)
                      (ring-nr ?ring-nr)))
   (return ?goal)
 )
@@ -234,7 +234,7 @@
 ; ----------------------- Assert Goal Functions -------------------------------
 
 (deffunction goal-production-assert-buffer-cap
-  (?mps ?cap-color ?order-id)
+  (?mps ?cap-color ?product-id)
 
   (bind ?goal (assert (goal (class BUFFER-CAP)
         (id (sym-cat BUFFER-CAP- (gensym*))) (sub-type SIMPLE)
@@ -242,12 +242,12 @@
         (params target-mps ?mps
                 cap-color ?cap-color)
   )))
-  (goal-meta-assert ?goal nil ?order-id nil)
+  (goal-meta-assert ?goal nil ?product-id nil)
   (return ?goal)
 )
 
 (deffunction goal-production-assert-store-wp
-  (?order-id ?mps ?wp ?shelf ?slot)
+  (?product-id ?mps ?wp ?shelf ?slot)
 
   (bind ?goal (assert (goal (class STORE-WP)
         (id (sym-cat STORE-WP- (gensym*))) (sub-type SIMPLE)
@@ -256,19 +256,19 @@
                 wp-loc UNKNOWN wp-side UNKNOWN
                 shelf ?shelf slot ?slot)
   )))
-  (goal-meta-assert ?goal nil ?order-id nil)
+  (goal-meta-assert ?goal nil ?product-id nil)
   (return ?goal)
 )
 
 (deffunction goal-production-assert-retrieve-wp
-  (?order-id ?mps ?wp ?shelf ?slot)
+  (?product-id ?mps ?wp ?shelf ?slot)
 
   (bind ?goal (assert (goal (class RETRIEVE-WP)
         (id (sym-cat STORE-WP- (gensym*))) (sub-type SIMPLE)
         (verbosity NOISY) (is-executable FALSE)
         (params wp ?wp target-mps ?mps target-side OUTPUT shelf ?shelf slot ?slot)
   )))
-  (goal-meta-assert ?goal nil ?order-id nil)
+  (goal-meta-assert ?goal nil ?product-id nil)
   (return ?goal)
 )
 
@@ -295,7 +295,7 @@
 )
 
 (deffunction goal-production-assert-mount-cap
-  (?wp ?mps ?wp-loc ?wp-side ?order-id)
+  (?wp ?mps ?wp-loc ?wp-side ?product-id)
 
   (bind ?goal (assert (goal (class MOUNT-CAP)
         (id (sym-cat MOUNT-CAP- (gensym*))) (sub-type SIMPLE)
@@ -306,12 +306,12 @@
                 wp-loc ?wp-loc
                 wp-side ?wp-side)
   )))
-  (goal-meta-assert ?goal nil ?order-id nil)
+  (goal-meta-assert ?goal nil ?product-id nil)
   (return ?goal)
 )
 
 (deffunction goal-production-assert-mount-ring
-  (?wp ?rs ?wp-loc ?wp-side ?ring-color ?order-id ?ring-nr)
+  (?wp ?rs ?wp-loc ?wp-side ?ring-color ?product-id ?ring-nr)
   (bind ?goal (assert (goal (class MOUNT-RING)
         (id (sym-cat MOUNT-RING- (gensym*))) (sub-type SIMPLE)
         (verbosity NOISY) (is-executable FALSE)
@@ -323,36 +323,36 @@
                  ring-color ?ring-color
                  )
   )))
-  (goal-meta-assert ?goal nil ?order-id ?ring-nr)
+  (goal-meta-assert ?goal nil ?product-id ?ring-nr)
   (return ?goal)
 )
 
 (deffunction goal-production-assert-discard
-  (?wp ?cs ?side ?order-id)
+  (?wp ?cs ?side ?product-id)
 
   (bind ?goal (assert (goal (class DISCARD)
         (id (sym-cat DISCARD- (gensym*))) (sub-type SIMPLE)
         (verbosity NOISY) (is-executable FALSE)
         (params wp ?wp wp-loc ?cs wp-side ?side)
   )))
-  (goal-meta-assert ?goal nil ?order-id nil)
+  (goal-meta-assert ?goal nil ?product-id nil)
   (return ?goal)
 )
 
 (deffunction goal-production-assert-deliver-rc21
-  (?wp ?order-id)
+  (?wp ?product-id)
 
   (bind ?goal (assert (goal (class DELIVER-RC21)
         (id (sym-cat DELIVER-RC21- (gensym*))) (sub-type SIMPLE)
         (verbosity NOISY) (is-executable FALSE)
         (params wp ?wp)
   )))
-  (goal-meta-assert ?goal nil ?order-id nil)
+  (goal-meta-assert ?goal nil ?product-id nil)
   (return ?goal)
 )
 
 (deffunction goal-production-assert-instruct-ds-deliver
-  (?wp ?order-id ?ds)
+  (?wp ?product-id ?ds)
 
   (bind ?goal (assert (goal (class INSTRUCT-DS-DELIVER)
     (id (sym-cat INSTRUCT-DS-DELIVER- (gensym*))) (sub-type SIMPLE)
@@ -360,12 +360,12 @@
     (params wp ?wp
             target-mps ?ds)
   )))
-  (goal-meta-assert ?goal central ?order-id nil)
+  (goal-meta-assert ?goal central ?product-id nil)
   (return ?goal)
 )
 
 (deffunction goal-production-assert-instruct-ss-store-wp
-  (?order-id ?wp ?mps ?shelf ?slot)
+  (?product-id ?wp ?mps ?shelf ?slot)
 
   (bind ?goal (assert (goal (class INSTRUCT-SS-STORE-WP)
     (id (sym-cat INSTRUCT-SS-STORE-WP- (gensym*))) (sub-type SIMPLE)
@@ -373,12 +373,12 @@
     (params wp ?wp
             target-mps ?mps shelf ?shelf slot ?slot )
   )))
-  (goal-meta-assert ?goal central ?order-id nil)
+  (goal-meta-assert ?goal central ?product-id nil)
   (return ?goal)
 )
 
 (deffunction goal-production-assert-instruct-ss-retrieve-wp
-  (?order-id ?wp ?mps ?shelf ?slot)
+  (?product-id ?wp ?mps ?shelf ?slot)
 
   (bind ?goal (assert (goal (class INSTRUCT-SS-RETRIEVE-WP)
     (id (sym-cat INSTRUCT-SS-RETRIEVE-WP- (gensym*))) (sub-type SIMPLE)
@@ -386,7 +386,7 @@
     (params wp ?wp
             target-mps ?mps shelf ?shelf ?slot )
   )))
-  (goal-meta-assert ?goal central ?order-id nil)
+  (goal-meta-assert ?goal central ?product-id nil)
   (return ?goal)
 )
 
@@ -405,7 +405,7 @@
 
 (deffunction goal-production-assert-deliver
   "If there is a DS, do a normal delivery, otherwise do a RoboCup 2021 delivery. "
-  (?wp ?order-id ?instruct-parent ?ds)
+  (?wp ?product-id ?instruct-parent ?ds)
 
   (bind ?goal nil)
   (if (any-factp ((?state domain-fact)) (and (eq ?state:name mps-state)
@@ -413,7 +413,7 @@
       )
   then
 
-    (bind ?instruct-goal (goal-production-assert-instruct-ds-deliver ?wp ?order-id ?ds))
+    (bind ?instruct-goal (goal-production-assert-instruct-ds-deliver ?wp ?product-id ?ds))
     (modify ?instruct-goal (parent ?instruct-parent))
 
     (bind ?goal
@@ -423,17 +423,17 @@
         (params wp ?wp
             target-mps ?ds
             target-side INPUT)
-      )) nil ?order-id nil)
+      )) nil ?product-id nil)
     )
   else
-    (bind ?goal (goal-production-assert-deliver-rc21 ?wp ?order-id))
+    (bind ?goal (goal-production-assert-deliver-rc21 ?wp ?product-id))
   )
 
   (return ?goal)
 )
 
 (deffunction goal-production-assert-pay-for-rings-with-base
-  (?wp ?wp-loc ?wp-side ?target-mps ?target-side ?order-id)
+  (?wp ?wp-loc ?wp-side ?target-mps ?target-side ?product-id)
   (bind ?goal (assert (goal (class PAY-FOR-RINGS-WITH-BASE)
         (id (sym-cat PAY-FOR-RINGS-WITH-BASE- (gensym*))) (sub-type SIMPLE)
         (verbosity NOISY) (is-executable FALSE)
@@ -444,12 +444,12 @@
                  target-side ?target-side
                  )
   )))
-  (goal-meta-assert ?goal nil ?order-id nil)
+  (goal-meta-assert ?goal nil ?product-id nil)
   (return ?goal)
 )
 
 (deffunction goal-production-assert-pay-for-rings-with-cap-carrier
-  (?wp ?wp-loc ?wp-side ?target-mps ?target-side ?order-id)
+  (?wp ?wp-loc ?wp-side ?target-mps ?target-side ?product-id)
 
   (bind ?goal (assert (goal (class PAY-FOR-RINGS-WITH-CAP-CARRIER)
         (id (sym-cat PAY-FOR-RINGS-WITH-CAP-CARRIER- (gensym*))) (sub-type SIMPLE)
@@ -461,12 +461,12 @@
                  target-side ?target-side
                  )
   )))
-  (goal-meta-assert ?goal nil ?order-id nil)
+  (goal-meta-assert ?goal nil ?product-id nil)
   (return ?goal)
 )
 
 (deffunction goal-production-assert-pay-for-rings-with-cap-carrier-from-shelf
-  (?wp-loc ?target-mps ?target-side ?order-id)
+  (?wp-loc ?target-mps ?target-side ?product-id)
 
   (bind ?goal (assert (goal (class PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
         (id (sym-cat PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF- (gensym*))) (sub-type SIMPLE)
@@ -476,12 +476,12 @@
                  target-side ?target-side
                  )
   )))
-  (goal-meta-assert ?goal nil ?order-id nil)
+  (goal-meta-assert ?goal nil ?product-id nil)
   (return ?goal)
 )
 
 (deffunction goal-production-assert-instruct-cs-buffer-cap
-  (?mps ?cap-color ?order-id)
+  (?mps ?cap-color ?product-id)
 
   (bind ?goal (assert (goal (class INSTRUCT-CS-BUFFER-CAP)
         (id (sym-cat INSTRUCT-CS-BUFFER-CAP- (gensym*))) (sub-type SIMPLE)
@@ -489,12 +489,12 @@
         (params target-mps ?mps
                 cap-color ?cap-color)
   )))
-  (goal-meta-assert ?goal central ?order-id nil)
+  (goal-meta-assert ?goal central ?product-id nil)
   (return ?goal)
 )
 
 (deffunction goal-production-assert-instruct-bs-dispense-base
-  (?wp ?base-color ?side ?order-id ?bs)
+  (?wp ?base-color ?side ?product-id ?bs)
 
   (bind ?goal (assert (goal (class INSTRUCT-BS-DISPENSE-BASE)
     (id (sym-cat INSTRUCT-BS-DISPENSE-BASE- (gensym*))) (sub-type SIMPLE)
@@ -504,24 +504,24 @@
                 target-side ?side
                 base-color ?base-color)
   )))
-  (goal-meta-assert ?goal central ?order-id nil)
+  (goal-meta-assert ?goal central ?product-id nil)
   (return ?goal)
 )
 
 (deffunction goal-production-assert-instruct-cs-mount-cap
-  (?mps ?cap-color ?order-id)
+  (?mps ?cap-color ?product-id)
   (bind ?goal (assert (goal (class INSTRUCT-CS-MOUNT-CAP)
         (id (sym-cat INSTRUCT-CS-MOUNT-CAP- (gensym*))) (sub-type SIMPLE)
         (verbosity NOISY) (is-executable FALSE)
         (params target-mps ?mps
                 cap-color ?cap-color)
   )))
-  (goal-meta-assert ?goal central ?order-id nil)
+  (goal-meta-assert ?goal central ?product-id nil)
   (return ?goal)
 )
 
 (deffunction goal-production-assert-instruct-rs-mount-ring
-  (?mps ?col-ring ?order-id ?ring-nr)
+  (?mps ?col-ring ?product-id ?ring-nr)
   (bind ?goal (assert (goal (class INSTRUCT-RS-MOUNT-RING)
         (id (sym-cat INSTRUCT-RS-MOUNT-RING- (gensym*))) (sub-type SIMPLE)
         (verbosity NOISY) (is-executable FALSE)
@@ -529,7 +529,7 @@
                       ring-color ?col-ring
                )
   )))
-  (goal-meta-assert ?goal central ?order-id ?ring-nr)
+  (goal-meta-assert ?goal central ?product-id ?ring-nr)
   (return ?goal)
 )
 
@@ -560,17 +560,17 @@
 	(return ?goal)
 )
 
-(deffunction goal-production-assign-order-and-prio-to-goal (?goal ?order-id ?prio)
+(deffunction goal-production-assign-product-and-prio-to-goal (?goal ?product-id ?prio)
   (bind ?goal-id (fact-slot-value ?goal id))
   (modify ?goal (priority ?prio))
   (do-for-fact ((?goal-meta goal-meta)) (eq ?goal-meta:goal-id ?goal-id)
-    (modify ?goal-meta (root-for-order ?order-id))
+    (modify ?goal-meta (root-for-product ?product-id))
   )
 )
 
 (deffunction goal-production-assert-requests
-  ;assert requests for an order's support goals (i.e., payment, buffer, discard)
-  (?rs ?cs ?col-rings ?col-cap ?order ?prio)
+  ;assert requests for an product's support goals (i.e., payment, buffer, discard)
+  (?rs ?cs ?col-rings ?col-cap ?product ?prio)
 
   (bind ?index 1)
   (bind ?seq 1)
@@ -583,24 +583,24 @@
       (bind ?price (sym-to-int (wm-key-arg ?rs-ring-spec:key rn)))
     )
     (loop-for-count ?price
-      (assert (wm-fact (key request pay args? ord ?order m (nth$ ?index ?rs) ring (sym-cat RING ?index) seq ?seq prio ?prio) (is-list TRUE) (type SYMBOL) (values status OPEN assigned-to)))
+      (assert (wm-fact (key request pay args? prod ?product m (nth$ ?index ?rs) ring (sym-cat RING ?index) seq ?seq prio ?prio) (is-list TRUE) (type SYMBOL) (values status OPEN assigned-to)))
       (bind ?seq (+ ?seq 1))
     )
     (bind ?index (+ ?index 1))
   )
-  (assert (wm-fact (key request buffer args? ord ?order col ?col-cap prio ?prio) (is-list TRUE) (type SYMBOL) (values status OPEN assigned-to)))
-  (assert (wm-fact (key request discard args? ord ?order cs ?cs prio ?prio) (is-list TRUE) (type SYMBOL) (values status OPEN assigned-to)))
+  (assert (wm-fact (key request buffer args? prod ?product col ?col-cap prio ?prio) (is-list TRUE) (type SYMBOL) (values status OPEN assigned-to)))
+  (assert (wm-fact (key request discard args? prod ?product cs ?cs prio ?prio) (is-list TRUE) (type SYMBOL) (values status OPEN assigned-to)))
 )
 
 
 (deffunction goal-production-assert-c0
-  (?root-id ?order-id ?wp-for-order ?cs ?ds ?bs ?col-cap ?col-base)
+  (?root-id ?product-id ?wp-for-product ?cs ?ds ?bs ?col-cap ?col-base)
 
   ;assert the instruct goals
   (bind ?instruct-goals
     (goal-tree-assert-central-run-parallel-prio INSTRUCT-ORDER ?*PRODUCTION-C0-PRIORITY*
-      (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base INPUT ?order-id ?bs)
-      (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
+      (goal-production-assert-instruct-bs-dispense-base ?wp-for-product ?col-base INPUT ?product-id ?bs)
+      (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?product-id)
     )
   )
   (bind ?instruct-parent (fact-slot-value ?instruct-goals id))
@@ -609,25 +609,25 @@
   ;assert the main production tree
   (bind ?goal
     (goal-tree-assert-central-run-all-prio PRODUCE-ORDER ?*PRODUCTION-C0-PRIORITY*
-      (goal-production-assert-deliver ?wp-for-order ?order-id ?instruct-parent ?ds)
-      (goal-production-assert-mount-cap ?wp-for-order ?cs ?bs INPUT ?order-id)
+      (goal-production-assert-deliver ?wp-for-product ?product-id ?instruct-parent ?ds)
+      (goal-production-assert-mount-cap ?wp-for-product ?cs ?bs INPUT ?product-id)
     )
   )
 
-  (goal-production-assign-order-and-prio-to-goal ?goal ?order-id ?*PRODUCTION-C0-PRIORITY*)
+  (goal-production-assign-product-and-prio-to-goal ?goal ?product-id ?*PRODUCTION-C0-PRIORITY*)
 
-  (goal-production-assert-requests (create$ ) ?cs (create$ ) ?col-cap ?order-id ?*PRODUCTION-C0-PRIORITY*)
+  (goal-production-assert-requests (create$ ) ?cs (create$ ) ?col-cap ?product-id ?*PRODUCTION-C0-PRIORITY*)
 )
 
 (deffunction goal-production-assert-c1
-  (?root-id ?order-id ?wp-for-order ?cs ?ds ?bs ?rs1 ?col-cap ?col-base ?col-ring1)
+  (?root-id ?product-id ?wp-for-product ?cs ?ds ?bs ?rs1 ?col-cap ?col-base ?col-ring1)
 
   ;assert the instruct goals
   (bind ?instruct-goals
     (goal-tree-assert-central-run-parallel-prio INSTRUCT-ORDER ?*PRODUCTION-C1-PRIORITY*
-      (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base INPUT ?order-id ?bs)
-      (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
-      (goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
+      (goal-production-assert-instruct-bs-dispense-base ?wp-for-product ?col-base INPUT ?product-id ?bs)
+      (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?product-id)
+      (goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?product-id ONE)
     )
   )
   (bind ?instruct-parent (fact-slot-value ?instruct-goals id))
@@ -636,26 +636,26 @@
   ;assert the main production tree
   (bind ?goal
     (goal-tree-assert-central-run-all-prio PRODUCE-ORDER ?*PRODUCTION-C1-PRIORITY*
-      (goal-production-assert-deliver ?wp-for-order ?order-id ?instruct-parent ?ds)
-      (goal-production-assert-mount-cap ?wp-for-order ?cs ?rs1 OUTPUT ?order-id)
-      (goal-production-assert-mount-ring ?wp-for-order ?rs1 ?bs INPUT ?col-ring1 ?order-id ONE)
+      (goal-production-assert-deliver ?wp-for-product ?product-id ?instruct-parent ?ds)
+      (goal-production-assert-mount-cap ?wp-for-product ?cs ?rs1 OUTPUT ?product-id)
+      (goal-production-assert-mount-ring ?wp-for-product ?rs1 ?bs INPUT ?col-ring1 ?product-id ONE)
     )
   )
 
-  (goal-production-assign-order-and-prio-to-goal ?goal ?order-id ?*PRODUCTION-C1-PRIORITY*)
+  (goal-production-assign-product-and-prio-to-goal ?goal ?product-id ?*PRODUCTION-C1-PRIORITY*)
 
-  (goal-production-assert-requests (create$ ?rs1) ?cs (create$ ?col-ring1) ?col-cap ?order-id ?*PRODUCTION-C1-PRIORITY*)
+  (goal-production-assert-requests (create$ ?rs1) ?cs (create$ ?col-ring1) ?col-cap ?product-id ?*PRODUCTION-C1-PRIORITY*)
 )
 
 (deffunction goal-production-assert-c2
-  (?root-id ?order-id ?wp-for-order ?cs ?ds ?bs ?rs1 ?rs2 ?col-cap ?col-base ?col-ring1 ?col-ring2)
+  (?root-id ?product-id ?wp-for-product ?cs ?ds ?bs ?rs1 ?rs2 ?col-cap ?col-base ?col-ring1 ?col-ring2)
 
   (bind ?instruct-goals
     (goal-tree-assert-central-run-parallel-prio INSTRUCT-ORDER ?*PRODUCTION-C2-PRIORITY*
-      (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base INPUT ?order-id ?bs)
-      (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
-      (goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
-      (goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2 ?order-id TWO)
+      (goal-production-assert-instruct-bs-dispense-base ?wp-for-product ?col-base INPUT ?product-id ?bs)
+      (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?product-id)
+      (goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?product-id ONE)
+      (goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2 ?product-id TWO)
     )
   )
   (bind ?instruct-parent (fact-slot-value ?instruct-goals id))
@@ -663,28 +663,28 @@
 
   (bind ?goal
     (goal-tree-assert-central-run-all-prio PRODUCE-ORDER ?*PRODUCTION-C2-PRIORITY*
-      (goal-production-assert-deliver ?wp-for-order ?order-id ?instruct-parent ?ds)
-      (goal-production-assert-mount-cap ?wp-for-order ?cs ?rs2 OUTPUT ?order-id)
-      (goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT ?col-ring2 ?order-id TWO)
-      (goal-production-assert-mount-ring ?wp-for-order ?rs1 ?bs INPUT ?col-ring1 ?order-id ONE)
+      (goal-production-assert-deliver ?wp-for-product ?product-id ?instruct-parent ?ds)
+      (goal-production-assert-mount-cap ?wp-for-product ?cs ?rs2 OUTPUT ?product-id)
+      (goal-production-assert-mount-ring ?wp-for-product ?rs2 ?rs1 OUTPUT ?col-ring2 ?product-id TWO)
+      (goal-production-assert-mount-ring ?wp-for-product ?rs1 ?bs INPUT ?col-ring1 ?product-id ONE)
     )
   )
 
-  (goal-production-assign-order-and-prio-to-goal ?goal ?order-id ?*PRODUCTION-C2-PRIORITY*)
+  (goal-production-assign-product-and-prio-to-goal ?goal ?product-id ?*PRODUCTION-C2-PRIORITY*)
 
-  (goal-production-assert-requests (create$ ?rs1 ?rs2) ?cs (create$ ?col-ring1 ?col-ring2) ?col-cap ?order-id ?*PRODUCTION-C2-PRIORITY*)
+  (goal-production-assert-requests (create$ ?rs1 ?rs2) ?cs (create$ ?col-ring1 ?col-ring2) ?col-cap ?product-id ?*PRODUCTION-C2-PRIORITY*)
 )
 
 (deffunction goal-production-assert-c3
-  (?root-id ?order-id ?wp-for-order ?cs ?ds ?bs ?rs1 ?rs2 ?rs3 ?col-cap ?col-base ?col-ring1 ?col-ring2 ?col-ring3)
+  (?root-id ?product-id ?wp-for-product ?cs ?ds ?bs ?rs1 ?rs2 ?rs3 ?col-cap ?col-base ?col-ring1 ?col-ring2 ?col-ring3)
 
   (bind ?instruct-goals
     (goal-tree-assert-central-run-parallel-prio INSTRUCT-ORDER ?*PRODUCTION-C3-PRIORITY*
-      (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base INPUT ?order-id ?bs)
-      (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
-      (goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
-      (goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2 ?order-id TWO)
-      (goal-production-assert-instruct-rs-mount-ring ?rs3 ?col-ring3 ?order-id THREE)
+      (goal-production-assert-instruct-bs-dispense-base ?wp-for-product ?col-base INPUT ?product-id ?bs)
+      (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?product-id)
+      (goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?product-id ONE)
+      (goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2 ?product-id TWO)
+      (goal-production-assert-instruct-rs-mount-ring ?rs3 ?col-ring3 ?product-id THREE)
     )
   )
   (bind ?instruct-parent (fact-slot-value ?instruct-goals id))
@@ -692,21 +692,21 @@
 
   (bind ?goal
     (goal-tree-assert-central-run-all-prio PRODUCE-ORDER ?*PRODUCTION-C3-PRIORITY*
-      (goal-production-assert-deliver ?wp-for-order ?order-id ?instruct-parent ?ds)
-      (goal-production-assert-mount-cap ?wp-for-order ?cs ?rs3 OUTPUT ?order-id)
-      (goal-production-assert-mount-ring ?wp-for-order ?rs3 ?rs2 OUTPUT ?col-ring3 ?order-id THREE)
-      (goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT ?col-ring2 ?order-id TWO)
-      (goal-production-assert-mount-ring ?wp-for-order ?rs1 ?bs INPUT ?col-ring1 ?order-id ONE)
+      (goal-production-assert-deliver ?wp-for-product ?product-id ?instruct-parent ?ds)
+      (goal-production-assert-mount-cap ?wp-for-product ?cs ?rs3 OUTPUT ?product-id)
+      (goal-production-assert-mount-ring ?wp-for-product ?rs3 ?rs2 OUTPUT ?col-ring3 ?product-id THREE)
+      (goal-production-assert-mount-ring ?wp-for-product ?rs2 ?rs1 OUTPUT ?col-ring2 ?product-id TWO)
+      (goal-production-assert-mount-ring ?wp-for-product ?rs1 ?bs INPUT ?col-ring1 ?product-id ONE)
     )
   )
 
-  (goal-production-assign-order-and-prio-to-goal ?goal ?order-id ?*PRODUCTION-C3-PRIORITY*)
+  (goal-production-assign-product-and-prio-to-goal ?goal ?product-id ?*PRODUCTION-C3-PRIORITY*)
 
-  (goal-production-assert-requests (create$ ?rs1 ?rs2 ?rs3) ?cs (create$ ?col-ring1 ?col-ring2 ?col-ring3) ?col-cap ?order-id ?*PRODUCTION-C3-PRIORITY*)
+  (goal-production-assert-requests (create$ ?rs1 ?rs2 ?rs3) ?cs (create$ ?col-ring1 ?col-ring2 ?col-ring3) ?col-cap ?product-id ?*PRODUCTION-C3-PRIORITY*)
 )
 
 (defrule goal-production-create-instruction-root
-  "Create the production root under which all instruction goal trees for the orders
+  "Create the production root under which all instruction goal trees for the products
   are asserted"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (domain-facts-loaded)
@@ -795,9 +795,9 @@
 )
 
 (defrule goal-production-create-cleanup-wp
-	"Creates a cleanup-wp goal to get rid of WPs that do not belong to any order,
+	"Creates a cleanup-wp goal to get rid of WPs that do not belong to any product,
   or step in the production chain e.g. a workpiece left from stopping to pursue an
-  order."
+  product."
 	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 	(goal (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
 	(goal (id ?root-id) (class WAIT-ROOT))
@@ -808,72 +808,72 @@
 )
 
 (defrule goal-production-debug-cap
-  "If there is a mismatch between machines and orders, produce output"
-  (wm-fact (key domain fact order-cap-color args? ord ?order-id col ?col))
+  "If there is a mismatch between machines and products, produce output"
+  (wm-fact (key domain fact product-cap-color args? prod ?product-id col ?col))
   (not (wm-fact (key domain fact cs-color args? m ?cs col ?col)))
   (goal (id ?root-id) (class INSTRUCTION-ROOT))
   =>
-  (printout error "Can not build order " ?order-id " with cap color " ?col " because there is no capstation for it" crlf)
+  (printout error "Can not build product " ?product-id " with cap color " ?col " because there is no capstation for it" crlf)
 )
 
 (defrule goal-production-debug-ring1
-  "If there is a mismatch between machines and orders, produce output"
-  (wm-fact (key domain fact order-ring1-color args? ord ?order-id col ?col&~RING_NONE))
+  "If there is a mismatch between machines and products, produce output"
+  (wm-fact (key domain fact product-ring1-color args? prod ?product-id col ?col&~RING_NONE))
   (not (wm-fact (key domain fact rs-ring-spec args? $? r ?col $?)))
   (goal (id ?root-id) (class INSTRUCTION-ROOT))
   =>
-  (printout error "Can not build order " ?order-id " with ring-1 color " ?col " because there is no ringstation for it" crlf)
+  (printout error "Can not build product " ?product-id " with ring-1 color " ?col " because there is no ringstation for it" crlf)
 )
 
 (defrule goal-production-debug-ring2
-  "If there is a mismatch between machines and orders, produce output"
-  (wm-fact (key domain fact order-ring2-color args? ord ?order-id col ?col-ring&~RING_NONE))
+  "If there is a mismatch between machines and products, produce output"
+  (wm-fact (key domain fact product-ring2-color args? prod ?product-id col ?col-ring&~RING_NONE))
   (not (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?col-ring $?)))
   (goal (id ?root-id) (class INSTRUCTION-ROOT))
   =>
-  (printout error "Can not build order " ?order-id " with ring-2 color " ?col-ring " because there is no ringstation for it" crlf)
+  (printout error "Can not build product " ?product-id " with ring-2 color " ?col-ring " because there is no ringstation for it" crlf)
 )
 
 (defrule goal-production-debug-ring3
-  "If there is a mismatch between machines and orders, produce output"
-  (wm-fact (key domain fact order-ring3-color args? ord ?order-id col ?col-ring&~RING_NONE))
+  "If there is a mismatch between machines and products, produce output"
+  (wm-fact (key domain fact product-ring3-color args? prod ?product-id col ?col-ring&~RING_NONE))
   (not (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?col-ring $?)))
   (goal (id ?root-id) (class INSTRUCTION-ROOT))
   =>
-  (printout error "Can not build order " ?order-id " with ring-3 color " ?col-ring " because there is no ringstation for it" crlf)
+  (printout error "Can not build product " ?product-id " with ring-3 color " ?col-ring " because there is no ringstation for it" crlf)
 )
 
-(defrule goal-production-create-produce-for-order
-  "Create for each incoming order a grounded production tree with the"
+(defrule goal-production-create-produce-for-product
+  "Create for each incoming product a grounded production tree with the"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?root-id) (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
   (wm-fact (key config rcll pick-and-place-challenge) (value FALSE))
-  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
-  (wm-fact (key domain fact order-base-color args? ord ?order-id col ?col-base))
-  (wm-fact (key domain fact order-cap-color  args? ord ?order-id col ?col-cap))
-  (wm-fact (key domain fact order-ring1-color args? ord ?order-id col ?col-ring1))
-  (wm-fact (key domain fact order-ring2-color args? ord ?order-id col ?col-ring2))
-  (wm-fact (key domain fact order-ring3-color args? ord ?order-id col ?col-ring3))
+  (wm-fact (key domain fact product-complexity args? prod ?product-id com ?comp))
+  (wm-fact (key domain fact product-base-color args? prod ?product-id col ?col-base))
+  (wm-fact (key domain fact product-cap-color  args? prod ?product-id col ?col-cap))
+  (wm-fact (key domain fact product-ring1-color args? prod ?product-id col ?col-ring1))
+  (wm-fact (key domain fact product-ring2-color args? prod ?product-id col ?col-ring2))
+  (wm-fact (key domain fact product-ring3-color args? prod ?product-id col ?col-ring3))
   (wm-fact (key domain fact cs-color args? m ?cs col ?col-cap))
   (wm-fact (key domain fact mps-type args? m ?cs t CS))
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
-  (not (wm-fact (key order meta wp-for-order args? wp ?something ord ?order-id)))
-  (or (wm-fact (key domain fact order-ring1-color args? ord ?order-id col RING_NONE))
+  (not (wm-fact (key product meta wp-for-product args? wp ?something prod ?product-id)))
+  (or (wm-fact (key domain fact product-ring1-color args? prod ?product-id col RING_NONE))
       (wm-fact (key domain fact rs-ring-spec args? m ?rs1 r ?col-ring1 $?)))
-  (or (wm-fact (key domain fact order-ring2-color args? ord ?order-id col RING_NONE))
+  (or (wm-fact (key domain fact product-ring2-color args? prod ?product-id col RING_NONE))
       (wm-fact (key domain fact rs-ring-spec args? m ?rs2 r ?col-ring2 $?)))
-  (or (wm-fact (key domain fact order-ring3-color args? ord ?order-id col RING_NONE))
+  (or (wm-fact (key domain fact product-ring3-color args? prod ?product-id col RING_NONE))
       (wm-fact (key domain fact rs-ring-spec args? m ?rs3 r ?col-ring3 $?)))
 
   (or
-    (wm-fact (key strategy meta selected-order args? cond filter) (value ?order-id))
+    (wm-fact (key strategy meta selected-product args? cond filter) (value ?product-id))
     (and
       (time $?now)
       (timer (name production-strategy-nothing-executable-timer) (time $?t&:(timeout ?now ?t ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT*)))
-      (wm-fact (key strategy meta selected-order args? cond fallback) (value ?order-id))
+      (wm-fact (key strategy meta selected-product args? cond fallback) (value ?product-id))
     )
   )
-  ?os <- (wm-fact (key order meta started args? ord ?order) (value FALSE))
+  ?os <- (wm-fact (key product meta started args? prod ?product) (value FALSE))
   (wm-fact (key mps workload needs-update) (value FALSE))
   =>
   ;find the necessary ringstations
@@ -889,32 +889,32 @@
   )
 
   ;create facts for workpiece
-  (bind ?wp-for-order (sym-cat wp- ?order-id))
-  (assert (domain-object (name ?wp-for-order) (type workpiece))
-      (domain-fact (name wp-unused) (param-values ?wp-for-order))
-      (wm-fact (key domain fact wp-base-color args? wp ?wp-for-order col BASE_NONE) (type BOOL) (value TRUE))
-      (wm-fact (key domain fact wp-cap-color args? wp ?wp-for-order col CAP_NONE) (type BOOL) (value TRUE))
-      (wm-fact (key domain fact wp-ring1-color args? wp ?wp-for-order col RING_NONE) (type BOOL) (value TRUE))
-      (wm-fact (key domain fact wp-ring2-color args? wp ?wp-for-order col RING_NONE) (type BOOL) (value TRUE))
-      (wm-fact (key domain fact wp-ring3-color args? wp ?wp-for-order col RING_NONE) (type BOOL) (value TRUE))
-      (wm-fact (key order meta wp-for-order args? wp ?wp-for-order ord ?order-id))
+  (bind ?wp-for-product (sym-cat wp- ?product-id))
+  (assert (domain-object (name ?wp-for-product) (type workpiece))
+      (domain-fact (name wp-unused) (param-values ?wp-for-product))
+      (wm-fact (key domain fact wp-base-color args? wp ?wp-for-product col BASE_NONE) (type BOOL) (value TRUE))
+      (wm-fact (key domain fact wp-cap-color args? wp ?wp-for-product col CAP_NONE) (type BOOL) (value TRUE))
+      (wm-fact (key domain fact wp-ring1-color args? wp ?wp-for-product col RING_NONE) (type BOOL) (value TRUE))
+      (wm-fact (key domain fact wp-ring2-color args? wp ?wp-for-product col RING_NONE) (type BOOL) (value TRUE))
+      (wm-fact (key domain fact wp-ring3-color args? wp ?wp-for-product col RING_NONE) (type BOOL) (value TRUE))
+      (wm-fact (key product meta wp-for-product args? wp ?wp-for-product prod ?product-id))
   )
   (if (eq ?comp C0)
     then
-    (goal-production-assert-c0 ?root-id ?order-id ?wp-for-order ?cs ?ds ?bs ?col-cap ?col-base)
+    (goal-production-assert-c0 ?root-id ?product-id ?wp-for-product ?cs ?ds ?bs ?col-cap ?col-base)
   )
   (if (and (eq ?comp C1) ?rs1)
     then
-    (goal-production-assert-c1 ?root-id ?order-id ?wp-for-order ?cs ?ds ?bs ?rs1 ?col-cap ?col-base ?col-ring1)
+    (goal-production-assert-c1 ?root-id ?product-id ?wp-for-product ?cs ?ds ?bs ?rs1 ?col-cap ?col-base ?col-ring1)
   )
   (if (and (eq ?comp C2) ?rs1 ?rs2)
     then
-    (goal-production-assert-c2 ?root-id ?order-id ?wp-for-order ?cs ?ds ?bs
+    (goal-production-assert-c2 ?root-id ?product-id ?wp-for-product ?cs ?ds ?bs
                 ?rs1 ?rs2 ?col-cap ?col-base ?col-ring1 ?col-ring2)
   )
   (if (and (eq ?comp C3) ?rs1 ?rs2 ?rs3)
     then
-    (goal-production-assert-c3 ?root-id ?order-id ?wp-for-order ?cs ?ds ?bs
+    (goal-production-assert-c3 ?root-id ?product-id ?wp-for-product ?cs ?ds ?bs
                 ?rs1 ?rs2 ?rs3 ?col-cap ?col-base ?col-ring1 ?col-ring2 ?col-ring3)
   )
 
@@ -935,59 +935,59 @@
 )
 
 (defrule goal-production-assert-store-option-for-wp
-  "Create for each order workpiece a storage option"
+  "Create for each product workpiece a storage option"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?root-id) (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
   (wm-fact (key config rcll pick-and-place-challenge) (value FALSE))
-  (wm-fact (key order meta wp-for-order args? wp ?wp-for-order ord ?order-id))
+  (wm-fact (key product meta wp-for-product args? wp ?wp-for-product prod ?product-id))
   (wm-fact (key domain fact ss-shelf-slot-free args? m ?ss shelf ?shelf slot ?slot))
-  (not (goal (class INSTRUCT-SS-STORE-WP|STORE-WP) (params wp ?wp-for-order $?) (mode ~RETRACTED)))
+  (not (goal (class INSTRUCT-SS-STORE-WP|STORE-WP) (params wp ?wp-for-product $?) (mode ~RETRACTED)))
   (wm-fact (key domain fact mps-type args? m ?ss t SS))
   (not (wm-fact (key domain fact ss-stored-wp args? m ?ss wp ? shelf ?shelf slot ?slot)))
   =>
   (bind ?goal (goal-tree-assert-central-run-all-prio STORE-WP 9999
-    (goal-production-assert-store-wp ?order-id ?ss ?wp-for-order ?shelf ?slot)
+    (goal-production-assert-store-wp ?product-id ?ss ?wp-for-product ?shelf ?slot)
   ))
-  (goal-production-assign-order-and-prio-to-goal ?goal nil 9999)
+  (goal-production-assign-product-and-prio-to-goal ?goal nil 9999)
 )
 
 (defrule goal-production-assert-instruct-ss-store-wp-on-demand
-  "Create for each order workpiece a storage option"
+  "Create for each product workpiece a storage option"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?root-id) (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
   (goal (class STORE-WP) (params wp ?wp target-mps ?mps target-side ?target-side $? shelf ?shelf slot ?slot))
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?target-side))
-  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
+  (wm-fact (key product meta wp-for-product args? wp ?wp prod ?product-id))
   (wm-fact (key domain fact mps-type args? m ?mps t SS))
   (not (goal (class INSTRUCT-SS-STORE-WP) (mode ~RETRACTED) (params wp ?wp $?)))
   =>
   (bind ?goal (goal-tree-assert-central-run-parallel-prio INSTRUCT-STORE ?*PRODUCTION-C0-PRIORITY*
-    (goal-production-assert-instruct-ss-store-wp ?order-id ?mps ?wp ?shelf ?slot)
+    (goal-production-assert-instruct-ss-store-wp ?product-id ?mps ?wp ?shelf ?slot)
   ))
-  (goal-production-assign-order-and-prio-to-goal ?goal nil 9999)
+  (goal-production-assign-product-and-prio-to-goal ?goal nil 9999)
 )
 
 (defrule goal-production-assert-retrieve-option-for-wp
-  "Create for each order workpiece a storage option"
+  "Create for each product workpiece a storage option"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?root-id) (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
   (wm-fact (key config rcll pick-and-place-challenge) (value FALSE))
   (wm-fact (key domain fact ss-stored-wp args? m ?ss wp ?wp shelf ?shelf slot ?slot))
-  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
+  (wm-fact (key product meta wp-for-product args? wp ?wp prod ?product-id))
   (not (goal (class INSTRUCT-SS-RETRIEVE-WP|RETRIEVE-WP) (params wp ?wp $? shelf ?shelf slot ?slot) (mode ~RETRACTED)))
   (wm-fact (key domain fact mps-type args? m ?ss t SS))
   =>
   (bind ?goal
   (goal-tree-assert-central-run-all-prio RERIEVE-WP 9999
-    (goal-production-assert-retrieve-wp ?order-id ?ss ?wp ?shelf ?slot)
+    (goal-production-assert-retrieve-wp ?product-id ?ss ?wp ?shelf ?slot)
   ))
-  (goal-production-assign-order-and-prio-to-goal ?goal nil 9999)
+  (goal-production-assign-product-and-prio-to-goal ?goal nil 9999)
 )
 
 (defrule goal-production-fill-in-unknown-wp-discard-from-cs
   "Fill in missing workpiece information into the discard goals from CS"
   ; there is a discard goal for a CS with formulated assigned goals
-  (wm-fact (key request discard args? ord ?order-id cs ?cs prio ?prio) (values status ACTIVE assigned-to ?goal-id ?i-goal-id))
+  (wm-fact (key request discard args? prod ?product-id cs ?cs prio ?prio) (values status ACTIVE assigned-to ?goal-id ?i-goal-id))
 
   ?g <- (goal (id ?goal-id) (class DISCARD) (mode FORMULATED) (parent ?parent)
               (params wp UNKNOWN wp-loc ?mps wp-side ?mps-side))
@@ -996,7 +996,7 @@
 
   ; there is a wp at the machine
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?mps-side))
-  (not (wm-fact (key order meta wp-for-order args? wp ?wp $?)))
+  (not (wm-fact (key product meta wp-for-product args? wp ?wp $?)))
 
   ; there is not another discard goal bound to this wp
   (not (goal (id ?other-goal-id) (class DISCARD) (outcome ~FAILED) (params wp ?wp wp-loc ?mps wp-side ?mps-side)))
@@ -1010,7 +1010,7 @@
 
 (defrule goal-production-remove-grounding-from-discard-wp-moved
   "If a DISCARD goal is grounded on a certain WP, but the WP moved, unground it."
-  (wm-fact (key request discard args? ord ?order-id cs ?cs prio ?prio) (values status ACTIVE assigned-to ?goal-id ?i-goal-id))
+  (wm-fact (key request discard args? prod ?product-id cs ?cs prio ?prio) (values status ACTIVE assigned-to ?goal-id ?i-goal-id))
 
   ?g <- (goal (id ?goal-id) (class DISCARD) (mode FORMULATED) (parent ?parent)
               (params wp ?wp wp-loc ?mps wp-side ?mps-side))
@@ -1025,7 +1025,7 @@
 
 (defrule goal-production-remove-grounding-from-discard-wp-assinged-to-pay
   "If a DISCARD goal is grounded on a certain WP, but the WP is assigned to a payment goal, unground it."
-  (wm-fact (key request discard args? ord ?order-id cs ?cs prio ?prio) (values status ACTIVE assigned-to ?goal-id ?i-goal-id))
+  (wm-fact (key request discard args? prod ?product-id cs ?cs prio ?prio) (values status ACTIVE assigned-to ?goal-id ?i-goal-id))
 
   ?g <- (goal (id ?goal-id) (class DISCARD) (mode FORMULATED) (parent ?parent)
               (params wp ?wp wp-loc ?mps wp-side ?mps-side))

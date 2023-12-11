@@ -30,14 +30,14 @@
                         |rs-mount-ring1
                         |rs-mount-ring2
                         |rs-mount-ring3
-                        |assign-wp-to-order
+                        |assign-wp-to-product
                         |ss-store-wp
                         |ss-retrieve-wp
-                        |fulfill-order-discard
-                        |fulfill-order-c0
-                        |fulfill-order-c1
-                        |fulfill-order-c2
-                        |fulfill-order-c3)
+                        |fulfill-product-discard
+                        |fulfill-product-c0
+                        |fulfill-product-c1
+                        |fulfill-product-c2
+                        |fulfill-product-c3)
          (executable TRUE)
          (param-values $?param-values))
   =>

@@ -123,12 +123,12 @@
 	(slot restricted-to (type SYMBOL)
 	                    (allowed-values nil robot1 robot2 robot3 central)
 	                    (default nil))
-	(slot order-id (type SYMBOL))
+	(slot product-id (type SYMBOL))
 	(slot ring-nr (type SYMBOL)
 	              (allowed-values nil ONE TWO THREE)
 	              (default nil))
-  (slot root-for-order (type SYMBOL))
-  (slot run-all-ordering (default 1) (type INTEGER))
+  (slot root-for-product (type SYMBOL))
+  (slot run-all-producting (default 1) (type INTEGER))
   (slot category (type SYMBOL)
                       (allowed-values nil PRODUCTION MAINTENANCE PRODUCTION-INSTRUCT MAINTENANCE-INSTRUCT OTHER OTHER-INSTRUCT UNKNOWN)
                       (default nil))
@@ -166,8 +166,15 @@
   (return (random 0 1000000000))
 )
 
-(deffunction order-to-int (?order)
-  (return (integer (string-to-field (sub-string 2 (length$ ?order) ?order))))
+(deffunction product-to-int (?product)
+  (bind ?o-start (str-index O ?product))
+  (bind ?p-start (str-index P ?product))
+  (return (integer (string-to-field (sub-string (+ ?p-start 1) (length$ ?product) ?product))))
+)
+(deffunction order-to-int (?product)
+  (bind ?o-start (str-index O ?product))
+  (bind ?p-start (str-index P ?product))
+  (return (integer (string-to-field (sub-string (+ ?o-start 1) (- ?p-start 1) ?product))))
 )
 
 (deffunction remote-if-id (?remote ?id)
@@ -631,7 +638,7 @@
 
 (deffunction get-zone (?margin $?vector)
   "Return the zone name for a given map coordinate $?vector if its
-   distance from the zone borders is greater or equal than ?margin."
+   distance from the zone bproducts is greater or equal than ?margin."
   (if (eq ?vector FALSE) then
     (return FALSE)
   )
@@ -1147,9 +1154,9 @@
 )
 
 (deffunction last-ring-points (?com)
-" @param ?com complexity of an order
+" @param ?com complexity of an product
 
-  @return returns points awarded for mounting the last ring of an order with
+  @return returns points awarded for mounting the last ring of an product with
           complexity ?com
 "
   (if (eq ?com C0) then (return 0))
@@ -1189,7 +1196,7 @@
   (return ?values)
 )
 
-(deffunction order-steps-index (?step)
+(deffunction product-steps-index (?step)
 " @param ?step production step, from the agent view describing the progress
                after a production goal is successfully executed.
 
@@ -1200,19 +1207,19 @@
   (if (eq ?step RING3) then (return 3))
   (if (eq ?step CAP) then (return 4))
   (if (eq ?step DELIVER) then (return 5))
-  (printout error "order-steps-index input " ?step " is not a valid step
+  (printout error "product-steps-index input " ?step " is not a valid step
                    (allowed values: RING1,RING2,RING3,CAP,DELIVER)" crlf)
 )
 
 
 (deffunction delivery-points (?qr ?qd-us ?qd-them ?competitive ?curr-time ?deadline)
-" @param ?qr quantities-requested of the order in question
+" @param ?qr quantities-requested of the product in question
   @param ?qd-us quantities-delivered of our team
   @param ?qd-them quantities-delivered of the opposing team
   @param ?competitive bool indicating whether competitive point changes should
                       be applied
   @param ?curr-time current game time in seconds
-  @param ?deadline deadline of the order
+  @param ?deadline deadline of the product
 
   @return delivery points (apply competitive rules if needed, 0 points if
           the requested quantities are already delivered, reduced points after)
@@ -1266,13 +1273,13 @@
           ?achieved-points points already scored in previous production steps
           ?timelist list of time-estimates for all production steps
           ?curr-time current game time in seconds
-          ?deadline deadline (in seconds) for the order that gets produced
+          ?deadline deadline (in seconds) for the product that gets produced
           ?next-step next step that scores points
 
   @return Amount of points the product yields, assuming tasks only score points
           if they are finished within the deadline
 "
-  (bind ?curr-step (order-steps-index ?next-step))
+  (bind ?curr-step (product-steps-index ?next-step))
   (if (<= ?curr-step (length ?pointlist))
     then
       (bind ?remaining-timelist (subseq$ ?timelist
@@ -1326,34 +1333,34 @@
   (return (- 1 (/ ?dist ?*MAX-DISTANCE*)))
 )
 
-(deffunction calculate-order-payments-sum (?order ?rs)
-  "Calculate the number of ring payments an order requires on an RS"
+(deffunction calculate-product-payments-sum (?product ?rs)
+  "Calculate the number of ring payments an product requires on an RS"
   (bind ?ring1-payment 0)
   (do-for-fact ((?ring1-color domain-fact) (?ring1-spec domain-fact))
-        (and (eq ?ring1-color:name order-ring1-color)
+        (and (eq ?ring1-color:name product-ring1-color)
              (eq ?ring1-spec:name rs-ring-spec)
              (member$ ?rs ?ring1-spec:param-values)
-             (member$ ?order ?ring1-color:param-values)
+             (member$ ?product ?ring1-color:param-values)
              (member$ (nth$ 2 ?ring1-color:param-values) ?ring1-spec:param-values)
         )
       (bind ?ring1-payment (sym-to-int (nth$ 3 ?ring1-spec:param-values)))
   )
   (bind ?ring2-payment 0)
   (do-for-fact ((?ring2-color domain-fact) (?ring2-spec domain-fact))
-        (and (eq ?ring2-color:name order-ring2-color)
+        (and (eq ?ring2-color:name product-ring2-color)
              (eq ?ring2-spec:name rs-ring-spec)
              (member$ ?rs ?ring2-spec:param-values)
-             (member$ ?order ?ring2-color:param-values)
+             (member$ ?product ?ring2-color:param-values)
              (member$ (nth$ 2 ?ring2-color:param-values) ?ring2-spec:param-values)
         )
       (bind ?ring2-payment (sym-to-int (nth$ 3 ?ring2-spec:param-values)))
   )
   (bind ?ring3-payment 0)
   (do-for-fact ((?ring3-color domain-fact) (?ring3-spec domain-fact))
-        (and (eq ?ring3-color:name order-ring3-color)
+        (and (eq ?ring3-color:name product-ring3-color)
              (eq ?ring3-spec:name rs-ring-spec)
              (member$ ?rs ?ring3-spec:param-values)
-             (member$ ?order ?ring3-color:param-values)
+             (member$ ?product ?ring3-color:param-values)
              (member$ (nth$ 2 ?ring3-color:param-values) ?ring3-spec:param-values)
         )
 
@@ -1362,34 +1369,34 @@
   (return (+ ?ring1-payment (+ ?ring2-payment ?ring3-payment)))
 )
 
-(deffunction calculate-order-interaction-sum (?order ?rs)
-  "Calculate the number of mounting interactions an order requires on an RS"
+(deffunction calculate-product-interaction-sum (?product ?rs)
+  "Calculate the number of mounting interactions an product requires on an RS"
   (bind ?rs-interactions 0)
   (do-for-fact ((?ring1-color domain-fact) (?ring1-spec domain-fact))
-        (and (eq ?ring1-color:name order-ring1-color)
+        (and (eq ?ring1-color:name product-ring1-color)
              (eq ?ring1-spec:name rs-ring-spec)
              (member$ ?rs ?ring1-spec:param-values)
-             (member$ ?order ?ring1-color:param-values)
+             (member$ ?product ?ring1-color:param-values)
              (member$ (nth$ 2 ?ring1-color:param-values) ?ring1-spec:param-values)
              (neq (nth$ 2 ?ring1-color:param-values) RING_NONE)
         )
     (bind ?rs-interactions (+ ?rs-interactions 1))
   )
   (do-for-fact ((?ring2-color domain-fact) (?ring2-spec domain-fact))
-        (and (eq ?ring2-color:name order-ring2-color)
+        (and (eq ?ring2-color:name product-ring2-color)
              (eq ?ring2-spec:name rs-ring-spec)
              (member$ ?rs ?ring2-spec:param-values)
-             (member$ ?order ?ring2-color:param-values)
+             (member$ ?product ?ring2-color:param-values)
              (member$ (nth$ 2 ?ring2-color:param-values) ?ring2-spec:param-values)
              (neq (nth$ 2 ?ring2-color:param-values) RING_NONE)
         )
     (bind ?rs-interactions (+ ?rs-interactions 1))
   )
   (do-for-fact ((?ring3-color domain-fact) (?ring3-spec domain-fact))
-        (and (eq ?ring3-color:name order-ring3-color)
+        (and (eq ?ring3-color:name product-ring3-color)
              (eq ?ring3-spec:name rs-ring-spec)
              (member$ ?rs ?ring3-spec:param-values)
-             (member$ ?order ?ring3-color:param-values)
+             (member$ ?product ?ring3-color:param-values)
              (member$ (nth$ 2 ?ring3-color:param-values) ?ring3-spec:param-values)
              (neq (nth$ 2 ?ring3-color:param-values) RING_NONE)
         )

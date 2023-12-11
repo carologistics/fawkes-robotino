@@ -96,7 +96,7 @@
 	)
 	(goal-meta (goal-id ?id) (assigned-to ?robot&~nil))
 	(wm-fact (key domain fact holding args? r ?robot wp ?wp))
-	(not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?any-order)))
+	(not (wm-fact (key product meta wp-for-product args? wp ?wp prod ?any-product)))
 	(not (goal (params $? ?wp $?)))
 	=>
 	(printout t "Goal CLEANUP-WP executable for " ?robot " and WP " ?wp  crlf)
@@ -194,9 +194,9 @@
 	                                   target-side ?target-side
 	                                   $?)
 	                          (is-executable FALSE))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (order-id ?order))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (product-id ?product))
 	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot)))
-	(wm-fact (key domain fact order-complexity args? ord ?order com ?order-complexity))
+	(wm-fact (key domain fact product-complexity args? prod ?product com ?product-complexity))
 	; Robot CEs
 	(wm-fact (key central agent robot args? r ?robot))
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -236,7 +236,7 @@
 
 	; prevent other goals from interfering (goal takeover, etc.)
 	(wm-fact (key wp meta next-step args? wp ?wp) (value CAP))
-	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+	(wm-fact (key product meta wp-for-product args? wp ?wp prod ?product))
 	(not (and
 		(goal (class MOUNT-CAP) (id ?oid&~?goal-id) (mode ~FORMULATED) (params $? target-mps ?target-mps $?))
 		(goal-meta (goal-id ?oid) (assigned-to ~nil))
@@ -258,7 +258,7 @@
 	                                   target-side ?target-side
 	                                   $?)
 	                          (is-executable FALSE))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (order-id ?order))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (product-id ?product))
 	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot)))
 
 	; Robot CEs
@@ -279,13 +279,13 @@
 	(or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
 	         (wm-fact (key domain fact wp-at args? wp ?wp m ?wp-loc side ?wp-side)))
 	    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
-	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+	(wm-fact (key product meta wp-for-product args? wp ?wp prod ?product))
 	(domain-fact (name zone-content) (param-values ?zz1 ?target-mps))
 	(domain-fact (name zone-content) (param-values ?zz2 ?wp-loc))
 
 	; refbox CEs, prevent blocking DS by delivering too early
   	(wm-fact (key refbox game-time) (values $?game-time))
-	(wm-fact (key refbox order ?order delivery-begin) (type UINT)
+	(wm-fact (key refbox product ?product delivery-begin) (type UINT)
 	        (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*DELIVER-AHEAD-TIME*))))
 	=>
 	(printout t "Goal DELIVER executable for " ?robot crlf)
@@ -437,7 +437,7 @@
 	                                   target-side ?target-side
 	                                   $?other-params)
 	                          (is-executable FALSE))
-	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (order-id ?order))
+	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (product-id ?product))
 	(not (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot)))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	;MPS-RS CEs (a cap carrier can be used to fill a RS later)
@@ -594,11 +594,11 @@ The workpiece remains in the output of the used ring station after
 	         (sym-cat wp-ring (sub-string 5 5 ?ring) -color))
 	          args? wp ?wp col RING_NONE ))
 	; Order CEs
-	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
-	(wm-fact (key domain fact ?order-ring-color&:(eq ?order-ring-color
-	         (sym-cat order-ring (sub-string 5 5 ?ring) -color))
-	          args? ord ?order col ?ring-color ))
-	(wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C1|C2|C3))
+	(wm-fact (key product meta wp-for-product args? wp ?wp prod ?product))
+	(wm-fact (key domain fact ?product-ring-color&:(eq ?product-ring-color
+	         (sym-cat product-ring (sub-string 5 5 ?ring) -color))
+	          args? prod ?product col ?ring-color ))
+	(wm-fact (key domain fact product-complexity args? prod ?product com ?complexity&C1|C2|C3))
 	(test (eq (sym-cat (sub-string 5 5 ?ring)) (sym-cat (sym-to-int ?nr))))
 	; Ring spec & costs
 	;(wm-fact (key domain fact rs-ring-spec
@@ -688,7 +688,7 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key domain fact mps-team args?       m ?target-mps col ?team-color))
 	; WP CEs
 	; Order CEs
-	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+	(wm-fact (key product meta wp-for-product args? wp ?wp prod ?product))
 
 	; MPS-Source CEs
 	(wm-fact (key domain fact mps-type args? m ?wp-loc t ?))
@@ -727,11 +727,11 @@ The workpiece remains in the output of the used ring station after
 	                    cap-color ?cap-color
 	             )
 	             (is-executable FALSE))
-	(goal-meta (goal-id ?goal-id) (order-id ?order-id))
+	(goal-meta (goal-id ?goal-id) (product-id ?product-id))
 	(not (goal (class INSTRUCT-CS-BUFFER-CAP) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED) (params target-mps ?mps $?)))
 
 	(goal (id ?buffer-goal-id) (class BUFFER-CAP) (sub-type SIMPLE) (mode ~FORMULATED))
-	(goal-meta (goal-id ?buffer-goal-id) (order-id ?order-id))
+	(goal-meta (goal-id ?buffer-goal-id) (product-id ?product-id))
 
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; MPS CEs
@@ -762,9 +762,9 @@ The workpiece remains in the output of the used ring station after
 	                    cap-color ?cap-color
 	             )
 	             (is-executable FALSE))
-	(goal-meta (goal-id ?goal-id) (order-id ?order-id))
+	(goal-meta (goal-id ?goal-id) (product-id ?product-id))
 	(goal (id ?mount-goal-id) (class MOUNT-CAP) (sub-type SIMPLE) (mode ~FORMULATED))
-	(goal-meta (goal-id ?mount-goal-id) (order-id ?order-id))
+	(goal-meta (goal-id ?mount-goal-id) (product-id ?product-id))
 
 	(not (goal (class INSTRUCT-CS-MOUNT-CAP) (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 	(wm-fact (key refbox team-color) (value ?team-color))
@@ -796,7 +796,7 @@ The workpiece remains in the output of the used ring station after
 	                    target-side ?side
 	                    base-color ?base-color)
 	            (is-executable FALSE))
-	(goal-meta (goal-id ?goal-id) (assigned-to ~nil) (order-id ?order-id))
+	(goal-meta (goal-id ?goal-id) (assigned-to ~nil) (product-id ?product-id))
 	(wm-fact (key refbox team-color) (value ?team-color))
 	; MPS CEs
 	(wm-fact (key domain fact mps-type args? m ?mps t BS))
@@ -809,7 +809,7 @@ The workpiece remains in the output of the used ring station after
 	(plan-action (action-name wait-for-wp) (param-values ?robot ?mps ?side ?wp)
 	             (goal-id ?oid) (state PENDING|RUNNING)
 	             (precondition ?precondition-id))
-	(goal-meta (goal-id ?oid) (order-id ?order-id))
+	(goal-meta (goal-id ?oid) (product-id ?product-id))
 	(not (goal (class INSTRUCT-BS-DISPENSE-BASE) (mode SELECTED|DISPATCHED|COMMITTED|EXPANDED)))
 	(domain-fact (name zone-content) (param-values ?mpsz ?mps))
 	=>
@@ -833,7 +833,7 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key domain fact mps-type args? m ?mps t SS))
 	(wm-fact (key domain fact mps-state args? m ?mps s IDLE))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
-	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+	(wm-fact (key product meta wp-for-product args? wp ?wp prod ?product))
 	(domain-fact (name zone-content) (param-values ?mpsz ?mps))
 
 	(not (plan-action (action-name wp-check) (param-values $? ?wp ?mps INPUT THERE) (state ~FINAL)))
@@ -855,9 +855,9 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key domain fact mps-type args? m ?mps t DS))
 	(wm-fact (key domain fact mps-state args? m ?mps s IDLE))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
-	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+	(wm-fact (key product meta wp-for-product args? wp ?wp prod ?product))
 	(wm-fact (key refbox game-time) (values $?game-time))
-	(wm-fact (key refbox order ?order delivery-begin) (type UINT)
+	(wm-fact (key refbox product ?product delivery-begin) (type UINT)
 	         (value ?begin&:(< ?begin (nth$ 1 ?game-time))))
 	(domain-fact (name zone-content) (param-values ?mpsz ?mps))
 
@@ -922,10 +922,10 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key domain fact ?wp-ring-color&:(eq ?wp-ring-color
 	         (sym-cat wp-ring (sub-string 5 5 ?ring) -color))
 	          args? wp ?wp col RING_NONE ))
-	(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
-	(wm-fact (key domain fact ?order-ring-color&:(eq ?order-ring-color
-	         (sym-cat order-ring (sub-string 5 5 ?ring) -color))
-	          args? ord ?order col ?ring-color ))
+	(wm-fact (key product meta wp-for-product args? wp ?wp prod ?product))
+	(wm-fact (key domain fact ?product-ring-color&:(eq ?product-ring-color
+	         (sym-cat product-ring (sub-string 5 5 ?ring) -color))
+	          args? prod ?product col ?ring-color ))
 	(not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side OUTPUT)))
 	(not (goal (class INSTRUCT-RS-MOUNT-RING) (mode EXPANDED|SELECTED|DISPATCHED|COMMITTED) (params target-mps ?mps $?)))
 	(domain-fact (name zone-content) (param-values ?mpsz ?mps))

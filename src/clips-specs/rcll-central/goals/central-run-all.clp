@@ -20,12 +20,12 @@
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
 ; Sub-type: CENTRAL-RUN-ALL-OF-SUBGOALS
-; Perform: one goal at a time, ordered by goal priority
+; Perform: one goal at a time, producted by goal priority
 ; Succeed: if all sub-goal succeeds
 ; Fail:    if exactly one sub-goal fails
 ;
-; A CENTRAL-RUN-ALL parent goal will order the executable  goals by priority
-; and then start performing them in order. If any goal fails, the parent
+; A CENTRAL-RUN-ALL parent goal will product the executable  goals by priority
+; and then start performing them in product. If any goal fails, the parent
 ; fails. If all goals have been completed successfully, the parent
 ; goal succeeds.
 ;
@@ -41,7 +41,7 @@
 ;
 ; Interactions:
 ; - User FORMULATES goal
-; - AUTOMATIC: SELECT executable sub-goal with lowest ordering number (this happens in
+; - AUTOMATIC: SELECT executable sub-goal with lowest producting number (this happens in
 ;              goal-reasoner.clp)
 ; - Automatic: when sub-goal is EVALUATED, outcome determines parent goal:
 ;   * FAILED: mode FINISHED, outcome FAILED, message

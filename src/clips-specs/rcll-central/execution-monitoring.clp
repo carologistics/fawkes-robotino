@@ -1159,7 +1159,7 @@
 (defrule execution-monitoring-correct-slide-counter
 	?monitoring-fact <- (wm-fact (key monitoring action-estimated-score args? goal-id ?goal-id plan-id ?plan-id action-id ?action-id action-name wp-put-slide-cc) (value 0))
 	(goal (id ?goal-id) (params $? target-mps ?rs $?))
-	?request <- (wm-fact (key request pay args? ord ?order m ?rs ring ?ring seq ?seq prio ?prio) (values status ? assigned-to $?assigned-goals&:(member$ ?goal-id ?assigned-goals)))
+	?request <- (wm-fact (key request pay args? prod ?product m ?rs ring ?ring seq ?seq prio ?prio) (values status ? assigned-to $?assigned-goals&:(member$ ?goal-id ?assigned-goals)))
 	?rs-filled <- (domain-fact (name rs-filled-with) (param-values ?rs ?bases-filled))
 	(domain-fact (name rs-inc) (param-values ?bases-now ?bases-filled))
 	=>

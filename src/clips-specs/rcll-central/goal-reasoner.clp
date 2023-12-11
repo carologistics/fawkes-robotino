@@ -142,19 +142,19 @@
   )
 )
 
-(deffunction goal-tree-update-meta-run-all-order (?f ?ordering)
+(deffunction goal-tree-update-meta-run-all-product (?f ?producting)
   (do-for-fact ((?goal-meta goal-meta)) (eq ?goal-meta:goal-id (fact-slot-value ?f id))
-    (modify ?goal-meta (run-all-ordering ?ordering))
+    (modify ?goal-meta (run-all-producting ?producting))
   )
 )
 
-(deffunction goal-reasoner-compute-order-conflicts-payments (?order1 ?order2)
-  "Detects a conflict between two order payments, i.e. when the sum of required payments
-   by both orders is bigger than the max number of payments per machine, which is 3."
+(deffunction goal-reasoner-compute-product-conflicts-payments (?product1 ?product2)
+  "Detects a conflict between two product payments, i.e. when the sum of required payments
+   by both products is bigger than the max number of payments per machine, which is 3."
   (bind ?conflict FALSE)
   (do-for-all-facts ((?rs domain-fact)) (and (eq ?rs:name mps-type) (member$ RS ?rs:param-values))
     (bind ?rs-name (nth$ 1 ?rs:param-values))
-    (if (> (+  (calculate-order-payments-sum ?order1 ?rs-name) (calculate-order-payments-sum ?order2 ?rs-name)) 3) then
+    (if (> (+  (calculate-product-payments-sum ?product1 ?rs-name) (calculate-product-payments-sum ?product2 ?rs-name)) 3) then
       (bind ?conflict TRUE)
     )
   )
@@ -218,7 +218,7 @@
   )
   (assert (goal-meta (goal-id ?id)))
   (foreach ?f ?fact-addresses
-    ;(goal-tree-update-meta-run-all-order ?f (+ 1 (- (length$ ?fact-addresses) ?f-index)))
+    ;(goal-tree-update-meta-run-all-product ?f (+ 1 (- (length$ ?fact-addresses) ?f-index)))
     (goal-tree-update-child ?f ?id ?prio)
   )
   (return ?goal)
@@ -299,7 +299,7 @@
 
 
 (defrule goal-reasoner-select-root-maintain
-"  Select all root maintain goals (having no parent) in order to expand them."
+"  Select all root maintain goals (having no parent) in product to expand them."
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
   ?g <- (goal (parent nil) (type MAINTAIN) (sub-type ~nil) (id ?goal-id)
         (mode FORMULATED) (verbosity ?v))
@@ -314,7 +314,7 @@
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
   ?g <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
       (id ?goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
-  (goal-meta (goal-id ?goal-id) (root-for-order nil))
+  (goal-meta (goal-id ?goal-id) (root-for-product nil))
   (goal (id ?id) (sub-type SIMPLE) (mode FORMULATED) (is-executable TRUE))
   (goal-meta (goal-id ?id) (assigned-to central))
   =>
@@ -332,13 +332,13 @@
     (wm-fact (key goal selection criterion args? t run-parallel) (type SYMBOL) (is-list TRUE) (values (create$)))
   )
 )
-(defrule goal-reasoner-select-root-for-order
-  "Select the root of an order-production-tree if it has the highest priority
+(defrule goal-reasoner-select-root-for-product
+  "Select the root of an product-production-tree if it has the highest priority
   and is not interfering with currently selected goals."
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
   ?target-goal <- (goal (parent nil) (type ACHIEVE) (sub-type ~nil)
       (id ?any-goal-id) (mode FORMULATED) (is-executable TRUE) (verbosity ?v))
-  (goal-meta (goal-id ?any-goal-id) (root-for-order ?any-order&~nil))
+  (goal-meta (goal-id ?any-goal-id) (root-for-product ?any-product&~nil))
   =>
   (printout (log-debug ?v) "Goal " (fact-slot-value ?target-goal id) " SELECTED" crlf)
   (modify ?target-goal (mode SELECTED))
@@ -357,10 +357,10 @@
   (declare (salience ?*SALIENCE-GOAL-PRE-SELECT*))
   (goal (type ACHIEVE) (id ?parent-id) (mode DISPATCHED) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS))
   (goal (type ACHIEVE) (id ?goal-id) (parent ?parent-id) (mode FORMULATED) (is-executable TRUE))
-  (goal-meta (goal-id ?goal-id) (run-all-ordering ?ordering))
+  (goal-meta (goal-id ?goal-id) (run-all-producting ?producting))
   (not (and
     (goal (id ?other-id&~?goal-id) (parent ?parent-id) (mode FORMULATED))
-    (goal-meta (goal-id ?other-id) (run-all-ordering ?other-ordering&:(> ?ordering ?other-ordering)))
+    (goal-meta (goal-id ?other-id) (run-all-producting ?other-producting&:(> ?producting ?other-producting)))
   ))
   ?selection <- (wm-fact (key goal selection criterion args? t run-all) (values $?values&:(not (member$ ?goal-id ?values))))
   =>
@@ -458,7 +458,7 @@
 ; ========================= Goal Dispatching =================================
 ; Trigger execution of a plan. We may commit to multiple plans
 ; (for different goals), e.g., one per robot, or for multiple
-; orders. It is then up to action selection and execution to determine
+; products. It is then up to action selection and execution to determine
 ; what to do when.
 
 
@@ -506,15 +506,15 @@
   (retract ?g)
 )
 
-(defrule goal-reasoner-evaluate-clean-up-failed-order-root
-  "Once all requests have been removed, a failed order tree root can be safely
-  cleaned up, thus freeing capacity for starting new orders."
+(defrule goal-reasoner-evaluate-clean-up-failed-product-root
+  "Once all requests have been removed, a failed product tree root can be safely
+  cleaned up, thus freeing capacity for starting new products."
   (declare (salience ?*MONITORING-SALIENCE*))
   (goal (id ?root-id) (outcome FAILED) (mode FINISHED|EVALUATED|RETRACTED))
-  ?gm <- (goal-meta (goal-id ?root-id) (root-for-order ?order-id&~nil))
-  (not (wm-fact (key request ? args? ord ?order-id $?)))
+  ?gm <- (goal-meta (goal-id ?root-id) (root-for-product ?product-id&~nil))
+  (not (wm-fact (key request ? args? prod ?product-id $?)))
   =>
-  (modify ?gm (root-for-order nil))
+  (modify ?gm (root-for-product nil))
 )
 
 (defrule goal-reasoner-evaluate-production-and-maintenance-wp-still-usable
@@ -549,7 +549,7 @@
 (defrule goal-reasoner-evaluate-production-goal-failed-wp-lost
   "If a production goal was failed because the WP was lost,
   clean-up the goal tree and requests
-  and let the production selector re-decide which order to pursue."
+  and let the production selector re-decide which product to pursue."
   (declare (salience ?*MONITORING-SALIENCE*))
   ?g <- (goal (class ?class)
         (id ?goal-id)
@@ -558,10 +558,10 @@
         (outcome FAILED)
         (verbosity ?v)
   )
-  (goal-meta (goal-id ?goal-id) (order-id ?order-id) (assigned-to ?robot)
+  (goal-meta (goal-id ?goal-id) (product-id ?product-id) (assigned-to ?robot)
              (category ?category&PRODUCTION|PRODUCTION-INSTRUCT))
-  ?order-root <- (goal (id ?root-id) (outcome ~FAILED))
-  (goal-meta (goal-id ?root-id) (root-for-order ?order-id))
+  ?product-root <- (goal (id ?root-id) (outcome ~FAILED))
+  (goal-meta (goal-id ?root-id) (root-for-product ?product-id))
   =>
   (if (not
           (eq ?category PRODUCTION-INSTRUCT)
@@ -570,16 +570,16 @@
         (set-robot-to-waiting ?robot)
         (remove-robot-assignment-from-goal-meta ?g)
   )
-  (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, aborting order as the WP was lost." crlf)
-  ;first fail the order root and the production/production-instruct goals
+  (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, aborting product as the WP was lost." crlf)
+  ;first fail the product root and the production/production-instruct goals
   ;this operation should be save, since only one production goal is gonna
-  ;run at at time. Failing the order root will also trigger a clean-up of requests
+  ;run at at time. Failing the product root will also trigger a clean-up of requests
   ;and thus of maintenance goals and their instructs.
-  (modify ?order-root (mode FINISHED) (outcome FAILED) (error WP-LOST))
+  (modify ?product-root (mode FINISHED) (outcome FAILED) (error WP-LOST))
   (do-for-all-facts ((?goal goal) (?goal-meta goal-meta))
     (and
       (eq ?goal:id ?goal-meta:goal-id)
-      (eq ?goal-meta:order-id ?order-id)
+      (eq ?goal-meta:product-id ?product-id)
       (or
         (eq ?category PRODUCTION)
         (eq ?category PRODUCTION-INSTRUCT)
@@ -594,7 +594,7 @@
   (do-for-all-facts ((?goal goal) (?goal-meta goal-meta))
     (and
       (eq ?goal:id ?goal-meta:goal-id)
-      (eq ?goal-meta:order-id ?order-id)
+      (eq ?goal-meta:product-id ?product-id)
       (or
         (eq ?category PRODUCTION)
         (eq ?category PRODUCTION-INSTRUCT)
@@ -620,10 +620,10 @@
         (outcome FAILED)
         (verbosity ?v)
   )
-  ?gm <- (goal-meta (goal-id ?goal-id) (order-id ?order-id) (assigned-to ?robot)
+  ?gm <- (goal-meta (goal-id ?goal-id) (product-id ?product-id) (assigned-to ?robot)
              (category ?category&PRODUCTION|PRODUCTION-INSTRUCT) (retries ?retries))
-  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
-  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
+  (wm-fact (key domain fact product-complexity args? prod ?product-id com ?comp))
+  (wm-fact (key product meta wp-for-product args? wp ?wp prod ?product-id))
   (wm-fact (key wp meta next-step args? wp ?wp) (value ?step))
   (test
     (or
@@ -668,7 +668,7 @@
 
 (defrule goal-reasoner-evaluate-production-goal-failed-broken-abort
   "If a production goal was failed because it interacted with a broken mps,
-  and gently abort the order, as we probably lost the WP."
+  and gently abort the product, as we probably lost the WP."
   (declare (salience ?*MONITORING-SALIENCE*))
   ?g <- (goal (class ?class)
         (id ?goal-id)
@@ -677,10 +677,10 @@
         (outcome FAILED)
         (verbosity ?v)
   )
-  (goal-meta (goal-id ?goal-id) (order-id ?order-id) (assigned-to ?robot)
+  (goal-meta (goal-id ?goal-id) (product-id ?product-id) (assigned-to ?robot)
              (category ?category&PRODUCTION|PRODUCTION-INSTRUCT))
-  ?order-root <- (goal (id ?root-id) (outcome ~FAILED))
-  (goal-meta (goal-id ?root-id) (root-for-order ?order-id))
+  ?product-root <- (goal (id ?root-id) (outcome ~FAILED))
+  (goal-meta (goal-id ?root-id) (root-for-product ?product-id))
   =>
   (if (not
           (eq ?category PRODUCTION-INSTRUCT)
@@ -689,16 +689,16 @@
         (set-robot-to-waiting ?robot)
         (remove-robot-assignment-from-goal-meta ?g)
   )
-  (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, aborting order as we are early in the production process." crlf)
-  ;first fail the order root and the production/production-instruct goals
+  (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, aborting product as we are early in the production process." crlf)
+  ;first fail the product root and the production/production-instruct goals
   ;this operation should be save, since only one production goal is gonna
-  ;run at at time. Failing the order root will also trigger a clean-up of requests
+  ;run at at time. Failing the product root will also trigger a clean-up of requests
   ;and thus of maintenance goals and their instructs.
-  (modify ?order-root (mode FINISHED) (outcome FAILED) (error ?error))
+  (modify ?product-root (mode FINISHED) (outcome FAILED) (error ?error))
   (do-for-all-facts ((?goal goal) (?goal-meta goal-meta))
     (and
       (eq ?goal:id ?goal-meta:goal-id)
-      (eq ?goal-meta:order-id ?order-id)
+      (eq ?goal-meta:product-id ?product-id)
       (or
         (eq ?category PRODUCTION)
         (eq ?category PRODUCTION-INSTRUCT)
@@ -713,7 +713,7 @@
   (do-for-all-facts ((?goal goal) (?goal-meta goal-meta))
     (and
       (eq ?goal:id ?goal-meta:goal-id)
-      (eq ?goal-meta:order-id ?order-id)
+      (eq ?goal-meta:product-id ?product-id)
       (or
         (eq ?category PRODUCTION)
         (eq ?category PRODUCTION-INSTRUCT)
@@ -737,7 +737,7 @@
         (outcome FAILED)
         (verbosity ?v)
   )
-  ?gm <- (goal-meta (goal-id ?goal-id) (order-id ?order-id) (assigned-to ?robot)
+  ?gm <- (goal-meta (goal-id ?goal-id) (product-id ?product-id) (assigned-to ?robot)
              (category ?category&MAINTENANCE|MAINTENANCE-INSTRUCT) (retries ?retries))
   (test (neq ?class PAY-FOR-RINGS-WITH-CAP-CARRIER))
   =>

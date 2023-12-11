@@ -55,7 +55,7 @@
   (bind ?waypoint (fact-slot-value ?agent-task-f waypoint))
   (bind ?wp (fact-slot-value ?agent-task-f workpiece))
   (bind ?colors (fact-slot-value ?agent-task-f workpiece-colors))
-  (bind ?order-id (fact-slot-value ?agent-task-f order))
+  (bind ?product-id (fact-slot-value ?agent-task-f product))
   (bind ?outcome (fact-slot-value ?agent-task-f outcome))
   (bind ?task-msg (pb-create "llsf_msgs.AgentTask"))
   (bind ?name-length (str-length (str-cat ?robot)))
@@ -112,8 +112,9 @@
     )
     (pb-set-field ?task-msg "workpiece_description" ?wp-description-msg)
   )
-  (if (neq ?order-id nil) then
-    (pb-set-field ?task-msg "order_id" (order-to-int ?order-id))
+  (if (neq ?product-id nil) then
+    (pb-set-field ?task-msg "product_id" (product-to-int ?product-id))
+    (pb-set-field ?task-msg "order_id" (order-to-int ?product-id))
   )
   (if ?task-msg-valid
    then
@@ -307,8 +308,10 @@
     (case DS
       then
         (bind ?ds-inst (pb-create "llsf_msgs.PrepareInstructionDS"))
-        (bind ?order (nth$ 1 ?instruction_info))
-        (bind ?order-id (float (string-to-field (sub-string 2 (length$ (str-cat ?order)) (str-cat ?order)))))
+        (bind ?product (nth$ 1 ?instruction_info))
+        (bind ?product-id (product-to-int ?product))
+        (bind ?order-id (order-to-int ?product))
+        (pb-set-field ?ds-inst "product_id" ?product-id)
         (pb-set-field ?ds-inst "order_id" ?order-id)
         (pb-set-field ?machine-instruction "instruction_ds" ?ds-inst)
     )

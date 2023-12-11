@@ -42,7 +42,7 @@
 	;            Suitable if an erroneous situation has to be avoided.
 	(slot termination (type SYMBOL) (allowed-values CUSTOM FAILURE SUCCESS) (default CUSTOM))
 	; termination status
-	; All tests have to terminate in order for a testbed to be completed.
+	; All tests have to terminate in product for a testbed to be completed.
 	; If a test without parent fails, all other tests fail as well.
 	(slot state (type SYMBOL) (allowed-values SUCCEEDED FAILED PENDING) (default PENDING))
 	; additional information on the reason for test termination
@@ -184,9 +184,9 @@
 	?testcase <- (testcase (type DELIVERY) (state PENDING) (args complexity ?com))
 	(wm-fact (key refbox team-color) (value ?team-color&~nil))
 	(wm-fact (key refbox phase) (value PRODUCTION))
-	(wm-fact (key domain fact quantity-delivered args? ord ?ord team ?team-color)
+	(wm-fact (key domain fact quantity-delivered args? prod ?ord team ?team-color)
 	         (value ?delivered&:(> ?delivered 0)))
-	(wm-fact (key domain fact order-complexity args? ord ?ord com ?com))
+	(wm-fact (key domain fact product-complexity args? prod ?ord com ?com))
 	=>
 	(modify ?testcase (state SUCCEEDED) (msg (str-cat "Delivery of complexity " ?com " done")))
 )
@@ -195,7 +195,7 @@
 " Tests of type DELIVERY-COUNT succeed once the specified number of deliveries
   happens. "
 	(wm-fact (key refbox team-color) (value ?team-color&~nil))
-	(wm-fact (key domain fact quantity-delivered args? ord ? team ?team-color)
+	(wm-fact (key domain fact quantity-delivered args? prod ? team ?team-color)
 	         (value ?delivered&:(> ?delivered 0)))
 	?testcase <- (testcase (type DELIVERY-COUNT) (state PENDING) (args count ?count))
 	(wm-fact (key refbox phase) (value PRODUCTION))
