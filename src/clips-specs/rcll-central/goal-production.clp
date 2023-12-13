@@ -759,18 +759,18 @@
     )
   )
 	(bind ?g (goal-tree-assert-central-run-parallel MOVE-OUT-OF-WAY ?wait-zones))
-	(modify ?g (parent ?root-id) (priority 1.0))
+	(modify ?g (parent ?root-id) (priority -1.0))
 )
 
 (defrule goal-production-change-priority-move-out-of-way
   ?g <- (goal (id ?goal-id) (class MOVE-OUT-OF-WAY)
               (type ACHIEVE) (sub-type SIMPLE)
               (mode FORMULATED) (parent ?pa-id&~nil)
-              (priority ?p&:(or (eq ?p 2) (eq ?p 1)))
+              (priority ?p&:(> ?p 0))
         )
   =>
   (printout t "modify priority of " ?goal-id crlf)
-  (modify ?g (priority (- ?p 2)))
+  (modify ?g (priority -1.0))
 )
 
 (defrule goal-production-create-cleanup-wp
