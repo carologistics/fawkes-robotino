@@ -110,8 +110,8 @@ private:
 	/// Intrinsic parameters of the camera
 	cv::Mat cameraMatrix_;
 	/// Distortion coefficients
-	cv::Mat                             distCoeffs_;
-	cv::aruco::PredefinedDictionaryType aruco_tag_type_;
+	cv::Mat                               distCoeffs_;
+	cv::aruco::PREDEFINED_DICTIONARY_NAME aruco_tag_type_;
 	/// store the markers, containing the poses
 	std::vector<TagVisionMarker> markers_;
 	/// the size of a marker in millimeter
