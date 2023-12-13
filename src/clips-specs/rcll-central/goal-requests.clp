@@ -142,7 +142,7 @@
   =>
   (bind ?wp-base-pay (sym-cat BASE-PAY- (gensym*)))
   (bind ?payment-goal (goal-production-assert-pay-for-rings-with-base ?wp-base-pay ?bs INPUT ?rs INPUT ?product-id))
-  (bind ?instruct-goal (goal-production-assert-instruct-bs-dispense-base ?wp-base-pay (nth$ (random 1 3) (create$ BASE_RED BASE_BLACK BASE_SILVER)) INPUT nil ?bs))
+  (bind ?instruct-goal (goal-production-assert-instruct-bs-dispense-base ?wp-base-pay (nth$ (random 1 3) (create$ BASE_RED BASE_BLACK BASE_SILVER)) INPUT ?product-id ?bs))
   (assert
       (domain-object (name ?wp-base-pay) (type workpiece))
       (domain-fact (name wp-unused) (param-values ?wp-base-pay))
@@ -204,8 +204,8 @@
   (bind ?discard-goal (goal-production-assert-discard UNKNOWN ?cs OUTPUT ?product-id))
   (bind ?instruct-goal (goal-production-assert-instruct-ds-discard UNKNOWN ?ds))
   (modify ?request (values status ACTIVE assigned-to (fact-slot-value ?discard-goal id) (fact-slot-value ?instruct-goal id)))
-  (modify ?discard-goal (parent ?root-id) (priority ?prio))
-  (modify ?instruct-goal (parent ?instruct-root-id) (priority ?prio))
+  (modify ?discard-goal (priority ?prio))
+  (modify ?instruct-goal (priority ?prio))
 )
 
 (defrule goal-request-remap-discard-to-pay-with-cc
