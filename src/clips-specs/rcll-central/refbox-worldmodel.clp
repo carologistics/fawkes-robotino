@@ -260,11 +260,13 @@
   (wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
   =>
   (foreach ?o (pb-field-list ?ptr "orders")
+    (bind ?product-list (create$))
+    (bind ?id (pb-field-value ?o "id"))
+    (bind ?order-id (sym-cat O ?id))
     (foreach ?p (pb-field-list ?o "products")
-      (bind ?id (pb-field-value ?p "oid"))
-      (bind ?order-id (sym-cat O ?id))
       (bind ?id (pb-field-value ?p "pid"))
       (bind ?product-id (sym-cat ?order-id P ?id))
+	  (bind ?product-list (append$ ?product-list ?product-id))
       ;check if the product is new
       (if (not (any-factp ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ domain fact product-complexity) )
                                                     (eq ?product-id (wm-key-arg ?wm-fact:key prod)))))
@@ -331,6 +333,12 @@
             )
       )
 	)
+    (if (not (any-factp ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ order meta product-list) )
+                                                    (eq ?order-id (wm-key-arg ?wm-fact:key ord)))))
+	  then
+	    (assert (wm-fact (key order meta product-list args? ord ?order-id) (is-list TRUE) (values ?product-list)))
+	)
+                                                    ; (eq ?product-id (nth$ (+ (member$ product ?wm-fact:key) 1) ?wm-fact:key))
   )
   (retract ?pf)
 )
