@@ -52,8 +52,10 @@
                         (eq (wm-key-arg ?order:key ord) (wm-key-arg ?or:key ord))
             )))) 
         (bind ?order-list (insert$ ?order-list 1 (wm-key-arg ?order:key ord))))
-    (return ?order-list)
+    
+    (return (create$ ?order-list FALSE))
 )
+
 (deffunction pick-random-order (?order-list)
     "generate a random integer, return the order-id on this integer position"
     (bind ?len (length$ ?order-list))
@@ -111,6 +113,407 @@
     )
   )
   (return ?rs)
+)
+
+(deffunction trim-machine-name (?machine)
+  ""
+  (return (sym-cat (sub-string 3 5 (str-cat ?machine)))) 
+)
+
+(deffunction transfer-ring-requirements-into-number (?ring-re)
+  ""
+  (bind ?num 0)
+  (if (eq ?ring-re ZERO) then (bind ?num 0))
+  (if (eq ?ring-re ONE) then (bind ?num 1))
+  (if (eq ?ring-re TWO) then (bind ?num 2))
+  (return ?num)
+)
+
+(deffunction calculate-overall-workload-for-each-processing-order (?team-name)
+  "for cs1, cs2, rs1, rs2"
+  (bind ?cs1 0)
+  (bind ?cs2 0)
+  (bind ?rs1 0)
+  (bind ?rs2 0)
+  (do-for-fact ((?mps-workload wm-fact))
+    (wm-key-prefix ?mps-workload:key (create$ mps workload overall args? m (sym-cat ?team-name CS1)))
+    (bind ?cs1 ?mps-workload:value)
+  )
+  (do-for-fact ((?mps-workload wm-fact))
+    (wm-key-prefix ?mps-workload:key (create$ mps workload overall args? m (sym-cat ?team-name CS2)))
+    (bind ?cs2 ?mps-workload:value)
+  )
+  (do-for-fact ((?mps-workload wm-fact))
+    (wm-key-prefix ?mps-workload:key (create$ mps workload overall args? m (sym-cat ?team-name RS1)))
+    (bind ?rs1 ?mps-workload:value)
+  )
+  (do-for-fact ((?mps-workload wm-fact))
+    (wm-key-prefix ?mps-workload:key (create$ mps workload overall args? m (sym-cat ?team-name RS2)))
+    (bind ?rs2 ?mps-workload:value)
+  )
+  (return (create$ ?cs1 ?cs2 ?rs1 ?rs2))
+)
+
+(deffunction calculate-decreased-workload-for-each-processing-order (?next-step ?c ?cs ?r1 ?r2 ?r3)
+  "if an C3 order's next step is ring2, the RS workload for ring1 should be taken away from workload overall"
+  (bind ?res (create$ 0 0 0 0))
+  (bind ?cs1 0)
+  (bind ?cs2 0)
+  (bind ?rs1 0)
+  (bind ?rs2 0)
+  (printout t ?next-step " " ?c " " ?cs " " ?r1 " " ?r2 " " ?r3 crlf)
+
+  (if (eq ?next-step DELIVER)
+  then
+    (if (eq ?cs CS1)
+    then
+      (bind ?cs1 (+ ?cs1 1))
+    else 
+      (bind ?cs2 (+ ?cs2 1))
+    )
+  )
+  
+  (if (or (and (eq ?next-step CAP) (eq ?c C3)) 
+          (and (eq ?next-step DELIVER) (eq ?c C3))) 
+  then
+    ; the first ring ?r1
+    (if (eq (nth$ 1 ?r1) RS1)
+    then
+      (bind ?rs1 (+ ?rs1 (nth$ 2 ?r1)))
+    else
+      (bind ?rs2 (+ ?rs2 (nth$ 2 ?r1)))
+    )  
+    ; the second ring ?r2
+    (if (eq (nth$ 1 ?r2) RS1)
+    then
+      (bind ?rs1 (+ ?rs1 (nth$ 2 ?r2)))
+    else
+      (bind ?rs2 (+ ?rs2 (nth$ 2 ?r2)))
+    )
+    ; the third ring ?r3
+    (if (eq (nth$ 1 ?r3) RS1)
+    then
+      (bind ?rs1 (+ ?rs1 (nth$ 2 ?r3)))
+    else
+      (bind ?rs2 (+ ?rs2 (nth$ 2 ?r3)))
+    )
+  )
+
+  (if (or (eq ?next-step RING3)
+          (and (eq ?next-step CAP) (eq ?c C2))
+          (and (eq ?next-step DELIVER) (eq ?c C2)))
+  then
+    ; the first ring ?r1
+    (if (eq (nth$ 1 ?r1) RS1)
+    then
+      (bind ?rs1 (+ ?rs1 (nth$ 2 ?r1)))
+    else
+      (bind ?rs2 (+ ?rs2 (nth$ 2 ?r1)))
+    )  
+    ; the second ring ?r2
+    (if (eq (nth$ 1 ?r2) RS1)
+    then
+      (bind ?rs1 (+ ?rs1 (nth$ 2 ?r2)))
+    else
+      (bind ?rs2 (+ ?rs2 (nth$ 2 ?r2)))
+    )
+  )
+
+  (if (or (eq ?next-step RING2)
+          (and (eq ?next-step CAP) (eq ?c C1))
+          (and (eq ?next-step DELIVER) (eq ?c C1)))
+  then
+    ; the first ring ?r1
+    (if (eq (nth$ 1 ?r1) RS1)
+    then
+      (bind ?rs1 (+ ?rs1 (nth$ 2 ?r1)))
+    else
+      (bind ?rs2 (+ ?rs2 (nth$ 2 ?r1)))
+    )  
+  )
+
+  (if (or (eq ?next-step RING1)
+          (and (eq ?next-step CAP) (eq ?c C0))
+          (and (eq ?next-step DELIVER) (eq ?c C0)))
+  then
+    (printout t "Nothing done!!" crlf)
+  )
+  (bind ?res (create$ ?cs1 ?cs2 ?rs1 ?rs2))
+  ; (printout t "the return value is " ?res crlf)
+  (return ?res)
+)
+
+(deffunction print-all-useful-parameters-at-every-decision-moment ()
+    ""
+    (bind ?order-list (generate-all-order-list))
+    (bind ?candidate-list (generate-candidate-order-list))
+    ; game time
+    (do-for-fact ((?game-time wm-fact))
+      (wm-key-prefix ?game-time:key (create$ refbox game-time))
+      (bind ?current-game-time (nth$ 1 ?game-time:values))
+      (printout t "Current game time is " ?current-game-time crlf)
+    )
+    (printout t crlf)
+    ; machine status
+    (do-for-all-facts ((?wp-at-fact wm-fact)) 
+        (wm-key-prefix ?wp-at-fact:key (create$ domain fact wp-at args? wp))
+        (bind ?wp-for-order (wm-key-arg ?wp-at-fact:key wp))
+        (bind ?machine-loc (wm-key-arg ?wp-at-fact:key m))
+        ; (if (eq (sym-cat (sub-string 1 3 (str-cat ?wp-for-order))) wp-)
+        ; then
+        (printout t "wp " ?wp-for-order " is at machine " ?machine-loc " side " (wm-key-arg ?wp-at-fact:key side) crlf)
+        ; )
+    )
+    (do-for-all-facts ((?robot-hold-wp wm-fact)) 
+        (wm-key-prefix ?robot-hold-wp:key (create$ domain fact holding args? r))
+        (bind ?holding-robot (wm-key-arg ?robot-hold-wp:key r))
+        (bind ?holding-wp (wm-key-arg ?robot-hold-wp:key wp))
+        (printout t ?holding-robot " is holding " ?holding-wp crlf)
+    )
+    ; (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+    (printout t crlf)
+    ; (do-for-all-facts ((?mps-state wm-fact)) 
+    ;     (wm-key-prefix ?mps-state:key (create$ domain fact mps-state args? m))
+    ;     (bind ?machine (wm-key-arg ?mps-state:key m))
+    ;     (bind ?machine-state (wm-key-arg ?mps-state:key s))
+    ;     (bind ?machine-true ?mps-state:value)
+    ;     (printout t "machine " ?machine " is at state " ?machine-state " with value " ?machine-true crlf)
+    ; )
+    (bind ?overall-workload (calculate-overall-workload-for-each-processing-order C-))
+    (bind ?update-cs1 (nth$ 1 ?overall-workload))
+    (bind ?update-cs2 (nth$ 2 ?overall-workload))
+    (bind ?update-rs1 (nth$ 3 ?overall-workload))
+    (bind ?update-rs2 (nth$ 4 ?overall-workload))
+
+    (do-for-all-facts ((?started wm-fact))
+      (and (wm-key-prefix ?started:key (create$ order meta started))
+              (eq ?started:value TRUE))
+      (bind ?or_started (wm-key-arg ?started:key ord))
+      (printout t "order " ?or_started " is started" crlf)
+    )
+    (do-for-all-facts ((?fulfilled wm-fact))
+      (wm-key-prefix ?fulfilled:key (create$ domain fact order-fulfilled))
+      (bind ?or_fulfilled (wm-key-arg ?fulfilled:key ord))
+      (printout t "order " ?or_fulfilled " is finished" crlf)
+    )
+
+    ; order status
+    (foreach ?or ?order-list
+      (printout t crlf)
+      (bind ?tag 0)
+
+      ; order ID 
+      (printout t ?or-index ": " ?or " ")
+
+      ; order complexity
+      (do-for-fact ((?oc wm-fact)) 
+          (wm-key-prefix ?oc:key (create$ domain fact order-complexity args? ord ?or com))
+          (bind ?com (wm-key-arg ?oc:key com))
+          (printout t " " ?com))
+
+      ; If it is not started yet? being processed? delivered?
+      (if (member$ ?or ?candidate-list) 
+        then (printout t " candidate ")
+        else
+          (if (any-factp ((?delivered wm-fact)) 
+                (and (eq ?delivered:key (create$ domain fact quantity-delivered args? ord ?or team CYAN))
+                    (= ?delivered:value 1)))
+          then
+            (bind ?tag 2) (printout t " ->delivered ")
+          else
+            (bind ?tag 1) (printout t " being processed ")
+          )
+          ; (do-for-fact ((?delivered wm-fact)) (eq ?delivered:key (create$ domain fact quantity-delivered args? ord ?or team CYAN))
+          ;   (printout t " ->delivered " ?delivered:value))
+      ) 
+      (printout t crlf)
+
+      (printout t "the second method to determine the status of order" crlf)
+      (if (any-factp ((?started wm-fact)) 
+          (and (wm-key-prefix ?started:key (create$ order meta started args? ord ?or))
+              (eq ?started:value TRUE)))
+      then
+        (if (any-factp ((?fulfilled wm-fact)) 
+            (and (wm-key-prefix ?fulfilled:key (create$ domain fact order-fulfilled))
+                (eq (wm-key-arg ?fulfilled:key ord) ?or)))
+        then
+          (printout t " ->fulfilled ")
+        else
+          (printout t " ->not finished yet ")
+        )
+      else
+        (printout t " ->not started yet ")
+      )
+      (printout t crlf)
+
+      ; delivery time window
+      (do-for-all-facts ((?tw wm-fact)) 
+          (and (wm-key-prefix ?tw:key (create$ refbox order)) (member$ ?or ?tw:key))
+          (if (member$ delivery-begin ?tw:key) then (printout t "Delivery Begin " ?tw:value crlf))
+          (if (member$ delivery-end ?tw:key) then (printout t "Delivery End " ?tw:value crlf)))    
+      ; (wm-fact (key refbox order ?order delivery-end) (type UINT) (value ?end))
+
+      ; base color
+      (do-for-fact ((?bc wm-fact)) 
+          (wm-key-prefix ?bc:key (create$ domain fact order-base-color args? ord ?or col))
+          (printout t "Base Color " (wm-key-arg ?bc:key col) crlf))
+      ; (if (any-factp ((?bc wm-fact)) (wm-key-prefix ?bc:key (create$ domain fact order-base-color args? ord ?or col)))
+      ; then (printout t "Base Color" (wm-key-arg ?bc:key col) crlf))  
+
+      ; cap color and station
+      (do-for-fact ((?cc wm-fact)) 
+          (wm-key-prefix ?cc:key (create$ domain fact order-cap-color args? ord ?or col))
+          (bind ?cap-color (wm-key-arg ?cc:key col))
+          (printout t "Cap Color " ?cap-color))
+      (do-for-fact ((?cs wm-fact))
+          (and (wm-key-prefix ?cs:key (create$ domain fact cs-color args? m))
+              (eq ?cap-color (wm-key-arg ?cs:key col)))
+          (bind ?cap-station (wm-key-arg ?cs:key m))
+          (printout t " " ?cap-station))
+      (printout t crlf)
+      ; cap station
+      (printout t "the second method to decide which cap station is used" crlf)
+      (do-for-fact ((?cs wm-fact))
+        (wm-key-prefix ?cs:key (create$ mps workload order args? m C-CS1 ord ?or))
+        (printout t "the number of CS1 is " ?cs:value crlf))     
+      (do-for-fact ((?cs wm-fact))
+        (wm-key-prefix ?cs:key (create$ mps workload order args? m C-CS2 ord ?or))
+        (printout t "the number of CS2 is " ?cs:value crlf))   
+      (printout t crlf) 
+      ; ring color
+      (do-for-fact ((?r1c wm-fact)) 
+          (wm-key-prefix ?r1c:key (create$ domain fact order-ring1-color args? ord ?or col))
+          (bind ?ring1-color (wm-key-arg ?r1c:key col))
+          (printout t "Ring1 Color " ?ring1-color))
+      ; ring station
+      (if (neq ?ring1-color RING_NONE)
+      then 
+        (bind ?rs1 (goal-production-get-machine-for-color ?ring1-color))
+        (printout t " " ?rs1)
+      else (bind ?rs1 None))
+      ; ring cost
+      (do-for-fact ((?r1r wm-fact)) 
+          (wm-key-prefix ?r1r:key (create$ domain fact rs-ring-spec args? m ?rs1 r ?ring1-color rn))
+          (bind ?ring1-requirement (wm-key-arg ?r1r:key rn))
+          (printout t " " ?ring1-requirement))
+      (printout t crlf)
+
+      ; (wm-fact (key domain fact rs-ring-spec
+      ;           args? m ?mps r ?ring1-color&~RING_NONE rn ?ring-num))
+
+      (do-for-fact ((?r2c wm-fact)) 
+          (wm-key-prefix ?r2c:key (create$ domain fact order-ring2-color args? ord ?or col))
+          (bind ?ring2-color (wm-key-arg ?r2c:key col))
+          (printout t "Ring2 Color " ?ring2-color))
+      (if (neq ?ring2-color RING_NONE)
+      then 
+        (bind ?rs2 (goal-production-get-machine-for-color ?ring2-color))
+        (printout t " " ?rs2)
+      else (bind ?rs2 None))
+      (do-for-fact ((?r2r wm-fact)) 
+          (wm-key-prefix ?r2r:key (create$ domain fact rs-ring-spec args? m ?rs2 r ?ring2-color rn))
+          (bind ?ring2-requirement (wm-key-arg ?r2r:key rn))
+          (printout t " " ?ring2-requirement))
+      (printout t crlf) 
+
+      (do-for-fact ((?r3c wm-fact)) 
+          (wm-key-prefix ?r3c:key (create$ domain fact order-ring3-color args? ord ?or col))
+          (bind ?ring3-color (wm-key-arg ?r3c:key col))
+          (printout t "Ring3 Color " ?ring3-color))
+      (if (neq ?ring3-color RING_NONE)
+      then 
+        (bind ?rs3 (goal-production-get-machine-for-color ?ring3-color))
+        (printout t " " ?rs3)
+      else (bind ?rs3 None))
+      (do-for-fact ((?r3r wm-fact)) 
+          (wm-key-prefix ?r3r:key (create$ domain fact rs-ring-spec args? m ?rs3 r ?ring3-color rn))
+          (bind ?ring3-requirement (wm-key-arg ?r3r:key rn))
+          (printout t " " ?ring3-requirement))
+      (printout t crlf)  
+            
+      ; ring station
+      (printout t "the second method to decide which ring station is used" crlf)
+      (do-for-fact ((?rs wm-fact))
+        (wm-key-prefix ?rs:key (create$ mps workload order args? m C-RS1 ord ?or))
+        (printout t "the number of RS1 is " ?rs:value crlf))     
+      (do-for-fact ((?rs wm-fact))
+        (wm-key-prefix ?rs:key (create$ mps workload order args? m C-RS2 ord ?or))
+        (printout t "the number of RS2 is " ?rs:value crlf))   
+      (printout t crlf)
+
+      ; (do-for-all-facts ((?mps-workload wm-fact)) 
+      ;   (and (wm-key-prefix ?mps-workload:key (create$ mps workload order args? m))
+      ;       (eq (wm-key-arg ?mps-workload:key ord) ?or))
+      ;   (bind ?machine (wm-key-arg ?mps-workload:key m))
+      ;   (bind ?machine-workload ?mps-workload:value)
+      ;   (printout t "machine " ?machine " has workload " ?machine-workload " for this order " crlf)
+      ; )       
+
+      ; the production step of this order
+      (if (= ?tag 0) 
+        then (printout t "No machines are occupied becauseof this order!" crlf)
+        else 
+          (bind ?wp-for-order (sym-cat wp- ?or))
+          ; (any-factp ((?after-base wm-fact)) (and (wm-key-prefix ?after-base:key (create$ wp meta points-current args? wp))
+          ;                                             (eq (wm-key-arg ?after-base:key wp) ?wp-for-order)))
+          
+          ; (printout t "Base of this order is already finished" crlf)
+          (do-for-all-facts ((?next-step-fact wm-fact)) 
+              (eq ?next-step-fact:key (create$ wp meta next-step args? wp ?wp-for-order))
+              (bind ?next-step ?next-step-fact:value)
+              (printout t "Next step of this order is " ?next-step crlf))
+          ; (wm-fact (key order meta next-step args? ord ?order) (value ?next-step))
+          (do-for-all-facts ((?prev-step-fact wm-fact)) 
+              (eq ?prev-step-fact:key (create$ wp meta prev-step args? wp ?wp-for-order))
+              (bind ?prev-step ?prev-step-fact:value)
+              (printout t "Previous step of this order is " ?prev-step crlf))
+          (do-for-all-facts ((?next-machine-fact wm-fact)) 
+              (eq ?next-machine-fact:key (create$ wp meta next-machine args? wp ?wp-for-order))
+              (bind ?next-machine ?next-machine-fact:value)
+              (printout t "Next machine of this order is " ?next-machine crlf))
+          ; (do-for-fact ((?delivered-fact plan-action)) 
+          ;     (eq (sym-cat (sub-string 1 13 (str-cat ?delivered-fact:action-name))) fulfill-order)
+          ;     ; (bind ?next-machine ?next-machine-fact:value)
+          ;     (printout t "id " ?delivered-fact:id crlf)
+          ;     (printout t "goal-id " ?delivered-fact:goal-id crlf)
+          ;     (printout t "plan-id " ?delivered-fact:plan-id crlf))            
+          ; (plan-action (id (string-to-field ?id-str)) (action-name ?name) (param-values $?param-values))
+    
+          ; (wm-fact (key wp meta estimated-points-total args? wp ?wp)
+          ;          (type INT) (is-list FALSE) (value ?ep-total))
+      )
+      (if (= ?tag 1)
+      then
+        (if (neq ?rs1 None)
+        then
+          (bind ?r1 (create$ (trim-machine-name ?rs1) (+ 1 (transfer-ring-requirements-into-number ?ring1-requirement))))
+        else 
+          (bind ?r1 (create$ None 0))
+        )
+        (if (neq ?rs2 None)
+        then
+          (bind ?r2 (create$ (trim-machine-name ?rs2) (+ 1 (transfer-ring-requirements-into-number ?ring2-requirement))))
+        else 
+          (bind ?r2 (create$ None 0))
+        )
+        (if (neq ?rs3 None)
+        then
+          (bind ?r3 (create$ (trim-machine-name ?rs3) (+ 1 (transfer-ring-requirements-into-number ?ring3-requirement))))
+        else 
+          (bind ?r3 (create$ None 0))
+        )
+        (bind ?del-res (calculate-decreased-workload-for-each-processing-order ?next-step ?com (trim-machine-name ?cap-station) ?r1 ?r2 ?r3))
+        (printout t "Subtracted workload is " ?del-res  crlf)
+        (bind ?update-cs1 (- ?update-cs1 (nth$ 1 ?del-res)))
+        (bind ?update-cs2 (- ?update-cs2 (nth$ 2 ?del-res)))
+        (bind ?update-rs1 (- ?update-rs1 (nth$ 3 ?del-res)))
+        (bind ?update-rs2 (- ?update-rs2 (nth$ 4 ?del-res)))
+      )
+      (printout t crlf)
+    )
+    (bind ?res-workload (create$ ?update-cs1 ?update-cs2 ?update-rs1 ?update-rs2))
+    (printout t "Overall workload is " ?overall-workload crlf)
+    (printout t "Updated workload is " ?res-workload  crlf)
 )
 
 (defrule goal-production-navgraph-compute-wait-positions-finished
@@ -823,19 +1226,25 @@
 
 (defrule ask-next-order-at-same-intervals
     "determine a random next order to be processed every minute or other time interval"
-    ; (declare (salience ?*SALIENCE-GOAL-FORMULATE*)) (= (mod ?gt ?*PRODUCTION-TIME-INTERVAL*) 0)
-    (wm-fact (key refbox game-time) (values ?gt&:(= (mod ?gt ?*PRODUCTION-TIME-INTERVAL*) 0) ?)) 
+    (wm-fact (key refbox game-time) (values $?gt)) 
+    ; (wm-fact (key refbox game-time) (values ?gt&:(= (mod ?gt ?*PRODUCTION-TIME-INTERVAL*) 0) ?)) 
     ; (wm-fact (key refbox game-time) (values $?gt&:(= (mod (+ (float (nth$ 1 ?gt)) (/ (float (nth$ 2 ?gt)) 1000000.)) ?*PRODUCTION-TIME-INTERVAL*) 0))) 
-    ; ?f <- (wm-fact (key strategy meta selected-order args? cond random) (value ?ex-order-id))
+    ; (time $?now)
+    ?tf <- (timer (name production-time-interval-timer) (time $?t&:(timeout ?gt ?t ?*PRODUCTION-TIME-INTERVAL*)))
     =>
-    (printout t "Result1:" (generate-all-order-list) crlf)
+    (modify ?tf (time ?gt))
+    ; (assert (wm-fact (key mps workload needs-update) (is-list FALSE) (type BOOL) (value TRUE)))
+    ; (printout t "Current time" ?now crlf)
+    (printout t "Result1:all orders" (generate-all-order-list) crlf)
     (bind ?result (generate-candidate-order-list))
-    (printout t "Result2:" ?result crlf)
+    (printout t "Result2:all candidate orders" ?result crlf)
     (bind ?order-id (pick-random-order ?result))
-    (printout t "Result3:" ?order-id crlf)
-    ; (modify ?f (value ?order-id))
-
-    (assert (wm-fact (key strategy meta selected-order args? cond random) (value ?order-id)))
+    (printout t "Result3:")
+    (if ?order-id then 
+      (printout t "the chosen random order:" ?order-id crlf)
+      (assert (wm-fact (key strategy meta selected-order args? cond random time (nth$ 1 ?gt)) (value ?order-id)))
+    else  (printout t "nothing chosen!" crlf)
+    )
 )
 (defrule goal-production-create-produce-for-order
   "Create for each incoming order a grounded production tree with the"
@@ -867,13 +1276,14 @@
   ;     (wm-fact (key strategy meta selected-order args? cond fallback) (value ?order-id))
   ;   )
   ; )
-  (wm-fact (key strategy meta selected-order args? cond random) (value ?order-id))
-  ; (wm-fact (key refbox game-time) (values ?gt&:(= (mod ?gt ?*PRODUCTION-TIME-INTERVAL*) 0) $?)) 
+  (wm-fact (key strategy meta selected-order args? cond random time ?) (value ?order-id))
 
-  ?os <- (wm-fact (key order meta started args? ord ?order) (value FALSE))
+  ?os <- (wm-fact (key order meta started args? ord ?order-id) (value FALSE))
   (wm-fact (key mps workload needs-update) (value FALSE))
   =>
-  (printout t "Result4:selected order" ?order-id crlf)
+  (printout t "Result4:selected order " ?order-id crlf)
+  (printout t "production time interval " ?*PRODUCTION-TIME-INTERVAL* crlf)
+  (print-all-useful-parameters-at-every-decision-moment)
 
   ;find the necessary ringstations
   (bind ?rs1 (goal-production-get-machine-for-color ?col-ring1))
