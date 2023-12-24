@@ -848,76 +848,123 @@
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?root-id) (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
   (wm-fact (key config rcll pick-and-place-challenge) (value FALSE))
-  (wm-fact (key domain fact product-complexity args? prod ?product-id com ?comp))
-  (wm-fact (key domain fact product-base-color args? prod ?product-id col ?col-base))
-  (wm-fact (key domain fact product-cap-color  args? prod ?product-id col ?col-cap))
-  (wm-fact (key domain fact product-ring1-color args? prod ?product-id col ?col-ring1))
-  (wm-fact (key domain fact product-ring2-color args? prod ?product-id col ?col-ring2))
-  (wm-fact (key domain fact product-ring3-color args? prod ?product-id col ?col-ring3))
-  (wm-fact (key domain fact cs-color args? m ?cs col ?col-cap))
-  (wm-fact (key domain fact mps-type args? m ?cs t CS))
-  (wm-fact (key domain fact mps-type args? m ?bs t BS))
-  (not (wm-fact (key product meta wp-for-product args? wp ?something prod ?product-id)))
-  (or (wm-fact (key domain fact product-ring1-color args? prod ?product-id col RING_NONE))
-      (wm-fact (key domain fact rs-ring-spec args? m ?rs1 r ?col-ring1 $?)))
-  (or (wm-fact (key domain fact product-ring2-color args? prod ?product-id col RING_NONE))
-      (wm-fact (key domain fact rs-ring-spec args? m ?rs2 r ?col-ring2 $?)))
-  (or (wm-fact (key domain fact product-ring3-color args? prod ?product-id col RING_NONE))
-      (wm-fact (key domain fact rs-ring-spec args? m ?rs3 r ?col-ring3 $?)))
+  (wm-fact (key domain fact product-complexity args? prod ?product-id-p com ?comp-p))
+  (wm-fact (key domain fact product-base-color args? prod ?product-id-p col ?col-base-p))
+  (wm-fact (key domain fact product-cap-color  args? prod ?product-id-p col ?col-cap-p))
+  (wm-fact (key domain fact product-ring1-color args? prod ?product-id-p col ?col-ring1-p))
+  (wm-fact (key domain fact product-ring2-color args? prod ?product-id-p col ?col-ring2-p))
+  (wm-fact (key domain fact product-ring3-color args? prod ?product-id-p col ?col-ring3-p))
+  (wm-fact (key domain fact cs-color args? m ?cs-p col ?col-cap-p))
+  (wm-fact (key domain fact mps-type args? m ?cs-p t CS))
+  (wm-fact (key domain fact mps-type args? m ?bs-p t BS))
 
+  (not (wm-fact (key product meta wp-for-product args? wp ?something-p prod ?product-id-p)))
+  (or (wm-fact (key domain fact product-ring1-color args? prod ?product-id-p col RING_NONE))
+      (wm-fact (key domain fact rs-ring-spec args? m ?rs1-p r ?col-ring1-p $?)))
+  (or (wm-fact (key domain fact product-ring2-color args? prod ?product-id-p col RING_NONE))
+      (wm-fact (key domain fact rs-ring-spec args? m ?rs2-p r ?col-ring2-p $?)))
+  (or (wm-fact (key domain fact product-ring3-color args? prod ?product-id col RING_NONE))
+      (wm-fact (key domain fact rs-ring-spec args? m ?rs3-p r ?col-ring3-p $?)))
+  
   (or
-    (wm-fact (key strategy meta selected-product args? cond filter) (value ?product-id))
+  (wm-fact (key strategy meta selected-product args? cond filter) (value ?product-id-p))
     (and
       (time $?now)
       (timer (name production-strategy-nothing-executable-timer) (time $?t&:(timeout ?now ?t ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT*)))
-      (wm-fact (key strategy meta selected-product args? cond fallback) (value ?product-id))
+      (wm-fact (key strategy meta selected-product args? cond fallback) (value ?product-id-p))
     )
   )
   ?os <- (wm-fact (key product meta started args? prod ?product) (value FALSE))
   (wm-fact (key mps workload needs-update) (value FALSE))
+
+  (wm-fact (key order meta product-list args? ord ?order-id) (is-list TRUE) (value nil) (values $?product-list))
+  (test (member$ ?product-id-p $?product-list))
   =>
-  ;find the necessary ringstations
-  (bind ?rs1 (goal-production-get-machine-for-color ?col-ring1))
-  (bind ?rs2 (goal-production-get-machine-for-color ?col-ring2))
-  (bind ?rs3 (goal-production-get-machine-for-color ?col-ring3))
+  (printout t "aaaaaaaaaaaaaaaaaaaaaaaaaaCreate production tree for product " ?product-id-p "bbbbbbbbbbbb" ?product-list crlf)
+  ; create for all products in order a production tree when one product triggers the rule
+  ; this part pulls all the necessary information from the wm of each product
+  (foreach ?product-id $?product-list
+    ; (bind ?root-id (gensym*))
+    (printout t "aazzzzzzzzzzzzzzzzzzzzzzzzzzzzCreate production tree for product " ?product-id)
 
-  ;bind the ds to NONE - if there is none, or the actual DS - if there is one
-  (bind ?ds NONE)
-  (do-for-fact ((?do domain-object) (?df domain-fact))
-    (and (eq ?do:type mps) (member$ ?do:name ?df:param-values) (member$ DS ?df:param-values))
-    (bind ?ds ?do:name)
-  )
+    (do-for-fact ((?temp-comp wm-fact))
+       (and (wm-key-prefix ?temp-comp:key (create$ domain fact product-complexity)) (eq (wm-key-arg ?temp-comp:key prod) ?product-id))
+        (bind ?comp (wm-key-arg ?temp-comp:key com)))
+    (do-for-fact ((?temp-col-base wm-fact))
+       (and (wm-key-prefix ?temp-col-base:key (create$ domain fact product-base-color)) (eq (wm-key-arg ?temp-col-base:key prod) ?product-id))
+        (bind ?col-base (wm-key-arg ?temp-col-base:key col)))
+    (do-for-fact ((?temp-col-cap wm-fact))
+       (and (wm-key-prefix ?temp-col-cap:key (create$ domain fact product-cap-color)) (eq (wm-key-arg ?temp-col-cap:key prod) ?product-id))
+        (bind ?col-cap (wm-key-arg ?temp-col-cap:key col)))
+    (do-for-fact ((?temp-col-ring1 wm-fact))
+       (and (wm-key-prefix ?temp-col-ring1:key (create$ domain fact product-ring1-color)) (eq (wm-key-arg ?temp-col-ring1:key prod) ?product-id))
+        (bind ?col-ring1 (wm-key-arg ?temp-col-ring1:key col)))
+    (do-for-fact ((?temp-col-ring2 wm-fact))
+       (and (wm-key-prefix ?temp-col-ring2:key (create$ domain fact product-ring2-color)) (eq (wm-key-arg ?temp-col-ring2:key prod) ?product-id))
+        (bind ?col-ring2 (wm-key-arg ?temp-col-ring2:key col)))
+    (do-for-fact ((?temp-col-ring3 wm-fact))
+       (and (wm-key-prefix ?temp-col-ring3:key (create$ domain fact product-ring3-color)) (eq (wm-key-arg ?temp-col-ring3:key prod) ?product-id))
+        (bind ?col-ring3 (wm-key-arg ?temp-col-ring3:key col)))
+    (do-for-fact ((?temp-cs wm-fact))
+       (and (wm-key-prefix ?temp-cs:key (create$ domain fact cs-color)) (eq (wm-key-arg ?temp-cs:key col) ?col-cap))
+        (bind ?cs (wm-key-arg ?temp-cs:key m)))
+    (do-for-fact ((?temp-bs wm-fact))
+       (and (wm-key-prefix ?temp-bs:key (create$ domain fact mps-type)) (eq (wm-key-arg ?temp-bs:key t) BS))
+        (bind ?bs (wm-key-arg ?temp-bs:key m)))
+    (do-for-fact ((?temp-rs1 wm-fact))
+       (and (wm-key-prefix ?temp-rs1:key (create$ domain fact rs-ring-spec)) (eq (wm-key-arg ?temp-rs1:key r) ?col-ring1))
+        (bind ?rs1 (wm-key-arg ?temp-rs1:key m)))
+    (do-for-fact ((?temp-rs2 wm-fact))
+       (and (wm-key-prefix ?temp-rs2:key (create$ domain fact rs-ring-spec)) (eq (wm-key-arg ?temp-rs2:key r) ?col-ring2))
+        (bind ?rs2 (wm-key-arg ?temp-rs2:key m)))
+    (do-for-fact ((?temp-rs3 wm-fact))
+       (and (wm-key-prefix ?temp-rs3:key (create$ domain fact rs-ring-spec)) (eq (wm-key-arg ?temp-rs3:key r) ?col-ring3))
+        (bind ?rs3 (wm-key-arg ?temp-rs3:key m)))
 
-  ;create facts for workpiece
-  (bind ?wp-for-product (sym-cat wp- ?product-id))
-  (assert (domain-object (name ?wp-for-product) (type workpiece))
-      (domain-fact (name wp-unused) (param-values ?wp-for-product))
-      (wm-fact (key domain fact wp-base-color args? wp ?wp-for-product col BASE_NONE) (type BOOL) (value TRUE))
-      (wm-fact (key domain fact wp-cap-color args? wp ?wp-for-product col CAP_NONE) (type BOOL) (value TRUE))
-      (wm-fact (key domain fact wp-ring1-color args? wp ?wp-for-product col RING_NONE) (type BOOL) (value TRUE))
-      (wm-fact (key domain fact wp-ring2-color args? wp ?wp-for-product col RING_NONE) (type BOOL) (value TRUE))
-      (wm-fact (key domain fact wp-ring3-color args? wp ?wp-for-product col RING_NONE) (type BOOL) (value TRUE))
-      (wm-fact (key product meta wp-for-product args? wp ?wp-for-product prod ?product-id))
-  )
-  (if (eq ?comp C0)
-    then
-    (goal-production-assert-c0 ?root-id ?product-id ?wp-for-product ?cs ?ds ?bs ?col-cap ?col-base)
-  )
-  (if (and (eq ?comp C1) ?rs1)
-    then
-    (goal-production-assert-c1 ?root-id ?product-id ?wp-for-product ?cs ?ds ?bs ?rs1 ?col-cap ?col-base ?col-ring1)
-  )
-  (if (and (eq ?comp C2) ?rs1 ?rs2)
-    then
-    (goal-production-assert-c2 ?root-id ?product-id ?wp-for-product ?cs ?ds ?bs
-                ?rs1 ?rs2 ?col-cap ?col-base ?col-ring1 ?col-ring2)
-  )
-  (if (and (eq ?comp C3) ?rs1 ?rs2 ?rs3)
-    then
-    (goal-production-assert-c3 ?root-id ?product-id ?wp-for-product ?cs ?ds ?bs
-                ?rs1 ?rs2 ?rs3 ?col-cap ?col-base ?col-ring1 ?col-ring2 ?col-ring3)
-  )
+    ; now create the production tree for each product
+    ;find the necessary ringstations
+    (bind ?rs1 (goal-production-get-machine-for-color ?col-ring1))
+    (bind ?rs2 (goal-production-get-machine-for-color ?col-ring2))
+    (bind ?rs3 (goal-production-get-machine-for-color ?col-ring3))
 
+    ;bind the ds to NONE - if there is none, or the actual DS - if there is one
+    (bind ?ds NONE)
+    (do-for-fact ((?do domain-object) (?df domain-fact))
+      (and (eq ?do:type mps) (member$ ?do:name ?df:param-values) (member$ DS ?df:param-values))
+      (bind ?ds ?do:name)
+    )
+
+    ;create facts for workpiece
+    (bind ?wp-for-product (sym-cat wp- ?product-id))
+    (assert (domain-object (name ?wp-for-product) (type workpiece))
+        (domain-fact (name wp-unused) (param-values ?wp-for-product))
+        (wm-fact (key domain fact wp-base-color args? wp ?wp-for-product col BASE_NONE) (type BOOL) (value TRUE))
+        (wm-fact (key domain fact wp-cap-color args? wp ?wp-for-product col CAP_NONE) (type BOOL) (value TRUE))
+        (wm-fact (key domain fact wp-ring1-color args? wp ?wp-for-product col RING_NONE) (type BOOL) (value TRUE))
+        (wm-fact (key domain fact wp-ring2-color args? wp ?wp-for-product col RING_NONE) (type BOOL) (value TRUE))
+        (wm-fact (key domain fact wp-ring3-color args? wp ?wp-for-product col RING_NONE) (type BOOL) (value TRUE))
+        (wm-fact (key product meta wp-for-product args? wp ?wp-for-product prod ?product-id))
+    )
+    (if (eq ?comp C0)
+      then
+      (goal-production-assert-c0 ?root-id ?product-id ?wp-for-product ?cs ?ds ?bs ?col-cap ?col-base)
+    )
+    (if (and (eq ?comp C1) ?rs1)
+      then
+      (goal-production-assert-c1 ?root-id ?product-id ?wp-for-product ?cs ?ds ?bs ?rs1 ?col-cap ?col-base ?col-ring1)
+    )
+    (if (and (eq ?comp C2) ?rs1 ?rs2)
+      then
+      (goal-production-assert-c2 ?root-id ?product-id ?wp-for-product ?cs ?ds ?bs
+                  ?rs1 ?rs2 ?col-cap ?col-base ?col-ring1 ?col-ring2)
+    )
+    (if (and (eq ?comp C3) ?rs1 ?rs2 ?rs3)
+      then
+      (goal-production-assert-c3 ?root-id ?product-id ?wp-for-product ?cs ?ds ?bs
+                  ?rs1 ?rs2 ?rs3 ?col-cap ?col-base ?col-ring1 ?col-ring2 ?col-ring3)
+    )
+  )
+  
   ;clean-up needs update facts
   (delayed-do-for-all-facts
     ((?update-fact wm-fact)) (wm-key-prefix ?update-fact:key (create$ mps workload needs-update))
@@ -942,8 +989,17 @@
   (wm-fact (key product meta wp-for-product args? wp ?wp-for-product prod ?product-id))
   (wm-fact (key domain fact ss-shelf-slot-free args? m ?ss shelf ?shelf slot ?slot))
   (not (goal (class INSTRUCT-SS-STORE-WP|STORE-WP) (params wp ?wp-for-product $?) (mode ~RETRACTED)))
+  (not (goal (class INSTRUCT-SS-STORE-WP|STORE-WP) (params $? shelf ?shelf slot ?slot $?) (mode ~RETRACTED)))
+
   (wm-fact (key domain fact mps-type args? m ?ss t SS))
   (not (wm-fact (key domain fact ss-stored-wp args? m ?ss wp ? shelf ?shelf slot ?slot)))
+
+  ;delivery start is more than 3 minutes away
+  (wm-fact (key refbox game-time) (values $?game-time))
+	(wm-fact (key refbox product ?product-id delivery-begin) (type UINT)
+	         (value ?begin&:(> (- ?begin (nth$ 1 ?game-time)) 120)))
+  ;product is capped -> finished         
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp-for-product col ~CAP_NONE))
   =>
   (bind ?goal (goal-tree-assert-central-run-all-prio STORAGE-STATION 9999
     (goal-production-assert-store-wp ?product-id ?ss ?wp-for-product ?shelf ?slot)
@@ -976,6 +1032,11 @@
   (wm-fact (key product meta wp-for-product args? wp ?wp prod ?product-id))
   (not (goal (class INSTRUCT-SS-RETRIEVE-WP|RETRIEVE-WP) (params wp ?wp $? shelf ?shelf slot ?slot) (mode ~RETRACTED)))
   (wm-fact (key domain fact mps-type args? m ?ss t SS))
+
+  ; retrieve when delivery start is less than 1 minute away
+  (wm-fact (key refbox game-time) (values $?game-time))
+	(wm-fact (key refbox product ?product-id delivery-begin) (type UINT)
+	         (value ?begin&:(< (- ?begin (nth$ 1 ?game-time)) 60)))
   =>
   (bind ?goal
   (goal-tree-assert-central-run-all-prio STORAGE-STATION 9999
@@ -983,6 +1044,7 @@
   ))
   (goal-production-assign-product-and-prio-to-goal ?goal nil 9999)
 )
+
 (defrule goal-production-assert-instruct-ss-retrieve-on-demand
   "Create for each product workpiece a storage option"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))

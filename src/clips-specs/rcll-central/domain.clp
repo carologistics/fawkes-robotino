@@ -107,7 +107,7 @@
         (bind ?ss M-SS)
   )
   (foreach ?shelf (create$ ZERO ONE TWO THREE FOUR FIVE)
-    (foreach ?slot (create$ ZERO ONE TWO THREE FOUR FIVE SIX SEVEN)
+    (foreach ?slot (create$ ZERO ONE TWO THREE )
       (assert (domain-fact (name ss-shelf-slot-free) (param-values ?ss ?shelf ?slot)))
     )
   )

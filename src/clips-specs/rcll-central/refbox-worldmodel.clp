@@ -275,7 +275,9 @@
             (bind ?complexity (pb-field-value ?p "complexity"))
             (bind ?competitive (pb-field-value ?o "competitive"))
             (bind ?delivery-gate (pb-field-value ?o "delivery_gate"))
-            (bind ?quantity-requested (pb-field-value ?o "quantity_requested"))
+            ;(bind ?quantity-requested (pb-field-value ?o "quantity_requested"))
+            (bind ?quantity-requested (pb-field-value ?p "quantity_requested_p"))
+
             (bind ?begin (pb-field-value ?o "delivery_period_begin"))
             (bind ?end (pb-field-value ?o "delivery_period_end"))
             (if (pb-has-field ?p "base_color") then
@@ -311,11 +313,11 @@
             (printout t "Added product " ?id " with " (pb-field-value ?p "cap_color") crlf)
         else
             (if (eq ?team-color CYAN) then
-              (bind ?qd-them (pb-field-value ?o "quantity_delivered_magenta"))
-              (bind ?qd-us (pb-field-value ?o "quantity_delivered_cyan"))
+              (bind ?qd-them (pb-field-value ?p "quantity_delivered_magenta_p"))
+              (bind ?qd-us (pb-field-value ?p "quantity_delivered_cyan_p"))
             else
-              (bind ?qd-them (pb-field-value ?o "quantity_delivered_cyan"))
-              (bind ?qd-us (pb-field-value ?o "quantity_delivered_magenta"))
+              (bind ?qd-them (pb-field-value ?p "quantity_delivered_cyan_p"))
+              (bind ?qd-us (pb-field-value ?p "quantity_delivered_magenta_p"))
             )
             (do-for-fact ((?old-qd-them wm-fact))
               (and (wm-key-prefix ?old-qd-them:key
@@ -336,6 +338,7 @@
     (if (not (any-factp ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ order meta product-list) )
                                                     (eq ?order-id (wm-key-arg ?wm-fact:key ord)))))
 	  then
+      (printout t "bbbbbbbbbbbbbbbbbbb order " ?order-id " with " ?product-list crlf)
 	    (assert (wm-fact (key order meta product-list args? ord ?order-id) (is-list TRUE) (values ?product-list)))
 	)
                                                     ; (eq ?product-id (nth$ (+ (member$ product ?wm-fact:key) 1) ?wm-fact:key))
