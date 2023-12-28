@@ -1000,6 +1000,8 @@
 	         (value ?begin&:(> (- ?begin (nth$ 1 ?game-time)) 120)))
   ;product is capped -> finished         
   (wm-fact (key domain fact wp-cap-color args? wp ?wp-for-product col ~CAP_NONE))
+  (not (domain-fact (name product-fulfilled) (param-values ?wp)))
+
   =>
   (bind ?goal (goal-tree-assert-central-run-all-prio STORAGE-STATION 9999
     (goal-production-assert-store-wp ?product-id ?ss ?wp-for-product ?shelf ?slot)
