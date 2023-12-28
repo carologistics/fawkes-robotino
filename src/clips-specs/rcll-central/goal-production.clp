@@ -997,10 +997,10 @@
   ;delivery start is more than 3 minutes away
   (wm-fact (key refbox game-time) (values $?game-time))
 	(wm-fact (key refbox product ?product-id delivery-begin) (type UINT)
-	         (value ?begin&:(> (- ?begin (nth$ 1 ?game-time)) 120)))
+	         (value ?begin&:(> (- ?begin (nth$ 1 ?game-time)) 180)))
   ;product is capped -> finished         
-  (wm-fact (key domain fact wp-cap-color args? wp ?wp-for-product col ~CAP_NONE))
-  (not (domain-fact (name product-fulfilled) (param-values ?wp)))
+  ; (wm-fact (key domain fact wp-cap-color args? wp ?wp-for-product col ~CAP_NONE))
+  ; (not (domain-fact (name product-fulfilled) (param-values ?wp)))
 
   =>
   (bind ?goal (goal-tree-assert-central-run-all-prio STORAGE-STATION 9999
