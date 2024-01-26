@@ -93,7 +93,7 @@
   ?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id)
            (state WAITING) (action-name ?action-name))
   (action-task-executor-enable (name ?action-name))
-  ?at <- (refbox-agent-task (task-id ?task-seq) (robot ?robot))
+  ?at <- (refbox-agent-task (task-id ?task-seq) (robot ?robot) (goal-id ?goal-id) (plan-id ?plan-id) (action-id ?id))
   (wm-fact (key refbox robot task seq args? r ?robot) (value ?task-seq))
   (wm-fact (key simulator comm peer-enabled ?robot) (value TRUE) (type BOOL))
   (wm-fact (key simulator comm peer-id ?robot) (value ?peer-id) (type INT))
