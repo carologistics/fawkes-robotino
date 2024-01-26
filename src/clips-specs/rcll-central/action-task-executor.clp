@@ -119,9 +119,12 @@
     (goal-id ?goal-id) (plan-id ?plan-id) (action-id ?id)
     (outcome ?outcome)
   )
+  (test (eq (string-to-field (sub-string (str-length ?robot) (str-length ?robot) ?robot))
+  (pb-field-value ?task-msg "robot_id")))
   (wm-fact (key refbox robot task seq args? r ?robot) (value ?task-seq))
   =>
   (bind ?task (pb-field-value ?task-msg "task_id"))
+  (if (eq ?task ?task-seq) then
   (bind ?robot-num (pb-field-value ?task-msg "robot_id"))
   (bind ?team-col (pb-field-value ?task-msg "team_color"))
   (bind ?outcome EXECUTION-FAILED)
