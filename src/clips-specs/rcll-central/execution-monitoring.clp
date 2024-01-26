@@ -310,6 +310,7 @@
 	(bind ?interleaved-id (sym-cat ?class -INTERLEAVED-PLAN-))
 	(bind ?interleaved-plan (plan-assert-sequential ?interleaved-id ?goal-id ?robot
 	    (plan-assert-action go-wait ?robot ?robot-at ?robot-at-side (wait-pos ?robot-to ?robot-to-side))
+	    (plan-assert-action wait ?robot (wait-pos ?robit-to ?robot-to-side) WAIT))
 	))
 	(modify ?plan-action (param-values ?robot (wait-pos ?robot-to ?robot-to-side) WAIT ?robot-to ?robot-to-side))
 	(modify ?plan (suspended TRUE) (suspension-reason (fact-slot-value ?interleaved-plan plan-id)))
