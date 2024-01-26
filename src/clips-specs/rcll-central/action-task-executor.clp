@@ -67,6 +67,26 @@
   (modify ?pa (state WAITING))
 )
 
+(defrule action-task-skip-trivial-move
+" We dont sent agent tasks for trivial moves...
+"
+  (declare (salience ?*SALIENCE-LOW*))
+  ?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id) (state WAITING)
+                      (action-name move) (param-values ?robot ?source ?source-side ?source ?source-side))
+  =>
+  (modify ?pa (state EXECUTION-SUCCEEDED))
+)
+
+(defrule action-task-skip-trivial-go-wait
+" We dont sent agent tasks for trivial moves...
+"
+  (declare (salience ?*SALIENCE-LOW*))
+  ?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id) (state WAITING)
+                      (action-name go-wait) (param-values ?robot ?source ?source-side ?source))
+  =>
+  (modify ?pa (state EXECUTION-SUCCEEDED))
+)
+
 (defrule action-task-send-command
 " Create an AgentTask protobuf message and send it to the simulator peer.
 "
