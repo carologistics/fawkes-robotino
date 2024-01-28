@@ -73,6 +73,7 @@
   (declare (salience ?*SALIENCE-LOW*))
   ?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id) (state WAITING)
                       (action-name move) (param-values ?robot ?source ?source-side ?source ?source-side))
+  (action-task-executor-enable (name move))
   =>
   (modify ?pa (state EXECUTION-SUCCEEDED))
 )
@@ -83,6 +84,7 @@
   (declare (salience ?*SALIENCE-LOW*))
   ?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id) (state WAITING)
                       (action-name go-wait) (param-values ?robot ?source ?source-side ?source))
+  (action-task-executor-enable (name go-wait))
   =>
   (modify ?pa (state EXECUTION-SUCCEEDED))
 )
