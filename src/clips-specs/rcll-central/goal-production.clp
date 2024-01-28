@@ -536,13 +536,13 @@
       (bind ?price (sym-to-int (wm-key-arg ?rs-ring-spec:key rn)))
     )
     (loop-for-count ?price
-      (assert (wm-fact (key request pay args? ord ?order m (nth$ ?index ?rs) ring (sym-cat RING ?index) seq ?seq prio ?prio) (is-list TRUE) (type SYMBOL) (values status OPEN assigned-to)))
+      (assert (wm-fact (key request pay args? ord ?order m (nth$ ?index ?rs) ring (sym-cat RING ?index) seq ?seq prio ?prio) (is-list TRUE) (type SYMBOL) (values status ACTIVE)))
       (bind ?seq (+ ?seq 1))
     )
     (bind ?index (+ ?index 1))
   )
-  (assert (wm-fact (key request buffer args? ord ?order col ?col-cap prio ?prio) (is-list TRUE) (type SYMBOL) (values status OPEN assigned-to)))
-  (assert (wm-fact (key request discard args? ord ?order cs ?cs prio ?prio) (is-list TRUE) (type SYMBOL) (values status OPEN assigned-to)))
+  (assert (wm-fact (key request buffer args? ord ?order col ?col-cap prio ?prio) (is-list TRUE) (type SYMBOL) (values status ACTIVE)))
+  (assert (wm-fact (key request discard args? ord ?order cs ?cs prio ?prio) (is-list TRUE) (type SYMBOL) (values status ACTIVE)))
 )
 
 
@@ -915,9 +915,6 @@
 
 (defrule goal-production-fill-in-unknown-wp-discard-from-cs
   "Fill in missing workpiece information into the discard goals from CS"
-  ; there is a discard goal for a CS with formulated assigned goals
-  (wm-fact (key request discard args? ord ?order-id cs ?cs prio ?prio) (values status ACTIVE assigned-to ?goal-id ?i-goal-id))
-
   ?g <- (goal (id ?goal-id) (class DISCARD) (mode FORMULATED) (parent ?parent)
               (params wp UNKNOWN wp-loc ?mps wp-side ?mps-side))
   ?i <- (goal (id ?i-goal-id) (class INSTRUCT-DS-DISCARD) (mode FORMULATED)
@@ -937,34 +934,24 @@
   (modify ?i (params wp ?wp target-mps ?ds))
 )
 
-(defrule goal-production-remove-grounding-from-discard-wp-moved
-  "If a DISCARD goal is grounded on a certain WP, but the WP moved, unground it."
-  (wm-fact (key request discard args? ord ?order-id cs ?cs prio ?prio) (values status ACTIVE assigned-to ?goal-id ?i-goal-id))
-
+(defrule goal-production-remove-unused-discard
+  "Remove an obsolete discard goal"
   ?g <- (goal (id ?goal-id) (class DISCARD) (mode FORMULATED) (parent ?parent)
-              (params wp ?wp wp-loc ?mps wp-side ?mps-side))
-  ?i <- (goal (id ?i-goal-id) (class INSTRUCT-DS-DISCARD) (mode FORMULATED)
-	            (params wp ?wp target-mps ?ds))
+              (params wp ?wp&:(neq ?wp UNKNOWN) wp-loc ?mps wp-side ?mps-side))
   (not (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?mps-side)))
-  (test (neq ?wp UNKNOWN))
+  (not (wm-fact (key domain fact holding args? r ? wp ?wp)))
   =>
-  (modify ?g (params wp UNKNOWN wp-loc ?mps wp-side ?mps-side))
-  (modify ?i (params wp UNKNOWN target-mps ?ds))
+  (retract ?g)
 )
 
-(defrule goal-production-remove-grounding-from-discard-wp-assinged-to-pay
-  "If a DISCARD goal is grounded on a certain WP, but the WP is assigned to a payment goal, unground it."
-  (wm-fact (key request discard args? ord ?order-id cs ?cs prio ?prio) (values status ACTIVE assigned-to ?goal-id ?i-goal-id))
-
-  ?g <- (goal (id ?goal-id) (class DISCARD) (mode FORMULATED) (parent ?parent)
-              (params wp ?wp wp-loc ?mps wp-side ?mps-side))
-  ?i <- (goal (id ?i-goal-id) (class INSTRUCT-DS-DISCARD) (mode FORMULATED)
-	            (params wp ?wp target-mps ?ds))
-  (goal (class PAY-FOR-RINGS-WITH-CAP-CARRIER) (params wp ?wp wp-loc ?mps wp-side ?mps-side $?))
-  (test (neq ?wp UNKNOWN))
+(defrule goal-production-remove-unused-instruct-discard
+  "Remove an obsolete discard instruct goal"
+  ?g <- (goal (id ?i-goal-id) (class INSTRUCT-DS-DISCARD) (mode FORMULATED)
+	            (params wp ?wp&:(neq ?wp UNKNOWN) target-mps ?ds))
+  (not (wm-fact (key domain fact wp-at args? wp ?wp m ? side ?)))
+  (not (wm-fact (key domain fact holding args? r ? wp ?wp)))
   =>
-  (modify ?g (params wp UNKNOWN wp-loc ?mps wp-side ?mps-side))
-  (modify ?i (params wp UNKNOWN target-mps ?ds))
+  (retract ?g)
 )
 
 (defrule goal-production-assert-enter-field-zones
@@ -1006,4 +993,96 @@
   =>
   (printout t "Goal " ENTER-FIELD " removed after entering" crlf)
   (retract ?gf ?gm)
+)
+
+; ----------------- Support Goals ---------------------------
+
+
+(defrule goal-production-assert-buffer-goal
+  "If there is no bufer goal yet, create one."
+  (wm-fact (key domain fact cs-color args? m ?cs col ?cap-col))
+  (goal (class INSTRUCTION-ROOT) (id ?instruct-root-id))
+  (goal (class SUPPORT-ROOT) (id ?root-id))
+  (not (goal (class BUFFER-CAP) (params $? ?cs ?$) (mode ~RETRACTED)))
+  =>
+  (bind ?buffer-goal (goal-production-assert-buffer-cap ?cs ?cap-col nil))
+  (bind ?instruct-goal (goal-production-assert-instruct-cs-buffer-cap ?cs ?cap-col nil))
+  (modify ?buffer-goal (parent ?root-id))
+  (modify ?instruct-goal (parent ?instruct-root-id))
+)
+
+(defrule goal-production-assert-pay-with-base-goal
+  "Create 2 pay-with-base goals for each ring station"
+  (wm-fact (key domain fact mps-type args? m ?bs t BS))
+  (wm-fact (key domain fact mps-type args? m ?rs t RS))
+  (goal (class SUPPORT-ROOT) (id ?root-id))
+  (goal (class INSTRUCTION-ROOT) (id ?instruct-root-id))
+  (not (and (goal (id ?some-id) (class PAY-FOR-RINGS-WITH-BASE) (params $? target-mps ?rs $?) (mode ~RETRACTED))
+       (goal (id ?some-other-id&:(neq ?some-id ?some-other-id)) (class PAY-FOR-RINGS-WITH-BASE) (params $? target-mps ?rs $?) (mode ~RETRACTED))))
+  =>
+  (bind ?wp-base-pay (sym-cat BASE-PAY- (gensym*)))
+  (bind ?payment-goal (goal-production-assert-pay-for-rings-with-base ?wp-base-pay ?bs INPUT ?rs INPUT nil))
+  (bind ?instruct-goal (goal-production-assert-instruct-bs-dispense-base ?wp-base-pay (nth$ (random 1 3) (create$ BASE_RED BASE_BLACK BASE_SILVER)) INPUT nil ?bs))
+  (assert
+      (domain-object (name ?wp-base-pay) (type workpiece))
+      (domain-fact (name wp-unused) (param-values ?wp-base-pay))
+      (wm-fact (key domain fact wp-base-color args? wp ?wp-base-pay col BASE_NONE) (type BOOL) (value TRUE))
+  )
+  (modify ?payment-goal (parent ?root-id))
+  (modify ?instruct-goal (parent ?instruct-root-id))
+)
+
+(defrule goal-production-assert-discard
+  "Create a discard goal for each cap station."
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact cs-color args? m ?cs col ?cap-col))
+  (wm-fact (key domain fact mps-type args? m ?ds t DS))
+
+  (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
+
+  (goal (class SUPPORT-ROOT) (id ?root-id))
+  (goal (class INSTRUCTION-ROOT) (id ?instruct-root-id))
+  (not (goal (class DISCARD) (params $? ?cs $?) (mode ~RETRACTED)))
+  ;and there is no discard offer
+  =>
+  (bind ?discard-goal (goal-production-assert-discard UNKNOWN ?cs OUTPUT nil))
+  (bind ?instruct-goal (goal-production-assert-instruct-ds-discard UNKNOWN ?ds))
+  (do-for-all-facts ((?mtype domain-fact)) (and (eq ?mtype:name mps-type) (member$ RS ?mtype:param-values))
+  (bind ?pay-goal-fact (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN ?cs OUTPUT (nth$ 1 ?mtype:param-values) INPUT nil))
+  (modify ?pay-goal-fact (parent ?root-id))
+  )
+  (modify ?discard-goal (parent ?root-id))
+  (modify ?instruct-goal (parent ?instruct-root-id))
+)
+
+(defrule goal-production-assert-pay-with-cc
+  "Create a pay-with-cc goal for each cap-less cap-carrier."
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact cs-color args? m ?cs col ?cap-col))
+  (wm-fact (key domain fact mps-type args? m ?rs t RS))
+
+  (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
+  (wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side ?mps-side))
+  (not (wm-fact (key order meta wp-for-order args? wp ?wp $?)))
+
+  ; there is not another payment goal bound to this wp
+  (not (goal (id ?other-goal-id) (class PAY-FOR-RINGS-WITH-CAP-CARRIER) (outcome ~FAILED) (params wp ?wp wp-loc ?cs wp-side ? target-mps ?rs $?)))
+
+  (goal (class SUPPORT-ROOT) (id ?root-id))
+  ;and there is no discard offer
+  =>
+  (do-for-all-facts ((?mtype domain-fact)) (and (eq ?mtype:name mps-type) (member$ RS ?mtype:param-values))
+  (bind ?pay-goal-fact (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN ?cs OUTPUT (nth$ 1 ?mtype:param-values) INPUT nil))
+  (modify ?pay-goal-fact (parent ?root-id))
+  )
+)
+(defrule goal-production-remove-unused-pay-with-cc
+  "Remove an obsolete discard goal"
+  ?g <- (goal (id ?goal-id) (class PAY-FOR-RINGS-WITH-CAP-CARRIER) (mode FORMULATED) (parent ?parent)
+              (params wp ?wp wp-loc ?mps wp-side ?mps-side $?))
+  (not (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?mps-side)))
+  (not (wm-fact (key domain fact holding args? r ? wp ?wp)))
+  =>
+  (retract ?g)
 )
