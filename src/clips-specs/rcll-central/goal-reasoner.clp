@@ -424,10 +424,21 @@
                (eq ?highest-prio-gm:goal-id (fact-slot-value ?highest-prio-goal-fact id))
                  (bind ?robot (fact-slot-value ?highest-prio-gm assigned-to))
   )
-  (modify ?highest-prio-goal-fact (mode SELECTED))
+  (bind ?selected (modify ?highest-prio-goal-fact (mode SELECTED)))
+	(if (eq (fact-slot-value ?selected class) MOVE-OUT-OF-WAY) then 
+  (do-for-all-facts ((?g goal)) (eq ?g:mode DISPATCHED)
+    (printout warn ?g:id " is concurrently running" crlf)
+  )
+  (do-for-all-facts ((?df domain-fact)) (eq ?df:name wp-at)
+    (printout warn  ?df:param-values crlf)
+  )
+  )
   ; flush executability
 	(delayed-do-for-all-facts ((?g goal))
 		(and (eq ?g:is-executable TRUE) (neq ?g:class SEND-BEACON))
+		(if (and (eq (fact-slot-value ?selected class) MOVE-OUT-OF-WAY) (neq ?g:class MOVE-OUT-OF-WAY)) then
+		(printout warn "Could select " ?g:id " instead of MOVE-OUT-OF-WAY" crlf)
+		)
 		(modify ?g (is-executable FALSE))
 	)
   ; if it is actually a robot, remove all other assignments and the waiting status
