@@ -17,7 +17,7 @@ plugins/execution-time-estimator:
   # Does not work with empty whitelist
   static:
     priority: -1
-    speed: 1
+    speed: 4
 
     # global whitelist options
     exec-time: 5
@@ -98,7 +98,7 @@ plugins/execution-time-estimator:
     pose-update: true
     # misc options
     priority: 1
-    speed: 0.5
+    speed: 2
 
     # global whitelist options
     target: place

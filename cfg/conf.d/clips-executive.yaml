@@ -59,12 +59,14 @@ clips-executive:
           - name: motor-switch
           - name: navgraph
           - name: protobuf
+          - name: simulation-result
           - name: tf
           - name: robmem-wait
             feature-request: false
             files: ["BATCH|robmem-wait-init.clp"]
             wait-for: robmem-initialized
           - name: robot_memory
+          
         stage-3:
           - name: utils
             file: rcll-central/utils.clp

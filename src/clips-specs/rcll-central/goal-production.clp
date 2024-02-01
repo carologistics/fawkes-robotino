@@ -52,8 +52,10 @@
                         (eq (wm-key-arg ?order:key ord) (wm-key-arg ?or:key ord))
             )))) 
         (bind ?order-list (insert$ ?order-list 1 (wm-key-arg ?order:key ord))))
-    
-    (return (create$ ?order-list FALSE))
+    (loop-for-count (round (* (length$ ?order-list) (/ 1 2)))
+      (bind ?order-list (create$ ?order-list FALSE)))
+    ; (return (create$ ?order-list FALSE))
+    (return ?order-list)
 )
 
 (deffunction pick-random-order (?order-list)
@@ -247,6 +249,7 @@
     ""
     (bind ?order-list (generate-all-order-list))
     (bind ?candidate-list (generate-candidate-order-list))
+
     ; game time
     (do-for-fact ((?game-time wm-fact))
       (wm-key-prefix ?game-time:key (create$ refbox game-time))
@@ -254,6 +257,9 @@
       (printout t "Current game time is " ?current-game-time crlf)
     )
     (printout t crlf)
+
+    (bind ?arguments (create$ ?current-game-time))
+
     ; machine status
     (do-for-all-facts ((?wp-at-fact wm-fact)) 
         (wm-key-prefix ?wp-at-fact:key (create$ domain fact wp-at args? wp))
@@ -337,20 +343,21 @@
             (and (wm-key-prefix ?fulfilled:key (create$ domain fact order-fulfilled))
                 (eq (wm-key-arg ?fulfilled:key ord) ?or)))
         then
-          (printout t " ->fulfilled ")
+          (bind ?order-status " ->fulfilled ")
         else
-          (printout t " ->not finished yet ")
+          (bind ?order-status " ->not finished yet ")
         )
       else
-        (printout t " ->not started yet ")
+        (bind ?order-status " ->not started yet ")
       )
+      (printout t ?order-status)
       (printout t crlf)
 
       ; delivery time window
       (do-for-all-facts ((?tw wm-fact)) 
           (and (wm-key-prefix ?tw:key (create$ refbox order)) (member$ ?or ?tw:key))
-          (if (member$ delivery-begin ?tw:key) then (printout t "Delivery Begin " ?tw:value crlf))
-          (if (member$ delivery-end ?tw:key) then (printout t "Delivery End " ?tw:value crlf)))    
+          (if (member$ delivery-begin ?tw:key) then (bind ?or-begin ?tw:value) (printout t "Delivery Begin " ?or-begin crlf))
+          (if (member$ delivery-end ?tw:key) then (bind ?or-end ?tw:value) (printout t "Delivery End " ?or-end crlf)))    
       ; (wm-fact (key refbox order ?order delivery-end) (type UINT) (value ?end))
 
       ; base color
@@ -369,6 +376,9 @@
           (and (wm-key-prefix ?cs:key (create$ domain fact cs-color args? m))
               (eq ?cap-color (wm-key-arg ?cs:key col)))
           (bind ?cap-station (wm-key-arg ?cs:key m))
+          (if (eq ?cap-station C-CS1) 
+          then (bind ?CS1-num 1) (bind ?CS2-num 0)
+          else (bind ?CS1-num 0) (bind ?CS2-num 1))
           (printout t " " ?cap-station))
       (printout t crlf)
       ; cap station
@@ -435,10 +445,12 @@
       (printout t "the second method to decide which ring station is used" crlf)
       (do-for-fact ((?rs wm-fact))
         (wm-key-prefix ?rs:key (create$ mps workload order args? m C-RS1 ord ?or))
-        (printout t "the number of RS1 is " ?rs:value crlf))     
+        (bind ?RS1-num ?rs:value)
+        (printout t "the number of RS1 is " ?RS1-num crlf))     
       (do-for-fact ((?rs wm-fact))
         (wm-key-prefix ?rs:key (create$ mps workload order args? m C-RS2 ord ?or))
-        (printout t "the number of RS2 is " ?rs:value crlf))   
+        (bind ?RS2-num ?rs:value)
+        (printout t "the number of RS2 is " ?RS2-num crlf))   
       (printout t crlf)
 
       ; (do-for-all-facts ((?mps-workload wm-fact)) 
@@ -510,10 +522,15 @@
         (bind ?update-rs2 (- ?update-rs2 (nth$ 4 ?del-res)))
       )
       (printout t crlf)
+      (bind ?one-order-info (create$ ?or-index ?or ?com ?order-status ?or-begin ?or-end ?CS1-num ?CS2-num ?RS1-num ?RS2-num))
+      (bind ?arguments (create$ ?arguments ?one-order-info <>))
     )
     (bind ?res-workload (create$ ?update-cs1 ?update-cs2 ?update-rs1 ?update-rs2))
     (printout t "Overall workload is " ?overall-workload crlf)
     (printout t "Updated workload is " ?res-workload  crlf)
+    (bind ?arguments (create$ ?arguments ?overall-workload ?res-workload))
+
+    (return ?arguments)
 )
 
 (defrule goal-production-navgraph-compute-wait-positions-finished
@@ -1224,6 +1241,17 @@
   (printout error "Can not build order " ?order-id " with ring-3 color " ?col-ring " because there is no ringstation for it" crlf)
 )
 
+(defrule write-overall-points-into-csv
+  "Once the game state switches from PRODUCTION to POST-GAME, write the overal points into csv file"
+  (wm-fact (key refbox phase) (value POST_GAME))
+  (wm-fact (key refbox points CYAN) (value ?points))
+  (wm-fact (key game ID) (values ?ID1 ?ID2))
+  ?tf <- (wm-fact (key game overall points) (value 0))
+  =>
+  (modify ?tf (value 1))
+  (simulation-result-into-csv (create$ ?ID1 ?ID2 "Overall" ?points))
+)
+
 (defrule ask-next-order-at-same-intervals
     "determine a random next order to be processed every minute or other time interval"
     (wm-fact (key refbox game-time) (values $?gt)) 
@@ -1231,10 +1259,14 @@
     ; (wm-fact (key refbox game-time) (values $?gt&:(= (mod (+ (float (nth$ 1 ?gt)) (/ (float (nth$ 2 ?gt)) 1000000.)) ?*PRODUCTION-TIME-INTERVAL*) 0))) 
     ; (time $?now)
     ?tf <- (timer (name production-time-interval-timer) (time $?t&:(timeout ?gt ?t ?*PRODUCTION-TIME-INTERVAL*)))
+
+    (wm-fact (key refbox points CYAN) (value ?points))
+    (wm-fact (key game ID) (values ?ID1 ?ID2))
     =>
     (modify ?tf (time ?gt))
     ; (assert (wm-fact (key mps workload needs-update) (is-list FALSE) (type BOOL) (value TRUE)))
     ; (printout t "Current time" ?now crlf)
+    (printout t crlf)
     (printout t "Result1:all orders" (generate-all-order-list) crlf)
     (bind ?result (generate-candidate-order-list))
     (printout t "Result2:all candidate orders" ?result crlf)
@@ -1243,7 +1275,9 @@
     (if ?order-id then 
       (printout t "the chosen random order:" ?order-id crlf)
       (assert (wm-fact (key strategy meta selected-order args? cond random time (nth$ 1 ?gt)) (value ?order-id)))
-    else  (printout t "nothing chosen!" crlf)
+    else  
+      (printout t "nothing chosen!" crlf)
+      (simulation-result-into-csv (create$ ?ID1 ?ID2 ?points "//" " " "//" (print-all-useful-parameters-at-every-decision-moment)))
     )
 )
 (defrule goal-production-create-produce-for-order
@@ -1280,10 +1314,13 @@
 
   ?os <- (wm-fact (key order meta started args? ord ?order-id) (value FALSE))
   (wm-fact (key mps workload needs-update) (value FALSE))
+
+  (wm-fact (key refbox points CYAN) (value ?points))
+  (wm-fact (key game ID) (values ?ID1 ?ID2))
   =>
   (printout t "Result4:selected order " ?order-id crlf)
   (printout t "production time interval " ?*PRODUCTION-TIME-INTERVAL* crlf)
-  (print-all-useful-parameters-at-every-decision-moment)
+  (simulation-result-into-csv (create$ ?ID1 ?ID2 ?points "//" ?order-id "//" (print-all-useful-parameters-at-every-decision-moment)))
 
   ;find the necessary ringstations
   (bind ?rs1 (goal-production-get-machine-for-color ?col-ring1))

@@ -35,6 +35,8 @@
     (wm-fact (id "/game/state")  (value WAIT_START) )
     (wm-fact (id "/refbox/game-time")  (type UINT) (is-list TRUE) (values 0 0))
     (timer (name production-time-interval-timer) (time 0 0))
+    (wm-fact (key game ID) (values (nth$ 1 ?now) (nth$ 2 ?now)))
+    (wm-fact (key game overall points) (value 0))
     (wm-fact (key refbox beacon seq) (type UINT) (value 1))
   )
 )

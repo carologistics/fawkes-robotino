@@ -8,8 +8,11 @@
 # files between baseline and experiment runs.
 # Runs are conducted in an alternating fashion
 
-refbox_args="--refbox-args \"--cfg-simulation simulation/default_simulation.yaml --cfg-mps mps/mockup_mps.yaml --cfg-game game/load_game.yaml --cfg-mongodb mongodb/enable_mongodb.yaml\""
-central_args="-x start -o -k -r -n 3 --mongodb --central-agent m-central-clips-exec -m m-skill-sim --keep-tmpfiles"
+# refbox_args="--refbox-args \"--cfg-simulation simulation/default_simulation.yaml --cfg-mps mps/mockup_mps.yaml --cfg-game game/load_game.yaml --cfg-mongodb mongodb/enable_mongodb.yaml\""
+# central_args="-x start -o -k -r -n 3 --mongodb --central-agent m-central-clips-exec -m m-skill-sim --keep-tmpfiles"
+central_args="-o -k -n 3 --mongodb -m m-skill-sim --central-agent m-central-clips-exec"
+refbox_args="--refbox-args \"--cfg-mps mps/mockup_mps.yaml\"" 
+
 decentral_args="-r -k -o --mongodb -m m-distributed-skill-sim-clips-exec"
 gazsim_path="$FAWKES_DIR/bin/./gazsim.bash"
 scripts_path=$FAWKES_DIR/etc/scripts/eval_suite
@@ -226,7 +229,9 @@ start_simulation_generate_game() {
 
 start_simulation () {
     echo "starting simulation $1"
-    eval $1
+    # eval $1
+    $FAWKES_DIR/bin/./gazsim.bash -x kill;
+    $FAWKES_DIR/bin/./gazsim.bash -o -k -n 3 --mongodb -m m-skill-sim --central-agent m-central-clips-exec --refbox-args "--cfg-mps mps/mockup_mps.yaml"
     sleep 20
 }
 
