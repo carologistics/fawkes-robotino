@@ -28,6 +28,7 @@
 #include <utils/math/angle.h>
 
 #include <boost/algorithm/string/predicate.hpp>
+#include <chrono>
 #include <iomanip>
 #include <iostream>
 #include <math.h>
@@ -476,6 +477,7 @@ ObjectTrackingThread::loop()
 	std::string                            pos_str;
 	fawkes::tf::Stamped<fawkes::tf::Point> cur_object_pos_target;
 	if (detected) {
+		logger->log_info(name(), "Object Detected");
 		//draw bounding box
 		rectangle(image, closest_box, Scalar(0, 255, 0), 2);
 
@@ -512,7 +514,34 @@ ObjectTrackingThread::loop()
 		tf::StampedTransform stf_object_pos(tf_object_pos, capture_time, cam_frame_, object_pos_frame_);
 		object_pos_pub->send_transform(stf_object_pos);
 	} else {
+		logger->log_info(name(), "Object NOT Detected!!!!!!!!!!!!!!!!!!!!!");
 		pos_str = "X.XXX X.XXX X.XXX";
+
+		// Get timestamp to save image
+
+		// Get the current system time
+		std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+
+		// Convert the system time to a time_t object
+		std::time_t time = std::chrono::system_clock::to_time_t(now);
+
+		// Convert the time_t object to a tm struct
+		std::tm *localTime = std::localtime(&time);
+
+		// Get the remaining milliseconds
+		auto duration     = now.time_since_epoch();
+		auto seconds      = std::chrono::duration_cast<std::chrono::seconds>(duration);
+		auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(duration - seconds);
+
+		// Format the date and time
+		std::stringstream ss;
+		ss << std::put_time(localTime, "%Y_%m_%d_%H_%M_%S") << "_" << std::setfill('0') << std::setw(3)
+		   << milliseconds.count();
+
+		std::string new_img_name =
+		  "/home/robotino/fawkes-robotino/etc/yolo_images_undetected/" + ss.str() + ".jpg";
+		std::replace(new_img_name.begin(), new_img_name.end(), ':', '_');
+		imwrite(new_img_name, image);
 
 		//handle case if first detection is unsuccessful
 		if (past_responses_.size() == 0) {
@@ -538,11 +567,6 @@ ObjectTrackingThread::loop()
 	                    shm_buffer_results_->buffer(),
 	                    camera_width_,
 	                    camera_height_);
-
-	//save results
-	//std::string new_img_name = "/tmp/yolo_results/" + std::to_string(name_it_) + ".jpg";
-	//imwrite(new_img_name, image);
-	//name_it_ ++;
 	fawkes::Time after_projection(clock);
 
 	//compute weighted average
@@ -624,15 +648,17 @@ ObjectTrackingThread::loop()
 
 	fawkes::Time after_interface_update(clock);
 	loop_count_++;
-	//double average_loop = (after_interface_update - &starting_time_) / loop_count_;
+	double average_loop = (after_interface_update - &starting_time_) / loop_count_;
 
-	//logger->log_info("load image time ", std::to_string(before_detect - &start_time).c_str());
-	//logger->log_info("detection time  ", std::to_string(after_detect - &before_detect).c_str());
-	//logger->log_info("box time        ", std::to_string(after_projection - &after_detect).c_str());
-	//logger->log_info("interface time  ", std::to_string(after_interface_update - &after_projection).c_str());
-	//logger->log_info("overall time    ", std::to_string(after_interface_update - &start_time).c_str());
-	//logger->log_info("loop count      ", std::to_string(loop_count_).c_str());
-	//logger->log_info("average loop    ", std::to_string(average_loop).c_str());
+	logger->log_info("load image time ", std::to_string(before_detect - &start_time).c_str());
+	logger->log_info("detection time  ", std::to_string(after_detect - &before_detect).c_str());
+	logger->log_info("box time        ", std::to_string(after_projection - &after_detect).c_str());
+	logger->log_info("interface time  ",
+	                 std::to_string(after_interface_update - &after_projection).c_str());
+	logger->log_info("overall time    ",
+	                 std::to_string(after_interface_update - &start_time).c_str());
+	logger->log_info("loop count      ", std::to_string(loop_count_).c_str());
+	logger->log_info("average loop    ", std::to_string(average_loop).c_str());
 }
 
 bool
