@@ -3,10 +3,10 @@
 ---
 hardware/laser:
   front:
-    time_offset: 0.022911
+    time_offset: -0.012582
     host: 192.168.0.32
   back:
-    time_offset: 0.018779
+    time_offset: -0.078836
     host: 192.168.0.33
 
 plugins/laser-filter:
