@@ -548,6 +548,7 @@
   ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to ?robot)
              (category ?category&PRODUCTION|MAINTENANCE|PRODUCTION-INSTRUCT|MAINTENANCE-INSTRUCT) (retries ?retries))
   =>
+  (modify ?gm (retries (+ 1 ?retries)))
   (if (not
         (or
           (eq ?category PRODUCTION-INSTRUCT)
@@ -560,7 +561,6 @@
   )
   (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as workpiece is still usable after fail" crlf)
   (modify ?g (mode FORMULATED) (outcome UNKNOWN))
-  (modify ?gm (retries (+ 1 ?retries)))
 
   (goal-reasoner-retract-plan-action ?goal-id)
 )
