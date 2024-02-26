@@ -1183,15 +1183,16 @@
 	(assert (wm-fact (key monitoring action-estimated-score args? goal-id ?goal-id plan-id ?plan-id action-id (sym-cat ?action-id)  action-name ?action-name) (value (- ?points ?recorded-points))))
 )
 
-(defrule execution-monitoring-correct-slide-counter
-	?monitoring-fact <- (wm-fact (key monitoring action-estimated-score args? goal-id ?goal-id plan-id ?plan-id action-id ?action-id action-name wp-put-slide-cc) (value 0))
-	(goal (id ?goal-id) (params $? target-mps ?rs $?))
-	?request <- (wm-fact (key request pay args? ord ?order m ?rs ring ?ring seq ?seq prio ?prio) (values status ? assigned-to $?assigned-goals&:(member$ ?goal-id ?assigned-goals)))
-	?rs-filled <- (domain-fact (name rs-filled-with) (param-values ?rs ?bases-filled))
-	(domain-fact (name rs-inc) (param-values ?bases-now ?bases-filled))
-	=>
-	(printout t "Detected no point increase after put slide, re-issuing request and adjusting counter")
-	(retract ?monitoring-fact)
-	(modify ?rs-filled (param-values ?rs ?bases-now))
-	(modify ?request (values status OPEN assgined-to))
-)
+; TODO: revisit
+;(defrule execution-monitoring-correct-slide-counter
+;	?monitoring-fact <- (wm-fact (key monitoring action-estimated-score args? goal-id ?goal-id plan-id ?plan-id action-id ?action-id action-name wp-put-slide-cc) (value 0))
+;	(goal (id ?goal-id) (params $? target-mps ?rs $?))
+;	?request <- (wm-fact (key request pay args? ord ?order m ?rs ring ?ring seq ?seq prio ?prio) (values status ? assigned-to $?assigned-goals&:(member$ ?goal-id ?assigned-goals)))
+;	?rs-filled <- (domain-fact (name rs-filled-with) (param-values ?rs ?bases-filled))
+;	(domain-fact (name rs-inc) (param-values ?bases-now ?bases-filled))
+;	=>
+;	(printout t "Detected no point increase after put slide, re-issuing request and adjusting counter")
+;	(retract ?monitoring-fact)
+;	(modify ?rs-filled (param-values ?rs ?bases-now))
+;	(modify ?request (values status OPEN assgined-to))
+;)
