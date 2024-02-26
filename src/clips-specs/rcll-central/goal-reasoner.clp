@@ -580,7 +580,7 @@
   (goal-meta (goal-id ?goal-id) (order-id ?order-id) (assigned-to ?robot)
              (category ?category&PRODUCTION|PRODUCTION-INSTRUCT))
   ?order-root <- (goal (id ?root-id) (outcome ~FAILED))
-  (goal-meta (goal-id ?root-id) (root-for-order ?order-id))
+  (goal-meta (goal-id ?root-id) (root-for-order ?order-id&:(neq ?order-id nil)))
   =>
   (if (not
           (eq ?category PRODUCTION-INSTRUCT)
@@ -699,7 +699,7 @@
   (goal-meta (goal-id ?goal-id) (order-id ?order-id) (assigned-to ?robot)
              (category ?category&PRODUCTION|PRODUCTION-INSTRUCT))
   ?order-root <- (goal (id ?root-id) (outcome ~FAILED))
-  (goal-meta (goal-id ?root-id) (root-for-order ?order-id))
+  (goal-meta (goal-id ?root-id) (root-for-order ?order-id&:(neq ?order-id nil)))
   =>
   (if (not
           (eq ?category PRODUCTION-INSTRUCT)
@@ -809,6 +809,7 @@
   ?g <- (goal (id ?goal-id) (class ?class&MOVE-OUT-OF-WAY|CLEANUP-WP) (mode FINISHED)
               (outcome ?outcome) (verbosity ?v))
   ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (retries ?retries))
+  (not (plan-action (state FAILED) (error-msg "Stuck on Running")))
   =>
   (printout (log-debug ?v) "Evaluate " ?class " goal " ?goal-id crlf)
   (set-robot-to-waiting ?robot)
