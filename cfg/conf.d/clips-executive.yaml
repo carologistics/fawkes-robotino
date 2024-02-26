@@ -121,8 +121,7 @@ clips-executive:
               - rcll-central/action-task-executor.clp
           - name: simtest
             file: rcll-central/simtest.clp
-      # the mapping syntax for parameters is defined in
-      # fawkes/src/libs/utils/misc/map_skill.cpp
+
       action-mapping:
         enter-field: >
           drive_into_field{place="?(place)Y",
@@ -144,8 +143,6 @@ clips-executive:
         wp-get: manipulate_wp{mps=?(m)S,
                               side=?(side)S,target="WORKPIECE",c=?(com)S}
         wp-discard: discard{}
-        explore-and-turn: goto_corner_turn{place=?(place)S,
-                                           min_x=-5, max_x=0, min_y=0, max_y=6}
         wp-check: manipulate_wp{mps=?(m)S,dry_run=true,
                           side=?(side)S,target="WORKPIECE",query=?(query)S}
       parameters:
@@ -201,8 +198,6 @@ clips-executive:
         - RobotinoSensorInterface
         - RobotinoLightInterface
         - HeartbeatInterface
-        - BoxInterface
-        - SwitchInterface
 
     test:
       domain: test-scenario/test-domain.clp
