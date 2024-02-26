@@ -52,7 +52,7 @@ fawkes/meta_plugins:
     - m-realsense
     - skiller-rest-api
     - skiller_motor_state
-    - box_detect
+    - tag-vision
     - mps-laser-gen-ros2
     - object-tracking
   m-robot-memory:
