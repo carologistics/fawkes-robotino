@@ -139,6 +139,23 @@
     (if ?successful then (bind ?outcome EXECUTION-SUCCEEDED))
   )
   (modify ?pa (state ?outcome))
+   else (if (> ?task ?task-seq) then
+     (bind ?robot-num (pb-field-value ?task-msg "robot_id"))
+     (bind ?team-col (pb-field-value ?task-msg "team_color"))
+     (printout warn "Received feedback for futur task!" crlf)
+	 (printout t ?goal-id " " ?plan-id " " ?id " " ?action-name crlf)
+	 (printout t ?task-seq " " ?robot " " ?outcome crlf)
+	 (printout t  ?task " " ?robot-num " " ?team-col crlf)
+	 )
+     (if (< ?task ?task-seq) then
+     (bind ?robot-num (pb-field-value ?task-msg "robot_id"))
+     (bind ?team-col (pb-field-value ?task-msg "team_color"))
+     (printout warn "Received feedback for past task!" crlf)
+	 (printout t ?goal-id " " ?plan-id " " ?id " " ?action-name crlf)
+	 (printout t ?task-seq " " ?robot " " ?outcome crlf)
+	 (printout t  ?task " " ?robot-num " " ?team-col crlf)
+	 )
+  )
   (retract ?pf)
 )
 
@@ -147,4 +164,8 @@
   ?pf <- (protobuf-msg (type "llsf_msgs.AgentTask") (ptr ?task-msg))
   =>
   (printout error "received AgentTask message without action" crlf)
+  (bind ?robot-num (pb-field-value ?task-msg "robot_id"))
+  (bind ?team-col (pb-field-value ?task-msg "team_color"))
+  (bind ?task (pb-field-value ?task-msg "task_id"))
+  (printout t  ?task " " ?robot-num " " ?team-col crlf)
 )
