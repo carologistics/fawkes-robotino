@@ -121,9 +121,11 @@
     (wm-fact (key domain fact mps-team args? m ?mps col ?any-team-color))
     (wm-fact (key game found-tag name args? m ?mps ))
   )
-  (not (wm-fact (key game found-tag all-found)))
+  ;(not (wm-fact (key game found-tag all-found)))
+  (not (navgraph-all-tags-triggered))
 =>
   (printout t "Triggering NavGraph generation with Ground-truth" crlf)
   (navgraph-add-all-new-tags)
-  (assert (wm-fact (key game found-tag all-found)))
+  ;(assert (wm-fact (key game found-tag all-found)))
+  (assert (navgraph-all-tags-triggered))
 )

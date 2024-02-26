@@ -67,13 +67,35 @@
   (modify ?pa (state WAITING))
 )
 
+(defrule action-task-skip-trivial-move
+" We dont sent agent tasks for trivial moves...
+"
+  (declare (salience ?*SALIENCE-LOW*))
+  ?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id) (state WAITING)
+                      (action-name move) (param-values ?robot ?source ?source-side ?source ?source-side))
+  (action-task-executor-enable (name move))
+  =>
+  (modify ?pa (state EXECUTION-SUCCEEDED))
+)
+
+(defrule action-task-skip-trivial-go-wait
+" We dont sent agent tasks for trivial moves...
+"
+  (declare (salience ?*SALIENCE-LOW*))
+  ?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id) (state WAITING)
+                      (action-name go-wait) (param-values ?robot ?source ?source-side ?source))
+  (action-task-executor-enable (name go-wait))
+  =>
+  (modify ?pa (state EXECUTION-SUCCEEDED))
+)
+
 (defrule action-task-send-command
 " Create an AgentTask protobuf message and send it to the simulator peer.
 "
   ?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id)
            (state WAITING) (action-name ?action-name))
   (action-task-executor-enable (name ?action-name))
-  ?at <- (refbox-agent-task (task-id ?task-seq) (robot ?robot))
+  ?at <- (refbox-agent-task (task-id ?task-seq) (robot ?robot) (goal-id ?goal-id) (plan-id ?plan-id) (action-id ?id))
   (wm-fact (key refbox robot task seq args? r ?robot) (value ?task-seq))
   (wm-fact (key simulator comm peer-enabled ?robot) (value TRUE) (type BOOL))
   (wm-fact (key simulator comm peer-id ?robot) (value ?peer-id) (type INT))
@@ -99,9 +121,12 @@
     (goal-id ?goal-id) (plan-id ?plan-id) (action-id ?id)
     (outcome ?outcome)
   )
+  (test (eq (string-to-field (sub-string (str-length ?robot) (str-length ?robot) ?robot))
+  (pb-field-value ?task-msg "robot_id")))
   (wm-fact (key refbox robot task seq args? r ?robot) (value ?task-seq))
   =>
   (bind ?task (pb-field-value ?task-msg "task_id"))
+  (if (eq ?task ?task-seq) then
   (bind ?robot-num (pb-field-value ?task-msg "robot_id"))
   (bind ?team-col (pb-field-value ?task-msg "team_color"))
   (bind ?outcome EXECUTION-FAILED)
@@ -114,6 +139,23 @@
     (if ?successful then (bind ?outcome EXECUTION-SUCCEEDED))
   )
   (modify ?pa (state ?outcome))
+   else (if (> ?task ?task-seq) then
+     (bind ?robot-num (pb-field-value ?task-msg "robot_id"))
+     (bind ?team-col (pb-field-value ?task-msg "team_color"))
+     (printout warn "Received feedback for futur task!" crlf)
+	 (printout t ?goal-id " " ?plan-id " " ?id " " ?action-name crlf)
+	 (printout t ?task-seq " " ?robot " " ?outcome crlf)
+	 (printout t  ?task " " ?robot-num " " ?team-col crlf)
+	 )
+     (if (< ?task ?task-seq) then
+     (bind ?robot-num (pb-field-value ?task-msg "robot_id"))
+     (bind ?team-col (pb-field-value ?task-msg "team_color"))
+     (printout warn "Received feedback for past task!" crlf)
+	 (printout t ?goal-id " " ?plan-id " " ?id " " ?action-name crlf)
+	 (printout t ?task-seq " " ?robot " " ?outcome crlf)
+	 (printout t  ?task " " ?robot-num " " ?team-col crlf)
+	 )
+  )
   (retract ?pf)
 )
 
@@ -122,4 +164,8 @@
   ?pf <- (protobuf-msg (type "llsf_msgs.AgentTask") (ptr ?task-msg))
   =>
   (printout error "received AgentTask message without action" crlf)
+  (bind ?robot-num (pb-field-value ?task-msg "robot_id"))
+  (bind ?team-col (pb-field-value ?task-msg "team_color"))
+  (bind ?task (pb-field-value ?task-msg "task_id"))
+  (printout t  ?task " " ?robot-num " " ?team-col crlf)
 )
