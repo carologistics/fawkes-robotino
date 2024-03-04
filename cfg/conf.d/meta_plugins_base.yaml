@@ -54,6 +54,5 @@ fawkes/meta_plugins:
     - m-base-laser
     - m-base-gripper
     - m-base-ros2
-    - amcl2
     - m-base-joy
     - laser_front_dist
