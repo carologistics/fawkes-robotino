@@ -1,5 +1,5 @@
 ros2:
   node-name: "robotinobase3"
-  namespace: ""
+  namespace: "robotinobase3"
   tf:
-    tf_prefix: "robotinobase3"
+    tf_prefix: "robotinobase3/"
