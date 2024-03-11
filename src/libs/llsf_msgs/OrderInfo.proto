@@ -47,18 +47,18 @@ option java_outer_classname = "OrderInfoProtos";
 
 message UnconfirmedDelivery {
   enum CompType {
-    COMP_ID  = 2000;
+    COMP_ID = 2000;
     MSG_TYPE = 45;
   }
 
-  required uint32 id            = 1;
-  required Team   team          = 2;
-  required Time   delivery_time = 3;
+  required uint32 id = 1;
+  required Team team = 2;
+  required Time delivery_time = 3;
 }
 
 message Order {
   enum CompType {
-    COMP_ID  = 2000;
+    COMP_ID = 2000;
     MSG_TYPE = 42;
   }
 
@@ -71,12 +71,12 @@ message Order {
   }
 
   // ID and requested product of this order
-  required uint32       id = 1;
-  required Complexity   complexity = 2;
+  required uint32 id = 1;
+  required Complexity complexity = 2;
 
-  required BaseColor    base_color = 3;
-  repeated RingColor    ring_colors = 4;
-  required CapColor     cap_color = 5;
+  required BaseColor base_color = 3;
+  repeated RingColor ring_colors = 4;
+  required CapColor cap_color = 5;
 
   // Quantity requested and delivered
   required uint32 quantity_requested = 6;
@@ -86,7 +86,7 @@ message Order {
   // Start and end time of the delivery
   // period in seconds of game time
   required uint32 delivery_period_begin = 9;
-  required uint32 delivery_period_end   = 10;
+  required uint32 delivery_period_end = 10;
 
   // The gate to deliver to, defaults to any
   // (non-defunct, i.e. non-red light) gate
@@ -99,7 +99,7 @@ message Order {
 
 message OrderInfo {
   enum CompType {
-    COMP_ID  = 2000;
+    COMP_ID = 2000;
     MSG_TYPE = 41;
   }
 
@@ -109,20 +109,20 @@ message OrderInfo {
 
 message SetOrderDelivered {
   enum CompType {
-    COMP_ID  = 2000;
+    COMP_ID = 2000;
     MSG_TYPE = 43;
   }
 
-  required Team   team_color = 1;
-  required uint32 order_id   = 2;
+  required Team team_color = 1;
+  required uint32 order_id = 2;
 }
 
 message ConfirmDelivery {
   enum CompType {
-    COMP_ID  = 2000;
+    COMP_ID = 2000;
     MSG_TYPE = 46;
   }
 
   required uint32 delivery_id = 1;
-  required bool   correct     = 2;
+  required bool correct = 2;
 }

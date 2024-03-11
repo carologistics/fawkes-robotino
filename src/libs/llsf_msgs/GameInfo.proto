@@ -46,7 +46,7 @@ option java_outer_classname = "GameInfoProtos";
 // Game information for controllers
 message GameInfo {
   enum CompType {
-    COMP_ID  = 2000;
+    COMP_ID = 2000;
     MSG_TYPE = 81;
   }
 
@@ -57,13 +57,13 @@ message GameInfo {
 // Request setting of a new game phase
 message SetTeamName {
   enum CompType {
-    COMP_ID  = 2000;
+    COMP_ID = 2000;
     MSG_TYPE = 82;
   }
 
   // Name of the team to set
-  required string team_name  = 1;
+  required string team_name = 1;
 
   // Color of team
-  required Team   team_color = 2;
+  required Team team_color = 2;
 }

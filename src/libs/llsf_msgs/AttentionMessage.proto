@@ -45,14 +45,14 @@ option java_outer_classname = "AttentionMessageProtos";
 
 message AttentionMessage {
   enum CompType {
-    COMP_ID  = 2000;
+    COMP_ID = 2000;
     MSG_TYPE = 2;
   }
 
   // The message to display, be brief!
   required string message = 1;
   // Time (sec) the msg should be visible
-  optional float  time_to_show = 2;
+  optional float time_to_show = 2;
   // if the message only regards one team
-  optional Team   team_color = 3;
+  optional Team team_color = 3;
 }

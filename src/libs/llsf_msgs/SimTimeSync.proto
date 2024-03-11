@@ -36,17 +36,14 @@ syntax = "proto2";
 
 package llsf_msgs;
 
-option java_package =
-  "org.robocup_logistics.llsf_msgs";
-option java_outer_classname =
-  "SimTimeSyncProtos";
-
+option java_package = "org.robocup_logistics.llsf_msgs";
+option java_outer_classname = "SimTimeSyncProtos";
 
 import "Time.proto";
 
 message SimTimeSync {
   enum CompType {
-    COMP_ID  = 2000;
+    COMP_ID = 2000;
     MSG_TYPE = 327;
   }
 

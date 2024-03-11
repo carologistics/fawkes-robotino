@@ -43,10 +43,8 @@ import "Team.proto";
 import "Pose2D.proto";
 import "AgentTask.proto";
 
-option java_package =
-  "org.robocup_logistics.llsf_msgs";
-option java_outer_classname =
-  "BeaconSignalProtos";
+option java_package = "org.robocup_logistics.llsf_msgs";
+option java_outer_classname = "BeaconSignalProtos";
 
 message BeaconSignal {
   enum CompType {
@@ -55,7 +53,7 @@ message BeaconSignal {
   }
 
   // Local time in UTC
-  required Time   time = 1;
+  required Time time = 1;
   // Sequence number
   required uint64 seq = 2;
 
@@ -66,19 +64,20 @@ message BeaconSignal {
   // The robot's name
   required string peer_name = 5;
   // Team color, teams MUST sent this
-  optional Team   team_color = 6;
+  optional Team team_color = 6;
 
   // Position and orientation of the
   // robot on the LLSF playing field
   optional Pose2D pose = 7;
-  // Maybe needed for future generalisation of beacon signal and tracking of robots current activity (used by GRIPS currently)
+  // Maybe needed for future generalisation of beacon signal and tracking of
+  // robots current activity (used by GRIPS currently)
   optional AgentTask task = 9; // current task-id of robot
-  repeated FinishedTask finished_tasks = 10; // a list of all the tasks that the robot has done. Contains the ID of the task and the result
+  repeated FinishedTask finished_tasks =
+      10; // a list of all the tasks that the robot has done. Contains the ID of
+          // the task and the result
 }
 
-message FinishedTask{
-	required uint32 TaskId = 1; // the specific task thats been done
-	required bool successful = 2; // the result of the task thats been done
+message FinishedTask {
+  required uint32 TaskId = 1;   // the specific task thats been done
+  required bool successful = 2; // the result of the task thats been done
 }
-
-

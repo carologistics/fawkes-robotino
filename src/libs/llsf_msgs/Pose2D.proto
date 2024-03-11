@@ -47,11 +47,11 @@ option java_outer_classname = "Pose2DProtos";
 // Data is relative to the LLSF field frame
 message Pose2D {
   // Time when this pose was measured
-  required Time   timestamp = 1;
+  required Time timestamp = 1;
 
   // X/Y coordinates in meters
-  required float  x = 2;
-  required float  y = 3;
+  required float x = 2;
+  required float y = 3;
   // Orientation in rad
-  required float  ori = 4;
+  required float ori = 4;
 }

@@ -48,7 +48,7 @@ message Time {
 
   // Time in seconds since the Unix epoch
   // in UTC or seconds part of duration
-  required int64  sec = 1;
+  required int64 sec = 1;
 
   // Nano seconds after seconds for a time
   // or nanoseconds part for duration

@@ -42,8 +42,8 @@ option java_package = "org.robocup_logistics.llsf_msgs";
 option java_outer_classname = "ProductColorProtos";
 
 enum RingColor {
-  RING_BLUE   = 1;
-  RING_GREEN  = 2;
+  RING_BLUE = 1;
+  RING_GREEN = 2;
   RING_ORANGE = 3;
   RING_YELLOW = 4;
 }
@@ -57,5 +57,5 @@ enum BaseColor {
 
 enum CapColor {
   CAP_BLACK = 1;
-  CAP_GREY  = 2;
+  CAP_GREY = 2;
 }
