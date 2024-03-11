@@ -44,18 +44,18 @@ option java_package = "org.robocup_logistics.llsf_msgs";
 option java_outer_classname = "MachineCommandsProtos";
 
 enum MachineState {
-  IDLE      = 1;
+  IDLE = 1;
   AVAILABLE = 2;
   PROCESSED = 3;
   DELIVERED = 4;
   RETRIEVED = 5;
-  RESET     = 15;
+  RESET = 15;
 }
 
 // Load puck into machine area.
 message SetMachineState {
   enum CompType {
-    COMP_ID  = 2000;
+    COMP_ID = 2000;
     MSG_TYPE = 17;
   }
 
@@ -65,11 +65,10 @@ message SetMachineState {
   required MachineState state = 2;
 }
 
-
 // Load puck into machine area.
 message MachineAddBase {
   enum CompType {
-    COMP_ID  = 2000;
+    COMP_ID = 2000;
     MSG_TYPE = 18;
   }
 
@@ -80,7 +79,7 @@ message MachineAddBase {
 // Set machine lights.
 message SetMachineLights {
   enum CompType {
-    COMP_ID  = 2000;
+    COMP_ID = 2000;
     MSG_TYPE = 19;
   }
 

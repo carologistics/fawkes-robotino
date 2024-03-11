@@ -41,14 +41,40 @@ package llsf_msgs;
 option java_package = "org.robocup_logistics.llsf_msgs";
 option java_outer_classname = "VersionProtos";
 
+message ConfigValue {
+  enum CompType {
+    COMP_ID = 2000;
+    MSG_TYPE = 6;
+  }
+  enum ValueType {
+    STRING = 0;
+    BOOLEAN = 1;
+    FLOAT = 2;
+    INTEGER = 3;
+  }
+
+  // The name of the config
+  required string name = 1;
+  // One of STRING BOOLEAN INTEGER FLOAT
+  required ValueType type = 2;
+  // The possible values, exactly one of those is
+  optional string string_value  = 5;
+  optional bool boolean_value  = 6;
+  optional uint32 integer_value  = 7;
+  optional float float_value  = 8;
+}
+
 message VersionInfo {
   enum CompType {
-    COMP_ID  = 2000;
+    COMP_ID = 2000;
     MSG_TYPE = 3;
   }
 
-  required uint32 version_major  = 1;
-  required uint32 version_minor  = 2;
-  required uint32 version_micro  = 3;
+  required uint32 version_major = 1;
+  required uint32 version_minor = 2;
+  required uint32 version_micro = 3;
   required string version_string = 4;
+
+  // Various configuration values that shape the behavior of the refbox
+  repeated ConfigValue configuration = 10;
 }

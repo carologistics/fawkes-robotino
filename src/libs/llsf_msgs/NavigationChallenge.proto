@@ -52,10 +52,10 @@ message Route {
 
 message NavigationRoutes {
   enum CompType {
-    COMP_ID  = 2000;
+    COMP_ID = 2000;
     MSG_TYPE = 250;
   }
 
   required Team team_color = 1;
-	repeated Route routes = 5;
+  repeated Route routes = 5;
 }

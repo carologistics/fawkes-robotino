@@ -47,36 +47,36 @@ option java_outer_classname = "ExplorationInfoProtos";
 
 message ExplorationSignal {
   enum CompType {
-    COMP_ID  = 2000;
+    COMP_ID = 2000;
     MSG_TYPE = 70;
   }
 
   // machine type of this assignment
-  required string    type   = 1;
+  required string type = 1;
   // Light specification (MachineInfo.proto)
   repeated LightSpec lights = 2;
 }
 
 message ExplorationZone {
   enum CompType {
-    COMP_ID  = 2000;
+    COMP_ID = 2000;
     MSG_TYPE = 71;
   }
 
   // Zone to explore
-  required Zone  zone = 2;
+  required Zone zone = 2;
   // Team the machine belongs to
-  required Team  team_color = 3;
+  required Team team_color = 3;
 }
 
 message ExplorationInfo {
   enum CompType {
-    COMP_ID  = 2000;
+    COMP_ID = 2000;
     MSG_TYPE = 72;
   }
 
   // The signal assignments
-  repeated ExplorationSignal  signals = 1;
+  repeated ExplorationSignal signals = 1;
   // The zones to explore
-  repeated ExplorationZone    zones = 2;
+  repeated ExplorationZone zones = 2;
 }
