@@ -5,6 +5,8 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/navgraph
 ---
 navgraph:
 
+  path_execution: false
+
   # Base TF Frame ID
   base_frame: !frame base_link
 
