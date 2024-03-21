@@ -63,7 +63,7 @@ fawkes/meta_plugins:
     - laser-lines-bridge !!
     - motor-move-bridge !!
     - laser-lines !!
-    - ros2-tf2 !! tf oneway
+    - ros2-tf2-oneway
     - bbsync
     - ros2
     - ros2-navigator
