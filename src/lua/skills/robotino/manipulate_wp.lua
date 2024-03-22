@@ -52,6 +52,7 @@ Parameters:
                      the workpiece is there (optional, bool)
       @param query   defines if dry_run expects a workpiece to be at the location or wet (optional, THERE | ABSENT)
                      THERE by default
+      @param safe_put true, if we have to put the wp on the conveyor in a way that it does not break the fingers even if there is a wp, used after failing dry_run, false by default (optional, boolean)
       @param map_pos true, if MPS Pos is compared to Map Pos(optional,bool) True by default
 ]==]
 
@@ -65,10 +66,10 @@ local MIN_ACTUAL_DIST      = 0.7 -- minimum distance b/w bot and laser center
 local MIN_MAPPED_ORI       = math.pi/6 -- minimum angle b/w sensed laser data and tf-mps data
 local MIN_ACTUAL_ORI       = math.pi/6 -- minimum angle b/w bot and laser center
 
--- Initialize as skill module
 skillenv.skill_module(_M)
 local llutils = require("fawkes.laser-lines_utils")
 local tfm = require("fawkes.tfutils")
+
 
 -- Load config
 local x_max = 0.115
@@ -118,6 +119,9 @@ if config:exists("plugins/object_tracking/shelf_values/right_shelf_offset_side")
   right_shelf_offset_side = config:get_float("plugins/object_tracking/shelf_values/right_shelf_offset_side")
 end
 
+local offset_x_put_conveyor_target_frame = config:get_float("plugins/vs_offsets/conveyor/put_target/offset_x")
+local offset_x_safe_put_conveyor_target_frame = config:get_float("plugins/vs_offsets/conveyor/safe_put/offset_x")
+
 -- read wp config
 if config:exists("plugins/object_tracking/puck_values/ring_height") then
   ring_height = config:get_float("plugins/object_tracking/puck_values/ring_height")
@@ -129,6 +133,7 @@ if config:exists("plugins/vs_offsets/workpiece/pick_target/save_dist") then
   safe_dist = config:get_float("plugins/vs_offsets/workpiece/pick_target/save_dist")
 end
 
+-- Match laser line to navgraph point
 function match_line(lines)
   local matched_line = nil
   local mapped_dist = 0
@@ -154,7 +159,6 @@ function match_line(lines)
       z=0,
       ori = fawkes.tf.create_quaternion_from_yaw(line_center.ori)},"/base_laser","base_link")
 
-      
     --printf(tostring(fawkes.tf.get_yaw(base_center.ori)))
     
     if fsm.vars.map_pos then 
@@ -195,6 +199,10 @@ function gripper_aligned()
      ori=fawkes.tf.create_quaternion_from_yaw(0)},
     "base_link", "end_effector_home")
 
+  if fsm.vars.safe_put then
+    gripper_target.x = gripper_target.x - offset_x_put_conveyor_target_frame + offset_x_safe_put_conveyor_target_frame
+  end
+  
   if fsm.vars.target == "WORKPIECE" then
     return math.abs(gripper_target.x - arduino:x_position()) < GRIPPER_TOLERANCE.x
       and math.abs(gripper_target.y - (arduino:y_position() - y_max/2)) < GRIPPER_TOLERANCE.y
@@ -275,7 +283,9 @@ function input_invalid()
   else
     fsm.vars.reverse_output = false
   end
-    
+  if fsm.vars.safe_put == nil then
+	fsm.vars.safe_put = false
+  end
  
   if (fsm.vars.target_object_type == nil or string.gsub(fsm.vars.target_object_type, "^%s*(.-)%s*$", "%1") == 0) then
     print_error("That is not a valid target!")
@@ -569,6 +579,10 @@ function MOVE_BASE_AND_GRIPPER:init()
   local diff_y = (gripper_y - base_y) * (gripper_y - base_y)
   local forward_distance = math.sqrt(diff_x + diff_y)
 
+  if fsm.vars.safe_put then
+    forward_distance = forward_distance - offset_x_put_conveyor_target_frame + offset_x_safe_put_conveyor_target_frame
+  end
+
   local gripper_target = tfm.transform6D(
     {x=forward_distance,
      y=0,
@@ -584,7 +598,7 @@ function MOVE_BASE_AND_GRIPPER:init()
   end
 end
 
-function FINE_TUNE_GRIPPER:init()
+function FINE_TUNE_GRIPPER:init()    
   fsm.vars.missing_detections = 0
   fsm.vars.out_of_reach       = false
   fsm.vars.gripper_wait       = 10
@@ -608,6 +622,10 @@ function FINE_TUNE_GRIPPER:loop()
      z=object_tracking_if:gripper_frame(2),
      ori=fawkes.tf.create_quaternion_from_yaw(0)},
     "base_link", "end_effector_home")
+  print("fine tune gripper" .. gripper_target.z)
+  if fsm.vars.safe_put then
+    gripper_target.x = gripper_target.x - offset_x_put_conveyor_target_frame + offset_x_safe_put_conveyor_target_frame
+  end
 
   if fsm.vars.target == "WORKPIECE" then
     set_gripper(gripper_target.x,
@@ -624,6 +642,7 @@ function GRIPPER_ROUTINE:init()
   -- perform pick or put routine
   self.args["pick_or_put_vs"].target = fsm.vars.target
   self.args["pick_or_put_vs"].missing_c3_height = tostring(fsm.vars.missing_c3_height)
+  self.args["pick_or_put_vs"].safe_put = fsm.vars.safe_put 
 end
 
 -- end tracking afterwards
