@@ -234,6 +234,8 @@ end
 function SAFE_PUSH:init()
   fsm.vars.target_x = math.max(0, math.min(fsm.vars.target_x - offset_x_safe_put_conveyor_target_frame + offset_x_put_conveyor_routine, x_max))
   self.args["gripper_commands"].x = fsm.vars.target_x
+  self.args["gripper_commands"].y = fsm.vars.target_y
+  self.args["gripper_commands"].z = fsm.vars.target_z
   self.args["gripper_commands"].command = "MOVEABS"
   print("OKSAFEPUSH")
 end
@@ -241,6 +243,8 @@ end
 function SAFE_PUT_DOWN:init()
   fsm.vars.target_z = math.max(0, math.min(fsm.vars.target_z - offset_z_safe_put_conveyor_target_frame + offset_z_put_conveyor_routine, z_max))
   self.args["gripper_commands"].z = fsm.vars.target_z
+  self.args["gripper_commands"].x = fsm.vars.target_x
+  self.args["gripper_commands"].y = fsm.vars.target_y
   self.args["gripper_commands"].command = "MOVEABS"
   print("OKSAFEDOWN")
 end
