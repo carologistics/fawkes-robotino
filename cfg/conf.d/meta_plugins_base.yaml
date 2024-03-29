@@ -59,14 +59,13 @@ fawkes/meta_plugins:
     - laser_front_dist
     - pos3d-publisher
   m-ros2-base:
-    - laser_front_dist !!
-    - laser-lines-bridge !!
-    - motor-move-bridge !!
-    - laser-lines !!
-    - ros2-tf2-oneway
     - bbsync
     - ros2
+    - ros2-tf-oneway
+    - ros2-laserbridge
+    - ros2-motorinterface
     - ros2-navigator
+    - laser-lines
     - m-base-gripper
     - m-fv-vision
     - navgraph
