@@ -34,6 +34,7 @@ fawkes/meta_plugins:
     - ros2-irscan
     - ros2-cmdvel
     - ros2-navigator
+    - pos3d-publisher
   m-base-laser:
     - laser
     - laser-filter
@@ -56,3 +57,4 @@ fawkes/meta_plugins:
     - m-base-ros2
     - m-base-joy
     - laser_front_dist
+    - pos3d-publisher
