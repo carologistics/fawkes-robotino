@@ -46,7 +46,7 @@ option java_outer_classname = "RobotCommandsProtos";
 // Set a robot's maintenance state
 message SetRobotMaintenance {
   enum CompType {
-    COMP_ID  = 2000;
+    COMP_ID = 2000;
     MSG_TYPE = 91;
   }
 
@@ -54,7 +54,7 @@ message SetRobotMaintenance {
   required uint32 robot_number = 1;
   // True to activate maintenance,
   // false to bring back robot
-  required bool   maintenance  = 3;
+  required bool maintenance = 3;
   // Team the robot belongs to
-  required Team   team_color   = 4;
+  required Team team_color = 4;
 }

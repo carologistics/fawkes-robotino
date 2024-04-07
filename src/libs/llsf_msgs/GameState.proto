@@ -45,7 +45,7 @@ option java_outer_classname = "GameStateProtos";
 
 message GameState {
   enum CompType {
-    COMP_ID  = 2000;
+    COMP_ID = 2000;
     MSG_TYPE = 20;
   }
 
@@ -57,20 +57,20 @@ message GameState {
   }
 
   enum Phase {
-    PRE_GAME    = 0;
-    SETUP       = 10;
+    PRE_GAME = 0;
+    SETUP = 10;
     EXPLORATION = 20;
-    PRODUCTION  = 30;
-    POST_GAME   = 40;
+    PRODUCTION = 30;
+    POST_GAME = 40;
   }
 
   // Time in seconds since game start
-  required Time   game_time = 1;
+  required Time game_time = 1;
 
   // Current game state
-  required State  state = 3;
+  required State state = 3;
   // Current game phase
-  required Phase  phase = 4;
+  required Phase phase = 4;
   // Awarded points, cyan
   optional uint32 points_cyan = 5;
   // Name of the currently playing team
@@ -90,7 +90,7 @@ message GameState {
 // Request setting of a new game state
 message SetGameState {
   enum CompType {
-    COMP_ID  = 2000;
+    COMP_ID = 2000;
     MSG_TYPE = 21;
   }
   // The new desired state
@@ -100,9 +100,16 @@ message SetGameState {
 // Request setting of a new game phase
 message SetGamePhase {
   enum CompType {
-    COMP_ID  = 2000;
+    COMP_ID = 2000;
     MSG_TYPE = 22;
   }
   // The new desired phase
   required GameState.Phase phase = 1;
+}
+
+message RandomizeField {
+  enum CompType {
+    COMP_ID = 2000;
+    MSG_TYPE = 23;
+  }
 }

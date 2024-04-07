@@ -1,9 +1,10 @@
 
 /***************************************************************************
- *  Pose2D.proto - 2D Position on the playing field
+ *  WorkpieceInfo.proto - LLSF Protocol - Workpiece info
  *
- *  Created: Fri Feb 22 11:19:32 2013
- *  Copyright  2013  Tim Niemueller [www.niemueller.de]
+ *  Created: Tue Jun 28 12:06:17 2016
+ *  Copyright  2013-2016  Tim Niemueller [www.niemueller.de]
+ *             2019       Mostafa Gomaa
  ****************************************************************************/
 
 /*  Redistribution and use in source and binary forms, with or without
@@ -37,19 +38,53 @@
 syntax = "proto2";
 package llsf_msgs;
 
-option java_package = "org.robocup_logistics.llsf_msgs";
-option java_outer_classname = "Pose3DProtos";
+import "Team.proto";
+import "ProductColor.proto";
 
-// Pose information in 3d euclidian space
-// Data is relative to ???
-message Pose3D {
-  // X/Y coordinates in meters
-  required float  x = 2;
-  required float  y = 3;
-  required float  z = 4;
-  // Orientation in rad
-  required float  ori_x = 5;
-  required float  ori_y = 6;
-  required float  ori_z = 7;
-  required float  ori_w = 8;
+option java_package = "org.robocup_logistics.llsf_msgs";
+option java_outer_classname = "WorkpieceInfoProtos";
+
+message Workpiece {
+  enum CompType {
+    COMP_ID = 2000;
+    MSG_TYPE = 55;
+  }
+
+  // Puck unique ID
+  required uint32 id = 1;
+
+  // Machine which detected the workpiece
+  required string at_machine = 2;
+
+  // last seen at machine
+  optional float visible = 3;
+
+  // Team the puck belongs to
+  optional Team team_color = 4;
+
+  optional BaseColor base_color = 5;
+  repeated RingColor ring_colors = 6;
+  optional CapColor cap_color = 7;
+}
+
+message WorkpieceInfo {
+  enum CompType {
+    COMP_ID = 2000;
+    MSG_TYPE = 56;
+  }
+
+  // List of all known pucks
+  repeated Workpiece workpieces = 1;
+}
+
+message WorkpieceAddRing {
+  enum CompType {
+    COMP_ID = 2000;
+    MSG_TYPE = 57;
+  }
+
+  // Puck unique ID
+  required uint32 id = 1;
+
+  required RingColor ring_color = 2;
 }
