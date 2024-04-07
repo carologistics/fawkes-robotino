@@ -57,3 +57,12 @@ fawkes/meta_plugins:
     - amcl2
     - m-base-joy
     - laser_front_dist
+  m-ros2-skiller:
+    - flite
+    - ros2
+    - navgraph
+    - navgraph-generator
+    - navgraph-generator-mps
+    - skiller
+    - ros2-cx-skiller
+    - ros2-cx-navgraph

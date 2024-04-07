@@ -20,19 +20,28 @@
 #
 # *****************************************************************************
 
-set_output_directory_plugins()
+set(PLUGIN_ros2-cx-navgraph
+  ON
+  CACHE BOOL "Build ros2 cx-navgraph plugin")
 
-set(CMAKE_SHARED_MODULE_PREFIX "")
-add_subdirectory(clips-motor-switch)
-add_subdirectory(navgraph-generator-mps)
-add_subdirectory(skiller_motor_state)
-add_subdirectory(mps-laser-gen)
-add_subdirectory(laser_front_dist)
-
-# add_subdirectory(tag_vision)
-add_subdirectory(object-tracking)
-add_subdirectory(conveyor_pose)
-add_subdirectory(conveyor_plane)
-add_subdirectory(arduino)
-add_subdirectory(box_detect)
-add_subdirectory(ros2_navgraph)
+if(PLUGIN_ros2-cx-navgraph)
+  add_library(ros2-cx-navgraph MODULE navgraph_plugin.cpp
+    navgraph_thread.cpp navgraph_node.cpp)
+  depend_on_ros2(ros2-cx-navgraph)
+  depend_on_ros2_libs(
+    ros2-cx-navgraph
+    "rmw;rosidl_typesupport_interface;std_srvs::std_srvs__rosidl_generator_cpp;rcl_interfaces;cx_msgs;lifecycle_msgs;rclcpp_lifecycle"
+  )
+  target_link_libraries(
+    ros2-cx-navgraph
+    fawkescore
+    fawkesutils
+    fawkesaspects
+    fawkesblackboard
+    fawkesinterface
+    NavGraphGeneratorInterface
+    NavGraphWithMPSGeneratorInterface
+    fawkesros2aspect)
+else()
+  plugin_disabled_message(ros2-cx-navgraph)
+endif()
