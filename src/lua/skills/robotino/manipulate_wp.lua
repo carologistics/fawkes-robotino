@@ -37,7 +37,7 @@ depends_interfaces = {
    {v = "line8", type="LaserLineInterface", id="/laser-lines/8"},
    {v = "laserline_switch", type = "SwitchInterface", id="laser-lines"},
    {v = "object_tracking_if", type = "ObjectTrackingInterface", id="object-tracking"},
-   {v = "arduino", type = "ArduinoInterface", id="Arduino"}
+   {v = "arduino", type = "ArduinoInterface", id="Arduino"},
 }
 
 documentation      = [==[
@@ -52,6 +52,7 @@ Parameters:
                      the workpiece is there (optional, bool)
       @param query   defines if dry_run expects a workpiece to be at the location or wet (optional, THERE | ABSENT)
                      THERE by default
+      @param safe_put true, if we have to put the wp on the conveyor in a way that it does not break the fingers even if there is a wp, used after failing dry_run, false by default (optional, boolean)
       @param map_pos true, if MPS Pos is compared to Map Pos(optional,bool) True by default
 ]==]
 
@@ -60,15 +61,16 @@ local LASER_BASE_OFFSET    = 0.5 -- distance between robotino middle point and l
 local GRIPPER_TOLERANCE    = {x=0.005, y=0.001, z=0.001} -- accuracy
 local MISSING_MAX          = 5 -- limit for missing object detections in a row while fine-tuning gripper
 local MIN_VIS_HIST_LINE    = 5 -- minimum visibility history for laser-line before considering it
-local MIN_MAPPED_DIST      = 0.5 -- minimum distance of sensed laser data and tf-mps data
+local MIN_MAPPED_DIST      = 0.5 -- minimum distance of sensed laser data and navgraph data
 local MIN_ACTUAL_DIST      = 0.7 -- minimum distance b/w bot and laser center
-local MIN_MAPPED_ORI       = math.pi/6 -- minimum angle b/w sensed laser data and tf-mps data
+local MIN_MAPPED_ORI       = math.pi/6 -- minimum angle b/w sensed laser data and navgraph data
 local MIN_ACTUAL_ORI       = math.pi/6 -- minimum angle b/w bot and laser center
-
 -- Initialize as skill module
+
 skillenv.skill_module(_M)
 local llutils = require("fawkes.laser-lines_utils")
 local tfm = require("fawkes.tfutils")
+
 
 -- Load config
 local x_max = 0.115
@@ -118,6 +120,9 @@ if config:exists("plugins/object_tracking/shelf_values/right_shelf_offset_side")
   right_shelf_offset_side = config:get_float("plugins/object_tracking/shelf_values/right_shelf_offset_side")
 end
 
+local offset_x_put_conveyor_target_frame = config:get_float("plugins/vs_offsets/conveyor/put_target/offset_x")
+local offset_x_safe_put_conveyor_target_frame = config:get_float("plugins/vs_offsets/conveyor/safe_put/offset_x")
+
 -- read wp config
 if config:exists("plugins/object_tracking/puck_values/ring_height") then
   ring_height = config:get_float("plugins/object_tracking/puck_values/ring_height")
@@ -129,18 +134,17 @@ if config:exists("plugins/vs_offsets/workpiece/pick_target/save_dist") then
   safe_dist = config:get_float("plugins/vs_offsets/workpiece/pick_target/save_dist")
 end
 
+-- Match laser line to navgraph point
 function match_line(lines)
   local matched_line = nil
   local mapped_dist = 0
   if fsm.vars.map_pos then
-    local mps_point= tfm.transform6D({
-      x = 0,
-      y = 0,
+    local navgraph_point= tfm.transform6D({
+      x = fsm.vars.mps_x,
+      y = fsm.vars.mps_y,
       z = 0,
-      ori = fawkes.tf.create_quaternion_from_yaw(0)
-      }, fsm.vars.mps,"/map")
-    printf(mps_point.x)
-    printf(tostring(fawkes.tf.get_yaw(mps_point.ori)))
+      ori = fawkes.tf.create_quaternion_from_yaw(fsm.vars.mps_ori)
+      }, "/map", "/base_laser")
   end
 
   local min_dist = MIN_ACTUAL_DIST
@@ -154,22 +158,16 @@ function match_line(lines)
       z=0,
       ori = fawkes.tf.create_quaternion_from_yaw(line_center.ori)},"/base_laser","base_link")
 
-
     --printf(tostring(fawkes.tf.get_yaw(base_center.ori)))
 
     if fsm.vars.map_pos then
-      mapped_dist = math.vec_length(mps_point.x - line_center.x, mps_point.y - line_center.y)
-      local orient_diff = line_center.ori - fawkes.tf.get_yaw(mps_point.ori)
-      --printf('Distance from expected map pos to laser line: %f and its threshold: %f',mapped_dist,MIN_MAPPED_DIST)
-      --printf('Difference b/w actual orientation & expected orientation : %f and its threshold: %f',orient_diff,MIN_MAPPED_ORI)
+      mapped_dist = math.vec_length(navgraph_point.x - line_center.x, navgraph_point.y - line_center.y)
+      local orient_diff = line_center.ori - fawkes.tf.get_yaw(navgraph_point.ori)
     end
 
     local actual_dist = math.vec_length(base_center.x,base_center.y)
-    --printf('Distance calculated from the Laser center to robotino base: %f and its threshold: %f',actual_dist,min_dist)
-    --printf('Difference b/w Bot orientation & laser_line orientation : %s and its threshold: %f',fawkes.tf.get_yaw(base_center.ori),MIN_ACTUAL_ORI)
-
     if (line:visibility_history() >= MIN_VIS_HIST_LINE and actual_dist < min_dist and fawkes.tf.get_yaw(base_center.ori)<=MIN_ACTUAL_ORI) and
-        ( not fsm.vars.map_pos or (mapped_dist<=MIN_MAPPED_DIST and (line_center.ori-fawkes.tf.get_yaw(mps_point.ori))<=MIN_MAPPED_ORI))
+        ( not fsm.vars.map_pos or (mapped_dist<=MIN_MAPPED_DIST and (line_center.ori-fawkes.tf.get_yaw(navgraph_point.ori))<=MIN_MAPPED_ORI))
     then
         min_dist = actual_dist
         matched_line = line
@@ -194,6 +192,10 @@ function gripper_aligned()
      z=object_tracking_if:gripper_frame(2),
      ori=fawkes.tf.create_quaternion_from_yaw(0)},
     "base_link", "end_effector_home")
+
+  if fsm.vars.safe_put then
+    gripper_target.x = gripper_target.x - offset_x_put_conveyor_target_frame + offset_x_safe_put_conveyor_target_frame
+  end
 
   if fsm.vars.target == "WORKPIECE" then
     return math.abs(gripper_target.x - arduino:x_position()) < GRIPPER_TOLERANCE.x
@@ -275,7 +277,9 @@ function input_invalid()
   else
     fsm.vars.reverse_output = false
   end
-
+  if fsm.vars.safe_put == nil then
+	fsm.vars.safe_put = false
+  end
 
   if (fsm.vars.target_object_type == nil or string.gsub(fsm.vars.target_object_type, "^%s*(.-)%s*$", "%1") == 0) then
     print_error("That is not a valid target!")
@@ -382,10 +386,10 @@ function INIT:init()
   fsm.vars.lines[line7:id()] = line7
   fsm.vars.lines[line8:id()] = line8
 
-  -- local node = navgraph:node(fsm.vars.mps)
-  -- fsm.vars.mps_x = node:x()
-  -- fsm.vars.mps_y = node:y()
-  -- fsm.vars.mps_ori = node:property_as_float("orientation")
+  local node = navgraph:node(fsm.vars.mps)
+  fsm.vars.mps_x = node:x()
+  fsm.vars.mps_y = node:y()
+  fsm.vars.mps_ori = node:property_as_float("orientation")
 
   if fsm.vars.side == "INPUT" then
     fsm.vars.mps_ori = fsm.vars.mps_ori+math.pi
@@ -577,6 +581,10 @@ function MOVE_BASE_AND_GRIPPER:init()
   local diff_y = (gripper_y - base_y) * (gripper_y - base_y)
   local forward_distance = math.sqrt(diff_x + diff_y)
 
+  if fsm.vars.safe_put then
+    forward_distance = forward_distance - offset_x_put_conveyor_target_frame + offset_x_safe_put_conveyor_target_frame
+  end
+
   local gripper_target = tfm.transform6D(
     {x=forward_distance,
      y=0,
@@ -616,6 +624,10 @@ function FINE_TUNE_GRIPPER:loop()
      z=object_tracking_if:gripper_frame(2),
      ori=fawkes.tf.create_quaternion_from_yaw(0)},
     "base_link", "end_effector_home")
+  print("fine tune gripper" .. gripper_target.z)
+  if fsm.vars.safe_put then
+    gripper_target.x = gripper_target.x - offset_x_put_conveyor_target_frame + offset_x_safe_put_conveyor_target_frame
+  end
 
   if fsm.vars.target == "WORKPIECE" then
     set_gripper(gripper_target.x,
@@ -632,6 +644,7 @@ function GRIPPER_ROUTINE:init()
   -- perform pick or put routine
   self.args["pick_or_put_vs"].target = fsm.vars.target
   self.args["pick_or_put_vs"].missing_c3_height = tostring(fsm.vars.missing_c3_height)
+  self.args["pick_or_put_vs"].safe_put = fsm.vars.safe_put
 end
 
 -- end tracking afterwards
