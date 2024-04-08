@@ -183,10 +183,10 @@
   (return ?interfaces)
 )
 
-(deffunction get-laptop-interfaces (?if ?id)
+(deffunction get-robot-interfaces (?if ?id)
   (bind ?interfaces (create$))
   (do-for-all-facts ((?robot wm-fact))
-    (wm-key-prefix ?robot:key (create$ central agent laptop))
+    (wm-key-prefix ?robot:key (create$ central agent robot))
     (bind ?interfaces (append$ ?interfaces
                                (remote-if ?if (wm-key-arg ?robot:key r) ?id)))
   )
@@ -322,7 +322,7 @@
 	(bind ?any-tag-to-add FALSE)
 
 	(bind ?interfaces (get-interfaces "NavGraphWithMPSGeneratorInterface" "navgraph-generator-mps"))
-	(bind ?interfaces (append$ ?interfaces (get-laptop-interfaces "NavGraphWithMPSGeneratorInterface" "navgraph-generator-mps")))
+	(bind ?interfaces (append$ ?interfaces (get-robot-interfaces "NavGraphWithMPSGeneratorInterface" "navgraph-generator-mps")))
 	(delayed-do-for-all-facts ((?res exploration-result)) (eq ?res:status PARTIAL_CORRECT)
 		(bind ?side INPUT)
 		(bind ?frame "map")
@@ -374,7 +374,7 @@
   (bind ?any-tag-to-add FALSE)
 
   (bind ?interfaces (get-interfaces "NavGraphWithMPSGeneratorInterface" "navgraph-generator-mps"))
-  (bind ?interfaces (append$ ?interfaces (get-laptop-interfaces "NavGraphWithMPSGeneratorInterface" "navgraph-generator-mps")))
+  (bind ?interfaces (append$ ?interfaces (get-robot-interfaces "NavGraphWithMPSGeneratorInterface" "navgraph-generator-mps")))
 
   (if (any-factp ((?static-nav wm-fact))
         (and (wm-key-prefix ?static-nav:key (create$ config rcll use-static-navgraph))
