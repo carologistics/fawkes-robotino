@@ -458,8 +458,25 @@
   )
 )
 
+(deffunction navgraph-set-field-size (?robot ?p1_x ?p1_y ?p2_x ?p2_y)
+  "Uses the NavGraphInterface to setup the bounding box for a navgraph generator.
+  "
+  (if (eq ?robot central) then
+    (bind ?interface "NavGraphGeneratorInterface::navgraph-generator")
+  else
+    (bind ?interface (remote-if "NavGraphGeneratorInterface" ?robot "navgraph-generator"))
+  )
+
+  (bind ?msg (blackboard-create-msg ?interface "SetBoundingBoxMessage"))
+  (blackboard-set-msg-field ?msg "p1_x" ?p1_x)
+  (blackboard-set-msg-field ?msg "p1_y" ?p1_y)
+  (blackboard-set-msg-field ?msg "p2_x" ?p2_x)
+  (blackboard-set-msg-field ?msg "p2_y" ?p2_y)
+  (blackboard-send-msg ?msg)
+)
+
 (deffunction navgraph-compute (?robot)
-	(if ?robot then
+	(if (neq ?robot central) then
 	 (bind ?interface (remote-if "NavGraphWithMPSGeneratorInterface" ?robot "navgraph-generator-mps"))
 	else
 	 (bind ?interface "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps")
@@ -467,6 +484,73 @@
 	(bind ?msg (blackboard-create-msg ?interface "ComputeMessage"))
 	(blackboard-send-msg ?msg)
 	(printout t "Sent compute for " ?robot crlf)
+)
+
+(deffunction navgraph-init (?target ?add-tags)
+	"Initializes the navgraph for a robot"
+
+	; get the field size from refbox config
+	(bind ?field-height NOT-SET)
+	(bind ?field-width NOT-SET)
+	(bind ?mirrored NOT-SET)
+	(delayed-do-for-all-facts ((?field-info wm-fact))
+	  	(wm-key-prefix ?field-info:key (create$ key refbox field))
+
+		(if (eq ?field-info:key (create$ key refbox version-info config args? name field_height)) then
+			(bind ?field-height ?field-info:value)
+		)
+		(if (eq ?field-info:key (create$ key refbox version-info config args? name field_width)) then
+			(bind ?field-width ?field-info:value)
+		)
+		(if (eq ?field-info:key (create$ key refbox version-info config args? name field_mirrored)) then
+			(bind ?mirrored ?field-info:value)
+		)
+	)
+
+	(bind ?fallback-format FALSE)
+	(if (or (eq ?field-height NOT-SET) (eq ?field-height DOES-NOT-EXIST)) then
+		(printout warn " Field height not set in refbox config" crlf)
+		(bind ?fallback-format TRUE)
+	)
+	(if (or (eq ?field-width NOT-SET) (eq ?field-width DOES-NOT-EXIS)T) then
+		(printout warn "Field width not set in refbox config" crlf)
+		(bind ?fallback-format TRUE)
+	)
+	(if (or (eq ?mirrored NOT-SET) (eq ?mirrored DOES-NOT-EXIST)) then
+		(printout warn "Field mirrored not set in refbox config" crlf)
+		(bind ?fallback-format TRUE)
+	)
+
+	(if (eq ?fallback-format TRUE) then
+  		(bind ?prefix (str-cat ?*NAVGRAPH_GENERATOR_MPS_CONFIG* "bounding-box/"))
+		(if (not (do-for-fact ((?cf1 confval) (?cf2 confval))
+			(and (str-prefix (str-cat ?prefix "p1") ?cf1:path)
+				(str-prefix (str-cat ?prefix "p2") ?cf2:path)
+			)
+			(bind ?p1_x (integer (nth$ 1 ?cf1:list-value)))
+			(bind ?p1_y (integer (nth$ 2 ?cf1:list-value)))
+			(bind ?p2_x (integer (nth$ 1 ?cf2:list-value)))
+			(bind ?p2_y (integer (nth$ 2 ?cf2:list-value)))
+		))
+		then
+			(printout warn "Could not set field size, bounding box config not found" crlf)
+		)
+		else
+		(bind ?p1_x (- 0 ?field-width))
+		(bind ?p1_y 0)
+		(bind ?p2_x ?field-width)
+		(bind ?p2_y ?field-height)
+		(if ?mirrored then
+			(bind ?p2_x 0)
+		)
+	)
+
+	(navgraph-set-field-size ?target ?p1_x ?p1_y ?p2_x ?p2_y)
+	(if (eq ?add-tags TRUE) then
+		(navgraph-add-all-new-tags)
+	else
+		(navgraph-compute ?target)
+	)
 )
 
 
@@ -783,38 +867,6 @@
   (bind ?interface (remote-if "SwitchInterface" ?robot "switch/box_detect_enabled"))
   (bind ?msg (blackboard-create-msg ?interface "DisableSwitchMessage"))
   (blackboard-send-msg ?msg)
-)
-
-(deffunction navgraph-set-field-size (?robot ?p1_x ?p1_y ?p2_x ?p2_y)
-  "Uses the NavGraphInterface to setup the bounding box on a robot to match
-   the one from the central agent. If they have disagreeing bounding boxes,
-   then the existence and positions of grid coordinates are not lining up.
-  "
-  (bind ?interface (remote-if "NavGraphGeneratorInterface" ?robot "navgraph-generator"))
-
-  (bind ?msg (blackboard-create-msg ?interface "SetBoundingBoxMessage"))
-  (blackboard-set-msg-field ?msg "p1_x" ?p1_x)
-  (blackboard-set-msg-field ?msg "p1_y" ?p1_y)
-  (blackboard-set-msg-field ?msg "p2_x" ?p2_x)
-  (blackboard-set-msg-field ?msg "p2_y" ?p2_y)
-  (bind ?msg (blackboard-create-msg ?interface "SetBoundingBoxMessage"))
-  (blackboard-send-msg ?msg)
-)
-
-(deffunction navgraph-set-field-size-from-cfg (?robot)
-  (bind ?prefix (str-cat ?*NAVGRAPH_GENERATOR_MPS_CONFIG* "bounding-box/"))
-  (if (not (do-for-fact ((?cf1 confval) (?cf2 confval))
-    (and (str-prefix (str-cat ?prefix "p1") ?cf1:path)
-          (str-prefix (str-cat ?prefix "p2") ?cf2:path)
-    )
-    (navgraph-set-field-size ?robot (integer (nth$ 1 ?cf1:list-value))
-                                            (integer (nth$ 2 ?cf1:list-value))
-                                            (integer (nth$ 1 ?cf2:list-value))
-                                            (integer (nth$ 2 ?cf2:list-value)))
-  ))
-   then
-    (printout warn "Could not set field size, bounding box config not found" crlf)
-  )
 )
 
 (deffunction navigator-set-speed (?robot ?max-velocity ?max-rotation)
