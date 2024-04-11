@@ -424,3 +424,27 @@
     (assert (wm-fact (key domain fact reached args?) (is-list TRUE) (values $?reached)))
   )
 )
+
+
+
+(defrule refbox-recv-VersionInfo
+  ?pf <- (protobuf-msg (type "llsf_msgs.VersionInfo") (ptr ?p))
+  =>
+  (foreach ?c (pb-field-list ?p "configuration")
+    (bind ?name (pb-field-value ?c "name"))
+    (bind ?type (pb-field-value ?c "type"))
+    (if (eq ?type INTEGER) then
+      (bind ?value (pb-field-value ?c "integer_value"))
+    )
+    (if (eq ?type BOOLEAN) then
+      (bind ?value (pb-field-value ?c "boolean_value"))
+    )
+    (if (eq ?type STRING) then
+      (bind ?value (pb-field-value ?c "string_value"))
+    )
+    (if (eq ?type FLOAT) then
+      (bind ?value (pb-field-value ?c "float_value"))
+    )
+    (assert (wm-fact (key refbox version-info config args? name (sym-cat ?name)) (type ?type) (value ?value)))
+  )
+)
