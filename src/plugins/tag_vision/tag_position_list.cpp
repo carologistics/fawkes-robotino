@@ -70,11 +70,41 @@ TagPositionList::TagPositionList(fawkes::BlackBoard      *blackboard,
 	this->cam_frame_   = cam_frame;
 	this->tf_listener_ = tf_listener;
 
+	tag_id_names_[101] = "C-CS1-O";
+	tag_id_names_[103] = "C-CS2-O";
+	tag_id_names_[201] = "M-CS1-O";
+	tag_id_names_[203] = "M-CS2-O";
+	tag_id_names_[111] = "C-RS1-O";
+	tag_id_names_[113] = "C-RS2-O";
+	tag_id_names_[211] = "M-RS1-O";
+	tag_id_names_[213] = "M-RS2-O";
+	tag_id_names_[121] = "C-BS-O";
+	tag_id_names_[221] = "M-BS-O";
+	tag_id_names_[131] = "C-DS-O";
+	tag_id_names_[231] = "M-DS-O";
+	tag_id_names_[141] = "C-SS-O";
+	tag_id_names_[241] = "M-SS-O";
+
+	tag_id_names_[102] = "C-CS1-I";
+	tag_id_names_[104] = "C-CS2-I";
+	tag_id_names_[202] = "M-CS1-I";
+	tag_id_names_[204] = "M-CS2-I";
+	tag_id_names_[112] = "C-RS1-I";
+	tag_id_names_[114] = "C-RS2-I";
+	tag_id_names_[212] = "M-RS1-I";
+	tag_id_names_[214] = "M-RS2-I";
+	tag_id_names_[122] = "C-BS-I";
+	tag_id_names_[222] = "M-BS-I";
+	tag_id_names_[132] = "C-DS-I";
+	tag_id_names_[232] = "M-DS-I";
+	tag_id_names_[142] = "C-SS-I";
+	tag_id_names_[242] = "M-SS-I";
+
 	// create blackboard interfaces
-	for (unsigned int i = 0; i < this->max_markers_; i++) {
+	for (const auto &tag : tag_id_names_) {
 		// create a name for the new interface
-		std::string interface_name     = std::string("/tag-vision/") + std::to_string(i);
-		std::string interface_name_map = std::string("/tag-vision/") + std::to_string(i) + "/to_map";
+		std::string interface_name     = std::string("/tag-vision/") + tag.second;
+		std::string interface_name_map = std::string("/tag-vision/") + tag.second + "/to_map";
 		// create the interface and store
 		try {
 			// get an interface from the blackboard
@@ -91,28 +121,29 @@ TagPositionList::TagPositionList(fawkes::BlackBoard      *blackboard,
 			map_interface->set_frame("map");
 			// generate a helper class and push it into this vector
 
-			this->push_back(new TagPositionInterfaceHelper(interface,
-			                                               map_interface,
-			                                               i,
-			                                               this->clock_,
-			                                               main_thread_->get_tf_publisher(i, "tag_"),
-			                                               main_thread_->get_tf_publisher(i, "map_tag_"),
-			                                               tf_listener_,
-			                                               cam_frame));
+			this->push_back(
+			  new TagPositionInterfaceHelper(interface,
+			                                 map_interface,
+			                                 tag.first,
+			                                 this->clock_,
+			                                 main_thread_->get_tf_publisher(tag.second, "tag_"),
+			                                 main_thread_->get_tf_publisher(tag.second, "map_tag_"),
+			                                 tf_listener_,
+			                                 cam_frame));
 		} catch (std::exception &e) {
 			this->logger_->log_error(thread_name.c_str(), "Could not open the blackboard: %s", e.what());
 			throw(e);
 		}
 	}
 
-	// initialize tag info interface
-	try {
-		this->index_interface_ =
-		  blackboard->open_for_writing<fawkes::TagVisionInterface>("/tag-vision/info");
-	} catch (std::exception &e) {
-		this->logger_->log_error(thread_name.c_str(), "Could not open the blackboard: %s", e.what());
-		throw(e);
-	}
+	// // initialize tag info interface
+	// try {
+	// 	this->index_interface_ =
+	// 	  blackboard->open_for_writing<fawkes::TagVisionInterface>("/tag-vision/info");
+	// } catch (std::exception &e) {
+	// 	this->logger_->log_error(thread_name.c_str(), "Could not open the blackboard: %s", e.what());
+	// 	throw(e);
+	// }
 }
 
 /**
@@ -121,7 +152,7 @@ TagPositionList::TagPositionList(fawkes::BlackBoard      *blackboard,
 TagPositionList::~TagPositionList()
 {
 	// close tag vision interface
-	this->blackboard_->close(this->index_interface_);
+	//this->blackboard_->close(this->index_interface_);
 
 	// delete this interfaces
 	for (auto &interface : *this) {
@@ -235,19 +266,16 @@ TagPositionList::find_suitable_interface(const TagVisionMarker &marker) const
 	TagPositionInterfaceHelper *rv           = nullptr;
 
 	for (TagPositionInterfaceHelper *interface : *this) {
-		if (interface->marker_id() == marker.marker_id
-		    || interface->marker_id() == EMPTY_INTERFACE_MARKER_ID)
-			return interface;
-
-		if (interface->visibility_history() < min_vis_hist) {
-			min_vis_hist = interface->visibility_history();
+		if (interface->marker_id() == marker.marker_id) {
 			rv           = interface;
+			min_vis_hist = interface->visibility_history();
+			break;
 		}
 	}
 
-	if (min_vis_hist > INTERFACE_UNSEEN_BOUND)
-		return nullptr;
-
+	// if (min_vis_hist > INTERFACE_UNSEEN_BOUND) {
+	// 	return nullptr;
+	// }
 	return rv;
 }
 
@@ -293,12 +321,12 @@ TagPositionList::update_blackboard(std::vector<TagVisionMarker>              &ma
 	// update blackboard with interfaces
 	int32_t visible_markers = 0;
 	for (TagPositionInterfaceHelper *pos_iface : *this) {
-		this->index_interface_->set_tag_id(pos_iface->index(), pos_iface->marker_id());
+		//this->index_interface_->set_tag_id(pos_iface->index(), pos_iface->marker_id());
 		if (pos_iface->marker_id() != EMPTY_INTERFACE_MARKER_ID) {
 			visible_markers++;
 		}
 		pos_iface->write();
 	}
-	this->index_interface_->set_tags_visible(visible_markers);
-	this->index_interface_->write();
+	//this->index_interface_->set_tags_visible(visible_markers);
+	//this->index_interface_->write();
 }
