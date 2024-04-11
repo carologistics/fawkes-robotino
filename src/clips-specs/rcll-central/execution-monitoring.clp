@@ -963,7 +963,7 @@
   (modify ?pa (param-values ?rs $?o-args ?rs-new ?bases-remain ?rs-req))
 )
 
-; ----------------------- RESTORE FROM BACKUP -------------------------------
+; ----------------------- RESTORE AND INSERT -------------------------------
 
 (defrule execution-monitoring-remove-waiting-robot
 	(declare (salience ?*SALIENCE-HIGH*))
@@ -987,9 +987,7 @@
 	(assert (wm-fact (key central agent robot-waiting args? r ?robot)))
 	(assert (wm-fact (key monitoring robot-reinserted args? r ?robot) (values ?now)))
 	;recompute navgraph after re-insertion
-	(navgraph-set-field-size-from-cfg ?robot)
-	(navgraph-add-all-new-tags)
-	(navgraph-compute ?robot)
+	(navgraph-init ?robot TRUE)
 
 	(retract ?rl)
 )
@@ -1000,10 +998,7 @@
 	(wm-fact (key refbox game-time) (values $?now))
 	(test (timeout ?now ?start-time ?*REINSERTION-NAVGRAPH-TIMEOUT*))
 	=>
-	;recompute navgraph after re-insertion
-	(navgraph-set-field-size-from-cfg ?robot)
-	(navgraph-add-all-new-tags)
-	(navgraph-compute ?robot)
+	(navgraph-init ?robot TRUE)
 	(retract ?wf)
 )
 
@@ -1196,3 +1191,41 @@
 ;	(modify ?rs-filled (param-values ?rs ?bases-now))
 ;	(modify ?request (values status OPEN assgined-to))
 ;)
+
+; ----------------------- EXPLORATION -----------------------------------
+(defrule execution-monitoring-generate-navgraph-when-all-tags-found
+  "Generate the navgraph when all the mps tags where found."
+  (wm-fact (key refbox phase) (value PRODUCTION))
+  (forall
+    (wm-fact (key domain fact mps-team args? m ?mps col ?any-team-color))
+    (wm-fact (key game found-tag name args? m ?mps ))
+  )
+  (not (navgraph-all-tags-triggered))
+=>
+  (printout t "Triggering NavGraph generation with Ground-truth" crlf)
+  (navgraph-add-all-new-tags)
+  (assert (navgraph-all-tags-triggered))
+)
+
+(defrule execution-monitoring-get-wait-positions-from-navgraph
+  "Add the waiting points to the domain once their generation is finished."
+  (NavGraphWithMPSGeneratorInterface (id "/navgraph-generator-mps") (final TRUE))
+  (or (wm-fact (key config rcll use-static-navgraph) (type BOOL) (value TRUE))
+      (forall
+        (wm-fact (key central agent robot args? r ?robot))
+        (NavGraphWithMPSGeneratorInterface (id ?id&:(eq ?id (remote-if-id ?robot "navgraph-generator-mps"))) (final TRUE))
+      )
+  )
+=>
+  (printout t "Navgraph generation of waiting-points finished. Getting waitpoints." crlf)
+  (do-for-all-facts ((?waitzone navgraph-node)) (str-index "WAIT-" ?waitzone:name)
+    (assert
+      (domain-object (name (sym-cat ?waitzone:name)) (type waitpoint))
+      (wm-fact (key navgraph waitzone args? name (sym-cat ?waitzone:name)) (is-list TRUE) (type INT) (values (nth$ 1 ?waitzone:pos) (nth$ 2 ?waitzone:pos)))
+    )
+  )
+  (assert (wm-fact (key navgraph waitzone generated) (type BOOL) (value TRUE)))
+  (delayed-do-for-all-facts ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ central agent robot))
+    (assert (wm-fact (key central agent robot-waiting args? r (wm-key-arg ?wm:key r))))
+  )
+)
