@@ -233,6 +233,61 @@
 	(assert (exploration-result (team UNKNOWN) (machine (sym-cat ?mps-string)) (zone (zone-string-to-sym ?zone-string)) (orientation ?orientation)))
 )
 
+
+(defrule exp-report-tag-to-exploration-result
+	"Take the information from the exploration interface and map it to a exploration-result fact."
+	(wm-fact (key exploration active) (value TRUE))
+	(machine (name ?n))
+	(not (exploration-result (machine ?n)))
+	(Position3DInterface (id ?if-id&:(str-index  (str-cat "/tag-vision/" ?n) ?if-id)) (visibility_history ?vsh&:(> ?vsh 10))
+    (translation $?trans)
+    (rotation $?rot)
+	)
+  (wm-fact (key domain fact mps-type args? m ?some-machine&:(or
+             (eq ?machine ?some-machine)
+             (eq ?machine (mirror-name ?some-machine)))
+             t ?mtype))
+	=>
+	(bind ?tag-id)
+	(bind ?side-suffix (sub-string (- (length$ ?if-id) 1) (length$ ?if-id) ?if-id))
+	(if
+	(bind ?x (nth$ 1 ?trans))
+	(bind ?y (nth$ 2 ?trans))
+	(bind ?prefix "C")
+	(if (< ?y 0) then (return))
+	(if (< ?x 0) then
+		(bind ?x (* -1 ?x))
+		(bind ?prefix "M")
+	)
+	(bind ?x (floor ?x))
+	(bind ?y (floor ?y))
+	(bind ?zn2 (str-act ?prefix "_Z" ?x ?y))
+
+	(bind ?yaw (tf-yaw-from-quat $?rot))
+	(bind ?odd TRUE)
+	(if (eq 0 (mod ?tag-id 2)) then (bind ?odd FALSE))
+	(if ?odd then (bind ?yaw (+ ?yaw ?*PI* )))
+	(if (< ?yaw 0) then (bind ?yaw (+ ?yaw ?*2PI*)))
+	(bind ?orientation (* 45 (round (* (/ ?yaw ?*PI*) 4.0))))
+
+  (assert
+    (exploration-result
+      (machine ?machine) (zone ?zn2)
+      (orientation ?orientation)
+      (team ?team-color)
+      (trans ?trans)
+      (rot ?rot)
+      (tag-id ?tag-id)
+    )
+    (exploration-result
+      (machine (mirror-name ?machine)) (zone (mirror-name ?zn2))
+      (orientation (mirror-orientation ?mtype ?zn2 ?orientation))
+      (team (mirror-team ?team-color))
+    )
+  )
+)
+
+
 (defrule exp-report-send-partial
 	"Send exploration result if team unknown"
 	(wm-fact (key exploration active) (value TRUE))
