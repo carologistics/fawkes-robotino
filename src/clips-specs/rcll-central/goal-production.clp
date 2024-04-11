@@ -83,28 +83,6 @@
   (return ?rs)
 )
 
-(defrule goal-production-navgraph-compute-wait-positions-finished
-  "Add the waiting points to the domain once their generation is finished."
-  (NavGraphWithMPSGeneratorInterface (id "/navgraph-generator-mps") (final TRUE))
-  (or (wm-fact (key config rcll use-static-navgraph) (type BOOL) (value TRUE))
-      (forall
-        (wm-fact (key central agent robot args? r ?robot))
-        (NavGraphWithMPSGeneratorInterface (id ?id&:(eq ?id (remote-if-id ?robot "navgraph-generator-mps"))) (final TRUE))
-      )
-  )
-=>
-  (printout t "Navgraph generation of waiting-points finished. Getting waitpoints." crlf)
-  (do-for-all-facts ((?waitzone navgraph-node)) (str-index "WAIT-" ?waitzone:name)
-    (assert
-      (domain-object (name (sym-cat ?waitzone:name)) (type waitpoint))
-      (wm-fact (key navgraph waitzone args? name (sym-cat ?waitzone:name)) (is-list TRUE) (type INT) (values (nth$ 1 ?waitzone:pos) (nth$ 2 ?waitzone:pos)))
-    )
-  )
-  (assert (wm-fact (key navgraph waitzone generated) (type BOOL) (value TRUE)))
-  (delayed-do-for-all-facts ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ central agent robot))
-    (assert (wm-fact (key central agent robot-waiting args? r (wm-key-arg ?wm:key r))))
-  )
-)
 (deffunction goal-meta-get-goal-category (?goal-class)
   (bind ?production-goals (create$ MOUNT-CAP MOUNT-RING DELIVER-RC21 DELIVER))
   (bind ?maintenance-goals (create$ BUFFER-CAP PAY-FOR-RINGS-WITH-BASE PAY-FOR-RINGS-WITH-CAP-CARRIER PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF))
