@@ -564,9 +564,9 @@ NavGraphGeneratorMPSThread::generate_navgraph()
 	navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::SetFilterMessage(
 	  NavGraphGeneratorInterface::FILTER_ORPHAN_NODES, true));
 
-	navgen_if_->msgq_enqueue(
-	  new NavGraphGeneratorInterface::SetFilterMessage(NavGraphGeneratorInterface::FILTER_MULTI_GRAPH,
-	                                                   true));
+	// navgen_if_->msgq_enqueue(
+	//   new NavGraphGeneratorInterface::SetFilterMessage(NavGraphGeneratorInterface::FILTER_MULTI_GRAPH,
+	//                                                    true));
 
 	navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::SetFilterParamFloatMessage(
 	  NavGraphGeneratorInterface::FILTER_EDGES_BY_MAP, "distance", cfg_map_min_dist_));
