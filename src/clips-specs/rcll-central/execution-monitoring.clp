@@ -327,7 +327,7 @@
 				 (skiller ?skiller)
 				 (state FORMULATED)
 				 (action-name move)
-				 (param-values ?robot ?robot-at ?robot-at-side ?robot-to ?robot-to-side))
+				 (param-values ?robot ?robot-at&:(not (str-index "WAIT-" ?robot-at)) ?robot-at-side ?robot-to ?robot-to-side))
 	(not (plan-action (id ?prev-action-id&:(eq (- ?action-id 1) ?prev-action-id)) (goal-id ?goal-id) (plan-id ?plan-id)))
 	=>
 	(bind ?interleaved-id (sym-cat ?class -INTERLEAVED-PLAN-))
