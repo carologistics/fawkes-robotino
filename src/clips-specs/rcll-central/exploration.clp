@@ -237,7 +237,7 @@
 (defrule exp-report-tag-to-exploration-result
 	"Take the information from the exploration interface and map it to a exploration-result fact."
 	(wm-fact (key exploration active) (value TRUE))
-	(machine (name ?n))
+	(domain-fact (name machine-type) (param-values ?n ?))
 	(not (exploration-result (machine ?n)))
 	(Position3DInterface (id ?if-id&:(str-index  (str-cat "/tag-vision/" ?n) ?if-id)) (visibility_history ?vsh&:(> ?vsh 10))
     (translation $?trans)
