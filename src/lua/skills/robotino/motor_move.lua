@@ -66,6 +66,7 @@ local V_MAX_CAM =     { x=0.06, y=0.06, ori=0.3 }
 local V_MIN =         { x=0.006, y=0.006, ori=0.02 }   -- below the motor won't even start
 local TOLERANCE =     { x=0.02, y=0.02, ori=0.025 } -- accuracy
 local TOLERANCE_VS =  { x=0.02, y=0.02, ori=0.01 }
+local TOL_ORI_START   = 0.1
 local TOLERANCE_EE =  { x=0.15, y=0.04, ori=0.03} -- tolerance for end_early condition
 local TOLERANCE_CAM = { x=0.005, y=0.0015, ori=0.01 }
 local D_DECEL =       { x=0.035, y=0.035, ori=0.15 }    -- deceleration distance
@@ -112,7 +113,7 @@ end
 
 
 function set_speed(self)
-   local v = {}
+   local v = {x=0, y=0, ori=0}
 
    local dist_target = tfm.transform6D(
       self.fsm.vars.target,
@@ -138,7 +139,15 @@ function set_speed(self)
 
       for k, _ in pairs(dist_target) do
          -- Ignore z axis: no way to move up & down in /base_link!
-         if k ~= "z" then
+         if (math.abs(scalar(dist_target.ori)) >= TOL_ORI_START) then
+            fsm.vars.rotating = true
+         elseif (math.abs(scalar(dist_target.ori)) < self.fsm.vars.tolerance_arg["ori"]) then
+            fsm.vars.rotating = false
+         elseif (math.abs(scalar(dist_target.x)) < self.fsm.vars.tolerance_arg["x"] and
+                 math.abs(scalar(dist_target.y)) < self.fsm.vars.tolerance_arg["y"]) then
+            fsm.vars.rotating = true
+         end
+         if ((k == "x" or k == "y") and not fsm.vars.rotating) or (k == "ori" and fsm.vars.rotating) then
             local delta_dist = math.abs(self.fsm.vars.last_dist_target[k] - scalar(dist_target[k]))
             self.fsm.vars.moved_dist[self.fsm.vars.monitor_idx][k] = delta_dist
             self.fsm.vars.last_dist_target[k] = scalar(dist_target[k])
