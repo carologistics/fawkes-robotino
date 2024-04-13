@@ -240,17 +240,17 @@
 	(domain-fact (name machine-type) (param-values ?n ?))
 	(not (exploration-result (machine ?n)))
 	(Position3DInterface (id ?if-id&:(str-index  (str-cat "/tag-vision/" ?n) ?if-id)) (visibility_history ?vsh&:(> ?vsh 10))
-    (translation $?trans)
-    (rotation $?rot)
+		(translation $?trans)
+		(rotation $?rot)
 	)
-  (wm-fact (key domain fact mps-type args? m ?some-machine&:(or
-             (eq ?machine ?some-machine)
-             (eq ?machine (mirror-name ?some-machine)))
+	(wm-fact (key refbox team-color) (value ?team-color))
+  	(wm-fact (key domain fact mps-type args? m ?some-machine&:(or
+             (eq ?n ?some-machine)
+             (eq ?n (mirror-name ?some-machine)))
              t ?mtype))
 	=>
 	(bind ?tag-id)
 	(bind ?side-suffix (sub-string (- (length$ ?if-id) 1) (length$ ?if-id) ?if-id))
-	(if
 	(bind ?x (nth$ 1 ?trans))
 	(bind ?y (nth$ 2 ?trans))
 	(bind ?prefix "C")
@@ -259,9 +259,9 @@
 		(bind ?x (* -1 ?x))
 		(bind ?prefix "M")
 	)
-	(bind ?x (floor ?x))
-	(bind ?y (floor ?y))
-	(bind ?zn2 (str-act ?prefix "_Z" ?x ?y))
+	(bind ?x (round (+ ?x 0.5)))
+	(bind ?x (round (+ ?x 0.5)))
+	(bind ?zn2 (str-cat ?prefix "_Z" ?x ?y))
 
 	(bind ?yaw (tf-yaw-from-quat $?rot))
 	(bind ?odd TRUE)
@@ -272,7 +272,7 @@
 
   (assert
     (exploration-result
-      (machine ?machine) (zone ?zn2)
+      (machine ?n) (zone ?zn2)
       (orientation ?orientation)
       (team ?team-color)
       (trans ?trans)
@@ -280,7 +280,7 @@
       (tag-id ?tag-id)
     )
     (exploration-result
-      (machine (mirror-name ?machine)) (zone (mirror-name ?zn2))
+      (machine (mirror-name ?n)) (zone (mirror-name ?zn2))
       (orientation (mirror-orientation ?mtype ?zn2 ?orientation))
       (team (mirror-team ?team-color))
     )

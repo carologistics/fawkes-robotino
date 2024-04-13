@@ -127,36 +127,33 @@
 )
 
 (defrule register-new-agent-task-move-go-wait-nav-pos
+  ; TODO: fix! temporarily changed to use machine position instead of wait position
+  ; as go-wait might be re-implemented and navgraph removed
   (declare (salience ?*MONITORING-SALIENCE*))
   (wm-fact (key refbox robot task seq args? r ?robot) (value ?seq))
   (plan-action (id ?id) (action-name go-wait)
     (param-values ?robot
                   ?from
                   ?from-side
-                  ?nav-node)
+                  ?target)
     (state WAITING|RUNNING) (goal-id ?goal-id) (plan-id ?plan-id)
   )
-  (test (or (neq ?from ?nav-node) (neq ?from-side WAIT)))
+  (test (or (neq ?from ?target) (neq ?from-side WAIT)))
   (not (refbox-agent-task (robot ?robot) (task-id ?seq)))
-  (navgraph-node (name ?str-nav-node&:(eq (str-cat ?nav-node) ?str-nav-node))
-   (pos ?x-f ?y-f))
+  (wm-fact (key game found-tag name args? m ?mps))
+  (test (str-index (str-cat ?mps) (str-cat ?target)))
   =>
-  ; get the associated zone by ceiling all values
-  (bind ?x-offset 0.5)
-  (bind ?prefix C)
-  (bind ?y-offset 0.5)
-  (if (< ?x-f 0) then
-    (bind ?x-offset -0.5)
-    (bind ?prefix M)
+  (if (str-index (str-cat "-I") (str-cat ?target))
+   then
+    (bind ?side INPUT)
+    else
+    (bind ?side OUTPUT)
   )
+
   (assert (refbox-agent-task (task-id ?seq) (robot ?robot) (task-type Move)
-  (waypoint (sym-cat ?prefix
-                     _Z
-                     (abs (round (+ ?x-f ?x-offset)))
-                     (round (+ ?y-f ?y-offset))
-                    ))
-  (goal-id ?goal-id) (plan-id ?plan-id) (action-id ?id)
- ))
+   (machine ?mps) (side ?side) (goal-id ?goal-id) (plan-id ?plan-id)
+   (action-id ?id)
+  ))
 )
 
 (defrule register-new-agent-task-move-go-wait-wait-zone

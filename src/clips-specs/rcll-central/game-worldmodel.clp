@@ -113,3 +113,14 @@
 
   (retract ?gt ?gt-t ?gt-z ?gt-y ?gt-o)
 )
+
+(defrule game-generate-waitpoints-for-machines
+  "Generate waitpoint objects for each machine input/output side that is free based on game logic"
+  (wm-fact (key game found-tag name args? m ?mps))
+  (wm-fact (key domain fact mps-type args? m ?mps t ?type))
+  =>
+  (if (neq ?type DS) then
+    (assert (domain-object (name (sym-cat "WAIT-" ?mps -O)) (type waitpoint)))
+  )
+  (assert (domain-object (name (sym-cat "WAIT-" ?mps -I)) (type waitpoint)))
+)

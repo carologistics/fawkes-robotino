@@ -7,7 +7,6 @@ clips-protobuf:
   env-name: agent
   proto-dirs:
     - "@BASEDIR@/src/libs/llsf_msgs"
-    - "@BASEDIR@/fawkes/src/libs/gazsim_msgs"
 
   unwatch-facts: [protobuf-msg]
   unwatch-rules: [protobuf-cleanup-message]
