@@ -26,7 +26,6 @@ module(..., skillenv.module_init)
 name               = "manipulate_wp"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"goto","motor_move","pick_or_put_vs"}
-depends_skills     = {"goto","motor_move","pick_or_put_vs"}
 depends_interfaces = {
    {v = "line1", type="LaserLineInterface", id="/laser-lines/1"},
    {v = "line2", type="LaserLineInterface", id="/laser-lines/2"},
@@ -54,7 +53,6 @@ Parameters:
       @param query   defines if dry_run expects a workpiece to be at the location or wet (optional, THERE | ABSENT)
                      THERE by default
       @param safe_put true, if we have to put the wp on the conveyor in a way that it does not break the fingers even if there is a wp, used after failing dry_run, false by default (optional, boolean)
-      @param map_pos true, if MPS Pos is compared to Map Pos(optional,bool) True by default
       @param map_pos true, if MPS Pos is compared to Map Pos(optional,bool) True by default
 ]==]
 
@@ -214,6 +212,10 @@ function gripper_aligned()
      z=object_tracking_if:gripper_frame(2),
      ori=fawkes.tf.create_quaternion_from_yaw(0)},
     "base_link", "end_effector_home")
+  
+  if fsm.vars.target == "WORKPIECE" or  fsm.vars.target == "SLIDE" then
+    fsm.vars.safe_put = false
+  end
 
   if fsm.vars.safe_put then
     gripper_target.x = gripper_target.x - offset_x_put_conveyor_target_frame + offset_x_safe_put_conveyor_target_frame
