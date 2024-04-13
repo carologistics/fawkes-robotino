@@ -696,44 +696,44 @@
   )))
 )
 
-(defrule goal-production-create-move-out-of-way
-	"Creates a move out of way goal. As soon as it is completed it's reset"
-	(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-	(goal (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
-	(goal (id ?root-id) (class WAIT-ROOT))
-	(not (goal (class MOVE-OUT-OF-WAY)))
-	(or
-    (navgraph-node (name ?n&:(eq (str-index "-BS-O" ?n) 2)))
-  )
-  (wm-fact (key refbox team-color) (value ?color))
 
+(defrule goal-production-meta-machine-wait-zone-admissibility
+  "Asserts admissibility of a machine's side to be a wait zone"
+  ; TODO: redo with proper wait zones from TF
+  ; setup info
+  (wm-fact (key refbox team-color) (value ?color))
   (wm-fact (key refbox field height) (value ?field-height))
   (wm-fact (key refbox field width) (value ?field-width))
-	=>
-  (bind ?wait-zones (create$))
-  (do-for-all-facts ((?nav navgraph-node))
-                    (or
-                      (eq 2 (str-index "-SS-O" ?nav:name))
-                      (eq 2 (str-index "-SS-I" ?nav:name))
-                      (eq 2 (str-index "-DS-O" ?nav:name))
-                      (and (eq 1 (str-index "M-BS-O" ?nav:name)) (eq ?color MAGENTA))
-                      (and (eq 1 (str-index "C-BS-O" ?nav:name)) (eq ?color CYAN))
-                      (and (eq 1 (str-index "M-CS1-O" ?nav:name)) (eq ?color MAGENTA))
-                      (and (eq 1 (str-index "C-CS1-O" ?nav:name)) (eq ?color CYAN))
-                      (and (eq 1 (str-index "M-CS2-O" ?nav:name)) (eq ?color MAGENTA))
-                      (and (eq 1 (str-index "C-CS2-O" ?nav:name)) (eq ?color CYAN))
-                      (and (eq 1 (str-index "M-RS1-O" ?nav:name)) (eq ?color MAGENTA))
-                      (and (eq 1 (str-index "C-RS1-O" ?nav:name)) (eq ?color CYAN))
-                      (and (eq 1 (str-index "M-RS2-O" ?nav:name)) (eq ?color MAGENTA))
-                      (and (eq 1 (str-index "C-RS2-O" ?nav:name)) (eq ?color CYAN))
-                    )
-    (if (or
-        (< (abs (nth$ 1 ?nav:pos)) (- ?field-width 1))
-        (> (nth$ 2 ?nav:pos) 1)
-      )
 
-      then
-      (bind ?wait-zones (insert$ ?wait-zones 1 (goal-production-assert-move-out-of-way  (sym-cat ?nav:name))))
+  ; machine info
+	(wm-fact (key domain fact mps-team args? m ?mps col ?mps-color))
+
+  ; not already covered
+  (not (wm-fact (key meta machine-wait-zone-admissible args? m ?mps $?)))
+
+  ;check if it is a desirable MPS
+  (eq ?mps-type SS)
+  =>
+  (assert (wm-fact (key meta machine-wait-zone-admissible args? m ?mps side INPUT)))
+  (assert (wm-fact (key meta machine-wait-zone-admissible args? m ?mps side OUTPUT)))
+)
+
+(defrule goal-production-create-move-out-of-way-goal
+	"Creates a move out of way goal with a subgoal for each possible waiting position.
+  As soon as it is completed it's reset"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
+  (goal (id ?root-id) (class WAIT-ROOT))
+  (not (goal (class MOVE-OUT-OF-WAY)))
+  =>
+  (bind ?wait-zones (create$))
+  (do-for-all-facts ((?admissible wm-fact))
+    (eq ?admissible:key (create$ meta machine-wait-zone-admissible))
+    (if (eq (wm-key-arg ?admissible:key side) INPUT) then
+        (bind ?wait-zones (insert$ ?wait-zones 1 (goal-production-assert-move-out-of-way (sym-cat (wm-key-arg ?admissible:key m) -I))))
+    )
+    (if (eq (wm-key-arg ?admissible:key side) OUTPUT) then
+        (bind ?wait-zones (insert$ ?wait-zones 1 (goal-production-assert-move-out-of-way (sym-cat (wm-key-arg ?admissible:key m) -O))))
     )
   )
 	(bind ?g (goal-tree-assert-central-run-parallel MOVE-OUT-OF-WAY ?wait-zones))

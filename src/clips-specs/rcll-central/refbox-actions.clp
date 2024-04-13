@@ -28,10 +28,12 @@
                         (bind ?ptime ?pose:time)))
    then
     ; We do not have a correct Pose, fake it using the position of the machine we're at
-    (do-for-fact ((?at wm-fact) (?node navgraph-node))
-                 (and (wm-key-prefix ?at:key (create$ domain fact at args? r (sym-cat ?robot-name)))
-                      (eq ?node:name (wm-fact-to-navgraph-node ?at:key)))
-                 (bind ?trans ?node:pos)
+    (do-for-fact ((?at wm-fact) (?mps wm-fact))
+      (and
+        (wm-key-prefix ?at:key (create$ domain fact at args? r (sym-cat ?robot-name)))
+        (wm-key-prefix ?mps:key (create$ game found-tag zone args? m (wm-key-arg ?at:key m)))
+      )
+      (bind ?trans (zone-center ?mps:value))
     )
   )
   (bind ?beacon-pose (pb-field-value ?beacon "pose"))
