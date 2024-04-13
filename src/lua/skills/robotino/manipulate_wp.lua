@@ -415,10 +415,7 @@ function INIT:init()
   -- fsm.vars.mps_y = node:y()
   -- fsm.vars.mps_ori = node:property_as_float("orientation")
   
-  if fsm.vars.side == "INPUT" then
-    fsm.vars.mps_ori = fsm.vars.mps_ori+math.pi
-  end
-  fsm.vars.missing_detections = 0
+   fsm.vars.missing_detections = 0
   fsm.vars.msgid              = 0
   fsm.vars.out_of_reach       = false
 
