@@ -130,13 +130,14 @@ end
 function match_line(lines)
   local matched_line = nil
   local mapped_dist = 0
+  local mps_point = nil
   if fsm.vars.map_pos then
-    local mps_point= tfm.transform6D({
+    mps_point= tfm.transform6D({
       x = 0,
       y = 0,
       z = 0,
       ori = fawkes.tf.create_quaternion_from_yaw(0)
-      }, fsm.vars.mps,"/map")
+      }, fsm.vars.mps,"/base_link")
     printf(mps_point.x)
     printf(tostring(fawkes.tf.get_yaw(mps_point.ori)))
   end
