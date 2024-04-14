@@ -266,17 +266,12 @@ TagVisionThread::loop()
 	// logger->log_info(name(),"entering loop");
 	// get img form fv
 	fv_cam_->capture();
-	firevision::convert(fv_cam_->colorspace(),
-	                    firevision::YUV422_PLANAR,
-	                    fv_cam_->buffer(),
-	                    image_buffer_,
-	                    this->img_width_,
-	                    this->img_height_);
+	unsigned char* cam_buffer = fv_cam_->buffer();
 
 	fv_cam_->dispose_buffer();
 
 	// convert img
-	firevision::CvMatAdapter::convert_image_bgr(image_buffer_, ipl_image_);
+    ipl_image_ = cv::Mat(this->img_height_, this->img_width_, CV_8UC3, cam_buffer);
 	// convert to grayscale
 	// get marker from img
 	get_marker();
