@@ -163,34 +163,6 @@
   (retract ?pf)
 )
 
-; (defrule refbox-recv-MachineReportInfo
-;   ?pb-msg <- (protobuf-msg (type "llsf_msgs.MachineReportInfo") (ptr ?p))
-;   =>
-;   (bind ?machines (create$))
-
-;   (foreach ?m (pb-field-list ?p "reported_types")
-;     (bind ?m-name (sym-cat (pb-field-value ?m "name")))
-;     (if (and
-;           (any-factp ((?wm-fact wm-fact))
-;               (and (wm-key-prefix ?wm-fact:key (create$ domain fact mps-state))
-;                     (eq (wm-key-arg ?wm-fact:key m) ?m-name)
-;               )
-;           )
-;           (not
-;             (any-factp ((?wm-fact wm-fact))
-;                 (and (wm-key-prefix ?wm-fact:key (create$ refbox explored-machine))
-;                       (eq (wm-key-arg ?wm-fact:key m) ?m-name)
-;                 )
-;             )
-;           )
-;         )
-;       then
-;         (assert (wm-fact (key refbox explored-machine args? m ?m-name)))
-;     )
-;   )
-; )
-
-
 (defrule refbox-recv-MachineInfo
   ?pb-msg <- (protobuf-msg (type "llsf_msgs.MachineInfo") (ptr ?p))
   (wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
@@ -251,7 +223,6 @@
       (retract ?wm-fact)
   )
 )
-
 
 
 (defrule game-receive-field-layout-protobuf
