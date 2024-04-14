@@ -986,20 +986,8 @@
 	=>
 	(assert (wm-fact (key central agent robot-waiting args? r ?robot)))
 	(assert (wm-fact (key monitoring robot-reinserted args? r ?robot) (values ?now)))
-	;recompute navgraph after re-insertion
-	(navgraph-init ?robot TRUE)
 
 	(retract ?rl)
-)
-
-(defrule execution-monitoring-set-navgraph-after-reinsertion
-	"Recompute the navgraph again after a certain time to make sure everything was set correctly"
-	?wf <- (wm-fact (key monitoring robot-reinserted args? r ?robot) (values $?start-time))
-	(wm-fact (key refbox game-time) (values $?now))
-	(test (timeout ?now ?start-time ?*REINSERTION-NAVGRAPH-TIMEOUT*))
-	=>
-	(navgraph-init ?robot TRUE)
-	(retract ?wf)
 )
 
 (defrule execution-monitoring-clean-wm-from-robot
@@ -1201,6 +1189,8 @@
     (wm-fact (key game found-tag name args? m ?mps ))
   )
   (not (navgraph-all-tags-triggered))
+  (blackboard-interface (id "/navgraph-generator")
+	                    (type "NavGraphGeneratorInterface"))
 =>
   (printout t "Triggering NavGraph generation with Ground-truth" crlf)
   (navgraph-add-all-new-tags)
