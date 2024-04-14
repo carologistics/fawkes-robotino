@@ -265,17 +265,22 @@ TagVisionThread::loop()
 	}
 	// logger->log_info(name(),"entering loop");
 	// get img form fv
-    fv_cam_->capture();
-    firevision::convert(fv_cam_->colorspace(),
+	fv_cam_->capture();
+	firevision::convert(fv_cam_->colorspace(),
 	                    firevision::YUV422_PLANAR,
-                        fv_cam_->buffer(),
-                        image_buffer_,
-                        this->img_width_,
-                        this->img_height_);
-    fv_cam_->dispose_buffer();
+	                    fv_cam_->buffer(),
+	                    image_buffer_,
+	                    this->img_width_,
+	                    this->img_height_);
+
+	fv_cam_->dispose_buffer();
+
+	// convert img
 	firevision::CvMatAdapter::convert_image_bgr(image_buffer_, ipl_image_);
 
     // Convert to grayscale and apply binary threshold
+	cv::cvtColor(ipl_image_, ipl_image_, cv::COLOR_BGR2GRAY);
+
     double thresholdValue = 127;  // Adjustable threshold value
     cv::threshold(ipl_image_, ipl_image_, thresholdValue, 255, cv::THRESH_BINARY);
 
