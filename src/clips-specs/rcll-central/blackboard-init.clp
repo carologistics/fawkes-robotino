@@ -153,7 +153,7 @@
 )
 
 (defrule blackboard-init-motor-interfaces
-  "Open the Navgraph blackboard interfaces ."
+  "Open the motor interfaces of the robotinos."
   (domain-facts-loaded)
   (ff-feature-loaded blackboard)
   (wm-fact (key central agent robot args? r ?robot))

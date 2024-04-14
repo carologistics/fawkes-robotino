@@ -27,7 +27,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defrule goal-production-navigation-challenge-move-executable
-" Move to a navgraph node
+" Move to a zone
 "
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class NAVIGATION-CHALLENGE-MOVE)
