@@ -279,7 +279,7 @@ TagVisionThread::loop()
     cv::threshold(ipl_image_, ipl_image_, thresholdValue, 255, cv::THRESH_BINARY);
 
     // Convert the binary grayscale image to BGR
-    cv::cvtColor(gray_image, ipl_image_, cv::COLOR_GRAY2BGR);
+    cv::cvtColor(ipl_image_, ipl_image_, cv::COLOR_GRAY2BGR);
     // Continue with tag detection if necessary
     get_marker();
 
