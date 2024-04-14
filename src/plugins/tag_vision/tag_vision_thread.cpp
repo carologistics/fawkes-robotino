@@ -267,12 +267,13 @@ TagVisionThread::loop()
 	// get img form fv
     fv_cam_->capture();
     firevision::convert(fv_cam_->colorspace(),
-                        firevision::MONO8,  // Directly convert to MONO8 for binary image
+	                    firevision::YUV422_PLANAR,
                         fv_cam_->buffer(),
                         image_buffer_,
                         this->img_width_,
                         this->img_height_);
     fv_cam_->dispose_buffer();
+	firevision::CvMatAdapter::convert_image_bgr(image_buffer_, ipl_image_);
 
     // Convert to grayscale and apply binary threshold
     double thresholdValue = 127;  // Adjustable threshold value
