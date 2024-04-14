@@ -400,7 +400,9 @@
 					(trans (tag-offset (zone-string-to-sym-dash (str-cat ?er:zone)) (deg-to-rad ?er:orientation) 0.17))
 					(rot (tf-quat-from-yaw (deg-to-rad ?er:orientation)))
 		)
-		(navgraph-add-tags-from-exploration)
+		(if (any-factp ((?ng-interface blackboard-interface)) (eq ?ng-interface:type "NavGraphGeneratorInterface")) then
+			(navgraph-add-tags-from-exploration)
+		)
   	)
   )
 )
