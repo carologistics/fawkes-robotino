@@ -135,6 +135,7 @@
 	                      (type "NavGraphWithMPSGeneratorInterface"))
 	(blackboard-interface (id "/navgraph-generator")
 	                    (type "NavGraphGeneratorInterface"))
+  (wm-fact (key refbox version-info received))
 	=>
 	(navgraph-init central FALSE)
 )

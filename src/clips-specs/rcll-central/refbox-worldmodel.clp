@@ -429,6 +429,7 @@
 
 (defrule refbox-recv-VersionInfo
   ?pf <- (protobuf-msg (type "llsf_msgs.VersionInfo") (ptr ?p))
+  (not (wm-fact (key refbox version-info received)))
   =>
   (foreach ?c (pb-field-list ?p "configuration")
     (bind ?name (pb-field-value ?c "name"))
@@ -447,4 +448,5 @@
     )
     (assert (wm-fact (key refbox version-info config args? name (sym-cat ?name)) (type ?type) (value ?value)))
   )
+  (assert (wm-fact (key refbox version-info received)))
 )
