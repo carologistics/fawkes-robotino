@@ -58,14 +58,20 @@ end
 --local REGION_TRANS=0.2
 
 function check_tf(self)
-  if fsm.vars.place ~= "" then
-    local tf_point = tf_mod.transform6D({
-        x = 0,
-        y = 0,
-        z = 0,
-        ori = fawkes.tf.create_quaternion_from_yaw(0)
-        }, fsm.vars.place,"/map")
-    return tf_point == nil
+  if self.fsm.vars.place ~= nil then
+    if string.match(self.fsm.vars.place, "^[MC][-]Z[1-7][1-8]$") then
+      return false
+    end
+    if fsm.vars.place ~= "" then
+      local tf_point = tf_mod.transform6D({
+          x = 0,
+          y = 0,
+          z = 0,
+          ori = fawkes.tf.create_quaternion_from_yaw(0)
+          }, fsm.vars.place,"map")
+      return tf_point == nil
+    end
+    return true
   end
   return false
 end
