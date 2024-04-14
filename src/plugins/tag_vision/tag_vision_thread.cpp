@@ -285,7 +285,7 @@ TagVisionThread::loop()
     cv::threshold(ipl_image_, ipl_image_, thresholdValue, 255, cv::THRESH_BINARY);
 
     // Define the structuring element for morphological operations
-    int morph_size = 1;  // Size of the structuring element
+    int morph_size = 2;  // Size of the structuring element
     cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, 
                                                 cv::Size(2 * morph_size + 1, 2 * morph_size + 1),
                                                 cv::Point(morph_size, morph_size));
