@@ -284,6 +284,17 @@ TagVisionThread::loop()
     double thresholdValue = 50;  // Adjustable threshold value
     cv::threshold(ipl_image_, ipl_image_, thresholdValue, 255, cv::THRESH_BINARY);
 
+    // Define the structuring element for morphological operations
+    int morph_size = 3;  // Size of the structuring element
+    cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, 
+                                                cv::Size(2 * morph_size + 1, 2 * morph_size + 1),
+                                                cv::Point(morph_size, morph_size));
+
+
+    cv::erode(ipl_image_, ipl_image_, element);
+
+
+    cv::dilate(ipl_image_, ipl_image_, element);
     // Convert the binary grayscale image to BGR
     cv::cvtColor(ipl_image_, ipl_image_, cv::COLOR_GRAY2BGR);
     // Continue with tag detection if necessary
