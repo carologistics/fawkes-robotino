@@ -282,7 +282,8 @@ TagVisionThread::loop()
 	cv::cvtColor(ipl_image_, ipl_image_, cv::COLOR_BGR2GRAY);
 
     double thresholdValue = 50;  // Adjustable threshold value
-    cv::threshold(ipl_image_, ipl_image_, thresholdValue, 255, cv::THRESH_BINARY);
+	// Assuming ipl_image_ is a grayscale image
+	cv::threshold(ipl_image_, ipl_image_, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
 
     // Define the structuring element for morphological operations
     int morph_size = 2;  // Size of the structuring element
