@@ -266,8 +266,13 @@ TagVisionThread::loop()
 	// logger->log_info(name(),"entering loop");
 	// get img form fv
 	fv_cam_->capture();
-	firevision::CvMatAdapter::convert_image_bgr(fv_cam_->buffer(), ipl_image_);
-
+	
+	firevision::convert(fv_cam_->colorspace(),
+	                    firevision::YUV422_PLANAR,
+	                    fv_cam_->buffer(),
+	                    image_buffer_,
+	                    this->img_width_,
+	                    this->img_height_);
 
 	fv_cam_->dispose_buffer();
 
