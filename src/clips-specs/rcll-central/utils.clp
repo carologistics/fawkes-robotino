@@ -494,15 +494,15 @@
 	(bind ?field-width NOT-SET)
 	(bind ?mirrored NOT-SET)
 	(delayed-do-for-all-facts ((?field-info wm-fact))
-	  	(wm-key-prefix ?field-info:key (create$ key refbox field))
+	  	(wm-key-prefix ?field-info:key (create$ refbox version-info config))
 
-		(if (eq ?field-info:key (create$ key refbox version-info config args? name field_height)) then
+		(if (eq ?field-info:key (create$ refbox version-info config args? name field_height)) then
 			(bind ?field-height ?field-info:value)
 		)
-		(if (eq ?field-info:key (create$ key refbox version-info config args? name field_width)) then
+		(if (eq ?field-info:key (create$ refbox version-info config args? name field_width)) then
 			(bind ?field-width ?field-info:value)
 		)
-		(if (eq ?field-info:key (create$ key refbox version-info config args? name field_mirrored)) then
+		(if (eq ?field-info:key (create$ refbox version-info config args? name field_mirrored)) then
 			(bind ?mirrored ?field-info:value)
 		)
 	)
@@ -512,7 +512,7 @@
 		(printout warn " Field height not set in refbox config" crlf)
 		(bind ?fallback-format TRUE)
 	)
-	(if (or (eq ?field-width NOT-SET) (eq ?field-width DOES-NOT-EXIS)T) then
+	(if (or (eq ?field-width NOT-SET) (eq ?field-width DOES-NOT-EXIST)) then
 		(printout warn "Field width not set in refbox config" crlf)
 		(bind ?fallback-format TRUE)
 	)
@@ -534,6 +534,7 @@
 		))
 		then
 			(printout warn "Could not set field size, bounding box config not found" crlf)
+      (return)
 		)
 		else
 		(bind ?p1_x (- 0 ?field-width))
