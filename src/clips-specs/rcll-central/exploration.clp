@@ -31,13 +31,23 @@
 ; ---------------- EXPLORATION SYNC ----------------
 
 (defrule exp-sync-zone-content
-	(not (wm-fact (key domain fact zone-content args? z ?zn m ?machine)))
-	(wm-fact (id "/config/rcll/exploration/zone-margin") (type FLOAT) (value ?zone-margin))
-	(confval (path ?min-path&:(eq ?min-path (str-cat ?*NAVGRAPH_GENERATOR_MPS_CONFIG* "bounding-box/p1")))
-	         (list-value ?x_min ?y_min))
-	(confval (path ?max-path&:(eq ?max-path (str-cat ?*NAVGRAPH_GENERATOR_MPS_CONFIG* "bounding-box/p2")))
-	         (list-value ?x_max ?y_max))
+	(not (wm-fact (key domain fact zone-content args? $?)))
+	(wm-fact (key config rcll exploration zone-margin) (type FLOAT) (value ?zone-margin))
+
+	(wm-fact (key refbox version-info config args? name field_height) (value ?field-height))
+	(wm-fact (key refbox version-info config args? name field_width) (value ?field-width))
+	(wm-fact (key refbox version-info config args? name field_mirrored) (value ?mirrored))
 	=>
+	(bind ?x_min 0)
+	(if (eq ?mirrored TRUE) then
+		(bind ?x_min (* -1 ?field-width))
+	else
+		(bind ?x_min 0)
+	)
+	(bind ?x_max ?field-width)
+	(bind ?y_min 0)
+	(bind ?y_max ?field-height)
+
 	(bind ?zones (create$))
 	(loop-for-count (?x ?x_min ?x_max)
 		(loop-for-count (?y ?y_min ?y_max)
