@@ -138,27 +138,21 @@ function match_line(lines)
       z = 0,
       ori = fawkes.tf.create_quaternion_from_yaw(0)
       }, fsm.vars.mps,"/base_link")
-    printf(mps_point.x)
-    printf(tostring(fawkes.tf.get_yaw(mps_point.ori)))
   end
 
   local min_dist = MIN_ACTUAL_DIST
   for k, line in pairs(lines) do
     local line_center = llutils.center(line, 0)
-    --printf('Ori:%f',line_center.ori)
    
     local base_center =  tfm.transform6D({
       x=line_center.x,
       y=line_center.y,
       z=0,
       ori = fawkes.tf.create_quaternion_from_yaw(line_center.ori)},"/base_laser","base_link")
-
-      
-    --printf(tostring(fawkes.tf.get_yaw(base_center.ori)))
     
     if fsm.vars.map_pos then 
-      mapped_dist = math.vec_length(mps_point.x - line_center.x, mps_point.y - line_center.y)
-      local orient_diff = line_center.ori - fawkes.tf.get_yaw(mps_point.ori)
+      mapped_dist = math.vec_length(mps_point.x - base_center.x, mps_point.y - base_center.y)
+      local orient_diff = math.abs(math.fmod((math.normalize_mirror_rad(fawkes.tf.get_yaw(base_center.ori)) - math.normalize_mirror_rad(fawkes.tf.get_yaw(mps_point.ori))), 2*math.pi))
       --printf('Distance from expected map pos to laser line: %f and its threshold: %f',mapped_dist,MIN_MAPPED_DIST)
       --printf('Difference b/w actual orientation & expected orientation : %f and its threshold: %f',orient_diff,MIN_MAPPED_ORI)
     end
@@ -168,7 +162,7 @@ function match_line(lines)
     --printf('Difference b/w Bot orientation & laser_line orientation : %s and its threshold: %f',fawkes.tf.get_yaw(base_center.ori),MIN_ACTUAL_ORI)
     
     if (line:visibility_history() >= MIN_VIS_HIST_LINE and actual_dist < min_dist and fawkes.tf.get_yaw(base_center.ori)<=MIN_ACTUAL_ORI) and 
-        ( not fsm.vars.map_pos or (mapped_dist<=MIN_MAPPED_DIST and (line_center.ori-fawkes.tf.get_yaw(mps_point.ori))<=MIN_MAPPED_ORI))
+    ( not fsm.vars.map_pos or (mapped_dist<=MIN_MAPPED_DIST and (fawkes.tf.get_yaw(base_center.ori)-fawkes.tf.get_yaw(mps_point.ori))<=MIN_MAPPED_ORI))
     then
         min_dist = actual_dist
         matched_line = line
