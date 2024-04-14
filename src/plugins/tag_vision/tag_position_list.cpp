@@ -95,8 +95,8 @@ TagPositionList::TagPositionList(fawkes::BlackBoard      *blackboard,
 			                                               map_interface,
 			                                               i,
 			                                               this->clock_,
-			                                               main_thread_->get_tf_publisher(i, "tag_"),
-			                                               main_thread_->get_tf_publisher(i, "map_tag_"),
+			                                               main_thread_->get_tf_publisher(std::to_string(i), "tag_"),
+								       main_thread_->get_tf_publisher(std::to_string(i), "map_tag_"),
 			                                               tf_listener_,
 			                                               cam_frame));
 		} catch (std::exception &e) {

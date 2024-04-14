@@ -131,29 +131,17 @@ TagVisionThread::init()
 		this->img_height_ = fv_cam_->pixel_height();
 	}
 
-	// SHM image buffer
-	if (shm_buffer_ != nullptr) {
-		delete shm_buffer_;
-		shm_buffer_   = nullptr;
-		image_buffer_ = nullptr;
-	}
+
 
 	shm_buffer_ = new firevision::SharedMemoryImageBuffer(shm_id_.c_str(),
-	                                                      firevision::YUV422_PLANAR,
-	                                                      this->img_width_,
-	                                                      this->img_height_);
+															firevision::BGR,
+															this->img_width_,
+															this->img_height_);
 
-	if (!shm_buffer_->is_valid()) {
-		delete shm_buffer_;
-		delete fv_cam_;
-		shm_buffer_ = nullptr;
-		fv_cam_     = nullptr;
-		throw fawkes::Exception("Shared memory segment not valid");
-	}
 	std::string frame = this->config->get_string((prefix + "frame").c_str());
 	shm_buffer_->set_frame_id(frame.c_str());
-
 	image_buffer_ = shm_buffer_->buffer();
+
 	ipl_image_    = cv::Mat(cv::Size(this->img_width_, this->img_height_), CV_8UC3, 3);
 
 	// set up marker
@@ -255,12 +243,12 @@ TagVisionThread::finalize()
  * @return The TransformPublisher to be used for the tag index
  */
 tf::TransformPublisher *
-TagVisionThread::get_tf_publisher(size_t idx, std::string frame)
+TagVisionThread::get_tf_publisher(std::string name, std::string frame)
 {
-	if (tf_publishers.find(frame + std::to_string(idx)) == tf_publishers.end())
-		tf_add_publisher("%s%ld", frame.c_str(), idx);
+	if (tf_publishers.find(frame + name) == tf_publishers.end())
+		tf_add_publisher("%s%s", frame.c_str(), name.c_str());
 
-	return tf_publishers[frame + std::to_string(idx)];
+	return tf_publishers[frame + name];
 }
 
 void
@@ -292,9 +280,14 @@ TagVisionThread::loop()
 	// convert to grayscale
 	// get marker from img
 	get_marker();
-
+	firevision::convert(firevision::BGR,
+						firevision::BGR,
+						ipl_image_.data,
+						shm_buffer_->buffer(),
+						img_width_,
+						img_height_);
 	this->tag_interfaces_->update_blackboard(markers_, laser_line_ifs_);
-
+	
 	cfg_mutex_.unlock();
 }
 
