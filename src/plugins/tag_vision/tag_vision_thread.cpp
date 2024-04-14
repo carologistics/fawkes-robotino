@@ -293,7 +293,7 @@ TagVisionThread::loop()
 						img_width_,
 						img_height_);
 	this->tag_interfaces_->update_blackboard(markers_, laser_line_ifs_);
-	finalize()
+	finalize();
 	cfg_mutex_.unlock();
 }
 
