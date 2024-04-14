@@ -197,7 +197,7 @@
 )
 
 (defrule exp-goals-move-executable
-	"Move to a navgraph node."
+	"Move to a zone."
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class EXPLORATION-MOVE)
 	                          (mode FORMULATED)
