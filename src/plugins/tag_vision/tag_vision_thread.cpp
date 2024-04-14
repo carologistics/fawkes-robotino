@@ -265,22 +265,26 @@ TagVisionThread::loop()
 	}
 	// logger->log_info(name(),"entering loop");
 	// get img form fv
-	fv_cam_->capture();
-	
-	firevision::convert(fv_cam_->colorspace(),
-	                    firevision::YUV422_PLANAR,
-	                    fv_cam_->buffer(),
-	                    image_buffer_,
-	                    this->img_width_,
-	                    this->img_height_);
+    fv_cam_->capture();
+    firevision::convert(fv_cam_->colorspace(),
+                        firevision::MONO8,  // Directly convert to MONO8 for binary image
+                        fv_cam_->buffer(),
+                        image_buffer_,
+                        this->img_width_,
+                        this->img_height_);
+    fv_cam_->dispose_buffer();
 
-	fv_cam_->dispose_buffer();
+    // Convert to grayscale and apply binary threshold
+    cv::Mat gray_image = cv::Mat(cv::Size(this->img_width_, this->img_height_), CV_8UC1, image_buffer_);
+    double thresholdValue = 127;  // Adjustable threshold value
+    cv::threshold(gray_image, gray_image, thresholdValue, 255, cv::THRESH_BINARY);
 
-	// convert img
-	firevision::CvMatAdapter::convert_image_bgr(image_buffer_, ipl_image_);
-	// convert to grayscale
-	// get marker from img
-	get_marker();
+    // Convert the binary grayscale image to BGR
+    cv::Mat ipl_image_;
+    cv::cvtColor(gray_image, ipl_image_, cv::COLOR_GRAY2BGR);
+    // Continue with tag detection if necessary
+    get_marker();
+
 	firevision::convert(firevision::BGR,
 						firevision::BGR,
 						ipl_image_.data,
