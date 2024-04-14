@@ -227,6 +227,7 @@ TagVisionThread::finalize()
 	shm_buffer_   = nullptr;
 	image_buffer_ = nullptr;
 	ipl_image_.release();
+	gray_image.release();
 	delete this->tag_interfaces_;
 
 	while (!laser_line_ifs_->empty()) {
@@ -292,7 +293,7 @@ TagVisionThread::loop()
 						img_width_,
 						img_height_);
 	this->tag_interfaces_->update_blackboard(markers_, laser_line_ifs_);
-	
+	finalize()
 	cfg_mutex_.unlock();
 }
 
