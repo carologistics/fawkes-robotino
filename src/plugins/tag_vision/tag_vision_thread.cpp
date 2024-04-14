@@ -281,7 +281,7 @@ TagVisionThread::loop()
     // Convert to grayscale and apply binary threshold
 	cv::cvtColor(ipl_image_, ipl_image_, cv::COLOR_BGR2GRAY);
 
-    double thresholdValue = 127;  // Adjustable threshold value
+    double thresholdValue = 100;  // Adjustable threshold value
     cv::threshold(ipl_image_, ipl_image_, thresholdValue, 255, cv::THRESH_BINARY);
 
     // Convert the binary grayscale image to BGR
