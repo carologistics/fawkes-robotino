@@ -227,7 +227,6 @@ TagVisionThread::finalize()
 	shm_buffer_   = nullptr;
 	image_buffer_ = nullptr;
 	ipl_image_.release();
-	gray_image.release();
 	delete this->tag_interfaces_;
 
 	while (!laser_line_ifs_->empty()) {
@@ -276,12 +275,10 @@ TagVisionThread::loop()
     fv_cam_->dispose_buffer();
 
     // Convert to grayscale and apply binary threshold
-    cv::Mat gray_image = cv::Mat(cv::Size(this->img_width_, this->img_height_), CV_8UC1, image_buffer_);
     double thresholdValue = 127;  // Adjustable threshold value
-    cv::threshold(gray_image, gray_image, thresholdValue, 255, cv::THRESH_BINARY);
+    cv::threshold(ipl_image_, ipl_image_, thresholdValue, 255, cv::THRESH_BINARY);
 
     // Convert the binary grayscale image to BGR
-    cv::Mat ipl_image_;
     cv::cvtColor(gray_image, ipl_image_, cv::COLOR_GRAY2BGR);
     // Continue with tag detection if necessary
     get_marker();
