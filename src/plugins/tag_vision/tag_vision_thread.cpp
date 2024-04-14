@@ -281,7 +281,7 @@ TagVisionThread::loop()
     // Convert to grayscale and apply binary threshold
 	cv::cvtColor(ipl_image_, ipl_image_, cv::COLOR_BGR2GRAY);
 
-    double thresholdValue = 100;  // Adjustable threshold value
+    double thresholdValue = 50;  // Adjustable threshold value
     cv::threshold(ipl_image_, ipl_image_, thresholdValue, 255, cv::THRESH_BINARY);
 
     // Convert the binary grayscale image to BGR
@@ -296,7 +296,6 @@ TagVisionThread::loop()
 						img_width_,
 						img_height_);
 	this->tag_interfaces_->update_blackboard(markers_, laser_line_ifs_);
-	finalize();
 	cfg_mutex_.unlock();
 }
 
