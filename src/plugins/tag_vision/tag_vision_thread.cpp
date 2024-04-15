@@ -267,7 +267,7 @@ TagVisionThread::loop()
 	// logger->log_info(name(),"entering loop");
 	// get img form fv
 	fv_cam_->capture();
-	logger->log_info("Camera output",fv_cam_->buffer());
+	logger->log_info("Camera output",fv_cam_->colorspace());
 	
 	firevision::convert(fv_cam_->colorspace(),
 	                    firevision::YUV422_PLANAR,
