@@ -246,18 +246,21 @@ TagVisionThread::loop()
 
     fv_cam_->capture();
     // Assuming the camera outputs BGR images directly into ipl_image_
-    firevision::convert(fv_cam_->colorspace(), firevision::BGR, fv_cam_->buffer(), ipl_image_.data, this->img_width_, this->img_height_);
+    firevision::convert(fv_cam_->colorspace(), firevision::YUV422_PLANAR, fv_cam_->buffer(), ipl_image_.data, this->img_width_, this->img_height_);
     fv_cam_->dispose_buffer();
+	firevision::CvMatAdapter::convert_image_bgr(image_buffer_, ipl_image_);
 
     // Process image directly on ipl_image_
     get_marker();
-    this->tag_interfaces_->update_blackboard(markers_, laser_line_ifs_);
 	firevision::convert(firevision::BGR,
-					firevision::BGR,
-					ipl_image_.data,
-					shm_buffer_->buffer(),
-					img_width_,
-					img_height_);
+						firevision::BGR,
+						ipl_image_.data,
+						shm_buffer_->buffer(),
+						img_width_,
+						img_height_);
+
+    this->tag_interfaces_->update_blackboard(markers_, laser_line_ifs_);
+
     cfg_mutex_.unlock();
 }
 
