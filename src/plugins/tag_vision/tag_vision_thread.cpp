@@ -112,12 +112,12 @@ TagVisionThread::init()
 
 	// Image Buffer ID
 	shm_id_ = config->get_string((prefix + "shm_image_id").c_str());
-	shm_buffer_results_  = new firevision::SharedMemoryImageBuffer(shm_id_.c_str(),
+	shm_buffer_  = new firevision::SharedMemoryImageBuffer(shm_id_.c_str(),
                                                                 firevision::BGR,
                                                                 img_width_,
                                                                 img_height_);
-	std::string frame_id = this->config->get_string((prefix + "frame").c_str());
-	shm_buffer_results_->set_frame_id(frame_id.c_str());
+	std::string frame = this->config->get_string((prefix + "frame").c_str());
+	shm_buffer_->set_frame_id(frame.c_str());
     ipl_image_ = cv::Mat(this->img_width_, this->img_height_, CV_8UC3);
 
 		// init firevision camera
@@ -213,6 +213,8 @@ void TagVisionThread::finalize()
     ipl_image_.release();
     delete this->tag_interfaces_;
     // Cleanup for laser_line_ifs_ as before
+	delete shm_buffer_;
+	shm_buffer_ = nullptr;
 }
 
 /**
@@ -253,7 +255,7 @@ TagVisionThread::loop()
 	firevision::convert(firevision::BGR,
 					firevision::BGR,
 					ipl_image_.data,
-					shm_buffer_results_->buffer(),
+					shm_buffer_->buffer(),
 					img_width_,
 					img_height_);
     cfg_mutex_.unlock();
