@@ -5,6 +5,7 @@
  *  Plugin created: Thu Jun 23 22:35:32 2016
 
  *  Copyright  2016  Frederik Zwilling
+ *             2023  Matteo Tschesche
  *
  ****************************************************************************/
 
@@ -28,11 +29,12 @@
 #include <tf/types.h>
 
 #include <cmath>
+#include <limits>
 
 using namespace fawkes;
 
 /** @class LaserFrontDistThread 'laser_front_dist_thread.h'
- * Calculates distance to object in front with average of laser beams in front
+ * Calculates distance to object in front with the minimum of laser beams in front
  * @author Frederik Zwilling
  */
 
@@ -59,9 +61,9 @@ LaserFrontDistThread::init()
 void
 LaserFrontDistThread::loop()
 {
-	// calculate average:
+	// calculate min:
 	if_laser_->read();
-	float sum = 0.0;
+	float min = std::numeric_limits<float>::infinity();
 	for (int i = 0; i < beams_used_ / 2 + beams_used_ % 2; i++) {
 		if (!std::isnormal(if_laser_->distances(i))) {
 			// this is invalid
@@ -69,7 +71,9 @@ LaserFrontDistThread::loop()
 			if_result_->write();
 			return;
 		}
-		sum += if_laser_->distances(i);
+		if (min > if_laser_->distances(i)) {
+			min = if_laser_->distances(i);
+		}
 	}
 	for (int i = 0; i < beams_used_ / 2; i++) {
 		if (!std::isnormal(if_laser_->distances(359 - i))) {
@@ -78,20 +82,22 @@ LaserFrontDistThread::loop()
 			if_result_->write();
 			return;
 		}
-		sum += if_laser_->distances(359 - i);
+		if (min > if_laser_->distances(359 - i)) {
+			min = if_laser_->distances(359 - i);
+		}
 	}
-	float average = sum / (float)beams_used_;
-	frame_        = if_laser_->frame();
+	frame_ = if_laser_->frame();
+	logger->log_info("laser-front-dist: ", std::to_string(min).c_str());
 
 	// publish transform
-	tf::Transform        transform(tf::create_quaternion_from_yaw(M_PI), tf::Vector3(average, 0, 0));
+	tf::Transform        transform(tf::create_quaternion_from_yaw(M_PI), tf::Vector3(min, 0, 0));
 	Time                 time(clock);
 	tf::StampedTransform stamped_transform(transform, time, frame_.c_str(), target_frame_.c_str());
 	tf_publisher->send_transform(stamped_transform);
 
 	// write result
 	if_result_->set_visibility_history(1);
-	if_result_->set_translation(0, average);
+	if_result_->set_translation(0, min);
 	if_result_->set_frame(frame_.c_str());
 	if_result_->write();
 }
