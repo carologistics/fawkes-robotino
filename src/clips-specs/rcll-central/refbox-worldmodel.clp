@@ -72,18 +72,6 @@
   (assert (wm-fact (key refbox game-time) (is-list TRUE) (type UINT) (values ?sec (/ ?nsec 1000))))
   (assert (wm-fact (id "/refbox/points/MAGENTA") (type UINT) (value (pb-field-value ?p "points_magenta")) ))
   (assert (wm-fact (id "/refbox/points/CYAN") (type UINT) (value (pb-field-value ?p "points_cyan")) ))
-
-  ; assert the field height and width if it has not been asserted yet
-  (if
-    (not
-      (any-factp ((?field-height wm-fact))
-        (wm-key-prefix ?field-height:key (create$ refbox field height))
-      )
-    ) then
-    (assert (wm-fact (id "/refbox/field/height") (type UINT) (value (pb-field-value ?p "field_height")) ))
-    (assert (wm-fact (id "/refbox/field/width") (type UINT) (value (pb-field-value ?p "field_width")) ))
-    (assert (wm-fact (id "/refbox/field/mirrored") (type UINT) (value (pb-field-value ?p "field_mirrored")) ))
-  )
 )
 
 
