@@ -64,7 +64,9 @@ TagVisionThread::init()
 	config->add_change_handler(this);
 	// load config
 	// config prefix in string for concatinating
-	std::string prefix = CFG_PREFIX;
+	std::string prefix = CFG_PREFIX; 
+
+    std::string connection = this->config->get_string(std::string(prefix) + "camera");
 	// log, that we open load the config
 	logger->log_info(name(), "loading config");
 	// Marker type
@@ -110,40 +112,26 @@ TagVisionThread::init()
 
 	// Image Buffer ID
 	shm_id_ = config->get_string((prefix + "shm_image_id").c_str());
-
-	// init firevision camera
-	// CAM swapping not working (??)
-	if (fv_cam_ != nullptr) {
-		// free the camera
-		fv_cam_->stop();
-		fv_cam_->flush();
-		fv_cam_->dispose_buffer();
-		fv_cam_->close();
-		delete fv_cam_;
-		fv_cam_ = nullptr;
-	}
-	if (fv_cam_ == nullptr) {
-		std::string connection = this->config->get_string((prefix + "camera").c_str());
-		fv_cam_                = vision_master->register_for_camera(connection.c_str(), this);
-		fv_cam_->start();
-		fv_cam_->open();
-		this->img_width_  = fv_cam_->pixel_width();
-		this->img_height_ = fv_cam_->pixel_height();
-	}
-
-
-
-	shm_buffer_ = new firevision::SharedMemoryImageBuffer(shm_id_.c_str(),
-															firevision::BGR,
-															this->img_width_,
-															this->img_height_);
-
+	shm_buffer_  = new firevision::SharedMemoryImageBuffer(shm_id_.c_str(),
+                                                                firevision::BGR,
+                                                                img_width_,
+                                                                img_height_);
 	std::string frame = this->config->get_string((prefix + "frame").c_str());
 	shm_buffer_->set_frame_id(frame.c_str());
-	image_buffer_ = shm_buffer_->buffer();
+    ipl_image_ = cv::Mat(this->img_width_, this->img_height_, CV_8UC3, 3);
 
+		// init firevision camera
+	// CAM swapping not working (??)
+    if (fv_cam_ == nullptr) {
+    	std::string connection = this->config->get_string(std::string(prefix) + "camera");
+        fv_cam_ = vision_master->register_for_camera(connection.c_str(), this);
+        fv_cam_->start();
+        fv_cam_->open();
+        this->img_width_ = fv_cam_->pixel_width();
+        this->img_height_ = fv_cam_->pixel_height();
+    }
+    
 	ipl_image_    = cv::Mat(cv::Size(this->img_width_, this->img_height_), CV_8UC3, 3);
-
 	// set up marker
 	max_marker_ = 16;
 
@@ -251,7 +239,7 @@ TagVisionThread::get_tf_publisher(std::string name, std::string frame)
 	return tf_publishers[frame + name];
 }
 
-void
+void 
 TagVisionThread::loop()
 {
 	if (!cfg_mutex_.try_lock()) {
@@ -263,8 +251,6 @@ TagVisionThread::loop()
 		init();
 		return;
 	}
-	// logger->log_info(name(),"entering loop");
-	// get img form fv
 
     fv_cam_->capture();
     // Assuming the camera outputs BGR images directly into ipl_image_
