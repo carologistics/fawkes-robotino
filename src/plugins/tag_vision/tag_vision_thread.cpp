@@ -277,30 +277,9 @@ TagVisionThread::loop()
 
 	// convert img
 	firevision::CvMatAdapter::convert_image_bgr(image_buffer_, ipl_image_);
-
-    // Convert to grayscale and apply binary threshold
-	cv::cvtColor(ipl_image_, ipl_image_, cv::COLOR_BGR2GRAY);
-
-    double thresholdValue = 50;  // Adjustable threshold value
-	// Assuming ipl_image_ is a grayscale image
-	cv::threshold(ipl_image_, ipl_image_, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
-
-    // Define the structuring element for morphological operations
-    int morph_size = 2;  // Size of the structuring element
-    cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, 
-                                                cv::Size(2 * morph_size + 1, 2 * morph_size + 1),
-                                                cv::Point(morph_size, morph_size));
-
-
-    cv::erode(ipl_image_, ipl_image_, element);
-
-
-    cv::dilate(ipl_image_, ipl_image_, element);
-    // Convert the binary grayscale image to BGR
-    cv::cvtColor(ipl_image_, ipl_image_, cv::COLOR_GRAY2BGR);
-    // Continue with tag detection if necessary
-    get_marker();
-
+	// convert to grayscale
+	// get marker from img
+	get_marker();
 	firevision::convert(firevision::BGR,
 						firevision::BGR,
 						ipl_image_.data,
@@ -308,6 +287,7 @@ TagVisionThread::loop()
 						img_width_,
 						img_height_);
 	this->tag_interfaces_->update_blackboard(markers_, laser_line_ifs_);
+	
 	cfg_mutex_.unlock();
 }
 

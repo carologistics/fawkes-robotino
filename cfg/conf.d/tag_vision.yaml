@@ -11,7 +11,7 @@ plugins/tag_vision:
   # :size=640x480:awb=false:aec=false:agc=false:exposure=305
   # camera: v4l2:light:device=/dev/video1:white_balance_temperature_auto=0:\
   # exposure_auto=1:exposure_absolute=305
-  camera: v4l2:tag:device=/dev/video_tag:size=640x480:exposure_auto=1:exposure_absolute=800:gain=auto:frame_rate=30
+  camera: v4l2:tag:device=/dev/video_tag:size=1920x1080:exposure_auto=1:exposure_absolute=800:gain=auto:frame_rate=30
 
   # Marker type
   # Supported types: ALVAR
