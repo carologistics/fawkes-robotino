@@ -4,6 +4,7 @@
  *  Created: Mon Apr 04 15:40:32 2016
  *  Copyright  2011-2016  Tim Niemueller [www.niemueller.de]
  *                  2016  Nicolas Limpert
+ *                  2023  Tim Wendt
  ****************************************************************************/
 
 /*  This program is free software; you can redistribute it and/or modify
@@ -22,34 +23,17 @@
 #ifndef __PLUGINS_ARDUINO_COM_MESSAGE_H_
 #define __PLUGINS_ARDUINO_COM_MESSAGE_H_
 
+#include <aspect/logging.h>
+
 #include <boost/asio.hpp>
 #include <cstdint>
+#include <queue>
+#include <sstream>
+#include <string>
 
 class ArduinoComMessage
 {
 public:
-	/**
-   * @brief Mapping for all possible commands, that can be send to the arduino
-   */
-	enum class command_id_t : char {
-		CMD_CALIBRATE          = 'C',
-		CMD_X_NEW_POS          = 'X',
-		CMD_Y_NEW_POS          = 'Y',
-		CMD_Z_NEW_POS          = 'Z',
-		CMD_CLOSE              = 'G',
-		CMD_OPEN               = 'O',
-		CMD_STATUS_REQ         = 'S',
-		CMD_SET_A_TOGGLE_STEPS = 'T',
-		CMD_X_NEW_SPEED        = 'x',
-		CMD_Y_NEW_SPEED        = 'y',
-		CMD_Z_NEW_SPEED        = 'z',
-		CMD_A_NEW_SPEED        = 'a',
-		CMD_X_NEW_ACC          = 'm',
-		CMD_Y_NEW_ACC          = 'n',
-		CMD_Z_NEW_ACC          = 'o',
-		CMD_A_NEW_ACC          = 'p'
-	};
-
 	/**
    * @brief The prefix of each message to the arduino
    */
@@ -57,40 +41,37 @@ public:
 
 	ArduinoComMessage();
 	~ArduinoComMessage();
-	ArduinoComMessage(command_id_t cmdid, unsigned int value);
+	ArduinoComMessage(char cmdid, unsigned int value);
 
-	bool           add_command(command_id_t cmd, unsigned int number);
-	unsigned short get_data_size();
-	unsigned short get_cur_buffer_index();
+	bool add_command(char cmd, unsigned int number);
 
-	boost::asio::const_buffer buffer();
+	static bool parse_message_from_arduino(int (&gripperr_position)[3],
+	                                       bool       &is_gripper_open,
+	                                       char       &arduino_status,
+	                                       bool       &has_restarted,
+	                                       std::string buffer);
 
-	void         set_msecs_if_lower(unsigned int msecs);
-	unsigned int get_msecs();
+	std::string buffer() const;
 
-	/**
-   * @brief Calculates the number of digits an integer consists of
-   *
-   * @param i The number of which the number of digits should be calculated
-   *
-   * @return The amount of digits i consists of
-   */
-	static inline unsigned short
-	num_digits(unsigned int i)
+	bool
+	operator==(const ArduinoComMessage *q)
 	{
-		return i > 0 ? (int)log10((double)i) + 1 : 1;
+		return q->buffer() == buffer();
 	}
 
-private:
-	void ctor();
-	void dtor();
+	/**
+	 * @brief All variables that define the position of the gripper
+	 * X,Y,Z position of the axis
+	 * A position of the motor, that controls the gripper
+	 */
+	typedef enum { X, Y, Z, A } gripper_pose_t;
 
 private:
-	char          *data_;
-	unsigned short data_size_;
-	unsigned short cur_buffer_index_; // index of next data field
+	inline void ctor();
+	void        dtor();
 
-	unsigned int msecs_to_wait_;
+private:
+	std::stringstream data_;
 };
 
 #endif
