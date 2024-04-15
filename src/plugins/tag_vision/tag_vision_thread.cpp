@@ -67,7 +67,7 @@ TagVisionThread::init()
 	std::string prefix = CFG_PREFIX; 
 	std::string frame = this->config->get_string((prefix + "frame").c_str());
 
-	std::string connection = this->config->get_string(prefix) + "camera").c_str();
+    std::string connection = this->config->get_string(std::string(prefix) + "camera");
 	// log, that we open load the config
 	logger->log_info(name(), "loading config");
 	// Marker type
@@ -117,7 +117,7 @@ TagVisionThread::init()
 	// init firevision camera
 	// CAM swapping not working (??)
     if (fv_cam_ == nullptr) {
-        std::string connection = this->config->get_string((CFG_PREFIX + "camera").c_str());
+    	std::string connection = this->config->get_string(std::string(prefix) + "camera");
         fv_cam_ = vision_master->register_for_camera(connection.c_str(), this);
         fv_cam_->start();
         fv_cam_->open();
