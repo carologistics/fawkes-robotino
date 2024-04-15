@@ -35,7 +35,12 @@ plugins/vs_offsets:
       offset_z: 0.02
       # = distance_from_usual_wp_pos + belt_size_ / 2 + puck_height_ / 2
       # = distance_from_usual_wp_pos + 0.035
-
+      
+    safe_put:
+      offset_x: -0.01
+      #usual put distance- diameter of puck
+      offset_z: 0.01
+    
     put_routine:
       offset_x: 0.03
       offset_z: 0.01
