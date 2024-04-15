@@ -64,7 +64,9 @@ TagVisionThread::init()
 	config->add_change_handler(this);
 	// load config
 	// config prefix in string for concatinating
-	std::string prefix = CFG_PREFIX;
+	std::string prefix = CFG_PREFIX; 
+    std::string connection = this->config->get_string(prefix + "camera");
+    std::string frame = this->config->get_string(prefix + "frame");
 	// log, that we open load the config
 	logger->log_info(name(), "loading config");
 	// Marker type
@@ -221,7 +223,8 @@ TagVisionThread::get_tf_publisher(std::string name, std::string frame)
 	return tf_publishers[frame + name];
 }
 
-void TagVisionThread::loop()
+void 
+TagVisionThread::loop()
 {
     if (!cfg_mutex_.try_lock()) {
         return;
@@ -234,7 +237,7 @@ void TagVisionThread::loop()
 
     fv_cam_->capture();
     // Assuming the camera outputs BGR images directly into ipl_image_
-    fv_cam_->retrieve(ipl_image_, CV_CAP_OPENNI_BGR_IMAGE);
+    firevision::convert(fv_cam_->colorspace(), firevision::BGR, fv_cam_->buffer(), ipl_image_.data, this->img_width_, this->img_height_);
     fv_cam_->dispose_buffer();
 
     // Process image directly on ipl_image_
