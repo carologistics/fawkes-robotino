@@ -65,8 +65,9 @@ TagVisionThread::init()
 	// load config
 	// config prefix in string for concatinating
 	std::string prefix = CFG_PREFIX; 
-	std::string connection = this->config->get_string(std::string(prefix) + "camera");
-    std::string frame = this->config->get_string(std::string(prefix) + "frame");
+	std::string frame = this->config->get_string((prefix + "frame").c_str());
+
+	std::string connection = this->config->get_string(prefix) + "camera").c_str();
 	// log, that we open load the config
 	logger->log_info(name(), "loading config");
 	// Marker type
