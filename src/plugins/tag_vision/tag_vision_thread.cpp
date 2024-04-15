@@ -118,18 +118,26 @@ TagVisionThread::init()
                                                                 img_height_);
 	std::string frame = this->config->get_string((prefix + "frame").c_str());
 	shm_buffer_->set_frame_id(frame.c_str());
-	ipl_image_    = cv::Mat(cv::Size(this->img_width_, this->img_height_), CV_8UC3, 3);
 
 		// init firevision camera
 	// CAM swapping not working (??)
-    if (fv_cam_ == nullptr) {
-    	std::string connection = this->config->get_string(std::string(prefix) + "camera");
-        fv_cam_ = vision_master->register_for_camera(connection.c_str(), this);
-        fv_cam_->start();
-        fv_cam_->open();
-        this->img_width_ = fv_cam_->pixel_width();
-        this->img_height_ = fv_cam_->pixel_height();
-    }
+	if (fv_cam_ != nullptr) {
+		// free the camera
+		fv_cam_->stop();
+		fv_cam_->flush();
+		fv_cam_->dispose_buffer();
+		fv_cam_->close();
+		delete fv_cam_;
+		fv_cam_ = nullptr;
+	}
+	if (fv_cam_ == nullptr) {
+		std::string connection = this->config->get_string((prefix + "camera").c_str());
+		fv_cam_                = vision_master->register_for_camera(connection.c_str(), this);
+		fv_cam_->start();
+		fv_cam_->open();
+		this->img_width_  = fv_cam_->pixel_width();
+		this->img_height_ = fv_cam_->pixel_height();
+	}
     
 	ipl_image_    = cv::Mat(cv::Size(this->img_width_, this->img_height_), CV_8UC3, 3);
 	// set up marker
@@ -262,6 +270,7 @@ TagVisionThread::loop()
 	                    this->img_height_);
     fv_cam_->dispose_buffer();
 	firevision::CvMatAdapter::convert_image_bgr(image_buffer_, ipl_image_);
+
 
     // Process image directly on ipl_image_
     get_marker();
