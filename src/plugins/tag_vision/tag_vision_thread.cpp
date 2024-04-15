@@ -65,7 +65,6 @@ TagVisionThread::init()
 	// load config
 	// config prefix in string for concatinating
 	std::string prefix = CFG_PREFIX; 
-	std::string frame = this->config->get_string((prefix + "frame").c_str());
 
     std::string connection = this->config->get_string(std::string(prefix) + "camera");
 	// log, that we open load the config
@@ -113,8 +112,15 @@ TagVisionThread::init()
 
 	// Image Buffer ID
 	shm_id_ = config->get_string((prefix + "shm_image_id").c_str());
+	shm_buffer_results_  = new firevision::SharedMemoryImageBuffer(shm_id_.c_str(),
+                                                                firevision::BGR,
+                                                                img_width_,
+                                                                img_height_);
+	std::string frame_id = this->config->get_string((prefix + "frame").c_str());
+	shm_buffer_results_->set_frame_id(frame_id.c_str());
+    ipl_image_ = cv::Mat(this->img_width_, this->img_height_, CV_8UC3);
 
-	// init firevision camera
+		// init firevision camera
 	// CAM swapping not working (??)
     if (fv_cam_ == nullptr) {
     	std::string connection = this->config->get_string(std::string(prefix) + "camera");
@@ -244,7 +250,12 @@ TagVisionThread::loop()
     // Process image directly on ipl_image_
     get_marker();
     this->tag_interfaces_->update_blackboard(markers_, laser_line_ifs_);
-
+	firevision::convert(firevision::BGR,
+					firevision::BGR,
+					ipl_image_.data,
+					shm_buffer_results_->buffer(),
+					img_width_,
+					img_height_);
     cfg_mutex_.unlock();
 }
 
