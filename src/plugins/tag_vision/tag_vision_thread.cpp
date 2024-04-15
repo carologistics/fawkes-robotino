@@ -1,3 +1,4 @@
+
 /***************************************************************************
  *  tag_vision_thread.cpp - Thread to print the robot's position to the log
  *
@@ -64,9 +65,7 @@ TagVisionThread::init()
 	config->add_change_handler(this);
 	// load config
 	// config prefix in string for concatinating
-	std::string prefix = CFG_PREFIX; 
-
-    std::string connection = this->config->get_string(std::string(prefix) + "camera");
+	std::string prefix = CFG_PREFIX;
 	// log, that we open load the config
 	logger->log_info(name(), "loading config");
 	// Marker type
@@ -112,14 +111,8 @@ TagVisionThread::init()
 
 	// Image Buffer ID
 	shm_id_ = config->get_string((prefix + "shm_image_id").c_str());
-	shm_buffer_  = new firevision::SharedMemoryImageBuffer(shm_id_.c_str(),
-                                                                firevision::BGR,
-                                                                img_width_,
-                                                                img_height_);
-	std::string frame = this->config->get_string((prefix + "frame").c_str());
-	shm_buffer_->set_frame_id(frame.c_str());
 
-		// init firevision camera
+	// init firevision camera
 	// CAM swapping not working (??)
 	if (fv_cam_ != nullptr) {
 		// free the camera
@@ -138,8 +131,20 @@ TagVisionThread::init()
 		this->img_width_  = fv_cam_->pixel_width();
 		this->img_height_ = fv_cam_->pixel_height();
 	}
-    
+
+
+
+	shm_buffer_ = new firevision::SharedMemoryImageBuffer(shm_id_.c_str(),
+															firevision::BGR,
+															this->img_width_,
+															this->img_height_);
+
+	std::string frame = this->config->get_string((prefix + "frame").c_str());
+	shm_buffer_->set_frame_id(frame.c_str());
+	image_buffer_ = shm_buffer_->buffer();
+
 	ipl_image_    = cv::Mat(cv::Size(this->img_width_, this->img_height_), CV_8UC3, 3);
+
 	// set up marker
 	max_marker_ = 16;
 
@@ -247,7 +252,7 @@ TagVisionThread::get_tf_publisher(std::string name, std::string frame)
 	return tf_publishers[frame + name];
 }
 
-void 
+void
 TagVisionThread::loop()
 {
 	if (!cfg_mutex_.try_lock()) {
@@ -259,31 +264,52 @@ TagVisionThread::loop()
 		init();
 		return;
 	}
-
-    fv_cam_->capture();
-    // Assuming the camera outputs BGR images directly into ipl_image_
+	// logger->log_info(name(),"entering loop");
+	// get img form fv
+	fv_cam_->capture();
 	firevision::convert(fv_cam_->colorspace(),
 	                    firevision::YUV422_PLANAR,
 	                    fv_cam_->buffer(),
 	                    image_buffer_,
 	                    this->img_width_,
 	                    this->img_height_);
-    fv_cam_->dispose_buffer();
+
+	fv_cam_->dispose_buffer();
+
+	// convert img
 	firevision::CvMatAdapter::convert_image_bgr(image_buffer_, ipl_image_);
 
+    // Convert to grayscale and apply binary threshold
+	cv::cvtColor(ipl_image_, ipl_image_, cv::COLOR_BGR2GRAY);
 
-    // Process image directly on ipl_image_
+    double thresholdValue = 50;  // Adjustable threshold value
+	// Assuming ipl_image_ is a grayscale image
+	cv::threshold(ipl_image_, ipl_image_, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
+
+    // Define the structuring element for morphological operations
+    int morph_size = 2;  // Size of the structuring element
+    cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, 
+                                                cv::Size(2 * morph_size + 1, 2 * morph_size + 1),
+                                                cv::Point(morph_size, morph_size));
+
+
+    cv::erode(ipl_image_, ipl_image_, element);
+
+
+    cv::dilate(ipl_image_, ipl_image_, element);
+    // Convert the binary grayscale image to BGR
+    cv::cvtColor(ipl_image_, ipl_image_, cv::COLOR_GRAY2BGR);
+    // Continue with tag detection if necessary
     get_marker();
+
 	firevision::convert(firevision::BGR,
 						firevision::BGR,
 						ipl_image_.data,
 						shm_buffer_->buffer(),
 						img_width_,
 						img_height_);
-
-    this->tag_interfaces_->update_blackboard(markers_, laser_line_ifs_);
-
-    cfg_mutex_.unlock();
+	this->tag_interfaces_->update_blackboard(markers_, laser_line_ifs_);
+	cfg_mutex_.unlock();
 }
 
 void
