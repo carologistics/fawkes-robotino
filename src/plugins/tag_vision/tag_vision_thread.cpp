@@ -254,7 +254,7 @@ TagVisionThread::loop()
 
     fv_cam_->capture();
     // Assuming the camera outputs BGR images directly into ipl_image_
-    firevision::convert(fv_cam_->colorspace(), firevision::YUV422_PLANAR, fv_cam_->buffer(), ipl_image_.data, this->img_width_, this->img_height_);
+    firevision::convert(fv_cam_->colorspace(), firevision::YUV422_PLANAR, fv_cam_->buffer(), image_buffer_, this->img_width_, this->img_height_);
     fv_cam_->dispose_buffer();
 	firevision::CvMatAdapter::convert_image_bgr(image_buffer_, ipl_image_);
 
