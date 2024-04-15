@@ -696,28 +696,6 @@
   )))
 )
 
-
-(defrule goal-production-meta-machine-wait-zone-admissibility
-  "Asserts admissibility of a machine's side to be a wait zone"
-  ; TODO: redo with proper wait zones from TF
-  ; setup info
-  (wm-fact (key refbox team-color) (value ?color))
-  (wm-fact (key refbox field height) (value ?field-height))
-  (wm-fact (key refbox field width) (value ?field-width))
-
-  ; machine info
-	(wm-fact (key domain fact mps-team args? m ?mps col ?mps-color))
-
-  ; not already covered
-  (not (wm-fact (key meta machine-wait-zone-admissible args? m ?mps $?)))
-
-  ;check if it is a desirable MPS
-  (eq ?mps-type SS)
-  =>
-  (assert (wm-fact (key meta machine-wait-zone-admissible args? m ?mps side INPUT)))
-  (assert (wm-fact (key meta machine-wait-zone-admissible args? m ?mps side OUTPUT)))
-)
-
 (defrule goal-production-create-move-out-of-way-goal
 	"Creates a move out of way goal with a subgoal for each possible waiting position.
   As soon as it is completed it's reset"
@@ -726,18 +704,11 @@
   (goal (id ?root-id) (class WAIT-ROOT))
   (not (goal (class MOVE-OUT-OF-WAY)))
   =>
-  (bind ?wait-zones (create$))
-  (do-for-all-facts ((?admissible wm-fact))
-    (eq ?admissible:key (create$ meta machine-wait-zone-admissible))
-    (if (eq (wm-key-arg ?admissible:key side) INPUT) then
-        (bind ?wait-zones (insert$ ?wait-zones 1 (goal-production-assert-move-out-of-way (sym-cat (wm-key-arg ?admissible:key m) -I))))
-    )
-    (if (eq (wm-key-arg ?admissible:key side) OUTPUT) then
-        (bind ?wait-zones (insert$ ?wait-zones 1 (goal-production-assert-move-out-of-way (sym-cat (wm-key-arg ?admissible:key m) -O))))
-    )
-  )
-	(bind ?g (goal-tree-assert-central-run-parallel MOVE-OUT-OF-WAY ?wait-zones))
-	(modify ?g (parent ?root-id) (priority -1.0))
+  (bind ?wait-zones (create$ (goal-production-assert-move-out-of-way WAIT1)
+                             (goal-production-assert-move-out-of-way WAIT2)
+                             (goal-production-assert-move-out-of-way WAIT3)
+                             (goal-production-assert-move-out-of-way WAIT4)))
+  (modify ?g (parent ?root-id) (priority -1.0))
 )
 
 (defrule goal-production-change-priority-move-out-of-way
