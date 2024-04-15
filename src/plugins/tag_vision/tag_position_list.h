@@ -82,6 +82,8 @@ private:
 	std::string              cam_frame_;
 	fawkes::tf::Transformer *tf_listener_;
 
+	std::map<int, std::string> tag_id_names_;
+
 	TagPose get_laser_line_pose(fawkes::LaserLineInterface *laser_line_if);
 	TagPose get_nearest_laser_line_pose(TagPose                                    tag_pose,
 	                                    std::vector<fawkes::LaserLineInterface *> *laser_line_ifs);
