@@ -267,6 +267,8 @@ TagVisionThread::loop()
 	// logger->log_info(name(),"entering loop");
 	// get img form fv
 	fv_cam_->capture();
+	logger->log_info("Camera output",fv_cam_->buffer());
+	
 	firevision::convert(fv_cam_->colorspace(),
 	                    firevision::YUV422_PLANAR,
 	                    fv_cam_->buffer(),
@@ -284,7 +286,7 @@ TagVisionThread::loop()
 
     double thresholdValue = 50;  // Adjustable threshold value
 	// Assuming ipl_image_ is a grayscale image
-	cv::threshold(ipl_image_, ipl_image_, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
+	cv::threshold(ipl_image_, ipl_image_, 0, 255, cv::THRESH_BINARY);
 
     // Define the structuring element for morphological operations
     int morph_size = 2;  // Size of the structuring element
