@@ -118,7 +118,7 @@ TagVisionThread::init()
                                                                 img_height_);
 	std::string frame = this->config->get_string((prefix + "frame").c_str());
 	shm_buffer_->set_frame_id(frame.c_str());
-    ipl_image_ = cv::Mat(this->img_width_, this->img_height_, CV_8UC3);
+    ipl_image_ = cv::Mat(this->img_width_, this->img_height_, CV_8UC3, 3);
 
 		// init firevision camera
 	// CAM swapping not working (??)
