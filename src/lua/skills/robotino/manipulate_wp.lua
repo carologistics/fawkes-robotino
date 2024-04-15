@@ -128,9 +128,10 @@ end
 -- Match laser line to tf-mps point
 
 function match_line(lines)
-  local matched_line = nil
-  local mapped_dist = 0
-  local mps_point = nil
+  local matched_line = nil 
+  local mapped_dist = 0 
+  local mps_point = nil 
+
   if fsm.vars.map_pos then
     mps_point= tfm.transform6D({
       x = 0,
@@ -138,34 +139,51 @@ function match_line(lines)
       z = 0,
       ori = fawkes.tf.create_quaternion_from_yaw(0)
       }, fsm.vars.mps,"/base_link")
-  end
+  end 
+  local mps_point_yaw = fawkes.tf.get_yaw(mps_point.ori)
+  --printf("ori without input: %f",tostring(mps_point_yaw))
+  if (fsm.vars.side == "INPUT") then
+    --printf("===================================")
+    mps_point_yaw = mps_point_yaw + math.pi
+    --printf("ori with input: %f",tostring(mps_point_yaw))
+  end 
 
   local min_dist = MIN_ACTUAL_DIST
   for k, line in pairs(lines) do
-    local line_center = llutils.center(line, 0)
-   
-    local base_center =  tfm.transform6D({
-      x=line_center.x,
-      y=line_center.y,
-      z=0,
-      ori = fawkes.tf.create_quaternion_from_yaw(line_center.ori)},"/base_laser","base_link")
-    
-    if fsm.vars.map_pos then 
-      mapped_dist = math.vec_length(mps_point.x - base_center.x, mps_point.y - base_center.y)
-      local orient_diff = math.abs(math.fmod((math.normalize_mirror_rad(fawkes.tf.get_yaw(base_center.ori)) - math.normalize_mirror_rad(fawkes.tf.get_yaw(mps_point.ori))), 2*math.pi))
-      --printf('Distance from expected map pos to laser line: %f and its threshold: %f',mapped_dist,MIN_MAPPED_DIST)
-      --printf('Difference b/w actual orientation & expected orientation : %f and its threshold: %f',orient_diff,MIN_MAPPED_ORI)
-    end
-    
-    local actual_dist = math.vec_length(base_center.x,base_center.y)
-    --printf('Distance calculated from the Laser center to robotino base: %f and its threshold: %f',actual_dist,min_dist)
-    --printf('Difference b/w Bot orientation & laser_line orientation : %s and its threshold: %f',fawkes.tf.get_yaw(base_center.ori),MIN_ACTUAL_ORI)
-    
-    if (line:visibility_history() >= MIN_VIS_HIST_LINE and actual_dist < min_dist and fawkes.tf.get_yaw(base_center.ori)<=MIN_ACTUAL_ORI) and 
-    ( not fsm.vars.map_pos or (mapped_dist<=MIN_MAPPED_DIST and (fawkes.tf.get_yaw(base_center.ori)-fawkes.tf.get_yaw(mps_point.ori))<=MIN_MAPPED_ORI))
-    then
+    if (line:visibility_history() >= MIN_VIS_HIST_LINE) then
+      local line_center = llutils.center(line, 0)
+      local base_center =  tfm.transform6D({
+        x=line:point_on_line(0),
+        y=line:point_on_line(1),
+        z=line:point_on_line(2),
+        ori = fawkes.tf.create_quaternion_from_yaw(line:bearing())},line:frame_id(),"/base_link")
+
+      printf('=============================================')
+      
+      if fsm.vars.map_pos then 
+        mapped_dist = math.vec_length(mps_point.x - base_center.x, mps_point.y - base_center.y)
+        local orient_diff = math.abs(math.fmod((math.normalize_mirror_rad(fawkes.tf.get_yaw(base_center.ori)) - math.normalize_mirror_rad(mps_point_yaw)), 2*math.pi))
+        --printf("mps_point_x %f",mps_point.x)
+        --printf("base_x %f",base_center.x)
+        --printf("mps_y %f",mps_point.y)
+        --printf("base_y %f",base_center.y)  
+        --printf('Distance from expected map pos to laser line: %f and its threshold: %f',mapped_dist,MIN_MAPPED_DIST)
+        --printf('base_center_ori:%f',tostring(math.normalize_mirror_rad(fawkes.tf.get_yaw(base_center.ori))))
+        --printf('mps_point_ori:%f',tostring(math.normalize_mirror_rad(mps_point_yaw)))
+        --printf('Difference b/w actual orientation & expected orientation : %f and its threshold: %f',orient_diff,MIN_MAPPED_ORI)
+      end
+
+      local actual_dist = math.vec_length(base_center.x,base_center.y)
+      --printf('Distance calculated from the Laser center to robotino base: %f and its threshold: %f',actual_dist,min_dist)
+      --printf('Difference b/w Bot orientation & laser_line orientation : %s and its threshold: %f', math.normalize_mirror_rad(fawkes.tf.get_yaw(base_center.ori)),MIN_ACTUAL_ORI)
+
+      if (line:visibility_history() >= MIN_VIS_HIST_LINE and actual_dist < min_dist and fawkes.tf.get_yaw(base_center.ori)<=MIN_ACTUAL_ORI) and
+          ( not fsm.vars.map_pos or (mapped_dist<=MIN_MAPPED_DIST and ((math.abs(math.fmod((math.normalize_mirror_rad(fawkes.tf.get_yaw(base_center.ori)) - math.normalize_mirror_rad(mps_point_yaw)), 2*math.pi)))<=MIN_MAPPED_ORI)))
+      then
         min_dist = actual_dist
         matched_line = line
+      end
+    else
     end
   end
   return matched_line
