@@ -266,16 +266,13 @@ TagVisionThread::loop()
 	}
 	// logger->log_info(name(),"entering loop");
 	// get img form fv
+	// Capture an image from the camera
 	fv_cam_->capture();
-	logger->log_info("Camera output",fv_cam_->colorspace());
-	
-	firevision::convert(fv_cam_->colorspace(),
-	                    firevision::YUV422_PLANAR,
-	                    fv_cam_->buffer(),
-	                    image_buffer_,
-	                    this->img_width_,
-	                    this->img_height_);
 
+	// Assuming image_buffer_ is already allocated with the correct size
+	memcpy(image_buffer_, fv_cam_->buffer(), this->img_width_ * this->img_height_ * bytes_per_pixel);
+
+	// Dispose of the camera buffer
 	fv_cam_->dispose_buffer();
 
 	// convert img
