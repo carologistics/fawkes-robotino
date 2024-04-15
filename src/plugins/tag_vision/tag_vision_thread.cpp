@@ -1,3 +1,4 @@
+
 /***************************************************************************
  *  tag_vision_thread.cpp - Thread to print the robot's position to the log
  *
@@ -131,29 +132,17 @@ TagVisionThread::init()
 		this->img_height_ = fv_cam_->pixel_height();
 	}
 
-	// SHM image buffer
-	if (shm_buffer_ != nullptr) {
-		delete shm_buffer_;
-		shm_buffer_   = nullptr;
-		image_buffer_ = nullptr;
-	}
+
 
 	shm_buffer_ = new firevision::SharedMemoryImageBuffer(shm_id_.c_str(),
-	                                                      firevision::YUV422_PLANAR,
-	                                                      this->img_width_,
-	                                                      this->img_height_);
+															firevision::BGR,
+															this->img_width_,
+															this->img_height_);
 
-	if (!shm_buffer_->is_valid()) {
-		delete shm_buffer_;
-		delete fv_cam_;
-		shm_buffer_ = nullptr;
-		fv_cam_     = nullptr;
-		throw fawkes::Exception("Shared memory segment not valid");
-	}
 	std::string frame = this->config->get_string((prefix + "frame").c_str());
 	shm_buffer_->set_frame_id(frame.c_str());
-
 	image_buffer_ = shm_buffer_->buffer();
+
 	ipl_image_    = cv::Mat(cv::Size(this->img_width_, this->img_height_), CV_8UC3, 3);
 
 	// set up marker
@@ -277,24 +266,48 @@ TagVisionThread::loop()
 	}
 	// logger->log_info(name(),"entering loop");
 	// get img form fv
+	// Capture an image from the camera
 	fv_cam_->capture();
-	firevision::convert(fv_cam_->colorspace(),
-	                    firevision::YUV422_PLANAR,
-	                    fv_cam_->buffer(),
-	                    image_buffer_,
-	                    this->img_width_,
-	                    this->img_height_);
 
+	// Assuming image_buffer_ is already allocated with the correct size
+	memcpy(image_buffer_, fv_cam_->buffer(), this->img_width_ * this->img_height_ * bytes_per_pixel);
+
+	// Dispose of the camera buffer
 	fv_cam_->dispose_buffer();
 
 	// convert img
 	firevision::CvMatAdapter::convert_image_bgr(image_buffer_, ipl_image_);
-	// convert to grayscale
-	// get marker from img
-	get_marker();
 
+    // Convert to grayscale and apply binary threshold
+	cv::cvtColor(ipl_image_, ipl_image_, cv::COLOR_BGR2GRAY);
+
+    double thresholdValue = 50;  // Adjustable threshold value
+	// Assuming ipl_image_ is a grayscale image
+	cv::threshold(ipl_image_, ipl_image_, 0, 255, cv::THRESH_BINARY);
+
+    // Define the structuring element for morphological operations
+    int morph_size = 2;  // Size of the structuring element
+    cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, 
+                                                cv::Size(2 * morph_size + 1, 2 * morph_size + 1),
+                                                cv::Point(morph_size, morph_size));
+
+
+    cv::erode(ipl_image_, ipl_image_, element);
+
+
+    cv::dilate(ipl_image_, ipl_image_, element);
+    // Convert the binary grayscale image to BGR
+    cv::cvtColor(ipl_image_, ipl_image_, cv::COLOR_GRAY2BGR);
+    // Continue with tag detection if necessary
+    get_marker();
+
+	firevision::convert(firevision::BGR,
+						firevision::BGR,
+						ipl_image_.data,
+						shm_buffer_->buffer(),
+						img_width_,
+						img_height_);
 	this->tag_interfaces_->update_blackboard(markers_, laser_line_ifs_);
-
 	cfg_mutex_.unlock();
 }
 
