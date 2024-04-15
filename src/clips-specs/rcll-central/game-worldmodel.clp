@@ -104,13 +104,6 @@
     (wm-fact (key game found-tag zone args? m (mirror-name ?mps)) (value ?mirror-zone))
   )
 
-  (tf-add-publisher (str-cat "mps"))
-  (tf-publish-pose-static "map" "mps" 0.0 0.0 0.0)
-  (tf-add-publisher (str-cat ?mps))
-  (tf-publish-pose-static "mps" (str-cat ?mps) ?yaw (nth$ 1 (zone-center ?zone)) (nth$ 2 (zone-center ?zone)))
-  (tf-add-publisher (str-cat ?mirror-name))
-  (tf-publish-pose-static "mps" (str-cat ?mirror-name) ?mirror-yaw (nth$ 1 (zone-center ?mirror-zone)) (nth$ 2 (zone-center ?mirror-zone)))
-
   (retract ?gt ?gt-t ?gt-z ?gt-y ?gt-o)
 )
 
