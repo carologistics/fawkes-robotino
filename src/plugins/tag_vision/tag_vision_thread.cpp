@@ -279,14 +279,6 @@ TagVisionThread::loop()
 	// convert img
 	firevision::CvMatAdapter::convert_image_bgr(image_buffer_, ipl_image_);
 
-    // Convert to grayscale and apply binary threshold
-	cv::cvtColor(ipl_image_, ipl_image_, cv::COLOR_BGR2GRAY);
-
-    double thresholdValue = 100;  // Adjustable threshold value
-    cv::threshold(ipl_image_, ipl_image_, thresholdValue, 255, cv::THRESH_BINARY);
-
-    // Convert the binary grayscale image to BGR
-    cv::cvtColor(ipl_image_, ipl_image_, cv::COLOR_GRAY2BGR);
     // Continue with tag detection if necessary
     get_marker();
 
