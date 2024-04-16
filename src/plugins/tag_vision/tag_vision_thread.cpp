@@ -266,13 +266,14 @@ TagVisionThread::loop()
 	}
 	// logger->log_info(name(),"entering loop");
 	// get img form fv
-	// Capture an image from the camera
 	fv_cam_->capture();
+	firevision::convert(fv_cam_->colorspace(),
+	                    firevision::YUV422_PLANAR,
+	                    fv_cam_->buffer(),
+	                    image_buffer_,
+	                    this->img_width_,
+	                    this->img_height_);
 
-	// Assuming image_buffer_ is already allocated with the correct size
-	memcpy(image_buffer_, fv_cam_->buffer(), this->img_width_ * this->img_height_ * bytes_per_pixel);
-
-	// Dispose of the camera buffer
 	fv_cam_->dispose_buffer();
 
 	// convert img
@@ -281,21 +282,9 @@ TagVisionThread::loop()
     // Convert to grayscale and apply binary threshold
 	cv::cvtColor(ipl_image_, ipl_image_, cv::COLOR_BGR2GRAY);
 
-    double thresholdValue = 50;  // Adjustable threshold value
-	// Assuming ipl_image_ is a grayscale image
-	cv::threshold(ipl_image_, ipl_image_, 0, 255, cv::THRESH_BINARY);
+    double thresholdValue = 100;  // Adjustable threshold value
+    cv::threshold(ipl_image_, ipl_image_, thresholdValue, 255, cv::THRESH_BINARY);
 
-    // Define the structuring element for morphological operations
-    int morph_size = 2;  // Size of the structuring element
-    cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, 
-                                                cv::Size(2 * morph_size + 1, 2 * morph_size + 1),
-                                                cv::Point(morph_size, morph_size));
-
-
-    cv::erode(ipl_image_, ipl_image_, element);
-
-
-    cv::dilate(ipl_image_, ipl_image_, element);
     // Convert the binary grayscale image to BGR
     cv::cvtColor(ipl_image_, ipl_image_, cv::COLOR_GRAY2BGR);
     // Continue with tag detection if necessary
@@ -308,6 +297,7 @@ TagVisionThread::loop()
 						img_width_,
 						img_height_);
 	this->tag_interfaces_->update_blackboard(markers_, laser_line_ifs_);
+	finalize();
 	cfg_mutex_.unlock();
 }
 
