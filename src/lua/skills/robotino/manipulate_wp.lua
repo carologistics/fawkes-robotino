@@ -644,15 +644,12 @@ function FINE_TUNE_GRIPPER:loop()
 end
 
 function GRIPPER_ROUTINE:init()
+  -- end tracking since VS is over
+  object_tracking_if:msgq_enqueue(object_tracking_if.StopTrackingMessage:new())
+
   -- perform pick or put routine
   self.args["pick_or_put_vs"].target = fsm.vars.target
   self.args["pick_or_put_vs"].missing_c3_height = tostring(fsm.vars.missing_c3_height)
-end
-
--- end tracking afterwards
-
-function FINAL:init()
-  object_tracking_if:msgq_enqueue(object_tracking_if.StopTrackingMessage:new())
 end
 
 function FAILED:init()
