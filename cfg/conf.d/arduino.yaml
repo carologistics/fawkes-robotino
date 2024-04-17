@@ -47,11 +47,11 @@ arduino:
     speed_x: 4000
     speed_y: 4000
     speed_z: 4000
-    speed_a: 7000
+    speed_a: 500
     acc_x: 7000
     acc_y: 7000
     acc_z: 7000
-    acc_a: 15000
+    acc_a: 1000
 
   hardware_settings:
     # the micro stepping mode.
@@ -64,4 +64,4 @@ arduino:
     # CAREFUL! setting this too high can also make open not working
     # a good starting value is 120*a where a
     # is the microstepping mode of the A motor
-    a_toggle_steps: 240
+    a_toggle_steps: 130

@@ -474,14 +474,15 @@ read_package()
 			send_status();
 			break;
 		case CMD_OPEN:
+			motor_X.disableOutputs();
 			set_new_rel_pos(-a_toggle_steps, motor_A);
 			open_gripper = true;
 			break;
 		case CMD_CLOSE:
-			set_new_speed_acc(opening_speed / 8,
+			set_new_speed_acc(opening_speed,
 			                  0.0,
 			                  motor_A); //slow down closing speed to an eighth of opening speed
-			set_new_rel_pos(a_toggle_steps, motor_A);
+			set_new_rel_pos(a_toggle_steps + 20, motor_A);
 			set_new_speed_acc(opening_speed, 0.0, motor_A); //reset speed
 			open_gripper = false;
 			break;
