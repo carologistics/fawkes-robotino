@@ -708,6 +708,7 @@
                              (goal-production-assert-move-out-of-way WAIT2)
                              (goal-production-assert-move-out-of-way WAIT3)
                              (goal-production-assert-move-out-of-way WAIT4)))
+  (bind ?g (goal-tree-assert-central-run-parallel MOVE-OUT-OF-WAY ?wait-zones))
   (modify ?g (parent ?root-id) (priority -1.0))
 )
 
