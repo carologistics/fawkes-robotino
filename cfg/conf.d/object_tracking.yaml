@@ -84,8 +84,8 @@ plugins/object_tracking:
   max_acceptable_dist: 0.15
 
   yolo:
-    weights_path: "../cfg/yolo/yolov4-tiny.weights"
-    config_path: "../cfg/yolo/yolov4-tiny.cfg"
+    weights_path: "../cfg/yolo/best.onnx"
+    config_path: "../cfg/yolo/args.yaml"
     confThreshold: 0.4
     nmsThreshold: 0.3
     # input size
