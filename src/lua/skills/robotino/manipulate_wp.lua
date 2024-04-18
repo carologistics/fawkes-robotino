@@ -198,7 +198,14 @@ end
 
 function laser_line_found()
   fsm.vars.matched_line = match_line(fsm.vars.lines)
-  return fsm.vars.matched_line ~= nil
+  -- send laser line to use to object tracking
+  if fsm.vars.matched_line ~= nil then
+    local msg = object_tracking_if.LaserLineMessage:new(
+      fsm.vars.matched_line.frame_id)
+    object_tracking_if:msgq_enqueue_copy(msg)
+    return true
+  else
+    return false
 end
 
 function gripper_aligned()

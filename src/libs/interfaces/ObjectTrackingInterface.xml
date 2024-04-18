@@ -100,4 +100,12 @@
     Stop tracking the current target.
     </comment>
   </message>
+  <message name="LaserLine">
+    <comment>
+    Send laser line to object tracking.
+    </comment>
+    <field type="string" length="32" name="ll">
+      frame_id: Coordinate frame ID of data.
+    </field>
+  </message>
 </interface>

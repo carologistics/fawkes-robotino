@@ -321,6 +321,12 @@ ObjectTrackingThread::loop()
 			object_tracking_if_->set_current_expected_side(ObjectTrackingInterface::DEFAULT_SIDE);
 
 			object_tracking_if_->write();
+		} else if (object_tracking_if_->msgq_first_is<ObjectTrackingInterface::LaserLineMessage>()) {
+			logger->log_info(name(), "Received LaserLineMessage");
+
+			ObjectTrackingInterface::LaserLineMessage *msg =
+			  object_tracking_if_->msgq_first<ObjectTrackingInterface::LaserLineMessage>();
+			ll_ = laserlines_[msg->ll()];
 		} else {
 			logger->log_warn(name(), "Unknown message received");
 		}
@@ -385,22 +391,10 @@ ObjectTrackingThread::loop()
 	//-------------------------------------------------------------------------
 
 	//find laser-line if needed
-	for (fawkes::LaserLineInterface *ll : laserlines_) {
-		ll->read();
-	}
-	fawkes::LaserLineInterface *cur_ll;
-	bool                        cur_found = laserline_get_best_fit(cur_ll);
-	if (cur_found)
-		ll_ = cur_ll;
-	ll_found_ = cur_found || ll_found_;
-	if (!ll_found_) {
-		logger->log_info(name(), "No fitting laser line found!");
-		msgid_++;
-		object_tracking_if_->set_msgid(msgid_);
-		object_tracking_if_->set_detected(false);
-		object_tracking_if_->write();
-		return;
-	}
+	// for (fawkes::LaserLineInterface *ll : laserlines_) {
+	// 	ll->read();
+	// }
+	ll_->read();
 
 	//detect objects
 	std::vector<std::array<float, 4>> out_boxes;
