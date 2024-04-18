@@ -88,6 +88,7 @@
 )
 
 (defrule wm-sync-cleanup-goal-wm-fact
+	(declare (salience ?*SALIENCE-HIGH*))
 	?wm <- (wm-fact (key template fact goal args? id ?id))
 	(not (goal (id ?id)))
 	=>
@@ -95,6 +96,7 @@
 )
 
 (defrule wm-sync-cleanup-goal-meta-wm-fact
+	(declare (salience ?*SALIENCE-HIGH*))
 	?wm <- (wm-fact (key template fact goal-meta args? goal-id ?id))
 	(not (goal-meta (goal-id ?id)))
 	=>

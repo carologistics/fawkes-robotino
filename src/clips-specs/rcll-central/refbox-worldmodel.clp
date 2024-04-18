@@ -72,18 +72,6 @@
   (assert (wm-fact (key refbox game-time) (is-list TRUE) (type UINT) (values ?sec (/ ?nsec 1000))))
   (assert (wm-fact (id "/refbox/points/MAGENTA") (type UINT) (value (pb-field-value ?p "points_magenta")) ))
   (assert (wm-fact (id "/refbox/points/CYAN") (type UINT) (value (pb-field-value ?p "points_cyan")) ))
-
-  ; assert the field height and width if it has not been asserted yet
-  (if
-    (not
-      (any-factp ((?field-height wm-fact))
-        (wm-key-prefix ?field-height:key (create$ refbox field height))
-      )
-    ) then
-    (assert (wm-fact (id "/refbox/field/height") (type UINT) (value (pb-field-value ?p "field_height")) ))
-    (assert (wm-fact (id "/refbox/field/width") (type UINT) (value (pb-field-value ?p "field_width")) ))
-    (assert (wm-fact (id "/refbox/field/mirrored") (type UINT) (value (pb-field-value ?p "field_mirrored")) ))
-  )
 )
 
 
@@ -163,34 +151,6 @@
   (retract ?pf)
 )
 
-(defrule refbox-recv-MachineReportInfo
-  ?pb-msg <- (protobuf-msg (type "llsf_msgs.MachineReportInfo") (ptr ?p))
-  =>
-  (bind ?machines (create$))
-
-  (foreach ?m (pb-field-list ?p "reported_types")
-    (bind ?m-name (sym-cat (pb-field-value ?m "name")))
-    (if (and
-          (any-factp ((?wm-fact wm-fact))
-              (and (wm-key-prefix ?wm-fact:key (create$ domain fact mps-state))
-                    (eq (wm-key-arg ?wm-fact:key m) ?m-name)
-              )
-          )
-          (not
-            (any-factp ((?wm-fact wm-fact))
-                (and (wm-key-prefix ?wm-fact:key (create$ refbox explored-machine))
-                      (eq (wm-key-arg ?wm-fact:key m) ?m-name)
-                )
-            )
-          )
-        )
-      then
-        (assert (wm-fact (key refbox explored-machine args? m ?m-name)))
-    )
-  )
-)
-
-
 (defrule refbox-recv-MachineInfo
   ?pb-msg <- (protobuf-msg (type "llsf_msgs.MachineInfo") (ptr ?p))
   (wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
@@ -251,7 +211,6 @@
       (retract ?wm-fact)
   )
 )
-
 
 
 (defrule game-receive-field-layout-protobuf
@@ -423,4 +382,30 @@
     (retract ?reached-fact)
     (assert (wm-fact (key domain fact reached args?) (is-list TRUE) (values $?reached)))
   )
+)
+
+
+
+(defrule refbox-recv-VersionInfo
+  ?pf <- (protobuf-msg (type "llsf_msgs.VersionInfo") (ptr ?p))
+  (not (wm-fact (key refbox version-info received)))
+  =>
+  (foreach ?c (pb-field-list ?p "configuration")
+    (bind ?name (pb-field-value ?c "name"))
+    (bind ?type (pb-field-value ?c "type"))
+    (if (eq ?type INTEGER) then
+      (bind ?value (pb-field-value ?c "integer_value"))
+    )
+    (if (eq ?type BOOLEAN) then
+      (bind ?value (pb-field-value ?c "boolean_value"))
+    )
+    (if (eq ?type STRING) then
+      (bind ?value (pb-field-value ?c "string_value"))
+    )
+    (if (eq ?type FLOAT) then
+      (bind ?value (pb-field-value ?c "float_value"))
+    )
+    (assert (wm-fact (key refbox version-info config args? name (sym-cat ?name)) (type ?type) (value ?value)))
+  )
+  (assert (wm-fact (key refbox version-info received)))
 )

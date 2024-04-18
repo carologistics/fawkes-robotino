@@ -166,28 +166,6 @@
   (modify ?pa (state EXECUTION-SUCCEEDED))
 )
 
-(defrule lock-actions-distance-based-unlocking
-  (domain-object (name ?loc))
-  (domain-obj-is-of-type ?loc mps)
-  (domain-object (name ?side))
-  (domain-obj-is-of-type ?side mps-side)
-  (wm-fact (key cx identity) (value ?self))
-  (location-unlock-pending ?loc ?side)
-  ?mf <- (mutex (name ?lock-name&:(eq ?lock-name (sym-cat ?loc - ?side)))
-                (state LOCKED) (request ~UNLOCK) (locked-by ?self)
-                (pending-requests $?pending&:(not (member$ UNLOCK ?pending))))
-  (navgraph-node
-    (name ?node&:(eq ?node
-                     (str-cat ?loc (if (eq ?side INPUT) then -I else -O))))
-    (pos $?mps-pose))
-  (Position3DInterface (id "Pose") (translation $?pose))
-  (test (> (distance-mf ?pose ?mps-pose) ?*UNLOCK-DISTANCE*))
-  =>
-  (printout warn "Unlocking " ?lock-name " based on distance ("
-                 (distance-mf ?pose ?mps-pose) ")" crlf)
-  (mutex-unlock-async ?lock-name)
-)
-
 (defrule lock-actions-unlock-no-pose-available
   (domain-object (name ?loc))
   (domain-obj-is-of-type ?loc mps)

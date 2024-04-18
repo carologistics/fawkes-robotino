@@ -36,7 +36,7 @@
 
 (defrule action-selection-select-move
 	?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
-	                    (id ?id) (state FORMULATED)
+	                    (id ?id) (skiller ?skiller) (state FORMULATED)
 	                    (action-name ?action-name&move)
 	                    (param-values ?r ?from ?from-side ?to ?to-side))
 	(plan (id ?plan-id) (goal-id ?goal-id) (suspended FALSE))
@@ -46,6 +46,11 @@
 	(not (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (state FORMULATED) (id ?oid&:(< ?oid ?id))))
 	(not (plan-action (state ~FORMULATED&~FAILED&~FINAL)
 	                  (param-values ? ? ? ?to ?to-side)))
+	(not 	(or
+			(plan-action (skiller ~?skiller) (action-name move) (state ~FORMULATED&~FINAL) (param-values ~?r ? ? ?to ?to-side))
+			(domain-fact (name at) (param-values ~?r ?to ?to-side))
+			)
+	)
 	=>
 	(modify ?pa (state PENDING))
 )
