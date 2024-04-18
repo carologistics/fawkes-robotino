@@ -130,8 +130,6 @@ clips-executive:
         explore-zone: explore_zone{zone=?(z)s}
         move-node: goto{place=?(z)s}
         move: goto{place="?(to)Y-?(to-side|/OUTPUT/OUTPUT/|/INPUT/INPUT/)Y"}
-        move-wp-get: goto{place="?(to)Y-?(to-side|/OUTPUT/OOUTPUT/|/INPUT/INPUT/)Y"}
-        move-wp-put: goto{place="?(to)Y-?(to-side|/OUTPUT/OUTPUT/|/INPUT/INPUT/)Y"}
         go-wait: goto{place="?(to)Y"}
         wp-get-shelf: manipulate_wp{mps=?(m)S,safe_put=false, map_pos=false,
                               side="SHELF-?(spot)Y",target="WORKPIECE"}
