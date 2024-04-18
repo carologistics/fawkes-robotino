@@ -157,7 +157,7 @@ ObjectTrackingThread::init()
 	swapRB_ = true;
 
 	//set up network
-	net_ = readNet(weights_path_, config_path_);
+	net_ = readNet(weights_path_);
 	net_.setPreferableBackend(DNN_BACKEND_DEFAULT);
 	net_.setPreferableTarget(DNN_TARGET_CPU);
 	//get name of output layer
