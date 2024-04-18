@@ -154,7 +154,7 @@ function set_speed(self)
 
                -- speed if we're decelerating
                v_dec = a[k]/self.fsm.vars.decel_factor * math.abs(scalar(dist_target[k]))
-               
+
                -- decide if we wanna decelerate, accelerate or max out
                v[k] = math.min(
                   self.fsm.vars.vmax_arg[k],
@@ -186,7 +186,7 @@ function set_speed(self)
       end
    end
 
-   if self.fsm.vars.frame and self.fsm.vars.target_frame ~= "/odom" then 
+   if self.fsm.vars.frame and self.fsm.vars.target_frame ~= "/odom" then
       -- save target in odom for fallback
       local tgt_odom = tfm.transform6D(
          {x=self.fsm.vars.target.x, y=self.fsm.vars.target.y, z=self.fsm.vars.target.z, ori=self.fsm.vars.target.ori},
@@ -317,7 +317,7 @@ function INIT:init()
    if self.fsm.vars.puck then
       print("WARNING: motor_move: puck argument is deprecated!")
    end
-   
+
    self.fsm.vars.target_frame = self.fsm.vars.frame or "/odom"
 
    -- If frame arg is specified, input coordinates are relative to it
@@ -349,13 +349,13 @@ function INIT:init()
       self.fsm.vars.z = self.fsm.vars.z or 0
       self.fsm.vars.ori = self.fsm.vars.ori or 0
    end
-   
+
    -- Make sure that ori ~= |math.pi|
    if self.fsm.vars.ori == math.pi then self.fsm.vars.ori = self.fsm.vars.ori - 1e-6 end
    if self.fsm.vars.ori == -math.pi then self.fsm.vars.ori = self.fsm.vars.ori + 1e-6 end
-   
+
    self.fsm.vars.qori = fawkes.tf.create_quaternion_from_yaw(self.fsm.vars.ori)
-   
+
    self.fsm.vars.cycle = 0
    self.fsm.vars.stop_attempts = self.fsm.vars.stop_attempts or 0
    self.fsm.vars.num_fallbacks = 0
@@ -477,7 +477,7 @@ function DRIVE_VS:init()
 	-- "Magic", i.e. heuristic multiplier that determines how much we brake
 	-- when approaching target. Important to avoid overshooting.
 	self.fsm.vars.decel_factor = 6.5
-	
+
 	set_speed(self)
 end
 
@@ -497,7 +497,7 @@ function DRIVE_VS:loop()
 
    self.fsm.vars.target.x = object_tracking_if:base_frame(0)
    self.fsm.vars.target.y = object_tracking_if:base_frame(1)
-   self.fsm.vars.target.ori = fawkes.tf.create_quaternion_from_yaw(object_tracking_if:base_frame(5))
+   self.fsm.vars.target.ori = fawkes.tf.create_quaternion_from_yaw(-object_tracking_if:base_frame(5))
    set_speed(self)
 end
 
@@ -516,7 +516,7 @@ function DRIVE_CAM:init()
    -- "Magic", i.e. heuristic multiplier that determines how much we brake
    -- when approaching target. Important to avoid overshooting.
    self.fsm.vars.decel_factor = 10
-   
+
    set_speed(self)
 end
 
@@ -536,7 +536,7 @@ end
 
 function FALLBACK_TO_ODOM:init()
    printf("motor_move: lost target frame %s, falling back to odom frame", self.fsm.vars.target_frame)
-   
+
    self.fsm.vars.target = self.fsm.vars.fallback_target_odom
    self.fsm.vars.target_frame = "/odom"
    self.fsm.vars.num_fallbacks = self.fsm.vars.num_fallbacks + 1
@@ -544,7 +544,7 @@ end
 
 function RECOVER_TO_FRAME:init()
    printf("motor_move: found original target frame %s again, using it", self.fsm.vars.frame)
-   
+
    self.fsm.vars.target = self.fsm.vars.recover_target_frame
    self.fsm.vars.target_frame = self.fsm.vars.frame
 end

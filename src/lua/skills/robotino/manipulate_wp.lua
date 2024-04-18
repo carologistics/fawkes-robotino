@@ -269,8 +269,8 @@ function input_invalid()
   else
     fsm.vars.reverse_output = false
   end
-    
- 
+
+
   if (fsm.vars.target_object_type == nil or string.gsub(fsm.vars.target_object_type, "^%s*(.-)%s*$", "%1") == 0) then
     print_error("That is not a valid target!")
     return true
@@ -577,7 +577,7 @@ function MOVE_BASE_AND_GRIPPER:init()
   -- move base to target pose using visual servoing
   self.args["motor_move"] = {x = object_tracking_if:base_frame(0),
                              y = object_tracking_if:base_frame(1),
-                             ori = object_tracking_if:base_frame(5),
+                             ori = -object_tracking_if:base_frame(5),
                              frame = "base_link",
                              visual_servoing = true}
 
