@@ -25,7 +25,8 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "manipulate_wp"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"goto","motor_move","pick_or_put_vs","mps_align"}
+depends_skills     = {"goto","motor_move","pick_or_put_vs"}
+depends_skills     = {"goto","motor_move","pick_or_put_vs"}
 depends_interfaces = {
    {v = "line1", type="LaserLineInterface", id="/laser-lines/1"},
    {v = "line2", type="LaserLineInterface", id="/laser-lines/2"},
@@ -37,24 +38,8 @@ depends_interfaces = {
    {v = "line8", type="LaserLineInterface", id="/laser-lines/8"},
    {v = "laserline_switch", type = "SwitchInterface", id="laser-lines"},
    {v = "object_tracking_if", type = "ObjectTrackingInterface", id="object-tracking"},
-   {v = "tag_0", type = "Position3DInterface", id="/tag-vision/0"},
-   {v = "tag_1", type = "Position3DInterface", id="/tag-vision/1"},
-   {v = "tag_2", type = "Position3DInterface", id="/tag-vision/2"},
-   {v = "tag_3", type = "Position3DInterface", id="/tag-vision/3"},
-   {v = "tag_4", type = "Position3DInterface", id="/tag-vision/4"},
-   {v = "tag_5", type = "Position3DInterface", id="/tag-vision/5"},
-   {v = "tag_6", type = "Position3DInterface", id="/tag-vision/6"},
-   {v = "tag_7", type = "Position3DInterface", id="/tag-vision/7"},
-   {v = "tag_8", type = "Position3DInterface", id="/tag-vision/8"},
-   {v = "tag_9", type = "Position3DInterface", id="/tag-vision/9"},
-   {v = "tag_10", type = "Position3DInterface", id="/tag-vision/10"},
-   {v = "tag_11", type = "Position3DInterface", id="/tag-vision/11"},
-   {v = "tag_12", type = "Position3DInterface", id="/tag-vision/12"},
-   {v = "tag_13", type = "Position3DInterface", id="/tag-vision/13"},
-   {v = "tag_14", type = "Position3DInterface", id="/tag-vision/14"},
-   {v = "tag_15", type = "Position3DInterface", id="/tag-vision/15"},
-   {v = "tag_info", type = "TagVisionInterface", id="/tag-vision/info"},
-   {v = "arduino", type = "ArduinoInterface", id="Arduino"},
+   {v = "arduino", type = "ArduinoInterface", id="Arduino"}
+   {v = "arduino", type = "ArduinoInterface", id="Arduino"}
 }
 
 documentation      = [==[
@@ -69,20 +54,22 @@ Parameters:
                      the workpiece is there (optional, bool)
       @param query   defines if dry_run expects a workpiece to be at the location or wet (optional, THERE | ABSENT)
                      THERE by default
+      @param map_pos true, if MPS Pos is compared to Map Pos(optional,bool) True by default
 ]==]
 
 local LASER_BASE_OFFSET    = 0.5 -- distance between robotino middle point and laser-line
                                   -- used for DRIVE_TO_LASER_LINE
 local GRIPPER_TOLERANCE    = {x=0.005, y=0.001, z=0.001} -- accuracy
 local MISSING_MAX          = 5 -- limit for missing object detections in a row while fine-tuning gripper
-local LINE_MATCH_TOLERANCE = 0.3 -- meter threshold of laserline center to tag
 local MIN_VIS_HIST_LINE    = 5 -- minimum visibility history for laser-line before considering it
-local MIN_VIS_HIST_TAG     = 5 -- minimum visibility history for tag before considering it
+local MIN_MAPPED_DIST      = 0.5 -- minimum distance of sensed laser data and tf-mps data
+local MIN_ACTUAL_DIST      = 0.7 -- minimum distance b/w bot and laser center
+local MIN_MAPPED_ORI       = math.pi/6 -- minimum angle b/w sensed laser data and tf-mps data
+local MIN_ACTUAL_ORI       = math.pi/6 -- minimum angle b/w bot and laser center
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
 local llutils = require("fawkes.laser-lines_utils")
-local tag_utils = require("tag_utils")
 local tfm = require("fawkes.tfutils")
 
 -- Load config
@@ -138,42 +125,75 @@ if config:exists("plugins/object_tracking/puck_values/ring_height") then
   ring_height = config:get_float("plugins/object_tracking/puck_values/ring_height")
 end
 
--- read config values for target frame and routine adjustments
--- save dist
-if config:exists("plugins/vs_offsets/workpiece/pick_target/save_dist") then
-  safe_dist = config:get_float("plugins/vs_offsets/workpiece/pick_target/save_dist")
-end
+-- Match laser line to tf-mps point
 
--- Match tag to navgraph point
-function match_line(tag,lines)
-   local matched_line = nil
+function match_line(lines)
+  local matched_line = nil 
+  local mapped_dist = 0 
+  local mps_point = nil 
+  local mps_point_yaw = nil
+  if fsm.vars.map_pos then
+    mps_point= tfm.transform6D({
+      x = 0,
+      y = 0,
+      z = 0,
+      ori = fawkes.tf.create_quaternion_from_yaw(0)
+      }, fsm.vars.mps,"/base_link")
+    mps_point_yaw = fawkes.tf.get_yaw(mps_point.ori)
+  else
+    mps_point_yaw = 0
+  end 
+  
+  --printf("ori without input: %f",tostring(mps_point_yaw))
+  if (fsm.vars.side == "INPUT") then
+    --printf("===================================")
+    mps_point_yaw = mps_point_yaw + math.pi
+    --printf("ori with input: %f",tostring(mps_point_yaw))
+  end 
 
-   if tag and tag:visibility_history() >= MIN_VIS_HIST_TAG then
-      local tag_laser = tfm.transform6D(
-         { x=tag:translation(0), y=tag:translation(1), z=tag:translation(2),
-            ori = { x=tag:rotation(0), y=tag:rotation(1), z=tag:rotation(2), w=tag:rotation(3)  }
-         }, tag:frame(), "/base_laser"
-      )
-      local min_dist = LINE_MATCH_TOLERANCE
-      for k,line in pairs(lines) do
-         local line_center = llutils.center(line, 0)
-         local dist = math.vec_length(tag_laser.x - line_center.x, tag_laser.y - line_center.y)
-         if line:visibility_history() >= MIN_VIS_HIST_LINE
-            and dist < min_dist
-         then
-            min_dist = dist
-            matched_line = line
-            printf("Line dist: %f", dist)
-         end
+  local min_dist = MIN_ACTUAL_DIST
+  for k, line in pairs(lines) do
+    if (line:visibility_history() >= MIN_VIS_HIST_LINE) then
+      local line_center = llutils.center(line, 0)
+      local base_center =  tfm.transform6D({
+        x=line:point_on_line(0),
+        y=line:point_on_line(1),
+        z=line:point_on_line(2),
+        ori = fawkes.tf.create_quaternion_from_yaw(line:bearing())},line:frame_id(),"/base_link")
+
+      printf('=============================================')
+      
+      if fsm.vars.map_pos then 
+        mapped_dist = math.vec_length(mps_point.x - base_center.x, mps_point.y - base_center.y)
+        local orient_diff = math.abs(math.fmod((math.normalize_mirror_rad(fawkes.tf.get_yaw(base_center.ori)) - math.normalize_mirror_rad(mps_point_yaw)), 2*math.pi))
+        --printf("mps_point_x %f",mps_point.x)
+        --printf("base_x %f",base_center.x)
+        --printf("mps_y %f",mps_point.y)
+        --printf("base_y %f",base_center.y)  
+        --printf('Distance from expected map pos to laser line: %f and its threshold: %f',mapped_dist,MIN_MAPPED_DIST)
+        --printf('base_center_ori:%f',tostring(math.normalize_mirror_rad(fawkes.tf.get_yaw(base_center.ori))))
+        --printf('mps_point_ori:%f',tostring(math.normalize_mirror_rad(mps_point_yaw)))
+        --printf('Difference b/w actual orientation & expected orientation : %f and its threshold: %f',orient_diff,MIN_MAPPED_ORI)
       end
-   end
 
-   return matched_line
+      local actual_dist = math.vec_length(base_center.x,base_center.y)
+      --printf('Distance calculated from the Laser center to robotino base: %f and its threshold: %f',actual_dist,min_dist)
+      --printf('Difference b/w Bot orientation & laser_line orientation : %s and its threshold: %f', math.normalize_mirror_rad(fawkes.tf.get_yaw(base_center.ori)),MIN_ACTUAL_ORI)
+
+      if (line:visibility_history() >= MIN_VIS_HIST_LINE and actual_dist < min_dist and fawkes.tf.get_yaw(base_center.ori)<=MIN_ACTUAL_ORI) and
+          ( not fsm.vars.map_pos or (mapped_dist<=MIN_MAPPED_DIST and ((math.abs(math.fmod((math.normalize_mirror_rad(fawkes.tf.get_yaw(base_center.ori)) - math.normalize_mirror_rad(mps_point_yaw)), 2*math.pi)))<=MIN_MAPPED_ORI)))
+      then
+        min_dist = actual_dist
+        matched_line = line
+      end
+    else
+    end
+  end
+  return matched_line
 end
 
 function laser_line_found()
-  local tag = tag_utils.iface_for_id(fsm.vars.tags, tag_info, fsm.vars.tag_id)
-  fsm.vars.matched_line = match_line(tag, fsm.vars.lines)
+  fsm.vars.matched_line = match_line(fsm.vars.lines)
   return fsm.vars.matched_line ~= nil
 end
 
@@ -333,9 +353,6 @@ fsm:define_states{ export_to=_M, closure={MISSING_MAX=MISSING_MAX},
    {"INIT",                  JumpState},
    {"START_TRACKING",        JumpState},
    {"FIND_LASER_LINE",       JumpState},
-   {"DRIVE_BACK",            SkillJumpState, skills={{motor_move}},      final_to="SEARCH_LASER_LINE", fail_to="SEARCH_LASER_LINE"},
-   {"SEARCH_LASER_LINE",     JumpState},
-   {"MPS_ALIGN",             SkillJumpState, skills={{mps_align}},       final_to="SEARCH_LASER_LINE", fail_to="FAILED"},
    {"DRIVE_TO_LASER_LINE",   SkillJumpState, skills={{motor_move}},      final_to="WAIT_FOR_GRIPPER", fail_to="FAILED"},
    {"WAIT_FOR_GRIPPER",      JumpState},
    {"AT_LASER_LINE",         JumpState},
@@ -351,10 +368,7 @@ fsm:add_transitions{
    {"START_TRACKING", "FAILED",                   timeout=2, desc="Object tracker is not starting"},
    {"START_TRACKING", "FIND_LASER_LINE",          cond=object_tracker_active},
    {"FIND_LASER_LINE", "DRIVE_TO_LASER_LINE",     cond=laser_line_found},
-   {"FIND_LASER_LINE", "DRIVE_BACK",              timeout=1, desc="Could not find laser-line, drive back"},
-   {"SEARCH_LASER_LINE", "DRIVE_TO_LASER_LINE",   cond=laser_line_found},
-   {"SEARCH_LASER_LINE", "FAILED",                cond="vars.search_attemps > 10", desc="Tried 10 times, could not find laser-line"},
-   {"SEARCH_LASER_LINE", "MPS_ALIGN",             timeout=1, desc="Could not find laser-line, spin"},
+   {"FIND_LASER_LINE", "FAILED",              timeout=1, desc="Could not find laser-line, drive back"},
    {"WAIT_FOR_GRIPPER", "AT_LASER_LINE",          cond=ready_for_gripper_movement, desc="Found Object"},
    {"WAIT_FOR_GRIPPER", "START_TRACKING",         timeout=5, desc="Something went wrong with axis movement"},
    {"AT_LASER_LINE", "FINAL",                     cond=dry_expected_object_found, desc="Found Object"},
@@ -382,15 +396,14 @@ function INIT:init()
   fsm.vars.lines[line7:id()] = line7
   fsm.vars.lines[line8:id()] = line8
 
-  fsm.vars.tags = { tag_0, tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7,
-  tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15 }
-
-  if fsm.vars.side == "OUTPUT" then
-    fsm.vars.tag_id = navgraph:node(fsm.vars.mps):property_as_float("tag_output")
-  else
-    fsm.vars.tag_id = navgraph:node(fsm.vars.mps):property_as_float("tag_input")
+  -- local node = navgraph:node(fsm.vars.mps)
+  -- fsm.vars.mps_x = node:x()
+  -- fsm.vars.mps_y = node:y()
+  -- fsm.vars.mps_ori = node:property_as_float("orientation")
+  
+  if fsm.vars.side == "INPUT" then
+    fsm.vars.mps_ori = fsm.vars.mps_ori+math.pi
   end
-
   fsm.vars.missing_detections = 0
   fsm.vars.msgid              = 0
   fsm.vars.out_of_reach       = false
@@ -426,6 +439,9 @@ function INIT:init()
       fsm.vars.c = "C3"
     end
   end
+  if fsm.vars.map_pos ~= false then
+    fsm.vars.map_pos = true
+  end
 
   -- difference in height of current product compared to a C3
   local MISSING_C3_HEIGHT = {["C0"] = ring_height * 3,
@@ -445,15 +461,6 @@ function INIT:init()
   fsm.vars.gripper_target_pos_y = 0
   fsm.vars.gripper_target_pos_z = 0
   fsm.vars.gripper_wait         = 0
-end
-
-function INIT:exit()
-  fsm.vars.error = "invalid input"
-end
-
-function MPS_ALIGN:init()
-  self.args["mps_align"].tag_id = fsm.vars.tag_id
-  self.args["mps_align"].x = 0.5
 end
 
 function START_TRACKING:init()
@@ -479,18 +486,6 @@ end
 function FIND_LASER_LINE:init()
   -- start searching for laser line
   fsm.vars.search_attemps = 0
-end
-
-function SEARCH_LASER_LINE:exit()
-  fsm.vars.error = "laser-line not found"
-end
-
-function DRIVE_BACK:init()
-  self.args["motor_move"].x = drive_back_x
-end
-
-function SEARCH_LASER_LINE:init()
-  fsm.vars.search_attemps = fsm.vars.search_attemps + 1
 end
 
 function DRIVE_TO_LASER_LINE:init()
