@@ -36,3 +36,7 @@ realsense2:
   # Set Laser Power. Some USB3 ports are not able to deliver stable power
   # use -1 for max power
   laser_power: -1
+  
+  # Set exposure time in milliseconds
+  # Set -1 for auto exposure
+  exposure_time: 100
