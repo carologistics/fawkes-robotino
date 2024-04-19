@@ -159,7 +159,7 @@ ObjectTrackingThread::init()
 
 	//set up network
 	//cv::dnn::Net net_ = readNetFromONNX(weights_path_);
-	cv::dnn::Net net = cv::dnn::readNetFromONNX(weightsPath);
+	cv::dnn::Net net = cv::dnn::readNetFromONNX(weights_path_);
 	if (net.empty()) {
     std::cerr << "Failed to load network" << std::endl;
     return;
