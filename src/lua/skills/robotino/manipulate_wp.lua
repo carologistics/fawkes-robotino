@@ -126,32 +126,24 @@ end
 
 function match_line(lines)
   local matched_line = nil
-  local mapped_dist = 0
-  local mps_point = nil
-  local mps_point_yaw = nil
 
   local min_dist = MIN_ACTUAL_DIST
   local best_distance = nil
+
   for k, line in pairs(lines) do
     if (line:visibility_history() >= MIN_VIS_HIST_LINE) then
-      local line_center = llutils.center(line)
-
       local line_center = llutils.center(line, 0)
-      local base_center =  tfm.transform6D({
-        x=line:end_point_1(0),
-        y=line:end_point_1(1),
-        z=line:end_point_1(2),
-        ori = fawkes.tf.create_quaternion_from_yaw(line:bearing())},line:frame_id(), fsm.vars.mps)
-      local robot_center =  tfm.transform6D({
-        x=line:end_point_1(0),
-        y=line:end_point_1(1),
-        z=line:end_point_1(2),
-        ori = fawkes.tf.create_quaternion_from_yaw(line:bearing())},line:frame_id(), "base_link")
+      local base_center = nil
+      if fsm.vars.map_pos == true then
+	base_center =  tfm.transform6D(line_center,line:frame_id(), fsm.vars.mps)
+      end
+      local robot_center =  tfm.transform6D(line_center,line:frame_id(), "base_link")
       local distance = math.sqrt(base_center.x * base_center.x + base_center.y * base_center.y)
       printf("distance: %f", distance)
       local robot_distance = math.sqrt(robot_center.x * base_center.x + base_center.y * base_center.y)
+
       printf("X: %f, Y: %f Distane: %f, num: %s", base_center.x, base_center.y, distance, k)
-       if distance < 0.50 then
+       if (fsm.vars.map_pos == true and distance < 0.50) or fsm.vars.map_pos == false then
           if best_distance == nil then
             best_distance = distance
             matched_line = line
