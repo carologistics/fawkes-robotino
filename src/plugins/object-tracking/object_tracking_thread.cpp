@@ -38,6 +38,10 @@
 #include <opencv2/imgproc.hpp>
 #include <sstream>
 #include <stdio.h>
+#include <torch/script.h> // For TorchScript
+#include <torch/torch.h>
+
+using namespace torch::indexing;
 
 using namespace fawkes;
 using namespace cv;
@@ -158,18 +162,15 @@ ObjectTrackingThread::init()
 	swapRB_ = true;
 
 	//set up network
-	//cv::dnn::Net net_ = readNetFromONNX(weights_path_);
-	cv::dnn::Net net = cv::dnn::readNetFromONNX(weights_path_);
-	if (net.empty()) {
-    std::cerr << "Failed to load network" << std::endl;
-    return;
+	torch::jit::script::Module module_;
+	try {
+		// Load the TorchScript model
+		module_ = torch::jit::load("path_to_yolov8_model.pt");
+		std::cout << "Model loaded successfully\n";
+	} catch (const c10::Error& e) {
+		std::cerr << "Error loading the model\n";
+		return;
 	}
-
-	net_.setPreferableBackend(DNN_BACKEND_DEFAULT);
-	net_.setPreferableTarget(DNN_TARGET_CPU);
-	//get name of output layer
-	outName_ = net_.getUnconnectedOutLayersNames();
-
 	//set up weighted average filter
 	//-------------------------------------------------------------------------
 	filter_weights_[0] = 0.4;  // current response
@@ -780,49 +781,22 @@ ObjectTrackingThread::set_shm()
 }
 
 void
-ObjectTrackingThread::detect_objects(Mat image, std::vector<std::array<float, 4>> &out_boxes)
-{
-	std::vector<float>                confidences;
-	std::vector<Rect>                 boxes;
-	std::vector<Mat>                  results;
-	std::vector<std::array<float, 4>> yolo_bbs;
+ObjectTrackingThread:: detect_objects(cv::Mat &image, std::vector<std::array<float, 4>> &out_boxes) {
+    // Convert BGR image to RGB
+    cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
 
-	Mat blob = blobFromImage(image, scale_, Size(inpWidth_, inpHeight_), Scalar(), swapRB_);
+    // Convert Mat to a float tensor
+    auto img_tensor = torch::from_blob(image.data, {image.rows, image.cols, 3}, torch::kByte).permute({2, 0, 1}).to(torch::kFloat);
 
-	std::cout << "Blob dimensions: " << blob.size << std::endl;
-	std::cout << "Blob data type: " << blob.type() << std::endl;
-	net_.setInput(blob);
-	net_.forward(results, outName_);
-	//results: L x N x (5 + #classes): 3 x 5808(in last layer) x [center_x, center_y, width, height, background_class, WORKPIECE, CONVEYOR, SLIDE]
+    // Normalize and add batch dimension
+    img_tensor = img_tensor.div(255).unsqueeze(0);
 
-	//check each yolo-layer output
-	for (size_t l = 0; l < outName_.size(); l++) {
-		//pointer to access results' data
-		float *data = (float *)results[l].data;
+    // Run the model
+    auto result = module_.forward({img_tensor}).toTensor();
 
-		//confidence thresholding
-		for (int j = 0; j < results[l].rows; ++j, data += results[l].cols) {
-			//take confidence for target class - filter other classes
-			float confidence = data[4 + (int)current_object_type_];
-			if (confidence > confThreshold_) {
-				std::array<float, 4> yolo_bb = {data[0], data[1], data[2], data[3]};
-				yolo_bbs.push_back(yolo_bb);
-
-				Rect rect_bb;
-				convert_bb_yolo2rect(yolo_bb, rect_bb);
-				boxes.push_back(rect_bb);
-
-				confidences.push_back(confidence);
-			}
-		}
-	}
-
-	//non-maximum suppression
-	std::vector<int> indices;
-	NMSBoxes(boxes, confidences, confThreshold_, nmsThreshold_, indices);
-	for (size_t i = 0; i < indices.size(); ++i) {
-		out_boxes.push_back(yolo_bbs[indices[i]]);
-	}
+    // Post-processing to extract bounding boxes (the specific method may vary)
+    auto detections = result.squeeze().detach().cpu();
+    parse_detections(detections, out_boxes);
 }
 
 void
