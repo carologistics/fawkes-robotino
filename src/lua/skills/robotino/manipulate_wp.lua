@@ -494,7 +494,7 @@ function DRIVE_TO_LASER_LINE:init()
   local p = llutils.point_in_front(center, LASER_BASE_OFFSET)
   local laser_target = tfm.transform6D(
         {  x = p.x,
-           y = p.y + offset_y,
+           y = p.y - offset_y,
            z = 0,
            ori = fawkes.tf.create_quaternion_from_yaw(fsm.vars.matched_line:bearing()) },
         fsm.vars.matched_line:frame_id(), "/odom"
