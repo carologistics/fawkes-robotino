@@ -158,7 +158,13 @@ ObjectTrackingThread::init()
 	swapRB_ = true;
 
 	//set up network
-	cv::dnn::Net net_ = readNetFromONNX(weights_path_);
+	//cv::dnn::Net net_ = readNetFromONNX(weights_path_);
+	cv::dnn::Net net = cv::dnn::readNetFromONNX(weightsPath);
+	if (net.empty()) {
+    std::cerr << "Failed to load network" << std::endl;
+    return;
+	}
+
 	net_.setPreferableBackend(DNN_BACKEND_DEFAULT);
 	net_.setPreferableTarget(DNN_TARGET_CPU);
 	//get name of output layer
@@ -781,8 +787,9 @@ ObjectTrackingThread::detect_objects(Mat image, std::vector<std::array<float, 4>
 	std::vector<Mat>                  results;
 	std::vector<std::array<float, 4>> yolo_bbs;
 
-	Mat blob = blobFromImage(image, scale_, Size(inpWidth_, inpHeight_), Scalar(), swapRB_);
-	net_.setInput(blob);
+	cv::Mat blob = cv::dnn::blobFromImage(image, scale, cv::Size(inpWidth, inpHeight), cv::Scalar(), swapRB);
+	std::cout << "Blob dimensions: " << blob.size << std::endl;
+	std::cout << "Blob data type: " << blob.type() << std::endl;	net_.setInput(blob);
 	net_.forward(results, outName_);
 	//results: L x N x (5 + #classes): 3 x 5808(in last layer) x [center_x, center_y, width, height, background_class, WORKPIECE, CONVEYOR, SLIDE]
 
