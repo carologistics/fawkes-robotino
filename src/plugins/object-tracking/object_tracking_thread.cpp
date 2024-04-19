@@ -781,24 +781,56 @@ ObjectTrackingThread::set_shm()
 }
 
 void
-ObjectTrackingThread:: detect_objects(cv::Mat &image, std::vector<std::array<float, 4>> &out_boxes) {
-    // Convert BGR image to RGB
-    cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
+// ObjectTrackingThread:: detect_objects(cv::Mat &image, std::vector<std::array<float, 4>> &out_boxes) {
+//     // Convert BGR image to RGB
+//     cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
 
-    // Convert Mat to a float tensor
-    auto img_tensor = torch::from_blob(image.data, {image.rows, image.cols, 3}, torch::kByte).permute({2, 0, 1}).to(torch::kFloat);
+//     // Convert Mat to a float tensor
+//     auto img_tensor = torch::from_blob(image.data, {image.rows, image.cols, 3}, torch::kByte).permute({2, 0, 1}).to(torch::kFloat);
 
-    // Normalize and add batch dimension
-    img_tensor = img_tensor.div(255).unsqueeze(0);
+//     // Normalize and add batch dimension
+//     img_tensor = img_tensor.div(255).unsqueeze(0);
 
-    // Run the model
-    auto result = module_.forward({img_tensor}).toTensor();
+//     // Run the model
+//     auto result = module_.forward({img_tensor}).toTensor();
 
-    // Post-processing to extract bounding boxes (the specific method may vary)
-    auto detections = result.squeeze().detach().cpu();
-    parse_detections(detections, out_boxes);
+//     // Post-processing to extract bounding boxes (the specific method may vary)
+//     auto detections = result.squeeze().detach().cpu();
+//     parse_detections(detections, out_boxes);
+// }
+
+void ObjectTrackingThread::detect_objects(cv::Mat image, std::vector<std::array<float, 4>>& out_boxes) {
+    // Preprocessing
+    auto input_tensor = torch::from_blob(image.data, {1, image.rows, image.cols, 3}, torch::kByte);
+    input_tensor = input_tensor.permute({0, 3, 1, 2}); // Convert to {1, C, H, W}
+    input_tensor = input_tensor.to(torch::kFloat).div(255.0);
+    if (swapRB_)
+        input_tensor = input_tensor.index({torch::indexing::Slice(), {2, 1, 0}, torch::indexing::Slice(), torch::indexing::Slice()});
+
+    // Forward pass
+    torch::jit::script::Module module; // Assume module is loaded elsewhere
+    torch::NoGradGuard no_grad;
+    auto results = module.forward({input_tensor}).toTensor();
+
+    // Iterate over detections
+    auto detections = results.squeeze(0).select(1, 4).gt(confThreshold_).nonzero().squeeze(1);
+    for (int i = 0; i < detections.size(0); i++) {
+        int idx = detections[i].item<int>();
+        float x_center = results[0][idx][0].item<float>();
+        float y_center = results[0][idx][1].item<float>();
+        float width = results[0][idx][2].item<float>();
+        float height = results[0][idx][3].item<float>();
+        float confidence = results[0][idx][4].item<float>();
+
+        if (confidence > confThreshold_) {
+            std::array<float, 4> yolo_bb = {x_center, y_center, width, height};
+            out_boxes.push_back(yolo_bb);
+        }
+    }
+
+    // Note: Implement Non-Maximum Suppression (NMS) if multiple detections overlap
+    // This could be a call to a PyTorch NMS function or a custom implementation
 }
-
 void
 ObjectTrackingThread::convert_bb_yolo2rect(std::array<float, 4> yolo_bbox, Rect &rect_bbox)
 {
