@@ -1,12 +1,5 @@
 
-----------------------------------------------------------------------------
---  manipulate_wp.lua
---
---  Created: Wed Nov 17
---  Copyright  2021  Matteo Tschesche
---
-----------------------------------------------------------------------------
-
+---------------------------------------------------------------------------- -- manipulate_wp.lua -- -- Created: Wed Nov 17 -- Copyright 2021 Matteo Tschesche -- ----------------------------------------------------------------------------
 --  This program is free software; you can redistribute it and/or modify
 --  it under the terms of the GNU General Public License as published by
 --  the Free Software Foundation; either version 2 of the License, or
@@ -61,10 +54,10 @@ local LASER_BASE_OFFSET    = 0.5 -- distance between robotino middle point and l
 local GRIPPER_TOLERANCE    = {x=0.005, y=0.001, z=0.001} -- accuracy
 local MISSING_MAX          = 5 -- limit for missing object detections in a row while fine-tuning gripper
 local MIN_VIS_HIST_LINE    = 5 -- minimum visibility history for laser-line before considering it
-local MIN_MAPPED_DIST      = 0.5 -- minimum distance of sensed laser data and tf-mps data
-local MIN_ACTUAL_DIST      = 0.7 -- minimum distance b/w bot and laser center
-local MIN_MAPPED_ORI       = math.pi/6 -- minimum angle b/w sensed laser data and tf-mps data
-local MIN_ACTUAL_ORI       = math.pi/6 -- minimum angle b/w bot and laser center
+local MIN_MAPPED_DIST      = 0.7 -- minimum distance of sensed laser data and tf-mps data
+local MIN_ACTUAL_DIST      = 1.8 -- minimum distance b/w bot and laser center
+local MIN_MAPPED_ORI       = math.pi/5 -- minimum angle b/w sensed laser data and tf-mps data
+local MIN_ACTUAL_ORI       = math.pi/3 -- minimum angle b/w bot and laser center
 
 -- Initialize as skill module
 
@@ -86,7 +79,7 @@ local right_shelf_offset_side  = -0.275
 
 local ring_height = 0.01
 
-local drive_back_x = -0.1
+local drive_back_x = -0.4
 
 local safe_dist = 0.03 -- extra distance in x direction to target position while moving base
 
@@ -136,61 +129,37 @@ function match_line(lines)
   local mapped_dist = 0
   local mps_point = nil
   local mps_point_yaw = nil
-  if fsm.vars.map_pos then
-    mps_point= tfm.transform6D({
-      x = 0,
-      y = 0,
-      z = 0,
-      ori = fawkes.tf.create_quaternion_from_yaw(0)
-      }, fsm.vars.mps,"/base_link")
-    mps_point_yaw = fawkes.tf.get_yaw(mps_point.ori)
-  else
-    mps_point_yaw = 0
-  end
-
-  --printf("ori without input: %f",tostring(mps_point_yaw))
-  if (fsm.vars.side == "INPUT") then
-    --printf("===================================")
-    mps_point_yaw = mps_point_yaw + math.pi
-    --printf("ori with input: %f",tostring(mps_point_yaw))
-  end
 
   local min_dist = MIN_ACTUAL_DIST
+  local best_distance = nil
   for k, line in pairs(lines) do
     if (line:visibility_history() >= MIN_VIS_HIST_LINE) then
+      local line_center = llutils.center(line)
+
       local line_center = llutils.center(line, 0)
       local base_center =  tfm.transform6D({
-        x=line:point_on_line(0),
-        y=line:point_on_line(1),
-        z=line:point_on_line(2),
-        ori = fawkes.tf.create_quaternion_from_yaw(line:bearing())},line:frame_id(),"/base_link")
-
-      printf('=============================================')
-
-      if fsm.vars.map_pos then
-        mapped_dist = math.vec_length(mps_point.x - base_center.x, mps_point.y - base_center.y)
-        local orient_diff = math.abs(math.fmod((math.normalize_mirror_rad(fawkes.tf.get_yaw(base_center.ori)) - math.normalize_mirror_rad(mps_point_yaw)), 2*math.pi))
-        --printf("mps_point_x %f",mps_point.x)
-        --printf("base_x %f",base_center.x)
-        --printf("mps_y %f",mps_point.y)
-        --printf("base_y %f",base_center.y)
-        --printf('Distance from expected map pos to laser line: %f and its threshold: %f',mapped_dist,MIN_MAPPED_DIST)
-        --printf('base_center_ori:%f',tostring(math.normalize_mirror_rad(fawkes.tf.get_yaw(base_center.ori))))
-        --printf('mps_point_ori:%f',tostring(math.normalize_mirror_rad(mps_point_yaw)))
-        --printf('Difference b/w actual orientation & expected orientation : %f and its threshold: %f',orient_diff,MIN_MAPPED_ORI)
-      end
-
-      local actual_dist = math.vec_length(base_center.x,base_center.y)
-      --printf('Distance calculated from the Laser center to robotino base: %f and its threshold: %f',actual_dist,min_dist)
-      --printf('Difference b/w Bot orientation & laser_line orientation : %s and its threshold: %f', math.normalize_mirror_rad(fawkes.tf.get_yaw(base_center.ori)),MIN_ACTUAL_ORI)
-
-      if (line:visibility_history() >= MIN_VIS_HIST_LINE and actual_dist < min_dist and fawkes.tf.get_yaw(base_center.ori)<=MIN_ACTUAL_ORI) and
-          ( not fsm.vars.map_pos or (mapped_dist<=MIN_MAPPED_DIST and ((math.abs(math.fmod((math.normalize_mirror_rad(fawkes.tf.get_yaw(base_center.ori)) - math.normalize_mirror_rad(mps_point_yaw)), 2*math.pi)))<=MIN_MAPPED_ORI)))
-      then
-        min_dist = actual_dist
-        matched_line = line
-      end
-    else
+        x=line:end_point_1(0),
+        y=line:end_point_1(1),
+        z=line:end_point_1(2),
+        ori = fawkes.tf.create_quaternion_from_yaw(line:bearing())},line:frame_id(), fsm.vars.mps)
+      local robot_center =  tfm.transform6D({
+        x=line:end_point_1(0),
+        y=line:end_point_1(1),
+        z=line:end_point_1(2),
+        ori = fawkes.tf.create_quaternion_from_yaw(line:bearing())},line:frame_id(), "base_link")
+      local distance = math.sqrt(base_center.x * base_center.x + base_center.y * base_center.y)
+      printf("distance: %f", distance)
+      local robot_distance = math.sqrt(robot_center.x * base_center.x + base_center.y * base_center.y)
+      printf("X: %f, Y: %f Distane: %f, num: %s", base_center.x, base_center.y, distance, k)
+       if distance < 0.50 then
+          if best_distance == nil then
+            best_distance = distance
+            matched_line = line
+          elseif best_distance > robot_distance then
+            best_distance = robot_distance
+            matched_line = line
+          end
+        end
     end
   end
   return matched_line
@@ -530,6 +499,7 @@ function DRIVE_TO_LASER_LINE:init()
            ori = fawkes.tf.create_quaternion_from_yaw(fsm.vars.matched_line:bearing()) },
         fsm.vars.matched_line:frame_id(), "/odom"
         )
+
   if laser_target then
     self.args["motor_move"] = {x = laser_target.x,
                                y = laser_target.y,
@@ -669,6 +639,12 @@ function GRIPPER_ROUTINE:init()
   self.args["pick_or_put_vs"].target = fsm.vars.target
   self.args["pick_or_put_vs"].missing_c3_height = tostring(fsm.vars.missing_c3_height)
   self.args["pick_or_put_vs"].safe_put = fsm.vars.safe_put
+end
+
+-- end tracking afterwards
+
+function FINAL:init()
+  object_tracking_if:msgq_enqueue(object_tracking_if.StopTrackingMessage:new())
 end
 
 function FAILED:init()
