@@ -35,6 +35,7 @@ fawkes/meta_plugins:
     - ros2-cmdvel
     - ros2-navigator
     - pos3d-publisher
+    - m-fv-vision
   m-base-laser:
     - laser
     - laser-filter
