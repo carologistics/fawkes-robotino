@@ -787,9 +787,11 @@ ObjectTrackingThread::detect_objects(Mat image, std::vector<std::array<float, 4>
 	std::vector<Mat>                  results;
 	std::vector<std::array<float, 4>> yolo_bbs;
 
-	cv::Mat blob = cv::dnn::blobFromImage(image, scale, cv::Size(inpWidth, inpHeight), cv::Scalar(), swapRB);
+	Mat blob = blobFromImage(image, scale_, Size(inpWidth_, inpHeight_), Scalar(), swapRB_);
+
 	std::cout << "Blob dimensions: " << blob.size << std::endl;
-	std::cout << "Blob data type: " << blob.type() << std::endl;	net_.setInput(blob);
+	std::cout << "Blob data type: " << blob.type() << std::endl;
+	net_.setInput(blob);
 	net_.forward(results, outName_);
 	//results: L x N x (5 + #classes): 3 x 5808(in last layer) x [center_x, center_y, width, height, background_class, WORKPIECE, CONVEYOR, SLIDE]
 
