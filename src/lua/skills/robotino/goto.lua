@@ -57,8 +57,26 @@ end
 -- Tunables
 --local REGION_TRANS=0.2
 
-function check_navgraph(self)
-  return self.fsm.vars.place ~= nil and not navgraph
+function check_tf(self)
+  if self.fsm.vars.place ~= nil then
+    if string.match(self.fsm.vars.place, "WAIT") then
+      return false
+    end
+    if string.match(self.fsm.vars.place, "^[MC][-]Z[1-7][1-8]$") then
+      return false
+    end
+    if fsm.vars.place ~= "" then
+      local tf_point = tf_mod.transform6D({
+          x = 0,
+          y = 0,
+          z = 0,
+          ori = fawkes.tf.create_quaternion_from_yaw(0)
+          }, fsm.vars.place,"map")
+      return tf_point == nil
+    end
+    return true
+  end
+  return false
 end
 
 function target_reached()
@@ -97,7 +115,7 @@ function travelled_distance(self)
 end
 
 fsm:define_states{ export_to=_M,
-  closure={check_navgraph=check_navgraph, reached_target_region=reached_target_region, has_navigator=has_navigator, travelled_distance=travelled_distance},
+  closure={check_tf=check_tf, reached_target_region=reached_target_region, has_navigator=has_navigator, travelled_distance=travelled_distance},
   {"CHECK_INPUT",   JumpState},
   {"WAIT_TF",       JumpState},
   {"INIT",          JumpState},
@@ -110,7 +128,7 @@ fsm:add_transitions{
   {"CHECK_INPUT", "INIT", cond=can_navigate},
   {"CHECK_INPUT", "WAIT_TF", cond=true},
   {"WAIT_TF", "INIT", cond=can_navigate},
-  {"INIT",  "FAILED",         precond=check_navgraph, desc="no navgraph"},
+  {"INIT",  "FAILED",         precond=check_tf, desc="no tf"},
   {"INIT",  "FAILED",         cond="not vars.target_valid",                 desc="target invalid"},
   {"INIT",  "MOVING",         cond=true},
   {"MOVING", "TIMEOUT",       timeout=2}, -- Give the interface some time to update
@@ -129,9 +147,6 @@ function INIT:init()
     if string.match(self.fsm.vars.place, "WAIT") then 
        self.fsm.vars.waiting_pos = true
     end
-    if string.match(self.fsm.vars.place, "G-") then
-       laserline_switch:msgq_enqueue(laserline_switch.EnableSwitchMessage:new())
-    end
     if string.match(self.fsm.vars.place, "^[MC][-]Z[1-7][1-8]$") then
       -- place argument is a zone, e.g. M-Z21
       self.fsm.vars.zone = self.fsm.vars.place
@@ -142,26 +157,20 @@ function INIT:init()
       end
     else
       -- place argument is a navgraph point
-      local node = navgraph:node(self.fsm.vars.place)
-      if node:is_valid() then
-        self.fsm.vars.x = node:x()
-        self.fsm.vars.y = node:y()
-        if node:has_property("orientation") then
-          self.fsm.vars.ori = node:property_as_float("orientation");
-        end
+      local tf_point = tf_mod.transform6D({
+        x = 0,
+        y = 0,
+        z = 0,
+        ori = fawkes.tf.create_quaternion_from_yaw(0)
+        }, fsm.vars.place,"map")
 
-        local ori_tolerance_given = node:property_as_float("orientation_tolerance") ~= navgraph:default_property_as_float("orientation_tolerance")
-        local target_tolerance_given = node:property_as_float("target_tolerance") ~= navgraph:default_property_as_float("target_tolerance")
+      if tf_point ~= nil then
+        self.fsm.vars.x = tf_point.x
+        self.fsm.vars.y = tf_point.y
+        self.fsm.vars.ori = fawkes.tf.get_yaw(tf_point.ori);
 
-        -- Check whether only one of the tolerances is customized.
-        -- If so, print a warning due to an unexpected definition.
-        if ori_tolerance_given and not target_tolerance_given or
-           not ori_tolerance_given and target_tolerance_given then
-          print_warn("Place " .. self.fsm.vars.place .. " only defines one custom tolerance.")
-        end
-
-        self.fsm.vars.ori_tolerance = node:property_as_float("orientation_tolerance");
-        self.fsm.vars.trans_tolerance = node:property_as_float("target_tolerance");
+        self.fsm.vars.ori_tolerance = 3.14;
+        self.fsm.vars.trans_tolerance = 0.6;
 
       else
         self.fsm.vars.target_valid = false

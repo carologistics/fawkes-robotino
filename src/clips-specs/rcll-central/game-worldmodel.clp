@@ -104,25 +104,16 @@
     (wm-fact (key game found-tag zone args? m (mirror-name ?mps)) (value ?mirror-zone))
   )
 
-  (tf-add-publisher (str-cat "mps"))
-  (tf-publish-pose-static "map" "mps" 0.0 0.0 0.0)
-  (tf-add-publisher (str-cat ?mps))
-  (tf-publish-pose-static "mps" (str-cat ?mps) ?yaw (nth$ 1 (zone-center ?zone)) (nth$ 2 (zone-center ?zone)))
-  (tf-add-publisher (str-cat ?mirror-name))
-  (tf-publish-pose-static "mps" (str-cat ?mirror-name) ?mirror-yaw (nth$ 1 (zone-center ?mirror-zone)) (nth$ 2 (zone-center ?mirror-zone)))
-
   (retract ?gt ?gt-t ?gt-z ?gt-y ?gt-o)
 )
 
-
-(defrule game-generate-navgraph-when-all-tags-found
-  "Generate the navgraph when all the mps tags where found."
-  (wm-fact (key refbox phase) (value PRODUCTION))
-  (forall
-    (wm-fact (key domain fact mps-team args? m ?mps col ?any-team-color))
-    (wm-fact (key game found-tag name args? m ?mps ))
+(defrule game-generate-waitpoints-for-machines
+  "Generate waitpoint objects for each machine input/output side that is free based on game logic"
+  (wm-fact (key game found-tag name args? m ?mps))
+  (wm-fact (key domain fact mps-type args? m ?mps t ?type))
+  =>
+  (if (neq ?type DS) then
+    (assert (domain-object (name (sym-cat "WAIT-" ?mps -O)) (type waitpoint)))
   )
-=>
-  (printout t "Triggering NavGraph generation with Ground-truth" crlf)
-  (navgraph-add-all-new-tags)
+  (assert (domain-object (name (sym-cat "WAIT-" ?mps -I)) (type waitpoint)))
 )
