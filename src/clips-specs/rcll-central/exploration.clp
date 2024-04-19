@@ -278,6 +278,10 @@
 		(if (< ?yaw 0) then (bind ?yaw (+ ?yaw ?*2PI*)))
 		(bind ?orientation (* 45 (round (* (/ ?yaw ?*PI*) 4.0))))
 
+		(if (eq ?orientation 360) then
+			(bind ?orientation 0)
+		)
+
 		(assert
 			(exploration-result
 				(machine ?n)
