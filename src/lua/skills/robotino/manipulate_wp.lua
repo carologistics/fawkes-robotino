@@ -26,6 +26,7 @@ module(..., skillenv.module_init)
 name               = "manipulate_wp"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"goto","motor_move","pick_or_put_vs"}
+depends_skills     = {"goto","motor_move","pick_or_put_vs"}
 depends_interfaces = {
    {v = "line1", type="LaserLineInterface", id="/laser-lines/1"},
    {v = "line2", type="LaserLineInterface", id="/laser-lines/2"},
@@ -54,6 +55,8 @@ Parameters:
                      THERE by default
       @param safe_put true, if we have to put the wp on the conveyor in a way that it does not break the fingers even if there is a wp, used after failing dry_run, false by default (optional, boolean)
       @param map_pos true, if MPS Pos is compared to Map Pos(optional,bool) True by default
+      @param safe_put true, if we have to put the wp on the conveyor in a way that it does not break the fingers even if there is a wp, used after failing dry_run, false by default (optional, boolean)
+      @param map_pos true, if MPS Pos is compared to Map Pos(optional,bool) True by default
 ]==]
 
 local LASER_BASE_OFFSET    = 0.5 -- distance between robotino middle point and laser-line
@@ -61,16 +64,18 @@ local LASER_BASE_OFFSET    = 0.5 -- distance between robotino middle point and l
 local GRIPPER_TOLERANCE    = {x=0.005, y=0.001, z=0.001} -- accuracy
 local MISSING_MAX          = 5 -- limit for missing object detections in a row while fine-tuning gripper
 local MIN_VIS_HIST_LINE    = 5 -- minimum visibility history for laser-line before considering it
-local MIN_MAPPED_DIST      = 0.5 -- minimum distance of sensed laser data and tf-mps data
-local MIN_ACTUAL_DIST      = 0.7 -- minimum distance b/w bot and laser center
-local MIN_MAPPED_ORI       = math.pi/6 -- minimum angle b/w sensed laser data and tf-mps data
-local MIN_ACTUAL_ORI       = math.pi/6 -- minimum angle b/w bot and laser center
+local MIN_MAPPED_DIST      = 0.7 -- minimum distance of sensed laser data and tf-mps data
+local MIN_ACTUAL_DIST      = 1.8 -- minimum distance b/w bot and laser center
+local MIN_MAPPED_ORI       = math.pi/5 -- minimum angle b/w sensed laser data and tf-mps data
+local MIN_ACTUAL_ORI       = math.pi/3 -- minimum angle b/w bot and laser center
 
 -- Initialize as skill module
+
 
 skillenv.skill_module(_M)
 local llutils = require("fawkes.laser-lines_utils")
 local tfm = require("fawkes.tfutils")
+
 
 
 -- Load config
@@ -86,7 +91,7 @@ local right_shelf_offset_side  = -0.275
 
 local ring_height = 0.01
 
-local drive_back_x = -0.1
+local drive_back_x = -0.4
 
 local safe_dist = 0.03 -- extra distance in x direction to target position while moving base
 
@@ -124,6 +129,9 @@ end
 local offset_x_put_conveyor_target_frame = config:get_float("plugins/vs_offsets/conveyor/put_target/offset_x")
 local offset_x_safe_put_conveyor_target_frame = config:get_float("plugins/vs_offsets/conveyor/safe_put/offset_x")
 
+local offset_x_put_conveyor_target_frame = config:get_float("plugins/vs_offsets/conveyor/put_target/offset_x")
+local offset_x_safe_put_conveyor_target_frame = config:get_float("plugins/vs_offsets/conveyor/safe_put/offset_x")
+
 -- read wp config
 if config:exists("plugins/object_tracking/puck_values/ring_height") then
   ring_height = config:get_float("plugins/object_tracking/puck_values/ring_height")
@@ -133,49 +141,48 @@ end
 
 function match_line(lines)
   local matched_line = nil
-  local mapped_dist = 0
-  local mps_point = nil
-  if fsm.vars.map_pos then
-    mps_point= tfm.transform6D({
-      x = 0,
-      y = 0,
-      z = 0,
-      ori = fawkes.tf.create_quaternion_from_yaw(0)
-      }, fsm.vars.mps,"/base_link")
-  end
 
   local min_dist = MIN_ACTUAL_DIST
+  local best_distance = nil
+
   for k, line in pairs(lines) do
-    local line_center = llutils.center(line, 0)
-   
-    local base_center =  tfm.transform6D({
-      x=line_center.x,
-      y=line_center.y,
-      z=0,
-      ori = fawkes.tf.create_quaternion_from_yaw(line_center.ori)},"/base_laser","base_link")
-    
-    if fsm.vars.map_pos then 
-      mapped_dist = math.vec_length(mps_point.x - base_center.x, mps_point.y - base_center.y)
-      local orient_diff = math.abs(math.fmod((math.normalize_mirror_rad(fawkes.tf.get_yaw(base_center.ori)) - math.normalize_mirror_rad(fawkes.tf.get_yaw(mps_point.ori))), 2*math.pi))
-      --printf('Distance from expected map pos to laser line: %f and its threshold: %f',mapped_dist,MIN_MAPPED_DIST)
-      --printf('Difference b/w actual orientation & expected orientation : %f and its threshold: %f',orient_diff,MIN_MAPPED_ORI)
-    end
-    
-    local actual_dist = math.vec_length(base_center.x,base_center.y)
-    --printf('Distance calculated from the Laser center to robotino base: %f and its threshold: %f',actual_dist,min_dist)
-    --printf('Difference b/w Bot orientation & laser_line orientation : %s and its threshold: %f',fawkes.tf.get_yaw(base_center.ori),MIN_ACTUAL_ORI)
-    
-    if (line:visibility_history() >= MIN_VIS_HIST_LINE and actual_dist < min_dist and fawkes.tf.get_yaw(base_center.ori)<=MIN_ACTUAL_ORI) and 
-    ( not fsm.vars.map_pos or (mapped_dist<=MIN_MAPPED_DIST and (fawkes.tf.get_yaw(base_center.ori)-fawkes.tf.get_yaw(mps_point.ori))<=MIN_MAPPED_ORI))
-    then
-        min_dist = actual_dist
-        matched_line = line
+    if (line:visibility_history() >= MIN_VIS_HIST_LINE) then
+      local line_center = llutils.center(line, 0)
+      local base_center = nil
+      local distance = nil
+      if fsm.vars.map_pos == true then
+        base_center =  tfm.transform6D({
+        x=line_center.x,
+        y=line_center.y,
+        z=0,
+        ori = fawkes.tf.create_quaternion_from_yaw(line:bearing())},line:frame_id(), fsm.vars.mps)
+        distance = math.sqrt(base_center.x * base_center.x + base_center.y * base_center.y)
+        printf("distance: %f", distance)
+        printf("X: %f, Y: %f Distane: %f, num: %s", base_center.x, base_center.y, distance, k)
+      end
+      local robot_center =  tfm.transform6D({
+        x=line_center.x,
+        y=line_center.y,
+        z=0,
+        ori = fawkes.tf.create_quaternion_from_yaw(line:bearing())},line:frame_id(), "base_link")
+      local robot_distance = math.sqrt(robot_center.x * robot_center.x + robot_center.y * robot_center.y)
+
+       if (fsm.vars.map_pos == true and distance < 0.50) or fsm.vars.map_pos == false then
+          if best_distance == nil then
+            best_distance = distance
+            matched_line = line
+          elseif best_distance > robot_distance then
+            best_distance = robot_distance
+            matched_line = line
+          end
+        end
     end
   end
   return matched_line
 end
 
 function laser_line_found()
+  fsm.vars.matched_line = match_line(fsm.vars.lines)
   fsm.vars.matched_line = match_line(fsm.vars.lines)
   return fsm.vars.matched_line ~= nil
 end
@@ -191,7 +198,7 @@ function gripper_aligned()
      z=object_tracking_if:gripper_frame(2),
      ori=fawkes.tf.create_quaternion_from_yaw(0)},
     "base_link", "end_effector_home")
-  
+
   if fsm.vars.target == "WORKPIECE" or  fsm.vars.target == "SLIDE" then
     fsm.vars.safe_put = false
   end
@@ -199,8 +206,12 @@ function gripper_aligned()
   if fsm.vars.safe_put then
     gripper_target.x = gripper_target.x - offset_x_put_conveyor_target_frame + offset_x_safe_put_conveyor_target_frame
   end
-  
-  if fsm.vars.target == "WORKPIECE" then
+
+  if fsm.vars.target == "SLIDE" then
+    return math.abs(gripper_target.x - arduino:x_position()) < GRIPPER_TOLERANCE.x * 1.3
+       and math.abs(gripper_target.y - (arduino:y_position() - y_max/2)) < GRIPPER_TOLERANCE.y * 1.3
+       and math.abs(math.min(gripper_target.z, z_max) - arduino:z_position()) < GRIPPER_TOLERANCE.z * 1.3
+  elseif fsm.vars.target == "WORKPIECE" then
     return math.abs(gripper_target.x - arduino:x_position()) < GRIPPER_TOLERANCE.x
       and math.abs(gripper_target.y - (arduino:y_position() - y_max/2)) < GRIPPER_TOLERANCE.y
       and math.abs(math.min(gripper_target.z - fsm.vars.missing_c3_height, z_max) - arduino:z_position()) < GRIPPER_TOLERANCE.z
@@ -241,6 +252,10 @@ function set_gripper(x, y, z)
      math.abs(fsm.vars.gripper_target_pos_x - x_clipped) > GRIPPER_TOLERANCE.x * 2 or
      math.abs(fsm.vars.gripper_target_pos_y - y_clipped) > GRIPPER_TOLERANCE.y * 1 or
      math.abs(fsm.vars.gripper_target_pos_z - z_clipped) > GRIPPER_TOLERANCE.z * 1.5)) or
+     (arduino:is_final() and fsm.vars.target == "SLIDE" and (
+     math.abs(fsm.vars.gripper_target_pos_x - x_clipped) > GRIPPER_TOLERANCE.x * 1.3 or
+     math.abs(fsm.vars.gripper_target_pos_y - y_clipped) > GRIPPER_TOLERANCE.y * 1.3 or
+     math.abs(fsm.vars.gripper_target_pos_z - z_clipped) > GRIPPER_TOLERANCE.z * 1.3)) or
      (arduino:is_final() and (
      math.abs(fsm.vars.gripper_target_pos_x - x_clipped) > GRIPPER_TOLERANCE.x or
      math.abs(fsm.vars.gripper_target_pos_y - y_clipped) > GRIPPER_TOLERANCE.y or
@@ -284,6 +299,10 @@ function input_invalid()
 	fsm.vars.safe_put = false
   end
  
+  if fsm.vars.safe_put == nil then
+	fsm.vars.safe_put = false
+  end
+
   if (fsm.vars.target_object_type == nil or string.gsub(fsm.vars.target_object_type, "^%s*(.-)%s*$", "%1") == 0) then
     print_error("That is not a valid target!")
     return true
@@ -362,6 +381,7 @@ fsm:add_transitions{
    {"START_TRACKING", "FIND_LASER_LINE",          cond=object_tracker_active},
    {"FIND_LASER_LINE", "DRIVE_TO_LASER_LINE",     cond=laser_line_found},
    {"FIND_LASER_LINE", "FAILED",              timeout=1, desc="Could not find laser-line, drive back"},
+   {"FIND_LASER_LINE", "FAILED",              timeout=1, desc="Could not find laser-line, drive back"},
    {"WAIT_FOR_GRIPPER", "AT_LASER_LINE",          cond=ready_for_gripper_movement, desc="Found Object"},
    {"WAIT_FOR_GRIPPER", "START_TRACKING",         timeout=5, desc="Something went wrong with axis movement"},
    {"AT_LASER_LINE", "FINAL",                     cond=dry_expected_object_found, desc="Found Object"},
@@ -393,7 +413,7 @@ function INIT:init()
   -- fsm.vars.mps_x = node:x()
   -- fsm.vars.mps_y = node:y()
   -- fsm.vars.mps_ori = node:property_as_float("orientation")
-  
+
    fsm.vars.missing_detections = 0
   fsm.vars.msgid              = 0
   fsm.vars.out_of_reach       = false
@@ -428,6 +448,9 @@ function INIT:init()
     else -- assume highest possible workpiece if unknown
       fsm.vars.c = "C3"
     end
+  end
+  if fsm.vars.map_pos ~= false then
+    fsm.vars.map_pos = true
   end
   if fsm.vars.map_pos ~= false then
     fsm.vars.map_pos = true
@@ -504,11 +527,12 @@ function DRIVE_TO_LASER_LINE:init()
   local p = llutils.point_in_front(center, LASER_BASE_OFFSET)
   local laser_target = tfm.transform6D(
         {  x = p.x,
-           y = p.y + offset_y,
+           y = p.y - offset_y,
            z = 0,
            ori = fawkes.tf.create_quaternion_from_yaw(fsm.vars.matched_line:bearing()) },
         fsm.vars.matched_line:frame_id(), "/odom"
         )
+
   if laser_target then
     self.args["motor_move"] = {x = laser_target.x,
                                y = laser_target.y,
@@ -585,6 +609,10 @@ function MOVE_BASE_AND_GRIPPER:init()
     forward_distance = forward_distance - offset_x_put_conveyor_target_frame + offset_x_safe_put_conveyor_target_frame
   end
 
+  if fsm.vars.safe_put then
+    forward_distance = forward_distance - offset_x_put_conveyor_target_frame + offset_x_safe_put_conveyor_target_frame
+  end
+
   local gripper_target = tfm.transform6D(
     {x=forward_distance,
      y=0,
@@ -628,6 +656,10 @@ function FINE_TUNE_GRIPPER:loop()
   if fsm.vars.safe_put then
     gripper_target.x = gripper_target.x - offset_x_put_conveyor_target_frame + offset_x_safe_put_conveyor_target_frame
   end
+  print("fine tune gripper" .. gripper_target.z)
+  if fsm.vars.safe_put then
+    gripper_target.x = gripper_target.x - offset_x_put_conveyor_target_frame + offset_x_safe_put_conveyor_target_frame
+  end
 
   if fsm.vars.target == "WORKPIECE" then
     set_gripper(gripper_target.x,
@@ -641,10 +673,13 @@ function FINE_TUNE_GRIPPER:loop()
 end
 
 function GRIPPER_ROUTINE:init()
+  -- end tracking since VS is over
+  object_tracking_if:msgq_enqueue(object_tracking_if.StopTrackingMessage:new())
+
   -- perform pick or put routine
   self.args["pick_or_put_vs"].target = fsm.vars.target
   self.args["pick_or_put_vs"].missing_c3_height = tostring(fsm.vars.missing_c3_height)
-  self.args["pick_or_put_vs"].safe_put = fsm.vars.safe_put 
+  self.args["pick_or_put_vs"].safe_put = fsm.vars.safe_put
 end
 
 -- end tracking afterwards
