@@ -4,7 +4,7 @@
 hardware/laser:
   front:
     time_offset: 0.037843
-    host: 192.168.0.22
+    host: 192.168.0.1
   back:
     time_offset: 0.044299
     host: 192.168.0.23
