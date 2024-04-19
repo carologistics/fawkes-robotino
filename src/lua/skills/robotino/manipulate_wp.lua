@@ -132,9 +132,9 @@ end
 -- Match laser line to tf-mps point
 
 function match_line(lines)
-  local matched_line = nil 
-  local mapped_dist = 0 
-  local mps_point = nil 
+  local matched_line = nil
+  local mapped_dist = 0
+  local mps_point = nil
   local mps_point_yaw = nil
   if fsm.vars.map_pos then
     mps_point= tfm.transform6D({
@@ -146,14 +146,14 @@ function match_line(lines)
     mps_point_yaw = fawkes.tf.get_yaw(mps_point.ori)
   else
     mps_point_yaw = 0
-  end 
-  
+  end
+
   --printf("ori without input: %f",tostring(mps_point_yaw))
   if (fsm.vars.side == "INPUT") then
     --printf("===================================")
     mps_point_yaw = mps_point_yaw + math.pi
     --printf("ori with input: %f",tostring(mps_point_yaw))
-  end 
+  end
 
   local min_dist = MIN_ACTUAL_DIST
   for k, line in pairs(lines) do
@@ -166,14 +166,14 @@ function match_line(lines)
         ori = fawkes.tf.create_quaternion_from_yaw(line:bearing())},line:frame_id(),"/base_link")
 
       printf('=============================================')
-      
-      if fsm.vars.map_pos then 
+
+      if fsm.vars.map_pos then
         mapped_dist = math.vec_length(mps_point.x - base_center.x, mps_point.y - base_center.y)
         local orient_diff = math.abs(math.fmod((math.normalize_mirror_rad(fawkes.tf.get_yaw(base_center.ori)) - math.normalize_mirror_rad(mps_point_yaw)), 2*math.pi))
         --printf("mps_point_x %f",mps_point.x)
         --printf("base_x %f",base_center.x)
         --printf("mps_y %f",mps_point.y)
-        --printf("base_y %f",base_center.y)  
+        --printf("base_y %f",base_center.y)
         --printf('Distance from expected map pos to laser line: %f and its threshold: %f',mapped_dist,MIN_MAPPED_DIST)
         --printf('base_center_ori:%f',tostring(math.normalize_mirror_rad(fawkes.tf.get_yaw(base_center.ori))))
         --printf('mps_point_ori:%f',tostring(math.normalize_mirror_rad(mps_point_yaw)))
@@ -212,7 +212,7 @@ function gripper_aligned()
      z=object_tracking_if:gripper_frame(2),
      ori=fawkes.tf.create_quaternion_from_yaw(0)},
     "base_link", "end_effector_home")
-  
+
   if fsm.vars.target == "WORKPIECE" or  fsm.vars.target == "SLIDE" then
     fsm.vars.safe_put = false
   end
@@ -220,7 +220,7 @@ function gripper_aligned()
   if fsm.vars.safe_put then
     gripper_target.x = gripper_target.x - offset_x_put_conveyor_target_frame + offset_x_safe_put_conveyor_target_frame
   end
-  
+
   if fsm.vars.target == "WORKPIECE" then
     return math.abs(gripper_target.x - arduino:x_position()) < GRIPPER_TOLERANCE.x
       and math.abs(gripper_target.y - (arduino:y_position() - y_max/2)) < GRIPPER_TOLERANCE.y
@@ -304,7 +304,7 @@ function input_invalid()
   if fsm.vars.safe_put == nil then
 	fsm.vars.safe_put = false
   end
- 
+
   if (fsm.vars.target_object_type == nil or string.gsub(fsm.vars.target_object_type, "^%s*(.-)%s*$", "%1") == 0) then
     print_error("That is not a valid target!")
     return true
@@ -414,7 +414,7 @@ function INIT:init()
   -- fsm.vars.mps_x = node:x()
   -- fsm.vars.mps_y = node:y()
   -- fsm.vars.mps_ori = node:property_as_float("orientation")
-  
+
    fsm.vars.missing_detections = 0
   fsm.vars.msgid              = 0
   fsm.vars.out_of_reach       = false
@@ -587,7 +587,7 @@ function MOVE_BASE_AND_GRIPPER:init()
   -- move base to target pose using visual servoing
   self.args["motor_move"] = {x = object_tracking_if:base_frame(0),
                              y = object_tracking_if:base_frame(1),
-                             ori = object_tracking_if:base_frame(5),
+                             ori = -object_tracking_if:base_frame(5),
                              frame = "base_link",
                              visual_servoing = true}
 
@@ -621,7 +621,7 @@ function MOVE_BASE_AND_GRIPPER:init()
   end
 end
 
-function FINE_TUNE_GRIPPER:init()    
+function FINE_TUNE_GRIPPER:init()
   fsm.vars.missing_detections = 0
   fsm.vars.out_of_reach       = false
   fsm.vars.gripper_wait       = 10
@@ -668,7 +668,7 @@ function GRIPPER_ROUTINE:init()
   -- perform pick or put routine
   self.args["pick_or_put_vs"].target = fsm.vars.target
   self.args["pick_or_put_vs"].missing_c3_height = tostring(fsm.vars.missing_c3_height)
-  self.args["pick_or_put_vs"].safe_put = fsm.vars.safe_put 
+  self.args["pick_or_put_vs"].safe_put = fsm.vars.safe_put
 end
 
 function FAILED:init()
