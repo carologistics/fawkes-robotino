@@ -780,7 +780,7 @@ ObjectTrackingThread::set_shm()
 	}
 }
 
-void
+//void
 // ObjectTrackingThread:: detect_objects(cv::Mat &image, std::vector<std::array<float, 4>> &out_boxes) {
 //     // Convert BGR image to RGB
 //     cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
@@ -800,13 +800,27 @@ void
 // }
 
 void ObjectTrackingThread::detect_objects(cv::Mat image, std::vector<std::array<float, 4>>& out_boxes) {
-    // Preprocessing
+     // Convert cv::Mat to torch::Tensor
     auto input_tensor = torch::from_blob(image.data, {1, image.rows, image.cols, 3}, torch::kByte);
-    input_tensor = input_tensor.permute({0, 3, 1, 2}); // Convert to {1, C, H, W}
-    input_tensor = input_tensor.to(torch::kFloat).div(255.0);
-    if (swapRB_)
-        input_tensor = input_tensor.index({torch::indexing::Slice(), {2, 1, 0}, torch::indexing::Slice(), torch::indexing::Slice()});
+    input_tensor = input_tensor.permute({0, 3, 1, 2}); // Change from {1, H, W, C} to {1, C, H, W}
+    input_tensor = input_tensor.to(torch::kFloat32).div(255.0);
 
+    // Swap color channels if necessary
+    if (swapRB_) {
+        input_tensor = input_tensor.index({torch::indexing::Slice(), 
+                                           {torch::indexing::Slice(2, 0, -1)}, // Swap the 2nd and 0th (R and B) channels
+                                           torch::indexing::Slice(), 
+                                           torch::indexing::Slice()});
+    }
+
+    // Load the model and perform inference
+    torch::jit::script::Module module;
+    try {
+        module = load_model("path_to_yolov8_model.pt");  // Specify the path to the model file
+    } catch (...) {
+        std::cerr << "Failed to load model" << std::endl;
+        return;  // Exit if model loading fails
+    }
     // Forward pass
     torch::jit::script::Module module; // Assume module is loaded elsewhere
     torch::NoGradGuard no_grad;
