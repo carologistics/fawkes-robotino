@@ -20,7 +20,7 @@ plugins/vs_offsets:
       save_dist: 0.0
       # pick_routine and pick_end is sharing the same x offset as its
       #  pick_target
-      offset_x: 0.005
+      offset_x: 0.002
       offset_z: 0.035
 
     pick_routine:
