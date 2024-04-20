@@ -53,7 +53,7 @@
   ?*PREPARE-PERIOD* = 1.0
   ?*ABORT-PREPARE-PERIOD* = 30.0
   ?*ABORT-PREPARE-DOWN-RESET* = 5.0
-  ?*BEACON-TIMER* = 2
+  ?*BEACON-TIMER* = 1
   ; bound on number of past task outcomes that are sent
   ?*NUM-SENT-FINISHED-TASKS* = 10
 
