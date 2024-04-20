@@ -266,6 +266,7 @@
 
 (defrule refbox-action-mps-prepare-send-signal
   (declare (salience ?*SALIENCE-LOW*))
+  (time $?now)
   ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (id ?id)
                       (state RUNNING)
                       (action-name prepare-bs|
@@ -328,7 +329,83 @@
 
   (pb-broadcast ?peer-id ?machine-instruction)
   (pb-destroy ?machine-instruction)
+
+  (assert (timer (name (sym-cat ?goal-id - ?plan-id - ?id -send-again-timer))
+                 (time ?now) (seq 1)))
   (printout t "Sent Prepare Msg for " ?mps " with " ?instruction_info  crlf)
+)
+
+(defrule refbox-action-mps-prepare-send-signal2
+  (declare (salience ?*SALIENCE-LOW*))
+  (time $?now)
+  ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (id ?id)
+                      (state RUNNING)
+                      (action-name prepare-bs|
+                                   prepare-cs|
+                                   prepare-ds|
+                                   prepare-rs|
+                                   prepare-ss)
+                      (executable TRUE)
+                      (param-names $?param-names)
+                      (param-values $?param-values))
+  (domain-obj-is-of-type ?mps&:(eq ?mps (plan-action-arg m
+                                                         ?param-names
+                                                         ?param-values))
+                         mps)
+  (metadata-prepare-mps ?mps ?team-color ?peer-id $?instruction_info)
+  (wm-fact (key domain fact mps-type args? m ?mps t ?mps-type) (value TRUE))
+  ; hot fix check thoroughly and replace
+  ;(protobuf-msg (type "llsf_msgs.MachineInfo"))
+?at <- (timer (name ?nat&:(eq ?nat
+                            (sym-cat ?goal-id - ?plan-id - ?id -send-again-timer)))
+          (time $?t&:(timeout ?now ?t 15))
+          (seq ?seq))
+  =>
+  (bind ?machine-instruction (pb-create "llsf_msgs.PrepareMachine"))
+  (pb-set-field ?machine-instruction "team_color" ?team-color)
+  (pb-set-field ?machine-instruction "machine" (str-cat ?mps))
+
+  (switch ?mps-type
+    (case BS
+      then
+        (bind ?bs-inst (pb-create "llsf_msgs.PrepareInstructionBS"))
+        (pb-set-field ?bs-inst "side" (nth$ 1 ?instruction_info))
+        (pb-set-field ?bs-inst "color" (nth$ 2 ?instruction_info))
+        (pb-set-field ?machine-instruction "instruction_bs" ?bs-inst)
+    )
+    (case CS
+      then
+      	(bind ?cs-inst (pb-create "llsf_msgs.PrepareInstructionCS"))
+        (pb-set-field ?cs-inst "operation" (nth$ 1 ?instruction_info))
+        (pb-set-field ?machine-instruction "instruction_cs" ?cs-inst)
+    )
+    (case DS
+      then
+        (bind ?ds-inst (pb-create "llsf_msgs.PrepareInstructionDS"))
+        (bind ?order (nth$ 1 ?instruction_info))
+        (bind ?order-id (float (string-to-field (sub-string 2 (length$ (str-cat ?order)) (str-cat ?order)))))
+        (pb-set-field ?ds-inst "order_id" ?order-id)
+        (pb-set-field ?machine-instruction "instruction_ds" ?ds-inst)
+    )
+    (case SS
+      then
+       (bind ?ss-inst (pb-create "llsf_msgs.PrepareInstructionSS"))
+                (bind ?instruction (nth$ 2 ?instruction_info))
+                (pb-set-field ?ss-inst "operation" ?instruction)
+                (pb-set-field ?machine-instruction "instruction_ss" ?ss-inst)
+    )
+    (case RS
+      then
+        (bind ?rs-inst (pb-create "llsf_msgs.PrepareInstructionRS"))
+        (pb-set-field ?rs-inst "ring_color" (nth$ 1 ?instruction_info) )
+        (pb-set-field ?machine-instruction "instruction_rs" ?rs-inst)
+    )
+  )
+
+  (pb-broadcast ?peer-id ?machine-instruction)
+  (pb-destroy ?machine-instruction)
+  (printout t "Sent Prepare Msg for " ?mps " with " ?instruction_info  crlf)
+  (retract ?at)
 )
 
 
