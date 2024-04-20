@@ -468,9 +468,7 @@ ObjectTrackingThread::loop()
 	try {
 		tf_listener->transform_point(cam_frame_, expected_pos, expected_pos_cam);
 	} catch (tf::ExtrapolationException &) {
-		expected_pos.stamp     = Time(0, 0);
-		expected_pos_cam.stamp = Time(0, 0);
-		tf_listener->transform_point(cam_frame_, expected_pos, expected_pos_cam);
+		return;
 	}
 
 	//get 3d position of closest bounding box to expected position in cam_gripper frame
@@ -556,9 +554,7 @@ ObjectTrackingThread::loop()
 			try {
 				tf_listener->transform_point(target_frame_, expected_pos, cur_object_pos_target);
 			} catch (tf::ExtrapolationException &) {
-				expected_pos.stamp          = Time(0, 0);
-				cur_object_pos_target.stamp = Time(0, 0);
-				tf_listener->transform_point(target_frame_, expected_pos, cur_object_pos_target);
+				return;
 			}
 			detected = true;
 		}
@@ -636,9 +632,7 @@ ObjectTrackingThread::loop()
 	try {
 		tf_listener->transform_point("base_link", weighted_object_pos_target, weighted_object_pos_base);
 	} catch (tf::ExtrapolationException &) {
-		weighted_object_pos_target.stamp = Time(0, 0);
-		weighted_object_pos_base.stamp   = Time(0, 0);
-		tf_listener->transform_point("base_link", weighted_object_pos_target, weighted_object_pos_base);
+		return;
 	}
 	//-------------------------------------------------------------------------
 
