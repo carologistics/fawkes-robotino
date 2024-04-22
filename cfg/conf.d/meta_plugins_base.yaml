@@ -58,3 +58,22 @@ fawkes/meta_plugins:
     - m-base-joy
     - laser_front_dist
     - pos3d-publisher
+  m-ros2-base:
+    - bbsync
+    - ros2
+    - ros2-tf2-oneway
+    - ros2-laserbridge
+    - ros2-motorinterface
+    - ros2-navigator
+    - navgraph
+    - laser-lines
+    - arduino
+    - static-transforms
+    - webview
+    - fvbase
+    - fvfountain
+    - skiller
+    - realsense2
+    - skiller-rest-api
+    - skiller_motor_state
+    - object-tracking
