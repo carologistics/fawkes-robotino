@@ -506,7 +506,7 @@ function DRIVE_VS:loop()
 
    self.fsm.vars.target.x = object_tracking_if:base_frame(0)
    self.fsm.vars.target.y = object_tracking_if:base_frame(1)
-   self.fsm.vars.target.ori = fawkes.tf.create_quaternion_from_yaw(object_tracking_if:base_frame(5))
+   self.fsm.vars.target.ori = fawkes.tf.create_quaternion_from_yaw(-object_tracking_if:base_frame(5))
    set_speed(self)
 end
 
