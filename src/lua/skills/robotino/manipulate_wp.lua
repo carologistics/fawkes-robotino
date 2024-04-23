@@ -577,7 +577,7 @@ function MOVE_BASE_AND_GRIPPER:init()
   -- move base to target pose using visual servoing
   self.args["motor_move"] = {x = object_tracking_if:base_frame(0),
                              y = object_tracking_if:base_frame(1),
-                             ori = object_tracking_if:base_frame(5),
+                             ori = -object_tracking_if:base_frame(5),
                              frame = "base_link",
                              visual_servoing = true}
 

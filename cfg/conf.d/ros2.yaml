@@ -27,6 +27,9 @@ ros2:
     # Frequency in Hz at which the clock should be published
     frequency: 100
 
+  laserbridge:
+    scan_topic_name: "/front/sick_scan/scan"
+
   tf:
     # Use tf2 for communication with ROS.
     # This means using the tf2_msgs message types and publishing
