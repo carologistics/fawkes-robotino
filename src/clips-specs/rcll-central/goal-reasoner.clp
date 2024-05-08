@@ -424,10 +424,21 @@
                (eq ?highest-prio-gm:goal-id (fact-slot-value ?highest-prio-goal-fact id))
                  (bind ?robot (fact-slot-value ?highest-prio-gm assigned-to))
   )
-  (modify ?highest-prio-goal-fact (mode SELECTED))
+  (bind ?selected (modify ?highest-prio-goal-fact (mode SELECTED)))
+	(if (eq (fact-slot-value ?selected class) MOVE-OUT-OF-WAY) then 
+  (do-for-all-facts ((?g goal)) (eq ?g:mode DISPATCHED)
+    (printout warn ?g:id " is concurrently running" crlf)
+  )
+  (do-for-all-facts ((?df domain-fact)) (eq ?df:name wp-at)
+    (printout warn  ?df:param-values crlf)
+  )
+  )
   ; flush executability
 	(delayed-do-for-all-facts ((?g goal))
 		(and (eq ?g:is-executable TRUE) (neq ?g:class SEND-BEACON))
+		(if (and (eq (fact-slot-value ?selected class) MOVE-OUT-OF-WAY) (neq ?g:class MOVE-OUT-OF-WAY)) then
+		(printout warn "Could select " ?g:id " instead of MOVE-OUT-OF-WAY" crlf)
+		)
 		(modify ?g (is-executable FALSE))
 	)
   ; if it is actually a robot, remove all other assignments and the waiting status
@@ -537,6 +548,7 @@
   ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to ?robot)
              (category ?category&PRODUCTION|MAINTENANCE|PRODUCTION-INSTRUCT|MAINTENANCE-INSTRUCT) (retries ?retries))
   =>
+  (modify ?gm (retries (+ 1 ?retries)))
   (if (not
         (or
           (eq ?category PRODUCTION-INSTRUCT)
@@ -549,7 +561,6 @@
   )
   (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as workpiece is still usable after fail" crlf)
   (modify ?g (mode FORMULATED) (outcome UNKNOWN))
-  (modify ?gm (retries (+ 1 ?retries)))
 
   (goal-reasoner-retract-plan-action ?goal-id)
 )
@@ -569,7 +580,7 @@
   (goal-meta (goal-id ?goal-id) (order-id ?order-id) (assigned-to ?robot)
              (category ?category&PRODUCTION|PRODUCTION-INSTRUCT))
   ?order-root <- (goal (id ?root-id) (outcome ~FAILED))
-  (goal-meta (goal-id ?root-id) (root-for-order ?order-id))
+  (goal-meta (goal-id ?root-id) (root-for-order ?order-id&:(neq ?order-id nil)))
   =>
   (if (not
           (eq ?category PRODUCTION-INSTRUCT)
@@ -688,7 +699,7 @@
   (goal-meta (goal-id ?goal-id) (order-id ?order-id) (assigned-to ?robot)
              (category ?category&PRODUCTION|PRODUCTION-INSTRUCT))
   ?order-root <- (goal (id ?root-id) (outcome ~FAILED))
-  (goal-meta (goal-id ?root-id) (root-for-order ?order-id))
+  (goal-meta (goal-id ?root-id) (root-for-order ?order-id&:(neq ?order-id nil)))
   =>
   (if (not
           (eq ?category PRODUCTION-INSTRUCT)
@@ -798,6 +809,7 @@
   ?g <- (goal (id ?goal-id) (class ?class&MOVE-OUT-OF-WAY|CLEANUP-WP) (mode FINISHED)
               (outcome ?outcome) (verbosity ?v))
   ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil) (retries ?retries))
+  (not (plan-action (state FAILED) (error-msg "Stuck on Running")))
   =>
   (printout (log-debug ?v) "Evaluate " ?class " goal " ?goal-id crlf)
   (set-robot-to-waiting ?robot)

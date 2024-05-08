@@ -77,6 +77,12 @@
 	(do-for-all-facts ((?df domain-fact)) TRUE
 	  (retract ?df)
 	)
+  (do-for-all-facts ((?df domain-object)) TRUE
+	  (retract ?df)
+	)
+  (do-for-all-facts ((?df domain-obj-is-of-type)) TRUE
+    (retract ?df)
+  )
 	(assert (domain-wm-flushed))
 )
 
@@ -188,20 +194,73 @@
 
 (defrule domain-init-tag-matching
   (domain-fact (name mps-type) (param-values ?mps ?))
-  (navgraph-node (name ?str-mps&:(eq (sym-cat ?str-mps) ?mps))
-                 (properties $? "tag_input" ?input-str $?))
-  (navgraph-node (name ?str-mps)
-                 (properties $? "tag_output" ?output-str $?))
   (not (domain-fact (name tag-matching) (param-values ?mps $?)))
   =>
-  (if (str-index "C-" ?str-mps) then
+  (if (str-index "C-" (str-cat ?mps)) then
     (bind ?team CYAN)
    else
     (bind ?team MAGENTA)
   )
+  (if (eq ?mps C-BS) then
+      (bind ?input 122)
+      (bind ?output 121)
+  )
+  (if (eq ?mps C-CS1) then
+      (bind ?input 102)
+      (bind ?output 101)
+  )
+  (if (eq ?mps C-CS2) then
+      (bind ?input 104)
+      (bind ?output 103)
+  )
+  (if (eq ?mps C-RS1) then
+      (bind ?input 112)
+      (bind ?output 111)
+  )
+  (if (eq ?mps C-RS2) then
+      (bind ?input 114)
+      (bind ?output 113)
+  )
+  (if (eq ?mps C-DS) then
+      (bind ?input 132)
+      (bind ?output 131)
+  )
+  (if (eq ?mps C-SS) then
+      (bind ?input 142)
+      (bind ?output 141)
+  )
+  (if (eq ?mps M-BS) then
+      (bind ?input 222)
+      (bind ?output 221)
+  )
+  (if (eq ?mps M-CS1) then
+      (bind ?input 202)
+      (bind ?output 201)
+  )
+  (if (eq ?mps M-CS2) then
+      (bind ?input 204)
+      (bind ?output 203)
+  )
+  (if (eq ?mps M-RS1) then
+      (bind ?input 212)
+      (bind ?output 211)
+  )
+  (if (eq ?mps M-RS2) then
+      (bind ?input 214)
+      (bind ?output 213)
+  )
+  (if (eq ?mps M-DS) then
+      (bind ?input 232)
+      (bind ?output 231)
+  )
+  (if (eq ?mps M-SS) then
+      (bind ?input 242)
+      (bind ?output 241)
+  )
+
   (assert
-    (domain-fact (name tag-matching) (param-values ?mps INPUT ?team (string-to-field ?input-str)))
-    (domain-fact (name tag-matching) (param-values ?mps OUTPUT ?team (string-to-field ?output-str)))
+    (domain-fact (name tag-matching) (param-values ?mps INPUT ?team ?input))
+    (domain-fact (name tag-matching) (param-values ?mps OUTPUT ?team ?output))
   )
 )
 

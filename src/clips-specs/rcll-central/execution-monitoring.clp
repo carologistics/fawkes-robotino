@@ -297,7 +297,7 @@
 				 (state FORMULATED)
 				 (action-name move)
 				 (param-values ?robot ?robot-at ?robot-at-side ?robot-to ?robot-to-side))
-	(plan-action (id ?prev-action-id&:(eq (- ?action-id 1) ?prev-action-id)) (goal-id ?goal-id) (plan-id ?plan-id) (state EXECUTION-SUCCEEDED|SENSED-EFFECTS-WAIT|SENSED-EFFECTS-HOLD|EFFECTS-APPLIED|FINAL))
+	(not (plan-action (id ?prev-action-id&:(eq (- ?action-id 1) ?prev-action-id)) (goal-id ?goal-id) (plan-id ?plan-id) (state FORMULATED|PENDING|WAITING|RUNNING)))
 	(or
 		(plan-action (skiller ?other-skiller&:(neq ?skiller ?other-skiller)) (action-name move) (state ~FORMULATED&~FINAL) (param-values ?other-robot&:(neq ?robot ?other-robot) ? ? ?robot-to ?robot-to-side))
 		(and
@@ -310,6 +310,7 @@
 	(bind ?interleaved-id (sym-cat ?class -INTERLEAVED-PLAN-))
 	(bind ?interleaved-plan (plan-assert-sequential ?interleaved-id ?goal-id ?robot
 	    (plan-assert-action go-wait ?robot ?robot-at ?robot-at-side (wait-pos ?robot-to ?robot-to-side))
+	    (plan-assert-action wait ?robot (wait-pos ?robot-to ?robot-to-side) WAIT)
 	))
 	(modify ?plan-action (param-values ?robot (wait-pos ?robot-to ?robot-to-side) WAIT ?robot-to ?robot-to-side))
 	(modify ?plan (suspended TRUE) (suspension-reason (fact-slot-value ?interleaved-plan plan-id)))
@@ -326,7 +327,7 @@
 				 (skiller ?skiller)
 				 (state FORMULATED)
 				 (action-name move)
-				 (param-values ?robot ?robot-at ?robot-at-side ?robot-to ?robot-to-side))
+				 (param-values ?robot ?robot-at&:(not (str-index "WAIT-" ?robot-at)) ?robot-at-side ?robot-to ?robot-to-side))
 	(not (plan-action (id ?prev-action-id&:(eq (- ?action-id 1) ?prev-action-id)) (goal-id ?goal-id) (plan-id ?plan-id)))
 	=>
 	(bind ?interleaved-id (sym-cat ?class -INTERLEAVED-PLAN-))
@@ -962,7 +963,7 @@
   (modify ?pa (param-values ?rs $?o-args ?rs-new ?bases-remain ?rs-req))
 )
 
-; ----------------------- RESTORE FROM BACKUP -------------------------------
+; ----------------------- RESTORE AND INSERT -------------------------------
 
 (defrule execution-monitoring-remove-waiting-robot
 	(declare (salience ?*SALIENCE-HIGH*))
@@ -985,25 +986,8 @@
 	=>
 	(assert (wm-fact (key central agent robot-waiting args? r ?robot)))
 	(assert (wm-fact (key monitoring robot-reinserted args? r ?robot) (values ?now)))
-	;recompute navgraph after re-insertion
-	(navgraph-set-field-size-from-cfg ?robot)
-	(navgraph-add-all-new-tags)
-	(navgraph-compute ?robot)
 
 	(retract ?rl)
-)
-
-(defrule execution-monitoring-set-navgraph-after-reinsertion
-	"Recompute the navgraph again after a certain time to make sure everything was set correctly"
-	?wf <- (wm-fact (key monitoring robot-reinserted args? r ?robot) (values $?start-time))
-	(wm-fact (key refbox game-time) (values $?now))
-	(test (timeout ?now ?start-time ?*REINSERTION-NAVGRAPH-TIMEOUT*))
-	=>
-	;recompute navgraph after re-insertion
-	(navgraph-set-field-size-from-cfg ?robot)
-	(navgraph-add-all-new-tags)
-	(navgraph-compute ?robot)
-	(retract ?wf)
 )
 
 (defrule execution-monitoring-clean-wm-from-robot
@@ -1182,15 +1166,33 @@
 	(assert (wm-fact (key monitoring action-estimated-score args? goal-id ?goal-id plan-id ?plan-id action-id (sym-cat ?action-id)  action-name ?action-name) (value (- ?points ?recorded-points))))
 )
 
-(defrule execution-monitoring-correct-slide-counter
-	?monitoring-fact <- (wm-fact (key monitoring action-estimated-score args? goal-id ?goal-id plan-id ?plan-id action-id ?action-id action-name wp-put-slide-cc) (value 0))
-	(goal (id ?goal-id) (params $? target-mps ?rs $?))
-	?request <- (wm-fact (key request pay args? ord ?order m ?rs ring ?ring seq ?seq prio ?prio) (values status ? assigned-to $?assigned-goals&:(member$ ?goal-id ?assigned-goals)))
-	?rs-filled <- (domain-fact (name rs-filled-with) (param-values ?rs ?bases-filled))
-	(domain-fact (name rs-inc) (param-values ?bases-now ?bases-filled))
-	=>
-	(printout t "Detected no point increase after put slide, re-issuing request and adjusting counter")
-	(retract ?monitoring-fact)
-	(modify ?rs-filled (param-values ?rs ?bases-now))
-	(modify ?request (values status OPEN assgined-to))
+; TODO: revisit
+;(defrule execution-monitoring-correct-slide-counter
+;	?monitoring-fact <- (wm-fact (key monitoring action-estimated-score args? goal-id ?goal-id plan-id ?plan-id action-id ?action-id action-name wp-put-slide-cc) (value 0))
+;	(goal (id ?goal-id) (params $? target-mps ?rs $?))
+;	?request <- (wm-fact (key request pay args? ord ?order m ?rs ring ?ring seq ?seq prio ?prio) (values status ? assigned-to $?assigned-goals&:(member$ ?goal-id ?assigned-goals)))
+;	?rs-filled <- (domain-fact (name rs-filled-with) (param-values ?rs ?bases-filled))
+;	(domain-fact (name rs-inc) (param-values ?bases-now ?bases-filled))
+;	=>
+;	(printout t "Detected no point increase after put slide, re-issuing request and adjusting counter")
+;	(retract ?monitoring-fact)
+;	(modify ?rs-filled (param-values ?rs ?bases-now))
+;	(modify ?request (values status OPEN assgined-to))
+;)
+
+; ----------------------- EXPLORATION -----------------------------------
+(defrule execution-monitoring-generate-navgraph-when-all-tags-found
+  "Generate the navgraph when all the mps tags where found."
+  (wm-fact (key refbox phase) (value PRODUCTION))
+  (forall
+    (wm-fact (key domain fact mps-team args? m ?mps col ?any-team-color))
+    (wm-fact (key game found-tag name args? m ?mps ))
+  )
+  (not (navgraph-all-tags-triggered))
+  (blackboard-interface (id "/navgraph-generator")
+	                    (type "NavGraphGeneratorInterface"))
+=>
+  (printout t "Triggering NavGraph generation with Ground-truth" crlf)
+  (navgraph-add-all-new-tags)
+  (assert (navgraph-all-tags-triggered))
 )

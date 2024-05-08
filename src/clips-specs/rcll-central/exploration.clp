@@ -31,13 +31,23 @@
 ; ---------------- EXPLORATION SYNC ----------------
 
 (defrule exp-sync-zone-content
-	(not (wm-fact (key domain fact zone-content args? z ?zn m ?machine)))
-	(wm-fact (id "/config/rcll/exploration/zone-margin") (type FLOAT) (value ?zone-margin))
-	(confval (path ?min-path&:(eq ?min-path (str-cat ?*NAVGRAPH_GENERATOR_MPS_CONFIG* "bounding-box/p1")))
-	         (list-value ?x_min ?y_min))
-	(confval (path ?max-path&:(eq ?max-path (str-cat ?*NAVGRAPH_GENERATOR_MPS_CONFIG* "bounding-box/p2")))
-	         (list-value ?x_max ?y_max))
+	(not (wm-fact (key domain fact zone-content args? $?)))
+	(wm-fact (key config rcll exploration zone-margin) (type FLOAT) (value ?zone-margin))
+
+	(wm-fact (key refbox version-info config args? name field_height) (value ?field-height))
+	(wm-fact (key refbox version-info config args? name field_width) (value ?field-width))
+	(wm-fact (key refbox version-info config args? name field_mirrored) (value ?mirrored))
 	=>
+	(bind ?x_min 0)
+	(if (eq ?mirrored TRUE) then
+		(bind ?x_min (* -1 ?field-width))
+	else
+		(bind ?x_min 0)
+	)
+	(bind ?x_max ?field-width)
+	(bind ?y_min 0)
+	(bind ?y_max ?field-height)
+
 	(bind ?zones (create$))
 	(loop-for-count (?x ?x_min ?x_max)
 		(loop-for-count (?y ?y_min ?y_max)
@@ -197,7 +207,7 @@
 )
 
 (defrule exp-goals-move-executable
-	"Move to a navgraph node."
+	"Move to a zone."
 	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
 	?g <- (goal (id ?goal-id) (class EXPLORATION-MOVE)
 	                          (mode FORMULATED)
@@ -231,6 +241,64 @@
 	(not (exploration-result (zone ?zone&:(eq ?zone (zone-string-to-sym ?zone-string)))))
 	=>
 	(assert (exploration-result (team UNKNOWN) (machine (sym-cat ?mps-string)) (zone (zone-string-to-sym ?zone-string)) (orientation ?orientation)))
+)
+
+(defrule exp-report-tag-to-exploration-result
+	"Take the information from the exploration interface and map it to a exploration-result fact."
+	(wm-fact (key exploration active) (value TRUE))
+    (domain-fact (name tag-matching) (param-values ?n ?side ?color ?tag-id))
+	(domain-fact (name mps-type) (param-values ?n ?mtype))
+	(not (exploration-result (machine ?n)))
+	(Position3DInterface (id ?if-id&:(str-index  (str-cat "/tag-vision/" ?n) ?if-id)) (visibility_history ?vsh&:(> ?vsh 10))
+		(translation $?trans)
+		(rotation $?rot)
+	)
+	=>
+	(bind ?side-suffix (sub-string (- (length$ ?if-id) 7) (- (length$ ?if-id) 7) ?if-id))
+	(if (or
+			(and (eq ?side-suffix "I") (eq ?side INPUT))
+			(and (eq ?side-suffix "O") (eq ?side OUTPUT))
+	 	) then
+		(bind ?x (nth$ 1 ?trans))
+		(bind ?y (nth$ 2 ?trans))
+		(bind ?prefix "C")
+		(if (< ?y 0) then (return))
+		(if (< ?x 0) then
+			(bind ?x (* -1 ?x))
+			(bind ?prefix "M")
+		)
+		(bind ?x (round (+ ?x 0.5)))
+		(bind ?y (round (+ ?y 0.5)))
+		(bind ?zn2 (str-cat ?prefix "_Z" ?x ?y))
+
+		(bind ?yaw (tf-yaw-from-quat $?rot))
+		(bind ?odd TRUE)
+		(if (eq 0 (mod ?tag-id 2)) then (bind ?odd FALSE))
+		(if ?odd then (bind ?yaw (+ ?yaw ?*PI* )))
+		(if (< ?yaw 0) then (bind ?yaw (+ ?yaw ?*2PI*)))
+		(bind ?orientation (* 45 (round (* (/ ?yaw ?*PI*) 4.0))))
+
+		(if (eq ?orientation 360) then
+			(bind ?orientation 0)
+		)
+
+		(assert
+			(exploration-result
+				(machine ?n)
+				(zone ?zn2)
+				(orientation ?orientation)
+				(team ?color)
+				(status PARTIAL_CORRECT)
+			)
+			(exploration-result
+				(machine (mirror-name ?n))
+				(zone (mirror-name ?zn2))
+				(orientation (mirror-orientation ?mtype ?zn2 ?orientation))
+				(team (mirror-team ?color))
+				(status PARTIAL_CORRECT)
+			)
+		)
+	)
 )
 
 (defrule exp-report-send-partial
@@ -335,7 +403,9 @@
 					(trans (tag-offset (zone-string-to-sym-dash (str-cat ?er:zone)) (deg-to-rad ?er:orientation) 0.17))
 					(rot (tf-quat-from-yaw (deg-to-rad ?er:orientation)))
 		)
-		(navgraph-add-tags-from-exploration)
+		(if (any-factp ((?ng-interface blackboard-interface)) (eq ?ng-interface:type "NavGraphGeneratorInterface")) then
+			(navgraph-add-tags-from-exploration)
+		)
   	)
   )
 )

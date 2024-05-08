@@ -61,20 +61,6 @@
   (blackboard-open "SwitchInterface" (remote-if-id ?robot "switch/box_detect_enabled"))
 )
 
-(defrule blackboard-init-open-laptop-navgraph-interfaces
-  "Open the robot-specific Navgraph blackboard interfaces."
-  (domain-facts-loaded)
-  (ff-feature-loaded blackboard)
-  (wm-fact (key central agent laptop args? r ?robot))
-  =>
-  (blackboard-open "NavGraphWithMPSGeneratorInterface"
-                   (remote-if-id ?robot "navgraph-generator-mps"))
-  (blackboard-open "NavGraphGeneratorInterface"
-                   (remote-if-id ?robot "navgraph-generator"))
-  (blackboard-open "NavigatorInterface"
-                   (remote-if-id ?robot "Navigator"))
-)
-
 (defrule blackboard-init-open-liveliness-check
   "Open the robot-specific Heartbeat blackboard interface."
   (domain-facts-loaded)
@@ -83,7 +69,6 @@
   =>
   (blackboard-open "HeartbeatInterface" (remote-if-id "heartbeat" ?robot))
 )
-
 
 (defrule blackboard-init-open-robot-navgraph-interfaces
   "Open the robot-specific Navgraph blackboard interfaces."
@@ -99,92 +84,60 @@
                    (remote-if-id ?robot "Navigator"))
 )
 
-(defrule blackboard-init-compute-navgraph
-  (or (wm-fact (key central agent robot args? r ?robot))
-      (wm-fact (key central agent laptop args? r ?robot)))
-  (blackboard-interface (id ?id&:(str-index ?robot ?id))
-                        (type "NavGraphWithMPSGeneratorInterface"))
-  (blackboard-interface (id ?id2&:(str-index ?robot ?id2))
-                        (type "NavGraphGeneratorInterface"))
-  (wm-fact (key config rcll use-static-navgraph) (type BOOL) (value FALSE))
-  =>
-  (navgraph-set-field-size-from-cfg ?robot)
-  (navgraph-compute ?robot)
+(defrule blackboard-init-compute-navgraph-robot
+	(wm-fact (key central agent robot args? r ?robot))
+	(blackboard-interface (id ?id&:(str-index ?robot ?id))
+	                      (type "NavGraphWithMPSGeneratorInterface"))
+	(blackboard-interface (id ?id2&:(str-index ?robot ?id2))
+	                      (type "NavGraphGeneratorInterface"))
+ 	=>
+	(navgraph-init ?robot FALSE)
 )
 
-(defrule blackboard-init-compute-navgraph-from-refbox-value
-  (or (wm-fact (key central agent robot args? r ?robot))
-      (wm-fact (key central agent laptop args? r ?robot)))
-  (blackboard-interface (id ?id&:(str-index ?robot ?id))
-                        (type "NavGraphWithMPSGeneratorInterface"))
-  (blackboard-interface (id ?id2&:(str-index ?robot ?id2))
-                        (type "NavGraphGeneratorInterface"))
-  (wm-fact (key config rcll use-static-navgraph) (type BOOL) (value FALSE))
-  (wm-fact (key refbox field height) (value ?field-height))
-  (wm-fact (key refbox field width) (value ?field-width))
-  (wm-fact (key refbox field mirrored) (value ?mirrored))
-  (test
-    (and
-      (neq ?field-height NOT-SET) (neq ?field-height DOES-NOT-EXIST)
-      (neq ?field-width NOT-SET) (neq ?field-width DOES-NOT-EXIST)
-      (neq ?mirrored NOT-SET) (neq ?mirrored DOES-NOT-EXIST)
-    )
-  )
+(defrule blackboard-init-open-robot-tag-vision-interfaces
+  "Open the robot tag vision blackboard interfaces."
+  (domain-facts-loaded)
+  (ff-feature-loaded blackboard)
+  (wm-fact (key central agent robot args? r ?robot))
   =>
-  (bind ?p1_x (- 0 ?field-width))
-  (bind ?p1_y 0)
-  (bind ?p2_x ?field-width)
-  (bind ?p2_y ?field-height)
-  (if ?mirrored
-    then
-    (bind ?p2_x 0)
-  )
-  (navgraph-set-field-size ?robot ?p1_x ?p1_y ?p2_x ?p2_y)
-  (navgraph-compute ?robot)
+  (blackboard-open "Position3DInterface" (remote-if-id ?robot "tag-vision/C-BS-I/to_map"))
+  (blackboard-open "Position3DInterface" (remote-if-id ?robot "tag-vision/C-BS-O/to_map"))
+  (blackboard-open "Position3DInterface" (remote-if-id ?robot "tag-vision/C-DS-I/to_map"))
+  (blackboard-open "Position3DInterface" (remote-if-id ?robot "tag-vision/C-DS-O/to_map"))
+  (blackboard-open "Position3DInterface" (remote-if-id ?robot "tag-vision/C-SS-I/to_map"))
+  (blackboard-open "Position3DInterface" (remote-if-id ?robot "tag-vision/C-SS-O/to_map"))
+  (blackboard-open "Position3DInterface" (remote-if-id ?robot "tag-vision/C-CS1-I/to_map"))
+  (blackboard-open "Position3DInterface" (remote-if-id ?robot "tag-vision/C-CS1-O/to_map"))
+  (blackboard-open "Position3DInterface" (remote-if-id ?robot "tag-vision/C-CS2-I/to_map"))
+  (blackboard-open "Position3DInterface" (remote-if-id ?robot "tag-vision/C-CS2-O/to_map"))
+  (blackboard-open "Position3DInterface" (remote-if-id ?robot "tag-vision/C-RS1-I/to_map"))
+  (blackboard-open "Position3DInterface" (remote-if-id ?robot "tag-vision/C-RS1-O/to_map"))
+  (blackboard-open "Position3DInterface" (remote-if-id ?robot "tag-vision/C-RS2-I/to_map"))
+  (blackboard-open "Position3DInterface" (remote-if-id ?robot "tag-vision/C-RS2-O/to_map"))
+  (blackboard-open "Position3DInterface" (remote-if-id ?robot "tag-vision/M-BS-I/to_map"))
+  (blackboard-open "Position3DInterface" (remote-if-id ?robot "tag-vision/M-BS-O/to_map"))
+  (blackboard-open "Position3DInterface" (remote-if-id ?robot "tag-vision/M-DS-I/to_map"))
+  (blackboard-open "Position3DInterface" (remote-if-id ?robot "tag-vision/M-DS-O/to_map"))
+  (blackboard-open "Position3DInterface" (remote-if-id ?robot "tag-vision/M-SS-I/to_map"))
+  (blackboard-open "Position3DInterface" (remote-if-id ?robot "tag-vision/M-SS-O/to_map"))
+  (blackboard-open "Position3DInterface" (remote-if-id ?robot "tag-vision/M-CS1-I/to_map"))
+  (blackboard-open "Position3DInterface" (remote-if-id ?robot "tag-vision/M-CS1-O/to_map"))
+  (blackboard-open "Position3DInterface" (remote-if-id ?robot "tag-vision/M-CS2-I/to_map"))
+  (blackboard-open "Position3DInterface" (remote-if-id ?robot "tag-vision/M-CS2-O/to_map"))
+  (blackboard-open "Position3DInterface" (remote-if-id ?robot "tag-vision/M-RS1-I/to_map"))
+  (blackboard-open "Position3DInterface" (remote-if-id ?robot "tag-vision/M-RS1-O/to_map"))
+  (blackboard-open "Position3DInterface" (remote-if-id ?robot "tag-vision/M-RS2-I/to_map"))
+  (blackboard-open "Position3DInterface" (remote-if-id ?robot "tag-vision/M-RS2-O/to_map"))
 )
 
 (defrule blackboard-init-compute-navgraph-central
-  (blackboard-interface (id "/navgraph-generator-mps")
-                        (type "NavGraphWithMPSGeneratorInterface"))
-  (blackboard-interface (id "/navgraph-generator")
-                        (type "NavGraphGeneratorInterface"))
-  =>
-  (navgraph-compute FALSE)
-)
-
-(defrule blackboard-init-compute-navgraph-central-from-refbox-value
-  (blackboard-interface (id "/navgraph-generator-mps")
-                        (type "NavGraphWithMPSGeneratorInterface"))
-  (blackboard-interface (id "/navgraph-generator")
-                        (type "NavGraphGeneratorInterface"))
-  (wm-fact (key refbox field height) (value ?field-height))
-  (wm-fact (key refbox field width) (value ?field-width))
-  (wm-fact (key refbox field mirrored) (value ?mirrored))
-  (test
-    (and
-      (neq ?field-height NOT-SET) (neq ?field-height DOES-NOT-EXIST)
-      (neq ?field-width NOT-SET) (neq ?field-width DOES-NOT-EXIST)
-      (neq ?mirrored NOT-SET) (neq ?mirrored DOES-NOT-EXIST)
-    )
-  )
-  =>
-  (bind ?p1_x (- 0 ?field-width))
-  (bind ?p1_y 0)
-  (bind ?p2_x ?field-width)
-  (bind ?p2_y ?field-height)
-  (if ?mirrored
-    then
-    (bind ?p2_x 0)
-  )
-  (bind ?interface "NavGraphGeneratorInterface::navgraph-generator")
-  (bind ?msg (blackboard-create-msg ?interface "SetBoundingBoxMessage"))
-  (blackboard-set-msg-field ?msg "p1_x" ?p1_x)
-  (blackboard-set-msg-field ?msg "p1_y" ?p1_y)
-  (blackboard-set-msg-field ?msg "p2_x" ?p2_x)
-  (blackboard-set-msg-field ?msg "p2_y" ?p2_y)
-  (bind ?msg (blackboard-create-msg ?interface "SetBoundingBoxMessage"))
-  (blackboard-send-msg ?msg)
-  (navgraph-compute FALSE)
+	(blackboard-interface (id "/navgraph-generator-mps")
+	                      (type "NavGraphWithMPSGeneratorInterface"))
+	(blackboard-interface (id "/navgraph-generator")
+	                    (type "NavGraphGeneratorInterface"))
+  (wm-fact (key refbox version-info received))
+	=>
+	(navgraph-init central FALSE)
 )
 
 (defrule blackboard-init-open-skiller-interface
@@ -201,7 +154,7 @@
 )
 
 (defrule blackboard-init-motor-interfaces
-  "Open the Navgraph blackboard interfaces ."
+  "Open the motor interfaces of the robotinos."
   (domain-facts-loaded)
   (ff-feature-loaded blackboard)
   (wm-fact (key central agent robot args? r ?robot))
