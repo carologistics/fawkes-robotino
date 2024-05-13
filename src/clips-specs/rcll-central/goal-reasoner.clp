@@ -862,13 +862,30 @@
   All pre evaluation steps should have been executed, enforced by the higher priority
 "
   (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome)
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome) (class ?class)
               (verbosity ?v))
-  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot) (order-id ?oid))
 =>
   (set-robot-to-waiting ?robot)
   (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED" crlf)
   (modify ?g (mode EVALUATED))
+
+  ; restrict future goals to this robot to streamline processing
+  (if (or (eq ?class MOUNT-RING) (eq ?class MOUNT-CAP) (eq ?class DELIVER)) then
+    (delayed-do-for-all-facts ((?ogm goal-meta) (?og goal))
+      (and
+        (eq ?og:id ?ogm:goal-id)
+        (eq ?og:mode FORMULATED)
+        (eq ?ogm:order-id ?oid)
+        (or
+          (eq ?og:class MOUNT-RING)
+          (eq ?og:class MOUNT-CAP)
+          (eq ?og:class DELIVER)
+        )
+      )
+      (modify ?ogm (restricted-to ?robot))
+    )
+  )
 )
 
 ; ================================= Goal Clean up ============================
