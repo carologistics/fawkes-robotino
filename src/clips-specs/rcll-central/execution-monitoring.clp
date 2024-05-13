@@ -265,6 +265,20 @@
   (printout error  "Goal "  ?goal-id " timed out on selection!" crlf)
   (set-robot-to-waiting ?robot)
   (remove-robot-assignment-from-goal-meta ?g)
+  ; remove restrictions
+  (delayed-do-for-all-facts ((?ogm goal-meta) (?og goal))
+      (and
+        (eq ?og:id ?ogm:goal-id)
+        (eq ?og:mode FORMULATED)
+        (eq ?ogm:restricted-to ?robot)
+        (or
+          (eq ?og:class MOUNT-RING)
+          (eq ?og:class MOUNT-CAP)
+          (eq ?og:class DELIVER)
+        )
+      )
+      (modify ?ogm (restricted-to nil))
+  )
   (retract ?timer)
 )
 
@@ -1195,4 +1209,24 @@
   (printout t "Triggering NavGraph generation with Ground-truth" crlf)
   (navgraph-add-all-new-tags)
   (assert (navgraph-all-tags-triggered))
+)
+
+; ----------------------- GOAL RESTRICTIONS -----------------------------------
+(defrule execution-monitoring-remove-restriction-if-robot-lost
+  "Remove goal restrictions if the robot is lost."
+  (wm-fact (key central agent robot-lost args? r ?robot))
+  ?g <- (goal (id ?ogid) (mode FORMULATED))
+  ?gm <- (goal-meta (goal-id ?ogid) (restricted-to ?robot))
+  =>
+  (modify ?gm (restricted-to nil))
+)
+
+(defrule execution-monitoring-remove-restriction-robot-occupied
+  (domain-object (type robot) (name ?robot))
+  (goal (id ?gid) (mode DISPATCHED))
+  (goal-meta (goal-id ?gid) (assigned-to ?robot))
+  ?g <- (goal (id ?ogid) (mode FORMULATED))
+  ?gm <- (goal-meta (goal-id ?ogid) (restricted-to ?robot))
+  =>
+  (modify ?gm (restricted-to nil))
 )
