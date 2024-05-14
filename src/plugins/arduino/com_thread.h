@@ -131,7 +131,7 @@ private:
 	char current_arduino_status_;
 	int  gripper_pose_[3]     = {0, 0, 0};
 	int  goal_gripper_pose[3] = {0, 7500, 13000};
-	bool goal_gripper_is_open = false;
+	bool goal_gripper_is_open = true;
 	bool is_homed             = false;
 	int  home_gripper_pose[3] = {0, 7500, 13000};
 

@@ -123,7 +123,6 @@ fsm:add_transitions{
    {"CHOOSE_ACTION", "CLOSE_GRIPPER", cond=is_pick_action, desc="Picking Up Workpiece"},
    {"CHOOSE_ACTION", "OPEN_GRIPPER",  cond=is_put_action, desc="Putting Down Workpiece"},
    {"CHOOSE_ACTION", "FAILED",        true, desc="Instructions Unclear"},
-   {"DECIDE_CLOSE", "CLOSE_DEFAULT",  cond=is_put_action, desc="Close Gripper"},
    {"DECIDE_CLOSE", "FINAL",          true},
 }
 
