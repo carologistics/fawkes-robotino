@@ -161,7 +161,7 @@ function match_line(lines)
 
        if (fsm.vars.map_pos == true and distance < 0.50) or fsm.vars.map_pos == false then
           if best_distance == nil then
-            best_distance = distance
+            best_distance = robot_distance
             matched_line = line
           elseif best_distance > robot_distance then
             best_distance = robot_distance
