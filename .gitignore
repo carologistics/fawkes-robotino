@@ -10,6 +10,7 @@
 /src/clips-specs/clips
 /src/clips-specs/clips-navgraph
 /src/clips-specs/clips-protobuf
+/etc/yolo_images_undetected/
 
 # Specific paths, _ variants for cross compilation environments
 /build/
