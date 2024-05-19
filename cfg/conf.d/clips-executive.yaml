@@ -119,6 +119,26 @@ clips-executive:
             files:
               - rcll-central/noop-actions.clp
               - rcll-central/action-task-executor.clp
+          - name: derived-predicates
+            files:
+              - rcll-central/derived-predicates/cc-reachable.clp
+              - rcll-central/derived-predicates/cs-input-ready-to-buffer-cap.clp
+              - rcll-central/derived-predicates/cs-input-ready-to-mount-cap.clp
+              - rcll-central/derived-predicates/rs-input-ready-to-mount-ring.clp
+              - rcll-central/derived-predicates/ds-input-ready-to-deliver.clp
+              - rcll-central/derived-predicates/mps-found.clp
+              - rcll-central/derived-predicates/next-machine.clp
+              - rcll-central/derived-predicates/next-step.clp
+              - rcll-central/derived-predicates/rs-fillable.clp
+              - rcll-central/derived-predicates/rs-input-blocked.clp
+              - rcll-central/derived-predicates/rs-input-reserved-for-wp.clp
+              - rcll-central/derived-predicates/transport-blocked.clp
+              - rcll-central/derived-predicates/wp-blocked.clp
+              - rcll-central/derived-predicates/wait-for-wp.clp
+              - rcll-central/derived-predicates/wp-deliver-start.clp
+              - rcll-central/derived-predicates/wp-reachable.clp
+              - rcll-central/derived-predicates/instruct-blocked.clp
+              - rcll-central/derived-predicates/slide-in-use.clp
           - name: simtest
             file: rcll-central/simtest.clp
       # the mapping syntax for parameters is defined in
