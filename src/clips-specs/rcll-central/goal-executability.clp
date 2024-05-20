@@ -112,7 +112,29 @@
   (domain-retract-grounding ?grounding)
 )
 
-; TODO: technically, we would need to add the clearing of goal-meta facts to the domain-retract-grounding function, but that is in the core....
+(defrule goal-executability-grounding-retract-no-action
+  (domain-operator (name ?op-name&:(not (str-index goal- ?op-name))) (param-names $?param-names))
+  ?pg <- (pddl-grounding (id ?id&:(str-index (sym-cat "grounding-" ?op-name "1-gen") ?id))
+                                               (param-names $?param-names)
+                                               (param-values $?param-values))
+  (not (plan-action
+          (action-name ?op-name)
+          (param-values $?param-values)
+        )
+  )
+  =>
+  (retract ?pg)
+)
+
+(defrule goal-executability-grounding-retract-no-goal
+  (domain-operator (name ?op-name&:(str-index goal- ?op-name)) (param-names $?param-names))
+  ?pg <- (pddl-grounding (id ?id&:(str-index (sym-cat "grounding-" ?op-name "1-gen") ?id))
+                                               (param-names $?param-names)
+                                               (param-values $?param-values))
+  (not (goal (class ?class&:(eq (sym-cat goal- (lowcase ?class)) ?op-name))))
+  =>
+  (retract ?pg)
+)
 
 
 ; ----------------------- Production GOALS -------------------------------
