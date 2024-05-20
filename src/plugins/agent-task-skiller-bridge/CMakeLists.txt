@@ -1,7 +1,7 @@
 # *****************************************************************************
 # CMake Build System for Fawkes
 # -------------------
-# Copyright (C) 2023 by Tarik Viehmann and Daniel Swoboda
+# Copyright (C) 2024 by Tarik Viehmann
 #
 # *****************************************************************************
 #
@@ -20,20 +20,26 @@
 #
 # *****************************************************************************
 
-set_output_directory_plugins()
+set(PLUGIN_agent-task-skiller-bridge
+    ON
+    CACHE BOOL "Build agent-task-skiller-bridge")
 
-set(CMAKE_SHARED_MODULE_PREFIX "")
-add_subdirectory(agent-task-skiller-bridge)
-add_subdirectory(clips-motor-switch)
-add_subdirectory(navgraph-generator-mps)
-add_subdirectory(skiller_motor_state)
-add_subdirectory(mps-laser-gen)
-add_subdirectory(laser_front_dist)
-add_subdirectory(tag_vision)
-add_subdirectory(picam-client)
-add_subdirectory(object-tracking)
-add_subdirectory(conveyor_pose)
-add_subdirectory(conveyor_plane)
-add_subdirectory(arduino)
-add_subdirectory(box_detect)
-add_subdirectory(ros2)
+if(PLUGIN_clips-motor-switch)
+  add_library(agent-task-skiller-bridge MODULE bridge-plugin.cpp bridge-thread.cpp)
+  depend_on_protobuf(agent-task-skiller-bridge)
+  depend_on_boost_libs(agent-task-skiller-bridge system)
+  target_link_libraries(
+    agent-task-skiller-bridge
+    fawkescore
+    fawkesutils
+    fawkesaspects
+    fawkesinterface
+    fawkesblackboard
+    fawkesconfig
+    SkillerInterface
+    rcll-protobuf-msgs
+    protobuf_comm
+    protobuf::libprotobuf )
+else()
+  plugin_disabled_message("agent-task-skiller-bridge")
+endif()
