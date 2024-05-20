@@ -48,13 +48,13 @@ void
 AgentTaskSkillerBridgeThread::init()
 {
 	logger->log_info(name(), "try load stuff");
-	std::string peer_address = config->get_string("/agent-task-skiller-bridge/peer_address");
-	recv_port_magenta_       = config->get_int("/agent-task-skiller-bridge/recv_port_magenta");
-	recv_port_cyan_          = config->get_int("/agent-task-skiller-bridge/recv_port_cyan");
-	recv_port_public_        = config->get_int("/agent-task-skiller-bridge/recv_port_public");
-	team_name_               = config->get_string("/agent-task-skiller-bridge/team_name");
-	crypto_key_              = config->get_string("/agent-task-skiller-bridge/crypto_key");
-	crypto_key_              = config->get_int("/agent-task-skiller-bridge/robot_id");
+	peer_address_      = config->get_string("/agent-task-skiller-bridge/peer_address");
+	recv_port_magenta_ = config->get_int("/agent-task-skiller-bridge/recv_port_magenta");
+	recv_port_cyan_    = config->get_int("/agent-task-skiller-bridge/recv_port_cyan");
+	recv_port_public_  = config->get_int("/agent-task-skiller-bridge/recv_port_public");
+	team_name_         = config->get_string("/agent-task-skiller-bridge/team_name");
+	crypto_key_        = config->get_string("/agent-task-skiller-bridge/crypto_key");
+	robot_id_          = config->get_int("/agent-task-skiller-bridge/robot_id");
 
 	std::vector<std::string> proto_dirs;
 	try {
@@ -221,6 +221,7 @@ AgentTaskSkillerBridgeThread::handle_peer_msg(boost::asio::ip::udp::endpoint &,
 	} else if (desc->name() == "AgentTask") {
 		const llsf_msgs::AgentTask *agent_task_msg =
 		  dynamic_cast<const llsf_msgs::AgentTask *>(msg_ptr.get());
+		logger->log_info(name(), "Got task for %i, i am %i", agent_task_msg->robot_id(), robot_id_);
 		if (agent_task_msg->robot_id() == robot_id_) {
 			next_skill_          = construct_task_string(*agent_task_msg);
 			next_agent_task_msg_ = *agent_task_msg;
