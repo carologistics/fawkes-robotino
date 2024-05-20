@@ -86,7 +86,7 @@
 	 then
 		(bind ?timeout-duration ?*RUNNING-TIMEOUT-DURATION*)
 	)
-	(if (member$ ?action-name (create$ cs-mount-cap cs-buffer-cap rs-mount-ring1 rs-mount-ring2 rs-mount-ring3))
+	(if (member$ ?action-name (create$ cs-mount-cap cs-retrieve-cap rs-mount-ring1 rs-mount-ring2 rs-mount-ring3))
 	 then
 		(bind ?timeout-duration ?*PREPARE-WAIT-TIMEOUT-DURATION*)
 	)
@@ -942,7 +942,7 @@
                                    prepare-rs|
                                    prepare-ss|
                                    cs-mount-cap|
-                                   cs-buffer-cap|
+                                   cs-retrieve-cap|
                                    rs-mount-ring1|
                                    rs-mount-ring2|
                                    rs-mount-ring3)
