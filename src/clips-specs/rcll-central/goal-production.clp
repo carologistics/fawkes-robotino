@@ -28,8 +28,25 @@
   ?*PRODUCTION-C1-PRIORITY* = 40
   ?*PRODUCTION-C2-PRIORITY* = 50
   ?*PRODUCTION-C3-PRIORITY* = 60
+  ?*PRODUCTION-PAY-PRIORITY* = 10
+  ?*PRODUCTION-PAY-CC-PRIORITY-INCREASE* = 5
+  ?*PRODUCTION-BUFFER-PRIORITY* = 20
   ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT* = 30
   ?*ROBOT-WAITING-TIMEOUT* = 2
+)
+
+(deffunction prio-from-complexity (?com)
+  (bind ?priority ?*PRODUCTION-C0-PRIORITY*)
+  (if (eq ?com C1) then
+    (bind ?priority ?*PRODUCTION-C1-PRIORITY*)
+  )
+  (if (eq ?com C2) then
+    (bind ?priority ?*PRODUCTION-C2-PRIORITY*)
+  )
+  (if (eq ?com C3) then
+    (bind ?priority ?*PRODUCTION-C3-PRIORITY*)
+  )
+  (return ?priority)
 )
 
 (deffunction goal-meta-assign-robot-to-goal (?goal ?robot)
@@ -224,6 +241,7 @@
         (verbosity NOISY) (is-executable FALSE)
         (params target-mps ?mps
                 cap-color ?cap-color)
+        (priority (float ?*PRODUCTION-BUFFER-PRIORITY*))
   )))
   (goal-meta-assert ?goal nil ?order-id nil)
   (return ?goal)

@@ -1321,6 +1321,9 @@
 )
 
 ; ========================= Dynamic Priorities =============================
+
+; -- increase priority to clear a CS output
+
 (defrule production-strategy-increase-priority-to-free-cs
   "If there is a WP at the output of a CS and there is a WP for an order
    approaching the CS, increase the priority of a discard goal to free the CS."
@@ -1337,33 +1340,26 @@
     )
     (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side INPUT))
   )
+  (not (wm-fact (key strategy meta priority increase free-cs args? wp ?cc mps ?cs) (value ?old-prio&:(< ?old-prio (prio-from-complexity ?com)))))
 
   =>
-  (bind ?priority ?*PRODUCTION-C0-PRIORITY*)
-  (if (eq ?com C1) then
-    (bind ?priority ?*PRODUCTION-C1-PRIORITY*)
+  (bind ?priority (prio-from-complexity ?com))
+  (bind ?old-prio-val 0)
+  (do-for-fact ((?old-prio wm-fact)) (eq ?old-prio:key (create$ strategy meta priority increase free-cs args? wp ?cc mps ?cs))
+    (bind ?old-prio-val ?old-prio:value)
+    (retract ?old-prio)
   )
-  (if (eq ?com C2) then
-    (bind ?priority ?*PRODUCTION-C2-PRIORITY*)
-  )
-  (if (eq ?com C3) then
-    (bind ?priority ?*PRODUCTION-C3-PRIORITY*)
-  )
-
+  (bind ?priority (- ?priority ?old-prio-val))
   (assert (wm-fact (key strategy meta priority increase free-cs args? wp ?cc mps ?cs) (value ?priority)))
   (delayed-do-for-all-facts ((?goal goal))
     (and
       (eq ?goal:mode FORMULATED)
       (or
-        (and
-          (eq ?goal:class DISCARD)
-          (member$ ?cs ?goal:params)
-          (member$ OUTPUT ?goal:params)
+        (and (eq ?goal:class DISCARD)
+             (member$ ?cc ?goal:params)
         )
-        (and
-          (eq ?goal:class PAY-FOR-RINGS-WITH-CAP-CARRIER)
-          (member$ ?cs ?goal:params)
-          (member$ OUTPUT ?goal:params)
+        (and (eq ?goal:class PAY-FOR-RINGS-WITH-BASE)
+             (member$ ?cc ?goal:params)
         )
       )
     )
@@ -1372,26 +1368,159 @@
 )
 
 (defrule production-strategy-revert-priority-to-free-cs
-  ?wf <- (wm-fact (key strategy meta priority increase free-cs args? wp ?wp mps ?cs) (value ?priority))
+  ?wf <- (wm-fact (key strategy meta priority increase free-cs args? wp ?cc mps ?cs) (value ?priority))
   (not (wm-fact (key domain fact wp-at args? wp ?cc m ?cs side OUTPUT)))
   =>
   (delayed-do-for-all-facts ((?goal goal))
     (and
       (eq ?goal:mode FORMULATED)
       (or
-        (and
-          (eq ?goal:class DISCARD)
-          (member$ ?cs ?goal:params)
-          (member$ OUTPUT ?goal:params)
+        (and (eq ?goal:class DISCARD)
+             (member$ ?cc ?goal:params)
         )
-        (and
-          (eq ?goal:class PAY-FOR-RINGS-WITH-CAP-CARRIER)
-          (member$ ?cs ?goal:params)
-          (member$ OUTPUT ?goal:params)
+        (and (eq ?goal:class PAY-FOR-RINGS-WITH-CAP-CARRIER)
+             (member$ ?cc ?goal:params)
         )
       )
     )
     (modify ?goal (priority (- ?goal:priority ?priority)))
   )
   (retract ?wf)
+)
+
+(defrule production-strategy-apply-priority-to-free-cs
+  (wm-fact (key strategy meta priority increase free-cs args? wp ?wp ?mps $?) (value ?prio-increase))
+  ?g <- (goal (class DISCARD|PAY-FOR-RINGS-WITH-BASE)
+    (mode FORMULATED) (priority ?prio) (params $? wp ?wp $?))
+  (test (< ?prio ?prio-increase))
+  =>
+  (modify ?g (priority (+ ?prio ?prio-increase)))
+)
+
+; -- increase priority to buffer a cap
+
+(defrule production-strategy-increase-priority-to-buffer-cs
+  "If there is a WP that needs a cap next, make it a priority to buffer the station"
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?ord))
+  (domain-fact (name order-complexity) (param-values ?ord ?com))
+  (domain-fact (name order-cap-color) (param-values ?ord ?cap-color))
+
+  (domain-fact (name cs-color) (param-values ?cs ?cap-color))
+  (domain-fact (name cs-can-perform) (param-values ?cs RETRIEVE_CAP))
+
+  (wm-fact (key wp meta next-step args? wp ?wp) (value CAP))
+  (wm-fact (key wp meta next-machine args? wp ?wp) (value ?cs))
+
+  (not (wm-fact (key strategy meta priority increase buffer-cs args? mps ?cs) (value ?old-prio&:(< ?old-prio (prio-from-complexity ?com)))))
+  =>
+  (bind ?priority (prio-from-complexity ?com))
+  (bind ?old-prio-val 0)
+  (do-for-fact ((?old-prio wm-fact)) (eq ?old-prio:key (create$ strategy meta priority increase buffer-cs args? mps ?cs))
+    (bind ?old-prio-val ?old-prio:value)
+    (retract ?old-prio)
+  )
+  (bind ?priority (- ?priority ?old-prio-val))
+  (assert (wm-fact (key strategy meta priority increase buffer-cs args? mps ?cs) (value ?priority)))
+  (delayed-do-for-all-facts ((?goal goal))
+    (and
+      (eq ?goal:mode FORMULATED)
+      (eq ?goal:class BUFFER-CAP)
+      (member$ ?cs ?goal:params)
+      (member$ ?cap-color ?goal:params)
+    )
+    (modify ?goal (priority (+ ?goal:priority ?priority)))
+  )
+)
+
+(defrule production-strategy-revert-priority-to-buffer-cs
+  ?wf <- (wm-fact (key strategy meta priority increase buffer-cs args? mps ?cs) (value ?priority))
+  (not (wm-fact (key wp meta next-machine args? wp ?wp) (value ?cs)))
+  =>
+  (delayed-do-for-all-facts ((?goal goal))
+    (and
+      (eq ?goal:mode FORMULATED)
+      (eq ?goal:class BUFFER-CAP)
+      (member$ ?cs ?goal:params)
+    )
+    (modify ?goal (priority (- ?goal:priority ?priority)))
+  )
+  (retract ?wf)
+)
+
+(defrule production-strategy-apply-priority-to-buffer-cs
+  (wm-fact (key strategy meta priority increase buffer-cs args? mps ?mps) (value ?prio-increase))
+  ?g <- (goal (class BUFFER-CS)
+    (mode FORMULATED) (priority ?prio) (params $? target-mps ?mps $?))
+  (test (< ?prio ?prio-increase))
+  =>
+  (modify ?g (priority (+ ?prio ?prio-increase)))
+)
+
+; -- increase priority to pay for a workpiece that waits
+
+(defrule production-strategy-increase-priority-to-pay-for-wp
+  "If a WP needs payment for it's next step, bump all respective payment goals"
+  (domain-fact (name mps-type) (param-values ?mps RS))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  (domain-fact (name order-complexity) (param-values ?ord ?com))
+  (wm-fact (key wp meta next-step args? wp ?wp)
+    (value ?ring&:(str-index RING ?ring)))
+  (domain-fact (name ?order-ring-color) (param-values ?order ?ring-color))
+  (test
+    (eq ?order-ring-color (sym-cat order-ring (sub-string 5 5 ?ring) -color))
+  )
+  (domain-fact (name rs-ring-spec) (param-values ?mps ?ring-color ?ring-spec))
+  (domain-fact (name rs-filled-with) (param-values ?mps ?filled-with))
+  (test (< (sym-to-int ?filled-with) (sym-to-int ?ring-spec)))
+
+  (not (wm-fact (key strategy meta priority increase pay-for-wp args? wp ? mps ?mps $) (value ?old-prio&:(< ?old-prio (prio-from-complexity ?com)))))
+  =>
+  (bind ?priority (prio-from-complexity ?com))
+  (bind ?old-prio-val 0)
+  (do-for-fact ((?old-prio wm-fact)) (and (wm-key-prefix ?old-prio:key (create$ strategy meta priority increase pay-for-wp))
+  (eq (wm-key-arg ?old-prio:key mps) ?mps))
+    (bind ?old-prio-val ?old-prio:value)
+    (retract ?old-prio)
+  )
+  (bind ?priority (- ?priority ?old-prio-val))
+  (assert (wm-fact (key strategy meta priority increase pay-for-wp args? wp ?wp mps ?mps ring-col ?ring-color) (value ?priority)))
+  (delayed-do-for-all-facts ((?goal goal))
+    (and
+      (eq ?goal:mode FORMULATED)
+      (eq ?goal:class PAY-FOR-RINGS-WITH-BASE)
+      (member$ ?mps ?goal:params)
+    )
+    (modify ?goal (priority (+ ?goal:priority ?priority)))
+  )
+)
+
+(defrule production-strategy-revert-priority-to-pay-for-wp
+  ?wf <- (wm-fact (key strategy meta priority increase pay-for-wp args? wp ?wp mps ?mps ring-col ?ring-color) (value ?priority))
+  (or
+    (not (wm-fact (key wp meta next-machine args? wp ?wp) (value ?mps)))
+    (domain-fact (name rs-input-ready-to-mount-ring) (param-values ?mps ?ring-color))
+    (and
+      (domain-fact (name rs-ring-spec) (param-values ?mps ?ring-color ?ring-spec))
+      (domain-fact (name rs-filled-width) (param-values ?mps ?filled-with&:(> (sym-to-int ?filled-with) (sym-to-int ?ring-spec))))
+    )
+  )
+  =>
+  (delayed-do-for-all-facts ((?goal goal))
+    (and
+      (eq ?goal:mode FORMULATED)
+      (eq ?goal:class PAY-FOR-RINGS-WITH-BASE)
+      (member$ ?mps ?goal:params)
+    )
+    (modify ?goal (priority (- ?goal:priority ?priority)))
+  )
+  (retract ?wf)
+)
+
+(defrule production-strategy-apply-priority-to-pay-for-wp
+  ?g <- (goal (class PAY-FOR-RINGS-WITH-BASE)
+    (mode FORMULATED) (priority ?prio) (params $? target-mps ?mps))
+  (wm-fact (key strategy meta priority increase pay-for-wp args? wp ? ?mps $?) (value ?prio-increase))
+  (test (< ?prio ?prio-increase))
+  =>
+  (modify ?g (priority (+ ?prio ?prio-increase)))
 )
