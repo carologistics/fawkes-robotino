@@ -127,6 +127,7 @@
 	(slot ring-nr (type SYMBOL)
 	              (allowed-values nil ONE TWO THREE)
 	              (default nil))
+  (slot precondition (type SYMBOL) (default nil))
   (slot root-for-order (type SYMBOL))
   (slot run-all-ordering (default 1) (type INTEGER))
   (slot category (type SYMBOL)
@@ -1234,6 +1235,19 @@
   (return (+ ?filled-with ?open-payments))
 )
 
+(deffunction names-from-name-value-list ($?args)
+" @param $?args a list containing name value pairs. E.g. (m C-CS1 s IDLE)
+
+  @return The values of the argument list as list. E.g (C-CS1 IDLE)
+"
+  (bind ?names (create$))
+  (foreach ?a ?args
+    (if (eq 1 (mod ?a-index 2)) then
+      (bind ?names (create$ ?names ?a))
+    )
+  )
+  (return ?names)
+)
 
 (deffunction values-from-name-value-list ($?args)
 " @param $?args a list containing name value pairs. E.g. (m C-CS1 s IDLE)

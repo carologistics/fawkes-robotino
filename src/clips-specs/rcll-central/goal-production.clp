@@ -305,31 +305,26 @@
 )
 
 (deffunction goal-production-assert-mount-cap
-  (?wp ?mps ?wp-loc ?wp-side ?order-id)
+  (?wp ?mps ?cap-color ?order-id)
 
   (bind ?goal (assert (goal (class MOUNT-CAP)
         (id (sym-cat MOUNT-CAP- (gensym*))) (sub-type SIMPLE)
          (verbosity NOISY) (is-executable FALSE)
         (params wp ?wp
                 target-mps ?mps
-                target-side INPUT
-                wp-loc ?wp-loc
-                wp-side ?wp-side)
+                cap-color ?cap-color)
   )))
   (goal-meta-assert ?goal nil ?order-id nil)
   (return ?goal)
 )
 
 (deffunction goal-production-assert-mount-ring
-  (?wp ?rs ?wp-loc ?wp-side ?ring-color ?order-id ?ring-nr)
+  (?wp ?rs ?ring-color ?order-id ?ring-nr)
   (bind ?goal (assert (goal (class MOUNT-RING)
         (id (sym-cat MOUNT-RING- (gensym*))) (sub-type SIMPLE)
         (verbosity NOISY) (is-executable FALSE)
         (params  wp ?wp
                  target-mps ?rs
-                 target-side INPUT
-                 wp-loc ?wp-loc
-                 wp-side ?wp-side
                  ring-color ?ring-color
                  )
   )))
@@ -338,12 +333,12 @@
 )
 
 (deffunction goal-production-assert-discard
-  (?wp ?cs ?side ?order-id)
+  (?wp ?target-mps ?order-id)
 
   (bind ?goal (assert (goal (class DISCARD)
         (id (sym-cat DISCARD- (gensym*))) (sub-type SIMPLE)
         (verbosity NOISY) (is-executable FALSE)
-        (params wp ?wp wp-loc ?cs wp-side ?side)
+        (params wp ?wp target-mps ?target-mps)
   )))
   (goal-meta-assert ?goal nil ?order-id nil)
   (return ?goal)
@@ -405,8 +400,7 @@
         (id (sym-cat DELIVER- (gensym*))) (sub-type SIMPLE)
         (verbosity NOISY) (is-executable FALSE)
         (params wp ?wp
-            target-mps ?ds
-            target-side INPUT)
+            target-mps ?ds)
       )) nil ?order-id nil)
     )
   else
@@ -417,48 +411,41 @@
 )
 
 (deffunction goal-production-assert-pay-for-rings-with-base
-  (?wp ?wp-loc ?wp-side ?target-mps ?target-side ?order-id)
+  (?wp ?target-mps ?order-id)
   (bind ?goal (assert (goal (class PAY-FOR-RINGS-WITH-BASE)
         (id (sym-cat PAY-FOR-RINGS-WITH-BASE- (gensym*))) (sub-type SIMPLE)
         (verbosity NOISY) (is-executable FALSE)
         (params  wp ?wp
-                 wp-loc ?wp-loc
-                 wp-side ?wp-side
                  target-mps ?target-mps
-                 target-side ?target-side
                  )
+        (priority (float ?*PRODUCTION-PAY-PRIORITY*))
   )))
   (goal-meta-assert ?goal nil ?order-id nil)
   (return ?goal)
 )
 
 (deffunction goal-production-assert-pay-for-rings-with-cap-carrier
-  (?wp ?wp-loc ?wp-side ?target-mps ?target-side ?order-id)
+  (?target-mps ?order-id)
 
   (bind ?goal (assert (goal (class PAY-FOR-RINGS-WITH-CAP-CARRIER)
         (id (sym-cat PAY-FOR-RINGS-WITH-CAP-CARRIER- (gensym*))) (sub-type SIMPLE)
         (verbosity NOISY) (is-executable FALSE)
-        (params  wp ?wp
-                 wp-loc ?wp-loc
-                 wp-side ?wp-side
-                 target-mps ?target-mps
-                 target-side ?target-side
-                 )
+        (params target-mps ?target-mps
+        )
   )))
   (goal-meta-assert ?goal nil ?order-id nil)
   (return ?goal)
 )
 
 (deffunction goal-production-assert-pay-for-rings-with-cap-carrier-from-shelf
-  (?wp-loc ?target-mps ?target-side ?order-id)
+  (?target-mps ?cap-color ?order-id)
 
   (bind ?goal (assert (goal (class PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
         (id (sym-cat PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF- (gensym*))) (sub-type SIMPLE)
         (verbosity NOISY) (is-executable FALSE)
-        (params  wp-loc ?wp-loc
-                 target-mps ?target-mps
-                 target-side ?target-side
-                 )
+        (params target-mps ?target-mps
+                cap-color ?cap-color
+        )
   )))
   (goal-meta-assert ?goal nil ?order-id nil)
   (return ?goal)
@@ -594,7 +581,7 @@
   (bind ?goal
     (goal-tree-assert-central-run-all-incremental-prio PRODUCE-ORDER ?*PRODUCTION-C0-PRIORITY* ?*PRODUCTION-PRIORITY-INCREASE*
       (goal-production-assert-deliver ?wp-for-order ?order-id ?instruct-parent ?ds)
-      (goal-production-assert-mount-cap ?wp-for-order ?cs ?bs INPUT ?order-id)
+      (goal-production-assert-mount-cap ?wp-for-order ?cs ?col-cap ?order-id)
     )
   )
 
@@ -621,8 +608,8 @@
   (bind ?goal
     (goal-tree-assert-central-run-all-incremental-prio PRODUCE-ORDER ?*PRODUCTION-C1-PRIORITY* ?*PRODUCTION-PRIORITY-INCREASE*
       (goal-production-assert-deliver ?wp-for-order ?order-id ?instruct-parent ?ds)
-      (goal-production-assert-mount-cap ?wp-for-order ?cs ?rs1 OUTPUT ?order-id)
-      (goal-production-assert-mount-ring ?wp-for-order ?rs1 ?bs INPUT ?col-ring1 ?order-id ONE)
+      (goal-production-assert-mount-cap ?wp-for-order ?cs ?col-cap ?order-id)
+      (goal-production-assert-mount-ring ?wp-for-order ?rs1 ?col-ring1 ?order-id ONE)
     )
   )
 
@@ -648,9 +635,9 @@
   (bind ?goal
     (goal-tree-assert-central-run-all-incremental-prio PRODUCE-ORDER ?*PRODUCTION-C2-PRIORITY* ?*PRODUCTION-PRIORITY-INCREASE*
       (goal-production-assert-deliver ?wp-for-order ?order-id ?instruct-parent ?ds)
-      (goal-production-assert-mount-cap ?wp-for-order ?cs ?rs2 OUTPUT ?order-id)
-      (goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT ?col-ring2 ?order-id TWO)
-      (goal-production-assert-mount-ring ?wp-for-order ?rs1 ?bs INPUT ?col-ring1 ?order-id ONE)
+      (goal-production-assert-mount-cap ?wp-for-order ?cs ?col-cap ?order-id)
+      (goal-production-assert-mount-ring ?wp-for-order ?rs2 ?col-ring2 ?order-id TWO)
+      (goal-production-assert-mount-ring ?wp-for-order ?rs1 ?col-ring1 ?order-id ONE)
     )
   )
 
@@ -677,10 +664,10 @@
   (bind ?goal
     (goal-tree-assert-central-run-all-prio PRODUCE-ORDER ?*PRODUCTION-C3-PRIORITY*
       (goal-production-assert-deliver ?wp-for-order ?order-id ?instruct-parent ?ds)
-      (goal-production-assert-mount-cap ?wp-for-order ?cs ?rs3 OUTPUT ?order-id)
-      (goal-production-assert-mount-ring ?wp-for-order ?rs3 ?rs2 OUTPUT ?col-ring3 ?order-id THREE)
-      (goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT ?col-ring2 ?order-id TWO)
-      (goal-production-assert-mount-ring ?wp-for-order ?rs1 ?bs INPUT ?col-ring1 ?order-id ONE)
+      (goal-production-assert-mount-cap ?wp-for-order ?cs ?col-cap ?order-id)
+      (goal-production-assert-mount-ring ?wp-for-order ?rs3 ?col-ring3 ?order-id THREE)
+      (goal-production-assert-mount-ring ?wp-for-order ?rs2 ?col-ring2 ?order-id TWO)
+      (goal-production-assert-mount-ring ?wp-for-order ?rs1 ?col-ring1 ?order-id ONE)
     )
   )
 
@@ -930,8 +917,6 @@
   ; there is not another discard goal bound to this wp
   (not (goal (id ?other-goal-id) (class DISCARD) (outcome ~FAILED) (params wp ?wp wp-loc ?mps wp-side ?mps-side)))
 
-  ; there is not a payment goal bound to this wp
-  (not (goal (class PAY-FOR-RINGS-WITH-CAP-CARRIER) (params wp ?wp wp-loc ?mps wp-side ?mps-side $?)))
   =>
   (modify ?g (params wp ?wp wp-loc ?mps wp-side ?mps-side))
   (modify ?i (params wp ?wp target-mps ?ds))
@@ -1006,7 +991,7 @@
   (wm-fact (key domain fact cs-color args? m ?cs col ?cap-col))
   (goal (class INSTRUCTION-ROOT) (id ?instruct-root-id))
   (goal (class SUPPORT-ROOT) (id ?root-id))
-  (not (goal (class BUFFER-CAP) (params $? ?cs ?$) (mode ~RETRACTED)))
+  (not (goal (class BUFFER-CAP) (params $? ?cs $?) (mode ~RETRACTED)))
   =>
   (bind ?buffer-goal (goal-production-assert-buffer-cap ?cs ?cap-col nil))
   (bind ?instruct-goal (goal-production-assert-instruct-cs-buffer-cap ?cs ?cap-col nil))
@@ -1024,7 +1009,7 @@
        (goal (id ?some-other-id&:(neq ?some-id ?some-other-id)) (class PAY-FOR-RINGS-WITH-BASE) (params $? target-mps ?rs $?) (mode ~RETRACTED))))
   =>
   (bind ?wp-base-pay (sym-cat BASE-PAY- (gensym*)))
-  (bind ?payment-goal (goal-production-assert-pay-for-rings-with-base ?wp-base-pay ?bs INPUT ?rs INPUT nil))
+  (bind ?payment-goal (goal-production-assert-pay-for-rings-with-base ?wp-base-pay ?rs nil))
   (bind ?instruct-goal (goal-production-assert-instruct-bs-dispense-base ?wp-base-pay (nth$ (random 1 3) (create$ BASE_RED BASE_BLACK BASE_SILVER)) INPUT nil ?bs))
   (assert
       (domain-object (name ?wp-base-pay) (type workpiece))
@@ -1036,9 +1021,11 @@
 )
 
 (defrule goal-production-assert-discard
-  "Create a discard goal for each cap station."
+  "Create a discard goal for each unused cap-carrier."
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact cs-color args? m ?cs col ?cap-col))
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side OUTPUT))
+  (not (wm-fact (key order meta wp-for-order args? wp ?wp $?)))
   (wm-fact (key domain fact mps-type args? m ?ds t DS))
 
   (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
@@ -1046,46 +1033,32 @@
   (goal (class SUPPORT-ROOT) (id ?root-id))
   (goal (class INSTRUCTION-ROOT) (id ?instruct-root-id))
   (not (goal (class DISCARD) (params $? ?cs $?) (mode ~RETRACTED)))
-  ;and there is no discard offer
   =>
-  (bind ?discard-goal (goal-production-assert-discard UNKNOWN ?cs OUTPUT nil))
-  (bind ?instruct-goal (goal-production-assert-instruct-ds-discard UNKNOWN ?ds))
+  (bind ?discard-goal (goal-production-assert-discard ?wp ?ds nil))
+  (bind ?instruct-goal (goal-production-assert-instruct-ds-discard ?wp ?ds))
   (do-for-all-facts ((?mtype domain-fact)) (and (eq ?mtype:name mps-type) (member$ RS ?mtype:param-values))
-  (bind ?pay-goal-fact (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN ?cs OUTPUT (nth$ 1 ?mtype:param-values) INPUT nil))
-  (modify ?pay-goal-fact (parent ?root-id))
+    (bind ?pay-goal-fact (goal-production-assert-pay-for-rings-with-base ?wp (nth$ 1 ?mtype:param-values) nil))
+    (modify ?pay-goal-fact (parent ?root-id) (priority (float (+ ?*PRODUCTION-PAY-PRIORITY* ?*PRODUCTION-PAY-CC-PRIORITY-INCREASE*))))
   )
   (modify ?discard-goal (parent ?root-id))
   (modify ?instruct-goal (parent ?instruct-root-id))
 )
 
-(defrule goal-production-assert-pay-with-cc
-  "Create a pay-with-cc goal for each cap-less cap-carrier."
-  (wm-fact (key refbox team-color) (value ?team-color))
-  (wm-fact (key domain fact cs-color args? m ?cs col ?cap-col))
-  (wm-fact (key domain fact mps-type args? m ?rs t RS))
-
-  (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
-  (wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
-  (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side ?mps-side))
-  (not (wm-fact (key order meta wp-for-order args? wp ?wp $?)))
-
-  ; there is not another payment goal bound to this wp
-  (not (goal (id ?other-goal-id) (class PAY-FOR-RINGS-WITH-CAP-CARRIER) (outcome ~FAILED) (params wp ?wp wp-loc ?cs wp-side ? target-mps ?rs $?)))
-
-  (goal (class SUPPORT-ROOT) (id ?root-id))
-  ;and there is no discard offer
-  =>
-  (do-for-all-facts ((?mtype domain-fact)) (and (eq ?mtype:name mps-type) (member$ RS ?mtype:param-values))
-  (bind ?pay-goal-fact (goal-production-assert-pay-for-rings-with-cap-carrier UNKNOWN ?cs OUTPUT (nth$ 1 ?mtype:param-values) INPUT nil))
-  (modify ?pay-goal-fact (parent ?root-id))
-  )
-)
-(defrule goal-production-remove-unused-pay-with-cc
-  "Remove an obsolete discard goal"
-  ?g <- (goal (id ?goal-id) (class PAY-FOR-RINGS-WITH-CAP-CARRIER) (mode FORMULATED) (parent ?parent)
-              (params wp ?wp wp-loc ?mps wp-side ?mps-side $?))
-  (not (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?mps-side)))
-  (not (wm-fact (key domain fact holding args? r ? wp ?wp)))
-  =>
-  (retract ?g)
-)
+; (defrule goal-production-assert-pay-with-cc
+;   "Create two pay-with-cc goals for each RS (one for each CS)."
+;   (wm-fact (key refbox team-color) (value ?team-color))
+;   (wm-fact (key domain fact mps-type args? m ?rs t RS))
+;
+;   (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
+;
+;   ; there are not two payment goals already
+;   (not (and (goal (id ?goal-id) (class PAY-FOR-RINGS-WITH-CAP-CARRIER) (outcome ~FAILED) (params target-mps ?rs))
+;             (goal (id ~?goal-id) (class PAY-FOR-RINGS-WITH-CAP-CARRIER) (outcome ~FAILED) (params target-mps ?rs))
+;        )
+;   )
+;
+;   (goal (class SUPPORT-ROOT) (id ?root-id))
+;   =>
+;   (bind ?pay-goal-fact (goal-production-assert-pay-for-rings-with-cap-carrier ?rs nil))
+;   (modify ?pay-goal-fact (parent ?root-id))
+; )
