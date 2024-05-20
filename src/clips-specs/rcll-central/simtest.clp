@@ -61,7 +61,7 @@
 (deffunction simtest-connect (?type $?tests)
 " Create hierarchical tests with:
   @param ?type type
-  @param ?$tests child tests
+  @param $?tests child tests
   @return fact id of parent test
 "
 	(bind ?name (sym-cat ?type - (gensym*)))
