@@ -89,6 +89,7 @@
 	M-Z73 M-Z63 M-Z53 M-Z43 M-Z33 M-Z23 M-Z13 - zone
 	M-Z72 M-Z62 M-Z52 M-Z42 M-Z32 M-Z22 M-Z12 - zone
 	M-Z71 M-Z61 M-Z51 M-Z41 M-Z31 M-Z21 M-Z11 - zone
+	WAIT1 WAIT2 WAIT3 WAIT4 - waitpoint
 	THERE ABSENT - wp-query
 	RING1 RING2 RING3 CAP DELIVER - wp-step
 	central - central-reasoner
@@ -413,6 +414,7 @@
 	:precondition (at ?r ?from ?from-side)
 	:effect (and (not (at ?r ?from ?from-side))
 	             (mps-side-approachable ?from ?from-side)
+	             (not (mps-side-approachable ?to WAIT))
 	             (at ?r ?to WAIT)
 	        )
 )
