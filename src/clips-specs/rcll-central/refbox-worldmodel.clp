@@ -24,6 +24,7 @@
 ; DANGERZONE: NEVER use a foreach on a pb-field-list. It will crash. Use progn$ instead.
 
 (defrule refbox-recv-BeaconSignal
+  (declare (salience ?*SALIENCE-DOMAIN-CHECK*))
   ?pf <- (protobuf-msg (type "llsf_msgs.BeaconSignal") (ptr ?p))
   (time $?now)
   =>
@@ -34,6 +35,7 @@
 
 
 (defrule refbox-recv-GameState
+  (declare (salience ?*SALIENCE-DOMAIN-CHECK*))
   ?pf <- (protobuf-msg (type "llsf_msgs.GameState") (ptr ?p) (rcvd-from ?host ?port))
   ?gt <- (wm-fact (key refbox game-time))
   ?rp <- (wm-fact (id "/refbox/phase")  (value ?phase) )
@@ -77,6 +79,7 @@
 
 (defrule refbox-recv-order
   "Assert orders sent by the refbox."
+  (declare (salience ?*SALIENCE-DOMAIN-CHECK*))
   ?pf <- (protobuf-msg (type "llsf_msgs.OrderInfo") (ptr ?ptr))
   (wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
   =>
@@ -152,6 +155,7 @@
 )
 
 (defrule refbox-recv-MachineInfo
+  (declare (salience ?*SALIENCE-DOMAIN-CHECK*))
   ?pb-msg <- (protobuf-msg (type "llsf_msgs.MachineInfo") (ptr ?p))
   (wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
   =>
@@ -350,6 +354,7 @@
 (defrule refbox-recv-NavigationRoutes-update
   "When there are waypoints, reached and remaining facts, compare the incoming new lists
   from the refbox with the existing facts and update them if necessary. "
+  (declare (salience ?*SALIENCE-DOMAIN-CHECK*))
   ?pf <- (protobuf-msg (type "llsf_msgs.NavigationRoutes") (ptr ?p))
   ?waypoints-fact <- (wm-fact (key domain fact waypoints args?) (values $?waypoints-old))
   ?reached-fact <- (wm-fact (key domain fact reached args?) (values $?reached-old))
