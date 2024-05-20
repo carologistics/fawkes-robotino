@@ -34,7 +34,7 @@ openprs-agent:
     bb-auto-cleanup: true
 
     # Where to look for protobuf messages
-    protobuf-paths: ["@BASEDIR@/src/libs/llsf_msgs"]
+    protobuf-paths: ["@BASEDIR@/src/libs/llsf_msgs/rcll-protobuf-msgs"]
     # Automatically call protobuf processing?
     protobuf-auto-process: true
 

@@ -4,7 +4,7 @@
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/gazsim
 ---
 gazsim:
-  proto-dirs: ["@BASEDIR@/src/libs/llsf_msgs"]
+  proto-dirs: ["@BASEDIR@/src/libs/llsf_msgs/rcll-protobuf-msgs"]
   world-name: "LLSF"
   # default robot name
   robot-name: "carologistics-robotino"
