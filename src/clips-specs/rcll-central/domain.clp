@@ -25,8 +25,22 @@
 =>
   (parse-pddl-domain (path-resolve "rcll-central/domain.pddl"))
   (assert (domain-loaded))
+  (bind ?rules (get-defrule-list))
+  (foreach ?r ?rules
+    (if (str-index domain-check ?r) then
+      (unwatch rules ?r)
+    )
+    (if (str-index domain-ground ?r) then
+      (unwatch rules ?r)
+    )
+  )
+  (bind ?facts (get-deftemplate-list))
+  (foreach ?r ?facts
+    (if (str-index grounded-pddl ?r) then
+      (unwatch facts ?r)
+    )
+  )
 )
-
 
 (defrule domain-set-sensed-predicates
   " Mark some predicates as sensed predicates.
