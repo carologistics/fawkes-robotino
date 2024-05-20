@@ -1,3 +1,6 @@
 [submodule "fawkes"]
 	path = fawkes
 	url = https://github.com/fawkesrobotics/fawkes.git
+[submodule "src/libs/llsf_msgs/rcll-protobuf-msgs"]
+	path = src/libs/llsf_msgs/rcll-protobuf-msgs
+	url = git@github.com:robocup-logistics/rcll-protobuf-msgs.git
