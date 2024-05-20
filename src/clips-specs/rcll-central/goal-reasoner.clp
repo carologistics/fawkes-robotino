@@ -901,6 +901,7 @@
       (modify ?ogm (restricted-to ?robot))
     )
   )
+  (goal-reasoner-retract-plan-action ?goal-id)
 )
 
 ; ================================= Goal Clean up ============================
@@ -913,7 +914,17 @@
   (not (goal (parent ?goal-id) (mode ?mode&~RETRACTED)))
 =>
   (printout (log-debug ?v) "Goal " ?goal-id " RETRACTED" crlf)
+  (goal-reasoner-retract-plan-action ?goal-id)
   (modify ?g (mode RETRACTED))
+)
+
+(defrule goal-reasoner-remove-dangling-plans
+" Retract plan and plan action if they belong to no goal.
+"
+  (plan (goal-id ?goal-id))
+  (not (goal (id ?goal-id) (mode ?mode&~RETRACTED)))
+=>
+  (goal-reasoner-retract-plan-action ?goal-id)
 )
 
 (defrule goal-reasoner-error-goal-without-sub-type-detected
