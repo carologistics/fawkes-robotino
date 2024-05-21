@@ -86,7 +86,8 @@ AgentTaskSkillerBridgeThread::init()
 
 	skiller_if_ = blackboard->open_for_reading<SkillerInterface>("Skiller");
 	bbil_add_data_interface(skiller_if_);
-	bbil_add_reader_interface(skiller_if_);
+	blackboard->register_listener(this);
+	//bbil_add_reader_interface(skiller_if_);
 
 	logger->log_info(name(), "Acquire exclusive Skiller Control");
 	SkillerInterface::AcquireControlMessage *aqm = new SkillerInterface::AcquireControlMessage();
