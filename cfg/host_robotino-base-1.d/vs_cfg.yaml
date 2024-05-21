@@ -21,7 +21,7 @@ plugins/vs_offsets:
       # pick_routine and pick_end is sharing the same x offset as its
       #  pick_target
       offset_x: 0.002
-      offset_z: 0.07
+      offset_z: 0.065
 
     pick_routine:
       offset_z: 0.009
@@ -44,7 +44,7 @@ plugins/vs_offsets:
 
     put_end:
       # put_end is sharing the same x offset as its pick_target
-      offset_z: 0.1
+      offset_z: 0.09
 
   slide:
     put_target:
