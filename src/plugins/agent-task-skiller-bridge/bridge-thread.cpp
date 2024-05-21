@@ -93,25 +93,46 @@ AgentTaskSkillerBridgeThread::init()
 	SkillerInterface::AcquireControlMessage *aqm = new SkillerInterface::AcquireControlMessage();
 	skiller_if_->msgq_enqueue(aqm);
 
-	logger->log_info(name(),
-	                 "Listening to %s on %i (public) %i (magenta) %i (cyan)",
-	                 peer_address_.c_str(),
-	                 recv_port_public_,
-	                 recv_port_magenta_,
-	                 recv_port_public_);
+	// logger->log_info(name(),
+	//                  "Listening to %s on %i (public) %i (magenta) %i (cyan)",
+	//                  peer_address_.c_str(),
+	//                  recv_port_public_,
+	//                  recv_port_magenta_,
+	//                  recv_port_public_);
 	message_register_ = std::make_shared<protobuf_comm::MessageRegister>(proto_dirs);
-	public_peer_      = std::make_shared<protobuf_comm::ProtobufBroadcastPeer>(peer_address_,
-                                                                        4477,
-                                                                        recv_port_public_,
-                                                                        message_register_.get());
-	public_peer_->signal_received().connect(
+	// public_peer_      = std::make_shared<protobuf_comm::ProtobufBroadcastPeer>(peer_address_,
+	//                                                                       4477,
+	//                                                                       recv_port_public_,
+	//                                                                       message_register_.get());
+	// public_peer_->signal_received().connect(
+	//   boost::bind(&AgentTaskSkillerBridgeThread::handle_peer_msg,
+	//               this,
+	//               boost::placeholders::_1,
+	//               boost::placeholders::_2,
+	//               boost::placeholders::_3,
+	//               boost::placeholders::_4));
+	// public_peer_->signal_recv_error().connect(
+	//   boost::bind(&AgentTaskSkillerBridgeThread::handle_peer_recv_error,
+	//               this,
+	//               boost::placeholders::_1,
+	//               boost::placeholders::_2));
+	logger->log_info(name(),
+	                 "Listening to CYAN peer %s:%i for team %s",
+	                 peer_address_.c_str(),
+	                 recv_port_cyan_,
+	                 team_name_.c_str());
+	private_peer_ = std::make_shared<protobuf_comm::ProtobufBroadcastPeer>(peer_address_,
+	                                                                       4466,
+	                                                                       recv_port_cyan_,
+	                                                                       message_register_.get());
+	private_peer_->signal_received().connect(
 	  boost::bind(&AgentTaskSkillerBridgeThread::handle_peer_msg,
 	              this,
 	              boost::placeholders::_1,
 	              boost::placeholders::_2,
 	              boost::placeholders::_3,
 	              boost::placeholders::_4));
-	public_peer_->signal_recv_error().connect(
+	private_peer_->signal_recv_error().connect(
 	  boost::bind(&AgentTaskSkillerBridgeThread::handle_peer_recv_error,
 	              this,
 	              boost::placeholders::_1,
