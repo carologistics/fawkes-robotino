@@ -242,16 +242,16 @@ AgentTaskSkillerBridgeThread::construct_task_string(const llsf_msgs::AgentTask &
 		return "goto{place=\"" + waypoint + "-" + machine_point + "\"}";
 	} else if (agent_task_msg.has_retrieve()) {
 		const llsf_msgs::Retrieve &retrieve = agent_task_msg.retrieve();
-		return "manipulate_wp{mps=" + retrieve.machine_id() + ",safe_put=false,map_pos=true,side="
-		       + retrieve.machine_point() + ",target=\"WORKPIECE\",c=\"C3\"}";
+		return "manipulate_wp{mps=\"" + retrieve.machine_id() + "\",safe_put=false,map_pos=true,side=\""
+		       + retrieve.machine_point() + "\",target=\"WORKPIECE\",c=\"C3\"}";
 	} else if (agent_task_msg.has_deliver()) {
 		const llsf_msgs::Deliver &deliver = agent_task_msg.deliver();
 		if (deliver.machine_point() == "SLIDE") {
-			return "manipulate_wp{mps=" + deliver.machine_id()
-			       + ",map_pos=true,side=" + deliver.machine_point() + ",target=\"SLIDE\",c=\"C3\"}";
+			return "manipulate_wp{mps=\"" + deliver.machine_id() + "\",map_pos=true,side=\""
+			       + deliver.machine_point() + "\",target=\"SLIDE\",c=\"C3\"}";
 		}
-		return "manipulate_wp{mps=" + deliver.machine_id()
-		       + ",map_pos=true,side=" + deliver.machine_point() + ",target=\"CONVEYOR\",c=\"C3\"}";
+		return "manipulate_wp{mps=\"" + deliver.machine_id() + "\",map_pos=true,side=\""
+		       + deliver.machine_point() + "\",target=\"CONVEYOR\",c=\"C3\"}";
 	} else if (agent_task_msg.has_buffer()) {
 		return "unknown";
 	} else if (agent_task_msg.has_explore_machine()) {
