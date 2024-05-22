@@ -98,18 +98,19 @@
   (retract ?pg)
   (printout debug "Goal " ?id " changed, remove grounding" crlf)
   (modify ?gm (precondition nil))
-  (if ?is-executable then (modify ?g (is-executable TRUE)))
+  (if ?is-executable then (modify ?g (is-executable FALSE)))
 )
 
 (defrule goal-executability-goal-done
   "After the effects of an action have been applied, change it to FINAL."
   (declare (salience ?*SALIENCE-DOMAIN-APPLY*))
-  (goal (id ?id) (class ?class) (params $?goal-params) (sub-type SIMPLE) (outcome ~UNKNOWN))
+  ?g <- (goal (id ?id) (class ?class) (params $?goal-params) (sub-type SIMPLE) (outcome ~UNKNOWN) (is-executable ?is-executable))
   ?gm <- (goal-meta (goal-id ?id) (assigned-to ?robot) (precondition ?grounding&:(neq ?grounding nil)))
   =>
   (printout debug "Goal " ?id " done, remove grounding" crlf)
   (modify ?gm (precondition nil))
   (domain-retract-grounding ?grounding)
+  (if ?is-executable then (modify ?g (is-executable FALSE)))
 )
 
 (defrule goal-executability-grounding-retract-no-action
