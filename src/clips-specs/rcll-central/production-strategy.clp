@@ -1332,6 +1332,7 @@
 
   (wm-fact (key order meta wp-for-order args? wp ?wp ord ?ord))
   (wm-fact (key domain fact order-complexity args? ord ?ord com ?com))
+  (wm-fact (key wp meta next-step args? wp ?wp) (value ?step))
 
   (or
     (and
@@ -1340,20 +1341,23 @@
     )
     (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side INPUT))
   )
-  (not (wm-fact (key strategy meta priority increase free-cs args? wp ?cc mps ?cs) (value ?old-prio&:(> ?old-prio (prio-from-complexity ?com)))))
+  (not (wm-fact (key strategy meta priority increase free-cs args? wp ?cc mps ?cs) (value ?old-prio&:(> ?old-prio (dynamic-prio-from-complexity ?com ?step)))))
 
   =>
-  (bind ?priority (prio-from-complexity ?com))
+  (bind ?priority (dynamic-prio-from-complexity ?com ?step))
+  (assert (wm-fact (key strategy meta priority increase free-cs args? wp ?cc mps ?cs) (value ?priority)))
+
+  ; adjust existing goals that already received a priority update
   (bind ?old-prio-val 0)
   (do-for-fact ((?old-prio wm-fact)) (eq ?old-prio:key (create$ strategy meta priority increase free-cs args? wp ?cc mps ?cs))
     (bind ?old-prio-val ?old-prio:value)
     (retract ?old-prio)
   )
   (bind ?priority (- ?priority ?old-prio-val))
-  (assert (wm-fact (key strategy meta priority increase free-cs args? wp ?cc mps ?cs) (value ?priority)))
   (delayed-do-for-all-facts ((?goal goal))
     (and
       (eq ?goal:mode FORMULATED)
+      (> ?goal:priority ?old-prio-val)
       (or
         (and (eq ?goal:class DISCARD)
              (member$ ?cc ?goal:params)
@@ -1374,6 +1378,7 @@
   (delayed-do-for-all-facts ((?goal goal))
     (and
       (eq ?goal:mode FORMULATED)
+      (> ?goal:priority ?priority)
       (or
         (and (eq ?goal:class DISCARD)
              (member$ ?cc ?goal:params)
@@ -1408,23 +1413,30 @@
   (domain-fact (name cs-color) (param-values ?cs ?cap-color))
   (domain-fact (name cs-can-perform) (param-values ?cs RETRIEVE_CAP))
 
-  (wm-fact (key wp meta next-step args? wp ?wp) (value CAP))
-  (wm-fact (key wp meta next-machine args? wp ?wp) (value ?cs))
+  (domain-fact (name order-cap-color) (param-values ?ord ?cap-color))
+  ; The order is actually started or a C0
+  (or
+    (domain-fact (name wp-usable) (param-values ?wp))
+    (test (eq ?com C0))
+  )
+  (wm-fact (key wp meta next-step args? wp ?wp) (value ?step))
 
-  (not (wm-fact (key strategy meta priority increase buffer-cs args? mps ?cs) (value ?old-prio&:(> ?old-prio (prio-from-complexity ?com)))))
+  (not (wm-fact (key strategy meta priority increase buffer-cs args? mps ?cs) (value ?old-prio&:(> ?old-prio (dynamic-prio-from-complexity ?com ?step)))))
   =>
-  (bind ?priority (prio-from-complexity ?com))
+  (bind ?priority (dynamic-prio-from-complexity ?com ?step))
+  (assert (wm-fact (key strategy meta priority increase buffer-cs args? mps ?cs) (value ?priority)))
+  ; adjust existing goals that already received a priority update
   (bind ?old-prio-val 0)
   (do-for-fact ((?old-prio wm-fact)) (eq ?old-prio:key (create$ strategy meta priority increase buffer-cs args? mps ?cs))
     (bind ?old-prio-val ?old-prio:value)
     (retract ?old-prio)
   )
   (bind ?priority (- ?priority ?old-prio-val))
-  (assert (wm-fact (key strategy meta priority increase buffer-cs args? mps ?cs) (value ?priority)))
   (delayed-do-for-all-facts ((?goal goal))
     (and
       (eq ?goal:mode FORMULATED)
       (eq ?goal:class BUFFER-CAP)
+      (> ?goal:priority ?old-prio-val)
       (member$ ?cs ?goal:params)
       (member$ ?cap-color ?goal:params)
     )
@@ -1440,6 +1452,7 @@
     (and
       (eq ?goal:mode FORMULATED)
       (eq ?goal:class BUFFER-CAP)
+      (> ?goal:priority ?priority)
       (member$ ?cs ?goal:params)
     )
     (modify ?goal (priority (- ?goal:priority ?priority)))
@@ -1473,21 +1486,23 @@
   (domain-fact (name rs-filled-with) (param-values ?mps ?filled-with))
   (test (< (sym-to-int ?filled-with) (sym-to-int ?ring-spec)))
 
-  (not (wm-fact (key strategy meta priority increase pay-for-wp args? wp ? mps ?mps $) (value ?old-prio&:(> ?old-prio (prio-from-complexity ?com)))))
+  (not (wm-fact (key strategy meta priority increase pay-for-wp args? wp ? mps ?mps $) (value ?old-prio&:(> ?old-prio (dynamic-prio-from-complexity ?com ?ring)))))
   =>
-  (bind ?priority (prio-from-complexity ?com))
+  (bind ?priority (dynamic-prio-from-complexity ?com ?ring))
+  (assert (wm-fact (key strategy meta priority increase pay-for-wp args? wp ?wp mps ?mps ring-col ?ring-color) (value ?priority)))
+  ; adjust existing goals that already received a priority update
   (bind ?old-prio-val 0)
   (do-for-fact ((?old-prio wm-fact)) (and (wm-key-prefix ?old-prio:key (create$ strategy meta priority increase pay-for-wp))
-  (eq (wm-key-arg ?old-prio:key mps) ?mps))
+    (eq (wm-key-arg ?old-prio:key mps) ?mps))
     (bind ?old-prio-val ?old-prio:value)
     (retract ?old-prio)
   )
   (bind ?priority (- ?priority ?old-prio-val))
-  (assert (wm-fact (key strategy meta priority increase pay-for-wp args? wp ?wp mps ?mps ring-col ?ring-color) (value ?priority)))
   (delayed-do-for-all-facts ((?goal goal))
     (and
       (eq ?goal:mode FORMULATED)
       (eq ?goal:class PAY-FOR-RINGS-WITH-BASE)
+      (> ?goal:priority ?old-prio-val)
       (member$ ?mps ?goal:params)
     )
     (modify ?goal (priority (+ ?goal:priority ?priority)))
@@ -1523,4 +1538,11 @@
   (test (< ?prio ?prio-increase))
   =>
   (modify ?g (priority (+ ?prio ?prio-increase)))
+)
+
+(defrule production-strategy-increase-priority-of-deliver-goals
+  ?g <- (goal (class DELIVER)
+    (mode FORMULATED) (priority ?prio&:(< ?prio ?*DELIVER-PRIORITY-INCREASE*)))
+  =>
+  (modify ?g (priority (+ ?prio ?*DELIVER-PRIORITY-INCREASE*)))
 )
