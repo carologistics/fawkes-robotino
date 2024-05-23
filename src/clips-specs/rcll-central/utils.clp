@@ -260,6 +260,19 @@
   )
 )
 
+(deffunction zone-str-from-coords (?x ?y)
+" Map x y coordinates to a zone name they belong to, e..g, M_Z51
+"
+  (bind ?prefix "C")
+  (if (< ?y 0) then (return))
+  (if (< ?x 0) then
+    (bind ?x (* -1 ?x))
+    (bind ?prefix "M")
+  )
+  (bind ?x (round (+ ?x 0.5)))
+  (bind ?y (round (+ ?y 0.5)))
+  (return (str-cat ?prefix "_Z" ?x ?y))
+)
 
 (deffunction zone-center (?zn)
   "Calculates the coordinates of the center of a zone
