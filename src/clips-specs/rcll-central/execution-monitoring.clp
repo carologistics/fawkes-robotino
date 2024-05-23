@@ -1057,7 +1057,7 @@
 					     (eq ?final-action:goal-id ?g:id)
 					     (eq ?formulated-action:state FORMULATED)
 					     (eq ?final-action:state FINAL))
-				 (modify ?formulated-action (sate FAILED))
+				 (modify ?formulated-action (state FAILED))
 				)
 			)
 	)
