@@ -77,4 +77,3 @@ fawkes/meta_plugins:
     - skiller-rest-api
     - skiller_motor_state
     - object-tracking
-    - tag_vision
