@@ -39,6 +39,7 @@
   ?*TOTAL-PRODUCTION-THRESHOLD-1ROBOT* = 1
   ?*SALIENCE-ORDER-SELECTION* = ?*SALIENCE-HIGH*
   ?*UPDATE-WORKLOAD-TIMEOUT* = 2
+  ?*ORDER-SELECTION-RESET-TIMEOUT* = 60
 )
 
 (deffunction production-strategy-produce-ahead-check (?gt ?start ?end ?complexity)
@@ -1319,6 +1320,48 @@
   =>
   (retract ?timer)
 )
+
+; re-evaluate criteria for orders that did not progress yet
+(defrule production-strategy-clear-started-orders
+  "Trigger a re-evaluation of orders to pursue every minute"
+  (declare (salience ?*SALIENCE-LOW*))
+  (time $?now)
+  ?reset-fact <- (wm-fact (key order selection reset) (value FALSE))
+  ?timer <- (timer (name order-selection-reset-timer) (time $?t&:(timeout ?now ?t ?*ORDER-SELECTION-RESET-TIMEOUT*)) (seq ?seq))
+  =>
+  (modify ?timer (time ?now) (seq (+ ?seq 1)))
+  (modify ?reset-fact (value TRUE))
+)
+
+(defrule production-strategy-purge-non-started-order
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (wm-fact (key order selection reset) (value TRUE))
+  ?os <- (wm-fact (key order meta started args? ord ?order) (value TRUE))
+  (goal (id ?parent))
+  (goal-meta (goal-id ?parent) (root-for-order ?order))
+  ; goal was not started yet
+  (not (goal (parent ?parent) (mode ~FORMULATED)))
+  ?do <- (domain-object (name ?wp-name&:(eq ?wp-name (sym-cat wp- ?order))))
+  =>
+  (delayed-do-for-all-facts ((?g goal)) (eq ?g:parent ?parent)
+    (retract ?g)
+  )
+  (delayed-do-for-all-facts ((?df domain-fact)) (member$ ?wp-name ?df:param-values)
+    (retract ?df)
+  )
+  (retract ?do)
+  (modify ?os (value FALSE))
+)
+
+(defrule production-strategy-finish-purging-non-started-orders
+  (declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+  ?osr <- (wm-fact (key order selection reset) (value TRUE))
+  ?update-fact <- (wm-fact (key mps workload needs-update))
+  =>
+  (modify ?osr (value FALSE))
+  (modify ?update-fact (value TRUE))
+)
+
 
 ; ========================= Dynamic Priorities =============================
 
