@@ -65,6 +65,7 @@ fawkes/meta_plugins:
     - ros2-laserbridge
     - ros2-motorinterface
     - ros2-navigator
+    - pos3d-publisher
     - navgraph
     - laser-lines
     - arduino
