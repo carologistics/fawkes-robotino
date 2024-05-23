@@ -1319,7 +1319,7 @@
     )
     (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side INPUT))
   )
-  (not (wm-fact (key strategy meta priority increase free-cs args? wp ?cc mps ?cs) (value ?old-prio&:(< ?old-prio (prio-from-complexity ?com)))))
+  (not (wm-fact (key strategy meta priority increase free-cs args? wp ?cc mps ?cs) (value ?old-prio&:(> ?old-prio (prio-from-complexity ?com)))))
 
   =>
   (bind ?priority (prio-from-complexity ?com))
@@ -1390,7 +1390,7 @@
   (wm-fact (key wp meta next-step args? wp ?wp) (value CAP))
   (wm-fact (key wp meta next-machine args? wp ?wp) (value ?cs))
 
-  (not (wm-fact (key strategy meta priority increase buffer-cs args? mps ?cs) (value ?old-prio&:(< ?old-prio (prio-from-complexity ?com)))))
+  (not (wm-fact (key strategy meta priority increase buffer-cs args? mps ?cs) (value ?old-prio&:(> ?old-prio (prio-from-complexity ?com)))))
   =>
   (bind ?priority (prio-from-complexity ?com))
   (bind ?old-prio-val 0)
@@ -1452,7 +1452,7 @@
   (domain-fact (name rs-filled-with) (param-values ?mps ?filled-with))
   (test (< (sym-to-int ?filled-with) (sym-to-int ?ring-spec)))
 
-  (not (wm-fact (key strategy meta priority increase pay-for-wp args? wp ? mps ?mps $) (value ?old-prio&:(< ?old-prio (prio-from-complexity ?com)))))
+  (not (wm-fact (key strategy meta priority increase pay-for-wp args? wp ? mps ?mps $) (value ?old-prio&:(> ?old-prio (prio-from-complexity ?com)))))
   =>
   (bind ?priority (prio-from-complexity ?com))
   (bind ?old-prio-val 0)
