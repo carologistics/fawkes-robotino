@@ -15,13 +15,14 @@ plugins/vs_offsets:
   # change y direction through host_specific static frame
   workpiece:
     pick_target:
-      # distance in x direction in front of target frame to be more save while
-      #  moving base
-      save_dist: 0.0
+      offset_x: -0.04
+      offset_z: 0.055
+
+    pick_top:
       # pick_routine and pick_end is sharing the same x offset as its
-      #  pick_target
-      offset_x: 0.005
-      offset_z: 0.03
+      #  pick_top
+      offset_x: 0.002
+      offset_z: 0.055
 
     pick_routine:
       offset_z: -0.035
@@ -31,8 +32,12 @@ plugins/vs_offsets:
 
   conveyor:
     put_target:
-      offset_x: 0.03
-      offset_z: 0.02
+      offset_x: -0.015
+      offset_z: 0.03
+  
+    put_top:
+      offset_x: 0.02
+      offset_z: 0.03
       # = distance_from_usual_wp_pos + belt_size_ / 2 + puck_height_ / 2
       # = distance_from_usual_wp_pos + 0.035
 
@@ -49,7 +54,11 @@ plugins/vs_offsets:
   slide:
     put_target:
       offset_x: -0.03
-      offset_z: 0.015
+      offset_z: 0.03
+
+    put_top:
+      offset_x: 0.015
+      offset_z: 0.03
       # = distance_from_usual_wp_pos + puck_height_ / 2
       # = distance_from_usual_wp_pos + 0.0125
 
