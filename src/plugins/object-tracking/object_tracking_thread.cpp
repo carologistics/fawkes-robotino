@@ -28,6 +28,7 @@
 #include <utils/math/angle.h>
 
 #include <boost/algorithm/string/predicate.hpp>
+#include <chrono>
 #include <iomanip>
 #include <iostream>
 #include <math.h>
@@ -37,6 +38,7 @@
 #include <opencv2/imgproc.hpp>
 #include <sstream>
 #include <stdio.h>
+#include <thread>
 
 using namespace fawkes;
 using namespace cv;
@@ -405,6 +407,7 @@ ObjectTrackingThread::loop()
 	std::vector<std::array<float, 4>> out_boxes;
 	fawkes::Time                      before_detect(clock);
 	detect_objects(image, out_boxes);
+	std::this_thread::sleep_for(std::chrono::milliseconds(250));
 	fawkes::Time after_detect(clock);
 
 	//update results for saved images in webview
