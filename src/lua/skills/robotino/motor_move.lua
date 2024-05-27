@@ -113,6 +113,19 @@ end
 
 
 function set_speed(self)
+   -- compute overall loop time
+   -- loop time of 15 Hz: 1000/15 = 66.667
+   fsm.vars.now = fawkes.Time:new():in_msec()
+   if fsm.vars.last_loop == nil then
+      fsm.vars.loop_time["-2"] = 66.667
+      fsm.vars.loop_time["-1"] = 66.667
+   else
+      fsm.vars.loop_time["-2"] = fsm.vars.loop_time["-1"]
+      fsm.vars.loop_time["-1"] = fsm.vars.now - fsm.vars.last_loop
+      print_info("[motor_move] Last loop time of " .. 1000/fsm.vars.loop_time["-1"] .. " Hz")
+   end
+   fsm.vars.last_loop = fsm.vars.now
+
    local v = {x=0, y=0, ori=0}
 
    local dist_target = tfm.transform6D(
@@ -162,7 +175,9 @@ function set_speed(self)
                v_acc = self.fsm.vars.cycle * ACCEL[k]
 
                -- speed if we're decelerating
-               v_dec = a[k]/self.fsm.vars.decel_factor * math.abs(scalar(dist_target[k]))
+               -- average loop time should be at least 15, linearly reduce speed for lower
+               -- loop times to prevent controlling issues/oscillation/panda bug
+               v_dec = a[k]/self.fsm.vars.decel_factor * math.abs(scalar(dist_target[k])) * min(1, 33.333/(fsm.vars.loop_time["-1"]+fsm.vars.loop_time["-2"]))
 
                -- decide if we wanna decelerate, accelerate or max out
                v[k] = math.min(
