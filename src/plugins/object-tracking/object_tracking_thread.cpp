@@ -712,9 +712,9 @@ ObjectTrackingThread::laserline_get_expected_position(
 
 	//get point on laser-line with y_offset_
 	float x_pos =
-	  ll->end_point_2(0) + (ll->end_point_1(0) - ll->end_point_2(0)) * (0.5 + y_offset_ / 0.7);
+	  ll->end_point_1(0) + (ll->end_point_2(0) - ll->end_point_1(0)) * (0.5 + y_offset_ / 0.7);
 	float y_pos =
-	  ll->end_point_2(1) + (ll->end_point_1(1) - ll->end_point_2(1)) * (0.5 + y_offset_ / 0.7);
+	  ll->end_point_1(1) + (ll->end_point_2(1) - ll->end_point_1(1)) * (0.5 + y_offset_ / 0.7);
 	float z_pos = z_offset_;
 
 	float angle = ll->bearing();
