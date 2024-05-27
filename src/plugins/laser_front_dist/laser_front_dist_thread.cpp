@@ -87,7 +87,6 @@ LaserFrontDistThread::loop()
 		}
 	}
 	frame_ = if_laser_->frame();
-	logger->log_info("laser-front-dist: ", std::to_string(min).c_str());
 
 	// publish transform
 	tf::Transform        transform(tf::create_quaternion_from_yaw(M_PI), tf::Vector3(min, 0, 0));
