@@ -165,11 +165,11 @@ ObjectTrackingThread::init()
 
 	//set up weighted average filter
 	//-------------------------------------------------------------------------
-	filter_weights_[0] = 0.4;  // current response
-	filter_weights_[1] = 0.3;  // last response
-	filter_weights_[2] = 0.15; // 2. last response
-	filter_weights_[3] = 0.1;  // 3. last response
-	filter_weights_[4] = 0.05; // 4. last response
+	filter_weights_[0] = 0.2; // current response
+	filter_weights_[1] = 0.2; // last response
+	filter_weights_[2] = 0.2; // 2. last response
+	filter_weights_[3] = 0.2; // 3. last response
+	filter_weights_[4] = 0.2; // 4. last response
 	//-------------------------------------------------------------------------
 
 	filter_size_ = sizeof(filter_weights_) / sizeof(filter_weights_[0]);
