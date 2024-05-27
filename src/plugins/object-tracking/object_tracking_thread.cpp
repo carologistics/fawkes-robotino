@@ -840,9 +840,10 @@ ObjectTrackingThread::closest_position(std::vector<std::array<float, 4>>      bo
 	}
 
 	if (min_dist == max_acceptable_dist_) {
-		// logger->log_warn(name(), "No detection close enough!");
+		logger->log_warn(name(), "No detection close enough!");
 		return false;
 	}
+	logger->log_warn(name(), std::to_string(min_dist).c_str());
 
 	//convert closest bounding box into Rect to draw it on images
 	convert_bb_yolo2rect(bounding_boxes[box_id], closest_box);
