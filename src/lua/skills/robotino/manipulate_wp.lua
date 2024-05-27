@@ -82,8 +82,6 @@ local ring_height = 0.01
 
 local drive_back_x = -0.4
 
-local safe_dist = 0.03 -- extra distance in x direction to target position while moving base
-
 -- read gripper config
 if config:exists("/arduino/x_max") then
     x_max = config:get_float("/arduino/x_max")
@@ -683,13 +681,12 @@ function MOVE_BASE_AND_GRIPPER:init()
         ori = fawkes.tf.create_quaternion_from_yaw(0)
     }, "base_link", "end_effector_home")
 
-    fsm.vars.gripper_wait = 10
-    if fsm.vars.target == "WORKPIECE" then
-        set_gripper(gripper_target.x - safe_dist, 0,
-                    gripper_target.z - fsm.vars.missing_c3_height)
-    else
-        set_gripper(gripper_target.x - safe_dist, 0, gripper_target.z)
-    end
+  fsm.vars.gripper_wait = 10
+  if fsm.vars.target == "WORKPIECE" then
+    set_gripper(gripper_target.x, 0, gripper_target.z - fsm.vars.missing_c3_height)
+  else
+    set_gripper(gripper_target.x, 0, gripper_target.z)
+  end
 end
 
 function FINE_TUNE_GRIPPER:init()
