@@ -61,10 +61,7 @@ local LASER_BASE_OFFSET    = 0.5 -- distance between robotino middle point and l
 local GRIPPER_TOLERANCE    = {x=0.005, y=0.001, z=0.001} -- accuracy
 local MISSING_MAX          = 5 -- limit for missing object detections in a row while fine-tuning gripper
 local MIN_VIS_HIST_LINE    = 5 -- minimum visibility history for laser-line before considering it
-local MIN_MAPPED_DIST      = 0.7 -- minimum distance of sensed laser data and tf-mps data
 local MIN_ACTUAL_DIST      = 1.8 -- minimum distance b/w bot and laser center
-local MIN_MAPPED_ORI       = math.pi/5 -- minimum angle b/w sensed laser data and tf-mps data
-local MIN_ACTUAL_ORI       = math.pi/3 -- minimum angle b/w bot and laser center
 
 -- Initialize as skill module
 
@@ -149,8 +146,6 @@ function match_line(lines)
         z=0,
         ori = fawkes.tf.create_quaternion_from_yaw(line:bearing())},line:frame_id(), fsm.vars.mps)
         distance = math.sqrt(base_center.x * base_center.x + base_center.y * base_center.y)
-        printf("distance: %f", distance)
-        printf("X: %f, Y: %f Distane: %f, num: %s", base_center.x, base_center.y, distance, k)
       end
       local robot_center =  tfm.transform6D({
         x=line_center.x,
@@ -395,12 +390,7 @@ function INIT:init()
   fsm.vars.lines[line7:id()] = line7
   fsm.vars.lines[line8:id()] = line8
 
-  -- local node = navgraph:node(fsm.vars.mps)
-  -- fsm.vars.mps_x = node:x()
-  -- fsm.vars.mps_y = node:y()
-  -- fsm.vars.mps_ori = node:property_as_float("orientation")
-
-   fsm.vars.missing_detections = 0
+  fsm.vars.missing_detections = 0
   fsm.vars.msgid              = 0
   fsm.vars.out_of_reach       = false
 
@@ -631,7 +621,6 @@ function FINE_TUNE_GRIPPER:loop()
      z=object_tracking_if:gripper_frame(2),
      ori=fawkes.tf.create_quaternion_from_yaw(0)},
     "base_link", "end_effector_home")
-  print("fine tune gripper" .. gripper_target.z)
   if fsm.vars.safe_put then
     gripper_target.x = gripper_target.x - offset_x_put_conveyor_target_frame + offset_x_safe_put_conveyor_target_frame
   end
