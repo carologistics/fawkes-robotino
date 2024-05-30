@@ -52,7 +52,6 @@ Parameters:
                      the workpiece is there (optional, bool)
       @param query   defines if dry_run expects a workpiece to be at the location or wet (optional, THERE | ABSENT)
                      THERE by default
-      @param safe_put true, if we have to put the wp on the conveyor in a way that it does not break the fingers even if there is a wp, used after failing dry_run, false by default (optional, boolean)
       @param map_pos true, if MPS Pos is compared to Map Pos(optional,bool) True by default
 ]==]
 
@@ -118,9 +117,6 @@ if config:exists("plugins/object_tracking/shelf_values/right_shelf_offset_side")
   right_shelf_offset_side = config:get_float("plugins/object_tracking/shelf_values/right_shelf_offset_side")
 end
 
-local offset_x_put_conveyor_target_frame = config:get_float("plugins/vs_offsets/conveyor/put_target/offset_x")
-local offset_x_safe_put_conveyor_target_frame = config:get_float("plugins/vs_offsets/conveyor/safe_put/offset_x")
-
 -- read wp config
 if config:exists("plugins/object_tracking/puck_values/ring_height") then
   ring_height = config:get_float("plugins/object_tracking/puck_values/ring_height")
@@ -185,19 +181,7 @@ function gripper_aligned()
      ori=fawkes.tf.create_quaternion_from_yaw(0)},
     "base_link", "end_effector_home")
 
-  if fsm.vars.target == "WORKPIECE" or  fsm.vars.target == "SLIDE" then
-    fsm.vars.safe_put = false
-  end
-
-  if fsm.vars.safe_put then
-    gripper_target.x = gripper_target.x - offset_x_put_conveyor_target_frame + offset_x_safe_put_conveyor_target_frame
-  end
-
-  if fsm.vars.target == "SLIDE" then
-    return math.abs(gripper_target.x - arduino:x_position()) < GRIPPER_TOLERANCE.x * 1.3
-       and math.abs(gripper_target.y - (arduino:y_position() - y_max/2)) < GRIPPER_TOLERANCE.y * 1.3
-       and math.abs(math.min(gripper_target.z, z_max) - arduino:z_position()) < GRIPPER_TOLERANCE.z * 1.3
-  elseif fsm.vars.target == "WORKPIECE" then
+  if fsm.vars.target == "WORKPIECE" then
     return math.abs(gripper_target.x - arduino:x_position()) < GRIPPER_TOLERANCE.x
       and math.abs(gripper_target.y - (arduino:y_position() - y_max/2)) < GRIPPER_TOLERANCE.y
       and math.abs(math.min(gripper_target.z - fsm.vars.missing_c3_height, z_max) - arduino:z_position()) < GRIPPER_TOLERANCE.z
@@ -280,9 +264,6 @@ function input_invalid()
     fsm.vars.reverse_output = true
   else
     fsm.vars.reverse_output = false
-  end
-  if fsm.vars.safe_put == nil then
-	fsm.vars.safe_put = false
   end
 
   if (fsm.vars.target_object_type == nil or string.gsub(fsm.vars.target_object_type, "^%s*(.-)%s*$", "%1") == 0) then
@@ -478,6 +459,10 @@ function FIND_LASER_LINE:init()
   fsm.vars.search_attemps = 0
 end
 
+function SEARCH_LASER_LINE:exit()
+  fsm.vars.error = "laser-line not found"
+end
+
 function DRIVE_TO_LASER_LINE:init()
   fsm.vars.consecutive_detections = 0
   fsm.vars.tracking_msgid = 0
@@ -578,10 +563,6 @@ function MOVE_BASE_AND_GRIPPER:init()
   local diff_y = (gripper_y - base_y) * (gripper_y - base_y)
   local forward_distance = math.sqrt(diff_x + diff_y)
 
-  if fsm.vars.safe_put then
-    forward_distance = forward_distance - offset_x_put_conveyor_target_frame + offset_x_safe_put_conveyor_target_frame
-  end
-
   local gripper_target = tfm.transform6D(
     {x=forward_distance,
      y=0,
@@ -621,9 +602,6 @@ function FINE_TUNE_GRIPPER:loop()
      z=object_tracking_if:gripper_frame(2),
      ori=fawkes.tf.create_quaternion_from_yaw(0)},
     "base_link", "end_effector_home")
-  if fsm.vars.safe_put then
-    gripper_target.x = gripper_target.x - offset_x_put_conveyor_target_frame + offset_x_safe_put_conveyor_target_frame
-  end
 
   if fsm.vars.target == "WORKPIECE" then
     set_gripper(gripper_target.x,
@@ -643,7 +621,6 @@ function GRIPPER_ROUTINE:init()
   -- perform pick or put routine
   self.args["pick_or_put_vs"].target = fsm.vars.target
   self.args["pick_or_put_vs"].missing_c3_height = tostring(fsm.vars.missing_c3_height)
-  self.args["pick_or_put_vs"].safe_put = fsm.vars.safe_put
 end
 
 -- end tracking afterwards
