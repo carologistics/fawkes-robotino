@@ -20,15 +20,16 @@
 #  GNU Library General Public License for more details.
 #
 #  Read the full text in the LICENSE.GPL file in the doc directory.
-
-import sys
-import subprocess
 import os
-from threading import Thread, Lock
+import subprocess
+import sys
+from threading import Lock
+from threading import Thread
 
 exit_flag = False
 exit_code = 0
 exit_lock = Lock()
+
 
 def follow_file(file):
     global exit_flag, exit_code
@@ -40,35 +41,35 @@ def follow_file(file):
             exit_code = 1
         return
 
-    command = ['tail', '-f', file]
+    command = ["tail", "-f", file]
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    for line in iter(process.stdout.readline, ''):
+    for line in iter(process.stdout.readline, ""):
         if "SIMTEST: Finished" in line:
-            print(line, end='')
+            print(line, end="")
             with exit_lock:
                 exit_flag = True
                 exit_code = 2
             break
         elif "SIMTEST: End" in line:
-            print(line, end='')
+            print(line, end="")
             with exit_lock:
                 exit_flag = True
                 exit_code = 3
             break
         elif "SIMTEST: FAILED" in line:
-            print(line, end='')
+            print(line, end="")
             with exit_lock:
                 exit_flag = True
                 exit_code = 4
             break
         elif "[EXCEPTION]" in line:
-            print(line, end='')
+            print(line, end="")
             with exit_lock:
                 exit_flag = True
                 exit_code = 5
             break
         elif "SIMTEST: SUCCEEDED" in line:
-            print(line, end='')
+            print(line, end="")
             with exit_lock:
                 exit_flag = True
                 exit_code = 0
@@ -76,7 +77,8 @@ def follow_file(file):
     process.stdout.close()
     process.terminate()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     files = sys.argv[1:]
     threads = []
     for file in files:
