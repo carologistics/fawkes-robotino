@@ -329,7 +329,7 @@ fsm:define_states{ export_to=_M, closure={MISSING_MAX=MISSING_MAX},
    {"START_TRACKING",        JumpState},
    {"FIND_LASER_LINE",       JumpState},
    {"DRIVE_TO_LASER_LINE",   SkillJumpState, skills={{motor_move}},      final_to="WAIT_FOR_GRIPPER", fail_to="FAILED"},
-   {"WAIT_FOR_GRIPPER",      JumpState},
+   {"SEARCH_LASER_LINE",     JumpState},  {"WAIT_FOR_GRIPPER",      JumpState},
    {"AT_LASER_LINE",         JumpState},
    {"DRY_RUN_ABSENT",        JumpState},
    {"MOVE_BASE_AND_GRIPPER", SkillJumpState, skills={{motor_move}},      final_to="FINE_TUNE_GRIPPER", fail_to="FIND_LASER_LINE"},
@@ -343,7 +343,9 @@ fsm:add_transitions{
    {"START_TRACKING", "FAILED",                   timeout=2, desc="Object tracker is not starting"},
    {"START_TRACKING", "FIND_LASER_LINE",          cond=object_tracker_active},
    {"FIND_LASER_LINE", "DRIVE_TO_LASER_LINE",     cond=laser_line_found},
-   {"FIND_LASER_LINE", "FAILED",              timeout=1, desc="Could not find laser-line, drive back"},
+   {"FIND_LASER_LINE", "SEARCH_LASER_LINE",       timeout=1, desc="Could not find laser-line, drive back"},
+   {"SEARCH_LASER_LINE", "FAILED",                cond="vars.search_attemps > 10", desc="Tried 10 times, could not find laser-line"},
+   {"SEARCH_LASER_LINE", "DRIVE_TO_LASER_LINE",   cond=laser_line_found},
    {"WAIT_FOR_GRIPPER", "AT_LASER_LINE",          cond=ready_for_gripper_movement, desc="Found Object"},
    {"WAIT_FOR_GRIPPER", "START_TRACKING",         timeout=5, desc="Something went wrong with axis movement"},
    {"AT_LASER_LINE", "FINAL",                     cond=dry_expected_object_found, desc="Found Object"},
@@ -457,6 +459,10 @@ end
 function FIND_LASER_LINE:init()
   -- start searching for laser line
   fsm.vars.search_attemps = 0
+end
+
+function SEARCH_LASER_LINE:init()
+  fsm.vars.search_attemps = fsm.vars.search_attemps + 1
 end
 
 function SEARCH_LASER_LINE:exit()
