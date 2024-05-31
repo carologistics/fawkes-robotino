@@ -15,7 +15,7 @@ webview:
   # TCP port for Webview HTTP requests; TCP port
   port: !tcp-port 8085
 
-#seperate the shared memory images for the webcam:
+# seperate the shared memory images for the webcam:
 firevision:
   fountain:
     tcp_port: !tcp-port 2215
@@ -26,10 +26,10 @@ gazsim:
     label-script-name: "label/robotino5"
 
 plugins/light_front:
-  #Camera for gazebo simulation:
+  # Camera for gazebo simulation:
   camera: shmem:gazsim_cam:image_id=robotino5/gazsim_light_front:deep_copy=true
   shm_image_id: "robotino5/light_front"
-  
+
 asp-agent:
   robot-name: "T'Pol"
   robot-number: 5

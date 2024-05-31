@@ -140,7 +140,7 @@
     (state ~DOWN&~BROKEN))
   (ring-station (name ?rs) (bases-loaded ?bases&:(< ?bases 3)))
   (found-tag (name ?rs))
-  (machine (mtype BS) 
+  (machine (mtype BS)
     (name ?bs) (team ?team-color)
     (state ~DOWN&~BROKEN))
   (base-station (name ?bs) (active-side ?bs-side) (fail-side ?fs&:(neq ?bs-side ?fs)))
@@ -188,7 +188,7 @@
            (state ~DOWN&~BROKEN))
   (ring-station (name ?rs) (bases-loaded ?bases&:(< ?bases 3)))
   ;check that the task was not rejected before
-  (not (and 
+  (not (and
     (task (name fill-rs) (state rejected) (id ?rej-id))
     (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 1))) (machine ?rs) (machine-feature SLIDE))
   ))
@@ -197,7 +197,7 @@
   =>
   (printout t "PROD: INSERT unknown base " ?product-id " into " ?rs crlf)
   (bind ?task-id (random-id))
-  (assert 
+  (assert
     (task (name fill-rs) (id ?task-id) (state proposed)
       (steps (create$ (+ ?task-id 1)))
       (priority ?*PRIORITY-PREFILL-RS*))
@@ -222,7 +222,7 @@
            (state ~DOWN&~BROKEN))
   (ring-station (name ?rs) (bases-loaded ?bases&:(< ?bases 3)))
   ;check that the task was not rejected before
-  (not (and 
+  (not (and
     (task (name fill-rs) (state rejected) (id ?rej-id))
     (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 1))) (machine ?rs) (machine-feature SLIDE))
   ))
@@ -231,7 +231,7 @@
   =>
   (printout t "PROD: INSERT unintentionally holding base " ?product-id " into " ?rs crlf)
   (bind ?task-id (random-id))
-  (assert 
+  (assert
     (task (name fill-rs) (id ?task-id) (state proposed)
       (steps (create$ (+ ?task-id 1)))
       (priority ?*PRIORITY-PREFILL-RS-WITH-HOLDING-BASE*))
@@ -281,7 +281,7 @@
            (state ~BROKEN))
   (cap-station (name ?cs) (cap-loaded ?cap-color) (assigned-cap-color ?cap-color))
   (found-tag (name ?cs))
-  (machine (mtype BS) 
+  (machine (mtype BS)
     (name ?bs) (team ?team-color)
     (state ~DOWN&~BROKEN))
   (base-station (name ?bs) (active-side ?bs-side))
@@ -781,7 +781,7 @@
     "Expected machine " ?mps " to be IDLE, but it is READY-AT-OUTPUT")
   (assert (mps-reset (machine ?mps)))
 )
- 
+
 (defrule prod-nothing-to-do-save-factbase
   "If the agent can't find any task, save the factbase to find problems"
   (declare (salience ?*PRIORITY-NOTHING-TO-DO*))
@@ -830,5 +830,3 @@
   (retract ?no-task)
   (assert (no-task-found (nth$ 1 ?game-time)))
 )
-
-

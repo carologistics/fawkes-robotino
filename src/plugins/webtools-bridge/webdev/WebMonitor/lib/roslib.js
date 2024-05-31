@@ -1,5 +1,5 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-/* eslint-disable no-unused-vars */
+
 'use strict';
 var hasOwnProperty = Object.prototype.hasOwnProperty;
 var propIsEnumerable = Object.prototype.propertyIsEnumerable;
@@ -379,7 +379,7 @@ function SimpleActionServer(options) {
     this.nextGoal = null; // the one that'll be preempting
 
     goalListener.subscribe(function(goalMessage) {
-        
+
     if(that.currentGoal) {
             that.nextGoal = goalMessage;
             // needs to happen AFTER rest is set up
@@ -430,7 +430,7 @@ function SimpleActionServer(options) {
             }
             if(that.currentGoal && isEarlier(that.currentGoal.goal_id.stamp,
                                              cancelMessage.stamp)) {
-                
+
                 that.emit('cancel');
             }
         }
@@ -455,7 +455,7 @@ SimpleActionServer.prototype.__proto__ = EventEmitter2.prototype;
 */
 
 SimpleActionServer.prototype.setSucceeded = function(result2) {
-    
+
 
     var resultMessage = new Message({
         status : {goal_id : this.currentGoal.goal_id, status : 3},
@@ -1069,7 +1069,7 @@ Ros.prototype.decodeTypeDefs = function(defs) {
     }
     return typeDefDict;
   };
-  
+
   return decodeTypeDefsRec(defs[0], defs);
 };
 
@@ -1254,7 +1254,7 @@ if(typeof bson !== 'undefined'){
  * Events listeners for a WebSocket or TCP socket to a JavaScript
  * ROS Client. Sets up Messages for a given topic to trigger an
  * event on the ROS client.
- * 
+ *
  * @namespace SocketAdapter
  * @private
  */
@@ -2023,7 +2023,7 @@ var tf = module.exports = {
 mixin(Ros, ['TFClient'], tf);
 },{"../core/Ros":10,"../mixin":22,"./TFClient":23}],25:[function(require,module,exports){
 /**
- * @fileOverview 
+ * @fileOverview
  * @author Benjamin Pitzer - ben.pitzer@gmail.com
  * @author Russell Toris - rctoris@wpi.edu
  */
@@ -2054,7 +2054,7 @@ function UrdfBox(options) {
 module.exports = UrdfBox;
 },{"../math/Vector3":20,"./UrdfTypes":34}],26:[function(require,module,exports){
 /**
- * @fileOverview 
+ * @fileOverview
  * @author Benjamin Pitzer - ben.pitzer@gmail.com
  * @author Russell Toris - rctoris@wpi.edu
  */
@@ -2078,7 +2078,7 @@ function UrdfColor(options) {
 module.exports = UrdfColor;
 },{}],27:[function(require,module,exports){
 /**
- * @fileOverview 
+ * @fileOverview
  * @author Benjamin Pitzer - ben.pitzer@gmail.com
  * @author Russell Toris - rctoris@wpi.edu
  */
@@ -2101,7 +2101,7 @@ function UrdfCylinder(options) {
 module.exports = UrdfCylinder;
 },{"./UrdfTypes":34}],28:[function(require,module,exports){
 /**
- * @fileOverview 
+ * @fileOverview
  * @author David V. Lu!!  davidvlu@gmail.com
  */
 
@@ -2115,7 +2115,7 @@ module.exports = UrdfCylinder;
 function UrdfJoint(options) {
   this.name = options.xml.getAttribute('name');
   this.type = options.xml.getAttribute('type');
-  
+
   var limits = options.xml.getElementsByTagName('limit');
   if (limits.length > 0) {
     this.minval = parseFloat( limits[0].getAttribute('lower') );
@@ -2127,7 +2127,7 @@ module.exports = UrdfJoint;
 
 },{}],29:[function(require,module,exports){
 /**
- * @fileOverview 
+ * @fileOverview
  * @author Benjamin Pitzer - ben.pitzer@gmail.com
  * @author Russell Toris - rctoris@wpi.edu
  */
@@ -2156,7 +2156,7 @@ function UrdfLink(options) {
 module.exports = UrdfLink;
 },{"./UrdfVisual":35}],30:[function(require,module,exports){
 /**
- * @fileOverview 
+ * @fileOverview
  * @author Benjamin Pitzer - ben.pitzer@gmail.com
  * @author Russell Toris - rctoris@wpi.edu
  */
@@ -2206,7 +2206,7 @@ module.exports = UrdfMaterial;
 
 },{"./UrdfColor":26,"object-assign":1}],31:[function(require,module,exports){
 /**
- * @fileOverview 
+ * @fileOverview
  * @author Benjamin Pitzer - ben.pitzer@gmail.com
  * @author Russell Toris - rctoris@wpi.edu
  */
@@ -2243,7 +2243,7 @@ function UrdfMesh(options) {
 module.exports = UrdfMesh;
 },{"../math/Vector3":20,"./UrdfTypes":34}],32:[function(require,module,exports){
 /**
- * @fileOverview 
+ * @fileOverview
  * @author Benjamin Pitzer - ben.pitzer@gmail.com
  * @author Russell Toris - rctoris@wpi.edu
  */
@@ -2314,7 +2314,7 @@ function UrdfModel(options) {
         // Check for a material
         for( var j=0; j<link.visuals.length; j++ )
         {
-          var mat = link.visuals[j].material; 
+          var mat = link.visuals[j].material;
           if ( mat !== null ) {
             if (this.materials[mat.name] !== void 0) {
               link.visuals[j].material = this.materials[mat.name];
@@ -2340,7 +2340,7 @@ module.exports = UrdfModel;
 
 },{"./UrdfJoint":28,"./UrdfLink":29,"./UrdfMaterial":30,"xmldom":41}],33:[function(require,module,exports){
 /**
- * @fileOverview 
+ * @fileOverview
  * @author Benjamin Pitzer - ben.pitzer@gmail.com
  * @author Russell Toris - rctoris@wpi.edu
  */
@@ -2370,7 +2370,7 @@ module.exports = {
 
 },{}],35:[function(require,module,exports){
 /**
- * @fileOverview 
+ * @fileOverview
  * @author Benjamin Pitzer - ben.pitzer@gmail.com
  * @author Russell Toris - rctoris@wpi.edu
  */
@@ -2557,7 +2557,7 @@ function decompressPng(data, callback) {
     var canvas = new Canvas();
    var  context = canvas.getContext('2d');
 
-   
+
     // Sets width and height.
     canvas.width = image.width;
     canvas.height = image.height;

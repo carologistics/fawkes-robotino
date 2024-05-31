@@ -95,7 +95,7 @@
   (do-for-all-facts ((?ntl needed-task-lock) (?l lock)) (and (eq ?l:agent ?*ROBOT-NAME*)(eq ?l:resource ?ntl:resource))
     (retract ?ntl ?l)
     (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?l:resource)))
-  )  
+  )
 )
 
 (deffunction coordination-remove-old-rejected-tasks ()
@@ -127,7 +127,7 @@
 (defrule coordination-release-after-task-finished
   "If a task is finished the lock for the task is released and incoming facts are removed from the worldmodel. State is changed from TASK-FINISHED to IDLE."
   (declare (salience ?*PRIORITY-LOCK-HIGH*))
-  ?t <- (task (name ?task) (state finished) (steps $?steps)) 
+  ?t <- (task (name ?task) (state finished) (steps $?steps))
   ?s <- (state TASK-FINISHED)
   =>
   (coordination-release-all-subgoal-locks)
@@ -151,7 +151,7 @@
 
 (defrule coordination-release-and-reject-task-after-failed
   "If a task has failed the task lock is released and incoming facts are removed. If needed a warning is printed and the state is changed from TASK-FAILED to IDLE. All rejected proposals are removed and failed task is rejected."
-  ?t <- (task (name ?task) (state failed)) 
+  ?t <- (task (name ?task) (state failed))
   ?s <- (state TASK-FAILED)
   =>
   (coordination-release-all-subgoal-locks)

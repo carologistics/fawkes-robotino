@@ -177,7 +177,7 @@
   (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
   (team-color ?team-color&~nil)
   ;T3/T4 to load
-  (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S1 ?l)) 
+  (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S1 ?l))
 	   (incoming $?i&~:(member$ BRING_S1 ?i)) (name ?name-T3_T4)
 	   (produced-puck NONE) (team ?team-color) (junk 0) (priority ?prio)
 	   (out-of-order-until $?ooo&:(eq (nth$ 1 ?ooo) 0)))
@@ -213,7 +213,7 @@
   (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
   (team-color ?team-color&~nil)
   ;T3/T4 to load
-  (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S0 ?l)) 
+  (machine (mtype T3|T4) (loaded-with $?l&~:(member$ S0 ?l))
 	   (incoming $?i&:(and (not (member$ BRING_S0 ?i))
 			       (or (member$ S1 ?l) (member$ BRING_S1 ?i))))
 	   (name ?name-T3_T4) (produced-puck NONE)
@@ -353,7 +353,7 @@
 		(priority ?p2&:(> ?p2 ?prio)) (junk 0)
 		(out-of-order-until $?ooo2&:(eq (nth$ 1 ?ooo2) 0))))
    ;T2 to get the S2 from
-  (machine (mtype T2) (produced-puck S2) 
+  (machine (mtype T2) (produced-puck S2)
 	   (incoming $?i-T2&~:(member$ PICK_PROD ?i-T2)) (name ?name_T2) (team ?team-color))
   (not (proposed-task (name pick-and-load) (args $?args&:(subsetp ?args (create$ ?name_T2 ?name_T3T4))) (state rejected)))
   (holding NONE)

@@ -90,7 +90,7 @@
 (defrule mps-instruction-stop-sending-when-mps-is-prepared-instrucitons
   "Stop instructing the mps, if it is already prepared."
   (time $?now)
-  ?mps-inst <- (mps-instruction (machine ?machine) 
+  ?mps-inst <- (mps-instruction (machine ?machine)
                                 (seq ?seq&:(>= ?seq ?*MIN-TIMES-TO-SEND-MPS-INSTRUCTIONS*)))
   (machine (name ?machine) (state PROCESSING|PREPARED|READY-AT-OUTPUT))
   =>
@@ -101,7 +101,7 @@
 (defrule mps-instruction-stop-sending-when-mps-is-broken
   "Stop instructing the mps, when the MPS is/became broken"
   (time $?now)
-  ?mps-inst <- (mps-instruction (machine ?machine) 
+  ?mps-inst <- (mps-instruction (machine ?machine)
                                 (seq ?seq&:(>= ?seq ?*MIN-TIMES-TO-SEND-MPS-INSTRUCTIONS*)))
   (machine (name ?machine) (state BROKEN))
   =>
@@ -113,22 +113,22 @@
  "Create ResetMachine Message"
   (bind ?reset-msg (pb-create "llsf_msgs.ResetMachine"))
   (pb-set-field ?reset-msg "team_color" ?team-color)
-  (pb-set-field ?reset-msg "machine" ?machine) 
+  (pb-set-field ?reset-msg "machine" ?machine)
 (return ?reset-msg)
 )
 
 (defrule mps-instruction-send-reset-periodicaly
   "Periodically send reset to mps, until machine reseted."
   (time $?now)
-  ?mps-reset <- (mps-reset (machine ?machine) (seq ?seq) 
+  ?mps-reset <- (mps-reset (machine ?machine) (seq ?seq)
                            (timer $?t&:(timeout ?now ?t ?*MPS_RESET-PERIOD*))
 			                     (lock ?lock))
   (or (test (eq ?lock NONE))
       (wait-for-lock (res ?lock) (state use)))
   (team-color ?team-color)
   (peer-id private ?peer)
-  =>  
-  (bind ?instruction (mps-instruction-reset-machine ?machine ?team-color))  
+  =>
+  (bind ?instruction (mps-instruction-reset-machine ?machine ?team-color))
   (pb-broadcast ?peer ?instruction)
   (pb-destroy ?instruction)
   (printout t "Sent mps-reset for " ?machine crlf)
@@ -145,6 +145,3 @@
   (printout t "Mps " ?machine " successfully reseted" crlf)
   (retract ?mps-reset)
 )
-
-
-

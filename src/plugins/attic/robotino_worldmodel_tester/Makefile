@@ -24,7 +24,7 @@ LIBS_robotino_wm_tester = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
                           fawkesblackboard fawkesinterface \
                           RobotinoWorldModelInterface
 OBJS_robotino_wm_tester = robotino_wm_tester_plugin.o \
-                          robotino_wm_tester_thread.o 
+                          robotino_wm_tester_thread.o
 
 OBJS_all    = $(OBJS_robotino_wm-tester)
 PLUGINS_all = $(PLUGINDIR)/robotino-wm-tester.$(SOEXT)

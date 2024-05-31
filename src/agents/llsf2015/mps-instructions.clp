@@ -90,7 +90,7 @@
 (defrule mps-instruction-stop-sending-when-mps-is-prepared-instrucitons
   "Stop instructing the mps, if it is already prepared."
   (time $?now)
-  ?mps-inst <- (mps-instruction (machine ?machine) 
+  ?mps-inst <- (mps-instruction (machine ?machine)
                                 (seq ?seq&:(>= ?seq ?*MIN-TIMES-TO-SEND-MPS-INSTRUCTIONS*)))
   (machine (name ?machine) (state PROCESSING|PREPARED|READY-AT-OUTPUT))
   =>

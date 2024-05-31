@@ -88,5 +88,3 @@ ringMountedByRobot(R, P, M, C, GT) :- end(R, T, GT), ringTask(T), taskLocation(T
 putDown(R, GT)           :- ringMountedByRobot(R, _, _, _, GT).
 ringMounted(M, P, C, GT) :- ringMountedByRobot(_, P, M, C, GT).
 process(M, P, GT)        :- ringMountedByRobot(_, P, M, _, GT).
-
-

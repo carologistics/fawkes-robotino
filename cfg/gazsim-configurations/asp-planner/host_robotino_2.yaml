@@ -15,7 +15,7 @@ webview:
   # TCP port for Webview HTTP requests; TCP port
   port: !tcp-port 8082
 
-#seperate the shared memory images for the webcam:
+# seperate the shared memory images for the webcam:
 firevision:
   fountain:
     tcp_port: !tcp-port 2212
@@ -26,10 +26,10 @@ gazsim:
     label-script-name: "label/robotino2"
 
 plugins/light_front:
-  #Camera for gazebo simulation:
+  # Camera for gazebo simulation:
   camera: shmem:gazsim_cam:image_id=robotino2/gazsim_light_front:deep_copy=true
   shm_image_id: "robotino2/light_front"
-  
+
 asp-agent:
   robot-name: "T'Pol"
   robot-number: 2
@@ -69,7 +69,7 @@ plugins/robot-memory:
 
 webtools-bridge:
   port: 5050
-  #port where rosbridge is expected to start. Websocket connection will be established to forward the Ros requests to the Rosbridge
+  # port where rosbridge is expected to start. Websocket connection will be established to forward the Ros requests to the Rosbridge
   rosbridge-port: 8080
   rosbridge-uri: "ws://localhost:8080"
 

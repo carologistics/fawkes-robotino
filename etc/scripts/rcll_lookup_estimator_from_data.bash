@@ -52,5 +52,3 @@ gauss_params=$(${gauss_fit} \
 	--csv "${data_dir}/wp-discard.csv" ${gauss_fit_options} )
 ${sample_script} ${skillsim_options} -s discard \
 	${gauss_params} > /dev/null 2>&1
-
-

@@ -24,4 +24,3 @@
 
 holding(R, P, GT) :- holding(R, P, GT-1), not putDown(R, GT), not horizon(GT).
 holding(R, P, GT) :- pickUp(R, P, GT), not horizon(GT).
-

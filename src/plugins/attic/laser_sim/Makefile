@@ -21,7 +21,7 @@ include $(BUILDCONFDIR)/tf/tf.mk
 LIBS_lasersim = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
                 fawkesblackboard fawkesinterface \
                 MotorInterface Laser360Interface Position3DInterface
-OBJS_lasersim = laser_sim_plugin.o laser_sim_thread.o 
+OBJS_lasersim = laser_sim_plugin.o laser_sim_thread.o
 
 OBJS_all    = $(OBJS_lasersim)
 PLUGINS_all = $(PLUGINDIR)/lasersim.$(SOEXT)

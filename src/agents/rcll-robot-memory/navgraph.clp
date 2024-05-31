@@ -62,10 +62,10 @@
   (tag-matching (tag-id ?tag) (machine ?machine) (side ?side))
   (not (navgraph-added-for-mps (name ?machine)))
   =>
-  (printout t "Add Tag Nr." ?tag " (" ?machine " " ?side 
+  (printout t "Add Tag Nr." ?tag " (" ?machine " " ?side
 	    ") we got from another bot to Navgraph-generation"  crlf)
   (printout warn "TODO: check which zone contains the machine, so we don't try to find a tag there again"  crlf)
-  
+
   (navgraph-add-all-new-tags)
 )
 
@@ -84,7 +84,7 @@
   (phase ?phase)
   =>
   ; Find zone by center of the mps
-  (bind ?center (utils-get-2d-center (nth$ 1 ?pos-i) (nth$ 2 ?pos-i) 
+  (bind ?center (utils-get-2d-center (nth$ 1 ?pos-i) (nth$ 2 ?pos-i)
                                      (nth$ 1 ?pos-o) (nth$ 2 ?pos-o)))
   (bind ?zone-y (round-down (/ (nth$ 2 ?center) ?*ZONE-HEIGHT*)))
   (bind ?cyan-x (nth$ 1 ?center))
@@ -108,7 +108,7 @@
   (do-for-fact ((?ze zone-exploration)) (eq ?ze:name (sym-cat Z ?zone))
     (if (or (eq ?ze:team ?team-color) (eq ?phase PRODUCTION)) then
       (if (and (neq (sym-cat Z ?zone) ?zone-intended) (neq ?zone-intended NONE)) then
-        (printout t "That is behind the zone I currently explore (" 
+        (printout t "That is behind the zone I currently explore ("
                   ?zone-intended ")" crlf)
       )
       (synced-modify ?ze still-to-explore FALSE
@@ -180,7 +180,7 @@
   "Assing places to waitpoints so we can drive there when the place is locked."
   (added-waiting-positions)
   (navgraph-node (name ?p&:(or (eq "-I" (sub-string (- (str-length ?p) 1) (str-length ?p) ?p))
-                               (eq "-O" (sub-string (- (str-length ?p) 1) (str-length ?p) ?p))))                               
+                               (eq "-O" (sub-string (- (str-length ?p) 1) (str-length ?p) ?p))))
                  (pos $?pos))
   (wait-point ?wait-point)
   =>

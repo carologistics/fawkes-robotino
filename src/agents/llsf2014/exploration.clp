@@ -4,7 +4,7 @@
 ;
 ;  Created: Fri Apr 26 18:38:18 2013 (Magdeburg)
 ;  Copyright  2013  Frederik Zwilling
-;             2013  Alexander von Wirth 
+;             2013  Alexander von Wirth
 ;             2013  Tim Niemueller [www.niemueller.de]
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
@@ -135,7 +135,7 @@
 (defrule exp-drive-to-finished
   "Arriving at a machine in first or second round. Preparing recognition of the light signals."
   (phase EXPLORATION)
-  ?final <- (skill (name "drive_to") (status FINAL|FAILED)) 
+  ?final <- (skill (name "drive_to") (status FINAL|FAILED))
   ?s <- (state EXP_DRIVING_TO_MACHINE)
   (time $?now)
   =>
@@ -242,7 +242,7 @@
     (retract ?s ?g)
     (assert (state EXP_FOUND_NEXT_MACHINE)
 	    (exp-next-machine (nth$ ?ind ?row)))
-    
+
     else
     ;there is not machine on the line left
     ;(printout warn "No next machine on the line" crlf)
@@ -353,7 +353,7 @@
     (progn$ (?light (pb-field-list ?sig "lights"))
       (bind ?light-color (pb-field-value ?light "color"))
       (bind ?light-state (pb-field-value ?light "state"))
-      ;assert the read type color and state to compose it together in compose-type-light-pattern-matching 
+      ;assert the read type color and state to compose it together in compose-type-light-pattern-matching
       (assert (type-spec-pre ?type ?light-color ?light-state))
     )
   )
@@ -386,7 +386,7 @@
 (defrule exp-all-matchings-are-there
   "Assert fact that all matchings have beed received."
   (phase EXPLORATION)
-  (matching-type-light (type T1) (red ?) (yellow ?) (green ?)) 
+  (matching-type-light (type T1) (red ?) (yellow ?) (green ?))
   (matching-type-light (type T2) (red ?) (yellow ?) (green ?))
   (matching-type-light (type T3) (red ?) (yellow ?) (green ?))
   (matching-type-light (type T4) (red ?) (yellow ?) (green ?))

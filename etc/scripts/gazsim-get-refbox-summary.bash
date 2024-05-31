@@ -13,7 +13,7 @@ EOF
 
 if [[ -z $1 ]]
 then
-     usage: 
+     usage:
      exit 1
 fi
 

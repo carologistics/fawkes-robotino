@@ -148,7 +148,7 @@
   =>
   (printout warn "Changing Role from P1P2 to P3 because there is not enough time for an other p1 or p2" crlf)
   (retract ?r)
-  (assert (role P3))       
+  (assert (role P3))
 )
 
 ;change role from p1p2,p1 or p2 to p3 if something went wrong

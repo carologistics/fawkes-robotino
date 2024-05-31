@@ -14,7 +14,7 @@ clips-agent:
     load-reasoner: false
 
     dynamic-role-change/enabled: true
-    
+
     play-exploration-without-refbox: false
     # uncomment following line ONLY if you are playing without refbox
     # unwatch-rules: [sim-recv-MachineInfo, sim-recv-PuckInfo]

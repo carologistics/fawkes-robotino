@@ -129,7 +129,7 @@ function tolerance_ok()
       gripper_dist.ori.w
    )
    local yaw = fawkes.tf.get_yaw(q)
-   
+
    print_info("gripper_dist: %f, %f, ,%f, %f",
       gripper_dist.x,
       gripper_dist.y,
@@ -232,11 +232,11 @@ fsm:define_states{ export_to=_M,
 fsm:add_transitions{
    {"INIT", "FAILED", cond="not input_ok()", desc = "Wrong input format"},
    {"INIT", "MOVE_GRIPPER", cond=true},
-   
+
    {"LOOK", "FAILED", timeout=15, desc = "Fitness threshold wasn't reached"},
    {"LOOK", "FAILED", cond=no_writer, desc="No writer for conveyor vision"},
    {"LOOK", "LOOK_DONE", cond=result_ready, desc="conveyor_pose result ready"},
-   
+
    {"LOOK_DONE", "FAILED", cond="vars.retries > MAX_RETRIES"},
    {"LOOK_DONE", "FAILED", cond="vars.vision_retries > MAX_VISION_RETRIES"},
    {"LOOK_DONE", "LOOK", cond="tolerance_ok() == nil", desc="TF error"},
@@ -283,7 +283,7 @@ end
 function LOOK:exit()
    local msg = if_conveyor_pose.StopICPMessage:new()
    if_conveyor_pose:msgq_enqueue_copy(msg)
-   
+
    self.fsm.vars.target_pos_odom = tfm.transform(TARGET_POS, "conveyor_pose", "odom")
 end
 
@@ -303,7 +303,7 @@ end
 
 function DRIVE:init()
    print_info("conveyor_pose fitness: %f", if_conveyor_pose:euclidean_fitness())
-   
+
    self.fsm.vars.retries = self.fsm.vars.retries + 1
    self.args["motor_move"].x = self.fsm.vars.target_pos_odom.x
    self.args["motor_move"].y = self.fsm.vars.target_pos_odom.y

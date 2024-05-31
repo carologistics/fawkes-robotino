@@ -341,7 +341,7 @@ function INIT:init()
    self.fsm.vars.tags = { tag_0, tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7,
       tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15 }
    self.fsm.vars.clusters = { cluster1, cluster2, cluster3, cluster4, cluster5,
-      cluster6, cluster7, cluster8, cluster9, cluster10 } 
+      cluster6, cluster7, cluster8, cluster9, cluster10 }
 
    self.fsm.vars.zone_corner_idx = 1
    self.fsm.vars.attempts = 0
@@ -380,7 +380,7 @@ function WAIT_FOR_SENORS:loop()
          self.fsm.vars.line_vista = p_map
       end
    end
-   
+
    local cluster_map = cluster_in_zone(self.fsm.vars.clusters)
    if not self.fsm.vars.line_vista and cluster_map then
       -- No line found, but maybe we can guess something from a cluster...
@@ -449,7 +449,7 @@ end
 function PICK_VISTA_POINT:init()
    -- Make sure we don't use a zone corner coordinate that's inside a wall or
    -- entirely outside the playing field...
-   
+
    self.fsm.vars.zone_corner = nil
 
    while not self.fsm.vars.zone_corner and self.fsm.vars.zone_corner_idx <= #ZONE_CORNERS do
@@ -474,7 +474,7 @@ function PICK_VISTA_POINT:init()
             ori = math.atan2(-dy, -dx)
          }
       end
-      
+
       self.fsm.vars.zone_corner_idx = self.fsm.vars.zone_corner_idx + 1
    end
 end

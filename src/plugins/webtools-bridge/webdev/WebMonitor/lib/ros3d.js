@@ -1184,7 +1184,7 @@ ROS3D.InteractiveMarkerControl = function(options) {
         path : that.path,
         loader : that.loader
       });
-      
+
       // if transformMsg isn't null, this was called by TFClient
       if (transformMsg !== null) {
         // get the current pose as a ROSLIB.Pose...
@@ -1204,7 +1204,7 @@ ROS3D.InteractiveMarkerControl = function(options) {
       // add the marker
       that.add(markerHelper);
     };
-    
+
     // If the marker lives in a separate TF Frame, ask the *local* TFClient
     // for the transformation from the InteractiveMarker frame to the
     // sub-Marker frame
@@ -1610,7 +1610,7 @@ ROS3D.Marker = function(options) {
   }
 
   THREE.Object3D.call(this);
-  
+
   if(message.scale) {
     this.msgScale = [message.scale.x, message.scale.y, message.scale.z];
   }
@@ -1748,13 +1748,13 @@ ROS3D.Marker = function(options) {
     case ROS3D.MARKER_CUBE_LIST:
       // holds the main object
       var object = new THREE.Object3D();
-      
+
       // check if custom colors should be used
       var numPoints = message.points.length;
       var createColors = (numPoints === message.colors.length);
       // do not render giant lists
       var stepSize = Math.ceil(numPoints / 1250);
-        
+
       // add the points
       var p, cube, curColor, newMesh;
       for (p = 0; p < numPoints; p+=stepSize) {
@@ -1915,7 +1915,7 @@ ROS3D.Marker.prototype.setPose = function(pose) {
 ROS3D.Marker.prototype.update = function(message) {
   // set the pose and get the color
   this.setPose(message.pose);
-  
+
   // Update color
   if(message.color.r !== this.msgColor.r ||
      message.color.g !== this.msgColor.g ||
@@ -1925,7 +1925,7 @@ ROS3D.Marker.prototype.update = function(message) {
       var colorMaterial = ROS3D.makeColorMaterial(
           message.color.r, message.color.g,
           message.color.b, message.color.a);
-  
+
       switch (message.type) {
       case ROS3D.MARKER_LINE_STRIP:
       case ROS3D.MARKER_LINE_LIST:
@@ -1962,17 +1962,17 @@ ROS3D.Marker.prototype.update = function(message) {
       default:
           return false;
       }
-      
+
       this.msgColor = message.color;
   }
-  
+
   // Update geometry
   var scaleChanged =
         Math.abs(this.msgScale[0] - message.scale.x) > 1.0e-6 ||
         Math.abs(this.msgScale[1] - message.scale.y) > 1.0e-6 ||
         Math.abs(this.msgScale[2] - message.scale.z) > 1.0e-6;
   this.msgScale = [message.scale.x, message.scale.y, message.scale.z];
-  
+
   switch (message.type) {
     case ROS3D.MARKER_CUBE:
     case ROS3D.MARKER_SPHERE:
@@ -2007,7 +2007,7 @@ ROS3D.Marker.prototype.update = function(message) {
     default:
         break;
   }
-  
+
   return true;
 };
 
@@ -2090,7 +2090,7 @@ ROS3D.MarkerArrayClient = function(options) {
     throttle_rate : 1000,
     queue_length : 5
   });
-  
+
   arrayTopic.subscribe(function(arrayMessage) {
     if(arrayMessage.markers.length > 100){
       console.log (arrayMessage.markers.length);
@@ -2103,7 +2103,7 @@ ROS3D.MarkerArrayClient = function(options) {
 
 
       // if(message.action != 0){
-       
+
       //   console.table([message.ns , message.id]);
       // }
       // if(message.ns == "navgraph"){
@@ -2111,7 +2111,7 @@ ROS3D.MarkerArrayClient = function(options) {
 
       // }
 
-    
+
       if(message.action === 0) {
         var updated = false;
         // if(message.ns == "navgraph"){
@@ -2120,7 +2120,7 @@ ROS3D.MarkerArrayClient = function(options) {
         // }
 
         if(message.ns + message.id in that.markers) { // "MODIFY"
-      
+
           updated = that.markers[message.ns + message.id].children[0].update(message);
           if(!updated) { // "REMOVE"
               that.rootObject.remove(that.markers[message.ns + message.id]);
@@ -2141,7 +2141,7 @@ ROS3D.MarkerArrayClient = function(options) {
           {
               if( message.text. split('-') [0] == 'C' || message.text. split('-') [0] == 'M' )
               {
-                console.table ([{ name: message.text , id: message.id, 
+                console.table ([{ name: message.text , id: message.id,
                 x: message.pose.position.x ,
                 y: message.pose.position.y ,
                 z: message.pose.position.z ,
@@ -2151,27 +2151,27 @@ ROS3D.MarkerArrayClient = function(options) {
                 ori_w: message.pose.orientation . w }]);
 
                 var updated_machine_name ;
-                for ( machine_name in window.machines) 
-                {  
+                for ( machine_name in window.machines)
+                {
                   if( window.machines.hasOwnProperty(machine_name))
                   {
                     // var machine_name = window.machines[machine_name].name;
                     var find_machine_name = message.text.search (machine_name);
                     if( find_machine_name != -1)
-                    {        
+                    {
                       if(  message.pose.position.x  !=0   || message.pose.position.y !=0)
                       {
-                        if(   !(window.machines[machine_name] .nav_node.hasOwnProperty (message.text)) || (  window.machines[machine_name] . nav_node[message.text]. x != message.pose.position.x   
+                        if(   !(window.machines[machine_name] .nav_node.hasOwnProperty (message.text)) || (  window.machines[machine_name] . nav_node[message.text]. x != message.pose.position.x
                                                                                                           || window.machines[machine_name] . nav_node[message.text]. y != message.pose.position.y
                                                                                                            )
                           ){
-                          window.machines[ machine_name ].nav_node[message.text] = message.pose.position ;                       
+                          window.machines[ machine_name ].nav_node[message.text] = message.pose.position ;
                           machine_nav_updated = true;
                           updated_machine_name = machine_name;
                           message_edited = message;
                         }
-                      }   
-                    } 
+                      }
+                    }
                   }
                 }
               }
@@ -2211,17 +2211,17 @@ ROS3D.MarkerArrayClient = function(options) {
       if(machine_nav_updated)
       {
 
-        for ( machine_name in window.machines) 
-        {  
+        for ( machine_name in window.machines)
+        {
           if( window.machines.hasOwnProperty(machine_name) && window.machines[machine_name].nav_node.hasOwnProperty(machine_name))
           {
-              if(machine_name in that.markers) 
+              if(machine_name in that.markers)
               { // "REMOVE"
                  that.rootObject.remove(that.markers[machine_name]);
               }
 
-              // var message_edited = message ; 
-              message_edited .type =1 ; 
+              // var message_edited = message ;
+              message_edited .type =1 ;
               message_edited . ns = "mps";
               message_edited . id = ++id_traker;
               message_edited .color.a = 1;
@@ -2229,7 +2229,7 @@ ROS3D.MarkerArrayClient = function(options) {
               message_edited .color.g = 1;
               message_edited .color.b = 0;
 
-// 0.69 0.35 0.01  
+// 0.69 0.35 0.01
               message_edited .scale.x = .69 ;
               message_edited .scale.y =  .35;
               message_edited .scale.z = .72;
@@ -2237,7 +2237,7 @@ ROS3D.MarkerArrayClient = function(options) {
               message_edited .pose.position .x = window.machines[machine_name].nav_node[machine_name].x;
               message_edited .pose.position .y = window.machines[machine_name].nav_node[machine_name].y;
               message_edited .pose.position .z = window.machines[machine_name].nav_node[machine_name].z + .72/2;
-            
+
               var orientation_vector = {};
               orientation_vector .x = window.machines[ machine_name].nav_node[machine_name+"-I"].x - window.machines[ machine_name].nav_node[machine_name+"-O"].x;
               orientation_vector .y = window.machines[ machine_name].nav_node[machine_name+"-I"].y - window.machines[ machine_name].nav_node[machine_name+"-O"].y;
@@ -2266,9 +2266,9 @@ ROS3D.MarkerArrayClient = function(options) {
             }
           }
         }
-  
 
-    
+
+
     that.emit('change');
   });
 };

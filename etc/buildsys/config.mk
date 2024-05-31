@@ -46,4 +46,3 @@ endif
 CFLAGS_EXTRA  += -g -Wall -Werror -O2
 
 endif # __robotino_config_mk_
-

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE interface SYSTEM "interface.dtd">
 <interface name="BoxInterface" author="Daniel Honies" year="2023">
-  
+
   <data>
     <comment>
       detected box including type, zone and orientation

@@ -18,8 +18,8 @@ fawkes:
 plugins/static-transforms:
   transforms:
     dummy:
-     frame: !frame map
-     child_frame: !frame base_link
-     trans_x: 0
-     trans_y: 0
-     trans_z: 0
+      frame: !frame map
+      child_frame: !frame base_link
+      trans_x: 0
+      trans_y: 0
+      trans_z: 0

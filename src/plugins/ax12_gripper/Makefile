@@ -37,4 +37,3 @@ PLUGINS_all = $(PLUGINDIR)/ax12_gripper.$(SOEXT)
 PLUGINS_build = $(PLUGINS_all)
 
 include $(BUILDSYSDIR)/base.mk
-

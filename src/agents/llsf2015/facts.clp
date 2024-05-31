@@ -41,7 +41,7 @@
   (slot next (type SYMBOL)) ;TODO delete next
 
   ; for exploration-catch-up in produciton
-  (multislot incoming (type SYMBOL) (default (create$)))  
+  (multislot incoming (type SYMBOL) (default (create$)))
   (multislot incoming-agent (type SYMBOL) (default (create$)))
   (slot times-searched (type INTEGER) (default 0))
   (slot sync-id (type INTEGER) (default 0))
@@ -79,7 +79,7 @@
   (slot name (type SYMBOL))
 )
 
-(deftemplate last-navgraph-compute-msg 
+(deftemplate last-navgraph-compute-msg
   (slot id (type INTEGER))
 )
 
@@ -132,15 +132,15 @@
   (slot sync-id (type INTEGER) (default 0))
 )
 
-; (deftemplate base-station 
+; (deftemplate base-station
 ;   (slot name (type SYMBOL) (allowed-symbols C-BS M-BS))
 ; )
 
-; (deftemplate delivery-station 
+; (deftemplate delivery-station
 ;   (slot name (type SYMBOL) (allowed-symbols C-DS M-DS))
 ; )
 
-(deftemplate cap-station 
+(deftemplate cap-station
   (slot name (type SYMBOL) (allowed-symbols C-CS1 C-CS2 M-CS1 M-CS2))
   (slot cap-loaded (type SYMBOL) (allowed-symbols NONE GREY BLACK) (default NONE))
   ;the team has to fill one CS with black and the other with grey caps (config)
@@ -364,7 +364,7 @@
   (refbox-state WAIT_START)
   (game-time (create$ 0 0))
   (game-duration (* 15 60))
-  
+
   (timer (name beacon) (time (create$ 0 0)) (seq 1))
   (timer (name exploration-finished) (time (create$ 0 0)) (seq 1))
   (timer (name send-worldmodel-sync) (time (create$ 0 0)) (seq 1))
@@ -374,7 +374,7 @@
 
   (pose (x 0.0) (y 0.0))
   (puck-in-gripper FALSE)
-  
+
   ; Input storage per team color
   (input-storage CYAN Ins1 0 0)
   (input-storage MAGENTA Ins2 0 0)

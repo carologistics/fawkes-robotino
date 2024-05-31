@@ -104,7 +104,7 @@
 
 (defrule navgraph-select-places-for-waitpoints
   (navgraph-node (name ?p&:(or (eq "-I" (sub-string (- (str-length ?p) 1) (str-length ?p) ?p))
-                               (eq "-O" (sub-string (- (str-length ?p) 1) (str-length ?p) ?p))))                               
+                               (eq "-O" (sub-string (- (str-length ?p) 1) (str-length ?p) ?p))))
                  (pos $?pos))
 =>
   (assert (place-needing-waitpoint (name ?p) (pos ?pos)))

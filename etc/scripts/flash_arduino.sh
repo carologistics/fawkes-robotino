@@ -29,7 +29,7 @@ fi
 
 eval $check_command > /dev/null 2>&1
 
-if [[ $? == 0 ]] 
+if [[ $? == 0 ]]
 then
 	echo -e "\e[32mNo need to flash the arduino!\e[0m"
 else

@@ -56,7 +56,7 @@ message PlacePuckUnderMachine {
     COMP_ID  = 2000;
     MSG_TYPE = 15;
   }
-  
+
   required string machine_name = 1;
   required uint32 puck_id = 2;
 }
@@ -66,7 +66,7 @@ message LoadPuckInMachine {
     COMP_ID  = 2000;
     MSG_TYPE = 16;
   }
-  
+
   required string machine_name = 1;
   required uint32 puck_id = 2;
 }

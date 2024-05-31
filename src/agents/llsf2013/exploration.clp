@@ -4,7 +4,7 @@
 ;
 ;  Created: Fri Apr 26 18:38:18 2013 (Magdeburg)
 ;  Copyright  2013  Frederik Zwilling
-;             2013  Alexander von Wirth 
+;             2013  Alexander von Wirth
 ;             2013  Tim Niemueller [www.niemueller.de]
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
@@ -57,7 +57,7 @@
 ;arriving at a machine in first or second round. Preparing recognition of the light signals
 (defrule exp-ppgoto-arrived-at-machine
   (phase EXPLORATION)
-  ?final <- (skill (name "ppgoto") (status FINAL)) 
+  ?final <- (skill (name "ppgoto") (status FINAL))
   ?s <- (state EXP_DRIVING_TO_MACHINE)
   (goalmachine ?name)
   (machine-exploration (name ?name) (look-pos ?goal))
@@ -72,7 +72,7 @@
 ;redo movement with global motor move
 (defrule exp-global-motor-move-finished
   (phase EXPLORATION)
-  ?final <- (skill (name "global_motor_move") (status FINAL|FAILED)) 
+  ?final <- (skill (name "global_motor_move") (status FINAL|FAILED))
   ?s <- (state EXP_DRIVING_TO_MACHINE_GLOBAL)
   (time $?now)
   =>
@@ -248,7 +248,7 @@
   (first-exploration-machine ?nextMachine)
   =>
   (printout t "Finished first round." crlf)
-  (retract ?r ?n) 
+  (retract ?r ?n)
   (assert (round FIRST_FINISHED)
   )
 )
@@ -276,7 +276,7 @@
   (skill-call ppgoto place (str-cat ?waiting-for-prod-point))
   (printout t "Driving away..." crlf)
   (retract ?sr ?si)
-  (assert (driven-to-waiting-point))  
+  (assert (driven-to-waiting-point))
 )
 
 (deffunction machine-is-closer (?x ?y ?x2 ?y2 $?pos)
@@ -302,7 +302,7 @@
   (declare (salience ?*PRIORITY-HIGH*))
   (phase EXPLORATION)
   (round RETRY)
-  ?r <- (want-to-retry ?m)  
+  ?r <- (want-to-retry ?m)
   (Position3DInterface (id "Pose") (translation $?pos))
   (machine-exploration (name ?m) (x ?x) (y ?y) (next ?) (look-pos ?lp))
   (machine-exploration (name ?m2) (x ?x2) (y ?y2&~:(machine-is-closer ?x ?y ?x2 ?y2 ?pos)))
@@ -323,7 +323,7 @@
   (assert (state EXP_DRIVING_TO_MACHINE)
           (goalmachine ?m)
   )
-  (skill-call ppgoto place (str-cat ?lp))  
+  (skill-call ppgoto place (str-cat ?lp))
 )
 
 ;Finish exploration phase if all machines are recognized
@@ -353,7 +353,7 @@
     (progn$ (?light (pb-field-list ?sig "lights"))
       (bind ?light-color (pb-field-value ?light "color"))
       (bind ?light-state (pb-field-value ?light "state"))
-      ;assert the read type color and state to compose it together in compose-type-light-pattern-matching 
+      ;assert the read type color and state to compose it together in compose-type-light-pattern-matching
       (assert (type-spec-pre ?type ?light-color ?light-state))
     )
   )
@@ -373,7 +373,7 @@
 
 (defrule exp-all-matchings-are-there
   (phase EXPLORATION)
-  (matching-type-light (type T1) (red ?) (yellow ?) (green ?)) 
+  (matching-type-light (type T1) (red ?) (yellow ?) (green ?))
   (matching-type-light (type T2) (red ?) (yellow ?) (green ?))
   (matching-type-light (type T3) (red ?) (yellow ?) (green ?))
   (matching-type-light (type T4) (red ?) (yellow ?) (green ?))

@@ -831,7 +831,7 @@ The workpiece remains in the output of the used ring station after
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
 
 	(not (plan-action (action-name wp-check) (param-values $? ?wp ?mps INPUT THERE) (state ~FINAL)))
-	
+
 	(domain-fact (name zone-content) (param-values ?mpsz ?mps))
 	=>
 	(printout t "Goal INSTRUCT-DS-DISCARD executable for " ?robot crlf)
@@ -906,6 +906,3 @@ The workpiece remains in the output of the used ring station after
   =>
   (retract ?g)
 )
-
-
-

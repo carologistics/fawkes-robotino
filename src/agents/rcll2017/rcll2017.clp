@@ -19,7 +19,7 @@
   (config-load "/hardware/robotino")
 )
 
-(deffacts init 
+(deffacts init
   "Initializes clips agent."
   (init)
 )

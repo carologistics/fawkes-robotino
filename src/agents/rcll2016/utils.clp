@@ -72,12 +72,12 @@
     (blackboard-set-msg-multifield ?msg "tag_translation" ?ft:trans)
     (blackboard-set-msg-multifield ?msg "tag_rotation" ?ft:rot)
     (blackboard-send-msg ?msg)
-    (printout t "Send UpdateStationByTagMessage: id " (str-cat ?ft:name) 
+    (printout t "Send UpdateStationByTagMessage: id " (str-cat ?ft:name)
 	      " side " ?ft:side
 	      " frame " ?ft:frame
 	      " trans " ?ft:trans
 	      " rot " ?ft:rot  crlf)
-   
+
     (assert (navgraph-added-for-mps (name ?ft:name)))
   )
   (if ?any-tag-to-add
@@ -98,7 +98,7 @@
 
 (deffunction utils-remove-prefix (?string ?prefix)
   "Removes a prefix from a string or symbol by its length"
-  (bind ?res (sub-string (+ 1 (str-length (str-cat ?prefix))) 
+  (bind ?res (sub-string (+ 1 (str-length (str-cat ?prefix)))
 			 (str-length (str-cat ?string))
 			 (str-cat ?string)))
   (if (eq (type ?string) SYMBOL) then
@@ -137,13 +137,13 @@
   )
   (bind ?zone-x (round-down (/ (- ?zone-cyan 1) 4)))
   (bind ?zone-y (mod (- ?zone-cyan 1) 4))
-  
+
   (bind ?y-min (* ?zone-y ?*ZONE-HEIGHT*))
   (bind ?y-max (* (+ ?zone-y 1) ?*ZONE-HEIGHT*))
 
   (bind ?x-min (* ?zone-x ?*ZONE-WIDTH*))
   (bind ?x-max (* (+ ?zone-x 1) ?*ZONE-WIDTH*))
-  
+
   (if (> ?zone 12) then
     (bind ?x-min (- 0 ?x-min))
     (bind ?x-max (- 0 ?x-max))
@@ -210,11 +210,11 @@
       then
       (if (deftemplate-slot-multip (fact-relation ?f) ?slot)
         then ;copy multifield
-        (bind ?acom (str-cat ?acom "(" ?slot " (create$ " 
+        (bind ?acom (str-cat ?acom "(" ?slot " (create$ "
                              (implode$ (fact-slot-value ?f ?slot))
                              "))"))
         else ;copy singlefield
-        (bind ?acom (str-cat ?acom "(" ?slot " " 
+        (bind ?acom (str-cat ?acom "(" ?slot " "
                              (escape-if-string (fact-slot-value ?f ?slot)) ")"))
       )
       else
@@ -242,14 +242,14 @@
     then
     (printout error "Slot " ?slot " is no multifield!" crlf)
   )
-  
+
   (bind ?acom (str-cat "(assert (" (fact-relation ?f) " "))
   (progn$ (?cur-slot (fact-slot-names ?f))
     (if (neq ?slot ?cur-slot)
       then
       (if (deftemplate-slot-multip (fact-relation ?f) ?cur-slot)
         then ;coply multifield
-        (bind ?acom (str-cat ?acom "(" ?cur-slot " (create$ " 
+        (bind ?acom (str-cat ?acom "(" ?cur-slot " (create$ "
                              (implode$ (fact-slot-value ?f ?cur-slot))
                              "))"))
         else ;copy singlefield
@@ -334,7 +334,7 @@
       then
       (if (deftemplate-slot-multip (fact-relation ?f) ?cur-slot)
         then ;coply multifield
-        (bind ?acom (str-cat ?acom "(" ?cur-slot " (create$ " 
+        (bind ?acom (str-cat ?acom "(" ?cur-slot " (create$ "
                              (implode$ (fact-slot-value ?f ?cur-slot))
                              "))"))
         else ;copy singlefield

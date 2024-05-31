@@ -1,6 +1,6 @@
 
 ----------------------------------------------------------------------------
---  goto.lua - 
+--  goto.lua -
 --
 --  Created: Thu Aug 14 14:32:47 2008
 --  modified by Victor Mataré
@@ -106,7 +106,7 @@ function travelled_distance(self)
   local x = (self.fsm.vars.cur_x - self.fsm.vars.initial_position_x) * (self.fsm.vars.cur_x - self.fsm.vars.initial_position_x)
   local y = (self.fsm.vars.cur_y - self.fsm.vars.initial_position_y) * (self.fsm.vars.cur_y - self.fsm.vars.initial_position_y)
   local distance_travelled = math.sqrt(x + y)
- 
+
   if distance_travelled > distance_to_travel then
     return true
   else
@@ -144,7 +144,7 @@ function INIT:init()
 
   if self.fsm.vars.place ~= nil then
     -- check for waiting position
-    if string.match(self.fsm.vars.place, "WAIT") then 
+    if string.match(self.fsm.vars.place, "WAIT") then
        self.fsm.vars.waiting_pos = true
     end
     if string.match(self.fsm.vars.place, "^[MC][-]Z[1-7][1-8]$") then
@@ -180,7 +180,7 @@ function INIT:init()
   else
     -- infinity tells the navigator to ignore ori
     self.fsm.vars.ori = self.fsm.vars.ori or 1/0
-  end 
+  end
 
   self.fsm.vars.region_trans = self.fsm.vars.region_trans or REGION_TRANS
 end
@@ -230,7 +230,7 @@ end
 function TIMEOUT:loop()
   if fsm.vars.waiting_pos == true then
     local got_cur_pose = false
- 
+
     while not got_cur_pose do
       local cur_pose = tf_mod.transform({x=0, y=0, ori=0}, "base_link", "map")
       if cur_pose ~= nil then

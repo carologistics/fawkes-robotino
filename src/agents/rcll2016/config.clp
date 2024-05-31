@@ -94,4 +94,3 @@
   (assert (move-into-field-waittime ?into-field-wait))
   (retract ?cv)
 )
-

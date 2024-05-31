@@ -8,7 +8,7 @@
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/gazsim
 ---
 
-#camera setup in the simulation
+# camera setup in the simulation
 plugins/light_front:
   camera_offset_horizontal: 0
   camera_offset_horizontal_rad: 0.0
@@ -17,12 +17,12 @@ plugins/light_front:
   camera_angle_vertical_rad: .00
   threashold_brightness: 120
   threashold_black: 80
-  
+
 clips-agent:
   clips-debug: true
   skill-sim: false
   skill-sim-time: 0.5
-  
+
   # debug level is a number of: 0 ~ none, 1 ~ minimal, 2 ~ more, 3 ~ maximum
   debug-level: 3
 
@@ -39,16 +39,16 @@ clips-agent:
     play-exploration-without-refbox: false
 
 skills/take_puck_to:
-   #front sensor distance when the puck is lost
-   front_sensor_dist: 0.073
+  # front sensor distance when the puck is lost
+  front_sensor_dist: 0.073
 
 skills/fetch_puck:
-   #front sensor distance when fetching the puck
-   front_sensor_dist: 0.045
+  # front sensor distance when fetching the puck
+  front_sensor_dist: 0.045
 
 skills/deliver_puck:
-   #front sensor distance when checking if we still have the puck at the delivery gates
-   front_sensor_dist: 0.05
+  # front sensor distance when checking if we still have the puck at the delivery gates
+  front_sensor_dist: 0.05
 
 skills/align_distance_conveyor/x: 0.25
 
@@ -66,7 +66,7 @@ fawkes:
 # debug=0, info=1, warn=2, error=4, none=8
 ballposlog/log_level: 0
 
-#colli og-laser buffer:
+# colli og-laser buffer:
 plugins/colli/laser_occupancy_grid/buffer_size: 4
 
 agent-monitor:
@@ -109,7 +109,7 @@ plugins/static-transforms:
       trans_x: 0.1
       trans_y: 0.0
       trans_z: 0.44
-      rot_pitch: 0 
+      rot_pitch: 0
       rot_yaw: 0
       rot_roll: 0
     cam_conveyor:
@@ -121,7 +121,7 @@ arduino:
   y_max: 0.085
   z_max: 0.1
 
- # min space in x, y and z in meters
+  # min space in x, y and z in meters
   x_min: 0
   z_min: -2.0
   # y_min: defaults to y_max / -2

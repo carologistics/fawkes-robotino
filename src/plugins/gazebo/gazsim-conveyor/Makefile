@@ -57,4 +57,3 @@ warning_protobuf:
 endif
 
 include $(BUILDSYSDIR)/base.mk
-

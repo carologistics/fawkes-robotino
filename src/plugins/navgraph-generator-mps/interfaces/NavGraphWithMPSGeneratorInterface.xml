@@ -6,7 +6,7 @@
      <comment>Which side is being added.</comment>
      <item name="INPUT">Input of station.</item>
      <item name="OUTPUT">Output of station.</item>
-  </enum> 
+  </enum>
   </constants>
   <data>
     <comment>

@@ -18,7 +18,7 @@
     (bind ?m-state (sym-cat (pb-field-value ?m "state")))
     (do-for-fact ((?machine machine))
       (eq ?machine:name ?m-name)
-      
+
       (if (or (neq ?machine:team ?m-team) (neq ?machine:state ?m-state)) then
         (modify ?machine (state ?m-state) (team ?m-team))
       )
@@ -163,7 +163,7 @@
   )
   ?of <- (order (product-id ?product-id)
     (quantity-requested ?qr) (quantity-delivered ?qd)
-    (begin ?begin) 
+    (begin ?begin)
     (delivery-gate ?gate) (in-delivery ?id)
   )
   =>
@@ -277,7 +277,7 @@
     (retract ?hf)
     (assert (holding NONE))
   )
-  (printout error "Delivery failed. Try again if I have a puck." crlf) 
+  (printout error "Delivery failed. Try again if I have a puck." crlf)
 )
 
 (defrule wm-drive-to-failed
@@ -318,7 +318,7 @@
   ?mf <- (machine (name ?name) (mtype ?mtype))
   (puck-in-gripper ?have-puck)
   =>
-  (printout error "WTF? Unhandled light code at " ?name "|" ?mtype crlf) 
+  (printout error "WTF? Unhandled light code at " ?name "|" ?mtype crlf)
   (retract ?lf ?gtdw)
   (if (not ?have-puck)
     then
@@ -347,7 +347,7 @@
     (printout t "Have puck in gripper" crlf)
     (retract ?pig)
     (assert (puck-in-gripper TRUE))
-  
+
     else
     (printout t "Have no puck in gripper" crlf)
     (retract ?pig)

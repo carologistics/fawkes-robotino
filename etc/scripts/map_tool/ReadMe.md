@@ -26,5 +26,3 @@
 * The map string as well as the origin is written to `map_creation.txt`
 * Upon saving the map all text field values are stored to `values.yaml` (back to defaults by deleting this file)
 * Don't click any upper text field anymore when manually changing the map string (it will delete all your changes)
-
-

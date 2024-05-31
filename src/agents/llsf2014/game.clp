@@ -73,7 +73,7 @@
 (defrule start-playing
   "When a bot (exluding P-3) has moved into the field, start the exploration."
   ?sf <- (state MOVING_INTO_FIELD)
-  ?skf <- (skill-done (name "motor_move") (status FINAL|FAILED)) 
+  ?skf <- (skill-done (name "motor_move") (status FINAL|FAILED))
   (lock-announce-restart-finished)
   (not (role P3-ONLY))
   =>
@@ -86,7 +86,7 @@
 (defrule start-playing-as-P3_ONLY
   "When 10 seconds of game time have elapsed, move P-3 bot into the field."
   ?sf <- (state MOVING_INTO_FIELD)
-  ?skf <- (skill-done (name "motor_move") (status FINAL|FAILED)) 
+  ?skf <- (skill-done (name "motor_move") (status FINAL|FAILED))
   (role P3-ONLY)
   (time $?now)
   ?timer <- (timer (name wait-before-start) (time $?t&:(timeout ?now ?t 10.0)))
@@ -129,7 +129,7 @@
   "If config value play-exploration-without-refbox is true, immediately start EXPLORATION."
   (confval (path "/clips-agent/llsf2014/play-exploration-without-refbox") (value true))
   =>
-  (assert 
+  (assert
     (exploration-start)
     (phase EXPLORATION)
     (state IDLE)

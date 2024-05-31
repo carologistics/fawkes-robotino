@@ -62,7 +62,7 @@
     (retract ?hf)
     (assert (holding NONE))
   )
-  (printout error "Delivery failed. Try again if I have a puck." crlf) 
+  (printout error "Delivery failed. Try again if I have a puck." crlf)
 )
 
 (defrule wm-goto-failed
@@ -78,7 +78,7 @@
     (retract ?hf)
     (assert (holding NONE))
   )
-  (printout error "Production failed at " ?name crlf) 
+  (printout error "Production failed at " ?name crlf)
 )
 
 (defrule wm-take-puck-to-failed
@@ -272,9 +272,9 @@
   (assert (worldmodel-change (machine ?name) (change SET_DOUBTFUL_WORLDMODEL)))
   (retract ?gtdw)
   ;how to handle the situation:
-  (if (or (eq ?mtype RECYCLE) 
+  (if (or (eq ?mtype RECYCLE)
 	  (eq ?mtype T1)
-	  (eq ?mtype T5)) 
+	  (eq ?mtype T5))
     then
     ;simply ignore and go on
     (retract ?lf ?tf ?hf)
@@ -358,7 +358,7 @@
   ?mf <- (machine (name ?name) (mtype ?mtype))
   (puck-in-gripper ?have-puck)
   =>
-  (printout error "WTF? Unhandled light code at " ?name "|" ?mtype crlf) 
+  (printout error "WTF? Unhandled light code at " ?name "|" ?mtype crlf)
   (retract ?lf ?tf ?gtdw ?s)
   (if (not ?have-puck)
     then
@@ -496,43 +496,43 @@
   ?m <- (machine (name ?machine) (loaded-with $?loaded-with) (incoming $?incoming) (incoming-agent $?incoming-agent)(junk ?junk) (produced-puck ?produced) (doubtful-worldmodel ?doubtful-wm))
   =>
   (switch ?change
-    (case ADD_LOADED_WITH then 
+    (case ADD_LOADED_WITH then
       (modify ?m (loaded-with (append$ ?loaded-with ?value)))
     )
     (case REMOVE_LOADED_WITH then
       (modify ?m (loaded-with (delete-member$ ?loaded-with ?value)))
     )
-    (case ADD_INCOMING then 
+    (case ADD_INCOMING then
       (modify ?m (incoming (append$ ?incoming ?value))
 	         (incoming-agent (append$ ?incoming-agent ?agent)))
     )
-    (case REMOVE_INCOMING then 
+    (case REMOVE_INCOMING then
       (modify ?m (incoming (delete-member$ ?incoming ?value))
 	         ;every agent should do only one thing at a machine
 	         (incoming-agent (delete-member$ ?incoming-agent ?agent)))
     )
-    (case SET_NUM_CO then 
+    (case SET_NUM_CO then
       (modify ?m (junk ?amount))
     )
-    (case SET_PROD_FINISHED_TIME then 
+    (case SET_PROD_FINISHED_TIME then
       (modify ?m (final-prod-time (create$ ?amount 0)))
     )
     (case SET_OUT_OF_ORDER_UNTIL then
       (modify ?m (out-of-order-until (create$ ?amount 0)))
     )
-    (case REMOVE_PRODUCED then 
+    (case REMOVE_PRODUCED then
       (modify ?m (produced-puck NONE))
     )
-    (case SET_PRODUCE_BLOCKED then 
+    (case SET_PRODUCE_BLOCKED then
       (modify ?m (produce-blocked TRUE))
     )
-    (case RESET_PRODUCE_BLOCKED then 
+    (case RESET_PRODUCE_BLOCKED then
       (modify ?m (produce-blocked FALSE))
     )
-    (case SET_RECYCLE_BLOCKED then 
+    (case SET_RECYCLE_BLOCKED then
       (modify ?m (recycle-blocked TRUE))
     )
-    (case SET_DOUBTFUL_WORLDMODEL then 
+    (case SET_DOUBTFUL_WORLDMODEL then
       (if ?doubtful-wm
 	then
 	;second problem -> block this machine
@@ -561,17 +561,17 @@
   ?ps <- (puck-storage (name ?storage) (incoming $?incoming) (incoming-agent $?incoming-agent))
   =>
   (switch ?change
-    (case ADD_LOADED_WITH then 
+    (case ADD_LOADED_WITH then
       (modify ?ps (puck ?value))
     )
     (case REMOVE_LOADED_WITH then
       (modify ?ps (puck NONE))
     )
-    (case ADD_INCOMING then 
+    (case ADD_INCOMING then
       (modify ?ps (incoming (append$ ?incoming ?value))
 	          (incoming-agent (append$ ?incoming-agent ?agent)))
     )
-    (case REMOVE_INCOMING then 
+    (case REMOVE_INCOMING then
       (modify ?ps (incoming (delete-member$ ?incoming ?value))
 	         ;every agent should do only one thing at a machine
 	         (incoming-agent (delete-member$ ?incoming-agent ?agent)))
@@ -602,9 +602,9 @@
     ;(printout t "Have puck in gripper" crlf)
     (retract ?pig)
     (assert (puck-in-gripper TRUE))
-    
+
     else
-    
+
     (if (and (> ?dist ?trigger) ?puck)
 	then
       ;(printout t "Have no puck in gripper" crlf)
@@ -624,7 +624,7 @@
   (printout error "Amount of CO pucks at " ?name " wrong." crlf)
   (printout error "Saving fact-list to  agent-snapshot-" (nth$ 1 ?now) ".clp" crlf)
   (save-facts (str-cat "agent-snapshot-junk-wrong-" (nth$ 1 ?now) ".clp") visible)
-  
+
   (modify ?m (junk 1))
   (assert (junk-failed T2))
 )
@@ -637,7 +637,7 @@
   (printout error "Amount of CO pucks at " ?name " wrong." crlf)
   (printout error "Saving fact-list to  agent-snapshot-" (nth$ 1 ?now) ".clp" crlf)
   (save-facts (str-cat "agent-snapshot-junk-wrong-" (nth$ 1 ?now) ".clp") visible)
-  
+
   (modify ?m (junk 0))
   (assert (junk-failed T1-T5))
 )
@@ -651,7 +651,7 @@
   (printout error "Amount of CO pucks at " ?name " wrong." crlf)
   (printout error "Saving fact-list to  agent-snapshot-" (nth$ 1 ?now) ".clp" crlf)
   (save-facts (str-cat "agent-snapshot-junk-wrong-" (nth$ 1 ?now) ".clp") visible)
-  
+
   (modify ?m (junk 2))
   (assert (junk-failed T3-T4))
 )
@@ -667,7 +667,7 @@
       (bind ?new-incoming-agent (delete$ ?new-incoming-agent ?index ?index))
     )
     (modify ?m (incoming ?new-incoming) (incoming-agent ?new-incoming-agent))
-  ) 
+  )
 )
 
 (defrule wm-remove-out-of-order

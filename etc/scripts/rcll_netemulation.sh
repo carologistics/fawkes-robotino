@@ -33,7 +33,7 @@ Allows to modify network Traffic. Based on 'tc' tool
 usage:
 
   $0 setup <network interface> OPTIONS
-  $0 clear <network interface> 
+  $0 clear <network interface>
   $0 show  <network interface>
 
 OPTIONS:

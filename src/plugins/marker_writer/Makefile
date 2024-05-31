@@ -34,7 +34,7 @@ ifeq ($(HAVE_ROS)$(HAVE_CPP11),11)
     LDFLAGS += $(LDFLAGS_ROS) $(call ros-pkg-lflags,visualization_msgs)
 
     PLUGINS_build = $(PLUGINS_all)
-  else 
+  else
     WARN_TARGETS+= warning_visualization_msgs
   endif
 else

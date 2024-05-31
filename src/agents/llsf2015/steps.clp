@@ -42,14 +42,14 @@
 	  (wait-for-lock (priority ?p) (res ?mps))
   )
   (if (eq ?feature SLIDE) then
-    (assert 
+    (assert
       (skill-to-execute (skill bring_product_to) (args place ?mps slide TRUE)  (target ?mps))
     )
   else
     (assert
       (skill-to-execute (skill bring_product_to) (args place ?mps)  (target ?mps))
     )
-  ) 
+  )
   ; check if we have to instruct an mps:
   (if (and (eq ?mtype CS)
            (or (eq ?task-name fill-cap)(eq ?task-name clear-cs))) then
@@ -228,8 +228,8 @@
   (not (found-tag (name ?machine)))
   (TagVisionInterface (id "/tag-vision/info") (tags_visible ?num-tags&:(> ?num-tags 0))
                       (tag_id $?tag-ids&:(member$ ?tag ?tag-ids)))
-  (Position3DInterface (id ?tag-if-id&:(eq ?tag-if-id (str-cat "/tag-vision/" (- (member$ ?tag ?tag-ids) 1)))) 
-                       (visibility_history ?vh&:(> ?vh ?needed-vh)) 
+  (Position3DInterface (id ?tag-if-id&:(eq ?tag-if-id (str-cat "/tag-vision/" (- (member$ ?tag ?tag-ids) 1))))
+                       (visibility_history ?vh&:(> ?vh ?needed-vh))
                        (translation $?trans) (rotation $?rot)
                        (frame ?frame) (time $?timestamp))
   ?skill-finish-state <- (explore-zone-state ?)
@@ -254,7 +254,7 @@
     )
   )
   (if (eq 7 (length$ ?tf-transrot)) then
-    (synced-assert (str-cat "(found-tag (name " ?machine ") (side " ?side 
+    (synced-assert (str-cat "(found-tag (name " ?machine ") (side " ?side
                             ") (frame \"/map\") (trans (create$ "
                             (implode$ (subseq$ ?tf-transrot 1 3)) ")) "
                             " (rot (create$ " (implode$ (subseq$ ?tf-transrot 4 7))

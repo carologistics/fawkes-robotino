@@ -129,7 +129,7 @@
   (if (debug 2) then (printout t "Recycling consumed puck" ?name crlf))
   (printout t "prod-recycle-puck" crlf)
   (retract ?sf)
-  (assert (state PROD_LOCK_REQUIRED_GOTO ?name))    
+  (assert (state PROD_LOCK_REQUIRED_GOTO ?name))
 )
 
 (defrule prod-figure-out-waiting-points
@@ -189,7 +189,7 @@
   (retract ?sf)
   (assert (state PROD_LOCK_REQUIRED_GOTO ?name)
 	  (want-to-produce-final-product);dirty robocup improvement
-  )  
+  )
 )
 
 (defrule prod-s0-t3-s1-s2
@@ -251,7 +251,7 @@
 )
 
 (defrule prod-s1-t2-not-s1
-  (declare (salience ?*PRIORITY-T2*))  
+  (declare (salience ?*PRIORITY-T2*))
   (phase PRODUCTION)
   (role ?role)
   ?sf <- (state IDLE)
@@ -265,7 +265,7 @@
 )
 
 (defrule prod-s2-t3-has-some-but-not-s2
-  (declare (salience ?*PRIORITY-T3*))  
+  (declare (salience ?*PRIORITY-T3*))
   (phase PRODUCTION)
   (role ?role)
   ?sf <- (state IDLE)
@@ -280,7 +280,7 @@
 )
 
 (defrule prod-s2-t3-empty
-  (declare (salience ?*PRIORITY-T3*))  
+  (declare (salience ?*PRIORITY-T3*))
   (phase PRODUCTION)
   (role ?role)
   ?sf <- (state IDLE)

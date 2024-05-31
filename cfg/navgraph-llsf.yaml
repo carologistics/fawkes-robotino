@@ -5,35 +5,35 @@ graph-name: LLSF
 root: SW
 
 default-properties:
-    # Max. distance between actual and target positions to deem the target
-    # reached. This value is for intermediate nodes on a path; m
-    # The value can be overwritten per node in the graph file.
-    - travel_tolerance: 0.7
+  # Max. distance between actual and target positions to deem the target
+  # reached. This value is for intermediate nodes on a path; m
+  # The value can be overwritten per node in the graph file.
+  - travel_tolerance: 0.7
 
-    # Max. distance between actual and target positions to deem the target
-    # reached. This value is for the last node on a path; m
-    # The value can be overwritten per node in the graph file.
-    - target_tolerance: 0.3
+  # Max. distance between actual and target positions to deem the target
+  # reached. This value is for the last node on a path; m
+  # The value can be overwritten per node in the graph file.
+  - target_tolerance: 0.3
 
-    # Max. distance between actual and target orientation to deem the target
-    # reached. This value is for the last node on a path; rad
-    - orientation_tolerance: 0.6
+  # Max. distance between actual and target orientation to deem the target
+  # reached. This value is for the last node on a path; rad
+  - orientation_tolerance: 0.6
 
-    # When following a plan the robot will check all upcoming nodes if they
-    # are close to the robot within this tolerance. If so, they take a shortcut
-    # and will go to the node in the plan after the shortcut node.
-    # This is potentially dangerous depending on the graph and navigator as it
-    # might violate the typical graph constraint of only having direct-line-of-tavel
-    # connections. The value can be overidden with a node property of the same name; m
-    - shortcut_tolerance: 0.7
+  # When following a plan the robot will check all upcoming nodes if they
+  # are close to the robot within this tolerance. If so, they take a shortcut
+  # and will go to the node in the plan after the shortcut node.
+  # This is potentially dangerous depending on the graph and navigator as it
+  # might violate the typical graph constraint of only having direct-line-of-tavel
+  # connections. The value can be overidden with a node property of the same name; m
+  - shortcut_tolerance: 0.7
 
 nodes:
-# Highway points:
+  # Highway points:
 
   - name: P11
     pos: [-4.48, 1.12]
     properties:
-       - highway_exit
+      - highway_exit
 
   - !unconnected
     name: C-ins-in
@@ -50,7 +50,7 @@ nodes:
   - name: P12
     pos: [-4.48, 2.24]
     properties:
-       - highway_exit
+      - highway_exit
   - name: P13
     pos: [-4.48, 3.36]
     properties:
@@ -116,20 +116,20 @@ nodes:
   - name: P91
     pos: [4.48, 1.12]
     properties:
-       - highway_exit
+      - highway_exit
   - name: P92
     pos: [4.48, 2.24]
     properties:
-       - highway_exit
+      - highway_exit
   - name: P93
     pos: [4.48, 3.36]
     properties:
-       - highway_exit
+      - highway_exit
   - name: P94
     pos: [4.48, 4.48]
 
-# Arrival points for machines
-# right side
+  # Arrival points for machines
+  # right side
   - name: M1
     pos: [0.56, 1.23]
     properties:
@@ -186,7 +186,7 @@ nodes:
     pos: [1.01, 5.04]
     properties:
       - orientation: 3.14
-# left side
+  # left side
   - name: M13
     pos: [-0.56, 1.23]
     properties:
@@ -242,8 +242,8 @@ nodes:
       - orientation: 0
       - leave_right
 
-# Highway exits:
-        
+  # Highway exits:
+
   - name: M1H
     pos: [0.56, 1.12]
     properties:
@@ -296,7 +296,7 @@ nodes:
     pos: [1.12, 5.04]
     properties:
       - highway_exit
-  
+
   - name: M13H
     pos: [-0.56, 1.12]
     properties:
@@ -350,8 +350,8 @@ nodes:
     properties:
       - highway_exit
 
-# special points:
-        
+  # special points:
+
   - name: deliver1
     pos: [4.7, 2.99]
     properties:
@@ -432,7 +432,7 @@ nodes:
     pos: [-5.04, 3.92]
     properties:
       - orientation: -1.57
-# Wait points for machines in a row (free position of the four possible machine positions and WAIT_FOR_DELIVER for M12 and M24)
+  # Wait points for machines in a row (free position of the four possible machine positions and WAIT_FOR_DELIVER for M12 and M24)
   - name: WAIT_FOR_ROW_1
     pos: [-3.92, 3.92]
   - name: WAIT_FOR_ROW_2
@@ -450,10 +450,10 @@ nodes:
   - name: WAIT_FOR_ROW_8
     pos: [3.92, 3.92]
 
-# Exploration Points
-# TODO: optimize
+  # Exploration Points
+  # TODO: optimize
 
-# right side
+  # right side
   - name: ExpM1
     pos: [0.56, 1.23]
     properties:
@@ -502,7 +502,7 @@ nodes:
     pos: [5.04, 4.59]
     properties:
       - orientation: 1.57
-# left side
+  # left side
   - name: ExpM13
     pos: [-0.56, 1.23]
     properties:
@@ -552,7 +552,7 @@ nodes:
     properties:
       - orientation: 1.57
 
-# Puck Storage Points:
+  # Puck Storage Points:
   - name: D1_PUCK_STORAGE_1
     pos: [5.00, 1.68]
     properties:
@@ -574,8 +574,8 @@ nodes:
 # !bidir (bidirectional, default), !dir (directed)
 connections:
 
-# Highway connections:
-# horizontal
+  # Highway connections:
+  # horizontal
   - [P11, M21H]
   - [M21H, P12]
   - [P12, P13]
@@ -617,7 +617,7 @@ connections:
   - [M9H, P92]
   - [P92, P93]
   - [P93, P94]
-#vertical
+  # vertical
   - [P11, P21]
   - [P21, P31]
   - [P31, P41]
@@ -628,7 +628,7 @@ connections:
   - [P61, P71]
   - [P71, P81]
   - [P81, P91]
-  
+
   - [P12, P22]
   - [P22, M18H]
   - [M18H, P32]
@@ -639,7 +639,7 @@ connections:
   - [P72, M6H]
   - [M6H, P82]
   - [P82, P92]
-  
+
   - [P13, M22H]
   - [M22H, P23]
   - [P23, M19H]
@@ -654,7 +654,7 @@ connections:
   - [M7H, P83]
   - [P83, M10H]
   - [M10H, P93]
-  
+
   - [M24H, P14]
   - [P14, M23H]
   - [M23H, P24]
@@ -668,8 +668,8 @@ connections:
   - [M11H, P94]
   - [P94, M12H]
 
-# diagonal links
-# (unnecessary because of wait points at the diagonals)
+  # diagonal links
+  # (unnecessary because of wait points at the diagonals)
   # - [P22, P33]
   # - [P23, P32]
   # - [P13, P24]
@@ -683,7 +683,7 @@ connections:
   # - [P83, P94]
   # - [P93, P84]
 
-# connection of machines
+  # connection of machines
 
   - [M1, M1H]
   - [M2, M2H]
@@ -712,7 +712,7 @@ connections:
   - [R1, R1H]
   - [R2, R2H]
 
-# connection of special points
+  # connection of special points
 
   - !split-intersection [IA1H, P61]
   - !split-intersection [IA1H, P71]
@@ -727,15 +727,15 @@ connections:
   - !split-intersection [IA2H2, P41]
   - [IA2H2, Ins2Sec]
 
-  - !split-intersection [P92,  deliver1]
-  - !split-intersection [P92,  deliver1a]
-  - [P93,  deliver1]
-  - !split-intersection [P93,  deliver1a]
+  - !split-intersection [P92, deliver1]
+  - !split-intersection [P92, deliver1a]
+  - [P93, deliver1]
+  - !split-intersection [P93, deliver1a]
 
-  - !split-intersection [P12,  deliver2]
-  - !split-intersection [P12,  deliver2a]
-  - !split-intersection [P13,  deliver2]
-  - !split-intersection [P13,  deliver2a]
+  - !split-intersection [P12, deliver2]
+  - !split-intersection [P12, deliver2a]
+  - !split-intersection [P13, deliver2]
+  - !split-intersection [P13, deliver2a]
 
   - [P81, WAIT_FOR_INS_1_ROBOTINO_1]
   - [P21, WAIT_FOR_INS_2_ROBOTINO_1]
@@ -748,7 +748,7 @@ connections:
   - !dir [P14, WAIT_FOR_DELIVER_2]
   - !dir [WAIT_FOR_DELIVER_2, P13]
 
-# connection of Exploration points
+  # connection of Exploration points
 
   - [ExpM1, M1H]
   - [ExpM2, M2H]

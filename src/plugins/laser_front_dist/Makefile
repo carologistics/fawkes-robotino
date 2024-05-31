@@ -2,7 +2,7 @@
 #         Makefile Build System for Fawkes: laser_front_dist Plugin
 #                            -------------------
 #   Created on Thu Jun 23 22:35:32 2016
- 
+
 #   Copyright (C) 2016 by Frederik Zwilling
 #
 #*****************************************************************************

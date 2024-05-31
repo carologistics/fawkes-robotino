@@ -100,7 +100,6 @@
     (bind ?x (pb-field-value ?beacon-pose "x"))
     (bind ?y (pb-field-value ?beacon-pose "y"))
   )
-  (assert (active-robot (name (sym-cat ?beacon-name)) (last-seen ?now) (x ?x) (y ?y)))     
-  (retract ?pf) 
+  (assert (active-robot (name (sym-cat ?beacon-name)) (last-seen ?now) (x ?x) (y ?y)))
+  (retract ?pf)
 )
-

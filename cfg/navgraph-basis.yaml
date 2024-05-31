@@ -5,52 +5,52 @@ graph-name: LLSF
 root: SW
 
 default-properties:
-    # Max. distance between actual and target positions to deem the target
-    # reached. This value is for intermediate nodes on a path; m
-    # The value can be overwritten per node in the graph file.
-    - travel_tolerance: 1.5
+  # Max. distance between actual and target positions to deem the target
+  # reached. This value is for intermediate nodes on a path; m
+  # The value can be overwritten per node in the graph file.
+  - travel_tolerance: 1.5
 
-    # Max. distance between actual and target positions to deem the target
-    # reached. This value is for the last node on a path; m
-    # The value can be overwritten per node in the graph file.
-    - target_tolerance: 0.7
+  # Max. distance between actual and target positions to deem the target
+  # reached. This value is for the last node on a path; m
+  # The value can be overwritten per node in the graph file.
+  - target_tolerance: 0.7
 
-    # Max. distance between actual and target orientation to deem the target
-    # reached. This value is for the last node on a path; rad
-    - orientation_tolerance: 0.6
+  # Max. distance between actual and target orientation to deem the target
+  # reached. This value is for the last node on a path; rad
+  - orientation_tolerance: 0.6
 
-    # When following a plan the robot will check all upcoming nodes if they
-    # are close to the robot within this tolerance. If so, they take a shortcut
-    # and will go to the node in the plan after the shortcut node.
-    # This is potentially dangerous depending on the graph and navigator as it
-    # might violate the typical graph constraint of only having direct-line-of-tavel
-    # connections. The value can be overidden with a node property of the same name; m
-    - shortcut_tolerance: 1.2
+  # When following a plan the robot will check all upcoming nodes if they
+  # are close to the robot within this tolerance. If so, they take a shortcut
+  # and will go to the node in the plan after the shortcut node.
+  # This is potentially dangerous depending on the graph and navigator as it
+  # might violate the typical graph constraint of only having direct-line-of-tavel
+  # connections. The value can be overidden with a node property of the same name; m
+  - shortcut_tolerance: 1.2
 
-    # Distance from base_link to the MPS to align
-    - align_distance: 0.45
+  # Distance from base_link to the MPS to align
+  - align_distance: 0.45
 
-    # Signal position on the table. Z is the table height above ground.
-    - signal_hint_x: 0.035
-    - signal_hint_y: -0.1
-    - signal_hint_z: 0.78
+  # Signal position on the table. Z is the table height above ground.
+  - signal_hint_x: 0.035
+  - signal_hint_y: -0.1
+  - signal_hint_z: 0.78
 
-    # Offset for aligning in front of the conveyor using the laser line
-    - input_offset_y: 0.025
-    - output_offset_y: -0.025
+  # Offset for aligning in front of the conveyor using the laser line
+  - input_offset_y: 0.025
+  - output_offset_y: -0.025
 
 
 nodes:
 
-# Default point, used only for mps_detect_signal when no or an invalid place= is given
+  # Default point, used only for mps_detect_signal when no or an invalid place= is given
   - !unconnected
     name: place-default
     pos: [1, 1]
     properties:
       - only-copy-properties
-#
-# Exploration points
-#
+  #
+  # Exploration points
+  #
   # High (far) row
   #
   - !unconnected
@@ -107,8 +107,8 @@ nodes:
       - group: exploration
       - orientation: 0
 
-# drive into field points
-# Cyan
+  # drive into field points
+  # Cyan
   - !unconnected
     name: C-INS-OUT
     pos: [4.5, 0.5]
@@ -120,7 +120,7 @@ nodes:
     properties:
       - always-copy: true
       - orientation: 1.5
-# Magenta
+  # Magenta
   - !unconnected
     name: M-INS-OUT
     pos: [-4.5, 0.5]
@@ -133,10 +133,10 @@ nodes:
       - always-copy: true
       - orientation: 1.7
 
-# wait points
+  # wait points
   - !unconnected
     name: WAIT1
-    pos : [0,1]
+    pos: [0, 1]
     properties:
       - group: waiting-positions
       - orientation: 1.57
@@ -144,7 +144,7 @@ nodes:
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-C-BS-I
-    pos : [0,1]
+    pos: [0, 1]
     properties:
       - group: waiting-positions
       - only-copy-properties
@@ -152,7 +152,7 @@ nodes:
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-C-BS-O
-    pos : [0,1]
+    pos: [0, 1]
     properties:
       - group: waiting-positions
       - only-copy-properties
@@ -160,7 +160,7 @@ nodes:
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-C-CS1-I
-    pos : [0,1]
+    pos: [0, 1]
     properties:
       - group: waiting-positions
       - only-copy-properties
@@ -168,7 +168,7 @@ nodes:
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-C-CS1-O
-    pos : [0,1]
+    pos: [0, 1]
     properties:
       - group: waiting-positions
       - only-copy-properties
@@ -176,7 +176,7 @@ nodes:
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-C-CS2-I
-    pos : [0,1]
+    pos: [0, 1]
     properties:
       - group: waiting-positions
       - only-copy-properties
@@ -184,7 +184,7 @@ nodes:
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-C-CS2-O
-    pos : [0,1]
+    pos: [0, 1]
     properties:
       - group: waiting-positions
       - only-copy-properties
@@ -192,7 +192,7 @@ nodes:
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-C-RS1-I
-    pos : [0,1]
+    pos: [0, 1]
     properties:
       - group: waiting-positions
       - only-copy-properties
@@ -200,7 +200,7 @@ nodes:
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-C-RS1-O
-    pos : [0,1]
+    pos: [0, 1]
     properties:
       - group: waiting-positions
       - only-copy-properties
@@ -208,7 +208,7 @@ nodes:
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-C-RS2-I
-    pos : [0,1]
+    pos: [0, 1]
     properties:
       - group: waiting-positions
       - only-copy-properties
@@ -216,7 +216,7 @@ nodes:
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-C-RS2-O
-    pos : [0,1]
+    pos: [0, 1]
     properties:
       - group: waiting-positions
       - only-copy-properties
@@ -224,7 +224,7 @@ nodes:
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-C-DS-I
-    pos : [0,1]
+    pos: [0, 1]
     properties:
       - group: waiting-positions
       - only-copy-properties
@@ -232,7 +232,7 @@ nodes:
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-C-DS-O
-    pos : [0,1]
+    pos: [0, 1]
     properties:
       - group: waiting-positions
       - only-copy-properties
@@ -240,7 +240,7 @@ nodes:
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-C-SS-I
-    pos : [0,1]
+    pos: [0, 1]
     properties:
       - group: waiting-positions
       - only-copy-properties
@@ -248,7 +248,7 @@ nodes:
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-C-SS-O
-    pos : [0,1]
+    pos: [0, 1]
     properties:
       - group: waiting-positions
       - only-copy-properties
@@ -256,7 +256,7 @@ nodes:
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-M-BS-I
-    pos : [0,1]
+    pos: [0, 1]
     properties:
       - group: waiting-positions
       - only-copy-properties
@@ -264,7 +264,7 @@ nodes:
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-M-BS-O
-    pos : [0,1]
+    pos: [0, 1]
     properties:
       - group: waiting-positions
       - only-copy-properties
@@ -272,7 +272,7 @@ nodes:
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-M-CS1-I
-    pos : [0,1]
+    pos: [0, 1]
     properties:
       - group: waiting-positions
       - only-copy-properties
@@ -280,7 +280,7 @@ nodes:
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-M-CS1-O
-    pos : [0,1]
+    pos: [0, 1]
     properties:
       - group: waiting-positions
       - only-copy-properties
@@ -288,7 +288,7 @@ nodes:
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-M-CS2-I
-    pos : [0,1]
+    pos: [0, 1]
     properties:
       - group: waiting-positions
       - only-copy-properties
@@ -296,7 +296,7 @@ nodes:
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-M-CS2-O
-    pos : [0,1]
+    pos: [0, 1]
     properties:
       - group: waiting-positions
       - only-copy-properties
@@ -304,7 +304,7 @@ nodes:
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-M-RS1-I
-    pos : [0,1]
+    pos: [0, 1]
     properties:
       - group: waiting-positions
       - only-copy-properties
@@ -312,7 +312,7 @@ nodes:
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-M-RS1-O
-    pos : [0,1]
+    pos: [0, 1]
     properties:
       - group: waiting-positions
       - only-copy-properties
@@ -320,7 +320,7 @@ nodes:
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-M-RS2-I
-    pos : [0,1]
+    pos: [0, 1]
     properties:
       - group: waiting-positions
       - only-copy-properties
@@ -328,7 +328,7 @@ nodes:
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-M-RS2-O
-    pos : [0,1]
+    pos: [0, 1]
     properties:
       - group: waiting-positions
       - only-copy-properties
@@ -336,7 +336,7 @@ nodes:
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-M-DS-I
-    pos : [0,1]
+    pos: [0, 1]
     properties:
       - group: waiting-positions
       - only-copy-properties
@@ -344,7 +344,7 @@ nodes:
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-M-DS-O
-    pos : [0,1]
+    pos: [0, 1]
     properties:
       - group: waiting-positions
       - only-copy-properties
@@ -352,7 +352,7 @@ nodes:
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-M-SS-I
-    pos : [0,1]
+    pos: [0, 1]
     properties:
       - group: waiting-positions
       - only-copy-properties
@@ -360,160 +360,159 @@ nodes:
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-M-SS-O
-    pos : [0,1]
+    pos: [0, 1]
     properties:
       - group: waiting-positions
       - only-copy-properties
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
 
-# Machine points for property generation
-# Positions will be written by the generator
-# Cyan
+  # Machine points for property generation
+  # Positions will be written by the generator
+  # Cyan
   - !unconnected
     name: C-CS1
     pos: [0, 0]
     properties:
       - only-copy-properties
       - group: machines
-      # - tag_input: 1 # ALVAR
-      # - tag_output: 2 # ALVAR
-      - tag_input: 102 # ARUCO
-      - tag_output: 101 # ARUCO
+      # - tag_input: 1  # ALVAR
+      # - tag_output: 2  # ALVAR
+      - tag_input: 102  # ARUCO
+      - tag_output: 101  # ARUCO
   - !unconnected
     name: C-CS2
     pos: [0, 0]
     properties:
       - only-copy-properties
       - group: machines
-      # - tag_input: 17 # ALVAR
-      # - tag_output: 18 # ALVAR
-      - tag_input: 104 # ARUCO
-      - tag_output: 103 # ARUCO
+      # - tag_input: 17  # ALVAR
+      # - tag_output: 18  # ALVAR
+      - tag_input: 104  # ARUCO
+      - tag_output: 103  # ARUCO
   - !unconnected
     name: C-RS1
     pos: [0, 0]
     properties:
       - only-copy-properties
       - group: machines
-      # - tag_input: 33 # ALVAR
-      # - tag_output: 34 # ALVAR
-      - tag_input: 112 # ARUCO
-      - tag_output: 111 # ARUCO
+      # - tag_input: 33  # ALVAR
+      # - tag_output: 34  # ALVAR
+      - tag_input: 112  # ARUCO
+      - tag_output: 111  # ARUCO
   - !unconnected
     name: C-RS2
     pos: [0, 0]
     properties:
       - only-copy-properties
       - group: machines
-      # - tag_input: 177 # ALVAR
-      # - tag_output: 178 # ALVAR
-      - tag_input: 114 # ARUCO
-      - tag_output: 113 # ARUCO
+      # - tag_input: 177  # ALVAR
+      # - tag_output: 178  # ALVAR
+      - tag_input: 114  # ARUCO
+      - tag_output: 113  # ARUCO
   - !unconnected
     name: C-BS
     pos: [0, 0]
     properties:
       - only-copy-properties
       - group: machines
-      # - tag_input: 65 # ALVAR
-      # - tag_output: 66 # ALVAR
-      - tag_input: 122 # ARUCO
-      - tag_output: 121 # ARUCO
+      # - tag_input: 65  # ALVAR
+      # - tag_output: 66  # ALVAR
+      - tag_input: 122  # ARUCO
+      - tag_output: 121  # ARUCO
   - !unconnected
     name: C-DS
     pos: [0, 0]
     properties:
       - only-copy-properties
       - group: machines
-      # - tag_input: 81 # ALVAR
-      # - tag_output: 82 # ALVAR
-      - tag_input: 132 # ARUCO
-      - tag_output: 131 # ARUCO
+      # - tag_input: 81  # ALVAR
+      # - tag_output: 82  # ALVAR
+      - tag_input: 132  # ARUCO
+      - tag_output: 131  # ARUCO
   - !unconnected
     name: C-SS
     pos: [0, 0]
     properties:
       - only-copy-properties
       - group: machines
-      # - tag_input: 193 # ALVAR
-      # - tag_output: 194 # ALVAR
-      - tag_input: 142 # ARUCO
-      - tag_output: 141 # ARUCO
-#Magenta
+      # - tag_input: 193  # ALVAR
+      # - tag_output: 194  # ALVAR
+      - tag_input: 142  # ARUCO
+      - tag_output: 141  # ARUCO
+  # Magenta
   - !unconnected
     name: M-CS1
     pos: [0, 0]
     properties:
       - only-copy-properties
       - group: machines
-      # - tag_input: 97 # ALVAR
-      # - tag_output: 98 # ALVAR
-      - tag_input: 202 # ARUCO
-      - tag_output: 201 # ARUCO
+      # - tag_input: 97  # ALVAR
+      # - tag_output: 98  # ALVAR
+      - tag_input: 202  # ARUCO
+      - tag_output: 201  # ARUCO
   - !unconnected
     name: M-CS2
     pos: [0, 0]
     properties:
       - only-copy-properties
       - group: machines
-      # - tag_input: 113 # ALVAR
-      # - tag_output: 114 # ALVAR
-      - tag_input: 204 # ARUCO
-      - tag_output: 203 # ARUCO
+      # - tag_input: 113  # ALVAR
+      # - tag_output: 114  # ALVAR
+      - tag_input: 204  # ARUCO
+      - tag_output: 203  # ARUCO
   - !unconnected
     name: M-RS1
     pos: [0, 0]
     properties:
       - only-copy-properties
       - group: machines
-      # - tag_input: 129 # ALVAR
-      # - tag_output: 130 # ALVAR
-      - tag_input: 212 # ARUCO
-      - tag_output: 211 # ARUCO
+      # - tag_input: 129  # ALVAR
+      # - tag_output: 130  # ALVAR
+      - tag_input: 212  # ARUCO
+      - tag_output: 211  # ARUCO
   - !unconnected
     name: M-RS2
     pos: [0, 0]
     properties:
       - only-copy-properties
       - group: machines
-      # - tag_input: 145 # ALVAR
-      # - tag_output: 146 # ALVAR
-      - tag_input: 214 # ARUCO
-      - tag_output: 213 # ARUCO
+      # - tag_input: 145  # ALVAR
+      # - tag_output: 146  # ALVAR
+      - tag_input: 214  # ARUCO
+      - tag_output: 213  # ARUCO
   - !unconnected
     name: M-BS
     pos: [0, 0]
     properties:
       - only-copy-properties
       - group: machines
-      # - tag_input: 161 # ALVAR
-      # - tag_output: 162 # ALVAR
-      - tag_input: 222 # ARUCO
-      - tag_output: 221 # ARUCO
+      # - tag_input: 161  # ALVAR
+      # - tag_output: 162  # ALVAR
+      - tag_input: 222  # ARUCO
+      - tag_output: 221  # ARUCO
   - !unconnected
     name: M-DS
     pos: [0, 0]
     properties:
       - only-copy-properties
       - group: machines
-      # - tag_input: 49 # ALVAR
-      # - tag_output: 50 # ALVAR
-      - tag_input: 232 # ARUCO
-      - tag_output: 231 # ARUCO
+      # - tag_input: 49  # ALVAR
+      # - tag_output: 50  # ALVAR
+      - tag_input: 232  # ARUCO
+      - tag_output: 231  # ARUCO
   - !unconnected
     name: M-SS
     pos: [0, 0]
     properties:
       - only-copy-properties
       - group: machines
-      # - tag_input: 209 # ALVAR
-      # - tag_output: 210 # ALVAR
-      - tag_input: 242 # ARUCO
-      - tag_output: 241 # ARUCO
+      # - tag_input: 209  # ALVAR
+      # - tag_output: 210  # ALVAR
+      - tag_input: 242  # ARUCO
+      - tag_output: 241  # ARUCO
 
 # Possible directional tags:
 # !bidir (bidirectional, default), !dir (directed)
 connections:
 # common
-

@@ -248,7 +248,7 @@ end
 -- Return all lines which may have the tag we're looking for
 function get_interesting_lines(lines)
    local rv = {}
-   
+
    -- Shallow-copy input table so we don't delete values from it
    local good_lines = {}
    for k,v in pairs(lines) do good_lines[k] = v end
@@ -261,7 +261,7 @@ function get_interesting_lines(lines)
          if matched then good_lines[matched:id()] = nil end
       end
    end
-   
+
    -- Use only lines that have been inspected 0 times or less often than the others
    local max_num_visited = 1
    for k,v in pairs(fsm.vars.lines_visited) do
@@ -322,7 +322,7 @@ function SEARCH_LINES:init()
    end
 
    self.fsm.vars.lines_visited[chosen_line:id()] = self.fsm.vars.lines_visited[chosen_line:id()] + 1
-   
+
    print("SEARCH LINES turn ori: " .. ori)
    self.args["motor_move"].ori = ori
    self.fsm.vars.search_idx = self.fsm.vars.search_idx + 1
@@ -387,7 +387,7 @@ function ALIGN_FAST:init()
    printf("center l: %f, %f, %f", center.x, center.y, center.ori)
    local center_bl = tfm.transform(center, "/base_laser", "/base_link")
    local p = llutils.point_in_front(center_bl, self.fsm.vars.x)
-   
+
    printf("p    : %f %f %f", p.x, p.y, p.ori)
 
    self.args["motor_move"] = {
@@ -430,14 +430,14 @@ end
 
 function ALIGN_PRECISE:init()
    self.fsm.vars.align_attempts = self.fsm.vars.align_attempts + 1
-  
+
    if self.fsm.vars.p_tag then
       printf("p_tag: %f %f %f",
          self.fsm.vars.p_tag.x,
          self.fsm.vars.p_tag.y,
          fawkes.tf.get_yaw(self.fsm.vars.p_tag.ori))
 
-      self.args["motor_move"] = { 
+      self.args["motor_move"] = {
          x = self.fsm.vars.p_tag.x,
          y = self.fsm.vars.p_tag.y,
          ori = fawkes.tf.get_yaw(self.fsm.vars.p_tag.ori),
@@ -455,5 +455,3 @@ function ALIGN_TURN:init()
       ori = self.fsm.vars.ori
    }
 end
-
-

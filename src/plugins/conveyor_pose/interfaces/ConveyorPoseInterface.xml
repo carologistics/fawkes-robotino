@@ -22,7 +22,7 @@
       <item name="SHELF_RIGHT">Right shelf of the Cap Station.</item>
       <item name="SLIDE">Slide of the Ring Station.</item>
       <item name="LAST_MPS_TARGET_ELEMENT">Marks last entry of this enum.</item>
-    </enum> 
+    </enum>
   </constants>
   <data>
     <comment>The last transformation computed by the conveyor-pose plugin.</comment>

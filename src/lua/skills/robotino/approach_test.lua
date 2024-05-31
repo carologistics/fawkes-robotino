@@ -37,7 +37,7 @@ local X_AT_MPS = 0.28
 local CONVEYOR_IN_OUT_OFFSET=0.03  -- offset of the conveyor relative to the middlepoint of the laser line
 local OFFSET_SLIDE=-0.27 -- offset of the slide relative to the middle point of the laser liner
 
-documentation      = [==[ 
+documentation      = [==[
 Aligns to an machine and interacts with the MPS
 It is meant to test interactions with MPS, when a navgraph is not available
 You are responsible to enter values which make sense, no sanity check is executed.

@@ -30,4 +30,3 @@
     <field type="string" name="team_magenta" length="255">Name of the magenta team</field>
   </data>
 </interface>
-

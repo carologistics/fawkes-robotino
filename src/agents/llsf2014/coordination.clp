@@ -33,22 +33,22 @@
 				(resource (sym-cat BRING_S0 "~" (nth$ 1 ?a)))))
     )
     (case load-with-S1 then
-      (assert (needed-task-lock (action BRING_S1) (place (nth$ 1 ?a)) 
+      (assert (needed-task-lock (action BRING_S1) (place (nth$ 1 ?a))
 				(resource (sym-cat BRING_S1 "~" (nth$ 1 ?a)))))
     )
     (case load-with-S2 then
-      (assert (needed-task-lock (action BRING_S2) (place (nth$ 1 ?a)) 
+      (assert (needed-task-lock (action BRING_S2) (place (nth$ 1 ?a))
 				(resource (sym-cat BRING_S2 "~" (nth$ 1 ?a)))))
     )
     (case pick-and-deliver then
-      (assert (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a)) 
+      (assert (needed-task-lock (action PICK_PROD) (place (nth$ 1 ?a))
 				(resource (sym-cat PICK_PROD "~" (nth$ 1 ?a))))
-	      (needed-task-lock (action (sym-cat BRING_ (nth$ 2 ?a))) (place DELIVER) 
+	      (needed-task-lock (action (sym-cat BRING_ (nth$ 2 ?a))) (place DELIVER)
 				(resource (sym-cat BRING_ (nth$ 2 ?a) "~" (nth$ 3 ?a) "~Order" (nth$ 4 ?a))))
       )
     )
     (case recycle then
-      (assert (needed-task-lock (action PICK_CO) (place (nth$ 1 ?a)) 
+      (assert (needed-task-lock (action PICK_CO) (place (nth$ 1 ?a))
 				(resource (sym-cat PICK_CO "-" (nth$ 1 ?a))))
       )
     )
@@ -64,7 +64,7 @@
       )
     )
     (case deliver then
-      (assert (needed-task-lock (action (sym-cat BRING_ (nth$ 2 ?a))) (place DELIVER) 
+      (assert (needed-task-lock (action (sym-cat BRING_ (nth$ 2 ?a))) (place DELIVER)
 				(resource (sym-cat BRING_ (nth$ 2 ?a) "~" (nth$ 3 ?a) "~Order" (nth$ 4 ?a)))))
     )
     (case recycle-holding then
@@ -159,13 +159,13 @@
   (do-for-all-facts ((?ntl needed-task-lock) (?l lock)) (and (eq ?l:agent ?*ROBOT-NAME*)(eq ?l:resource ?ntl:resource))
     (retract ?ntl ?l)
     (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?l:resource)))
-  )  
+  )
 )
 
 (defrule coordination-release-after-task-finished
   "If a task is finished the lock for the task is released and incoming facts are removed from the worldmodel. State is changed from TASK-FINISHED to IDLE."
   (declare (salience ?*PRIORITY-LOCK-HIGH*))
-  ?t <- (task (name ?task) (args $?args) (state finished)) 
+  ?t <- (task (name ?task) (args $?args) (state finished))
   ?s <- (state TASK-FINISHED)
   =>
   ;release all locks for subtask goals
@@ -198,7 +198,7 @@
 
 (defrule coordination-release-and-reject-task-after-failed
   "If a task has failed the task lock is released and incoming facts are removed. If needed a warning is printed and the state is changed from TASK-FAILED to IDLE. All rejected proposals are removed and failed task is rejected."
-  ?t <- (task (name ?task) (args $?args) (state failed)) 
+  ?t <- (task (name ?task) (args $?args) (state failed))
   ?s <- (state TASK-FAILED)
   =>
   ;release all locks for subtask goals

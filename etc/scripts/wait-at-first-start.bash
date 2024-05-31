@@ -14,5 +14,3 @@ if [ $TIME_DIFF -lt 10 ]
     sleep $1s
 fi
 #otherwise start fawkes directly
-
-

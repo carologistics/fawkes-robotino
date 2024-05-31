@@ -30,7 +30,7 @@ depends_skills     = {"ppgoto_waypoints"}
 depends_interfaces = { }
 
 documentation      = [==[Drives between the given list of navgraph-points continuously
-      
+
 
 Parameters:
       pps: List of points to drive to e.g. drive_test{pps={"P64", "P92", "P73", "P62", "P93"}}

@@ -43,7 +43,7 @@ class SignalHintInterface : public Interface
   typedef struct __attribute__((packed)) {
     int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
     int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
-    double translation[3]; /**< 
+    double translation[3]; /**<
 			Last set position estimate, i.e. the one currently used (data fields
 			are mandatory?).
 		 */
@@ -60,7 +60,7 @@ class SignalHintInterface : public Interface
     typedef struct __attribute__((packed)) {
       int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
       int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
-      double translation[3]; /**< 
+      double translation[3]; /**<
 			Expected position of the signal, relative to left endpoint of the
 			laser-line we see when standing in front of the MPS table
 		 */

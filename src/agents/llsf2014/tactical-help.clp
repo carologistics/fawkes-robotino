@@ -12,7 +12,7 @@
 (deffunction tac-find-best-T1 (?goal ?goal-x ?goal-y ?pos-x ?pos-y ?team)
   ; the best T1 is currently not used by another robot (not locked)
   ; and located between the robot and the goal machine
-  
+
   ;find middle
   (bind ?mid-x (/ (+ ?pos-x ?goal-x) 2))
   (bind ?mid-y (/ (+ ?pos-y ?goal-y) 2))
@@ -39,7 +39,7 @@
 
 (deffunction tac-check-for-secondary-ins (?ins ?inssec ?game-time)
   (if
-    (or 
+    (or
         (and (any-factp ((?inslock locked-resource)) (eq ?inslock:resource ?ins)) (not (any-factp ((?seclock locked-resource)) (eq ?seclock:resource ?inssec))) (>= 60 (nth$ 1 ?game-time)))
         (any-factp ((?secowned locked-resource)) (and (eq ?secowned:resource ?inssec) (eq ?secowned:agent ?*ROBOT-NAME*)))
     )
@@ -146,7 +146,7 @@
   ;highest priority between first T3_T4 and ins
   ;second highest priority between second T3_T4 and ins
   ;lowest priority for every other T2
- 
+
   ;first T2:
   (bind ?mid-x (/ (+ ?first-x ?ins-x) 2))
   (bind ?mid-y (/ (+ ?first-y ?ins-y) 2))
@@ -163,7 +163,7 @@
   (do-for-fact ((?m machine)) (eq ?best-T2 ?m:name)
     (modify ?m (priority 3))
   )
-  
+
   ;second T2
   (bind ?mid-x (/ (+ ?second-x ?ins-x) 2))
   (bind ?mid-y (/ (+ ?second-y ?ins-y) 2))
@@ -180,7 +180,7 @@
   (do-for-fact ((?m machine)) (eq ?best-T2 ?m:name)
     (modify ?m (priority 2))
   )
-  
+
   ;last T2
   (do-for-fact ((?m machine)) (and (eq T2 ?m:mtype) (eq 0 ?m:priority))
     (modify ?m (priority 1))
@@ -194,7 +194,7 @@
   (common-wait-point WAIT_FOR_ROW_1 M22 M23)
   (common-wait-point WAIT_FOR_ROW_2 M15 M18 M19)
   (common-wait-point WAIT_FOR_ROW_3 M20 R2)
-  (common-wait-point WAIT_FOR_ROW_4 M14 M16 M17) 
+  (common-wait-point WAIT_FOR_ROW_4 M14 M16 M17)
   (common-wait-point WAIT_FOR_ROW_5 M2 M4 M5)
   (common-wait-point WAIT_FOR_ROW_6 M8 R1)
   (common-wait-point WAIT_FOR_ROW_7 M3 M6 M7)
@@ -202,7 +202,7 @@
   (common-wait-point WAIT_FOR_INS_1_ROBOTINO_3 M9)
   (common-wait-point WAIT_FOR_INS_2_ROBOTINO_3 M21)
   (common-wait-point WAIT_FOR_INS_1_ROBOTINO_2 M1 M13)
-  
+
 )
 
 (defrule tac-create-wait-point-facts
@@ -226,7 +226,7 @@
   (order (id ?id2&:(neq ?id1 ?id2)) (product P3)
 	 (end ?end2&:(> (nth$ 1 ?time) ?end2)))
   (order (id ?id3&:(and (neq ?id3 ?id2) (neq ?id3 ?id1))) (product P3)
-	 (end ?end3&:(> (nth$ 1 ?time) ?end3)))  
+	 (end ?end3&:(> (nth$ 1 ?time) ?end3)))
   =>
   (assert (no-more-needed P3))
 )

@@ -16,4 +16,3 @@
     <field type="uint32" name="raw_materials" length="4">Raw material costs</field>
   </data>
 </interface>
-

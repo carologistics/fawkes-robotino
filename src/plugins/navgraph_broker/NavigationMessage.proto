@@ -1,7 +1,7 @@
 
 
 /***************************************************************************
- *  NavigationMessage.proto 
+ *  NavigationMessage.proto
  *
  *  Created: Fr Apr 04 15:59:22 2014
  *  Copyright  2014  Sebastian Reuter
@@ -43,7 +43,7 @@ message NavigationMessage {
 
   // vector of strings to store the path-nodes
   repeated string nodelist = 4;
-  
+
   // name of robot as string
   required string robotname = 5;
 }

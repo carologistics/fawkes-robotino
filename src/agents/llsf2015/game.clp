@@ -124,7 +124,7 @@
   "If config value play-exploration-without-refbox is true, immediately start EXPLORATION."
   (confval (path "/clips-agent/llsf2015/play-exploration-without-refbox") (value true))
   =>
-  (assert 
+  (assert
     (exploration-start)
     (phase EXPLORATION)
     (state IDLE)

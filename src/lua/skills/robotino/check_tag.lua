@@ -1,5 +1,5 @@
 ----------------------------------------------------------------------------
---  check_tag.lua -check if tag in front is the given tag_id 
+--  check_tag.lua -check if tag in front is the given tag_id
 --
 --  Copyright 2015 The Carologistics Team
 ----------------------------------------------------------------------------
@@ -23,7 +23,7 @@ module(..., skillenv.module_init)
 name               = "check_tag"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {}
-depends_interfaces = { 
+depends_interfaces = {
    {v = "tag_0", type = "Position3DInterface", id="/tag-vision/0"},
    {v = "tag_1", type = "Position3DInterface", id="/tag-vision/1"},
    {v = "tag_2", type = "Position3DInterface", id="/tag-vision/2"},
@@ -44,7 +44,7 @@ depends_interfaces = {
 }
 
 documentation      = [==[
-@param optional tag_id the id of the tag to check for 
+@param optional tag_id the id of the tag to check for
 
 This skill will also FINAL if at least one tag is seen
 and no tag_id was given
@@ -115,4 +115,3 @@ function INIT:init()
     printf("check_tag: Search for any tag")
   end
 end
-

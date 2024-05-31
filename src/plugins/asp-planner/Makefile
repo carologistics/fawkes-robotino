@@ -29,7 +29,7 @@ OBJS_asp_planner = asp_planner_plugin.o asp_planner_thread.o \
 OBJS_all    = $(OBJS_asp_planner)
 PLUGINS_all = $(PLUGINDIR)/asp-planner.$(SOEXT)
 
-REQ_BOOST_LIBS = 
+REQ_BOOST_LIBS =
 HAVE_BOOST_LIBS = $(call boost-have-libs,$(REQ_BOOST_LIBS))
 
 ifeq ($(HAVE_CPP14)$(HAVE_CLINGO)$(HAVE_BOOST_LIBS)$(HAVE_ROBOT_MEMORY),1111)

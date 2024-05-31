@@ -12,4 +12,3 @@ include:
 fawkes:
   mainapp:
     loggers: console;file/debug:debug4.log
-

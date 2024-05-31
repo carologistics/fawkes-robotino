@@ -53,7 +53,7 @@
 
   ;Timeout before removing rejected tasks when no task is found
   ?*TIMEOUT-REMOVE-REJECTED-WHILE-WAITING* = 25
-  
+
   ?*PI* = 3.141592653589
   ?*2PI* = 6.2831853
   ?*PI-HALF* = 1.5707963

@@ -20,6 +20,6 @@ include $(BASEDIR)/etc/buildsys/config.mk
 
 INTERFACES_all = $(notdir $(patsubst %.xml,%,$(wildcard $(SRCDIR)/*.xml)))
 include $(BUILDSYSDIR)/interface.mk
-	
+
 
 include $(BUILDSYSDIR)/base.mk

@@ -29,7 +29,7 @@
 	<field type="int32" name="puck1_visibility_history">visibility history</field>
 	<field type="int32" name="puck2_visibility_history">visibility history</field>
 	<field type="int32" name="puck3_visibility_history">visibility history</field>
-	
+
 	<field type="double" length="3" name="puck1_translation">Translation vector from the reference frame's origin, ordered as (x, y, z).
         </field>
 	<field type="double" length="3" name="puck2_translation">Translation vector from the reference frame's origin, ordered as (x, y, z).

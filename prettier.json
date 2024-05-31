@@ -1,0 +1,16 @@
+{
+  "semi": false,
+  "tabWidth": 2,
+  "useTabs": false,
+  "trailingComma": "none",
+  "singleQuote": true,
+  "overrides": [
+    {
+      "files": "*.yml",
+      "options": {
+        "printWidth": 80,
+        "bracketSpacing": true
+      }
+    }
+  ]
+}

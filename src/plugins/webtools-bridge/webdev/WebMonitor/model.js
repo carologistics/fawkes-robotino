@@ -6,17 +6,17 @@
 			    messageType 	: 'mm' 													  	,
 			    throttle_rate	: 1000 													  	,
 			});
-				
-			// eg,fact: (machine (name M-DS) (team MAGENTA) (mtype DS) (incoming) (incoming-agent) (loaded-id 0) (produced-id 0) (x 0.0) (y 0.0) (final-prod-time 0 0) (state IDLE) (sync-id 38))	
+
+			// eg,fact: (machine (name M-DS) (team MAGENTA) (mtype DS) (incoming) (incoming-agent) (loaded-id 0) (produced-id 0) (x 0.0) (y 0.0) (final-prod-time 0 0) (state IDLE) (sync-id 38))
 			machine_fact_listener . subscribe ( 	function(message) {
-				
+
 				for( index_f in message [topic_name_] )
 				{
 					if( window.team.color == message [topic_name] [index_f] ["team"][0] ) {
-						
-						var machine_fact = machines [ message 	 	[topic_name] [index_f]  ;  
-						var machine_name = machines [ machine_fact 	["name"][0] ;  
-						
+
+						var machine_fact = machines [ message 	 	[topic_name] [index_f]  ];
+						var machine_name = machines [ machine_fact 	["name"][0]] ;
+
 						window.machines[machine_name] . prototype . name 			= machine_name ;
 						window.machines[machine_name] . prototype . name 			= machine_name ;
 						window.machines[machine_name] . prototype . state 			= machine_fact["state"][0] 			;
@@ -28,4 +28,5 @@
 						window.machines[machine_name] . prototype . incoming 	 	= machine_fact["incoming"] 			; //array of values of  incoming
 						window.machines[machine_name] . prototype . incoming_agent 	= machine_fact["incoming-agent"] 	; //array of values of incoming-agents
 					}
-		
+				}
+			});

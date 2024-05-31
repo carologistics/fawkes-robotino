@@ -20,11 +20,11 @@
   (config-load "/hardware/robotino")
 )
 
-(deffacts init 
+(deffacts init
   "Initializes clips agent."
   (init)
 )
- 
+
 ; Request clips-features
 (defrule enable-blackboard
   "If blackboard feature is set load the blackboard, if it is not yet loaded."

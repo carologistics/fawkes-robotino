@@ -127,4 +127,3 @@
   (robmem-upsert "robmem.planner" ?doc (str-cat "{\"relation\": \"machine\", \"machine\": \"" ?machine "\"}"))
   (bson-destroy ?doc)
 )
-

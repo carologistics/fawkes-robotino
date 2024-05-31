@@ -37,7 +37,7 @@ LIBS_machine_signal = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
                       fawkesblackboard fawkesinterface fvutils fvcams fvmodels \
                       fvfilters fvclassifiers fawkesconfig fawkestf fvmodels \
                       RobotinoLightInterface SwitchInterface \
-                      Position3DInterface SignalHintInterface LaserLineInterface 
+                      Position3DInterface SignalHintInterface LaserLineInterface
 OBJS_machine_signal = custom_rois.o plugin.o state.o pipeline_thread.o sensor_thread.o
 
 OBJS_all    = $(OBJS_machine_signal)

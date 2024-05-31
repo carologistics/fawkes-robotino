@@ -140,7 +140,7 @@
   "If config value play-exploration-without-refbox is true, immediately start EXPLORATION."
   (confval (path "/clips-agent/rcll2016/play-exploration-without-refbox") (value true))
   =>
-  (assert 
+  (assert
     (exploration-start)
     (phase EXPLORATION)
     (state IDLE)
@@ -227,4 +227,3 @@
   (modify ?ze (machine ?machine) (correct TRUE))
   (retract ?gt)
 )
-

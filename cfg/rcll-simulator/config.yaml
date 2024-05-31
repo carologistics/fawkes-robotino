@@ -1,7 +1,7 @@
 ﻿version: 2
 # Color of machine gets taken from a prefix of C-xxx or M-xxx
 stations:
-  C-BS: 
+  C-BS:
     active: true
     debug: true
     type: BS
@@ -9,93 +9,93 @@ stations:
     position: CZ28
     orientation: 0
   C-CS1:
-    active: True
+    active: true
     debug: true
-    port:  4841
+    port: 4841
     type: CS
     position: CZ54
     orientation: 45
   C-CS2:
-    active: True
+    active: true
     debug: true
-    port:  4842
+    port: 4842
     type: CS
     position: MZ77
     orientation: 90
   C-RS1:
-    active: True
+    active: true
     debug: true
-    port:  4843
+    port: 4843
     type: RS
     position: CZ21
     orientation: 180
   C-RS2:
-    active: True
+    active: true
     debug: true
-    port:  4844
+    port: 4844
     type: RS
     position: MZ15
     orientation: 45
   C-DS:
-    active: True
+    active: true
     debug: true
-    port:  4845
+    port: 4845
     type: DS
     position: CZ72
     orientation: 90
   C-SS:
     active: true
     debug: true
-    port:  4846
+    port: 4846
     type: SS
     position: MZ77
     orientation: 270
   M-BS:
     active: true
     debug: true
-    port:  4850
+    port: 4850
     type: BS
     position: MZ28
     orientation: 0
   M-CS1:
     active: true
     debug: true
-    port:  4851
+    port: 4851
     type: CS
     position: MZ54
     orientation: 45
   M-CS2:
     active: true
     debug: true
-    port:  4852
+    port: 4852
     type: CS
     position: CZ77
     orientation: 90
   M-RS1:
     active: true
     debug: true
-    port:  4853
+    port: 4853
     type: RS
     position: MZ21
     orientation: 135
   M-RS2:
     active: true
     debug: true
-    port:  4854
+    port: 4854
     type: RS
     position: CZ15
     orientation: 180
   M-DS:
     active: true
     debug: true
-    port:  4855
+    port: 4855
     type: DS
     position: MZ72
     orientation: 225
   M-SS:
     active: true
     debug: true
-    port:  4856
+    port: 4856
     type: SS
     position: MZ78
     orientation: 0
@@ -130,12 +130,12 @@ robots:
 teams:
   CYAN:
     name: Carologistics
-    active: True
+    active: true
     host: 127.0.0.1
     port: 2016
   MAGENTA:
     name: GRIPS
-    active: False
+    active: false
     host: 127.0.0.1
     port: 12345
 refbox:
@@ -152,7 +152,7 @@ refbox:
     send: 4442
     recv: 4447
 webui:
-  prefix: http  
+  prefix: http
   port: 8000
 general:
   timefactor: 1.0
@@ -160,15 +160,15 @@ general:
   mockup-connections: false
   robot-connection-type: udp  # connection can be UDP and TCP currently. if nothing is given we default to tcp
   ignore-teamcolor: false
-  robot-prepare-mps: false # robot is responsible to send prepare machine messages, option might be removed in future as teams tend to send prepare via their main control unit
+  robot-prepare-mps: false  # robot is responsible to send prepare machine messages, option might be removed in future as teams tend to send prepare via their main control unit
   robot-direct-beacon: true  # Robot is expected to send his beaconsignals directly to the refbox via udp
   enable-barcode-scanner: false
-  robot-move-zone-duration: 0.8 # in seconds, with max speed of 0.5m/s
-  robot-grab-product-duration: 10 # duration for a single try of a grab 
-  robot-maximum-grab-duration: 30 # duration after which a grab is stopped
-  robot-place-product-duration: 10 # duration for a single place try
-  belt-action-duration: 2 # roughly between 1.5 and 2.6 which are the times of mockup and real mps to move from input to mid/mid to output, respectively.
-  bs-dispense-duration: 1.1 # time the base station takes to dispense a base - taken from mockup mps
+  robot-move-zone-duration: 0.8  # in seconds, with max speed of 0.5m/s
+  robot-grab-product-duration: 10  # duration for a single try of a grab
+  robot-maximum-grab-duration: 30  # duration after which a grab is stopped
+  robot-place-product-duration: 10  # duration for a single place try
+  belt-action-duration: 2  # roughly between 1.5 and 2.6 which are the times of mockup and real mps to move from input to mid/mid to output, respectively.
+  bs-dispense-duration: 1.1  # time the base station takes to dispense a base - taken from mockup mps
   cs-buffer-duration: 17.5  # buffer cap - taken from mockup mps
   rs-mount-duration: 17.3  # mounting a ring 3.5 seconds - taken from mockup mps
   ds-deliver-duration: 4.7  # time it takes to deliver - taken from mockup mps

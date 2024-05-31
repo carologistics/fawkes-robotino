@@ -73,4 +73,3 @@ else
   echo "Failure: Timeout during startup."
   exit 1
 fi
-

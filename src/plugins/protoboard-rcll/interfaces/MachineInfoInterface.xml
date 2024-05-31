@@ -30,4 +30,3 @@
     <field type="RingColor" name="ring_colors" length="2">Available ring colors</field>
   </data>
 </interface>
-

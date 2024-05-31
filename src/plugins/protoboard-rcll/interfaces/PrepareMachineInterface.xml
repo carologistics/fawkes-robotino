@@ -41,7 +41,7 @@
       <item name="MOUNT_CAP">Mount cap</item>
     </enum>
   </constants>
-  
+
   <data>
     <comment>No data needed really, just store last msgid</comment>
     <field type="uint32" name="last_msgid">Last sent message ID</field>
@@ -81,4 +81,3 @@
     <field type="CSOp" name="operation">Operation to perform</field>
   </message>
 </interface>
-

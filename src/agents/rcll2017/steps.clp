@@ -63,7 +63,7 @@
 	  (wait-for-lock (priority ?p) (res (sym-cat ?mps "-I")))
   )
   (bind ?args (create$ place ?mps))
-  
+
   (if ?already-at-mps then
     ;the shelf position we used last can be derived from the number of caps on the shelf
     (bind ?sslot MIDDLE)
@@ -76,7 +76,7 @@
     )
     (bind ?args (create$ ?args atmps ?sslot))
   )
-  
+
   (assert (skill-to-execute (skill bring_product_to) (args ?args) (target ?mps)))
 )
 
@@ -274,8 +274,8 @@
   (not (found-tag (name ?machine)))
   (TagVisionInterface (id "/tag-vision/info") (tags_visible ?num-tags&:(> ?num-tags 0))
                       (tag_id $?tag-ids&:(member$ ?tag ?tag-ids)))
-  (Position3DInterface (id ?tag-if-id&:(eq ?tag-if-id (str-cat "/tag-vision/" (- (member$ ?tag ?tag-ids) 1)))) 
-                       (visibility_history ?vh&:(> ?vh ?needed-vh)) 
+  (Position3DInterface (id ?tag-if-id&:(eq ?tag-if-id (str-cat "/tag-vision/" (- (member$ ?tag ?tag-ids) 1))))
+                       (visibility_history ?vh&:(> ?vh ?needed-vh))
                        (translation $?trans) (rotation $?rot)
                        (frame ?frame) (time $?timestamp))
   ?skill-finish-state <- (explore-zone-state ?)
@@ -300,7 +300,7 @@
     )
   )
   (if (eq 7 (length$ ?tf-transrot)) then
-    (synced-assert (str-cat "(found-tag (name " ?machine ") (side " ?side 
+    (synced-assert (str-cat "(found-tag (name " ?machine ") (side " ?side
                             ") (frame \"/map\") (trans (create$ "
                             (implode$ (subseq$ ?tf-transrot 1 3)) ")) "
                             " (rot (create$ " (implode$ (subseq$ ?tf-transrot 4 7))
@@ -624,7 +624,7 @@ the waiting state until we can use it again."
   ?state <- (state ?result&SKILL-FINAL|SKILL-FAILED)
   ?ste <- (skill-to-execute (skill get_product_from)
                             (args $?args) (state final|failed))
-  ?l <- (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource PREPARE-BS))  
+  ?l <- (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource PREPARE-BS))
   (machine (name ?mps) (team ?team-color))
   ?bsf <- (base-station (name ?mps))
   =>

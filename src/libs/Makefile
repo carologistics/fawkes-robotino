@@ -20,5 +20,3 @@ include $(BUILDSYSDIR)/fvconf.mk
 SUBDIRS = interfaces llsf_msgs
 
 include $(BUILDSYSDIR)/rules.mk
-
-

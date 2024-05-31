@@ -78,4 +78,3 @@ capMountedByRobot(R, M, P, GT) :- end(R, T, GT), capTask(T), taskLocation(T, L),
 putDown(R, GT)       :- capMountedByRobot(R, _, _, GT).
 capMounted(M, P, GT) :- capMountedByRobot(_, M, P, GT).
 process(M, P, GT)    :- capMountedByRobot(_, M, P, GT).
-

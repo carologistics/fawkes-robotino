@@ -50,7 +50,7 @@ fsm:add_transitions{
    {"PPGOTO", "FINAL",  cond=waypoints_done},
 }
 
-function INIT:init() 
+function INIT:init()
    fsm.vars.table_size = table.getn( self.fsm.vars.wp )         -- get list of targets
    fsm.vars.table_pos  = 0
 end
