@@ -21,7 +21,7 @@
 
 (define (domain visit-machines)
   (:requirements :strips :typing)
-  (:types 
+  (:types
           machine - object
           team - object
   )
@@ -35,7 +35,7 @@
   )
   (:action visit
     :parameters (?m - machine ?t - team )
-    :precondition (and (team-color ?t) 
+    :precondition (and (team-color ?t)
                        (team-machine ?t ?m)
                        (not (visited ?m)))
     :effect (visited ?m)

@@ -29,20 +29,20 @@ initial-pose:
   M-R1:
     host: localhost:1924
     x: -3.5
-    y:  0.5
-    z:  0.0
+    y: 0.5
+    z: 0.0
     ori: [0.0 0.0 0.7 0.7]
 
   M-R2:
     host: localhost:1925
     x: -4.5
-    y:  0.5
-    z:  0.0
+    y: 0.5
+    z: 0.0
     ori: [0.0 0.0 0.7 0.7]
 
   M-R3:
     host: localhost:1926
     x: -5.5
-    y:  0.5
-    z:  0.0
+    y: 0.5
+    z: 0.0
     ori: [0.0 0.0 0.7 0.7]

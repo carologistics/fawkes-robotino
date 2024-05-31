@@ -23,4 +23,3 @@ include $(BUILDSYSDIR)/root/root.mk
 include $(BUILDSYSDIR)/root/linkscripts.mk
 
 src: fawkes
-

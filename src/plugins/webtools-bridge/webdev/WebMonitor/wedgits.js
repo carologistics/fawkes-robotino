@@ -10,9 +10,9 @@ function simple_monitor(){
 
 	$(document).ready(function()
 	{
-	    $("#monitor_div").find(":button") .click(function() 
+	    $("#monitor_div").find(":button") .click(function()
 	    {
-	    	var prefiexed_topic_name = $("#monitor_div").find(":text").val(); 
+	    	var prefiexed_topic_name = $("#monitor_div").find(":text").val();
 
 	    	$("#monitor_div").append("<div id=monitor_div_"+div_ids+" class=smplmntr > </div>"); //where the topic wil be displaied
 
@@ -23,31 +23,31 @@ function simple_monitor(){
 			    throttle_rate:window.throttle_rate ,
 		  	});
 		  	listener.div_index=div_ids; //keep the div's id as a topic attridute
-		  	listener.subscribe(function(message) 
+		  	listener.subscribe(function(message)
 		  	{
 		  		var div_id="#monitor_div_"+this.div_index;
-		  		
+
 		  		$(div_id).empty();// clear the div
 
-		  		for (var key in message)//present the content in the div 
+		  		for (var key in message)//present the content in the div
 		  		{
 		  			var div_content = key + " : ";
 		  			if(message[key].constructor === Array)
 		  			{
 		  				for( var fact in message[key] )
 		  				{
-		  					div_content+= JSON.stringify(message[key][fact], null, 5) + "<br>"; //TODO: maybe i dont need to stringfiy 
+		  					div_content+= JSON.stringify(message[key][fact], null, 5) + "<br>"; //TODO: maybe i dont need to stringfiy
 		  				}
 		  			}
 		  			else
 		  			{
-		  				div_content+= message[key] + "<br>"; 
+		  				div_content+= message[key] + "<br>";
 		  			}
-		
-		  			div_content+=  "<br>"; 
+
+		  			div_content+=  "<br>";
 		  			$(div_id).append(div_content);
 		  		}
-		  		
+
 		  	});
 
 		  	div_ids++;
@@ -115,7 +115,7 @@ function simple_monitor(){
 
 function products()
 {
-	var that = this; 
+	var that = this;
 
 	this.  destination_bridge_name= "clips";
 	this.  product_topic_name= "product";
@@ -215,7 +215,7 @@ function orders( ){
 
 
 	window.$production.prepend(this.$wedgit_div);//the wedgit container
-	
+
 	this.visualize = function( robot_info ){
 
 		// $(document).ready(function()
@@ -230,7 +230,7 @@ function orders( ){
 			  //   throttle_rate:1000,
 		  	// });
 
-		  	// product_facts_listener.subscribe(function(message) 
+		  	// product_facts_listener.subscribe(function(message)
 		  	// {
 		  	// 	product_facts=message;
 
@@ -243,7 +243,7 @@ function orders( ){
 			    messageType : 'mm',
 			    throttle_rate:window.throttle_rate,
 		  	});
-		  	order_facts_listener.subscribe(function(message) 
+		  	order_facts_listener.subscribe(function(message)
 		  	{
 		  		$("#"+that.wedgit_id).empty();// clear the div
 		  		$("#"+that.wedgit_id).append("<h2> Orders: </h2>");
@@ -258,18 +258,18 @@ function orders( ){
 						{
 							if (JSON.parse(product_facts.product[product].id) == JSON.parse( order_facts.order[order]["product-id"] ))
 			  				{
-								var $order_div=$("<div> </div>").addClass("order");// the class order is given to  each one of the orders_divs that contain the product div 
+								var $order_div=$("<div> </div>").addClass("order");// the class order is given to  each one of the orders_divs that contain the product div
 								var $product_div=$("<div> </div>").addClass("product").attr('id',"product_"+product_facts.product[product].id);// the class 'produced' is given to the div containing  peace itself
-								
+
 								var base_color = product_facts.product[product].base[0];
 								$product_div.prepend("<div class=products_base style= background-color:"+base_color+"> </div>");
-								
+
 								for( var ring_index in product_facts.product[product].rings )
 								{
 									var ring_color = product_facts.product[product].rings[ring_index];
 									$product_div.prepend("<div class='products_ring "+ring_index +"' style= background-color:"+ring_color+"> </div>");
 								}
-								
+
 								var cap_color = product_facts.product[product].cap[0];
 								$product_div.prepend("<div class=products_cap style= background-color:"+cap_color+"> </div>");
 
@@ -288,7 +288,7 @@ function orders( ){
 								$order_div.append($product_div);
 								$order_div.append($order_info);
 
-								$("#"+that. wedgit_id).append($order_div); //div will hold this product	  				
+								$("#"+that. wedgit_id).append($order_div); //div will hold this product
 
 			  				}
 						}
@@ -310,15 +310,15 @@ function robotInfo( robot_name , bridge_connection )
 
 	var $container_div= $("<div>  </div>").addClass("container").attr('id',container_id);// div contaning the wedgi
 	window.$layout_container.append($container_div);//the wedgit container
-	
+
 	var $container_header= $("<div>  </div>").addClass("container_header");
 	$container_header.append($("<h1>"+robot_name+"</h1>").addClass("container_header_element"));
 	$container_div.append($container_header);
 
-	
+
 	$(document).ready(function()
 	{
-		
+
 		//------------The State Wedgit
 		if(provided_tools["lock_role"])
 		{
@@ -359,7 +359,7 @@ function robotInfo( robot_name , bridge_connection )
 		  	});
 
 		  	$container_header.append($lock_role_wedgit_div);
-			
+
 		}
 
 
@@ -396,7 +396,7 @@ function robotInfo( robot_name , bridge_connection )
 	  		});
 
 
-	  		product_facts_listener.subscribe(function(message) 
+	  		product_facts_listener.subscribe(function(message)
 	  		{
 		  		$holding_wedgit_div.empty();// clear the div
 
@@ -412,20 +412,20 @@ function robotInfo( robot_name , bridge_connection )
 
 							var base_color = message.product[product].base[0];
 							$product_div.prepend("<div class=products_base style= background-color:"+base_color+"> </div>");
-							
+
 							for( var ring_index in message.product[product].rings )
 							{
 								var ring_color = message.product[product].rings[ring_index];
 								$product_div.prepend("<div class='products_ring "+ring_index +" ' style= background-color:"+ring_color+"> </div>");
 							}
-							
+
 							var cap_color = message.product[product].cap[0];
 							$product_div.prepend("<div class=products_cap style= background-color:"+cap_color+"> </div>");
 
-							$holding_wedgit_div.append($product_div); //div will hold this product	  				
+							$holding_wedgit_div.append($product_div); //div will hold this product
 
 						}
-						
+
 					}
 		  		}
 		  	});
@@ -433,7 +433,7 @@ function robotInfo( robot_name , bridge_connection )
 
 
 		  	$container_header.append($holding_wedgit_div);
-			
+
 		}
 
 
@@ -467,7 +467,7 @@ function robotInfo( robot_name , bridge_connection )
 		  	});
 
 		  	$container_header.append($state_wedgit_div);
-			
+
 		}
 
 
@@ -585,7 +585,7 @@ function robotInfo( robot_name , bridge_connection )
 		  				something_locked = true;
 		  				var $li_element  = $("<li></li>");
 		  				$li_element.html("<span>"+fact.resource+"</span>");
-	
+
 		  				$locked_resource_wedgit_div.find("ul").append($li_element);
 		  			}
 		  		}
@@ -639,7 +639,7 @@ function robotInfo( robot_name , bridge_connection )
 		  					//$skills_wedgit_div.find("p.execute span").append( fact["args"][args_index] );
 		  				}
 		  			}
-		  		
+
 		  		}
 
 		  	});
@@ -710,6 +710,3 @@ function robotInfo( robot_name , bridge_connection )
 
 
 }
-
-
-

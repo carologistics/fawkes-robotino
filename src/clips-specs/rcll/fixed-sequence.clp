@@ -900,14 +900,14 @@
   (assert
     (plan (id WAIT-FOR-MPS-PROCESS-PLAN) (goal-id ?goal-id))
   )
-  (if (eq ?pos ?mps-other) then 
+  (if (eq ?pos ?mps-other) then
     (assert
       (plan-action (id 1) (plan-id WAIT-FOR-MPS-PROCESS-PLAN) (goal-id ?goal-id)
                         (action-name wait)
                         (param-values ?robot ?pos))
     )
   else
-    (assert 
+    (assert
       (plan-action (id 1) (plan-id WAIT-FOR-MPS-PROCESS-PLAN) (goal-id ?goal-id)
                         (action-name go-wait)
                         (param-values ?robot ?mps-other ?side-other ?pos))

@@ -249,4 +249,3 @@
     (plan-id ?plan-id) (action-id ?id)
   ))
 )
-

@@ -12,7 +12,7 @@ OPTIONS:
    -h                  Show this message
    -x arg              Initial x coordinate
    -y arg              Initial y coordinate
-   -p arg              Fawkes remote as port 
+   -p arg              Fawkes remote as port
    -o arg arg arg arg  Initial orientation (quaternion)
    -d                  Publish default initial localization for all three robots
                        This is retrieved from the config, e.g., /initial-pose/C-R1/x
@@ -36,7 +36,7 @@ wait_for_amcl()
   done
   echo " sending position!"
 }
- 
+
 #check options
 
 PORT=1910
@@ -75,7 +75,7 @@ do
 	 o)
 	     # option with 4 option arguments
              if [ $# -lt $((OPTIND + 2)) ]
-             then    
+             then
 		 echo "$IAM: orientation quaternion needs four input arguments"
                  usage
                  exit 1

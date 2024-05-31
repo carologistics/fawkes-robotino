@@ -22,7 +22,7 @@ clean:
 cleanall: clean
 	rm -rf libraries
 
-comm: 
+comm:
 	minicom -D $(DEV_ARDUINO)
 
 verify: Compiled/ArduinoSketch.ino.hex
@@ -30,4 +30,3 @@ verify: Compiled/ArduinoSketch.ino.hex
 
 safe_flash: Compiled/ArduinoSketch.ino.hex # flash only if verify goes wrong
 	avrdude  -patmega328p -carduino -P$(DEV_ARDUINO) -B 10 -F -Uflash:v:$<:i || avrdude  -patmega328p -carduino -P$(DEV_ARDUINO) -B 10 -F -Uflash:w:$<:i
-

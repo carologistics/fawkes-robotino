@@ -13,7 +13,7 @@
 ;   (common-wait-point WAIT_FOR_ROW_1 M22 M23)
 ;   (common-wait-point WAIT_FOR_ROW_2 M15 M18 M19)
 ;   (common-wait-point WAIT_FOR_ROW_3 M20 R2)
-;   (common-wait-point WAIT_FOR_ROW_4 M14 M16 M17) 
+;   (common-wait-point WAIT_FOR_ROW_4 M14 M16 M17)
 ;   (common-wait-point WAIT_FOR_ROW_5 M2 M4 M5)
 ;   (common-wait-point WAIT_FOR_ROW_6 M8 R1)
 ;   (common-wait-point WAIT_FOR_ROW_7 M3 M6 M7)
@@ -21,7 +21,7 @@
 ;   (common-wait-point WAIT_FOR_INS_1_ROBOTINO_3 M9)
 ;   (common-wait-point WAIT_FOR_INS_2_ROBOTINO_3 M21)
 ;   (common-wait-point WAIT_FOR_INS_1_ROBOTINO_3 M13)
-;   (common-wait-point WAIT_FOR_INS_1_ROBOTINO_2 M1)  
+;   (common-wait-point WAIT_FOR_INS_1_ROBOTINO_2 M1)
 ; )
 
 (defrule tac-create-wait-point-facts

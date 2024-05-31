@@ -45,4 +45,3 @@ possible(R, T, GT) :- getProductTask(T), taskLocation(T, L), robot(R), not holdi
 
 pickUp(R, P, GT) :- end(R, T, GT), getProductTask(T), taskLocation(T, L), locationToMachineMap(L, M),
                     storing(M, P, GT-1).
-

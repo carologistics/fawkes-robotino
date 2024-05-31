@@ -20,4 +20,3 @@ sed $SCRIPT_PATH/../fawkes/.buildkite/pipeline.yml \
 # Note, that the steps must be properly indented as if it were
 # prefixed with "steps:"!
 # cat $SCRIPT_PATH/steps.yml
-

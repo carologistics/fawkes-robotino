@@ -129,7 +129,7 @@
 
 (deffunction utils-remove-prefix (?string ?prefix)
   "Removes a prefix from a string or symbol by its length"
-  (bind ?res (sub-string (+ 1 (str-length (str-cat ?prefix))) 
+  (bind ?res (sub-string (+ 1 (str-length (str-cat ?prefix)))
 			 (str-length (str-cat ?string))
 			 (str-cat ?string)))
   (if (eq (type ?string) SYMBOL) then
@@ -184,13 +184,13 @@
   )
   (bind ?zone-x (round-down (/ (- ?zone-cyan 1) 4)))
   (bind ?zone-y (mod (- ?zone-cyan 1) 4))
-  
+
   (bind ?y-min (* ?zone-y ?*ZONE-HEIGHT*))
   (bind ?y-max (* (+ ?zone-y 1) ?*ZONE-HEIGHT*))
 
   (bind ?x-min (* ?zone-x ?*ZONE-WIDTH*))
   (bind ?x-max (* (+ ?zone-x 1) ?*ZONE-WIDTH*))
-  
+
   (if (> ?zone 12) then
     (bind ?x-min (- 0 ?x-min))
     (bind ?x-max (- 0 ?x-max))
@@ -257,11 +257,11 @@
       then
       (if (deftemplate-slot-multip (fact-relation ?f) ?slot)
         then ;copy multifield
-        (bind ?acom (str-cat ?acom "(" ?slot " (create$ " 
+        (bind ?acom (str-cat ?acom "(" ?slot " (create$ "
                              (implode$ (fact-slot-value ?f ?slot))
                              "))"))
         else ;copy singlefield
-        (bind ?acom (str-cat ?acom "(" ?slot " " 
+        (bind ?acom (str-cat ?acom "(" ?slot " "
                              (escape-if-string (fact-slot-value ?f ?slot)) ")"))
       )
       else
@@ -289,14 +289,14 @@
     then
     (printout error "Slot " ?slot " is no multifield!" crlf)
   )
-  
+
   (bind ?acom (str-cat "(assert (" (fact-relation ?f) " "))
   (progn$ (?cur-slot (fact-slot-names ?f))
     (if (neq ?slot ?cur-slot)
       then
       (if (deftemplate-slot-multip (fact-relation ?f) ?cur-slot)
         then ;coply multifield
-        (bind ?acom (str-cat ?acom "(" ?cur-slot " (create$ " 
+        (bind ?acom (str-cat ?acom "(" ?cur-slot " (create$ "
                              (implode$ (fact-slot-value ?f ?cur-slot))
                              "))"))
         else ;copy singlefield
@@ -381,7 +381,7 @@
       then
       (if (deftemplate-slot-multip (fact-relation ?f) ?cur-slot)
         then ;coply multifield
-        (bind ?acom (str-cat ?acom "(" ?cur-slot " (create$ " 
+        (bind ?acom (str-cat ?acom "(" ?cur-slot " (create$ "
                              (implode$ (fact-slot-value ?f ?cur-slot))
                              "))"))
         else ;copy singlefield
@@ -607,12 +607,12 @@
      then
       (do-for-fact ((?mo mirror-orientation)) (eq ?mo:cyan ?ori)
         (bind ?m-ori ?mo:magenta)
-      )   
+      )
      else
       (do-for-fact ((?mo mirror-orientation)) (eq ?mo:magenta ?ori)
         (bind ?m-ori ?mo:cyan)
-      )   
-    )   
+      )
+    )
     (return ?m-ori)
    else
     (bind ?x (eval (sub-string 4 4 ?zn)))
@@ -620,16 +620,16 @@
 
     (if (eq ?y 8) then
       (return 180)
-    )   
+    )
     (if (or (eq ?y 1) (eq ?y 2)) then
       (return 0)
-    )   
+    )
     (if (and (eq ?x 7) (eq ?t "M")) then  ; this is the other way around, because I compare with the team color of the originalting machine
-      (return 90) 
-    )   
+      (return 90)
+    )
     (if (and (eq ?x 7) (eq ?t "C")) then
       (return 270)
-    )   
+    )
     (printout error "error in rotation of machines, checked all possible cases, but nothing cateched" crlf)
     (return ?ori)
   )
@@ -655,13 +655,13 @@
     (blackboard-set-msg-multifield ?msg "tag_rotation" ?ft:rot)
     (blackboard-set-msg-multifield ?msg "zone_coords" (zone-coords ?ze:name))
     (blackboard-send-msg ?msg)
-    (printout t "Send UpdateStationByTagMessage: id " (str-cat ?ft:name) 
+    (printout t "Send UpdateStationByTagMessage: id " (str-cat ?ft:name)
 	      " side " ?ft:side
 	      " frame " ?ft:frame
 	      " trans " ?ft:trans
 	      " rot " ?ft:rot
         " zone " ?ze:name crlf)
-   
+
     (assert (navgraph-added-for-mps (name ?ft:name)))
   )
   (if ?any-tag-to-add
@@ -679,4 +679,3 @@
     (printout t "There are no tags to add" crlf)
   )
 )
-

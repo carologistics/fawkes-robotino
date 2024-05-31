@@ -48,7 +48,7 @@ fawkes/bbsync:
     robotino-base/active: false
 
     robot1:
-      #active: true (set via the off-field startup)
+      # active: true (set via the off-field startup)
       host: robotino-base-1
       port: !tcp-port 1910
       reading:
@@ -90,7 +90,7 @@ fawkes/bbsync:
 
 
     robot2:
-      #active: true (set via the off-field startup)
+      # active: true (set via the off-field startup)
       host: robotino-base-2
       port: !tcp-port 1910
       reading:
@@ -132,7 +132,7 @@ fawkes/bbsync:
 
 
     robot3:
-      #active: true (set via the off-field startup)
+      # active: true (set via the off-field startup)
       host: robotino-base-3
       port: !tcp-port 1910
       reading:

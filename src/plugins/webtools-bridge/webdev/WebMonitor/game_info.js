@@ -1,30 +1,30 @@
 function GameMetadata (){
 	var that = this ;
-	
+
 	this.phase =   "N/A";
 	this. game_time ="N/A";
 
 
 }
 
-window.game_info =  new GameMetadata(); 
+window.game_info =  new GameMetadata();
 
 
 
 function GameInfoWedgit ( $parent )  {
 
 	var	 that 			= this ;
-	this. $parent_ 		= $parent ;	
-	this. $wedgit_div_	= $("<div>  </div>") 	.addClass("wedgit")	
+	this. $parent_ 		= $parent ;
+	this. $wedgit_div_	= $("<div>  </div>") 	.addClass("wedgit")
 												.addClass( "game_info" )
 								 				// .append( $("<div > </div>" ) . addClass ("header") )
 												.append( $("<div > </div>" ) . addClass ("body") )
 												.append( $("<div > </div>" ) . addClass ("footer") );
 	var $row ;
 	var $col ;
-	
+
 	//=================Incoming
-	$row =  $("<div> </div>" ) . addClass( "row_element" ) ;	
+	$row =  $("<div> </div>" ) . addClass( "row_element" ) ;
 	$col = $("<span> </span>" ) . addClass( "col_element" ) ;
 	$col.append("<b> Phase: </b> ");
 	var $content = $("<span> N/A </span> ")  . addClass ("phase");
@@ -59,11 +59,11 @@ function GameInfoWedgit ( $parent )  {
 
 	//EndBody
 	//-===================================================
-	
+
 
 	//do I need document .ready here ..Check!
 	$(document) . ready (function() {
-		that. $parent_ . append ( that .$wedgit_div_ ) ;	
+		that. $parent_ . append ( that .$wedgit_div_ ) ;
 	});
 
 
@@ -74,7 +74,7 @@ function GameInfoWedgit ( $parent )  {
 		that.$wedgit_div_ .find (".game_time") .empty() . append (window.game_info.game_time);
 
 		that.$wedgit_div_ .find (".team_color") .empty() . append (window.game_info.team_color);
-	
+
 		that.$wedgit_div_ .find (".score .points_cyan") . empty() . append (window.game_info.points_cyan );
 
 		that.$wedgit_div_ .find (".score .points_magenta") . empty() . append (window.game_info.points_magenta );
@@ -84,11 +84,11 @@ function GameInfoWedgit ( $parent )  {
 
 
 function GameInfoMonitor(){
-	
-	var that 						=this; 
-	
+
+	var that 						=this;
+
 	this. destination_bridge_name_ 	= "clips";
-	
+
 
 	//coming from wedgit object parameters
  	this.	 div_id_ 					= 	"game_info_monitor" ;
@@ -104,7 +104,7 @@ function GameInfoMonitor(){
 	this . visualize =  function ( robot_info ){
 
 		//---------------------------------------------------------------------Subscription to machine fact
-		// Fact: (phase EXPORATION)		
+		// Fact: (phase EXPORATION)
 		var topic_name = "phase" ;
 		var phase_fact_listener 	= new ROSLIB.Topic( {
 			ros 			: robot_info.connection  									,
@@ -114,29 +114,29 @@ function GameInfoMonitor(){
 		});
 
 		phase_fact_listener . subscribe ( 	function(message) {
-			var topic_name_ = "phase"; 
+			var topic_name_ = "phase";
 
 			for( index_f in message [topic_name_] )
 			{
-				var phase_fact = message  [topic_name_] [index_f]  ;  
-		
-				if( phase_fact .fields [0] !=  that.phase ) {		
+				var phase_fact = message  [topic_name_] [index_f]  ;
 
-					window.game_info.phase 	= phase_fact .fields [0]	; 
-					
+				if( phase_fact .fields [0] !=  that.phase ) {
+
+					window.game_info.phase 	= phase_fact .fields [0]	;
+
 					that . wedgit . visualize()		;
 
 				}
 
-			}			
-				
+			}
+
 		});
 
 
-			
+
 
 			//---------------------------------------------------------------------Subscription to machine fact
-			// Fact: (game-time 340)		
+			// Fact: (game-time 340)
 			var topic_name = "game-time" ;
 			var time_fact_listener 	= new ROSLIB.Topic( {
 				ros 			: robot_info.connection  									,
@@ -146,20 +146,20 @@ function GameInfoMonitor(){
 			});
 
 			time_fact_listener . subscribe ( 	function(message) {
-				var topic_name_ = "game-time"; 
+				var topic_name_ = "game-time";
 
 				for( index_f in message [topic_name_] )
 				{
-					var time_fact = message  [topic_name_] [index_f]  ;  
-			
-						window.game_info.game_time = time_fact .fields [0] / 60	; 
-	
+					var time_fact = message  [topic_name_] [index_f]  ;
+
+						window.game_info.game_time = time_fact .fields [0] / 60	;
+
 						that . wedgit . visualize()		;
-				}		
-					
+				}
+
 			});
 
-			// Fact: (team-color CYAN)		
+			// Fact: (team-color CYAN)
 			var topic_name = "team-color" ;
 			var team_color_fact_listener 	= new ROSLIB.Topic( {
 				ros 			: robot_info.connection  									,
@@ -169,21 +169,21 @@ function GameInfoMonitor(){
 			});
 
 			team_color_fact_listener . subscribe ( 	function(message) {
-				var topic_name_ = "team-color"; 
+				var topic_name_ = "team-color";
 
 				for( index_f in message [topic_name_] )
 				{
-					var team_color_fact = message  [topic_name_] [index_f]  ;  
-			
-					window.game_info.team_color = team_color_fact .fields [0]; 
-	
+					var team_color_fact = message  [topic_name_] [index_f]  ;
+
+					window.game_info.team_color = team_color_fact .fields [0];
+
 					that . wedgit . visualize()		;
 
-				}		
-					
+				}
+
 			});
 
-			// Fact: (team-color CYAN)		
+			// Fact: (team-color CYAN)
 			var topic_name = "points-cyan" ;
 			var points_cyan_fact_listener 	= new ROSLIB.Topic( {
 				ros 			: robot_info.connection  									,
@@ -193,21 +193,21 @@ function GameInfoMonitor(){
 			});
 
 			points_cyan_fact_listener . subscribe ( 	function(message) {
-				var topic_name_ = "points-cyan"; 
+				var topic_name_ = "points-cyan";
 
 				for( index_f in message [topic_name_] )
 				{
-					var points_cyan_fact = message  [topic_name_] [index_f]  ;  
-			
-					window.game_info.points_cyan =points_cyan_fact .fields [0]; 
-	
+					var points_cyan_fact = message  [topic_name_] [index_f]  ;
+
+					window.game_info.points_cyan =points_cyan_fact .fields [0];
+
 					that . wedgit . visualize()		;
 
-				}		
-					
+				}
+
 			});
 
-			// Fact: (team-color CYAN)		
+			// Fact: (team-color CYAN)
 			var topic_name = "points-magenta" ;
 			var points_magenta_fact_listener 	= new ROSLIB.Topic( {
 				ros 			: robot_info.connection  									,
@@ -217,18 +217,18 @@ function GameInfoMonitor(){
 			});
 
 			points_magenta_fact_listener . subscribe ( 	function(message) {
-				var topic_name_ = "points-magenta"; 
+				var topic_name_ = "points-magenta";
 
 				for( index_f in message [topic_name_] )
 				{
-					var points_magenta_fact = message  [topic_name_] [index_f]  ;  
-			
-					window.game_info.points_magenta =points_magenta_fact .fields [0]; 
-	
+					var points_magenta_fact = message  [topic_name_] [index_f]  ;
+
+					window.game_info.points_magenta =points_magenta_fact .fields [0];
+
 					that . wedgit . visualize()		;
 
-				}		
-					
+				}
+
 			});
 
 

@@ -14,4 +14,3 @@
 %#heuristic begin(_,T,GT). [-1,sign]
 
 %#minimize{ GT@1,T : begin(_, T, GT), task(T) }.
-

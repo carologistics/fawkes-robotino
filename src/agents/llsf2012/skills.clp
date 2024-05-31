@@ -54,4 +54,3 @@
   (retract ?s ?gf)
   (assert (state GOTO-FAILED))
 )
-

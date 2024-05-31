@@ -12,7 +12,7 @@ network:
     service_name: "Fawkes on ASP global planner"
 
 webview:
-  #TCP port for Webview HTTP requests; TCP port
+  # TCP port for Webview HTTP requests; TCP port
   port: !tcp-port 8088
 
 clips-agent:
@@ -36,4 +36,3 @@ asp-agent:
   magenta-recv-port: 4518
   cyan-send-port: 4498
   magenta-send-port: 4538
-

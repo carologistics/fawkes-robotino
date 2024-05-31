@@ -29,7 +29,7 @@ using namespace std;
 /**
  * @class BoxDetectThread "box_detect_thread.h"
  * Subscribes to TF data and publishes detected MPS in the box interface.
- * @author Daniel Honies	
+ * @author Daniel Honies
 */
 
 BoxDetectThread::BoxDetectThread()

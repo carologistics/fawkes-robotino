@@ -37,7 +37,7 @@ LIBS_puck_vision = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
                    fawkesblackboard fawkesinterface fvutils fvcams fvmodels \
                    fvclassifiers fawkesconfig fvfilters fawkestf \
                    TransformInterface RobotinoLightInterface \
-                   PuckVisionInterface Position3DInterface 
+                   PuckVisionInterface Position3DInterface
 OBJS_puck_vision = puck_vision.o puck_vision_thread.o
 
 OBJS_all    = $(OBJS_puck_vision)

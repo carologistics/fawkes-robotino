@@ -113,7 +113,7 @@ fsm:define_states{ export_to=_M,
   {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands}}, final_to="OPEN_GRIPPER",fail_to="FAILED"},
   {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_BACK", fail_to="FAILED"},
   {"MOVE_BACK", SkillJumpState, skills={{gripper_commands},{motor_move}}, final_to="FINAL",fail_to="FAILED"},
-} 
+}
 
 fsm:add_transitions{
   {"INIT", "FAILED", cond="pose_not_exist()"},
@@ -181,5 +181,5 @@ function MOVE_BACK:init()
   self.args["gripper_commands"].command = "MOVEABS"
   self.args["gripper_commands"].x = 0
   self.args["gripper_commands"].y = 0
-  self.args["gripper_commands"].z = self.fsm.vars.z_max 
+  self.args["gripper_commands"].z = self.fsm.vars.z_max
 end

@@ -37,7 +37,7 @@
   (retract ?l)
   (modify ?lae (state use))
 )
- 
+
 (defrule lock-use-finished
   "When the locked resource we used is no longer used, prepare for lock-release.
   Lock is released after ?*RELEASE-DISTANCE* m from the current position."

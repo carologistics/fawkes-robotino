@@ -1,21 +1,21 @@
-#max range where an obstacle is added [m] 
+# max range where an obstacle is added [m]
 obstacle_range: 3.0
 raytrace_range: 3.0
 
-#min_obstacle_height: 0.0
+# min_obstacle_height: 0.0
 
-#footprint: [[x0, y0], [x1, y1], ... [xn, yn]]
+# footprint: [[x0, y0], [x1, y1], ... [xn, yn]]
 robot_radius: 0.275
 
-#keep-away distance from obstacles 
+# keep-away distance from obstacles
 inflation_radius: 0.30
 
-#list of sensors used for the costmap
+# list of sensors used for the costmap
 observation_sources: laser_scan_sensor
 
-# marking/clearing = true -> sensor used to add/clear obstacles from costmap 
+# marking/clearing = true -> sensor used to add/clear obstacles from costmap
 laser_scan_sensor: {sensor_frame: base_laser, data_type: LaserScan, topic: /fawkes_scans/Laser_urg_filtered_360, marking: true, clearing: true}
 
-#gazsim-only!!!:
-#tolerance is set so high to avoid timing problems 
+# gazsim-only!!!:
+# tolerance is set so high to avoid timing problems
 transform_tolerance: 1000000000.0

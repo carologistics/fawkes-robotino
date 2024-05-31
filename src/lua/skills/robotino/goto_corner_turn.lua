@@ -58,7 +58,7 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    {"INIT",   "GOTO_CORNER", cond=true},
-  
+
 }
 
 
@@ -71,7 +71,7 @@ end
 function GOTO_CORNER:init()
    local index = 0;
    if self.fsm.vars.min_x ~= nil then
-      MIN_X_MAP = self.fsm.vars.min_x 
+      MIN_X_MAP = self.fsm.vars.min_x
    end
    if self.fsm.vars.max_x ~= nil then
       MAX_X_MAP = self.fsm.vars.max_x
@@ -92,7 +92,7 @@ function GOTO_CORNER:init()
         if string.sub(self.fsm.vars.place, 1, 1) == "M" then
           self.fsm.vars.x = 0 - self.fsm.vars.x
         end
-      end 
+      end
    end
    turn = 4;
    if self.fsm.vars.x + 1 > MAX_X_MAP and self.fsm.vars.y - 2 > MIN_Y_MAP and self.fsm.vars.y + 1 < MAX_Y_MAP then
@@ -129,7 +129,7 @@ function GOTO_CORNER:init()
       turn = 1;
    end
 
-   
+
    self.args["goto"] = {
 	  ori = 1.570795 * index,
 	  x = self.fsm.vars.x,

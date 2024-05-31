@@ -59,11 +59,11 @@ function transformed_pose(self)
   -- TODO check nil
 
   local ori = fawkes.tf.get_yaw( fawkes.tf.Quaternion:new(cp.ori.x, cp.ori.y, cp.ori.z, cp.ori.w))
-  
+
   return { x = cp.x,
            y = cp.y,
            z = cp.z,
-           ori = ori 
+           ori = ori
          }
 end
 
@@ -115,7 +115,7 @@ function INIT:init()
   if self.fsm.vars.use_conveyor == nil then
     self.fsm.vars.use_conveyor = true
   end
-  
+
   conveyor_switch:msgq_enqueue_copy(conveyor_switch.EnableSwitchMessage:new())
   self.fsm.vars.ll_dist = if_front_dist:translation(0) - self.fsm.vars.x
 end

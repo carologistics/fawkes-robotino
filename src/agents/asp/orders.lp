@@ -39,4 +39,3 @@ cap(o, c).
 ring(o, 1, r1) :- r1 != "none".
 ring(o, 2, r2) :- r2 != "none".
 ring(o, 3, r3) :- r3 != "none".
-

@@ -15,4 +15,3 @@
         image: carologistics/cluster-runner:latest
         always-pull: true
         debug: true
- 

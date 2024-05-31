@@ -41,7 +41,7 @@
     else
     (bind ?*CURRENT-MASTER-TIMEOUT* ?*ROBOT-TIMEOUT*)
   )
-  
+
   (printout t "Initial lock-role is SLAVE" crlf)
   ;seed for random numbers (needed for problem solving if there are two masters)
   (seed (nth$ 2 ?now))
@@ -49,7 +49,7 @@
   (assert (master-last-seen ?now)
 	  (master-name "")
 	  (lock-role SLAVE)
-  )  
+  )
 )
 
 ;;;;MASTER/SLAVE selection;;;;
@@ -122,7 +122,7 @@
   (modify ?s (time ?now) (seq (+ ?seq 1)))
   (delayed-do-for-all-facts ((?lock lock)) TRUE
     (if (or (and (eq ?role MASTER) (or (eq ?lock:type ACCEPT) (eq ?lock:type REFUSE) (eq ?lock:type RELEASE_RVCD)))
-	    (and (eq ?role SLAVE) (or (eq ?lock:type GET) (eq ?lock:type RELEASE)))) 
+	    (and (eq ?role SLAVE) (or (eq ?lock:type GET) (eq ?lock:type RELEASE))))
       then
       ;(printout t "   type " ?lock:type " of " ?lock:resource " from agent " ?lock:agent crlf)
       (bind ?lock-msg (pb-create "llsf_msgs.LockMessage"))
@@ -256,7 +256,7 @@
   (declare (salience ?*PRIORITY-LOCK-HIGH*))
   (lock-role MASTER)
   ?l <- (lock (type GET) (agent ?a) (resource ?r))
-  ?lm <- (locked-resource (resource ?r) (agent ~?a))	
+  ?lm <- (locked-resource (resource ?r) (agent ~?a))
   =>
   (assert (lock (type REFUSE) (agent ?a) (resource ?r)))
 )
@@ -357,14 +357,14 @@
 (defrule lock-delete-exploration-locks-when-switching-to-production
   "On phase change to Prouciton we want to get rid of old exploration-locks."
   (declare (salience ?*PRIORITY-HIGH*))
-  (change-phase PRODUCTION) 
+  (change-phase PRODUCTION)
   =>
   (delayed-do-for-all-facts ((?lock lock) (?me zone-exploration)) (eq ?lock:resource ?me:name)
     (retract ?lock)
   )
   (delayed-do-for-all-facts ((?lock locked-resource) (?me zone-exploration)) (eq ?lock:resource ?me:name)
     (retract ?lock)
-  ) 
+  )
 )
 
 (defrule lock-delete-locks-of-lost-robot
@@ -416,7 +416,7 @@
     (pb-broadcast ?peer ?lock-msg)
     (pb-destroy ?lock-msg)
     (modify ?timer (time ?now) (seq (+ ?seq 1)))
-    
+
     else
     (retract ?timer)
     (assert (timer (name announce-restart-wait) (time ?now)))
@@ -454,7 +454,7 @@
     (assert (master-last-seen ?now))
     (bind ?*CURRENT-MASTER-TIMEOUT* (float (random 0 3)))
   )
-  
+
   ; revome old incoming fields of machines caused by the resetted agent
   (wm-remove-incoming-by-agent (sym-cat ?agent))
 

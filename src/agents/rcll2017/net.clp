@@ -167,8 +167,8 @@
     (bind ?x (pb-field-value ?beacon-pose "x"))
     (bind ?y (pb-field-value ?beacon-pose "y"))
   )
-  (assert (active-robot (name (sym-cat ?beacon-name)) (last-seen ?now) (x ?x) (y ?y)))     
-  (retract ?pf) 
+  (assert (active-robot (name (sym-cat ?beacon-name)) (last-seen ?now) (x ?x) (y ?y)))
+  (retract ?pf)
 )
 
 (defrule net-recv-order
@@ -195,7 +195,7 @@
           )
           (bind ?rings (create$ ))
           (progn$ (?ring (pb-field-list ?o "ring_colors"))
-            (bind ?rings (append$ ?rings 
+            (bind ?rings (append$ ?rings
             (utils-remove-prefix ?ring RING_)))
           )
           (bind ?cap (utils-remove-prefix (pb-field-value ?o "cap_color") CAP_))

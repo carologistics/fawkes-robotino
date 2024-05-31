@@ -49,7 +49,7 @@
 
 (defrule start-playing
   ?sf <- (state MOVING_INTO_FIELD)
-  ?skf <- (skill (name "motor_move") (status FINAL|FAILED)) 
+  ?skf <- (skill (name "motor_move") (status FINAL|FAILED))
   =>
   (retract ?sf ?skf)
   (assert (state IDLE))
@@ -86,7 +86,7 @@
 (defrule play-exploration-without-refbox
   (confval (path "/clips-agent/llsf2013/play-exploration-without-refbox") (value true))
   =>
-  (assert 
+  (assert
     (exploration-start)
     (phase EXPLORATION)
     (state IDLE)
