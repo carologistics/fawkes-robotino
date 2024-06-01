@@ -111,3 +111,8 @@ repos:
         args: ["--noout"]
         language: system
         types: [xml]
+      - id: check-license
+        name: check-license
+        entry: fawkes/etc/licscripts/check_license.bash
+        language: system
+        exclude: '^.*(\.js|\.css|README|\.md|notes_on_migration|TODO)$'
