@@ -4,8 +4,8 @@
 # Imagine the following being here from Fawkes' pipeline.yml,
 # this is why the indentation looks as below.
 # steps:
-  # wait for build steps to have completed
-  - wait
+  # # wait for build steps to have completed
+  # - wait
 
   - label: :rocket: Run simulation
     command: .buildkite/run
@@ -14,4 +14,13 @@
       docker#v1.4.0:
         image: carologistics/cluster-runner:latest
         always-pull: true
-        debug: true
+  - label: "Pre-commit Checks"
+    command:
+      - "pre-commit install"  # Ensures pre-commit is installed
+      - "pre-commit run --all-files"  # Runs all the pre-commit hooks
+    plugins:
+      - docker#v1.4.0:
+          image: "quay.io/fawkesrobotics/fawkes-builder:f39-ros2"  # Use an appropriate image
+          environment:
+            - LC_ALL=C.UTF-8
+            - LANG=C.UTF-8       debug: true
