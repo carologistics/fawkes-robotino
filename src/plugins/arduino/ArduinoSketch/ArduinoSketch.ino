@@ -23,7 +23,6 @@
 
 #include <AccelStepper.h>
 #include <Wire.h>
-//#include <Servo.h>
 
 //#define DEBUG_MODE
 
@@ -40,7 +39,6 @@
 AccelStepper motor_X(MOTOR_X_STEP_SHIFT, MOTOR_X_DIR_SHIFT);
 AccelStepper motor_Y(MOTOR_Y_STEP_SHIFT, MOTOR_Y_DIR_SHIFT);
 AccelStepper motor_Z(MOTOR_Z_STEP_SHIFT, MOTOR_Z_DIR_SHIFT);
-//Servo servo_a;
 
 long a_toggle_steps = 240;
 
@@ -418,7 +416,6 @@ read_package()
 	byte cur_i_cmd = package_start + 3;
 
   while (cur_i_cmd < buf_i_) {
-  Serial.println(buffer_[cur_i_cmd]);//-------------------------------------------------------------------------------------------------------------------------------DEBUG
 		char cur_cmd   = buffer_[cur_i_cmd];
 		long new_value = 0;
 		if (ArduinoHelper::isValidSerialCommand(cur_cmd)) {
@@ -475,6 +472,7 @@ read_package()
       }
 			do{
         writeMicroseconds(servoPin, 1500);
+        Serial.println("opening");
       }while(milliseconds - prevMillis < 20000);
       if(milliseconds - prevMillis >= 20000){
         digitalWrite(servoPin, LOW);
@@ -483,6 +481,11 @@ read_package()
       Serial.println("gripper open");
 			break;
 		case CMD_CLOSE:
+        prevMillis = milliseconds;
+			do{
+        writeMicroseconds(servoPin, 600);
+        Serial.println("closing");
+      }while(milliseconds - prevMillis < 20000);
       open_gripper = LOW;
       Serial.println("gripper close");
 			break;
@@ -543,7 +546,6 @@ writeMicroseconds(int pin, int pulseWidth) {
   // Ensure the total period is 20ms
   delayMicroseconds(refreshInterval - pulseWidth);
 }
-
 
 void
 setup()
@@ -619,11 +621,8 @@ setup()
 	TIMSK0 = 0;   // start new
 	TIFR0  = 0x7; // clear all interrupt flags
 
- 
 
 	enable_step_interrupt();
-
-	//servo_a.attach(12);
 
 	interrupts();
 	//default behavior should be to calibrate and home on serial port open
@@ -636,25 +635,18 @@ void
 loop()
 {
   if (!open_gripper) {
-    Serial.println(open_gripper);
     switch (st){
-    case 1:
+    case 1: 
       writeMicroseconds(servoPin, 900);
       if(customMillis() - prevMillis > 2500){
         st = 0;
-        //Serial.println("out of 1 at ");
-        //Serial.println(prevMillis);
         prevMillis = customMillis();
       }
     break;
-
+    
     case 0:
-      //writeMicroseconds(servoPin, 150);
-      //writeMicroseconds(servoPin, 900);
       if(customMillis() - prevMillis > 10000){
         st = 1;
-        //Serial.println("out of 0");
-        //Serial.println(prevMillis);
         prevMillis = customMillis();
       }
     break;
