@@ -177,7 +177,7 @@ function set_speed(self)
                -- speed if we're decelerating
                -- average loop time should be at least DESIRED_HZ, linearly reduce speed for lower
                -- loop times to prevent controlling issues/oscillation/panda bug
-               v_dec = a[k]/self.fsm.vars.decel_factor * math.abs(scalar(dist_target[k])) * math.min(1, 1000/(DESIRED_HZ*2*(fsm.vars.loop_time["l"]+fsm.vars.loop_time["ll"])))
+               v_dec = a[k]/self.fsm.vars.decel_factor * math.abs(scalar(dist_target[k])) * math.min(1, (2000/(fsm.vars.loop_time["l"]+fsm.vars.loop_time["ll"]))/DESIRED_HZ)
 
                -- decide if we wanna decelerate, accelerate or max out
                v[k] = math.min(
