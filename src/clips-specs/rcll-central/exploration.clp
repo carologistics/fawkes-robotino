@@ -261,15 +261,7 @@
 	 	) then
 		(bind ?x (nth$ 1 ?trans))
 		(bind ?y (nth$ 2 ?trans))
-		(bind ?prefix "C")
-		(if (< ?y 0) then (return))
-		(if (< ?x 0) then
-			(bind ?x (* -1 ?x))
-			(bind ?prefix "M")
-		)
-		(bind ?x (round (+ ?x 0.5)))
-		(bind ?y (round (+ ?y 0.5)))
-		(bind ?zn2 (str-cat ?prefix "_Z" ?x ?y))
+		(bind ?zn2 (zone-str-from-coords ?x ?y))
 
 		(bind ?yaw (tf-yaw-from-quat $?rot))
 		(bind ?odd TRUE)

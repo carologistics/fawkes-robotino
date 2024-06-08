@@ -1230,3 +1230,26 @@
   =>
   (modify ?gm (restricted-to nil))
 )
+
+(defrule execution-monitoring-change-robot-pos-preemptively
+" Update the robot position if it is actually not at the current position anymore.
+"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  (goal (id ?goal-id))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+
+  ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+    (id ?id) (state RUNNING)
+    (action-name move|go-wait) (param-values ?robot ?mps ?side $?to)
+  )
+  ?at <- (domain-fact (name at) (param-values ?robot ?mps ?side))
+  (domain-fact (name zone-content) (param-values ?zone ?mps))
+
+  (Position3DInterface (id ?if-id&:(eq ?if-id (remote-if-id ?robot "Pose"))) (translation ?x ?y ?z))
+  (test (> (distance ?x ?y (nth$ 1 (zone-coords ?zone)) (nth$ 2 (zone-coords ?zone))) 1))
+  =>
+  (bind ?zone (zone-string-to-sym-dash (zone-str-from-coords ?x ?y)))
+  (modify ?at (param-values ?robot ?zone WAIT))
+  (assert (domain-fact (name mps-side-approachable) (param-values ?mps ?side)))
+  (modify ?pa (param-values ?robot ?zone WAIT $?to))
+)
