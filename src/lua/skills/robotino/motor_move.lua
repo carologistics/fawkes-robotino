@@ -78,6 +78,7 @@ local STUCK_THRESHOLD = 0.6  -- STUCK threshold: Consider ourselves stuck if we 
                              --                  last MONITOR_LEN loops
 local MISSING_MAX     = 5    -- limit for missing object detections in a row
 local SAFE_DIST       = 0.17 -- minimum distance between front laser and mps while manipulating
+local DESIRED_HZ      = 8    -- desired HZ when using motor_move, will move in usual speed
 
 -- Initialize as skill module
 skillenv.skill_module(_M )
@@ -113,6 +114,17 @@ end
 
 
 function set_speed(self)
+   -- compute overall loop time
+   fsm.vars.now = fawkes.Time:new():in_msec()
+   if fsm.vars.last_loop == nil then
+      fsm.vars.loop_time["ll"] = 1000/DESIRED_HZ
+      fsm.vars.loop_time["l"] = 1000/DESIRED_HZ
+   else
+      fsm.vars.loop_time["ll"] = fsm.vars.loop_time["l"]
+      fsm.vars.loop_time["l"] = fsm.vars.now - fsm.vars.last_loop
+   end
+   fsm.vars.last_loop = fsm.vars.now
+
    local v = {x=0, y=0, ori=0}
 
    local dist_target = tfm.transform6D(
@@ -162,7 +174,9 @@ function set_speed(self)
                v_acc = self.fsm.vars.cycle * ACCEL[k]
 
                -- speed if we're decelerating
-               v_dec = a[k]/self.fsm.vars.decel_factor * math.abs(scalar(dist_target[k]))
+               -- average loop time should be at least DESIRED_HZ, linearly reduce speed for lower
+               -- loop times to prevent controlling issues/oscillation/panda bug
+               v_dec = a[k]/self.fsm.vars.decel_factor * math.abs(scalar(dist_target[k])) * math.min(1, (2000/(fsm.vars.loop_time["l"]+fsm.vars.loop_time["ll"]))/DESIRED_HZ)
 
                -- decide if we wanna decelerate, accelerate or max out
                v[k] = math.min(
@@ -322,6 +336,8 @@ function INIT:init()
 
    self.fsm.vars.tags = { tag_0, tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7,
       tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15 }
+   
+      fsm.vars.loop_time = { l=0, ll=0}
 
    if self.fsm.vars.puck then
       print("WARNING: motor_move: puck argument is deprecated!")
