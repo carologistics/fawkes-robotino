@@ -122,7 +122,6 @@ function set_speed(self)
    else
       fsm.vars.loop_time["ll"] = fsm.vars.loop_time["l"]
       fsm.vars.loop_time["l"] = fsm.vars.now - fsm.vars.last_loop
-      print_info("[motor_move] Last loop time of " .. 1000/fsm.vars.loop_time["l"] .. " Hz")
    end
    fsm.vars.last_loop = fsm.vars.now
 
