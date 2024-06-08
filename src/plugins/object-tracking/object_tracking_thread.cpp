@@ -752,10 +752,7 @@ ObjectTrackingThread::set_shm()
 void
 ObjectTrackingThread::detect_objects(Mat image, std::vector<std::array<float, 4>> &out_boxes)
 {
-	std::vector<float>                confidences;
-	std::vector<Rect>                 boxes;
-	std::vector<Mat>                  results;
-	std::vector<std::array<float, 4>> yolo_bbs;
+	std::vector<Mat> results;
 
 	Mat blob = blobFromImage(image, scale_, Size(inpWidth_, inpHeight_), Scalar(), swapRB_);
 	net_.setInput(blob);
@@ -773,22 +770,9 @@ ObjectTrackingThread::detect_objects(Mat image, std::vector<std::array<float, 4>
 			float confidence = data[4 + (int)current_object_type_];
 			if (confidence > confThreshold_) {
 				std::array<float, 4> yolo_bb = {data[0], data[1], data[2], data[3]};
-				yolo_bbs.push_back(yolo_bb);
-
-				Rect rect_bb;
-				convert_bb_yolo2rect(yolo_bb, rect_bb);
-				boxes.push_back(rect_bb);
-
-				confidences.push_back(confidence);
+				out_boxes.push_back(yolo_bb);
 			}
 		}
-	}
-
-	//non-maximum suppression
-	std::vector<int> indices;
-	NMSBoxes(boxes, confidences, confThreshold_, nmsThreshold_, indices);
-	for (size_t i = 0; i < indices.size(); ++i) {
-		out_boxes.push_back(yolo_bbs[indices[i]]);
 	}
 }
 
