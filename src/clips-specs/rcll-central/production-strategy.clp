@@ -136,21 +136,9 @@
     (bind ?m (wm-key-arg ?overall-fact:key m))
     (bind ?sum 0)
 
-    (delayed-do-for-all-facts ((?workload-fact wm-fact)) (and (wm-key-prefix ?workload-fact:key (create$ mps workload order))
+    (delayed-do-for-all-facts ((?workload-fact wm-fact)) (and (wm-key-prefix ?workload-fact:key (create$ mps workload wp))
                                                 (eq ?m (wm-key-arg ?workload-fact:key m)))
-      ;the order has been started and not fulfilled yet
-      (if (any-factp ((?order-started wm-fact)) (and (wm-key-prefix ?order-started:key (create$ order meta started))
-                                                    (eq (wm-key-arg ?workload-fact:key ord)
-                                                        (wm-key-arg ?order-started:key ord))
-                                                    (eq ?order-started:value TRUE)))
-        then
-        (if (not (any-factp ((?order-fulfilled wm-fact)) (and (wm-key-prefix ?order-fulfilled:key (create$ domain fact order-fulfilled))
-                                                      (eq (wm-key-arg ?workload-fact:key ord)
-                                                          (wm-key-arg ?order-fulfilled:key ord)))))
-        then
-            (bind ?sum (+ ?sum ?workload-fact:value))
-        )
-      )
+      (bind ?sum (+ ?sum ?workload-fact:value))
     )
     (modify ?overall-fact (value ?sum))
   )
@@ -520,6 +508,15 @@
           (wm-fact (key wp meta next-machine args? wp ?wp)
                    (type SYMBOL) (is-list FALSE) (value ?curr-machine))
   )
+  (delayed-do-for-all-facts ((?workload wm-fact))
+    (and
+      (wm-key-prefix ?workload:key (create$ mps workload order))
+      (eq (wm-key-arg ?workload:key ord) ?order)
+    )
+    (assert (wm-fact (key mps workload wp args? m (wm-key-arg ?workload:key m) wp ?wp) (type INT)
+      (is-list FALSE) (value ?workload:value))
+    )
+  )
 )
 
 
@@ -550,9 +547,9 @@
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-col))
   ; MPS CEs
   (wm-fact (key domain fact cs-color args? m ?cs col ?cap-col))
-  (wm-fact (key domain fact rs-ring-spec args? m ?rs1 r ?col-r1 $?))
-  (wm-fact (key domain fact rs-ring-spec args? m ?rs2 r ?col-r2 $?))
-  (wm-fact (key domain fact rs-ring-spec args? m ?rs3 r ?col-r3 $?))
+  (wm-fact (key domain fact rs-ring-spec args? m ?rs1 r ?col-r1 rn ?rc1))
+  (wm-fact (key domain fact rs-ring-spec args? m ?rs2 r ?col-r2 rn ?rc2))
+  (wm-fact (key domain fact rs-ring-spec args? m ?rs3 r ?col-r3 rn ?rc3))
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact mps-type args? m ?ds t DS))
   ; WP Meta CEs
@@ -613,6 +610,30 @@
           )
       )
   )
+  (if (member$ ?curr-step (create$ RING1 RING2 RING3)) then
+    (bind ?ring-num (string-to-field (sub-string 5 5 ?curr-step)))
+    (if (or (eq ?new-step CAP) (eq ?new-step (sym-cat RING (+ 1 ?ring-num)))) then
+      (bind ?used-rs ?rs1)
+      (bind ?used-pay ?rc1)
+      (if (= ?ring-num 2) then
+        (bind ?used-rs ?rs2)
+        (bind ?used-pay ?rc2)
+      )
+      (if (= ?ring-num 3) then
+        (bind ?used-rs ?rs3)
+        (bind ?used-pay ?rc3)
+      )
+      (do-for-fact ((?workload wm-fact)) (eq ?workload:key (create$ mps workload wp args? m ?used-rs wp ?wp))
+        (modify ?workload (value (- (- ?workload:value (sym-to-int ?used-pay)) 1))) ; all payments were done and the operation itself as well
+      )
+    )
+  )
+  (if (and (eq ?curr-step CAP) (eq ?new-step DELIVER)) then
+    (do-for-fact ((?workload wm-fact)) (eq ?workload:key (create$ mps workload wp args? m ?cs wp ?wp))
+      (modify ?workload (value 0))
+    )
+  )
+
   (modify ?ss (value (+ ?scored 1)))
   (modify ?ns (value (+ ?p-curr
                         (nth$ (order-steps-index ?curr-step) $?p-list))))
