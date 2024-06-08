@@ -24,7 +24,7 @@ plugins/vs_offsets:
       offset_z: 0.055
 
     pick_routine:
-      offset_z: -0.021
+      offset_z: -0.015
 
     pick_end:
       offset_z: -0.005
