@@ -43,6 +43,7 @@
 	order - object
 	order-complexity-value - object
 	workpiece - object
+	central-reasoner - robot
 	cap-carrier - workpiece
 	shelf-spot - object
 	number - object
@@ -52,6 +53,7 @@
 	token - object
 	master-token - token
 	wp-query - object
+	wp-step - object
 )
 
 (:constants
@@ -87,7 +89,10 @@
 	M-Z73 M-Z63 M-Z53 M-Z43 M-Z33 M-Z23 M-Z13 - zone
 	M-Z72 M-Z62 M-Z52 M-Z42 M-Z32 M-Z22 M-Z12 - zone
 	M-Z71 M-Z61 M-Z51 M-Z41 M-Z31 M-Z21 M-Z11 - zone
+	WAIT1 WAIT2 WAIT3 WAIT4 - waitpoint
 	THERE ABSENT - wp-query
+	RING1 RING2 RING3 CAP DELIVER - wp-step
+	central - central-reasoner
 )
 
 (:predicates
@@ -96,7 +101,7 @@
 	(can-hold ?r - robot)
 	(entered-field ?r - robot)
 	(robot-waiting ?r - robot)
-	(maps ?m - mps ?r -robot)
+	(maps ?m - mps ?r - robot)
 	(zone-content ?z - zone ?m - obstacle)
 	(mps-type ?m - mps ?t - mps-typename)
 	(mps-state ?m - mps ?s - mps-statename)
@@ -145,6 +150,27 @@
 	              ?slot - ss-slot ?base-col - base-color
 	              ?ring1-col - ring-color ?ring2-col - ring-color
 	              ?ring3-col - ring-color ?cap-col - cap-color)
+
+
+	; meta predicates, handled directly through clips
+	(cc-reachable ?r - robot ?cap-col - cap-color)
+	(wp-reachable ?r - robot ?wp - workpiece)
+	(wp-deliver-start ?wp - workpiece)
+	(next-step ?wp - workpiece ?step - wp-step)
+	(mps-found ?m - mps)
+	(transport-blocked ?m - mps)
+	(instruct-blocked ?m - mps)
+	(wp-blocked ?wp - workpiece)
+	(rs-fillable ?m - mps)
+	(rs-input-blocked ?m - mps)
+	(rs-input-reserved-for-wp ?m - mps ?wp - workpiece)
+	(next-machine ?wp - workpiece ?m - mps)
+	(cs-input-ready-to-mount-cap ?m - mps ?cap-col - cap-color)
+	(cs-input-ready-to-buffer-cap ?m - mps ?cap-col - cap-color)
+	(wait-for-wp ?wp - workpiece ?m - mps ?side - mps-side)
+	(rs-input-ready-to-mount-ring ?m - mps ?ring-col - ring-color)
+	(ds-input-ready-to-deliver ?m - mps ?wp - workpiece)
+	(slide-in-use ?m - mps)
 )
 
 (:action explore-zone
@@ -276,6 +302,7 @@
 	                   (rs-ring-spec ?m ?rc ?r-req)
 	                   (rs-filled-with ?m ?rs-before)
 	                   (rs-sub ?rs-before ?r-req ?rs-after)
+	                   (not (slide-in-use ?m))
 	              )
 	:effect (and (not (mps-state ?m IDLE))
 	             (mps-state ?m READY-AT-OUTPUT)
@@ -388,6 +415,7 @@
 	:precondition (at ?r ?from ?from-side)
 	:effect (and (not (at ?r ?from ?from-side))
 	             (mps-side-approachable ?from ?from-side)
+	             (not (mps-side-approachable ?to WAIT))
 	             (at ?r ?to WAIT)
 	        )
 )
@@ -523,6 +551,7 @@
 	                   (at ?r ?m INPUT)
 	                   (wp-usable ?wp)
 	                   (holding ?r ?wp)
+	                   (not (instruct-blocked ?m))
 	                   (rs-filled-with ?m ?rs-before)
 	                   (rs-inc ?rs-before ?rs-after)
 	              )
@@ -809,4 +838,275 @@
 	:effect (at ?r ?point WAIT)
 )
 
+; TODO CLEANUP WP is broken in master
+(:action goal-cleanup-wp
+	:parameters (?r - robot ?zone - zone)
+	:precondition (not (entered-field ?r))
+	:effect (and (entered-field ?r)
+	             (at ?r ?zone WAIT)
+	        )
+)
+
+(:action goal-enter-field
+	:parameters (?r - robot ?zone - zone)
+	:precondition (not (entered-field ?r))
+	:effect (and (entered-field ?r)
+	             (at ?r ?zone WAIT)
+	        )
+)
+
+; TODO: check if target is not last position (key monitoring robot last-wait-position)
+(:action goal-move-out-of-way
+	:parameters (?r - robot ?target-pos - waitpoint)
+	:precondition (mps-side-approachable ?target-pos WAIT)
+	:effect (and (at ?r ?target-pos WAIT)
+	             (not (mps-side-approachable ?target-pos WAIT))
+	)
+)
+
+(:action goal-move
+	:parameters (?r - robot ?target-mps - mps)
+	:precondition (and
+	                   (maps ?target-mps ?r)
+	                   (mps-found ?target-mps)
+	              )
+	:effect (and
+	             (at ?r ?target-mps OUTPUT)
+	        )
+)
+
+(:action goal-buffer-cap
+	:parameters (?r - robot ?target-mps - mps ?cap-color - cap-color)
+	:precondition (and
+	                   (mps-type ?target-mps CS)
+	                   (mps-found ?target-mps)
+	                   (not (mps-state ?target-mps BROKEN))
+	                   (cs-can-perform ?target-mps RETRIEVE_CAP)
+	                   (mps-side-free ?target-mps INPUT)
+	                   (cc-reachable ?r ?cap-color)
+	                   (not (transport-blocked ?target-mps))
+	              )
+	:effect (and
+	             (at ?r ?target-mps OUTPUT)
+	        )
+)
+
+; TODO: bs-in-use and request block should be revisited
+(:action goal-mount-cap
+	:parameters (?r - robot ?wp - workpiece ?target-mps - mps ?cap-color - cap-color)
+	:precondition (and
+	                   (mps-type ?target-mps CS)
+	                   (mps-found ?target-mps)
+	                   (not (mps-state ?target-mps BROKEN))
+	                   (cs-can-perform ?target-mps MOUNT_CAP)
+	                   (cs-buffered ?target-mps ?cap-color)
+	                   (mps-side-free ?target-mps INPUT)
+	                   (wp-reachable ?r ?wp)
+	                   (next-step ?wp CAP)
+	                   (not (transport-blocked ?target-mps))
+	                   (not (wp-blocked ?wp))
+	              )
+	:effect (and
+	             (at ?r ?target-mps OUTPUT)
+	        )
+)
+
+; todo
+(:action goal-deliver
+	:parameters (?r - robot ?wp - workpiece ?target-mps - mps)
+	:precondition (and
+	                   (mps-type ?target-mps DS)
+	                   (mps-found ?target-mps)
+	                   (not (mps-state ?target-mps BROKEN))
+	                   (mps-side-free ?target-mps INPUT)
+	                   (wp-reachable ?r ?wp)
+	                   (next-step ?wp DELIVER)
+	                   (wp-deliver-start ?wp)
+	                   (not (wp-blocked ?wp))
+	              )
+	:effect (and
+	             (at ?r ?target-mps OUTPUT)
+	        )
+)
+
+; TODO: this is different than the old behavior
+(:action goal-discard
+	:parameters (?r - robot ?wp - workpiece ?target-mps - mps)
+	:precondition (and
+	                   (wp-reachable ?r ?wp)
+	                   (not (wp-blocked ?wp))
+	              )
+	:effect (and
+	                   (wp-reachable ?r ?wp)
+	        )
+)
+
+(:action goal-pay-for-rings-with-base
+	:parameters (?r - robot ?wp - workpiece ?target-mps - mps)
+	:precondition (and
+	                   (mps-type ?target-mps RS)
+	                   (mps-found ?target-mps)
+	                   (not (mps-state ?target-mps BROKEN))
+	                   (wp-reachable ?r ?wp)
+	                   (rs-fillable ?target-mps)
+	                   (not (wp-blocked ?wp))
+	              )
+	:effect (and
+	             (at ?r ?target-mps OUTPUT)
+	        )
+)
+
+; (:action goal-pay-for-rings-with-cap-carrier
+; 	:parameters (?r - robot ?target-mps - mps)
+; 	:precondition (and
+; 	                   (mps-type ?target-mps RS)
+; 	                   (mps-found ?target-mps)
+; 	                   (not (mps-state ?target-mps BROKEN))
+; 	                   (cc-reachable ?r CAP_NONE)
+; 	                   (rs-fillable ?target-mps)
+; 	              )
+; 	:effect (and
+; 	             (at ?r ?target-mps OUTPUT)
+; 	        )
+; )
+
+(:action goal-pay-for-rings-with-cap-carrier-from-shelf
+	:parameters (?r - robot ?target-mps - mps ?cap-color - cap-color)
+	:precondition (and
+	                   (mps-type ?target-mps RS)
+	                   (mps-found ?target-mps)
+	                   (not (mps-state ?target-mps BROKEN))
+	                   (cc-reachable ?r ?cap-color)
+	                   (rs-fillable ?target-mps)
+	              )
+	:effect (and
+	             (at ?r ?target-mps OUTPUT)
+	        )
+)
+
+; THIS ASSUMES NO MORE THAN 3 C1-CX PRODUCTS AT ONCE, (OTHERWISE DEADLOCKS OCCUR)
+; TODO: this actually does not check for ring-color
+(:action goal-mount-ring
+	:parameters (?r - robot ?wp - workpiece ?target-mps - mps ?ring-color - ring-color)
+	:precondition (and
+	                   (mps-type ?target-mps RS)
+	                   (mps-found ?target-mps)
+	                   (not (mps-state ?target-mps BROKEN))
+	                   (not (transport-blocked ?target-mps))
+	                   (mps-side-free ?target-mps INPUT)
+	                   (or
+	                     (rs-input-reserved-for-wp ?target-mps ?wp)
+	                     (not (rs-input-blocked ?target-mps))
+	                   )
+	                   (wp-reachable ?r ?wp)
+	                   (next-machine ?wp ?target-mps)
+	                   (or
+	                      (next-step ?wp RING1)
+	                      (next-step ?wp RING2)
+	                      (next-step ?wp RING3)
+	                   )
+	                   (not (wp-blocked ?wp))
+	            )
+	:effect (and
+	             (at ?r ?target-mps OUTPUT)
+	        )
+)
+
+(:action goal-instruct-rs-mount-ring
+	:parameters (?r - central-reasoner ?target-mps - mps ?ring-color - ring-color)
+	:precondition (and
+	                   (mps-type ?target-mps RS)
+	                   (mps-found ?target-mps)
+	                   (not (instruct-blocked ?target-mps))
+	                   (mps-state ?target-mps IDLE)
+	                   ; (or
+	                   ;   (rs-ring-spec ?target-mps ?ring-color ZERO)
+	                   ;   (rs-ring-spec ?target-mps ?ring-color NONE)
+	                   ;   (rs-ring-spec ?target-mps ?ring-color TWO)
+	                   ; )
+	                   (mps-side-free ?target-mps OUTPUT)
+	                   (rs-input-ready-to-mount-ring ?target-mps ?ring-color)
+	            )
+	:effect (and
+	                   (mps-state ?target-mps IDLE)
+	        )
+)
+
+(:action goal-instruct-cs-buffer-cap
+	:parameters (?r - central-reasoner ?target-mps - mps ?cap-color - cap-color)
+	:precondition (and
+	                   (mps-type ?target-mps CS)
+	                   (mps-found ?target-mps)
+	                   (not (instruct-blocked ?target-mps))
+	                   (mps-state ?target-mps IDLE)
+	                   (cs-can-perform ?target-mps RETRIEVE_CAP)
+	                   (mps-side-free ?target-mps OUTPUT)
+	                   (cs-input-ready-to-buffer-cap ?target-mps ?cap-color)
+	            )
+	:effect (and
+	                   (mps-state ?target-mps IDLE)
+	        )
+)
+
+(:action goal-instruct-cs-mount-cap
+	:parameters (?r - central-reasoner ?target-mps - mps ?cap-color - cap-color)
+	:precondition (and
+	                   (mps-type ?target-mps CS)
+	                   (mps-found ?target-mps)
+	                   (not (instruct-blocked ?target-mps))
+	                   (mps-state ?target-mps IDLE)
+	                   (cs-can-perform ?target-mps MOUNT_CAP)
+	                   (mps-side-free ?target-mps OUTPUT)
+	                   (cs-input-ready-to-mount-cap ?target-mps ?cap-color)
+	            )
+	:effect (and
+	                   (mps-state ?target-mps IDLE)
+	        )
+)
+
+(:action goal-instruct-bs-dispense-base
+	:parameters (?r - central-reasoner ?wp - workpiece ?target-mps - mps ?target-side - mps-side ?base-color - base-color)
+	:precondition (and
+	                   (mps-type ?target-mps BS)
+	                   (mps-found ?target-mps)
+	                   (not (instruct-blocked ?target-mps))
+	                   (mps-state ?target-mps IDLE)
+	                   (mps-side-free ?target-mps INPUT)
+	                   (mps-side-free ?target-mps OUTPUT)
+	                   (wp-unused ?wp)
+	                   (wait-for-wp ?wp ?target-mps ?target-side)
+	            )
+	:effect (and
+	                   (mps-state ?target-mps IDLE)
+	        )
+)
+
+(:action goal-instruct-ds-deliver
+	:parameters (?r - central-reasoner ?wp - workpiece ?target-mps - mps)
+	:precondition (and
+	                   (mps-type ?target-mps DS)
+	                   (mps-found ?target-mps)
+	                   (not (instruct-blocked ?target-mps))
+	                   (mps-state ?target-mps IDLE)
+	                   (wp-at ?wp ?target-mps INPUT)
+	                   (ds-input-ready-to-deliver ?target-mps ?wp)
+	            )
+	:effect (and
+	                   (mps-state ?target-mps IDLE)
+	        )
+)
+
+(:action goal-instruct-ds-discard
+	:parameters (?r - central-reasoner ?wp - workpiece ?target-mps - mps)
+	:precondition (and
+	                   (mps-type ?target-mps DS)
+	                   (mps-found ?target-mps)
+	                   (not (instruct-blocked ?target-mps))
+	                   (mps-state ?target-mps IDLE)
+	                   (wp-at ?wp ?target-mps INPUT)
+	            )
+	:effect (and
+	                   (mps-state ?target-mps IDLE)
+	        )
+)
 )

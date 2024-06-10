@@ -425,7 +425,7 @@
                  (bind ?robot (fact-slot-value ?highest-prio-gm assigned-to))
   )
   (bind ?selected (modify ?highest-prio-goal-fact (mode SELECTED)))
-	(if (eq (fact-slot-value ?selected class) MOVE-OUT-OF-WAY) then 
+	(if (eq (fact-slot-value ?selected class) MOVE-OUT-OF-WAY) then
   (do-for-all-facts ((?g goal)) (eq ?g:mode DISPATCHED)
     (printout warn ?g:id " is concurrently running" crlf)
   )
@@ -886,6 +886,7 @@
       (modify ?ogm (restricted-to ?robot))
     )
   )
+  (goal-reasoner-retract-plan-action ?goal-id)
 )
 
 ; ================================= Goal Clean up ============================
@@ -898,7 +899,17 @@
   (not (goal (parent ?goal-id) (mode ?mode&~RETRACTED)))
 =>
   (printout (log-debug ?v) "Goal " ?goal-id " RETRACTED" crlf)
+  (goal-reasoner-retract-plan-action ?goal-id)
   (modify ?g (mode RETRACTED))
+)
+
+(defrule goal-reasoner-remove-dangling-plans
+" Retract plan and plan action if they belong to no goal.
+"
+  (plan (goal-id ?goal-id))
+  (not (goal (id ?goal-id) (mode ?mode&~RETRACTED)))
+=>
+  (goal-reasoner-retract-plan-action ?goal-id)
 )
 
 (defrule goal-reasoner-error-goal-without-sub-type-detected
