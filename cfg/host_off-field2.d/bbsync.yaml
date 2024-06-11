@@ -58,6 +58,8 @@ fawkes/bbsync:
         navgraph-generator: NavGraphGeneratorInterface::/navgraph-generator=/robot1/navgraph-generator
         navigator: NavigatorInterface::Navigator=/robot1/Navigator
         robotino: MotorInterface::Robotino=/robot1/Robotino
+        exploration: ExplorationInterface::/exploration/info=/robot1/exploration/info
+        box-switch: SwitchInterface::/switch/box_detect_enabled=/robot1/switch/box_detect_enabled
 
 
     robot2:
@@ -71,6 +73,8 @@ fawkes/bbsync:
         navgraph-generator: NavGraphGeneratorInterface::/navgraph-generator=/robot2/navgraph-generator
         navigator: NavigatorInterface::Navigator=/robot2/Navigator
         robotino: MotorInterface::Robotino=/robot2/Robotino
+        exploration: ExplorationInterface::/exploration/info=/robot2/exploration/info
+        box-switch: SwitchInterface::/switch/box_detect_enabled=/robot2/switch/box_detect_enabled
 
 
     robot3:
@@ -84,3 +88,5 @@ fawkes/bbsync:
         navgraph-generator: NavGraphGeneratorInterface::/navgraph-generator=/robot3/navgraph-generator
         navigator: NavigatorInterface::Navigator=/robot3/Navigator
         robotino: MotorInterface::Robotino=/robot3/Robotino
+        exploration: ExplorationInterface::/exploration/info=/robot3/exploration/info
+        box-switch: SwitchInterface::/switch/box_detect_enabled=/robot3/switch/box_detect_enabled

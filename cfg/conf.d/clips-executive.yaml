@@ -187,6 +187,7 @@ clips-executive:
 
       blackboard-preload:
         - Position3DInterface
+        - ExplorationInterface
         - NavGraphWithMPSGeneratorInterface
         - NavGraphGeneratorInterface
         - NavigatorInterface
