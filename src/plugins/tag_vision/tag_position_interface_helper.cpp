@@ -24,6 +24,9 @@
 
 #include "tag_vision_thread.h"
 
+#include <cmath>
+#include <sstream>
+
 /** @class TagPositionInterfaceHelper "tag_position_interface_helper.h"
  * This class is used to help handling of the Position3DInterface calss. It
  * Calculates the needed position values from the given alvar position and sets
@@ -48,8 +51,6 @@
  * @param cam_frame The frame of reference for the transforms published
  */
 TagPositionInterfaceHelper::TagPositionInterfaceHelper(
-  fawkes::Position3DInterface    *position_interface,
-  fawkes::Position3DInterface    *position_interface_map,
   u_int32_t                       index,
   fawkes::Clock                  *clock,
   fawkes::tf::TransformPublisher *tf_publisher,
@@ -57,8 +58,6 @@ TagPositionInterfaceHelper::TagPositionInterfaceHelper(
   fawkes::tf::Transformer        *tf_listener,
   std::string                     cam_frame)
 {
-	pos_iface_          = position_interface;
-	pos_iface_map_      = position_interface_map;
 	index_              = index;
 	marker_id_          = index;
 	visibility_history_ = 0;
@@ -70,6 +69,8 @@ TagPositionInterfaceHelper::TagPositionInterfaceHelper(
 	tf_publisher_     = tf_publisher;
 	map_tf_publisher_ = map_tf_publisher;
 	tf_listener_      = tf_listener;
+
+	map_pose_.tvec = {-1, -1, -1};
 }
 
 /**
@@ -93,11 +94,18 @@ TagPositionInterfaceHelper::~TagPositionInterfaceHelper()
 void
 TagPositionInterfaceHelper::set_pose(TagPose new_pose, MarkerType marker_type)
 {
+	marker_type_ = marker_type;
 	// create a quaternion on the angles.
 	fawkes::tf::Quaternion tag_rot(new_pose.quaternion[CV_ROT::CV_X],
 	                               new_pose.quaternion[CV_ROT::CV_Y],
 	                               new_pose.quaternion[CV_ROT::CV_Z],
 	                               new_pose.quaternion[CV_ROT::CV_W]);
+	if (marker_type == MarkerType::ARUCO) {
+		tag_rot = fawkes::tf::Quaternion(new_pose.quaternion[ALVAR_ROT::A_X],
+		                                 new_pose.quaternion[ALVAR_ROT::A_Y],
+		                                 new_pose.quaternion[ALVAR_ROT::A_Z],
+		                                 new_pose.quaternion[ALVAR_ROT::A_W]);
+	}
 	fawkes::tf::Quaternion fix_tag_orientation(0, 0, 0);
 	switch (marker_type) {
 	case MarkerType::ARUCO:
@@ -110,17 +118,22 @@ TagPositionInterfaceHelper::set_pose(TagPose new_pose, MarkerType marker_type)
 		break;
 	}
 	fawkes::tf::Quaternion result = tag_rot * fix_tag_orientation;
-
-	// publish the quaternion
-	pos_iface_->set_rotation(ROT::X, result.getX());
-	pos_iface_->set_rotation(ROT::Y, result.getY());
-	pos_iface_->set_rotation(ROT::Z, result.getZ());
-	pos_iface_->set_rotation(ROT::W, result.getW());
+	switch (marker_type) {
+	case MarkerType::ARUCO:
+		cam_pose_.quaternion[CV_ROT::CV_X] = result.getX();
+		cam_pose_.quaternion[CV_ROT::CV_Y] = result.getY();
+		cam_pose_.quaternion[CV_ROT::CV_Z] = result.getZ();
+		cam_pose_.quaternion[CV_ROT::CV_W] = result.getW();
+		break;
+	case MarkerType::ALVAR:
+		cam_pose_.quaternion[ALVAR_ROT::A_X] = result.getX();
+		cam_pose_.quaternion[ALVAR_ROT::A_Y] = result.getY();
+		cam_pose_.quaternion[ALVAR_ROT::A_Z] = result.getZ();
+		cam_pose_.quaternion[ALVAR_ROT::A_W] = result.getW();
+		break;
+	}
+	cam_pose_.tvec = new_pose.tvec / 1000;
 	// publish the translation
-	pos_iface_->set_translation(TRANS::T_X /*1*/, new_pose.tvec[TRANS::T_X /*0*/] / 1000);
-	pos_iface_->set_translation(TRANS::T_Y /*2*/, new_pose.tvec[TRANS::T_Y /*1*/] / 1000);
-	pos_iface_->set_translation(TRANS::T_Z /*0*/, new_pose.tvec[TRANS::T_Z /*2*/] / 1000);
-
 	was_seen_ = true;
 
 	// publish the transform
@@ -151,14 +164,24 @@ TagPositionInterfaceHelper::set_pose(TagPose new_pose, MarkerType marker_type)
 		                                        "map",
 		                                        tag_frame_ + "_to_map");
 		// publish the quaternion in map frame
-		pos_iface_map_->set_rotation(ROT::X, tag_in_map_pose.getRotation().getX());
-		pos_iface_map_->set_rotation(ROT::Y, tag_in_map_pose.getRotation().getY());
-		pos_iface_map_->set_rotation(ROT::Z, tag_in_map_pose.getRotation().getZ());
-		pos_iface_map_->set_rotation(ROT::W, tag_in_map_pose.getRotation().getW());
-		// publish the translation in map frame
-		pos_iface_map_->set_translation(TRANS::T_X /*1*/, tag_in_map_pose.getOrigin().getX());
-		pos_iface_map_->set_translation(TRANS::T_Y /*2*/, tag_in_map_pose.getOrigin().getY());
-		pos_iface_map_->set_translation(TRANS::T_Z /*0*/, tag_in_map_pose.getOrigin().getZ());
+		switch (marker_type) {
+		case MarkerType::ARUCO:
+			map_pose_.quaternion[CV_ROT::CV_X] = tag_in_map_pose.getRotation().getX();
+			map_pose_.quaternion[CV_ROT::CV_Y] = tag_in_map_pose.getRotation().getY();
+			map_pose_.quaternion[CV_ROT::CV_Z] = tag_in_map_pose.getRotation().getZ();
+			map_pose_.quaternion[CV_ROT::CV_W] = tag_in_map_pose.getRotation().getW();
+			break;
+		case MarkerType::ALVAR:
+			map_pose_.quaternion[ALVAR_ROT::A_X] = tag_in_map_pose.getRotation().getX();
+			map_pose_.quaternion[ALVAR_ROT::A_Y] = tag_in_map_pose.getRotation().getY();
+			map_pose_.quaternion[ALVAR_ROT::A_Z] = tag_in_map_pose.getRotation().getZ();
+			map_pose_.quaternion[ALVAR_ROT::A_W] = tag_in_map_pose.getRotation().getW();
+			break;
+		}
+		map_pose_.tvec                   = new_pose.tvec / 1000;
+		map_pose_.tvec[TRANS::T_X /*1*/] = tag_in_map_pose.getOrigin().getX();
+		map_pose_.tvec[TRANS::T_Y /*2*/] = tag_in_map_pose.getOrigin().getY();
+		map_pose_.tvec[TRANS::T_Z /*0*/] = tag_in_map_pose.getOrigin().getZ();
 	} catch (fawkes::tf::TransformException &e) {
 		std::cout << "Can't transform to " << tag_frame_ << " " << e.what() << std::endl;
 	}
@@ -172,6 +195,67 @@ void
 TagPositionInterfaceHelper::set_marker_id(unsigned long new_id)
 {
 	marker_id_ = new_id;
+}
+
+/**
+ * Calculate zone of current marker, (e.g., M-Z61)
+ */
+std::string
+TagPositionInterfaceHelper::get_zone()
+{
+	std::string prefix = "C";
+	auto        x      = map_pose_.tvec[TRANS::T_X];
+	auto        y      = map_pose_.tvec[TRANS::T_Y];
+
+	if (y < 0)
+		return "M_Z00";
+
+	if (x < 0) {
+		x *= -1;
+		prefix = "M";
+	}
+
+	x = round(x + 0.5);
+	y = round(y + 0.5);
+
+	std::stringstream ss;
+	ss << prefix << "_Z" << x << y;
+	return ss.str();
+}
+
+/**
+ * Calculate ori of a given marker, discretized in 45 degree steps
+ */
+int
+TagPositionInterfaceHelper::get_discrete_ori()
+{
+	fawkes::tf::Quaternion fawkes_rot(map_pose_.quaternion[CV_ROT::CV_X],
+	                                  map_pose_.quaternion[CV_ROT::CV_Y],
+	                                  map_pose_.quaternion[CV_ROT::CV_Z],
+	                                  map_pose_.quaternion[CV_ROT::CV_W]);
+	if (marker_type_ == MarkerType::ARUCO) {
+		fawkes_rot = fawkes::tf::Quaternion(map_pose_.quaternion[ALVAR_ROT::A_X],
+		                                    map_pose_.quaternion[ALVAR_ROT::A_Y],
+		                                    map_pose_.quaternion[ALVAR_ROT::A_Z],
+		                                    map_pose_.quaternion[ALVAR_ROT::A_W]);
+	}
+	constexpr double PI = 3.14159265358979323846;
+
+	double ori = fawkes::tf::get_yaw(fawkes_rot);
+	if (index_ % 2 == 1) {
+		ori += PI;
+	}
+	if (ori < 0) {
+		ori += (2 * PI);
+	}
+	ori            = ori / PI * 4.0;
+	double ori_deg = round(ori) * 45.0;
+
+	int result = static_cast<int>(ori_deg);
+	if (result == 360) {
+		result = 0;
+	}
+	return result;
 }
 
 /**
@@ -230,11 +314,11 @@ TagPositionInterfaceHelper::write()
 	//	marker_id_ = EMPTY_INTERFACE_MARKER_ID;
 	//}
 	// set the new visibility history
-	pos_iface_->set_visibility_history(visibility_history_);
-	pos_iface_map_->set_visibility_history(visibility_history_);
-	// write out the interface
-	pos_iface_->write();
-	pos_iface_map_->write();
+	// pos_iface_->set_visibility_history(visibility_history_);
+	// pos_iface_map_->set_visibility_history(visibility_history_);
+	// // write out the interface
+	// pos_iface_->write();
+	// pos_iface_map_->write();
 	// reset the update marker
 	was_seen_ = false;
 }

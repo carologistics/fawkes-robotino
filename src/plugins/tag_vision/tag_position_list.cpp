@@ -102,29 +102,11 @@ TagPositionList::TagPositionList(fawkes::BlackBoard      *blackboard,
 
 	// create blackboard interfaces
 	for (const auto &tag : tag_id_names_) {
-		// create a name for the new interface
-		std::string interface_name     = std::string("/tag-vision/") + tag.second;
-		std::string interface_name_map = std::string("/tag-vision/") + tag.second + "/to_map";
 		// create the interface and store
 		try {
 			// get an interface from the blackboard
-			auto interface =
-			  this->blackboard_->open_for_writing<fawkes::Position3DInterface>(interface_name.c_str());
-			// set the frame of the interface
-			interface->set_frame(cam_frame.c_str());
-			// generate a helper class and push it into this vector
-
-			// get an interface from the blackboard
-			auto map_interface = this->blackboard_->open_for_writing<fawkes::Position3DInterface>(
-			  (interface_name_map).c_str());
-			// set the frame of the interface
-			map_interface->set_frame("map");
-			// generate a helper class and push it into this vector
-
 			this->push_back(
-			  new TagPositionInterfaceHelper(interface,
-			                                 map_interface,
-			                                 tag.first,
+			  new TagPositionInterfaceHelper(tag.first,
 			                                 this->clock_,
 			                                 main_thread_->get_tf_publisher(tag.second, "tag_"),
 			                                 main_thread_->get_tf_publisher(tag.second, "map_tag_"),
@@ -136,14 +118,14 @@ TagPositionList::TagPositionList(fawkes::BlackBoard      *blackboard,
 		}
 	}
 
-	// // initialize tag info interface
-	// try {
-	// 	this->index_interface_ =
-	// 	  blackboard->open_for_writing<fawkes::TagVisionInterface>("/tag-vision/info");
-	// } catch (std::exception &e) {
-	// 	this->logger_->log_error(thread_name.c_str(), "Could not open the blackboard: %s", e.what());
-	// 	throw(e);
-	// }
+	// initialize tag info interface
+	try {
+		this->exploration_interface_ =
+		  blackboard->open_for_writing<fawkes::ExplorationInterface>("/exploration/info");
+	} catch (std::exception &e) {
+		this->logger_->log_error(thread_name.c_str(), "Could not open the blackboard: %s", e.what());
+		throw(e);
+	}
 }
 
 /**
@@ -152,13 +134,7 @@ TagPositionList::TagPositionList(fawkes::BlackBoard      *blackboard,
 TagPositionList::~TagPositionList()
 {
 	// close tag vision interface
-	//this->blackboard_->close(this->index_interface_);
-
-	// delete this interfaces
-	for (auto &interface : *this) {
-		this->blackboard_->close(interface->pos_iface());
-		delete interface;
-	}
+	this->blackboard_->close(this->exploration_interface_);
 }
 
 TagPose
@@ -255,7 +231,7 @@ TagPositionList::get_nearest_laser_line_pose(
 
 /**
  * Find a blackboard interface manager that we can update with the given
- * ALVAR marker.
+ * marker.
  * @param marker
  * @return An unused or matching interface manager.
  */
@@ -314,19 +290,71 @@ TagPositionList::update_blackboard(std::vector<TagVisionMarker>              &ma
 			}
 			marker_interface->set_pose(tmp_pose, marker.type);
 		} else
-			logger_->log_warn(thread_name_.c_str(),
-			                  "Cannot publish tag #%u: Index interface full!",
-			                  marker.marker_id);
+			logger_->log_debug(thread_name_.c_str(),
+			                   "Cannot process tag #%u: unknown id!",
+			                   marker.marker_id);
 	}
 	// update blackboard with interfaces
-	int32_t visible_markers = 0;
 	for (TagPositionInterfaceHelper *pos_iface : *this) {
-		//this->index_interface_->set_tag_id(pos_iface->index(), pos_iface->marker_id());
-		if (pos_iface->marker_id() != EMPTY_INTERFACE_MARKER_ID) {
-			visible_markers++;
-		}
 		pos_iface->write();
 	}
-	//this->index_interface_->set_tags_visible(visible_markers);
-	//this->index_interface_->write();
+	// map from machine names to zone, ori pairs
+	std::map<std::string, std::pair<std::string, int>> exploration_result;
+
+	for (TagPositionInterfaceHelper *pos_iface : *this) {
+		std::string machine = tag_id_names_[pos_iface->index()];
+		machine             = machine.substr(0, machine.size() - 2);
+		auto it             = exploration_result.find(machine);
+		if (it == exploration_result.end()) {
+			// Machine not present, add it to exploration_result
+			if (pos_iface->visibility_history() > 2) {
+				exploration_result[machine] =
+				  std::make_pair(pos_iface->get_zone(), pos_iface->get_discrete_ori());
+			} else {
+				exploration_result[machine] = std::make_pair("M_Z00", 0);
+			}
+		} else {
+			if (pos_iface->visibility_history() > 2) {
+				if (pos_iface->get_zone() != "M_Z00") {
+					// Machine already present, check for mismatches
+					if (it->second.first != "M_Z00"
+					    && (it->second.first != pos_iface->get_zone()
+					        || it->second.second != pos_iface->get_discrete_ori())) {
+						this->logger_->log_warn(
+						  thread_name_.c_str(),
+						  "Conflicting information for machine position of %s (%i), (%s vs %s) and (%i vs %i)",
+						  machine.c_str(),
+						  pos_iface->index(),
+						  it->second.first.c_str(),
+						  pos_iface->get_zone().c_str(),
+						  it->second.second,
+						  pos_iface->get_discrete_ori());
+					}
+					exploration_result[machine] =
+					  std::make_pair(pos_iface->get_zone(), pos_iface->get_discrete_ori());
+				}
+			}
+		}
+	}
+	// Vectors to store the extracted data
+	int         index = 0;
+	std::string machines;
+	std::string zones;
+	int         oris[16];
+	for (const auto &entry : exploration_result) {
+		if (index > 0) {
+			machines += " " + entry.first;
+			zones += " " + entry.second.first;
+		} else {
+			machines += entry.first;
+			zones += " " + entry.second.first;
+		}
+		oris[index] = entry.second.second;
+		index++;
+	}
+
+	exploration_interface_->set_machines(machines.c_str());
+	exploration_interface_->set_zones(zones.c_str());
+	exploration_interface_->set_oris(oris);
+	this->exploration_interface_->write();
 }

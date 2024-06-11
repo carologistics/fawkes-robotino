@@ -25,7 +25,7 @@
 
 #include <blackboard/blackboard.h>
 #include <blackboard/exceptions.h>
-#include <interfaces/TagVisionInterface.h>
+#include <interfaces/ExplorationInterface.h>
 
 #include <string>
 #include <vector>
@@ -68,8 +68,8 @@ private:
 	size_t max_markers_;
 	/// The blackboard to publish on
 	fawkes::BlackBoard *blackboard_;
-	/// Tag vision inforamtion interface
-	fawkes::TagVisionInterface *index_interface_;
+	/// Tag vision information interface
+	fawkes::ExplorationInterface *exploration_interface_;
 	/// Name of the calling thread
 	std::string thread_name_;
 	/// Logger for logging
