@@ -60,8 +60,8 @@ TagPositionInterfaceHelper::TagPositionInterfaceHelper(
 	pos_iface_          = position_interface;
 	pos_iface_map_      = position_interface_map;
 	index_              = index;
+	marker_id_          = index;
 	visibility_history_ = 0;
-	marker_id_          = 0;
 	was_seen_           = false;
 	clock_              = clock;
 
@@ -226,9 +226,9 @@ TagPositionInterfaceHelper::write()
 		visibility_history_--;
 	}
 	// empty marker id if the tag is to long not visible
-	if (marker_id_ != EMPTY_INTERFACE_MARKER_ID && visibility_history_ < INTERFACE_UNSEEN_BOUND) {
-		marker_id_ = EMPTY_INTERFACE_MARKER_ID;
-	}
+	//if (marker_id_ != EMPTY_INTERFACE_MARKER_ID && visibility_history_ < INTERFACE_UNSEEN_BOUND) {
+	//	marker_id_ = EMPTY_INTERFACE_MARKER_ID;
+	//}
 	// set the new visibility history
 	pos_iface_->set_visibility_history(visibility_history_);
 	pos_iface_map_->set_visibility_history(visibility_history_);
