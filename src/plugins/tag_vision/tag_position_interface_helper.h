@@ -93,9 +93,7 @@ class TagPositionInterfaceHelper
 {
 public:
 	/// Constructor
-	TagPositionInterfaceHelper(fawkes::Position3DInterface    *position_interface,
-	                           fawkes::Position3DInterface    *position_interface_map,
-	                           u_int32_t                       index_,
+	TagPositionInterfaceHelper(u_int32_t                       index_,
 	                           fawkes::Clock                  *clock,
 	                           fawkes::tf::TransformPublisher *tf_publisher,
 	                           fawkes::tf::TransformPublisher *map_tf_publisher,
@@ -115,27 +113,8 @@ public:
 	int32_t       visibility_history() const;
 	void          set_visibility_history(int32_t);
 
-	/**
-   * @brief Returns the Position3D interface of this plugin
-   *
-   * @return The interface
-   */
-	fawkes::Position3DInterface *
-	pos_iface()
-	{
-		return this->pos_iface_;
-	}
-
-	/**
-   * @brief Returns the Position3D interface of this plugin
-   *
-   * @return The interface
-   */
-	fawkes::Position3DInterface *
-	pos_iface_map()
-	{
-		return this->pos_iface_map_;
-	}
+	std::string get_zone();
+	int         get_discrete_ori();
 
 	/**
    * @brief Returns the position of this interface in the TagPositionList, or
@@ -148,12 +127,18 @@ public:
 	{
 		return this->index_;
 	}
+	/**
+   * @brief Returns the stored map pose
+   *
+   * @return The pose in map frame
+   */
+	TagPose
+	map_pose()
+	{
+		return this->map_pose_;
+	}
 
 private:
-	/// The interface to handle
-	fawkes::Position3DInterface *pos_iface_;
-	fawkes::Position3DInterface *pos_iface_map_;
-
 	/// The visibility history for the interface to handle
 	int32_t visibility_history_;
 
@@ -180,6 +165,10 @@ private:
 	fawkes::tf::TransformPublisher *tf_publisher_;
 	fawkes::tf::TransformPublisher *map_tf_publisher_;
 	fawkes::tf::Transformer        *tf_listener_;
+
+	MarkerType marker_type_;
+	TagPose    map_pose_;
+	TagPose    cam_pose_;
 };
 
 #endif // TAG_POSITION_INTREFACE_H
