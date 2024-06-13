@@ -998,9 +998,9 @@ VisualPositionThread::getCenterRoi(firevision::ROI p1, firevision::ROI p2)
 	return center;
 };
 
-void VisualPositionThread::config_value_erased(const char *path){};
-void VisualPositionThread::config_tag_changed(const char *new_tag){};
-void VisualPositionThread::config_comment_changed(const fawkes::Configuration::ValueIterator *v){};
+void VisualPositionThread::config_value_erased(const char *path) {};
+void VisualPositionThread::config_tag_changed(const char *new_tag) {};
+void VisualPositionThread::config_comment_changed(const fawkes::Configuration::ValueIterator *v) {};
 void
 VisualPositionThread::config_value_changed(const fawkes::Configuration::ValueIterator *v)
 {

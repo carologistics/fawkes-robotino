@@ -10,7 +10,7 @@
 #
 # Read the full text in the LICENSE.GPL file in the doc directory.
 
-default_stages: [pre-commit, pre-push]
+default_stages: [pre-commit, pre-push, manual]
 # General
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks

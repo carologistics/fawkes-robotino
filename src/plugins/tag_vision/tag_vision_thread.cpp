@@ -421,9 +421,9 @@ TagVisionThread::get_marker()
 }
 
 // config handling
-void TagVisionThread::config_value_erased(const char *path){};
-void TagVisionThread::config_tag_changed(const char *new_tag){};
-void TagVisionThread::config_comment_changed(const fawkes::Configuration::ValueIterator *v){};
+void TagVisionThread::config_value_erased(const char *path) {};
+void TagVisionThread::config_tag_changed(const char *new_tag) {};
+void TagVisionThread::config_comment_changed(const fawkes::Configuration::ValueIterator *v) {};
 void
 TagVisionThread::config_value_changed(const fawkes::Configuration::ValueIterator *v)
 {
