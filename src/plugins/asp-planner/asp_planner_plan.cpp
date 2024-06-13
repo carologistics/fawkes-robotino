@@ -162,7 +162,7 @@ extractMapFromAnswerSet(const Clingo::SymbolVector &symbols,
 			                        begin,
 			                        std::max(transform(time) + planGameTime, 1));
 		} // if ( begin || end )
-	}   // for ( const auto& symbol : symbols )
+	} // for ( const auto& symbol : symbols )
 
 	int size = 0;
 
@@ -220,7 +220,7 @@ assembleTemporaryPlan(std::unordered_map<std::string, std::vector<IntermediatePl
 				if (iter->Task == robotPlan.Tasks[i].Task) {
 					break;
 				} // if ( iter->Task == robotPlan.Tasks[i].Task )
-			}   // for ( ; i < robotPlan.Tasks.size(); ++i )
+			} // for ( ; i < robotPlan.Tasks.size(); ++i )
 			iter->Begin = robotPlan.Tasks[i].Begin;
 
 			logger->log_info(logging_component,
@@ -430,7 +430,7 @@ AspPlannerThread::loopPlan(void)
 					                 planIter->Begin,
 					                 planIter->End);
 				} // else -> if ( needsUpdate(*planIter, *tempIter) && !planIter->Done )
-			}   // if ( sameTask(*planIter, *tempIter) )
+			} // if ( sameTask(*planIter, *tempIter) )
 			else {
 				// A different task, handle differently for already started tasks.
 				const auto robotCStr = robotName.c_str();
@@ -506,7 +506,7 @@ AspPlannerThread::loopPlan(void)
 			                 planIter->End);
 			robotPlan.erase(planIter, planEnd);
 		} // else if ( planIter != planEnd )
-	}   // for ( auto& pair : Plan )
+	} // for ( auto& pair : Plan )
 
 	if (commit) {
 		logger->log_info(LoggingComponent,
@@ -526,11 +526,11 @@ AspPlannerThread::loopPlan(void)
 					if (needsUpdate(deployed[index], updated[index])) {
 						updatePlanTiming(robot, index, updated[index]);
 					} // if ( needsUpdate(deployed[index], updated[index]) )
-				}   // if ( sameTask(deployed[index], updated[index]) )
+				} // if ( sameTask(deployed[index], updated[index]) )
 				else {
 					updatePlan(robot, index, updated[index]);
 				} // else -> if ( sameTask(deployed[index], updated[index]) )
-			}   // for ( ; index < dSize && index < uSize; ++index )
+			} // for ( ; index < dSize && index < uSize; ++index )
 
 			// At most one of the following loops will be executed.
 			for (; index < dSize; ++index) {
@@ -544,7 +544,7 @@ AspPlannerThread::loopPlan(void)
 			using std::swap;
 			swap(deployed, updated);
 		} // for ( const auto& pair : Robots )
-	}   // if ( commit )
+	} // if ( commit )
 	else {
 		logger->log_info(LoggingComponent,
 		                 "The new plan will be discarded because of inconsistencies.");
@@ -760,7 +760,7 @@ AspPlannerThread::planFeedbackCallback(const bsoncxx::document::view &document)
 		} // case 'e'
 		default: throw fawkes::Exception("Unknown action %s!", action.c_str());
 		} // switch ( action[0] )
-	}   // try
+	} // try
 	catch (const std::exception &e) {
 		logger->log_error(LoggingComponent,
 		                  "Exception while extracting plan feedback: %s\n%s",

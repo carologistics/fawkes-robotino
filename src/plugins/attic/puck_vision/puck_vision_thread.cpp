@@ -857,9 +857,9 @@ PuckVisionThread::finalize() // TODO check if everthing gets deleted
 	logger->log_info(name(), "finalize ends");
 }
 
-void PuckVisionThread::config_value_erased(const char *path){};
-void PuckVisionThread::config_tag_changed(const char *new_tag){};
-void PuckVisionThread::config_comment_changed(const fawkes::Configuration::ValueIterator *v){};
+void PuckVisionThread::config_value_erased(const char *path) {};
+void PuckVisionThread::config_tag_changed(const char *new_tag) {};
+void PuckVisionThread::config_comment_changed(const fawkes::Configuration::ValueIterator *v) {};
 void
 PuckVisionThread::config_value_changed(const fawkes::Configuration::ValueIterator *v)
 {

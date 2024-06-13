@@ -79,8 +79,8 @@ AspPlannerThread::graph_changed(void) noexcept
 			NodesToFind.erase(node.name());
 			logger->log_info(LoggingComponent, "graph_changed: %s", node.name().c_str());
 		} // if ( !node.has_property(NodePropertyASP) &&
-		  // NavgraphNodesForASP.count(node.name()) )
-	}   // for ( auto node : navgraph->nodes() )
+		// NavgraphNodesForASP.count(node.name()) )
+	} // for ( auto node : navgraph->nodes() )
 	return;
 }
 
@@ -117,7 +117,7 @@ AspPlannerThread::fillNavgraphNodesForASP(const bool lockWorldMutex)
 			arguments[2]  = Clingo::String(side);
 			lastInsertion = NavgraphNodesForASP.insert({name, Clingo::Function("m", {arguments, 3})});
 		} // for ( const auto& side : {"I", "O"} )
-	}   // for ( const auto& machine : {"BS", "CS1", "CS2", "RS1", "RS2", "DS"} )
+	} // for ( const auto& machine : {"BS", "CS1", "CS2", "RS1", "RS2", "DS"} )
 
 	// Remove the output side of the DS.
 	assert(lastInsertion->first == std::string(TeamColor) + "-DS-O");
@@ -196,7 +196,7 @@ AspPlannerThread::updateNavgraphDistances(void)
 					if (!path.empty()) {
 						return distanceToDuration(path.cost());
 					} // if ( !path.empty() )
-				}   // if ( fromNode.is_valid() && toNode.is_valid() )
+				} // if ( fromNode.is_valid() && toNode.is_valid() )
 				return MaxDriveDuration;
 			};
 
@@ -206,7 +206,7 @@ AspPlannerThread::updateNavgraphDistances(void)
 
 			NavgraphDistances.emplace_back(Clingo::Function("setDriveDuration", {arguments, 3}));
 		} // for ( auto to = from; ++to != end; )
-	}   // for ( auto from = NavgraphDistances.begin(); from != end; ++from )
+	} // for ( auto from = NavgraphDistances.begin(); from != end; ++from )
 
 	done = NodesToFind.empty();
 	return;

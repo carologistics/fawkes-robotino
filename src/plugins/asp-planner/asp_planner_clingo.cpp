@@ -155,7 +155,7 @@ AspPlannerThread::loopClingo(void)
 				for (auto zone = 1; zone <= 24; ++zone) {
 					releaseZone(zone, false);
 				} // for ( auto zone = 1; zone <= 24; ++zone )
-			}   // else -> if ( ReceivedZonesToExplore )
+			} // else -> if ( ReceivedZonesToExplore )
 			navgraphLocker.unlock();
 			// Locked: clingo, WorldMutex
 			fillNavgraphNodesForASP(false);
@@ -197,15 +197,15 @@ AspPlannerThread::loopClingo(void)
 					else {
 						break;
 					} // else -> if ( swap )
-				}   // for ( bool swap = true; true; )
-			}     // for ( const auto& external : NavgraphDistances )
-		}       // if ( lastUpdate )
+				} // for ( bool swap = true; true; )
+			} // for ( const auto& external : NavgraphDistances )
+		} // if ( lastUpdate )
 		else {
 			for (const auto &external : NavgraphDistances) {
 				clingo->assign_external(external, true);
 			} // for ( const auto& external : NavgraphDistances )
-		}   // else -> if ( lastUpdate )
-	}     // if ( UpdateNavgraphDistances )
+		} // else -> if ( lastUpdate )
+	} // if ( UpdateNavgraphDistances )
 	else if (requests == 0 && Interrupt == InterruptSolving::Not) {
 		MutexLocker solvingLocker(&SolvingMutex);
 		// Locked: clingo, NavgraphDistanceMutex, SolvingMutex
@@ -221,7 +221,7 @@ AspPlannerThread::loopClingo(void)
 			// setup.)
 			return;
 		} // if ( StartSolvingGameTime == GameTime )
-	}   // else if ( requests == 0 && Interrupt == InterruptSolving::Not )
+	} // else if ( requests == 0 && Interrupt == InterruptSolving::Not )
 	navgraphLocker.unlock();
 	// Locked: clingo
 
@@ -291,7 +291,7 @@ AspPlannerThread::loopClingo(void)
 			// locationRobot->second != name )
 			addExternal(generateRobotLocationExternal(name, location));
 		} // else -> if ( robot.Doing.isValid() )
-	}   // for ( const auto& pair : Robots )
+	} // for ( const auto& pair : Robots )
 
 	for (const auto &pair : Machines) {
 		const auto &name(pair.first);
@@ -304,7 +304,7 @@ AspPlannerThread::loopClingo(void)
 			if (working) {
 				working = machine.BrokenUntil + working - GameTime;
 			} // if ( working )
-		}   // if ( machine.BrokenUntil )
+		} // if ( machine.BrokenUntil )
 
 		if (working) {
 			assert(machine.Storing.isValid());
@@ -314,7 +314,7 @@ AspPlannerThread::loopClingo(void)
 		else if (machine.Storing.isValid()) {
 			addExternal(generateMachineStoringExternal(name, machine.Storing));
 		} // else if ( machine.Storing.isValid() )
-	}   // for ( const auto& pair : Machines )
+	} // for ( const auto& pair : Machines )
 
 	for (const auto &machine : {"CS1", "CS2"}) {
 		const auto &info(Machines[machine]);
@@ -344,7 +344,7 @@ AspPlannerThread::loopClingo(void)
 		if (!product.Cap.empty()) {
 			addExternal(generateProductCapExternal(id, product.Cap));
 		} // if ( !product.Cap.empty() )
-	}   // for ( auto index = 0; index < static_cast<int>(Products.size()); ++index
+	} // for ( auto index = 0; index < static_cast<int>(Products.size()); ++index
 	// )
 	worldLocker.unlock();
 	// Locked: clingo
@@ -509,10 +509,10 @@ AspPlannerThread::shouldInterrupt(void)
 							                 threshold.count());
 							setInterrupt(InterruptSolving::High, "Delayed Task");
 						} // if ( GameTime > doing.EstimatedEnd + threshold.count() )
-					}   // if ( doing.isValid() )
-				}     // if ( pair.second.Alive )
-			}       // for ( const auto& pair : Robots )
-		}         // if ( now - lastCheck >= threshold )
+					} // if ( doing.isValid() )
+				} // if ( pair.second.Alive )
+			} // for ( const auto& pair : Robots )
+		} // if ( now - lastCheck >= threshold )
 
 		// Check down here, so we have released the locks!
 		if (Interrupt != InterruptSolving::Not) {
@@ -822,14 +822,14 @@ AspPlannerThread::addOrderToASP(const OrderInformation &order)
 			                               Clingo::String(color.Color)}),
 			             reason);
 		} // for ( auto ring = 1; ring <= 3; ++ring )
-	}   // for ( const auto& color : RingColors )
+	} // for ( const auto& color : RingColors )
 
 	for (auto qty = order.Quantity + 1; qty <= MaxQuantity; ++qty) {
 		for (auto ring = 1; ring <= 3; ++ring) {
 			for (const auto &location : RingLocations) {
 				queueRelease(generateMountRingExternal(location, order.Number, qty, ring), reason);
 			} // for ( const auto& location : RingLocations )
-		}   // for ( auto ring = 1; ring <= 3; ++ring )
+		} // for ( auto ring = 1; ring <= 3; ++ring )
 		for (const auto &location : CapLocations) {
 			queueRelease(generateMountCapExternal(location, order.Number, qty), reason);
 		} // for ( const auto& location : CapLocations )
@@ -887,7 +887,7 @@ AspPlannerThread::addOrderToASP(const OrderInformation &order)
 			for (const auto &location : RingLocations) {
 				queueRelease(generateMountRingExternal(location, order.Number, qty, ring), reason);
 			} // for ( const auto& location : RingLocations )
-		}   // for ( ; ring <= 3; ++ring )
+		} // for ( ; ring <= 3; ++ring )
 
 		OrderTaskMap.insert({{order.Number, qty}, std::move(tasks)});
 	} // for ( auto qty = 1; qty <= order.Quantity; ++qty )
@@ -981,7 +981,7 @@ splitParameters(string_view string)
 				else if (string[index] == '(') {
 					++count;
 				} // else if ( string[index] == '(' )
-			}   // for ( auto count = 1u, index = paranthesis + 1; count != 0; ++index )
+			} // for ( auto count = 1u, index = paranthesis + 1; count != 0; ++index )
 
 			const auto substrStart(paranthesis + 1), substrEnd(index - 1 - substrStart);
 			ret.push_back(Clingo::Function(std::string(string.substr(0, paranthesis)).c_str(),
@@ -1005,7 +1005,7 @@ splitParameters(string_view string)
 			assert(string[0] == '"');
 			ret.push_back(Clingo::String(std::string(string.substr(1, string.size() - 2))));
 		} // else -> if ( std::isdigit(string[0]) )
-	}   // if ( string.size() != 0 )
+	} // if ( string.size() != 0 )
 
 	return ret;
 }
@@ -1288,12 +1288,12 @@ AspPlannerThread::robotFinishedTask(const std::string &robot,
 			if (pair.second.Holding.ID > id.ID) {
 				--pair.second.Holding.ID;
 			} // if ( pair.second.Holding.ID > id.ID )
-		}   // for ( auto& pair : Robots )
+		} // for ( auto& pair : Robots )
 		for (auto &pair : Machines) {
 			if (pair.second.Storing.ID > id.ID) {
 				--pair.second.Storing.ID;
 			} // if ( pair.second.Storing.ID > id.ID )
-		}   // for ( auto& pair : Machines )
+		} // for ( auto& pair : Machines )
 		return;
 	};
 
