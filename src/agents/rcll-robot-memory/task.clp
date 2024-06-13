@@ -31,7 +31,7 @@
   ?state <- (state STEP-FINISHED)
   ?task <- (task (state running) (steps $?steps) (current-step ?id-finished) (name ?name))
   (step (id ?id-finished) (state finished))
-  ?step-next <- (step (id ?id-next&:(eq ?id-next 
+  ?step-next <- (step (id ?id-next&:(eq ?id-next
 					(nth$ (+ 1 (member$ ?id-finished ?steps)) ?steps)))
 		      (state inactive))
   =>
@@ -49,7 +49,7 @@
   ?task <- (task (state running) (steps $?steps) (current-step ?id-finished) (name ?task-name))
   (step (id ?id-finished) (state finished))
   ;there is no next task
-  (not (step (id ?id-next&:(eq ?id-next 
+  (not (step (id ?id-next&:(eq ?id-next
 			       (nth$ (+ 1 (member$ ?id-finished ?steps)) ?steps)))
 	     (state inactive)))
   =>

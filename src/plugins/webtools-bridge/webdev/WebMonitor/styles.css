@@ -46,13 +46,13 @@ html, body {
 }
 .container_header_element
 {
-   
+
     display: inline-block;
     border :none;
     position: relative;
 }
 
-div[id^="holding__"] 
+div[id^="holding__"]
 {
     overflow:hidden;
     position: absolute;
@@ -76,7 +76,7 @@ div[id^="lock_role__"].slave img
     height : 80px ;
 }*/
 
-div[id^="lock_role__"] 
+div[id^="lock_role__"]
 {
     position : absolute ;
     right: 0px;
@@ -135,23 +135,23 @@ div[id^="skills__"] p.done span.FAILED
 }
 
 .active-order{
-    border: 6px solid #000000;    
+    border: 6px solid #000000;
 }
 
 .products_cap{
-    
+
 	width: 50px;
     height: 5px;
 }
 
 .products_ring{
-    
+
 	width: 50px;
     height: 12px;
 }
 
 .products_base{
-    
+
 	width: 50px;
     height: 17px;
 }
@@ -196,7 +196,7 @@ div[id^="skills__"] p.done span.FAILED
 }
 
 .mps.wedgit{
-    
+
     border: 3px solid #73AD21;
     margin : 6px;
     display:block;
@@ -207,7 +207,7 @@ div[id^="skills__"] p.done span.FAILED
 .row_element{
     display: block;
     border : 3px ;
-    margin : 6px; 
+    margin : 6px;
     position: relative;
 }
 
@@ -224,11 +224,11 @@ div[id^="skills__"] p.done span.FAILED
     min-height: auto;
     min-width: auto;
     right: 0%;
-    
+
 }
 .mps_puck{
     min-height: 20px;
-    width: 10px; 
+    width: 10px;
 }
 
 .mps_exploration{
@@ -237,7 +237,7 @@ div[id^="skills__"] p.done span.FAILED
 
 
 .selected_color{
-    border: 6px solid #000000;    
+    border: 6px solid #000000;
 }
 
 img.done{
@@ -273,7 +273,7 @@ img.not_loaded{
     position: fixed;
     top : 0px;
     display: block;
-    
+
 }*/
 .game_info .col_element
 {

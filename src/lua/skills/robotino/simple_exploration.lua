@@ -52,7 +52,7 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    {"INIT",   "CORNER_0_0", cond=true},
-  
+
 }
 
 
@@ -60,7 +60,7 @@ function TURN1:init()
    self.args["motor_move"] = {
       ori = 1.570795,
       vel_rot = 0.2,
-	  
+
    }
 end
 
@@ -68,7 +68,7 @@ function TURN2:init()
 	self.args["motor_move"] = {
 	   ori = 1.570795,
 	   vel_rot = 0.2,
-	   
+
 	}
 end
 
@@ -76,7 +76,7 @@ function TURN3:init()
 	self.args["motor_move"] = {
 	   ori = 1.570795,
 	   vel_rot = 0.2,
-	   
+
 	}
 end
 

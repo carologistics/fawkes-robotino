@@ -257,4 +257,3 @@
   (assert (holding NONE))
 
 )
-

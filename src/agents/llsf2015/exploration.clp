@@ -4,7 +4,7 @@
 ;
 ;  Created: Fri Apr 26 18:38:18 2013 (Magdeburg)
 ;  Copyright  2013  Frederik Zwilling
-;             2013  Alexander von Wirth 
+;             2013  Alexander von Wirth
 ;             2013  Tim Niemueller [www.niemueller.de]
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
@@ -39,7 +39,7 @@
     (default (printout warn "NO EXPLORATION ROW DEFINED! UNABLE TO DO EXPLORATION!" crlf))
   )
   (printout t "At first, I am exploring the " ?row " row" crlf)
-  
+
 )
 
 (defrule exp-turn-line-over
@@ -184,7 +184,7 @@
     )
   )
   (if (eq 7 (length$ ?tf-transrot)) then
-    (synced-assert (str-cat "(found-tag (name " ?machine ") (side " ?side 
+    (synced-assert (str-cat "(found-tag (name " ?machine ") (side " ?side
                             ") (frame \"/map\") (trans (create$ "
                             (implode$ (subseq$ ?tf-transrot 1 3)) ")) "
                             " (rot (create$ " (implode$ (subseq$ ?tf-transrot 4 7))
@@ -225,7 +225,7 @@
 (defrule update-zone-info
   "Update zone info from ZoneInterface"
   ?zi <- (ZoneInterface (id "/explore-zone/info") (search_state ?state) (tag_id ?tag))
-  ?lzi <- (last-zoneinfo (tag-id ?old-tag) 
+  ?lzi <- (last-zoneinfo (tag-id ?old-tag)
     (search-state ?old-state&:(or (neq ?old-state ?state) (neq ?old-tag ?tag))))
   =>
   (retract ?lzi ?zi)
@@ -281,7 +281,7 @@
 
   (assert (state EXP_IDLE)
 	  (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?old))
-  )  
+  )
   (retract ?s ?skill-finish-state)
 )
 
@@ -318,7 +318,7 @@
 (defrule exp-explore-light-signal
   "Preparing recognition of the light signals after we arrived at the output side."
   (phase EXPLORATION)
-  ?final <- (skill-done (name "drive_to") (status FINAL|FAILED)) 
+  ?final <- (skill-done (name "drive_to") (status FINAL|FAILED))
   ?s <- (state EXP_DRIVE_TO_OUTPUT)
   (goalmachine ?zone)
   (zone-exploration (name ?zone) (machine ?machine))
@@ -332,7 +332,7 @@
 (defrule exp-explore-light-signal-finished
   "RobotinoLightInterface has recognized the light-signals => memorize light-signals for further rules and prepare to drive to the next machine."
   (phase EXPLORATION)
-  ?final <- (skill-done (name "mps_detect_signal") (status FINAL)) 
+  ?final <- (skill-done (name "mps_detect_signal") (status FINAL))
   ?l-signal <- (last-lights (red ?red) (yellow ?yellow) (green ?green))
   ?s <- (state EXP_DETECT_LIGHT)
   ?g <- (goalmachine ?zone)
@@ -353,7 +353,7 @@
 (defrule exp-explore-light-signal-failed
   "RobotinoLightInterface has *not* recognized the light-signals."
   (phase EXPLORATION)
-  ?final <- (skill-done (name "mps_detect_signal") (status FAILED)) 
+  ?final <- (skill-done (name "mps_detect_signal") (status FAILED))
   ?s <- (state EXP_DETECT_LIGHT)
   ?g <- (goalmachine ?zone)
   (zone-exploration (name ?zone) (machine ?machine))
@@ -369,7 +369,7 @@
 (defrule exp-explore-light-signal-wrong-signal
   "RobotinoLightInterface has recognized the light-signals => memorize light-signals for further rules and prepare to drive to the next machine."
   (phase EXPLORATION)
-  ?final <- (skill-done (name "mps_detect_signal") (status FINAL)) 
+  ?final <- (skill-done (name "mps_detect_signal") (status FINAL))
   ?l-signal <- (last-lights (red ?red) (yellow ?yellow) (green ?green))
   ?s <- (state EXP_DETECT_LIGHT)
   ?g <- (goalmachine ?zone)
@@ -414,7 +414,7 @@
     (retract ?s ?g)
     (assert (state EXP_FOUND_NEXT_MACHINE)
 	    (exp-next-machine (nth$ ?ind ?row)))
-    
+
     else
     ;there is not machine on the line left
     (printout t "No next machine on the line" crlf)
@@ -428,7 +428,7 @@
 
 (defrule exp-find-next-machine-with-already-found-tag
   "When there is a mps with found tag that is not recognized, explore it first."
-  (declare (salience ?*PRIORITY-EXP-PARTLY-EXPLORED*)) 
+  (declare (salience ?*PRIORITY-EXP-PARTLY-EXPLORED*))
   (phase EXPLORATION)
   (exp-tactic NEAREST)
   ?s <- (state EXP_IDLE)
@@ -452,7 +452,7 @@
 
 (defrule exp-find-next-machine-nearest
   "Find nearest machine close to last machine. When there is a mps with found tag that is not recognized, explore it first."
-  (declare (salience ?*PRIORITY-EXP-NEAREST*)) 
+  (declare (salience ?*PRIORITY-EXP-NEAREST*))
   (phase EXPLORATION)
   (exp-tactic NEAREST)
   ?s <- (state EXP_IDLE)
@@ -460,7 +460,7 @@
   (team-color ?team-color)
   (zone-exploration (name ?old) (x ?x) (y ?y) (team ?team))
   =>
-  ; what is the fewest times a zone was searched 
+  ; what is the fewest times a zone was searched
   (bind ?min-times-searched 1000)
   (delayed-do-for-all-facts ((?me zone-exploration))
     (and (eq ?me:team ?team-color) (not ?me:recognized)
@@ -638,7 +638,7 @@
     )
     (assert (exp-matching (mtype ?mtype) (red ?red) (yellow ?yellow) (green ?green)))
   )
-  (assert (exp-machines-initialized) 
+  (assert (exp-machines-initialized)
 	  (have-exp-info))
 )
 

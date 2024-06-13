@@ -31,7 +31,7 @@ LDFLAGS  += $(LDFLAGS_OPENCV)
 
 LDFLAGS  += "-lopencv_core"
 LDFLAGS  += "-lopencv_imgproc"
-LDFLAGS  += "-lopencv_objdetect" 
+LDFLAGS  += "-lopencv_objdetect"
 LDFLAGS  += "-lopencv_highgui"
 
 ifeq ($(HAVE_TF),1)

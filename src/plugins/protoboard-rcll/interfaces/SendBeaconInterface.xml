@@ -29,4 +29,3 @@
     <field type="float" name="orientation">Robot's orientation (yaw) on the field</field>
   </message>
 </interface>
-

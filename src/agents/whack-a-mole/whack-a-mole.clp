@@ -70,7 +70,7 @@
   ?sf <- (state SEARCHING)
   ?signal <- (signal (type waitforhistory))
   (time $?now)
-  
+
   =>
   (modify ?signal (time ?now))
   (retract ?skf ?sf)
@@ -89,5 +89,5 @@
 ;  (declare (salience ?*PRIORITY-HIGH*))
 ;  ?skf <- (skill (name "drive_to_closest_light") (status FINAL))
 ;  =>
-;  (modify ?skf (status FAILED))  
+;  (modify ?skf (status FAILED))
 ;)

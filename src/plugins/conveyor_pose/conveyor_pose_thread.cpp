@@ -547,7 +547,7 @@ ConveyorPoseThread::loop()
 				syncpoint_ready_for_icp_->emit(name());
 			}
 		} // ! cfg_record_model_
-	}   // update_input_cloud()
+	} // update_input_cloud()
 }
 
 bool

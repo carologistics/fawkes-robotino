@@ -6,7 +6,7 @@
 COMPETITION_NAME=testruns
 
 # Number of games for each team pair
-NUM_RUNS=1 
+NUM_RUNS=1
 
 # Run Gazebo headless (without gui)
 HEADLESS=false

@@ -735,9 +735,9 @@ GripperAX12AThread::holds_puck()
 
 /** Handle config changes
  */
-void GripperAX12AThread::config_value_erased(const char *path){};
-void GripperAX12AThread::config_tag_changed(const char *new_tag){};
-void GripperAX12AThread::config_comment_changed(const fawkes::Configuration::ValueIterator *v){};
+void GripperAX12AThread::config_value_erased(const char *path) {};
+void GripperAX12AThread::config_tag_changed(const char *new_tag) {};
+void GripperAX12AThread::config_comment_changed(const fawkes::Configuration::ValueIterator *v) {};
 void
 GripperAX12AThread::config_value_changed(const fawkes::Configuration::ValueIterator *v)
 {

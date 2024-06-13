@@ -30,7 +30,7 @@
 
 
 //=================================================DEMO start
-  
+
 
   var listener3 = new ROSLIB.Topic({
     ros : ros,
@@ -42,25 +42,25 @@
 
   listener3.subscribe(function(message) {
 
-    var bbDiv = document.getElementById("clips"); 
+    var bbDiv = document.getElementById("clips");
 
     if(! this.init ){
       this.init =true;
 
       var title = document.createElement("h4");
       title.innerHTML = listener3.name ;
-      
+
       var content = document.createElement("div");
       content.id= listener3.name;
-      
+
       bbDiv.appendChild(title);
       bbDiv.appendChild(content);
     }
 
-    var data_div = document.getElementById(listener3.name); 
+    var data_div = document.getElementById(listener3.name);
     data_div.innerHTML = JSON.stringify(message, null, 5);
 
-   
+
   });
 
 
@@ -75,25 +75,25 @@
 
   clip_State.subscribe(function(message) {
 
-    var bbDiv = document.getElementById("clips"); 
+    var bbDiv = document.getElementById("clips");
 
     if(! this.init ){
       this.init =true;
 
       var title = document.createElement("h4");
       title.innerHTML = clip_State.name ;
-      
+
       var content = document.createElement("div");
       content.id= clip_State.name;
-      
+
       bbDiv.appendChild(title);
       bbDiv.appendChild(content);
     }
 
-    var data_div = document.getElementById(clip_State.name); 
+    var data_div = document.getElementById(clip_State.name);
     data_div.innerHTML = JSON.stringify(message, null, 5);
 
-   
+
   });
 
 </script>

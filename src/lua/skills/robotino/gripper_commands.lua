@@ -54,7 +54,7 @@ function input_ok()
     if not fsm.vars.x or not fsm.vars.y or not fsm.vars.z then
       print("Missing coordinates " .. fsm.vars.x .. " " .. fsm.vars.y .. " " ..fsm.vars.z)
       return false
-    else 
+    else
       return true
     end
   end
@@ -93,7 +93,7 @@ function is_error()
   if msgid == nil then
     return false
   end
-  if msgid ~= fsm.vars.msgid then 
+  if msgid ~= fsm.vars.msgid then
     return false
   end
   status = arduino:status()

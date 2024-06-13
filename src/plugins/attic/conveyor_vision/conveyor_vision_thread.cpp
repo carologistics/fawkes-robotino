@@ -226,9 +226,9 @@ ConveyorVisionThread::loop()
 //}
 
 // config handling
-void ConveyorVisionThread::config_value_erased(const char *path){};
-void ConveyorVisionThread::config_tag_changed(const char *new_tag){};
-void ConveyorVisionThread::config_comment_changed(const fawkes::Configuration::ValueIterator *v){};
+void ConveyorVisionThread::config_value_erased(const char *path) {};
+void ConveyorVisionThread::config_tag_changed(const char *new_tag) {};
+void ConveyorVisionThread::config_comment_changed(const fawkes::Configuration::ValueIterator *v) {};
 void
 ConveyorVisionThread::config_value_changed(const fawkes::Configuration::ValueIterator *v)
 {

@@ -8,7 +8,7 @@ usage()
 cat << EOF
 usage: $0 options
 
-This scrpit launches a Rosbridge server on a certian port and and a tf2_wed_republisher node 
+This scrpit launches a Rosbridge server on a certian port and and a tf2_wed_republisher node
 
 OPTIONS:
    -h             Show this message
@@ -40,9 +40,9 @@ do
             MY_ROS_MASTER="http://localhost:$OPTARG"
         else
             MY_ROS_MASTER=$OPTARG
-        fi 
+        fi
              ;;
-         
+
          ?)
              usage
              exit
@@ -58,12 +58,12 @@ echo $ROSBRIDGE_PORT
 OPEN_COMMAND="gnome-terminal"
 
 
-# #Launch the Rosbridge and Tf2_web_republisher instace for each ros core 
+# #Launch the Rosbridge and Tf2_web_republisher instace for each ros core
 
 OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"export ROS_MASTER_URI=$MY_ROS_MASTER; roslaunch rosbridge_server rosbridge_websocket.launch port:=$ROSBRIDGE_PORT; exec bash\"'"
 OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"export ROS_MASTER_URI=$MY_ROS_MASTER; rosrun tf2_web_republisher tf2_web_republisher; exec bash\"'"
 OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"export ROS_MASTER_URI=$MY_ROS_MASTER; rosrun arrow_marker arrow; exec bash\"'"
- 
+
 
 eval $OPEN_COMMAND
 
@@ -71,4 +71,4 @@ eval $OPEN_COMMAND
 #TODO:
 #check the ros running distro and adapt commands for feurte (like rosrun and the bridgeport)
 #let the port be passed to the ROSBRIDGE launch script
-#Try to idnetify which robot we will ge the visualization_marker topic from and either start it 
+#Try to idnetify which robot we will ge the visualization_marker topic from and either start it

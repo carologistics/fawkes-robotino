@@ -61,10 +61,10 @@
   (tag-matching (tag-id ?tag) (machine ?machine) (side ?side))
   (not (navgraph-added-for-mps (name ?machine)))
   =>
-  (printout t "Add Tag Nr." ?tag " (" ?machine " " ?side 
+  (printout t "Add Tag Nr." ?tag " (" ?machine " " ?side
 	    ") we got from another bot to Navgraph-generation"  crlf)
   (printout warn "TODO: check which zone contains the machine, so we don't try to find a tag there again"  crlf)
-  
+
   (navgraph-add-all-new-tags)
 )
 
@@ -84,7 +84,7 @@
   (goalmachine ?zone-intended)
   =>
   ; Find zone by center of the mps
-  (bind ?center (utils-get-2d-center (nth$ 1 ?pos-i) (nth$ 2 ?pos-i) 
+  (bind ?center (utils-get-2d-center (nth$ 1 ?pos-i) (nth$ 2 ?pos-i)
                                      (nth$ 1 ?pos-o) (nth$ 2 ?pos-o)))
   (bind ?zone-y (round-down (/ (nth$ 2 ?center) ?*ZONE-HEIGHT*)))
   (bind ?cyan-x (nth$ 1 ?center))
@@ -96,14 +96,14 @@
   (if (< (nth$ 1 ?center) 0) then
     (bind ?zone (+ ?zone 12))
   )
-  
+
   (printout t "mps " ?mps " is in zone " ?zone crlf)
 
   (bind ?zone-color-right FALSE)
   (do-for-fact ((?ze zone-exploration)) (eq ?ze:name (sym-cat Z ?zone))
     (if (eq ?ze:team ?team-color) then
       (if (neq (sym-cat Z ?zone) ?zone-intended) then
-        (printout t "That is behind the zone I currently explore (" 
+        (printout t "That is behind the zone I currently explore ("
                   ?zone-intended ")" crlf)
       )
       (synced-modify ?ze still-to-explore FALSE

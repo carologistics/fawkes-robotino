@@ -23,7 +23,7 @@ CFLAGS += $(CFLAGS_CPP11)
 OBJS_protoboard_rcll = rcll_receiving.o rcll_sending.o plugin.o
 OBJS_all = $(OBJS_protoboard_rcll)
 
-PLUGINS_all = $(PLUGINDIR)/protoboard-rcll.$(SOEXT) 
+PLUGINS_all = $(PLUGINDIR)/protoboard-rcll.$(SOEXT)
 PLUGINS_build = $(PLUGINS_all)
 
 include $(BUILDSYSDIR)/base.mk

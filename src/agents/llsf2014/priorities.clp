@@ -40,7 +40,7 @@
   ?*PRIORITY-LOAD-T2-WITH-S0* = 55
   ?*PRIORITY-DELIVER-HOLDING* = 5
   ?*PRIORITY-LOAD-HOLDING-S2* = 5
-  
+
 
   ; tast execution order priorities
   ; (if the first subtasks are already complete, don't do them again)

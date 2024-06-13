@@ -22,6 +22,6 @@
     (domain-effect
       (part-of visit) (predicate visited) (param-names to))
   )
-  
+
   (path-load "rcll/refbox.clp")
 )

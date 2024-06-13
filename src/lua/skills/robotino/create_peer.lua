@@ -97,4 +97,3 @@ function SEND_MSG:init()
    end
    peer_iface:msgq_enqueue_copy(msg)
 end
-

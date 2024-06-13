@@ -21,14 +21,14 @@ include $(BUILDSYSDIR)/clips.mk
 include $(BUILDSYSDIR)/boost.mk
 
 LIBS_webtools_bridge = fawkescore fawkesutils fawkesaspects fvutils \
-                       fawkestf fawkesinterface fawkesblackboard 
+                       fawkestf fawkesinterface fawkesblackboard
 OBJS_webtools_bridge = webtools_bridge_plugin.o webtools_bridge_thread.o \
                        event_emitter.o callable.o serializer.o \
                        websocket_server.o web_session.o proxy_session.o bridge_manager.o \
                        blackboard_processor.o rosbridge_proxy_processor.o clips_processor.o \
                        subscription_capability_manager.o subscription_capability.o \
                        advertisment_capability_manager.o advertisment_capability.o	\
-                       service_capability_manager.o 
+                       service_capability_manager.o
 
 OBJS_all    = $(OBJS_webtools_bridge)
 PLUGINS_all = $(PLUGINDIR)/webtools-bridge.$(SOEXT)
@@ -48,8 +48,8 @@ endif
 CFLAGS_CPP11 += -std=c++11 -D_WEBSOCKETPP_CPP11_STL_
 
 ifeq ($(HAVE_TF)$(HAVE_CLIPS)$(HAVE_CPP11)$(HAVE_WEBSOCKETPP)$(HAVE_RAPIDJSON),11111)
-  CFLAGS  += $(CFLAGS_TF) $(CFLAGS_CLIPS) $(CFLAGS_CPP11) 
-  LDFLAGS += $(LDFLAGS_TF) 
+  CFLAGS  += $(CFLAGS_TF) $(CFLAGS_CLIPS) $(CFLAGS_CPP11)
+  LDFLAGS += $(LDFLAGS_TF)
 
   PLUGINS_gui = $(PLUGINS_all)
 else
@@ -73,7 +73,7 @@ endif
 ifeq ($(OBJSSUBMAKE),1)
 gui: $(WARN_TARGETS)
 .PHONY: warning_tf warning_ros warning_geometry_msgs warning_cpp11 warning_clips warning_websocketpp
-warning_tf: 
+warning_tf:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting webtools-bridge libs" \
                          "$(TNORMAL) (tf not available)"
 warning_cpp11:

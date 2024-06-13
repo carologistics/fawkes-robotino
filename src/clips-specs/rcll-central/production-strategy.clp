@@ -762,7 +762,7 @@
 
 (deffunction production-strategy-get-cutoff-complexity (?comp)
   (switch ?comp
-  (case C0 then (return ?*C0-CUTOFF*)) 
+  (case C0 then (return ?*C0-CUTOFF*))
   (case C1 then (return ?*C1-CUTOFF*))
   (case C2 then (return ?*C2-CUTOFF*))
   (case C3 then (return ?*C3-CUTOFF*))
@@ -791,7 +791,7 @@
 (defrule production-strategy-reduce-order-time-limit
   ?limit <- (wm-fact (key strategy meta production-order-time-limit args? com ?comp) (value ~0))
   (wm-fact (key refbox game-time) (values ?gt&:(eq (* 60 (production-strategy-get-cutoff-complexity ?comp)) ?gt)))
-  => 
+  =>
   (modify ?limit (value 0))
 )
 
@@ -1395,7 +1395,3 @@
   )
   (retract ?wf)
 )
-
-
-
-

@@ -31,9 +31,9 @@ depends_interfaces = {
    {v = "robotino_sensor", type = "RobotinoSensorInterface", id="Robotino"} -- Interface to read I/O ports
  }
 
-documentation      = [==[ 
+documentation      = [==[
 aligns to a machine and puts a product on the conveyor.
-It will get the offsets and the align distance for the machine 
+It will get the offsets and the align distance for the machine
 from the navgraph
 
 Parameters:

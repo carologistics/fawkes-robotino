@@ -64,7 +64,7 @@ local LINE_LENGTH_MIN=0.64
 local LINE_LENGTH_MAX=0.71
 local MAX_ORI=30 -- in degrees
 
--- function to find the closest LL's direction 
+-- function to find the closest LL's direction
 -- which fulfills the following criteria:
 -- visibility history over MIN_VIS_HIST_LINE
 -- minimum distance to bot
@@ -219,7 +219,7 @@ function GOTO_SHELF:init()
       self.fsm:set_error("no shelf side set")
       self.fsm.vars.error = true
    end
-   
+
 
    local target_pos_cp = { x = gripper_adjust_x_distance,
                            y = 0.0,
@@ -235,9 +235,9 @@ function GOTO_SHELF:init()
    target_pos_bl.y = target_pos_bl.y + dist_y * laserline_direction.y
 
    self.fsm.vars.target_pos_odom = tfm.transform6D(target_pos_bl, "base_link", "odom")
-   
+
   self.args["motor_move"] =
-	{ y = dist_y * laserline_direction.y, 
+	{ y = dist_y * laserline_direction.y,
     x = dist_y * laserline_direction.x,
 		tolerance = { x=0.002, y=0.002, ori=0.01 }
 	}
@@ -271,4 +271,3 @@ end
 function LEAVE_SHELF:init()
    self.args["motor_move"].x = -0.2
 end
-

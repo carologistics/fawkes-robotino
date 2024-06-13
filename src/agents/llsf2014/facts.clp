@@ -212,7 +212,7 @@
   (refbox-state WAIT_START)
   (game-time (create$ 0 0))
   (game-duration (* 15 60))
-  
+
   (timer (name beacon) (time (create$ 0 0)) (seq 1))
   (timer (name exploration-finished) (time (create$ 0 0)) (seq 1))
   (timer (name send-worldmodel-sync) (time (create$ 0 0)) (seq 1))
@@ -221,7 +221,7 @@
 
   (pose (x 0.0) (y 0.0))
   (puck-in-gripper FALSE)
-  
+
   ; Input storage per team color
   (input-storage CYAN Ins1 0 0)
   (input-storage MAGENTA Ins2 0 0)

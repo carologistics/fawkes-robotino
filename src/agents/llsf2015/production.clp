@@ -107,7 +107,7 @@
           (state ~DOWN&~BROKEN))
   (ring-station (name ?rs) (bases-loaded ?bases&:(< ?bases 3)))
   (found-tag (name ?rs))
-  (machine (mtype BS) 
+  (machine (mtype BS)
     (name ?bs) (team ?team-color)
     (state ~DOWN&~BROKEN))
   (found-tag (name ?bs))
@@ -145,7 +145,7 @@
     (state ~DOWN&~BROKEN))
   (ring-station (name ?rs) (bases-loaded ?bases&:(< ?bases 3)))
   ;check that the task was not rejected before
-  (not (and 
+  (not (and
     (task (name fill-rs) (state rejected) (id ?rej-id))
     (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 1))) (machine ?rs) (machine-feature SLIDE))
   ))
@@ -154,7 +154,7 @@
   =>
   (printout t "PROD: INSERT unknown base " ?product-id " into " ?rs crlf)
   (bind ?task-id (random-id))
-  (assert 
+  (assert
     (task (name fill-rs) (id ?task-id) (state proposed)
       (steps (create$ (+ ?task-id 1)))
       (priority ?*PRIORITY-PREFILL-RS*))
@@ -179,7 +179,7 @@
     (state ~DOWN&~BROKEN))
   (ring-station (name ?rs) (bases-loaded ?bases&:(< ?bases 3)))
   ;check that the task was not rejected before
-  (not (and 
+  (not (and
     (task (name fill-rs) (state rejected) (id ?rej-id))
     (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 1))) (machine ?rs) (machine-feature SLIDE))
   ))
@@ -188,7 +188,7 @@
   =>
   (printout t "PROD: INSERT unintentionally holding base " ?product-id " into " ?rs crlf)
   (bind ?task-id (random-id))
-  (assert 
+  (assert
     (task (name fill-rs) (id ?task-id) (state proposed)
       (steps (create$ (+ ?task-id 1)))
       (priority ?*PRIORITY-PREFILL-RS-WITH-HOLDING-BASE*))
@@ -221,7 +221,7 @@
       (task-priority ?*PRIORITY-DISCARD-UNKNOWN*))
   )
 )
-  
+
 (defrule prod-produce-c0
   "Produce a C0"
   (declare (salience ?*PRIORITY-PRODUCE-C0*))
@@ -241,7 +241,7 @@
 ;      (cap-station (name ?cs) (assigned-cap-color ?cap-color)))
 ;  )
   (found-tag (name ?cs))
-  (machine (mtype BS) 
+  (machine (mtype BS)
     (name ?bs) (team ?team-color)
     (state ~DOWN&~BROKEN))
   (found-tag (name ?bs))
@@ -490,7 +490,7 @@
     (needed-task-lock (task-id ?task-id) (action FILL_CAP) (place ?cs))
   )
 )
-  
+
 (defrule prod-find-missing-mps-exploration-catch-up
   "If we have not found all mps until the production phase, we have to find them now."
   (declare (salience ?*PRIORITY-FIND-MISSING-MPS*))
@@ -502,7 +502,7 @@
   (machine (name ?missing-mps) (team ?team-color) (mtype ~RS))
   (not (found-tag (name ?missing-mps)))
   ; zone-to-explore
-  ?z-f <- (zone-exploration (name ?zone) (machine ~UNKNOWN) 
+  ?z-f <- (zone-exploration (name ?zone) (machine ~UNKNOWN)
                             (still-to-explore TRUE) (team ?team-color)
                             (incoming $?i&~:(member$ FIND_TAG ?i))
                             (times-searched ?times-searched))
@@ -515,7 +515,7 @@
 	    (step (name find-tag) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 1))) (zone ?zone))))
   (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-FIND-MISSING-MPS*))))
   =>
-  (printout t "PROD: " ?missing-mps " still not found!" 
+  (printout t "PROD: " ?missing-mps " still not found!"
             " Searching for it in zone " ?zone crlf)
   (bind ?task-id (random-id))
   (assert (task (name exploration-catch-up) (id ?task-id) (state proposed)

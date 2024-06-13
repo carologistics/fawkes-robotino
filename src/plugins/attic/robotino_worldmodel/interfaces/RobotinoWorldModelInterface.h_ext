@@ -51,7 +51,7 @@ class RobotinoWorldModelInterface : public Interface
   static const uint32_t r1;
   static const uint32_t r2;
 
-  /** 
+  /**
         Enumeration for the type of a machine
        */
   typedef enum {
@@ -68,7 +68,7 @@ class RobotinoWorldModelInterface : public Interface
   } machine_type_t;
   const char * tostring_machine_type_t(machine_type_t value) const;
 
-  /** 
+  /**
         States describe which pucks are currently located at the
         machine and the
         state of the machine itsself.

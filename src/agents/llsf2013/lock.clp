@@ -26,7 +26,7 @@
   (retract ?i)
   (assert (master-last-seen ?now)
 	  (lock-role SLAVE)
-  )  
+  )
 )
 
 ;;;;MASTER/SLAVE selection;;;;
@@ -87,7 +87,7 @@
   (modify ?s (time ?now) (seq (+ ?seq 1)))
   (delayed-do-for-all-facts ((?lock lock)) TRUE
     (if (or (and (eq ?role MASTER) (or (eq ?lock:type ACCEPT) (eq ?lock:type REFUSE) (eq ?lock:type RELEASE_RVCD)))
-	    (and (eq ?role SLAVE) (or (eq ?lock:type GET) (eq ?lock:type RELEASE)))) 
+	    (and (eq ?role SLAVE) (or (eq ?lock:type GET) (eq ?lock:type RELEASE))))
       then
       ;(printout t "   type " ?lock:type " of " ?lock:resource " from agent " ?lock:agent crlf)
       (bind ?lock-msg (pb-create "llsf_msgs.LockMessage"))
@@ -159,7 +159,7 @@
   (declare (salience ?*PRIORITY-LOCK-HIGH*))
   (lock-role MASTER)
   ?l <- (lock (type GET) (agent ?a) (resource ?r))
-  ?lm <- (locked-resource (resource ?r) (agent ~?a))	
+  ?lm <- (locked-resource (resource ?r) (agent ~?a))
   =>
   (assert (lock (type REFUSE) (agent ?a) (resource ?r)))
   (if (not (eq ?a ?*ROBOT-NAME*)) then
@@ -239,14 +239,14 @@
 
 (defrule lock-delete-all-locks-when-changing-the-phase
   (declare (salience ?*PRIORITY-HIGH*))
-  (change-phase ?new-phase) 
+  (change-phase ?new-phase)
   =>
   (delayed-do-for-all-facts ((?lock lock)) TRUE
     (retract ?lock)
   )
   (delayed-do-for-all-facts ((?lock locked-resource)) TRUE
     (retract ?lock)
-  ) 
+  )
 )
 
 (defrule lock-delete-locks-of-lost-robot

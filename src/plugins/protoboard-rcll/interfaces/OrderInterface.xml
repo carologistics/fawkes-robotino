@@ -48,4 +48,3 @@
     <field type="uint32" name="quantity_delivered_magenta">How many were delivered by Magenta</field>
   </data>
 </interface>
-

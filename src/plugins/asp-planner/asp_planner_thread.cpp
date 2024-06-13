@@ -119,7 +119,7 @@ AspPlannerThread::gameTimeCallback(const bsoncxx::document::view &document)
 		else if (phase == "POST_GAME") {
 			GameTime = -1;
 		} // else if ( phase == "POST_GAME" )
-	}   // try
+	} // try
 	catch (const std::exception &e) {
 		logger->log_error(LoggingComponent,
 		                  "Exception while updating game time: %s\n%s",
@@ -190,8 +190,8 @@ AspPlannerThread::machineCallback(const bsoncxx::document::view &document)
 				else if (diff <= -8) {
 					setInterrupt(InterruptSolving::Normal, "Machine earlier up again");
 				} // else if ( diff <= -8 )
-			}   // if (info.State == "BROKEN" || info.State == "DOWN" )
-		}     // if ( state != Machines[machine].State )
+			} // if (info.State == "BROKEN" || info.State == "DOWN" )
+		} // if ( state != Machines[machine].State )
 		info.State = std::move(state);
 	} // try
 	catch (const std::exception &e) {
@@ -254,7 +254,7 @@ AspPlannerThread::orderCallback(const bsoncxx::document::view &document)
 			                  MaxQuantity,
 			                  quantity);
 		} // if ( quantity > MaxQuantity )
-	}   // try
+	} // try
 	catch (const std::exception &e) {
 		logger->log_error(LoggingComponent,
 		                  "Exception while extracting an order: %s\n%s",
@@ -292,8 +292,8 @@ AspPlannerThread::ringColorCallback(const bsoncxx::document::view &document)
 			for (const auto &pair : Orders) {
 				addOrderToASP(pair.second);
 			} // for ( const auto& pair : Orders )
-		}   // if ( RingColors.size() == 4 )
-	}     // try
+		} // if ( RingColors.size() == 4 )
+	} // try
 	catch (const std::exception &e) {
 		logger->log_error(LoggingComponent,
 		                  "Exception while setting ring color: %s\n%s",
@@ -337,7 +337,7 @@ AspPlannerThread::teamColorCallback(const bsoncxx::document::view &document)
 			TeamColor = color == "CYAN" ? "C" : "M";
 			setTeam();
 		} // if ( color != "nil" )
-	}   // try
+	} // try
 	catch (const std::exception &e) {
 		logger->log_error(LoggingComponent,
 		                  "Exception while updating the team color: %s\n%s",
@@ -386,7 +386,7 @@ AspPlannerThread::zonesCallback(const bsoncxx::document::view &document)
          * left. So the std::find has to search a smaller range. */
 				std::swap(*iter, *--end);
 			} // else -> if ( iter == end )
-		}   // for ( auto zone = 1; zone <= 24; ++zone )
+		} // for ( auto zone = 1; zone <= 24; ++zone )
 		fillNavgraphNodesForASP(false);
 	} // try
 	catch (const std::exception &e) {
@@ -567,8 +567,8 @@ AspPlannerThread::loop(void)
 					robotPlan.Tasks[robotPlan.FirstNotDone].Begun = false;
 					robotPlan.CurrentTask.clear();
 				} // if ( info.Doing.isValid() )
-			}   // if ( info.Alive && now - info.LastSeen >= timeOut )
-		}     // for ( auto& pair : Robots )
+			} // if ( info.Alive && now - info.LastSeen >= timeOut )
+		} // for ( auto& pair : Robots )
 
 		for (auto &pair : Machines) {
 			auto &info(pair.second);
@@ -583,8 +583,8 @@ AspPlannerThread::loop(void)
 				                 GameTime);
 				info.WorkingUntil = 0;
 			} // if ( info.BrokenUntil && info.BrokenUntil <= GameTime )
-		}   // for ( auto& pair : Machines )
-	}     // Block for iteration over Robots & Machines
+		} // for ( auto& pair : Machines )
+	} // Block for iteration over Robots & Machines
 
 	if (GameTime == -1) {
 		static bool once = true;
@@ -623,7 +623,7 @@ AspPlannerThread::loop(void)
 						if (!noAdd) {
 							sum += idle;
 						} // if ( !noAdd )
-					}   // if ( task.Begin > last )
+					} // if ( task.Begin > last )
 					else {
 						idleString[0] = 0;
 					} // else -> if ( task.Begin > last )
@@ -642,7 +642,7 @@ AspPlannerThread::loop(void)
 						logger->log_info(LoggingComponent, "==== Game end ====");
 						noAdd = true;
 					} // if ( task.End >= ProductionEnd && !noAdd )
-				}   // for ( const auto& task : pair.second.Tasks )
+				} // for ( const auto& task : pair.second.Tasks )
 
 				logger->log_info(LoggingComponent, "Total idle time for %s: %d", pair.first.c_str(), sum);
 				totalSum += sum;
@@ -664,7 +664,7 @@ AspPlannerThread::loop(void)
 						hold     = false;
 						location = iter->first;
 					} // if ( iter->second.Storing.ID == id )
-				}   // for ( auto iter = Machines.begin(); iter != Machines.end() &&
+				} // for ( auto iter = Machines.begin(); iter != Machines.end() &&
 				// !found; ++iter )
 
 				for (auto iter = Robots.begin(); iter != Robots.end() && !found; ++iter) {
@@ -673,7 +673,7 @@ AspPlannerThread::loop(void)
 						hold     = true;
 						location = iter->first;
 					} // if ( iter->second.Holding.ID == id )
-				}   // for ( auto iter = Robots.begin(); iter != Robots.end() && !found;
+				} // for ( auto iter = Robots.begin(); iter != Robots.end() && !found;
 				// ++iter )
 
 				logger->log_info(LoggingComponent,
@@ -687,8 +687,8 @@ AspPlannerThread::loop(void)
 				                 hold ? "hold   by" : "stored on",
 				                 location.data());
 			} // for ( const auto& product : Products )
-		}   // if ( once )
-	}     // if ( GameTime == -1 )
+		} // if ( once )
+	} // if ( GameTime == -1 )
 	else {
 		loopPlan();
 		loopClingo();

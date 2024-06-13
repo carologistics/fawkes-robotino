@@ -2,7 +2,7 @@
 
 function Map() {
 
-  var that = this ; 
+  var that = this ;
 
     var $map = $("<div>  </div>") .addClass("wedgit") .attr("id" , "map") ;
     $(window.$layout_container).append($map) ;//the wedgit container
@@ -19,7 +19,7 @@ function Map() {
                     z : 25
                     }
     });
-  
+
 
 
 
@@ -47,7 +47,7 @@ function Map() {
 
 
   this . visualize_map = function( robot_info ){
-     
+
       var gridClient = new ROS3D.OccupancyGridClient({
         ros : robot_info .connection ,
         rootObject : that. viewer.scene
@@ -65,7 +65,7 @@ function Map() {
           rate : 10
       });
 
-      //=============================================================Navgraph Marker Array to show the 
+      //=============================================================Navgraph Marker Array to show the
       var markerArrayClient = new ROS3D.MarkerArrayClient({
         ros : robot_info.connection ,
         tfClient : tfClient ,
@@ -87,9 +87,9 @@ function Map() {
     //       rate : 10
     //   });
 
-    //   var myMapObject = that ; 
+    //   var myMapObject = that ;
 
-    //   //=============================================================Navgraph Marker Array to show the 
+    //   //=============================================================Navgraph Marker Array to show the
     //   var LaserScan = new ROS3D.LaserScan({
     //     ros : robot_info.connection ,
     //     tfClient : tfClient ,
@@ -100,7 +100,7 @@ function Map() {
 
     // };
 
-   
+
 // /fawkes_scans/Laser_urg_filtered_360
 
     // new ROS3D.LaserScan = function(options) {
@@ -118,7 +118,7 @@ function Map() {
     //         messageType : 'sensor_msgs/LaserScan'
     //       });
 
-   
+
 }
 
 
@@ -127,4 +127,3 @@ function Map() {
 // /colli_cells_mid yellow
 // /colli_cells_near orang
 // /colli_cells_occupied red
-

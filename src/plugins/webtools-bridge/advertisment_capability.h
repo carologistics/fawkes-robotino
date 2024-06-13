@@ -130,7 +130,7 @@ protected:
 		Request() : id("")
 		{
 		}
-		~Request(){};
+		~Request() {};
 		std::string id; /**< id given to request. Unique across a single
                        advertisement instance*/
 	};

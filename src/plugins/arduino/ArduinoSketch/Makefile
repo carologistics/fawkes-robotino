@@ -1,3 +1,15 @@
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Library General Public License for more details.
+#
+# Read the full text in the LICENSE.GPL file in the doc directory.
+
 .PHONY: build flash clean accstepper cleanall comm verify safe_flash
 
 # important immediate assignment (only if other makefiles are somehow included)
@@ -22,7 +34,7 @@ clean:
 cleanall: clean
 	rm -rf libraries
 
-comm: 
+comm:
 	minicom -D $(DEV_ARDUINO)
 
 verify: Compiled/ArduinoSketch.ino.hex
@@ -30,4 +42,3 @@ verify: Compiled/ArduinoSketch.ino.hex
 
 safe_flash: Compiled/ArduinoSketch.ino.hex # flash only if verify goes wrong
 	avrdude  -patmega328p -carduino -P$(DEV_ARDUINO) -B 10 -F -Uflash:v:$<:i || avrdude  -patmega328p -carduino -P$(DEV_ARDUINO) -B 10 -F -Uflash:w:$<:i
-

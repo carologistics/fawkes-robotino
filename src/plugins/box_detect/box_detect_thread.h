@@ -2,7 +2,7 @@
  *  box_detect_thread.hpp - box_detect
  *
  *  Plugin created: May 30 21:54:46 2023
- * 
+ *
  *  Copyright  2023 Daniel Honies
  *
  ****************************************************************************/

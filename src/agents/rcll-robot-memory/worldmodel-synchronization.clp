@@ -165,7 +165,7 @@
 (deffunction worldmodel-sync-apply-key-value-msg (?pair)
   ; This function applies the modification of the worldmodel
   ; sent with a single key-value message
-  
+
   (bind ?synced-templates (create$))
   ;get list of all templates that are synced
   (do-for-fact ((?wm-sync-info wm-sync-info)) TRUE
@@ -219,7 +219,7 @@
           (bind ?slot-id (- ?key (* 100 ?sync-id)))
           (bind ?slot (wm-sync-get-slot-of-index ?fact ?slot-id))
           (if (not ?slot) then
-            (printout error "Can't find slot for key " ?key 
+            (printout error "Can't find slot for key " ?key
                       " of template " ?template "." crlf)
           )
           ; actually modify
@@ -399,7 +399,7 @@
   (retract ?pmsg)
   ;send acknowledgment
   (bind ?msg-ack (pb-create "llsf_msgs.WorldmodelChangeAck"))
-  (pb-set-field ?msg-ack "id" ?id)  
+  (pb-set-field ?msg-ack "id" ?id)
   (pb-broadcast ?peer ?msg-ack)
   (pb-destroy ?msg-ack)
 )
@@ -464,7 +464,7 @@
 )
 
 (deffunction worldmodel-sync-remove-fact-with-sync-id (?sync-id $?templates)
-  ; (progn$ (?templ ?templates)       
+  ; (progn$ (?templ ?templates)
   (do-for-fact ((?fact ?templates)) (eq ?fact:sync-id ?sync-id)
     (retract ?fact)
   )

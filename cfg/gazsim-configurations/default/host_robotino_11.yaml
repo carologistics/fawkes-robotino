@@ -71,7 +71,7 @@ fawkes/bbsync:
   peers:
     robotino-base/active: false
     robot1:
-      #active: true (set via the gazsim startup)
+      # active: true (set via the gazsim startup)
       host: localhost
       port: !tcp-port 1921
       reading:
@@ -81,7 +81,7 @@ fawkes/bbsync:
         navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/robot1/navgraph-generator-mps
         navigator: NavigatorInterface::Navigator=/robot1/Navigator
     robot2:
-      #active: true (set via the gazsim startup)
+      # active: true (set via the gazsim startup)
       host: localhost
       port: !tcp-port 1922
       reading:
@@ -91,7 +91,7 @@ fawkes/bbsync:
         navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/robot2/navgraph-generator-mps
         navigator: NavigatorInterface::Navigator=/robot2/Navigator
     robot3:
-      #active: true (set via the gazsim startup)
+      # active: true (set via the gazsim startup)
       host: localhost
       port: !tcp-port 1923
       reading:

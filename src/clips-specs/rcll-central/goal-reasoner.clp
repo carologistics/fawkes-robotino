@@ -425,7 +425,7 @@
                  (bind ?robot (fact-slot-value ?highest-prio-gm assigned-to))
   )
   (bind ?selected (modify ?highest-prio-goal-fact (mode SELECTED)))
-	(if (eq (fact-slot-value ?selected class) MOVE-OUT-OF-WAY) then 
+	(if (eq (fact-slot-value ?selected class) MOVE-OUT-OF-WAY) then
   (do-for-all-facts ((?g goal)) (eq ?g:mode DISPATCHED)
     (printout warn ?g:id " is concurrently running" crlf)
   )

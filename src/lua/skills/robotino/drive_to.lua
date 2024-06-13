@@ -99,7 +99,7 @@ function SKILL_GLOBAL_MOTOR_MOVE:init()
 		 self.args["global_motor_move"] = {x = self.fsm.vars.x, y = self.fsm.vars.y}
   end
   self.args["global_motor_move"].ori = self.fsm.vars.ori
-  
+
   printf("Drive to: call global_motor_move with: x(" ..
 						tostring(self.args["global_motor_move"].x) .. ") y(" ..
 						tostring(self.args["global_motor_move"].y)  ..") ori(" ..

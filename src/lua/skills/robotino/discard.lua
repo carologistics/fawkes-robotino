@@ -66,7 +66,7 @@ end
 
 function MOVE_GRIPPER_FORWARD:init()
 
-  self.args["gripper_commands"].x = MOVE_X 
+  self.args["gripper_commands"].x = MOVE_X
   self.args["gripper_commands"].y = self.fsm.vars.y_max
   self.args["gripper_commands"].z = 0
   self.args["gripper_commands"].command = "MOVEABS"

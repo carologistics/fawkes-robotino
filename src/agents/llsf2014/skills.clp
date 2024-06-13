@@ -34,7 +34,7 @@
     (if (or (eq ?mtype T5)
   	    (and (or (eq ?mtype T3) (eq ?mtype T4)) (eq (length$ ?lw) 2)))
       then
-      (bind ?dont-wait true)   
+      (bind ?dont-wait true)
       (bind ?out-of-order "leave")
 
       else
@@ -163,7 +163,7 @@
     (retract ?sf ?df ?gst)
     (assert (state (sym-cat GET-S0- ?s)))
     (modify ?wfl (state finished))
-    
+
     else
     ;recall skill
     (retract ?df)
@@ -210,7 +210,7 @@
     (retract ?sf ?df)
     (assert (state (sym-cat TAKE-PUCK-TO- ?s)))
     (modify ?wfl (state finished))
-    
+
     else
     (printout t "recalling skill because I still hava a puck" crlf)
     (retract ?df)
@@ -231,7 +231,7 @@
     (retract ?sf ?df)
     (assert (state (sym-cat DRIVE-TO- ?s)))
     (modify ?wfl (state finished))
-    
+
     else
     (printout t "recalling skill because I still hava a puck" crlf)
     (retract ?df)
