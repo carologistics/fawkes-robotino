@@ -8,63 +8,63 @@ plugins/vs_offsets:
   base_offset: 0.28
 
   # offsets between object pose from the object tracking plugin and the target
-  #  frame before starting the routine (..._target), at the pick/put
-  #  position in the routine (..._routine), and at the end of the gripper
-  #  routine (..._end)
+  #  frame before starting the routine (target), at the pick/put
+  #  position in the routine (routine), and at the end of the gripper
+  #  routine (end)
   # z positions assume the wp is a C3 and reduce the height if its lower
   # change y direction through host_specific static frame
   workpiece:
-    pick_target:
-      offset_x: -0.04
-      offset_z: 0.055
+    target:
+      x: -0.04
+      z: 0.055
 
-    pick_top:
+    top:
       # pick_routine and pick_end is sharing the same x offset as its
       #  pick_top
-      offset_x: 0.002
-      offset_z: 0.055
+      x: 0.002
+      z: 0.055
 
-    pick_routine:
-      offset_z: -0.035
+    routine:
+      z: -0.015
 
-    pick_end:
-      offset_z: -0.015
+    end:
+      z: -0.005
 
   conveyor:
-    put_target:
-      offset_x: -0.015
-      offset_z: 0.03
+    target:
+      x: -0.015
+      z: 0.03
   
-    put_top:
-      offset_x: 0.02
-      offset_z: 0.03
+    top:
+      x: 0.02
+      z: 0.03
       # = distance_from_usual_wp_pos + belt_size_ / 2 + puck_height_ / 2
       # = distance_from_usual_wp_pos + 0.035
 
-    put_routine:
-      offset_x: 0.03
-      offset_z: 0.01
+    routine:
+      x: 0.02
+      z: 0.02
       # = belt_size_ / 2 + puck_height_ / 2
       # = 0.035
 
-    put_end:
+    end:
       # put_end is sharing the same x offset as its pick_target
-      offset_z: 0.07
+      z: 0.085
 
   slide:
-    put_target:
-      offset_x: -0.03
-      offset_z: 0.03
+    target:
+      x: -0.03
+      z: 0.03
 
-    put_top:
-      offset_x: 0.015
-      offset_z: 0.03
+    top:
+      x: 0.015
+      z: 0.03
       # = distance_from_usual_wp_pos + puck_height_ / 2
       # = distance_from_usual_wp_pos + 0.0125
 
-    put_routine:
-      offset_x: 0.015
-      offset_z: -0.03
+    routine:
+      x: 0.015
+      z: -0.035
 
-    put_end:
-      offset_z: 0.02
+    end:
+      z: 0.02
