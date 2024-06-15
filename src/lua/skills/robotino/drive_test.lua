@@ -26,7 +26,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "drive_test"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"ppgoto_waypoints"}
+depends_skills     = {"ppmoveto_waypoints"}
 depends_interfaces = { }
 
 documentation      = [==[Drives between the given list of navgraph-points continuously
@@ -40,7 +40,7 @@ skillenv.skill_module(_M)
 
 fsm:define_states{ export_to=_M,
    {"INIT", JumpState},
-   {"GOTO", SkillJumpState, skills={{ppgoto_waypoints}}, final_to="GOTO", fail_to="FAILED"},
+   {"GOTO", SkillJumpState, skills={{ppmoveto_waypoints}}, final_to="GOTO", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
@@ -48,5 +48,5 @@ fsm:add_transitions{
 }
 
 function GOTO:init()
-   self.args["ppgoto_waypoints"].wp = self.fsm.vars.pps
+   self.args["ppmoveto_waypoints"].wp = self.fsm.vars.pps
 end

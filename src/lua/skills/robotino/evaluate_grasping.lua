@@ -24,7 +24,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "evaluate_grasping"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"goto", "manipulate_wp"}
+depends_skills     = {"moveto", "manipulate_wp"}
 depends_interfaces = {}
 
 documentation      = [==[
@@ -54,7 +54,7 @@ fsm:define_states{ export_to=_M, closure={},
    {"PICK",    SkillJumpState, skills={{manipulate_wp}}, final_to="PUT" ,fail_to="FAILED"},
    {"PUT",     SkillJumpState, skills={{manipulate_wp}}, final_to="REPEAT" ,fail_to="FAILED"},
    {"REPEAT",  JumpState},
-   {"END_POS", SkillJumpState, skills={{goto}}, final_to="FINAL", fail_to="FINAL"},
+   {"END_POS", SkillJumpState, skills={{moveto}}, final_to="FINAL", fail_to="FINAL"},
 }
 
 fsm:add_transitions{
@@ -83,7 +83,7 @@ function PUT:init()
 end
 
 function END_POS:init()
-  self.args["goto"] = {x = mps_end_pos[fsm.vars.mps].x,
+  self.args["moveto"] = {x = mps_end_pos[fsm.vars.mps].x,
                        y = mps_end_pos[fsm.vars.mps].y,
                        ori = mps_end_pos[fsm.vars.mps].ori}
 end

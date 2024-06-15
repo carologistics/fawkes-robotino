@@ -1,6 +1,6 @@
 
 ----------------------------------------------------------------------------
---  relgoto.lua
+--  relmoveto.lua
 --
 --  Created: Thu Aug 14 14:32:47 2008
 --  Copyright  2008  Tim Niemueller [www.niemueller.de]
@@ -24,7 +24,7 @@
 module(..., skillenv.module_init)
 
 -- Crucial skill information
-name               = "relgoto"
+name               = "relmoveto"
 fsm                = SkillHSM:new{name=name, start="CHECK_INPUT", debug=false}
 depends_skills     = nil
 depends_interfaces = {
@@ -48,7 +48,7 @@ end
 --end
 
 function target_reached()
-   if navigator:msgid() == fsm.vars.goto_msgid then
+   if navigator:msgid() == fsm.vars.moveto_msgid then
       if navigator:is_final() and navigator:error_code() ~= 0 then
          return false
       end
@@ -58,14 +58,14 @@ function target_reached()
 end
 
 function navi_failure()
-   if navigator:msgid() == fsm.vars.goto_msgid then
+   if navigator:msgid() == fsm.vars.moveto_msgid then
       return navigator:is_final() and navigator:error_code() ~= 0
    end
    return false
 end
 
 function not_our_msgid()
-   return navigator:msgid() ~= fsm.vars.goto_msgid and os.time() > fsm.vars.msgid_timeout
+   return navigator:msgid() ~= fsm.vars.moveto_msgid and os.time() > fsm.vars.msgid_timeout
 end
 
 fsm:define_states{ export_to=_M,
@@ -99,10 +99,10 @@ function MOVING:init()
       self.fsm.vars.x,
       self.fsm.vars.y,
       self.fsm.vars.ori)
-   fsm.vars.goto_msgid = navigator:msgq_enqueue(msg)
+   fsm.vars.moveto_msgid = navigator:msgq_enqueue(msg)
 end
 
 function MOVING:exit()
-   local msg = navigator.StopMessage:new(fsm.vars.goto_msgid or 0)
+   local msg = navigator.StopMessage:new(fsm.vars.moveto_msgid or 0)
    navigator:msgq_enqueue(msg)
 end

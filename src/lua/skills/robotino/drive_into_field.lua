@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "drive_into_field"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"goto"}
+depends_skills     = {"moveto"}
 depends_interfaces = {
      {v = "pose",      type="Position3DInterface", id="Pose"}
 }
@@ -48,7 +48,7 @@ end
 fsm:define_states{ export_to=_M,
    {"INIT",             JumpState},
    {"WAIT",             JumpState},
-   {"DRIVE_INTO_FIELD", SkillJumpState, skills={{goto}}, final_to="FINAL", fail_to="FAILED"},
+   {"DRIVE_INTO_FIELD", SkillJumpState, skills={{moveto}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
@@ -62,7 +62,7 @@ function WAIT:init()
 end
 
 function DRIVE_INTO_FIELD:init()
-   self.args["goto"] = {
+   self.args["moveto"] = {
       place = self.fsm.vars.place
    }
 end

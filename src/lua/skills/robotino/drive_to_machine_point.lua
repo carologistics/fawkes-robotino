@@ -27,7 +27,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "drive_to_machine_point"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = { "goto","mps_align","motor_move" }
+depends_skills     = { "moveto","mps_align","motor_move" }
 depends_interfaces = {
    {v = "line1", type="LaserLineInterface", id="/laser-lines/1"},
    {v = "line2", type="LaserLineInterface", id="/laser-lines/2"},
@@ -227,7 +227,7 @@ fsm:define_states{ export_to=_M,
   {"INIT",                     JumpState},
 
   -- DRIVE_TO fails when the goal cannot be reached - should we still try to perform an MPS_ALIGN?
-  {"SKILL_DRIVE_TO",           SkillJumpState, skills={{goto}},          final_to="SKILL_MPS_ALIGN", fail_to="FAILED"},
+  {"SKILL_DRIVE_TO",           SkillJumpState, skills={{moveto}},          final_to="SKILL_MPS_ALIGN", fail_to="FAILED"},
   {"SKILL_MPS_ALIGN",          SkillJumpState, skills={{mps_align}},         final_to="FINAL", fail_to="FAILED"},
 }
 
@@ -310,7 +310,7 @@ function INIT:init()
 end
 
 function SKILL_DRIVE_TO:init()
-	self.args["goto"] = {x = self.fsm.vars.x, y = self.fsm.vars.y, ori = self.fsm.vars.ori}
+	self.args["moveto"] = {x = self.fsm.vars.x, y = self.fsm.vars.y, ori = self.fsm.vars.ori}
 end
 
 function SKILL_MPS_ALIGN:init()

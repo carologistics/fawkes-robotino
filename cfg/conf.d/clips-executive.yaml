@@ -128,9 +128,9 @@ clips-executive:
           drive_into_field{place="?(place)Y",
                            wait=?(r|/robot1/0.0/|/robot2/2.0/|/robot3/4.0/)f}
         explore-zone: explore_zone{zone=?(z)s}
-        move-node: goto{place=?(z)s}
-        move: goto{place="?(to)Y-?(to-side|/OUTPUT/OUTPUT/|/INPUT/INPUT/)Y"}
-        go-wait: goto{place="?(to)Y"}
+        move-node: moveto{place=?(z)s}
+        move: moveto{place="?(to)Y-?(to-side|/OUTPUT/OUTPUT/|/INPUT/INPUT/)Y"}
+        go-wait: moveto{place="?(to)Y"}
         wp-get-shelf: manipulate_wp{mps=?(m)S,safe_put=false, map_pos=true,
                               side="SHELF-?(spot)Y",target="WORKPIECE"}
         wp-put: manipulate_wp{mps=?(m)S, map_pos=true,
@@ -140,7 +140,7 @@ clips-executive:
         wp-get: manipulate_wp{mps=?(m)S,safe_put=false, map_pos=true,
                               side=?(side)S,target="WORKPIECE",c=?(com)S}
         wp-discard: discard{}
-        explore-and-turn: goto_corner_turn{place=?(place)S,
+        explore-and-turn: moveto_corner_turn{place=?(place)S,
                                            min_x=-5, max_x=0, min_y=0, max_y=6}
         wp-check: manipulate_wp{mps=?(m)S,dry_run=true, map_pos=true,
                           side=?(side)S,target="WORKPIECE",query=?(query)S}
@@ -224,7 +224,7 @@ clips-executive:
       state-estimation: visit-all/state-estimation-init.clp
 
       action-mapping:
-        visit: ppgoto{place=?(m)S}
+        visit: ppmoveto{place=?(m)S}
       blackboard-preload: ["Position3DInterface"]
 
     rcll:
@@ -297,11 +297,11 @@ clips-executive:
           drive_into_field{team=?(team-color)S,
                            wait=?(r|/Icks/0.0/|/Upsilan/10.0/|/Set/20.0/)f}
         explore-zone: explore_zone{zone=?(z)s}
-        move-node: goto{place=?(z)s}
-        move: goto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
-        move-wp-get: goto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
-        move-wp-put: goto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
-        go-wait: goto{place="?(to)Y"}
+        move-node: moveto{place=?(z)s}
+        move: moveto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
+        move-wp-get: moveto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
+        move-wp-put: moveto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
+        go-wait: moveto{place="?(to)Y"}
         wp-get-shelf: get_product_from{place=?(m)S, shelf=?(spot)S}
         wp-put: bring_product_to{place=?(m)S}
         wp-put-slide-cc: bring_product_to{place=?(m)S, slide="TRUE"}

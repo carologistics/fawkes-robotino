@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "explore_zone"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = { "goto", "motor_move" }
+depends_skills     = { "moveto", "motor_move" }
 depends_interfaces = {
    {v = "zone_info", type="ZoneInterface",       id="/explore-zone/info", writing=true},
    {v = "bb_found_tag", type="Position3DInterface", id="/explore-zone/found-tag", writing=true},
@@ -279,10 +279,10 @@ fsm:define_states{ export_to=_M,
    {"WAIT_FOR_TAG", JumpState},
    {"TURN", SkillJumpState, skills={{motor_move}}, final_to="WAIT_FOR_TAG", fail_to="FAILED"},
    {"WAIT_FOR_SENORS", JumpState},
-   {"FIND_LINE", SkillJumpState, skills={{goto}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
+   {"FIND_LINE", SkillJumpState, skills={{moveto}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
    {"PICK_VISTA_POINT", JumpState},
-   {"GOTO_LINE", SkillJumpState, skills={{goto}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
-   {"GOTO_VISTA_POINT", SkillJumpState, skills={{goto}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
+   {"GOTO_LINE", SkillJumpState, skills={{moveto}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
+   {"GOTO_VISTA_POINT", SkillJumpState, skills={{moveto}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
    {"WAIT_AMCL", JumpState}
 }
 
@@ -432,13 +432,13 @@ end
 
 function FIND_LINE:init()
    self.fsm.vars.found_something = true
-   self.args["goto"] = self.fsm.vars.cluster_vista
+   self.args["moveto"] = self.fsm.vars.cluster_vista
 end
 
 
 function GOTO_LINE:init()
    self.fsm.vars.found_something = true
-   self.args["goto"] = {
+   self.args["moveto"] = {
       x = self.fsm.vars.line_vista.x,
       y = self.fsm.vars.line_vista.y,
       ori = fawkes.tf.get_yaw(self.fsm.vars.line_vista.ori)
@@ -481,7 +481,7 @@ end
 
 
 function GOTO_VISTA_POINT:init()
-   self.args["goto"] = self.fsm.vars.zone_corner
+   self.args["moveto"] = self.fsm.vars.zone_corner
 end
 
 function FAILED:init()

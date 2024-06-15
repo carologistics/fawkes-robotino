@@ -24,7 +24,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "evaluate_icp"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"goto", "get_product_from", "bring_product_to"}
+depends_skills     = {"moveto", "get_product_from", "bring_product_to"}
 depends_interfaces = {}
 
 documentation      = [==[
@@ -78,7 +78,7 @@ end
 
 fsm:define_states{ export_to=_M, closure={},
    {"INIT",          JumpState},
-   {"GOTO_START",    SkillJumpState, skills={{goto}}, final_to="CHOOSE_ACTION" ,fail_to="CHOOSE_ACTION"},
+   {"GOTO_START",    SkillJumpState, skills={{moveto}}, final_to="CHOOSE_ACTION" ,fail_to="CHOOSE_ACTION"},
    {"CHOOSE_ACTION", JumpState},
    {"PICK",          SkillJumpState, skills={{get_product_from}}, final_to="PUT_POSSIBLE" ,fail_to="GOTO_START"},
    {"PUT",           SkillJumpState, skills={{bring_product_to}}, final_to="GOTO_START" ,fail_to="GOTO_START"},
@@ -128,7 +128,7 @@ function INIT:init()
 end
 
 function GOTO_START:init()
-  self.args["goto"] = {x = fsm.vars.startpoint.x,
+  self.args["moveto"] = {x = fsm.vars.startpoint.x,
                        y = fsm.vars.startpoint.y,
                        ori = fsm.vars.startpoint.ori}
 end

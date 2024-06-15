@@ -24,7 +24,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "simple_exploration"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"motor_move", "goto"}
+depends_skills     = {"motor_move", "moveto"}
 depends_interfaces = {
      {v = "pose",      type="Position3DInterface", id="Pose"}
 }
@@ -40,13 +40,13 @@ local TIMEOUT_UPPER_LIMIT = 60
 
 fsm:define_states{ export_to=_M,
    {"INIT",             JumpState},
-   {"CORNER_0_0", SkillJumpState, skills={{goto}}, final_to="TURN1"},
+   {"CORNER_0_0", SkillJumpState, skills={{moveto}}, final_to="TURN1"},
    {"TURN1", SkillJumpState, skills={{motor_move}}, final_to="CORNER_0_1"},
-   {"CORNER_0_1", SkillJumpState, skills={{goto}}, final_to="TURN2"},
+   {"CORNER_0_1", SkillJumpState, skills={{moveto}}, final_to="TURN2"},
    {"TURN2", SkillJumpState, skills={{motor_move}}, final_to="CORNER_1_1"},
-   {"CORNER_1_1", SkillJumpState, skills={{goto}}, final_to="TURN3"},
+   {"CORNER_1_1", SkillJumpState, skills={{moveto}}, final_to="TURN3"},
    {"TURN3", SkillJumpState, skills={{motor_move}}, final_to="CORNER_1_0"},
-   {"CORNER_1_0", SkillJumpState, skills={{goto}}, final_to="TURN4"},
+   {"CORNER_1_0", SkillJumpState, skills={{moveto}}, final_to="TURN4"},
    {"TURN4", SkillJumpState, skills={{motor_move}}, final_to="FINAL"}
 }
 
@@ -90,7 +90,7 @@ end
 
 
 function CORNER_0_0:init()
-   self.args["goto"] = {
+   self.args["moveto"] = {
 	  ori = 1.570795,
 	  x = -0.5,
 	  y = 0.5
@@ -99,7 +99,7 @@ end
 
 
 function CORNER_0_1:init()
-   self.args["goto"] = {
+   self.args["moveto"] = {
 	  ori = 3.14159,
 	  x = -0.5,
 	  y = 5.5
@@ -107,7 +107,7 @@ function CORNER_0_1:init()
 end
 
 function CORNER_1_1:init()
-   self.args["goto"] = {
+   self.args["moveto"] = {
 	  ori = -1.570795,
 	  x = -4.5,
 	  y = 5.5
@@ -115,7 +115,7 @@ function CORNER_1_1:init()
 end
 
 function CORNER_1_0:init()
-   self.args["goto"] = {
+   self.args["moveto"] = {
 	  ori = 0,
 	  x = -4.5,
 	  y = 1.5
