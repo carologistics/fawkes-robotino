@@ -66,10 +66,9 @@ if config:exists("/arduino/z_max") then
 end
 
 -- read vs configs
-local offset_x_put_conveyor_target_frame = config:get_float(
-                                               "plugins/vs_offsets/conveyor/put_target/offset_x")
-local offset_x_put_slide_target_frame = config:get_float(
-                                            "plugins/vs_offsets/slide/put_target/offset_x")
+local offset_x_pick_target_frame = config:get_float("plugins/vs_offsets/slide/pick_target/offset_x")
+local offset_x_put_conveyor_target_frame = config:get_float("plugins/vs_offsets/conveyor/put_target/offset_x")
+local offset_x_put_slide_target_frame = config:get_float("plugins/vs_offsets/slide/put_target/offset_x")
 
 local offset_z_pick_target_frame = config:get_float(
                                        "plugins/vs_offsets/workpiece/pick_target/offset_z")
@@ -78,10 +77,16 @@ local offset_z_put_conveyor_target_frame = config:get_float(
 local offset_z_put_slide_target_frame = config:get_float(
                                             "plugins/vs_offsets/slide/put_target/offset_z")
 
-local offset_x_put_conveyor_routine = config:get_float(
-                                          "plugins/vs_offsets/conveyor/put_routine/offset_x")
-local offset_x_put_slide_routine = config:get_float(
-                                       "plugins/vs_offsets/slide/put_routine/offset_x")
+local offset_x_pick_top = config:get_float("plugins/vs_offsets/workpiece/pick_top/offset_x")
+local offset_x_put_conveyor_top = config:get_float("plugins/vs_offsets/conveyor/put_top/offset_x")
+local offset_x_put_slide_top = config:get_float("plugins/vs_offsets/slide/put_top/offset_x")
+
+local offset_z_pick_top = config:get_float("plugins/vs_offsets/workpiece/pick_top/offset_z")
+local offset_z_put_conveyor_top = config:get_float("plugins/vs_offsets/conveyor/put_top/offset_z")
+local offset_z_put_slide_top = config:get_float("plugins/vs_offsets/slide/put_top/offset_z")
+
+local offset_x_put_conveyor_routine = config:get_float("plugins/vs_offsets/conveyor/put_routine/offset_x")
+local offset_x_put_slide_routine = config:get_float("plugins/vs_offsets/slide/put_routine/offset_x")
 
 local offset_z_pick_routine = config:get_float(
                                   "plugins/vs_offsets/workpiece/pick_routine/offset_z")
@@ -116,123 +121,63 @@ end
 
 function is_put_action() return not is_pick_action() end
 
-fsm:define_states{
-    export_to = _M,
-    closure = {},
-    {"INIT", JumpState},
-    {
-        "MOVE_GRIPPER_DOWN",
-        SkillJumpState,
-        skills = {{gripper_commands}},
-        final_to = "CHOOSE_ACTION",
-        fail_to = "FAILED"
-    },
-    {"CHOOSE_ACTION", JumpState},
-    {
-        "CLOSE_GRIPPER",
-        SkillJumpState,
-        skills = {{gripper_commands}},
-        final_to = "MOVE_GRIPPER_UP",
-        fail_to = "FAILED"
-    },
-    {
-        "OPEN_GRIPPER",
-        SkillJumpState,
-        skills = {{gripper_commands}},
-        final_to = "MOVE_GRIPPER_UP",
-        fail_to = "FAILED"
-    },
-    {
-        "MOVE_GRIPPER_UP",
-        SkillJumpState,
-        skills = {{gripper_commands}},
-        final_to = "GRIPPER_DEFAULT",
-        fail_to = "FAILED"
-    },
-    {
-        "GRIPPER_DEFAULT",
-        SkillJumpState,
-        skills = {{gripper_commands}},
-        final_to = "DRIVE_BACK",
-        fail_to = "FAILED"
-    },
-    {
-        "DRIVE_BACK",
-        SkillJumpState,
-        skills = {{motor_move}},
-        final_to = "DECIDE_CLOSE",
-        fail_to = "FAILED"
-    },
-    {"DECIDE_CLOSE", JumpState},
-    {
-        "CLOSE_DEFAULT",
-        SkillJumpState,
-        skills = {{gripper_commands}},
-        final_to = "FINAL",
-        fail_to = "FAILED"
-    }
+fsm:define_states{ export_to=_M, closure={},
+   {"INIT",                 JumpState},
+   {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_GRIPPER_DOWN" , fail_to="FAILED"},
+   {"MOVE_GRIPPER_DOWN",    SkillJumpState, skills={{gripper_commands}}, final_to="CHOOSE_ACTION" ,     fail_to="FAILED"},
+   {"CHOOSE_ACTION",        JumpState},
+   {"CLOSE_GRIPPER",        SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_GRIPPER_UP",    fail_to="FAILED"},
+   {"OPEN_GRIPPER",         SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_GRIPPER_UP",    fail_to="FAILED"},
+   {"MOVE_GRIPPER_UP",      SkillJumpState, skills={{gripper_commands}}, final_to="GRIPPER_DEFAULT",    fail_to="FAILED"},
+   {"GRIPPER_DEFAULT",      SkillJumpState, skills={{gripper_commands}}, final_to="DRIVE_BACK",         fail_to="FAILED"},
+   {"DRIVE_BACK",           SkillJumpState, skills={{motor_move}},       final_to="DECIDE_CLOSE",       fail_to="FAILED"},
+   {"DECIDE_CLOSE",         JumpState},
+   {"CLOSE_DEFAULT",        SkillJumpState, skills={{gripper_commands}}, final_to="FINAL",              fail_to="FAILED"},
 }
 
 fsm:add_transitions{
-    {"INIT", "FAILED", cond = input_invalid, desc = "Invalid Input"},
-    {"INIT", "MOVE_GRIPPER_DOWN", true, desc = "Start Routine"}, {
-        "CHOOSE_ACTION",
-        "CLOSE_GRIPPER",
-        cond = is_pick_action,
-        desc = "Picking Up Workpiece"
-    }, {
-        "CHOOSE_ACTION",
-        "OPEN_GRIPPER",
-        cond = is_put_action,
-        desc = "Putting Down Workpiece"
-    }, {"CHOOSE_ACTION", "FAILED", true, desc = "Instructions Unclear"},
-    {
-        "DECIDE_CLOSE",
-        "CLOSE_DEFAULT",
-        cond = is_put_action,
-        desc = "Close Gripper"
-    }, {"DECIDE_CLOSE", "FINAL", true}
+   {"INIT", "FAILED",                 cond=input_invalid,  desc="Invalid Input"},
+   {"INIT", "MOVE_GRIPPER_FORWARD",   true,                desc="Start Routine"},
+   {"CHOOSE_ACTION", "CLOSE_GRIPPER", cond=is_pick_action, desc="Picking Up Workpiece"},
+   {"CHOOSE_ACTION", "OPEN_GRIPPER",  cond=is_put_action,  desc="Putting Down Workpiece"},
+   {"CHOOSE_ACTION", "FAILED",        true,                desc="Instructions Unclear"},
+   {"DECIDE_CLOSE", "CLOSE_DEFAULT",  cond=is_put_action,  desc="Close Gripper"},
+   {"DECIDE_CLOSE", "FINAL",          true},
 }
 
 function INIT:init()
-    fsm.vars.missing_c3_height = tonumber(fsm.vars.missing_c3_height)
+  fsm.vars.missing_c3_height = tonumber(fsm.vars.missing_c3_height)
+  local gripper_target = tfm.transform6D(
+    {x=object_tracking_if:gripper_frame(0),
+     y=object_tracking_if:gripper_frame(1),
+     z=object_tracking_if:gripper_frame(2),
+     ori=fawkes.tf.create_quaternion_from_yaw(0)},
+    "base_link", "end_effector_home")
 end
 
-function MOVE_GRIPPER_DOWN:init()
-    local gripper_target = tfm.transform6D({
-        x = object_tracking_if:gripper_frame(0),
-        y = object_tracking_if:gripper_frame(1),
-        z = object_tracking_if:gripper_frame(2),
-        ori = fawkes.tf.create_quaternion_from_yaw(0)
-    }, "base_link", "end_effector_home")
-
-    -- Clip to axis limits
-    local x_given = gripper_target.x
-    if fsm.vars.target == "WORKPIECE" then
-        x_given = gripper_target.x
-    elseif fsm.vars.target == "CONVEYOR" then
-        x_given = gripper_target.x - offset_x_put_conveyor_target_frame +
-                      offset_x_put_conveyor_routine
-    else -- SLIDE
-        x_given = gripper_target.x - offset_x_put_slide_target_frame +
-                      offset_x_put_slide_routine
-    end
+function MOVE_GRIPPER_FORWARD:init()
+  -- Clip to axis limits
+  local x_given = gripper_target.x
+  if fsm.vars.target == "WORKPIECE" then
+    x_given = gripper_target.x - offset_x_pick_target_frame + offset_x_pick_top
+  elseif fsm.vars.target == "CONVEYOR" then
+    x_given = gripper_target.x - offset_x_put_conveyor_target_frame + offset_x_put_conveyor_top
+  else -- SLIDE
+    x_given = gripper_target.x - offset_x_put_slide_target_frame + offset_x_put_slide_top
+  end
 
     local x_clipped = math.max(0, math.min(x_given, x_max))
     local y_clipped =
         math.max(-y_max / 2, math.min(gripper_target.y, y_max / 2))
 
-    local z_given = 0
-    if fsm.vars.target == "WORKPIECE" then
-        z_given = gripper_target.z - offset_z_pick_target_frame +
-                      offset_z_pick_routine
-    elseif fsm.vars.target == "CONVEYOR" then
-        z_given = gripper_target.z - offset_z_put_conveyor_target_frame +
-                      offset_z_put_conveyor_routine
-    else -- SLIDE
-        z_given = gripper_target.z - offset_z_put_slide_target_frame +
-                      offset_z_put_slide_routine
-    end
+  local z_given = 0
+  if fsm.vars.target == "WORKPIECE" then
+    z_given = gripper_target.z - offset_z_pick_target_frame + offset_z_pick_top
+  elseif fsm.vars.target == "CONVEYOR" then
+    z_given = gripper_target.z - offset_z_put_conveyor_target_frame + offset_z_put_conveyor_top
+  else -- SLIDE
+    z_given = gripper_target.z - offset_z_put_slide_target_frame + offset_z_put_slide_top
+  end
 
     fsm.vars.target_x = x_clipped
     fsm.vars.target_y = y_clipped
@@ -246,7 +191,44 @@ function MOVE_GRIPPER_DOWN:init()
     self.args["gripper_commands"].command = "MOVEABS"
 end
 
-function CLOSE_GRIPPER:init() self.args["gripper_commands"].command = "CLOSE" end
+function MOVE_GRIPPER_DOWN:init()
+-- Clip to axis limits
+local x_given = gripper_target.x
+if fsm.vars.target == "WORKPIECE" then
+  x_given = gripper_target.x
+elseif fsm.vars.target == "CONVEYOR" then
+  x_given = gripper_target.x - offset_x_put_conveyor_target_frame + offset_x_put_conveyor_routine
+else -- SLIDE
+  x_given = gripper_target.x - offset_x_put_slide_target_frame + offset_x_put_slide_routine
+end
+
+local x_clipped = math.max(0, math.min(x_given, x_max))
+local y_clipped = math.max(-y_max/2, math.min(gripper_target.y, y_max/2))
+
+local z_given = 0
+if fsm.vars.target == "WORKPIECE" then
+  z_given = gripper_target.z - offset_z_pick_target_frame + offset_z_pick_routine
+elseif fsm.vars.target == "CONVEYOR" then
+  z_given = gripper_target.z - offset_z_put_conveyor_target_frame + offset_z_put_conveyor_routine
+else -- SLIDE
+  z_given = gripper_target.z - offset_z_put_slide_target_frame + offset_z_put_slide_routine
+end
+
+fsm.vars.target_x = x_clipped
+fsm.vars.target_y = y_clipped
+fsm.vars.target_z = z_given
+
+local z_clipped = math.max(0, math.min(z_given, z_max))
+
+self.args["gripper_commands"].x = x_clipped
+self.args["gripper_commands"].y = y_clipped
+self.args["gripper_commands"].z = z_clipped
+self.args["gripper_commands"].command = "MOVEABS"
+end
+
+function CLOSE_GRIPPER:init()
+  self.args["gripper_commands"].command= "CLOSE"
+end
 
 function OPEN_GRIPPER:init() self.args["gripper_commands"].command = "OPEN" end
 
