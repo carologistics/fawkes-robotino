@@ -1,4 +1,3 @@
-
 ----------------------------------------------------------------------------
 --  gripper.lua - Skill to open or close Robotino AX12 gripper
 --
@@ -7,7 +6,6 @@
 --             2014  Tim Niemueller
 --             2015  Nicolas Limpert
 ----------------------------------------------------------------------------
-
 --  This program is free software; you can redistribute it and/or modify
 --  it under the terms of the GNU General Public License as published by
 --  the Free Software Foundation; either version 2 of the License, or
@@ -19,19 +17,18 @@
 --  GNU Library General Public License for more details.
 --
 --  Read the full text in the LICENSE.GPL file in the doc directory.
-
 -- Initialize module
 module(..., skillenv.module_init)
 
 -- Crucial skill information
-name               = "gripper_commands"
-fsm                = SkillHSM:new{name=name, start="CHECK_WRITER", debug=false}
-depends_skills     = nil
+name = "gripper_commands"
+fsm = SkillHSM:new{name = name, start = "CHECK_WRITER", debug = false}
+depends_skills = nil
 depends_interfaces = {
-    {v = "arduino", type = "ArduinoInterface", id="Arduino"},
+    {v = "arduino", type = "ArduinoInterface", id = "Arduino"}
 }
 
-documentation      = [==[
+documentation = [==[
     @param command    can be : ( OPEN | CLOSE | STOP | MOVEABS | MOVEREL | CALIBRATE )
     @param x   x position for gripper move
     @param y   y position for gripper move
@@ -41,104 +38,102 @@ documentation      = [==[
 
 ]==]
 
-
-
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
 function input_ok()
-  if fsm.vars.command == "OPEN" or fsm.vars.command == "STOP" or fsm.vars.command == "CLOSE" then
-    return true
-  end
-  if fsm.vars.command == "MOVEABS" or fsm.vars.command == "MOVEREL" then
-    if not fsm.vars.x or not fsm.vars.y or not fsm.vars.z then
-      print("Missing coordinates " .. fsm.vars.x .. " " .. fsm.vars.y .. " " ..fsm.vars.z)
-      return false
-    else
-      return true
+    if fsm.vars.command == "OPEN" or fsm.vars.command == "STOP" or
+        fsm.vars.command == "CLOSE" then return true end
+    if fsm.vars.command == "MOVEABS" or fsm.vars.command == "MOVEREL" then
+        if not fsm.vars.x or not fsm.vars.y or not fsm.vars.z then
+            print("Missing coordinates " .. fsm.vars.x .. " " .. fsm.vars.y ..
+                      " " .. fsm.vars.z)
+            return false
+        else
+            return true
+        end
     end
-  end
 
-  if fsm.vars.command == "CALIBRATE" then
-    return true
-  end
-  print("Unknown command: " .. fsm.vars.command)
-  return false
+    if fsm.vars.command == "CALIBRATE" then return true end
+    print("Unknown command: " .. fsm.vars.command)
+    return false
 end
 
 function tf_ready()
--- Checks if the tf tree of the gripper is complete and up to date after moving
--- This is done by checking if the latest transform update is newer than the
--- arduino interface timestamp
-  if not arduino:is_final() then
-    return false
-  end
+    -- Checks if the tf tree of the gripper is complete and up to date after moving
+    -- This is done by checking if the latest transform update is newer than the
+    -- arduino interface timestamp
+    if not arduino:is_final() then return false end
 
-  local bb_stamp = arduino:timestamp()
-  if not tf:can_transform("gripper", "gripper_home", bb_stamp) then
-    return false
-  end
+    local bb_stamp = arduino:timestamp()
+    if not tf:can_transform("gripper", "gripper_home", bb_stamp) then
+        return false
+    end
 
-  local transform = fawkes.tf.StampedTransform:new()
-  tf:lookup_transform("gripper", "gripper_home", transform)
-  if transform.stamp:in_usec() < bb_stamp:in_usec() then
-    return false
-  end
-  return true
+    local transform = fawkes.tf.StampedTransform:new()
+    tf:lookup_transform("gripper", "gripper_home", transform)
+    if transform.stamp:in_usec() < bb_stamp:in_usec() then return false end
+    return true
 end
 
-
 function is_error()
-  msgid = arduino:msgid()
-  if msgid == nil then
+    msgid = arduino:msgid()
+    if msgid == nil then return false end
+    if msgid ~= fsm.vars.msgid then return false end
+    status = arduino:status()
+    if status == 2 or status == 3 or status == 4 then return true end
     return false
-  end
-  if msgid ~= fsm.vars.msgid then
-    return false
-  end
-  status = arduino:status()
-  if status == 2 or status == 3 or status == 4 then
-    return true
-  end
-  return false
 end
 
 -- States
 fsm:define_states{
-   export_to=_M,
-   closure={arduino=arduino, is_error=is_error, input_ok = input_ok, tf_ready=tf_ready},
-   {"CHECK_WRITER", JumpState},
-   {"COMMAND", JumpState},
-   {"WAIT", JumpState},
+    export_to = _M,
+    closure = {
+        arduino = arduino,
+        is_error = is_error,
+        input_ok = input_ok,
+        tf_ready = tf_ready
+    },
+    {"CHECK_WRITER", JumpState},
+    {"COMMAND", JumpState},
+    {"WAIT", JumpState}
 }
 
 -- Transitions
 fsm:add_transitions{
-   {"CHECK_WRITER", "FAILED", cond="not input_ok()", desc="Input not correct"},
-   {"CHECK_WRITER", "FAILED", precond="not arduino:has_writer()", desc="No writer for gripper"},
-   {"CHECK_WRITER", "COMMAND", cond=true, desc="Writer ok got to command"},
-   {"COMMAND", "WAIT", timeout=0.2},
-   {"WAIT", "FAILED", cond="is_error()"},
-   {"WAIT", "FINAL", cond="vars.wait ~= nil and not vars.wait"},
-   {"WAIT", "FINAL", cond="arduino:is_final() and tf_ready()"},
-   {"WAIT", "FAILED", timeout=15},
+    {
+        "CHECK_WRITER",
+        "FAILED",
+        cond = "not input_ok()",
+        desc = "Input not correct"
+    }, {
+        "CHECK_WRITER",
+        "FAILED",
+        precond = "not arduino:has_writer()",
+        desc = "No writer for gripper"
+    },
+    {"CHECK_WRITER", "COMMAND", cond = true, desc = "Writer ok got to command"},
+    {"COMMAND", "WAIT", timeout = 0.2}, {"WAIT", "FAILED", cond = "is_error()"},
+    {"WAIT", "FINAL", cond = "vars.wait ~= nil and not vars.wait"},
+    {"WAIT", "FINAL", cond = "arduino:is_final() and tf_ready()"},
+    {"WAIT", "FAILED", timeout = 15}
 }
 
 function COMMAND:init()
 
-   if self.fsm.vars.command == "OPEN" then
-      theOpenMessage = arduino.OpenGripperMessage:new()
-      arduino:msgq_enqueue(theOpenMessage)
+    if self.fsm.vars.command == "OPEN" then
+        theOpenMessage = arduino.OpenGripperMessage:new()
+        arduino:msgq_enqueue(theOpenMessage)
 
-   elseif self.fsm.vars.command == "CLOSE" then
-      theCloseMessage = arduino.CloseGripperMessage:new()
-      arduino:msgq_enqueue(theCloseMessage)
+    elseif self.fsm.vars.command == "CLOSE" then
+        theCloseMessage = arduino.CloseGripperMessage:new()
+        arduino:msgq_enqueue(theCloseMessage)
 
-   elseif self.fsm.vars.command == "STOP" then
-      theStopMessage = arduino.StopMessage:new()
-      arduino:msgq_enqueue(theStopMessage)
+    elseif self.fsm.vars.command == "STOP" then
+        theStopMessage = arduino.StopMessage:new()
+        arduino:msgq_enqueue(theStopMessage)
 
-   elseif self.fsm.vars.command == "MOVEABS" then
+    elseif self.fsm.vars.command == "MOVEABS" then
 
         x = self.fsm.vars.x
         y = self.fsm.vars.y
@@ -152,7 +147,7 @@ function COMMAND:init()
         move_abs_message:set_target_frame(target_frame)
         self.fsm.vars.msgid = arduino:msgq_enqueue_copy(move_abs_message)
 
-   elseif self.fsm.vars.command == "MOVEREL" then
+    elseif self.fsm.vars.command == "MOVEREL" then
         x = self.fsm.vars.x
         y = self.fsm.vars.y
         z = self.fsm.vars.z
@@ -162,8 +157,8 @@ function COMMAND:init()
         move_rel_message:set_z(z)
         self.fsm.vars.msgid = arduino:msgq_enqueue_copy(move_rel_message)
 
-   elseif self.fsm.vars.command == "CALIBRATE" then
+    elseif self.fsm.vars.command == "CALIBRATE" then
         calibrate_message = arduino.CalibrateMessage:new()
         arduino:msgq_enqueue_copy(calibrate_message)
-   end
+    end
 end

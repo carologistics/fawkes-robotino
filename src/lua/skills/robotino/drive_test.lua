@@ -1,4 +1,3 @@
-
 ----------------------------------------------------------------------------
 --  drive_test.lua
 --
@@ -7,7 +6,6 @@
 --             2014-2015  Tobias Neumann
 --
 ----------------------------------------------------------------------------
-
 --  This program is free software; you can redistribute it and/or modify
 --  it under the terms of the GNU General Public License as published by
 --  the Free Software Foundation; either version 2 of the License, or
@@ -19,17 +17,17 @@
 --  GNU Library General Public License for more details.
 --
 --  Read the full text in the LICENSE.GPL file in the doc directory.
-
 -- Initialize module
 module(..., skillenv.module_init)
 
 -- Crucial skill information
-name               = "drive_test"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"ppmoveto_waypoints"}
-depends_interfaces = { }
+name = "drive_test"
+fsm = SkillHSM:new{name = name, start = "INIT", debug = false}
+depends_skills = {"ppmoveto_waypoints"}
+depends_interfaces = {}
 
-documentation      = [==[Drives between the given list of navgraph-points continuously
+documentation =
+    [==[Drives between the given list of navgraph-points continuously
 
 
 Parameters:
@@ -38,15 +36,18 @@ Parameters:
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-fsm:define_states{ export_to=_M,
-   {"INIT", JumpState},
-   {"GOTO", SkillJumpState, skills={{ppmoveto_waypoints}}, final_to="GOTO", fail_to="FAILED"},
+fsm:define_states{
+    export_to = _M,
+    {"INIT", JumpState},
+    {
+        "GOTO",
+        SkillJumpState,
+        skills = {{ppmoveto_waypoints}},
+        final_to = "GOTO",
+        fail_to = "FAILED"
+    }
 }
 
-fsm:add_transitions{
-   {"INIT", "GOTO", cond=true}
-}
+fsm:add_transitions{{"INIT", "GOTO", cond = true}}
 
-function GOTO:init()
-   self.args["ppmoveto_waypoints"].wp = self.fsm.vars.pps
-end
+function GOTO:init() self.args["ppmoveto_waypoints"].wp = self.fsm.vars.pps end
