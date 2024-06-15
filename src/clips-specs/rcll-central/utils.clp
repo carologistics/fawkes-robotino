@@ -264,7 +264,9 @@
 " Map x y coordinates to a zone name they belong to, e..g, M_Z51
 "
   (bind ?prefix "C")
-  (if (< ?y 0) then (return))
+  (if (< ?y 0) then
+	(printout t "Received negative y coordinate " ?y ", which is outside the playing field. Setting zone to empty string" crlf)
+	(return ""))
   (if (< ?x 0) then
     (bind ?x (* -1 ?x))
     (bind ?prefix "M")
