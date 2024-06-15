@@ -1,6 +1,6 @@
 
 ----------------------------------------------------------------------------
---  goto.lua -
+--  moveto.lua -
 --
 --  Created: Thu Aug 14 14:32:47 2008
 --  modified by Victor Mataré
@@ -24,7 +24,7 @@
 module(..., skillenv.module_init)
 
 -- Crucial skill information
-name               = "goto"
+name               = "moveto"
 fsm                = SkillHSM:new{name=name, start="CHECK_INPUT"}
 depends_skills     = { }
 depends_interfaces = {
@@ -48,8 +48,8 @@ skillenv.skill_module(_M)
 
 local tf_mod = require 'fawkes.tfutils'
 
-if config:exists("/skills/goto/distance_to_travel") then
-   distance_to_travel = config:get_float("/skills/goto/distance_to_travel")
+if config:exists("/skills/moveto/distance_to_travel") then
+   distance_to_travel = config:get_float("/skills/moveto/distance_to_travel")
 else
    distance_to_travel = 0.5
 end
@@ -224,7 +224,7 @@ function MOVING:init()
         self.fsm.vars.ori_tolerance)
    end
 
-   fsm.vars.goto_msgid = navigator:msgq_enqueue(msg)
+   fsm.vars.moveto_msgid = navigator:msgq_enqueue(msg)
 end
 
 function TIMEOUT:loop()
@@ -245,7 +245,7 @@ end
 
 function MOVING:reset()
     if navigator:has_writer() and not navigator:is_final() and self.fsm.vars.waiting_pos == false then
-       printf("goto: sending stop");
+       printf("moveto: sending stop");
        navigator:msgq_enqueue(navigator.StopMessage:new(fsm.vars.msgid or 0))
     end
  end

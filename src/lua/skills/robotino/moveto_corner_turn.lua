@@ -1,5 +1,5 @@
 ----------------------------------------------------------------------------
---  goto_corner_turn.lua
+--  moveto_corner_turn.lua
 --
 --  Created: Thu Jun 12 15:25:00 2023
 --  Copyright  2023 Daniel Hones
@@ -22,9 +22,9 @@
 module(..., skillenv.module_init)
 
 -- Crucial skill information
-name               = "goto_corner_turn"
+name               = "moveto_corner_turn"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"motor_move", "goto", "turn_to_search"}
+depends_skills     = {"motor_move", "moveto", "turn_to_search"}
 depends_interfaces = {
      {v = "pose",      type="Position3DInterface", id="Pose"}
 }
@@ -51,7 +51,7 @@ local turn = 4
 
 fsm:define_states{ export_to=_M,
    {"INIT",             JumpState},
-   {"GOTO_CORNER", SkillJumpState, skills={{goto}}, final_to="TURN"},
+   {"GOTO_CORNER", SkillJumpState, skills={{moveto}}, final_to="TURN"},
    {"TURN", SkillJumpState, skills={{turn_to_search}}, final_to="FINAL"},
 
 }
@@ -130,7 +130,7 @@ function GOTO_CORNER:init()
    end
 
 
-   self.args["goto"] = {
+   self.args["moveto"] = {
 	  ori = 1.570795 * index,
 	  x = self.fsm.vars.x,
 	  y = self.fsm.vars.y,

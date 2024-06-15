@@ -1,5 +1,5 @@
 ----------------------------------------------------------------------------
---  goto_waypoints.lua
+--  ppmoveto_waypoints.lua
 --
 --  Created: Sat Jun 14 15:13:19 2014
 --  Copyright  2014       Frederik Zwilling
@@ -23,15 +23,15 @@
 module(..., skillenv.module_init)
 
 -- Crucial skill information
-name               = "goto_waypoints"
+name               = "ppmoveto_waypoints"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"goto"}
+depends_skills     = {"ppmoveto"}
 depends_interfaces = { }
 
-documentation      = [==[Drives the given list of navgraph-points without using the pathplaner
+documentation      = [==[Drives the given list of navgraph-points
 
 Parameters:
-      wp:     List of points to drive to e.g. goto_waypoints{wp={"P64", "P92", "P73", "P62", "P93"}}
+      wp:     List of points to drive to e.g. ppmoveto_waypoints{wp={"P64", "P92", "P73", "P62", "P93"}}
 ]==]
 -- Initialize as skill module
 skillenv.skill_module(_M)
@@ -42,12 +42,12 @@ end
 
 fsm:define_states{ export_to=_M,
    {"INIT", JumpState},
-   {"GOTO", SkillJumpState, skills={{goto}}, final_to="GOTO", fail_to="FAILED"},
+   {"PPGOTO", SkillJumpState, skills={{ppmoveto}}, final_to="PPGOTO", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
-   {"INIT",   "GOTO", cond=true},
-   {"GOTO", "FINAL",  cond=waypoints_done},
+   {"INIT",   "PPGOTO", cond=true},
+   {"PPGOTO", "FINAL",  cond=waypoints_done},
 }
 
 function INIT:init()
@@ -55,7 +55,7 @@ function INIT:init()
    fsm.vars.table_pos  = 0
 end
 
-function GOTO:init()
+function PPGOTO:init()
    fsm.vars.table_pos = fsm.vars.table_pos + 1                  -- increment list position
-   self.args["goto"] = { place = self.fsm.vars.wp[fsm.vars.table_pos] }
+   self.args["ppmoveto"].place = self.fsm.vars.wp[fsm.vars.table_pos]  -- get next target
 end

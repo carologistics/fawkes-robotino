@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "manipulate_wp"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"goto","motor_move","pick_or_put_vs"}
+depends_skills     = {"moveto","motor_move","pick_or_put_vs"}
 depends_interfaces = {
    {v = "line1", type="LaserLineInterface", id="/laser-lines/1"},
    {v = "line2", type="LaserLineInterface", id="/laser-lines/2"},
