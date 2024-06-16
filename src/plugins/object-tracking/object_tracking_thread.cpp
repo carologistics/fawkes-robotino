@@ -98,9 +98,8 @@ ObjectTrackingThread::init()
 	offset_z_slide_target_ = config->get_float("plugins/vs_offsets/slide/target/z");
 
 	offset_x_workpiece_top_ = config->get_float("plugins/vs_offsets/workpiece/top/x");
-	offset_x_conveyor_top_ =
-	  config->get_float("plugins/vs_offsets/conveyor/top/x");
-	offset_x_slide_top_ = config->get_float("plugins/vs_offsets/slide/top/x");
+	offset_x_conveyor_top_  = config->get_float("plugins/vs_offsets/conveyor/top/x");
+	offset_x_slide_top_     = config->get_float("plugins/vs_offsets/slide/top/x");
 
 	//get camera params
 	camera_width_     = config->get_int("plugins/object_tracking/camera_intrinsics/width");
@@ -923,8 +922,10 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 	case ObjectTrackingInterface::WORKPIECE:
 		gripper_offset_x = offset_x_workpiece_target_;
 		gripper_offset_z = offset_z_workpiece_target_;
-		max_x_needed     = object_pos.getX() + cos(mps_angle) * max(offset_x_workpiece_target_, offset_x_workpiece_top_);
-		max_y_needed     = object_pos.getY() - sin(mps_angle) * max(offset_x_workpiece_target_, offset_x_workpiece_top_);
+		max_x_needed =
+		  object_pos.getX() + cos(mps_angle) * max(offset_x_workpiece_target_, offset_x_workpiece_top_);
+		max_y_needed =
+		  object_pos.getY() - sin(mps_angle) * max(offset_x_workpiece_target_, offset_x_workpiece_top_);
 		break;
 	case ObjectTrackingInterface::CONVEYOR_BELT_FRONT:
 		gripper_offset_x = offset_x_conveyor_target_;
