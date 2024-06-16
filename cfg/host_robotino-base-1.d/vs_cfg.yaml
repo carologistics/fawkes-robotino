@@ -44,20 +44,20 @@ plugins/vs_offsets:
 
     end:
       # end is sharing the same x offset as its target
-      z: 0.075
+      z: 0.11
 
   slide:
     target:
       x: -0.03
-      z: 0.015
+      z: 0.05
 
     top:
       x: 0.02
-      z: 0.015
+      z: 0.05
 
     routine:
-      x: 0.020
-      z: -0.005
+      x: 0.02
+      z: 0.01
 
     end:
-      z: 0.015
+      z: 0.05
