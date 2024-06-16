@@ -17,7 +17,7 @@ navgraph:
   # Graph file to use for path planning
   graph_file: navgraph-basis.yaml
 
-  # Interval in which the resend the goto command; sec
+  # Interval in which the resend the moveto command; sec
   resend_interval: 1
 
   # Interval in which to replan if constraints have been modified
