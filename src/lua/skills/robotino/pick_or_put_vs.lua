@@ -134,7 +134,7 @@ fsm:add_transitions{
 
 function INIT:init()
   fsm.vars.missing_c3_height = tonumber(fsm.vars.missing_c3_height)
-  local gripper_target = tfm.transform6D(
+  fsm.vars.gripper_target = tfm.transform6D(
     {x=object_tracking_if:gripper_frame(0),
      y=object_tracking_if:gripper_frame(1),
      z=object_tracking_if:gripper_frame(2),
@@ -144,22 +144,21 @@ end
 
 function MOVE_GRIPPER_FORWARD:init()
   -- Clip to axis limits
-  local x_given = gripper_target.x
+  local x_given = fsm.vars.gripper_target.x
   if fsm.vars.target == "WORKPIECE" then
-    x_given = gripper_target.x - offset_x_workpiece_target_frame + offset_x_workpiece_top
+    x_given = fsm.vars.gripper_target.x - offset_x_workpiece_target_frame + offset_x_workpiece_top
   elseif fsm.vars.target == "CONVEYOR" then
-    x_given = gripper_target.x - offset_x_conveyor_target_frame + offset_x_conveyor_top
+    x_given = fsm.vars.gripper_target.x - offset_x_conveyor_target_frame + offset_x_conveyor_top
   else -- SLIDE
-    x_given = gripper_target.x - offset_x_slide_target_frame + offset_x_slide_top
+    x_given = fsm.vars.gripper_target.x - offset_x_slide_target_frame + offset_x_slide_top
   end
 
-    local x_clipped = math.max(0, math.min(x_given, x_max))
-    local y_clipped =
-        math.max(-y_max / 2, math.min(gripper_target.y, y_max / 2))
+  local x_clipped = math.max(0, math.min(x_given, x_max))
+  local y_clipped = math.max(-y_max/2, math.min(fsm.vars.gripper_target.y, y_max/2))
 
   fsm.vars.target_x = x_clipped
   fsm.vars.target_y = y_clipped
-  fsm.vars.target_z = gripper_target.z
+  fsm.vars.target_z = fsm.vars.gripper_target.z
 
   local z_clipped = math.max(0, math.min(fsm.vars.target_z, z_max))
 
@@ -171,25 +170,25 @@ end
 
 function MOVE_GRIPPER_DOWN:init()
 -- Clip to axis limits
-local x_given = gripper_target.x
+local x_given = fsm.vars.gripper_target.x
 if fsm.vars.target == "WORKPIECE" then
-  x_given = gripper_target.x
+  x_given = fsm.vars.gripper_target.x
 elseif fsm.vars.target == "CONVEYOR" then
-  x_given = gripper_target.x - offset_x_conveyor_target_frame + offset_x_conveyor_routine
+  x_given = fsm.vars.gripper_target.x - offset_x_conveyor_target_frame + offset_x_conveyor_routine
 else -- SLIDE
-  x_given = gripper_target.x - offset_x_slide_target_frame + offset_x_slide_routine
+  x_given = fsm.vars.gripper_target.x - offset_x_slide_target_frame + offset_x_slide_routine
 end
 
 local x_clipped = math.max(0, math.min(x_given, x_max))
-local y_clipped = math.max(-y_max/2, math.min(gripper_target.y, y_max/2))
+local y_clipped = math.max(-y_max/2, math.min(fsm.vars.gripper_target.y, y_max/2))
 
 local z_given = 0
 if fsm.vars.target == "WORKPIECE" then
-  z_given = gripper_target.z - offset_z_workpiece_target_frame + offset_z_workpiece_routine
+  z_given = fsm.vars.gripper_target.z - offset_z_workpiece_target_frame + offset_z_workpiece_routine
 elseif fsm.vars.target == "CONVEYOR" then
-  z_given = gripper_target.z - offset_z_conveyor_target_frame + offset_z_conveyor_routine
+  z_given = fsm.vars.gripper_target.z - offset_z_conveyor_target_frame + offset_z_conveyor_routine
 else -- SLIDE
-  z_given = gripper_target.z - offset_z_slide_target_frame + offset_z_slide_routine
+  z_given = fsm.vars.gripper_target.z - offset_z_slide_target_frame + offset_z_slide_routine
 end
 
 fsm.vars.target_x = x_clipped
