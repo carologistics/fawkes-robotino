@@ -1391,14 +1391,13 @@
 
   =>
   (bind ?priority (dynamic-prio-from-complexity ?com ?step))
-  (assert (wm-fact (key strategy meta priority increase free-cs args? wp ?cc mps ?cs) (value ?priority)))
-
   ; adjust existing goals that already received a priority update
   (bind ?old-prio-val 0)
   (do-for-fact ((?old-prio wm-fact)) (eq ?old-prio:key (create$ strategy meta priority increase free-cs args? wp ?cc mps ?cs))
     (bind ?old-prio-val ?old-prio:value)
     (retract ?old-prio)
   )
+  (assert (wm-fact (key strategy meta priority increase free-cs args? wp ?cc mps ?cs) (value ?priority)))
   (bind ?priority (- ?priority ?old-prio-val))
   (delayed-do-for-all-facts ((?goal goal))
     (and
@@ -1470,13 +1469,13 @@
   (not (wm-fact (key strategy meta priority increase buffer-cs args? mps ?cs) (value ?old-prio&:(> ?old-prio (dynamic-prio-from-complexity ?com ?step)))))
   =>
   (bind ?priority (dynamic-prio-from-complexity ?com ?step))
-  (assert (wm-fact (key strategy meta priority increase buffer-cs args? mps ?cs) (value ?priority)))
   ; adjust existing goals that already received a priority update
   (bind ?old-prio-val 0)
   (do-for-fact ((?old-prio wm-fact)) (eq ?old-prio:key (create$ strategy meta priority increase buffer-cs args? mps ?cs))
     (bind ?old-prio-val ?old-prio:value)
     (retract ?old-prio)
   )
+  (assert (wm-fact (key strategy meta priority increase buffer-cs args? mps ?cs) (value ?priority)))
   (bind ?priority (- ?priority ?old-prio-val))
   (delayed-do-for-all-facts ((?goal goal))
     (and
@@ -1535,7 +1534,6 @@
   (not (wm-fact (key strategy meta priority increase pay-for-wp args? wp ? mps ?mps $) (value ?old-prio&:(> ?old-prio (dynamic-prio-from-complexity ?com ?ring)))))
   =>
   (bind ?priority (dynamic-prio-from-complexity ?com ?ring))
-  (assert (wm-fact (key strategy meta priority increase pay-for-wp args? wp ?wp mps ?mps ring-col ?ring-color) (value ?priority)))
   ; adjust existing goals that already received a priority update
   (bind ?old-prio-val 0)
   (do-for-fact ((?old-prio wm-fact)) (and (wm-key-prefix ?old-prio:key (create$ strategy meta priority increase pay-for-wp))
@@ -1543,6 +1541,7 @@
     (bind ?old-prio-val ?old-prio:value)
     (retract ?old-prio)
   )
+  (assert (wm-fact (key strategy meta priority increase pay-for-wp args? wp ?wp mps ?mps ring-col ?ring-color) (value ?priority)))
   (bind ?priority (- ?priority ?old-prio-val))
   (delayed-do-for-all-facts ((?goal goal))
     (and
