@@ -144,7 +144,7 @@ end
 
 function MOVE_GRIPPER_FORWARD:init()
   -- Clip to axis limits
-  local x_given = fsm.vars.gripper_target.x
+  local x_given = 0
   if fsm.vars.target == "WORKPIECE" then
     x_given = fsm.vars.gripper_target.x - offset_x_workpiece_target_frame + offset_x_workpiece_top
   elseif fsm.vars.target == "CONVEYOR" then
@@ -170,9 +170,9 @@ end
 
 function MOVE_GRIPPER_DOWN:init()
 -- Clip to axis limits
-local x_given = fsm.vars.gripper_target.x
+local x_given = 0
 if fsm.vars.target == "WORKPIECE" then
-  x_given = fsm.vars.gripper_target.x
+  x_given = fsm.vars.gripper_target.x - offset_x_workpiece_target_frame + offset_x_workpiece_top
 elseif fsm.vars.target == "CONVEYOR" then
   x_given = fsm.vars.gripper_target.x - offset_x_conveyor_target_frame + offset_x_conveyor_routine
 else -- SLIDE
