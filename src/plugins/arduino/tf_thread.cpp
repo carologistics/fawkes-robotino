@@ -137,7 +137,6 @@ ArduinoTFThread::set_position(float new_x_pos, float new_y_pos, float new_z_pos)
 	cur_x_ = new_x_pos;
 	cur_y_ = new_y_pos;
 	cur_z_ = new_z_pos;
-	update();
 }
 
 void
