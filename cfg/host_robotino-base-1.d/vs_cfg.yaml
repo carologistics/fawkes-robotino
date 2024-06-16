@@ -15,7 +15,7 @@ plugins/vs_offsets:
   # change y direction through host_specific static frame
   workpiece:
     target:
-      x: -0.043
+      x: -0.05
       z: 0.1
 
     top:
@@ -31,7 +31,7 @@ plugins/vs_offsets:
 
   conveyor:
     target:
-      x: -0.015
+      x: -0.03
       z: 0.073
   
     top:
@@ -47,7 +47,7 @@ plugins/vs_offsets:
 
   slide:
     target:
-      x: -0.03
+      x: -0.05
       z: 0.05
 
     top:
