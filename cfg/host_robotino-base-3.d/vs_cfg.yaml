@@ -33,7 +33,7 @@ plugins/vs_offsets:
     target:
       x: -0.03
       z: 0.03
-  
+
     top:
       x: 0.02
 
