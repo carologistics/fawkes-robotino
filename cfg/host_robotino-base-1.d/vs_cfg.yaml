@@ -19,8 +19,7 @@ plugins/vs_offsets:
       z: 0.01
 
     top:
-      # pick_routine and pick_end is sharing the same x offset as its
-      #  pick_top
+      # routine and end is sharing the same x offset as its top
       x: 0.002
       z: 0.1
 
@@ -38,18 +37,13 @@ plugins/vs_offsets:
     top:
       x: 0.03
       z: 0.073
-      # = distance_from_usual_wp_pos + belt_size_ / 2 + puck_height_ / 2
-      # = distance_from_usual_wp_pos + 0.035
 
     routine:
       x: 0.03
       z: 0.043
 
-      # = belt_size_ / 2 + puck_height_ / 2
-      # = 0.035
-
     end:
-      # put_end is sharing the same x offset as its pick_target
+      # end is sharing the same x offset as its target
       z: 0.075
 
   slide:
@@ -60,8 +54,6 @@ plugins/vs_offsets:
     top:
       x: 0.02
       z: 0.015
-      # = distance_from_usual_wp_pos + puck_height_ / 2
-      # = distance_from_usual_wp_pos + 0.0125
 
     routine:
       x: 0.020
