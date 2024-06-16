@@ -88,18 +88,19 @@ ObjectTrackingThread::init()
 
 	base_offset_ = config->get_float("plugins/vs_offsets/base_offset");
 
-	offset_x_pick_ = config->get_float("plugins/vs_offsets/workpiece/pick_target/offset_x");
-	offset_z_pick_ = config->get_float("plugins/vs_offsets/workpiece/pick_target/offset_z");
+	offset_x_workpiece_target_ = config->get_float("plugins/vs_offsets/workpiece/target/x");
+	offset_z_workpiece_target_ = config->get_float("plugins/vs_offsets/workpiece/target/z");
 
-	offset_x_put_conveyor_ = config->get_float("plugins/vs_offsets/conveyor/put_target/offset_x");
-	offset_z_put_conveyor_ = config->get_float("plugins/vs_offsets/conveyor/put_target/offset_z");
+	offset_x_conveyor_target_ = config->get_float("plugins/vs_offsets/conveyor/target/x");
+	offset_z_conveyor_target_ = config->get_float("plugins/vs_offsets/conveyor/target/z");
 
-	offset_x_routine_conveyor_ =
-	  config->get_float("plugins/vs_offsets/conveyor/put_routine/offset_x");
-	offset_x_routine_slide_ = config->get_float("plugins/vs_offsets/slide/put_routine/offset_x");
+	offset_x_slide_target_ = config->get_float("plugins/vs_offsets/slide/target/x");
+	offset_z_slide_target_ = config->get_float("plugins/vs_offsets/slide/target/z");
 
-	offset_x_put_slide_ = config->get_float("plugins/vs_offsets/slide/put_target/offset_x");
-	offset_z_put_slide_ = config->get_float("plugins/vs_offsets/slide/put_target/offset_z");
+	offset_x_workpiece_top_ = config->get_float("plugins/vs_offsets/workpiece/top/x");
+	offset_x_conveyor_top_ =
+	  config->get_float("plugins/vs_offsets/conveyor/top/x");
+	offset_x_slide_top_ = config->get_float("plugins/vs_offsets/slide/top/x");
 
 	//get camera params
 	camera_width_     = config->get_int("plugins/object_tracking/camera_intrinsics/width");
@@ -920,26 +921,26 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 
 	switch (current_object_type_) {
 	case ObjectTrackingInterface::WORKPIECE:
-		gripper_offset_x = offset_x_pick_;
-		gripper_offset_z = offset_z_pick_;
-		max_x_needed     = object_pos.getX() + cos(mps_angle) * offset_x_pick_;
-		max_y_needed     = object_pos.getY() - sin(mps_angle) * offset_x_pick_;
+		gripper_offset_x = offset_x_workpiece_target_;
+		gripper_offset_z = offset_z_workpiece_target_;
+		max_x_needed     = object_pos.getX() + cos(mps_angle) * max(offset_x_workpiece_target_, offset_x_workpiece_top_);
+		max_y_needed     = object_pos.getY() - sin(mps_angle) * max(offset_x_workpiece_target_, offset_x_workpiece_top_);
 		break;
 	case ObjectTrackingInterface::CONVEYOR_BELT_FRONT:
-		gripper_offset_x = offset_x_put_conveyor_;
-		gripper_offset_z = offset_z_put_conveyor_;
+		gripper_offset_x = offset_x_conveyor_target_;
+		gripper_offset_z = offset_z_conveyor_target_;
 		max_x_needed =
-		  object_pos.getX() + cos(mps_angle) * max(offset_x_put_conveyor_, offset_x_routine_conveyor_);
+		  object_pos.getX() + cos(mps_angle) * max(offset_x_conveyor_target_, offset_x_conveyor_top_);
 		max_y_needed =
-		  object_pos.getY() - sin(mps_angle) * max(offset_x_put_conveyor_, offset_x_routine_conveyor_);
+		  object_pos.getY() - sin(mps_angle) * max(offset_x_conveyor_target_, offset_x_conveyor_top_);
 		break;
 	case ObjectTrackingInterface::SLIDE_FRONT:
-		gripper_offset_x = offset_x_put_slide_;
-		gripper_offset_z = offset_z_put_slide_;
+		gripper_offset_x = offset_x_slide_target_;
+		gripper_offset_z = offset_z_slide_target_;
 		max_x_needed =
-		  object_pos.getX() + cos(mps_angle) * max(offset_x_put_slide_, offset_x_routine_slide_);
+		  object_pos.getX() + cos(mps_angle) * max(offset_x_slide_target_, offset_x_slide_top_);
 		max_y_needed =
-		  object_pos.getY() - sin(mps_angle) * max(offset_x_put_slide_, offset_x_routine_slide_);
+		  object_pos.getY() - sin(mps_angle) * max(offset_x_slide_target_, offset_x_slide_top_);
 		break;
 	default:
 		logger->log_error(object_tracking_if_->enum_tostring("TARGET_OBJECT_TYPE",
