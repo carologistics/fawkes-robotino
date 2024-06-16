@@ -85,9 +85,9 @@ local offset_z_workpiece_routine = config:get_float("plugins/vs_offsets/workpiec
 local offset_z_conveyor_routine = config:get_float("plugins/vs_offsets/conveyor/routine/z")
 local offset_z_slide_routine = config:get_float("plugins/vs_offsets/slide/routine/z")
 
-local offset_z_up_pick = config:get_float("plugins/vs_offsets/workpiece/end/z")
-local offset_z_up_conveyor = config:get_float("plugins/vs_offsets/conveyor/end/z")
-local offset_z_up_slide = config:get_float("plugins/vs_offsets/slide/end/z")
+local offset_z_workpiece_end = config:get_float("plugins/vs_offsets/workpiece/end/z")
+local offset_z_conveyor_end = config:get_float("plugins/vs_offsets/conveyor/end/z")
+local offset_z_slide_end = config:get_float("plugins/vs_offsets/slide/end/z")
 
 function input_invalid()
     if fsm.vars.target == "WORKPIECE" or fsm.vars.target == "CONVEYOR" or
@@ -213,11 +213,11 @@ function OPEN_GRIPPER:init() self.args["gripper_commands"].command = "OPEN" end
 function MOVE_GRIPPER_UP:init()
   local z_given = 0
   if fsm.vars.target == "WORKPIECE" then
-    z_given = fsm.vars.target_z - offset_z_workpiece_routine + offset_z_up_pick
+    z_given = fsm.vars.target_z - offset_z_workpiece_routine + offset_z_workpiece_end
   elseif fsm.vars.target == "CONVEYOR" then
-    z_given = fsm.vars.target_z - offset_z_conveyor_routine + offset_z_up_conveyor - fsm.vars.missing_c3_height
+    z_given = fsm.vars.target_z - offset_z_conveyor_routine + offset_z_conveyor_end - fsm.vars.missing_c3_height
   else -- SLIDE
-    z_given = fsm.vars.target_z - offset_z_slide_routine + offset_z_up_slide
+    z_given = fsm.vars.target_z - offset_z_slide_routine + offset_z_slide_end
   end
 
     self.args["gripper_commands"].x = fsm.vars.target_x
