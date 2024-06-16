@@ -20,8 +20,8 @@ plugins/vs_offsets:
 
     top:
       # routine and end is sharing the same x offset as its top
+      # top is sharing the same z offset as its target
       x: 0.002
-      z: 0.055
 
     routine:
       z: -0.015
@@ -36,7 +36,6 @@ plugins/vs_offsets:
   
     top:
       x: 0.02
-      z: 0.03
 
     routine:
       x: 0.02
@@ -53,7 +52,6 @@ plugins/vs_offsets:
 
     top:
       x: 0.015
-      z: 0.03
 
     routine:
       x: 0.015
