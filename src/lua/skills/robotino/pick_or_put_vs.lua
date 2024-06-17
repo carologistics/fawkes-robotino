@@ -155,12 +155,13 @@ function MOVE_GRIPPER_FORWARD:init()
 
   local x_clipped = math.max(0, math.min(x_given, x_max))
   local y_clipped = math.max(-y_max/2, math.min(fsm.vars.gripper_target.y, y_max/2))
+  local z_clipped = 0
+  if fsm.vars.target == "WORKPIECE" then
+    z_clipped = math.max(0, math.min(fsm.vars.gripper_target.z - fsm.vars.missing_c3_height, z_max))
+  else
+    z_clipped = math.max(0, math.min(fsm.vars.gripper_target.z, z_max))
+  end
 
-  fsm.vars.target_x = x_clipped
-  fsm.vars.target_y = y_clipped
-  fsm.vars.target_z = fsm.vars.gripper_target.z
-
-  local z_clipped = math.max(0, math.min(fsm.vars.target_z, z_max))
 
     self.args["gripper_commands"].x = x_clipped
     self.args["gripper_commands"].y = y_clipped
