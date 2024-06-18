@@ -1387,7 +1387,7 @@
     )
     (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side INPUT))
   )
-  (not (wm-fact (key strategy meta priority increase free-cs args? wp ?cc mps ?cs) (value ?old-prio&:(> ?old-prio (dynamic-prio-from-complexity ?com ?step)))))
+  (not (wm-fact (key strategy meta priority increase free-cs args? wp ?cc mps ?cs) (value ?higher-prio&:(> ?higher-prio (dynamic-prio-from-complexity ?com ?step)))))
 
   =>
   (bind ?priority (dynamic-prio-from-complexity ?com ?step))
@@ -1466,7 +1466,7 @@
   )
   (wm-fact (key wp meta next-step args? wp ?wp) (value ?step))
 
-  (not (wm-fact (key strategy meta priority increase buffer-cs args? mps ?cs) (value ?old-prio&:(> ?old-prio (dynamic-prio-from-complexity ?com ?step)))))
+  (not (wm-fact (key strategy meta priority increase buffer-cs args? mps ?cs) (value ?higher-prio&:(> ?higher-prio (dynamic-prio-from-complexity ?com ?step)))))
   =>
   (bind ?priority (dynamic-prio-from-complexity ?com ?step))
   ; adjust existing goals that already received a priority update
@@ -1531,7 +1531,7 @@
   (domain-fact (name rs-filled-with) (param-values ?mps ?filled-with))
   (test (< (sym-to-int ?filled-with) (sym-to-int ?ring-spec)))
 
-  (not (wm-fact (key strategy meta priority increase pay-for-wp args? wp ? mps ?mps $) (value ?old-prio&:(> ?old-prio (dynamic-prio-from-complexity ?com ?ring)))))
+  (not (wm-fact (key strategy meta priority increase pay-for-wp args? wp ? mps ?mps $) (value ?higher-prio&:(> ?higher-prio (dynamic-prio-from-complexity ?com ?ring)))))
   =>
   (bind ?priority (dynamic-prio-from-complexity ?com ?ring))
   ; adjust existing goals that already received a priority update
