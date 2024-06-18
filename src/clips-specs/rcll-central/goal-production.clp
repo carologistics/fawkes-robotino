@@ -120,7 +120,7 @@
 )
 
 (deffunction goal-production-get-machine-for-color
-  (?col-ring)
+  (?ring-col)
 
   (bind ?rs FALSE)
   (do-for-all-facts ((?mps-type wm-fact)) (and (wm-key-prefix ?mps-type:key (create$ domain fact mps-type))
@@ -128,7 +128,7 @@
     (bind ?machine (wm-key-arg ?mps-type:key m))
     (do-for-fact ((?rs-ring-spec wm-fact)) (and (wm-key-prefix ?rs-ring-spec:key (create$ domain fact rs-ring-spec))
                                                 (eq (wm-key-arg ?rs-ring-spec:key m) ?machine)
-                                                (eq (wm-key-arg ?rs-ring-spec:key r) ?col-ring))
+                                                (eq (wm-key-arg ?rs-ring-spec:key r) ?ring-col))
       (bind ?rs ?machine)
     )
   )
@@ -492,12 +492,12 @@
 )
 
 (deffunction goal-production-assert-instruct-rs-mount-ring
-  (?mps ?col-ring ?order-id ?ring-nr)
+  (?mps ?ring-col ?order-id ?ring-nr)
   (bind ?goal (assert (goal (class INSTRUCT-RS-MOUNT-RING)
         (id (sym-cat INSTRUCT-RS-MOUNT-RING- (gensym*))) (sub-type SIMPLE)
         (verbosity NOISY) (is-executable FALSE)
               (params target-mps ?mps
-                      ring-color ?col-ring
+                      ring-color ?ring-col
                )
   )))
   (goal-meta-assert ?goal central ?order-id ?ring-nr)
@@ -541,7 +541,7 @@
 
 (deffunction goal-production-assert-requests
   ;assert requests for an order's support goals (i.e., payment, buffer, discard)
-  (?rs ?cs ?col-rings ?col-cap ?order ?prio)
+  (?rs ?cs ?ring-cols ?cap-col ?order ?prio)
 
   (bind ?index 1)
   (bind ?seq 1)
@@ -549,7 +549,7 @@
     (bind ?price 0)
     (do-for-fact ((?rs-ring-spec wm-fact))
       (and (wm-key-prefix ?rs-ring-spec:key (create$ domain fact rs-ring-spec))
-          (eq (wm-key-arg ?rs-ring-spec:key r ) (nth$ ?index ?col-rings))
+          (eq (wm-key-arg ?rs-ring-spec:key r ) (nth$ ?index ?ring-cols))
       )
       (bind ?price (sym-to-int (wm-key-arg ?rs-ring-spec:key rn)))
     )
@@ -559,19 +559,19 @@
     )
     (bind ?index (+ ?index 1))
   )
-  (assert (wm-fact (key request buffer args? ord ?order col ?col-cap prio ?prio) (is-list TRUE) (type SYMBOL) (values status ACTIVE)))
+  (assert (wm-fact (key request buffer args? ord ?order col ?cap-col prio ?prio) (is-list TRUE) (type SYMBOL) (values status ACTIVE)))
   (assert (wm-fact (key request discard args? ord ?order cs ?cs prio ?prio) (is-list TRUE) (type SYMBOL) (values status ACTIVE)))
 )
 
 
 (deffunction goal-production-assert-c0
-  (?root-id ?order-id ?wp-for-order ?cs ?ds ?bs ?col-cap ?col-base)
+  (?root-id ?order-id ?wp-for-order ?cs ?ds ?bs ?cap-col ?base-col)
 
   ;assert the instruct goals
   (bind ?instruct-goals
     (goal-tree-assert-central-run-parallel-prio INSTRUCT-ORDER ?*PRODUCTION-C0-PRIORITY*
-      (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base INPUT ?order-id ?bs)
-      (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
+      (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?base-col INPUT ?order-id ?bs)
+      (goal-production-assert-instruct-cs-mount-cap ?cs ?cap-col ?order-id)
     )
   )
   (bind ?instruct-parent (fact-slot-value ?instruct-goals id))
@@ -581,24 +581,24 @@
   (bind ?goal
     (goal-tree-assert-central-run-all-incremental-prio PRODUCE-ORDER ?*PRODUCTION-C0-PRIORITY* ?*PRODUCTION-PRIORITY-INCREASE*
       (goal-production-assert-deliver ?wp-for-order ?order-id ?instruct-parent ?ds)
-      (goal-production-assert-mount-cap ?wp-for-order ?cs ?col-cap ?order-id)
+      (goal-production-assert-mount-cap ?wp-for-order ?cs ?cap-col ?order-id)
     )
   )
 
   (goal-production-assign-order-and-prio-to-goal ?goal ?order-id ?*PRODUCTION-C0-PRIORITY*)
 
-  (goal-production-assert-requests (create$ ) ?cs (create$ ) ?col-cap ?order-id ?*PRODUCTION-C0-PRIORITY*)
+  (goal-production-assert-requests (create$ ) ?cs (create$ ) ?cap-col ?order-id ?*PRODUCTION-C0-PRIORITY*)
 )
 
 (deffunction goal-production-assert-c1
-  (?root-id ?order-id ?wp-for-order ?cs ?ds ?bs ?rs1 ?col-cap ?col-base ?col-ring1)
+  (?root-id ?order-id ?wp-for-order ?cs ?ds ?bs ?rs1 ?cap-col ?base-col ?ring-col1)
 
   ;assert the instruct goals
   (bind ?instruct-goals
     (goal-tree-assert-central-run-parallel-prio INSTRUCT-ORDER ?*PRODUCTION-C1-PRIORITY*
-      (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base INPUT ?order-id ?bs)
-      (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
-      (goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
+      (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?base-col INPUT ?order-id ?bs)
+      (goal-production-assert-instruct-cs-mount-cap ?cs ?cap-col ?order-id)
+      (goal-production-assert-instruct-rs-mount-ring ?rs1 ?ring-col1 ?order-id ONE)
     )
   )
   (bind ?instruct-parent (fact-slot-value ?instruct-goals id))
@@ -608,25 +608,25 @@
   (bind ?goal
     (goal-tree-assert-central-run-all-incremental-prio PRODUCE-ORDER ?*PRODUCTION-C1-PRIORITY* ?*PRODUCTION-PRIORITY-INCREASE*
       (goal-production-assert-deliver ?wp-for-order ?order-id ?instruct-parent ?ds)
-      (goal-production-assert-mount-cap ?wp-for-order ?cs ?col-cap ?order-id)
-      (goal-production-assert-mount-ring ?wp-for-order ?rs1 ?col-ring1 ?order-id ONE)
+      (goal-production-assert-mount-cap ?wp-for-order ?cs ?cap-col ?order-id)
+      (goal-production-assert-mount-ring ?wp-for-order ?rs1 ?ring-col1 ?order-id ONE)
     )
   )
 
   (goal-production-assign-order-and-prio-to-goal ?goal ?order-id ?*PRODUCTION-C1-PRIORITY*)
 
-  (goal-production-assert-requests (create$ ?rs1) ?cs (create$ ?col-ring1) ?col-cap ?order-id ?*PRODUCTION-C1-PRIORITY*)
+  (goal-production-assert-requests (create$ ?rs1) ?cs (create$ ?ring-col1) ?cap-col ?order-id ?*PRODUCTION-C1-PRIORITY*)
 )
 
 (deffunction goal-production-assert-c2
-  (?root-id ?order-id ?wp-for-order ?cs ?ds ?bs ?rs1 ?rs2 ?col-cap ?col-base ?col-ring1 ?col-ring2)
+  (?root-id ?order-id ?wp-for-order ?cs ?ds ?bs ?rs1 ?rs2 ?cap-col ?base-col ?ring-col1 ?ring-col2)
 
   (bind ?instruct-goals
     (goal-tree-assert-central-run-parallel-prio INSTRUCT-ORDER ?*PRODUCTION-C2-PRIORITY*
-      (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base INPUT ?order-id ?bs)
-      (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
-      (goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
-      (goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2 ?order-id TWO)
+      (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?base-col INPUT ?order-id ?bs)
+      (goal-production-assert-instruct-cs-mount-cap ?cs ?cap-col ?order-id)
+      (goal-production-assert-instruct-rs-mount-ring ?rs1 ?ring-col1 ?order-id ONE)
+      (goal-production-assert-instruct-rs-mount-ring ?rs2 ?ring-col2 ?order-id TWO)
     )
   )
   (bind ?instruct-parent (fact-slot-value ?instruct-goals id))
@@ -635,45 +635,45 @@
   (bind ?goal
     (goal-tree-assert-central-run-all-incremental-prio PRODUCE-ORDER ?*PRODUCTION-C2-PRIORITY* ?*PRODUCTION-PRIORITY-INCREASE*
       (goal-production-assert-deliver ?wp-for-order ?order-id ?instruct-parent ?ds)
-      (goal-production-assert-mount-cap ?wp-for-order ?cs ?col-cap ?order-id)
-      (goal-production-assert-mount-ring ?wp-for-order ?rs2 ?col-ring2 ?order-id TWO)
-      (goal-production-assert-mount-ring ?wp-for-order ?rs1 ?col-ring1 ?order-id ONE)
+      (goal-production-assert-mount-cap ?wp-for-order ?cs ?cap-col ?order-id)
+      (goal-production-assert-mount-ring ?wp-for-order ?rs2 ?ring-col2 ?order-id TWO)
+      (goal-production-assert-mount-ring ?wp-for-order ?rs1 ?ring-col1 ?order-id ONE)
     )
   )
 
   (goal-production-assign-order-and-prio-to-goal ?goal ?order-id ?*PRODUCTION-C2-PRIORITY*)
 
-  (goal-production-assert-requests (create$ ?rs1 ?rs2) ?cs (create$ ?col-ring1 ?col-ring2) ?col-cap ?order-id ?*PRODUCTION-C2-PRIORITY*)
+  (goal-production-assert-requests (create$ ?rs1 ?rs2) ?cs (create$ ?ring-col1 ?ring-col2) ?cap-col ?order-id ?*PRODUCTION-C2-PRIORITY*)
 )
 
 (deffunction goal-production-assert-c3
-  (?root-id ?order-id ?wp-for-order ?cs ?ds ?bs ?rs1 ?rs2 ?rs3 ?col-cap ?col-base ?col-ring1 ?col-ring2 ?col-ring3)
+  (?root-id ?order-id ?wp-for-order ?cs ?ds ?bs ?rs1 ?rs2 ?rs3 ?cap-col ?base-col ?ring-col1 ?ring-col2 ?ring-col3)
 
   (bind ?instruct-goals
-    (goal-tree-assert-central-run-all-incremental-prio PRODUCE-ORDER ?*PRODUCTION-C3-PRIORITY* ?*PRODUCTION-PRIORITY-INCREASE*
-      (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base INPUT ?order-id ?bs)
-      (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
-      (goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
-      (goal-production-assert-instruct-rs-mount-ring ?rs2 ?col-ring2 ?order-id TWO)
-      (goal-production-assert-instruct-rs-mount-ring ?rs3 ?col-ring3 ?order-id THREE)
+    (goal-tree-assert-central-run-parallel-prio INSTRUCT-ORDER ?*PRODUCTION-C3-PRIORITY*
+      (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?base-col INPUT ?order-id ?bs)
+      (goal-production-assert-instruct-cs-mount-cap ?cs ?cap-col ?order-id)
+      (goal-production-assert-instruct-rs-mount-ring ?rs1 ?ring-col1 ?order-id ONE)
+      (goal-production-assert-instruct-rs-mount-ring ?rs2 ?ring-col2 ?order-id TWO)
+      (goal-production-assert-instruct-rs-mount-ring ?rs3 ?ring-col3 ?order-id THREE)
     )
   )
   (bind ?instruct-parent (fact-slot-value ?instruct-goals id))
   (bind ?instruct-goals (modify ?instruct-goals (parent ?root-id) (priority ?*PRODUCTION-C3-PRIORITY*)))
 
   (bind ?goal
-    (goal-tree-assert-central-run-all-prio PRODUCE-ORDER ?*PRODUCTION-C3-PRIORITY*
+    (goal-tree-assert-central-run-all-incremental-prio PRODUCE-ORDER ?*PRODUCTION-C3-PRIORITY* ?*PRODUCTION-PRIORITY-INCREASE*
       (goal-production-assert-deliver ?wp-for-order ?order-id ?instruct-parent ?ds)
-      (goal-production-assert-mount-cap ?wp-for-order ?cs ?col-cap ?order-id)
-      (goal-production-assert-mount-ring ?wp-for-order ?rs3 ?col-ring3 ?order-id THREE)
-      (goal-production-assert-mount-ring ?wp-for-order ?rs2 ?col-ring2 ?order-id TWO)
-      (goal-production-assert-mount-ring ?wp-for-order ?rs1 ?col-ring1 ?order-id ONE)
+      (goal-production-assert-mount-cap ?wp-for-order ?cs ?cap-col ?order-id)
+      (goal-production-assert-mount-ring ?wp-for-order ?rs3 ?ring-col3 ?order-id THREE)
+      (goal-production-assert-mount-ring ?wp-for-order ?rs2 ?ring-col2 ?order-id TWO)
+      (goal-production-assert-mount-ring ?wp-for-order ?rs1 ?ring-col1 ?order-id ONE)
     )
   )
 
   (goal-production-assign-order-and-prio-to-goal ?goal ?order-id ?*PRODUCTION-C3-PRIORITY*)
 
-  (goal-production-assert-requests (create$ ?rs1 ?rs2 ?rs3) ?cs (create$ ?col-ring1 ?col-ring2 ?col-ring3) ?col-cap ?order-id ?*PRODUCTION-C3-PRIORITY*)
+  (goal-production-assert-requests (create$ ?rs1 ?rs2 ?rs3) ?cs (create$ ?ring-col1 ?ring-col2 ?ring-col3) ?cap-col ?order-id ?*PRODUCTION-C3-PRIORITY*)
 )
 
 (defrule goal-production-create-instruction-root
@@ -796,20 +796,20 @@
 
 (defrule goal-production-debug-ring2
   "If there is a mismatch between machines and orders, produce output"
-  (wm-fact (key domain fact order-ring2-color args? ord ?order-id col ?col-ring&~RING_NONE))
-  (not (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?col-ring $?)))
+  (wm-fact (key domain fact order-ring2-color args? ord ?order-id col ?ring-col&~RING_NONE))
+  (not (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring-col $?)))
   (goal (id ?root-id) (class INSTRUCTION-ROOT))
   =>
-  (printout error "Can not build order " ?order-id " with ring-2 color " ?col-ring " because there is no ringstation for it" crlf)
+  (printout error "Can not build order " ?order-id " with ring-2 color " ?ring-col " because there is no ringstation for it" crlf)
 )
 
 (defrule goal-production-debug-ring3
   "If there is a mismatch between machines and orders, produce output"
-  (wm-fact (key domain fact order-ring3-color args? ord ?order-id col ?col-ring&~RING_NONE))
-  (not (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?col-ring $?)))
+  (wm-fact (key domain fact order-ring3-color args? ord ?order-id col ?ring-col&~RING_NONE))
+  (not (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring-col $?)))
   (goal (id ?root-id) (class INSTRUCTION-ROOT))
   =>
-  (printout error "Can not build order " ?order-id " with ring-3 color " ?col-ring " because there is no ringstation for it" crlf)
+  (printout error "Can not build order " ?order-id " with ring-3 color " ?ring-col " because there is no ringstation for it" crlf)
 )
 
 (defrule goal-production-create-produce-for-order
@@ -818,21 +818,21 @@
   (goal (id ?root-id) (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
   (wm-fact (key config rcll pick-and-place-challenge) (value FALSE))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
-  (wm-fact (key domain fact order-base-color args? ord ?order-id col ?col-base))
-  (wm-fact (key domain fact order-cap-color  args? ord ?order-id col ?col-cap))
-  (wm-fact (key domain fact order-ring1-color args? ord ?order-id col ?col-ring1))
-  (wm-fact (key domain fact order-ring2-color args? ord ?order-id col ?col-ring2))
-  (wm-fact (key domain fact order-ring3-color args? ord ?order-id col ?col-ring3))
-  (wm-fact (key domain fact cs-color args? m ?cs col ?col-cap))
+  (wm-fact (key domain fact order-base-color args? ord ?order-id col ?base-col))
+  (wm-fact (key domain fact order-cap-color  args? ord ?order-id col ?cap-col))
+  (wm-fact (key domain fact order-ring1-color args? ord ?order-id col ?ring-col1))
+  (wm-fact (key domain fact order-ring2-color args? ord ?order-id col ?ring-col2))
+  (wm-fact (key domain fact order-ring3-color args? ord ?order-id col ?ring-col3))
+  (wm-fact (key domain fact cs-color args? m ?cs col ?cap-col))
   (wm-fact (key domain fact mps-type args? m ?cs t CS))
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
   (not (wm-fact (key order meta wp-for-order args? wp ?something ord ?order-id)))
   (or (wm-fact (key domain fact order-ring1-color args? ord ?order-id col RING_NONE))
-      (wm-fact (key domain fact rs-ring-spec args? m ?rs1 r ?col-ring1 $?)))
+      (wm-fact (key domain fact rs-ring-spec args? m ?rs1 r ?ring-col1 $?)))
   (or (wm-fact (key domain fact order-ring2-color args? ord ?order-id col RING_NONE))
-      (wm-fact (key domain fact rs-ring-spec args? m ?rs2 r ?col-ring2 $?)))
+      (wm-fact (key domain fact rs-ring-spec args? m ?rs2 r ?ring-col2 $?)))
   (or (wm-fact (key domain fact order-ring3-color args? ord ?order-id col RING_NONE))
-      (wm-fact (key domain fact rs-ring-spec args? m ?rs3 r ?col-ring3 $?)))
+      (wm-fact (key domain fact rs-ring-spec args? m ?rs3 r ?ring-col3 $?)))
 
   (or
     (wm-fact (key strategy meta selected-order args? cond filter) (value ?order-id))
@@ -846,9 +846,9 @@
   (wm-fact (key mps workload needs-update) (value FALSE))
   =>
   ;find the necessary ringstations
-  (bind ?rs1 (goal-production-get-machine-for-color ?col-ring1))
-  (bind ?rs2 (goal-production-get-machine-for-color ?col-ring2))
-  (bind ?rs3 (goal-production-get-machine-for-color ?col-ring3))
+  (bind ?rs1 (goal-production-get-machine-for-color ?ring-col1))
+  (bind ?rs2 (goal-production-get-machine-for-color ?ring-col2))
+  (bind ?rs3 (goal-production-get-machine-for-color ?ring-col3))
 
   ;bind the ds to NONE - if there is none, or the actual DS - if there is one
   (bind ?ds NONE)
@@ -870,21 +870,21 @@
   )
   (if (eq ?comp C0)
     then
-    (goal-production-assert-c0 ?root-id ?order-id ?wp-for-order ?cs ?ds ?bs ?col-cap ?col-base)
+    (goal-production-assert-c0 ?root-id ?order-id ?wp-for-order ?cs ?ds ?bs ?cap-col ?base-col)
   )
   (if (and (eq ?comp C1) ?rs1)
     then
-    (goal-production-assert-c1 ?root-id ?order-id ?wp-for-order ?cs ?ds ?bs ?rs1 ?col-cap ?col-base ?col-ring1)
+    (goal-production-assert-c1 ?root-id ?order-id ?wp-for-order ?cs ?ds ?bs ?rs1 ?cap-col ?base-col ?ring-col1)
   )
   (if (and (eq ?comp C2) ?rs1 ?rs2)
     then
     (goal-production-assert-c2 ?root-id ?order-id ?wp-for-order ?cs ?ds ?bs
-                ?rs1 ?rs2 ?col-cap ?col-base ?col-ring1 ?col-ring2)
+                ?rs1 ?rs2 ?cap-col ?base-col ?ring-col1 ?ring-col2)
   )
   (if (and (eq ?comp C3) ?rs1 ?rs2 ?rs3)
     then
     (goal-production-assert-c3 ?root-id ?order-id ?wp-for-order ?cs ?ds ?bs
-                ?rs1 ?rs2 ?rs3 ?col-cap ?col-base ?col-ring1 ?col-ring2 ?col-ring3)
+                ?rs1 ?rs2 ?rs3 ?cap-col ?base-col ?ring-col1 ?ring-col2 ?ring-col3)
   )
 
   ;clean-up needs update facts
