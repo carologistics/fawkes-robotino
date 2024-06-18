@@ -465,56 +465,6 @@
 	(modify ?g (mode EXPANDED))
 )
 
-; (defrule goal-expander-get-cap-carrier-to-fill-rs-holding
-; 	?g <- (goal (id ?goal-id) (class ?class&PAY-FOR-RINGS-WITH-CAP-CARRIER)
-; 	                          (mode SELECTED) (parent ?parent)
-; 	                          (params target-mps ?target-mps
-; 	                                  $?))
-; 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-; 	(domain-fact (name at) (param-values ?robot ?curr-location ?curr-side))
-; 	(domain-fact (name holding) (param-values ?robot ?wp))
-;
-; 	(domain-fact (name rs-inc) (param-values ?rs-before ?rs-after))
-; 	(domain-fact (name rs-filled-with) (param-values ?target-mps ?rs-before))
-; 	=>
-; 	(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
-; 		(plan-assert-move ?robot ?curr-location ?curr-side ?target-mps INPUT
-; 			(plan-assert-action wp-put-slide-cc ?robot ?wp ?target-mps ?rs-before ?rs-after)
-; 		)
-; 	)
-; 	(modify ?g (mode EXPANDED))
-; )
-
-; (defrule goal-expander-get-cap-carrier-to-fill-rs
-; 	?g <- (goal (id ?goal-id) (class ?class&PAY-FOR-RINGS-WITH-CAP-CARRIER)
-; 	                          (mode SELECTED) (parent ?parent)
-; 	                          (params target-mps ?target-mps
-; 	                                  $?))
-; 	(goal-meta (goal-id ?goal-id) (assigned-to ?robot&~nil))
-; 	(domain-fact (name at) (param-values ?robot ?curr-location ?curr-side))
-; 	(domain-fact (name can-hold) (param-values ?robot))
-; 	(domain-fact (name wp-at) (param-values ?wp ?wp-loc ?wp-side))
-; 	(domain-fact (name wp-base-color) (param-values ?wp BASE_CLEAR))
-; 	(domain-fact (name wp-cap-color) (param-values ?wp CAP_NONE))
-;
-; 	(domain-fact (name rs-inc) (param-values ?rs-before ?rs-after))
-; 	(domain-fact (name rs-filled-with) (param-values ?target-mps ?rs-before))
-; 	=>
-; 	(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
-; 		(create$ ; only last statement of if is returned
-; 			(plan-assert-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side ?wp
-; 				(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side (get-wp-complexity ?wp))
-; 				(plan-assert-action wp-check ?robot ?wp ?wp-loc ?wp-side ABSENT)
-; 			)
-; 			(plan-assert-move ?robot ?wp-loc ?wp-side ?target-mps INPUT
-; 				(plan-assert-action wp-put-slide-cc ?robot
-; 				 ?wp ?target-mps ?rs-before ?rs-after)
-; 			)
-; 		)
-; 	)
-; 	(modify ?g (mode EXPANDED))
-; )
-
 (defrule goal-expander-get-shelf-to-fill-rs-holding
 	 ?g <- (goal (id ?goal-id) (class ?class&PAY-FOR-RINGS-WITH-CARRIER-FROM-SHELF)
 	             (mode SELECTED) (parent ?parent)
