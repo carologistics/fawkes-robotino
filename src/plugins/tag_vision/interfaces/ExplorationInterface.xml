@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="ExplorationInterface" author="Tarik Viehmann" year="2024">
+  <data>
+    <comment>
+      Storage for information for machines
+    </comment>
+    <field type="string" length="128" name="machines">
+      Reference coordinate frame for the data.
+    </field>
+    <field type="string" length="128" name="zones">
+      Zone information.
+    </field>
+    <field type="int32" length="14" name="oris">
+      Zones where machines are located in.
+    </field>
+  </data>
+</interface>

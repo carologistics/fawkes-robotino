@@ -1,1 +1,2 @@
 generate_interface_from_xml(TagVisionInterface.xml)
+generate_interface_from_xml(ExplorationInterface.xml)

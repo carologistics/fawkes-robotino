@@ -255,12 +255,12 @@ TagVisionThread::finalize()
  * @return The TransformPublisher to be used for the tag index
  */
 tf::TransformPublisher *
-TagVisionThread::get_tf_publisher(size_t idx, std::string frame)
+TagVisionThread::get_tf_publisher(std::string name, std::string frame)
 {
-	if (tf_publishers.find(frame + std::to_string(idx)) == tf_publishers.end())
-		tf_add_publisher("%s%ld", frame.c_str(), idx);
+	if (tf_publishers.find(frame + name) == tf_publishers.end())
+		tf_add_publisher("%s%s", frame.c_str(), name.c_str());
 
-	return tf_publishers[frame + std::to_string(idx)];
+	return tf_publishers[frame + name];
 }
 
 void

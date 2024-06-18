@@ -61,7 +61,7 @@ if(PLUGIN_tag_vision)
     fvclassifiers
     fvfilters
     fawkesconfig
-    TagVisionInterface)
+    ExplorationInterface)
 else()
   plugin_disabled_message("tag_vision")
 endif()

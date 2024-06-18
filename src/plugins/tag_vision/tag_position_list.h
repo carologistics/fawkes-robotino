@@ -25,7 +25,7 @@
 
 #include <blackboard/blackboard.h>
 #include <blackboard/exceptions.h>
-#include <interfaces/TagVisionInterface.h>
+#include <interfaces/ExplorationInterface.h>
 
 #include <string>
 #include <vector>
@@ -68,8 +68,8 @@ private:
 	size_t max_markers_;
 	/// The blackboard to publish on
 	fawkes::BlackBoard *blackboard_;
-	/// Tag vision inforamtion interface
-	fawkes::TagVisionInterface *index_interface_;
+	/// Tag vision information interface
+	fawkes::ExplorationInterface *exploration_interface_;
 	/// Name of the calling thread
 	std::string thread_name_;
 	/// Logger for logging
@@ -81,6 +81,8 @@ private:
 
 	std::string              cam_frame_;
 	fawkes::tf::Transformer *tf_listener_;
+
+	std::map<int, std::string> tag_id_names_;
 
 	TagPose get_laser_line_pose(fawkes::LaserLineInterface *laser_line_if);
 	TagPose get_nearest_laser_line_pose(TagPose                                    tag_pose,

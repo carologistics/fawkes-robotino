@@ -237,7 +237,7 @@
       (bind ?type (sym-cat (pb-field-value ?machine "type")))
     )
     (if (and ?zone ?rot ?type (neq ?rot NOT-SET) (neq ?zone N-T-SET)) then
-       (printout t "Received ground-truth for Machine: " ?name
+       (printout debug "Received ground-truth for Machine: " ?name
         ", rot: " ?rot ", zone: " ?zone ", type: " ?type crlf)
       (bind ?yaw (deg-to-rad ?rot))
       (delayed-do-for-all-facts ((?old-gt wm-fact))
