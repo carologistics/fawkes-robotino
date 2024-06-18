@@ -24,12 +24,64 @@
 ; ----------------------- Util -------------------------------
 
 (defglobal
+  ; defines the spacing between complexity-based prios
+  ?*PRODUCTION-PRIO-BASE-STEP* = 10
+  ; complexity-based starting prios according to spacing above
   ?*PRODUCTION-C0-PRIORITY* = 30
   ?*PRODUCTION-C1-PRIORITY* = 40
   ?*PRODUCTION-C2-PRIORITY* = 50
   ?*PRODUCTION-C3-PRIORITY* = 60
+  ; increas complexity by this for each solved step
+  ?*PRODUCTION-PRIORITY-INCREASE* = 100
+  ; further bump any delivery goal to most urgent level
+  ?*DELIVER-PRIORITY-INCREASE* = 1000
+  ; Support priorities
+  ; these values should be selected, such that the respective base priorities
+  ; are in a range from 1 to ?*PRODUCTION-PRIO-BASE-STEP*.
+  ?*PRODUCTION-PAY-PRIORITY* = 1
+  ?*PRODUCTION-PAY-CC-PRIORITY-INCREASE* = 2
+  ?*PRODUCTION-BUFFER-PRIORITY* = 2
+
   ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT* = 30
   ?*ROBOT-WAITING-TIMEOUT* = 2
+)
+
+(deffunction prio-from-complexity (?com)
+  (bind ?priority ?*PRODUCTION-C0-PRIORITY*)
+  (if (eq ?com C1) then
+    (bind ?priority ?*PRODUCTION-C1-PRIORITY*)
+  )
+  (if (eq ?com C2) then
+    (bind ?priority ?*PRODUCTION-C2-PRIORITY*)
+  )
+  (if (eq ?com C3) then
+    (bind ?priority ?*PRODUCTION-C3-PRIORITY*)
+  )
+  (return ?priority)
+)
+
+(deffunction dynamic-prio-from-complexity (?com ?step)
+  (bind ?priority ?*PRODUCTION-C0-PRIORITY*)
+  (if (eq ?com C1) then
+    (bind ?priority ?*PRODUCTION-C1-PRIORITY*)
+  )
+  (if (eq ?com C2) then
+    (bind ?priority ?*PRODUCTION-C2-PRIORITY*)
+  )
+  (if (eq ?com C3) then
+    (bind ?priority ?*PRODUCTION-C3-PRIORITY*)
+  )
+  (bind ?priority (- ?priority ?*PRODUCTION-PRIO-BASE-STEP*))
+  (if (str-index RING ?step) then
+    (bind ?priority (+ ?priority (* (- (string-to-field (sub-string 5 5 ?step)) 1) ?*PRODUCTION-PRIORITY-INCREASE*)))
+  )
+  (if (eq ?step CAP) then
+    (bind ?priority (+ ?priority (* (string-to-field (sub-string 2 2 ?com)) ?*PRODUCTION-PRIORITY-INCREASE*)))
+  )
+  (if (eq ?step DELIVER) then
+    (bind ?priority (+ ?priority (* (+ (string-to-field (sub-string 2 2 ?com)) 1) ?*PRODUCTION-PRIORITY-INCREASE*)))
+  )
+  (return ?priority)
 )
 
 (deffunction goal-meta-assign-robot-to-goal (?goal ?robot)
@@ -224,6 +276,7 @@
         (verbosity NOISY) (is-executable FALSE)
         (params target-mps ?mps
                 cap-color ?cap-color)
+        (priority (float ?*PRODUCTION-BUFFER-PRIORITY*))
   )))
   (goal-meta-assert ?goal nil ?order-id nil)
   (return ?goal)
@@ -539,7 +592,7 @@
 
   ;assert the main production tree
   (bind ?goal
-    (goal-tree-assert-central-run-all-prio PRODUCE-ORDER ?*PRODUCTION-C0-PRIORITY*
+    (goal-tree-assert-central-run-all-incremental-prio PRODUCE-ORDER ?*PRODUCTION-C0-PRIORITY* ?*PRODUCTION-PRIORITY-INCREASE*
       (goal-production-assert-deliver ?wp-for-order ?order-id ?instruct-parent ?ds)
       (goal-production-assert-mount-cap ?wp-for-order ?cs ?bs INPUT ?order-id)
     )
@@ -566,7 +619,7 @@
 
   ;assert the main production tree
   (bind ?goal
-    (goal-tree-assert-central-run-all-prio PRODUCE-ORDER ?*PRODUCTION-C1-PRIORITY*
+    (goal-tree-assert-central-run-all-incremental-prio PRODUCE-ORDER ?*PRODUCTION-C1-PRIORITY* ?*PRODUCTION-PRIORITY-INCREASE*
       (goal-production-assert-deliver ?wp-for-order ?order-id ?instruct-parent ?ds)
       (goal-production-assert-mount-cap ?wp-for-order ?cs ?rs1 OUTPUT ?order-id)
       (goal-production-assert-mount-ring ?wp-for-order ?rs1 ?bs INPUT ?col-ring1 ?order-id ONE)
@@ -593,7 +646,7 @@
   (bind ?instruct-goals (modify ?instruct-goals (parent ?root-id) (priority ?*PRODUCTION-C2-PRIORITY*)))
 
   (bind ?goal
-    (goal-tree-assert-central-run-all-prio PRODUCE-ORDER ?*PRODUCTION-C2-PRIORITY*
+    (goal-tree-assert-central-run-all-incremental-prio PRODUCE-ORDER ?*PRODUCTION-C2-PRIORITY* ?*PRODUCTION-PRIORITY-INCREASE*
       (goal-production-assert-deliver ?wp-for-order ?order-id ?instruct-parent ?ds)
       (goal-production-assert-mount-cap ?wp-for-order ?cs ?rs2 OUTPUT ?order-id)
       (goal-production-assert-mount-ring ?wp-for-order ?rs2 ?rs1 OUTPUT ?col-ring2 ?order-id TWO)
@@ -610,7 +663,7 @@
   (?root-id ?order-id ?wp-for-order ?cs ?ds ?bs ?rs1 ?rs2 ?rs3 ?col-cap ?col-base ?col-ring1 ?col-ring2 ?col-ring3)
 
   (bind ?instruct-goals
-    (goal-tree-assert-central-run-parallel-prio INSTRUCT-ORDER ?*PRODUCTION-C3-PRIORITY*
+    (goal-tree-assert-central-run-all-incremental-prio PRODUCE-ORDER ?*PRODUCTION-C3-PRIORITY* ?*PRODUCTION-PRIORITY-INCREASE*
       (goal-production-assert-instruct-bs-dispense-base ?wp-for-order ?col-base INPUT ?order-id ?bs)
       (goal-production-assert-instruct-cs-mount-cap ?cs ?col-cap ?order-id)
       (goal-production-assert-instruct-rs-mount-ring ?rs1 ?col-ring1 ?order-id ONE)
