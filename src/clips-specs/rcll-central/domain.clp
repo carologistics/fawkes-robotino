@@ -25,8 +25,22 @@
 =>
   (parse-pddl-domain (path-resolve "rcll-central/domain.pddl"))
   (assert (domain-loaded))
+  (bind ?rules (get-defrule-list))
+  (foreach ?r ?rules
+    (if (str-index domain-check ?r) then
+      (unwatch rules ?r)
+    )
+    (if (str-index domain-ground ?r) then
+      (unwatch rules ?r)
+    )
+  )
+  (bind ?facts (get-deftemplate-list))
+  (foreach ?r ?facts
+    (if (str-index grounded-pddl ?r) then
+      (unwatch facts ?r)
+    )
+  )
 )
-
 
 (defrule domain-set-sensed-predicates
   " Mark some predicates as sensed predicates.
@@ -342,6 +356,10 @@
     (domain-fact (name cs-color) (param-values ?cs2 CAP_BLACK))
     (domain-fact (name rs-filled-with) (param-values ?rs1 ZERO))
     (domain-fact (name rs-filled-with) (param-values ?rs2 ZERO))
+    (domain-fact (name mps-side-approachable) (param-values WAIT1 WAIT))
+    (domain-fact (name mps-side-approachable) (param-values WAIT2 WAIT))
+    (domain-fact (name mps-side-approachable) (param-values WAIT3 WAIT))
+    (domain-fact (name mps-side-approachable) (param-values WAIT4 WAIT))
   )
   (assert (domain-facts-loaded))
 )

@@ -157,7 +157,7 @@
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?col-r1))
   (wm-fact (key domain fact order-ring2-color args? ord ?order col ?col-r2))
   (wm-fact (key domain fact order-ring3-color args? ord ?order col ?col-r3))
-  (wm-fact (key domain fact order-cap-color args? ord ?order col ?col-cap))
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-col))
   ; Ring Specs CEs
   (wm-fact (key domain fact rs-ring-spec
             args? m ?mps1 r ?col-r1 rn ?req1&:(neq ?req1 NA)))
@@ -166,7 +166,7 @@
   (wm-fact (key domain fact rs-ring-spec
             args? m ?mps3 r ?col-r3 rn ?req3&:(neq ?req3 NA)))
   ; Cap Spec
-  (wm-fact (key domain fact cs-color args? m ?mps-cap col ?col-cap))
+  (wm-fact (key domain fact cs-color args? m ?mps-cap col ?cap-col))
   ; Order Meta CEs
   (wm-fact (key order meta competitive args? ord ?order) (value ?competitive))
   (not (wm-fact (key order meta points-max args? ord ?order)))

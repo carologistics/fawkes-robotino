@@ -258,13 +258,12 @@
   (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
 
   (wm-fact (key refbox game-time) (values $?now))
-  ?timer <- (selection-timer (goal-id ?goal-id) (robot ?robot)
+  (selection-timer (goal-id ?goal-id) (robot ?robot)
     (start-time $?st)
-		(timeout-duration ?timeout&:(timeout ?now ?st ?timeout)))
+    (timeout-duration ?timeout&:(timeout ?now ?st ?timeout)))
   =>
   (printout error  "Goal "  ?goal-id " timed out on selection!" crlf)
   (set-robot-to-waiting ?robot)
-  (remove-robot-assignment-from-goal-meta ?g)
   ; remove restrictions
   (delayed-do-for-all-facts ((?ogm goal-meta) (?og goal))
       (and
@@ -279,7 +278,13 @@
       )
       (modify ?ogm (restricted-to nil))
   )
-  (retract ?timer)
+  (delayed-do-for-all-facts ((?ogm goal-meta))
+        (eq ?ogm:assigned-to ?robot)
+      (modify ?ogm (assigned-to nil))
+  )
+  (delayed-do-for-all-facts ((?timer selection-timer)) (eq ?timer:robot ?robot)
+    (retract ?timer)
+  )
 )
 
 (defrule execution-monitoring-remove-timeout-goal-selection

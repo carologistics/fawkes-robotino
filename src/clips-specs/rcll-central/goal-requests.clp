@@ -161,7 +161,7 @@
 
   (goal (class SUPPORT-ROOT) (id ?root-id))
   =>
-  (bind ?payment-goal (goal-production-assert-pay-for-rings-with-base ?wp ?mps ?side ?rs INPUT nil))
+  (bind ?payment-goal (goal-production-assert-pay-for-rings-with-base ?wp ?rs nil))
   (modify ?request (values status ACTIVE assigned-to (fact-slot-value ?payment-goal id)))
   (modify ?payment-goal (parent ?root-id) (priority 100))
 )
@@ -179,7 +179,7 @@
   (goal (class SUPPORT-ROOT) (id ?root-id))
   (goal (class INSTRUCTION-ROOT) (id ?instruct-root-id))
   =>
-  (bind ?discard-goal (goal-production-assert-discard ?wp ?mps ?side nil))
+  (bind ?discard-goal (goal-production-assert-discard ?wp ?mps nil))
   (bind ?instruct-goal (goal-production-assert-instruct-ds-discard ?wp ?ds))
   (modify ?request (values status ACTIVE assigned-to (fact-slot-value ?discard-goal id) (fact-slot-value ?instruct-goal id)))
   (modify ?discard-goal (parent ?root-id) (priority 100))
