@@ -261,7 +261,7 @@ AgentTaskSkillerBridgeThread::construct_task_string(const llsf_msgs::AgentTask &
 		const llsf_msgs::Move &move     = agent_task_msg.move();
 		std::string            waypoint = move.waypoint();
 		std::string machine_point       = move.has_machine_point() ? move.machine_point() : "INPUT";
-		return "goto{place=\"" + waypoint + "-" + machine_point + "\"}";
+		return "moveto{place=\"" + waypoint + "-" + machine_point + "\"}";
 	} else if (agent_task_msg.has_retrieve()) {
 		const llsf_msgs::Retrieve &retrieve = agent_task_msg.retrieve();
 		return "manipulate_wp{mps=\"" + retrieve.machine_id() + "\",safe_put=false,map_pos=true,side=\""
