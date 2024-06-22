@@ -171,6 +171,7 @@
 	(rs-input-ready-to-mount-ring ?m - mps ?ring-col - ring-color)
 	(ds-input-ready-to-deliver ?m - mps ?wp - workpiece)
 	(slide-in-use ?m - mps)
+	(bs-side-in-use ?m - mps ?side - mps-side)
 )
 
 (:action explore-zone

@@ -15,9 +15,15 @@
 "
   (declare (salience ?*SALIENCE-DOMAIN-CHECK*))
   (domain-fact (name at) (param-values ?robot $?))
+  (domain-fact (name mps-type) (param-values ?bs BS))
   (domain-fact (name wp-base-color) (param-values ?wp BASE_NONE))
+  (domain-fact (name mps-found) (param-values ?bs))
   (not (domain-fact (name wp-reachable) (param-values ?robot ?wp)))
   (domain-fact (name can-hold) (param-values ?robot))
+  (or
+    (not (domain-fact (name bs-side-in-use) (param-values ?bs INPUT)))
+    (not (domain-fact (name bs-side-in-use) (param-values ?bs OUTPUT)))
+  )
  =>
   (assert (domain-fact (name wp-reachable) (param-values ?robot ?wp)))
 )
@@ -58,5 +64,17 @@
   (domain-fact (name wp-base-color) (param-values ?wp ~BASE_NONE))
   (not (domain-fact (name wp-usable) (param-values ?wp)))
  =>
+  (retract ?f)
+)
+
+(defrule wp-reachable-negative-bs-busy
+" If the bs has both sides in use and the wp is in the bs, the wp is not reachable.
+"
+  (declare (salience ?*SALIENCE-DOMAIN-CHECK*))
+  ?f <- (domain-fact (name wp-reachable) (param-values ?robot ?wp))
+  (domain-fact (name wp-base-color) (param-values ?wp BASE_NONE))
+  (domain-fact (name bs-side-in-use) (param-values ?bs INPUT))
+  (domain-fact (name bs-side-in-use) (param-values ?bs OUTPUT))
+  =>
   (retract ?f)
 )
