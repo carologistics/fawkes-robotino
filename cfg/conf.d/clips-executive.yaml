@@ -139,6 +139,7 @@ clips-executive:
               - rcll-central/derived-predicates/wp-reachable.clp
               - rcll-central/derived-predicates/instruct-blocked.clp
               - rcll-central/derived-predicates/slide-in-use.clp
+              - rcll-central/derived-predicates/bs-side-in-use.clp
           - name: simtest
             file: rcll-central/simtest.clp
       # the mapping syntax for parameters is defined in
