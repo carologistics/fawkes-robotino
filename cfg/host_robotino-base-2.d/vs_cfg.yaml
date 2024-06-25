@@ -8,19 +8,18 @@ plugins/vs_offsets:
   base_offset: 0.28
 
   # offsets between object pose from the object tracking plugin and the target
-  #  frame before starting the routine (target), at the pick/put
-  #  position in the routine (routine), and at the end of the gripper
-  #  routine (end)
-  # z positions assume the wp is a C3 and reduce the height if its lower
-  # change y direction through host_specific static frame
+  #  frame before starting the routine (target in both x and z), above the
+  #  workpiece (top, only x is changed), at the pick/put position in the
+  #  routine (routine, only z is changed), and at the end of the gripper (end,
+  #  only z is changed) routine (end)
+  # z positions assume the wp is a C3 and reduce the height if its lower change
+  #  y direction through host_specific static frame
   workpiece:
     target:
       x: -0.05
       z: 0.035
 
     top:
-      # routine and end is sharing the same x offset as its top
-      # top is sharing the same z offset as its target
       x: 0.005
 
     routine:
@@ -38,11 +37,9 @@ plugins/vs_offsets:
       x: 0.03
 
     routine:
-      x: 0.03
       z: 0.02
 
     end:
-      # end is sharing the same x offset as its target
       z: 0.07
 
   slide:
@@ -54,7 +51,6 @@ plugins/vs_offsets:
       x: 0.04
 
     routine:
-      x: 0.04
       z: -0.02
 
     end:
