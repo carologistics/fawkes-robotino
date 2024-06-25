@@ -78,9 +78,6 @@ local offset_x_workpiece_top = config:get_float("plugins/vs_offsets/workpiece/to
 local offset_x_conveyor_top = config:get_float("plugins/vs_offsets/conveyor/top/x")
 local offset_x_slide_top = config:get_float("plugins/vs_offsets/slide/top/x")
 
-local offset_x_conveyor_routine = config:get_float("plugins/vs_offsets/conveyor/routine/x")
-local offset_x_slide_routine = config:get_float("plugins/vs_offsets/slide/routine/x")
-
 local offset_z_workpiece_routine = config:get_float("plugins/vs_offsets/workpiece/routine/z")
 local offset_z_conveyor_routine = config:get_float("plugins/vs_offsets/conveyor/routine/z")
 local offset_z_slide_routine = config:get_float("plugins/vs_offsets/slide/routine/z")
@@ -175,9 +172,9 @@ local x_given = 0
 if fsm.vars.target == "WORKPIECE" then
   x_given = fsm.vars.gripper_target.x - offset_x_workpiece_target_frame + offset_x_workpiece_top
 elseif fsm.vars.target == "CONVEYOR" then
-  x_given = fsm.vars.gripper_target.x - offset_x_conveyor_target_frame + offset_x_conveyor_routine
+  x_given = fsm.vars.gripper_target.x - offset_x_conveyor_target_frame + offset_x_conveyor_top
 else -- SLIDE
-  x_given = fsm.vars.gripper_target.x - offset_x_slide_target_frame + offset_x_slide_routine
+  x_given = fsm.vars.gripper_target.x - offset_x_slide_target_frame + offset_x_slide_top
 end
 
 local x_clipped = math.max(0, math.min(x_given, x_max))
