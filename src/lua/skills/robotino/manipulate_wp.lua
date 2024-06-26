@@ -681,12 +681,13 @@ function MOVE_BASE_AND_GRIPPER:init()
         ori = fawkes.tf.create_quaternion_from_yaw(0)
     }, "base_link", "end_effector_home")
 
-  fsm.vars.gripper_wait = 10
-  if fsm.vars.target == "WORKPIECE" then
-    set_gripper(gripper_target.x, 0, gripper_target.z - fsm.vars.missing_c3_height)
-  else
-    set_gripper(gripper_target.x, 0, gripper_target.z)
-  end
+    fsm.vars.gripper_wait = 10
+    if fsm.vars.target == "WORKPIECE" then
+        set_gripper(gripper_target.x, 0,
+                    gripper_target.z - fsm.vars.missing_c3_height)
+    else
+        set_gripper(gripper_target.x, 0, gripper_target.z)
+    end
 end
 
 function FINE_TUNE_GRIPPER:init()
