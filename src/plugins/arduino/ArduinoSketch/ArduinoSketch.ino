@@ -466,30 +466,12 @@ read_package()
 			send_status();
 			break;
 		case CMD_OPEN:
-      digitalWrite(servoPin, LOW);
-      /*if(entry){
-        prevMillis = milliseconds;
-        entry = 0;
-      }
-			do{
-        writeMicroseconds(servoPin, 1500);
-        Serial.println("opening");
-      }while(milliseconds - prevMillis < 20000);
-      if(milliseconds - prevMillis >= 20000){
-        digitalWrite(servoPin, LOW);
-      }
+      digitalWrite(servoPin, HIGH);
       open_gripper = HIGH;
-      Serial.println("gripper open");*/
 			break;
 		case CMD_CLOSE:
-      digitalWrite(servoPin, HIGH);
-        /*prevMillis = milliseconds;
-			do{
-        writeMicroseconds(servoPin, 600);
-        Serial.println("closing");
-      }while(milliseconds - prevMillis < 20000);
+      digitalWrite(servoPin, LOW);
       open_gripper = LOW;
-      Serial.println("gripper close");
 			break;
 		case CMD_CALIBRATE: calibrate(); break;
 		case CMD_DOUBLE_CALIBRATE: double_calibrate(); break;
