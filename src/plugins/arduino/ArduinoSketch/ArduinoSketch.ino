@@ -475,7 +475,7 @@ read_package()
 		case CMD_DOUBLE_CALIBRATE: double_calibrate(); break;
 		case CMD_SET_SPEED:
 			set_new_speed(new_value);
-			send_status();*/
+			send_status();
 			break;
 		case CMD_SET_ACCEL:
 			set_new_acc(new_value);
