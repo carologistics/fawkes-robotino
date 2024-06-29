@@ -64,7 +64,7 @@ long a_toggle_steps = 240;
 #define STATUS_OPEN 1
 #define STATUS_CLOSED 0
 
-#define servoPin 12
+#define servoPin 12 // HIGH to open gripper, LOW to close gripper
 
 char status_array_[] = {'M', 'I', 'E'};
 
@@ -76,10 +76,10 @@ int cur_status = STATUS_IDLE;
 
 int loop_nr = 0;
 
-volatile unsigned long milliseconds = 0;
+//volatile unsigned long milliseconds = 0;
 bool st = 1, entry = 1;
-unsigned long prevMillis = 0;
-const int refreshInterval = 20000; //Refresh interval in microseconds (20ms)
+//unsigned long prevMillis = 0;
+//const int refreshInterval = 20000; //Refresh interval in microseconds (20ms)
 
 #define BUFFER_SIZE 256
 char   buffer_[BUFFER_SIZE];
@@ -466,7 +466,8 @@ read_package()
 			send_status();
 			break;
 		case CMD_OPEN:
-      if(entry){
+      digitalWrite(servoPin, LOW);
+      /*if(entry){
         prevMillis = milliseconds;
         entry = 0;
       }
@@ -478,10 +479,11 @@ read_package()
         digitalWrite(servoPin, LOW);
       }
       open_gripper = HIGH;
-      Serial.println("gripper open");
+      Serial.println("gripper open");*/
 			break;
 		case CMD_CLOSE:
-        prevMillis = milliseconds;
+      digitalWrite(servoPin, HIGH);
+        /*prevMillis = milliseconds;
 			do{
         writeMicroseconds(servoPin, 600);
         Serial.println("closing");
@@ -493,7 +495,7 @@ read_package()
 		case CMD_DOUBLE_CALIBRATE: double_calibrate(); break;
 		case CMD_SET_SPEED:
 			set_new_speed(new_value);
-			send_status();
+			send_status();*/
 			break;
 		case CMD_SET_ACCEL:
 			set_new_acc(new_value);
@@ -528,7 +530,7 @@ read_package()
 }
 
 // Custom millis() function
-unsigned long
+/*unsigned long
 customMillis() {
   unsigned long ms;
   cli(); // Disable interrupts
@@ -545,7 +547,7 @@ writeMicroseconds(int pin, int pulseWidth) {
   
   // Ensure the total period is 20ms
   delayMicroseconds(refreshInterval - pulseWidth);
-}
+}*/
 
 void
 setup()
@@ -634,7 +636,7 @@ int loop_number = 0;
 void
 loop()
 {
-  if (!open_gripper) {
+  /*if (!open_gripper) {
     switch (st){
     case 1: 
       writeMicroseconds(servoPin, 900);
@@ -651,7 +653,7 @@ loop()
       }
     break;
     }
-	}
+	}*/
 	if (movement_done_flag) {
 		motor_X.disableOutputs(); // same pin for all of them
 		movement_done_flag = false;
@@ -683,7 +685,7 @@ ISR(TIMER0_COMPA_vect) // this is called every overflow of the timer 0
 	if (occupied)
 		return; // this interrupt is already called
 	occupied = true;
-  milliseconds++;
+  //milliseconds++;
 	interrupts(); // we need interrupts here to catch all the incoming serial data and finish the pulse
 	if (cur_status == STATUS_MOVING) {
 		byte
