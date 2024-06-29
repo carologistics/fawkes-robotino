@@ -20,18 +20,28 @@
 #
 # *****************************************************************************
 
-set_output_directory_plugins()
+set(PLUGIN_ros2-rto-data-in
+    ON
+    CACHE BOOL "Build ros2-rto-data-in")
 
-set(CMAKE_SHARED_MODULE_PREFIX "")
-add_subdirectory(clips-motor-switch)
-add_subdirectory(navgraph-generator-mps)
-add_subdirectory(skiller_motor_state)
-add_subdirectory(mps-laser-gen)
-add_subdirectory(laser_front_dist)
-add_subdirectory(tag_vision)
-add_subdirectory(object-tracking)
-add_subdirectory(conveyor_pose)
-add_subdirectory(conveyor_plane)
-add_subdirectory(arduino)
-add_subdirectory(box_detect)
-add_subdirectory(ros2)
+if(PLUGIN_ros2-rto-data-in)
+  add_library(ros2-rto-data-in MODULE rto_data_in_plugin.cpp
+                                         rto_data_in_thread.cpp)
+  depend_on_ros2(ros2-rto-data-in)
+  depend_on_ros2_libs(
+    ros2-rto-data-in
+    "rmw;rosidl_typesupport_interface;rcl_interfaces;rto_msgs"
+  )
+  target_link_libraries(
+    ros2-rto-data-in
+    fawkescore
+    fawkesutils
+    fawkesaspects
+    fawkesblackboard
+    fawkesinterface
+    fawkesros2aspect
+    RTODataInterface)
+else()
+  plugin_disabled_message(ros2-rto-data-in)
+endif()
+add_subdirectory(interfaces)
