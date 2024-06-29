@@ -1,0 +1,8 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/gazsim
+---
+rto-data-in:
+  analog-topic: "analog_readings"
+  digital-topic: "digital_readings"
