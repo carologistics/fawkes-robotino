@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="RTODataInterface" author="Tarik Viehmann" year="2024">
+  <data>
+    <comment>
+      Interface to access Arduino functionalities
+    </comment>
+    <field type="float" length="8" name="analog_readings">
+        Analog Readings of the Robotino.
+    </field>
+    <field type="bool" length="8" name="digital_readings">
+        Digital Readings of the Robotino.
+    </field>
+  </data>
+</interface>
