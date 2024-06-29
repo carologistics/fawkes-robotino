@@ -466,11 +466,9 @@ read_package()
 			send_status();
 			break;
 		case CMD_OPEN:
-      digitalWrite(servoPin, HIGH);
       open_gripper = HIGH;
 			break;
 		case CMD_CLOSE:
-      digitalWrite(servoPin, LOW);
       open_gripper = LOW;
 			break;
 		case CMD_CALIBRATE: calibrate(); break;
@@ -618,24 +616,11 @@ int loop_number = 0;
 void
 loop()
 {
-  /*if (!open_gripper) {
-    switch (st){
-    case 1: 
-      writeMicroseconds(servoPin, 900);
-      if(customMillis() - prevMillis > 2500){
-        st = 0;
-        prevMillis = customMillis();
-      }
-    break;
-    
-    case 0:
-      if(customMillis() - prevMillis > 10000){
-        st = 1;
-        prevMillis = customMillis();
-      }
-    break;
-    }
-	}*/
+  if(open_gripper){
+    digitalWrite(servoPin, HIGH);
+  } else{
+    digitalWrite(servoPin, LOW);
+  }
 	if (movement_done_flag) {
 		motor_X.disableOutputs(); // same pin for all of them
 		movement_done_flag = false;
