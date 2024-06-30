@@ -146,6 +146,7 @@ private:
 	fawkes::Time                    expected_finish_time_;
 
 	bool  wp_sensed_                  = false;
+	bool  wp_sensor_enable_           = true;
 	bool  wp_sensor_analog_           = true;
 	int   wp_sensor_pin_              = 0;
 	float wp_sensor_analog_threshold_ = 0.7;
