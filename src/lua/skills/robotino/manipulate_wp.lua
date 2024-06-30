@@ -518,7 +518,7 @@ function INIT:init()
     fsm.vars.expected_side = SIDE_NAMES[fsm.vars.side]
 
     -- get wp height
-    fsm.vars.missing_c3_height = MISSING_C3_HEIGHT[fsm.vars.c]
+    fsm.vars.missing_c3_height = 0
 
     fsm.vars.gripper_target_pos_x = 0
     fsm.vars.gripper_target_pos_y = 0
