@@ -38,7 +38,9 @@
 #include <blackboard/interface_listener.h>
 #include <config/change_handler.h>
 #include <core/threading/thread.h>
+#include <interface/interface.h>
 #include <interfaces/JoystickInterface.h>
+#include <interfaces/RTODataInterface.h>
 #include <tf/types.h>
 
 #include <memory>
@@ -143,10 +145,16 @@ private:
 	std::mutex                      queue_mutex;
 	fawkes::Time                    expected_finish_time_;
 
+	bool  wp_sensed_                  = false;
+	bool  wp_sensor_analog_           = true;
+	int   wp_sensor_pin_              = 0;
+	float wp_sensor_analog_threshold_ = 0.7;
+
 	std::unique_ptr<SerialPort> port_;
 	boost::thread               timer_thread;
 
 	fawkes::ArduinoInterface  *arduino_if_;
+	fawkes::RTODataInterface  *rto_data_in_if_;
 	fawkes::JoystickInterface *joystick_if_;
 
 	ArduinoTFThread *tf_thread_;
@@ -164,6 +172,7 @@ private:
 
 	float inline round_to_2nd_dec(float f);
 	void pose_publish_tf();
+	void bb_interface_data_changed(fawkes::Interface *interface) noexcept;
 
 	bool handle_xyz_message(fawkes::ArduinoInterface::MoveXYZAbsMessage *message);
 
