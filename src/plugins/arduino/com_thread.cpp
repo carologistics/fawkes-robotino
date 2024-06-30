@@ -153,12 +153,14 @@ ArduinoComThread::init()
 
 	joystick_if_ =
 	  blackboard->open_for_reading<JoystickInterface>("Joystick", cfg_ifid_joystick_.c_str());
-	rto_data_in_if_ = blackboard->open_for_reading<RTODataInterface>("robotino_data");
+	if (wp_sensor_enable_) {
+		rto_data_in_if_ = blackboard->open_for_reading<RTODataInterface>("robotino_data");
+		bbil_add_data_interface(rto_data_in_if_);
+	}
 
 	movement_pending_ = false;
 
 	bbil_add_message_interface(arduino_if_);
-	bbil_add_data_interface(rto_data_in_if_);
 
 	blackboard->register_listener(this);
 	arduino_if_->set_final(true);
@@ -370,6 +372,12 @@ ArduinoComThread::load_config()
 		cfg_steps_per_mm_[Z] = 200.0 * cfg_z_microstep / 1.5;
 
 		cfg_a_toggle_steps_ = config->get_int(cfg_prefix_ + "/hardware_settings/a_toggle_steps");
+		wp_sensor_enable_   = config->get_bool(cfg_prefix_ + "/robotino_wp_sensor/wp_sensor_enable");
+
+		wp_sensor_analog_ = config->get_bool(cfg_prefix_ + "/robotino_wp_sensor/wp_sensor_analog");
+		wp_sensor_pin_    = config->get_int(cfg_prefix_ + "/robotino_wp_sensor/wp_sensor_pin");
+		wp_sensor_analog_threshold_ =
+		  config->get_float(cfg_prefix_ + "/robotino_wp_sensor/wp_sensor_analog_threshold");
 		// 2mm / rotation
 	} catch (Exception &e) {
 	}
@@ -635,21 +643,23 @@ ArduinoComThread::config_comment_changed(const fawkes::Configuration::ValueItera
 void
 ArduinoComThread::bb_interface_data_changed(fawkes::Interface *interface) noexcept
 {
-	RTODataInterface *data_if = dynamic_cast<RTODataInterface *>(interface);
-	if (!data_if)
-		return;
-	data_if->read();
-	bool old_sensed = wp_sensed_;
-	if (wp_sensor_analog_) {
-		float analog_reading = data_if->analog_readings()[wp_sensor_pin_];
-		wp_sensed_           = (analog_reading > wp_sensor_analog_threshold_);
-		logger->log_debug(name(), "analog reading: %b", wp_sensed_);
-	} else {
-		wp_sensed_ = data_if->analog_readings()[wp_sensor_pin_];
-		logger->log_debug(name(), "digital reading: %b", wp_sensed_);
-	}
-	if (old_sensed != wp_sensed_) {
-		arduino_if_->set_wp_sensed(wp_sensed_);
-		arduino_if_->write();
+	if (wp_sensor_enable_) {
+		RTODataInterface *data_if = dynamic_cast<RTODataInterface *>(interface);
+		if (!data_if)
+			return;
+		data_if->read();
+		bool old_sensed = wp_sensed_;
+		if (wp_sensor_analog_) {
+			float analog_reading = data_if->analog_readings()[wp_sensor_pin_];
+			wp_sensed_           = (analog_reading > wp_sensor_analog_threshold_);
+			logger->log_debug(name(), "analog reading: %b", wp_sensed_);
+		} else {
+			wp_sensed_ = data_if->analog_readings()[wp_sensor_pin_];
+			logger->log_debug(name(), "digital reading: %b", wp_sensed_);
+		}
+		if (old_sensed != wp_sensed_) {
+			arduino_if_->set_wp_sensed(wp_sensed_);
+			arduino_if_->write();
+		}
 	}
 }
