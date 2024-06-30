@@ -19,6 +19,7 @@
     <field type="float" name="z_position">Current z-position</field>
 
     <field type="bool"  name="gripper_closed">True if gripper is closed</field>
+    <field type="bool"  name="wp_sensed">True if the wp is sensed in the gripper</field>
 
     <field type="float" name="x_max">Max len in x</field>
     <field type="float" name="y_max">Max len in y</field>
