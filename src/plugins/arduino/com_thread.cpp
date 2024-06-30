@@ -153,10 +153,12 @@ ArduinoComThread::init()
 
 	joystick_if_ =
 	  blackboard->open_for_reading<JoystickInterface>("Joystick", cfg_ifid_joystick_.c_str());
+	rto_data_in_if_ = blackboard->open_for_reading<RTODataInterface>("robotino_data");
 
 	movement_pending_ = false;
 
 	bbil_add_message_interface(arduino_if_);
+	bbil_add_data_interface(rto_data_in_if_);
 
 	blackboard->register_listener(this);
 	arduino_if_->set_final(true);
@@ -624,4 +626,30 @@ ArduinoComThread::config_tag_changed(const char *new_tag)
 void
 ArduinoComThread::config_comment_changed(const fawkes::Configuration::ValueIterator *v)
 {
+}
+
+/** Handle interface changes.
+ * Check the robotino in data for capacitive sensor reading
+ * @param interface interface instance that you supplied to bbil_add_data_interface()
+ */
+void
+ArduinoComThread::bb_interface_data_changed(fawkes::Interface *interface) noexcept
+{
+	RTODataInterface *data_if = dynamic_cast<RTODataInterface *>(interface);
+	if (!data_if)
+		return;
+	data_if->read();
+	bool old_sensed = wp_sensed_;
+	if (wp_sensor_analog_) {
+		float analog_reading = data_if->analog_readings()[wp_sensor_pin_];
+		wp_sensed_           = (analog_reading > wp_sensor_analog_threshold_);
+		logger->log_debug(name(), "analog reading: %b", wp_sensed_);
+	} else {
+		wp_sensed_ = data_if->analog_readings()[wp_sensor_pin_];
+		logger->log_debug(name(), "digital reading: %b", wp_sensed_);
+	}
+	if (old_sensed != wp_sensed_) {
+		arduino_if_->set_wp_sensed(wp_sensed_);
+		arduino_if_->write();
+	}
 }

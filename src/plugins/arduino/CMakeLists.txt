@@ -46,6 +46,7 @@ if(PLUGIN_arduino)
     fawkesblackboard
     fawkesinterface
     ArduinoInterface
+    RTODataInterface
     JoystickInterface)
 
   add_custom_target(
