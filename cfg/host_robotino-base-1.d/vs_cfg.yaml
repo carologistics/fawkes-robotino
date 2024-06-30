@@ -21,8 +21,6 @@ plugins/vs_offsets:
 
     top:
       x: 0.000
-
-    routine:
       z: 0.009
 
     end:
@@ -34,17 +32,18 @@ plugins/vs_offsets:
       z: 0.0075
 
     top:
-      x: 0.02
+      x: 0.03
+      z: 0.073
 
     routine:
-      z: -0.01
+      z: 0.043
 
     end:
-      z: 0.055
+      z: 0.11
 
   slide:
     target:
-      x: -0.5
+      x: -0.05
       z: 0.05
 
     top:
