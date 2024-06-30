@@ -62,6 +62,7 @@ fawkes/meta_plugins:
     - bbsync
     - ros2
     - ros2-tf2-oneway
+    - ros2-rto-data-in
     - ros2-laserbridge
     - ros2-motorinterface
     - ros2-navigator
