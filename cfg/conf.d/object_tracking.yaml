@@ -3,6 +3,16 @@
 ---
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/webview
 ---
+
+plugins/picam_client:
+  ip: "172.26.108.74"
+  port: 6465
+
+  camera_intrinsics:
+    # image size
+    width: 640
+    height: 480
+
 plugins/object_tracking:
   if_name: "object-tracking"
 
@@ -98,7 +108,7 @@ plugins/object_tracking:
     image_path: "../cfg/yolo/realsense2.jpg"
 
   buffer:
-    shm_image_id: "realsense_rgb"
+    shm_image_id: "picam"
     shm_image_id_res: "object_tracking"
     frame: "cam_gripper"
 
