@@ -105,6 +105,7 @@
 	(domain-object (name ?mps) (type mps))
 	(exploration-result (machine ?mps) (zone ?zone-result) (team ~UNKNOWN) (status PARTIAL_CORRECT))
 	?zc <- (domain-fact (name zone-content) (param-values ?zone-fact UNKNOWN))
+	(wm-fact (key game found-tag zone args? m ?mps) (value ?zone-fact))
 	(test (eq (zone-string-to-sym-dash (str-cat ?zone-result)) ?zone-fact))
 	=>
 	(modify ?zc (param-values ?zone-fact ?mps))
