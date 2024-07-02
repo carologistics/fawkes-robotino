@@ -68,6 +68,7 @@ public:
 
 	virtual void init();
 	virtual void loop();
+	virtual void finalize();
 
 private:
 	//MPS values used to compute expected object position on MPS
