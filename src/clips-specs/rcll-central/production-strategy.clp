@@ -1337,13 +1337,17 @@
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key order selection reset) (value TRUE))
   ?os <- (wm-fact (key order meta started args? ord ?order) (value TRUE))
-  (goal (id ?parent))
-  (goal-meta (goal-id ?parent) (root-for-order ?order))
+  ?parent-fact <- (goal (id ?parent))
+  ?parent-meta-fact <- (goal-meta (goal-id ?parent) (root-for-order ?order))
   ; goal was not started yet
   (not (goal (parent ?parent) (mode ~FORMULATED)))
   ?do <- (domain-object (name ?wp-name&:(eq ?wp-name (sym-cat wp- ?order))))
+  (not (domain-fact (name wp-usable) (param-values ?wp-name)))
   =>
   (delayed-do-for-all-facts ((?g goal)) (eq ?g:parent ?parent)
+    (retract ?g)
+  )
+  (delayed-do-for-all-facts ((?g goal)) (member$ ?wp-name ?g:params)
     (retract ?g)
   )
   (delayed-do-for-all-facts ((?df domain-fact)) (member$ ?wp-name ?df:param-values)
@@ -1352,7 +1356,7 @@
   (delayed-do-for-all-facts ((?wm wm-fact)) (member$ ?wp-name ?wm:key)
     (retract ?wm)
   )
-  (retract ?do)
+  (retract ?do ?parent-fact ?parent-meta-fact)
   (modify ?os (value FALSE))
 )
 
