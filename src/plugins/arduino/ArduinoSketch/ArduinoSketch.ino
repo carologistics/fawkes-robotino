@@ -23,6 +23,8 @@
 
 #include <AccelStepper.h>
 #include <Wire.h>
+#include <HardwareTimer.h> // for using timer interrupts in Arduino GIGA
+//https://github.com/stm32duino/Arduino_Core_STM32.git -- link for HardwareTimer.h
 
 //#define DEBUG_MODE
 
@@ -34,7 +36,11 @@
  * which is written when the low byte is read.
  * It is thus important, that the low byte is read before the high byte, so the shadow register is properly loaded.
 */
-#define CUR_TIME (TCNT1L | (unsigned int)((TCNT1H << 8)));
+//#define CUR_TIME (TCNT1L | (unsigned int)((TCNT1H << 8)));
+HardwareTimer* timer2 = new HardwareTimer(TIM2);
+#define CUR_TIM (timer2->getCount())
+
+HardwareTimer* timer3 = new HardwareTimer(TIM3);
 
 AccelStepper motor_X(MOTOR_X_STEP_SHIFT, MOTOR_X_DIR_SHIFT);
 AccelStepper motor_Y(MOTOR_Y_STEP_SHIFT, MOTOR_Y_DIR_SHIFT);
@@ -80,7 +86,8 @@ char   buffer_[BUFFER_SIZE];
 byte   buf_i_ = 0;
 String errormessage;
 
-void
+//------------UNO----------------------
+/*void
 enable_step_interrupt()
 {
 	TIMSK0 = 0x02; // enable interrupt of timer overflow
@@ -90,7 +97,23 @@ void
 disable_step_interrupt()
 {
 	TIMSK0 = 0x0; // disable interrupt of timer overflow
+}*/
+//------------UNO-----------------------
+//-----------GIGA----------------------
+void
+enable_step_interrupt()
+{
+  timer3->attachInterrupt(1, timer3Callback); // SHOULD THIS BE DONE HERE AT EVERY FUCNTION CALL OR JUST ONCE OUTSIDE ??
+  timer3->resume();// start timer
 }
+
+void
+disable_step_interrupt()
+{
+  timer3->detachInterrupt(1); //SHOULD WE DETACH EVERYTIME AT FUNCTION CALL OR ONLY PAUSE ??
+  timer3->pause();//pause the timer
+}
+//-----------GIGA----------------------
 
 void
 send_packet(int status_, int value_to_send)
@@ -529,15 +552,21 @@ setup()
 	Serial.begin(115200);
 	// Serial.setTimeout(0);
 
+  timer2->setPrescaleFactor(1); // NEED TO SET THE PRESCALER
+  timer2->setOverflow(0xFFFF); // max overflow
+  //start the timer here or at the end of the setup() ???
+  timer2->resume(); 
+/*
 	TIMSK0 = 0; // turn off interrupts on Timer 0. micros() will thus NOT work anymore!
-	/* Why use timer 0 for the step interrupt?
-  *  Why use timer 2 for the pule interrupts?
-  *  By this procedure it's made sure that the pulse interrupts fire BEFORE a new step interrupt is called, in case both are pending
-  */
+	//  Why use timer 0 for the step interrupt?
+  //  Why use timer 2 for the pule interrupts?
+  //  By this procedure it's made sure that the pulse interrupts fire BEFORE a new step interrupt is called, in case both are pending
+  //
 
 	TCCR1A = 0x0;
 	TCCR1B = 0x3; // use 64 prescaler -> 4 us per cnt
 	TIMSK1 = 0x0; // deactivate all interrupts with this timer
+  */
 
 	// initialize the LIMIT_PIN as an input per motor:
 	pinMode(MOTOR_X_LIMIT_PIN, INPUT_PULLUP);
@@ -581,24 +610,46 @@ setup()
 	motor_X.disableOutputs();
 
 	// configure the pulse interrupt
-
-	TCCR2A = 0x1; // just normal mode
+//-----------UNO----------------
+	/*TCCR2A = 0x1; // just normal mode
 	TCCR2B = 0x0; //no clock source, activate with TCCR2B=0x1; just direct io clock
 	TCNT2  = 0;   // reset counter
 	OCR2A  = 3;   //15; // start pulse, should be at least 650ns after setting direction
 	OCR2B  = 254; // end pulse, should be at least 1.9us after starting pulse
 	TIFR2  = 0x7; // clear already set flags
-	TIMSK2 = 0x6; // activate both compare interrupts
+	TIMSK2 = 0x6; // activate both compare interrupts*/
+//-----------UNO----------------
+//----------GIGA-------------------
+  timer2->setMode(1, TIMER_OUTPUT_COMPARE_PWM1); // PWM Mode on Channel 1 (I THINK THIS IS THE NORMAL MODE ??)
+  timer2->setPrescaleFactor(1);//No prescaling -- SURE ABOUT THIS ??
+  timer2->setOverflow(255); //max vlaue of 8 bits
+
+  timer2->setCaptureCompare(1, 3, RESOLUTION_8B_COMPARE_FORMAT); // start pulse value (3 in 8bit mode)
+  timer2->setCaptureCompare(2, 254, RESOLUTION_8B_COMPARE_FORMAT); // end pulse value (254 in 8bit mode)
+
+  timer2->attachInterrupt(1, onPulseInterrupt);
+  timer2->attachInterrupt(2, offPulseInterrupt);
+
+  timer2->resume();
+//----------GIGA-------------------
+
 
 	// configure the step interrupt
-
-	TCCR0A = 0x2; // CTC mode
+//------------UNO--------------
+	/*TCCR0A = 0x2; // CTC mode
 	TCCR0B = 0x2; // 0.5us per cnt, prescaler is 8
 	OCR0A  = 70;  // 35us per step
 	TCNT0  = 0;
 	TIMSK0 = 0;   // start new
-	TIFR0  = 0x7; // clear all interrupt flags
+	TIFR0  = 0x7; // clear all interrupt flags*/
+//------------UNO--------------
+//---------GIGA------------------
+  timer3->setMode(1, TIMER_OUTPUT_COMPARE);// set CTC mode on channel 1
+  timer3->setPrescaleFactor(8); // prescaler 8
+  timer3->setOverflow(70, TICK_FORMAT); //35us per step
+  timer3->setCount(0); // initialze timer count to 0
 	enable_step_interrupt();
+//---------GIGA------------------
 
 	interrupts();
 	//default behavior should be to calibrate and home on serial port open
@@ -633,7 +684,8 @@ volatile byte step_bits_xyz = 0;
 volatile byte step_bits_a   = 0;
 volatile bool pulse_done    = true;
 
-ISR(TIMER0_COMPA_vect) // this is called every overflow of the timer 0
+//-----------UNO---------------
+/*ISR(TIMER0_COMPA_vect) // this is called every overflow of the timer 0
 {
 	static volatile bool occupied = false;
 	if (occupied)
@@ -672,9 +724,47 @@ ISR(TIMER0_COMPA_vect) // this is called every overflow of the timer 0
 		}
 	}
 	occupied = false;
-}
+}*/
+//------------------UNO----------------------
+//--------------------GIGA-------------------
+void timer3Callback() {
+    static volatile bool occupied = false;
+    if (occupied) return; // this interrupt is already called
+    occupied = true;
+    interrupts(); // we need interrupts here to catch all the incoming serial data and finish the pulse
+    
+    if (cur_status == STATUS_MOVING) {
+        byte dir = 0, step = 0, step_a = 0;
+        byte dir_a = 0;
+        bool movement_done;
 
-ISR(TIMER2_COMPA_vect) // start of pulse
+        unsigned int time = CUR_TIM;
+        movement_done = motor_X.get_step(step, dir, time);
+        movement_done &= motor_Y.get_step(step, dir, time);
+        movement_done &= motor_Z.get_step(step, dir, time);
+        movement_done &= motor_A.get_step(step_a, dir_a, time);
+        movement_done_flag = movement_done;
+
+        if (step | step_a) { // only step if really necessary
+            while (!pulse_done); // wait until the previous pulse is done
+            dir ^= 1 << MOTOR_X_DIR_SHIFT;
+            dir ^= 1 << MOTOR_Y_DIR_SHIFT;
+            MOTOR_XYZ_DIR_OUT = (MOTOR_XYZ_DIR_OUT & MOTOR_XYZ_DIR_INV_MASK) | dir; // set the direction pins right
+            MOTOR_A_DIR_OUT = (MOTOR_A_DIR_OUT & MOTOR_A_DIR_INV_MASK) | dir_a; // set the direction pins right
+            step_bits_xyz = step;
+            step_bits_a = step_a;
+
+            pulse_done = false;
+            timer2->resume();// resume pulse interrupts
+        }
+    }
+    occupied = false;
+}
+//--------------------GIGA-------------------
+
+
+//---------UNO-----------
+/*ISR(TIMER2_COMPA_vect) // start of pulse
 {
 	MOTOR_XYZ_STEP_OUT |= step_bits_xyz;
 	MOTOR_A_STEP_OUT |= step_bits_a;
@@ -688,4 +778,22 @@ ISR(TIMER2_COMPB_vect) // end of pulse
 	TCCR2B     = 0x0; // stop timer
 	TCNT2      = 0;   // reset cnt value
 	pulse_done = true;
+}*/
+//-----------UNO---------------
+//---------------GIGA----------
+void
+onPulseInterrupt() { //start of pulse
+  MOTOR_XYZ_STEP_OUT |= step_bits_xyz;
+  MOTOR_A_STEP_OUT |= step_bits_a;
 }
+void
+offPulseInterrupt() { //end of pulse
+  MOTOR_XYZ_STEP_OUT &= ~step_bits_xyz;
+  MOTOR_A_STEP_OUT &= ~step_bits_a;
+
+  timer2->pause(); // Pause the timer //BUT WHERE DOES THE TIMER RESUME AGAIN FOR NEXT PULSE?
+  timer2->setCount(0); // Reset timer count
+
+  pulse_done = true;
+}
+//---------------GIGA----------
