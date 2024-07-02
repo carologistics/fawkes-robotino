@@ -294,13 +294,13 @@ function OPEN_GRIPPER:init() self.args["gripper_commands"].command = "OPEN" end
 function MOVE_GRIPPER_UP:init()
     local z_given = 0
     if fsm.vars.target == "WORKPIECE" then
-        z_given = fsm.vars.target_z - offset_z_workpiece_routine +
+        z_given = fsm.vars.target_z - offset_z_workpiece_target_frame +
                       offset_z_workpiece_end
     elseif fsm.vars.target == "CONVEYOR" then
-        z_given = fsm.vars.target_z - offset_z_conveyor_routine +
+        z_given = fsm.vars.target_z - offset_z_conveyor_target_frame +
                       offset_z_conveyor_end - fsm.vars.missing_c3_height
     else -- SLIDE
-        z_given = fsm.vars.target_z - offset_z_slide_routine +
+        z_given = fsm.vars.target_z - offset_z_slide_target_frame +
                       offset_z_slide_end
     end
 
