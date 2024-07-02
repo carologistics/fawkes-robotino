@@ -97,17 +97,18 @@ private:
 
 	//target frame offsets:
 	float base_offset_;
-	float offset_x_pick_;
-	float offset_z_pick_;
+	float offset_x_workpiece_target_;
+	float offset_z_workpiece_target_;
 
-	float offset_x_put_conveyor_;
-	float offset_z_put_conveyor_;
+	float offset_x_conveyor_target_;
+	float offset_z_conveyor_target_;
 
-	float offset_x_put_slide_;
-	float offset_z_put_slide_;
+	float offset_x_slide_target_;
+	float offset_z_slide_target_;
 
-	float offset_x_routine_conveyor_;
-	float offset_x_routine_slide_;
+	float offset_x_workpiece_top_;
+	float offset_x_conveyor_top_;
+	float offset_x_slide_top_;
 
 	//expected pose offsets:
 	float x_offset_;
