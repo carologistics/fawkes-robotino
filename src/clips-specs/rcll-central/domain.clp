@@ -122,9 +122,6 @@
   )
   (assert
     (domain-fact (name self) (param-values ?self))
-    (domain-fact (name at) (param-values robot1 START INPUT))
-    (domain-fact (name at) (param-values robot2 START INPUT))
-    (domain-fact (name at) (param-values robot3 START INPUT))
     (domain-fact (name mps-team) (param-values ?bs ?team-color))
     (domain-fact (name can-hold) (param-values robot1))
     (domain-fact (name can-hold) (param-values robot2))
