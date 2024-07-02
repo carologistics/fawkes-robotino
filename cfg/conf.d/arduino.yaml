@@ -65,3 +65,15 @@ arduino:
     # a good starting value is 120*a where a
     # is the microstepping mode of the A motor
     a_toggle_steps: 240
+
+  #  settings for reading the wp sensor connected to the robotino base
+  robotino_wp_sensor:
+    # whether to use an external wp sensor
+    wp_sensor_enable: true
+    # whether the external wp sensor gives analog readings
+    # (if false it assumes digital signals)
+    wp_sensor_analog: true
+    # pin number of  data in on the robotino
+    wp_sensor_pin: 0
+    # if using analog signals, wp is sensed if the threshold is crossed
+    wp_analog_threshold: 0.7

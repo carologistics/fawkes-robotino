@@ -20,44 +20,28 @@
 #
 # *****************************************************************************
 
-set(PLUGIN_arduino
+set(PLUGIN_ros2-rto-data-in
     ON
-    CACHE BOOL "Build arduino plugin")
-set(DEV_ARDUINO
-    /dev/arduino
-    CACHE STRING Arduino_Location)
+    CACHE BOOL "Build ros2-rto-data-in")
 
-add_subdirectory(interfaces)
-
-if(PLUGIN_arduino)
-  add_library(arduino MODULE arduino_plugin.cpp com_thread.cpp tf_thread.cpp
-                             com_message.cpp serialport.cpp)
-  depend_on_pkgconfig_libs(arduino libudev)
-  depend_on_pcl(arduino)
-  depend_on_tf(arduino)
-  depend_on_boost_libs(arduino "thread;chrono")
+if(PLUGIN_ros2-rto-data-in)
+  add_library(ros2-rto-data-in MODULE rto_data_in_plugin.cpp
+                                         rto_data_in_thread.cpp)
+  depend_on_ros2(ros2-rto-data-in)
+  depend_on_ros2_libs(
+    ros2-rto-data-in
+    "rmw;rosidl_typesupport_interface;rcl_interfaces;rto_msgs"
+  )
   target_link_libraries(
-    arduino
-    m
+    ros2-rto-data-in
     fawkescore
     fawkesutils
     fawkesaspects
-    fawkesbaseapp
     fawkesblackboard
     fawkesinterface
-    ArduinoInterface
-    RTODataInterface
-    JoystickInterface)
-
-  add_custom_target(
-    flash_arduino ALL
-    /bin/sh ${PROJECT_SOURCE_DIR}/etc/scripts/flash_arduino.sh
-    ${CMAKE_CURRENT_SOURCE_DIR} ${DEV_ARDUINO}
-    COMMENT "flash the arduino")
-  add_dependencies(arduino flash_arduino)
-  # target_compile_options(arduino PRIVATE -ggdb3 -O0) set(CMAKE_CXX_FLAGS
-  # "${CMAKE_CXX_FLAGS} -g -O0") Uncomment when using gdb and having trouble to
-  # connect to the serial port
+    fawkesros2aspect
+    RTODataInterface)
 else()
-  plugin_disabled_message("arduino")
+  plugin_disabled_message(ros2-rto-data-in)
 endif()
+add_subdirectory(interfaces)
