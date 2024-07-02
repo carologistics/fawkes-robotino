@@ -1,0 +1,16 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+hardware/laser:
+  front:
+    time_offset: -0.012582
+    host: 192.168.0.42
+  back:
+    time_offset: -0.078836
+    host: 192.168.0.43
+
+plugins/laser-filter:
+  back-downsample:
+    active: true
+  back-360to360:
+    active: false

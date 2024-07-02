@@ -1,0 +1,5 @@
+ros2:
+  node-name: "robotinobase4"
+  namespace: "robotinobase4"
+  tf:
+    tf_prefix: "robotinobase4/"
