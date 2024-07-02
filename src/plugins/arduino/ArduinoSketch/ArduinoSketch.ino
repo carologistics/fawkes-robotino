@@ -81,18 +81,6 @@ byte   buf_i_ = 0;
 String errormessage;
 
 void
-enable_step_interrupt()
-{
-	TIMSK0 = 0x02; // enable interrupt of timer overflow
-}
-
-void
-disable_step_interrupt()
-{
-	TIMSK0 = 0x0; // disable interrupt of timer overflow
-}
-
-void
 send_packet(int status_, int value_to_send)
 {
 	Serial.print(AT);
@@ -202,8 +190,8 @@ double_calibrate()
 		;
 	movement_done_flag = false;
 	// reduce speed to a minimum
-	float speeds[3] = {motor_X.get_speed(), motor_Y.get_speed(), motor_Z.get_speed()};
-	float accs[3]   = {motor_X.get_acc(), motor_Y.get_acc(), motor_Z.get_acc()};
+	float speeds[3] = {motor_X.speed(), motor_Y.speed(), motor_Z.speed()};
+	float accs[3]   = {motor_X.acceleration(), motor_Y.acceleration(), motor_Z.acceleration()};
 	set_new_speed_acc(SECOND_CAL_MAX_SPEED, SECOND_CAL_MAX_ACC, motor_X);
 	set_new_speed_acc(SECOND_CAL_MAX_SPEED, SECOND_CAL_MAX_ACC, motor_Y);
 	set_new_speed_acc(SECOND_CAL_MAX_SPEED, SECOND_CAL_MAX_ACC, motor_Z);
@@ -230,11 +218,9 @@ calibrate()
 		motor_Y.enableOutputs();
 		motor_Z.enableOutputs();
 		motor_A.enableOutputs();
-		noInterrupts();
 		if (!x_done)
 			motor_X.move(20000L);
 		movement_done_flag = false;
-		interrupts();
 		// due to high step count, reaching end stops is guaranteed!
 		set_status(
 		  STATUS_MOVING); // status is always only changed on no interrupt code level, hence no race condition occurs here
@@ -245,6 +231,7 @@ calibrate()
 		// (again inspired from grbl)
 		// Additionally, the backwards movement should use different numbers of steps
 		// to ensure that the end stops will not be triggerend simulatenously at the second calibration.
+    motor_X.run();
 		while (!movement_done_flag && (!x_done)) {
 			if (!x_done && digitalRead(MOTOR_X_LIMIT_PIN) == LOW) {
 				x_done = true;
@@ -254,13 +241,11 @@ calibrate()
 		movement_done_flag = false;
 	} while (!x_done);
 	do { //repeat calibration as long as not successfull
-		noInterrupts();
 		if (!y_done)
 			motor_Y.move(20000L);
 		if (!z_done)
 			motor_Z.move(20000L);
 		movement_done_flag = false;
-		interrupts();
 		// due to high step count, reaching end stops is guaranteed!
 		set_status(
 		  STATUS_MOVING); // status is always only changed on no interrupt code level, hence no race condition occurs here
@@ -271,6 +256,8 @@ calibrate()
 		// (again inspired from grbl)
 		// Additionally, the backwards movement should use different numbers of steps
 		// to ensure that the end stops will not be triggerend simulatenously at the second calibration.
+    motor_Y.run();
+    motor_Z.run();
 		while (!movement_done_flag && (!y_done || !z_done)) {
 			if (!y_done && digitalRead(MOTOR_Y_LIMIT_PIN) == LOW) {
 				y_done = true;
@@ -288,7 +275,7 @@ calibrate()
 void
 reach_end_handle(AccelStepper &motor, byte extra)
 {
-	motor.hard_stop();
+	motor.stop();
 	motor.setCurrentPosition(0L);
 	motor.move(-400 - extra);
 }
@@ -300,9 +287,7 @@ set_new_pos(long new_pos, AccelStepper &motor)
 	motor_Y.enableOutputs();
 	motor_Z.enableOutputs();
 	motor_A.enableOutputs();
-	noInterrupts(); // shortly disable interrupts to preverent stepping while changing target position (this is actually only a problem when cur_status == STATUS_MOVING)
 	motor.moveTo(new_pos);
-	interrupts(); // activate interrupts again
 	set_status(
 	  STATUS_MOVING); // status is always only changed on no interrupt code level, hence no race condition occurs here
 }
@@ -314,38 +299,33 @@ set_new_rel_pos(long new_rel_pos, AccelStepper &motor)
 	motor_Y.enableOutputs();
 	motor_Z.enableOutputs();
 	motor_A.enableOutputs();
-	noInterrupts();
 	motor.move(new_rel_pos);
-	interrupts();
 	set_status(STATUS_MOVING);
 }
 
 void
 set_new_speed(float new_speed)
 {
-	noInterrupts(); // shortly disable interrupts to preverent stepping while changing target position (this is actually only a problem when cur_status == STATUS_MOVING)
 	set_new_speed_acc(new_speed, -1, motor_X);
 	set_new_speed_acc(new_speed, -1, motor_Y);
 	set_new_speed_acc(new_speed, -1, motor_Z);
 	set_new_speed_acc(new_speed, -1, motor_A);
-	interrupts(); // activate interrupts again
 }
 
 void
 set_new_acc(float new_acc)
 {
-	noInterrupts(); // shortly disable interrupts to preverent stepping while changing target position (this is actually only a problem when cur_status == STATUS_MOVING)
 	set_new_speed_acc(-1, new_acc, motor_X);
 	set_new_speed_acc(-1, new_acc, motor_Y);
 	set_new_speed_acc(-1, new_acc, motor_Z);
 	set_new_speed_acc(-1, new_acc, motor_A);
-	interrupts(); // activate interrupts again
 }
 
 inline void
 set_new_speed_acc(float new_speed, float new_acc, AccelStepper &motor)
 {
-	motor.setMaxSpeedAcc(new_speed, new_acc);
+	motor.setMaxSpeed(new_speed);
+  motor.setAcceleration(new_acc);
 }
 
 // stop all the motors using the most recent acceleration values
@@ -362,10 +342,10 @@ slow_stop_all()
 void
 fast_stop_all()
 {
-	motor_X.hard_stop();
-	motor_Y.hard_stop();
-	motor_Z.hard_stop();
-	motor_A.hard_stop();
+	motor_X.stop();
+	motor_Y.stop();
+	motor_Z.stop();
+	motor_A.stop();
 }
 
 void
@@ -425,7 +405,7 @@ read_package()
 				return;
 			} // flush and return if parsing error
 		}
-		float opening_speed = motor_A.get_speed(); //get current openening speed
+		float opening_speed = motor_A.maxSpeed(); //get current openening speed
 		bool  assumed_gripper_state_local;
 		// this is used to store the assumed gripper state locally, to reduce calls to the function get_assumed_gripper_state
 
@@ -529,16 +509,6 @@ setup()
 	Serial.begin(115200);
 	// Serial.setTimeout(0);
 
-	TIMSK0 = 0; // turn off interrupts on Timer 0. micros() will thus NOT work anymore!
-	/* Why use timer 0 for the step interrupt?
-  *  Why use timer 2 for the pule interrupts?
-  *  By this procedure it's made sure that the pulse interrupts fire BEFORE a new step interrupt is called, in case both are pending
-  */
-
-	TCCR1A = 0x0;
-	TCCR1B = 0x3; // use 64 prescaler -> 4 us per cnt
-	TIMSK1 = 0x0; // deactivate all interrupts with this timer
-
 	// initialize the LIMIT_PIN as an input per motor:
 	pinMode(MOTOR_X_LIMIT_PIN, INPUT_PULLUP);
 	pinMode(MOTOR_Y_LIMIT_PIN, INPUT_PULLUP);
@@ -555,10 +525,6 @@ setup()
 	pinMode(MOTOR_Z_DIR_PIN, OUTPUT);
 	pinMode(MOTOR_A_DIR_PIN, OUTPUT);
 
-	motor_X.setEnablePin(MOTOR_X_ENABLE_PIN, true);
-	motor_Y.setEnablePin(MOTOR_Y_ENABLE_PIN, true);
-	motor_Z.setEnablePin(MOTOR_Z_ENABLE_PIN, true);
-	motor_A.setEnablePin(MOTOR_A_ENABLE_PIN, true);
 	motor_X.disableOutputs(); // same pin for all of them
 	/* motor_Y.disableOutputs(); // same pin for all of them */
 	/* motor_Z.disableOutputs(); // same pin for all of them */
@@ -580,27 +546,6 @@ setup()
 
 	motor_X.disableOutputs();
 
-	// configure the pulse interrupt
-
-	TCCR2A = 0x1; // just normal mode
-	TCCR2B = 0x0; //no clock source, activate with TCCR2B=0x1; just direct io clock
-	TCNT2  = 0;   // reset counter
-	OCR2A  = 3;   //15; // start pulse, should be at least 650ns after setting direction
-	OCR2B  = 254; // end pulse, should be at least 1.9us after starting pulse
-	TIFR2  = 0x7; // clear already set flags
-	TIMSK2 = 0x6; // activate both compare interrupts
-
-	// configure the step interrupt
-
-	TCCR0A = 0x2; // CTC mode
-	TCCR0B = 0x2; // 0.5us per cnt, prescaler is 8
-	OCR0A  = 70;  // 35us per step
-	TCNT0  = 0;
-	TIMSK0 = 0;   // start new
-	TIFR0  = 0x7; // clear all interrupt flags
-	enable_step_interrupt();
-
-	interrupts();
 	//default behavior should be to calibrate and home on serial port open
 	calibrate();
 }
@@ -627,65 +572,13 @@ loop()
 	} else {
 		loop_nr++;
 	}
+
+  motor_X.run();
+  motor_Y.run();
+  motor_Z.run();
+  motor_A.run();
 }
 
 volatile byte step_bits_xyz = 0;
 volatile byte step_bits_a   = 0;
 volatile bool pulse_done    = true;
-
-ISR(TIMER0_COMPA_vect) // this is called every overflow of the timer 0
-{
-	static volatile bool occupied = false;
-	if (occupied)
-		return; // this interrupt is already called
-	occupied = true;
-	interrupts(); // we need interrupts here to catch all the incoming serial data and finish the pulse
-	if (cur_status == STATUS_MOVING) {
-		byte
-		  dir  = 0,
-		  step = 0, step_a = 0,
-		  dir_a =
-		    0; // using these allows for more efficient code, compared to using the above volatile corresponding step_bits_*
-		bool movement_done;
-
-		unsigned int time = CUR_TIME;
-		movement_done     = motor_X.get_step(step, dir, time);
-		movement_done &= motor_Y.get_step(step, dir, time);
-		movement_done &= motor_Z.get_step(step, dir, time);
-		movement_done &= motor_A.get_step(step_a, dir_a, time);
-		movement_done_flag = movement_done;
-		if (step | step_a) { // only step if really necessary
-			while (!pulse_done)
-				; // wait until the previous pulse is done // TODO:: remove after ensuring pulse is surely done here EVERY TIME!
-			// Serial.println(dir,BIN);
-			dir ^= 1 << MOTOR_X_DIR_SHIFT;
-			dir ^= 1 << MOTOR_Y_DIR_SHIFT;
-			MOTOR_XYZ_DIR_OUT =
-			  (MOTOR_XYZ_DIR_OUT & MOTOR_XYZ_DIR_INV_MASK) | dir; // set the direction pins right
-			MOTOR_A_DIR_OUT =
-			  (MOTOR_A_DIR_OUT & MOTOR_A_DIR_INV_MASK) | dir_a; // set the direction pins right
-			step_bits_xyz = step;
-			step_bits_a   = step_a;
-
-			pulse_done = false;
-			TCCR2B     = 0x1; // activate pulse interrupts // GO GO GO
-		}
-	}
-	occupied = false;
-}
-
-ISR(TIMER2_COMPA_vect) // start of pulse
-{
-	MOTOR_XYZ_STEP_OUT |= step_bits_xyz;
-	MOTOR_A_STEP_OUT |= step_bits_a;
-}
-
-ISR(TIMER2_COMPB_vect) // end of pulse
-{
-	MOTOR_XYZ_STEP_OUT &=
-	  ~step_bits_xyz; // stopping the pulse has higher priority than turning off the timer
-	MOTOR_A_STEP_OUT &= ~step_bits_a;
-	TCCR2B     = 0x0; // stop timer
-	TCNT2      = 0;   // reset cnt value
-	pulse_done = true;
-}
