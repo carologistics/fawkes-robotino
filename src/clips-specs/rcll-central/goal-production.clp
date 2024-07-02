@@ -958,6 +958,7 @@
   "Enter the field (drive outside of the starting box)."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key central agent robot args? r ?robot))
+  (not (wm-fact (key central agent robot-lost args? r ?robot)))
   (not (wm-fact (key domain fact entered-field args? r ?robot)))
   (not
     (and
