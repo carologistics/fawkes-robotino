@@ -14,5 +14,5 @@ plugins:
         frame: !frame gripper_home
         child_frame: !frame end_effector_home
         trans_x: 0.157         #higher: grab closer to the base
-        trans_y: -0.0031        #higher: grab more to the right
+        trans_y: 0.0021        #higher: grab more to the right
         trans_z: -0.0485        #higher: grab lower
