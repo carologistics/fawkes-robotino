@@ -283,6 +283,7 @@
                          mps)
   (metadata-prepare-mps ?mps ?team-color ?peer-id $?instruction_info)
   (wm-fact (key domain fact mps-type args? m ?mps t ?mps-type) (value TRUE))
+  (not (timer (name ?t-name&:(eq ?t-name (sym-cat ?goal-id - ?plan-id - ?id -send-again-timer)))))
   ; hot fix check thoroughly and replace
   ;(protobuf-msg (type "llsf_msgs.MachineInfo"))
   =>
