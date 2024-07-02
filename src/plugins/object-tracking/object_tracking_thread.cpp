@@ -959,3 +959,9 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 	base_target[1] = max_y_needed + sin(mps_angle) * base_offset_;
 	base_target[2] = mps_angle;
 }
+
+void
+ObjectTrackingThread::finalize()
+{
+	blackboard->close(object_tracking_if_);
+}
