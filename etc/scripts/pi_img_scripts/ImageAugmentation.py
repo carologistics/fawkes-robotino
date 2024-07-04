@@ -73,7 +73,7 @@ else:
 if os.path.isdir('workpiece_detection-2'):
     pass
 else: 
-    rf = Roboflow(api_key="XkvHB2mdjqJZJ1qSpE8K")
+    rf = Roboflow(api_key="")
     project = rf.workspace("carologistics").project("workpiece_detection-zsaw1")
     version = project.version(2)
     dataset = version.download("yolov8")
