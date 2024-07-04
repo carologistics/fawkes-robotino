@@ -21,31 +21,6 @@
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
 
-; ----------------------- Util -------------------------------
-
-(defglobal
-  ; defines the spacing between complexity-based prios
-  ?*PRODUCTION-PRIO-BASE-STEP* = 10
-  ; complexity-based starting prios according to spacing above
-  ?*PRODUCTION-C0-PRIORITY* = 30
-  ?*PRODUCTION-C1-PRIORITY* = 40
-  ?*PRODUCTION-C2-PRIORITY* = 50
-  ?*PRODUCTION-C3-PRIORITY* = 60
-  ; increas complexity by this for each solved step
-  ?*PRODUCTION-PRIORITY-INCREASE* = 100
-  ; further bump any delivery goal to most urgent level
-  ?*DELIVER-PRIORITY-INCREASE* = 1000
-  ; Support priorities
-  ; these values should be selected, such that the respective base priorities
-  ; are in a range from 1 to ?*PRODUCTION-PRIO-BASE-STEP*.
-  ?*PRODUCTION-PAY-PRIORITY* = 1
-  ?*PRODUCTION-PAY-CC-PRIORITY-INCREASE* = 2
-  ?*PRODUCTION-BUFFER-PRIORITY* = 2
-
-  ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT* = 30
-  ?*ROBOT-WAITING-TIMEOUT* = 2
-)
-
 (deffunction prio-from-complexity (?com)
   (bind ?priority ?*PRODUCTION-C0-PRIORITY*)
   (if (eq ?com C1) then
@@ -72,6 +47,29 @@
     (bind ?priority ?*PRODUCTION-C3-PRIORITY*)
   )
   (bind ?priority (- ?priority ?*PRODUCTION-PRIO-BASE-STEP*))
+  (if (str-index RING ?step) then
+    (bind ?priority (+ ?priority (* (- (string-to-field (sub-string 5 5 ?step)) 1) ?*PRODUCTION-PRIORITY-INCREASE*)))
+  )
+  (if (eq ?step CAP) then
+    (bind ?priority (+ ?priority (* (string-to-field (sub-string 2 2 ?com)) ?*PRODUCTION-PRIORITY-INCREASE*)))
+  )
+  (if (eq ?step DELIVER) then
+    (bind ?priority (+ ?priority (* (+ (string-to-field (sub-string 2 2 ?com)) 1) ?*PRODUCTION-PRIORITY-INCREASE*)))
+  )
+  (return ?priority)
+)
+
+(deffunction dynamic-prio-from-complexity-for-production-orders (?com ?step)
+  (bind ?priority ?*PRODUCTION-C0-PRIORITY*)
+  (if (eq ?com C1) then
+    (bind ?priority ?*PRODUCTION-C1-PRIORITY*)
+  )
+  (if (eq ?com C2) then
+    (bind ?priority ?*PRODUCTION-C2-PRIORITY*)
+  )
+  (if (eq ?com C3) then
+    (bind ?priority ?*PRODUCTION-C3-PRIORITY*)
+  )
   (if (str-index RING ?step) then
     (bind ?priority (+ ?priority (* (- (string-to-field (sub-string 5 5 ?step)) 1) ?*PRODUCTION-PRIORITY-INCREASE*)))
   )
