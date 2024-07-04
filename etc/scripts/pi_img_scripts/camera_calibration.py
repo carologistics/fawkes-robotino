@@ -1,3 +1,27 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
+##########################################################################
+#
+#  gaussian_mixture_fit.py: fit gaussian mixture distribution to 1-D data
+#
+#  Copyright © OPENCV-ORG Documentation
+#  Copyright © 2024 Abhirup Das<abhirup.das@rwth-aachen.de>
+#
+##########################################################################
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Library General Public License for more details.
+#
+#  Read the full text in the LICENSE.GPL file in the doc directory.
+
 import numpy as np
 import cv2 as cv
 import glob
@@ -16,22 +40,22 @@ imgpoints = [] # 2d points in image plane.
 images = glob.glob('*.jpg')
  
 for fname in images:
- img = cv.imread(fname)
- gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
- 
- # Find the chess board corners
- ret, corners = cv.findChessboardCorners(gray, (7,6), None)
- 
- # If found, add object points, image points (after refining them)
- if ret == True:
- objpoints.append(objp)
- 
- corners2 = cv.cornerSubPix(gray,corners, (11,11), (-1,-1), criteria)
- imgpoints.append(corners2)
- 
- # Draw and display the corners
- cv.drawChessboardCorners(img, (7,6), corners2, ret)
- cv.imshow('img', img)
- cv.waitKey(500)
- 
+    img = cv.imread(fname)
+    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+
+    # Find the chess board corners
+    ret, corners = cv.findChessboardCorners(gray, (7,6), None)
+
+    # If found, add object points, image points (after refining them)
+    if ret == True:
+        objpoints.append(objp)
+
+    corners2 = cv.cornerSubPix(gray,corners, (11,11), (-1,-1), criteria)
+    imgpoints.append(corners2)
+
+    # Draw and display the corners
+    cv.drawChessboardCorners(img, (7,6), corners2, ret)
+    cv.imshow('img', img)
+    cv.waitKey(500)
+
 cv.destroyAllWindows()
