@@ -24,7 +24,7 @@ import glob
 from roboflow import Roboflow
 
 # Initialize Roboflow client
-rf = Roboflow(api_key="XkvHB2mdjqJZJ1qSpE8K")
+rf = Roboflow(api_key="")
 
 # Directory path and file extension for images
 dir_name = "PATH/TO/IMAGES"
