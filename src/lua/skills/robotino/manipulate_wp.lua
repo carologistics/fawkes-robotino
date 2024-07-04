@@ -565,7 +565,7 @@ function FIND_LASER_LINE:init()
     fsm.vars.search_attemps = 0
 end
 
-function SEARCH_LASER_LINE:init()
+function SEARCH_LASER_LINE:loop()
     fsm.vars.search_attemps = fsm.vars.search_attemps + 1
 end
 
