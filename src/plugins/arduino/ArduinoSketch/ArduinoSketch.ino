@@ -98,6 +98,8 @@ int cur_status = STATUS_IDLE;
 
 int loop_nr = 0;
 
+unsigned long prevMillisO, prevMillisC;
+
 #define BUFFER_SIZE 256
 char   buffer_[BUFFER_SIZE];
 byte   buf_i_ = 0;
@@ -418,10 +420,14 @@ void read_package() {
 			send_status();
 			break;*/
 		case CMD_OPEN:
+      prevMillisO = millis();
+      cur_status = STATUS_MOVING;
 			gripperOpen();
 			open_gripper = true;
 			break;
 		case CMD_CLOSE:
+      prevMillisC = millis();
+      cur_status = STATUS_MOVING;
 			gripperClose();
 			open_gripper = false;
 			break;
@@ -479,6 +485,7 @@ void disableMotor() {
     motorXEnabled = false;
     motorYEnabled = false;
     motorZEnabled = false;
+    cur_status = STATUS_IDLE; 
 }
 
 void enableMotor(AccelStepper &stepper) {
@@ -508,6 +515,7 @@ void moveServo(int angle) {
 }
 
 void moveStepperAbsolute(AccelStepper &stepper, int absoluteSteps, int limitPin, int &direction) {
+    cur_status = STATUS_MOVING;
     enableMotor(stepper);
     int currentPosition = stepper.currentPosition();
     int targetPosition = absoluteSteps;
@@ -525,11 +533,11 @@ void moveStepperAbsolute(AccelStepper &stepper, int absoluteSteps, int limitPin,
 
 void checkConditionsAndRun(){
     // Run the steppers if not at limit switches and there are steps to move
-    if(motorXEnabled){if ((!isLimitSwitchEngaged(MOTOR_X_LIMIT_PIN) && stepperX.distanceToGo() != 0) || (isLimitSwitchEngaged(MOTOR_X_LIMIT_PIN) && Xdir == 1)) {stepperX.run();}
+    if(motorXEnabled){if ((!isLimitSwitchEngaged(MOTOR_X_LIMIT_PIN) && stepperX.distanceToGo() != 0) || (isLimitSwitchEngaged(MOTOR_X_LIMIT_PIN) && Xdir == 1)) {cur_status = STATUS_MOVING; stepperX.run();}
     }
-    if(motorYEnabled){if ((!isLimitSwitchEngaged(MOTOR_Y_LIMIT_PIN) && stepperY.distanceToGo() != 0) || (isLimitSwitchEngaged(MOTOR_Y_LIMIT_PIN) && Ydir == 1)) {stepperY.run();}
+    if(motorYEnabled){if ((!isLimitSwitchEngaged(MOTOR_Y_LIMIT_PIN) && stepperY.distanceToGo() != 0) || (isLimitSwitchEngaged(MOTOR_Y_LIMIT_PIN) && Ydir == 1)) {cur_status = STATUS_MOVING; stepperY.run();}
     }
-    if(motorZEnabled){if ((!isLimitSwitchEngaged(MOTOR_Z_LIMIT_PIN) && stepperZ.distanceToGo() != 0) || (isLimitSwitchEngaged(MOTOR_Z_LIMIT_PIN) && Zdir == -1)) {stepperZ.run();}
+    if(motorZEnabled){if ((!isLimitSwitchEngaged(MOTOR_Z_LIMIT_PIN) && stepperZ.distanceToGo() != 0) || (isLimitSwitchEngaged(MOTOR_Z_LIMIT_PIN) && Zdir == -1)) {cur_status = STATUS_MOVING; stepperZ.run();}
     }
 
     // Disable motors if movement is complete or if endswitch triggered on direction -1 (Z axis direction is always flipped because of how it is connected)
@@ -600,8 +608,19 @@ void loop() {
 		set_status(STATUS_IDLE);
 	}*/
 
+  if(millis() - prevMillisC > 1000 && prevMillisC != 0){
+    cur_status = STATUS_IDLE;
+    prevMillisC = 0;
+  }
+
+  if(millis() - prevMillisO > 1000 && prevMillisO != 0){
+    cur_status = STATUS_IDLE;
+    prevMillisO = 0;
+  }
+
+  Serial.println(cur_status);
+
 	read_package();
-  checkConditionsAndRun();// move it to end after cur_status i sbeing updated properly throughout the codde !!!!!!!!!!!!!!!
 	if (cur_status != STATUS_MOVING) {
 		loop_nr = 0;
 		return;
@@ -613,7 +632,7 @@ void loop() {
 	} else {
 		loop_nr++;
 	}
-
+  checkConditionsAndRun();// move it to end after cur_status i sbeing updated properly throughout the codde !!!!!!!!!!!!!!!
   /*stepperX.run();
   stepperY.run();
   stepperZ.run();*/
