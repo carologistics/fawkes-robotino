@@ -63,8 +63,6 @@ void checkConditionsAndRun();
 void readMessage();
 void gripperClose();
 void gripperOpen();
-void gripperOpenAngleConfig(int openAngle);
-void gripperCloseAngleConfig(int closeAngle);
 
 long a_toggle_steps = 240; //--------------------------------------------------------------------- need this ??
 
@@ -376,9 +374,9 @@ void read_package() {
 		// this is used to store the assumed gripper state locally, to reduce calls to the function get_assumed_gripper_state
 
 		switch (cur_cmd) {
-		case CMD_X_NEW_POS: moveStepperAbsolute(stepperX, new_value, MOTOR_X_LIMIT_PIN, Xdir); break;
-		case CMD_Y_NEW_POS: moveStepperAbsolute(stepperY, new_value, MOTOR_Y_LIMIT_PIN, Ydir); break;
-		case CMD_Z_NEW_POS: moveStepperAbsolute(stepperZ, -new_value, MOTOR_Z_LIMIT_PIN, Zdir); break;
+		case CMD_X_NEW_POS: enableMotor(stepperX); moveStepperAbsolute(stepperX, new_value, MOTOR_X_LIMIT_PIN, Xdir); break;
+		case CMD_Y_NEW_POS: enableMotor(stepperY); moveStepperAbsolute(stepperY, new_value, MOTOR_Y_LIMIT_PIN, Ydir); break;
+		case CMD_Z_NEW_POS: enableMotor(stepperZ); moveStepperAbsolute(stepperZ, -new_value, MOTOR_Z_LIMIT_PIN, Zdir); break;
 		case CMD_STATUS_REQ: send_status(); break;
 		/*case CMD_A_SET_TOGGLE_STEPS:
 			a_toggle_steps = new_value;
@@ -501,7 +499,7 @@ void gripperClose() {
 }
 
 void gripperOpen() {
-  servoA.write(gripper_close_angle);
+  servoA.write(gripper_open_angle);
 }
 
 void moveServo(int angle) {
@@ -603,7 +601,7 @@ void loop() {
 	}*/
 
 	read_package();
-
+  checkConditionsAndRun();// move it to end after cur_status i sbeing updated properly throughout the codde !!!!!!!!!!!!!!!
 	if (cur_status != STATUS_MOVING) {
 		loop_nr = 0;
 		return;
@@ -616,7 +614,6 @@ void loop() {
 		loop_nr++;
 	}
 
-  checkConditionsAndRun();
   /*stepperX.run();
   stepperY.run();
   stepperZ.run();*/
