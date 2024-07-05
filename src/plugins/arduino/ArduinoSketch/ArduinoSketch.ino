@@ -34,14 +34,34 @@
  * which is written when the low byte is read.
  * It is thus important, that the low byte is read before the high byte, so the shadow register is properly loaded.
 */
-#define CUR_TIME (TCNT1L | (unsigned int)((TCNT1H << 8)));
 
-AccelStepper motor_X(MOTOR_X_STEP_SHIFT, MOTOR_X_DIR_SHIFT);
-AccelStepper motor_Y(MOTOR_Y_STEP_SHIFT, MOTOR_Y_DIR_SHIFT);
-AccelStepper motor_Z(MOTOR_Z_STEP_SHIFT, MOTOR_Z_DIR_SHIFT);
-AccelStepper motor_A(MOTOR_A_STEP_SHIFT, MOTOR_A_DIR_SHIFT);
+// Create stepper motor instances
+AccelStepper stepperX(AccelStepper::DRIVER, MOTOR_X_STEP_PIN, MOTOR_X_DIR_PIN);
+AccelStepper stepperY(AccelStepper::DRIVER, MOTOR_Y_STEP_PIN, MOTOR_Y_DIR_PIN);
+AccelStepper stepperZ(AccelStepper::DRIVER, MOTOR_Z_STEP_PIN, MOTOR_Z_DIR_PIN);
 
-long a_toggle_steps = 240;
+// Create servo motor instance
+Servo servoA;
+
+// Variables to track motor state
+bool motorXEnabled = false;
+bool motorYEnabled = false;
+bool motorZEnabled = false;
+
+int Xdir, Ydir, Zdir;
+
+// Function declarations
+void calibrate();
+void calibrateAxis(AccelStepper &stepper, int limitPin, int &direction, int extra);
+void moveStepperAbsolute(AccelStepper &stepper, int absoluteSteps, int limitPin, int &direction);
+void moveServo(Servo &servo, int angle);
+void enableMotor(AccelStepper &stepper);
+void disableMotor();
+bool isLimitSwitchEngaged(int limitPin);
+void checkConditionsAndRun();
+void readMessage();
+
+long a_toggle_steps = 240; //--------------------------------------------------------------------- need this ??
 
 #define DEFAULT_MAX_SPEED_X 4000
 #define DEFAULT_MAX_ACCEL_X 7000
@@ -51,9 +71,6 @@ long a_toggle_steps = 240;
 
 #define DEFAULT_MAX_SPEED_Z 4000
 #define DEFAULT_MAX_ACCEL_Z 7000
-
-#define DEFAULT_MAX_SPEED_A 7000
-#define DEFAULT_MAX_ACCEL_A 15000
 
 #define SECOND_CAL_MAX_SPEED 500
 #define SECOND_CAL_MAX_ACC 1000
@@ -80,18 +97,14 @@ char   buffer_[BUFFER_SIZE];
 byte   buf_i_ = 0;
 String errormessage;
 
-void
-send_packet(int status_, int value_to_send)
-{
+void send_packet(int status_, int value_to_send) {
 	Serial.print(AT);
 	Serial.print(status_array_[status_]);
 	Serial.print(value_to_send);
 	Serial.print("\r\n");
 }
 
-inline int
-convert_to_check_sum(int i)
-{
+inline int convert_to_check_sum(int i) {
 	//using asci table to convert in to the number it would be casted to
 	byte sum = 0;
 	if (i == 0) {
@@ -116,9 +129,7 @@ convert_to_check_sum(int i)
 }
 
 int cur_pos;
-void
-send_status()
-{
+void send_status() {
 	byte checksum = 0;
 	Serial.print(AT); //checksum = 181
 	Serial.print(status_array_[cur_status]);
@@ -127,27 +138,28 @@ send_status()
 	if (cur_status == STATUS_ERROR) {
 		Serial.print(errormessage);
 	} else { // send all the information while moving and while idle
-		cur_pos = -motor_X.currentPosition();
+		cur_pos = -stepperX.currentPosition();
 		Serial.print(cur_pos);
 		checksum += convert_to_check_sum(cur_pos);
 
 		Serial.print(" "); //checksum = 32
 
-		cur_pos = -motor_Y.currentPosition();
+		cur_pos = -stepperY.currentPosition();
 		Serial.print(cur_pos);
 		checksum += convert_to_check_sum(cur_pos);
 
 		Serial.print(" "); //checksum = 32
 
-		cur_pos = -motor_Z.currentPosition();
+		cur_pos = -stepperZ.currentPosition();
 		Serial.print(cur_pos);
 		checksum += convert_to_check_sum(cur_pos);
 
 		Serial.print(" "); //checksum = 32
 
-		cur_pos = -motor_A.currentPosition();
+		/*cur_pos = -motor_A.currentPosition();
 		Serial.print(cur_pos);
-		checksum += convert_to_check_sum(cur_pos);
+		checksum += convert_to_check_sum(cur_pos);*/
+    //REPLACE FOR SERVO ----------------------------------------------------------------------------------
 
 		Serial.print(" "); //checksum = 32
 
@@ -160,9 +172,7 @@ send_status()
 	Serial.print("\r\n");
 }
 
-int
-send_gripper_status()
-{
+int send_gripper_status() {
 	if (open_gripper) {
 		Serial.print("OPEN"); //checksum = 50
 		return 50;
@@ -172,185 +182,182 @@ send_gripper_status()
 	return 186;
 }
 
-void
-set_status(int status_)
-{
+void set_status(int status_) {
 	if (cur_status != status_) {
 		cur_status = status_;
 		send_status();
 	}
 }
 
-void
-double_calibrate()
-{
+void double_calibrate() {
 	// first fast calibration run
 	calibrate();
-	while (!movement_done_flag)
-		;
+	/*while (cur_status == STATUS_MOVING)
+		;*/
 	movement_done_flag = false;
 	// reduce speed to a minimum
-	float speeds[3] = {motor_X.speed(), motor_Y.speed(), motor_Z.speed()};
-	float accs[3]   = {motor_X.acceleration(), motor_Y.acceleration(), motor_Z.acceleration()};
-	set_new_speed_acc(SECOND_CAL_MAX_SPEED, SECOND_CAL_MAX_ACC, motor_X);
-	set_new_speed_acc(SECOND_CAL_MAX_SPEED, SECOND_CAL_MAX_ACC, motor_Y);
-	set_new_speed_acc(SECOND_CAL_MAX_SPEED, SECOND_CAL_MAX_ACC, motor_Z);
+	float speeds[3] = {stepperX.speed(), stepperY.speed(), stepperZ.speed()};
+	float accs[3]   = {stepperX.acceleration(), stepperY.acceleration(), stepperZ.acceleration()};
+	set_new_speed_acc(SECOND_CAL_MAX_SPEED, SECOND_CAL_MAX_ACC, stepperX);
+	set_new_speed_acc(SECOND_CAL_MAX_SPEED, SECOND_CAL_MAX_ACC, stepperY);
+	set_new_speed_acc(SECOND_CAL_MAX_SPEED, SECOND_CAL_MAX_ACC, stepperZ);
 	// calibrate a second time
 	calibrate();
-	while (!movement_done_flag)
-		;
+	/*while (!movement_done_flag)
+		;*/
 	movement_done_flag = false;
 	// after calibration the old speed and acc values are used
-	set_new_speed_acc(speeds[0], accs[0], motor_X);
-	set_new_speed_acc(speeds[1], accs[1], motor_Y);
-	set_new_speed_acc(speeds[2], accs[2], motor_Z);
+	set_new_speed_acc(speeds[0], accs[0], stepperX);
+	set_new_speed_acc(speeds[1], accs[1], stepperY);
+	set_new_speed_acc(speeds[2], accs[2], stepperZ);
 }
 
-void
-calibrate()
-{
-	// while the x axis is not done calibrating, the gripper is not moving in y
-	// and z direction, else this could be dangerous if a workpiece is placed
-	// near the gripper
-	bool x_done = false, y_done = false, z_done = false;
-	do { //repeat calibration as long as not successfull
-		motor_X.enableOutputs();
-		motor_Y.enableOutputs();
-		motor_Z.enableOutputs();
-		motor_A.enableOutputs();
-		if (!x_done)
-			motor_X.move(20000L);
-		movement_done_flag = false;
-		// due to high step count, reaching end stops is guaranteed!
-		set_status(
-		  STATUS_MOVING); // status is always only changed on no interrupt code level, hence no race condition occurs here
-		// This while loop controls permanently the state of the respective end stops and handles crashing into them
-		// When all end stops are triggered simulatenously, additional latency is introduced.
-		// The latency is maily due to the planning of the back movement.
-		// One work around is to calibrate twice, the first time fast and the second time slowly.
-		// (again inspired from grbl)
-		// Additionally, the backwards movement should use different numbers of steps
-		// to ensure that the end stops will not be triggerend simulatenously at the second calibration.
-    motor_X.run();
-		while (!movement_done_flag && (!x_done)) {
-			if (!x_done && digitalRead(MOTOR_X_LIMIT_PIN) == LOW) {
-				x_done = true;
-				reach_end_handle(motor_X, 0);
-			}
-		}
-		movement_done_flag = false;
-	} while (!x_done);
-	do { //repeat calibration as long as not successfull
-		if (!y_done)
-			motor_Y.move(20000L);
-		if (!z_done)
-			motor_Z.move(20000L);
-		movement_done_flag = false;
-		// due to high step count, reaching end stops is guaranteed!
-		set_status(
-		  STATUS_MOVING); // status is always only changed on no interrupt code level, hence no race condition occurs here
-		// This while loop controls permanently the state of the respective end stops and handles crashing into them
-		// When all end stops are triggered simulatenously, additional latency is introduced.
-		// The latency is maily due to the planning of the back movement.
-		// One work around is to calibrate twice, the first time fast and the second time slowly.
-		// (again inspired from grbl)
-		// Additionally, the backwards movement should use different numbers of steps
-		// to ensure that the end stops will not be triggerend simulatenously at the second calibration.
-    motor_Y.run();
-    motor_Z.run();
-		while (!movement_done_flag && (!y_done || !z_done)) {
-			if (!y_done && digitalRead(MOTOR_Y_LIMIT_PIN) == LOW) {
-				y_done = true;
-				reach_end_handle(motor_Y, 100);
-			}
-			if (!z_done && digitalRead(MOTOR_Z_LIMIT_PIN) == LOW) {
-				z_done = true;
-				reach_end_handle(motor_Z, 200);
-			}
-		}
-		movement_done_flag = false;
-	} while (!x_done || !y_done || !z_done);
+void calibrateAxis(AccelStepper &stepper, int limitPin, int direction, int extra) {
+    // Ensure motor is enabled
+    enableMotor(stepper);
+
+    // Move towards the end switch until triggered
+    stepper.move(direction*40000);
+    while (!isLimitSwitchEngaged(limitPin)) {
+        stepper.run();
+    }
+
+    // Stop at the end switch and set position to zero
+    stepper.setCurrentPosition(0);
+    Serial.println("Axis calibrated.");
+
+    stepper.move(-direction*(400+extra)); // move slightly in the opposite direction from limit switch after calibration
+    while(stepper.distanceToGo()){
+      stepper.run();
+    }
+
+    // Disable motor after calibration
+    disableMotor();
 }
 
-void
-reach_end_handle(AccelStepper &motor, byte extra)
-{
+void calibrate() {
+    set_status(STATUS_MOVING);
+    // Calibrate X axis
+    calibrateAxis(stepperX, MOTOR_X_LIMIT_PIN, -1, 0);
+
+    // Calibrate Y axis
+    calibrateAxis(stepperY, MOTOR_Y_LIMIT_PIN, -1, 100);
+
+    // Calibrate Z axis
+    calibrateAxis(stepperZ, MOTOR_Z_LIMIT_PIN, 1, 200); // Invert direction for Z-axis calibration
+
+    set_status(STATUS_IDLE);
+}
+
+/*
+void calibrate() {
+  bool x_done = false, y_done = false, z_done = false;
+
+  // Calibrate X-axis
+  do {
+    motor_X.enableOutputs();
+    motor_X.move(20000L); // Move a large number of steps
+    set_status(STATUS_MOVING);
+
+    while (!movement_done_flag && !x_done) {
+      if (!x_done && digitalRead(MOTOR_X_LIMIT_PIN) == LOW) {
+        x_done = true;
+        reach_end_handle(motor_X, 0); // Handle reaching the end
+      }
+      motor_X.run();
+    }
+    movement_done_flag = false;
+  } while (!x_done);
+
+  // Calibrate Y and Z axes simultaneously
+  do {
+    if (!y_done) motor_Y.move(20000L);
+    if (!z_done) motor_Z.move(20000L);
+    set_status(STATUS_MOVING);
+
+    while (!movement_done_flag && (!y_done || !z_done)) {
+      if (!y_done && digitalRead(MOTOR_Y_LIMIT_PIN) == LOW) {
+        y_done = true;
+        reach_end_handle(motor_Y, 100); // Handle reaching the end for Y axis
+      }
+      if (!z_done && digitalRead(MOTOR_Z_LIMIT_PIN) == LOW) {
+        z_done = true;
+        reach_end_handle(motor_Z, 200); // Handle reaching the end for Z axis
+      }
+      motor_Y.run();
+      motor_Z.run();
+    }
+    movement_done_flag = false;
+  } while (!y_done || !z_done);
+
+  // Disable motor outputs after calibration
+  motor_X.disableOutputs();
+  motor_Y.disableOutputs();
+  motor_Z.disableOutputs();
+  motor_A.disableOutputs();
+
+  // Set status to idle after calibration
+  set_status(STATUS_IDLE);
+}*/
+
+void reach_end_handle(AccelStepper &motor, byte extra) {
 	motor.stop();
 	motor.setCurrentPosition(0L);
 	motor.move(-400 - extra);
 }
 
-void
-set_new_pos(long new_pos, AccelStepper &motor)
-{
+void set_new_pos(long new_pos, AccelStepper &motor) {
 	motor.enableOutputs();
-	motor_Y.enableOutputs();
-	motor_Z.enableOutputs();
-	motor_A.enableOutputs();
+	stepperY.enableOutputs();// IS IT NECESSARY TO ENABLE THIS??
+	stepperZ.enableOutputs();// IS IT NECESSARY TO ENABLE THIS??
+	//motor_A.enableOutputs();
 	motor.moveTo(new_pos);
 	set_status(
 	  STATUS_MOVING); // status is always only changed on no interrupt code level, hence no race condition occurs here
 }
 
-void
-set_new_rel_pos(long new_rel_pos, AccelStepper &motor)
-{
+void set_new_rel_pos(long new_rel_pos, AccelStepper &motor) {
 	motor.enableOutputs();
-	motor_Y.enableOutputs();
-	motor_Z.enableOutputs();
-	motor_A.enableOutputs();
+	stepperY.enableOutputs();// IS IT NECESSARY TO ENABLE THIS??
+	stepperZ.enableOutputs();// IS IT NECESSARY TO ENABLE THIS??
+	//motor_A.enableOutputs();
 	motor.move(new_rel_pos);
 	set_status(STATUS_MOVING);
 }
 
-void
-set_new_speed(float new_speed)
-{
-	set_new_speed_acc(new_speed, -1, motor_X);
-	set_new_speed_acc(new_speed, -1, motor_Y);
-	set_new_speed_acc(new_speed, -1, motor_Z);
-	set_new_speed_acc(new_speed, -1, motor_A);
+void set_new_speed(float new_speed) {
+  stepperX.setMaxSpeed(new_speed);
+  stepperY.setMaxSpeed(new_speed);
+  stepperZ.setMaxSpeed(new_speed);
 }
 
-void
-set_new_acc(float new_acc)
-{
-	set_new_speed_acc(-1, new_acc, motor_X);
-	set_new_speed_acc(-1, new_acc, motor_Y);
-	set_new_speed_acc(-1, new_acc, motor_Z);
-	set_new_speed_acc(-1, new_acc, motor_A);
+void set_new_acc(float new_acc) {
+  stepperX.setAcceleration(new_acc);
+  stepperY.setAcceleration(new_acc);
+  stepperZ.setAcceleration(new_acc);
 }
 
-inline void
-set_new_speed_acc(float new_speed, float new_acc, AccelStepper &motor)
-{
+inline void set_new_speed_acc(float new_speed, float new_acc, AccelStepper &motor) {
 	motor.setMaxSpeed(new_speed);
   motor.setAcceleration(new_acc);
 }
 
 // stop all the motors using the most recent acceleration values
-void
-slow_stop_all()
-{
-	motor_X.stop();
-	motor_Y.stop();
-	motor_Z.stop();
-	motor_A.stop();
+void slow_stop_all() {
+	stepperX.stop();
+	stepperY.stop();
+	stepperZ.stop();
 }
 
 // stop all motors with infinite acceleration. Do not use if step counter should still be correct afterwards.
-void
-fast_stop_all()
-{
-	motor_X.stop();
-	motor_Y.stop();
-	motor_Z.stop();
-	motor_A.stop();
+void fast_stop_all() {
+  disableMotor();
+  motorXEnabled = false;
+  motorYEnabled = false;
+  motorZEnabled = false;
 }
 
-void
-read_package()
-{
+void read_package() {
 	char next_char;
 	while (true) {
 		next_char = Serial.read();
@@ -418,9 +425,9 @@ read_package()
 			a_toggle_steps = new_value;
 			send_status();
 			break;
-#ifdef DEBUG_MODE
+  #ifdef DEBUG_MODE
 		case CMD_A_NEW_POS: set_new_pos(new_value, motor_A); break;
-#endif
+  #endif
 		case CMD_X_NEW_SPEED:
 			set_new_speed_acc(new_value, 0.0, motor_X);
 			send_status();
@@ -483,9 +490,9 @@ read_package()
 			break;
 		case CMD_FAST_STOP: fast_stop_all(); break;
 		default:
-#ifdef DEBUG_MODE
+  #ifdef DEBUG_MODE
 			send_packet(STATUS_ERROR, 15);
-#endif
+  #endif
 			break;
 		}
 
@@ -503,9 +510,37 @@ read_package()
 	buf_i_ = 0;
 }
 
-void
-setup()
-{
+bool isLimitSwitchEngaged(int limitPin) {
+    return digitalRead(limitPin) == LOW;
+}
+
+void disableMotor() {
+    digitalWrite(MOTOR_ENABLE_PIN, HIGH);
+    // Reset motor state
+    motorXEnabled = false;
+    motorYEnabled = false;
+    motorZEnabled = false;
+}
+
+void enableMotor(AccelStepper &stepper) {
+    digitalWrite(MOTOR_ENABLE_PIN, LOW);
+
+    // Track motor state
+    if (&stepper == &stepperX) {
+        motorXEnabled = true;
+    } else if (&stepper == &stepperY) {
+        motorYEnabled = true;
+    } else if (&stepper == &stepperZ) {
+        motorZEnabled = true;
+    }
+}
+
+void moveServo(Servo &servo, int angle) {
+    angle = constrain(angle, 0, 180);
+    servo.write(angle);
+}
+
+void setup() {
 	Serial.begin(115200);
 	// Serial.setTimeout(0);
 
@@ -550,9 +585,7 @@ setup()
 	calibrate();
 }
 
-void
-loop()
-{
+void loop() {
 	if (movement_done_flag) {
 		motor_X.disableOutputs(); // same pin for all of them
 		movement_done_flag = false;
@@ -578,7 +611,3 @@ loop()
   motor_Z.run();
   motor_A.run();
 }
-
-volatile byte step_bits_xyz = 0;
-volatile byte step_bits_a   = 0;
-volatile bool pulse_done    = true;
