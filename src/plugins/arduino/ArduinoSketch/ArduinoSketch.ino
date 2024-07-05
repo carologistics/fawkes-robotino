@@ -618,7 +618,7 @@ void loop() {
     prevMillisO = 0;
   }
 
-  Serial.println(cur_status);
+ // Serial.println(cur_status);
 
 	read_package();
 	if (cur_status != STATUS_MOVING) {
