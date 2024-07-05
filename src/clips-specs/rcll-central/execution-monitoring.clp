@@ -630,6 +630,7 @@
 	?wp-atf <- (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side))
 
 	(not (wm-fact (key monitoring retry-after-sensing args? r ?robot a wp-put id ?id-put-sym&:(eq ?id-put-sym (sym-cat ?id-put)) m ?mps g ?goal-id)))
+	?can-hold <- (domain-fact (name can-hold) (param-values ?robot))
 	=>
 	(printout error "WP " ?wp " was expected to be at " ?mps " (" ?side") but could not be detected. Restarting wp-put!")
 	(modify ?pa-check (state FORMULATED) (error-msg ""))
@@ -639,7 +640,8 @@
 	  (wm-fact (key monitoring retry-after-sensing args? r ?robot a wp-put id (sym-cat ?id-put) m ?mps g ?goal-id))
 	)
 	(retract ?wp-atf)
-	(assert (wm-fact (key domain fact holding args? r ?robot wp ?wp) (type BOOL) (value TRUE)))
+	(retract ?can-hold)
+	(assert (domain-fact (name holding) (param-values ?robot ?wp)))
 	(assert (wm-fact (key domain fact mps-side-free args? m ?mps side ?side) (type BOOL) (value TRUE)))
 )
 
