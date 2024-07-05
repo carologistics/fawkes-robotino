@@ -47,6 +47,8 @@
 #define CMD_Z_NEW_ACC 'o'
 #define CMD_A_NEW_ACC 'p'
 #define CMD_SET_ACCEL 'q'
+#define CMD_GRIP_OPEN_ANG 'u' // newly added
+#define CMD_GRIP_CLOSE_ANG 'v' // newly added
 #ifdef DEBUG_MODE
 #	define CMD_A_NEW_POS 'A'
 #endif
