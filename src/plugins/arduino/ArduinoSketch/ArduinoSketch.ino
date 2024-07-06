@@ -66,13 +66,13 @@ void gripperOpen();
 
 long a_toggle_steps = 240; //--------------------------------------------------------------------- need this ??
 
-#define DEFAULT_MAX_SPEED_X 4000
+#define DEFAULT_MAX_SPEED_X 2000
 #define DEFAULT_MAX_ACCEL_X 7000
 
-#define DEFAULT_MAX_SPEED_Y 4000
+#define DEFAULT_MAX_SPEED_Y 2000
 #define DEFAULT_MAX_ACCEL_Y 7000
 
-#define DEFAULT_MAX_SPEED_Z 4000
+#define DEFAULT_MAX_SPEED_Z 2000
 #define DEFAULT_MAX_ACCEL_Z 7000
 
 #define SECOND_CAL_MAX_SPEED 500
@@ -98,7 +98,7 @@ int cur_status = STATUS_IDLE;
 
 int loop_nr = 0;
 
-unsigned long prevMillisO, prevMillisC;
+unsigned long prevMillisO, prevMillisC, prevMillisStart;
 
 #define BUFFER_SIZE 256
 char   buffer_[BUFFER_SIZE];
@@ -146,13 +146,13 @@ void send_status() {
 	if (cur_status == STATUS_ERROR) {
 		Serial.print(errormessage);
 	} else { // send all the information while moving and while idle
-		cur_pos = -stepperX.currentPosition();
+		cur_pos = stepperX.currentPosition();
 		Serial.print(cur_pos);
 		checksum += convert_to_check_sum(cur_pos);
 
 		Serial.print(" "); //checksum = 32
 
-		cur_pos = -stepperY.currentPosition();
+		cur_pos = stepperY.currentPosition();
 		Serial.print(cur_pos);
 		checksum += convert_to_check_sum(cur_pos);
 
@@ -164,9 +164,9 @@ void send_status() {
 
 		Serial.print(" "); //checksum = 32
 
-		/*cur_pos = -motor_A.currentPosition();
+		cur_pos = ((open_gripper))?150:50;
 		Serial.print(cur_pos);
-		checksum += convert_to_check_sum(cur_pos);*/
+		checksum += convert_to_check_sum(cur_pos);
     //REPLACE FOR SERVO ----------------------------------------------------------------------------------
 
 		Serial.print(" "); //checksum = 32
@@ -182,11 +182,11 @@ void send_status() {
 
 int send_gripper_status() {
 	if (open_gripper) {
-		Serial.print("OPEN"); //checksum = 50
+		Serial.print("OPEN"); //checksum = 186 orig:50
 		return 50;
 	}
 
-	Serial.print("CLOSED"); //checksum = 186
+	Serial.print("CLOSED"); //checksum = 50 orig 186
 	return 186;
 }
 
@@ -224,6 +224,10 @@ void calibrateAxis(AccelStepper &stepper, int limitPin, int direction, int extra
     // Ensure motor is enabled
     enableMotor(stepper);
 
+    /*float speed = stepper.speed();
+    float acc = stepper.acceleration();
+    set_new_speed_acc(1000, 1000, stepper); // slow calibration*/
+
     // Move towards the end switch until triggered
     stepper.move(direction*40000);
     while (!isLimitSwitchEngaged(limitPin)) {
@@ -238,7 +242,7 @@ void calibrateAxis(AccelStepper &stepper, int limitPin, int direction, int extra
     while(stepper.distanceToGo()){
       stepper.run();
     }
-
+    //set_new_speed_acc(speed, acc, stepper);
     // Disable motor after calibration
     disableMotor();
 }
@@ -246,7 +250,7 @@ void calibrateAxis(AccelStepper &stepper, int limitPin, int direction, int extra
 void calibrate() {
     set_status(STATUS_MOVING);
     // Calibrate X axis
-    calibrateAxis(stepperX, MOTOR_X_LIMIT_PIN, -1, 0);
+    calibrateAxis(stepperX, MOTOR_X_LIMIT_PIN, -1, 800);
 
     // Calibrate Y axis
     calibrateAxis(stepperY, MOTOR_Y_LIMIT_PIN, -1, 100);
@@ -380,12 +384,13 @@ void read_package() {
 		case CMD_Y_NEW_POS: enableMotor(stepperY); moveStepperAbsolute(stepperY, new_value, MOTOR_Y_LIMIT_PIN, Ydir); break;
 		case CMD_Z_NEW_POS: enableMotor(stepperZ); moveStepperAbsolute(stepperZ, -new_value, MOTOR_Z_LIMIT_PIN, Zdir); break;
 		case CMD_STATUS_REQ: send_status(); break;
-		/*case CMD_A_SET_TOGGLE_STEPS:
-			a_toggle_steps = new_value;
+		case CMD_A_SET_TOGGLE_STEPS:
+			//a_toggle_steps = new_value;
 			send_status();
 			break;
-  #ifdef DEBUG_MODE
-		case CMD_A_NEW_POS: set_new_pos(new_value, motor_A); break;
+  /*#ifdef DEBUG_MODE
+		case CMD_A_NEW_POS: //set_new_pos(new_value, motor_A);
+      break;
   #endif*/
 		case CMD_X_NEW_SPEED:
 			set_new_speed_acc(new_value, 0.0, stepperX);
@@ -399,10 +404,10 @@ void read_package() {
 			set_new_speed_acc(new_value, 0.0, stepperZ);
 			send_status();
 			break;
-		/*case CMD_A_NEW_SPEED:
-			set_new_speed_acc(new_value, 0.0, motor_A);
+		case CMD_A_NEW_SPEED:
+			//set_new_speed_acc(new_value, 0.0, motor_A);
 			send_status();
-			break;*/
+			break;
 		case CMD_X_NEW_ACC:
 			set_new_speed_acc(0.0, new_value, stepperX);
 			send_status();
@@ -415,21 +420,21 @@ void read_package() {
 			set_new_speed_acc(0.0, new_value, stepperZ);
 			send_status();
 			break;
-		/*case CMD_A_NEW_ACC:
-			set_new_speed_acc(0.0, new_value, motor_A);
+		case CMD_A_NEW_ACC:
+			//set_new_speed_acc(0.0, new_value, motor_A);
 			send_status();
-			break;*/
+			break;
 		case CMD_OPEN:
       prevMillisO = millis();
       cur_status = STATUS_MOVING;
 			gripperOpen();
-			open_gripper = true;
+			//open_gripper = true;
 			break;
 		case CMD_CLOSE:
       prevMillisC = millis();
       cur_status = STATUS_MOVING;
 			gripperClose();
-			open_gripper = false;
+			//open_gripper = false;
 			break;
     case CMD_GRIP_CLOSE_ANG:
       gripper_close_angle = new_value;
@@ -485,7 +490,8 @@ void disableMotor() {
     motorXEnabled = false;
     motorYEnabled = false;
     motorZEnabled = false;
-    cur_status = STATUS_IDLE; 
+    cur_status = STATUS_IDLE;
+    send_status();
 }
 
 void enableMotor(AccelStepper &stepper) {
@@ -541,7 +547,7 @@ void checkConditionsAndRun(){
     }
 
     // Disable motors if movement is complete or if endswitch triggered on direction -1 (Z axis direction is always flipped because of how it is connected)
-    if ((!stepperX.isRunning() && motorXEnabled) || (isLimitSwitchEngaged(MOTOR_X_LIMIT_PIN) && Xdir == -1)) {
+    /*if ((!stepperX.isRunning() && motorXEnabled) ||(isLimitSwitchEngaged(MOTOR_X_LIMIT_PIN) && Xdir == -1)) {
         disableMotor();
     }
     if ((!stepperY.isRunning() && motorYEnabled) || (isLimitSwitchEngaged(MOTOR_Y_LIMIT_PIN) && Ydir == -1)) {
@@ -549,12 +555,23 @@ void checkConditionsAndRun(){
     }
     if ((!stepperZ.isRunning() && motorZEnabled) || (isLimitSwitchEngaged(MOTOR_Z_LIMIT_PIN) && Zdir == 1)) {
         disableMotor();
+    }*/
+
+    if( ((!stepperX.isRunning() && motorXEnabled) && (!stepperY.isRunning() && motorYEnabled) ) && (!stepperZ.isRunning() && motorZEnabled) ){
+      disableMotor();
     }
+
+    if ( ((isLimitSwitchEngaged(MOTOR_X_LIMIT_PIN) && Xdir == -1) || (isLimitSwitchEngaged(MOTOR_Y_LIMIT_PIN) && Ydir == -1) ) || (isLimitSwitchEngaged(MOTOR_Z_LIMIT_PIN) && Zdir == 1)){
+      disableMotor();
+    }
+
+
 }
 
 void setup() {
 	Serial.begin(115200);
 	// Serial.setTimeout(0);
+  prevMillisStart = millis();
 
 	// initialize the LIMIT_PIN as an input per motor:
 	pinMode(MOTOR_X_LIMIT_PIN, INPUT_PULLUP);
@@ -611,29 +628,34 @@ void loop() {
   if(millis() - prevMillisC > 1000 && prevMillisC != 0){
     cur_status = STATUS_IDLE;
     prevMillisC = 0;
+    open_gripper = false;
+		//send_status();
   }
 
   if(millis() - prevMillisO > 1000 && prevMillisO != 0){
     cur_status = STATUS_IDLE;
     prevMillisO = 0;
+    open_gripper = true;
+		//send_status();
   }
 
  // Serial.println(cur_status);
+  if(millis() - prevMillisStart > 5000){
+    read_package();
+    if (cur_status != STATUS_MOVING) {
+      loop_nr = 0;
+      return;
+    }
 
-	read_package();
-	if (cur_status != STATUS_MOVING) {
-		loop_nr = 0;
-		return;
-	}
-
-	if (loop_nr > 3000) {
-		send_status();
-		loop_nr = 0;
-	} else {
-		loop_nr++;
-	}
-  checkConditionsAndRun();// move it to end after cur_status i sbeing updated properly throughout the codde !!!!!!!!!!!!!!!
-  /*stepperX.run();
-  stepperY.run();
-  stepperZ.run();*/
+    if (loop_nr > 3000) {
+      send_status();
+      loop_nr = 0;
+    } else {
+      loop_nr++;
+    }
+    checkConditionsAndRun();// move it to end after cur_status i sbeing updated properly throughout the codde !!!!!!!!!!!!!!!
+    /*stepperX.run();
+    stepperY.run();
+    stepperZ.run();*/
+  }
 }
