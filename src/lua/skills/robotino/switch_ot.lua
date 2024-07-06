@@ -28,7 +28,8 @@ depends_interfaces = {
         v = "object_tracking_if",
         type = "ObjectTrackingInterface",
         id = "object-tracking"
-    }, {v = "arduino", type = "ArduinoInterface", id = "Arduino"}
+    }, {v = "arduino", type = "ArduinoInterface", id = "Arduino"},
+    {v = "laserline_switch", type = "SwitchInterface", id = "laser-lines"}
 }
 
 documentation = [==[
