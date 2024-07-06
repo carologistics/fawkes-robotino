@@ -154,7 +154,7 @@ ObjectTrackingThread::init()
 
 	//set NN params
 	scale_  = 0.00392; //to normalize inputs: 0.00392 * 255 = 1
-	swapRB_ = true;
+	swapRB_ = false;
 
 	//set up network
 	net_ = readNet(weights_path_, config_path_);
@@ -374,8 +374,7 @@ ObjectTrackingThread::loop()
 		}
 	} else {
 		//read from sharedMemoryBuffer and convert into Mat
-		image = Mat(camera_height_, camera_width_, CV_8UC3, shm_buffer_->buffer()).clone();
-		cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
+		image        = Mat(camera_height_, camera_width_, CV_8UC3, shm_buffer_->buffer()).clone();
 		capture_time = shm_buffer_->capture_time();
 	}
 
