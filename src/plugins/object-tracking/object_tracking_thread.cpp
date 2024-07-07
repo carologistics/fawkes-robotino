@@ -856,8 +856,8 @@ ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
                                        float               &wp_additional_height)
 {
 	//compute bounding box values
-	float bb_left    = bounding_box[0] + bounding_box[2] / 2;
-	float bb_right   = bounding_box[0] - bounding_box[2] / 2;
+	float bb_left    = bounding_box[0] - bounding_box[2] / 2;
+	float bb_right   = bounding_box[0] + bounding_box[2] / 2;
 	float bb_bottom  = bounding_box[1] - bounding_box[3] / 2;
 	float bb_top     = bounding_box[1] + bounding_box[3] / 2;
 	float bb_centerY = bounding_box[1];
@@ -951,11 +951,11 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 	}
 
 	gripper_target[0] = object_pos.getX() + cos(mps_angle) * gripper_offset_x;
-	gripper_target[1] = object_pos.getY() - sin(mps_angle) * gripper_offset_x;
+	gripper_target[1] = -(object_pos.getY() - sin(mps_angle) * gripper_offset_x);
 	gripper_target[2] = object_pos.getZ() + gripper_offset_z;
 
 	base_target[0] = max_x_needed - cos(mps_angle) * base_offset_;
-	base_target[1] = max_y_needed + sin(mps_angle) * base_offset_;
+	base_target[1] = -(max_y_needed + sin(mps_angle) * base_offset_);
 	base_target[2] = mps_angle;
 }
 
