@@ -1,5 +1,5 @@
 ----------------------------------------------------------------------------
---  start_ot.lua
+--  switch_ot.lua
 --
 --  Created: Wed Jul 05
 --  Copyright  2024  Matteo Tschesche
@@ -33,7 +33,7 @@ depends_interfaces = {
 }
 
 documentation = [==[
-Uses visual servoing to fulfill every workpiece manipulation task.
+Switches object tracking on or off.
 
 Parameters:
       @param switch  the type of message send to the object tracking (START | END)
