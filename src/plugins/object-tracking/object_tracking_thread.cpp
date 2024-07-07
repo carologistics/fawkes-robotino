@@ -858,8 +858,8 @@ ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
 	//compute bounding box values
 	float bb_left    = bounding_box[0] - bounding_box[2] / 2;
 	float bb_right   = bounding_box[0] + bounding_box[2] / 2;
-	float bb_bottom  = bounding_box[1] + bounding_box[3] / 2;
-	float bb_top     = bounding_box[1] - bounding_box[3] / 2;
+	float bb_bottom  = bounding_box[1] - bounding_box[3] / 2;
+	float bb_top     = bounding_box[1] + bounding_box[3] / 2;
 	float bb_centerY = bounding_box[1];
 
 	//delta values (correct if no distortion):
@@ -896,11 +896,11 @@ ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
 
 	if (current_object_type_ == ObjectTrackingInterface::WORKPIECE) {
 		//compute base middle point using the bottom point + wp_height/2
-		point[2]             = dy_top * dist + puck_height_ / 2;
-		wp_additional_height = max(puck_height_ / 2, dy_bottom * dist - point[2]);
+		point[2] = dy_bottom * dist + puck_height_ / 2;
+		//wp_additional_height = max(puck_height_ / 2, dy_bottom * dist - point[2]);
 	} else {
-		point[2]             = dy_center * dist;
-		wp_additional_height = 0;
+		point[2] = dy_center * dist;
+		//wp_additional_height = 0;
 	}
 }
 

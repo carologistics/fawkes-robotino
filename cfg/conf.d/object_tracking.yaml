@@ -10,8 +10,8 @@ plugins/picam_client:
 
   camera_intrinsics:
     # image size
-    width: 640
-    height: 480
+    width: 480
+    height: 640
 
 plugins/object_tracking:
   if_name: "object-tracking"
@@ -57,14 +57,14 @@ plugins/object_tracking:
 
   camera_intrinsics:
     # image size
-    width: 640
-    height: 480
+    width: 480
+    height: 640
     # principal point offset
-    ppx: 312.160461
-    ppy: 235.063721
+    ppx: 251.00801023972
+    ppy: 301.32794812152997
     # focal length
-    fx: 618.432129
-    fy: 618.432251
+    fx: 634.6348457656962
+    fy: 642.6147379302428
     # distortion coefficients
     model: 0
     # 0 - no distortion, rectilinear images
