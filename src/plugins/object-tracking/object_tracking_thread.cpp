@@ -856,8 +856,8 @@ ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
                                        float               &wp_additional_height)
 {
 	//compute bounding box values
-	float bb_left    = bounding_box[0] - bounding_box[2] / 2;
-	float bb_right   = bounding_box[0] + bounding_box[2] / 2;
+	float bb_left    = bounding_box[0] + bounding_box[2] / 2;
+	float bb_right   = bounding_box[0] - bounding_box[2] / 2;
 	float bb_bottom  = bounding_box[1] - bounding_box[3] / 2;
 	float bb_top     = bounding_box[1] + bounding_box[3] / 2;
 	float bb_centerY = bounding_box[1];
