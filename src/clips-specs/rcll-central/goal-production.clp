@@ -958,6 +958,7 @@
   "Enter the field (drive outside of the starting box)."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key central agent robot args? r ?robot))
+  (not (wm-fact (key central agent robot-lost args? r ?robot)))
   (not (wm-fact (key domain fact entered-field args? r ?robot)))
   (not
     (and
@@ -1044,21 +1045,13 @@
   (modify ?instruct-goal (parent ?instruct-root-id))
 )
 
-; (defrule goal-production-assert-pay-with-cc
-;   "Create two pay-with-cc goals for each RS (one for each CS)."
-;   (wm-fact (key refbox team-color) (value ?team-color))
-;   (wm-fact (key domain fact mps-type args? m ?rs t RS))
-;
-;   (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
-;
-;   ; there are not two payment goals already
-;   (not (and (goal (id ?goal-id) (class PAY-FOR-RINGS-WITH-CAP-CARRIER) (outcome ~FAILED) (params target-mps ?rs))
-;             (goal (id ~?goal-id) (class PAY-FOR-RINGS-WITH-CAP-CARRIER) (outcome ~FAILED) (params target-mps ?rs))
-;        )
-;   )
-;
-;   (goal (class SUPPORT-ROOT) (id ?root-id))
-;   =>
-;   (bind ?pay-goal-fact (goal-production-assert-pay-for-rings-with-cap-carrier ?rs nil))
-;   (modify ?pay-goal-fact (parent ?root-id))
-; )
+(defrule goal-production-remove-goal-for-unavailable-workpiece
+  " Clean up payment goals that operate on workpieces that can't be used at all."
+  (domain-object (name ?wp))
+  ?g <- (goal (id ?goal-id) (class PAY-FOR-RINGS-WITH-BASE) (params $? wp ?wp $?) (mode FORMULATED))
+  ?gm <- (goal-meta (goal-id ?goal-id))
+  (not (domain-fact (name wp-usable) (param-values ?wp)))
+  (not (domain-fact (name wp-unused) (param-values ?wp)))
+  =>
+  (retract ?g ?gm)
+)
