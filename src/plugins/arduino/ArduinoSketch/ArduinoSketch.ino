@@ -56,20 +56,20 @@ void calibrate();
 void calibrateAxis(AccelStepper &stepper, int limitPin, int &direction, int extra);
 void moveStepperAbsolute(AccelStepper &stepper, int absoluteSteps, int limitPin, int &direction);
 void enableMotor(AccelStepper &stepper);
-void disableMotor();
+void disableMotor(AccelStepper &stepper);
 bool isLimitSwitchEngaged(int limitPin);
 void checkConditionsAndRun();
 void readMessage();
 void gripperClose();
 void gripperOpen();
 
-#define DEFAULT_MAX_SPEED_X 2000
+#define DEFAULT_MAX_SPEED_X 4000
 #define DEFAULT_MAX_ACCEL_X 7000
 
-#define DEFAULT_MAX_SPEED_Y 2000
+#define DEFAULT_MAX_SPEED_Y 4000
 #define DEFAULT_MAX_ACCEL_Y 7000
 
-#define DEFAULT_MAX_SPEED_Z 2000
+#define DEFAULT_MAX_SPEED_Z 4000
 #define DEFAULT_MAX_ACCEL_Z 7000
 
 #define SECOND_CAL_MAX_SPEED 500
@@ -229,7 +229,7 @@ void calibrateAxis(AccelStepper &stepper, int limitPin, int direction, int extra
     }
 
     // Disable motor after calibration
-    disableMotor();
+    disableMotor(stepper);
 }
 
 void calibrate() {
@@ -291,13 +291,17 @@ void slow_stop_all() {
 	stepperX.stop();
 	stepperY.stop();
 	stepperZ.stop();
-  disableMotor();
+  disableMotor(stepperX);
+  disableMotor(stepperY);
+  disableMotor(stepperZ);
 }
 
 // stop all motors and stop taking further commands till told to - NEED TO ADD THIS FEATURE!!!
 void fast_stop_all() {
   void slow_stop_all();
-  disableMotor();
+  disableMotor(stepperX);
+  disableMotor(stepperY);
+  disableMotor(stepperZ);
   motorXEnabled = false;
   motorYEnabled = false;
   motorZEnabled = false;
@@ -466,29 +470,6 @@ bool isLimitSwitchEngaged(int limitPin) {
     return digitalRead(limitPin) == LOW;
 }
 
-void disableMotor() {
-    digitalWrite(MOTOR_X_ENABLE_PIN, HIGH); // all the steppers have just one common enable on CNC shield. Need to change function if using D7 as all three motors will have separate enable
-    // Reset motor state
-    motorXEnabled = false;
-    motorYEnabled = false;
-    motorZEnabled = false;
-    cur_status = STATUS_IDLE;
-    send_status();
-}
-
-void enableMotor(AccelStepper &stepper) {
-    digitalWrite(MOTOR_X_ENABLE_PIN, LOW);
-
-    // Track motor state
-    if (&stepper == &stepperX) {
-        motorXEnabled = true;
-    } else if (&stepper == &stepperY) {
-        motorYEnabled = true;
-    } else if (&stepper == &stepperZ) {
-        motorZEnabled = true;
-    }
-}
-
 void gripperClose() {
   servoA.write(gripper_close_angle);
 }
@@ -511,25 +492,29 @@ void moveStepperAbsolute(AccelStepper &stepper, int absoluteSteps, int limitPin,
     stepper.moveTo(targetPosition);
 }
 
-void checkConditionsAndRun(){
-    // Run the steppers if not at limit switches and there are steps to move
-    if(motorXEnabled){if ((!isLimitSwitchEngaged(MOTOR_X_LIMIT_PIN) && stepperX.distanceToGo() != 0) || (isLimitSwitchEngaged(MOTOR_X_LIMIT_PIN) && Xdir == 1)) {cur_status = STATUS_MOVING; stepperX.run();}
+void checkConditionsAndRun() {
+    bool anyMotorRunning = false;
+
+    // Check and run each motor if needed
+    if ((!isLimitSwitchEngaged(MOTOR_X_LIMIT_PIN) && stepperX.distanceToGo() != 0) || (isLimitSwitchEngaged(MOTOR_X_LIMIT_PIN) && Xdir == 1)) {
+        anyMotorRunning = true;
+        stepperX.run();
     }
-    if(motorYEnabled){if ((!isLimitSwitchEngaged(MOTOR_Y_LIMIT_PIN) && stepperY.distanceToGo() != 0) || (isLimitSwitchEngaged(MOTOR_Y_LIMIT_PIN) && Ydir == 1)) {cur_status = STATUS_MOVING; stepperY.run();}
+    if ((!isLimitSwitchEngaged(MOTOR_Y_LIMIT_PIN) && stepperY.distanceToGo() != 0) || (isLimitSwitchEngaged(MOTOR_Y_LIMIT_PIN) && Ydir == 1)) {
+        anyMotorRunning = true;
+        stepperY.run();
     }
-    if(motorZEnabled){if ((!isLimitSwitchEngaged(MOTOR_Z_LIMIT_PIN) && stepperZ.distanceToGo() != 0) || (isLimitSwitchEngaged(MOTOR_Z_LIMIT_PIN) && Zdir == -1)) {cur_status = STATUS_MOVING; stepperZ.run();}
+    if ((!isLimitSwitchEngaged(MOTOR_Z_LIMIT_PIN) && stepperZ.distanceToGo() != 0) || (isLimitSwitchEngaged(MOTOR_Z_LIMIT_PIN) && Zdir == -1)) {
+        anyMotorRunning = true;
+        stepperZ.run();
     }
 
-    // Disable motors if movement is complete or if endswitch triggered on direction -1 (Z axis direction is always flipped because of how it is connected)
-    if( ((!stepperX.isRunning() && motorXEnabled) && (!stepperY.isRunning() && motorYEnabled) ) && (!stepperZ.isRunning() && motorZEnabled) ){
-      disableMotor();
+    // Disable motors if no motor is running
+    if (!anyMotorRunning) {
+        disableMotor(stepperX);
+        disableMotor(stepperY);
+        disableMotor(stepperZ);
     }
-
-    if ( ((isLimitSwitchEngaged(MOTOR_X_LIMIT_PIN) && Xdir == -1) || (isLimitSwitchEngaged(MOTOR_Y_LIMIT_PIN) && Ydir == -1) ) || (isLimitSwitchEngaged(MOTOR_Z_LIMIT_PIN) && Zdir == 1)){
-      disableMotor();
-    }
-
-
 }
 
 void setup() {
