@@ -478,6 +478,34 @@ void gripperOpen() {
   servoA.write(gripper_open_angle);
 }
 
+void disableMotor(AccelStepper &stepper) {
+    digitalWrite(MOTOR_X_ENABLE_PIN, HIGH); // all the steppers have just one common enable on CNC shield. Need to change function if using D7 as all three motors will have separate enable
+    // Track motor state
+    if (&stepper == &stepperX) {
+        motorXEnabled = false;
+    } else if (&stepper == &stepperY) {
+        motorYEnabled = false;
+    } else if (&stepper == &stepperZ) {
+        motorZEnabled = false;
+    }
+
+    cur_status = STATUS_IDLE;
+    send_status();
+}
+
+void enableMotor(AccelStepper &stepper) {
+    digitalWrite(MOTOR_X_ENABLE_PIN, LOW); // all the steppers have just one common enable on CNC shield. Need to change function if using D7 as all three motors will have separate enable
+
+    // Track motor state
+    if (&stepper == &stepperX) {
+        motorXEnabled = true;
+    } else if (&stepper == &stepperY) {
+        motorYEnabled = true;
+    } else if (&stepper == &stepperZ) {
+        motorZEnabled = true;
+    }
+}
+
 void moveStepperAbsolute(AccelStepper &stepper, int absoluteSteps, int limitPin, int &direction) {
     cur_status = STATUS_MOVING;
     enableMotor(stepper);
