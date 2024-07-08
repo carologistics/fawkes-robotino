@@ -892,7 +892,7 @@ ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
 
 	//compute middle point with deltas and distance
 	point[0] = dist;
-	point[1] = (dx_left + dx_right) * dist / 2;
+	point[1] = -(dx_left + dx_right) * dist / 2;
 
 	if (current_object_type_ == ObjectTrackingInterface::WORKPIECE) {
 		//compute base middle point using the bottom point + wp_height/2
@@ -949,10 +949,10 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 	}
 
 	gripper_target[0] = object_pos.getX() + cos(mps_angle) * gripper_offset_x;
-	gripper_target[1] = -(object_pos.getY() - sin(mps_angle) * gripper_offset_x);
+	gripper_target[1] = object_pos.getY() - sin(mps_angle) * gripper_offset_x;
 	gripper_target[2] = object_pos.getZ() + gripper_offset_z;
 
 	base_target[0] = max_x_needed - cos(mps_angle) * base_offset_;
-	base_target[1] = -(max_y_needed + sin(mps_angle) * base_offset_);
+	base_target[1] = max_y_needed + sin(mps_angle) * base_offset_;
 	base_target[2] = mps_angle;
 }
