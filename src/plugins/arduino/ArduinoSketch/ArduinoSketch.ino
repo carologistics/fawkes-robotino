@@ -24,6 +24,7 @@
 #include <AccelStepper.h>
 #include <Wire.h>
 #include <Servo.h>
+#include <TimerOne.h>
 
 //#define DEBUG_MODE
 
@@ -49,12 +50,14 @@ bool motorXEnabled = false;
 bool motorYEnabled = false;
 bool motorZEnabled = false;
 
+int pos[3] = {0};
+
 int Xdir, Ydir, Zdir;
 
 // Function declarations
 void calibrate();
 void calibrateAxis(AccelStepper &stepper, int limitPin, int &direction, int extra);
-void moveStepperAbsolute(AccelStepper &stepper, int absoluteSteps, int limitPin, int &direction);
+void moveStepperAbsolute(AccelStepper &stepper, int absoluteSteps, int &direction);
 void enableMotor(AccelStepper &stepper);
 void disableMotor(AccelStepper &stepper);
 bool isLimitSwitchEngaged(int limitPin);
@@ -62,14 +65,15 @@ void checkConditionsAndRun();
 void readMessage();
 void gripperClose();
 void gripperOpen();
+void doMagic();
 
-#define DEFAULT_MAX_SPEED_X 4000
+#define DEFAULT_MAX_SPEED_X 7000
 #define DEFAULT_MAX_ACCEL_X 7000
 
-#define DEFAULT_MAX_SPEED_Y 4000
+#define DEFAULT_MAX_SPEED_Y 7000
 #define DEFAULT_MAX_ACCEL_Y 7000
 
-#define DEFAULT_MAX_SPEED_Z 4000
+#define DEFAULT_MAX_SPEED_Z 7000
 #define DEFAULT_MAX_ACCEL_Z 7000
 
 #define SECOND_CAL_MAX_SPEED 500
@@ -368,9 +372,9 @@ void read_package() {
 
 		switch (cur_cmd) {
       //Since gripper has been changed from stepper to servo, most of the CMD for motor A are commented out as they are not necessary. NEED TO REMOVE THOSE CMDS LATER !!!
-		case CMD_X_NEW_POS: enableMotor(stepperX); moveStepperAbsolute(stepperX, new_value, MOTOR_X_LIMIT_PIN, Xdir); break;
-		case CMD_Y_NEW_POS: enableMotor(stepperY); moveStepperAbsolute(stepperY, new_value, MOTOR_Y_LIMIT_PIN, Ydir); break;
-		case CMD_Z_NEW_POS: enableMotor(stepperZ); moveStepperAbsolute(stepperZ, -new_value, MOTOR_Z_LIMIT_PIN, Zdir); break;
+		case CMD_X_NEW_POS: enableMotor(stepperX); pos[0] = new_value; break;
+		case CMD_Y_NEW_POS: enableMotor(stepperY); pos[1] = new_value; break;
+		case CMD_Z_NEW_POS: enableMotor(stepperZ); pos[2] = -new_value; break;
 		case CMD_STATUS_REQ: send_status(); break;
 		case CMD_A_SET_TOGGLE_STEPS:
 			//a_toggle_steps = new_value;
@@ -462,6 +466,11 @@ void read_package() {
 		}
 	}
 
+  doMagic();
+  Serial.println(pos[0]);
+  Serial.println(pos[1]);
+  Serial.println(pos[2]);
+
 	// sucked everything out of this package, flush it
 	buf_i_ = 0;
 }
@@ -490,7 +499,7 @@ void disableMotor(AccelStepper &stepper) {
     }
 
     cur_status = STATUS_IDLE;
-    send_status();
+    //send_status();
 }
 
 void enableMotor(AccelStepper &stepper) {
@@ -506,7 +515,7 @@ void enableMotor(AccelStepper &stepper) {
     }
 }
 
-void moveStepperAbsolute(AccelStepper &stepper, int absoluteSteps, int limitPin, int &direction) {
+void moveStepperAbsolute(AccelStepper &stepper, int absoluteSteps, int &direction) {
     cur_status = STATUS_MOVING;
     enableMotor(stepper);
     int currentPosition = stepper.currentPosition();
@@ -519,6 +528,118 @@ void moveStepperAbsolute(AccelStepper &stepper, int absoluteSteps, int limitPin,
     }
     stepper.moveTo(targetPosition);
 }
+
+void doMagic(){
+  moveStepperAbsolute(stepperX, pos[0], Xdir);
+  moveStepperAbsolute(stepperY, pos[1], Ydir);
+  moveStepperAbsolute(stepperZ, pos[2], Zdir);
+
+ /* // Initial speed and acceleration values are the same for all axes
+    float speedX = 4000;
+    float accelerationX = 7000;
+  
+    float speedY = 4000;
+    float accelerationY = 7000;
+  
+    float speedZ = 4000;
+    float accelerationZ = 7000;
+
+    // Calculate absolute steps for each axis
+    long absStepsX = abs(pos[0] - stepperX.currentPosition());
+    long absStepsY = abs(pos[1] - stepperY.currentPosition());
+    long absStepsZ = abs(pos[2] - stepperZ.currentPosition());
+
+    // Calculate speed factors based on the maximum distance to travel
+    float maxDistance = max(absStepsX, max(absStepsY, absStepsZ));
+    float speedFactorX = maxDistance / max(1, absStepsX); // Ensure division by zero protection
+    float speedFactorY = maxDistance / max(1, absStepsY);
+    float speedFactorZ = maxDistance / max(1, absStepsZ);
+
+    // Adjust speeds and accelerations based on the distance to travel for each axis
+    if (absStepsX > absStepsY && absStepsX > absStepsZ) {
+        // X is traveling the farthest
+        float scalerY = (float)absStepsY / (float)absStepsX;
+        float scalerZ = (float)absStepsZ / (float)absStepsX;
+        speedY *= scalerY;
+        accelerationY *= scalerY;
+        speedZ *= scalerZ;
+        accelerationZ *= scalerZ;
+    } else if (absStepsY > absStepsX && absStepsY > absStepsZ) {
+        // Y is traveling the farthest
+        float scalerX = (float)absStepsX / (float)absStepsY;
+        float scalerZ = (float)absStepsZ / (float)absStepsY;
+        speedX *= scalerX;
+        accelerationX *= scalerX;
+        speedZ *= scalerZ;
+        accelerationZ *= scalerZ;
+    } else {
+        // Z is traveling the farthest
+        float scalerX = (float)absStepsX / (float)absStepsZ;
+        float scalerY = (float)absStepsY / (float)absStepsZ;
+        speedX *= scalerX;
+        accelerationX *= scalerX;
+        speedY *= scalerY;
+        accelerationY *= scalerY;
+    }
+
+  stepperX.setMaxSpeed(speedX);
+  stepperY.setMaxSpeed(speedY);
+  stepperZ.setMaxSpeed(speedZ);
+
+  /*stepperX.setAcceleration(accelerationX);
+  stepperY.setAcceleration(accelerationY);
+  stepperZ.setAcceleration(accelerationZ);*/
+
+  /*Serial.println(stepperX.speed());
+  Serial.println(stepperY.speed());
+  Serial.println(stepperZ.speed());*/
+}
+/*
+void moveStepperAbsolute(AccelStepper &stepper, int absoluteSteps, int limitPin, int &direction) {
+    // Collect current positions and distance to go for all three axes
+    enableMotor(stepper); // Ensure motor is enabled
+    cur_status = STATUS_MOVING;
+    int currentPositionX = stepperX.currentPosition();
+    int currentPositionY = stepperY.currentPosition();
+    int currentPositionZ = stepperZ.currentPosition();
+
+    int targetPositionX = stepperX.targetPosition();
+    int targetPositionY = stepperY.targetPosition();
+    int targetPositionZ = stepperZ.targetPosition();
+
+    int distanceToGoX = abs(targetPositionX - currentPositionX);
+    int distanceToGoY = abs(targetPositionY - currentPositionY);
+    int distanceToGoZ = abs(targetPositionZ - currentPositionZ);
+
+    // Calculate maximum distance among all axes
+    int maxDistance = max(distanceToGoX, max(distanceToGoY, distanceToGoZ));
+
+    // Calculate speeds based on maximum distance and max allowed speed
+    float maxSpeed = 4000;
+    float speedFactorX = maxDistance / max(1, distanceToGoX); // Ensure division by zero protection
+    float speedFactorY = maxDistance / max(1, distanceToGoY);
+    float speedFactorZ = maxDistance / max(1, distanceToGoZ);
+
+    // Determine final speeds for each axis
+    float speedX = maxSpeed * speedFactorX;
+    float speedY = maxSpeed * speedFactorY;
+    float speedZ = maxSpeed * speedFactorZ;
+
+    stepperX.setSpeed(speedX);
+    stepperY.setSpeed(speedY);
+    stepperZ.setSpeed(speedZ);
+
+    int currentPosition = stepper.currentPosition();
+    int targetPosition = absoluteSteps;
+    // Set speeds and move to target position for the specific stepper motor
+    if (targetPosition > currentPosition) {
+        direction = 1;
+    } else if (targetPosition < currentPosition) {
+        direction = -1;
+    }
+    stepper.moveTo(targetPosition);
+}
+*/
 
 void checkConditionsAndRun() {
     bool anyMotorRunning = false;
@@ -582,6 +703,9 @@ void setup() {
 
 	//default behavior should be to calibrate and home on serial port open
 	calibrate(); //SHOULD WE CALL DOUBLE CALIBRATE HERE INSTEAD? JUST TO BE ON A SAFER SIDE?
+
+  Timer1.initialize(750);
+  Timer1.attachInterrupt(timerCallback);
 }
 
 void loop() {
@@ -605,11 +729,15 @@ void loop() {
     }
 
     if (loop_nr > 3000) {
-      send_status();
+      //send_status();
       loop_nr = 0;
     } else {
       loop_nr++;
     }
-    checkConditionsAndRun();
+    //checkConditionsAndRun();
 
+}
+
+void timerCallback(){
+  checkConditionsAndRun();
 }
