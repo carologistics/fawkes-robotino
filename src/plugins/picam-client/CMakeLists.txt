@@ -23,7 +23,7 @@
 set(PLUGIN_picam-client
     ON
     CACHE BOOL "Build picam-client plugin")
-
+add_subdirectory(interfaces)
 if(PLUGIN_picam-client)
   add_library(picam-client MODULE picam_client_plugin.cpp
                                      picam_client_thread.cpp
@@ -37,6 +37,7 @@ if(PLUGIN_picam-client)
     fawkesinterface
     fawkesblackboard
     ObjectTrackingInterface
+    PiCamPluginInterface
     fvutils)
 
 else()
