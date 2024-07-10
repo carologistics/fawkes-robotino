@@ -9,9 +9,24 @@ plugins/picam_client:
   port: 6465
 
   camera_intrinsics:
-    # image size
     width: 480
     height: 640
+
+  camera_matrix:
+    rotation: 0
+    old_ppx: 251.00801023972
+    old_ppy: 301.32794812152997
+    old_f_y: 642.6147379302428
+    old_f_x: 634.6348457656962
+    new_ppx: 251.00801023972
+    new_ppy: 301.32794812152997
+    new_f_y: 642.6147379302428
+    new_f_x: 634.6348457656962
+    k1: 0
+    k2: 0
+    k3: 0
+    k4: 0
+    k5: 0
 
 plugins/object_tracking:
   if_name: "object-tracking"

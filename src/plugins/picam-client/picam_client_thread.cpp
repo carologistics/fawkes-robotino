@@ -27,6 +27,7 @@
 #include <aspect/logging.h>
 #include <interfaces/ObjectTrackingInterface.h>
 
+#include <chrono>
 #include <cstdint>
 #include <cstring>
 #include <iostream>
@@ -34,22 +35,32 @@
 #include <sstream>
 #include <stdio.h>
 #include <string>
+#include <thread>
 #include <vector>
 
 using namespace fawkes;
 using namespace cv;
 using namespace dnn;
 
-#define HEADER_SIZE_1 16 // Header size for message of type 1
-#define HEADER_SIZE_2 16 // Header size for message of type 2
-#define HEADER_SIZE_3 28 // Header size for message of type 3
+#define HEADER_SIZE_1 20               // Header size for message of type 1
+#define HEADER_SIZE_2 20               // Header size for message of type 2
+#define HEADER_SIZE_3 32               // Header size for message of type 3
+#define CONTROL_HEADER_SIZE 9          // Header size for control message
+#define CONTROL_HEADER_SIZE_PAYLOAD 13 // Header size for control message
+#define CONFIGURE_MESSAGE_SIZE 65      // Header size for control message
+
+#define SLEEP_INTERVAL 1
+#define DISCONNECT_THRESHOLD 10
+#define RECONNECT_INTERVAL 5
 
 /** @class PicamClientThread "picam_client_thread.h"
  * @author Daniel Swoboda
  */
 
 /** Constructor. */
-PicamClientThread::PicamClientThread() : Thread("PicamClientThread", Thread::OPMODE_CONTINUOUS)
+PicamClientThread::PicamClientThread()
+: Thread("PicamClientThread", Thread::OPMODE_CONTINUOUS),
+  BlackBoardInterfaceListener("PicamClientThread")
 {
 }
 
@@ -77,128 +88,376 @@ PicamClientThread::init()
 	                                                          camera_width_,
 	                                                          camera_height_);
 
-	// Create socket and connect
-	if ((sockfd_ = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		std::cerr << "Socket creation error" << std::endl;
-		return;
-	}
-
-	server_addr_.sin_family = AF_INET;
-	server_addr_.sin_port   = htons(server_port_);
-
-	if (inet_pton(AF_INET, server_ip_.c_str(), &server_addr_.sin_addr) <= 0) {
-		std::cerr << "Invalid address/ Address not supported" << std::endl;
-		return;
-	}
-
-	if (connect(sockfd_, (struct sockaddr *)&server_addr_, sizeof(server_addr_)) < 0) {
-		std::cerr << "Connection Failed" << std::endl;
-		return;
-	}
+	bb_interface_ = blackboard->open_for_writing<PiCamPluginInterface>("PiCamPluginInterface");
 }
 
 void
 PicamClientThread::loop()
 {
-	data_.clear();
-
-	// read the message type
-	data_.resize(1);
-	if (!receive_data(sockfd_, data_.data(), 1)) {
-		std::cerr << "Failed to read header" << std::endl;
-		return;
+	if (disconnect_counter_ > DISCONNECT_THRESHOLD) {
+		connected_          = false;
+		disconnect_counter_ = 0;
 	}
-	uint8_t message_type;
-	std::memcpy(&message_type, &data_[0], 1);
-
-	if (message_type == 1 || message_type == 2) {
+	if (connected_) {
 		data_.clear();
 
-		// read header for type 1 and 2 messages
-		data_.resize(HEADER_SIZE_1);
-		if (!receive_data(sockfd_, data_.data(), HEADER_SIZE_1)) {
-			std::cerr << "Failed to read header" << std::endl;
+		// read the message type
+		data_.resize(1);
+		if (!receive_data(sockfd_, data_.data(), 1)) {
+			std::cerr << "No message received in iteration" << std::endl;
+			std::this_thread::sleep_for(std::chrono::seconds(SLEEP_INTERVAL));
+			disconnect_counter_ += 1;
 			return;
 		}
-		uint32_t timestamp, width, height, length;
+		disconnect_counter_ = 0;
+		uint8_t message_type;
+		std::memcpy(&message_type, &data_[0], 1);
 
-		std::memcpy(&timestamp, &data_[0], 4);
-		std::memcpy(&height, &data_[4], 4);
-		std::memcpy(&width, &data_[8], 4);
-		std::memcpy(&length, &data_[12], 4);
+		if (message_type == 1 || message_type == 2) {
+			fawkes::Time now(clock);
+			data_.clear();
 
-		timestamp = ntohl(timestamp);
-		height    = ntohl(height);
-		width     = ntohl(width);
-		length    = ntohl(length);
+			// read header for type 1 and 2 messages
+			data_.resize(HEADER_SIZE_1);
+			if (!receive_data(sockfd_, data_.data(), HEADER_SIZE_1)) {
+				std::cerr << "Failed to read header" << std::endl;
+				std::this_thread::sleep_for(std::chrono::seconds(SLEEP_INTERVAL));
+				disconnect_counter_ += 1;
+				return;
+			}
+			disconnect_counter_ = 0;
+			uint64_t timestamp;
+			uint32_t width, height, length;
 
-		// read the frame payload based on the length
-		std::vector<char> image_data(length);
-		if (!receive_data(sockfd_, image_data.data(), length)) {
-			std::cerr << "Failed to read image data" << std::endl;
+			std::memcpy(&timestamp, &data_[0], 8);
+			std::memcpy(&height, &data_[8], 4);
+			std::memcpy(&width, &data_[12], 4);
+			std::memcpy(&length, &data_[16], 4);
+
+			timestamp                = ntohl(timestamp);
+			uint64_t timestamp_secs  = timestamp / 1000000000;
+			uint64_t timestamp_usecs = timestamp - timestamp_secs * 1000000000;
+			height                   = ntohl(height);
+			width                    = ntohl(width);
+			length                   = ntohl(length);
+
+			// read the frame payload based on the length
+			std::vector<char> image_data(length);
+			if (!receive_data(sockfd_, image_data.data(), length)) {
+				std::cerr << "Failed to read image data" << std::endl;
+				std::this_thread::sleep_for(std::chrono::seconds(SLEEP_INTERVAL));
+				disconnect_counter_ += 1;
+				return;
+			}
+			disconnect_counter_ = 0;
+
+			// decode base64
+			std::string base64_image(image_data.begin(), image_data.end());
+			std::string decoded_image = base64_decode(base64_image);
+
+			// decode image using OpenCV
+			std::vector<uchar> img_data(decoded_image.begin(), decoded_image.end());
+			cv::Mat            img = cv::imdecode(img_data, cv::IMREAD_COLOR);
+
+			if (img.empty()) {
+				std::cerr << "Failed to decode image" << std::endl;
+				std::this_thread::sleep_for(std::chrono::seconds(SLEEP_INTERVAL));
+				disconnect_counter_ += 1;
+				return;
+			}
+			disconnect_counter_ = 0;
+
+			// write received image in the right shared memory buffer, based on type
+			if (message_type == 1) {
+				firevision::convert(firevision::BGR,
+				                    firevision::BGR,
+				                    img.data,
+				                    shm_buffer_->buffer(),
+				                    camera_width_,
+				                    camera_height_);
+				shm_buffer_->set_capture_time(&now);
+			}
+			if (message_type == 2) {
+				firevision::convert(firevision::BGR,
+				                    firevision::BGR,
+				                    img.data,
+				                    shm_buffer_res_->buffer(),
+				                    camera_width_,
+				                    camera_height_);
+				shm_buffer_res_->set_capture_time(timestamp_secs, timestamp_usecs);
+			}
+
+		} else if (message_type == 3) {
+			data_.clear();
+			// read the message header of type 3
+			data_.resize(HEADER_SIZE_3);
+			if (!receive_data(sockfd_, data_.data(), HEADER_SIZE_3)) {
+				std::cerr << "Failed to read header" << std::endl;
+				std::this_thread::sleep_for(std::chrono::seconds(SLEEP_INTERVAL));
+				disconnect_counter_ += 1;
+				return;
+			}
+			disconnect_counter_ = 0;
+
+			// unpack the data
+			uint32_t timestamp, x, y, h, w, cls;
+			float    acc;
+			std::memcpy(&timestamp, &data_[0], 4);
+			std::memcpy(&x, &data_[4], 4);
+			std::memcpy(&y, &data_[8], 4);
+			std::memcpy(&h, &data_[12], 4);
+			std::memcpy(&w, &data_[16], 4);
+			std::memcpy(&acc, &data_[20], 4);
+			std::memcpy(&cls, &data_[24], 4);
+
+			// convert to host byte order
+			timestamp                = ntohl(timestamp);
+			uint64_t timestamp_secs  = timestamp / 1000000000;
+			uint64_t timestamp_usecs = timestamp - timestamp_secs * 1000000000;
+			x                        = ntohl(x);
+			y                        = ntohl(y);
+			h                        = ntohl(h);
+			w                        = ntohl(w);
+			acc                      = ntohl(acc);
+			cls                      = ntohl(cls);
+
+			if (timestamp > last_msg_time_) {
+				last_msg_time_ = timestamp;
+				msg_counter_   = 0;
+				reset_interface();
+			}
+
+			// write the data to the blackboard
+			write_to_interface(msg_counter_, x, y, h, w, acc, cls, timestamp_secs, timestamp_usecs);
+			msg_counter_ += 1;
+		}
+	} else {
+		if (connect_to_server() < 0) {
+			connected_ = false;
+			std::cerr << "Attempting to reconnect" << std::endl;
+			std::this_thread::sleep_for(std::chrono::seconds(RECONNECT_INTERVAL));
 			return;
+		} else {
+			std::cerr << "Connected to server" << std::endl;
+			connected_ = true;
 		}
-
-		// decode base64
-		std::string base64_image(image_data.begin(), image_data.end());
-		std::string decoded_image = base64_decode(base64_image);
-
-		// decode image using OpenCV
-		std::vector<uchar> img_data(decoded_image.begin(), decoded_image.end());
-		cv::Mat            img = cv::imdecode(img_data, cv::IMREAD_COLOR);
-
-		if (img.empty()) {
-			std::cerr << "Failed to decode image" << std::endl;
-			return;
-		}
-
-		// write received image in the right shared memory buffer, based on type
-		if (message_type == 1) {
-			firevision::convert(firevision::BGR,
-			                    firevision::BGR,
-			                    img.data,
-			                    shm_buffer_->buffer(),
-			                    camera_width_,
-			                    camera_height_);
-		}
-		if (message_type == 2) {
-			firevision::convert(firevision::BGR,
-			                    firevision::BGR,
-			                    img.data,
-			                    shm_buffer_res_->buffer(),
-			                    camera_width_,
-			                    camera_height_);
-		}
-
-	} else if (message_type == 3) {
-		data_.clear();
-		// read the message header of type 3
-		data_.resize(HEADER_SIZE_3);
-		if (!receive_data(sockfd_, data_.data(), HEADER_SIZE_3)) {
-			std::cerr << "Failed to read header" << std::endl;
-			return;
-		}
-
-		// unpack the data
-		uint32_t timestamp, x, y, h, w, cls;
-		float    acc;
-		std::memcpy(&timestamp, &data_[0], 4);
-		std::memcpy(&x, &data_[4], 4);
-		std::memcpy(&y, &data_[8], 4);
-		std::memcpy(&h, &data_[12], 4);
-		std::memcpy(&w, &data_[16], 4);
-		std::memcpy(&acc, &data_[20], 4);
-		std::memcpy(&cls, &data_[24], 4);
-
-		// convert to host byte order
-		timestamp = ntohl(timestamp);
-		x         = ntohl(x);
-		y         = ntohl(y);
-		h         = ntohl(h);
-		w         = ntohl(w);
-		acc       = ntohl(acc);
-		cls       = ntohl(cls);
 	}
+}
+
+void
+PicamClientThread::reset_interface()
+{
+	float null_array[6] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+	bb_interface_->set_bbox_0(null_array);
+	bb_interface_->set_bbox_0_timestamp(0);
+	bb_interface_->set_bbox_1(null_array);
+	bb_interface_->set_bbox_1_timestamp(0);
+	bb_interface_->set_bbox_2(null_array);
+	bb_interface_->set_bbox_2_timestamp(0);
+	bb_interface_->set_bbox_3(null_array);
+	bb_interface_->set_bbox_3_timestamp(0);
+	bb_interface_->set_bbox_4(null_array);
+	bb_interface_->set_bbox_4_timestamp(0);
+	bb_interface_->set_bbox_5(null_array);
+	bb_interface_->set_bbox_5_timestamp(0);
+	bb_interface_->set_bbox_6(null_array);
+	bb_interface_->set_bbox_6_timestamp(0);
+	bb_interface_->set_bbox_7(null_array);
+	bb_interface_->set_bbox_7_timestamp(0);
+	bb_interface_->set_bbox_8(null_array);
+	bb_interface_->set_bbox_8_timestamp(0);
+	bb_interface_->set_bbox_9(null_array);
+	bb_interface_->set_bbox_9_timestamp(0);
+	bb_interface_->set_bbox_10(null_array);
+	bb_interface_->set_bbox_10_timestamp(0);
+	bb_interface_->set_bbox_11(null_array);
+	bb_interface_->set_bbox_11_timestamp(0);
+	bb_interface_->set_bbox_12(null_array);
+	bb_interface_->set_bbox_12_timestamp(0);
+	bb_interface_->set_bbox_13(null_array);
+	bb_interface_->set_bbox_13_timestamp(0);
+	bb_interface_->set_bbox_14(null_array);
+	bb_interface_->set_bbox_14_timestamp(0);
+}
+
+void
+PicamClientThread::write_to_interface(int      slot,
+                                      float    x,
+                                      float    y,
+                                      float    h,
+                                      float    w,
+                                      float    acc,
+                                      float    cl,
+                                      uint64_t timestamp_secs,
+                                      uint64_t timestamp_usecs)
+{
+	float    values[6]    = {x, y, h, w, acc, cl};
+	uint64_t timestamp[2] = {timestamp_secs, timestamp_usecs};
+	if (slot == 0) {
+		bb_interface_->set_bbox_0(values);
+		bb_interface_->set_bbox_0_timestamp(timestamp);
+	} else if (slot == 1) {
+		bb_interface_->set_bbox_1(values);
+		bb_interface_->set_bbox_1_timestamp(timestamp);
+	} else if (slot == 2) {
+		bb_interface_->set_bbox_2(values);
+		bb_interface_->set_bbox_2_timestamp(timestamp);
+	} else if (slot == 3) {
+		bb_interface_->set_bbox_3(values);
+		bb_interface_->set_bbox_3_timestamp(timestamp);
+	} else if (slot == 4) {
+		bb_interface_->set_bbox_4(values);
+		bb_interface_->set_bbox_4_timestamp(timestamp);
+	} else if (slot == 5) {
+		bb_interface_->set_bbox_5(values);
+		bb_interface_->set_bbox_5_timestamp(timestamp);
+	} else if (slot == 6) {
+		bb_interface_->set_bbox_6(values);
+		bb_interface_->set_bbox_6_timestamp(timestamp);
+	} else if (slot == 7) {
+		bb_interface_->set_bbox_7(values);
+		bb_interface_->set_bbox_7_timestamp(timestamp);
+	} else if (slot == 8) {
+		bb_interface_->set_bbox_8(values);
+		bb_interface_->set_bbox_8_timestamp(timestamp);
+	} else if (slot == 9) {
+		bb_interface_->set_bbox_9(values);
+		bb_interface_->set_bbox_9_timestamp(timestamp);
+	} else if (slot == 10) {
+		bb_interface_->set_bbox_10(values);
+		bb_interface_->set_bbox_10_timestamp(timestamp);
+	} else if (slot == 11) {
+		bb_interface_->set_bbox_11(values);
+		bb_interface_->set_bbox_11_timestamp(timestamp);
+	} else if (slot == 12) {
+		bb_interface_->set_bbox_12(values);
+		bb_interface_->set_bbox_12_timestamp(timestamp);
+	} else if (slot == 13) {
+		bb_interface_->set_bbox_13(values);
+		bb_interface_->set_bbox_13_timestamp(timestamp);
+	} else if (slot == 14) {
+		bb_interface_->set_bbox_14(values);
+		bb_interface_->set_bbox_14_timestamp(timestamp);
+	}
+}
+
+bool
+PicamClientThread::bb_interface_message_received(Interface *interface, Message *message) noexcept
+{
+	bool status = false;
+	if (message->is_of_type<PiCamPluginInterface::ActivateStreamMessage>()) {
+		send_control_message(4);
+		status = true;
+	} else if (message->is_of_type<PiCamPluginInterface::ActivateMarkedStreamMessage>()) {
+		send_control_message(5);
+		status = true;
+	} else if (message->is_of_type<PiCamPluginInterface::DeactivateStreamMessage>()) {
+		send_control_message(6);
+		status = true;
+	} else if (message->is_of_type<PiCamPluginInterface::DeactivateMarkedStreamMessage>()) {
+		send_control_message(7);
+		status = true;
+	} else if (message->is_of_type<PiCamPluginInterface::EnableWorkpieceDetectionMessage>()) {
+		send_control_message(8);
+		status = true;
+	} else if (message->is_of_type<PiCamPluginInterface::EnableConveyorDetectionMessage>()) {
+		send_control_message(9);
+		status = true;
+	} else if (message->is_of_type<PiCamPluginInterface::EnableSlideDetectionMessage>()) {
+		send_control_message(10);
+		status = true;
+	} else if (message->is_of_type<PiCamPluginInterface::DisableDetectionMessage>()) {
+		send_control_message(11);
+		status = true;
+	} else if (message->is_of_type<PiCamPluginInterface::SetConfidenceMessage>()) {
+		PiCamPluginInterface::SetConfidenceMessage *msg =
+		  (PiCamPluginInterface::SetConfidenceMessage *)message;
+		send_control_message(12, msg->conf());
+		status = true;
+	} else if (message->is_of_type<PiCamPluginInterface::SetIOUMessage>()) {
+		PiCamPluginInterface::SetIOUMessage *msg = (PiCamPluginInterface::SetIOUMessage *)message;
+		send_control_message(13, msg->iou());
+		status = true;
+	}
+
+	return status;
+}
+
+void
+PicamClientThread::send_control_message(uint8_t message_type)
+{
+	uint64_t timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+	                       std::chrono::system_clock::now().time_since_epoch())
+	                       .count();
+
+	char header[CONTROL_HEADER_SIZE];
+	std::memcpy(&header[0], &message_type, 1);
+	uint64_t network_timestamp = htonl(timestamp);
+	std::memcpy(&header[1], &network_timestamp, 8);
+
+	send(sockfd_, header, CONTROL_HEADER_SIZE, 0);
+}
+
+void
+PicamClientThread::send_control_message(uint8_t message_type, float payload)
+{
+	uint64_t timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+	                       std::chrono::system_clock::now().time_since_epoch())
+	                       .count();
+
+	char header[CONTROL_HEADER_SIZE_PAYLOAD];
+	std::memcpy(&header[0], &message_type, 1);
+	uint64_t network_timestamp = htonl(timestamp);
+	std::memcpy(&header[1], &network_timestamp, 8);
+	float network_payload = htonl(payload);
+	std::memcpy(&header[9], &network_payload, 4);
+
+	send(sockfd_, header, CONTROL_HEADER_SIZE, 0);
+}
+
+void
+PicamClientThread::send_configure_message()
+{
+	uint64_t timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+	                       std::chrono::system_clock::now().time_since_epoch())
+	                       .count();
+
+	char    header[CONFIGURE_MESSAGE_SIZE];
+	uint8_t message_type = 14;
+	std::memcpy(&header[0], &message_type, 1);
+	uint64_t network_timestamp = htonl(timestamp);
+	std::memcpy(&header[1], &network_timestamp, 8);
+
+	uint32_t network_rotation = htonl(config->get_int("plugins/picam_client/camera_matrix/rotation"));
+	std::memcpy(&header[9], &network_rotation, 4);
+	float network_old_ppx = htonl(config->get_float("plugins/picam_client/camera_matrix/old_ppx"));
+	std::memcpy(&header[13], &network_old_ppx, 4);
+	float network_old_ppy = htonl(config->get_float("plugins/picam_client/camera_matrix/old_ppy"));
+	std::memcpy(&header[17], &network_old_ppy, 4);
+	float network_old_f_y = htonl(config->get_float("plugins/picam_client/camera_matrix/old_f_y"));
+	std::memcpy(&header[21], &network_old_f_y, 4);
+	float network_old_f_x = htonl(config->get_float("plugins/picam_client/camera_matrix/old_f_x"));
+	std::memcpy(&header[25], &network_old_f_x, 4);
+	float network_new_ppx = htonl(config->get_float("plugins/picam_client/camera_matrix/new_ppx"));
+	std::memcpy(&header[29], &network_new_ppx, 4);
+	float network_new_ppy = htonl(config->get_float("plugins/picam_client/camera_matrix/new_ppy"));
+	std::memcpy(&header[33], &network_new_ppy, 4);
+	float network_new_f_y = htonl(config->get_float("plugins/picam_client/camera_matrix/new_f_y"));
+	std::memcpy(&header[37], &network_new_f_y, 4);
+	float network_new_f_x = htonl(config->get_float("plugins/picam_client/camera_matrix/new_f_x"));
+	std::memcpy(&header[41], &network_new_f_x, 4);
+	float network_k1 = htonl(config->get_float("plugins/picam_client/camera_matrix/k1"));
+	std::memcpy(&header[45], &network_k1, 4);
+	float network_k2 = htonl(config->get_float("plugins/picam_client/camera_matrix/k2"));
+	std::memcpy(&header[49], &network_k2, 4);
+	float network_k3 = htonl(config->get_float("plugins/picam_client/camera_matrix/k3"));
+	std::memcpy(&header[53], &network_k3, 4);
+	float network_k4 = htonl(config->get_float("plugins/picam_client/camera_matrix/k4"));
+	std::memcpy(&header[57], &network_k4, 4);
+	float network_k5 = htonl(config->get_float("plugins/picam_client/camera_matrix/k5"));
+	std::memcpy(&header[61], &network_k5, 4);
+
+	send(sockfd_, header, CONFIGURE_MESSAGE_SIZE, 0);
 }
 
 bool
@@ -213,4 +472,30 @@ PicamClientThread::receive_data(int sockfd, char *buffer, size_t size)
 		total_received += received;
 	}
 	return true;
+}
+
+int
+PicamClientThread::connect_to_server()
+{
+	if ((sockfd_ = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+		std::cerr << "Socket creation error" << std::endl;
+		return -1;
+	}
+
+	server_addr_.sin_family = AF_INET;
+	server_addr_.sin_port   = htons(server_port_);
+
+	if (inet_pton(AF_INET, server_ip_.c_str(), &server_addr_.sin_addr) <= 0) {
+		std::cerr << "Invalid address or address not supported" << std::endl;
+		close(sockfd_);
+		return -1;
+	}
+
+	if (connect(sockfd_, (struct sockaddr *)&server_addr_, sizeof(server_addr_)) < 0) {
+		std::cerr << "Connection Failed" << std::endl;
+		close(sockfd_);
+		return -1;
+	}
+	send_configure_message();
+	return 0;
 }

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <!DOCTYPE interface SYSTEM "interface.dtd">
+ <interface name="PiCamPluginInterface" author="Daniel Swoboda" year="2024">
+   <data>
+     <comment>
+       Interface to control the PiCam Plugin and receive bounding boxes from the object detection.
+     </comment>
+     <field type="float" length="6" name="bbox_0">
+        A bounding box for the object detection.
+     </field>
+     <field type="float" length="6" name="bbox_1">
+        A bounding box for the object detection.
+     </field>
+     <field type="float" length="6" name="bbox_2">
+        A bounding box for the object detection.
+     </field>
+     <field type="float" length="6" name="bbox_3">
+        A bounding box for the object detection.
+     </field>
+     <field type="float" length="6" name="bbox_4">
+        A bounding box for the object detection.
+     </field>
+     <field type="float" length="6" name="bbox_5">
+        A bounding box for the object detection.
+     </field>
+     <field type="float" length="6" name="bbox_6">
+        A bounding box for the object detection.
+     </field>
+     <field type="float" length="6" name="bbox_7">
+        A bounding box for the object detection.
+     </field>
+     <field type="float" length="6" name="bbox_8">
+        A bounding box for the object detection.
+     </field>
+     <field type="float" length="6" name="bbox_9">
+        A bounding box for the object detection.
+     </field>
+     <field type="float" length="6" name="bbox_10">
+        A bounding box for the object detection.
+     </field>
+     <field type="float" length="6" name="bbox_11">
+        A bounding box for the object detection.
+     </field>
+     <field type="float" length="6" name="bbox_12">
+        A bounding box for the object detection.
+     </field>
+     <field type="float" length="6" name="bbox_13">
+        A bounding box for the object detection.
+     </field>
+     <field type="float" length="6" name="bbox_14">
+        A bounding box for the object detection.
+     </field>
+     <field type="uint64" length="2" name="bbox_0_timestamp">Timestamp for bounding box array 0.</field>
+     <field type="uint64" length="2" name="bbox_1_timestamp">Timestamp for bounding box array 1.</field>
+     <field type="uint64" length="2" name="bbox_2_timestamp">Timestamp for bounding box array 2.</field>
+     <field type="uint64" length="2" name="bbox_3_timestamp">Timestamp for bounding box array 3.</field>
+     <field type="uint64" length="2" name="bbox_4_timestamp">Timestamp for bounding box array 4.</field>
+     <field type="uint64" length="2" name="bbox_5_timestamp">Timestamp for bounding box array 5.</field>
+     <field type="uint64" length="2" name="bbox_6_timestamp">Timestamp for bounding box array 6.</field>
+     <field type="uint64" length="2" name="bbox_7_timestamp">Timestamp for bounding box array 7.</field>
+     <field type="uint64" length="2" name="bbox_8_timestamp">Timestamp for bounding box array 8.</field>
+     <field type="uint64" length="2" name="bbox_9_timestamp">Timestamp for bounding box array 9.</field>
+     <field type="uint64" length="2" name="bbox_10_timestamp">Timestamp for bounding box array 10.</field>
+     <field type="uint64" length="2" name="bbox_11_timestamp">Timestamp for bounding box array 11.</field>
+     <field type="uint64" length="2" name="bbox_12_timestamp">Timestamp for bounding box array 12.</field>
+     <field type="uint64" length="2" name="bbox_13_timestamp">Timestamp for bounding box array 13.</field>
+     <field type="uint64" length="2" name="bbox_14_timestamp">Timestamp for bounding box array 14.</field>
+   </data>
+   <message name="SetConfidence">
+    <comment>Set the confidence value of the detection</comment>
+    <field type="float" name="conf">
+      <comment></comment>
+    </field>
+  </message>
+   <message name="SetIOU">
+    <comment>Set the IOU value of the detection</comment>
+    <field type="float" name="iou">
+      <comment></comment>
+     </field>
+  </message>
+  <message name="ActivateStream">
+    <comment>Activate the camera stream</comment>
+  </message>
+  <message name="ActivateMarkedStream">
+    <comment>Activate the stream with markings from the detection</comment>
+  </message>
+  <message name="DeactivateStream">
+    <comment>Deactivate the camera stream</comment>
+  </message>
+  <message name="DeactivateMarkedStream">
+    <comment>Deactivate the stream with markings</comment>
+  </message>
+  <message name="EnableWorkpieceDetection">
+    <comment>Enable the detection for workpieces</comment>
+  </message>
+  <message name="EnableConveyorDetection">
+    <comment>Enable the detection for conveyor belts</comment>
+  </message>
+  <message name="EnableSlideDetection">
+    <comment>Enable the detection for slides</comment>
+  </message>
+  <message name="DisableDetection">
+    <comment>Disable the detection</comment>
+  </message>
+</interface>

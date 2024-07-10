@@ -31,7 +31,7 @@
 #include <aspect/logging.h>
 #include <blackboard/interface_listener.h>
 #include <core/threading/thread.h>
-#include <interfaces/ObjectTrackingInterface.h>
+#include <interfaces/PiCamPluginInterface.h>
 #include <utils/time/time.h>
 
 #include <cmath>
@@ -55,7 +55,8 @@ class PicamClientThread : public fawkes::Thread,
                           public fawkes::ClockAspect,
                           public fawkes::LoggingAspect,
                           public fawkes::ConfigurableAspect,
-                          public fawkes::BlackBoardAspect
+                          public fawkes::BlackBoardAspect,
+                          public fawkes::BlackBoardInterfaceListener
 {
 public:
 	PicamClientThread();
@@ -72,6 +73,13 @@ private:
 	int camera_width_;
 	int camera_height_;
 
+	//blackboard interface
+	fawkes::PiCamPluginInterface *bb_interface_;
+
+	//connection vars
+	bool connected_          = false;
+	int  disconnect_counter_ = 0;
+
 	//socket vars
 	int                sockfd_;
 	struct sockaddr_in server_addr_;
@@ -85,7 +93,29 @@ private:
 	firevision::SharedMemoryImageBuffer *shm_buffer_res_;
 	bool                                 shm_active_;
 
+	//message vars
+	uint64_t last_msg_time_;
+	int      msg_counter_;
+
+	//functions
+	void reset_interface();
+	void write_to_interface(int      slot,
+	                        float    x,
+	                        float    y,
+	                        float    h,
+	                        float    w,
+	                        float    acc,
+	                        float    cl,
+	                        uint64_t timestamp_secs,
+	                        uint64_t timestamp_usecs);
+
 	bool receive_data(int sockfd, char *buffer, size_t size);
+	bool bb_interface_message_received(fawkes::Interface *interface,
+	                                   fawkes::Message   *message) throw();
+	void send_control_message(uint8_t message_type);
+	void send_control_message(uint8_t message_type, float payload);
+	void send_configure_message();
+	int  connect_to_server();
 };
 
 #endif
