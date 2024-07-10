@@ -28,15 +28,6 @@
 
 //#define DEBUG_MODE
 
-/*
- * The current time tick is extracted from the TCNT1 register.
- * As this is a two byte register, but the data bus is only one byte wide
- * correct read is not trivial.
- * However, the timer peripheral implements a shadow register for the high byte
- * which is written when the low byte is read.
- * It is thus important, that the low byte is read before the high byte, so the shadow register is properly loaded.
-*/
-
 // Create stepper motor instances
 AccelStepper stepperX(AccelStepper::DRIVER, MOTOR_X_STEP_PIN, MOTOR_X_DIR_PIN);
 AccelStepper stepperY(AccelStepper::DRIVER, MOTOR_Y_STEP_PIN, MOTOR_Y_DIR_PIN);
@@ -704,7 +695,7 @@ void setup() {
 	//default behavior should be to calibrate and home on serial port open
 	calibrate(); //SHOULD WE CALL DOUBLE CALIBRATE HERE INSTEAD? JUST TO BE ON A SAFER SIDE?
 
-  Timer1.initialize(750);
+  Timer1.initialize(1000);
   Timer1.attachInterrupt(timerCallback);
 }
 
