@@ -247,37 +247,38 @@ PicamClientThread::loop()
 void
 PicamClientThread::reset_interface()
 {
-	float null_array[6] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+	float    null_array[6]     = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+	uint64_t null_timestamp[2] = {0, 0};
 	bb_interface_->set_bbox_0(null_array);
-	bb_interface_->set_bbox_0_timestamp(0);
+	bb_interface_->set_bbox_0_timestamp(null_timestamp);
 	bb_interface_->set_bbox_1(null_array);
-	bb_interface_->set_bbox_1_timestamp(0);
+	bb_interface_->set_bbox_1_timestamp(null_timestamp);
 	bb_interface_->set_bbox_2(null_array);
-	bb_interface_->set_bbox_2_timestamp(0);
+	bb_interface_->set_bbox_2_timestamp(null_timestamp);
 	bb_interface_->set_bbox_3(null_array);
-	bb_interface_->set_bbox_3_timestamp(0);
+	bb_interface_->set_bbox_3_timestamp(null_timestamp);
 	bb_interface_->set_bbox_4(null_array);
-	bb_interface_->set_bbox_4_timestamp(0);
+	bb_interface_->set_bbox_4_timestamp(null_timestamp);
 	bb_interface_->set_bbox_5(null_array);
-	bb_interface_->set_bbox_5_timestamp(0);
+	bb_interface_->set_bbox_5_timestamp(null_timestamp);
 	bb_interface_->set_bbox_6(null_array);
-	bb_interface_->set_bbox_6_timestamp(0);
+	bb_interface_->set_bbox_6_timestamp(null_timestamp);
 	bb_interface_->set_bbox_7(null_array);
-	bb_interface_->set_bbox_7_timestamp(0);
+	bb_interface_->set_bbox_7_timestamp(null_timestamp);
 	bb_interface_->set_bbox_8(null_array);
-	bb_interface_->set_bbox_8_timestamp(0);
+	bb_interface_->set_bbox_8_timestamp(null_timestamp);
 	bb_interface_->set_bbox_9(null_array);
-	bb_interface_->set_bbox_9_timestamp(0);
+	bb_interface_->set_bbox_9_timestamp(null_timestamp);
 	bb_interface_->set_bbox_10(null_array);
-	bb_interface_->set_bbox_10_timestamp(0);
+	bb_interface_->set_bbox_10_timestamp(null_timestamp);
 	bb_interface_->set_bbox_11(null_array);
-	bb_interface_->set_bbox_11_timestamp(0);
+	bb_interface_->set_bbox_11_timestamp(null_timestamp);
 	bb_interface_->set_bbox_12(null_array);
-	bb_interface_->set_bbox_12_timestamp(0);
+	bb_interface_->set_bbox_12_timestamp(null_timestamp);
 	bb_interface_->set_bbox_13(null_array);
-	bb_interface_->set_bbox_13_timestamp(0);
+	bb_interface_->set_bbox_13_timestamp(null_timestamp);
 	bb_interface_->set_bbox_14(null_array);
-	bb_interface_->set_bbox_14_timestamp(0);
+	bb_interface_->set_bbox_14_timestamp(null_timestamp);
 }
 
 void
