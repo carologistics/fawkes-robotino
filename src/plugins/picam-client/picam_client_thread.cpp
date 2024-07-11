@@ -189,6 +189,8 @@ PicamClientThread::loop()
 
 		} else if (message_type == 3) {
 			data_.clear();
+
+			std::cout << "received type 3" << std::endl;
 			// read the message header of type 3
 			data_.resize(HEADER_SIZE_3);
 			if (!receive_data(sockfd_, data_.data(), HEADER_SIZE_3)) {
@@ -210,11 +212,27 @@ PicamClientThread::loop()
 			std::memcpy(&w, &data_[20], 4);
 			std::memcpy(&acc, &data_[24], 4);
 			std::memcpy(&cls, &data_[28], 4);
+			uint64_t timestamp;
+			uint32_t cls;
+			float    x, y, h, w, acc;
+			std::memcpy(&timestamp, &data_[0], 8);
+			std::memcpy(&x, &data_[8], 4);
+			std::memcpy(&y, &data_[12], 4);
+			std::memcpy(&h, &data_[16], 4);
+			std::memcpy(&w, &data_[20], 4);
+			std::memcpy(&acc, &data_[24], 4);
+			std::memcpy(&cls, &data_[28], 4);
 
 			// convert to host byte order
 			timestamp                = ntohll(timestamp);
+			timestamp                = ntohll(timestamp);
 			uint64_t timestamp_secs  = timestamp / 1000000000;
 			uint64_t timestamp_usecs = timestamp - timestamp_secs * 1000000000;
+			x                        = ntohlf(x);
+			y                        = ntohlf(y);
+			h                        = ntohlf(h);
+			w                        = ntohlf(w);
+			acc                      = ntohlf(acc);
 			x                        = ntohlf(x);
 			y                        = ntohlf(y);
 			h                        = ntohlf(h);
@@ -294,9 +312,11 @@ PicamClientThread::write_to_interface(int      slot,
                                       uint64_t timestamp_secs,
                                       uint64_t timestamp_usecs)
 {
+	std::cout << slot << std::endl;
 	float    values[6]    = {x, y, h, w, acc, cl};
 	uint64_t timestamp[2] = {timestamp_secs, timestamp_usecs};
 	if (slot == 0) {
+		std::cout << x << " " << y << " " << h << " " << w << " " << cl << " " << acc << std::endl;
 		bb_interface_->set_bbox_0(values);
 		bb_interface_->set_bbox_0_timestamp(timestamp);
 	} else if (slot == 1) {
@@ -413,7 +433,7 @@ PicamClientThread::send_control_message(uint8_t message_type, float payload)
 	std::memcpy(&header[0], &message_type, 1);
 	uint64_t network_timestamp = ntohll(timestamp);
 	std::memcpy(&header[1], &network_timestamp, 8);
-	uint32_t network_payload = htonf(payload);
+	float network_payload = payload;
 	std::memcpy(&header[9], &network_payload, 4);
 
 	send(sockfd_, header, CONTROL_HEADER_SIZE, 0);
@@ -434,7 +454,7 @@ PicamClientThread::send_configure_message()
 
 	uint32_t network_rotation = htonl(config->get_int("plugins/picam_client/camera_matrix/rotation"));
 	std::memcpy(&header[9], &network_rotation, 4);
-	uint32_t network_old_ppx = htonf(config->get_float("plugins/picam_client/camera_matrix/old_ppx"));
+	float network_old_ppx = config->get_float("plugins/picam_client/camera_matrix/old_ppx");
 	std::memcpy(&header[13], &network_old_ppx, 4);
 	uint32_t network_old_ppy = htonf(config->get_float("plugins/picam_client/camera_matrix/old_ppy"));
 	std::memcpy(&header[17], &network_old_ppy, 4);
@@ -450,7 +470,7 @@ PicamClientThread::send_configure_message()
 	std::memcpy(&header[37], &network_new_f_y, 4);
 	uint32_t network_new_f_x = htonf(config->get_float("plugins/picam_client/camera_matrix/new_f_x"));
 	std::memcpy(&header[41], &network_new_f_x, 4);
-	uint32_t network_k1 = htonf(config->get_float("plugins/picam_client/camera_matrix/k1"));
+	float network_k1 = config->get_float("plugins/picam_client/camera_matrix/k1");
 	std::memcpy(&header[45], &network_k1, 4);
 	uint32_t network_k2 = htonf(config->get_float("plugins/picam_client/camera_matrix/k2"));
 	std::memcpy(&header[49], &network_k2, 4);
@@ -526,13 +546,4 @@ PicamClientThread::ntohlf(float val)
 	float swapped;
 	std::memcpy(&swapped, &temp, sizeof(swapped));
 	return swapped;
-}
-
-uint32_t
-PicamClientThread::htonf(float val)
-{
-	uint32_t temp;
-	std::memcpy(&temp, &val, sizeof(temp));
-	temp = htonl(temp);
-	return temp;
 }

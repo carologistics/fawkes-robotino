@@ -118,6 +118,5 @@ private:
 	int      connect_to_server();
 	uint64_t ntohll(uint64_t val);
 	float    ntohlf(float val);
-	uint32_t htonf(float val);
 };
 #endif
