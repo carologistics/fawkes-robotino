@@ -12,6 +12,10 @@ plugins/picam_client:
     width: 480
     height: 640
 
+  detection:
+    iou: 0.3
+    conf: 0.2
+
   camera_matrix:
     rotation: 270
     old_ppx: 247.16991942710536
