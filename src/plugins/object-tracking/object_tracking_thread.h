@@ -33,6 +33,7 @@
 #include <core/threading/thread.h>
 #include <interfaces/LaserLineInterface.h>
 #include <interfaces/ObjectTrackingInterface.h>
+#include <interfaces/PiCamPluginInterface.h>
 #include <librealsense2/rsutil.h>
 #include <tf/types.h>
 #include <utils/time/time.h>
@@ -61,6 +62,7 @@ class ObjectTrackingThread : public fawkes::Thread,
                              public fawkes::ConfigurableAspect,
                              public fawkes::BlackBoardAspect,
                              public fawkes::BlockedTimingAspect,
+                             public fawkes::BlackBoardInterfaceListener,
                              public fawkes::TransformAspect
 {
 public:
@@ -210,7 +212,6 @@ private:
 	void set_shm();
 
 	//use yolo to detect objects
-	void detect_objects(cv::Mat image, std::vector<std::array<float, 4>> &yolo_boxes);
 	void convert_bb_yolo2rect(std::array<float, 4> yolo_bbox, cv::Rect &rect_bbox);
 
 	//project bounding boxes into 3d points and take closest to expectation
@@ -230,6 +231,9 @@ private:
 	                           fawkes::LaserLineInterface            *ll,
 	                           double                                 gripper_target[3],
 	                           double                                 base_target[3]);
+	void bb_interface_data_changed(fawkes::Interface                 *interface,
+	                               std::vector<std::array<float, 4>> &out_boxes) noexcept;
+	fawkes::PiCamPluginInterface *picam_plugin_if_;
 };
 
 #endif
