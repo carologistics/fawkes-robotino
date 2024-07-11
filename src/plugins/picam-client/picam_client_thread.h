@@ -109,13 +109,15 @@ private:
 	                        uint64_t timestamp_secs,
 	                        uint64_t timestamp_usecs);
 
-	bool receive_data(int sockfd, char *buffer, size_t size);
-	bool bb_interface_message_received(fawkes::Interface *interface,
-	                                   fawkes::Message   *message) throw();
-	void send_control_message(uint8_t message_type);
-	void send_control_message(uint8_t message_type, float payload);
-	void send_configure_message();
-	int  connect_to_server();
+	bool     receive_data(int sockfd, char *buffer, size_t size);
+	bool     bb_interface_message_received(fawkes::Interface *interface,
+	                                       fawkes::Message   *message) throw();
+	void     send_control_message(uint8_t message_type);
+	void     send_control_message(uint8_t message_type, float payload);
+	void     send_configure_message();
+	int      connect_to_server();
+	uint64_t ntohll(uint64_t val);
+	float    ntohlf(float val);
+	uint32_t htonf(float val);
 };
-
 #endif
