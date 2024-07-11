@@ -24,6 +24,7 @@
 
 #include <aspect/logging.h>
 #include <interfaces/ObjectTrackingInterface.h>
+#include <interfaces/PiCamPluginInterface.h>
 #include <tf/types.h>
 #include <utils/math/angle.h>
 
@@ -51,6 +52,7 @@ using namespace dnn;
 ObjectTrackingThread::ObjectTrackingThread()
 : Thread("ObjectTrackingThread", Thread::OPMODE_WAITFORWAKEUP),
   BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_POST_LOOP),
+  BlackBoardInterfaceListener("ObjectTrackingInterface"),
   fawkes::TransformAspect(fawkes::TransformAspect::BOTH_DEFER_PUBLISHER)
 {
 }
@@ -115,53 +117,13 @@ ObjectTrackingThread::init()
 	camera_coeffs_[3] = config->get_float("plugins/object_tracking/camera_intrinsics/p2");
 	camera_coeffs_[4] = config->get_float("plugins/object_tracking/camera_intrinsics/k3");
 
-	//get params for saved image usage
-	use_saved_         = config->get_bool("plugins/object_tracking/saved/use_saved");
-	image_path_        = this->config->get_string(("plugins/object_tracking/saved/image_path"));
-	saved_object_type_ = static_cast<ObjectTrackingInterface::TARGET_OBJECT_TYPE>(
-	  config->get_int("plugins/object_tracking/saved/saved_object_type"));
-
-	rotate_image_        = config->get_bool("plugins/object_tracking/rotate_image");
 	target_frame_        = config->get_string("plugins/object_tracking/target_frame");
 	cam_frame_           = config->get_string("plugins/object_tracking/camera_frame");
 	max_acceptable_dist_ = config->get_float("plugins/object_tracking/max_acceptable_dist");
 
-	//needed for realsense 3d projection
-	intrinsics_.width     = camera_width_;
-	intrinsics_.height    = camera_height_;
-	intrinsics_.ppx       = camera_ppx_;
-	intrinsics_.ppy       = camera_ppy_;
-	intrinsics_.fx        = camera_fx_;
-	intrinsics_.fy        = camera_fy_;
-	intrinsics_.model     = static_cast<rs2_distortion>(camera_model_);
-	intrinsics_.coeffs[0] = camera_coeffs_[0];
-	intrinsics_.coeffs[1] = camera_coeffs_[1];
-	intrinsics_.coeffs[2] = camera_coeffs_[2];
-	intrinsics_.coeffs[3] = camera_coeffs_[3];
-	intrinsics_.coeffs[4] = camera_coeffs_[4];
-
 	//set object params
 	//               {Unset, Workpiece, Conveyor, Slide}
 	object_widths_ = {0.0, 0.04, 0.03, 0.0585};
-
-	//get NN params
-	weights_path_  = this->config->get_string(("plugins/object_tracking/yolo/weights_path"));
-	config_path_   = this->config->get_string(("plugins/object_tracking/yolo/config_path"));
-	confThreshold_ = this->config->get_float(("plugins/object_tracking/yolo/confThreshold"));
-	nmsThreshold_  = this->config->get_float(("plugins/object_tracking/yolo/nmsThreshold"));
-	inpWidth_      = this->config->get_int(("plugins/object_tracking/yolo/width"));
-	inpHeight_     = this->config->get_int(("plugins/object_tracking/yolo/height"));
-
-	//set NN params
-	scale_  = 0.00392; //to normalize inputs: 0.00392 * 255 = 1
-	swapRB_ = false;
-
-	//set up network
-	net_ = readNet(weights_path_, config_path_);
-	net_.setPreferableBackend(DNN_BACKEND_DEFAULT);
-	net_.setPreferableTarget(DNN_TARGET_CPU);
-	//get name of output layer
-	outName_ = net_.getUnconnectedOutLayersNames();
 
 	//set up weighted average filter
 	//-------------------------------------------------------------------------
@@ -184,6 +146,10 @@ ObjectTrackingThread::init()
 	for (std::string ll : laserlines_names_) {
 		laserlines_.push_back(blackboard->open_for_reading<fawkes::LaserLineInterface>(ll.c_str()));
 	}
+
+	//open PiCamPluginInterface  for reading
+	picam_plugin_if_ = blackboard->open_for_reading<PiCamPluginInterface>("PiCamPluginInterface");
+	bbil_add_data_interface(picam_plugin_if_);
 
 	//get laser line fitting configs
 	ll_max_dist_ = this->config->get_float(("plugins/object_tracking/laser_line_fit/max_dist"));
@@ -227,6 +193,7 @@ ObjectTrackingThread::init()
 	name_it_    = 0;
 	tracking_   = false;
 	shm_active_ = false;
+	blackboard->register_listener(this);
 }
 
 void
@@ -328,59 +295,17 @@ ObjectTrackingThread::loop()
 	//-------------------------------------------------------------------------
 
 	//check if tracking is active
-	if (!use_saved_ && !tracking_)
+	if (!tracking_)
 		return;
 
 	//get image
 	//-------------------------------------------------------------------------
 
-	//get all filenames in the given directory or the filename of the image path
-	if (use_saved_ && filenames_.empty())
-		glob(image_path_ + "*", filenames_);
-
 	fawkes::Time start_time(clock);
 
-	Mat          image;
-	fawkes::Time capture_time;
-
-	if (use_saved_) {
-		current_object_type_ = saved_object_type_;
-
-		bool found_image = false;
-		if (name_it_ >= filenames_.size())
-			return;
-
-		while (name_it_ < filenames_.size() && !found_image) {
-			//check if png or jpg file
-			if (boost::algorithm::ends_with(filenames_[name_it_], ".png")
-			    || boost::algorithm::ends_with(filenames_[name_it_], ".PNG")
-			    || boost::algorithm::ends_with(filenames_[name_it_], ".jpg")
-			    || boost::algorithm::ends_with(filenames_[name_it_], ".JPG")
-			    || boost::algorithm::ends_with(filenames_[name_it_], ".jpeg")
-			    || boost::algorithm::ends_with(filenames_[name_it_], ".JPEG")
-			    || boost::algorithm::ends_with(filenames_[name_it_], ".jfif")
-			    || boost::algorithm::ends_with(filenames_[name_it_], ".JFIF")
-			    || boost::algorithm::ends_with(filenames_[name_it_], ".pjpeg")
-			    || boost::algorithm::ends_with(filenames_[name_it_], ".PJPEG")
-			    || boost::algorithm::ends_with(filenames_[name_it_], ".pjp")
-			    || boost::algorithm::ends_with(filenames_[name_it_], ".PJP")) {
-				image       = imread(filenames_[name_it_]);
-				found_image = true;
-			} else if (name_it_ + 1 >= filenames_.size()) {
-				name_it_++;
-				return;
-			}
-			name_it_++;
-		}
-	} else {
-		//read from sharedMemoryBuffer and convert into Mat
-		image        = Mat(camera_height_, camera_width_, CV_8UC3, shm_buffer_->buffer()).clone();
-		capture_time = shm_buffer_->capture_time();
-	}
-
-	if (rotate_image_)
-		rotate(image, image, ROTATE_180);
-	//-------------------------------------------------------------------------
+	//read from sharedMemoryBuffer and convert into Mat
+	Mat          image = Mat(camera_height_, camera_width_, CV_8UC3, shm_buffer_->buffer()).clone();
+	fawkes::Time capture_time = shm_buffer_->capture_time();
 
 	//find laser-line if needed
 	for (fawkes::LaserLineInterface *ll : laserlines_) {
@@ -403,59 +328,8 @@ ObjectTrackingThread::loop()
 	//detect objects
 	std::vector<std::array<float, 4>> out_boxes;
 	fawkes::Time                      before_detect(clock);
-	detect_objects(image, out_boxes);
+	bb_interface_data_changed(picam_plugin_if_, out_boxes);
 	fawkes::Time after_detect(clock);
-
-	//update results for saved images in webview
-	if (use_saved_) {
-		for (size_t i = 0; i < out_boxes.size(); ++i) {
-			float pos[3];
-			float wp_additional_height = 0;
-			compute_3d_point(out_boxes[i], 0.0, pos, wp_additional_height);
-
-			//draw bounding box on the image
-			cv::Rect rect_bb;
-			convert_bb_yolo2rect(out_boxes[i], rect_bb);
-			rectangle(image, rect_bb, Scalar(0, 0, 255), 2);
-
-			//write 3d position under it
-			std::stringstream sx;
-			std::stringstream sy;
-			std::stringstream sz;
-			sx << std::fixed << std::setprecision(3) << pos[0];
-			sy << std::fixed << std::setprecision(3) << pos[1];
-			sz << std::fixed << std::setprecision(3) << pos[2];
-			std::string pos_str = sx.str() + " " + sy.str() + " " + sz.str();
-
-			cv::putText(image,
-			            pos_str,
-			            cv::Point(rect_bb.x, rect_bb.y + rect_bb.height + 23),
-			            cv::FONT_HERSHEY_SIMPLEX,
-			            0.85,
-			            cv::Scalar(0, 0, 255),
-			            2.5,
-			            true);
-		}
-		//set resulting image in shared memory buffer
-		firevision::convert(firevision::BGR,
-		                    firevision::BGR,
-		                    image.data,
-		                    shm_buffer_results_->buffer(),
-		                    camera_width_,
-		                    camera_height_);
-
-		//save results when using flag use_saved_
-		//std::string new_img_name = "/home/mtschesche/Pictures/realsense_sequence_3_norot_results/" + std::to_string(name_it_ -1) + ".jpg";
-		//imwrite(new_img_name, image);
-
-		fawkes::Time after_projection(clock);
-		//logger->log_info("load image time ", std::to_string(before_detect - &start_time).c_str());
-		//logger->log_info("detection time  ", std::to_string(after_detect - &before_detect).c_str());
-		//logger->log_info("box time        ", std::to_string(after_projection - &after_detect).c_str());
-		//logger->log_info("overall time    ", std::to_string(after_projection - &start_time).c_str());
-
-		return;
-	}
 
 	//get mps angle and expected object position through laser-data
 	float                                  mps_angle = ll_->bearing();
@@ -634,6 +508,54 @@ ObjectTrackingThread::loop()
 	//logger->log_info("average loop    ", std::to_string(average_loop).c_str());
 }
 
+void
+ObjectTrackingThread::bb_interface_data_changed(
+  fawkes::Interface                 *interface,
+  std::vector<std::array<float, 4>> &out_boxes) noexcept
+{
+	PiCamPluginInterface *picam_if = dynamic_cast<PiCamPluginInterface *>(interface);
+	if (!picam_if) {
+		return;
+	}
+	picam_if->read();
+	float    *values;
+	uint64_t *timestamp;
+	for (int slot = 0; slot < 15; ++slot) {
+		switch (slot) {
+		case 0: values = picam_if->bbox_0(); break;
+		case 1: values = picam_if->bbox_1(); break;
+		case 2: values = picam_if->bbox_2(); break;
+		case 3: values = picam_if->bbox_3(); break;
+		case 4: values = picam_if->bbox_4(); break;
+		case 5: values = picam_if->bbox_5(); break;
+		case 6: values = picam_if->bbox_6(); break;
+		case 7: values = picam_if->bbox_7(); break;
+		case 8: values = picam_if->bbox_8(); break;
+		case 9: values = picam_if->bbox_9(); break;
+		case 10: values = picam_if->bbox_10(); break;
+		case 11: values = picam_if->bbox_11(); break;
+		case 12: values = picam_if->bbox_12(); break;
+		case 13: values = picam_if->bbox_13(); break;
+		case 14: values = picam_if->bbox_14(); break;
+		default: continue;
+		}
+
+		if (values[0] == 0 && values[1] == 0 && values[2] == 0 && values[3] == 0) {
+			continue;
+		}
+		// Process
+		std::array<float, 4> data;
+		data[0] = values[0];
+		data[1] = values[1];
+		data[2] = values[2];
+		data[3] = values[3];
+		std::cout << "X: " << values[0] << ", Y: " << values[1] << ", H: " << values[2]
+		          << ", W: " << values[3] << std::endl;
+
+		out_boxes.push_back(data);
+	}
+}
+
 bool
 ObjectTrackingThread::laserline_get_best_fit(fawkes::LaserLineInterface *&best_fit)
 {
@@ -745,49 +667,6 @@ ObjectTrackingThread::set_shm()
 		throw fawkes::Exception("Shared memory segment not valid");
 	} else {
 		shm_active_ = true;
-	}
-}
-
-void
-ObjectTrackingThread::detect_objects(Mat image, std::vector<std::array<float, 4>> &out_boxes)
-{
-	std::vector<float>                confidences;
-	std::vector<Rect>                 boxes;
-	std::vector<Mat>                  results;
-	std::vector<std::array<float, 4>> yolo_bbs;
-
-	Mat blob = blobFromImage(image, scale_, Size(inpWidth_, inpHeight_), Scalar(), swapRB_);
-	net_.setInput(blob);
-	net_.forward(results, outName_);
-	//results: L x N x (5 + #classes): 3 x 5808(in last layer) x [center_x, center_y, width, height, background_class, WORKPIECE, CONVEYOR, SLIDE]
-
-	//check each yolo-layer output
-	for (size_t l = 0; l < outName_.size(); l++) {
-		//pointer to access results' data
-		float *data = (float *)results[l].data;
-
-		//confidence thresholding
-		for (int j = 0; j < results[l].rows; ++j, data += results[l].cols) {
-			//take confidence for target class - filter other classes
-			float confidence = data[4 + (int)current_object_type_];
-			if (confidence > confThreshold_) {
-				std::array<float, 4> yolo_bb = {data[0], data[1], data[2], data[3]};
-				yolo_bbs.push_back(yolo_bb);
-
-				Rect rect_bb;
-				convert_bb_yolo2rect(yolo_bb, rect_bb);
-				boxes.push_back(rect_bb);
-
-				confidences.push_back(confidence);
-			}
-		}
-	}
-
-	//non-maximum suppression
-	std::vector<int> indices;
-	NMSBoxes(boxes, confidences, confThreshold_, nmsThreshold_, indices);
-	for (size_t i = 0; i < indices.size(); ++i) {
-		out_boxes.push_back(yolo_bbs[indices[i]]);
 	}
 }
 

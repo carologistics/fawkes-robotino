@@ -36,6 +36,7 @@ if(PLUGIN_object-tracking)
     fawkesinterface
     fawkesblackboard
     ObjectTrackingInterface
+    PiCamPluginInterface
     fvutils
     fawkestf
     LaserLineInterface)
