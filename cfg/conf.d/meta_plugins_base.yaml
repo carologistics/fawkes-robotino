@@ -74,7 +74,7 @@ fawkes/meta_plugins:
     - fvbase
     - fvfountain
     - skiller
-    - realsense2
+    - picam-client
     - skiller-rest-api
     - skiller_motor_state
     - object-tracking
