@@ -68,7 +68,7 @@ void
 PicamClientThread::init()
 {
 	logger->log_info(name(), "Initializing Picam Client");
-	std::cout << "OpenCV version : " << CV_VERSION << std::endl;
+	logger->log_info(name(), ("OpenCV version " + std::string(CV_VERSION)).c_str());
 
 	// get params for connection
 	server_ip_     = config->get_string("plugins/picam_client/ip");
@@ -104,7 +104,8 @@ PicamClientThread::loop()
 		// read the message type
 		data_.resize(1);
 		if (!receive_data(sockfd_, data_.data(), 1)) {
-			std::cerr << "No message received in iteration" << std::endl;
+			logger->log_error(name(), "No message received in iteratione");
+
 			std::this_thread::sleep_for(std::chrono::seconds(SLEEP_INTERVAL));
 			disconnect_counter_ += 1;
 			return;
@@ -114,13 +115,12 @@ PicamClientThread::loop()
 		std::memcpy(&message_type, &data_[0], 1);
 
 		if (message_type == 1 || message_type == 2) {
-			fawkes::Time now(clock);
 			data_.clear();
 
 			// read header for type 1 and 2 messages
 			data_.resize(HEADER_SIZE_1);
 			if (!receive_data(sockfd_, data_.data(), HEADER_SIZE_1)) {
-				std::cerr << "Failed to read header" << std::endl;
+				logger->log_error(name(), "Failed to read header");
 				std::this_thread::sleep_for(std::chrono::seconds(SLEEP_INTERVAL));
 				disconnect_counter_ += 1;
 				return;
@@ -144,7 +144,7 @@ PicamClientThread::loop()
 			// read the frame payload based on the length
 			std::vector<char> image_data(length);
 			if (!receive_data(sockfd_, image_data.data(), length)) {
-				std::cerr << "Failed to read image data" << std::endl;
+				logger->log_error(name(), "Failed to read image data");
 				std::this_thread::sleep_for(std::chrono::seconds(SLEEP_INTERVAL));
 				disconnect_counter_ += 1;
 				return;
@@ -160,7 +160,7 @@ PicamClientThread::loop()
 			cv::Mat            img = cv::imdecode(img_data, cv::IMREAD_COLOR);
 
 			if (img.empty()) {
-				std::cerr << "Failed to decode image" << std::endl;
+				logger->log_error(name(), "Failed to decode image");
 				std::this_thread::sleep_for(std::chrono::seconds(SLEEP_INTERVAL));
 				disconnect_counter_ += 1;
 				return;
@@ -175,7 +175,7 @@ PicamClientThread::loop()
 				                    shm_buffer_->buffer(),
 				                    camera_width_,
 				                    camera_height_);
-				shm_buffer_->set_capture_time(&now);
+				shm_buffer_->set_capture_time(timestamp_secs, timestamp_usecs);
 			}
 			if (message_type == 2) {
 				firevision::convert(firevision::BGR,
@@ -192,7 +192,7 @@ PicamClientThread::loop()
 			// read the message header of type 3
 			data_.resize(HEADER_SIZE_3);
 			if (!receive_data(sockfd_, data_.data(), HEADER_SIZE_3)) {
-				std::cerr << "Failed to read header" << std::endl;
+				logger->log_error(name(), "Failed to read header");
 				std::this_thread::sleep_for(std::chrono::seconds(SLEEP_INTERVAL));
 				disconnect_counter_ += 1;
 				return;
@@ -200,25 +200,26 @@ PicamClientThread::loop()
 			disconnect_counter_ = 0;
 
 			// unpack the data
-			uint32_t timestamp, x, y, h, w, cls;
-			float    acc;
-			std::memcpy(&timestamp, &data_[0], 4);
-			std::memcpy(&x, &data_[4], 4);
-			std::memcpy(&y, &data_[8], 4);
-			std::memcpy(&h, &data_[12], 4);
-			std::memcpy(&w, &data_[16], 4);
-			std::memcpy(&acc, &data_[20], 4);
-			std::memcpy(&cls, &data_[24], 4);
+			uint64_t timestamp;
+			uint32_t cls;
+			float    x, y, h, w, acc;
+			std::memcpy(&timestamp, &data_[0], 8);
+			std::memcpy(&x, &data_[8], 4);
+			std::memcpy(&y, &data_[12], 4);
+			std::memcpy(&h, &data_[16], 4);
+			std::memcpy(&w, &data_[20], 4);
+			std::memcpy(&acc, &data_[24], 4);
+			std::memcpy(&cls, &data_[28], 4);
 
 			// convert to host byte order
-			timestamp                = ntohl(timestamp);
+			timestamp                = ntohll(timestamp);
 			uint64_t timestamp_secs  = timestamp / 1000000000;
 			uint64_t timestamp_usecs = timestamp - timestamp_secs * 1000000000;
-			x                        = ntohl(x);
-			y                        = ntohl(y);
-			h                        = ntohl(h);
-			w                        = ntohl(w);
-			acc                      = ntohl(acc);
+			x                        = ntohlf(x);
+			y                        = ntohlf(y);
+			h                        = ntohlf(h);
+			w                        = ntohlf(w);
+			acc                      = ntohlf(acc);
 			cls                      = ntohl(cls);
 
 			if (timestamp > last_msg_time_) {
@@ -234,11 +235,11 @@ PicamClientThread::loop()
 	} else {
 		if (connect_to_server() < 0) {
 			connected_ = false;
-			std::cerr << "Attempting to reconnect" << std::endl;
+			logger->log_error(name(), "Attempting to reconnect");
 			std::this_thread::sleep_for(std::chrono::seconds(RECONNECT_INTERVAL));
 			return;
 		} else {
-			std::cerr << "Connected to server" << std::endl;
+			logger->log_warn(name(), "Connected to server");
 			connected_ = true;
 		}
 	}
@@ -279,6 +280,7 @@ PicamClientThread::reset_interface()
 	bb_interface_->set_bbox_13_timestamp(null_timestamp);
 	bb_interface_->set_bbox_14(null_array);
 	bb_interface_->set_bbox_14_timestamp(null_timestamp);
+	bb_interface_->write();
 }
 
 void
@@ -340,6 +342,7 @@ PicamClientThread::write_to_interface(int      slot,
 		bb_interface_->set_bbox_14(values);
 		bb_interface_->set_bbox_14_timestamp(timestamp);
 	}
+	bb_interface_->write();
 }
 
 bool
@@ -393,7 +396,7 @@ PicamClientThread::send_control_message(uint8_t message_type)
 
 	char header[CONTROL_HEADER_SIZE];
 	std::memcpy(&header[0], &message_type, 1);
-	uint64_t network_timestamp = htonl(timestamp);
+	uint64_t network_timestamp = ntohll(timestamp);
 	std::memcpy(&header[1], &network_timestamp, 8);
 
 	send(sockfd_, header, CONTROL_HEADER_SIZE, 0);
@@ -408,9 +411,9 @@ PicamClientThread::send_control_message(uint8_t message_type, float payload)
 
 	char header[CONTROL_HEADER_SIZE_PAYLOAD];
 	std::memcpy(&header[0], &message_type, 1);
-	uint64_t network_timestamp = htonl(timestamp);
+	uint64_t network_timestamp = ntohll(timestamp);
 	std::memcpy(&header[1], &network_timestamp, 8);
-	float network_payload = htonl(payload);
+	uint32_t network_payload = htonf(payload);
 	std::memcpy(&header[9], &network_payload, 4);
 
 	send(sockfd_, header, CONTROL_HEADER_SIZE, 0);
@@ -426,36 +429,36 @@ PicamClientThread::send_configure_message()
 	char    header[CONFIGURE_MESSAGE_SIZE];
 	uint8_t message_type = 14;
 	std::memcpy(&header[0], &message_type, 1);
-	uint64_t network_timestamp = htonl(timestamp);
+	uint64_t network_timestamp = ntohll(timestamp);
 	std::memcpy(&header[1], &network_timestamp, 8);
 
 	uint32_t network_rotation = htonl(config->get_int("plugins/picam_client/camera_matrix/rotation"));
 	std::memcpy(&header[9], &network_rotation, 4);
-	float network_old_ppx = htonl(config->get_float("plugins/picam_client/camera_matrix/old_ppx"));
+	uint32_t network_old_ppx = htonf(config->get_float("plugins/picam_client/camera_matrix/old_ppx"));
 	std::memcpy(&header[13], &network_old_ppx, 4);
-	float network_old_ppy = htonl(config->get_float("plugins/picam_client/camera_matrix/old_ppy"));
+	uint32_t network_old_ppy = htonf(config->get_float("plugins/picam_client/camera_matrix/old_ppy"));
 	std::memcpy(&header[17], &network_old_ppy, 4);
-	float network_old_f_y = htonl(config->get_float("plugins/picam_client/camera_matrix/old_f_y"));
+	uint32_t network_old_f_y = htonf(config->get_float("plugins/picam_client/camera_matrix/old_f_y"));
 	std::memcpy(&header[21], &network_old_f_y, 4);
-	float network_old_f_x = htonl(config->get_float("plugins/picam_client/camera_matrix/old_f_x"));
+	uint32_t network_old_f_x = htonf(config->get_float("plugins/picam_client/camera_matrix/old_f_x"));
 	std::memcpy(&header[25], &network_old_f_x, 4);
-	float network_new_ppx = htonl(config->get_float("plugins/picam_client/camera_matrix/new_ppx"));
+	uint32_t network_new_ppx = htonf(config->get_float("plugins/picam_client/camera_matrix/new_ppx"));
 	std::memcpy(&header[29], &network_new_ppx, 4);
-	float network_new_ppy = htonl(config->get_float("plugins/picam_client/camera_matrix/new_ppy"));
+	uint32_t network_new_ppy = htonf(config->get_float("plugins/picam_client/camera_matrix/new_ppy"));
 	std::memcpy(&header[33], &network_new_ppy, 4);
-	float network_new_f_y = htonl(config->get_float("plugins/picam_client/camera_matrix/new_f_y"));
+	uint32_t network_new_f_y = htonf(config->get_float("plugins/picam_client/camera_matrix/new_f_y"));
 	std::memcpy(&header[37], &network_new_f_y, 4);
-	float network_new_f_x = htonl(config->get_float("plugins/picam_client/camera_matrix/new_f_x"));
+	uint32_t network_new_f_x = htonf(config->get_float("plugins/picam_client/camera_matrix/new_f_x"));
 	std::memcpy(&header[41], &network_new_f_x, 4);
-	float network_k1 = htonl(config->get_float("plugins/picam_client/camera_matrix/k1"));
+	uint32_t network_k1 = htonf(config->get_float("plugins/picam_client/camera_matrix/k1"));
 	std::memcpy(&header[45], &network_k1, 4);
-	float network_k2 = htonl(config->get_float("plugins/picam_client/camera_matrix/k2"));
+	uint32_t network_k2 = htonf(config->get_float("plugins/picam_client/camera_matrix/k2"));
 	std::memcpy(&header[49], &network_k2, 4);
-	float network_k3 = htonl(config->get_float("plugins/picam_client/camera_matrix/k3"));
+	uint32_t network_k3 = htonf(config->get_float("plugins/picam_client/camera_matrix/k3"));
 	std::memcpy(&header[53], &network_k3, 4);
-	float network_k4 = htonl(config->get_float("plugins/picam_client/camera_matrix/k4"));
+	uint32_t network_k4 = htonf(config->get_float("plugins/picam_client/camera_matrix/k4"));
 	std::memcpy(&header[57], &network_k4, 4);
-	float network_k5 = htonl(config->get_float("plugins/picam_client/camera_matrix/k5"));
+	uint32_t network_k5 = htonf(config->get_float("plugins/picam_client/camera_matrix/k5"));
 	std::memcpy(&header[61], &network_k5, 4);
 
 	send(sockfd_, header, CONFIGURE_MESSAGE_SIZE, 0);
@@ -479,7 +482,7 @@ int
 PicamClientThread::connect_to_server()
 {
 	if ((sockfd_ = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		std::cerr << "Socket creation error" << std::endl;
+		logger->log_error(name(), "Socket creation error");
 		return -1;
 	}
 
@@ -487,16 +490,49 @@ PicamClientThread::connect_to_server()
 	server_addr_.sin_port   = htons(server_port_);
 
 	if (inet_pton(AF_INET, server_ip_.c_str(), &server_addr_.sin_addr) <= 0) {
-		std::cerr << "Invalid address or address not supported" << std::endl;
+		logger->log_error(name(), "Invalid address or address not supported");
 		close(sockfd_);
 		return -1;
 	}
 
 	if (connect(sockfd_, (struct sockaddr *)&server_addr_, sizeof(server_addr_)) < 0) {
-		std::cerr << "Connection Failed" << std::endl;
+		logger->log_error(name(), "Connection failed");
 		close(sockfd_);
 		return -1;
 	}
 	send_configure_message();
+	send_control_message(13, config->get_float("plugins/picam_client/detection/iou"));
+	send_control_message(12, config->get_float("plugins/picam_client/detection/conf"));
+
 	return 0;
+}
+
+uint64_t
+PicamClientThread::ntohll(uint64_t netlonglong)
+{
+	if (htonl(1) != 1) {
+		return ((uint64_t)ntohl(netlonglong & 0xFFFFFFFF) << 32) | ntohl(netlonglong >> 32);
+	} else {
+		return netlonglong;
+	}
+}
+
+float
+PicamClientThread::ntohlf(float val)
+{
+	uint32_t temp;
+	std::memcpy(&temp, &val, sizeof(temp));
+	temp = ntohl(temp);
+	float swapped;
+	std::memcpy(&swapped, &temp, sizeof(swapped));
+	return swapped;
+}
+
+uint32_t
+PicamClientThread::htonf(float val)
+{
+	uint32_t temp;
+	std::memcpy(&temp, &val, sizeof(temp));
+	temp = htonl(temp);
+	return temp;
 }
