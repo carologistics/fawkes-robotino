@@ -58,13 +58,13 @@ void gripperClose();
 void gripperOpen();
 void doMagic();
 
-#define DEFAULT_MAX_SPEED_X 7000
+#define DEFAULT_MAX_SPEED_X 4000
 #define DEFAULT_MAX_ACCEL_X 7000
 
-#define DEFAULT_MAX_SPEED_Y 7000
+#define DEFAULT_MAX_SPEED_Y 4000
 #define DEFAULT_MAX_ACCEL_Y 7000
 
-#define DEFAULT_MAX_SPEED_Z 7000
+#define DEFAULT_MAX_SPEED_Z 4000
 #define DEFAULT_MAX_ACCEL_Z 7000
 
 #define SECOND_CAL_MAX_SPEED 500
@@ -84,7 +84,7 @@ bool open_gripper = false;
 int gripper_open_angle;
 int gripper_close_angle;
 
-int cur_status = STATUS_IDLE;
+int cur_status = STATUS_IDLE, prev_status = STATUS_IDLE;
 
 int loop_nr = 0;
 
@@ -458,9 +458,6 @@ void read_package() {
 	}
 
   doMagic();
-  Serial.println(pos[0]);
-  Serial.println(pos[1]);
-  Serial.println(pos[2]);
 
 	// sucked everything out of this package, flush it
 	buf_i_ = 0;
@@ -490,7 +487,7 @@ void disableMotor(AccelStepper &stepper) {
     }
 
     cur_status = STATUS_IDLE;
-    //send_status();
+    //send_status(); // DO NOT SEND STATUS HERE, GETS CALLED VERY OFTEN!!!
 }
 
 void enableMotor(AccelStepper &stepper) {
@@ -695,7 +692,7 @@ void setup() {
 	//default behavior should be to calibrate and home on serial port open
 	calibrate(); //SHOULD WE CALL DOUBLE CALIBRATE HERE INSTEAD? JUST TO BE ON A SAFER SIDE?
 
-  Timer1.initialize(1000);
+  Timer1.initialize(750);
   Timer1.attachInterrupt(timerCallback);
 }
 
@@ -720,7 +717,7 @@ void loop() {
     }
 
     if (loop_nr > 3000) {
-      //send_status();
+      send_status();
       loop_nr = 0;
     } else {
       loop_nr++;
