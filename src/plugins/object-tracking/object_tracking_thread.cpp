@@ -326,9 +326,7 @@ ObjectTrackingThread::loop()
 	}
 
 	//detect objects
-	std::vector<std::array<float, 4>> out_boxes;
-	fawkes::Time                      before_detect(clock);
-	bb_interface_data_changed(picam_plugin_if_, out_boxes);
+	fawkes::Time before_detect(clock);
 	fawkes::Time after_detect(clock);
 
 	//get mps angle and expected object position through laser-data
@@ -509,9 +507,7 @@ ObjectTrackingThread::loop()
 }
 
 void
-ObjectTrackingThread::bb_interface_data_changed(
-  fawkes::Interface                 *interface,
-  std::vector<std::array<float, 4>> &out_boxes) noexcept
+ObjectTrackingThread::bb_interface_data_changed(fawkes::Interface *interface) noexcept
 {
 	PiCamPluginInterface *picam_if = dynamic_cast<PiCamPluginInterface *>(interface);
 	if (!picam_if) {
@@ -520,6 +516,7 @@ ObjectTrackingThread::bb_interface_data_changed(
 	picam_if->read();
 	float    *values;
 	uint64_t *timestamp;
+	out_boxes.clear();
 	for (int slot = 0; slot < 15; ++slot) {
 		switch (slot) {
 		case 0: values = picam_if->bbox_0(); break;
@@ -547,8 +544,8 @@ ObjectTrackingThread::bb_interface_data_changed(
 		std::array<float, 4> data;
 		data[0] = values[0];
 		data[1] = values[1];
-		data[2] = values[2];
-		data[3] = values[3];
+		data[3] = values[2];
+		data[2] = values[3];
 		std::cout << "X: " << values[0] << ", Y: " << values[1] << ", H: " << values[2]
 		          << ", W: " << values[3] << std::endl;
 

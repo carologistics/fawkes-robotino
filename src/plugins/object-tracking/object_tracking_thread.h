@@ -227,13 +227,14 @@ private:
 	                      float                point[3],
 	                      float               &wp_additional_height);
 
+	std::vector<std::array<float, 4>> out_boxes;
+
 	//compute base and gripper target frame
 	void compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Point> object_pos,
 	                           fawkes::LaserLineInterface            *ll,
 	                           double                                 gripper_target[3],
 	                           double                                 base_target[3]);
-	void bb_interface_data_changed(fawkes::Interface                 *interface,
-	                               std::vector<std::array<float, 4>> &out_boxes) noexcept;
+	void bb_interface_data_changed(fawkes::Interface *interface) noexcept;
 	fawkes::PiCamPluginInterface *picam_plugin_if_;
 };
 
