@@ -3,6 +3,35 @@
 ---
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/webview
 ---
+
+plugins/picam_client:
+  ip: "192.168.0.100"
+  port: 6465
+
+  camera_intrinsics:
+    width: 480
+    height: 640
+
+  detection:
+    iou: 0.3
+    conf: 0.2
+
+  camera_matrix:
+    rotation: 270
+    old_ppx: 247.16991942710536
+    old_ppy: 311.0215589376087
+    old_f_y: 761.4091782824479
+    old_f_x: 762.6983388147113
+    new_ppx: 251.00801023972
+    new_ppy: 301.32794812152997
+    new_f_y: 634.6348457656962
+    new_f_x: 642.6147379302428
+    k1: -0.50304233
+    k2: 0.5782515
+    k3: -0.00701836
+    k4: 0.00308524
+    k5: -0.71367181
+
 plugins/object_tracking:
   if_name: "object-tracking"
 
@@ -47,14 +76,14 @@ plugins/object_tracking:
 
   camera_intrinsics:
     # image size
-    width: 640
-    height: 480
+    width: 480
+    height: 640
     # principal point offset
-    ppx: 312.160461
-    ppy: 235.063721
+    ppx: 251.00801023972
+    ppy: 301.32794812152997
     # focal length
-    fx: 618.432129
-    fy: 618.432251
+    fx: 634.6348457656962
+    fy: 642.6147379302428
     # distortion coefficients
     model: 0
     # 0 - no distortion, rectilinear images
@@ -98,7 +127,7 @@ plugins/object_tracking:
     image_path: "../cfg/yolo/realsense2.jpg"
 
   buffer:
-    shm_image_id: "realsense_rgb"
+    shm_image_id: "picam"
     shm_image_id_res: "object_tracking"
     frame: "cam_gripper"
 
