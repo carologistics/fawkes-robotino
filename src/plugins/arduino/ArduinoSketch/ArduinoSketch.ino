@@ -39,7 +39,6 @@
 AccelStepper motor_X(MOTOR_X_STEP_SHIFT, MOTOR_X_DIR_SHIFT);
 AccelStepper motor_Y(MOTOR_Y_STEP_SHIFT, MOTOR_Y_DIR_SHIFT);
 AccelStepper motor_Z(MOTOR_Z_STEP_SHIFT, MOTOR_Z_DIR_SHIFT);
-AccelStepper motor_A(MOTOR_A_STEP_SHIFT, MOTOR_A_DIR_SHIFT);
 
 long a_toggle_steps = 240;
 
@@ -65,6 +64,8 @@ long a_toggle_steps = 240;
 #define STATUS_OPEN 1
 #define STATUS_CLOSED 0
 
+#define servoPin 12 // HIGH to open gripper, LOW to close gripper
+
 char status_array_[] = {'M', 'I', 'E'};
 
 volatile bool movement_done_flag = false;
@@ -74,6 +75,11 @@ bool open_gripper = false;
 int cur_status = STATUS_IDLE;
 
 int loop_nr = 0;
+
+//volatile unsigned long milliseconds = 0;
+bool st = 1, entry = 1;
+//unsigned long prevMillis = 0;
+//const int refreshInterval = 20000; //Refresh interval in microseconds (20ms)
 
 #define BUFFER_SIZE 256
 char   buffer_[BUFFER_SIZE];
@@ -157,7 +163,7 @@ send_status()
 
 		Serial.print(" "); //checksum = 32
 
-		cur_pos = -motor_A.currentPosition();
+		cur_pos = 0; 
 		Serial.print(cur_pos);
 		checksum += convert_to_check_sum(cur_pos);
 
@@ -229,7 +235,6 @@ calibrate()
 		motor_X.enableOutputs();
 		motor_Y.enableOutputs();
 		motor_Z.enableOutputs();
-		motor_A.enableOutputs();
 		noInterrupts();
 		if (!x_done)
 			motor_X.move(20000L);
@@ -299,7 +304,6 @@ set_new_pos(long new_pos, AccelStepper &motor)
 	motor.enableOutputs();
 	motor_Y.enableOutputs();
 	motor_Z.enableOutputs();
-	motor_A.enableOutputs();
 	noInterrupts(); // shortly disable interrupts to preverent stepping while changing target position (this is actually only a problem when cur_status == STATUS_MOVING)
 	motor.moveTo(new_pos);
 	interrupts(); // activate interrupts again
@@ -313,7 +317,6 @@ set_new_rel_pos(long new_rel_pos, AccelStepper &motor)
 	motor.enableOutputs();
 	motor_Y.enableOutputs();
 	motor_Z.enableOutputs();
-	motor_A.enableOutputs();
 	noInterrupts();
 	motor.move(new_rel_pos);
 	interrupts();
@@ -327,7 +330,6 @@ set_new_speed(float new_speed)
 	set_new_speed_acc(new_speed, -1, motor_X);
 	set_new_speed_acc(new_speed, -1, motor_Y);
 	set_new_speed_acc(new_speed, -1, motor_Z);
-	set_new_speed_acc(new_speed, -1, motor_A);
 	interrupts(); // activate interrupts again
 }
 
@@ -338,7 +340,6 @@ set_new_acc(float new_acc)
 	set_new_speed_acc(-1, new_acc, motor_X);
 	set_new_speed_acc(-1, new_acc, motor_Y);
 	set_new_speed_acc(-1, new_acc, motor_Z);
-	set_new_speed_acc(-1, new_acc, motor_A);
 	interrupts(); // activate interrupts again
 }
 
@@ -355,7 +356,6 @@ slow_stop_all()
 	motor_X.stop();
 	motor_Y.stop();
 	motor_Z.stop();
-	motor_A.stop();
 }
 
 // stop all motors with infinite acceleration. Do not use if step counter should still be correct afterwards.
@@ -365,7 +365,6 @@ fast_stop_all()
 	motor_X.hard_stop();
 	motor_Y.hard_stop();
 	motor_Z.hard_stop();
-	motor_A.hard_stop();
 }
 
 void
@@ -414,9 +413,9 @@ read_package()
 	}
 
 	// this point is only reached when package was successfully located
-
 	byte cur_i_cmd = package_start + 3;
-	while (cur_i_cmd < buf_i_) {
+
+  while (cur_i_cmd < buf_i_) {
 		char cur_cmd   = buffer_[cur_i_cmd];
 		long new_value = 0;
 		if (ArduinoHelper::isValidSerialCommand(cur_cmd)) {
@@ -425,10 +424,8 @@ read_package()
 				return;
 			} // flush and return if parsing error
 		}
-		float opening_speed = motor_A.get_speed(); //get current openening speed
 		bool  assumed_gripper_state_local;
 		// this is used to store the assumed gripper state locally, to reduce calls to the function get_assumed_gripper_state
-
 		switch (cur_cmd) {
 		case CMD_X_NEW_POS: set_new_pos(-new_value, motor_X); break;
 		case CMD_Y_NEW_POS: set_new_pos(-new_value, motor_Y); break;
@@ -438,9 +435,6 @@ read_package()
 			a_toggle_steps = new_value;
 			send_status();
 			break;
-#ifdef DEBUG_MODE
-		case CMD_A_NEW_POS: set_new_pos(new_value, motor_A); break;
-#endif
 		case CMD_X_NEW_SPEED:
 			set_new_speed_acc(new_value, 0.0, motor_X);
 			send_status();
@@ -454,7 +448,6 @@ read_package()
 			send_status();
 			break;
 		case CMD_A_NEW_SPEED:
-			set_new_speed_acc(new_value, 0.0, motor_A);
 			send_status();
 			break;
 		case CMD_X_NEW_ACC:
@@ -470,20 +463,13 @@ read_package()
 			send_status();
 			break;
 		case CMD_A_NEW_ACC:
-			set_new_speed_acc(0.0, new_value, motor_A);
 			send_status();
 			break;
 		case CMD_OPEN:
-			set_new_rel_pos(-a_toggle_steps, motor_A);
-			open_gripper = true;
+      open_gripper = HIGH;
 			break;
 		case CMD_CLOSE:
-			set_new_speed_acc(opening_speed / 8,
-			                  0.0,
-			                  motor_A); //slow down closing speed to an eighth of opening speed
-			set_new_rel_pos(a_toggle_steps, motor_A);
-			set_new_speed_acc(opening_speed, 0.0, motor_A); //reset speed
-			open_gripper = false;
+      open_gripper = LOW;
 			break;
 		case CMD_CALIBRATE: calibrate(); break;
 		case CMD_DOUBLE_CALIBRATE: double_calibrate(); break;
@@ -523,6 +509,26 @@ read_package()
 	buf_i_ = 0;
 }
 
+// Custom millis() function
+/*unsigned long
+customMillis() {
+  unsigned long ms;
+  cli(); // Disable interrupts
+  ms = milliseconds;
+  sei(); // Enable interrupts
+  return ms;
+}
+
+void
+writeMicroseconds(int pin, int pulseWidth) {
+  digitalWrite(pin, HIGH);
+  delayMicroseconds(pulseWidth);
+  digitalWrite(pin, LOW);
+  
+  // Ensure the total period is 20ms
+  delayMicroseconds(refreshInterval - pulseWidth);
+}*/
+
 void
 setup()
 {
@@ -548,17 +554,16 @@ setup()
 	pinMode(MOTOR_X_STEP_PIN, OUTPUT);
 	pinMode(MOTOR_Y_STEP_PIN, OUTPUT);
 	pinMode(MOTOR_Z_STEP_PIN, OUTPUT);
-	pinMode(MOTOR_A_STEP_PIN, OUTPUT);
 
 	pinMode(MOTOR_X_DIR_PIN, OUTPUT);
 	pinMode(MOTOR_Y_DIR_PIN, OUTPUT);
 	pinMode(MOTOR_Z_DIR_PIN, OUTPUT);
-	pinMode(MOTOR_A_DIR_PIN, OUTPUT);
+
+  pinMode(servoPin, OUTPUT);
 
 	motor_X.setEnablePin(MOTOR_X_ENABLE_PIN, true);
 	motor_Y.setEnablePin(MOTOR_Y_ENABLE_PIN, true);
 	motor_Z.setEnablePin(MOTOR_Z_ENABLE_PIN, true);
-	motor_A.setEnablePin(MOTOR_A_ENABLE_PIN, true);
 	motor_X.disableOutputs(); // same pin for all of them
 	/* motor_Y.disableOutputs(); // same pin for all of them */
 	/* motor_Z.disableOutputs(); // same pin for all of them */
@@ -567,7 +572,6 @@ setup()
 	set_new_speed_acc(DEFAULT_MAX_SPEED_X, DEFAULT_MAX_ACCEL_X, motor_X);
 	set_new_speed_acc(DEFAULT_MAX_SPEED_Y, DEFAULT_MAX_ACCEL_Y, motor_Y);
 	set_new_speed_acc(DEFAULT_MAX_SPEED_Z, DEFAULT_MAX_ACCEL_Z, motor_Z);
-	set_new_speed_acc(DEFAULT_MAX_SPEED_A, DEFAULT_MAX_ACCEL_A, motor_A);
 
 	//CHECK SUM of "AT HELLO +" = 628
 	//lowByte(628) = 116
@@ -598,16 +602,25 @@ setup()
 	TCNT0  = 0;
 	TIMSK0 = 0;   // start new
 	TIFR0  = 0x7; // clear all interrupt flags
+
+
 	enable_step_interrupt();
 
 	interrupts();
 	//default behavior should be to calibrate and home on serial port open
 	calibrate();
+
 }
 
+int loop_number = 0;
 void
 loop()
 {
+  if(open_gripper){
+    digitalWrite(servoPin, HIGH);
+  } else{
+    digitalWrite(servoPin, LOW);
+  }
 	if (movement_done_flag) {
 		motor_X.disableOutputs(); // same pin for all of them
 		movement_done_flag = false;
@@ -639,22 +652,20 @@ ISR(TIMER0_COMPA_vect) // this is called every overflow of the timer 0
 	if (occupied)
 		return; // this interrupt is already called
 	occupied = true;
+  //milliseconds++;
 	interrupts(); // we need interrupts here to catch all the incoming serial data and finish the pulse
 	if (cur_status == STATUS_MOVING) {
 		byte
 		  dir  = 0,
-		  step = 0, step_a = 0,
-		  dir_a =
-		    0; // using these allows for more efficient code, compared to using the above volatile corresponding step_bits_*
+		  step = 0;
 		bool movement_done;
 
 		unsigned int time = CUR_TIME;
 		movement_done     = motor_X.get_step(step, dir, time);
 		movement_done &= motor_Y.get_step(step, dir, time);
 		movement_done &= motor_Z.get_step(step, dir, time);
-		movement_done &= motor_A.get_step(step_a, dir_a, time);
 		movement_done_flag = movement_done;
-		if (step | step_a) { // only step if really necessary
+		if (step) { // only step if really necessary
 			while (!pulse_done)
 				; // wait until the previous pulse is done // TODO:: remove after ensuring pulse is surely done here EVERY TIME!
 			// Serial.println(dir,BIN);
@@ -662,10 +673,7 @@ ISR(TIMER0_COMPA_vect) // this is called every overflow of the timer 0
 			dir ^= 1 << MOTOR_Y_DIR_SHIFT;
 			MOTOR_XYZ_DIR_OUT =
 			  (MOTOR_XYZ_DIR_OUT & MOTOR_XYZ_DIR_INV_MASK) | dir; // set the direction pins right
-			MOTOR_A_DIR_OUT =
-			  (MOTOR_A_DIR_OUT & MOTOR_A_DIR_INV_MASK) | dir_a; // set the direction pins right
 			step_bits_xyz = step;
-			step_bits_a   = step_a;
 
 			pulse_done = false;
 			TCCR2B     = 0x1; // activate pulse interrupts // GO GO GO
@@ -677,14 +685,12 @@ ISR(TIMER0_COMPA_vect) // this is called every overflow of the timer 0
 ISR(TIMER2_COMPA_vect) // start of pulse
 {
 	MOTOR_XYZ_STEP_OUT |= step_bits_xyz;
-	MOTOR_A_STEP_OUT |= step_bits_a;
 }
 
 ISR(TIMER2_COMPB_vect) // end of pulse
 {
 	MOTOR_XYZ_STEP_OUT &=
 	  ~step_bits_xyz; // stopping the pulse has higher priority than turning off the timer
-	MOTOR_A_STEP_OUT &= ~step_bits_a;
 	TCCR2B     = 0x0; // stop timer
 	TCNT2      = 0;   // reset cnt value
 	pulse_done = true;
