@@ -168,9 +168,15 @@ PicamClientThread::loop()
 			disconnect_counter_ = 0;
 
 			// write received image in the right shared memory buffer, based on type
+			fawkes::Time now(clock);
+			if (now.in_sec() - 2 > timestamp_secs) {
+				logger->log_warn(name(), "Image timestamp is older than 2 seconds, using local time");
+				timestamp_secs = (int)now.in_sec();
+			}
+
 			if (message_type == 1) {
-				firevision::convert(firevision::BGR,
-				                    firevision::BGR,
+				firevision::convert(firevision::RGB,
+				                    firevision::RGB,
 				                    img.data,
 				                    shm_buffer_->buffer(),
 				                    camera_width_,
@@ -178,8 +184,8 @@ PicamClientThread::loop()
 				shm_buffer_->set_capture_time(timestamp_secs, timestamp_usecs);
 			}
 			if (message_type == 2) {
-				firevision::convert(firevision::BGR,
-				                    firevision::BGR,
+				firevision::convert(firevision::RGB,
+				                    firevision::RGB,
 				                    img.data,
 				                    shm_buffer_res_->buffer(),
 				                    camera_width_,
@@ -503,6 +509,9 @@ PicamClientThread::connect_to_server()
 	send_configure_message();
 	send_control_message(13, config->get_float("plugins/picam_client/detection/iou"));
 	send_control_message(12, config->get_float("plugins/picam_client/detection/conf"));
+	send_control_message(4);
+	send_control_message(5);
+	send_control_message(8);
 
 	return 0;
 }
