@@ -188,8 +188,7 @@ function gripper_aligned()
     }, "base_link", "end_effector_home")
 
     if fsm.vars.target == "WORKPIECE" then
-        return math.abs(gripper_target.x - arduino:x_position()) <
-                   GRIPPER_TOLERANCE.x and
+        return arduino:x_position() == 0 and
                    math.abs(
                        gripper_target.y - (arduino:y_position() - y_max / 2)) <
                    GRIPPER_TOLERANCE.y and
@@ -198,8 +197,7 @@ function gripper_aligned()
                                 z_max) - arduino:z_position()) <
                    GRIPPER_TOLERANCE.z
     else
-        return math.abs(gripper_target.x - arduino:x_position()) <
-                   GRIPPER_TOLERANCE.x and
+        return arduino:x_position() == 0 and
                    math.abs(
                        gripper_target.y - (arduino:y_position() - y_max / 2)) <
                    GRIPPER_TOLERANCE.y and
@@ -222,10 +220,8 @@ function set_gripper(x, y, z)
     z_clipped = math.max(0, math.min(z, z_max))
 
     if x_clipped ~= x then
-        fsm.vars.out_of_reach = true
         print("Gripper cannot reache x-value: " .. x .. " ! Clipped to " ..
                   x_clipped)
-        return
     end
     if y_clipped ~= y then
         fsm.vars.out_of_reach = true
@@ -239,22 +235,16 @@ function set_gripper(x, y, z)
     end
 
     if (not arduino:is_final() and
-        (math.abs(fsm.vars.gripper_target_pos_x - x_clipped) >
-            GRIPPER_TOLERANCE.x * 2 or
-            math.abs(fsm.vars.gripper_target_pos_y - y_clipped) >
+        (math.abs(fsm.vars.gripper_target_pos_y - y_clipped) >
             GRIPPER_TOLERANCE.y * 1 or
             math.abs(fsm.vars.gripper_target_pos_z - z_clipped) >
             GRIPPER_TOLERANCE.z * 1.5)) or
         (arduino:is_final() and fsm.vars.target == "SLIDE" and
-            (math.abs(fsm.vars.gripper_target_pos_x - x_clipped) >
-                GRIPPER_TOLERANCE.x * 1.3 or
-                math.abs(fsm.vars.gripper_target_pos_y - y_clipped) >
+            (math.abs(fsm.vars.gripper_target_pos_y - y_clipped) >
                 GRIPPER_TOLERANCE.y * 1.3 or
                 math.abs(fsm.vars.gripper_target_pos_z - z_clipped) >
                 GRIPPER_TOLERANCE.z * 1.3)) or (arduino:is_final() and
-        (math.abs(fsm.vars.gripper_target_pos_x - x_clipped) >
-            GRIPPER_TOLERANCE.x or
-            math.abs(fsm.vars.gripper_target_pos_y - y_clipped) >
+        (math.abs(fsm.vars.gripper_target_pos_y - y_clipped) >
             GRIPPER_TOLERANCE.y or
             math.abs(fsm.vars.gripper_target_pos_z - z_clipped) >
             GRIPPER_TOLERANCE.z)) then
@@ -528,7 +518,7 @@ function INIT:init()
     fsm.vars.expected_side = SIDE_NAMES[fsm.vars.side]
 
     -- get wp height
-    fsm.vars.missing_c3_height = MISSING_C3_HEIGHT[fsm.vars.c]
+    fsm.vars.missing_c3_height = 0
 
     fsm.vars.gripper_target_pos_x = 0
     fsm.vars.gripper_target_pos_y = 0
@@ -683,10 +673,9 @@ function MOVE_BASE_AND_GRIPPER:init()
 
     fsm.vars.gripper_wait = 10
     if fsm.vars.target == "WORKPIECE" then
-        set_gripper(gripper_target.x, 0,
-                    gripper_target.z - fsm.vars.missing_c3_height)
+        set_gripper(0, 0, gripper_target.z - fsm.vars.missing_c3_height)
     else
-        set_gripper(gripper_target.x, 0, gripper_target.z)
+        set_gripper(0, 0, gripper_target.z)
     end
 end
 
@@ -716,10 +705,10 @@ function FINE_TUNE_GRIPPER:loop()
     }, "base_link", "end_effector_home")
 
     if fsm.vars.target == "WORKPIECE" then
-        set_gripper(gripper_target.x, gripper_target.y,
+        set_gripper(0, gripper_target.y,
                     gripper_target.z - fsm.vars.missing_c3_height)
     else
-        set_gripper(gripper_target.x, gripper_target.y, gripper_target.z)
+        set_gripper(0, gripper_target.y, gripper_target.z)
     end
 end
 
