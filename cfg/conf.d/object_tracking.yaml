@@ -32,6 +32,10 @@ plugins/picam_client:
     k4: 0.00308524
     k5: -0.71367181
 
+  buffer:
+    shm_image_id: "picam"
+    shm_image_id_res: "object_tracking"
+
 plugins/object_tracking:
   if_name: "object-tracking"
 
