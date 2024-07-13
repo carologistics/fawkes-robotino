@@ -35,6 +35,7 @@ documentation = [==[
     @param z   z position for gripper move
     @param target_frame   target frame of absolute coordinates
     @param wait (optional, default: true) force the skill to wait on arduino plugin
+    @param sense (optional, default: false) force the skill to end when detecting workpiece
 
 ]==]
 
@@ -53,6 +54,9 @@ function input_ok()
             return true
         end
     end
+
+    -- handle optional sense run
+    if fsm.vars.sense ~= true then fsm.vars.sense = false end
 
     if fsm.vars.command == "CALIBRATE" then return true end
     print("Unknown command: " .. fsm.vars.command)
@@ -85,6 +89,8 @@ function is_error()
     return false
 end
 
+function sensed_wp() return fsm.vars.sense and arduino:wp_sensed() end
+
 -- States
 fsm:define_states{
     export_to = _M,
@@ -114,6 +120,7 @@ fsm:add_transitions{
     },
     {"CHECK_WRITER", "COMMAND", cond = true, desc = "Writer ok got to command"},
     {"COMMAND", "WAIT", timeout = 0.2}, {"WAIT", "FAILED", cond = "is_error()"},
+    {"WAIT", "FINAL", cond = sensed_wp},
     {"WAIT", "FINAL", cond = "vars.wait ~= nil and not vars.wait"},
     {"WAIT", "FINAL", cond = "arduino:is_final() and tf_ready()"},
     {"WAIT", "FAILED", timeout = 15}
