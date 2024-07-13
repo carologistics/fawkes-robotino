@@ -31,7 +31,7 @@ arduino:
   gripper_dyn_z_frame_id: gripper_z_dyn
 
   # maximum space in x, y and z in meters
-  x_max: 0.115
+  x_max: 0.18
   y_max: 0.075
   z_max: 0.057
 
@@ -44,11 +44,11 @@ arduino:
   # in steps/s and steps/s/s of the differen stepper motors.
   # Please use these tags in the hostspecific host.yaml
   firmware_settings:
-    speed_x: 4000
+    speed_x: 2000
     speed_y: 4000
     speed_z: 4000
     speed_a: 7000
-    acc_x: 7000
+    acc_x: 4000
     acc_y: 7000
     acc_z: 7000
     acc_a: 15000

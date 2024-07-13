@@ -367,7 +367,7 @@ ArduinoComThread::load_config()
 
 		// the factor the microstepping mode needs to be multiplied with
 		// depends on the individual thread diameter and slope.
-		cfg_steps_per_mm_[X] = 200.0 * cfg_x_microstep / 3.0;
+		cfg_steps_per_mm_[X] = 200.0 * cfg_x_microstep / 44;
 		cfg_steps_per_mm_[Y] = 200.0 * cfg_y_microstep / 2.0;
 		cfg_steps_per_mm_[Z] = 200.0 * cfg_z_microstep / 1.5;
 
