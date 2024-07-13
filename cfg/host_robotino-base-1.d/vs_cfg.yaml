@@ -16,34 +16,34 @@ plugins/vs_offsets:
   #  y direction through host_specific static frame
   workpiece:
     target:
-      x: -0.025
+      x: -0.05
       z: 0.05
 
     top:
       x: 0.005
-      z: 0.013
+      z: 0.016
 
     end:
-      z: 0.018
+      z: 0.02
 
   conveyor:
     target:
-      x: -0.025
+      x: -0.05
       z: 0.05
 
     top:
-      x: 0.05
+      x: 0.03
       z: -0.01
 
     routine:
       z: -0.02
 
     end:
-      z: -0.005
+      z: -0.015
 
   slide:
     target:
-      x: -0.025
+      x: -0.05
       z: 0.05
 
     top:
@@ -51,7 +51,7 @@ plugins/vs_offsets:
       z: 0.015
 
     routine:
-      z: 0.007
+      z: -0.015
 
     end:
       z: 0.015
