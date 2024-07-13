@@ -89,7 +89,7 @@ function is_error()
     return false
 end
 
-function sensed_wp() return fsm.vars.sense and arduino:wp_sensed() end
+function sensed_wp() return fsm.vars.sense and arduino:is_wp_sensed() end
 
 -- States
 fsm:define_states{
