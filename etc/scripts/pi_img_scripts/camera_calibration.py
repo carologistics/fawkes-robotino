@@ -106,7 +106,14 @@ new_camera_matrix = cv.UMat(np.array([[new_f_x, 0.0, new_ppx], [0.0, new_f_y, ne
 distortion = cv.UMat(np.array([[k1, k2, k3, k4, k5]]))
 
 # undistort
-dst = cv.undistort(img, old_camera_matrix, distortion, None, new_camera_matrix)
+# dst = cv.undistort(img, old_camera_matrix, distortion, None, new_camera_matrix)
+
+
+# initialize undistort
+mapx, mapy = cv.initUndistortRectifyMap(old_camera_matrix, distortion, None, new_camera_matrix, (480, 640), 5)
+
+# undistort through remapping
+dst = cv.remap(img, mapx, mapy, cv.INTER_LINEAR)
 
 # cv.imwrite('calibresult_new.png', dst)
 
