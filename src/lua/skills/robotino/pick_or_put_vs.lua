@@ -256,11 +256,13 @@ function MOVE_GRIPPER_DOWN:init()
     -- Clip to axis limits
     local x_given = 0
     local z_given = 0
+    local sense_wp = false
     if fsm.vars.target == "WORKPIECE" then
         x_given = fsm.vars.gripper_target.x - offset_x_workpiece_target_frame +
                       offset_x_workpiece_top
         z_given = fsm.vars.gripper_target.z - offset_z_workpiece_target_frame +
                       offset_z_workpiece_top - fsm.vars.missing_c3_height
+        sense_wp = true
     elseif fsm.vars.target == "CONVEYOR" then
         x_given = fsm.vars.gripper_target.x - offset_x_conveyor_target_frame +
                       offset_x_conveyor_top
@@ -286,6 +288,7 @@ function MOVE_GRIPPER_DOWN:init()
     self.args["gripper_commands"].x = x_clipped
     self.args["gripper_commands"].y = y_clipped
     self.args["gripper_commands"].z = z_clipped
+    self.args["gripper_commands"].sense = sense_wp
     self.args["gripper_commands"].command = "MOVEABS"
 end
 
@@ -306,8 +309,8 @@ function MOVE_GRIPPER_UP:init()
                       offset_z_slide_end
     end
 
-    self.args["gripper_commands"].x = fsm.vars.target_x
-    self.args["gripper_commands"].y = fsm.vars.target_y
+    self.args["gripper_commands"].x = arduino:x_position()
+    self.args["gripper_commands"].y = arduino:y_position()
     self.args["gripper_commands"].z = math.max(0, math.min(z_given, z_max))
     self.args["gripper_commands"].command = "MOVEABS"
 end
