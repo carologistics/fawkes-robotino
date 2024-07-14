@@ -312,15 +312,16 @@
     (if (and (eq ?old-state MAINTENANCE)
              (eq ?state ACTIVE))
      then
-      (assert (wm-fact (key central agent robot-waiting args? r ?robot)))
+      (assert (wm-fact (key monitoring robot-out-of-maintenance args? r ?robot)))
     )
     (if (and (eq ?old-state ACTIVE)
              (neq ?state ACTIVE))
      then
-      (assert (reset-robot-in-wm ?robot))
+      (assert (wm-fact (key monitoring robot-in-maintenance args? r ?robot)))
     )
   )
 )
+
 
 (defrule refbox-recv-NavigationRoutes-initialize
   "When there are no waypoints,reached and remaining facts, initialize them based on
