@@ -1141,6 +1141,7 @@
 	)
 	(modify-all-plan-action-param-bs-side ?ig-id ?bs ?bs-side ?free-side)
 	(modify-all-plan-action-param-bs-side ?goal-id ?bs ?bs-side ?free-side)
+	(modify ?ig (params wp ?wp target-mps ?bs target-side ?free-side base-color ?base-color))
 )
 
 
