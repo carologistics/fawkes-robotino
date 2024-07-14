@@ -550,6 +550,7 @@
 	(test (eq TRUE (should-retry ?an ?error)))
 	(wm-fact (key central agent robot args? r ?r))
 	(not (wm-fact (key central agent robot-lost args? r ?r)))
+	(not (wm-fact (key monitoring robot-in-maintenance args? r ?r)))
 	(not (wm-fact (key monitoring action-retried args? r ?r a ?an id ?id2&:(eq ?id2 (sym-cat ?id)) m ? g ?goal-id)))
 	=>
 	(bind ?mps nil)
@@ -578,6 +579,8 @@
 	            (error-msg ?error)
 	            (param-values $?param-values))
 	(wm-fact (key central agent robot args? r ?r))
+	(not (wm-fact (key central agent robot-lost args? r ?r)))
+	(not (wm-fact (key monitoring robot-in-maintenance args? r ?r)))
 	(test (eq TRUE (should-retry ?an ?error)))
 	?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an id ?id2&:(eq ?id2 (sym-cat ?id)) m ? g ?goal-id)
 	        (value ?tries&:(< ?tries 3)));?*MAX-RETRIES-PICK*
@@ -986,10 +989,65 @@
 
 ; ----------------------- RESTORE AND INSERT -------------------------------
 
-(defrule execution-monitoring-remove-waiting-robot
+; robot-lost: robot is not reachable via bb
+; once a robot is lost, remove it's active goals and remove robot-waiting
+; once a robot is in maintenance, additionally clear it's worldmodel
+; a robot that was lost or in maintenance can only return if
+; 1) it is not lost anymore
+; 2) it is not in maintenance
+; 3) it is not still in cleanup
+
+(defrule execution-monitoring-enter-maintenance
+	(wm-fact (key monitoring robot-in-maintenance args? r ?robot))
+	=>
+	(assert (wm-fact (key monitoring stop-goals-of-robot args? r ?robot)))
+	(assert (wm-fact (key monitoring reset-wm-of-robot args? r ?robot)))
+)
+
+(defrule execution-monitoring-leave-maintenance
+	?r-in <- (wm-fact (key monitoring robot-in-maintenance args? r ?robot))
+	?r-out <- (wm-fact (key monitoring robot-out-of-maintenance args? r ?robot))
+	(not (wm-fact (key monitoring stop-goals-of-robot args? r ?robot)))
+	(not (wm-fact (key monitoring reset-wm-of-robot args? r ?robot)))
+	=>
+	(retract ?r-in)
+	(retract ?r-out)
+)
+
+(defrule execution-monitoring-robot-lost
 	(declare (salience ?*SALIENCE-HIGH*))
 	(wm-fact (key central agent robot args? r ?robot))
 	(HeartbeatInterface (id ?id&:(str-index ?robot ?id)) (alive FALSE))
+	(not (wm-fact (key central agent robot-lost args? r ?robot)))
+	?rw <- (wm-fact (key central agent robot-waiting args? r ?robot))
+	=>
+	(assert (wm-fact (key central agent robot-lost args? r ?robot)))
+	(assert (wm-fact (key monitoring stop-goals-of-robot args? r ?robot)))
+)
+
+(defrule execution-monitoring-robot-reachable
+	(declare (salience ?*SALIENCE-HIGH*))
+	(wm-fact (key central agent robot args? r ?robot))
+	(HeartbeatInterface (id ?id&:(str-index ?robot ?id)) (alive TRUE))
+	(not (wm-fact (key monitoring stop-goals-of-robot args? r ?robot)))
+	(not (wm-fact (key monitoring reset-wm-of-robot args? r ?robot)))
+	?rl <- (wm-fact (key central agent robot-lost args? r ?robot))
+	=>
+	(retract ?rl)
+)
+
+(defrule execution-monitoring-remove-waiting-robot-lost
+	(declare (salience ?*SALIENCE-HIGH*))
+	(wm-fact (key central agent robot args? r ?robot))
+	(wm-fact (key central agent robot-lost args? r ?robot))
+	?rw <- (wm-fact (key central agent robot-waiting args? r ?robot))
+	=>
+	(retract ?rw)
+)
+
+(defrule execution-monitoring-remove-waiting-robot-maintenance
+	(declare (salience ?*SALIENCE-HIGH*))
+	(wm-fact (key monitoring robot-in-maintenance args? r ?robot))
 	?rw <- (wm-fact (key central agent robot-waiting args? r ?robot))
 	=>
 	(retract ?rw)
@@ -998,75 +1056,91 @@
 (defrule execution-monitoring-add-waiting-robot
 	(declare (salience ?*SALIENCE-HIGH*))
 	(wm-fact (key central agent robot args? r ?robot))
-	?rl <- (wm-fact (key central agent robot-lost args? r ?robot))
-	(HeartbeatInterface (id ?id&:(str-index ?robot ?id)) (alive TRUE))
+	(not (wm-fact (key central agent robot-lost args? r ?robot)))
+	(not (wm-fact (key monitoring robot-in-maintenance args? r ?robot)))
+	(not (wm-fact (key monitoring stop-goals-of-robot args? r ?robot)))
+	(not (wm-fact (key monitoring reset-wm-of-robot args? r ?robot)))
 	(not (wm-fact (key central agent robot-waiting args? r ?robot)))
-	(not (goal-meta (assigned-to ?robot)))
-	(SkillerInterface (id ?skiller-id&:(str-index ?robot ?skiller-id)) (exclusive_controller ~""))
-	(wm-fact (key refbox game-time) (values $?now))
 	=>
 	(assert (wm-fact (key central agent robot-waiting args? r ?robot)))
-	(assert (wm-fact (key monitoring robot-reinserted args? r ?robot) (values ?now)))
-
-	(retract ?rl)
 )
 
-(defrule execution-monitoring-clean-wm-from-robot
-	(declare (salience ?*MONITORING-SALIENCE*))
+(defrule execution-monitoring-stop-goals-for-robot
+	(declare (salience ?*SALIENCE-HIGH*))
 	(domain-facts-loaded)
-	?reset <- (reset-robot-in-wm ?robot)
+	(wm-fact (key monitoring stop-goals-of-robot args? r ?robot))
+	?g <- (goal (id ?g-id) (mode DISPATCHED) (type ACHIEVE))
+	(goal-meta (goal-id ?g-id) (assigned-to ?robot))
 	=>
+	(if (not
 	(do-for-all-facts
-		((?goal goal))
-		(and (eq ?goal:mode DISPATCHED) (eq ?goal:sub-type SIMPLE))
-		(printout t "Restored simple goal " ?goal:id " is dispatched, abort execution." crlf)
+		((?plan-action plan-action))
+		(and (eq ?plan-action:goal-id ?g-id)
+		     (neq ?plan-action:state FORMULATED)
+		     (neq ?plan-action:state FINAL)
+		)
+		(printout t "   Aborting action " ?plan-action:action-name " on interface" ?plan-action:skiller crlf)
+		(bind ?m (blackboard-create-msg (str-cat "SkillerInterface::" ?plan-action:skiller) "StopExecMessage"))
+		(blackboard-send-msg ?m)
+		(do-for-fact ((?sae skill-action-execinfo))
+			(and (eq ?sae:goal-id ?plan-action:goal-id)
+			     (eq ?sae:plan-id ?plan-action:plan-id)
+			     (eq ?sae:action-id ?plan-action:id)
+			)
+			(do-for-fact ((?skill skill))
+				(and (eq ?skill:id ?sae:skill-id)
+				     (eq ?skill:skiller ?sae:skiller)
+				)
+				(retract ?skill)
+			)
+			(retract ?sae)
+		)
+		(modify ?plan-action (state EXECUTION-FAILED))
+	))
+	 then
+		(do-for-fact
+			((?formulated-action plan-action) (?final-action plan-action))
+			(and (eq ?formulated-action:goal-id ?g-id)
+			  (eq ?final-action:goal-id ?g-id)
+			  (eq ?formulated-action:state FORMULATED)
+			  (eq ?final-action:state FINAL))
+			(modify ?formulated-action (state FAILED))
+		)
 	)
+	(modify ?g (mode FINISHED) (outcome FAILED))
+)
+
+(defrule execution-monitoring-stop-goals-for-robot-done
+	(declare (salience ?*SALIENCE-HIGH*))
+	(domain-facts-loaded)
+	?sgor <- (wm-fact (key monitoring stop-goals-of-robot args? r ?robot))
+	(not (and (goal (id ?g-id) (mode ~FORMULATED&~RETRACTED) (type ACHIEVE))
+		    (goal-meta (goal-id ?g-id) (assigned-to ?robot))
+		)
+	)
+	=>
+	(retract ?sgor)
+)
+
+(defrule execution-monitoring-reset-wm-of-robot
+	(declare (salience ?*SALIENCE-HIGH*))
+	(domain-facts-loaded)
+	?reset <- (wm-fact (key monitoring reset-wm-of-robot args? r ?robot))
+	; reset wm only when no goal is running
+	(not (and (goal (id ?g-id) (mode ~FORMULATED&~RETRACTED) (type ACHIEVE))
+		    (goal-meta (goal-id ?g-id) (assigned-to ?robot))
+		)
+	)
+	=>
 	(do-for-all-facts ((?wm wm-fact))
-	                  (eq (wm-key-arg ?wm:key r) ?robot)
+		(and (eq (wm-key-arg ?wm:key r) ?robot)
+		    (not (wm-key-prefix ?wm:key (create$ refbox robot task seq)))
+		)
 		(retract ?wm)
 	)
+
 	(do-for-all-facts ((?df domain-fact)) (str-index ?robot (implode$ ?df:param-values))
 		(retract ?df)
-	)
-
-	(delayed-do-for-all-facts ((?gm goal-meta) (?g goal))
-		(and (eq ?gm:assigned-to ?robot) (eq ?g:id ?gm:goal-id)
-		     (neq ?g:mode FORMULATED) (neq ?g:mode FINISHED) (neq ?g:mode RETRACTED))
-			(if (not
-				(do-for-all-facts
-					((?plan-action plan-action))
-					(and (eq ?plan-action:goal-id ?g:id)
-					     (neq ?plan-action:state FORMULATED)
-					     (neq ?plan-action:state FINAL)
-					)
-					(printout t "   Aborting action " ?plan-action:action-name " on interface" ?plan-action:skiller crlf)
-					(bind ?m (blackboard-create-msg (str-cat "SkillerInterface::" ?plan-action:skiller) "StopExecMessage"))
-					(blackboard-send-msg ?m)
-					(do-for-fact ((?sae skill-action-execinfo))
-						(and (eq ?sae:goal-id ?plan-action:goal-id)
-						     (eq ?sae:plan-id ?plan-action:plan-id)
-						     (eq ?sae:action-id ?plan-action:id)
-						)
-						(do-for-fact ((?skill skill))
-							(and (eq ?skill:id ?sae:skill-id)
-							     (eq ?skill:skiller ?sae:skiller)
-							)
-							(retract ?skill)
-						)
-						(retract ?sae)
-					)
-					(modify ?plan-action (state EXECUTION-FAILED))
-				))
-			 then
-				(do-for-fact
-					((?formulated-action plan-action) (?final-action plan-action))
-					(and (eq ?formulated-action:goal-id ?g:id)
-					     (eq ?final-action:goal-id ?g:id)
-					     (eq ?formulated-action:state FORMULATED)
-					     (eq ?final-action:state FINAL))
-				 (modify ?formulated-action (state FAILED))
-				)
-			)
 	)
 
 	(do-for-all-facts ((?wsmf wm-sync-map-fact)) (eq (wm-key-arg ?wsmf:wm-fact-key r) ?robot)
@@ -1141,6 +1215,7 @@
 	)
 	(modify-all-plan-action-param-bs-side ?ig-id ?bs ?bs-side ?free-side)
 	(modify-all-plan-action-param-bs-side ?goal-id ?bs ?bs-side ?free-side)
+	(modify ?ig (params wp ?wp target-mps ?bs target-side ?free-side base-color ?base-color))
 )
 
 
