@@ -84,9 +84,48 @@ function has_navigator() return navigator:has_writer() end
 function can_navigate(self)
     return self.fsm.vars.x ~= nil and self.fsm.vars.y ~= nil
 end
+-- Define the error code mappings
+local planner_errors = {
+    [0] = "NONE",
+    [200] = "UNKNOWN",
+    [201] = "INVALID_PLANNER",
+    [202] = "TF_ERROR",
+    [203] = "START_OUTSIDE_MAP",
+    [204] = "GOAL_OUTSIDE_MAP",
+    [205] = "START_OCCUPIED",
+    [206] = "GOAL_OCCUPIED",
+    [207] = "TIMEOUT",
+    [208] = "NO_VALID_PATH"
+}
+
+local follow_path_errors = {
+    [0] = "NONE",
+    [100] = "UNKNOWN",
+    [101] = "INVALID_CONTROLLER",
+    [102] = "TF_ERROR",
+    [103] = "INVALID_PATH",
+    [104] = "PATIENCE_EXCEEDED",
+    [105] = "FAILED_TO_MAKE_PROGRESS",
+    [106] = "NO_VALID_CONTROL"
+}
+
+-- Function to get the error message
+local function get_error_message(error_code)
+    if planner_errors[error_code] then
+        return planner_errors[error_code]
+    elseif follow_path_errors[error_code] then
+        return follow_path_errors[error_code]
+    else
+        return "UNKNOWN_ERROR"
+    end
+end
 
 function target_unreachable()
-    if navigator:is_final() and navigator:error_code() ~= 0 then return true end
+    if navigator:is_final() and navigator:error_code() ~= 0 then
+        local error_message = get_error_message(navigator:error_code())
+        fsm.vars.error = error_message
+        return true
+    end
     return false
 end
 
@@ -270,4 +309,9 @@ function MOVING:reset()
         printf("moveto: sending stop");
         navigator:msgq_enqueue(navigator.StopMessage:new(fsm.vars.msgid or 0))
     end
+end
+
+function FAILED:init()
+    -- keep track of error
+    fsm:set_error(fsm.vars.error)
 end
