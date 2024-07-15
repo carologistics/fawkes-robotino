@@ -259,7 +259,7 @@ function set_gripper(x, y, z)
     move_abs_message:set_x(fsm.vars.gripper_target_pos_x)
     move_abs_message:set_y(fsm.vars.gripper_target_pos_y)
     move_abs_message:set_z(fsm.vars.gripper_target_pos_z)
-    move_abs_message:set_target_frame("gripper_home")
+    move_abs_message:set_target_frame("end_effector_home")
     arduino:msgq_enqueue_copy(move_abs_message)
 end
 
@@ -268,7 +268,7 @@ function move_gripper_default_pose()
     move_abs_message:set_x(0)
     move_abs_message:set_y(0)
     move_abs_message:set_z(z_max)
-    move_abs_message:set_target_frame("gripper_home")
+    move_abs_message:set_target_frame("end_effector_home")
     arduino:msgq_enqueue_copy(move_abs_message)
 end
 
