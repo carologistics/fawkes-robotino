@@ -69,15 +69,17 @@ function tf_ready()
     -- arduino interface timestamp
     if not arduino:is_final() then return false end
 
-    local bb_stamp = arduino:timestamp()
-    if not tf:can_transform("gripper", "gripper_home", bb_stamp) then
-        return false
-    end
+  local bb_stamp = arduino:timestamp()
+  if not tf:can_transform("gripper", "end_effector_home", bb_stamp) then
+    return false
+  end
 
-    local transform = fawkes.tf.StampedTransform:new()
-    tf:lookup_transform("gripper", "gripper_home", transform)
-    if transform.stamp:in_usec() < bb_stamp:in_usec() then return false end
-    return true
+  local transform = fawkes.tf.StampedTransform:new()
+  tf:lookup_transform("gripper", "end_effector_home", transform)
+  if transform.stamp:in_usec() < bb_stamp:in_usec() then
+    return false
+  end
+  return true
 end
 
 function is_error()
@@ -145,7 +147,7 @@ function COMMAND:init()
         x = self.fsm.vars.x
         y = self.fsm.vars.y
         z = self.fsm.vars.z
-        target_frame = self.fsm.vars.target_frame or "gripper_home"
+        target_frame = self.fsm.vars.target_frame or "end_effector_home"
 
         move_abs_message = arduino.MoveXYZAbsMessage:new()
         move_abs_message:set_x(x)

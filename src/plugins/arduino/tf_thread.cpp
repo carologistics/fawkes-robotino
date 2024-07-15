@@ -109,14 +109,10 @@ ArduinoTFThread::update()
 
 	tf::Vector3 v_z(0.0, 0.0, cur_z_);
 
-	tf::Transform tf_pose_gripper_x(q, v_x);
 	tf::Transform tf_pose_gripper_y(q, v_y);
 	tf::Transform tf_pose_gripper_z(q, v_z);
+	tf::Transform tf_pose_gripper_x(q, v_x);
 
-	tf::StampedTransform stamped_transform_x(tf_pose_gripper_x,
-	                                         now.stamp(),
-	                                         cfg_gripper_origin_x_frame_id_,
-	                                         cfg_gripper_dyn_x_frame_id_);
 	tf::StampedTransform stamped_transform_y(tf_pose_gripper_y,
 	                                         now.stamp(),
 	                                         cfg_gripper_origin_y_frame_id_,
@@ -125,6 +121,10 @@ ArduinoTFThread::update()
 	                                         now.stamp(),
 	                                         cfg_gripper_origin_z_frame_id_,
 	                                         cfg_gripper_dyn_z_frame_id_);
+	tf::StampedTransform stamped_transform_x(tf_pose_gripper_x,
+	                                         now.stamp(),
+	                                         cfg_gripper_origin_x_frame_id_,
+	                                         cfg_gripper_dyn_x_frame_id_);
 	dyn_x_pub->send_transform(stamped_transform_x);
 	dyn_y_pub->send_transform(stamped_transform_y);
 	dyn_z_pub->send_transform(stamped_transform_z);

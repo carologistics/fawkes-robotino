@@ -10,9 +10,9 @@ plugins:
         rot_yaw: -0.055420
       # Pose of the end effector (middle point of a grabbed workpiece) when the
       # gripper is at gripper_home
-      end_effector_home:
-        frame: !frame gripper_home
-        child_frame: !frame end_effector_home
-        trans_x: 0.138          # higher: grab closer to the base
-        trans_y: -0.003         # higher: grab more to the right
-        trans_z: -0.0765        # higher: grab lower
+      # end_effector_home:
+      #   frame: !frame gripper_home
+      #   child_frame: !frame end_effector_home
+      #   trans_x: 0.138          #higher: grab closer to the base
+      #   trans_y: -0.003         #higher: grab more to the right
+      #   trans_z: -0.0765        #higher: grab lower
