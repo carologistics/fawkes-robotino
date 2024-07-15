@@ -50,20 +50,10 @@ local gripper_default_pose_x = 0.00 -- conveyor pose offset in x direction
 local gripper_default_pose_y = 0.00 -- conveyor_pose offset in y direction
 local gripper_default_pose_z = 0.057 -- conveyor_pose offset in z direction
 
-local x_max = 0.115 -- gripper max value in x direction
-local y_max = 0.075 -- gripper max value in y direction
-local z_max = 0.057 -- gripper max value in z direction
-
 -- read gripper config
-if config:exists("/arduino/x_max") then
-    x_max = config:get_float("/arduino/x_max")
-end
-if config:exists("/arduino/y_max") then
-    y_max = config:get_float("/arduino/y_max")
-end
-if config:exists("/arduino/z_max") then
-    z_max = config:get_float("/arduino/z_max")
-end
+local x_max = config:get_float("/arduino/x_max") -- gripper max value in x direction
+local y_max = config:get_float("/arduino/y_max") -- gripper max value in y direction
+local z_max = config:get_float("/arduino/z_max") -- gripper max value in z direction
 
 -- read vs configs
 local offset_x_workpiece_target_frame = config:get_float(

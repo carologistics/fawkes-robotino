@@ -67,11 +67,6 @@ skillenv.skill_module(_M)
 local llutils = require("fawkes.laser-lines_utils")
 local tfm = require("fawkes.tfutils")
 
--- Load config
-local x_max = 0.115
-local y_max = 0.075
-local z_max = 0.057
-
 local belt_offset_side = 0.025
 local slide_offset_side = -0.225
 local left_shelf_offset_side = -0.075
@@ -83,15 +78,9 @@ local ring_height = 0.01
 local drive_back_x = -0.4
 
 -- read gripper config
-if config:exists("/arduino/x_max") then
-    x_max = config:get_float("/arduino/x_max")
-end
-if config:exists("/arduino/y_max") then
-    y_max = config:get_float("/arduino/y_max")
-end
-if config:exists("/arduino/max_z") then
-    z_max = config:get_float("/arduino/z_max")
-end
+local x_max = config:get_float("/arduino/x_max")
+local y_max = config:get_float("/arduino/y_max")
+local z_max = config:get_float("/arduino/z_max")
 
 -- read config values for computing expected target position
 -- conveyor
