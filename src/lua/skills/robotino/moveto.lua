@@ -109,6 +109,15 @@ local follow_path_errors = {
     [106] = "NO_VALID_CONTROL"
 }
 
+local function retry_needed()
+    if navigator:is_final() then
+        if navigator:error_code() == 206 or navigator:error_code() == 208 then
+            if fsm.vars.retry_count < 2 then return true end
+        end
+    end
+    return false
+end
+
 -- Function to get the error message
 local function get_error_message(error_code)
     if planner_errors[error_code] then
@@ -127,6 +136,14 @@ function target_unreachable()
         return true
     end
     return false
+end
+
+function set_target_back(distance)
+    local new_x = self.fsm.vars.x - distance * math.cos(self.fsm.vars.ori)
+    local new_y = self.fsm.vars.y - distance * math.sin(self.fsm.vars.ori)
+
+    self.fsm.vars.x = new_x
+    self.fsm.vars.y = new_y
 end
 
 function travelled_distance(self)
@@ -176,16 +193,23 @@ fsm:add_transitions{
         "FINAL",
         cond = "vars.waiting_pos and travelled_distance(self)",
         desc = "Going to waiting position"
+    }, {
+        "TIMEOUT",
+        "RETRY",
+        cond = retry_needed,
+        desc = "retry with a position a bit back"
     }, {"TIMEOUT", "FINAL", cond = target_reached, desc = "Target reached"},
     {
         "TIMEOUT",
         "FAILED",
         cond = target_unreachable,
         desc = "Target unreachable"
-    }
+    }, {"RETRY", "FAILED", cond = "not retry_needed()"},
+    {"RETRY", "MOVING", cond = true}
 }
 
 function INIT:init()
+    self.fsm.vars.retry_count = 0
     self.fsm.vars.target_valid = true
     self.fsm.vars.waiting_pos = false
 
@@ -314,4 +338,9 @@ end
 function FAILED:init()
     -- keep track of error
     fsm:set_error(fsm.vars.error)
+end
+
+function RETRY:init()
+    self.fsm.vars.retry_count = self.fsm.vars.retry_count + 1;
+    set_target_back(0.20)
 end
