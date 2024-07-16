@@ -44,11 +44,11 @@ arduino:
   # in steps/s and steps/s/s of the differen stepper motors.
   # Please use these tags in the hostspecific host.yaml
   firmware_settings:
-    speed_x: 4000
+    speed_x: 2000
     speed_y: 4000
     speed_z: 4000
     speed_a: 7000
-    acc_x: 7000
+    acc_x: 4000
     acc_y: 7000
     acc_z: 7000
     acc_a: 15000
