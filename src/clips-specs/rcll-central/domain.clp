@@ -416,12 +416,21 @@
   Restore the world model from the database."
   (declare (salience ?*SALIENCE-FIRST*))
 	(not (domain-facts-loaded))
+	(time $?now)
 	(wm-fact (key refbox phase) (value EXPLORATION|PRODUCTION))
 	(wm-fact (key config agent name) (value ?robot-name))
 	(wm-fact (key refbox team-color) (value ?team-color&~nil))
 	=>
 	(printout warn "Restoring world model from the database" crlf)
 	(wm-robmem-sync-restore)
+	(delayed-do-for-all-facts ((?refbox-wm wm-fact)) (wm-key-prefix ?refbox-wm:key (create$ refbox))
+	  (retract ?refbox-wm)
+	)
+	(delayed-do-for-all-facts ((?rw-wm wm-fact)) (wm-key-prefix ?rw-wm:key (create$ central agent robot-waiting))
+		(bind ?robot (wm-key-arg ?rw-wm:key r))
+		(assert (timer (name (sym-cat ?robot -waiting-timer)) (time ?now)))
+	)
+
 	(assert (sync-wm-facts-to-template-facts))
 	(assert (reset-robot-in-wm robot1)
 	        (reset-robot-in-wm robot2)
