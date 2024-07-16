@@ -397,7 +397,7 @@
 	?exp-active <- (wm-fact (key exploration active) (type BOOL) (value TRUE))
 	; there is no machine of our team for which we don't know the location
 	(wm-fact (key refbox team-color) (value ?color))
-	(not (and (wm-fact (key domain fact mps-team args? m ?target-mps col ?color))
+	(not (and (wm-fact (key domain fact mps-state args? m ?target-mps $?))
 	          (not (domain-fact (name zone-content)
 	                            (param-values ?zz ?target-mps))
 	)))
