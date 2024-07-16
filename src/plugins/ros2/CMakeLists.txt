@@ -24,6 +24,32 @@ set(PLUGIN_ros2-rto-data-in
     ON
     CACHE BOOL "Build ros2-rto-data-in")
 
+set(PLUGIN_ros2-motor-switch
+    ON
+    CACHE BOOL "Build ros2-motor-switch")
+
+if(PLUGIN_ros2-motor-switch)
+  add_library(ros2-motor-switch MODULE motor_switch_plugin.cpp
+                                         motor_switch_thread.cpp)
+  depend_on_ros2(ros2-motor-switch)
+  depend_on_ros2_libs(
+    ros2-motor-switch
+    "rto_msgs"
+  )
+  target_link_libraries(
+    ros2-motor-switch
+    fawkescore
+    fawkesutils
+    fawkesaspects
+    fawkesblackboard
+    fawkesinterface
+    fawkesros2aspect
+    SwitchInterface
+    RTODataInterface)
+else()
+  plugin_disabled_message(ros2-motor-switch)
+endif()
+
 if(PLUGIN_ros2-rto-data-in)
   add_library(ros2-rto-data-in MODULE rto_data_in_plugin.cpp
                                          rto_data_in_thread.cpp)
