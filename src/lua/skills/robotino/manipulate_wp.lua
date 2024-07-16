@@ -321,6 +321,9 @@ function object_tracker_active()
 end
 
 function ready_for_gripper_movement()
+    print("arduino:y_position(): ", arduino:y_position())
+    print("arduino:y_position() - y_max / 2: ", arduino:y_position() - y_max / 2)
+    print("default_z: ", default_z)
     return arduino:x_position() == default_x and arduino:y_position() - y_max /
                2 == default_y and arduino:z_position() == default_z
 end
