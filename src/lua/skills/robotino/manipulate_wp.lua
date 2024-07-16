@@ -180,21 +180,11 @@ function gripper_aligned()
         ori = fawkes.tf.create_quaternion_from_yaw(0)
     }, "base_link", "end_effector_home")
 
-    if fsm.vars.target == "WORKPIECE" then
-        print("arduino:x_position(): ", arduino:x_position())
-        print("arduino:x_position(): ", arduino:x_position())
-        return within_tolerance(arduino:x_position(), 0, 0.0001) and
-                   within_tolerance(arduino:y_position() - y_max / 2, y_max / 2,
-                                    0.0001) and
-                   within_tolerance(math.min(gripper_target.z, z_max),
-                                    arduino:z_position(), GRIPPER_TOLERANCE.z)
-    else
-        return within_tolerance(arduino:x_position(), 0, 0.0001) and
-                   within_tolerance(arduino:y_position() - y_max / 2, y_max / 2,
-                                    0.0001) and
-                   within_tolerance(math.min(gripper_target.z, z_max),
-                                    arduino:z_position(), GRIPPER_TOLERANCE.z)
-    end
+    return within_tolerance(arduino:x_position(), 0, 0.0001) and
+               within_tolerance(arduino:y_position() - y_max / 2, y_max / 2,
+                                0.0001) and
+               within_tolerance(math.min(gripper_target.z, z_max),
+                                arduino:z_position(), GRIPPER_TOLERANCE.z)
 end
 
 function set_gripper(x, y, z)
@@ -491,14 +481,7 @@ function INIT:init()
         ["SHELF-RIGHT"] = object_tracking_if.SHELF_RIGHT,
         ["SLIDE"] = object_tracking_if.SLIDE
     }
-    -- set c if unset
-    if (fsm.vars.c == nil or string.gsub(fsm.vars.c, "^%s*(.-)%s*$", "%1") == 0) then
-        if string.find(fsm.vars.side, "SHELF-") then
-            fsm.vars.c = "C0"
-        else -- assume highest possible workpiece if unknown
-            fsm.vars.c = "C3"
-        end
-    end
+
     if fsm.vars.map_pos ~= false then fsm.vars.map_pos = true end
 
     -- get ENUM of input variables
@@ -658,11 +641,7 @@ function MOVE_BASE_AND_GRIPPER:init()
     }, "base_link", "end_effector_home")
 
     fsm.vars.gripper_wait = 10
-    if fsm.vars.target == "WORKPIECE" then
-        set_gripper(0, y_max / 2, gripper_target.z)
-    else
-        set_gripper(0, y_max / 2, gripper_target.z)
-    end
+    set_gripper(0, y_max / 2, gripper_target.z)
 end
 
 function FINE_TUNE_GRIPPER:init()
@@ -690,11 +669,7 @@ function FINE_TUNE_GRIPPER:loop()
         ori = fawkes.tf.create_quaternion_from_yaw(0)
     }, "base_link", "end_effector_home")
 
-    if fsm.vars.target == "WORKPIECE" then
-        set_gripper(0, y_max / 2, gripper_target.z)
-    else
-        set_gripper(0, y_max / 2, gripper_target.z)
-    end
+    set_gripper(0, y_max / 2, gripper_target.z)
 end
 
 function GRIPPER_ROUTINE:init()
