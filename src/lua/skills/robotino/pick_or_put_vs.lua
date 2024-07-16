@@ -241,7 +241,7 @@ function MOVE_GRIPPER_RIGHT:init()
         print_error("y-axis clipped within routine!")
     end
 
-    local z_clipped = math.max(0, math.min(z_given, z_max))
+    local z_clipped = math.max(0.01, math.min(z_given, z_max))
 
     if z_clipped ~= z_given then
         print_error("z-axis clipped within routine!")
@@ -285,7 +285,7 @@ function MOVE_GRIPPER_FORWARD:init()
     local x_clipped = math.max(0, math.min(x_given, x_max))
     local y_clipped = math.max(-y_max / 2,
                                math.min(fsm.vars.gripper_target.y, y_max / 2))
-    local z_clipped = math.max(0, math.min(z_given, z_max))
+    local z_clipped = math.max(0.01, math.min(z_given, z_max))
 
     self.args["gripper_commands"].x = x_clipped
     self.args["gripper_commands"].y = y_clipped
@@ -330,7 +330,7 @@ function MOVE_GRIPPER_DOWN:init()
     fsm.vars.target_y = y_clipped
     fsm.vars.target_z = z_given
 
-    local z_clipped = math.max(0, math.min(z_given, z_max))
+    local z_clipped = math.max(0.01, math.min(z_given, z_max))
 
     self.args["gripper_commands"].x = x_clipped
     self.args["gripper_commands"].y = y_clipped
@@ -362,7 +362,7 @@ function MOVE_GRIPPER_UP:init()
 
     self.args["gripper_commands"].x = arduino:x_position()
     self.args["gripper_commands"].y = arduino:y_position() - y_max / 2
-    self.args["gripper_commands"].z = math.max(0, math.min(z_given, z_max))
+    self.args["gripper_commands"].z = math.max(0.01, math.min(z_given, z_max))
     self.args["gripper_commands"].command = "MOVEABS"
 end
 
