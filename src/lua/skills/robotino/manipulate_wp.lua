@@ -321,9 +321,7 @@ function object_tracker_active()
     return object_tracking_if:has_writer() and object_tracking_if:msgid() > 0
 end
 
-function ready_for_gripper_movement()
-    return z_max - fsm.vars.missing_c3_height < arduino:z_position()
-end
+function ready_for_gripper_movement() return z_max <= arduino:z_position() end
 
 function dry_expected_object_found()
     return fsm.vars.consecutive_detections > 2 and fsm.vars.dry_run and
