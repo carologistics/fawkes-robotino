@@ -111,7 +111,8 @@ local follow_path_errors = {
 
 local function retry_needed()
     if navigator:is_final() then
-        if navigator:error_code() == 206 or navigator:error_code() == 208 then
+        if navigator:error_code() == 206 or navigator:error_code() == 208 or
+            navigator:error_code() == 103 then
             if fsm.vars.retry_count < 2 then return true end
         end
     end
@@ -139,11 +140,11 @@ function target_unreachable()
 end
 
 function set_target_back(distance)
-    local new_x = self.fsm.vars.x - distance * math.cos(self.fsm.vars.ori)
-    local new_y = self.fsm.vars.y - distance * math.sin(self.fsm.vars.ori)
+    local new_x = fsm.vars.x - distance * math.cos(fsm.vars.ori)
+    local new_y = fsm.vars.y - distance * math.sin(fsm.vars.ori)
 
-    self.fsm.vars.x = new_x
-    self.fsm.vars.y = new_y
+    fsm.vars.x = new_x
+    fsm.vars.y = new_y
 end
 
 function travelled_distance(self)
@@ -172,6 +173,7 @@ fsm:define_states{
     {"CHECK_INPUT", JumpState},
     {"WAIT_TF", JumpState},
     {"INIT", JumpState},
+    {"RETRY", JumpState},
     {"MOVING", JumpState},
     {"TIMEOUT", JumpState}
 }
@@ -204,8 +206,7 @@ fsm:add_transitions{
         "FAILED",
         cond = target_unreachable,
         desc = "Target unreachable"
-    }, {"RETRY", "FAILED", cond = "not retry_needed()"},
-    {"RETRY", "MOVING", cond = true}
+    }, {"RETRY", "MOVING", cond = true}
 }
 
 function INIT:init()
@@ -342,5 +343,6 @@ end
 
 function RETRY:init()
     self.fsm.vars.retry_count = self.fsm.vars.retry_count + 1;
+    printf("Motor move failed going to RETRY with a position a bit back");
     set_target_back(0.20)
 end
