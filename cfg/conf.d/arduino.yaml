@@ -76,4 +76,4 @@ arduino:
     # pin number of  data in on the robotino
     wp_sensor_pin: 0
     # if using analog signals, wp is sensed if the threshold is crossed
-    wp_analog_threshold: 0.7
+    wp_sensor_analog_threshold: 0.7

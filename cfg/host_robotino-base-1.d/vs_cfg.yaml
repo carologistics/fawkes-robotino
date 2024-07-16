@@ -17,41 +17,41 @@ plugins/vs_offsets:
   workpiece:
     target:
       x: -0.05
-      z: 0.2
-
-    top:
-      x: 0.000
-
-    routine:
-      z: 0.009
-
-    end:
-      z: 0.055
-
-  conveyor:
-    target:
-      x: -0.5
-      z: 0.0075
-
-    top:
-      x: 0.02
-
-    routine:
-      z: -0.01
-
-    end:
-      z: 0.055
-
-  slide:
-    target:
-      x: -0.5
       z: 0.05
 
     top:
-      x: 0.025
-
-    routine:
-      z: 0.0075
+      x: 0.01
+      z: 0.011
 
     end:
-      z: 0.03
+      z: 0.02
+
+  conveyor:
+    target:
+      x: -0.05
+      z: 0.05
+
+    top:
+      x: 0.03
+      z: -0.01
+
+    routine:
+      z: -0.02
+
+    end:
+      z: -0.015
+
+  slide:
+    target:
+      x: -0.05
+      z: 0.05
+
+    top:
+      x: 0.05
+      z: 0.015
+
+    routine:
+      z: -0.015
+
+    end:
+      z: 0.015
