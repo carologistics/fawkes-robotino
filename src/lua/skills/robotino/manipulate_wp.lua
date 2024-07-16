@@ -182,13 +182,13 @@ function gripper_aligned()
 
     if fsm.vars.target == "WORKPIECE" then
         return
-            arduino:x_position() == 0 and arduino:y_position() == -y_max / 2 and
+            arduino:x_position() == 0 and arduino:y_position() == y_max / 2 and
                 math.abs(
                     math.min(gripper_target.z, z_max) - arduino:z_position()) <
                 GRIPPER_TOLERANCE.z
     else
         return
-            arduino:x_position() == 0 and arduino:y_position() == -y_max / 2 and
+            arduino:x_position() == 0 and arduino:y_position() == y_max / 2 and
                 math.abs(
                     math.min(gripper_target.z, z_max) - arduino:z_position()) <
                 GRIPPER_TOLERANCE.z
@@ -325,9 +325,6 @@ function within_tolerance(value, target, margin)
 end
 
 function ready_for_gripper_movement()
-    print("arduino:y_position(): ", arduino:y_position())
-    print("arduino:y_position() - y_max / 2: ", arduino:y_position() - y_max / 2)
-    print("default_y: ", default_y)
     return within_tolerance(arduino:x_position(), default_x, 0.0001) and
                within_tolerance(arduino:y_position() - y_max / 2, default_y,
                                 0.0001) and
@@ -660,9 +657,9 @@ function MOVE_BASE_AND_GRIPPER:init()
 
     fsm.vars.gripper_wait = 10
     if fsm.vars.target == "WORKPIECE" then
-        set_gripper(0, -y_max / 2, gripper_target.z)
+        set_gripper(0, y_max / 2, gripper_target.z)
     else
-        set_gripper(0, -y_max / 2, gripper_target.z)
+        set_gripper(0, y_max / 2, gripper_target.z)
     end
 end
 
@@ -692,9 +689,9 @@ function FINE_TUNE_GRIPPER:loop()
     }, "base_link", "end_effector_home")
 
     if fsm.vars.target == "WORKPIECE" then
-        set_gripper(0, -y_max / 2, gripper_target.z)
+        set_gripper(0, y_max / 2, gripper_target.z)
     else
-        set_gripper(0, -y_max / 2, gripper_target.z)
+        set_gripper(0, y_max / 2, gripper_target.z)
     end
 end
 
