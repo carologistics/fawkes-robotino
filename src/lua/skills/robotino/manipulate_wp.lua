@@ -181,13 +181,17 @@ function gripper_aligned()
     }, "base_link", "end_effector_home")
 
     if fsm.vars.target == "WORKPIECE" then
+        print("arduino:x_position(): ", arduino:x_position())
+        print("arduino:x_position(): ", arduino:x_position())
         return within_tolerance(arduino:x_position(), 0, 0.0001) and
-                   within_tolerance(arduino:y_position(), y_max / 2, 0.0001) and
+                   within_tolerance(arduino:y_position() - y_max / 2, y_max / 2,
+                                    0.0001) and
                    within_tolerance(math.min(gripper_target.z, z_max),
                                     arduino:z_position(), GRIPPER_TOLERANCE.z)
     else
         return within_tolerance(arduino:x_position(), 0, 0.0001) and
-                   within_tolerance(arduino:y_position(), y_max / 2, 0.0001) and
+                   within_tolerance(arduino:y_position() - y_max / 2, y_max / 2,
+                                    0.0001) and
                    within_tolerance(math.min(gripper_target.z, z_max),
                                     arduino:z_position(), GRIPPER_TOLERANCE.z)
     end
