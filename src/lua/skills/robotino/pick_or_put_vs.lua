@@ -112,6 +112,13 @@ fsm:define_states{
     closure = {},
     {"INIT", JumpState},
     {
+        "MOVE_GRIPPER_RIGHT",
+        SkillJumpState,
+        skills = {{gripper_commands}},
+        final_to = "MOVE_GRIPPER_FORWARD",
+        fail_to = "FAILED"
+    },
+    {
         "MOVE_GRIPPER_FORWARD",
         SkillJumpState,
         skills = {{gripper_commands}},
@@ -173,7 +180,7 @@ fsm:define_states{
 
 fsm:add_transitions{
     {"INIT", "FAILED", cond = input_invalid, desc = "Invalid Input"},
-    {"INIT", "MOVE_GRIPPER_FORWARD", true, desc = "Start Routine"}, {
+    {"INIT", "MOVE_GRIPPER_RIGHT", true, desc = "Start Routine"}, {
         "CHOOSE_ACTION",
         "CLOSE_GRIPPER",
         cond = is_pick_action,
@@ -199,6 +206,39 @@ function INIT:init()
         z = object_tracking_if:gripper_frame(2),
         ori = fawkes.tf.create_quaternion_from_yaw(0)
     }, "base_link", "end_effector_home")
+end
+
+function MOVE_GRIPPER_RIGHT:init()
+    -- Clip to axis limits
+    local z_given = 0
+    if fsm.vars.target == "WORKPIECE" then
+        z_given = fsm.vars.gripper_target.z - offset_z_workpiece_target_frame +
+                      offset_z_workpiece_top
+    elseif fsm.vars.target == "CONVEYOR" then
+        z_given = fsm.vars.gripper_target.z - offset_z_conveyor_target_frame +
+                      offset_z_conveyor_top
+    else -- SLIDE
+        z_given = fsm.vars.gripper_target.z - offset_z_slide_target_frame +
+                      offset_z_slide_top
+    end
+
+    local y_clipped = math.max(-y_max / 2,
+                               math.min(fsm.vars.gripper_target.y, y_max / 2))
+
+    if y_clipped ~= fsm.vars.gripper_target.y then
+        print_error("y-axis clipped within routine!")
+    end
+
+    local z_clipped = math.max(0, math.min(z_given, z_max))
+
+    if z_clipped ~= z_given then
+        print_error("z-axis clipped within routine!")
+    end
+
+    self.args["gripper_commands"].x = 0
+    self.args["gripper_commands"].y = y_clipped
+    self.args["gripper_commands"].z = z_clipped
+    self.args["gripper_commands"].command = "MOVEABS"
 end
 
 function MOVE_GRIPPER_FORWARD:init()
