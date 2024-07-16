@@ -245,20 +245,20 @@ function set_gripper(x, y, z)
         return
     end
 
-  move_abs_message:set_x(fsm.vars.gripper_target_pos_x)
-  move_abs_message:set_y(fsm.vars.gripper_target_pos_y)
-  move_abs_message:set_z(fsm.vars.gripper_target_pos_z)
-  move_abs_message:set_target_frame("end_effector_home")
-  arduino:msgq_enqueue_copy(move_abs_message)
+    move_abs_message:set_x(fsm.vars.gripper_target_pos_x)
+    move_abs_message:set_y(fsm.vars.gripper_target_pos_y)
+    move_abs_message:set_z(fsm.vars.gripper_target_pos_z)
+    move_abs_message:set_target_frame("end_effector_home")
+    arduino:msgq_enqueue_copy(move_abs_message)
 end
 
 function move_gripper_default_pose()
-  move_abs_message = arduino.MoveXYZAbsMessage:new()
-  move_abs_message:set_x(0)
-  move_abs_message:set_y(0)
-  move_abs_message:set_z(z_max)
-  move_abs_message:set_target_frame("end_effector_home")
-  arduino:msgq_enqueue_copy(move_abs_message)
+    move_abs_message = arduino.MoveXYZAbsMessage:new()
+    move_abs_message:set_x(0)
+    move_abs_message:set_y(0)
+    move_abs_message:set_z(z_max)
+    move_abs_message:set_target_frame("end_effector_home")
+    arduino:msgq_enqueue_copy(move_abs_message)
 end
 
 function input_invalid()
@@ -321,9 +321,7 @@ function object_tracker_active()
     return object_tracking_if:has_writer() and object_tracking_if:msgid() > 0
 end
 
-function ready_for_gripper_movement()
-    return z_max - fsm.vars.missing_c3_height < arduino:z_position()
-end
+function ready_for_gripper_movement() return z_max <= arduino:z_position() end
 
 function dry_expected_object_found()
     return fsm.vars.consecutive_detections > 2 and fsm.vars.dry_run and
