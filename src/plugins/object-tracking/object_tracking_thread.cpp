@@ -154,7 +154,7 @@ ObjectTrackingThread::init()
 
 	//set NN params
 	scale_  = 0.00392; //to normalize inputs: 0.00392 * 255 = 1
-	swapRB_ = true;
+	swapRB_ = false;
 
 	//set up network
 	net_ = readNet(weights_path_, config_path_);
@@ -374,8 +374,7 @@ ObjectTrackingThread::loop()
 		}
 	} else {
 		//read from sharedMemoryBuffer and convert into Mat
-		image = Mat(camera_height_, camera_width_, CV_8UC3, shm_buffer_->buffer()).clone();
-		cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
+		image        = Mat(camera_height_, camera_width_, CV_8UC3, shm_buffer_->buffer()).clone();
 		capture_time = shm_buffer_->capture_time();
 	}
 
@@ -859,8 +858,8 @@ ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
 	//compute bounding box values
 	float bb_left    = bounding_box[0] - bounding_box[2] / 2;
 	float bb_right   = bounding_box[0] + bounding_box[2] / 2;
-	float bb_bottom  = bounding_box[1] + bounding_box[3] / 2;
-	float bb_top     = bounding_box[1] - bounding_box[3] / 2;
+	float bb_bottom  = bounding_box[1] - bounding_box[3] / 2;
+	float bb_top     = bounding_box[1] + bounding_box[3] / 2;
 	float bb_centerY = bounding_box[1];
 
 	//delta values (correct if no distortion):
@@ -893,15 +892,15 @@ ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
 
 	//compute middle point with deltas and distance
 	point[0] = dist;
-	point[1] = (dx_left + dx_right) * dist / 2;
+	point[1] = -(dx_left + dx_right) * dist / 2;
 
 	if (current_object_type_ == ObjectTrackingInterface::WORKPIECE) {
 		//compute base middle point using the bottom point + wp_height/2
-		point[2]             = dy_top * dist + puck_height_ / 2;
-		wp_additional_height = max(puck_height_ / 2, dy_bottom * dist - point[2]);
+		point[2] = dy_bottom * dist + puck_height_ / 2;
+		//wp_additional_height = max(puck_height_ / 2, dy_bottom * dist - point[2]);
 	} else {
-		point[2]             = dy_center * dist;
-		wp_additional_height = 0;
+		point[2] = dy_center * dist;
+		//wp_additional_height = 0;
 	}
 }
 
