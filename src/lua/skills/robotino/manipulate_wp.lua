@@ -46,7 +46,6 @@ Parameters:
       @param target  the type of the target object: (WORKPIECE | CONVEYOR | SLIDE)
       @param mps     the name of the MPS (e.g. C-CS1, see navgraph)
       @param side    the side of the mps: (INPUT | OUTPUT | SHELF-LEFT | SHELF-MIDDLE | SHELF-RIGHT | SLIDE)
-      @param c       the complexity of the workpiece to grab/ in hand (optional, C0 | C1 | C2 | C3)
       @param dry_run true, if the gripper should not interact with the workpiece and only need to check if
                      the workpiece is there (optional, bool)
       @param query   defines if dry_run expects a workpiece to be at the location or wet (optional, THERE | ABSENT)
@@ -486,21 +485,10 @@ function INIT:init()
     end
     if fsm.vars.map_pos ~= false then fsm.vars.map_pos = true end
 
-    -- difference in height of current product compared to a C3
-    local MISSING_C3_HEIGHT = {
-        ["C0"] = ring_height * 3,
-        ["C1"] = ring_height * 2,
-        ["C2"] = ring_height,
-        ["C3"] = 0
-    }
-
     -- get ENUM of input variables
     fsm.vars.target_object_type = TARGET_NAMES[fsm.vars.target]
     fsm.vars.expected_mps = MPS_NAMES[fsm.vars.mps]
     fsm.vars.expected_side = SIDE_NAMES[fsm.vars.side]
-
-    -- get wp height
-    fsm.vars.missing_c3_height = 0
 
     fsm.vars.gripper_target_pos_x = 0
     fsm.vars.gripper_target_pos_y = 0
@@ -699,8 +687,6 @@ function GRIPPER_ROUTINE:init()
 
     -- perform pick or put routine
     self.args["pick_or_put_vs"].target = fsm.vars.target
-    self.args["pick_or_put_vs"].missing_c3_height = tostring(fsm.vars
-                                                                 .missing_c3_height)
 end
 
 -- end tracking afterwards

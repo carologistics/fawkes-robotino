@@ -37,7 +37,6 @@ It is independent of the workpiece location or its target location.
 
 Parameters:
       @param target             target object (WORKPIECE | CONVEYOR | SLIDE)
-      @param missing_c3_height  distance between C3 height and current wp height
 ]==]
 
 -- Initialize as skill module
@@ -194,7 +193,6 @@ fsm:add_transitions{
 }
 
 function INIT:init()
-    fsm.vars.missing_c3_height = tonumber(fsm.vars.missing_c3_height)
     fsm.vars.gripper_target = tfm.transform6D({
         x = object_tracking_if:gripper_frame(0),
         y = object_tracking_if:gripper_frame(1),
@@ -212,7 +210,7 @@ function MOVE_GRIPPER_FORWARD:init()
         x_given = fsm.vars.gripper_target.x - offset_x_workpiece_target_frame +
                       offset_x_workpiece_top
         z_given = fsm.vars.gripper_target.z - offset_z_workpiece_target_frame +
-                      offset_z_workpiece_top - fsm.vars.missing_c3_height
+                      offset_z_workpiece_top
         sense_wp = true
     elseif fsm.vars.target == "CONVEYOR" then
         x_given = fsm.vars.gripper_target.x - offset_x_conveyor_target_frame +
@@ -246,7 +244,7 @@ function MOVE_GRIPPER_DOWN:init()
         x_given = fsm.vars.gripper_target.x - offset_x_workpiece_target_frame +
                       offset_x_workpiece_top
         z_given = fsm.vars.gripper_target.z - offset_z_workpiece_target_frame +
-                      offset_z_workpiece_top - fsm.vars.missing_c3_height
+                      offset_z_workpiece_top
         sense_wp = true
     elseif fsm.vars.target == "CONVEYOR" then
         x_given = fsm.vars.gripper_target.x - offset_x_conveyor_target_frame +
@@ -286,10 +284,10 @@ function MOVE_GRIPPER_UP:init()
     local z_given = 0
     if fsm.vars.target == "WORKPIECE" then
         z_given = fsm.vars.gripper_target.z - offset_z_workpiece_target_frame +
-                      offset_z_workpiece_end - fsm.vars.missing_c3_height
+                      offset_z_workpiece_end
     elseif fsm.vars.target == "CONVEYOR" then
         z_given = fsm.vars.gripper_target.z - offset_z_conveyor_target_frame +
-                      offset_z_conveyor_end - fsm.vars.missing_c3_height
+                      offset_z_conveyor_end
     else -- SLIDE
         z_given = fsm.vars.gripper_target.z - offset_z_slide_target_frame +
                       offset_z_slide_end
