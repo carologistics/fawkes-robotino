@@ -22,23 +22,21 @@
 #ifndef __PLUGINS_CLIPS_MOTOR_SWITCH_CLIPS_MOTOR_SWITCH_THREAD_H_
 #define __PLUGINS_CLIPS_MOTOR_SWITCH_CLIPS_MOTOR_SWITCH_THREAD_H_
 
-#include <aspect/blackboard.h>
+#include "rclcpp/rclcpp.hpp"
+#include "rto_msgs/srv/set_omni_drive_enabled.hpp"
+
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
 #include <core/threading/thread.h>
 #include <plugins/clips/aspect/clips_feature.h>
+#include <plugins/ros2/aspect/ros2.h>
 
 #include <string>
 #include <vector>
 
-namespace fawkes {
-class MotorInterface;
-}
-
 class ClipsMotorSwitchThread : public fawkes::Thread,
                                public fawkes::LoggingAspect,
-                               public fawkes::ConfigurableAspect,
-                               public fawkes::BlackBoardAspect,
+                               public fawkes::ROS2Aspect,
                                public fawkes::CLIPSFeature,
                                public fawkes::CLIPSFeatureAspect
 {
@@ -69,9 +67,9 @@ private:
 
 	std::map<std::string, fawkes::LockPtr<CLIPS::Environment>> envs_;
 
+	rclcpp::Client<rto_msgs::srv::SetOmniDriveEnabled>::SharedPtr client_;
+
 private:
-	std::string             cfg_iface_id_;
-	fawkes::MotorInterface *motor_if_;
 };
 
 #endif
