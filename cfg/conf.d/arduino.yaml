@@ -31,7 +31,7 @@ arduino:
   gripper_dyn_z_frame_id: gripper_z_dyn
 
   # maximum space in x, y and z in meters
-  x_max: 0.18
+  x_max: 0.185
   y_max: 0.075
   z_max: 0.057
 
