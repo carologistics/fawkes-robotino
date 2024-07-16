@@ -92,6 +92,9 @@ ObjectTrackingThread::init()
 	offset_x_workpiece_target_ = config->get_float("plugins/vs_offsets/workpiece/target/x");
 	offset_z_workpiece_target_ = config->get_float("plugins/vs_offsets/workpiece/target/z");
 
+	offset_x_shelf_target_ = config->get_float("plugins/vs_offsets/shelf/target/x");
+	offset_z_shelf_target_ = config->get_float("plugins/vs_offsets/shelf/target/z");
+
 	offset_x_conveyor_target_ = config->get_float("plugins/vs_offsets/conveyor/target/x");
 	offset_z_conveyor_target_ = config->get_float("plugins/vs_offsets/conveyor/target/z");
 
@@ -921,12 +924,23 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 
 	switch (current_object_type_) {
 	case ObjectTrackingInterface::WORKPIECE:
-		gripper_offset_x = offset_x_workpiece_target_;
-		gripper_offset_z = offset_z_workpiece_target_;
-		max_x_needed =
-		  object_pos.getX() + cos(mps_angle) * max(offset_x_workpiece_target_, offset_x_workpiece_top_);
-		max_y_needed =
-		  object_pos.getY() - sin(mps_angle) * max(offset_x_workpiece_target_, offset_x_workpiece_top_);
+		if (current_expected_side_ == ObjectTrackingInterface::SHELF_LEFT
+		    || current_expected_side_ == ObjectTrackingInterface::SHELF_MIDDLE
+		    || current_expected_side_ == ObjectTrackingInterface::SHELF_RIGHT) {
+			gripper_offset_x = offset_x_shelf_target_;
+			gripper_offset_z = offset_z_shelf_target_;
+			max_x_needed =
+			  object_pos.getX() + cos(mps_angle) * max(offset_x_shelf_target_, offset_x_shelf_top_);
+			max_y_needed =
+			  object_pos.getY() - sin(mps_angle) * max(offset_x_shelf_target_, offset_x_shelf_top_);
+		} else {
+			gripper_offset_x = offset_x_workpiece_target_;
+			gripper_offset_z = offset_z_workpiece_target_;
+			max_x_needed     = object_pos.getX()
+			               + cos(mps_angle) * max(offset_x_workpiece_target_, offset_x_workpiece_top_);
+			max_y_needed = object_pos.getY()
+			               - sin(mps_angle) * max(offset_x_workpiece_target_, offset_x_workpiece_top_);
+		}
 		break;
 	case ObjectTrackingInterface::CONVEYOR_BELT_FRONT:
 		gripper_offset_x = offset_x_conveyor_target_;

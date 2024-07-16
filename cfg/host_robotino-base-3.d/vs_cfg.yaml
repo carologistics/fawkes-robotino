@@ -27,6 +27,18 @@ plugins/vs_offsets:
     end:
       z: 0.025
 
+  shelf:
+    target:
+      x: -0.05
+      z: 0.005
+
+    top:
+      x: 0.04
+      z: 0.005
+
+    end:
+      z: 0.005
+
   conveyor:
     target:
       x: -0.05
