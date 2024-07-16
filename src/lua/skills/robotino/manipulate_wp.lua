@@ -177,22 +177,17 @@ function gripper_aligned()
     }, "base_link", "end_effector_home")
 
     if fsm.vars.target == "WORKPIECE" then
-        return arduino:x_position() == 0 and
-                   math.abs(
-                       gripper_target.y - (arduino:y_position() - y_max / 2)) <
-                   GRIPPER_TOLERANCE.y and
-                   math.abs(
-                       math.min(gripper_target.z - fsm.vars.missing_c3_height,
-                                z_max) - arduino:z_position()) <
-                   GRIPPER_TOLERANCE.z
+        return
+            arduino:x_position() == 0 and arduino:y_position() == -y_max / 2 and
+                math.abs(
+                    math.min(gripper_target.z, z_max) - arduino:z_position()) <
+                GRIPPER_TOLERANCE.z
     else
-        return arduino:x_position() == 0 and
-                   math.abs(
-                       gripper_target.y - (arduino:y_position() - y_max / 2)) <
-                   GRIPPER_TOLERANCE.y and
-                   math.abs(
-                       math.min(gripper_target.z, z_max) - arduino:z_position()) <
-                   GRIPPER_TOLERANCE.z
+        return
+            arduino:x_position() == 0 and arduino:y_position() == -y_max / 2 and
+                math.abs(
+                    math.min(gripper_target.z, z_max) - arduino:z_position()) <
+                GRIPPER_TOLERANCE.z
     end
 end
 
@@ -255,8 +250,8 @@ end
 function move_gripper_default_pose()
     move_abs_message = arduino.MoveXYZAbsMessage:new()
     move_abs_message:set_x(0)
-    move_abs_message:set_y(0)
-    move_abs_message:set_z(z_max)
+    move_abs_message:set_y(-y_max / 2)
+    move_abs_message:set_z(0.03)
     move_abs_message:set_target_frame("end_effector_home")
     arduino:msgq_enqueue_copy(move_abs_message)
 end
@@ -660,9 +655,9 @@ function MOVE_BASE_AND_GRIPPER:init()
 
     fsm.vars.gripper_wait = 10
     if fsm.vars.target == "WORKPIECE" then
-        set_gripper(0, 0, gripper_target.z - fsm.vars.missing_c3_height)
+        set_gripper(0, -y_max / 2, gripper_target.z)
     else
-        set_gripper(0, 0, gripper_target.z)
+        set_gripper(0, -y_max / 2, gripper_target.z)
     end
 end
 
@@ -692,10 +687,9 @@ function FINE_TUNE_GRIPPER:loop()
     }, "base_link", "end_effector_home")
 
     if fsm.vars.target == "WORKPIECE" then
-        set_gripper(0, gripper_target.y,
-                    gripper_target.z - fsm.vars.missing_c3_height)
+        set_gripper(0, -y_max / 2, gripper_target.z)
     else
-        set_gripper(0, gripper_target.y, gripper_target.z)
+        set_gripper(0, -y_max / 2, gripper_target.z)
     end
 end
 

@@ -46,10 +46,6 @@ local tfm = require("fawkes.tfutils")
 
 local drive_back_x = -0.1
 
-local gripper_default_pose_x = 0.00 -- conveyor pose offset in x direction
-local gripper_default_pose_y = 0.00 -- conveyor_pose offset in y direction
-local gripper_default_pose_z = 0.057 -- conveyor_pose offset in z direction
-
 -- read gripper config
 local x_max = config:get_float("/arduino/x_max") -- gripper max value in x direction
 local y_max = config:get_float("/arduino/y_max") -- gripper max value in y direction
@@ -306,9 +302,9 @@ function MOVE_GRIPPER_UP:init()
 end
 
 function GRIPPER_DEFAULT:init()
-    self.args["gripper_commands"].x = gripper_default_pose_x
-    self.args["gripper_commands"].y = gripper_default_pose_y
-    self.args["gripper_commands"].z = gripper_default_pose_z
+    self.args["gripper_commands"].x = 0
+    self.args["gripper_commands"].y = -y_max / 2
+    self.args["gripper_commands"].z = 0.03
     self.args["gripper_commands"].command = "MOVEABS"
     self.args["gripper_commands"].wait = false
 end
