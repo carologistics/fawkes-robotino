@@ -509,11 +509,19 @@ PicamClientThread::connect_to_server()
 	send_configure_message();
 	send_control_message(13, config->get_float("plugins/picam_client/detection/iou"));
 	send_control_message(12, config->get_float("plugins/picam_client/detection/conf"));
-	if(config->get_bool("plugins/picam_client/detection/workpiece")) {
+	if(config->get_bool("plugins/picam_client/detection/initial/workpiece")) {
 		send_control_message(5);
 		send_control_message(8);
 	}
-	if(config->get_bbol("plugins/picam_client/stream")) {
+	if(config->get_bool("plugins/picam_client/detection/initial/conveyor")) {
+		send_control_message(5);
+		send_control_message(9);
+	}
+	if(config->get_bool("plugins/picam_client/detection/initial/slide")) {
+		send_control_message(5);
+		send_control_message(10);
+	}
+	if(config->get_bool("plugins/picam_client/stream")) {
 		send_control_message(4);
 	}
 

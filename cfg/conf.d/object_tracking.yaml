@@ -17,10 +17,13 @@ plugins/picam_client:
   detection:
     iou: 0.3
     conf: 0.2
-    workpiece: false
+    initial:
+      workpiece: false
+      conveyor: false
+      slide: false
 
   camera_matrix:
-    rotation: 270
+    rotation: 90
     old_ppx: 247.16991942710536
     old_ppy: 311.0215589376087
     old_f_y: 761.4091782824479
