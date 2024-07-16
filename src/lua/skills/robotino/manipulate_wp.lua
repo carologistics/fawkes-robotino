@@ -183,8 +183,9 @@ function gripper_aligned()
     return within_tolerance(arduino:x_position(), 0, 0.0001) and
                within_tolerance(arduino:y_position() - y_max / 2, y_max / 2,
                                 0.0001) and
-               within_tolerance(math.min(gripper_target.z, z_max),
-                                arduino:z_position(), GRIPPER_TOLERANCE.z)
+               within_tolerance(
+                   math.max(0.015, math.min(gripper_target.z, z_max)),
+                   arduino:z_position(), GRIPPER_TOLERANCE.z)
 end
 
 function set_gripper(x, y, z)
@@ -197,7 +198,7 @@ function set_gripper(x, y, z)
     -- Clip to axis limits
     x_clipped = math.max(0, math.min(x, x_max))
     y_clipped = math.max(-y_max / 2, math.min(y, y_max / 2))
-    z_clipped = math.max(0, math.min(z, z_max))
+    z_clipped = math.max(0.015, math.min(z, z_max))
 
     if x_clipped ~= x then
         print("Gripper cannot reache x-value: " .. x .. " ! Clipped to " ..
