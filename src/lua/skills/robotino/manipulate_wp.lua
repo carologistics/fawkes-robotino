@@ -704,8 +704,8 @@ function GRIPPER_ROUTINE:init()
     -- perform pick or put routine
     self.args["pick_or_put_vs"].target = fsm.vars.target
 
-    if fsm.vars.side == SHELF - LEFT or fsm.vars.side == SHELF - MIDDLE or
-        fsm.vars.side == SHELF - RIGHT then
+    if fsm.vars.side == "SHELF-LEFT" or fsm.vars.side == "SHELF-MIDDLE" or
+        fsm.vars.side == "SHELF-RIGHT" then
         self.args["pick_or_put_vs"].shelf = true
     else
         self.args["pick_or_put_vs"].shelf = false
