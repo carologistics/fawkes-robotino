@@ -83,7 +83,7 @@ local z_max = config:get_float("/arduino/z_max")
 
 -- default gripper pose
 local default_x = 0
-local default_y = -y_max / 2
+local default_y = y_max / 2
 local default_z = 0.03
 
 -- read config values for computing expected target position
@@ -321,8 +321,8 @@ function object_tracker_active()
 end
 
 function ready_for_gripper_movement()
-    return arduino:x_position() == default_x and arduino:y_position() ==
-               default_y and arduino:z_position() == default_z
+    return arduino:x_position() == default_x and arduino:y_position() - y_max /
+               2 == default_y and arduino:z_position() == default_z
 end
 
 function dry_expected_object_found()

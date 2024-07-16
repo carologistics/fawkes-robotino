@@ -341,7 +341,7 @@ end
 
 function GRIPPER_DEFAULT:init()
     self.args["gripper_commands"].x = 0
-    self.args["gripper_commands"].y = -y_max / 2
+    self.args["gripper_commands"].y = y_max / 2
     self.args["gripper_commands"].z = 0.03
     self.args["gripper_commands"].command = "MOVEABS"
     self.args["gripper_commands"].wait = false
