@@ -320,12 +320,18 @@ function object_tracker_active()
     return object_tracking_if:has_writer() and object_tracking_if:msgid() > 0
 end
 
+function within_tolerance(value, target, margin)
+    return math.abs(value - target) < margin
+end
+
 function ready_for_gripper_movement()
     print("arduino:y_position(): ", arduino:y_position())
     print("arduino:y_position() - y_max / 2: ", arduino:y_position() - y_max / 2)
-    print("default_z: ", default_z)
-    return arduino:x_position() == default_x and arduino:y_position() - y_max /
-               2 == default_y and arduino:z_position() == default_z
+    print("default_y: ", default_y)
+    return within_tolerance(arduino:x_position(), default_x, 0.0001) and
+               within_tolerance(arduino:y_position() - y_max / 2, default_y,
+                                0.0001) and
+               within_tolerance(arduino:z_position(), default_z, 0.0001)
 end
 
 function dry_expected_object_found()
