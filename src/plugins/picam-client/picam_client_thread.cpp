@@ -509,9 +509,13 @@ PicamClientThread::connect_to_server()
 	send_configure_message();
 	send_control_message(13, config->get_float("plugins/picam_client/detection/iou"));
 	send_control_message(12, config->get_float("plugins/picam_client/detection/conf"));
-	send_control_message(4);
-	send_control_message(5);
-	send_control_message(8);
+	if(config->get_bool("plugins/picam_client/detection/workpiece")) {
+		send_control_message(5);
+		send_control_message(8);
+	}
+	if(config->get_bbol("plugins/picam_client/stream")) {
+		send_control_message(4);
+	}
 
 	return 0;
 }
