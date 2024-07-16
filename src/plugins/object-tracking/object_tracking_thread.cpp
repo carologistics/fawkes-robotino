@@ -87,8 +87,7 @@ ObjectTrackingThread::init()
 	shelf_height_ = config->get_float("plugins/object_tracking/shelf_values/shelf_height");
 
 	base_offset_x_ = config->get_float("plugins/vs_offsets/base_offset_x");
-	base_offset_y_ =
-	  config->get_float("plugins/static-transforms/transforms/end_effector_home/trans_y");
+	base_offset_y_ = config->get_float("plugins/vs_offsets/base_offset_y");
 
 	offset_x_workpiece_target_ = config->get_float("plugins/vs_offsets/workpiece/target/x");
 	offset_z_workpiece_target_ = config->get_float("plugins/vs_offsets/workpiece/target/z");
