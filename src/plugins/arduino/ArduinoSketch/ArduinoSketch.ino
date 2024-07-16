@@ -163,7 +163,7 @@ send_status()
 
 		Serial.print(" "); //checksum = 32
 
-		cur_pos = 0; 
+		cur_pos = 0;
 		Serial.print(cur_pos);
 		checksum += convert_to_check_sum(cur_pos);
 
@@ -297,6 +297,12 @@ reach_end_handle(AccelStepper &motor, byte extra)
 	motor.setCurrentPosition(0L);
 	motor.move(-400 - extra);
 }
+void
+reached_end_handle(AccelStepper &motor)
+{
+	motor.hard_stop();
+	motor.setCurrentPosition(0L);
+}
 
 void
 set_new_pos(long new_pos, AccelStepper &motor)
@@ -415,7 +421,7 @@ read_package()
 	// this point is only reached when package was successfully located
 	byte cur_i_cmd = package_start + 3;
 
-  while (cur_i_cmd < buf_i_) {
+	while (cur_i_cmd < buf_i_) {
 		char cur_cmd   = buffer_[cur_i_cmd];
 		long new_value = 0;
 		if (ArduinoHelper::isValidSerialCommand(cur_cmd)) {
@@ -424,7 +430,7 @@ read_package()
 				return;
 			} // flush and return if parsing error
 		}
-		bool  assumed_gripper_state_local;
+		bool assumed_gripper_state_local;
 		// this is used to store the assumed gripper state locally, to reduce calls to the function get_assumed_gripper_state
 		switch (cur_cmd) {
 		case CMD_X_NEW_POS: set_new_pos(-new_value, motor_X); break;
@@ -447,9 +453,7 @@ read_package()
 			set_new_speed_acc(new_value, 0.0, motor_Z);
 			send_status();
 			break;
-		case CMD_A_NEW_SPEED:
-			send_status();
-			break;
+		case CMD_A_NEW_SPEED: send_status(); break;
 		case CMD_X_NEW_ACC:
 			set_new_speed_acc(0.0, new_value, motor_X);
 			send_status();
@@ -462,15 +466,9 @@ read_package()
 			set_new_speed_acc(0.0, new_value, motor_Z);
 			send_status();
 			break;
-		case CMD_A_NEW_ACC:
-			send_status();
-			break;
-		case CMD_OPEN:
-      open_gripper = HIGH;
-			break;
-		case CMD_CLOSE:
-      open_gripper = LOW;
-			break;
+		case CMD_A_NEW_ACC: send_status(); break;
+		case CMD_OPEN: open_gripper = HIGH; break;
+		case CMD_CLOSE: open_gripper = LOW; break;
 		case CMD_CALIBRATE: calibrate(); break;
 		case CMD_DOUBLE_CALIBRATE: double_calibrate(); break;
 		case CMD_SET_SPEED:
@@ -524,7 +522,7 @@ writeMicroseconds(int pin, int pulseWidth) {
   digitalWrite(pin, HIGH);
   delayMicroseconds(pulseWidth);
   digitalWrite(pin, LOW);
-  
+
   // Ensure the total period is 20ms
   delayMicroseconds(refreshInterval - pulseWidth);
 }*/
@@ -559,7 +557,7 @@ setup()
 	pinMode(MOTOR_Y_DIR_PIN, OUTPUT);
 	pinMode(MOTOR_Z_DIR_PIN, OUTPUT);
 
-  pinMode(servoPin, OUTPUT);
+	pinMode(servoPin, OUTPUT);
 
 	motor_X.setEnablePin(MOTOR_X_ENABLE_PIN, true);
 	motor_Y.setEnablePin(MOTOR_Y_ENABLE_PIN, true);
@@ -603,28 +601,36 @@ setup()
 	TIMSK0 = 0;   // start new
 	TIFR0  = 0x7; // clear all interrupt flags
 
-
 	enable_step_interrupt();
 
 	interrupts();
 	//default behavior should be to calibrate and home on serial port open
 	calibrate();
-
 }
 
 int loop_number = 0;
 void
 loop()
 {
-  if(open_gripper){
-    digitalWrite(servoPin, HIGH);
-  } else{
-    digitalWrite(servoPin, LOW);
-  }
+	if (open_gripper) {
+		digitalWrite(servoPin, HIGH);
+	} else {
+		digitalWrite(servoPin, LOW);
+	}
 	if (movement_done_flag) {
 		motor_X.disableOutputs(); // same pin for all of them
 		movement_done_flag = false;
 		set_status(STATUS_IDLE);
+	} else {
+		if (digitalRead(MOTOR_X_LIMIT_PIN) == LOW) {
+			reached_end_stop(motor_X, 0);
+		}
+		if (digitalRead(MOTOR_Y_LIMIT_PIN) == LOW) {
+			reached_end_stop(motor_Y, 0);
+		}
+		if (digitalRead(MOTOR_Z_LIMIT_PIN) == LOW) {
+			reached_end_stop(motor_Z, 0);
+		}
 	}
 
 	read_package();
@@ -652,12 +658,10 @@ ISR(TIMER0_COMPA_vect) // this is called every overflow of the timer 0
 	if (occupied)
 		return; // this interrupt is already called
 	occupied = true;
-  //milliseconds++;
+	//milliseconds++;
 	interrupts(); // we need interrupts here to catch all the incoming serial data and finish the pulse
 	if (cur_status == STATUS_MOVING) {
-		byte
-		  dir  = 0,
-		  step = 0;
+		byte dir = 0, step = 0;
 		bool movement_done;
 
 		unsigned int time = CUR_TIME;
