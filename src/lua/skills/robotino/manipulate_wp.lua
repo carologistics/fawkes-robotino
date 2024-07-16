@@ -81,6 +81,11 @@ local x_max = config:get_float("/arduino/x_max")
 local y_max = config:get_float("/arduino/y_max")
 local z_max = config:get_float("/arduino/z_max")
 
+-- default gripper pose
+local default_x = 0
+local default_y = -y_max / 2
+local default_z = 0.03
+
 -- read config values for computing expected target position
 -- conveyor
 if config:exists("plugins/object_tracking/belt_values/belt_offset_side") then
@@ -248,9 +253,9 @@ end
 
 function move_gripper_default_pose()
     move_abs_message = arduino.MoveXYZAbsMessage:new()
-    move_abs_message:set_x(0)
-    move_abs_message:set_y(-y_max / 2)
-    move_abs_message:set_z(0.03)
+    move_abs_message:set_x(default_x)
+    move_abs_message:set_y(default_y)
+    move_abs_message:set_z(default_z)
     move_abs_message:set_target_frame("end_effector_home")
     arduino:msgq_enqueue_copy(move_abs_message)
 end
@@ -315,7 +320,10 @@ function object_tracker_active()
     return object_tracking_if:has_writer() and object_tracking_if:msgid() > 0
 end
 
-function ready_for_gripper_movement() return z_max <= arduino:z_position() end
+function ready_for_gripper_movement()
+    return arduino:x_position() == default_x and arduino:y_position() ==
+               default_y and arduino:z_position() == default_z
+end
 
 function dry_expected_object_found()
     return fsm.vars.consecutive_detections > 2 and fsm.vars.dry_run and
