@@ -760,7 +760,7 @@
         )
   (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
   (or (not (wm-fact (key monitoring move-out-of-way high-prio args?)))
-      (eq ?robot nil)) 
+      (eq ?robot nil))
   =>
   (printout t "modify priority of " ?goal-id crlf)
   (modify ?g (priority -1.0))
