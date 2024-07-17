@@ -5,7 +5,8 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/webview
 ---
 plugins/vs_offsets:
   # distance between object and target base pose
-  base_offset_x: 0.28
+  base_offset_x: 0.265
+  base_offset_y: 0.049
 
   # offsets between object pose from the object tracking plugin and the target
   #  frame before starting the routine (target in both x and z), above the
@@ -16,11 +17,23 @@ plugins/vs_offsets:
   #  y direction through host_specific static frame
   workpiece:
     target:
-      x: -0.025
-      z: 0.03
+      x: -0.05
+      z: 0.015
 
     top:
-      x: 0.01
+      x: 0.06
+      z: 0.015
+
+    end:
+      z: 0.015
+
+  shelf:
+    target:
+      x: -0.05
+      z: 0.005
+
+    top:
+      x: 0.06
       z: 0.005
 
     end:
@@ -28,30 +41,30 @@ plugins/vs_offsets:
 
   conveyor:
     target:
-      x: 0.01
-      z: -0.02
+      x: -0.05
+      z: -0.01
 
     top:
-      x: 0.05
-      z: -0.025
+      x: 0.055
+      z: -0.01
 
     routine:
-      z: -0.025
+      z: -0.015
 
     end:
-      z: -0.025
+      z: -0.01
 
   slide:
     target:
-      x: 0.07
-      z: 0.025
+      x: -0.05
+      z: 0.02
 
     top:
-      x: 0.04
-      z: 0.00
+      x: 0.015
+      z: 0.02
 
     routine:
-      z: 0.00
+      z: 0.0
 
     end:
-      z: 0.00
+      z: 0.02
