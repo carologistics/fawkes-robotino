@@ -977,6 +977,10 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 	base_target[0] = max_x_needed - cos(mps_angle) * base_offset_x_ + sin(mps_angle) * base_offset_y_;
 	base_target[1] = max_y_needed + sin(mps_angle) * base_offset_x_ - cos(mps_angle) * base_offset_y_;
 	base_target[2] = mps_angle;
+
+	logger->log_info("base_target[0]: ", std::to_string(base_target[0]).c_str());
+	logger->log_info("base_target[1]: ", std::to_string(base_target[1]).c_str());
+	logger->log_info("base_target[2]: ", std::to_string(base_target[2]).c_str());
 }
 
 void
