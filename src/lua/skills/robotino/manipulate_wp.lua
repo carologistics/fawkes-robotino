@@ -1,7 +1,6 @@
 ----------------------------------------------------------------------------
 --  manipulate_wp.lua
---
---  Created: Wed Nov 17
+----  Created: Wed Nov 17
 --  Copyright  2021  Matteo Tschesche
 --
 ----------------------------------------------------------------------------
@@ -93,6 +92,9 @@ if config:exists("/arduino/max_z") then
     z_max = config:get_float("/arduino/z_max")
 end
 
+local default_x_exit = 0.06
+local default_y_exit = -0.03
+local default_z_exit = 0.03
 -- read config values for computing expected target position
 -- conveyor
 if config:exists("plugins/object_tracking/belt_values/belt_offset_side") then
@@ -270,6 +272,17 @@ function move_gripper_default_pose()
     move_abs_message:set_z(z_max)
     move_abs_message:set_target_frame("gripper_home")
     arduino:msgq_enqueue_copy(move_abs_message)
+end
+
+function move_gripper_default_pose_exit()
+    local abs_message = arduino.MoveXYZAbsMessage:new()
+    abs_message:set_x(default_x_exit)
+    abs_message:set_y(default_y_exit)
+    abs_message:set_z(default_z_exit)
+    abs_message:set_target_frame("end_effector_home")
+    arduino:msgq_enqueue_copy(abs_message)
+    local close_msg = arduino.CloseGripperMessage:new()
+    arduino:msgq_enqueue(close_msg)
 end
 
 function input_invalid()
@@ -725,11 +738,12 @@ end
 -- end tracking afterwards
 
 function FINAL:init()
+    move_gripper_default_pose_exit()
     object_tracking_if:msgq_enqueue(object_tracking_if.StopTrackingMessage:new())
 end
 
 function FAILED:init()
-    move_gripper_default_pose()
+    move_gripper_default_pose_exit()
     object_tracking_if:msgq_enqueue(object_tracking_if.StopTrackingMessage:new())
 
     -- keep track of error
