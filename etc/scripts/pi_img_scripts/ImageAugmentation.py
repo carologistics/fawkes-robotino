@@ -29,7 +29,7 @@ import cv2
 import imgaug.augmenters as iaa
 import numpy as np
 import requests
-import tqdm
+from tqdm import tqdm
 import yaml
 from imgaug.augmentables.bbs import BoundingBox
 from imgaug.augmentables.bbs import BoundingBoxesOnImage
