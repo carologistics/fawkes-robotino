@@ -551,6 +551,13 @@
   (modify ?gm (root-for-order nil))
 )
 
+;(defrule force-fail-goal
+;  (declare (salience (+ 2 ?*SALIENCE-GOAL-FORMULATE*)))
+;  ?g <- (goal (class MOUNT-RING) (mode FINISHED) (outcome ~FAILED))
+;  =>
+ ; (modify ?g (outcome FAILED))
+;)
+
 (defrule goal-reasoner-evaluate-production-and-maintenance-wp-still-usable
   "If a production or maintenance goal failed but the WP is still usable "
   (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
@@ -564,6 +571,12 @@
              (category ?category&PRODUCTION|MAINTENANCE|PRODUCTION-INSTRUCT|MAINTENANCE-INSTRUCT) (retries ?retries))
   =>
   (modify ?gm (retries (+ 1 ?retries)))
+  (do-for-fact ((?counter wm-fact))
+	(and (wm-key-prefix ?counter:key (create$ monitoring goal retry robot counter))
+	     (eq (wm-key-arg ?counter:key r) ?robot)
+	     (eq (wm-key-arg ?counter:key goal) ?goal-id))
+	(modify ?counter (value (+ 1 ?retries)))
+  )
   (if (not
         (or
           (eq ?category PRODUCTION-INSTRUCT)
@@ -828,6 +841,13 @@
   =>
   (printout (log-debug ?v) "Evaluate " ?class " goal " ?goal-id crlf)
   (set-robot-to-waiting ?robot)
+  ;if a move-out-of-the-way has urgent high priority, reset it on goal completion
+  (do-for-fact ((?f wm-fact))
+	(wm-key-prefix ?f:key (create$ monitoring move-out-of-way high-prio))
+	(do-for-all-facts ((?og goal))
+		(modify ?og (priority -1))	
+       	(retract ?f)
+  )
   (modify ?gm (retries (+ 1 ?retries)))
   (remove-robot-assignment-from-goal-meta ?g)
 

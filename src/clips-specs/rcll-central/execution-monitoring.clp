@@ -32,13 +32,6 @@
   (slot timeout-duration)
   (multislot start-time)
 )
-;A timeout for goals who were retried too many times
-(deftemplate goal-retry-wait-timer
-  (slot goal-id (type SYMBOL))
-  (slot timeout-duration)
-  (multislot start-time)
-)
-
 
 (deffunction fail-action (?action ?error-msg)
 	(do-for-fact ((?sae skill-action-execinfo))
@@ -588,27 +581,57 @@
 	(modify ?wm (value ?tries))
 )
 
-(defrule execution-monitoring-repeated-goal-retry-timeout
-" If a goal fails a pre-determined number of times, give it a timeout for executability."
+(defrule execution-monitoring-assert-goal-retry-by-robot-counter
+" Create a counter for each robot retrying a goal."
 	(declare (salience ?*MONITORING-SALIENCE*))
-	(goal (id ?goal-id) (mode FINISHED|EVALUATED|RETRACTED) (outcome FAILED))
-	?gm <- (goal-meta (goal-id ?goal-id) (retries ?retries&:(> ?retries ?*GOAL-RETRY-MAX*)) (assigned-to ?robot))
-	(wm-fact (key refbox game-time) (values $?now))
+	?gm <- (goal-meta (goal-id ?goal-id) (retries 0) (assigned-to ?assigned-robot&~nil))
+	(not (wm-fact (key monitoring goal retry robot counter args? goal ?goal-id r $?)))
 	=>
-	(printout error "Goal " ?goal-id " was retried " ?*GOAL-RETRY-MAX* " times, give it a timeout of " ?*GOAL-RETRY-TIMEOUT* "s." crlf)
-	(assert (goal-retry-wait-timer (goal-id ?goal-id) (timeout-duration ?*GOAL-RETRY-TIMEOUT*) (start-time ?now)))
-	(assert (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot)))
-	(modify ?gm (retries 0))
+	(do-for-fact ((?robot wm-fact))
+		(wm-key-prefix ?robot:key (create$ central agent robot))
+		(if (eq (wm-key-arg ?robot:key r) ?assigned-robot)
+		    then (assert (wm-fact (key monitoring goal retry robot counter args? goal ?goal-id r ?assigned-robot)
+			(value 0) (type INT) (is-list FALSE)))
+		)
+        )
 )
 
-(defrule execution-monitoring-repeated-goal-retry-timeout-over
-	(wm-fact (key refbox game-time) (values $?now))
-	?gt <- (goal-retry-wait-timer (goal-id ?goal-id) (start-time $?st) (timeout-duration ?td&:(timeout ?now ?st ?td)))
-	?wf <- (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot))
+(defrule execution-monitoring-retract-goal-retry-by-robot-counter
+" Retract the counter once the goal ceases to exist."
+	(declare (salience ?*MONITORING-SALIENCE*))
+        (wm-fact (key monitoring goal retry robot counter args? goal ?goal-id r $?))
+	(not (goal (id ?goal-id)))
 	=>
-	(retract ?gt ?wf)
+	(delayed-do-for-all-facts ((?counter wm-fact))
+                (and (wm-key-prefix ?counter:key (create$ monitoring goal retry robot counter))
+		     (eq (wm-key-arg ?counter:key goal) ?goal-id))
+		(retract ?counter)
+	)
 )
 
+(deffunction robot-move-out-of-way-high-prio (?robot)
+" Assign robot to the move-out-of-way goals with high priority."
+	(delayed-do-for-all-facts ((?g goal))
+		(and (eq ?g:class MOVE-OUT-OF-WAY)
+		     (eq ?g:sub-type SIMPLE)
+		)
+		(goal-meta-assign-robot-to-goal ?g ?robot)
+		(modify ?g (priority ?*MOVE-OUT-OF-WAY-HIGH-PRIORITY*))
+	)
+)
+
+(defrule execution-monitoring-handle-goal-retry-by-robot-exceeds-limit
+" If a goal is retried by the same robot too many times, move the robot away
+to unblock the machine
+"
+	(declare (salience ?*MONITORING-SALIENCE*))
+	(wm-fact (key monitoring goal retry robot counter args? goal ?goal-id r ?robot) (value ?counter&:(> ?counter ?*GOAL-RETRY-MAX*)))
+	(goal (id ?goal-id) (class ~MOVE-OUT-OF-WAY))
+	=>
+	(set-robot-to-waiting ?robot)
+	(assert (wm-fact (key monitoring move-out-of-way high-prio args?)))
+	(robot-move-out-of-way-high-prio ?robot)
+)
 
 ; ----------------------- HANDLE WP CHECK FAIL  --------------------------------
 

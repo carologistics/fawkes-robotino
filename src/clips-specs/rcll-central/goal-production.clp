@@ -41,7 +41,7 @@
   ?*PRODUCTION-PAY-PRIORITY* = 1
   ?*PRODUCTION-PAY-CC-PRIORITY-INCREASE* = 2
   ?*PRODUCTION-BUFFER-PRIORITY* = 2
-
+  ?*MOVE-OUT-OF-WAY-HIGH-PRIORITY* = 2000
   ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT* = 30
   ?*ROBOT-WAITING-TIMEOUT* = 2
 )
@@ -758,6 +758,9 @@
               (mode FORMULATED) (parent ?pa-id&~nil)
               (priority ?p&:(> ?p 0))
         )
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
+  (or (not (wm-fact (key monitoring move-out-of-way high-prio args?)))
+      (eq ?robot nil)) 
   =>
   (printout t "modify priority of " ?goal-id crlf)
   (modify ?g (priority -1.0))
