@@ -51,7 +51,6 @@ using namespace dnn;
 /** Constructor. */
 ObjectTrackingThread::ObjectTrackingThread()
 : Thread("ObjectTrackingThread", Thread::OPMODE_WAITFORWAKEUP),
-  BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_POST_LOOP),
   BlackBoardInterfaceListener("ObjectTrackingInterface"),
   fawkes::TransformAspect(fawkes::TransformAspect::BOTH_DEFER_PUBLISHER)
 {
@@ -305,7 +304,7 @@ ObjectTrackingThread::loop()
 
 	//read from sharedMemoryBuffer and convert into Mat
 	Mat          image = Mat(camera_height_, camera_width_, CV_8UC3, shm_buffer_->buffer()).clone();
-	fawkes::Time capture_time = shm_buffer_->capture_time();
+	fawkes::Time capture_time = boxes_time;
 
 	//find laser-line if needed
 	for (fawkes::LaserLineInterface *ll : laserlines_) {
@@ -517,6 +516,7 @@ ObjectTrackingThread::bb_interface_data_changed(fawkes::Interface *interface) no
 	float    *values;
 	uint64_t *timestamp;
 	out_boxes.clear();
+	boxes_time = picam_if->bbox_0_timestamp();
 	for (int slot = 0; slot < 15; ++slot) {
 		switch (slot) {
 		case 0: values = picam_if->bbox_0(); break;
@@ -551,6 +551,7 @@ ObjectTrackingThread::bb_interface_data_changed(fawkes::Interface *interface) no
 
 		out_boxes.push_back(data);
 	}
+	wakeup();
 }
 
 bool

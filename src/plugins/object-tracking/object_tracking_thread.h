@@ -61,7 +61,6 @@ class ObjectTrackingThread : public fawkes::Thread,
                              public fawkes::LoggingAspect,
                              public fawkes::ConfigurableAspect,
                              public fawkes::BlackBoardAspect,
-                             public fawkes::BlockedTimingAspect,
                              public fawkes::BlackBoardInterfaceListener,
                              public fawkes::TransformAspect
 {
@@ -228,6 +227,7 @@ private:
 	                      float               &wp_additional_height);
 
 	std::vector<std::array<float, 4>> out_boxes;
+	fawkes::Time                      boxes_time;
 
 	//compute base and gripper target frame
 	void compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Point> object_pos,
