@@ -412,7 +412,7 @@ ObjectTrackingThread::loop()
 }
 
 void
-ObjectTrackingThread::bb_interface_data_changed(fawkes::Interface *interface) noexcept
+ObjectTrackingThread::bb_interface_data_refreshed(fawkes::Interface *interface) noexcept
 {
 	PiCamPluginInterface *picam_if = dynamic_cast<PiCamPluginInterface *>(interface);
 	if (!picam_if) {
