@@ -919,8 +919,6 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 	//compute target gripper frame first
 	float gripper_offset_x = 0;
 	float gripper_offset_z = 0;
-	float max_x_needed     = 0;
-	float max_y_needed     = 0;
 
 	switch (current_object_type_) {
 	case ObjectTrackingInterface::WORKPIECE:
@@ -929,34 +927,18 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 		    || current_expected_side_ == ObjectTrackingInterface::SHELF_RIGHT) {
 			gripper_offset_x = offset_x_shelf_target_;
 			gripper_offset_z = offset_z_shelf_target_;
-			max_x_needed =
-			  object_pos.getX() + cos(mps_angle) * max(offset_x_shelf_target_, offset_x_shelf_top_);
-			max_y_needed =
-			  object_pos.getY() - sin(mps_angle) * max(offset_x_shelf_target_, offset_x_shelf_top_);
 		} else {
 			gripper_offset_x = offset_x_workpiece_target_;
 			gripper_offset_z = offset_z_workpiece_target_;
-			max_x_needed     = object_pos.getX()
-			               + cos(mps_angle) * max(offset_x_workpiece_target_, offset_x_workpiece_top_);
-			max_y_needed = object_pos.getY()
-			               - sin(mps_angle) * max(offset_x_workpiece_target_, offset_x_workpiece_top_);
 		}
 		break;
 	case ObjectTrackingInterface::CONVEYOR_BELT_FRONT:
 		gripper_offset_x = offset_x_conveyor_target_;
 		gripper_offset_z = offset_z_conveyor_target_;
-		max_x_needed =
-		  object_pos.getX() + cos(mps_angle) * max(offset_x_conveyor_target_, offset_x_conveyor_top_);
-		max_y_needed =
-		  object_pos.getY() - sin(mps_angle) * max(offset_x_conveyor_target_, offset_x_conveyor_top_);
 		break;
 	case ObjectTrackingInterface::SLIDE_FRONT:
 		gripper_offset_x = offset_x_slide_target_;
 		gripper_offset_z = offset_z_slide_target_;
-		max_x_needed =
-		  object_pos.getX() + cos(mps_angle) * max(offset_x_slide_target_, offset_x_slide_top_);
-		max_y_needed =
-		  object_pos.getY() - sin(mps_angle) * max(offset_x_slide_target_, offset_x_slide_top_);
 		break;
 	default:
 		logger->log_error(object_tracking_if_->enum_tostring("TARGET_OBJECT_TYPE",
@@ -969,20 +951,9 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 	gripper_target[1] = object_pos.getY() - sin(mps_angle) * gripper_offset_x;
 	gripper_target[2] = object_pos.getZ() + gripper_offset_z;
 
-	base_target[0] = max_x_needed - cos(mps_angle) * base_offset_x_ + sin(mps_angle) * base_offset_y_;
-	base_target[1] = max_y_needed + sin(mps_angle) * base_offset_x_ - cos(mps_angle) * base_offset_y_;
+	base_target[0] = max_x_needed - base_offset_x_;
+	base_target[1] = max_y_needed - base_offset_y_;
 	base_target[2] = mps_angle;
-
-	logger->log_info("mps_angle: ", std::to_string(mps_angle).c_str());
-	logger->log_info("cos(mps_angle): ", std::to_string(cos(mps_angle)).c_str());
-	logger->log_info("sin(mps_angle): ", std::to_string(sin(mps_angle)).c_str());
-	logger->log_info("object_pos.getX(): ", std::to_string(object_pos.getX()).c_str());
-	logger->log_info("object_pos.getY(): ", std::to_string(object_pos.getY()).c_str());
-	logger->log_info("dist_line_to_obj: ", std::to_string(dist_line_to_obj).c_str());
-	logger->log_info("(dist_line_to_obj + base_offset_x_): ",
-	                 std::to_string((dist_line_to_obj + base_offset_x_)).c_str());
-	logger->log_info("- cos(mps_angle) * base_offset_y_: ",
-	                 std::to_string(-cos(mps_angle) * base_offset_y_).c_str());
 
 	logger->log_info("base_target[0]: ", std::to_string(base_target[0]).c_str());
 	logger->log_info("base_target[1]: ", std::to_string(base_target[1]).c_str());
