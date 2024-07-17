@@ -86,10 +86,14 @@ ObjectTrackingThread::init()
 	  config->get_float("plugins/object_tracking/shelf_values/shelf_offset_front");
 	shelf_height_ = config->get_float("plugins/object_tracking/shelf_values/shelf_height");
 
-	base_offset_ = config->get_float("plugins/vs_offsets/base_offset");
+	base_offset_x_ = config->get_float("plugins/vs_offsets/base_offset_x");
+	base_offset_y_ = config->get_float("plugins/vs_offsets/base_offset_y");
 
 	offset_x_workpiece_target_ = config->get_float("plugins/vs_offsets/workpiece/target/x");
 	offset_z_workpiece_target_ = config->get_float("plugins/vs_offsets/workpiece/target/z");
+
+	offset_x_shelf_target_ = config->get_float("plugins/vs_offsets/shelf/target/x");
+	offset_z_shelf_target_ = config->get_float("plugins/vs_offsets/shelf/target/z");
 
 	offset_x_conveyor_target_ = config->get_float("plugins/vs_offsets/conveyor/target/x");
 	offset_z_conveyor_target_ = config->get_float("plugins/vs_offsets/conveyor/target/z");
@@ -920,12 +924,23 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 
 	switch (current_object_type_) {
 	case ObjectTrackingInterface::WORKPIECE:
-		gripper_offset_x = offset_x_workpiece_target_;
-		gripper_offset_z = offset_z_workpiece_target_;
-		max_x_needed =
-		  object_pos.getX() + cos(mps_angle) * max(offset_x_workpiece_target_, offset_x_workpiece_top_);
-		max_y_needed =
-		  object_pos.getY() - sin(mps_angle) * max(offset_x_workpiece_target_, offset_x_workpiece_top_);
+		if (current_expected_side_ == ObjectTrackingInterface::SHELF_LEFT
+		    || current_expected_side_ == ObjectTrackingInterface::SHELF_MIDDLE
+		    || current_expected_side_ == ObjectTrackingInterface::SHELF_RIGHT) {
+			gripper_offset_x = offset_x_shelf_target_;
+			gripper_offset_z = offset_z_shelf_target_;
+			max_x_needed =
+			  object_pos.getX() + cos(mps_angle) * max(offset_x_shelf_target_, offset_x_shelf_top_);
+			max_y_needed =
+			  object_pos.getY() - sin(mps_angle) * max(offset_x_shelf_target_, offset_x_shelf_top_);
+		} else {
+			gripper_offset_x = offset_x_workpiece_target_;
+			gripper_offset_z = offset_z_workpiece_target_;
+			max_x_needed     = object_pos.getX()
+			               + cos(mps_angle) * max(offset_x_workpiece_target_, offset_x_workpiece_top_);
+			max_y_needed = object_pos.getY()
+			               - sin(mps_angle) * max(offset_x_workpiece_target_, offset_x_workpiece_top_);
+		}
 		break;
 	case ObjectTrackingInterface::CONVEYOR_BELT_FRONT:
 		gripper_offset_x = offset_x_conveyor_target_;
@@ -954,8 +969,8 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 	gripper_target[1] = object_pos.getY() - sin(mps_angle) * gripper_offset_x;
 	gripper_target[2] = object_pos.getZ() + gripper_offset_z;
 
-	base_target[0] = max_x_needed - cos(mps_angle) * base_offset_;
-	base_target[1] = max_y_needed + sin(mps_angle) * base_offset_;
+	base_target[0] = max_x_needed - cos(mps_angle) * base_offset_x_ + sin(mps_angle) * base_offset_y_;
+	base_target[1] = max_y_needed + sin(mps_angle) * base_offset_x_ - cos(mps_angle) * base_offset_y_;
 	base_target[2] = mps_angle;
 }
 

@@ -46,7 +46,6 @@ Parameters:
       @param target  the type of the target object: (WORKPIECE | CONVEYOR | SLIDE)
       @param mps     the name of the MPS (e.g. C-CS1, see navgraph)
       @param side    the side of the mps: (INPUT | OUTPUT | SHELF-LEFT | SHELF-MIDDLE | SHELF-RIGHT | SLIDE)
-      @param c       the complexity of the workpiece to grab/ in hand (optional, C0 | C1 | C2 | C3)
       @param dry_run true, if the gripper should not interact with the workpiece and only need to check if
                      the workpiece is there (optional, bool)
       @param query   defines if dry_run expects a workpiece to be at the location or wet (optional, THERE | ABSENT)
@@ -67,11 +66,6 @@ skillenv.skill_module(_M)
 local llutils = require("fawkes.laser-lines_utils")
 local tfm = require("fawkes.tfutils")
 
--- Load config
-local x_max = 0.115
-local y_max = 0.075
-local z_max = 0.057
-
 local belt_offset_side = 0.025
 local slide_offset_side = -0.225
 local left_shelf_offset_side = -0.075
@@ -83,15 +77,14 @@ local ring_height = 0.01
 local drive_back_x = -0.4
 
 -- read gripper config
-if config:exists("/arduino/x_max") then
-    x_max = config:get_float("/arduino/x_max")
-end
-if config:exists("/arduino/y_max") then
-    y_max = config:get_float("/arduino/y_max")
-end
-if config:exists("/arduino/max_z") then
-    z_max = config:get_float("/arduino/z_max")
-end
+local x_max = config:get_float("/arduino/x_max")
+local y_max = config:get_float("/arduino/y_max")
+local z_max = config:get_float("/arduino/z_max")
+
+-- default gripper pose
+local default_x = 0
+local default_y = y_max / 2
+local default_z = 0.03
 
 -- read config values for computing expected target position
 -- conveyor
@@ -187,24 +180,12 @@ function gripper_aligned()
         ori = fawkes.tf.create_quaternion_from_yaw(0)
     }, "base_link", "end_effector_home")
 
-    if fsm.vars.target == "WORKPIECE" then
-        return arduino:x_position() == 0 and
-                   math.abs(
-                       gripper_target.y - (arduino:y_position() - y_max / 2)) <
-                   GRIPPER_TOLERANCE.y and
-                   math.abs(
-                       math.min(gripper_target.z - fsm.vars.missing_c3_height,
-                                z_max) - arduino:z_position()) <
-                   GRIPPER_TOLERANCE.z
-    else
-        return arduino:x_position() == 0 and
-                   math.abs(
-                       gripper_target.y - (arduino:y_position() - y_max / 2)) <
-                   GRIPPER_TOLERANCE.y and
-                   math.abs(
-                       math.min(gripper_target.z, z_max) - arduino:z_position()) <
-                   GRIPPER_TOLERANCE.z
-    end
+    return within_tolerance(arduino:x_position(), 0, 0.0001) and
+               within_tolerance(arduino:y_position() - y_max / 2, y_max / 2,
+                                0.0001) and
+               within_tolerance(
+                   math.max(0.01, math.min(gripper_target.z, z_max)),
+                   arduino:z_position(), GRIPPER_TOLERANCE.z)
 end
 
 function set_gripper(x, y, z)
@@ -217,7 +198,7 @@ function set_gripper(x, y, z)
     -- Clip to axis limits
     x_clipped = math.max(0, math.min(x, x_max))
     y_clipped = math.max(-y_max / 2, math.min(y, y_max / 2))
-    z_clipped = math.max(0, math.min(z, z_max))
+    z_clipped = math.max(0.01, math.min(z, z_max))
 
     if x_clipped ~= x then
         print("Gripper cannot reache x-value: " .. x .. " ! Clipped to " ..
@@ -259,16 +240,16 @@ function set_gripper(x, y, z)
     move_abs_message:set_x(fsm.vars.gripper_target_pos_x)
     move_abs_message:set_y(fsm.vars.gripper_target_pos_y)
     move_abs_message:set_z(fsm.vars.gripper_target_pos_z)
-    move_abs_message:set_target_frame("gripper_home")
+    move_abs_message:set_target_frame("end_effector_home")
     arduino:msgq_enqueue_copy(move_abs_message)
 end
 
 function move_gripper_default_pose()
     move_abs_message = arduino.MoveXYZAbsMessage:new()
-    move_abs_message:set_x(0)
-    move_abs_message:set_y(0)
-    move_abs_message:set_z(z_max)
-    move_abs_message:set_target_frame("gripper_home")
+    move_abs_message:set_x(default_x)
+    move_abs_message:set_y(default_y)
+    move_abs_message:set_z(default_z)
+    move_abs_message:set_target_frame("end_effector_home")
     arduino:msgq_enqueue_copy(move_abs_message)
 end
 
@@ -332,8 +313,15 @@ function object_tracker_active()
     return object_tracking_if:has_writer() and object_tracking_if:msgid() > 0
 end
 
+function within_tolerance(value, target, margin)
+    return math.abs(value - target) < margin
+end
+
 function ready_for_gripper_movement()
-    return z_max - fsm.vars.missing_c3_height < arduino:z_position()
+    return within_tolerance(arduino:x_position(), default_x, 0.0001) and
+               within_tolerance(arduino:y_position() - y_max / 2, default_y,
+                                0.0001) and
+               within_tolerance(arduino:z_position(), default_z, 0.0001)
 end
 
 function dry_expected_object_found()
@@ -494,31 +482,13 @@ function INIT:init()
         ["SHELF-RIGHT"] = object_tracking_if.SHELF_RIGHT,
         ["SLIDE"] = object_tracking_if.SLIDE
     }
-    -- set c if unset
-    if (fsm.vars.c == nil or string.gsub(fsm.vars.c, "^%s*(.-)%s*$", "%1") == 0) then
-        if string.find(fsm.vars.side, "SHELF-") then
-            fsm.vars.c = "C0"
-        else -- assume highest possible workpiece if unknown
-            fsm.vars.c = "C3"
-        end
-    end
-    if fsm.vars.map_pos ~= false then fsm.vars.map_pos = true end
 
-    -- difference in height of current product compared to a C3
-    local MISSING_C3_HEIGHT = {
-        ["C0"] = ring_height * 3,
-        ["C1"] = ring_height * 2,
-        ["C2"] = ring_height,
-        ["C3"] = 0
-    }
+    if fsm.vars.map_pos ~= false then fsm.vars.map_pos = true end
 
     -- get ENUM of input variables
     fsm.vars.target_object_type = TARGET_NAMES[fsm.vars.target]
     fsm.vars.expected_mps = MPS_NAMES[fsm.vars.mps]
     fsm.vars.expected_side = SIDE_NAMES[fsm.vars.side]
-
-    -- get wp height
-    fsm.vars.missing_c3_height = 0
 
     fsm.vars.gripper_target_pos_x = 0
     fsm.vars.gripper_target_pos_y = 0
@@ -672,11 +642,7 @@ function MOVE_BASE_AND_GRIPPER:init()
     }, "base_link", "end_effector_home")
 
     fsm.vars.gripper_wait = 10
-    if fsm.vars.target == "WORKPIECE" then
-        set_gripper(0, 0, gripper_target.z - fsm.vars.missing_c3_height)
-    else
-        set_gripper(0, 0, gripper_target.z)
-    end
+    set_gripper(0, y_max / 2, gripper_target.z)
 end
 
 function FINE_TUNE_GRIPPER:init()
@@ -704,12 +670,7 @@ function FINE_TUNE_GRIPPER:loop()
         ori = fawkes.tf.create_quaternion_from_yaw(0)
     }, "base_link", "end_effector_home")
 
-    if fsm.vars.target == "WORKPIECE" then
-        set_gripper(0, gripper_target.y,
-                    gripper_target.z - fsm.vars.missing_c3_height)
-    else
-        set_gripper(0, gripper_target.y, gripper_target.z)
-    end
+    set_gripper(0, y_max / 2, gripper_target.z)
 end
 
 function GRIPPER_ROUTINE:init()
@@ -718,8 +679,13 @@ function GRIPPER_ROUTINE:init()
 
     -- perform pick or put routine
     self.args["pick_or_put_vs"].target = fsm.vars.target
-    self.args["pick_or_put_vs"].missing_c3_height = tostring(fsm.vars
-                                                                 .missing_c3_height)
+
+    if fsm.vars.side == "SHELF-LEFT" or fsm.vars.side == "SHELF-MIDDLE" or
+        fsm.vars.side == "SHELF-RIGHT" then
+        self.args["pick_or_put_vs"].shelf = true
+    else
+        self.args["pick_or_put_vs"].shelf = false
+    end
 end
 
 -- end tracking afterwards

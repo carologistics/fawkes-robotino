@@ -97,9 +97,14 @@ private:
 	float shelf_height_;
 
 	//target frame offsets:
-	float base_offset_;
+	float base_offset_x_;
+	float base_offset_y_;
+
 	float offset_x_workpiece_target_;
 	float offset_z_workpiece_target_;
+
+	float offset_x_shelf_target_;
+	float offset_z_shelf_target_;
 
 	float offset_x_conveyor_target_;
 	float offset_z_conveyor_target_;
@@ -108,6 +113,7 @@ private:
 	float offset_z_slide_target_;
 
 	float offset_x_workpiece_top_;
+	float offset_x_shelf_top_;
 	float offset_x_conveyor_top_;
 	float offset_x_slide_top_;
 
