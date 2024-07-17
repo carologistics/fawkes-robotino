@@ -1,7 +1,7 @@
 # *****************************************************************************
 # CMake Build System for Fawkes
 # -------------------
-# Copyright (C) 2023 by Tarik Viehmann and Daniel Swoboda
+# Copyright (C) 2024 by Daniel Swoboda
 #
 # *****************************************************************************
 #
@@ -20,19 +20,26 @@
 #
 # *****************************************************************************
 
-set_output_directory_plugins()
+set(PLUGIN_picam-client
+    ON
+    CACHE BOOL "Build picam-client plugin")
+add_subdirectory(interfaces)
+if(PLUGIN_picam-client)
+  add_library(picam-client MODULE picam_client_plugin.cpp
+                                     picam_client_thread.cpp
+                                     base64.cpp)
+  target_link_libraries(
+    picam-client
+    m
+    fawkescore
+    fawkesutils
+    fawkesaspects
+    fawkesinterface
+    fawkesblackboard
+    ObjectTrackingInterface
+    PiCamPluginInterface
+    fvutils)
 
-set(CMAKE_SHARED_MODULE_PREFIX "")
-add_subdirectory(clips-motor-switch)
-add_subdirectory(navgraph-generator-mps)
-add_subdirectory(skiller_motor_state)
-add_subdirectory(mps-laser-gen)
-add_subdirectory(laser_front_dist)
-add_subdirectory(tag_vision)
-add_subdirectory(picam-client)
-add_subdirectory(object-tracking)
-add_subdirectory(conveyor_pose)
-add_subdirectory(conveyor_plane)
-add_subdirectory(arduino)
-add_subdirectory(box_detect)
-add_subdirectory(ros2)
+else()
+  plugin_disabled_message("picam-client")
+endif()
