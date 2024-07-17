@@ -845,7 +845,7 @@
   (do-for-fact ((?f wm-fact))
 	(wm-key-prefix ?f:key (create$ monitoring move-out-of-way high-prio))
 	(do-for-all-facts ((?og goal))
-		(modify ?og (priority -1))	
+		(modify ?og (priority -1))
        	(retract ?f)
   )
   (modify ?gm (retries (+ 1 ?retries)))
