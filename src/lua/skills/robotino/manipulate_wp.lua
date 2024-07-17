@@ -167,6 +167,27 @@ function match_line(lines)
     return matched_line
 end
 
+function angle_offset_mps()
+    local mps_offset = tfm.transform6D({
+        x = 0,
+        y = 0,
+        z = 0,
+        ori = fawkes.tf.create_quaternion_from_yaw(0.0)
+    }, fsm.vars.mps, "/base_link")
+
+    local phi = fawkes.tf.get_yaw(mps_offset.ori)
+    if phi > math.pi then phi = phi - 2 * math.pi end
+    if phi < -math.pi then phi = phi + 2 * math.pi end
+
+    printf("OFFSET: %f", phi)
+    return phi
+end
+
+function need_to_rotate()
+    if fsm.vars.map_pos == false then return false end
+    if math.abs(angle_offset_mps()) > 0.542 then return true end -- 0.542 = 31°
+    return false
+end
 function laser_line_found()
     fsm.vars.matched_line = match_line(fsm.vars.lines)
     return fsm.vars.matched_line ~= nil
@@ -360,6 +381,13 @@ fsm:define_states{
         final_to = "WAIT_FOR_GRIPPER",
         fail_to = "FAILED"
     },
+    {
+        "LOOK_AT_MACHINE",
+        SkillJumpState,
+        skills = {{motor_move}},
+        final_to = "FIND_LASER_LINE",
+        fail_to = "FAILED"
+    },
     {"SEARCH_LASER_LINE", JumpState},
     {"WAIT_FOR_GRIPPER", JumpState},
     {"AT_LASER_LINE", JumpState},
@@ -381,6 +409,10 @@ fsm:define_states{
     }
 }
 
+function look_at_machine_jumpstate()
+    return need_to_rotate() and object_tracker_active()
+end
+
 fsm:add_transitions{
     {"INIT", "FAILED", cond = input_invalid, desc = "Invalid Input"},
     {"INIT", "START_TRACKING", cond = true, desc = "Valid Input"}, {
@@ -388,7 +420,8 @@ fsm:add_transitions{
         "FAILED",
         timeout = 2,
         desc = "Object tracker is not starting"
-    }, {"START_TRACKING", "FIND_LASER_LINE", cond = object_tracker_active},
+    }, {"START_TRACKING", "LOOK_AT_MACHINE", cond = look_at_machine_jumpstate},
+    {"START_TRACKING", "FIND_LASER_LINE", cond = object_tracker_active},
     {"FIND_LASER_LINE", "DRIVE_TO_LASER_LINE", cond = laser_line_found}, {
         "FIND_LASER_LINE",
         "SEARCH_LASER_LINE",
@@ -584,6 +617,10 @@ function DRIVE_TO_LASER_LINE:init()
     else
         print_error("Transform Error: matched_line to odom")
     end
+end
+
+function LOOK_AT_MACHINE:init()
+    self.args["motor_move"] = {ori = angle_offset_mps()}
 end
 
 function DRY_RUN_ABSENT:loop()
