@@ -149,6 +149,7 @@ ObjectTrackingThread::init()
 	//open PiCamPluginInterface  for reading
 	picam_plugin_if_ = blackboard->open_for_reading<PiCamPluginInterface>("PiCamPluginInterface");
 	bbil_add_data_interface(picam_plugin_if_);
+	bbil_add_message_interface(object_tracking_if_);
 
 	//get laser line fitting configs
 	ll_max_dist_ = this->config->get_float(("plugins/object_tracking/laser_line_fit/max_dist"));
@@ -198,101 +199,6 @@ ObjectTrackingThread::init()
 void
 ObjectTrackingThread::loop()
 {
-	//handle incomming messages
-	//-------------------------------------------------------------------------
-	while (!object_tracking_if_->msgq_empty()) {
-		if (object_tracking_if_->msgq_first_is<ObjectTrackingInterface::StartTrackingMessage>()) {
-			logger->log_info(name(), "Received StartTrackingMessage");
-
-			ObjectTrackingInterface::StartTrackingMessage *msg =
-			  object_tracking_if_->msgq_first<ObjectTrackingInterface::StartTrackingMessage>();
-			current_object_type_   = msg->object_type_to_set();
-			current_expected_mps_  = msg->expected_mps_to_set();
-			current_expected_side_ = msg->expected_side_to_set();
-
-			//set offsets from laser line center for expected object position
-			switch (current_expected_side_) {
-			case ObjectTrackingInterface::INPUT_CONVEYOR:
-				x_offset_ = belt_offset_front_;
-				y_offset_ = belt_offset_side_;
-				z_offset_ = belt_height_;
-				break;
-			case ObjectTrackingInterface::OUTPUT_CONVEYOR:
-				x_offset_ = belt_offset_front_;
-				y_offset_ = -belt_offset_side_;
-				z_offset_ = belt_height_;
-				break;
-			case ObjectTrackingInterface::SLIDE:
-				x_offset_ = slide_offset_front_;
-				y_offset_ = belt_offset_side_ + slide_offset_side_;
-				z_offset_ = slide_height_;
-				break;
-			case ObjectTrackingInterface::SHELF_LEFT:
-				x_offset_ = shelf_offset_front_;
-				y_offset_ = belt_offset_side_ + left_shelf_offset_side_;
-				z_offset_ = shelf_height_;
-				break;
-			case ObjectTrackingInterface::SHELF_MIDDLE:
-				x_offset_ = shelf_offset_front_;
-				y_offset_ = belt_offset_side_ + middle_shelf_offset_side_;
-				z_offset_ = shelf_height_;
-				break;
-			case ObjectTrackingInterface::SHELF_RIGHT:
-				x_offset_ = shelf_offset_front_;
-				y_offset_ = belt_offset_side_ + right_shelf_offset_side_;
-				z_offset_ = shelf_height_;
-				break;
-			default:
-				logger->log_error(object_tracking_if_->enum_tostring("EXPECTED_SIDE",
-				                                                     current_expected_side_),
-				                  " is an invalid MPS-side!");
-				return;
-			}
-
-			if (current_object_type_ == ObjectTrackingInterface::WORKPIECE) {
-				x_offset_ += puck_size_;
-				z_offset_ += puck_height_ / 2;
-			} else if (current_object_type_ == ObjectTrackingInterface::CONVEYOR_BELT_FRONT) {
-				z_offset_ -= belt_size_ / 2;
-			}
-
-			//reset laser-line
-			ll_found_ = false;
-
-			//clear for weighted average
-			past_responses_.clear();
-
-			//activate shared memory buffer
-			if (!shm_active_)
-				set_shm();
-
-			//start interface
-			tracking_      = true;
-			msgid_         = 0;
-			starting_time_ = fawkes::Time(clock);
-			loop_count_    = 0;
-			object_tracking_if_->set_current_object_type(current_object_type_);
-			object_tracking_if_->set_current_expected_mps(current_expected_mps_);
-			object_tracking_if_->set_current_expected_side(current_expected_side_);
-		} else if (object_tracking_if_->msgq_first_is<ObjectTrackingInterface::StopTrackingMessage>()) {
-			logger->log_info(name(), "Received StopTrackingMessage");
-
-			tracking_ = false;
-			msgid_    = 0;
-			object_tracking_if_->set_msgid(msgid_);
-			object_tracking_if_->set_detected(false);
-			object_tracking_if_->set_current_object_type(ObjectTrackingInterface::DEFAULT_TYPE);
-			object_tracking_if_->set_current_expected_mps(ObjectTrackingInterface::DEFAULT_MPS);
-			object_tracking_if_->set_current_expected_side(ObjectTrackingInterface::DEFAULT_SIDE);
-
-			object_tracking_if_->write();
-		} else {
-			logger->log_warn(name(), "Unknown message received");
-		}
-		object_tracking_if_->msgq_pop();
-	}
-	//-------------------------------------------------------------------------
-
 	//check if tracking is active
 	if (!tracking_)
 		return;
@@ -514,9 +420,9 @@ ObjectTrackingThread::bb_interface_data_changed(fawkes::Interface *interface) no
 	}
 	picam_if->read();
 	float    *values;
-	uint64_t *timestamp;
+	uint64_t *timestamp = picam_if->bbox_0_timestamp();
 	out_boxes.clear();
-	boxes_time = picam_if->bbox_0_timestamp();
+	boxes_time = fawkes::Time(timestamp[0], timestamp[1]);
 	for (int slot = 0; slot < 15; ++slot) {
 		switch (slot) {
 		case 0: values = picam_if->bbox_0(); break;
@@ -546,9 +452,6 @@ ObjectTrackingThread::bb_interface_data_changed(fawkes::Interface *interface) no
 		data[1] = values[1];
 		data[3] = values[2];
 		data[2] = values[3];
-		std::cout << "X: " << values[0] << ", Y: " << values[1] << ", H: " << values[2]
-		          << ", W: " << values[3] << std::endl;
-
 		out_boxes.push_back(data);
 	}
 	wakeup();
@@ -834,6 +737,113 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 	base_target[0] = max_x_needed - cos(mps_angle) * base_offset_;
 	base_target[1] = max_y_needed + sin(mps_angle) * base_offset_;
 	base_target[2] = mps_angle;
+}
+
+bool
+ObjectTrackingThread::bb_interface_message_received(Interface *interface, Message *message) throw()
+{
+	if (message->is_of_type<ObjectTrackingInterface::StartTrackingMessage>()) {
+		logger->log_info(name(), "Received StartTrackingMessage");
+
+		ObjectTrackingInterface::StartTrackingMessage *msg =
+		  dynamic_cast<ObjectTrackingInterface::StartTrackingMessage *>(message);
+		current_object_type_   = msg->object_type_to_set();
+		current_expected_mps_  = msg->expected_mps_to_set();
+		current_expected_side_ = msg->expected_side_to_set();
+
+		//set offsets from laser line center for expected object position
+		switch (current_expected_side_) {
+		case ObjectTrackingInterface::INPUT_CONVEYOR:
+			x_offset_ = belt_offset_front_;
+			y_offset_ = belt_offset_side_;
+			z_offset_ = belt_height_;
+
+			break;
+		case ObjectTrackingInterface::OUTPUT_CONVEYOR:
+			x_offset_ = belt_offset_front_;
+			y_offset_ = -belt_offset_side_;
+			z_offset_ = belt_height_;
+			break;
+		case ObjectTrackingInterface::SLIDE:
+			x_offset_ = slide_offset_front_;
+			y_offset_ = belt_offset_side_ + slide_offset_side_;
+			z_offset_ = slide_height_;
+			break;
+		case ObjectTrackingInterface::SHELF_LEFT:
+			x_offset_ = shelf_offset_front_;
+			y_offset_ = belt_offset_side_ + left_shelf_offset_side_;
+			z_offset_ = shelf_height_;
+			break;
+		case ObjectTrackingInterface::SHELF_MIDDLE:
+			x_offset_ = shelf_offset_front_;
+			y_offset_ = belt_offset_side_ + middle_shelf_offset_side_;
+			z_offset_ = shelf_height_;
+			break;
+		case ObjectTrackingInterface::SHELF_RIGHT:
+			x_offset_ = shelf_offset_front_;
+			y_offset_ = belt_offset_side_ + right_shelf_offset_side_;
+			z_offset_ = shelf_height_;
+			break;
+		default:
+			logger->log_error(object_tracking_if_->enum_tostring("EXPECTED_SIDE", current_expected_side_),
+			                  " is an invalid MPS-side!");
+			return false;
+		}
+
+		if (current_object_type_ == ObjectTrackingInterface::WORKPIECE) {
+			x_offset_ += puck_size_;
+			z_offset_ += puck_height_ / 2;
+			PiCamPluginInterface::EnableWorkpieceDetectionMessage *wp_msg =
+			  new PiCamPluginInterface::EnableWorkpieceDetectionMessage();
+			picam_plugin_if_->msgq_enqueue(wp_msg);
+		} else if (current_object_type_ == ObjectTrackingInterface::CONVEYOR_BELT_FRONT) {
+			z_offset_ -= belt_size_ / 2;
+			PiCamPluginInterface::EnableConveyorDetectionMessage *conveyor_msg =
+			  new PiCamPluginInterface::EnableConveyorDetectionMessage();
+			picam_plugin_if_->msgq_enqueue(conveyor_msg);
+		} else if (current_object_type_ == ObjectTrackingInterface::SLIDE_FRONT) {
+			PiCamPluginInterface::EnableSlideDetectionMessage *slide_msg =
+			  new PiCamPluginInterface::EnableSlideDetectionMessage();
+			picam_plugin_if_->msgq_enqueue(slide_msg);
+		}
+
+		//reset laser-line
+		ll_found_ = false;
+
+		//clear for weighted average
+		past_responses_.clear();
+
+		//activate shared memory buffer
+		if (!shm_active_)
+			set_shm();
+
+		//start interface
+		tracking_      = true;
+		msgid_         = 0;
+		starting_time_ = fawkes::Time(clock);
+		loop_count_    = 0;
+		object_tracking_if_->set_current_object_type(current_object_type_);
+		object_tracking_if_->set_current_expected_mps(current_expected_mps_);
+		object_tracking_if_->set_current_expected_side(current_expected_side_);
+	} else if (message->is_of_type<ObjectTrackingInterface::StopTrackingMessage>()) {
+		logger->log_info(name(), "Received StopTrackingMessage");
+
+		tracking_ = false;
+		msgid_    = 0;
+		object_tracking_if_->set_msgid(msgid_);
+		object_tracking_if_->set_detected(false);
+		object_tracking_if_->set_current_object_type(ObjectTrackingInterface::DEFAULT_TYPE);
+		object_tracking_if_->set_current_expected_mps(ObjectTrackingInterface::DEFAULT_MPS);
+		object_tracking_if_->set_current_expected_side(ObjectTrackingInterface::DEFAULT_SIDE);
+
+		object_tracking_if_->write();
+		PiCamPluginInterface::DisableDetectionMessage *slide_msg =
+		  new PiCamPluginInterface::DisableDetectionMessage();
+		picam_plugin_if_->msgq_enqueue(slide_msg);
+	} else {
+		logger->log_warn(name(), "Unknown message received");
+	}
+	return false;
 }
 
 void

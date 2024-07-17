@@ -235,6 +235,10 @@ private:
 	                           double                                 gripper_target[3],
 	                           double                                 base_target[3]);
 	void bb_interface_data_changed(fawkes::Interface *interface) noexcept;
+	// For BlackBoardInterfaceListener
+	virtual bool bb_interface_message_received(fawkes::Interface *interface,
+	                                           fawkes::Message   *message) throw();
+
 	fawkes::PiCamPluginInterface *picam_plugin_if_;
 };
 
