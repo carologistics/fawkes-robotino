@@ -951,8 +951,8 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 	gripper_target[1] = object_pos.getY() - sin(mps_angle) * gripper_offset_x;
 	gripper_target[2] = object_pos.getZ() + gripper_offset_z;
 
-	base_target[0] = max_x_needed - base_offset_x_;
-	base_target[1] = max_y_needed - base_offset_y_;
+	base_target[0] = object_pos.getX() - base_offset_x_;
+	base_target[1] = object_pos.getY() - base_offset_y_;
 	base_target[2] = mps_angle;
 
 	logger->log_info("base_target[0]: ", std::to_string(base_target[0]).c_str());
