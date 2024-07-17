@@ -31,17 +31,38 @@
   ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT* = 30
   ?*PRODUCTION-TIME-INTERVAL* = 120
 )
+(deffunction check-order-time-wondow-validity (?order-id)
+    "begin<=current<=end or current<begin"
+    ; game time
+    (do-for-fact ((?game-time wm-fact))
+      (wm-key-prefix ?game-time:key (create$ refbox game-time))
+      (bind ?current-game-time (nth$ 1 ?game-time:values))
+      (printout t "check-order-time-wondow-validity:Current game time is " ?current-game-time crlf)
+    )
+    (printout t ?order-id crlf)
+    ; delivery time window
+    (do-for-all-facts ((?tw wm-fact)) 
+      (and (wm-key-prefix ?tw:key (create$ refbox order)) (member$ ?order-id ?tw:key))
+      (if (member$ delivery-begin ?tw:key) then (bind ?or-begin ?tw:value) (printout t "Delivery Begin " ?or-begin crlf))
+      (if (member$ delivery-end ?tw:key) then (bind ?or-end ?tw:value) (printout t "Delivery End " ?or-end crlf)))  
+
+    (if (or (and (<= ?or-begin ?current-game-time) (<= ?current-game-time ?or-end))
+            (< ?current-game-time ?or-begin))
+    then (printout t "check-order-time-wondow-validity:<><>order is valid candidate" crlf) (return TRUE))
+    (printout t "check-order-time-wondow-validity:<><>order is invalid" crlf)
+    (return FALSE)
+)
 (deffunction generate-all-order-list ()
     "generate a list containing all order-ids"
     (bind ?order-list (create$))
     (do-for-all-facts 
         ((?order wm-fact))
         (wm-key-prefix ?order:key (create$ domain fact order-complexity))
-        (bind ?order-list (insert$ ?order-list 1 (wm-key-arg ?order:key ord))))
+        (bind ?order-list (create$ ?order-list (wm-key-arg ?order:key ord))))
     (return ?order-list)
 )
 (deffunction generate-candidate-order-list ()
-    "generate a list containing all order-ids, whose order has not been worked on yet"
+    "generate a list containing all order-ids, whose order has not been worked on yet and time window is valid"
     (bind ?order-list (create$))
     (do-for-all-facts 
         ((?order wm-fact))
@@ -50,11 +71,18 @@
                     ((?or wm-fact))
                     (and (wm-key-prefix ?or:key (create$ order meta wp-for-order))
                         (eq (wm-key-arg ?order:key ord) (wm-key-arg ?or:key ord))
-            )))) 
-        (bind ?order-list (insert$ ?order-list 1 (wm-key-arg ?order:key ord))))
-    (loop-for-count (round (* (length$ ?order-list) (/ 1 2)))
-      (bind ?order-list (create$ ?order-list FALSE)))
-    ; (return (create$ ?order-list FALSE))
+            )))
+            (check-order-time-wondow-validity (wm-key-arg ?order:key ord))
+        ) 
+        (bind ?order-list (create$ ?order-list (wm-key-arg ?order:key ord))))
+
+    (bind ?len (length$ ?order-list))
+    (if (> ?len 0) 
+    then (loop-for-count (round (* (length$ ?order-list) (/ 1 2)))
+            (bind ?order-list (create$ ?order-list FALSE)))
+    else (bind ?order-list (create$ ?order-list FALSE))
+    )
+
     (return ?order-list)
 )
 
@@ -101,19 +129,26 @@
   )
 )
 
-(deffunction goal-production-get-machine-for-color
-  (?col-ring)
+(deffunction goal-production-get-machine-for-color (?col-ring)
 
+  (if (eq ?col-ring RING_NONE)
+  then
+    (return FALSE)
+  )
   (bind ?rs FALSE)
+  (printout t "!!!!!" crlf)
   (do-for-all-facts ((?mps-type wm-fact)) (and (wm-key-prefix ?mps-type:key (create$ domain fact mps-type))
                                                (eq (wm-key-arg ?mps-type:key t) RS))
     (bind ?machine (wm-key-arg ?mps-type:key m))
+    (printout t ?col-ring ?machine crlf)
     (do-for-fact ((?rs-ring-spec wm-fact)) (and (wm-key-prefix ?rs-ring-spec:key (create$ domain fact rs-ring-spec))
                                                 (eq (wm-key-arg ?rs-ring-spec:key m) ?machine)
                                                 (eq (wm-key-arg ?rs-ring-spec:key r) ?col-ring))
       (bind ?rs ?machine)
+      (printout t "binding" crlf)
     )
   )
+  (printout t "!!!!!" ?rs crlf)
   (return ?rs)
 )
 
@@ -131,7 +166,7 @@
   (return ?num)
 )
 
-(deffunction calculate-overall-workload-for-each-processing-order (?team-name)
+(deffunction calculate-overall-workload-for-all-processing-orders (?team-name)
   "for cs1, cs2, rs1, rs2"
   (bind ?cs1 0)
   (bind ?cs2 0)
@@ -158,6 +193,7 @@
 
 (deffunction calculate-decreased-workload-for-each-processing-order (?next-step ?c ?cs ?r1 ?r2 ?r3)
   "if an C3 order's next step is ring2, the RS workload for ring1 should be taken away from workload overall"
+
   (bind ?res (create$ 0 0 0 0))
   (bind ?cs1 0)
   (bind ?cs2 0)
@@ -234,12 +270,12 @@
     )  
   )
 
-  (if (or (eq ?next-step RING1)
-          (and (eq ?next-step CAP) (eq ?c C0))
-          (and (eq ?next-step DELIVER) (eq ?c C0)))
-  then
-    (printout t "Nothing done!!" crlf)
-  )
+  ; (if (or (eq ?next-step RING1)
+  ;         (and (eq ?next-step CAP) (eq ?c C0))
+  ;         (and (eq ?next-step DELIVER) (eq ?c C0)))
+  ; then
+  ;   (printout t "Nothing done!!" crlf)
+  ; )
   (bind ?res (create$ ?cs1 ?cs2 ?rs1 ?rs2))
   ; (printout t "the return value is " ?res crlf)
   (return ?res)
@@ -248,13 +284,13 @@
 (deffunction print-all-useful-parameters-at-every-decision-moment ()
     ""
     (bind ?order-list (generate-all-order-list))
-    (bind ?candidate-list (generate-candidate-order-list))
+    ; (bind ?candidate-list (generate-candidate-order-list))
 
     ; game time
     (do-for-fact ((?game-time wm-fact))
       (wm-key-prefix ?game-time:key (create$ refbox game-time))
       (bind ?current-game-time (nth$ 1 ?game-time:values))
-      (printout t "Current game time is " ?current-game-time crlf)
+      (printout t "print-all-useful-parameters-at-every-decision-moment:Current game time is " ?current-game-time crlf)
     )
     (printout t crlf)
 
@@ -285,7 +321,7 @@
     ;     (bind ?machine-true ?mps-state:value)
     ;     (printout t "machine " ?machine " is at state " ?machine-state " with value " ?machine-true crlf)
     ; )
-    (bind ?overall-workload (calculate-overall-workload-for-each-processing-order C-))
+    (bind ?overall-workload (calculate-overall-workload-for-all-processing-orders C-))
     (bind ?update-cs1 (nth$ 1 ?overall-workload))
     (bind ?update-cs2 (nth$ 2 ?overall-workload))
     (bind ?update-rs1 (nth$ 3 ?overall-workload))
@@ -303,7 +339,6 @@
       (printout t "order " ?or_fulfilled " is finished" crlf)
     )
 
-    ; order status
     (foreach ?or ?order-list
       (printout t crlf)
       (bind ?tag 0)
@@ -315,26 +350,35 @@
       (do-for-fact ((?oc wm-fact)) 
           (wm-key-prefix ?oc:key (create$ domain fact order-complexity args? ord ?or com))
           (bind ?com (wm-key-arg ?oc:key com))
-          (printout t " " ?com))
+          (printout t " " ?com crlf))
+
+      ; delivery time window
+      (do-for-all-facts ((?tw wm-fact)) 
+          (and (wm-key-prefix ?tw:key (create$ refbox order)) (member$ ?or ?tw:key))
+          (if (member$ delivery-begin ?tw:key) then (bind ?or-begin ?tw:value) (printout t "Delivery Begin " ?or-begin crlf))
+          (if (member$ delivery-end ?tw:key) then (bind ?or-end ?tw:value) (printout t "Delivery End " ?or-end crlf)))    
+      ; (wm-fact (key refbox order ?order delivery-end) (type UINT) (value ?end))
 
       ; If it is not started yet? being processed? delivered?
-      (if (member$ ?or ?candidate-list) 
-        then (printout t " candidate ")
-        else
-          (if (any-factp ((?delivered wm-fact)) 
-                (and (eq ?delivered:key (create$ domain fact quantity-delivered args? ord ?or team CYAN))
-                    (= ?delivered:value 1)))
-          then
-            (bind ?tag 2) (printout t " ->delivered ")
-          else
-            (bind ?tag 1) (printout t " being processed ")
-          )
-          ; (do-for-fact ((?delivered wm-fact)) (eq ?delivered:key (create$ domain fact quantity-delivered args? ord ?or team CYAN))
-          ;   (printout t " ->delivered " ?delivered:value))
-      ) 
-      (printout t crlf)
+      ; (if (member$ ?or ?candidate-list) 
+      ;   then (printout t " candidate ")
+      ;   else
+      ;     (if (any-factp ((?delivered wm-fact)) 
+      ;           (and (eq ?delivered:key (create$ domain fact quantity-delivered args? ord ?or team CYAN))
+      ;               (= ?delivered:value 1)))
+      ;     then
+      ;       (bind ?tag 2) (printout t " ->delivered ")
+      ;     else
+      ;       (bind ?tag 1) (printout t " being processed ")
+      ;     )
+      ;     ; (do-for-fact ((?delivered wm-fact)) (eq ?delivered:key (create$ domain fact quantity-delivered args? ord ?or team CYAN))
+      ;     ;   (printout t " ->delivered " ?delivered:value))
+      ; ) 
+      ; (printout t crlf)
 
-      (printout t "the second method to determine the status of order" crlf)
+      ; order status
+      ; 0---"not started yet/candidate"; 1---"not finished yet"; 2---"fulfilled"; 3---"invalid"
+      (printout t crlf)
       (if (any-factp ((?started wm-fact)) 
           (and (wm-key-prefix ?started:key (create$ order meta started args? ord ?or))
               (eq ?started:value TRUE)))
@@ -343,22 +387,24 @@
             (and (wm-key-prefix ?fulfilled:key (create$ domain fact order-fulfilled))
                 (eq (wm-key-arg ?fulfilled:key ord) ?or)))
         then
+          (bind ?tag 2)
           (bind ?order-status " ->fulfilled ")
         else
+          (bind ?tag 1)
           (bind ?order-status " ->not finished yet ")
         )
       else
-        (bind ?order-status " ->not started yet ")
+        (if (check-order-time-wondow-validity ?or)
+        then
+          (bind ?tag 0)
+          (bind ?order-status " ->not started yet ")
+        else
+          (bind ?tag 3)
+          (bind ?order-status " ->invalid ")
+        )  
       )
       (printout t ?order-status)
       (printout t crlf)
-
-      ; delivery time window
-      (do-for-all-facts ((?tw wm-fact)) 
-          (and (wm-key-prefix ?tw:key (create$ refbox order)) (member$ ?or ?tw:key))
-          (if (member$ delivery-begin ?tw:key) then (bind ?or-begin ?tw:value) (printout t "Delivery Begin " ?or-begin crlf))
-          (if (member$ delivery-end ?tw:key) then (bind ?or-end ?tw:value) (printout t "Delivery End " ?or-end crlf)))    
-      ; (wm-fact (key refbox order ?order delivery-end) (type UINT) (value ?end))
 
       ; base color
       (do-for-fact ((?bc wm-fact)) 
@@ -462,7 +508,7 @@
       ; )       
 
       ; the production step of this order
-      (if (= ?tag 0) 
+      (if (or (= ?tag 0) (= ?tag 3))
         then (printout t "No machines are occupied becauseof this order!" crlf)
         else 
           (bind ?wp-for-order (sym-cat wp- ?or))
@@ -494,6 +540,8 @@
           ; (wm-fact (key wp meta estimated-points-total args? wp ?wp)
           ;          (type INT) (is-list FALSE) (value ?ep-total))
       )
+      ; order status
+      ; 0---"not started yet/candidate"; 1---"not finished yet"; 2---"fulfilled"; 3---"invalid"
       (if (= ?tag 1)
       then
         (if (neq ?rs1 None)
@@ -522,13 +570,20 @@
         (bind ?update-rs2 (- ?update-rs2 (nth$ 4 ?del-res)))
       )
       (printout t crlf)
-      (bind ?one-order-info (create$ ?or-index ?or ?com ?order-status ?or-begin ?or-end ?CS1-num ?CS2-num ?RS1-num ?RS2-num))
-      (bind ?arguments (create$ ?arguments ?one-order-info <>))
+      ; order status
+      ; 0---"not started yet/candidate"; 1---"not finished yet"; 2---"fulfilled"; 3---"invalid"
+      ; only info of candidate orders whose time windows are legal will be printes in csv file
+      (if (= ?tag 0)
+      then 
+        (bind ?one-order-info (create$ ?or-index ?or ?com ?order-status ?or-begin ?or-end ?CS1-num ?CS2-num ?RS1-num ?RS2-num))
+        (bind ?arguments (create$ ?arguments ?one-order-info <>))
+      )
     )
     (bind ?res-workload (create$ ?update-cs1 ?update-cs2 ?update-rs1 ?update-rs2))
     (printout t "Overall workload is " ?overall-workload crlf)
     (printout t "Updated workload is " ?res-workload  crlf)
-    (bind ?arguments (create$ ?arguments ?overall-workload ?res-workload))
+    ; only rest workload will be printes in csv file
+    (bind ?arguments (create$ ?arguments ?res-workload))
 
     (return ?arguments)
 )
@@ -1242,7 +1297,7 @@
 )
 
 (defrule write-overall-points-into-csv
-  "Once the game state switches from PRODUCTION to POST-GAME, write the overal points into csv file"
+"Once the game state switches from PRODUCTION to POST_GAME, write the overal points into csv file"
   (wm-fact (key refbox phase) (value POST_GAME))
   (wm-fact (key refbox points CYAN) (value ?points))
   (wm-fact (key game ID) (values ?ID1 ?ID2))
@@ -1250,6 +1305,7 @@
   =>
   (modify ?tf (value 1))
   (simulation-result-into-csv (create$ ?ID1 ?ID2 "Overall" ?points))
+  (printout t "game over, total points is " ?points crlf)
 )
 
 (defrule ask-next-order-at-same-intervals
@@ -1321,6 +1377,43 @@
   (printout t "Result4:selected order " ?order-id crlf)
   (printout t "production time interval " ?*PRODUCTION-TIME-INTERVAL* crlf)
   (simulation-result-into-csv (create$ ?ID1 ?ID2 ?points "//" ?order-id "//" (print-all-useful-parameters-at-every-decision-moment)))
+  
+  (bind ?p NONE)
+  (do-for-fact ((?wm wm-fact))
+    (and (wm-key-prefix ?wm:key (create$ order meta points-max)) 
+        (eq (wm-key-arg ?wm:key ord) ?order-id))
+    (bind ?p ?wm:value)
+  )
+
+  (save-chosen-orders-with-max-points (create$ ?order-id ?p))
+
+  (bind ?r1 FALSE)
+  (if (neq ?col-ring1 RING_NONE)
+  then 
+    (do-for-fact ((?wm wm-fact))
+      (and (wm-key-prefix ?wm:key (create$ domain fact rs-ring-spec)) 
+          (eq (wm-key-arg ?wm:key r) ?col-ring1))
+      (bind ?r1 (wm-key-arg ?wm:key rn))
+    )  
+  )
+  (bind ?r2 FALSE)
+  (if (neq ?col-ring2 RING_NONE)
+  then 
+    (do-for-fact ((?wm wm-fact))
+      (and (wm-key-prefix ?wm:key (create$ domain fact rs-ring-spec)) 
+          (eq (wm-key-arg ?wm:key r) ?col-ring2))
+      (bind ?r2 (wm-key-arg ?wm:key rn))
+    )
+  )
+  (bind ?r3 FALSE)
+  (if (neq ?col-ring3 RING_NONE)
+  then 
+    (do-for-fact ((?wm wm-fact))
+      (and (wm-key-prefix ?wm:key (create$ domain fact rs-ring-spec)) 
+          (eq (wm-key-arg ?wm:key r) ?col-ring3))
+      (bind ?r3 (wm-key-arg ?wm:key rn))
+    )
+  )
 
   ;find the necessary ringstations
   (bind ?rs1 (goal-production-get-machine-for-color ?col-ring1))
