@@ -97,7 +97,11 @@ function invalid_params(self)
             self.fsm.vars.frame == "/base_link"
 end
 
-function send_transrot(vx, vy, omega)
+function send_transrot(self, vx, vy, omega)
+    if self.fsm.vars.only_rotate then
+        vx = 0
+        vy = 0
+    end
     local oc = motor:controller()
     local ocn = motor:controller_thread_name()
     motor:msgq_enqueue(motor.AcquireControlMessage:new())
@@ -252,7 +256,7 @@ function set_speed(self)
                     v.y, v.ori, dist_target.x, dist_target.y,
                     scalar(dist_target.ori))
     end
-    send_transrot(v.x, v.y, v.ori)
+    send_transrot(self, v.x, v.y, v.ori)
     self.fsm.vars.speed = v
 end
 
@@ -416,6 +420,10 @@ fsm:add_transitions{
 }
 
 function INIT:init()
+    self.fsm.vars.only_rotate = false
+    if self.fsm.vars.x == 0 and self.fsm.vars.y == 0 then
+        self.fsm.vars.only_rotate = true
+    end
     self.fsm.vars.msgid = 0
     self.fsm.vars.consecutive_detections = 0
     self.fsm.vars.missing_detections = 0
@@ -567,7 +575,7 @@ function DRIVE:loop()
     set_speed(self)
 end
 
-function DRIVE:exit() send_transrot(0, 0, 0) end
+function DRIVE:exit() send_transrot(self, 0, 0, 0) end
 
 function WAIT_TRACKING:loop()
     if self.fsm.vars.msgid ~= object_tracking_if:msgid() then
@@ -632,7 +640,7 @@ function DRIVE_VS:loop()
     set_speed(self)
 end
 
-function DRIVE_VS:exit() send_transrot(0, 0, 0) end
+function DRIVE_VS:exit() send_transrot(self, 0, 0, 0) end
 
 function DRIVE_CAM:init()
     self.fsm.vars.vmax_arg = {
@@ -651,7 +659,7 @@ end
 
 function DRIVE_CAM:loop() set_speed(self) end
 
-function DRIVE_CAM:exit() send_transrot(0, 0, 0) end
+function DRIVE_CAM:exit() send_transrot(self, 0, 0, 0) end
 
 function STOP_NAVIGATOR:init()
     local msg = navigator.StopMessage:new()
