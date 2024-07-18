@@ -184,7 +184,7 @@ function gripper_aligned()
 
     return within_tolerance(arduino:x_position(), 0, GRIPPER_TOLERANCE.x) and
                within_tolerance(arduino:y_position() - y_max / 2, y_max / 2,
-                                GRIPPER_TOLERANCE, y) and
+                                GRIPPER_TOLERANCE.y, y) and
                within_tolerance(
                    math.max(0.01, math.min(gripper_target.z, z_max)),
                    arduino:z_position(), GRIPPER_TOLERANCE.z)
