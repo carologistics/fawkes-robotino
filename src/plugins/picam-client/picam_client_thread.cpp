@@ -42,12 +42,14 @@ using namespace fawkes;
 using namespace cv;
 using namespace dnn;
 
-#define HEADER_SIZE_1 20               // Header size for message of type 1
-#define HEADER_SIZE_2 20               // Header size for message of type 2
-#define HEADER_SIZE_3 32               // Header size for message of type 3
-#define CONTROL_HEADER_SIZE 9          // Header size for control message
-#define CONTROL_HEADER_SIZE_PAYLOAD 13 // Header size for control message
-#define CONFIGURE_MESSAGE_SIZE 65      // Header size for control message
+#define htonll(x) ((((uint64_t)htonl(x)) << 32) + htonl((x) >> 32))
+
+#define HEADER_SIZE_1 20              // Header size for message of type 1
+#define HEADER_SIZE_2 20              // Header size for message of type 2
+#define HEADER_SIZE_3 32              // Header size for message of type 3
+#define CONTROL_HEADER_SIZE 1         // Header size for control message
+#define CONTROL_HEADER_SIZE_PAYLOAD 5 // Header size for control message
+#define CONFIGURE_MESSAGE_SIZE 57     // Header size for control message
 
 #define SLEEP_INTERVAL 1
 #define DISCONNECT_THRESHOLD 10
@@ -404,8 +406,6 @@ PicamClientThread::send_control_message(uint8_t message_type)
 
 	char header[CONTROL_HEADER_SIZE];
 	std::memcpy(&header[0], &message_type, 1);
-	uint64_t network_timestamp = ntohll(timestamp);
-	std::memcpy(&header[1], &network_timestamp, 8);
 
 	send(sockfd_, header, CONTROL_HEADER_SIZE, 0);
 }
@@ -419,12 +419,10 @@ PicamClientThread::send_control_message(uint8_t message_type, float payload)
 
 	char header[CONTROL_HEADER_SIZE_PAYLOAD];
 	std::memcpy(&header[0], &message_type, 1);
-	uint64_t network_timestamp = ntohll(timestamp);
-	std::memcpy(&header[1], &network_timestamp, 8);
 	uint32_t network_payload = htonf(payload);
-	std::memcpy(&header[9], &network_payload, 4);
+	std::memcpy(&header[1], &network_payload, 4);
 
-	send(sockfd_, header, CONTROL_HEADER_SIZE, 0);
+	send(sockfd_, header, CONTROL_HEADER_SIZE_PAYLOAD, 0);
 }
 
 void
@@ -437,37 +435,35 @@ PicamClientThread::send_configure_message()
 	char    header[CONFIGURE_MESSAGE_SIZE];
 	uint8_t message_type = 14;
 	std::memcpy(&header[0], &message_type, 1);
-	uint64_t network_timestamp = ntohll(timestamp);
-	std::memcpy(&header[1], &network_timestamp, 8);
 
 	uint32_t network_rotation = htonl(config->get_int("plugins/picam_client/camera_matrix/rotation"));
-	std::memcpy(&header[9], &network_rotation, 4);
+	std::memcpy(&header[1], &network_rotation, 4);
 	uint32_t network_old_ppx = htonf(config->get_float("plugins/picam_client/camera_matrix/old_ppx"));
-	std::memcpy(&header[13], &network_old_ppx, 4);
+	std::memcpy(&header[5], &network_old_ppx, 4);
 	uint32_t network_old_ppy = htonf(config->get_float("plugins/picam_client/camera_matrix/old_ppy"));
-	std::memcpy(&header[17], &network_old_ppy, 4);
+	std::memcpy(&header[9], &network_old_ppy, 4);
 	uint32_t network_old_f_y = htonf(config->get_float("plugins/picam_client/camera_matrix/old_f_y"));
-	std::memcpy(&header[21], &network_old_f_y, 4);
+	std::memcpy(&header[13], &network_old_f_y, 4);
 	uint32_t network_old_f_x = htonf(config->get_float("plugins/picam_client/camera_matrix/old_f_x"));
-	std::memcpy(&header[25], &network_old_f_x, 4);
+	std::memcpy(&header[17], &network_old_f_x, 4);
 	uint32_t network_new_ppx = htonf(config->get_float("plugins/picam_client/camera_matrix/new_ppx"));
-	std::memcpy(&header[29], &network_new_ppx, 4);
+	std::memcpy(&header[21], &network_new_ppx, 4);
 	uint32_t network_new_ppy = htonf(config->get_float("plugins/picam_client/camera_matrix/new_ppy"));
-	std::memcpy(&header[33], &network_new_ppy, 4);
+	std::memcpy(&header[25], &network_new_ppy, 4);
 	uint32_t network_new_f_y = htonf(config->get_float("plugins/picam_client/camera_matrix/new_f_y"));
-	std::memcpy(&header[37], &network_new_f_y, 4);
+	std::memcpy(&header[29], &network_new_f_y, 4);
 	uint32_t network_new_f_x = htonf(config->get_float("plugins/picam_client/camera_matrix/new_f_x"));
-	std::memcpy(&header[41], &network_new_f_x, 4);
+	std::memcpy(&header[33], &network_new_f_x, 4);
 	uint32_t network_k1 = htonf(config->get_float("plugins/picam_client/camera_matrix/k1"));
-	std::memcpy(&header[45], &network_k1, 4);
+	std::memcpy(&header[37], &network_k1, 4);
 	uint32_t network_k2 = htonf(config->get_float("plugins/picam_client/camera_matrix/k2"));
-	std::memcpy(&header[49], &network_k2, 4);
+	std::memcpy(&header[41], &network_k2, 4);
 	uint32_t network_k3 = htonf(config->get_float("plugins/picam_client/camera_matrix/k3"));
-	std::memcpy(&header[53], &network_k3, 4);
+	std::memcpy(&header[45], &network_k3, 4);
 	uint32_t network_k4 = htonf(config->get_float("plugins/picam_client/camera_matrix/k4"));
-	std::memcpy(&header[57], &network_k4, 4);
+	std::memcpy(&header[49], &network_k4, 4);
 	uint32_t network_k5 = htonf(config->get_float("plugins/picam_client/camera_matrix/k5"));
-	std::memcpy(&header[61], &network_k5, 4);
+	std::memcpy(&header[53], &network_k5, 4);
 
 	send(sockfd_, header, CONFIGURE_MESSAGE_SIZE, 0);
 }
@@ -511,6 +507,7 @@ PicamClientThread::connect_to_server()
 	send_configure_message();
 	send_control_message(13, config->get_float("plugins/picam_client/detection/iou"));
 	send_control_message(12, config->get_float("plugins/picam_client/detection/conf"));
+	send_control_message(11);
 	if (config->get_bool("plugins/picam_client/detection/initial/workpiece")) {
 		send_control_message(5);
 		send_control_message(8);
