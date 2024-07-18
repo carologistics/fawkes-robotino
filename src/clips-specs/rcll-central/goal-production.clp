@@ -41,7 +41,6 @@
   ?*PRODUCTION-PAY-PRIORITY* = 1
   ?*PRODUCTION-PAY-CC-PRIORITY-INCREASE* = 2
   ?*PRODUCTION-BUFFER-PRIORITY* = 2
-  ?*MOVE-OUT-OF-WAY-HIGH-PRIORITY* = 2000
   ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT* = 30
   ?*ROBOT-WAITING-TIMEOUT* = 2
 )
@@ -736,7 +735,7 @@
   )))
 )
 
-(defrule goal-production-create-move-out-of-way-goal
+(defrule goal-production-create-move-out-of-way-goal-tree
 	"Creates a move out of way goal with a subgoal for each possible waiting position.
   As soon as it is completed it's reset"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
@@ -764,6 +763,32 @@
   =>
   (printout t "modify priority of " ?goal-id crlf)
   (modify ?g (priority -1.0))
+)
+
+(defrule goal-production-re-create-move-out-of-way-simple
+" Re-creates a retracted move-out-of-way goal on completion for the
+	corresponding target wait positions"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?parent-id) (class MOVE-OUT-OF-WAY) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL))
+  (not (and (goal (class MOVE-OUT-OF-WAY) (sub-type SIMPLE) (parent ?parent-id) (params target WAIT1))
+       (goal (class MOVE-OUT-OF-WAY) (sub-type SIMPLE) (parent ?parent-id) (params target WAIT2))
+       (goal (class MOVE-OUT-OF-WAY) (sub-type SIMPLE) (parent ?parent-id) (params target WAIT3))
+       (goal (class MOVE-OUT-OF-WAY) (sub-type SIMPLE) (parent ?parent-id) (params target WAIT4))
+  ))
+  =>
+  (bind ?wait-pos (create$))
+  (delayed-do-for-all-facts ((?g goal))
+	(and (eq ?g:class MOVE-OUT-OF-WAY)
+	     (eq ?g:sub-type SIMPLE)
+	)
+	(bind ?wait-pos (append$ ?wait-pos (values-from-name-value-list ?g:params)))
+  )
+  (foreach ?w (create$ WAIT1 WAIT2 WAIT3 WAIT4)
+	(if (not (member$ ?w ?wait-pos))
+	    then (bind ?f (goal-production-assert-move-out-of-way ?w))
+		  (goal-tree-update-child ?f ?parent-id -1.0)
+	)
+  )
 )
 
 (defrule goal-production-create-cleanup-wp

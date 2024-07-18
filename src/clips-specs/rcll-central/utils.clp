@@ -82,6 +82,9 @@
 
   ?*GOAL-RETRY-MAX* = 5
   ?*GOAL-RETRY-TIMEOUT* = 10
+
+  ;priorities
+  ?*MOVE-OUT-OF-WAY-HIGH-PRIORITY* = 2000
 )
 
 ;A timeout for waiting for points
