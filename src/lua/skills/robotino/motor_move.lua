@@ -252,6 +252,10 @@ function set_speed(self)
                     v.y, v.ori, dist_target.x, dist_target.y,
                     scalar(dist_target.ori))
     end
+    if self.fsm.vars.only_rotate then
+        vx = 0
+        vy = 0
+    end
     send_transrot(v.x, v.y, v.ori)
     self.fsm.vars.speed = v
 end
@@ -416,6 +420,10 @@ fsm:add_transitions{
 }
 
 function INIT:init()
+    self.fsm.vars.only_rotate = false
+    if self.fsm.vars.x == 0 and self.fsm.vars.y == 0 then
+        self.fsm.vars.only_rotate = true
+    end
     self.fsm.vars.msgid = 0
     self.fsm.vars.consecutive_detections = 0
     self.fsm.vars.missing_detections = 0
