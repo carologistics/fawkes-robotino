@@ -82,6 +82,29 @@
 
   ?*GOAL-RETRY-MAX* = 5
   ?*GOAL-RETRY-TIMEOUT* = 10
+
+  ; defines the spacing between complexity-based prios
+  ?*PRODUCTION-PRIO-BASE-STEP* = 10
+  ; complexity-based starting prios according to spacing above
+  ?*PRODUCTION-C0-PRIORITY* = 30
+  ?*PRODUCTION-C1-PRIORITY* = 40
+  ?*PRODUCTION-C2-PRIORITY* = 50
+  ?*PRODUCTION-C3-PRIORITY* = 60
+  ?*PRODUCTION-STANDING-ORDER-PRIORITY* = 20
+  ; increas complexity by this for each solved step
+  ?*PRODUCTION-PRIORITY-INCREASE* = 100
+  ; further bump any delivery goal to most urgent level
+  ?*DELIVER-PRIORITY-INCREASE* = 1000
+  ; Support priorities
+  ; these values should be selected, such that the respective base priorities
+  ; are in a range from 1 to ?*PRODUCTION-PRIO-BASE-STEP*.
+  ?*PRODUCTION-PAY-PRIORITY* = 1
+  ?*PRODUCTION-PAY-CC-PRIORITY-INCREASE* = 2
+  ?*PRODUCTION-BUFFER-PRIORITY* = 2
+
+  ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT* = 30
+  ?*ROBOT-WAITING-TIMEOUT* = 2
+
 )
 
 ;A timeout for waiting for points
