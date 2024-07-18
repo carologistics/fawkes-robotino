@@ -60,7 +60,7 @@
 			         )
 			    )
 			 then
-				(bind ?team-prefix (sub-string 1 1 ?team-color)
+				(bind ?team-prefix (sub-string 1 1 ?team-color))
 				(if (< ?x 0) then ; field is mirrored, also add opposing team
 					(bind ?team-prefix (sub-string 1 1 (mirror-team ?team-color)))
 				)
