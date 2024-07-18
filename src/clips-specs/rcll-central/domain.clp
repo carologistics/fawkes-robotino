@@ -381,7 +381,7 @@
 		    (bind ?curr-robot (nth$ 1 ?r-active))
 		    (if (neq ?curr-robot laptop1) then
 		      (assert (wm-fact (key central agent robot args? r ?curr-robot))
-		              (assert (wm-fact (key central agent robot-waiting args? r ?robot)))
+		              (wm-fact (key central agent robot-waiting args? r ?curr-robot))
 		              (domain-object (name ?curr-robot) (type robot))
 		              (domain-fact (name robot-waiting) (param-values ?curr-robot))
 		              (domain-fact (name at) (param-values ?curr-robot START INPUT)))
