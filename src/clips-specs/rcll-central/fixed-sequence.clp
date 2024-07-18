@@ -385,6 +385,9 @@
 	=>
 	(bind ?wp-loc ?bs)
 	(bind ?wp-side INPUT)
+  (do-for-fact ((?g goal)) (and (eq ?g:class INSTRUCT-BS-DISPENSE-BASE) (eq ?g:mode FORMULATED) (member$ ?wp ?g:params))
+    (bind  ?wp-side (get-param-by-arg ?g:params target-side))
+  )
 	(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
 		(create$ ; only last statement of if is returned
 				(plan-assert-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side ?wp
@@ -419,6 +422,12 @@
 	=>
 	(bind ?wp-loc ?bs)
 	(bind ?wp-side INPUT)
+  (do-for-fact ((?g goal)) (and (eq ?g:class INSTRUCT-BS-DISPENSE-BASE) (eq ?g:mode FORMULATED) (member$ ?wp ?g:params))
+    (bind  ?wp-side (get-param-by-arg ?g:params target-side))
+  )
+  (do-for-fact ((?g goal)) (and (eq ?g:class INSTRUCT-BS-DISPANSE-BASE) (eq ?g:mode FORMULATED) (member$ ?wp ?g:params))
+    (bind  ?wp-side (get-param-by-arg ?g:params target-mps))
+  )
 	(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
 		(create$ ; only last statement of if is returned
 			(plan-assert-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side ?wp
