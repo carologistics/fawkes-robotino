@@ -945,9 +945,9 @@
   (wm-fact (key refbox team-color) (value ?team-color&:(neq ?team-color nil)))
   =>
 	(if (eq ?team-color CYAN) then
-    (assert (wm-fact (key enter-field targets) (is-list TRUE) (type SYMBOL) (values C-Z33 C-Z23 C-Z43)))
+    (assert (wm-fact (key enter-field targets) (is-list TRUE) (type SYMBOL) (values C-Z52 C-Z52 C-Z52)))
   else
-    (assert (wm-fact (key enter-field targets) (is-list TRUE) (type SYMBOL) (values M-Z33 M-Z23 M-Z43)))
+    (assert (wm-fact (key enter-field targets) (is-list TRUE) (type SYMBOL) (values M-Z52 M-Z52 M-Z52)))
   )
 )
 
