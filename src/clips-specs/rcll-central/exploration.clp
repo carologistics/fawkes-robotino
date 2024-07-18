@@ -12,7 +12,7 @@
   ?*EXP-MOVEMENT-COMPENSATION* = 0.0
   ?*EXP-SEARCH-LIMIT* = 1
   ?*MIRRORED-FIELD* = TRUE
-  ?*EXP-BASE-PRIO* = 10.0
+  ?*EXP-BASE-PRIO* = 2.0
 )
 
 (deffunction exp-assert-move
@@ -203,7 +203,7 @@
 	(bind ?goal
 	      (exp-assert-move ?location)
 	)
-	(modify ?goal (parent ?root-id) (priority (- ?*EXP-BASE-PRIO* ?n)))
+	(modify ?goal (parent ?root-id) (priority ?*EXP-BASE-PRIO*))
 	(modify ?targets (values ?locations))
 
 )
