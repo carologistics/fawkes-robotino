@@ -123,7 +123,7 @@ plugins/object_tracking:
   max_acceptable_dist: 150.15
 
   yolo:
-    weights_path: "../cfg/yolo/yolov8n.onnx"
+    weights_path: "../cfg/yolo/best.onnx"
     config_path: "../cfg/yolo/yolov4-tiny.cfg"
     confThreshold: 0.2
     nmsThreshold: 0.3

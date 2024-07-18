@@ -146,7 +146,7 @@ ObjectTrackingThread::init()
 
 	//set object params
 	//               {Unset, Workpiece, Conveyor, Slide}
-	object_widths_ = {0.0, 0.04, 0.03, 0.0585};
+	object_widths_ = {0.0, 0.03, 0.0585, 0.04};
 
 	//get NN params
 	weights_path_  = this->config->get_string(("plugins/object_tracking/yolo/weights_path"));
@@ -762,31 +762,27 @@ ObjectTrackingThread::detect_objects(Mat image, std::vector<std::array<float, 4>
 
 	Mat blob = blobFromImage(image, scale_, Size(inpWidth_, inpHeight_), Scalar(), swapRB_);
 	net_.setInput(blob);
-	net_.forward(results);
+	net_.forward(results, outName_);
 
 	int rows       = results[0].size[2];
 	int dimensions = results[0].size[1];
 
-	results[0] = outputs[0].reshape(1, dimensions);
-	cv::transpose(results[0], outputs[0]);
+	results[0] = results[0].reshape(1, dimensions);
+	cv::transpose(results[0], results[0]);
 
 	auto data = (float *)results[0].data;
 
-	std::vector<int>      class_ids{};
-	std::vector<float>    confidences{};
-	std::vector<cv::Rect> boxes{};
+	std::vector<int> class_ids{};
 
 	for (int i = 0; i < rows; ++i) {
-		float *classes_scores = data + 4;
-
-		cv::Mat   scores(1, classesCount, CV_32FC1, classes_scores);
 		cv::Point class_id;
-		double    maxClassScore;
 
-		minMaxLoc(scores, nullptr, &maxClassScore, nullptr, &class_id);
 		float confidence = data[4 + (int)current_object_type_];
 		if (confidence > confThreshold_) {
-			std::array<float, 4> yolo_bb = {data[0], data[1], data[2], data[3]};
+			std::array<float, 4> yolo_bb = {data[0] / inpWidth_,
+			                                data[1] / inpHeight_,
+			                                data[2] / inpWidth_,
+			                                data[3] / inpHeight_};
 			yolo_bbs.push_back(yolo_bb);
 
 			Rect rect_bb;
@@ -893,10 +889,13 @@ ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
 
 	float object_width = object_widths_[(int)current_object_type_];
 	float angle;
-	if (current_object_type_ == ObjectTrackingInterface::WORKPIECE) {
+	ef(current_object_type_ == ObjectTrackingInterface::WORKPIECE)
+	{
 		//workpiece angles depend only on the camera view and not the mps
 		angle = atan((dx_right + dx_left) / 2);
-	} else {
+	}
+	else
+	{
 		angle = mps_angle;
 	}
 

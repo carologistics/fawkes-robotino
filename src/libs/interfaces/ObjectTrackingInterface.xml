@@ -7,9 +7,9 @@
       The different types of objects to track.
       </comment>
       <item name="DEFAULT_TYPE">No object set.</item>
-      <item name="WORKPIECE">Workpiece.</item>
       <item name="CONVEYOR_BELT_FRONT">Conveyor belt front.</item>
       <item name="SLIDE_FRONT">Slide front.</item>
+      <item name="WORKPIECE">Workpiece.</item>
     </enum>
     <enum name="EXPECTED_MPS">
       <comment>
