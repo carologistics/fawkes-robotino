@@ -89,6 +89,8 @@ PicamClientThread::init()
 	                                                          camera_height_);
 
 	bb_interface_ = blackboard->open_for_writing<PiCamPluginInterface>("PiCamPluginInterface");
+	bbil_add_message_interface(bb_interface_);
+	blackboard->register_listener(this);
 }
 
 void
