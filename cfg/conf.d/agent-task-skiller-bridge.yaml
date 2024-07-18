@@ -1,0 +1,13 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/clips-protobuf
+---
+agent-task-skiller-bridge:
+  recv_port_magenta: 5442
+  recv_port_cyan: 5441
+  recv_port_public: 5444
+  peer_address: 172.26.255.255
+  team_name: "Carologistics"
+  robot_id: 1
+  crypto_key: "randomkey"
