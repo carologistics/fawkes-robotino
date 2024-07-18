@@ -1126,11 +1126,9 @@
 	(wm-fact (key mps meta bs-side-in-use args? bs ?bs bs-side ?bs-side goal ?ogid))
 	(not (wm-fact (key mps meta bs-side-in-use args? $? bs ?bs bs-side ?other-side&:(neq ?bs-side ?other-side) $?)))
 	(wm-fact (key domain fact mps-type args? $? ?bs $? BS $?))
-	?g <- (goal (id ?goal-id&:(neq ?ogid ?goal-id)) (class MOUNT-RING|MOUNT-CAP) (mode FORMULATED|EXPANDED|COMMITTED))
-	(plan-action (action-name wp-get) (goal-id ?goal-id) (param-values $? ?bs ?bs-side $?)
-               (state FORMULATED|PENDING))
+	?g <- (goal (id ?goal-id&:(neq ?ogid ?goal-id)) (class MOUNT-RING|MOUNT-CAP) (mode FORMULATED|SELECTED))
 	?gm <- (goal-meta (goal-id ?goal-id) (order-id ?orderid))
-	?ig <- (goal (id ?ig-id) (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED|EXPANDED|COMMITTED) (params wp ?wp target-mps ?bs target-side ?bs-side base-color ?base-color))
+	?ig <- (goal (id ?ig-id) (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED) (params wp ?wp target-mps ?bs target-side ?bs-side base-color ?base-color))
 	?igm <- (goal-meta (goal-id ?ig-id) (order-id ?orderid))
         =>
 	(switch ?bs-side
@@ -1139,8 +1137,6 @@
 		(case OUTPUT then
 			(bind ?free-side INPUT))
 	)
-	(modify-all-plan-action-param-bs-side ?ig-id ?bs ?bs-side ?free-side)
-	(modify-all-plan-action-param-bs-side ?goal-id ?bs ?bs-side ?free-side)
 	(modify ?ig (params wp ?wp target-mps ?bs target-side ?free-side base-color ?base-color))
 )
 
@@ -1151,10 +1147,8 @@
 	(wm-fact (key mps meta bs-side-in-use args? bs ?bs bs-side ?bs-side goal ?ogid))
 	(not (wm-fact (key mps meta bs-side-in-use args? $? bs ?bs bs-side ?other-side&:(neq ?bs-side ?other-side) $?)))
 	(wm-fact (key domain fact mps-type args? $? ?bs $? BS $?))
-	?g <- (goal (id ?g-id&:(neq ?ogid ?g-id)) (class PAY-FOR-RINGS-WITH-BASE) (mode FORMULATED|EXPANDED|COMMITTED) (params wp ?wp $?))
-	(plan-action (action-name wp-get) (goal-id ?g-id) (param-values $? ?bs ?bs-side $?)
-               (state FORMULATED|PENDING))
-	?ig <- (goal (id ?ig-id&:(neq ?ogid ?ig-id)) (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED|EXPANDED|COMMITTED) (params wp ?wp target-mps ?bs target-side ?bs-side base-color ?base-color))
+	?g <- (goal (id ?g-id&:(neq ?ogid ?g-id)) (class PAY-FOR-RINGS-WITH-BASE) (mode FORMULATED|SELECTED)  (params wp ?wp $?))
+	?ig <- (goal (id ?ig-id&:(neq ?ogid ?ig-id)) (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED) (params wp ?wp target-mps ?bs target-side ?bs-side base-color ?base-color))
 	=>
 	(switch ?bs-side
 		(case INPUT then
@@ -1162,8 +1156,6 @@
 		(case OUTPUT then
 			(bind ?free-side INPUT))
 	)
-	(modify-all-plan-action-param-bs-side ?ig-id ?bs ?bs-side ?free-side)
-	(modify-all-plan-action-param-bs-side ?g-id ?bs ?bs-side ?free-side)
 	(modify ?ig (params wp ?wp target-mps ?bs target-side ?free-side base-color ?base-color))
 )
 
