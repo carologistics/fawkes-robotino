@@ -331,10 +331,10 @@ function within_tolerance(value, target, margin)
 end
 
 function ready_for_gripper_movement()
-    return within_tolerance(arduino:x_position(), default_x, 0.0001) and
+    return within_tolerance(arduino:x_position(), default_x, 0.002) and
                within_tolerance(arduino:y_position() - y_max / 2, default_y,
-                                0.0001) and
-               within_tolerance(arduino:z_position(), default_z, 0.0001)
+                                0.002) and
+               within_tolerance(arduino:z_position(), default_z, 0.002)
 end
 
 function dry_expected_object_found()
