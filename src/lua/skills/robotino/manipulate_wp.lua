@@ -176,6 +176,10 @@ function angle_offset_mps()
     }, fsm.vars.mps, "/base_link")
 
     local phi = fawkes.tf.get_yaw(mps_offset.ori)
+    if fsm.vars.side == "OUTPUT" then
+    else
+        phi = phi + math.pi
+    end
     if phi > math.pi then phi = phi - 2 * math.pi end
     if phi < -math.pi then phi = phi + 2 * math.pi end
 
