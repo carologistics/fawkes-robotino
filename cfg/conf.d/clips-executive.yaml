@@ -104,6 +104,7 @@ clips-executive:
               - rcll-central/production-strategy.clp
               - rcll-central/exploration.clp
               - rcll-central/refbox-agent-task.clp
+              - rcll-central/pentester.clp
           - name: goal-expander
             file: rcll-central/fixed-sequence.clp
           - name: action-selection
