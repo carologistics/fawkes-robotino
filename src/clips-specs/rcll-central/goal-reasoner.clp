@@ -222,14 +222,14 @@
 (deffunction goal-tree-assert-central-run-all-incremental-prio (?class ?prio ?prio-increase $?fact-addresses)
   (bind ?id (sym-cat CENTRAL-RUN-ALL- ?class - (gensym*)))
   (bind ?goal
-    (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)))
+    (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS) (meta sequence-mode)))
   )
   (assert (goal-meta (goal-id ?id)))
   (bind ?prio-step 0.0)
   (foreach ?f ?fact-addresses
-    ;(goal-tree-update-meta-run-all-order ?f (+ 1 (- (length$ ?fact-addresses) ?f-index)))
+    (goal-tree-update-meta-run-all-order ?f (+ 1 (- (length$ ?fact-addresses) ?f-index)))
     (goal-tree-update-child ?f ?id (+ ?prio-step ?prio))
-	(bind ?prio-step (+ ?prio-step ?prio-increase))
+    (bind ?prio-step (+ ?prio-step ?prio-increase))
   )
   (return ?goal)
 )
@@ -237,11 +237,11 @@
 (deffunction goal-tree-assert-central-run-all-prio (?class ?prio $?fact-addresses)
   (bind ?id (sym-cat CENTRAL-RUN-ALL- ?class - (gensym*)))
   (bind ?goal
-    (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)))
+    (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS) (meta sequence-mode)))
   )
   (assert (goal-meta (goal-id ?id)))
   (foreach ?f ?fact-addresses
-    ;(goal-tree-update-meta-run-all-order ?f (+ 1 (- (length$ ?fact-addresses) ?f-index)))
+    (goal-tree-update-meta-run-all-order ?f (+ 1 (- (length$ ?fact-addresses) ?f-index)))
     (goal-tree-update-child ?f ?id ?prio)
   )
   (return ?goal)
