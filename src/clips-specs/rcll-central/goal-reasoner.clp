@@ -551,12 +551,12 @@
   (modify ?gm (root-for-order nil))
 )
 
-;(defrule force-fail-goal
-;  (declare (salience (+ 2 ?*SALIENCE-GOAL-FORMULATE*)))
-;  ?g <- (goal (class MOUNT-RING) (mode FINISHED) (outcome ~FAILED))
-;  =>
- ; (modify ?g (outcome FAILED))
-;)
+(defrule force-fail-goal
+  (declare (salience (+ 2 ?*SALIENCE-GOAL-FORMULATE*)))
+  ?g <- (goal (class MOUNT-RING) (mode FINISHED) (outcome ~FAILED))
+  =>
+ (modify ?g (outcome FAILED))
+)
 
 (defrule goal-reasoner-evaluate-production-and-maintenance-wp-still-usable
   "If a production or maintenance goal failed but the WP is still usable "
