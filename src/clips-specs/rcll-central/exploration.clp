@@ -34,6 +34,7 @@
 	(not (wm-fact (key domain fact zone-content args? $?)))
 	(wm-fact (key config rcll exploration zone-margin) (type FLOAT) (value ?zone-margin))
 
+	(wm-fact (key refbox team-color) (value ?team-color))
 	(wm-fact (key refbox version-info config args? name field_height) (value ?field-height))
 	(wm-fact (key refbox version-info config args? name field_width) (value ?field-width))
 	(wm-fact (key refbox version-info config args? name field_mirrored) (value ?mirrored))
@@ -59,9 +60,9 @@
 			         )
 			    )
 			 then
-				(bind ?team-prefix C)
-				(if (< ?x 0) then
-					(bind ?team-prefix M)
+				(bind ?team-prefix (sub-string 1 1 ?team-color)
+				(if (< ?x 0) then ; field is mirrored, also add opposing team
+					(bind ?team-prefix (sub-string 1 1 (mirror-team ?team-color)))
 				)
 				(bind ?zones (append$ ?zones (sym-cat ?team-prefix -Z (abs ?x) (abs ?y))))
 			)
@@ -396,7 +397,7 @@
 	?exp-active <- (wm-fact (key exploration active) (type BOOL) (value TRUE))
 	; there is no machine of our team for which we don't know the location
 	(wm-fact (key refbox team-color) (value ?color))
-	(not (and (wm-fact (key domain fact mps-team args? m ?target-mps col ?color))
+	(not (and (wm-fact (key domain fact mps-state args? m ?target-mps $?))
 	          (not (domain-fact (name zone-content)
 	                            (param-values ?zz ?target-mps))
 	)))
