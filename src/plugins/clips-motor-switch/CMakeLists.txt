@@ -32,12 +32,15 @@ if(PLUGIN_clips-motor-switch)
     clips-motor-switch
     fawkescore
     fawkesutils
+    fawkesconfig
     fawkesaspects
     fawkesclipsaspect
-    fawkesblackboard
-    fawkesinterface
-    MotorInterface)
-  depend_on_pkgconfig_libs(clips-motor-switch pddl_parser)
+    fawkesinterface)
+  depend_on_ros2(clips-motor-switch)
+  depend_on_ros2_libs(
+    clips-motor-switch
+    "rto_msgs"
+  )
 else()
   plugin_disabled_message("clips-motor-switch")
 endif()
