@@ -175,12 +175,12 @@ function angle_offset_mps()
         ori = fawkes.tf.create_quaternion_from_yaw(0.0)
     }, fsm.vars.mps, "/base_link")
 
-    -- local robot_base = tfm.transform6D({x = 0, y = 0, z = 0, ori = 0},
-    --    "/base_link", "/map")
-    -- local alpha = math.atan2(mps_offset.y, mps_offset.x)
-    -- local phi = alpha - robot_base.ori
-    printf("OFFSET: %f", fawkes.tf.get_yaw(mps_offset.ori))
-    return fawkes.tf.get_yaw(mps_offset.ori)
+    local phi = fawkes.tf.get_yaw(mps_offset.ori)
+    if phi > math.pi then phi = phi - 2 * math.pi end
+    if phi < -math.pi then phi = phi + 2 * math.pi end
+
+    printf("OFFSET: %f", phi)
+    return phi
 end
 
 function need_to_rotate()
