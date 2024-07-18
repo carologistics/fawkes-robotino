@@ -889,13 +889,10 @@ ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
 
 	float object_width = object_widths_[(int)current_object_type_];
 	float angle;
-	ef(current_object_type_ == ObjectTrackingInterface::WORKPIECE)
-	{
+	if (current_object_type_ == ObjectTrackingInterface::WORKPIECE) {
 		//workpiece angles depend only on the camera view and not the mps
 		angle = atan((dx_right + dx_left) / 2);
-	}
-	else
-	{
+	} else {
 		angle = mps_angle;
 	}
 
