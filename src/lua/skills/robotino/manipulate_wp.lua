@@ -624,7 +624,14 @@ function DRIVE_TO_LASER_LINE:init()
 end
 
 function LOOK_AT_MACHINE:init()
-    self.args["motor_move"] = {ori = angle_offset_mps()}
+    self.args["motor_move"] = {
+        x = 0,
+        y = 0,
+        frame = "/odom",
+        end_early = false,
+        dry_run = false,
+        ori = angle_offset_mps()
+    }
 end
 
 function DRY_RUN_ABSENT:loop()
