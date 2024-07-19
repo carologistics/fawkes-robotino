@@ -1163,8 +1163,9 @@
 (defrule execution-monitoring-bs-side-in-use
 "If a BS is part of a goal's operation, assert a fact to indicate this state."
 	(declare (salience ?*SALIENCE-HIGH*))
+  (domain-fact (name bs-side-in-use) (param-values ?bs ?bs-side))
+  (domain-fact (name mps-type) (param-values ?bs BS))
 	(not (wm-fact (key mps meta bs-side-in-use args? bs ?bs $?)))
-	(wm-fact (key domain fact mps-type args? $? ?bs $? BS $?))
 	(goal (id ?goal-id) (mode EXPANDED|COMMITTED|DISPATCHED) (sub-type SIMPLE))
 	(plan-action (action-name wp-get) (goal-id ?goal-id) (param-values $? ?bs ?bs-side $?)
                (state FORMULATED|PENDING|WAITING|RUNNING))
@@ -1197,17 +1198,15 @@
         )
 )
 
-(defrule execution-monitoring-modify-transport-goal-plans-if-bs-side-in-use
+(defrule execution-monitoring-modify-transport-goal-plans-if-bs-side-in-use-CX
 "if a bs side is in use, modify MOUNT-RING, MOUNT-CAP and INSTRUCT-BS goals to use the free side."
 	(declare (salience ?*MONITORING-SALIENCE*))
 	(wm-fact (key mps meta bs-side-in-use args? bs ?bs bs-side ?bs-side goal ?ogid))
 	(not (wm-fact (key mps meta bs-side-in-use args? $? bs ?bs bs-side ?other-side&:(neq ?bs-side ?other-side) $?)))
 	(wm-fact (key domain fact mps-type args? $? ?bs $? BS $?))
-	?g <- (goal (id ?goal-id&:(neq ?ogid ?goal-id)) (class MOUNT-RING|MOUNT-CAP) (mode FORMULATED|EXPANDED|COMMITTED))
-	(plan-action (action-name wp-get) (goal-id ?goal-id) (param-values $? ?bs ?bs-side $?)
-               (state FORMULATED|PENDING))
-	?gm <- (goal-meta (goal-id ?goal-id) (order-id ?orderid))
-	?ig <- (goal (id ?ig-id) (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED|EXPANDED|COMMITTED) (params wp ?wp target-mps ?bs target-side ?bs-side base-color ?base-color))
+	?g <- (goal (id ?goal-id&:(neq ?ogid ?goal-id)) (class MOUNT-RING) (mode FORMULATED|SELECTED))
+	?gm <- (goal-meta (goal-id ?goal-id) (order-id ?orderid) (ring-nr ONE))
+	?ig <- (goal (id ?ig-id) (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED) (params wp ?wp target-mps ?bs target-side ?bs-side base-color ?base-color))
 	?igm <- (goal-meta (goal-id ?ig-id) (order-id ?orderid))
         =>
 	(switch ?bs-side
@@ -1216,22 +1215,53 @@
 		(case OUTPUT then
 			(bind ?free-side INPUT))
 	)
-	(modify-all-plan-action-param-bs-side ?ig-id ?bs ?bs-side ?free-side)
-	(modify-all-plan-action-param-bs-side ?goal-id ?bs ?bs-side ?free-side)
 	(modify ?ig (params wp ?wp target-mps ?bs target-side ?free-side base-color ?base-color))
 )
 
+(defrule execution-monitoring-modify-transport-goal-plans-if-bs-side-in-use-C0
+"if a bs side is in use, modify MOUNT-RING, MOUNT-CAP and INSTRUCT-BS goals to use the free side."
+	(declare (salience ?*MONITORING-SALIENCE*))
+	(wm-fact (key mps meta bs-side-in-use args? bs ?bs bs-side ?bs-side goal ?ogid))
+	(not (wm-fact (key mps meta bs-side-in-use args? $? bs ?bs bs-side ?other-side&:(neq ?bs-side ?other-side) $?)))
+	(domain-fact (name mps-type) (param-values ?bs BS))
+  (domain-fact (name order-complexity) (param-values ?orderid C0))
+	?g <- (goal (id ?goal-id&:(neq ?ogid ?goal-id)) (class MOUNT-CAP) (mode FORMULATED|SELECTED))
+	?gm <- (goal-meta (goal-id ?goal-id) (order-id ?orderid))
+	?ig <- (goal (id ?ig-id) (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED) (params wp ?wp target-mps ?bs target-side ?bs-side base-color ?base-color))
+	?igm <- (goal-meta (goal-id ?ig-id) (order-id ?orderid))
+        =>
+	(switch ?bs-side
+		(case INPUT then
+			(bind ?free-side OUTPUT))
+		(case OUTPUT then
+			(bind ?free-side INPUT))
+	)
+	(modify ?ig (params wp ?wp target-mps ?bs target-side ?free-side base-color ?base-color))
+)
+(defrule execution-monitoring-modify-instruct-to-match-waiting-transport
+"if a bs side needs to be instructed and the robot is waiting at the wrong side, just adjust the instruct goal"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  ?g <- (goal (id ?goal-id) (class MOUNT-RING|MOUNT-CAP|PAY-FOR-RINGS-WITH-BASE) (mode DISPATCHED))
+  (domain-fact (name mps-type) (param-values ?bs BS))
+  (plan-action (action-name wait-for-wp) (goal-id ?goal-id) (param-values ?robot ?bs ?bs-side ?wp)
+               (state RUNNING))
+  ?gm <- (goal-meta (goal-id ?goal-id) (order-id ?orderid))
+  ?ig <- (goal (id ?ig-id) (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED) (params wp ?wp target-mps ?bs target-side ?o-side&:(neq ?o-side ?bs-side) base-color ?base-color))
+  ?igm <- (goal-meta (goal-id ?ig-id) (order-id ?orderid))
+        =>
+  (printout error "We suck at managing the BS" crlf)
+  (modify ?ig (params wp ?wp target-mps ?bs target-side ?bs-side base-color ?base-color))
+)
 
 (defrule execution-monitoring-modify-pay-for-rings-with-base-goals-plans-if-bs-side-in-use
 "if a bs side is in use, modify payment goals to use the free side."
 	(declare (salience ?*MONITORING-SALIENCE*))
 	(wm-fact (key mps meta bs-side-in-use args? bs ?bs bs-side ?bs-side goal ?ogid))
 	(not (wm-fact (key mps meta bs-side-in-use args? $? bs ?bs bs-side ?other-side&:(neq ?bs-side ?other-side) $?)))
-	(wm-fact (key domain fact mps-type args? $? ?bs $? BS $?))
-	?g <- (goal (id ?g-id&:(neq ?ogid ?g-id)) (class PAY-FOR-RINGS-WITH-BASE) (mode FORMULATED|EXPANDED|COMMITTED) (params wp ?wp $?))
-	(plan-action (action-name wp-get) (goal-id ?g-id) (param-values $? ?bs ?bs-side $?)
-               (state FORMULATED|PENDING))
-	?ig <- (goal (id ?ig-id&:(neq ?ogid ?ig-id)) (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED|EXPANDED|COMMITTED) (params wp ?wp target-mps ?bs target-side ?bs-side base-color ?base-color))
+	(domain-fact (name mps-type) (param-values ?bs BS))
+	?g <- (goal (id ?g-id&:(neq ?g-id ?ogid)) (class PAY-FOR-RINGS-WITH-BASE) (mode FORMULATED|SELECTED)  (params wp ?wp $?))
+	(not (goal (id ?o-ogid&:(and (neq ?g-id ?o-ogid) (neq ?o-ogid ?ogid))) (class PAY-FOR-RINGS-WITH-BASE) (mode EXPANDED|COMMITTED|DISPATCHED)  (params wp ?wp $?)))
+	?ig <- (goal (id ?ig-id) (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED) (params wp ?wp target-mps ?bs target-side ?bs-side base-color ?base-color))
 	=>
 	(switch ?bs-side
 		(case INPUT then
@@ -1239,8 +1269,6 @@
 		(case OUTPUT then
 			(bind ?free-side INPUT))
 	)
-	(modify-all-plan-action-param-bs-side ?ig-id ?bs ?bs-side ?free-side)
-	(modify-all-plan-action-param-bs-side ?g-id ?bs ?bs-side ?free-side)
 	(modify ?ig (params wp ?wp target-mps ?bs target-side ?free-side base-color ?base-color))
 )
 
@@ -1367,7 +1395,7 @@
 
 (defrule execution-monitoring-remove-restriction-robot-occupied
   (domain-object (type robot) (name ?robot))
-  (goal (id ?gid) (mode DISPATCHED))
+  (goal (id ?gid) (class ~ENTER-FIELD) (mode DISPATCHED))
   (goal-meta (goal-id ?gid) (assigned-to ?robot))
   ?g <- (goal (id ?ogid) (mode FORMULATED))
   ?gm <- (goal-meta (goal-id ?ogid) (restricted-to ?robot))
