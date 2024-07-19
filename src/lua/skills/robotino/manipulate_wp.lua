@@ -445,7 +445,7 @@ fsm:add_transitions{
         desc = "Found Object"
     }, {
         "WAIT_FOR_GRIPPER",
-        "START_TRACKING",
+        "FAILED",
         timeout = 5,
         desc = "Something went wrong with axis movement"
     }, {
@@ -582,6 +582,17 @@ function SEARCH_LASER_LINE:loop()
 end
 
 function SEARCH_LASER_LINE:exit() fsm.vars.error = "laser-line not found" end
+
+function WAIT_FOR_GRIPPER:init()
+    -- open gripper
+    if fsm.vars.target == "WORKPIECE" and not fsm.vars.dry_run then
+        local open_msg = arduino.OpenGripperMessage:new()
+        arduino:msgq_enqueue(open_msg)
+    end
+
+    -- move to default pose
+    move_gripper_default_pose()
+end
 
 function DRIVE_TO_LASER_LINE:init()
     fsm.vars.consecutive_detections = 0
