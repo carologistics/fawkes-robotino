@@ -611,6 +611,10 @@
   (goal-meta (goal-id ?goal-id) (assigned-to ?robot&:(neq ?robot nil)))
   =>
   (retract ?high-prio)
+  (delayed-do-for-all-facts ((?retry wm-fact))
+    (and (wm-key-prefix ?retry:key (create$ monitoring goal retry robot counter)) (eq (wm-key-arg ?retry:key r) ?robot))
+    (modify ?retry (value (max (- ?retry:value ?*GOAL-RETRY-MAX*) 0)))
+  )
 )
 
 ; ----------------------- HANDLE WP CHECK FAIL  --------------------------------
