@@ -602,19 +602,6 @@
 	(retract ?f)
 )
 
-(defrule execution-monitoring-handle-goal-retry-by-robot-exceeds-limit
-" If a goal is retried by the same robot too many times, move the robot away
-to unblock the machine
-"
-	(declare (salience ?*MONITORING-SALIENCE*))
-	(wm-fact (key monitoring goal retry robot counter args? goal ?goal-id r ?robot) (value ?counter&:(> ?counter ?*GOAL-RETRY-MAX*)))
-	(goal (id ?goal-id) (class ~MOVE-OUT-OF-WAY))
-	=>
-	(set-robot-to-waiting ?robot)
-	(assert (wm-fact (key monitoring move-out-of-way high-prio args?)))
-	(robot-move-out-of-way-high-prio ?robot)
-)
-
 ; ----------------------- HANDLE WP CHECK FAIL  --------------------------------
 
 (defrule execution-monitoring-wp-check-there-after-wp-put-retry

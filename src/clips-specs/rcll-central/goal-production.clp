@@ -765,6 +765,7 @@
 )
 
 (defrule goal-production-change-priority-move-out-of-way
+  (declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
   ?g <- (goal (id ?goal-id) (class MOVE-OUT-OF-WAY)
               (type ACHIEVE) (sub-type SIMPLE)
               (mode FORMULATED) (parent ?pa-id&~nil)
