@@ -374,6 +374,17 @@ function GRIPPER_DEFAULT:init()
     self.args["gripper_commands"].wait = false
 end
 
-function DRIVE_BACK:init() self.args["motor_move"].x = drive_back_x end
+function DRIVE_BACK:init()
+    if fsm.vars.target == "WORKPIECE" then
+        local calib_x_msg = arduino.CalibrateXMessage:new()
+        arduino:msgq_enqueue_copy(calib_x_msg)
+    else
+        local close_msg = arduino.CloseMessage:new()
+        arduino:msgq_enqueue_copy(close_msg)
+        local calib_msg = arduino.CalibrateMessage:new()
+        arduino:msgq_enqueue_copy(calib_msg)
+    end
+    self.args["motor_move"].x = drive_back_x
+end
 
 function CLOSE_DEFAULT:init() self.args["gripper_commands"].command = "CLOSE" end

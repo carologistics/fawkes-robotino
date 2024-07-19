@@ -287,6 +287,7 @@ ArduinoComThread::send_message(ArduinoComMessage &msg)
 	if (!port_) {
 		return false;
 	}
+	logger->log_debug(name(), "send_packet: %s", msg.buffer().c_str());
 	if (!port_->write(msg.buffer())) {
 		logger->log_error(name(), "Error while trying to send data to Arduino!");
 		return false;
@@ -540,6 +541,9 @@ ArduinoComThread::bb_interface_message_received(Interface *interface, Message *m
 		append_message_to_queue(msg);
 	} else if (message->is_of_type<ArduinoInterface::CalibrateMessage>()) {
 		append_message_to_queue(CMD_CALIBRATE);
+		status = true;
+	} else if (message->is_of_type<ArduinoInterface::CalibrateXMessage>()) {
+		append_message_to_queue(CMD_X_CALIBRATE);
 		status = true;
 	} else if (message->is_of_type<ArduinoInterface::CloseGripperMessage>()) {
 		append_message_to_queue(CMD_CLOSE);
