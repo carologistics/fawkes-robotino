@@ -1140,6 +1140,9 @@
 	)
 
 	(do-for-all-facts ((?df domain-fact)) (str-index ?robot (implode$ ?df:param-values))
+		(if (eq ?df:name holding) then
+			(assert (wm-fact (key monitoring cleanup-wp args? wp (nth$ 2 ?df:param-values))))
+		)
 		(retract ?df)
 	)
 
