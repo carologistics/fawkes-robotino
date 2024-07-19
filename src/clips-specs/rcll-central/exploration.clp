@@ -12,7 +12,7 @@
   ?*EXP-MOVEMENT-COMPENSATION* = 0.0
   ?*EXP-SEARCH-LIMIT* = 1
   ?*MIRRORED-FIELD* = TRUE
-  ?*EXP-BASE-PRIO* = 10.0
+  ?*EXP-BASE-PRIO* = 2.0
 )
 
 (deffunction exp-assert-move
@@ -34,6 +34,7 @@
 	(not (wm-fact (key domain fact zone-content args? $?)))
 	(wm-fact (key config rcll exploration zone-margin) (type FLOAT) (value ?zone-margin))
 
+	(wm-fact (key refbox team-color) (value ?team-color))
 	(wm-fact (key refbox version-info config args? name field_height) (value ?field-height))
 	(wm-fact (key refbox version-info config args? name field_width) (value ?field-width))
 	(wm-fact (key refbox version-info config args? name field_mirrored) (value ?mirrored))
@@ -59,9 +60,9 @@
 			         )
 			    )
 			 then
-				(bind ?team-prefix C)
-				(if (< ?x 0) then
-					(bind ?team-prefix M)
+				(bind ?team-prefix (sub-string 1 1 ?team-color))
+				(if (< ?x 0) then ; field is mirrored, also add opposing team
+					(bind ?team-prefix (sub-string 1 1 (mirror-team ?team-color)))
 				)
 				(bind ?zones (append$ ?zones (sym-cat ?team-prefix -Z (abs ?x) (abs ?y))))
 			)
@@ -173,9 +174,11 @@
 
 	(wm-fact (key exploration active) (value TRUE))
 	=>
-	(bind ?zones (create$ M-Z33 C-Z33 M-Z63 C-Z63 M-Z36 C-Z36 M-Z66 C-Z66 M-Z15 C-Z15))
-	(modify ?targets (values (randomize$ ?zones)))
-	(modify ?iteration (value (+ ?n 1)))
+	(bind ?zones (create$ M-Z48 C-Z48 M-Z44 C-Z44 C-Z58 M-Z62 C-Z62 M-Z58 M-Z54 C-Z54 C-Z68 M-Z68 M-Z64 C-Z64))
+	(modify ?targets (values ?zones))
+	(if (< ?n 100) then
+		(modify ?iteration (value (+ ?n 1)))
+	)
 )
 
 (defrule exp-setup-assert-root
@@ -202,7 +205,7 @@
 	(bind ?goal
 	      (exp-assert-move ?location)
 	)
-	(modify ?goal (parent ?root-id) (priority (- ?*EXP-BASE-PRIO* ?n)))
+	(modify ?goal (parent ?root-id) (priority ?*EXP-BASE-PRIO*))
 	(modify ?targets (values ?locations))
 
 )
@@ -396,7 +399,7 @@
 	?exp-active <- (wm-fact (key exploration active) (type BOOL) (value TRUE))
 	; there is no machine of our team for which we don't know the location
 	(wm-fact (key refbox team-color) (value ?color))
-	(not (and (wm-fact (key domain fact mps-team args? m ?target-mps col ?color))
+	(not (and (wm-fact (key domain fact mps-state args? m ?target-mps $?))
 	          (not (domain-fact (name zone-content)
 	                            (param-values ?zz ?target-mps))
 	)))

@@ -92,7 +92,7 @@
 (defrule goal-executability-retract-grounding-for-goal-if-precondition-mismatch
   " Remove the grounding as soon as a goal changes it params or assigned robot..
   "
-  (declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+  (declare (salience ?*SALIENCE-DOMAIN-CHECK*))
   ?pg <- (pddl-grounding (param-values $?param-values) (id ?grounding))
   ?g <- (goal (id ?id) (class ?class) (params $?goal-params) (sub-type SIMPLE) (is-executable ?is-executable))
   ?gm <- (goal-meta (goal-id ?id) (assigned-to ?robot) (precondition ?grounding))
