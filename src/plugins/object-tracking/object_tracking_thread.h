@@ -99,7 +99,6 @@ private:
 	//target frame offsets:
 	float base_offset_x_;
 	float base_offset_y_;
-
 	float offset_x_workpiece_target_;
 	float offset_z_workpiece_target_;
 
