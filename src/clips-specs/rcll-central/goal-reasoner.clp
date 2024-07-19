@@ -874,6 +874,16 @@
   (printout (log-debug ?v) "Removed WP from shelf on " ?cs " slot " ?spot crlf)
 )
 
+(defrule goal-reasoner-reforlumate-failed-instruct
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED)
+              (class ?c&:(str-index INSTRUCT ?c))
+              (verbosity ?v))
+  =>
+  (printout t "retry instruct goal when it failed" crlf)
+  (goal-reasoner-retract-plan-action ?goal-id)
+  (modify ?g (mode FORMULATED) (outcome FAILED))
+)
+
 ; ----------------------- EVALUATE COMMON ------------------------------------
 
 (defrule goal-reasoner-evaluate-common
