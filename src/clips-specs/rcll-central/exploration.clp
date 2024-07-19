@@ -175,8 +175,10 @@
 	(wm-fact (key exploration active) (value TRUE))
 	=>
 	(bind ?zones (create$ M-Z48 C-Z48 M-Z44 C-Z44 C-Z58 M-Z62 C-Z62 M-Z58 M-Z54 C-Z54 C-Z68 M-Z68 M-Z64 C-Z64))
-	;(modify ?targets (values (randomize$ ?zones)))
-	(modify ?iteration (value (+ ?n 1)))
+	(modify ?targets (values ?zones))
+	(if (< ?n 100) then
+		(modify ?iteration (value (+ ?n 1)))
+	)
 )
 
 (defrule exp-setup-assert-root
