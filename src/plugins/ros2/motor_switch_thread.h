@@ -24,6 +24,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "rto_msgs/srv/set_omni_drive_enabled.hpp"
+#include "rto_msgs/srv/set_vel_limits.hpp"
 
 #include <aspect/blackboard.h>
 #include <aspect/configurable.h>
@@ -41,10 +42,8 @@ class ROS2MotorSwitchThread : public fawkes::Thread,
 {
 public:
 	ROS2MotorSwitchThread();
-	virtual ~ROS2MotorSwitchThread();
 
 	virtual void init();
-	virtual void loop();
 	virtual void finalize();
 
 protected:
@@ -57,10 +56,14 @@ protected:
 private:
 	void enable_motor();
 	void disable_motor();
+	void drive_fast();
+	void drive_slow();
 
 	virtual bool bb_interface_message_received(fawkes::Interface *interface,
 	                                           fawkes::Message   *message) throw();
-	rclcpp::Client<rto_msgs::srv::SetOmniDriveEnabled>::SharedPtr client_;
+	rclcpp::Client<rto_msgs::srv::SetOmniDriveEnabled>::SharedPtr switch_client_;
+	rclcpp::Client<rto_msgs::srv::SetVelLimits>::SharedPtr        throttle_client_;
 	fawkes::SwitchInterface                                      *switch_if_;
+	fawkes::SwitchInterface                                      *throttle_if_;
 };
 #endif /* MOTOR_SWITCH_THREAD_H */

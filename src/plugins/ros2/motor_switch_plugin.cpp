@@ -25,11 +25,13 @@
 
 using namespace fawkes;
 
-class ROS2MotorSwitch : public fawkes::Plugin
+class ROS2MotorSwitchPlugin : public fawkes::Plugin
 {
 public:
-	explicit ROS2MotorSwitch(Configuration *config) : Plugin(config)
+	explicit ROS2MotorSwitchPlugin(Configuration *config) : Plugin(config)
 	{
 		thread_list.push_back(new ROS2MotorSwitchThread());
 	}
 };
+PLUGIN_DESCRIPTION("ROS bridge to configure motor")
+EXPORT_PLUGIN(ROS2MotorSwitchPlugin)

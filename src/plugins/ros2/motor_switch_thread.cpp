@@ -25,6 +25,7 @@
 
 using namespace fawkes;
 using SetOmniDriveEnabled = rto_msgs::srv::SetOmniDriveEnabled;
+using SetVelLimits        = rto_msgs::srv::SetVelLimits;
 
 ROS2MotorSwitchThread::ROS2MotorSwitchThread()
 : Thread("ROS2MotorSwitchThread", Thread::OPMODE_WAITFORWAKEUP),
@@ -35,15 +36,25 @@ ROS2MotorSwitchThread::ROS2MotorSwitchThread()
 void
 ROS2MotorSwitchThread::init()
 {
-	client_ = node_handle->create_client<SetOmniDriveEnabled>("cmd_vel_enable");
-	while (!client_->wait_for_service(std::chrono::seconds(5))) {
-		logger->log_warn(name(), "Service not available, waiting");
+	switch_client_ = node_handle->create_client<SetOmniDriveEnabled>(
+	  std::string(node_handle->get_namespace()) + "/cmd_vel_enable");
+	throttle_client_ = node_handle->create_client<SetVelLimits>(
+	  std::string(node_handle->get_namespace()) + "/set_velocity_limits");
+	while (!switch_client_->wait_for_service(std::chrono::seconds(5))) {
+		logger->log_warn(name(), "Switch service not available, waiting");
+	}
+	while (!throttle_client_->wait_for_service(std::chrono::seconds(5))) {
+		logger->log_warn(name(), "Throttle service not available, waiting");
 	}
 
 	switch_if_ = NULL;
 	switch_if_ = blackboard->open_for_writing<SwitchInterface>("motor-switch");
 	switch_if_->set_enabled(true);
 	switch_if_->write();
+	throttle_if_ = blackboard->open_for_writing<SwitchInterface>("motor-throttle");
+	throttle_if_->set_enabled(false);
+	throttle_if_->write();
+	bbil_add_message_interface(switch_if_);
 	bbil_add_message_interface(switch_if_);
 
 	blackboard->register_listener(this);
@@ -67,7 +78,7 @@ ROS2MotorSwitchThread::enable_motor()
 			logger->log_error(name(), "Failed to enable robotino motors");
 		}
 	};
-	auto future_result = client_->async_send_request(request, response_received_callback);
+	auto future_result = switch_client_->async_send_request(request, response_received_callback);
 }
 
 void
@@ -83,7 +94,44 @@ ROS2MotorSwitchThread::disable_motor()
 			logger->log_error(name(), "Failed to disable robotino motors");
 		}
 	};
-	auto future_result = client_->async_send_request(request, response_received_callback);
+	auto future_result = switch_client_->async_send_request(request, response_received_callback);
+}
+
+void
+ROS2MotorSwitchThread::drive_fast()
+{
+	auto request                    = std::make_shared<SetVelLimits::Request>();
+	using ServiceResponseFuture     = rclcpp::Client<SetVelLimits>::SharedFuture;
+	auto response_received_callback = [this](ServiceResponseFuture future) {
+		auto response = future.get();
+		if (!response->success) {
+			logger->log_error(name(), "Failed to unthrottle the motor");
+		}
+	};
+	request->max_linear_vel  = 3.0;
+	request->min_linear_vel  = 0.02;
+	request->max_angular_vel = 3.0;
+	request->min_angular_vel = 0.07;
+	auto future_result = throttle_client_->async_send_request(request, response_received_callback);
+}
+
+void
+ROS2MotorSwitchThread::drive_slow()
+{
+	auto request = std::make_shared<SetVelLimits::Request>();
+
+	using ServiceResponseFuture     = rclcpp::Client<SetVelLimits>::SharedFuture;
+	auto response_received_callback = [this](ServiceResponseFuture future) {
+		auto response = future.get();
+		if (!response->success) {
+			logger->log_error(name(), "Failed to throttle the motor");
+		}
+	};
+	request->max_linear_vel  = 0.2;
+	request->min_linear_vel  = 0.02;
+	request->max_angular_vel = 1.0;
+	request->min_angular_vel = 0.07;
+	auto future_result = throttle_client_->async_send_request(request, response_received_callback);
 }
 
 bool
@@ -92,27 +140,51 @@ ROS2MotorSwitchThread::bb_interface_message_received(fawkes::Interface *interfac
 {
 	if (message->is_of_type<SwitchInterface::SetMessage>()) {
 		SwitchInterface::SetMessage *msg = (SwitchInterface::SetMessage *)message;
-
-		if (msg->is_enabled()) {
-			switch_if_->set_enabled(true);
-			enable_motor();
-		} else {
-			switch_if_->set_enabled(false);
-			disable_motor();
+		if (interface == switch_if_) {
+			if (msg->is_enabled()) {
+				switch_if_->set_enabled(true);
+				enable_motor();
+			} else {
+				switch_if_->set_enabled(false);
+				disable_motor();
+			}
+			switch_if_->write();
 		}
-
-		switch_if_->write();
+		if (interface == throttle_if_) {
+			if (msg->is_enabled()) {
+				throttle_if_->set_enabled(true);
+				drive_slow();
+			} else {
+				throttle_if_->set_enabled(false);
+				drive_fast();
+			}
+			throttle_if_->write();
+		}
 	}
 	if (message->is_of_type<SwitchInterface::EnableSwitchMessage>()) {
-		switch_if_->set_enabled(true);
-		enable_motor();
-		switch_if_->write();
+		if (interface == switch_if_) {
+			switch_if_->set_enabled(true);
+			enable_motor();
+			switch_if_->write();
+		}
+		if (interface == throttle_if_) {
+			throttle_if_->set_enabled(true);
+			drive_slow();
+			throttle_if_->write();
+		}
 	}
 
 	if (message->is_of_type<SwitchInterface::DisableSwitchMessage>()) {
-		switch_if_->set_enabled(false);
-		disable_motor();
-		switch_if_->write();
+		if (interface == switch_if_) {
+			switch_if_->set_enabled(false);
+			disable_motor();
+			switch_if_->write();
+		}
+		if (interface == throttle_if_) {
+			throttle_if_->set_enabled(false);
+			drive_fast();
+			throttle_if_->write();
+		}
 	}
 
 	return true;
