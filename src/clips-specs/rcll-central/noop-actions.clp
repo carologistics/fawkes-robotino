@@ -35,7 +35,8 @@
                         |fulfill-order-c0
                         |fulfill-order-c1
                         |fulfill-order-c2
-                        |fulfill-order-c3)
+                        |fulfill-order-c3
+                        |wait-for-mps)
          (executable TRUE)
          (param-values $?param-values))
   =>
@@ -136,4 +137,36 @@
   =>
   (printout info "Refbox confirmed position " ?target " reached!" crlf)
   (modify ?pa (state FINAL))
+)
+
+(defrule action-start-execute-wait-for-mps
+	?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (state PENDING) (executable TRUE)
+	                    (action-name wait-for-mps) (param-values ?robot ?wp ?mps INPUT))
+  (goal (id ?goal-id) (class MOUNT-CAP|BUFFER-CAP|MOUNT-RING|PAY-FOR-RINGS-WITH-BASE|PAY-FOR-RINGS-WITH-CAP-CARRIER))
+  (not (domain-fact (name wp-at) (param-values ?any-wp ?mps OUTPUT)))
+	=>
+	(printout info "Waiting for an MPS to do an operation " ?wp " for robot " ?robot " to move to the other side" crlf)
+	(modify ?pa (state RUNNING))
+	(assert (timer (name (sym-cat "wait-for-mps-" ?robot "-" ?wp "-" ?mps))))
+)
+
+(defrule action-finish-execute-wait-for-mps-early
+	?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (state PENDING) (executable TRUE)
+	                    (action-name wait-for-mps) (param-values ?robot ?wp ?mps INPUT))
+  (goal (id ?goal-id) (class ~MOUNT-CAP&~BUFFER-CAP&~MOUNT-RING&~PAY-FOR-RINGS-WITH-BASE&~PAY-FOR-RINGS-WITH-CAP-CARRIER))
+  =>
+	(printout info "Not waiting for " ?wp " for robot " ?robot " to move to the other side" crlf)
+	(modify ?pa (state EXECUTION-SUCCEEDED))
+)
+
+(defrule action-finish-execute-wait-for-mps
+  ?pa <- (plan-action (plan-id ?plan-id) (state RUNNING) (executable TRUE)
+                      (action-name wait-for-mps) (param-values ?robot ?wp ?mps ?side))
+	(time $?now)
+	?wt <- (timer (name ?timer-name) (time $?t&:(timeout ?now ?t 10)))
+  (test (eq ?timer-name (sym-cat "wait-for-mps-" ?robot "-" ?wp "-" ?mps)))
+  =>
+  (printout info "Finished waiting for " ?mps " with robot " ?robot crlf)
+  (modify ?pa (state EXECUTION-SUCCEEDED))
+  (retract ?wt)
 )
