@@ -521,12 +521,6 @@ function START_TRACKING:init()
                                                                 .expected_side)
     object_tracking_if:msgq_enqueue_copy(msg)
 
-    -- open gripper
-    if fsm.vars.target == "WORKPIECE" and not fsm.vars.dry_run then
-        local open_msg = arduino.OpenGripperMessage:new()
-        arduino:msgq_enqueue(open_msg)
-    end
-
     -- move to default pose
     move_gripper_default_pose()
 end
@@ -543,6 +537,11 @@ function SEARCH_LASER_LINE:loop()
 end
 
 function SEARCH_LASER_LINE:exit() fsm.vars.error = "laser-line not found" end
+
+function WAIT_FOR_GRIPPER:init()
+    -- move to default pose
+    move_gripper_default_pose()
+end
 
 function DRIVE_TO_LASER_LINE:init()
     fsm.vars.consecutive_detections = 0
