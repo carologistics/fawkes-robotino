@@ -28,6 +28,7 @@
  */
 #define CMD_CALIBRATE 'C'
 #define CMD_DOUBLE_CALIBRATE 'c'
+#define CMD_X_CALIBRATE 'r'
 #define CMD_X_NEW_POS 'X'
 #define CMD_Y_NEW_POS 'Y'
 #define CMD_Z_NEW_POS 'Z'
