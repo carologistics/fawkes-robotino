@@ -43,7 +43,6 @@
   ?*PRODUCTION-BUFFER-PRIORITY* = 2
   ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT* = 30
   ?*ROBOT-WAITING-TIMEOUT* = 2
-  ?*ROBOT-WAITING-LONG-TIMEOUT* = 10
 )
 
 (deffunction prio-from-complexity (?com)
@@ -206,16 +205,6 @@
 
 ; ----------------------- Robot Assignment -------------------------------
 
-(defrule goal-executability-init-robot-waiting-timeout
-  (domain-loaded)
-  (wm-fact (key central agent robot args? r ?robot))
-  (not (wm-fact (key goal executability robot-waiting-timeout args? r ?robot)))
-  =>
-  (assert
-    (wm-fact (key goal executability robot-waiting-timeout args? r ?robot)(value ?*ROBOT-WAITING-TIMEOUT*))
-  )
-)
-
 (defrule goal-production-assign-robot-to-enter-field
   (wm-fact (key central agent robot args? r ?robot))
   (not (wm-fact (key domain fact entered-field args? r ?robot)))
@@ -238,10 +227,9 @@
   (not (goal-meta (assigned-to ?robot)))
   (wm-fact (key central agent robot-waiting args? r ?robot))
 	(wm-fact (key refbox game-time) (values $?now))
-  ?to <- (wm-fact (key goal executability robot-waiting-timeout args? r ?robot)(value ?robot-wait-timeout))
   ?wt <- (timer (name ?timer-name&:(eq ?timer-name
                                 (sym-cat ?robot -waiting-timer)))
-	        (time $?t&:(timeout ?now ?t ?robot-wait-timeout)))
+	        (time $?t&:(timeout ?now ?t ?*ROBOT-WAITING-TIMEOUT*)))
   =>
   (bind ?longest-waiting 0)
   (bind ?longest-waiting-robot ?robot)
@@ -263,7 +251,6 @@
                      (eq ?gm:assigned-to nil)))))
     (goal-meta-assign-robot-to-goal ?g ?robot)
   )
-  (if (neq ?to:value ?*ROBOT-WAITING-TIMEOUT*) then (modify ?to (value ?*ROBOT-WAITING-TIMEOUT*)))
   (modify ?longest-waiting)
   (retract ?wt)
 )
@@ -772,7 +759,7 @@
               (priority ?p&:(> ?p 0))
         )
   (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
-  (or (not (wm-fact (key monitoring move-out-of-way high-prio args?)))
+  (or (not (wm-fact (key monitoring move-out-of-way high-prio long-wait args? r ?robot)))
       (eq ?robot nil))
   =>
   (printout t "modify priority of " ?goal-id crlf)
