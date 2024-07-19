@@ -55,7 +55,7 @@ ROS2MotorSwitchThread::init()
 	throttle_if_->set_enabled(false);
 	throttle_if_->write();
 	bbil_add_message_interface(switch_if_);
-	bbil_add_message_interface(switch_if_);
+	bbil_add_message_interface(throttle_if_);
 
 	blackboard->register_listener(this);
 }
