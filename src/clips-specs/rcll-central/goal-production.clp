@@ -740,12 +740,25 @@
               (mode FORMULATED) (parent ?pa-id&~nil)
               (priority ?p&:(> ?p 0))
         )
-  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
-  (or (not (wm-fact (key monitoring move-out-of-way high-prio long-wait args? r ?robot)))
-      (eq ?robot nil))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot&:(neq ?robot nil)))
+  (wm-fact (key monitoring move-out-of-way high-prio long-wait args? r ?robot))
   =>
-  (printout t "modify priority of " ?goal-id crlf)
-  (modify ?g (priority -1.0))
+  (printout t "bump priority of " ?goal-id crlf)
+  (modify ?g (priority ?*MOVE-OUT-OF-WAY-HIGH-PRIORITY*))
+)
+
+(defrule goal-production-revert-priority-move-out-of-way
+  (declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+  ?g <- (goal (id ?goal-id) (class MOVE-OUT-OF-WAY)
+              (type ACHIEVE) (sub-type SIMPLE)
+              (mode FORMULATED) (parent ?pa-id&~nil)
+              (priority ?p&:(> ?p 0))
+        )
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot&:(neq ?robot nil)))
+  (not (wm-fact (key monitoring move-out-of-way high-prio long-wait args? r ?robot)))
+  =>
+  (printout t "reduce priority of " ?goal-id crlf)
+  (modify ?g (priority -1))
 )
 
 (defrule goal-production-re-create-move-out-of-way-simple
@@ -753,11 +766,11 @@
 	corresponding target wait positions"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?parent-id) (class MOVE-OUT-OF-WAY) (sub-type CENTRAL-RUN-SUBGOALS-IN-PARALLEL))
-  (not (and (goal (class MOVE-OUT-OF-WAY) (sub-type SIMPLE) (parent ?parent-id) (params target WAIT1))
-       (goal (class MOVE-OUT-OF-WAY) (sub-type SIMPLE) (parent ?parent-id) (params target WAIT2))
-       (goal (class MOVE-OUT-OF-WAY) (sub-type SIMPLE) (parent ?parent-id) (params target WAIT3))
-       (goal (class MOVE-OUT-OF-WAY) (sub-type SIMPLE) (parent ?parent-id) (params target WAIT4))
-  ))
+  (or (not (goal (class MOVE-OUT-OF-WAY) (sub-type SIMPLE) (parent ?parent-id) (params target WAIT1)))
+      (not (goal (class MOVE-OUT-OF-WAY) (sub-type SIMPLE) (parent ?parent-id) (params target WAIT2)))
+      (not (goal (class MOVE-OUT-OF-WAY) (sub-type SIMPLE) (parent ?parent-id) (params target WAIT3)))
+      (not (goal (class MOVE-OUT-OF-WAY) (sub-type SIMPLE) (parent ?parent-id) (params target WAIT4)))
+  )
   =>
   (bind ?wait-pos (create$))
   (delayed-do-for-all-facts ((?g goal))
