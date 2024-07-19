@@ -132,10 +132,10 @@ private:
 
 	char current_arduino_status_;
 	int  gripper_pose_[3]     = {0, 0, 0};
-	int  goal_gripper_pose[3] = {0, 7500, 13000};
+	int  goal_gripper_pose[3] = {545, 7500, 1000};
 	bool goal_gripper_is_open = false;
 	bool is_homed             = false;
-	int  home_gripper_pose[3] = {0, 7500, 13000};
+	int  home_gripper_pose[3] = {545, 7500, 1000};
 
 	void timer_callback();
 	void handle_nodata();
