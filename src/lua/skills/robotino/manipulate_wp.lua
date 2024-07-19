@@ -633,6 +633,7 @@ function MOVE_BASE_AND_GRIPPER:init()
         x = object_tracking_if:base_frame(0),
         y = object_tracking_if:base_frame(1),
         ori = -object_tracking_if:base_frame(5),
+        timeout_fail = 10,
         frame = "base_link",
         visual_servoing = true
     }
