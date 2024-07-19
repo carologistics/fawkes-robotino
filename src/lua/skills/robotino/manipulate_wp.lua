@@ -263,7 +263,7 @@ function move_gripper_default_pose_exit()
     abs_message:set_target_frame("end_effector_home")
     arduino:msgq_enqueue_copy(abs_message)
     local close_msg = arduino.CloseGripperMessage:new()
-    arduino:msgq_enqueue(close_msg)
+    arduino:msgq_enqueue_copy(close_msg)
 end
 
 function input_invalid()

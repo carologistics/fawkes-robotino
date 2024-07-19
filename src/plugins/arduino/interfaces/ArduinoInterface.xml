@@ -62,6 +62,9 @@
   <message name="Calibrate">
     <comment>Restore gripper's position to the initial position set in the configuration.</comment>
   </message>
+  <message name="CalibrateX">
+    <comment>Run a calibration of gripper's X</comment>
+  </message>
   <message name="Stop">
     <comment>Stops all Axis movement.</comment>
   </message>
