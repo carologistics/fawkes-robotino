@@ -627,6 +627,7 @@ function LOOK_AT_MACHINE:init()
     self.args["motor_move"] = {
         x = 0,
         y = 0,
+        timeout_fail = 3,
         frame = "/odom",
         end_early = false,
         dry_run = false,
@@ -680,6 +681,7 @@ function MOVE_BASE_AND_GRIPPER:init()
         x = object_tracking_if:base_frame(0),
         y = object_tracking_if:base_frame(1),
         ori = -object_tracking_if:base_frame(5),
+        timeout_fail = 10,
         frame = "base_link",
         visual_servoing = true
     }
