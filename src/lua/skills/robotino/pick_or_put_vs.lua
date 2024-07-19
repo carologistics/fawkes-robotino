@@ -157,6 +157,13 @@ fsm:define_states{
         fail_to = "FAILED"
     },
     {
+        "OPEN_FOR_WP",
+        SkillJumpState,
+        skills = {{gripper_commands}},
+        final_to = "MOVE_GRIPPER_RIGHT",
+        fail_to = "FAILED"
+    },
+    {
         "MOVE_GRIPPER_UP",
         SkillJumpState,
         skills = {{gripper_commands}},
@@ -189,7 +196,7 @@ fsm:define_states{
 
 fsm:add_transitions{
     {"INIT", "FAILED", cond = input_invalid, desc = "Invalid Input"},
-    {"INIT", "MOVE_GRIPPER_RIGHT", true, desc = "Start Routine"}, {
+    {"INIT", "OPEN_FOR_WP", true, desc = "Start Routine"}, {
         "CHOOSE_ACTION",
         "CLOSE_GRIPPER",
         cond = is_pick_action,
@@ -215,6 +222,15 @@ function INIT:init()
         z = object_tracking_if:gripper_frame(2),
         ori = fawkes.tf.create_quaternion_from_yaw(0)
     }, "base_link", "end_effector_home")
+end
+
+function OPEN_FOR_WP:init()
+    -- open gripper
+    if fsm.vars.target == "WORKPIECE" and not fsm.vars.dry_run then
+        self.args["gripper_commands"].command = "OPEN"
+    else
+        self.args["gripper_commands"].command = "CLOSE"
+    end
 end
 
 function MOVE_GRIPPER_RIGHT:init()
