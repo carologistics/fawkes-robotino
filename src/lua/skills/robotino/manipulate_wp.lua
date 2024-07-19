@@ -182,9 +182,9 @@ function gripper_aligned()
         ori = fawkes.tf.create_quaternion_from_yaw(0)
     }, "base_link", "end_effector_home")
 
-    return within_tolerance(arduino:x_position(), 0, 0.0001) and
+    return within_tolerance(arduino:x_position(), 0, GRIPPER_TOLERANCE.x) and
                within_tolerance(arduino:y_position() - y_max / 2, y_max / 2,
-                                0.0001) and
+                                GRIPPER_TOLERANCE.y, y) and
                within_tolerance(
                    math.max(0.01, math.min(gripper_target.z, z_max)),
                    arduino:z_position(), GRIPPER_TOLERANCE.z)
@@ -331,10 +331,12 @@ function within_tolerance(value, target, margin)
 end
 
 function ready_for_gripper_movement()
-    return within_tolerance(arduino:x_position(), default_x, 0.0001) and
-               within_tolerance(arduino:y_position() - y_max / 2, default_y,
-                                0.0001) and
-               within_tolerance(arduino:z_position(), default_z, 0.0001)
+    return
+        within_tolerance(arduino:x_position(), default_x, GRIPPER_TOLERANCE.x) and
+            within_tolerance(arduino:y_position() - y_max / 2, default_y,
+                             GRIPPER_TOLERANCE.y) and
+            within_tolerance(arduino:z_position(), default_z,
+                             GRIPPER_TOLERANCE.z)
 end
 
 function dry_expected_object_found()
