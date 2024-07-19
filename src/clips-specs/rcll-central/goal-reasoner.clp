@@ -140,34 +140,6 @@
   )
 )
 
-(deffunction set-robot-to-long-waiting (?robot)
-" Sets a robot that was assigned in a goal meta to waiting with a longer waiting timeout.
-  If no robot was assigned nothing happens.
-
-  @param ?robot: robot1 robot2 robot3 central nil
-"
-  (if (neq ?robot nil) then
-    (bind ?now (create$ ))
-    (do-for-fact ((?refbox-gt wm-fact)) (eq ?refbox-gt:key (create$ refbox game-time))
-      (bind ?now ?refbox-gt:values)
-    )
-
-    (do-for-fact ((?r wm-fact) (?to wm-fact))
-      (and (wm-key-prefix ?r:key (create$ central agent robot))
-           (eq ?robot (wm-key-arg ?r:key r))
-           (wm-key-prefix ?to:key (create$ goal executability robot-waiting-timeout))
-           (eq ?robot (wm-key-arg ?to:key r))
-      )
-      (assert (wm-fact (key central agent robot-waiting
-                        args? r (wm-key-arg ?r:key r)))
-              (timer (name (sym-cat ?robot -waiting-timer))
-	                   (time ?now))
-      )
-      (modify ?to (value ?*ROBOT-WAITING-LONG-TIMEOUT*))
-    )
-  )
-)
-
 (deffunction remove-robot-assignment-from-goal-meta (?goal)
   (if (not (do-for-fact ((?f goal-meta))
       (eq ?f:goal-id (fact-slot-value ?goal id))
@@ -586,7 +558,7 @@
  (modify ?g (outcome FAILED))
 )
 
-(deffunction robot-move-out-of-way-high-prio (?robot)
+(deffunction robot-move-out-of-way-high-prio-long-wait (?robot)
 " Assign robot to the move-out-of-way goals with high priority."
 	(delayed-do-for-all-facts ((?g goal) (?gm goal-meta))
 		(and (eq ?g:class MOVE-OUT-OF-WAY)
@@ -597,7 +569,7 @@
 		)
 		(goal-meta-assign-robot-to-goal ?g ?robot)
 		(modify ?g (priority ?*MOVE-OUT-OF-WAY-HIGH-PRIORITY*))
-		(assert (wm-fact (key monitoring move-out-of-way high-prio args?)))
+		(assert (wm-fact (key monitoring move-out-of-way high-prio long-wait args? r ?robot)))
 	)
 )
 
@@ -632,7 +604,7 @@
       then
         (remove-robot-assignment-from-goal-meta ?g)
         (if ?exceed-limit-max-retry then
-		(robot-move-out-of-way-high-prio ?robot)             
+		(robot-move-out-of-way-high-prio-long-wait ?robot)             
 	   else 
 		(set-robot-to-waiting ?robot)	
         )
@@ -893,7 +865,7 @@
   (set-robot-to-waiting ?robot)
   ;if a move-out-of-the-way has urgent high priority, reset it on goal completion
   (do-for-fact ((?f wm-fact))
-	(wm-key-prefix ?f:key (create$ monitoring move-out-of-way high-prio))
+	(wm-key-prefix ?f:key (create$ monitoring move-out-of-way high-prio long-wait args? r ?robot))
        	(retract ?f)
   )
   (modify ?gm (retries (+ 1 ?retries)))

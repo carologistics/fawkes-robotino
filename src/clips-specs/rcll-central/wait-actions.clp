@@ -22,6 +22,7 @@
 (defglobal
  ?*WAIT-DURATION* = 6
  ?*WAIT-DURATION-MOVE-OUT-OF-WAY* = 2
+ ?*LONG-WAIT-DURATION-MOVE-OUT-OF-WAY* = 10
 )
 
 (defrule action-start-execute-wait-action
@@ -45,13 +46,23 @@
   (retract ?timer)
 )
 
+(deffunction move-out-of-way-wait-time(?robot)
+  (do-for-fact ((?wf wm-fact))
+	(and (eq ?wf:key (create$ monitoring move-out-of-way high-prio long-wait))
+	(eq ?robot (wm-key-arg ?r:key r)))
+	(return ?*LONG-WAIT-DURATION-MOVE-OUT-OF-WAY*)
+  )
+  (return ?*WAIT-DURATION-MOVE-OUT-OF-WAY*)
+)
+
 (defrule action-finish-execute-wait-action-move-out-of-way
   ?pa <- (plan-action (id ?action-id) (plan-id ?plan-id) (goal-id ?goal-id)
                       (action-name wait) (state RUNNING))
   (goal (id ?goal-id) (class MOVE-OUT-OF-WAY))
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot))
   (time $?now)
   ?timer <- (timer (name ?name &:(eq ?name (sym-cat ?goal-id - ?plan-id - ?action-id)))
-                   (time $?t&:(timeout ?now ?t ?*WAIT-DURATION-MOVE-OUT-OF-WAY*)))
+                   (time $?t&:(timeout ?now ?t (move-out-of-way-wait-time ?robot))))
   =>
   (printout info "Finished waiting" crlf)
   (modify ?pa (state EXECUTION-SUCCEEDED))
