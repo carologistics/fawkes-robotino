@@ -379,7 +379,7 @@ function DRIVE_BACK:init()
         local calib_x_msg = arduino.CalibrateXMessage:new()
         arduino:msgq_enqueue_copy(calib_x_msg)
     else
-        local close_msg = arduino.CloseMessage:new()
+        local close_msg = arduino.CloseGripperMessage:new()
         arduino:msgq_enqueue_copy(close_msg)
         local calib_msg = arduino.CalibrateMessage:new()
         arduino:msgq_enqueue_copy(calib_msg)
