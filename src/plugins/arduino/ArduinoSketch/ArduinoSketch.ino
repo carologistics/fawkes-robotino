@@ -291,6 +291,28 @@ calibrate()
 }
 
 void
+Xcalibrate(){
+  bool x_done = false;
+  do{
+    motor_X.enableOutputs();
+    noInterrupts();
+		if (!x_done)
+			motor_X.move(20000L);
+		movement_done_flag = false;
+		interrupts();
+		// due to high step count, reaching end stops is guaranteed!
+		set_status(STATUS_MOVING);
+    while (!movement_done_flag && (!x_done)) {
+			if (!x_done && digitalRead(MOTOR_X_LIMIT_PIN) == LOW) {
+				x_done = true;
+				reach_end_handle(motor_X, 0);
+			}
+		}
+		movement_done_flag = false;
+  }while(!x_done);
+}
+
+void
 reach_end_handle(AccelStepper &motor, byte extra)
 {
 	motor.hard_stop();
@@ -465,6 +487,7 @@ read_package()
 		case CMD_CLOSE: open_gripper = LOW; break;
 		case CMD_CALIBRATE: calibrate(); break;
 		case CMD_DOUBLE_CALIBRATE: double_calibrate(); break;
+    case CMD_X_CALIBRATE: Xcalibrate(); break;
 		case CMD_SET_SPEED:
 			set_new_speed(new_value);
 			send_status();
