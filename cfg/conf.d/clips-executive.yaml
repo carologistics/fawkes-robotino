@@ -186,7 +186,6 @@ clips-executive:
           challenge-flip-insertion: true
           use-static-navgraph: false
 
-          start-with-waiting-robots: true
           exploration:
             # Reduce navigator velocity while traveling the field so we can
             # find laser-lines more reliably
