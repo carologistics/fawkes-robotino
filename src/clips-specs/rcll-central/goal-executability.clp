@@ -29,7 +29,6 @@
   ?*DELIVER-AHEAD-TIME* = 60
 )
 
-
 (deffunction is-free (?target-pos)
 	(if (any-factp ((?at wm-fact))
 	        (and (wm-key-prefix ?at:key (create$ domain fact at))

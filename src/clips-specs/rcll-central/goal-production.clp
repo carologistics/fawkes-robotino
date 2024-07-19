@@ -43,6 +43,7 @@
   ?*PRODUCTION-BUFFER-PRIORITY* = 2
   ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT* = 30
   ?*ROBOT-WAITING-TIMEOUT* = 2
+  ?*ROBOT-WAITING-LONG-TIMEOUT* = 10
 )
 
 (deffunction prio-from-complexity (?com)
@@ -205,6 +206,16 @@
 
 ; ----------------------- Robot Assignment -------------------------------
 
+(defrule goal-executability-init-robot-waiting-timeout
+  (domain-loaded)
+  (wm-fact (key central agent robot args? r ?robot))
+  (not (wm-fact (key goal executability robot-waiting-timeout args? r ?robot)))
+  =>
+  (assert
+    (wm-fact (key goal executability robot-waiting-timeout args? r ?robot)(value ?*ROBOT-WAITING-TIMEOUT*))
+  )
+)
+
 (defrule goal-production-assign-robot-to-enter-field
   (wm-fact (key central agent robot args? r ?robot))
   (not (wm-fact (key domain fact entered-field args? r ?robot)))
@@ -212,7 +223,7 @@
   ?gm <- (goal-meta (goal-id ?oid) (assigned-to nil))
   (not (goal-meta (assigned-to ?robot)))
   =>
-  (modify ?gm (assigned-to ?robot))
+  (goal-meta-assign-robot-to-goal ?oid ?robot)
 )
 
 (defrule goal-production-assign-robot-to-simple-goals
@@ -227,9 +238,10 @@
   (not (goal-meta (assigned-to ?robot)))
   (wm-fact (key central agent robot-waiting args? r ?robot))
 	(wm-fact (key refbox game-time) (values $?now))
+  ?to <- (wm-fact (key goal executability robot-waiting-timeout args? r ?robot)(value ?robot-wait-timeout))
   ?wt <- (timer (name ?timer-name&:(eq ?timer-name
                                 (sym-cat ?robot -waiting-timer)))
-	        (time $?t&:(timeout ?now ?t ?*ROBOT-WAITING-TIMEOUT*)))
+	        (time $?t&:(timeout ?now ?t ?robot-wait-timeout)))
   =>
   (bind ?longest-waiting 0)
   (bind ?longest-waiting-robot ?robot)
@@ -251,6 +263,7 @@
                      (eq ?gm:assigned-to nil)))))
     (goal-meta-assign-robot-to-goal ?g ?robot)
   )
+  (if (neq ?to:value ?*ROBOT-WAITING-TIMEOUT*) then (modify ?to (value ?*ROBOT-WAITING-TIMEOUT*)))
   (modify ?longest-waiting)
   (retract ?wt)
 )
