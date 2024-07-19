@@ -586,14 +586,10 @@
 	(declare (salience ?*MONITORING-SALIENCE*))
 	?gm <- (goal-meta (goal-id ?goal-id) (retries 0) (assigned-to ?assigned-robot&~nil))
 	(not (wm-fact (key monitoring goal retry robot counter args? goal ?goal-id r $?)))
+	(wm-fact (key central agent robot args? r ?assigned-robot))
 	=>
-	(do-for-fact ((?robot wm-fact))
-		(wm-key-prefix ?robot:key (create$ central agent robot))
-		(if (eq (wm-key-arg ?robot:key r) ?assigned-robot)
-		    then (assert (wm-fact (key monitoring goal retry robot counter args? goal ?goal-id r ?assigned-robot)
+	(assert (wm-fact (key monitoring goal retry robot counter args? goal ?goal-id r ?assigned-robot)
 			(value 0) (type INT) (is-list FALSE)))
-		)
-        )
 )
 
 (defrule execution-monitoring-retract-goal-retry-by-robot-counter
@@ -601,26 +597,9 @@
 	(declare (salience ?*MONITORING-SALIENCE*))
         (wm-fact (key monitoring goal retry robot counter args? goal ?goal-id r $?))
 	(not (goal (id ?goal-id)))
+	?f <- (wm-fact (key monitoring goal retry robot counter args?	goal ?goal-id r ?robot))
 	=>
-	(delayed-do-for-all-facts ((?counter wm-fact))
-                (and (wm-key-prefix ?counter:key (create$ monitoring goal retry robot counter))
-		     (eq (wm-key-arg ?counter:key goal) ?goal-id))
-		(retract ?counter)
-	)
-)
-
-(deffunction robot-move-out-of-way-high-prio (?robot)
-" Assign robot to the move-out-of-way goals with high priority."
-	(delayed-do-for-all-facts ((?g goal) (?gm goal-meta))
-		(and (eq ?g:class MOVE-OUT-OF-WAY)
-		     (eq ?g:sub-type SIMPLE)
-		     (eq ?g:mode FORMULATED)
-		     (eq ?g:id ?gm:goal-id)
-		     (eq ?gm:assigned-to nil)
-		)
-		(goal-meta-assign-robot-to-goal ?g ?robot)
-		(modify ?g (priority ?*MOVE-OUT-OF-WAY-HIGH-PRIORITY*))
-	)
+	(retract ?f)
 )
 
 (defrule execution-monitoring-handle-goal-retry-by-robot-exceeds-limit
