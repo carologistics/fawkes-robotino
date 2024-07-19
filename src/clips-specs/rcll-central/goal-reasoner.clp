@@ -558,21 +558,6 @@
 ;  (modify ?g (outcome FAILED))
 ; )
 
-(deffunction robot-move-out-of-way-high-prio-long-wait (?robot)
-" Assign robot to the move-out-of-way goals with high priority."
-	(delayed-do-for-all-facts ((?g goal) (?gm goal-meta))
-		(and (eq ?g:class MOVE-OUT-OF-WAY)
-		     (eq ?g:sub-type SIMPLE)
-		     (eq ?g:mode FORMULATED)
-		     (eq ?g:id ?gm:goal-id)
-		     (eq ?gm:assigned-to nil)
-		)
-		(goal-meta-assign-robot-to-goal ?g ?robot)
-		(modify ?g (priority ?*MOVE-OUT-OF-WAY-HIGH-PRIORITY*))
-		(assert (wm-fact (key monitoring move-out-of-way high-prio long-wait args? r ?robot)))
-	)
-)
-
 (defrule goal-reasoner-evaluate-production-and-maintenance-wp-still-usable
   "If a production or maintenance goal failed but the WP is still usable "
   (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
