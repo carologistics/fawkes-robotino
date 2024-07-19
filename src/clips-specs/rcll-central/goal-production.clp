@@ -83,24 +83,6 @@
   (return ?priority)
 )
 
-(deffunction goal-meta-assign-robot-to-goal (?goal ?robot)
-"Changes an existing goal-meta fact and assign it to the given robot"
-  (if (eq (fact-slot-value ?goal id) FALSE) then
-    (printout t "Goal has no id! " ?goal crlf)
-    (return)
-  )
-  (if (eq ?robot nil) then (return ))
-  (if (not (do-for-fact ((?f goal-meta))
-      (and (eq ?f:goal-id (fact-slot-value ?goal id))
-           (or (eq ?f:restricted-to ?robot)
-               (eq ?f:restricted-to nil)))
-      (modify ?f (assigned-to ?robot))))
-   then
-    (printout t "FAILED assign robot " ?robot " to goal "
-      (fact-slot-value ?goal id) crlf)
-  )
-)
-
 (deffunction goal-meta-assert (?goal ?robot ?order-id ?ring-nr)
 "Creates the goal-meta fact, assigns the goal to the robot and to its order"
   (assert (goal-meta (goal-id (fact-slot-value ?goal id))

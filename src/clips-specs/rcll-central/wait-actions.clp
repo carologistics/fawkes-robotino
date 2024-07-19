@@ -49,7 +49,7 @@
 (deffunction move-out-of-way-wait-time(?robot)
   (do-for-fact ((?wf wm-fact))
 	(and (eq ?wf:key (create$ monitoring move-out-of-way high-prio long-wait))
-	(eq ?robot (wm-key-arg ?r:key r)))
+	(eq ?robot (wm-key-arg ?wf:key r)))
 	(return ?*LONG-WAIT-DURATION-MOVE-OUT-OF-WAY*)
   )
   (return ?*WAIT-DURATION-MOVE-OUT-OF-WAY*)
