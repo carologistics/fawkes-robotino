@@ -123,13 +123,13 @@ plugins/object_tracking:
   max_acceptable_dist: 0.15
 
   yolo:
-    weights_path: "../cfg/yolo/yolov4-tiny.weights"
+    weights_path: "../cfg/yolo/best.onnx"
     config_path: "../cfg/yolo/yolov4-tiny.cfg"
-    confThreshold: 0.7
+    confThreshold: 0.5
     nmsThreshold: 0.3
     # input size
-    width: 352
-    height: 352
+    width: 640
+    height: 640
 
   saved:
     use_saved: false
