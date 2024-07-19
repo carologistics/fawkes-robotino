@@ -551,12 +551,12 @@
   (modify ?gm (root-for-order nil))
 )
 
-(defrule force-fail-goal
-  (declare (salience (+ 2 ?*SALIENCE-GOAL-FORMULATE*)))
-  ?g <- (goal (class MOUNT-RING) (mode FINISHED) (outcome ~FAILED))
-  =>
- (modify ?g (outcome FAILED))
-)
+; (defrule force-fail-goal
+;   (declare (salience (+ 2 ?*SALIENCE-GOAL-FORMULATE*)))
+;   ?g <- (goal (class MOUNT-RING) (mode FINISHED) (outcome ~FAILED))
+;   =>
+;  (modify ?g (outcome FAILED))
+; )
 
 (deffunction robot-move-out-of-way-high-prio-long-wait (?robot)
 " Assign robot to the move-out-of-way goals with high priority."
@@ -593,7 +593,9 @@
 	     (eq (wm-key-arg ?counter:key goal) ?goal-id))
 	(modify ?counter (value (+ 1 ?retries)))
 	(if (> ?retries ?*GOAL-RETRY-MAX*)
-	    then (bind ?exceed-max-retry TRUE))
+	 then
+	   (assert (wm-fact (key monitoring move-out-of-way high-prio long-wait args? r ?robot)))
+	)
   )
   (if (not
         (or
@@ -603,11 +605,7 @@
       )
       then
         (remove-robot-assignment-from-goal-meta ?g)
-        (if ?exceed-max-retry then
-		(robot-move-out-of-way-high-prio-long-wait ?robot)             
-	   else 
-		(set-robot-to-waiting ?robot)	
-        )
+		(set-robot-to-waiting ?robot)
   )
   (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as workpiece is still usable after fail" crlf)
   (modify ?g (mode FORMULATED) (outcome UNKNOWN))

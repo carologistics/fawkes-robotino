@@ -584,9 +584,9 @@
 (defrule execution-monitoring-assert-goal-retry-by-robot-counter
 " Create a counter for each robot retrying a goal."
 	(declare (salience ?*MONITORING-SALIENCE*))
-	?gm <- (goal-meta (goal-id ?goal-id) (retries 0) (assigned-to ?assigned-robot&~nil))
-	(not (wm-fact (key monitoring goal retry robot counter args? goal ?goal-id r $?)))
+	?gm <- (goal-meta (goal-id ?goal-id) (assigned-to ?assigned-robot&~nil))
 	(wm-fact (key central agent robot args? r ?assigned-robot))
+	(not (wm-fact (key monitoring goal retry robot counter args? goal ?goal-id r ?assigned-robot)))
 	=>
 	(assert (wm-fact (key monitoring goal retry robot counter args? goal ?goal-id r ?assigned-robot)
 			(value 0) (type INT) (is-list FALSE)))
@@ -595,11 +595,22 @@
 (defrule execution-monitoring-retract-goal-retry-by-robot-counter
 " Retract the counter once the goal ceases to exist."
 	(declare (salience ?*MONITORING-SALIENCE*))
-        (wm-fact (key monitoring goal retry robot counter args? goal ?goal-id r $?))
+	?f <- (wm-fact (key monitoring goal retry robot counter args? goal ?goal-id r ?robot))
 	(not (goal (id ?goal-id)))
-	?f <- (wm-fact (key monitoring goal retry robot counter args?	goal ?goal-id r ?robot))
 	=>
 	(retract ?f)
+)
+
+(defrule execution-monitoring-revert-high-prio-move-out-of-way
+  (declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+  ?high-prio <- (wm-fact (key monitoring move-out-of-way high-prio long-wait args? r ?robot))
+  (goal (id ?goal-id) (class MOVE-OUT-OF-WAY)
+    (type ACHIEVE) (sub-type SIMPLE)
+    (mode SELECTED) (parent ?pa-id&~nil)
+  )
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot&:(neq ?robot nil)))
+  =>
+  (retract ?high-prio)
 )
 
 ; ----------------------- HANDLE WP CHECK FAIL  --------------------------------
