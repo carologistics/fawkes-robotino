@@ -51,7 +51,7 @@ documentation = [==[Move on a (kind of) straight line to the given coordinates.
 @param x (Optional) The target X coordinate, relative to base_link or to the frame argument (if specified)
 @param y (Optional) Dito
 @param ori (Optional) Rotation. -math.pi <= ori <= math.pi
-@param timout_fail (Optional) will fail after that time
+@param timeout_fail (Optional) will fail after that time
 @param frame (Optional) Reference frame for input coordinates. Defaults to base_link.
 @param vel_trans (Optional) Translational top-speed. Upper limit: hardcoded tunable in skill module.
 @param vel_rot (Optional) Rotational top-speed. Upper limit: dito.
