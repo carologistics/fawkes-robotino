@@ -603,7 +603,7 @@
       )
       then
         (remove-robot-assignment-from-goal-meta ?g)
-        (if ?exceed-limit-max-retry then
+        (if ?exceed-max-retry then
 		(robot-move-out-of-way-high-prio-long-wait ?robot)             
 	   else 
 		(set-robot-to-waiting ?robot)	
