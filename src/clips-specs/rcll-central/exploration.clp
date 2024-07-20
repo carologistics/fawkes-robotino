@@ -224,6 +224,18 @@
 	(modify ?g (is-executable TRUE))
 )
 
+(defrule exp-goals-move-not-executable
+	"Move to a zone."
+	(declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+	?g <- (goal (id ?goal-id) (class EXPLORATION-MOVE)
+	                          (mode FORMULATED)
+	                          (params zone ?target)
+	                          (is-executable TRUE))
+	(goal-meta (goal-id ?goal-id) (assigned-to nil))
+	=>
+	(modify ?g (is-executable FALSE))
+)
+
 (defrule exp-goals-cleanup-failed-completed
 	"Remove failed or completed exploration goals."
 	?g <- (goal (class EXPLORATION-MOVE) (mode RETRACTED) (outcome FAILED|COMPLETED))
