@@ -151,7 +151,7 @@
 )
 
 (defrule action-finish-execute-wait-for-mps-early
-	?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (state PENDING) (executable TRUE)
+	?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (state PENDING)
 	                    (action-name wait-for-mps) (param-values ?robot ?wp ?mps INPUT))
   (goal (id ?goal-id) (class ~MOUNT-CAP&~BUFFER-CAP&~MOUNT-RING&~PAY-FOR-RINGS-WITH-BASE&~PAY-FOR-RINGS-WITH-CAP-CARRIER))
   =>
@@ -160,7 +160,7 @@
 )
 
 (defrule action-finish-execute-wait-for-mps-early-processing
-	?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (state PENDING) (executable TRUE)
+	?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (state PENDING)
 	                    (action-name wait-for-mps) (param-values ?robot ?wp ?mps INPUT))
   (domain-fact (name mps-state) (param-values ?mps PROCESSING))
   =>
@@ -169,9 +169,9 @@
 )
 
 (defrule action-finish-execute-wait-for-mps-early-insufficient-ring-count
-	?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (state PENDING) (executable TRUE)
+	?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (state PENDING|RUNNING)
 	                    (action-name wait-for-mps) (param-values ?robot ?wp ?mps INPUT))
-  (domain-fact (name mps-type (param-values ?mps RS)))
+  (domain-fact (name mps-type) (param-values ?mps RS))
 	(wm-fact (key domain fact rs-ring-spec args? m ?mps r $? rn ?req))
   ?wm2 <- (wm-fact (key domain fact rs-filled-with args? m ?rs n ?rs-num&:(> (sym-to-int ?req) (sym-to-int ?rs-num))))
   =>
@@ -181,9 +181,9 @@
 
 
 (defrule action-finish-execute-wait-for-mps-early-ring-station
-	?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (state PENDING) (executable TRUE)
+	?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (state PENDING|RUNNING)
 	                    (action-name wait-for-mps) (param-values ?robot ?wp ?mps INPUT))
-  (domain-fact (name mps-type (param-values ?mps RS)))
+  (domain-fact (name mps-type) (param-values ?mps RS))
 	(time $?now)
 	?wt <- (timer (name ?timer-name) (time $?t&:(timeout ?now ?t 10)))
   (test (eq ?timer-name (sym-cat "wait-for-mps-" ?robot "-" ?wp "-" ?mps)))
@@ -193,7 +193,7 @@
 )
 
 (defrule action-finish-execute-wait-for-mps
-  ?pa <- (plan-action (plan-id ?plan-id) (state RUNNING) (executable TRUE)
+  ?pa <- (plan-action (plan-id ?plan-id) (state RUNNING|RUNNING)
                       (action-name wait-for-mps) (param-values ?robot ?wp ?mps ?side))
 	(time $?now)
 	?wt <- (timer (name ?timer-name) (time $?t&:(timeout ?now ?t 20)))
