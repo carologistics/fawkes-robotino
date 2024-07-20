@@ -80,7 +80,7 @@
 
   ?*REINSERTION-NAVGRAPH-TIMEOUT* = 5
 
-  ?*GOAL-RETRY-MAX* = 5
+  ?*GOAL-RETRY-MAX* = 3
   ?*GOAL-RETRY-TIMEOUT* = 10
 
   ; defines the spacing between complexity-based prios
@@ -105,6 +105,8 @@
   ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT* = 30
   ?*ROBOT-WAITING-TIMEOUT* = 2
 
+  ;priorities
+  ?*MOVE-OUT-OF-WAY-HIGH-PRIORITY* = 2000.0
 )
 
 ;A timeout for waiting for points
@@ -1485,4 +1487,22 @@
     (bind ?rs-interactions (+ ?rs-interactions 1))
   )
   (return ?rs-interactions)
+)
+
+(deffunction goal-meta-assign-robot-to-goal (?goal ?robot)
+"Changes an existing goal-meta fact and assign it to the given robot"
+  (if (eq (fact-slot-value ?goal id) FALSE) then
+    (printout t "Goal has no id! " ?goal crlf)
+    (return)
+  )
+  (if (eq ?robot nil) then (return ))
+  (if (not (do-for-fact ((?f goal-meta))
+      (and (eq ?f:goal-id (fact-slot-value ?goal id))
+           (or (eq ?f:restricted-to ?robot)
+               (eq ?f:restricted-to nil)))
+      (modify ?f (assigned-to ?robot))))
+   then
+    (printout t "FAILED assign robot " ?robot " to goal "
+      (fact-slot-value ?goal id) crlf)
+  )
 )
