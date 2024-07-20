@@ -584,6 +584,7 @@
 (defrule execution-monitoring-assert-goal-retry-by-robot-counter
 " Create a counter for each robot retrying a goal."
 	(declare (salience ?*MONITORING-SALIENCE*))
+  (goal (id ?goal-id))
 	?gm <- (goal-meta (goal-id ?goal-id) (assigned-to ?assigned-robot&~nil))
 	(wm-fact (key central agent robot args? r ?assigned-robot))
 	(not (wm-fact (key monitoring goal retry robot counter args? goal ?goal-id r ?assigned-robot)))
