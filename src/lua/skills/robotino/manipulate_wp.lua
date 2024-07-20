@@ -256,6 +256,12 @@ function move_gripper_default_pose()
 end
 
 function move_gripper_default_pose_exit()
+    if fsm.vars.target ~= "WORKPIECE" then
+        local close_msg = arduino.CloseGripperMessage:new()
+        arduino:msgq_enqueue_copy(close_msg)
+        local calib_msg = arduino.CalibrateMessage:new()
+        arduino:msgq_enqueue_copy(calib_msg)
+    end
     local abs_message = arduino.MoveXYZAbsMessage:new()
     abs_message:set_x(default_x_exit)
     abs_message:set_y(default_y_exit)
@@ -263,7 +269,7 @@ function move_gripper_default_pose_exit()
     abs_message:set_target_frame("end_effector_home")
     arduino:msgq_enqueue_copy(abs_message)
     local close_msg = arduino.CloseGripperMessage:new()
-    arduino:msgq_enqueue(close_msg)
+    arduino:msgq_enqueue_copy(close_msg)
 end
 
 function input_invalid()
