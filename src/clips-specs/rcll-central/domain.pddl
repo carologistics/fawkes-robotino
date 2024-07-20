@@ -839,6 +839,12 @@
 	:effect (at ?r ?point WAIT)
 )
 
+(:action wait-for-mps
+	:parameters (?r - robot ?wp - workpiece ?mps - mps ?side - mps-side)
+	:precondition (at ?r ?mps ?side)
+	:effect (at ?r ?mps ?side)
+)
+
 ; TODO CLEANUP WP is broken in master
 (:action goal-cleanup-wp
 	:parameters (?r - robot ?zone - zone)

@@ -285,6 +285,7 @@
 			)
 			(plan-assert-action wp-put ?robot ?cc ?mps INPUT (get-wp-complexity ?cc))
 			;(plan-assert-action wp-check ?robot ?cc ?mps INPUT THERE)
+			(plan-assert-action wait-for-mps ?robot ?cc ?mps INPUT)
 		)
 	)
 	(modify ?g (mode EXPANDED))
@@ -322,6 +323,7 @@
 				(plan-assert-move ?robot ?wp-loc ?wp-side ?target-mps INPUT
 					(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT (get-wp-complexity ?wp))
 					;(plan-assert-action wp-check ?robot ?wp ?target-mps INPUT THERE)
+					(plan-assert-action wait-for-mps ?robot ?wp ?target-mps INPUT)
 				)
 		)
 	)
@@ -343,6 +345,7 @@
 		(plan-assert-move ?robot ?curr-location ?curr-side ?target-mps INPUT
 			(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT (get-wp-complexity ?wp))
 			;(plan-assert-action wp-check ?robot ?wp ?target-mps INPUT THERE)
+			(plan-assert-action wait-for-mps ?robot ?wp ?target-mps INPUT)
 		)
 	)
 	(modify ?g (mode EXPANDED))
@@ -397,6 +400,7 @@
 				(plan-assert-move ?robot ?wp-loc ?wp-side ?target-mps INPUT
 					(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT (get-wp-complexity ?wp))
 					;(plan-assert-action wp-check ?robot ?wp ?target-mps INPUT THERE)
+					(plan-assert-action wait-for-mps ?robot ?wp ?target-mps INPUT)
 				)
 		)
 	)
@@ -438,6 +442,7 @@
 				(plan-assert-action wp-put-slide-cc ?robot
 				 ?wp ?target-mps ?rs-before ?rs-after)
 			)
+			(plan-assert-action wait-for-mps ?robot ?wp ?target-mps INPUT)
 		)
 	)
 	(modify ?g (mode EXPANDED))
@@ -469,6 +474,7 @@
 				(plan-assert-action wp-put-slide-cc ?robot
 				 ?wp ?target-mps ?rs-before ?rs-after)
 			)
+			(plan-assert-action wait-for-mps ?robot ?wp ?target-mps INPUT)
 		)
 	)
 	(modify ?g (mode EXPANDED))
