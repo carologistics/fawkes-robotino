@@ -171,12 +171,7 @@ fsm:add_transitions{
     {"INIT", "FAILED", precond = check_tf, desc = "no tf"},
     {"INIT", "FAILED", cond = "not vars.target_valid", desc = "target invalid"},
     {"INIT", "MOVING", cond = true}, {"MOVING", "TIMEOUT", timeout = 2}, -- Give the interface some time to update
-    {
-        "TIMEOUT",
-        "FINAL",
-        cond = "vars.waiting_pos and travelled_distance(self)",
-        desc = "Going to waiting position"
-    }, {"TIMEOUT", "FINAL", cond = target_reached, desc = "Target reached"},
+    {"TIMEOUT", "FINAL", cond = target_reached, desc = "Target reached"},
     {
         "TIMEOUT",
         "FAILED",
