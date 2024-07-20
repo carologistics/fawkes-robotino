@@ -313,12 +313,14 @@ function input_invalid()
         end
     end
 
-    -- if (fsm.vars.target == "SLIDE" or fsm.vars.target == "CONVEYOR") and
-    --     not arduino:is_gripper_closed() then
-    --   print_error("If a conveyor or slide is targeted, " ..
-    --     "make sure there is a workpiece in the gripper!")
-    --   return true
-    -- end
+    if (fsm.vars.target == "SLIDE" or fsm.vars.target == "CONVEYOR") and
+        not arduino:is_wp_sensed() then
+        print_error("If a conveyor or slide is targeted, " ..
+                        "make sure there is a workpiece in the gripper!")
+        fsm.vars.error = "no workpiece sensed when trying to put"
+        fsm:set_error(fsm.vars.error)
+        -- return true
+    end
     return false
 end
 
@@ -347,6 +349,20 @@ end
 function dry_unexpected_object_found()
     return fsm.vars.consecutive_detections > 2 and fsm.vars.dry_run and
                fsm.vars.reverse_output
+end
+
+function capacity_wrong()
+    if fsm.vars.target == "WORKPIECE" and not arduino:is_wp_sensed() then
+        fsm.vars.error = "no workpiece sensed"
+        fsm:set_error(fsm.vars.error)
+        -- return true
+    elseif (fsm.vars.target == "SLIDE" or fsm.vars.target == "CONVEYOR") and
+        not arduino:is_wp_sensed() then
+        fsm.vars.error = "workpiece sensed after put"
+        fsm:set_error(fsm.vars.error)
+        -- return true
+    end
+    return false
 end
 
 fsm:define_states{
@@ -378,14 +394,19 @@ fsm:define_states{
         "GRIPPER_ROUTINE",
         SkillJumpState,
         skills = {{pick_or_put_vs}},
-        final_to = "FINAL",
-        fail_to = "FINE_TUNE_GRIPPER"
-    }
+        final_to = "CHECK_WP",
+        fail_to = "FAILED"
+    },
+    {"CHECK_WP", JumpState}
 }
 
 fsm:add_transitions{
-    {"INIT", "FAILED", cond = input_invalid, desc = "Invalid Input"},
-    {"INIT", "START_TRACKING", cond = true, desc = "Valid Input"}, {
+    {
+        "INIT",
+        "FAILED",
+        cond = input_invalid,
+        desc = "Invalid input or missing workpiece"
+    }, {"INIT", "START_TRACKING", cond = true, desc = "Valid input"}, {
         "START_TRACKING",
         "FAILED",
         timeout = 2,
@@ -448,7 +469,12 @@ fsm:add_transitions{
         "FIND_LASER_LINE",
         cond = "vars.missing_detections > MISSING_MAX",
         desc = "Tracking lost target"
-    }
+    }, {
+        "CHECK_WP",
+        "FAILED",
+        cond = capacity_wrong,
+        desc = "Workpiece wrongly sensed"
+    }, {"CHECK_WP", "FINAL", cond = true, desc = "Workpiece-check succesful"}
 }
 
 function INIT:init()
@@ -543,6 +569,7 @@ function SEARCH_LASER_LINE:exit() fsm.vars.error = "laser-line not found" end
 function WAIT_FOR_GRIPPER:init()
     -- move to default pose
     move_gripper_default_pose()
+    fsm.vars.error = "gripper default pose not reachable"
 end
 
 function DRIVE_TO_LASER_LINE:init()
@@ -583,7 +610,9 @@ function DRIVE_TO_LASER_LINE:init()
             end_early = false,
             dry_run = fsm.vars.dry_run
         }
+        fsm.vars.error = "Motor move failure"
     else
+        fsm.vars.error = "Transform error"
         print_error("Transform Error: matched_line to odom")
     end
 end
@@ -611,8 +640,6 @@ function DRIVE_TO_LASER_LINE:loop()
         end
     end
 end
-
-function DRIVE_TO_LASER_LINE:exit() fsm.vars.error = "object not found" end
 
 function AT_LASER_LINE:loop()
     if fsm.vars.tracking_msgid ~= object_tracking_if:msgid() then
@@ -659,12 +686,14 @@ function MOVE_BASE_AND_GRIPPER:init()
 
     fsm.vars.gripper_wait = 10
     set_gripper(0, y_max / 2, gripper_target.z)
+    fsm.vars.error = "VS failure while moving base"
 end
 
 function FINE_TUNE_GRIPPER:init()
     fsm.vars.missing_detections = 0
     fsm.vars.out_of_reach = false
     fsm.vars.gripper_wait = 10
+    fsm.vars.error = "VS failure when aligning the gripper"
 end
 
 function FINE_TUNE_GRIPPER:loop()
@@ -702,6 +731,7 @@ function GRIPPER_ROUTINE:init()
     else
         self.args["pick_or_put_vs"].shelf = false
     end
+    fsm.vars.error = "Gripper routine failed"
 end
 
 -- end tracking afterwards
