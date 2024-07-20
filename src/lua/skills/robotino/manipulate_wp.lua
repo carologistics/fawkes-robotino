@@ -579,6 +579,7 @@ function DRIVE_TO_LASER_LINE:init()
             y = laser_target.y,
             frame = "/odom",
             ori = fawkes.tf.get_yaw(laser_target.ori),
+            timeout_fail = 5,
             end_early = false,
             dry_run = fsm.vars.dry_run
         }
