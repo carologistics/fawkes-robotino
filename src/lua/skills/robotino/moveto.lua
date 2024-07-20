@@ -28,7 +28,8 @@ depends_interfaces = {
     --   {v = "pose", type="Position3DInterface", id="Pose"},
     {v = "navigator", type = "NavigatorInterface", id = "Navigator"},
     {v = "throttle", type = "SwitchInterface", id = "motor-throttle"},
-    {v = "laserline_switch", type = "SwitchInterface", id = "laser-lines"}
+    {v = "laserline_switch", type = "SwitchInterface", id = "laser-lines"},
+    {v = "setparam", type = "SwitchInterface", id = "setgoal-param"}
 }
 
 documentation = [==[Move to a known location via place or x, y, ori.
@@ -39,6 +40,7 @@ if place is set, this will be used and x, y and ori will be ignored
 @param y      y we want to drive to
 @param slow   move the robot slow
 @param ori    ori we want to drive to
+@param set_tolerance  set goalpose tolerance
 
 ]==]
 
@@ -160,6 +162,10 @@ function INIT:init()
         -- check for waiting position
         if string.match(self.fsm.vars.place, "WAIT") then
             self.fsm.vars.waiting_pos = true
+            self.fsm.set_tolerance = false
+            setparam:msgq_enqueue(setparam.EnableSwitchMessage:new())
+        else -- not a waiting position
+            setparam:msgq_enqueue(setparam.DisableSwitchMessage:new())
         end
         if string.match(self.fsm.vars.place, "^[MC][-]Z[1-7][1-8]$") then
             -- place argument is a zone, e.g. M-Z21

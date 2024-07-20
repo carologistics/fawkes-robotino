@@ -40,11 +40,16 @@ ROS2MotorSwitchThread::init()
 	  std::string(node_handle->get_namespace()) + "/cmd_vel_enable");
 	throttle_client_ = node_handle->create_client<SetVelLimits>(
 	  std::string(node_handle->get_namespace()) + "/set_velocity_limits");
+	goalparam_client_ = node_handle->create_client<SetParameters>(
+	  std::string(node_handle->get_namespace()) + "/controller_server/set_parameters");
 	while (!switch_client_->wait_for_service(std::chrono::seconds(5))) {
 		logger->log_warn(name(), "Switch service not available, waiting");
 	}
-	while (!throttle_client_->wait_for_service(std::chrono::seconds(5))) {
-		logger->log_warn(name(), "Throttle service not available, waiting");
+	while (!switch_client_->wait_for_service(std::chrono::seconds(5))) {
+		logger->log_warn(name(), "Switch service not available, waiting");
+	}
+	while (!goalparam_client_->wait_for_service(std::chrono::seconds(5))) {
+		logger->log_warn(name(), "Goalparam-set service not available, waiting");
 	}
 
 	switch_if_ = NULL;
@@ -54,8 +59,12 @@ ROS2MotorSwitchThread::init()
 	throttle_if_ = blackboard->open_for_writing<SwitchInterface>("motor-throttle");
 	throttle_if_->set_enabled(false);
 	throttle_if_->write();
+	goalparam_if_ = blackboard->open_for_writing<SwitchInterface>("setgoal-param");
+	goalparam_if_->set_enabled(false);
+	goalparam_if_->write();
 	bbil_add_message_interface(switch_if_);
 	bbil_add_message_interface(throttle_if_);
+	bbil_add_message_interface(goalparam_if_);
 
 	blackboard->register_listener(this);
 }
@@ -134,6 +143,40 @@ ROS2MotorSwitchThread::drive_slow()
 	auto future_result = throttle_client_->async_send_request(request, response_received_callback);
 }
 
+void
+ROS2MotorSwitchThread::low_tolerance()
+{
+	auto request                    = std::make_shared<SetParameters::Request>();
+	using ServiceResponseFuture     = rclcpp::Client<SetParameters>::SharedFuture;
+	auto response_received_callback = [this](ServiceResponseFuture future) {
+		auto response = future.get();
+		if (!response->successful) {
+			logger->log_error(name(), "Failed to set the low goal tolerance");
+		}
+	};
+	request->goal_checker.goal_checker  = 0.25;
+	request->goal_checker.yaw_goal_tolerance  = 0.25;
+	
+	auto future_result = goalparam_client_->async_send_request(request, response_received_callback);
+}
+
+void
+ROS2MotorSwitchThread::high_tolerance()
+{
+	auto request                    = std::make_shared<SetParameters::Request>();
+	using ServiceResponseFuture     = rclcpp::Client<SetParameters>::SharedFuture;
+	auto response_received_callback = [this](ServiceResponseFuture future) {
+		auto response = future.get();
+		if (!response->successful) {
+			logger->log_error(name(), "Failed to set the low goal tolerance");
+		}
+	};
+	request->goal_checker.goal_checker  = 0.75;
+	request->goal_checker.yaw_goal_tolerance  = 0.25;
+	
+	auto future_result = goalparam_client_->async_send_request(request, response_received_callback);
+}
+
 bool
 ROS2MotorSwitchThread::bb_interface_message_received(fawkes::Interface *interface,
                                                      fawkes::Message   *message) throw()
@@ -160,6 +203,16 @@ ROS2MotorSwitchThread::bb_interface_message_received(fawkes::Interface *interfac
 			}
 			throttle_if_->write();
 		}
+		if (interface == goalparam_if_) {
+			if (msg->is_enabled()) {
+				goalparam_if_->set_enabled(true);
+				high_tolerance();
+			} else {
+				throttle_if_->set_enabled(false);
+				low_tolerance();
+			}
+			throttle_if_->write();
+		}
 	}
 	if (message->is_of_type<SwitchInterface::EnableSwitchMessage>()) {
 		if (interface == switch_if_) {
@@ -170,6 +223,11 @@ ROS2MotorSwitchThread::bb_interface_message_received(fawkes::Interface *interfac
 		if (interface == throttle_if_) {
 			throttle_if_->set_enabled(true);
 			drive_slow();
+			throttle_if_->write();
+		}
+		if (interface == goalparam_if_) {
+			throttle_if_->set_enabled(true);
+			high_tolerance();
 			throttle_if_->write();
 		}
 	}
@@ -183,6 +241,11 @@ ROS2MotorSwitchThread::bb_interface_message_received(fawkes::Interface *interfac
 		if (interface == throttle_if_) {
 			throttle_if_->set_enabled(false);
 			drive_fast();
+			throttle_if_->write();
+		}
+		if (interface == goalparam_if_) {
+			throttle_if_->set_enabled(true);
+			low_tolerance();
 			throttle_if_->write();
 		}
 	}
