@@ -109,8 +109,8 @@ function is_timedout()
     return false
 end
 
-function send_transrot(self, vx, vy, omega)
-    if self.fsm.vars.only_rotate then
+function send_transrot(vx, vy, omega)
+    if fsm.vars.only_rotate then
         vx = 0
         vy = 0
     end
@@ -268,7 +268,7 @@ function set_speed(self)
                     v.y, v.ori, dist_target.x, dist_target.y,
                     scalar(dist_target.ori))
     end
-    send_transrot(self, v.x, v.y, v.ori)
+    send_transrot(v.x, v.y, v.ori)
     self.fsm.vars.speed = v
 end
 
@@ -590,7 +590,7 @@ function DRIVE:loop()
     set_speed(self)
 end
 
-function DRIVE:exit() send_transrot(self, 0, 0, 0) end
+function DRIVE:exit() send_transrot(0, 0, 0) end
 
 function WAIT_TRACKING:loop()
     if self.fsm.vars.msgid ~= object_tracking_if:msgid() then
@@ -655,7 +655,7 @@ function DRIVE_VS:loop()
     set_speed(self)
 end
 
-function DRIVE_VS:exit() send_transrot(self, 0, 0, 0) end
+function DRIVE_VS:exit() send_transrot(0, 0, 0) end
 
 function DRIVE_CAM:init()
     self.fsm.vars.vmax_arg = {
@@ -674,7 +674,7 @@ end
 
 function DRIVE_CAM:loop() set_speed(self) end
 
-function DRIVE_CAM:exit() send_transrot(self, 0, 0, 0) end
+function DRIVE_CAM:exit() send_transrot(0, 0, 0) end
 
 function STOP_NAVIGATOR:init()
     local msg = navigator.StopMessage:new()
