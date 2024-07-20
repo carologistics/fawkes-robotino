@@ -608,13 +608,14 @@
     (type ACHIEVE) (sub-type SIMPLE)
     (mode SELECTED) (parent ?pa-id&~nil)
   )
-  (goal-meta (goal-id ?goal-id) (assigned-to ?robot&:(neq ?robot nil)))
+  ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to ?robot&:(neq ?robot nil)) (retries ?retries))
   =>
   (retract ?high-prio)
   (delayed-do-for-all-facts ((?retry wm-fact))
     (and (wm-key-prefix ?retry:key (create$ monitoring goal retry robot counter)) (eq (wm-key-arg ?retry:key r) ?robot))
     (modify ?retry (value (max (- ?retry:value ?*GOAL-RETRY-MAX*) 0)))
   )
+  (modify ?gm (retries (max (- ?retries ?*GOAL-RETRY-MAX*) 0)))
 )
 
 ; ----------------------- HANDLE WP CHECK FAIL  --------------------------------
