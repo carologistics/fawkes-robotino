@@ -574,7 +574,7 @@
   ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to ?robot)
              (category ?category&PRODUCTION|MAINTENANCE|PRODUCTION-INSTRUCT|MAINTENANCE-INSTRUCT) (retries ?retries))
   =>
-  (modify ?gm (retries (+ 1 ?retries)))
+  (modify ?gm (retries 0))
   (bind ?exceed-max-retry FALSE)
   (do-for-fact ((?counter wm-fact))
 	(and (wm-key-prefix ?counter:key (create$ monitoring goal retry robot counter))
