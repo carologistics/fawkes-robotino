@@ -81,6 +81,13 @@ end
 
 function has_navigator() return navigator:has_writer() end
 
+function is_insertion()
+    if string.match(self.fsm.vars.place, "^[MC][-]Z[5-7][1]$") then
+        return true
+    end
+    return false
+end
+
 function can_navigate(self)
     return self.fsm.vars.x ~= nil and self.fsm.vars.y ~= nil
 end
@@ -165,6 +172,11 @@ fsm:add_transitions{
         "FAILED",
         cond = "not has_navigator()",
         desc = "Navigator not running"
+    }, {
+        "CHECK_INPUT",
+        "FAILED",
+        cond = is_insertion,
+        desc = "You shall not drive there"
     }, {"CHECK_INPUT", "INIT", cond = can_navigate},
     {"CHECK_INPUT", "WAIT_TF", cond = true},
     {"WAIT_TF", "INIT", cond = can_navigate},
