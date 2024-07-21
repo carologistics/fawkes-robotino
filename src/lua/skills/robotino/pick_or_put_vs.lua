@@ -44,7 +44,7 @@ Parameters:
 skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
 
-local drive_back_x = -0.1
+local drive_back_x = -0.2
 
 -- read gripper config
 local x_max = config:get_float("/arduino/x_max") -- gripper max value in x direction
