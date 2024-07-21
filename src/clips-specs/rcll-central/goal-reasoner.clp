@@ -570,13 +570,13 @@
   ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to ?robot)
              (category ?category&PRODUCTION|MAINTENANCE|PRODUCTION-INSTRUCT|MAINTENANCE-INSTRUCT) (retries ?retries))
   =>
-  (modify ?gm (retries 0))
+  (modify ?gm (retries (+ 1 ?retries)))
   (bind ?exceed-max-retry FALSE)
   (do-for-fact ((?counter wm-fact))
 	(and (wm-key-prefix ?counter:key (create$ monitoring goal retry robot counter))
 	     (eq (wm-key-arg ?counter:key r) ?robot)
 	     (eq (wm-key-arg ?counter:key goal) ?goal-id))
-	(modify ?counter (value (+ 1 ?retries)))
+	(modify ?counter (value (+ 1 ?counter:value)))
 	(if (> ?retries ?*GOAL-RETRY-MAX*)
 	 then
 	   (assert (wm-fact (key monitoring move-out-of-way high-prio long-wait args? r ?robot)))

@@ -573,7 +573,7 @@
 	(wm-fact (key central agent robot args? r ?r))
 	(test (eq TRUE (should-retry ?an ?error)))
 	?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an id ?id2&:(eq ?id2 (sym-cat ?id)) m ? g ?goal-id)
-	        (value ?tries&:(< ?tries 3)));?*MAX-RETRIES-PICK*
+	        (value ?tries&:(< ?tries 1)));?*MAX-RETRIES-PICK*
 	=>
 	(bind ?tries (+ 1 ?tries))
 	(modify ?pa (state FORMULATED) (error-msg ""))
@@ -616,7 +616,6 @@
     (and (wm-key-prefix ?retry:key (create$ monitoring goal retry robot counter)) (eq (wm-key-arg ?retry:key r) ?robot))
     (modify ?retry (value (max (- ?retry:value ?*GOAL-RETRY-MAX*) 0)))
   )
-  (modify ?gm (retries (max (- ?retries ?*GOAL-RETRY-MAX*) 0)))
 )
 
 ; ----------------------- HANDLE WP CHECK FAIL  --------------------------------
