@@ -243,6 +243,11 @@ function INIT:init()
         self.fsm.vars.ori = self.fsm.vars.ori or 1 / 0
     end
 
+    if math.abs(self.fsm.vars.x) > 4 and self.fsm.vars.y < 1 then
+        self.fsm.vars.target_valid = false
+        self.fsm.error = "insertion zone targetted"
+    end
+
     self.fsm.vars.region_trans = self.fsm.vars.region_trans or REGION_TRANS
 end
 
