@@ -196,9 +196,9 @@ function gripper_aligned()
             tostring(
                 within_tolerance(
                     math.max(0.01, math.min(gripper_target.z, z_max)),
-                    arduino:z_position(), GRIPPER_TOLERANCE.z)))
+                    arduino:z_position(), GRIPPER_TOLERANCE.z * 1.1)))
     return within_tolerance(math.max(0.01, math.min(gripper_target.z, z_max)),
-                            arduino:z_position(), GRIPPER_TOLERANCE.z)
+                            arduino:z_position(), GRIPPER_TOLERANCE.z * 1.1)
 end
 
 function set_gripper(x, y, z)
