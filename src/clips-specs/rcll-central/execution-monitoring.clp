@@ -1186,6 +1186,7 @@
 	)
 )
 
+
 (defrule execution-monitoring-reformulate-instruct-fails-bs-ds
 "When an INSTRUCT fails on a BS|DS, reformulate the instruct goal."
 	(declare (salience ?*MONITORING-SALIENCE*))
@@ -1318,4 +1319,27 @@
   (modify ?at (param-values ?robot ?zone WAIT))
   (assert (domain-fact (name mps-side-approachable) (param-values ?mps ?side)))
   (modify ?pa (param-values ?robot ?zone WAIT $?to))
+)
+
+
+; ----------------------- Orphaned WPS -----------------------------------
+(defrule execution-monitoring-reset-machine-with-orphaned-wp
+"When an INSTRUCT fails on an MPS (except BS|DS), break the machine."
+	(declare (salience ?*MONITORING-SALIENCE*))
+	?wm <- (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+  	(domain-object (name ?orphaned-wp) (type workpiece))
+  	(wm-fact (key domain fact wp-at args? wp ?orphaned-wp m ?mps side ?side))
+  	(not (goal (mode ~RETRACTED) (params $? ?orphaned-wp $?)))
+  	(not (goal (class RESET-MPS) (params mps ?mps) (mode ~RETRACTED)))
+	=>
+	(bind ?goal-id (sym-cat RESET-MPS - (gensym*)))
+	(assert (goal (id ?goal-id) (class RESET-MPS) (params mps ?mps) (mode EXPANDED) (sub-type SIMPLE) (type ACHIEVE)))
+	(assert (goal-meta (goal-id ?goal-id) (assigned-to central)))
+	(assert
+	    (plan (id (sym-cat ?goal-id -PLAN)) (goal-id ?goal-id))
+	    (plan-action (id 1) (plan-id (sym-cat ?goal-id -PLAN)) (goal-id ?goal-id)
+	        (action-name reset-mps)
+	        (param-names m)
+	        (param-values ?mps))
+	)
 )
