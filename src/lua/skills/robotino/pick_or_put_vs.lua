@@ -376,8 +376,10 @@ function MOVE_GRIPPER_UP:init()
 end
 
 function DRIVE_BACK:init()
-    local calib_x_msg = arduino.CalibrateXMessage:new()
-    arduino:msgq_enqueue_copy(calib_x_msg)
+    if fsm.vars.target == "WORKPIECE" then
+        local calib_x_msg = arduino.CalibrateXMessage:new()
+        arduino:msgq_enqueue_copy(calib_x_msg)
+    end
     self.args["motor_move"].x = drive_back_x
 end
 
