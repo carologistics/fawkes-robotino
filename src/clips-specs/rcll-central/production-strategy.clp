@@ -34,7 +34,7 @@
   ?*C1-CUTOFF* = 16
   ?*C2-CUTOFF* = 16
   ?*C3-CUTOFF* = 15
-  ?*TOTAL-PRODUCTION-THRESHOLD* = 2
+  ?*TOTAL-PRODUCTION-THRESHOLD* = 3
   ?*TOTAL-PRODUCTION-THRESHOLD-2ROBOTS* = 2
   ?*TOTAL-PRODUCTION-THRESHOLD-1ROBOT* = 1
   ?*SALIENCE-ORDER-SELECTION* = ?*SALIENCE-HIGH*
@@ -736,7 +736,6 @@
     (wm-fact (key strategy meta production-order-time-limit args? com C3) (value ?*C3-PRODUCTION-THRESHOLD*) (type INT))
     (wm-fact (key strategy meta production-order-limit args? com TOTAL) (value ?*TOTAL-PRODUCTION-THRESHOLD*) (type INT))
     (wm-fact (key strategy meta robot-active-count args?) (value 0) (type INT))
-    (wm-fact (key strategy meta standing-orders args?) (is-list TRUE) (type SYMBOL))    
   )
 )
 
@@ -1225,27 +1224,21 @@
 (defrule production-strategy-filter-set-selected-order-filter
   " - it is a possible order
     - it fulfills all the filters
-    - or it is a standing order before eight minutes
     - there is no order of a higher complexity that fulfills all the filters"
   (declare (salience ?*SALIENCE-ORDER-SELECTION*))
-  (wm-fact (key refbox game-time) (values ?curr-time $?))
+
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
-  (wm-fact (key strategy meta standing-orders args?) (values $?standing-orders))  
-  (or
-    (and (not (wm-fact (key strategy meta filtered-orders $?) (values $?values&:(not (member$ ?order-id ?values)))))
-        (not
-            (and
-            (wm-fact (key strategy meta possible-orders) (values $? ?o-order-id&:(neq ?order-id ?o-order-id) $?))
-            (not (wm-fact (key strategy meta filtered-orders $?) (values $?values&:(not (member$ ?o-order-id ?values)))))
-            (wm-fact (key domain fact order-complexity args? ord ?o-order-id com ?o-comp))
-            )
-        )
-        (test (and (< ?curr-time ?*MINUTE-EIGHT-GAME-TIME*) (not (member$ ?order-id ?standing-orders))))
+  (not (wm-fact (key strategy meta filtered-orders $?) (values $?values&:(not (member$ ?order-id ?values)))))
+  (not
+    (and
+      (wm-fact (key strategy meta possible-orders) (values $? ?o-order-id&:(neq ?order-id ?o-order-id) $?))
+      (not (wm-fact (key strategy meta filtered-orders $?) (values $?values&:(not (member$ ?o-order-id ?values)))))
+      (wm-fact (key domain fact order-complexity args? ord ?o-order-id com ?o-comp))
+      (test (< 0 (str-compare ?o-comp ?comp)))
     )
-    
-    (test (and (>= ?curr-time ?*MINUTE-EIGHT-GAME-TIME*) (member$ ?order-id ?standing-orders)))
   )
+
   ?f <- (wm-fact (key strategy meta selected-order args? cond filter) (value ?ex-order-id))
   (or
     (and
@@ -1599,23 +1592,13 @@
 )
 
 ; -- decrease priority for standing orders until game-time 10
-(defrule assert-standing-order
-  "check if the given order is a standing order"
-  (wm-fact (key refbox order ?order-id delivery-end) (type UINT) (value ?deadline))
-  (wm-fact (key refbox order ?order-id delivery-begin) (value ?begin))
-  (test (and (eq ?deadline ?*FULL-GAME-TIME*) (eq ?begin 0) ))
-  ?f <- (wm-fact (key strategy meta standing-orders args?) (values $?values))
-  (test (not (member$ ?order-id ?values)))
-  =>
-  (modify ?f (values ?values ?order-id))
-)
 
 (defrule production-strategy-decrease-priority-for-standing-orders
   "If there is an active standing order, decrease the goal priority until half time"
   (wm-fact (key refbox game-time) (values ?curr-time $?))
   (wm-fact (key refbox order ?order-id delivery-end) (type UINT) (value ?deadline))
   (wm-fact (key refbox order ?order-id delivery-begin) (value ?begin))
-  (test (and (eq ?deadline ?*FULL-GAME-TIME*) (eq ?begin 0) (< ?curr-time ?*MINUTE-EIGHT-GAME-TIME*)))
+  (test (and (eq ?deadline ?*FULL-GAME-TIME*) (eq ?begin 0) (< ?curr-time ?*HALF-GAME-TIME*)))
   (wm-fact (key strategy meta active-orders) (values $?values&:(member$ ?order-id ?values)))
   (not (wm-fact (key strategy meta priority decrease standing-order args? order-id ?order-id) (value ?val&:(eq ?val ?*PRODUCTION-STANDING-ORDER-PRIORITY*))))
   =>
@@ -1638,7 +1621,7 @@
   (wm-fact (key refbox game-time) (values ?curr-time $?))
   (wm-fact (key refbox order ?order-id delivery-begin) (value ?begin))
   (wm-fact (key refbox order ?order delivery-end) (type UINT) (value ?deadline))
-  (test (and (eq ?deadline ?*FULL-GAME-TIME*) (eq ?begin 0) (>= ?curr-time ?*MINUTE-EIGHT-GAME-TIME*)))
+  (test (and (eq ?deadline ?*FULL-GAME-TIME*) (eq ?begin 0) (>= ?curr-time ?*HALF-GAME-TIME*)))
   (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?com))
   =>
