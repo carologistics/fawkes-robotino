@@ -87,7 +87,7 @@ local default_z = 0.03
 
 local default_x_exit = 0.06
 local default_y_exit = -0.03
-local default_z_exit = 0.03
+local default_z_exit = 0
 -- read config values for computing expected target position
 -- conveyor
 if config:exists("plugins/object_tracking/belt_values/belt_offset_side") then
@@ -261,12 +261,6 @@ function move_gripper_default_pose()
 end
 
 function move_gripper_default_pose_exit()
-    if fsm.vars.target ~= "WORKPIECE" then
-        local close_msg = arduino.CloseGripperMessage:new()
-        arduino:msgq_enqueue_copy(close_msg)
-        local calib_msg = arduino.CalibrateMessage:new()
-        arduino:msgq_enqueue_copy(calib_msg)
-    end
     local abs_message = arduino.MoveXYZAbsMessage:new()
     abs_message:set_x(default_x_exit)
     abs_message:set_y(default_y_exit)
@@ -475,6 +469,12 @@ fsm:add_transitions{
 }
 
 function INIT:init()
+    if fsm.vars.target ~= "WORKPIECE" then
+        local close_msg = arduino.CloseGripperMessage:new()
+        arduino:msgq_enqueue_copy(close_msg)
+        local calib_msg = arduino.CalibrateMessage:new()
+        arduino:msgq_enqueue_copy(calib_msg)
+    end
     laserline_switch:msgq_enqueue(laserline_switch.EnableSwitchMessage:new())
 
     fsm.vars.lines = {}
