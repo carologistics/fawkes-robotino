@@ -184,15 +184,16 @@ function gripper_aligned()
     print_debug("fine-tune gripper pose aligned:")
     print_debug(
         "within_tolerance(arduino:x_position(), 0, GRIPPER_TOLERANCE.x): ",
-        within_tolerance(arduino:x_position(), 0, GRIPPER_TOLERANCE.x))
+        tostring(within_tolerance(arduino:x_position(), 0, GRIPPER_TOLERANCE.x)))
     print_debug(
         "within_tolerance(arduino:y_position() - y_max / 2, y_max / 2, GRIPPER_TOLERANCE.y, y): ",
-        within_tolerance(arduino:y_position() - y_max / 2, y_max / 2,
-                         GRIPPER_TOLERANCE.y, y))
+        tostring(within_tolerance(arduino:y_position() - y_max / 2, y_max / 2,
+                                  GRIPPER_TOLERANCE.y, y)))
     print_debug(
         "math.max(0.01, math.min(gripper_target.z, z_max)), arduino:z_position(), GRIPPER_TOLERANCE.z: ",
-        math.max(0.01, math.min(gripper_target.z, z_max)), arduino:z_position(),
-        GRIPPER_TOLERANCE.z)
+        tostring(
+            within_tolerance(math.max(0.01, math.min(gripper_target.z, z_max)),
+                             arduino:z_position(), GRIPPER_TOLERANCE.z)))
     return within_tolerance(arduino:x_position(), 0, GRIPPER_TOLERANCE.x) and
                within_tolerance(arduino:y_position() - y_max / 2, y_max / 2,
                                 GRIPPER_TOLERANCE.y, y) and
@@ -340,14 +341,18 @@ function ready_for_gripper_movement()
     print_debug("default gripper ready for movement:")
     print_debug(
         "within_tolerance(arduino:x_position(), default_x, GRIPPER_TOLERANCE.x): ",
-        within_tolerance(arduino:x_position(), default_x, GRIPPER_TOLERANCE.x))
+        tostring(
+            within_tolerance(arduino:x_position(), default_x,
+                             GRIPPER_TOLERANCE.x)))
     print_debug(
         "within_tolerance(arduino:y_position() - y_max / 2, default_y, GRIPPER_TOLERANCE.y): ",
-        within_tolerance(arduino:y_position() - y_max / 2, default_y,
-                         GRIPPER_TOLERANCE.y))
+        tostring(within_tolerance(arduino:y_position() - y_max / 2, default_y,
+                                  GRIPPER_TOLERANCE.y)))
     print_debug(
         "within_tolerance(arduino:z_position(), default_z, GRIPPER_TOLERANCE.z) :",
-        within_tolerance(arduino:z_position(), default_z, GRIPPER_TOLERANCE.z))
+        tostring(
+            within_tolerance(arduino:z_position(), default_z,
+                             GRIPPER_TOLERANCE.z)))
     return
         within_tolerance(arduino:x_position(), default_x, GRIPPER_TOLERANCE.x) and
             within_tolerance(arduino:y_position() - y_max / 2, default_y,
