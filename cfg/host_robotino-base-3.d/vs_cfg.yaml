@@ -60,11 +60,11 @@ plugins/vs_offsets:
       z: 0.02
 
     top:
-      x: 0.080
+      x: 0.07
       z: 0.02
 
     routine:
-      z: 0.0
+      z: -0.0075
 
     end:
       z: 0.02

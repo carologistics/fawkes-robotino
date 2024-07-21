@@ -22,10 +22,10 @@ plugins/vs_offsets:
 
     top:
       x: 0.04
-      z: 0.032
+      z: 0.026
 
     end:
-      z: 0.032
+      z: 0.026
 
   shelf:
     target:
@@ -60,7 +60,7 @@ plugins/vs_offsets:
       z: 0.02
 
     top:
-      x: 0.053
+      x: 0.043
       z: 0.02
 
     routine:
