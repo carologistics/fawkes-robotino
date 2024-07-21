@@ -167,13 +167,6 @@ fsm:define_states{
         "MOVE_GRIPPER_UP",
         SkillJumpState,
         skills = {{gripper_commands}},
-        final_to = "GRIPPER_DEFAULT",
-        fail_to = "FAILED"
-    },
-    {
-        "GRIPPER_DEFAULT",
-        SkillJumpState,
-        skills = {{gripper_commands}},
         final_to = "DRIVE_BACK",
         fail_to = "FAILED"
     },
@@ -380,14 +373,6 @@ function MOVE_GRIPPER_UP:init()
     self.args["gripper_commands"].y = arduino:y_position() - y_max / 2
     self.args["gripper_commands"].z = math.max(0.01, math.min(z_given, z_max))
     self.args["gripper_commands"].command = "MOVEABS"
-end
-
-function GRIPPER_DEFAULT:init()
-    self.args["gripper_commands"].x = 0
-    self.args["gripper_commands"].y = y_max / 2
-    self.args["gripper_commands"].z = 0.03
-    self.args["gripper_commands"].command = "MOVEABS"
-    self.args["gripper_commands"].wait = false
 end
 
 function DRIVE_BACK:init()
