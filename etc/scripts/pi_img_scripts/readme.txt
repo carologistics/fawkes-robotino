@@ -1,7 +1,9 @@
 #Camera Calibration & Checkerboard Generation
 https://markhedleyjones.com/projects/calibration-checkerboard-collection
 https://docs.opencv.org/4.x/dc/dbb/tutorial_py_calibration.html
-k=XkvHB2mdjqJZJ1qSpE8K
+
+Find your private API key: 
+In the navigation select your account button on the left corner below and hit the API keys button.
 
 #Roboflow Online Annotation Tool (Preferred)
 https://app.roboflow.com/
