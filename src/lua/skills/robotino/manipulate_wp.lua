@@ -197,8 +197,18 @@ function gripper_aligned()
                 within_tolerance(
                     math.max(0.01, math.min(gripper_target.z, z_max)),
                     arduino:z_position(), GRIPPER_TOLERANCE.z * 1.1)))
-    return within_tolerance(math.max(0.01, math.min(gripper_target.z, z_max)),
-                            arduino:z_position(), GRIPPER_TOLERANCE.z * 1.1)
+    local result = within_tolerance(math.max(0.01,
+                                             math.min(gripper_target.z, z_max)),
+                                    arduino:z_position(),
+                                    GRIPPER_TOLERANCE.z * 1.1)
+    if result == true then
+        if fsm.vars.img_wait > 10 then return result end
+        fsm.vars.img_wait = fsm.vars.img_wait + 1
+        return false
+    else
+        fsm.vars.img_wait = 0
+        return result
+    end
 end
 
 function set_gripper(x, y, z)
@@ -237,6 +247,7 @@ function set_gripper(x, y, z)
         (math.abs(fsm.vars.gripper_target_pos_z - z_clipped) >
             GRIPPER_TOLERANCE.z)) then
         fsm.vars.gripper_wait = 0
+        fsm.vars.img_wait = 0
         fsm.vars.gripper_target_pos_x = x_clipped
         fsm.vars.gripper_target_pos_y = y_clipped
         fsm.vars.gripper_target_pos_z = z_clipped
