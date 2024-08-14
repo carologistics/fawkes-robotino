@@ -22,10 +22,10 @@ plugins/vs_offsets:
 
     top:
       x: 0.04
-      z: 0.026
+      z: 0.038
 
     end:
-      z: 0.026
+      z: 0.038
 
   shelf:
     target:
@@ -34,10 +34,10 @@ plugins/vs_offsets:
 
     top:
       x: 0.03
-      z: 0.005
+      z: 0.025
 
     end:
-      z: 0.005
+      z: 0.025
 
   conveyor:
     target:
@@ -46,13 +46,13 @@ plugins/vs_offsets:
 
     top:
       x: 0.052
-      z: -0.005
+      z: 0.005
 
     routine:
-      z: -0.015
+      z: -0.005
 
     end:
-      z: -0.01
+      z: 0.01
 
   slide:
     target:
@@ -61,10 +61,10 @@ plugins/vs_offsets:
 
     top:
       x: 0.043
-      z: 0.02
+      z: 0.26
 
     routine:
-      z: 0.0
+      z: 0.26
 
     end:
-      z: 0.02
+      z: 0.26
