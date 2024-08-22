@@ -367,9 +367,6 @@ AgentTaskSkillerBridgeThread::send_pose()
 
 		pose.set_allocated_pose(pose_info);
 
-		// Log the information
-		logger->log_info(name(), "Send robot pose (%f,%f)", translation_[0], translation_[1]);
-
 		// Send the message using the peer
 		private_peer_->send(pose);
 	}
