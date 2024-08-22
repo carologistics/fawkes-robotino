@@ -125,7 +125,7 @@ AgentTaskSkillerBridgeThread::init()
 	                 recv_port_cyan_,
 	                 team_name_.c_str());
 	private_peer_ = std::make_shared<protobuf_comm::ProtobufBroadcastPeer>(peer_address_,
-	                                                                       4466,
+	                                                                       5441,
 	                                                                       recv_port_cyan_,
 	                                                                       message_register_.get());
 	private_peer_->signal_received().connect(
@@ -204,7 +204,7 @@ AgentTaskSkillerBridgeThread::handle_peer_msg(boost::asio::ip::udp::endpoint &,
 				                 recv_port_cyan_,
 				                 team_name_.c_str());
 				private_peer_ = std::make_shared<protobuf_comm::ProtobufBroadcastPeer>(
-				  peer_address_, 4466, recv_port_cyan_, message_register_.get(), crypto_key_);
+				  peer_address_, 5441, recv_port_cyan_, message_register_.get(), crypto_key_);
 				private_peer_->signal_received().connect(
 				  boost::bind(&AgentTaskSkillerBridgeThread::handle_peer_msg,
 				              this,
@@ -225,7 +225,7 @@ AgentTaskSkillerBridgeThread::handle_peer_msg(boost::asio::ip::udp::endpoint &,
 				                 recv_port_magenta_,
 				                 team_name_.c_str());
 				private_peer_ = std::make_shared<protobuf_comm::ProtobufBroadcastPeer>(
-				  peer_address_, 4466, recv_port_magenta_, message_register_.get(), crypto_key_);
+				  peer_address_, 5441, recv_port_magenta_, message_register_.get(), crypto_key_);
 				private_peer_->signal_received().connect(
 				  boost::bind(&AgentTaskSkillerBridgeThread::handle_peer_msg,
 				              this,
