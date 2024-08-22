@@ -192,7 +192,7 @@ AgentTaskSkillerBridgeThread::handle_peer_msg(boost::asio::ip::udp::endpoint &,
 		return;
 	}
 	const google::protobuf::Descriptor *desc = msg_ptr->GetDescriptor();
-	logger->log_info(name(), "Received msg %s", desc->name().c_str());
+	logger->log_debug(name(), "Received msg %s", desc->name().c_str());
 	if (desc->name() == "GameState") {
 		const llsf_msgs::GameState *game_state_msg =
 		  dynamic_cast<const llsf_msgs::GameState *>(msg_ptr.get());
