@@ -25,7 +25,8 @@ set(PLUGIN_agent-task-skiller-bridge
     CACHE BOOL "Build agent-task-skiller-bridge")
 
 if(PLUGIN_agent-task-skiller-bridge)
-  add_library(agent-task-skiller-bridge MODULE bridge-plugin.cpp bridge-thread.cpp)
+  add_library(agent-task-skiller-bridge MODULE bridge-plugin.cpp
+                                               bridge-thread.cpp)
   depend_on_protobuf(agent-task-skiller-bridge)
   depend_on_boost_libs(agent-task-skiller-bridge system)
   target_link_libraries(
@@ -37,6 +38,7 @@ if(PLUGIN_agent-task-skiller-bridge)
     fawkesblackboard
     fawkesconfig
     SkillerInterface
+    Position3DInterface
     rcll-protobuf-msgs
     protobuf_comm
     protobuf::libprotobuf )

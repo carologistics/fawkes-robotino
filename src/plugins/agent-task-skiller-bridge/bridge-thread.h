@@ -29,6 +29,7 @@
 #include <blackboard/interface_listener.h>
 #include <core/threading/thread.h>
 #include <google/protobuf/message.h>
+#include <interfaces/Position3DInterface.h>
 #include <interfaces/SkillerInterface.h>
 #include <llsf_msgs/AgentTask.pb.h>
 #include <protobuf_comm/message_register.h>
@@ -66,8 +67,9 @@ protected:
 	}
 
 private:
-	std::string               cfg_skiller_iface_id_;
-	fawkes::SkillerInterface *skiller_if_;
+	std::string                  cfg_skiller_iface_id_;
+	fawkes::SkillerInterface    *skiller_if_;
+	fawkes::Position3DInterface *pos_if_;
 
 	std::shared_ptr<protobuf_comm::ProtobufBroadcastPeer> private_peer_;
 	std::shared_ptr<protobuf_comm::ProtobufBroadcastPeer> public_peer_;
@@ -79,9 +81,11 @@ private:
 	                            std::shared_ptr<google::protobuf::Message> msg);
 	void        handle_peer_recv_error(boost::asio::ip::udp::endpoint &endpoint, std::string msg);
 	void        send_response();
+	void        send_pose();
 	std::string construct_task_string(const llsf_msgs::AgentTask &agent_task_msg);
 
 	std::string team_name_;
+	std::string team_color_;
 	std::string crypto_key_;
 	int         robot_id_;
 
@@ -98,6 +102,9 @@ private:
 	unsigned short recv_port_cyan_;
 	unsigned short recv_port_public_;
 	std::string    peer_address_;
+
+	double *rotation_;
+	double *translation_;
 };
 } // namespace fawkes
 

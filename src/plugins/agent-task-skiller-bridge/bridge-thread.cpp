@@ -24,6 +24,9 @@
 #include <core/threading/mutex_locker.h>
 #include <llsf_msgs/AgentTask.pb.h>
 #include <llsf_msgs/GameState.pb.h>
+#include <llsf_msgs/RobotInfo.pb.h>
+
+#include <chrono>
 
 using namespace fawkes;
 
@@ -47,7 +50,6 @@ AgentTaskSkillerBridgeThread::~AgentTaskSkillerBridgeThread()
 void
 AgentTaskSkillerBridgeThread::init()
 {
-	logger->log_info(name(), "try load stuff");
 	peer_address_      = config->get_string("/agent-task-skiller-bridge/peer_address");
 	recv_port_magenta_ = config->get_int("/agent-task-skiller-bridge/recv_port_magenta");
 	recv_port_cyan_    = config->get_int("/agent-task-skiller-bridge/recv_port_cyan");
@@ -82,10 +84,11 @@ AgentTaskSkillerBridgeThread::init()
 		logger->log_error(name(), "could not load stuff, i break");
 		return;
 	}
-	logger->log_info(name(), "could  load stuff");
 
 	skiller_if_ = blackboard->open_for_reading<SkillerInterface>("Skiller");
+	pos_if_     = blackboard->open_for_reading<Position3DInterface>("Pose");
 	bbil_add_data_interface(skiller_if_);
+	bbil_add_data_interface(pos_if_);
 	blackboard->register_listener(this);
 	//bbil_add_reader_interface(skiller_if_);
 
@@ -214,6 +217,7 @@ AgentTaskSkillerBridgeThread::handle_peer_msg(boost::asio::ip::udp::endpoint &,
 				              this,
 				              boost::placeholders::_1,
 				              boost::placeholders::_2));
+				team_color_ = "CYAN";
 			} else if (game_state_msg->team_magenta() == team_name_) {
 				logger->log_info(name(),
 				                 "Listening to MAGENTA peer %s:%i for team %s",
@@ -234,6 +238,7 @@ AgentTaskSkillerBridgeThread::handle_peer_msg(boost::asio::ip::udp::endpoint &,
 				              this,
 				              boost::placeholders::_1,
 				              boost::placeholders::_2));
+				team_color_ = "MAGENTA";
 			} else {
 				logger->log_info(name(),
 				                 "Waiting for RefBox to send information on team %s",
@@ -291,28 +296,79 @@ void
 AgentTaskSkillerBridgeThread::bb_interface_data_refreshed(fawkes::Interface *interface) throw()
 {
 	SkillerInterface *skiller_if = dynamic_cast<SkillerInterface *>(interface);
-	if (!skiller_if)
-		return;
-	skiller_if->read();
-	if (skiller_if->serial().get_string() != std::string(skiller_if->exclusive_controller())) {
-		successful_ = false;
-		error_code_ = 0; // Skiller control lost
-		wakeup();
-		return;
+	if (skiller_if) {
+		skiller_if->read();
+		if (skiller_if->serial().get_string() != std::string(skiller_if->exclusive_controller())) {
+			successful_ = false;
+			error_code_ = 0; // Skiller control lost
+			wakeup();
+			return;
+		}
+		switch (skiller_if->status()) {
+		case fawkes::SkillerInterface::SkillStatusEnum::S_INACTIVE: running_ = false; break;
+		case fawkes::SkillerInterface::SkillStatusEnum::S_FINAL:
+			successful_ = true;
+			running_    = false;
+			wakeup();
+			break;
+		case fawkes::SkillerInterface::SkillStatusEnum::S_RUNNING: running_ = true; break;
+		case fawkes::SkillerInterface::SkillStatusEnum::S_FAILED:
+			successful_ = false;
+			running_    = false;
+			wakeup();
+			break;
+		}
 	}
-	switch (skiller_if->status()) {
-	case fawkes::SkillerInterface::SkillStatusEnum::S_INACTIVE: running_ = false; break;
-	case fawkes::SkillerInterface::SkillStatusEnum::S_FINAL:
-		successful_ = true;
-		running_    = false;
-		wakeup();
-		break;
-	case fawkes::SkillerInterface::SkillStatusEnum::S_RUNNING: running_ = true; break;
-	case fawkes::SkillerInterface::SkillStatusEnum::S_FAILED:
-		successful_ = false;
-		running_    = false;
-		wakeup();
-		break;
+	Position3DInterface *pos_if = dynamic_cast<Position3DInterface *>(interface);
+	if (pos_if) {
+		pos_if->read();
+		rotation_    = pos_if->rotation();
+		translation_ = pos_if->translation();
+		send_pose();
+	}
+}
+void
+AgentTaskSkillerBridgeThread::send_pose()
+{
+	if (private_peer_) {
+		// Create and populate the outer message (Robot)
+		llsf_msgs::Robot pose;
+		pose.set_name(std::to_string(robot_id_));
+		pose.set_team(team_name_);
+		pose.set_host("robot");
+		auto now     = std::chrono::system_clock::now();
+		auto seconds = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
+		auto nanoseconds =
+		  std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count()
+		  % 1000000000;
+
+		llsf_msgs::Time *robot_time = new llsf_msgs::Time();
+		robot_time->set_sec(static_cast<int32_t>(seconds));
+		robot_time->set_nsec(static_cast<int32_t>(nanoseconds));
+		pose.set_allocated_last_seen(robot_time);
+
+		if (team_color_ == "CYAN") {
+			pose.set_team_color(llsf_msgs::CYAN);
+		} else {
+			pose.set_team_color(llsf_msgs::MAGENTA);
+		}
+
+		pose.set_number(robot_id_);
+
+		llsf_msgs::Time *pose_time = new llsf_msgs::Time();
+		pose_time->set_sec(static_cast<int32_t>(seconds));
+		pose_time->set_nsec(static_cast<int32_t>(nanoseconds));
+
+		llsf_msgs::Pose2D *pose_info = new llsf_msgs::Pose2D();
+		pose_info->set_allocated_timestamp(pose_time);
+		pose_info->set_x(static_cast<float>(translation_[0]));
+		pose_info->set_y(static_cast<float>(translation_[1]));
+		pose_info->set_ori(0);
+
+		pose.set_allocated_pose(pose_info);
+
+		// Send the message using the peer
+		private_peer_->send(pose);
 	}
 }
 
