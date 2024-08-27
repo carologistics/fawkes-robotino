@@ -1,0 +1,5 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+agent-task-skiller-bridge:
+  robot_id: 1
