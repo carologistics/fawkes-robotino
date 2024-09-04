@@ -91,9 +91,12 @@ private:
 
 	std::string next_skill_;
 	std::string curr_skill_;
-	bool        running_    = false;
-	bool        successful_ = false;
-	int         error_code_ = 0;
+	bool        running_     = false;
+	bool        successful_  = false;
+	bool        stop_thread_ = false;
+	int         error_code_  = 0;
+
+	std::thread response_thread_;
 
 	llsf_msgs::AgentTask next_agent_task_msg_;
 	llsf_msgs::AgentTask curr_agent_task_msg_;

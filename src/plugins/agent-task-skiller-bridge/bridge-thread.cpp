@@ -375,15 +375,28 @@ AgentTaskSkillerBridgeThread::send_pose()
 void
 AgentTaskSkillerBridgeThread::send_response()
 {
-	llsf_msgs::AgentTask response = curr_agent_task_msg_;
-	response.set_cancel_task(!successful_);
-	response.set_pause_task(false);
-	response.set_successful(successful_);
-	response.set_canceled(false);
-	response.set_error_code(error_code_);
-	logger->log_info(name(),
-	                 "Send response: Succesfull %s (code %i)",
-	                 successful_ ? "true" : "false",
-	                 error_code_);
-	private_peer_->send(response);
+	// If a previous thread is running, stop it
+	if (response_thread_.joinable()) {
+		stop_thread_ = true;
+		response_thread_.join();
+		stop_thread_ = false;
+	}
+
+	// Start a new thread with the updated data
+	response_thread_ = std::thread([this]() {
+		llsf_msgs::AgentTask response = curr_agent_task_msg_;
+		response.set_cancel_task(!successful_);
+		response.set_pause_task(false);
+		response.set_successful(successful_);
+		response.set_canceled(false);
+		response.set_error_code(error_code_);
+		while (!stop_thread_) {
+			logger->log_info(name(),
+			                 "Send response: Succesfull %s (code %i)",
+			                 successful_ ? "true" : "false",
+			                 error_code_);
+			private_peer_->send(response);
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+		}
+	});
 }
