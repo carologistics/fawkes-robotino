@@ -248,11 +248,25 @@ AgentTaskSkillerBridgeThread::handle_peer_msg(boost::asio::ip::udp::endpoint &,
 	} else if (desc->name() == "AgentTask") {
 		const llsf_msgs::AgentTask *agent_task_msg =
 		  dynamic_cast<const llsf_msgs::AgentTask *>(msg_ptr.get());
-		logger->log_info(name(), "Got task for %i, i am %i", agent_task_msg->robot_id(), robot_id_);
 		if (agent_task_msg->robot_id() == robot_id_) {
 			next_skill_          = construct_task_string(*agent_task_msg);
 			next_agent_task_msg_ = *agent_task_msg;
-			wakeup();
+			if (next_agent_task_msg_.task_id() != curr_agent_task_msg_.task_id()) {
+				logger->log_info(name(), "Got new task id %i", next_agent_task_msg_.task_id());
+				// If a previous thread is running, stop it
+				if (response_thread_.joinable()) {
+					stop_thread_ = true;
+					response_thread_.join();
+					stop_thread_ = false;
+				}
+				wakeup();
+			} else {
+				next_skill_ = "";
+				logger->log_info(name(),
+				                 "Ignoring same task id %i, currently at %i",
+				                 next_agent_task_msg_.task_id(),
+				                 curr_agent_task_msg_.task_id());
+			}
 		}
 	} else {
 		logger->log_debug(name(), "Received %s", desc->name().c_str());
@@ -301,6 +315,7 @@ AgentTaskSkillerBridgeThread::bb_interface_data_refreshed(fawkes::Interface *int
 		if (skiller_if->serial().get_string() != std::string(skiller_if->exclusive_controller())) {
 			successful_ = false;
 			error_code_ = 0; // Skiller control lost
+			logger->log_info(name(), "Skill control lost, wakeup");
 			wakeup();
 			return;
 		}
@@ -309,12 +324,14 @@ AgentTaskSkillerBridgeThread::bb_interface_data_refreshed(fawkes::Interface *int
 		case fawkes::SkillerInterface::SkillStatusEnum::S_FINAL:
 			successful_ = true;
 			running_    = false;
+			logger->log_info(name(), "Final, wakeup");
 			wakeup();
 			break;
 		case fawkes::SkillerInterface::SkillStatusEnum::S_RUNNING: running_ = true; break;
 		case fawkes::SkillerInterface::SkillStatusEnum::S_FAILED:
 			successful_ = false;
 			running_    = false;
+			logger->log_info(name(), "Failed, wakeup");
 			wakeup();
 			break;
 		}
@@ -375,15 +392,28 @@ AgentTaskSkillerBridgeThread::send_pose()
 void
 AgentTaskSkillerBridgeThread::send_response()
 {
-	llsf_msgs::AgentTask response = curr_agent_task_msg_;
-	response.set_cancel_task(!successful_);
-	response.set_pause_task(false);
-	response.set_successful(successful_);
-	response.set_canceled(false);
-	response.set_error_code(error_code_);
-	logger->log_info(name(),
-	                 "Send response: Succesfull %s (code %i)",
-	                 successful_ ? "true" : "false",
-	                 error_code_);
-	private_peer_->send(response);
+	// If a previous thread is running, stop it
+	if (response_thread_.joinable()) {
+		stop_thread_ = true;
+		response_thread_.join();
+		stop_thread_ = false;
+	}
+
+	// Start a new thread with the updated data
+	response_thread_ = std::thread([this]() {
+		llsf_msgs::AgentTask response = curr_agent_task_msg_;
+		response.set_cancel_task(!successful_);
+		response.set_pause_task(false);
+		response.set_successful(successful_);
+		response.set_canceled(false);
+		response.set_error_code(error_code_);
+		while (!stop_thread_) {
+			logger->log_info(name(),
+			                 "Send response: Succesful %s (code %i)",
+			                 response.successful() ? "true" : "false",
+			                 error_code_);
+			private_peer_->send(response);
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+		}
+	});
 }
