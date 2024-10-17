@@ -153,6 +153,7 @@ AgentTaskSkillerBridgeThread::finalize()
 void
 AgentTaskSkillerBridgeThread::loop()
 {
+	std::scoped_lock lock(task_mtx);
 	if (next_skill_ != "") {
 		// other skill is runnung, cancel it frst:
 		if (curr_skill_ != "") {
@@ -246,6 +247,7 @@ AgentTaskSkillerBridgeThread::handle_peer_msg(boost::asio::ip::udp::endpoint &,
 			}
 		}
 	} else if (desc->name() == "AgentTask") {
+		std::scoped_lock            lock(task_mtx);
 		const llsf_msgs::AgentTask *agent_task_msg =
 		  dynamic_cast<const llsf_msgs::AgentTask *>(msg_ptr.get());
 		if (agent_task_msg->robot_id() == robot_id_) {

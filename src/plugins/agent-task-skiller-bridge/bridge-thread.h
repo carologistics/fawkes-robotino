@@ -108,6 +108,8 @@ private:
 
 	double *rotation_;
 	double *translation_;
+
+	std::mutex task_mtx;
 };
 } // namespace fawkes
 
