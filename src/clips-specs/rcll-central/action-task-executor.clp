@@ -1,26 +1,36 @@
+(deftemplate protobuf-peer
+  (slot name (type SYMBOL))
+  (slot peer-id (type INTEGER))
+)
+
 (defrule action-task-connect-receiver-of-sim
   "Enable peer connection to the simulator"
   (confval (path "/rcll-simulator/enabled") (value TRUE))
-  (wm-fact (id "/config/rcll/sim-peer-address") (value ?peer-address))
-  (wm-fact (id "/config/rcll/sim-peer-recv-port") (value ?peer-recv-port))
-  (not (wm-fact (id "/simulator/comm/sim-peer-enabled") (value TRUE)))
+  (confval (path "/rcll-simulator/host") (value ?peer-address))
+  (confval (path "/rcll-simulator/robot-recv-ports") (is-list TRUE) (list-value $?recv-ports))
+  (confval (path "/rcll-simulator/robot-send-ports") (is-list TRUE) (list-value $?send-ports))
+  (not (protobuf-peer (name robot1)))
+  (not (executive-finalize))
   =>
-  (printout t "Enabling local simulation peer (public)" crlf)
-  (bind ?peer-id (pb-peer-create-local ?peer-address ?peer-recv-port ?peer-recv-port))
-  (assert (wm-fact (id "/simulator/comm/peer-enabled") (value TRUE) (type BOOL))
-          (wm-fact (id "/simulator/comm/peer-id/public") (value ?peer-id) (type INT))
-   )
+  (printout info "Enabling robot simulation peers" crlf)
+  (if (<> (length$ ?recv-ports) (length$ ?send-ports)) then
+    (printout error "Expected number or recv ports to be equal to send ports for simulator robots (" (length$ ?recv-ports) " != "(length$ ?send-ports) ")" crlf)
+   else
+    (loop-for-count (?i (length$ ?recv-ports)) do
+      (bind ?peer-id (pb-peer-create-local ?peer-address (nth$ ?i ?send-ports)(nth$ ?i ?recv-ports)))
+      (assert (protobuf-peer (name (sym-cat "robot" ?i)) (peer-id ?peer-id)))
+    )
+  )
 )
 
 (defrule action-task-disconnect-from-sim
   "Disable the local peer connection on finalize"
   (executive-finalize)
-  ?pe <- (wm-fact (id "/simulator/comm/peer-enabled") (value TRUE))
-  (wm-fact (id "/simulator/comm/peer-id/public") (value ?peer-id) (type INT))
+  ?pp <- (protobuf-peer (name ?robot) (peer-id ?peer-id))
   =>
-  (printout t "Closing local simulation peer (public)" crlf)
+  (printout t "Closing local simulation peer "  ?robot crlf)
   (pb-peer-destroy ?peer-id)
-  (modify ?pe (value FALSE))
+  (retract ?pp)
 )
 
 (defrule action-task-register
@@ -29,29 +39,13 @@
   =>
   (assert (action-task-executor-enable (name move))
           (action-task-executor-enable (name go-wait))
+          (action-task-executor-enable (name enter-field))
+          (action-task-executor-enable (name explore-and-turn))
           (action-task-executor-enable (name wp-get-shelf))
           (action-task-executor-enable (name wp-get))
           (action-task-executor-enable (name wp-put-slide-cc))
           (action-task-executor-enable (name wp-put))
   )
-)
-
-(defrule action-task-open-robot-peer
-  (declare (salience ?*SALIENCE-HIGH*))
-  (confval (path "/rcll-simulator/enabled") (value TRUE))
-  ?pf <- (protobuf-msg (type "llsf_msgs.BeaconSignal") (ptr ?p) (rcvd-from ?host ?robot-rcvd) (client-id ?client-id))
-  (wm-fact (id "/simulator/comm/peer-id/public") (value ?client-id) (type INT))
-  (wm-fact (id "/refbox/team-color") (value ?team-color&:(eq (pb-field-value ?p "team_color") ?team-color)))
-  (wm-fact (key central agent robot args? r ?robot&:(str-index (str-cat (pb-field-value ?p "number")) ?robot)))
-  (not (wm-fact (key simulator comm peer-id ?robot)))
-  =>
-  (printout t "Created send peer for robot " ?robot crlf)
-  (bind ?peer-id (pb-peer-create-local ?host ?robot-rcvd (+ 2018 (pb-field-value ?p "number"))))
-  (assert (wm-fact (key simulator comm peer-enabled ?robot) (value TRUE) (type BOOL))
-          (wm-fact (key simulator comm peer-id ?robot) (value ?peer-id) (type INT))
-   )
-  (pb-destroy ?p)
-  (retract ?pf)
 )
 
 (defrule action-task-set-on-waiting
@@ -62,9 +56,19 @@
   ?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id) (state PENDING)
                       (action-name ?action-name) (executable TRUE))
   (action-task-executor-enable (name ?action-name))
-  (wm-fact (id "/simulator/comm/peer-enabled") (value TRUE))
   =>
   (modify ?pa (state WAITING))
+)
+
+(defrule action-task-skip-non-mapped-actions
+" We dont sent agent tasks for enter-field or explore-and-turn
+"
+  (declare (salience ?*SALIENCE-LOW*))
+  ?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id) (state WAITING)
+                      (action-name ?action-name&:(member$ ?action-name (create$ explore-and-turn enter-field))))
+  (action-task-executor-enable (name ?action-name))
+  =>
+  (modify ?pa (state EXECUTION-SUCCEEDED))
 )
 
 (defrule action-task-skip-trivial-move
@@ -97,8 +101,7 @@
   (action-task-executor-enable (name ?action-name))
   ?at <- (refbox-agent-task (task-id ?task-seq) (robot ?robot) (goal-id ?goal-id) (plan-id ?plan-id) (action-id ?id))
   (wm-fact (key refbox robot task seq args? r ?robot) (value ?task-seq))
-  (wm-fact (key simulator comm peer-enabled ?robot) (value TRUE) (type BOOL))
-  (wm-fact (key simulator comm peer-id ?robot) (value ?peer-id) (type INT))
+  (protobuf-peer (name ?robot) (peer-id ?peer-id))
   (wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
   =>
   (bind ?task-msg (create-task-msg ?at ?team-color))
@@ -129,28 +132,26 @@
   (if (eq ?task ?task-seq) then
   (bind ?robot-num (pb-field-value ?task-msg "robot_id"))
   (bind ?team-col (pb-field-value ?task-msg "team_color"))
-  (bind ?outcome EXECUTION-FAILED)
+  (bind ?outcome UNKNOWN)
   (if (pb-has-field ?task-msg "cancelled") then
     (bind ?cancelled (pb-field-value ?task-msg "cancelled"))
     (if ?cancelled then (printout warn "Agent Task for " ?action-name " got cancelled" crlf))
   )
   (if (pb-has-field ?task-msg "successful") then
     (bind ?successful (pb-field-value ?task-msg "successful"))
-    (if ?successful then (bind ?outcome EXECUTION-SUCCEEDED))
+    (if ?successful then
+      (bind ?outcome EXECUTION-SUCCEEDED)
+     else
+      (bind ?outcome EXECUTION-FAILED)
+    )
   )
-  (modify ?pa (state ?outcome))
+  (if (neq ?outcome UNKNOWN) then
+    (modify ?pa (state ?outcome))
+  )
    else (if (> ?task ?task-seq) then
      (bind ?robot-num (pb-field-value ?task-msg "robot_id"))
      (bind ?team-col (pb-field-value ?task-msg "team_color"))
      (printout warn "Received feedback for futur task!" crlf)
-	 (printout t ?goal-id " " ?plan-id " " ?id " " ?action-name crlf)
-	 (printout t ?task-seq " " ?robot " " ?outcome crlf)
-	 (printout t  ?task " " ?robot-num " " ?team-col crlf)
-	 )
-     (if (< ?task ?task-seq) then
-     (bind ?robot-num (pb-field-value ?task-msg "robot_id"))
-     (bind ?team-col (pb-field-value ?task-msg "team_color"))
-     (printout warn "Received feedback for past task!" crlf)
 	 (printout t ?goal-id " " ?plan-id " " ?id " " ?action-name crlf)
 	 (printout t ?task-seq " " ?robot " " ?outcome crlf)
 	 (printout t  ?task " " ?robot-num " " ?team-col crlf)
@@ -163,9 +164,5 @@
   (declare (salience ?*SALIENCE-LOW*))
   ?pf <- (protobuf-msg (type "llsf_msgs.AgentTask") (ptr ?task-msg))
   =>
-  (printout error "received AgentTask message without action" crlf)
-  (bind ?robot-num (pb-field-value ?task-msg "robot_id"))
-  (bind ?team-col (pb-field-value ?task-msg "team_color"))
-  (bind ?task (pb-field-value ?task-msg "task_id"))
-  (printout t  ?task " " ?robot-num " " ?team-col crlf)
+  (retract ?pf)
 )

@@ -1,0 +1,24 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+# start fawkes with this configuration file if you want to just start the agent without robots
+
+# include main config file
+include:
+  - !ignore-missing conf.d/
+  - gazsim-configurations/gazsim-config-override.yaml
+  - !host-specific rcll-simulator/host_central_agent.yaml
+---
+
+fawkes:
+
+  # Main app relevant settings
+  mainapp:
+    loggers: console;file/debug:debug_central_agent_$time.log
+
+clips-executive:
+  spec: rcll-central
+fawkes/bbsync/peers:
+  robot1/active: true
+  robot2/active: true
+  robot3/active: true
