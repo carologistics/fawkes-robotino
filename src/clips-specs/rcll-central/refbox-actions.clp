@@ -129,7 +129,7 @@
 
 (defrule action-send-beacon-signal
   (time $?now)
-  (not (wm-fact (id "/simulator/comm/peer-id/public")))
+  (not (confval (path "/rcll-simulator/enabled") (value TRUE)))
   ?bs <- (wm-fact (key refbox beacon seq) (value ?seq))
   (wm-fact (key central agent robot args? r ?robot))
   (not (wm-fact (key central agent robot-lost args? r ?robot)))
@@ -151,7 +151,7 @@
 
 (defrule action-send-beacon-signal-with-task
   (time $?now)
-  (not (wm-fact (id "/simulator/comm/peer-id/public")))
+  (not (confval (path "/rcll-simulator/enabled") (value TRUE)))
   ?bs <- (wm-fact (key refbox beacon seq) (value ?seq))
   ?at <- (refbox-agent-task (task-id ?task-seq) (robot ?robot))
   (wm-fact (key central agent robot args? r ?robot))

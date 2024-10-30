@@ -1,0 +1,190 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+# to start fawkes, use robotino11.yaml in cfg/
+
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/gazsim
+---
+
+rcll-simulator:
+  enabled: true
+  host: 127.0.0.1
+  robot-send-ports: [2126, 2127, 2128]
+  robot-recv-ports: [2116, 2117, 2118]
+
+fawkes:
+  agent:
+    name: Icks
+    number: 1
+    team: Carologistics
+
+network:
+  fawkes:
+    tcp_port: !tcp-port 1931
+    service_name: "Fawkes on Agent (Cyan)"
+
+webview:
+  # TCP port for Webview HTTP requests; TCP port
+  port: !tcp-port 8091
+
+plugins/mongodb:
+  clients:
+    default/enabled: true
+    arbiter/enabled: false
+    robot-memory-local/hosts:
+      - localhost:27021
+    robot-memory-distributed/hosts:
+      - localhost:27031
+    robot-memory-local-direct/hostport: localhost:27021
+    robot-memory-distributed-direct/hostport: localhost:27031
+  instances:
+    robot-memory-local:
+      port: 27021
+      data-path: /tmp/mongodb-robot-memory-local-1
+      log/path: /tmp/mongodb-robot-memory-local-1.log
+    robot-memory-distributed:
+      port: 27031
+      use-tmp-directory: false
+      clear-data-on-termination: false
+      data-path: /tmp/mongodb-robot-memory-distributed-1
+      log/path: /tmp/mongodb-robot-memory-distributed-1.log
+  replica-sets:
+    bootstrap-mongodb/client: default
+    managed-sets:
+      robot-memory-local/hosts:
+        - localhost:27021
+      robot-memory-distributed/hosts:
+        - localhost:27031
+
+clips-executive/specs/rcll-central:
+  init:
+    stage-1:
+      - name: pddl-parser
+      - name: motor-switch
+      - name: navgraph
+      - name: protobuf
+      - name: tf
+    stage-3:
+      - name: utils
+        file: rcll-central/utils.clp
+      - name: worldmodel
+        files:
+          - rcll-central/mockup-mongodb.clp
+          - rcll-central/init.clp
+          - rcll-central/blackboard-init.clp
+          - rcll-central/game-worldmodel.clp
+      - name: communication
+        files:
+          - rcll-central/refbox-comm-init.clp
+          - rcll-central/refbox-worldmodel.clp
+      - name: domain
+        file: rcll-central/domain.clp
+      - name: goal-reasoner
+        files:
+          - goals/retry.clp
+          - goals/run-all.clp
+          - goals/run-one.clp
+          - goals/run-parallel.clp
+          - goals/timeout.clp
+          - goals/try-all.clp
+          - goal-tree.clp
+          - rcll-central/goals/run-endless.clp
+          - rcll-central/goals/simple.clp
+          - rcll-central/goals/central-run-all.clp
+          - rcll-central/goals/central-run-one.clp
+          - rcll-central/goals/central-run-parallel.clp
+          - rcll-central/goal-reasoner.clp
+          - rcll-central/goal-executability.clp
+          - rcll-central/goal-production.clp
+          - rcll-central/goal-requests.clp
+          - rcll-central/goal-challenges.clp
+          - rcll-central/production-strategy.clp
+          - rcll-central/exploration.clp
+          - rcll-central/refbox-agent-task.clp
+      - name: goal-expander
+        file: rcll-central/fixed-sequence.clp
+      - name: action-selection
+        file: rcll-central/action-selection.clp
+      - name: action-execution
+        files:
+          - skills-actions.clp
+          - rcll-central/refbox-actions.clp
+          - rcll-central/wait-actions.clp
+      - name: execution-monitoring
+        file: rcll-central/execution-monitoring.clp
+      - name: simulated-actions
+        files:
+          - rcll-central/noop-actions.clp
+          - rcll-central/action-task-executor.clp
+      - name: derived-predicates
+        files:
+          - rcll-central/derived-predicates/cc-reachable.clp
+          - rcll-central/derived-predicates/cs-input-ready-to-buffer-cap.clp
+          - rcll-central/derived-predicates/cs-input-ready-to-mount-cap.clp
+          - rcll-central/derived-predicates/rs-input-ready-to-mount-ring.clp
+          - rcll-central/derived-predicates/ds-input-ready-to-deliver.clp
+          - rcll-central/derived-predicates/mps-found.clp
+          - rcll-central/derived-predicates/next-machine.clp
+          - rcll-central/derived-predicates/next-step.clp
+          - rcll-central/derived-predicates/rs-fillable.clp
+          - rcll-central/derived-predicates/rs-input-blocked.clp
+          - rcll-central/derived-predicates/rs-input-reserved-for-wp.clp
+          - rcll-central/derived-predicates/transport-blocked.clp
+          - rcll-central/derived-predicates/wp-blocked.clp
+          - rcll-central/derived-predicates/wait-for-wp.clp
+          - rcll-central/derived-predicates/wp-deliver-start.clp
+          - rcll-central/derived-predicates/wp-reachable.clp
+          - rcll-central/derived-predicates/instruct-blocked.clp
+          - rcll-central/derived-predicates/slide-in-use.clp
+          - rcll-central/derived-predicates/bs-side-in-use.clp
+      - name: simtest
+        file: rcll-central/simtest.clp
+
+clips-executive/specs/rcll-central/parameters/rcll:
+  peer-address: 127.0.0.1
+  peer-recv-port: 4444
+  peer-send-port: 4445
+  cyan-recv-port: 4441
+  magenta-recv-port: 4442
+  cyan-send-port: 4446
+  magenta-send-port: 4447
+
+  peer-port: 0
+  cyan-port: 0
+  magenta-port: 0
+  wait-for-points: false
+
+fawkes/bbsync:
+  check_interval: 1000
+  peers:
+    robotino-base/active: false
+    robot1:
+      # active: true (set via the gazsim startup)
+      host: localhost
+      port: !tcp-port 1921
+      reading:
+        skiller: SkillerInterface::Skiller=/robot1/Skiller
+        pose: Position3DInterface::Pose=/robot1/Pose
+        navgraph-generator: NavGraphGeneratorInterface::/navgraph-generator=/robot1/navgraph-generator
+        navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/robot1/navgraph-generator-mps
+        navigator: NavigatorInterface::Navigator=/robot1/Navigator
+    robot2:
+      # active: true (set via the gazsim startup)
+      host: localhost
+      port: !tcp-port 1922
+      reading:
+        skiller: SkillerInterface::Skiller=/robot2/Skiller
+        pose: Position3DInterface::Pose=/robot2/Pose
+        navgraph-generator: NavGraphGeneratorInterface::/navgraph-generator=/robot2/navgraph-generator
+        navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/robot2/navgraph-generator-mps
+        navigator: NavigatorInterface::Navigator=/robot2/Navigator
+    robot3:
+      # active: true (set via the gazsim startup)
+      host: localhost
+      port: !tcp-port 1923
+      reading:
+        skiller: SkillerInterface::Skiller=/robot3/Skiller
+        pose: Position3DInterface::Pose=/robot3/Pose
+        navgraph-generator: NavGraphGeneratorInterface::/navgraph-generator=/robot3/navgraph-generator
+        navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/robot3/navgraph-generator-mps
+        navigator: NavigatorInterface::Navigator=/robot3/Navigator

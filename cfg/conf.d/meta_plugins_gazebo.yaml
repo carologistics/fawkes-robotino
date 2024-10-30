@@ -137,6 +137,13 @@ fawkes/meta_plugins:
     - m-distributed-clips-executive
     - webview
 
+  m-central-external-sim:
+    - navgraph
+    - navgraph-generator
+    - navgraph-generator-mps
+    - m-clips-executive
+    - webview
+
   m-central-clips-exec-ros1:
     - ros
     - m-central-clips-exec
