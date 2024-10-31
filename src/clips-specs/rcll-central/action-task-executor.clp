@@ -41,6 +41,7 @@
           (action-task-executor-enable (name go-wait))
           (action-task-executor-enable (name enter-field))
           (action-task-executor-enable (name explore-and-turn))
+          (action-task-executor-enable (name wp-check))
           (action-task-executor-enable (name wp-get-shelf))
           (action-task-executor-enable (name wp-get))
           (action-task-executor-enable (name wp-put-slide-cc))
@@ -65,7 +66,7 @@
 "
   (declare (salience ?*SALIENCE-LOW*))
   ?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id) (state WAITING)
-                      (action-name ?action-name&:(member$ ?action-name (create$ explore-and-turn enter-field))))
+                      (action-name ?action-name&:(member$ ?action-name (create$ explore-and-turn enter-field wp-check))))
   (action-task-executor-enable (name ?action-name))
   =>
   (modify ?pa (state EXECUTION-SUCCEEDED))
