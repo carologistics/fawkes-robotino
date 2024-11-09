@@ -110,10 +110,6 @@ function is_timedout()
 end
 
 function send_transrot(vx, vy, omega)
-    if fsm.vars.only_rotate then
-        vx = 0
-        vy = 0
-    end
     local oc = motor:controller()
     local ocn = motor:controller_thread_name()
     motor:msgq_enqueue(motor.AcquireControlMessage:new())
@@ -435,10 +431,6 @@ fsm:add_transitions{
 function INIT:init()
     self.fsm.vars.timeout_fail = self.fsm.vars.timeout_fail or 0
     self.fsm.vars.start_time = fawkes.Time:new():in_msec()
-    self.fsm.vars.only_rotate = false
-    if self.fsm.vars.x == 0 and self.fsm.vars.y == 0 then
-        self.fsm.vars.only_rotate = true
-    end
     self.fsm.vars.msgid = 0
     self.fsm.vars.consecutive_detections = 0
     self.fsm.vars.missing_detections = 0
