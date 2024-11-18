@@ -21,9 +21,12 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name = "moveto_corner_turn"
-fsm = SkillHSM:new{name = name, start = "INIT", debug = false}
+fsm = SkillHSM:new{name = name, start = "INIT", debug = true}
 depends_skills = {"motor_move", "moveto", "turn_to_search"}
-depends_interfaces = {{v = "pose", type = "Position3DInterface", id = "Pose"}}
+depends_interfaces = {
+    {v = "pose", type = "Position3DInterface", id = "Pose"},
+    {v = "throttle", type = "SwitchInterface", id = "motor-throttle"}
+}
 
 documentation = [==[Simple exploration for evaluation of danielhonies thesis
 @param: place place we want to go to
@@ -58,6 +61,7 @@ fsm:add_transitions{{"INIT", "GOTO_CORNER", cond = true}}
 function TURN:init() self.args["turn_to_search"] = {turns = turn * 2} end
 
 function GOTO_CORNER:init()
+    throttle:msgq_enqueue(throttle.EnableSwitchMessage:new())
     local index = 0;
     if self.fsm.vars.min_x ~= nil then MIN_X_MAP = self.fsm.vars.min_x end
     if self.fsm.vars.max_x ~= nil then MAX_X_MAP = self.fsm.vars.max_x end
@@ -119,6 +123,7 @@ function GOTO_CORNER:init()
     self.args["moveto"] = {
         ori = 1.570795 * index,
         x = self.fsm.vars.x,
-        y = self.fsm.vars.y
+        y = self.fsm.vars.y,
+        slow = true
     }
 end

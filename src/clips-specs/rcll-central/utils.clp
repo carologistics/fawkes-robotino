@@ -885,6 +885,22 @@
   (blackboard-send-msg ?msg)
 )
 
+
+(deffunction motors-disable (?robot)
+  "Use the SwitchInterface to turn off the motors"
+  (bind ?interface (remote-if "SwitchInterface" ?robot "switch/motor-switch"))
+  (bind ?msg (blackboard-create-msg ?interface "DisableSwitchMessage"))
+  (blackboard-send-msg ?msg)
+)
+
+(deffunction motors-enable (?robot)
+  "Use the SwitchInterface to turn off the motors"
+  (bind ?interface (remote-if "SwitchInterface" ?robot "switch/motor-switch"))
+  (bind ?msg (blackboard-create-msg ?interface "EnableSwitchMessage"))
+  (blackboard-send-msg ?msg)
+)
+
+
 (deffunction navigator-set-speed (?robot ?max-velocity ?max-rotation)
   "Uses the NavigatorInterface to set the max velocity and speed"
   (bind ?msg (blackboard-create-msg (remote-if "NavigatorInterface" ?robot "Navigator") "SetMaxVelocityMessage"))

@@ -59,6 +59,7 @@ fawkes/bbsync:
         navigator: NavigatorInterface::Navigator=/robot1/Navigator
         robotino: MotorInterface::Robotino=/robot1/Robotino
         exploration: ExplorationInterface::/exploration/info=/robot1/exploration/info
+        motor-switch: SwitchInterface::motor-switch=/robot1/motor-switch
 
 
     robot2:
@@ -73,6 +74,7 @@ fawkes/bbsync:
         navigator: NavigatorInterface::Navigator=/robot2/Navigator
         robotino: MotorInterface::Robotino=/robot2/Robotino
         exploration: ExplorationInterface::/exploration/info=/robot2/exploration/info
+        motor-switch: SwitchInterface::motor-switch=/robot2/motor-switch
 
 
     robot3:
@@ -87,3 +89,4 @@ fawkes/bbsync:
         navigator: NavigatorInterface::Navigator=/robot3/Navigator
         robotino: MotorInterface::Robotino=/robot3/Robotino
         exploration: ExplorationInterface::/exploration/info=/robot3/exploration/info
+        motor-switch: SwitchInterface::motor-switch=/robot3/motor-switch

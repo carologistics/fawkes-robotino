@@ -38,11 +38,7 @@
 =>
   (printout warn "***** Enabling motor *****" crlf)
   (modify ?sf (value RUNNING))
-  (bind ?msg (blackboard-create-msg
-               (remote-if "MotorInterface" ?robot "Robotino")
-               "SetMotorStateMessage"))
-  (blackboard-set-msg-field ?msg "motor_state" 0)
-  (blackboard-send-msg ?msg)
+  (motors-enable ?robot)
 )
 
 
@@ -57,11 +53,7 @@
   (modify ?sf (value PAUSED))
   (do-for-all-facts ((?agent-wm wm-fact))
                     (wm-key-prefix ?agent-wm:key (create$ central agent robot))
-    (bind ?msg (blackboard-create-msg
-               (remote-if "MotorInterface" (wm-key-arg ?agent-wm:key r) "Robotino")
-               "SetMotorStateMessage"))
-    (blackboard-set-msg-field ?msg "motor_state" 1)
-    (blackboard-send-msg ?msg)
+    (motors-disable (wm-key-arg ?agent-wm:key r))
   )
 )
 

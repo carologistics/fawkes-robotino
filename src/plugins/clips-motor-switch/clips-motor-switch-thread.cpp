@@ -21,12 +21,14 @@
 
 #include "clips-motor-switch-thread.h"
 
+#include "rto_msgs/srv/set_omni_drive_enabled.hpp"
+
 #include <core/threading/mutex_locker.h>
-#include <interfaces/MotorInterface.h>
 
 #include <clipsmm.h>
 
 using namespace fawkes;
+using SetOmniDriveEnabled = rto_msgs::srv::SetOmniDriveEnabled;
 
 /** @class ClipsMotorSwitchThread "clips-protobuf-thread.h"
  * Provide protobuf functionality to CLIPS environment.
@@ -50,14 +52,15 @@ ClipsMotorSwitchThread::~ClipsMotorSwitchThread()
 void
 ClipsMotorSwitchThread::init()
 {
-	cfg_iface_id_ = config->get_string("/clips-motor-switch/interface-id");
-	motor_if_     = blackboard->open_for_reading<MotorInterface>(cfg_iface_id_.c_str());
+	client_ = node_handle->create_client<SetOmniDriveEnabled>("cmd_vel_enable");
+	while (!client_->wait_for_service(std::chrono::seconds(5))) {
+		logger->log_warn(name(), "Service not available, waiting");
+	}
 }
 
 void
 ClipsMotorSwitchThread::finalize()
 {
-	blackboard->close(motor_if_);
 }
 
 void
@@ -90,23 +93,31 @@ ClipsMotorSwitchThread::loop()
 void
 ClipsMotorSwitchThread::clips_motor_enable(std::string env_name)
 {
-	try {
-		MotorInterface::SetMotorStateMessage *msg =
-		  new MotorInterface::SetMotorStateMessage(MotorInterface::MOTOR_ENABLED);
-		motor_if_->msgq_enqueue(msg);
-	} catch (Exception &e) {
-		logger->log_warn(name(), "Cannot enable motor");
-	}
+	auto request    = std::make_shared<SetOmniDriveEnabled::Request>();
+	request->enable = true;
+
+	using ServiceResponseFuture     = rclcpp::Client<SetOmniDriveEnabled>::SharedFuture;
+	auto response_received_callback = [this](ServiceResponseFuture future) {
+		auto response = future.get();
+		if (!response->success) {
+			logger->log_error(name(), "Failed to enable robotino motors");
+		}
+	};
+	auto future_result = client_->async_send_request(request, response_received_callback);
 }
 
 void
 ClipsMotorSwitchThread::clips_motor_disable(std::string env_name)
 {
-	try {
-		MotorInterface::SetMotorStateMessage *msg =
-		  new MotorInterface::SetMotorStateMessage(MotorInterface::MOTOR_DISABLED);
-		motor_if_->msgq_enqueue(msg);
-	} catch (Exception &e) {
-		logger->log_warn(name(), "Cannot disable motor");
-	}
+	auto request    = std::make_shared<SetOmniDriveEnabled::Request>();
+	request->enable = false;
+
+	using ServiceResponseFuture     = rclcpp::Client<SetOmniDriveEnabled>::SharedFuture;
+	auto response_received_callback = [this](ServiceResponseFuture future) {
+		auto response = future.get();
+		if (!response->success) {
+			logger->log_error(name(), "Failed to disable robotino motors");
+		}
+	};
+	auto future_result = client_->async_send_request(request, response_received_callback);
 }
