@@ -145,7 +145,7 @@ ObjectTrackingThread::init()
 	intrinsics_.coeffs[4] = camera_coeffs_[4];
 
 	//set object params
-	//               {Unset, Workpiece, Conveyor, Slide}
+	//               {Unset, Conveyor, Slide, Workpiece}
 	object_widths_ = {0.0, 0.03, 0.0585, 0.04};
 
 	//get NN params
