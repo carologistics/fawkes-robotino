@@ -954,10 +954,6 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 	base_target[0] = object_pos.getX() - base_offset_x_;
 	base_target[1] = object_pos.getY() - base_offset_y_;
 	base_target[2] = mps_angle;
-
-	logger->log_info("base_target[0]: ", std::to_string(base_target[0]).c_str());
-	logger->log_info("base_target[1]: ", std::to_string(base_target[1]).c_str());
-	logger->log_info("base_target[2]: ", std::to_string(base_target[2]).c_str());
 }
 
 void
