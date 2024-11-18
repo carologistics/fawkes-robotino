@@ -145,8 +145,8 @@ ObjectTrackingThread::init()
 	intrinsics_.coeffs[4] = camera_coeffs_[4];
 
 	//set object params
-	//               {Unset, Workpiece, Conveyor, Slide}
-	object_widths_ = {0.0, 0.04, 0.03, 0.0585};
+	//               {Unset, Conveyor, Slide, Workpiece}
+	object_widths_ = {0.0, 0.03, 0.0585, 0.04};
 
 	//get NN params
 	weights_path_  = this->config->get_string(("plugins/object_tracking/yolo/weights_path"));
@@ -161,7 +161,7 @@ ObjectTrackingThread::init()
 	swapRB_ = false;
 
 	//set up network
-	net_ = readNet(weights_path_, config_path_);
+	net_ = cv::dnn::readNetFromONNX(weights_path_);
 	net_.setPreferableBackend(DNN_BACKEND_DEFAULT);
 	net_.setPreferableTarget(DNN_TARGET_CPU);
 	//get name of output layer
@@ -763,30 +763,36 @@ ObjectTrackingThread::detect_objects(Mat image, std::vector<std::array<float, 4>
 	Mat blob = blobFromImage(image, scale_, Size(inpWidth_, inpHeight_), Scalar(), swapRB_);
 	net_.setInput(blob);
 	net_.forward(results, outName_);
-	//results: L x N x (5 + #classes): 3 x 5808(in last layer) x [center_x, center_y, width, height, background_class, WORKPIECE, CONVEYOR, SLIDE]
 
-	//check each yolo-layer output
-	for (size_t l = 0; l < outName_.size(); l++) {
-		//pointer to access results' data
-		float *data = (float *)results[l].data;
+	int rows       = results[0].size[2];
+	int dimensions = results[0].size[1];
 
-		//confidence thresholding
-		for (int j = 0; j < results[l].rows; ++j, data += results[l].cols) {
-			//take confidence for target class - filter other classes
-			float confidence = data[4 + (int)current_object_type_];
-			if (confidence > confThreshold_) {
-				std::array<float, 4> yolo_bb = {data[0], data[1], data[2], data[3]};
-				yolo_bbs.push_back(yolo_bb);
+	results[0] = results[0].reshape(1, dimensions);
+	cv::transpose(results[0], results[0]);
 
-				Rect rect_bb;
-				convert_bb_yolo2rect(yolo_bb, rect_bb);
-				boxes.push_back(rect_bb);
+	auto data = (float *)results[0].data;
 
-				confidences.push_back(confidence);
-			}
+	std::vector<int> class_ids{};
+
+	for (int i = 0; i < rows; ++i) {
+		cv::Point class_id;
+
+		float confidence = data[4 + (int)current_object_type_];
+		if (confidence > confThreshold_) {
+			std::array<float, 4> yolo_bb = {data[0] / inpWidth_,
+			                                data[1] / inpHeight_,
+			                                data[2] / inpWidth_,
+			                                data[3] / inpHeight_};
+			yolo_bbs.push_back(yolo_bb);
+
+			Rect rect_bb;
+			convert_bb_yolo2rect(yolo_bb, rect_bb);
+			boxes.push_back(rect_bb);
+
+			confidences.push_back(confidence);
 		}
+		data += dimensions;
 	}
-
 	//non-maximum suppression
 	std::vector<int> indices;
 	NMSBoxes(boxes, confidences, confThreshold_, nmsThreshold_, indices);
