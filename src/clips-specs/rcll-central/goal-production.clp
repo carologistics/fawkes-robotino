@@ -21,31 +21,6 @@
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
 
-; ----------------------- Util -------------------------------
-
-(defglobal
-  ; defines the spacing between complexity-based prios
-  ?*PRODUCTION-PRIO-BASE-STEP* = 10
-  ; complexity-based starting prios according to spacing above
-  ?*PRODUCTION-C0-PRIORITY* = 30
-  ?*PRODUCTION-C1-PRIORITY* = 40
-  ?*PRODUCTION-C2-PRIORITY* = 50
-  ?*PRODUCTION-C3-PRIORITY* = 60
-  ; increas complexity by this for each solved step
-  ?*PRODUCTION-PRIORITY-INCREASE* = 100
-  ; further bump any delivery goal to most urgent level
-  ?*DELIVER-PRIORITY-INCREASE* = 1000
-  ; Support priorities
-  ; these values should be selected, such that the respective base priorities
-  ; are in a range from 1 to ?*PRODUCTION-PRIO-BASE-STEP*.
-  ?*PRODUCTION-PAY-PRIORITY* = 1
-  ?*PRODUCTION-PAY-CC-PRIORITY-INCREASE* = 2
-  ?*PRODUCTION-BUFFER-PRIORITY* = 2
-
-  ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT* = 30
-  ?*ROBOT-WAITING-TIMEOUT* = 2
-)
-
 (deffunction prio-from-complexity (?com)
   (bind ?priority ?*PRODUCTION-C0-PRIORITY*)
   (if (eq ?com C1) then
@@ -82,24 +57,6 @@
     (bind ?priority (+ ?priority (* (+ (string-to-field (sub-string 2 2 ?com)) 1) ?*PRODUCTION-PRIORITY-INCREASE*)))
   )
   (return ?priority)
-)
-
-(deffunction goal-meta-assign-robot-to-goal (?goal ?robot)
-"Changes an existing goal-meta fact and assign it to the given robot"
-  (if (eq (fact-slot-value ?goal id) FALSE) then
-    (printout t "Goal has no id! " ?goal crlf)
-    (return)
-  )
-  (if (eq ?robot nil) then (return ))
-  (if (not (do-for-fact ((?f goal-meta))
-      (and (eq ?f:goal-id (fact-slot-value ?goal id))
-           (or (eq ?f:restricted-to ?robot)
-               (eq ?f:restricted-to nil)))
-      (modify ?f (assigned-to ?robot))))
-   then
-    (printout t "FAILED assign robot " ?robot " to goal "
-      (fact-slot-value ?goal id) crlf)
-  )
 )
 
 (deffunction goal-meta-assert (?goal ?robot ?order-id ?ring-nr)
@@ -209,11 +166,11 @@
 (defrule goal-production-assign-robot-to-enter-field
   (wm-fact (key central agent robot args? r ?robot))
   (not (wm-fact (key domain fact entered-field args? r ?robot)))
-  (goal (id ?oid) (class ENTER-FIELD)  (sub-type SIMPLE) (mode FORMULATED) (is-executable FALSE))
+  ?g <- (goal (id ?oid) (class ENTER-FIELD)  (sub-type SIMPLE) (mode FORMULATED) (is-executable FALSE))
   ?gm <- (goal-meta (goal-id ?oid) (assigned-to nil))
   (not (goal-meta (assigned-to ?robot)))
   =>
-  (modify ?gm (assigned-to ?robot))
+  (goal-meta-assign-robot-to-goal ?g ?robot)
 )
 
 (defrule goal-production-assign-robot-to-simple-goals
@@ -721,7 +678,7 @@
   (wm-fact (key refbox team-color) (value ?color))
   =>
   (bind ?g (goal-tree-assert-central-run-parallel WAIT-ROOT))
-  (modify ?g (meta do-not-finish) (priority 0))
+  (modify ?g (meta do-not-finish) (priority 10000.0))
 )
 
 (defrule goal-production-assert-wait-nothing-executable
@@ -736,31 +693,55 @@
   )))
 )
 
-(defrule goal-production-create-move-out-of-way-goal
-	"Creates a move out of way goal with a subgoal for each possible waiting position.
-  As soon as it is completed it's reset"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (class INSTRUCTION-ROOT) (mode FORMULATED|DISPATCHED))
-  (goal (id ?root-id) (class WAIT-ROOT))
-  (not (goal (class MOVE-OUT-OF-WAY)))
+(defrule goal-production-change-priority-move-out-of-way
+  (declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+  ?g <- (goal (id ?goal-id) (class MOVE-OUT-OF-WAY)
+              (type ACHIEVE) (sub-type SIMPLE)
+              (mode FORMULATED) (parent ?pa-id&~nil)
+              (priority ?p&:(< ?p ?*MOVE-OUT-OF-WAY-HIGH-PRIORITY*))
+        )
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot&:(neq ?robot nil)))
+  (wm-fact (key monitoring move-out-of-way high-prio long-wait args? r ?robot))
   =>
-  (bind ?wait-zones (create$ (goal-production-assert-move-out-of-way WAIT1)
-                             (goal-production-assert-move-out-of-way WAIT2)
-                             (goal-production-assert-move-out-of-way WAIT3)
-                             (goal-production-assert-move-out-of-way WAIT4)))
-  (bind ?g (goal-tree-assert-central-run-parallel MOVE-OUT-OF-WAY ?wait-zones))
-  (modify ?g (parent ?root-id) (priority -1.0))
+  (printout t "bump priority of " ?goal-id crlf)
+  (modify ?g (priority ?*MOVE-OUT-OF-WAY-HIGH-PRIORITY*))
 )
 
-(defrule goal-production-change-priority-move-out-of-way
+(defrule goal-production-revert-priority-move-out-of-way
+  (declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
   ?g <- (goal (id ?goal-id) (class MOVE-OUT-OF-WAY)
               (type ACHIEVE) (sub-type SIMPLE)
               (mode FORMULATED) (parent ?pa-id&~nil)
               (priority ?p&:(> ?p 0))
         )
+  (goal-meta (goal-id ?goal-id) (assigned-to ?robot&:(neq ?robot nil)))
+  (not (wm-fact (key monitoring move-out-of-way high-prio long-wait args? r ?robot)))
   =>
-  (printout t "modify priority of " ?goal-id crlf)
+  (printout t "reduce priority of " ?goal-id crlf)
   (modify ?g (priority -1.0))
+)
+
+(defrule goal-production-re-create-move-out-of-way-simple
+" Re-creates a retracted move-out-of-way goal on completion for the
+	corresponding target wait positions"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?parent-id) (class WAIT-ROOT))
+  (time $?now)
+  (not (goal (class MOVE-OUT-OF-WAY) (sub-type SIMPLE) (parent ?parent-id) (params target WAIT1|WAIT2|WAIT3|WAIT4)))
+  =>
+  (bind ?wait-pos (create$))
+  (delayed-do-for-all-facts ((?g goal))
+	(and (eq ?g:class MOVE-OUT-OF-WAY)
+	     (eq ?g:sub-type SIMPLE)
+	)
+	(bind ?wait-pos (append$ ?wait-pos (values-from-name-value-list ?g:params)))
+  )
+  (foreach ?w (create$ WAIT1 WAIT2 WAIT3 WAIT4)
+	(if (not (member$ ?w ?wait-pos))
+	    then (bind ?f (goal-production-assert-move-out-of-way ?w))
+		  (goal-tree-update-child ?f ?parent-id -1.0)
+	)
+  )
 )
 
 (defrule goal-production-create-cleanup-wp
