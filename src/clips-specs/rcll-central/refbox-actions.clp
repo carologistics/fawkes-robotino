@@ -132,6 +132,7 @@
   (not (wm-fact (id "/simulator/comm/peer-id/public")))
   ?bs <- (wm-fact (key refbox beacon seq) (value ?seq))
   (wm-fact (key central agent robot args? r ?robot))
+  (not (wm-fact (key central agent robot-lost args? r ?robot)))
   (wm-fact (key refbox robot task seq args? r ?robot) (value ?task-seq))
   (not (refbox-agent-task (robot ?robot) (task-id ?task-seq)))
   ?bt <- (timer (name ?tn&:(eq ?tn (sym-cat refbox-beacon-timer- ?robot)))
@@ -154,6 +155,7 @@
   ?bs <- (wm-fact (key refbox beacon seq) (value ?seq))
   ?at <- (refbox-agent-task (task-id ?task-seq) (robot ?robot))
   (wm-fact (key central agent robot args? r ?robot))
+  (not (wm-fact (key central agent robot-lost args? r ?robot)))
   (wm-fact (key refbox robot task seq args? r ?robot) (value ?task-seq))
   ; TODO could we skip a task by accident?
   ?bt <- (timer (name ?tn&:(eq ?tn (sym-cat refbox-beacon-timer- ?robot)))
