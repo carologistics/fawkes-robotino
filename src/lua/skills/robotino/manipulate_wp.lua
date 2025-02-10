@@ -196,11 +196,11 @@ function gripper_aligned()
             tostring(
                 within_tolerance(
                     math.max(0.01, math.min(gripper_target.z, z_max)),
-                    arduino:z_position(), GRIPPER_TOLERANCE.z * 1.1)))
+                    arduino:z_position(), GRIPPER_TOLERANCE.z * 1.3)))
     local result = within_tolerance(math.max(0.01,
                                              math.min(gripper_target.z, z_max)),
                                     arduino:z_position(),
-                                    GRIPPER_TOLERANCE.z * 1.1)
+                                    GRIPPER_TOLERANCE.z * 1.3)
     if result == true then
         if fsm.vars.img_wait > 10 then return result end
         fsm.vars.img_wait = fsm.vars.img_wait + 1
@@ -349,7 +349,7 @@ function object_tracker_active()
 end
 
 function within_tolerance(value, target, margin)
-    return math.abs(value - target) < margin
+    return math.abs(value - target) <= margin
 end
 
 function ready_for_gripper_movement()
