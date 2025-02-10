@@ -349,7 +349,7 @@ function object_tracker_active()
 end
 
 function within_tolerance(value, target, margin)
-    return math.abs(value - target) < margin
+    return math.abs(value - target) <= margin
 end
 
 function ready_for_gripper_movement()
