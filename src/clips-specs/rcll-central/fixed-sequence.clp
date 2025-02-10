@@ -314,18 +314,34 @@
 	(domain-fact (name at) (param-values ?robot ?curr-location ?curr-side))
 	(domain-fact (name wp-at) (param-values ?wp ?wp-loc ?wp-side))
 	=>
-	(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
-		(create$ ; only last statement of if is returned
-				(plan-assert-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side ?wp
-					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side (get-wp-complexity ?wp))
-					(plan-assert-action wp-check ?robot ?wp ?wp-loc ?wp-side ABSENT)
-				)
-				(plan-assert-move ?robot ?wp-loc ?wp-side ?target-mps INPUT
-					(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT (get-wp-complexity ?wp))
-					(plan-assert-action wp-check ?robot ?wp ?target-mps INPUT THERE)
-					(plan-assert-action wait-for-mps ?robot ?wp ?target-mps INPUT)
-				)
+	(if (neq ?class DELIVER) then
+		(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
+			(create$ ; only last statement of if is returned
+					(plan-assert-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side ?wp
+						(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side (get-wp-complexity ?wp))
+						(plan-assert-action wp-check ?robot ?wp ?wp-loc ?wp-side ABSENT)
+					)
+					(plan-assert-move ?robot ?wp-loc ?wp-side ?target-mps INPUT
+						(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT (get-wp-complexity ?wp))
+						(plan-assert-action wp-check ?robot ?wp ?target-mps INPUT THERE)
+						(plan-assert-action wait-for-mps ?robot ?wp ?target-mps INPUT)
+					)
+			)
 		)
+	else
+		(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
+			(create$ ; only last statement of if is returned
+					(plan-assert-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side ?wp
+						(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side (get-wp-complexity ?wp))
+						(plan-assert-action wp-check ?robot ?wp ?wp-loc ?wp-side ABSENT)
+					)
+					(plan-assert-move ?robot ?wp-loc ?wp-side ?target-mps INPUT
+						(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT (get-wp-complexity ?wp))
+						(plan-assert-action wait-for-mps ?robot ?wp ?target-mps INPUT)
+					)
+			)
+		)
+
 	)
 	(modify ?g (mode EXPANDED))
 )

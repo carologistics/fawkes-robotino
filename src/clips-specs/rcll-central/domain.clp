@@ -84,7 +84,7 @@
 (defrule domain-worldmodel-flush
 	(executive-init)
 	(wm-fact (key cx identity))
-	(wm-fact (key refbox phase) (value SETUP))
+	(wm-fact (key refbox phase) (value SETUP|PRODUCTION))
 	=>
 	(printout warn "Flushing worldmodel!" crlf)
 	(wm-robmem-flush)
@@ -281,7 +281,7 @@
   ?flushed <- (domain-wm-flushed)
   (wm-fact (key config agent name) (value ?robot-name))
   (wm-fact (key refbox team-color) (value ?team-color&~nil))
-  (wm-fact (key refbox phase) (value SETUP))
+  (wm-fact (key refbox phase) (value SETUP|PRODUCTION))
   =>
   (retract ?flushed)
   (bind ?self (sym-cat ?robot-name))
@@ -403,31 +403,31 @@
   (assert (timer (name order-selection-reset-timer)))
 )
 
-(defrule domain-restore-worldmodel-after-maintenance
-" Domain facts have not been loaded but the game is already running.
-  Restore the world model from the database."
-  (declare (salience ?*SALIENCE-FIRST*))
-	(not (domain-facts-loaded))
-	(wm-fact (key refbox phase) (value EXPLORATION|PRODUCTION))
-	(wm-fact (key config agent name) (value ?robot-name))
-	(wm-fact (key refbox team-color) (value ?team-color&~nil))
-	=>
-	(printout warn "Restoring world model from the database" crlf)
-	(wm-robmem-sync-restore)
-	(assert (sync-wm-facts-to-template-facts))
-	(assert (reset-robot-in-wm robot1)
-	        (reset-robot-in-wm robot2)
-	        (reset-robot-in-wm robot3)
-	        (domain-fact (name mirror-orientation) (param-values 0 180))
-	        (domain-fact (name mirror-orientation) (param-values 45 135))
-	        (domain-fact (name mirror-orientation) (param-values 90 90))
-	        (domain-fact (name mirror-orientation) (param-values 135 45))
-	        (domain-fact (name mirror-orientation) (param-values 180 0))
-	        (domain-fact (name mirror-orientation) (param-values 225 315))
-	        (domain-fact (name mirror-orientation) (param-values 270 270))
-	        (domain-fact (name mirror-orientation) (param-values 315 225))
-	)
-)
+; (defrule domain-restore-worldmodel-after-maintenance
+; " Domain facts have not been loaded but the game is already running.
+;   Restore the world model from the database."
+;   (declare (salience ?*SALIENCE-FIRST*))
+; 	(not (domain-facts-loaded))
+; 	(wm-fact (key refbox phase) (value EXPLORATION|PRODUCTION))
+; 	(wm-fact (key config agent name) (value ?robot-name))
+; 	(wm-fact (key refbox team-color) (value ?team-color&~nil))
+; 	=>
+; 	(printout warn "Restoring world model from the database" crlf)
+; 	(wm-robmem-sync-restore)
+; 	(assert (sync-wm-facts-to-template-facts))
+; 	(assert (reset-robot-in-wm robot1)
+; 	        (reset-robot-in-wm robot2)
+; 	        (reset-robot-in-wm robot3)
+; 	        (domain-fact (name mirror-orientation) (param-values 0 180))
+; 	        (domain-fact (name mirror-orientation) (param-values 45 135))
+; 	        (domain-fact (name mirror-orientation) (param-values 90 90))
+; 	        (domain-fact (name mirror-orientation) (param-values 135 45))
+; 	        (domain-fact (name mirror-orientation) (param-values 180 0))
+; 	        (domain-fact (name mirror-orientation) (param-values 225 315))
+; 	        (domain-fact (name mirror-orientation) (param-values 270 270))
+; 	        (domain-fact (name mirror-orientation) (param-values 315 225))
+; 	)
+; )
 
 (defrule domain-restore-template-facts
   (declare (salience ?*SALIENCE-FIRST*))

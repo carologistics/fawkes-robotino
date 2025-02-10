@@ -25,21 +25,21 @@
 ; steps.
 (defglobal
   ?*SALIENCE-PRODUCTION-STRATEGY* = -1
-  ?*RS-WORKLOAD-THRESHOLD* = 6
-  ?*C0-PRODUCTION-THRESHOLD* = 1
-  ?*C1-PRODUCTION-THRESHOLD* = 2
-  ?*C2-PRODUCTION-THRESHOLD* = 2
-  ?*C3-PRODUCTION-THRESHOLD* = 2
-  ?*C0-CUTOFF* = 17
-  ?*C1-CUTOFF* = 16
+  ?*RS-WORKLOAD-THRESHOLD* = 600
+  ?*C0-PRODUCTION-THRESHOLD* = 10
+  ?*C1-PRODUCTION-THRESHOLD* = 10
+  ?*C2-PRODUCTION-THRESHOLD* = 10
+  ?*C3-PRODUCTION-THRESHOLD* = 10
+  ?*C0-CUTOFF* = 20
+  ?*C1-CUTOFF* = 19
   ?*C2-CUTOFF* = 16
   ?*C3-CUTOFF* = 15
-  ?*TOTAL-PRODUCTION-THRESHOLD* = 3
+  ?*TOTAL-PRODUCTION-THRESHOLD* = 4
   ?*TOTAL-PRODUCTION-THRESHOLD-2ROBOTS* = 2
   ?*TOTAL-PRODUCTION-THRESHOLD-1ROBOT* = 1
   ?*SALIENCE-ORDER-SELECTION* = ?*SALIENCE-HIGH*
   ?*UPDATE-WORKLOAD-TIMEOUT* = 2
-  ?*ORDER-SELECTION-RESET-TIMEOUT* = 60
+  ?*ORDER-SELECTION-RESET-TIMEOUT* = 120
 )
 
 (deffunction production-strategy-produce-ahead-check (?gt ?start ?end ?complexity)
@@ -66,12 +66,13 @@
   "Count the number of order production root nodes that are not retracted."
   (bind ?order-roots 0)
   (do-for-all-facts
-    ((?goal goal) (?goal-meta goal-meta))
-    (and
-      (eq ?goal:id ?goal-meta:goal-id)
-      (neq ?goal-meta:root-for-order nil)
-      (neq ?goal:mode RETRACTED)
-    )
+    ((?d-fact domain-fact))
+      (or
+           (and (eq ?d-fact:name holding)
+               (str-index  wp- (nth$ 2 ?d-fact:param-values)))
+           (and (eq ?d-fact:name wp-at)
+               (str-index  wp- (nth$ 1 ?d-fact:param-values)))
+      )
     (bind ?order-roots (+ 1 ?order-roots))
   )
 
@@ -979,6 +980,7 @@
                         (values $?values&:(not (member$ ?order-id ?values))))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
  (wm-fact (key strategy meta production-order-time-limit args? com C0) (value ?limit))
+ (time $?)
  ;filter condition
   (or
     (and
@@ -1008,6 +1010,7 @@
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c0-limit)
                         (values $?values&:(member$ ?order-id ?values)))
   (wm-fact (key strategy meta production-order-time-limit args? com C0) (value ?limit))
+ (time $?)
   (test (<= ?limit (production-strategy-count-active-orders-of-complexity C0)))
   =>
   (modify ?filtered (values ))
@@ -1023,6 +1026,7 @@
                         (values $?values&:(not (member$ ?order-id ?values))))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
   (wm-fact (key strategy meta production-order-time-limit args? com C1) (value ?limit))
+ (time $?)
   ;filter condition
   (or
     (and
@@ -1052,6 +1056,7 @@
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c1-limit)
                         (values $?values&:(member$ ?order-id ?values)))
   (wm-fact (key strategy meta production-order-time-limit args? com C1) (value ?limit))
+ (time $?)
   (test (<= ?limit (production-strategy-count-active-orders-of-complexity C1)))
   =>
   (modify ?filtered (values ))
@@ -1067,6 +1072,7 @@
                         (values $?values&:(not (member$ ?order-id ?values))))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
   (wm-fact (key strategy meta production-order-time-limit args? com C2) (value ?limit))
+ (time $?)
   ;filter condition
   (or
     (and
@@ -1096,6 +1102,7 @@
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c2-limit)
                         (values $?values&:(member$ ?order-id ?values)))
    (wm-fact (key strategy meta production-order-time-limit args? com C2) (value ?limit))
+ (time $?)
   (test (<= ?limit (production-strategy-count-active-orders-of-complexity C2)))
   =>
   (modify ?filtered (values ))
@@ -1111,6 +1118,7 @@
                         (values $?values&:(not (member$ ?order-id ?values))))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
   (wm-fact (key strategy meta production-order-time-limit args? com C3) (value ?limit))
+ (time $?)
   ;filter condition
   (or
     (and
@@ -1140,6 +1148,7 @@
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter c3-limit)
                         (values $?values&:(member$ ?order-id ?values)))
   (wm-fact (key strategy meta production-order-time-limit args? com C3) (value ?limit))
+ (time $?)
   (test (<= ?limit (production-strategy-count-active-orders-of-complexity C3)))
   =>
   (modify ?filtered (values ))
@@ -1155,6 +1164,7 @@
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter total-limit)
                         (values $?values&:(not (member$ ?order-id ?values))))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
+  (time $?now)
 
   (wm-fact (key strategy meta production-order-limit args? com TOTAL) (value ?threshold))
   ;filter condition
@@ -1180,6 +1190,7 @@
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter total-limit)
                         (values $?values&:(member$ ?order-id ?values)))
   (wm-fact (key strategy meta production-order-limit args? com TOTAL) (value ?threshold))
+ (time $?)
   (test (<= ?threshold (production-strategy-count-active-orders)))
   =>
   (modify ?filtered (values ))
@@ -1358,7 +1369,9 @@
   (delayed-do-for-all-facts ((?wm wm-fact)) (member$ ?wp-name ?wm:key)
     (retract ?wm)
   )
-  (retract ?do ?parent-fact ?parent-meta-fact)
+  (retract ?do)
+  (retract ?parent-fact)
+  (retract ?parent-meta-fact)
   (modify ?os (value FALSE))
 )
 
@@ -1632,13 +1645,13 @@
       (eq ?goal-meta:order-id ?order-id)
       (eq ?goal:priority ?*PRODUCTION-STANDING-ORDER-PRIORITY*)
     )
-    ;figure out the correct "next-step" from the goal and bind it to ?step 
+    ;figure out the correct "next-step" from the goal and bind it to ?step
     (if (str-index CAP ?goal:class)
         then (bind ?step CAP)
 	else (if (str-index DELIVER ?goal:class)
                  then (bind ?step DELIVER)
                  else (if (str-index RING ?goal:class)
-                          then (bind ?step (switch ?goal-meta:ring-nr 
+                          then (bind ?step (switch ?goal-meta:ring-nr
                                            (case ONE then RING1)
                                            (case TWO then RING2)
                                            (case THREE then RING3)
@@ -1646,7 +1659,7 @@
                  )
         )
     )
-    (if (str-index INSTRUCT ?goal:class) 
+    (if (str-index INSTRUCT ?goal:class)
         then (bind ?priority (prio-from-complexity ?com))
         else (bind ?priority (dynamic-prio-from-complexity-for-production-orders ?com ?step))
     )
