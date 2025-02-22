@@ -261,6 +261,7 @@ AgentTaskSkillerBridgeThread::handle_peer_msg(boost::asio::ip::udp::endpoint &,
 					response_thread_.join();
 					stop_thread_ = false;
 				}
+				terminated_ = false;
 				wakeup();
 			} else {
 				next_skill_ = "";
@@ -282,11 +283,22 @@ AgentTaskSkillerBridgeThread::construct_task_string(const llsf_msgs::AgentTask &
 		const llsf_msgs::Move &move     = agent_task_msg.move();
 		std::string            waypoint = move.waypoint();
 		std::string machine_point       = move.has_machine_point() ? move.machine_point() : "INPUT";
+		if (machine_point.find("SHELF") != std::string::npos) {
+			machine_point = "INPUT";
+		}
+		if (machine_point.find("SLIDE") != std::string::npos) {
+			machine_point = "INPUT";
+		}
 		return "moveto{place=\"" + waypoint + "-" + machine_point + "\"}";
 	} else if (agent_task_msg.has_retrieve()) {
-		const llsf_msgs::Retrieve &retrieve = agent_task_msg.retrieve();
+		const llsf_msgs::Retrieve &retrieve      = agent_task_msg.retrieve();
+		std::string                machine_point = retrieve.machine_point();
+		if (machine_point.find("SHELF") != std::string::npos) {
+			machine_point += shelf_slots[shelf_index];
+			shelf_index = (shelf_index + 1) % 3;
+		}
 		return "manipulate_wp{mps=\"" + retrieve.machine_id() + "\",safe_put=false,map_pos=true,side=\""
-		       + retrieve.machine_point() + "\",target=\"WORKPIECE\",c=\"C3\"}";
+		       + machine_point + "\",target=\"WORKPIECE\",c=\"C3\"}";
 	} else if (agent_task_msg.has_deliver()) {
 		const llsf_msgs::Deliver &deliver = agent_task_msg.deliver();
 		if (deliver.machine_point() == "SLIDE") {
@@ -306,6 +318,7 @@ AgentTaskSkillerBridgeThread::construct_task_string(const llsf_msgs::AgentTask &
 void
 AgentTaskSkillerBridgeThread::handle_peer_recv_error(boost::asio::ip::udp::endpoint &, std::string)
 {
+	curr_agent_task_msg_.set_task_id(-1);
 }
 
 void
@@ -316,6 +329,7 @@ AgentTaskSkillerBridgeThread::bb_interface_data_refreshed(fawkes::Interface *int
 		skiller_if->read();
 		if (skiller_if->serial().get_string() != std::string(skiller_if->exclusive_controller())) {
 			successful_ = false;
+			terminated_ = true;
 			error_code_ = 0; // Skiller control lost
 			logger->log_info(name(), "Skill control lost, wakeup");
 			wakeup();
@@ -325,6 +339,7 @@ AgentTaskSkillerBridgeThread::bb_interface_data_refreshed(fawkes::Interface *int
 		case fawkes::SkillerInterface::SkillStatusEnum::S_INACTIVE: running_ = false; break;
 		case fawkes::SkillerInterface::SkillStatusEnum::S_FINAL:
 			successful_ = true;
+			terminated_ = true;
 			running_    = false;
 			logger->log_info(name(), "Final, wakeup");
 			wakeup();
@@ -332,6 +347,7 @@ AgentTaskSkillerBridgeThread::bb_interface_data_refreshed(fawkes::Interface *int
 		case fawkes::SkillerInterface::SkillStatusEnum::S_RUNNING: running_ = true; break;
 		case fawkes::SkillerInterface::SkillStatusEnum::S_FAILED:
 			successful_ = false;
+			terminated_ = true;
 			running_    = false;
 			logger->log_info(name(), "Failed, wakeup");
 			wakeup();
@@ -406,14 +422,18 @@ AgentTaskSkillerBridgeThread::send_response()
 		llsf_msgs::AgentTask response = curr_agent_task_msg_;
 		response.set_cancel_task(!successful_);
 		response.set_pause_task(false);
-		response.set_successful(successful_);
+		if (terminated_) {
+			response.set_successful(successful_);
+		}
 		response.set_canceled(false);
 		response.set_error_code(error_code_);
 		while (!stop_thread_) {
-			logger->log_info(name(),
-			                 "Send response: Succesful %s (code %i)",
-			                 response.successful() ? "true" : "false",
-			                 error_code_);
+			if (terminated_) {
+				logger->log_info(name(),
+				                 "Send response: Succesful %s (code %i)",
+				                 response.successful() ? "true" : "false",
+				                 error_code_);
+			}
 			private_peer_->send(response);
 			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 		}
