@@ -92,6 +92,7 @@ private:
 	std::string next_skill_;
 	std::string curr_skill_;
 	bool        running_     = false;
+	bool        terminated_  = false;
 	bool        successful_  = false;
 	bool        stop_thread_ = false;
 	int         error_code_  = 0;
@@ -105,6 +106,9 @@ private:
 	unsigned short recv_port_cyan_;
 	unsigned short recv_port_public_;
 	std::string    peer_address_;
+
+	std::array<std::string, 3> shelf_slots = {"-LEFT", "-MIDDLE", "-RIGHT"};
+	size_t                     shelf_index = 0;
 
 	double *rotation_;
 	double *translation_;
