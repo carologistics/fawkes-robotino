@@ -20,20 +20,28 @@
 #
 # *****************************************************************************
 
-set_output_directory_plugins()
+set(PLUGIN_gigatino
+    ON
+    CACHE BOOL "Build gigatino plugin")
 
-set(CMAKE_SHARED_MODULE_PREFIX "")
-add_subdirectory(clips-motor-switch)
-add_subdirectory(navgraph-generator-mps)
-add_subdirectory(skiller_motor_state)
-add_subdirectory(mps-laser-gen)
-add_subdirectory(laser_front_dist)
-add_subdirectory(tag_vision)
-add_subdirectory(picam-client)
-add_subdirectory(object-tracking)
-add_subdirectory(conveyor_pose)
-add_subdirectory(conveyor_plane)
-add_subdirectory(arduino)
-add_subdirectory(box_detect)
-add_subdirectory(ros2)
-add_subdirectory(gigatino)
+if(PLUGIN_gigatino)
+  add_library(gigatino MODULE gigatino_plugin.cpp com_thread.cpp)
+  depend_on_ros2(gigatino)
+set(GIGATINO_ROS_2_DEPS rclcpp_action gigatino_msgs)
+
+  depend_on_ros2_libs(gigatino "${GIGATINO_ROS_2_DEPS}")
+
+  target_link_libraries(
+    gigatino
+    m
+    fawkescore
+    fawkesutils
+    fawkesaspects
+    fawkesros2aspect
+    fawkesbaseapp
+    fawkesblackboard
+    fawkesinterface
+    ArduinoInterface)
+else()
+  plugin_disabled_message("gigatino")
+endif()

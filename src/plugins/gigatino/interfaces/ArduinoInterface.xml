@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="ArduinoInterface" author="Tim Niemueller, Nicolas Limpert" year="2016">
+  <constants>
+    <constant type="uint32" value="0" name="IDLE">No error.</constant>
+    <constant type="uint32" value="1" name="MOVING">The gripper is currently moving.</constant>
+
+    <constant type="uint32" value="2" name="ERROR_OUT_OF_RANGE_X">Desired motion in X would lead to exceeding limits.</constant>
+    <constant type="uint32" value="3" name="ERROR_OUT_OF_RANGE_Y">Desired motion in Y would lead to exceeding limits.</constant>
+    <constant type="uint32" value="4" name="ERROR_OUT_OF_RANGE_Z">Desired motion in Z would lead to exceeding limits.</constant>
+
+  </constants>
+  <data>
+    <comment>
+      Interface to access Arduino functionalities
+    </comment>
+    <field type="float" name="x_position">Current x-position</field>
+    <field type="float" name="y_position">Current y-position</field>
+    <field type="float" name="z_position">Current z-position</field>
+
+    <field type="bool"  name="gripper_closed">True if gripper is closed</field>
+    <field type="bool"  name="wp_sensed">True if the wp is sensed in the gripper</field>
+
+    <field type="float" name="x_max">Max len in x</field>
+    <field type="float" name="y_max">Max len in y</field>
+    <field type="float" name="z_max">Max len in z</field>
+
+    <field type="bool" name="final">True, if the last move command has been finished</field>
+
+    <field type="uint32" name="msgid">The ID of the message that is currently being
+      processed, or 0 if no message is being processed.</field>
+
+    <field type="uint32" name="status">The current status indicated by the above constants.</field>
+
+  </data>
+
+  <!-- Motion commands -->
+  <message name="MoveXYZAbs">
+    <comment>Move gripper to absolute end position.</comment>
+    <field type="float" name="x">New position in X</field>
+    <field type="float" name="y">New position in Y</field>
+    <field type="float" name="z">New position in Z</field>
+    <field type="string" length="64" name="target_frame">The target frame</field>
+  </message>
+  <message name="MoveXYZRel">
+    <comment>Move gripper to relative position.</comment>
+    <field type="float" name="x">New position in X</field>
+    <field type="float" name="y">New position in Y</field>
+    <field type="float" name="z">New position in Z</field>
+  </message>
+  <message name="MoveGripperAbs">
+    <comment>Open or close gripper to desired absolute position.</comment>
+    <field type="float" name="a">New goal pose for gripper</field>
+  </message>
+  <message name="MoveGripperRel">
+    <comment>Open or close gripper to desired relative position.</comment>
+    <field type="float" name="a">New goal pose for gripper</field>
+  </message>
+  <message name="ToHome">
+    <comment>Move gripper to home position in all axes.</comment>
+  </message>
+  <message name="Calibrate">
+    <comment>Restore gripper's position to the initial position set in the configuration.</comment>
+  </message>
+  <message name="CalibrateX">
+    <comment>Run a calibration of gripper's X</comment>
+  </message>
+  <message name="Stop">
+    <comment>Stops all Axis movement.</comment>
+  </message>
+  <message name="CloseGripper">
+    <comment>Close Gripper</comment>
+  </message>
+  <message name="OpenGripper">
+    <comment>Open Gripper</comment>
+  </message>
+  <message name="StatusUpdate">
+    <comment>Request a status of the arduino</comment>
+  </message>
+</interface>
