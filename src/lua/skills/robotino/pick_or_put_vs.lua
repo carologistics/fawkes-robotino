@@ -167,6 +167,13 @@ fsm:define_states{
         "MOVE_GRIPPER_UP",
         SkillJumpState,
         skills = {{gripper_commands}},
+        final_to = "MOVE_GRIPPER_BACK",
+        fail_to = "FAILED"
+    },
+    {
+        "MOVE_GRIPPER_BACK",
+        SkillJumpState,
+        skills = {{gripper_commands}},
         final_to = "DRIVE_BACK",
         fail_to = "FAILED"
     },
@@ -375,11 +382,14 @@ function MOVE_GRIPPER_UP:init()
     self.args["gripper_commands"].command = "MOVEABS"
 end
 
+function MOVE_GRIPPER_BACK:init()
+    self.args["gripper_commands"].x = 0.0
+    self.args["gripper_commands"].y = y_max / 2
+    self.args["gripper_commands"].z = arduino:z_position()
+    self.args["gripper_commands"].command = "MOVEABS"
+end
+
 function DRIVE_BACK:init()
-    if fsm.vars.target == "WORKPIECE" then
-        local calib_x_msg = arduino.CalibrateXMessage:new()
-        arduino:msgq_enqueue_copy(calib_x_msg)
-    end
     self.args["motor_move"].x = drive_back_x
 end
 
