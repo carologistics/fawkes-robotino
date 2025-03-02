@@ -49,6 +49,9 @@ Parameters:
                      the workpiece is there (optional, bool)
       @param query   defines if dry_run expects a workpiece to be at the location or wet (optional, THERE | ABSENT)
                      THERE by default
+      @param dry_end true, if the dry_run check should be done within the skill after manipulation, requires the
+                     dry_run parameter to be false (optional, bool)
+      @sense         true, if workpiece sensor should be used in dry_end to evaluate if it was succesful
       @param map_pos true, if MPS Pos is compared to Map Pos(optional,bool) True by default
 ]==]
 
@@ -72,8 +75,6 @@ local middle_shelf_offset_side = -0.175
 local right_shelf_offset_side = -0.275
 
 local ring_height = 0.01
-
-local drive_back_x = -0.4
 
 -- read gripper config
 local x_max = config:get_float("/arduino/x_max")
@@ -291,6 +292,8 @@ end
 function input_invalid()
     -- handle optional dry run
     if fsm.vars.dry_run == nil then fsm.vars.dry_run = false end
+    if fsm.vars.dry_end == nil or fsm.vars.dry_run then fsm.vars.dry_end = false end
+    if fsm.vars.sense == nil then fsm.vars.sense = false end
 
     if fsm.vars.query == "ABSENT" then
         fsm.vars.reverse_output = true
@@ -388,6 +391,13 @@ function dry_unexpected_object_found()
                fsm.vars.reverse_output
 end
 
+function workpiece_found()
+    return fsm.vars.consecutive_detections > 2
+end
+
+function sensed_wp() return arduino:is_wp_sensed() end
+
+
 fsm:define_states{
     export_to = _M,
     closure = {MISSING_MAX = MISSING_MAX},
@@ -417,9 +427,16 @@ fsm:define_states{
         "GRIPPER_ROUTINE",
         SkillJumpState,
         skills = {{pick_or_put_vs}},
-        final_to = "FINAL",
+        final_to = "DRY_END",
         fail_to = "FINE_TUNE_GRIPPER"
-    }
+    },
+    {"DRY_END", JumpState}
+    {"CHECK_FOR_WP", JumpState}
+    {"CHECK_FOR_NO_WP", JumpState}
+    {"PUT_FAILED", JumpState}
+    {"PUT_SUCCESSFUL", JumpState}
+    {"PICK_FAILED", JumpState}
+    {"PICK_SUCCESSFUL", JumpState}
 }
 
 fsm:add_transitions{
@@ -487,6 +504,96 @@ fsm:add_transitions{
         "FIND_LASER_LINE",
         cond = "vars.missing_detections > MISSING_MAX",
         desc = "Tracking lost target"
+    }, {
+        "DRY_END",
+        "CHECK_FOR_WP",
+        cond = check_for_wp,
+        desc = "Check if there is a workpiece"
+    }, {
+        "DRY_END",
+        "CHECK_FOR_NO_WP",
+        cond = check_for_no_wp,
+        desc = "Check if there is no workpiece"
+    }, {
+        "CHECK_FOR_WP",
+        "PUT_SUCCESSFULL",
+        timeout = workpiece_found,
+        desc = "Workpiece found as expected"
+    }, {
+        "CHECK_FOR_WP",
+        "PUT_FAILED",
+        timeout = 2,
+        desc = "Workpiece not found"
+    }, {
+        "CHECK_FOR_NO_WP",
+        "PICK_FAILED",
+        cond = workpiece_found,
+        desc = "Found unexpected workpiece"
+    }, {
+        "CHECK_FOR_NO_WP",
+        "PICK_SUCCESSFUL",
+        timeout = 2,
+        desc = "Workpiece not found, as expected"
+    }, {
+        "PUT_SUCCESSFULL",
+        "FINAL",
+        cond = "not vars.sense",
+        desc = "Put successful, but no sensing"
+    }, {
+        "PUT_SUCCESSFULL",
+        "FINAL",
+        cond = sensed_wp,
+        desc = "Put successful, but workpiece still in gripper"
+    }, {
+        "PUT_SUCCESSFULL",
+        "FINAL",
+        cond = true,
+        desc = "Put successful"
+    }, {
+        "PUT_FAILED",
+        "MOVE_BASE_AND_GRIPPER",
+        cond = "not vars.sense",
+        desc = "Put failed, but no sensing, so try again"
+    }, {
+        "PUT_FAILED",
+        "MOVE_BASE_AND_GRIPPER",
+        cond = sensed_wp,
+        desc = "Put failed, but workpiece still in gripper, so try again"
+    }, {
+        "PUT_FAILED",
+        "FAILED",
+        cond = true,
+        desc = "Put failed, workpiece lost"
+    }, {
+        "PICK_SUCCESSFUL",
+        "FINAL",
+        cond = "not vars.sense",
+        desc = "Pick successful, but no sensing"
+    }, {
+        "PICK_SUCCESSFUL",
+        "FINAL",
+        cond = sensed_wp,
+        desc = "Pick successful"
+    }, {
+        "PICK_SUCCESSFUL",
+        "FAILED",
+        cond = true,
+        desc = "Pick failed, workpiece lost"
+    }, {
+        "PICK_FAILED",
+        "MOVE_BASE_AND_GRIPPER",
+        cond = "not vars.sense",
+        desc = "Pick failed, so try again"
+    }, {
+        "PICK_FAILED",
+        "FINAL",
+        cond = sensed_wp,
+        desc = "Pick successful, but a workpiece still at output"
+    }, {
+        "PICK_FAILED",
+        "MOVE_BASE_AND_GRIPPER",
+        cond = true,
+        desc = "Pick failed, so try again"
     }
 }
 
@@ -745,6 +852,51 @@ function GRIPPER_ROUTINE:init()
         self.args["pick_or_put_vs"].shelf = true
     else
         self.args["pick_or_put_vs"].shelf = false
+    end
+end
+
+
+function DRY_END:init()
+    if fsm.vars.dry_end then
+        -- start tracking the workpiece in question
+        local msg = object_tracking_if.StartTrackingMessage:new(object_tracking_if.WORKPIECE,
+                                                                fsm.vars.expected_mps,
+                                                                fsm.vars.expected_side)
+        object_tracking_if:msgq_enqueue_copy(msg)
+
+        fsm.vars.consecutive_detections = 0
+
+        -- move to default pose
+        move_gripper_default_pose()
+        if fsm.vars.target == "WORKPIECE" then
+            fsm.vars.check_workpiece = false -- check if there is no workpiece
+        else
+            fsm.vars.check_workpiece = true -- check if there is a workpiece
+        end
+    end
+end
+
+function CHECK_FOR_NO_WP:loop()
+    if fsm.vars.tracking_msgid ~= object_tracking_if:msgid() then
+        fsm.vars.tracking_msgid = object_tracking_if:msgid()
+        if object_tracking_if:is_detected() then
+            fsm.vars.consecutive_detections =
+                fsm.vars.consecutive_detections + 1
+        else
+            fsm.vars.consecutive_detections = 0
+        end
+    end
+end
+
+function CHECK_FOR_WP:loop()
+    if fsm.vars.tracking_msgid ~= object_tracking_if:msgid() then
+        fsm.vars.tracking_msgid = object_tracking_if:msgid()
+        if object_tracking_if:is_detected() then
+            fsm.vars.consecutive_detections =
+                fsm.vars.consecutive_detections + 1
+        else
+            fsm.vars.consecutive_detections = 0
+        end
     end
 end
 
