@@ -430,12 +430,12 @@ fsm:define_states{
         final_to = "DRY_END",
         fail_to = "FINE_TUNE_GRIPPER"
     },
-    {"DRY_END", JumpState}
-    {"CHECK_FOR_WP", JumpState}
-    {"CHECK_FOR_NO_WP", JumpState}
-    {"PUT_FAILED", JumpState}
-    {"PUT_SUCCESSFUL", JumpState}
-    {"PICK_FAILED", JumpState}
+    {"DRY_END", JumpState},
+    {"CHECK_FOR_WP", JumpState},
+    {"CHECK_FOR_NO_WP", JumpState},
+    {"PUT_FAILED", JumpState},
+    {"PUT_SUCCESSFUL", JumpState},
+    {"PICK_FAILED", JumpState},
     {"PICK_SUCCESSFUL", JumpState}
 }
 
@@ -507,12 +507,12 @@ fsm:add_transitions{
     }, {
         "DRY_END",
         "CHECK_FOR_WP",
-        cond = check_for_wp,
+        cond = "vars.check_workpiece",
         desc = "Check if there is a workpiece"
     }, {
         "DRY_END",
         "CHECK_FOR_NO_WP",
-        cond = check_for_no_wp,
+        cond = "not vars.check_workpiece",
         desc = "Check if there is no workpiece"
     }, {
         "CHECK_FOR_WP",
