@@ -733,9 +733,7 @@ end
 function WAIT_SHAKING:init()
     fsm.vars.missing_detections = 0
     fsm.vars.out_of_reaches = 0
-    fsm.vars.locked_target.x = 0.0
-    fsm.vars.locked_target.y = 0.0
-    fsm.vars.locked_target.z = 0.0
+    fsm.vars.locked_target = {x = 0.0, y = 0.0, z = 0.0}
 end
 
 function WAIT_SHAKING:loop()

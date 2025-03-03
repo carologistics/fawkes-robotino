@@ -225,6 +225,8 @@ function INIT:init()
         z = object_tracking_if:gripper_frame(2),
         ori = fawkes.tf.create_quaternion_from_yaw(0)
     }, "base_link", "end_effector_home")
+    
+    fsm.vars.gripper_target = {x = 0.0, y = 0.0, z = 0.0}
     if fsm.vars.x ~= nil and fsm.vars.x > 0.0 then
         fsm.vars.gripper_target.x = fsm.vars.x
     else
