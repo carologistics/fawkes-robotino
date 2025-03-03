@@ -61,6 +61,7 @@ local GRIPPER_TOLERANCE = {x = 0.0075, y = 0.0015, z = 0.002} -- accuracy
 local MISSING_MAX = 5 -- limit for missing object detections in a row while fine-tuning gripper
 local MIN_VIS_HIST_LINE = 5 -- minimum visibility history for laser-line before considering it
 local MIN_ACTUAL_DIST = 1.8 -- minimum distance b/w bot and laser center
+local MAX_TRIES = 2 -- maximum number of action attempts before failing
 
 -- Initialize as skill module
 
@@ -463,6 +464,11 @@ fsm:add_transitions{
     {"INIT", "START_TRACKING", cond = true, desc = "Valid Input"}, {
         "START_TRACKING",
         "FAILED",
+        cond = "vars.nr_tries > MAX_TRIES",
+        desc = "Failed, too many tries"
+    }, {
+        "START_TRACKING",
+        "FAILED",
         timeout = 2,
         desc = "Object tracker is not starting"
     }, {"START_TRACKING", "FIND_LASER_LINE", cond = object_tracker_active},
@@ -627,12 +633,8 @@ fsm:add_transitions{
 }
 
 function INIT:init()
-    if fsm.vars.target ~= "WORKPIECE" then
-        local close_msg = arduino.CloseGripperMessage:new()
-        arduino:msgq_enqueue_copy(close_msg)
-        local calib_msg = arduino.CalibrateMessage:new()
-        arduino:msgq_enqueue_copy(calib_msg)
-    end
+    fsm.vars.nr_tries = 1
+
     laserline_switch:msgq_enqueue(laserline_switch.EnableSwitchMessage:new())
 
     fsm.vars.lines = {}
@@ -708,7 +710,13 @@ function START_TRACKING:init()
     move_gripper_default_pose()
 end
 
-function START_TRACKING:exit() fsm.vars.error = "OT interface closed" end
+function START_TRACKING:exit()
+    if fsm.vars.nr_tries > MAX_TRIES then 
+        fsm.vars.error = "too many retries"
+    else
+        fsm.vars.error = "OT interface closed"
+    end
+end
 
 function FIND_LASER_LINE:init()
     -- start searching for laser line
@@ -768,18 +776,6 @@ function DRIVE_TO_LASER_LINE:init()
     end
 end
 
-function DRY_RUN_ABSENT:loop()
-    if fsm.vars.tracking_msgid ~= object_tracking_if:msgid() then
-        fsm.vars.tracking_msgid = object_tracking_if:msgid()
-        if object_tracking_if:is_detected() then
-            fsm.vars.consecutive_detections =
-                fsm.vars.consecutive_detections + 1
-        else
-            fsm.vars.consecutive_detections = 0
-        end
-    end
-end
-
 function DRIVE_TO_LASER_LINE:loop()
     if fsm.vars.tracking_msgid ~= object_tracking_if:msgid() then
         fsm.vars.tracking_msgid = object_tracking_if:msgid()
@@ -807,6 +803,20 @@ function AT_LASER_LINE:loop()
 end
 
 function AT_LASER_LINE:exit() fsm.vars.error = "object not found" end
+
+function DRY_RUN_ABSENT:loop()
+    if fsm.vars.tracking_msgid ~= object_tracking_if:msgid() then
+        fsm.vars.tracking_msgid = object_tracking_if:msgid()
+        if object_tracking_if:is_detected() then
+            fsm.vars.consecutive_detections =
+                fsm.vars.consecutive_detections + 1
+        else
+            fsm.vars.consecutive_detections = 0
+        end
+    end
+end
+
+function DRY_RUN_ABSENT:exit() fsm.vars.error = "found unexpected object" end
 
 function MOVE_BASE_AND_GRIPPER:init()
     -- move base to target pose using visual servoing
@@ -928,6 +938,11 @@ function CHECK_FOR_WP:loop()
     end
 end
 
+
+function PUT_FAILED:exit() fsm.vars.error = "put failed, workpiece lost" end
+
+function PICK_SUCCESSFUL:exit() fsm.vars.error = "pick failed, workpiece lost" end
+
 -- end tracking afterwards
 
 function CHECK_FOR_NO_WP:exit()
@@ -939,6 +954,7 @@ function CHECK_FOR_WP:exit()
 end
 
 function RETRY:init()
+    fsm.vars.nr_tries = fsm.vars.nr_tries + 1
     self.args["gripper_commands"].command = "CALIBRATE"
     object_tracking_if:msgq_enqueue(object_tracking_if.StopTrackingMessage:new())
 end
@@ -957,7 +973,9 @@ function FINAL:init()
 end
 
 function FAILED:init()
-    calibrateXYZ()
+    if fsm.vars.nr_tries <= MAX_TRIES then
+        calibrateXYZ()
+    end
     move_gripper_default_pose_exit()
     object_tracking_if:msgq_enqueue(object_tracking_if.StopTrackingMessage:new())
 
