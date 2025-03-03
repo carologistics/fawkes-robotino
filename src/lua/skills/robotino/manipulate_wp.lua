@@ -441,7 +441,19 @@ fsm:define_states{
     {"PUT_SUCCESSFUL", JumpState},
     {"PICK_FAILED", JumpState},
     {"PICK_SUCCESSFUL", JumpState},
-    {"RETRY", JumpState}
+    {
+        "RETRY",
+        SkillJumpState,
+        skills = {{gripper_commands}},
+        final_to = "WAIT_GRIPPER",
+        fail_to = "FAILED"
+    }, {
+        "WAIT_GRIPPER",
+        SkillJumpState,
+        skills = {{gripper_commands}},
+        final_to = "START_TRACKING",
+        fail_to = "FAILED"
+    }
 }
 
 fsm:add_transitions{
@@ -511,6 +523,11 @@ fsm:add_transitions{
         desc = "Tracking lost target"
     }, {
         "DRY_END",
+        "FINAL",
+        cond = "not vars.dry_end",
+        desc = "Action successful, but no checking"
+    }, {
+        "DRY_END",
         "CHECK_FOR_WP",
         cond = "vars.check_workpiece",
         desc = "Check if there is a workpiece"
@@ -537,7 +554,7 @@ fsm:add_transitions{
     }, {
         "CHECK_FOR_NO_WP",
         "PICK_SUCCESSFUL",
-        timeout = 2,
+        timeout = 1,
         desc = "Workpiece not found, as expected"
     }, {
         "PUT_SUCCESSFUL",
@@ -599,11 +616,6 @@ fsm:add_transitions{
         "RETRY",
         cond = true,
         desc = "Pick failed, so try again"
-    }, {
-        "RETRY",
-        "START_TRACKING",
-        cond = true,
-        desc = "Retry Action"
     }
 }
 
@@ -920,9 +932,15 @@ function CHECK_FOR_WP:exit()
 end
 
 function RETRY:init()
-    calibrateXYZ()
-    move_gripper_default_pose_exit()
+    self.args["gripper_commands"].command = "CALIBRATE"
     object_tracking_if:msgq_enqueue(object_tracking_if.StopTrackingMessage:new())
+end
+
+function WAIT_GRIPPER:init()
+    self.args["gripper_commands"].x = default_x
+    self.args["gripper_commands"].y = default_y
+    self.args["gripper_commands"].z = default_z
+    self.args["gripper_commands"].command = "MOVEABS"
 end
 
 function FINAL:init()
@@ -932,7 +950,7 @@ function FINAL:init()
 end
 
 function FAILED:init()
-    calibrateX()
+    calibrateXYZ()
     move_gripper_default_pose_exit()
     object_tracking_if:msgq_enqueue(object_tracking_if.StopTrackingMessage:new())
 
