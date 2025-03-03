@@ -21,7 +21,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name = "manipulate_wp"
 fsm = SkillHSM:new{name = name, start = "INIT", debug = true}
-depends_skills = {"moveto", "motor_move", "pick_or_put_vs"}
+depends_skills = {"moveto", "motor_move", "pick_or_put_vs", "gripper_commands"}
 depends_interfaces = {
     {v = "line1", type = "LaserLineInterface", id = "/laser-lines/1"},
     {v = "line2", type = "LaserLineInterface", id = "/laser-lines/2"},
@@ -401,6 +401,8 @@ end
 
 function sensed_wp() return arduino:is_wp_sensed() end
 
+function slide_put() return fsm.vars.target == "SLIDE" end
+
 
 fsm:define_states{
     export_to = _M,
@@ -526,6 +528,11 @@ fsm:add_transitions{
         "FINAL",
         cond = "not vars.dry_end",
         desc = "Action successful, but no checking"
+    }, {
+        "DRY_END",
+        "FINAL",
+        cond = slide_put,
+        desc = "Action successful, no checking"
     }, {
         "DRY_END",
         "CHECK_FOR_WP",
