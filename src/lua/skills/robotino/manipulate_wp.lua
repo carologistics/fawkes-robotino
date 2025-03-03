@@ -407,7 +407,7 @@ function slide_put() return fsm.vars.target == "SLIDE" end
 
 fsm:define_states{
     export_to = _M,
-    closure = {MISSING_MAX = MISSING_MAX},
+    closure = {MISSING_MAX = MISSING_MAX, MAX_TRIES = MAX_TRIES},
     {"INIT", JumpState},
     {"START_TRACKING", JumpState},
     {"FIND_LASER_LINE", JumpState},
@@ -711,7 +711,7 @@ function START_TRACKING:init()
 end
 
 function START_TRACKING:exit()
-    if fsm.vars.nr_tries > MAX_TRIES then 
+    if fsm.vars.nr_tries > MAX_TRIES then
         fsm.vars.error = "too many retries"
     else
         fsm.vars.error = "OT interface closed"
