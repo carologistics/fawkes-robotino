@@ -27,6 +27,7 @@ depends_skills = {}
 depends_interfaces = {
     --   {v = "pose", type="Position3DInterface", id="Pose"},
     {v = "navigator", type = "NavigatorInterface", id = "Navigator"},
+    {v = "throttle", type = "SwitchInterface", id = "motor-throttle"},
     {v = "laserline_switch", type = "SwitchInterface", id = "laser-lines"}
 }
 
@@ -36,6 +37,7 @@ if place is set, this will be used and x, y and ori will be ignored
 @param place  Name of the place we want to go to.
 @param x      x we want to drive to
 @param y      y we want to drive to
+@param slow   move the robot slow
 @param ori    ori we want to drive to
 
 ]==]
@@ -171,12 +173,7 @@ fsm:add_transitions{
     {"INIT", "FAILED", precond = check_tf, desc = "no tf"},
     {"INIT", "FAILED", cond = "not vars.target_valid", desc = "target invalid"},
     {"INIT", "MOVING", cond = true}, {"MOVING", "TIMEOUT", timeout = 2}, -- Give the interface some time to update
-    {
-        "TIMEOUT",
-        "FINAL",
-        cond = "vars.waiting_pos and travelled_distance(self)",
-        desc = "Going to waiting position"
-    }, {"TIMEOUT", "FINAL", cond = target_reached, desc = "Target reached"},
+    {"TIMEOUT", "FINAL", cond = target_reached, desc = "Target reached"},
     {
         "TIMEOUT",
         "FAILED",
@@ -188,6 +185,10 @@ fsm:add_transitions{
 function INIT:init()
     self.fsm.vars.target_valid = true
     self.fsm.vars.waiting_pos = false
+    self.fsm.vars.slow = self.fsm.vars.slow or false
+    if not self.fsm.vars.slow then
+        throttle:msgq_enqueue(throttle.DisableSwitchMessage:new())
+    end
 
     if self.fsm.vars.place ~= nil then
         -- check for waiting position

@@ -141,18 +141,6 @@
   (assert (wm-fact (key request clean-up args? wp ?orphaned-wp  mps HOLDING side HOLDING ) (values status OPEN assigned-to)))
 )
 
-(defrule goal-request-handler-clean-up-at-machine
-  " If there is an orphaned WP at a machine create a handling request."
-  (domain-object (name ?orphaned-wp) (type workpiece))
-
-  (wm-fact (key domain fact wp-at args? wp ?orphaned-wp m ?mps side ?side))
-  ; it is orphaned, i.e. there is no clean-up request and it does not occur in any goal
-  (not (goal (mode ~RETRACTED) (params $? ?orphaned-wp $?)))
-  (not (wm-fact (key request clean-up args? wp ?orphaned-wp  $?)))
-  =>
-  (assert (wm-fact (key request clean-up args? wp ?orphaned-wp mps ?mps side ?side) (values status OPEN assigned-to)))
-)
-
 (defrule goal-request-handler-clean-up-activate-pay
   " If there is an orphaned WP and there are empty slides create a payment goal.
   "
@@ -179,7 +167,7 @@
   (goal (class SUPPORT-ROOT) (id ?root-id))
   (goal (class INSTRUCTION-ROOT) (id ?instruct-root-id))
   =>
-  (bind ?discard-goal (goal-production-assert-discard ?wp ?mps nil))
+  (bind ?discard-goal (goal-production-assert-discard ?wp ?ds nil))
   (bind ?instruct-goal (goal-production-assert-instruct-ds-discard ?wp ?ds))
   (modify ?request (values status ACTIVE assigned-to (fact-slot-value ?discard-goal id) (fact-slot-value ?instruct-goal id)))
   (modify ?discard-goal (parent ?root-id) (priority 100))

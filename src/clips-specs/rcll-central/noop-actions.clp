@@ -35,7 +35,8 @@
                         |fulfill-order-c0
                         |fulfill-order-c1
                         |fulfill-order-c2
-                        |fulfill-order-c3)
+                        |fulfill-order-c3
+                        |wait-for-mps)
          (executable TRUE)
          (param-values $?param-values))
   =>
@@ -136,4 +137,69 @@
   =>
   (printout info "Refbox confirmed position " ?target " reached!" crlf)
   (modify ?pa (state FINAL))
+)
+
+(defrule action-start-execute-wait-for-mps
+	?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (state PENDING) (executable TRUE)
+	                    (action-name wait-for-mps) (param-values ?robot ?wp ?mps INPUT))
+  (goal (id ?goal-id) (class MOUNT-CAP|BUFFER-CAP|MOUNT-RING|PAY-FOR-RINGS-WITH-BASE|PAY-FOR-RINGS-WITH-CAP-CARRIER))
+  (not (domain-fact (name wp-at) (param-values ?any-wp ?mps OUTPUT)))
+	=>
+	(printout info "Waiting for an MPS to do an operation " ?wp " for robot " ?robot " to move to the other side" crlf)
+	(modify ?pa (state RUNNING))
+	(assert (timer (name (sym-cat "wait-for-mps-" ?robot "-" ?wp "-" ?mps))))
+)
+
+(defrule action-finish-execute-wait-for-mps-early
+	?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (state PENDING)
+	                    (action-name wait-for-mps) (param-values ?robot ?wp ?mps INPUT))
+  (goal (id ?goal-id) (class ~MOUNT-CAP&~BUFFER-CAP&~MOUNT-RING&~PAY-FOR-RINGS-WITH-BASE&~PAY-FOR-RINGS-WITH-CAP-CARRIER))
+  =>
+	(printout info "Not waiting for " ?wp " for robot " ?robot " to move to the other side" crlf)
+	(modify ?pa (state EXECUTION-SUCCEEDED))
+)
+
+(defrule action-finish-execute-wait-for-mps-early-processing
+	?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (state PENDING)
+	                    (action-name wait-for-mps) (param-values ?robot ?wp ?mps INPUT))
+  (domain-fact (name mps-state) (param-values ?mps PROCESSING))
+  =>
+	(printout info "Not waiting for " ?wp " for robot " ?robot ", MPS already processing" crlf)
+	(modify ?pa (state EXECUTION-SUCCEEDED))
+)
+
+(defrule action-finish-execute-wait-for-mps-early-insufficient-ring-count
+	?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (state PENDING|RUNNING)
+	                    (action-name wait-for-mps) (param-values ?robot ?wp ?mps INPUT))
+  (domain-fact (name mps-type) (param-values ?mps RS))
+	(wm-fact (key domain fact rs-ring-spec args? m ?mps r $? rn ?req))
+  ?wm2 <- (wm-fact (key domain fact rs-filled-with args? m ?rs n ?rs-num&:(> (sym-to-int ?req) (sym-to-int ?rs-num))))
+  =>
+	(printout info "Not waiting for " ?wp " for robot " ?robot ", MPS already processing" crlf)
+	(modify ?pa (state EXECUTION-SUCCEEDED))
+)
+
+
+(defrule action-finish-execute-wait-for-mps-early-ring-station
+	?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (state PENDING|RUNNING)
+	                    (action-name wait-for-mps) (param-values ?robot ?wp ?mps INPUT))
+  (domain-fact (name mps-type) (param-values ?mps RS))
+	(time $?now)
+	?wt <- (timer (name ?timer-name) (time $?t&:(timeout ?now ?t 10)))
+  (test (eq ?timer-name (sym-cat "wait-for-mps-" ?robot "-" ?wp "-" ?mps)))
+  =>
+	(printout info "Not waiting for " ?wp " for robot " ?robot ", MPS already processing" crlf)
+	(modify ?pa (state EXECUTION-SUCCEEDED))
+)
+
+(defrule action-finish-execute-wait-for-mps
+  ?pa <- (plan-action (plan-id ?plan-id) (state RUNNING|RUNNING)
+                      (action-name wait-for-mps) (param-values ?robot ?wp ?mps ?side))
+	(time $?now)
+	?wt <- (timer (name ?timer-name) (time $?t&:(timeout ?now ?t 20)))
+  (test (eq ?timer-name (sym-cat "wait-for-mps-" ?robot "-" ?wp "-" ?mps)))
+  =>
+  (printout info "Finished waiting for " ?mps " with robot " ?robot crlf)
+  (modify ?pa (state EXECUTION-SUCCEEDED))
+  (retract ?wt)
 )

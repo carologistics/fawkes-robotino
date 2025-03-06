@@ -32,13 +32,6 @@
   (slot timeout-duration)
   (multislot start-time)
 )
-;A timeout for goals who were retried too many times
-(deftemplate goal-retry-wait-timer
-  (slot goal-id (type SYMBOL))
-  (slot timeout-duration)
-  (multislot start-time)
-)
-
 
 (deffunction fail-action (?action ?error-msg)
 	(do-for-fact ((?sae skill-action-execinfo))
@@ -550,6 +543,7 @@
 	(test (eq TRUE (should-retry ?an ?error)))
 	(wm-fact (key central agent robot args? r ?r))
 	(not (wm-fact (key central agent robot-lost args? r ?r)))
+	(not (wm-fact (key monitoring robot-in-maintenance args? r ?r)))
 	(not (wm-fact (key monitoring action-retried args? r ?r a ?an id ?id2&:(eq ?id2 (sym-cat ?id)) m ? g ?goal-id)))
 	=>
 	(bind ?mps nil)
@@ -578,9 +572,11 @@
 	            (error-msg ?error)
 	            (param-values $?param-values))
 	(wm-fact (key central agent robot args? r ?r))
+	(not (wm-fact (key central agent robot-lost args? r ?r)))
+	(not (wm-fact (key monitoring robot-in-maintenance args? r ?r)))
 	(test (eq TRUE (should-retry ?an ?error)))
 	?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an id ?id2&:(eq ?id2 (sym-cat ?id)) m ? g ?goal-id)
-	        (value ?tries&:(< ?tries 3)));?*MAX-RETRIES-PICK*
+	        (value ?tries&:(< ?tries 1)));?*MAX-RETRIES-PICK*
 	=>
 	(bind ?tries (+ 1 ?tries))
 	(modify ?pa (state FORMULATED) (error-msg ""))
@@ -588,27 +584,42 @@
 	(modify ?wm (value ?tries))
 )
 
-(defrule execution-monitoring-repeated-goal-retry-timeout
-" If a goal fails a pre-determined number of times, give it a timeout for executability."
+(defrule execution-monitoring-assert-goal-retry-by-robot-counter
+" Create a counter for each robot retrying a goal."
 	(declare (salience ?*MONITORING-SALIENCE*))
-	(goal (id ?goal-id) (mode FINISHED|EVALUATED|RETRACTED) (outcome FAILED))
-	?gm <- (goal-meta (goal-id ?goal-id) (retries ?retries&:(> ?retries ?*GOAL-RETRY-MAX*)) (assigned-to ?robot))
-	(wm-fact (key refbox game-time) (values $?now))
+  (goal (id ?goal-id))
+	?gm <- (goal-meta (goal-id ?goal-id) (assigned-to ?assigned-robot&~nil))
+	(wm-fact (key central agent robot args? r ?assigned-robot))
+	(not (wm-fact (key monitoring goal retry robot counter args? goal ?goal-id r ?assigned-robot)))
 	=>
-	(printout error "Goal " ?goal-id " was retried " ?*GOAL-RETRY-MAX* " times, give it a timeout of " ?*GOAL-RETRY-TIMEOUT* "s." crlf)
-	(assert (goal-retry-wait-timer (goal-id ?goal-id) (timeout-duration ?*GOAL-RETRY-TIMEOUT*) (start-time ?now)))
-	(assert (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot)))
-	(modify ?gm (retries 0))
+	(assert (wm-fact (key monitoring goal retry robot counter args? goal ?goal-id r ?assigned-robot)
+			(value 0) (type INT) (is-list FALSE)))
 )
 
-(defrule execution-monitoring-repeated-goal-retry-timeout-over
-	(wm-fact (key refbox game-time) (values $?now))
-	?gt <- (goal-retry-wait-timer (goal-id ?goal-id) (start-time $?st) (timeout-duration ?td&:(timeout ?now ?st ?td)))
-	?wf <- (wm-fact (key monitoring goal-in-retry-wait-period args? goal-id ?goal-id robot ?robot))
+(defrule execution-monitoring-retract-goal-retry-by-robot-counter
+" Retract the counter once the goal ceases to exist."
+	(declare (salience ?*MONITORING-SALIENCE*))
+	?f <- (wm-fact (key monitoring goal retry robot counter args? goal ?goal-id r ?robot))
+	(not (goal (id ?goal-id)))
 	=>
-	(retract ?gt ?wf)
+	(retract ?f)
 )
 
+(defrule execution-monitoring-revert-high-prio-move-out-of-way
+  (declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+  ?high-prio <- (wm-fact (key monitoring move-out-of-way high-prio long-wait args? r ?robot))
+  (goal (id ?goal-id) (class MOVE-OUT-OF-WAY)
+    (type ACHIEVE) (sub-type SIMPLE)
+    (mode SELECTED) (parent ?pa-id&~nil)
+  )
+  ?gm <- (goal-meta (goal-id ?goal-id) (assigned-to ?robot&:(neq ?robot nil)) (retries ?retries))
+  =>
+  (retract ?high-prio)
+  (delayed-do-for-all-facts ((?retry wm-fact))
+    (and (wm-key-prefix ?retry:key (create$ monitoring goal retry robot counter)) (eq (wm-key-arg ?retry:key r) ?robot))
+    (modify ?retry (value (max (- ?retry:value ?*GOAL-RETRY-MAX*) 0)))
+  )
+)
 
 ; ----------------------- HANDLE WP CHECK FAIL  --------------------------------
 
@@ -986,10 +997,65 @@
 
 ; ----------------------- RESTORE AND INSERT -------------------------------
 
-(defrule execution-monitoring-remove-waiting-robot
+; robot-lost: robot is not reachable via bb
+; once a robot is lost, remove it's active goals and remove robot-waiting
+; once a robot is in maintenance, additionally clear it's worldmodel
+; a robot that was lost or in maintenance can only return if
+; 1) it is not lost anymore
+; 2) it is not in maintenance
+; 3) it is not still in cleanup
+
+(defrule execution-monitoring-enter-maintenance
+	(wm-fact (key monitoring robot-in-maintenance args? r ?robot))
+	=>
+	(assert (wm-fact (key monitoring stop-goals-of-robot args? r ?robot)))
+	(assert (wm-fact (key monitoring reset-wm-of-robot args? r ?robot)))
+)
+
+(defrule execution-monitoring-leave-maintenance
+	?r-in <- (wm-fact (key monitoring robot-in-maintenance args? r ?robot))
+	?r-out <- (wm-fact (key monitoring robot-out-of-maintenance args? r ?robot))
+	(not (wm-fact (key monitoring stop-goals-of-robot args? r ?robot)))
+	(not (wm-fact (key monitoring reset-wm-of-robot args? r ?robot)))
+	=>
+	(retract ?r-in)
+	(retract ?r-out)
+)
+
+(defrule execution-monitoring-robot-lost
 	(declare (salience ?*SALIENCE-HIGH*))
 	(wm-fact (key central agent robot args? r ?robot))
 	(HeartbeatInterface (id ?id&:(str-index ?robot ?id)) (alive FALSE))
+	(not (wm-fact (key central agent robot-lost args? r ?robot)))
+	?rw <- (wm-fact (key central agent robot-waiting args? r ?robot))
+	=>
+	(assert (wm-fact (key central agent robot-lost args? r ?robot)))
+	(assert (wm-fact (key monitoring stop-goals-of-robot args? r ?robot)))
+)
+
+(defrule execution-monitoring-robot-reachable
+	(declare (salience ?*SALIENCE-HIGH*))
+	(wm-fact (key central agent robot args? r ?robot))
+	(HeartbeatInterface (id ?id&:(str-index ?robot ?id)) (alive TRUE))
+	(not (wm-fact (key monitoring stop-goals-of-robot args? r ?robot)))
+	(not (wm-fact (key monitoring reset-wm-of-robot args? r ?robot)))
+	?rl <- (wm-fact (key central agent robot-lost args? r ?robot))
+	=>
+	(retract ?rl)
+)
+
+(defrule execution-monitoring-remove-waiting-robot-lost
+	(declare (salience ?*SALIENCE-HIGH*))
+	(wm-fact (key central agent robot args? r ?robot))
+	(wm-fact (key central agent robot-lost args? r ?robot))
+	?rw <- (wm-fact (key central agent robot-waiting args? r ?robot))
+	=>
+	(retract ?rw)
+)
+
+(defrule execution-monitoring-remove-waiting-robot-maintenance
+	(declare (salience ?*SALIENCE-HIGH*))
+	(wm-fact (key monitoring robot-in-maintenance args? r ?robot))
 	?rw <- (wm-fact (key central agent robot-waiting args? r ?robot))
 	=>
 	(retract ?rw)
@@ -998,75 +1064,94 @@
 (defrule execution-monitoring-add-waiting-robot
 	(declare (salience ?*SALIENCE-HIGH*))
 	(wm-fact (key central agent robot args? r ?robot))
-	?rl <- (wm-fact (key central agent robot-lost args? r ?robot))
-	(HeartbeatInterface (id ?id&:(str-index ?robot ?id)) (alive TRUE))
+	(not (wm-fact (key central agent robot-lost args? r ?robot)))
+	(not (wm-fact (key monitoring robot-in-maintenance args? r ?robot)))
+	(not (wm-fact (key monitoring stop-goals-of-robot args? r ?robot)))
+	(not (wm-fact (key monitoring reset-wm-of-robot args? r ?robot)))
 	(not (wm-fact (key central agent robot-waiting args? r ?robot)))
-	(not (goal-meta (assigned-to ?robot)))
-	(SkillerInterface (id ?skiller-id&:(str-index ?robot ?skiller-id)) (exclusive_controller ~""))
-	(wm-fact (key refbox game-time) (values $?now))
 	=>
 	(assert (wm-fact (key central agent robot-waiting args? r ?robot)))
-	(assert (wm-fact (key monitoring robot-reinserted args? r ?robot) (values ?now)))
-
-	(retract ?rl)
 )
 
-(defrule execution-monitoring-clean-wm-from-robot
-	(declare (salience ?*MONITORING-SALIENCE*))
+(defrule execution-monitoring-stop-goals-for-robot
+	(declare (salience ?*SALIENCE-HIGH*))
 	(domain-facts-loaded)
-	?reset <- (reset-robot-in-wm ?robot)
+	(wm-fact (key monitoring stop-goals-of-robot args? r ?robot))
+	?g <- (goal (id ?g-id) (mode DISPATCHED) (type ACHIEVE))
+	(goal-meta (goal-id ?g-id) (assigned-to ?robot))
 	=>
+	(if (not
 	(do-for-all-facts
-		((?goal goal))
-		(and (eq ?goal:mode DISPATCHED) (eq ?goal:sub-type SIMPLE))
-		(printout t "Restored simple goal " ?goal:id " is dispatched, abort execution." crlf)
+		((?plan-action plan-action))
+		(and (eq ?plan-action:goal-id ?g-id)
+		     (neq ?plan-action:state FORMULATED)
+		     (neq ?plan-action:state FINAL)
+		)
+		(printout t "   Aborting action " ?plan-action:action-name " on interface" ?plan-action:skiller crlf)
+		(bind ?m (blackboard-create-msg (str-cat "SkillerInterface::" ?plan-action:skiller) "StopExecMessage"))
+		(blackboard-send-msg ?m)
+		(do-for-fact ((?sae skill-action-execinfo))
+			(and (eq ?sae:goal-id ?plan-action:goal-id)
+			     (eq ?sae:plan-id ?plan-action:plan-id)
+			     (eq ?sae:action-id ?plan-action:id)
+			)
+			(do-for-fact ((?skill skill))
+				(and (eq ?skill:id ?sae:skill-id)
+				     (eq ?skill:skiller ?sae:skiller)
+				)
+				(retract ?skill)
+			)
+			(retract ?sae)
+		)
+		(modify ?plan-action (state EXECUTION-FAILED))
+	))
+	 then
+		(do-for-fact
+			((?formulated-action plan-action) (?final-action plan-action))
+			(and (eq ?formulated-action:goal-id ?g-id)
+			  (eq ?final-action:goal-id ?g-id)
+			  (eq ?formulated-action:state FORMULATED)
+			  (eq ?final-action:state FINAL))
+			(modify ?formulated-action (state FAILED))
+		)
 	)
+	(modify ?g (mode FINISHED) (outcome FAILED))
+)
+
+(defrule execution-monitoring-stop-goals-for-robot-done
+	(declare (salience ?*SALIENCE-HIGH*))
+	(domain-facts-loaded)
+	?sgor <- (wm-fact (key monitoring stop-goals-of-robot args? r ?robot))
+	(not (and (goal (id ?g-id) (mode ~FORMULATED&~RETRACTED) (type ACHIEVE))
+		    (goal-meta (goal-id ?g-id) (assigned-to ?robot))
+		)
+	)
+	=>
+	(retract ?sgor)
+)
+
+(defrule execution-monitoring-reset-wm-of-robot
+	(declare (salience ?*SALIENCE-HIGH*))
+	(domain-facts-loaded)
+	?reset <- (wm-fact (key monitoring reset-wm-of-robot args? r ?robot))
+	; reset wm only when no goal is running
+	(not (and (goal (id ?g-id) (mode ~FORMULATED&~RETRACTED) (type ACHIEVE))
+		    (goal-meta (goal-id ?g-id) (assigned-to ?robot))
+		)
+	)
+	=>
 	(do-for-all-facts ((?wm wm-fact))
-	                  (eq (wm-key-arg ?wm:key r) ?robot)
+		(and (eq (wm-key-arg ?wm:key r) ?robot)
+		    (not (wm-key-prefix ?wm:key (create$ refbox robot task seq)))
+		)
 		(retract ?wm)
 	)
-	(do-for-all-facts ((?df domain-fact)) (str-index ?robot (implode$ ?df:param-values))
-		(retract ?df)
-	)
 
-	(delayed-do-for-all-facts ((?gm goal-meta) (?g goal))
-		(and (eq ?gm:assigned-to ?robot) (eq ?g:id ?gm:goal-id)
-		     (neq ?g:mode FORMULATED) (neq ?g:mode FINISHED) (neq ?g:mode RETRACTED))
-			(if (not
-				(do-for-all-facts
-					((?plan-action plan-action))
-					(and (eq ?plan-action:goal-id ?g:id)
-					     (neq ?plan-action:state FORMULATED)
-					     (neq ?plan-action:state FINAL)
-					)
-					(printout t "   Aborting action " ?plan-action:action-name " on interface" ?plan-action:skiller crlf)
-					(bind ?m (blackboard-create-msg (str-cat "SkillerInterface::" ?plan-action:skiller) "StopExecMessage"))
-					(blackboard-send-msg ?m)
-					(do-for-fact ((?sae skill-action-execinfo))
-						(and (eq ?sae:goal-id ?plan-action:goal-id)
-						     (eq ?sae:plan-id ?plan-action:plan-id)
-						     (eq ?sae:action-id ?plan-action:id)
-						)
-						(do-for-fact ((?skill skill))
-							(and (eq ?skill:id ?sae:skill-id)
-							     (eq ?skill:skiller ?sae:skiller)
-							)
-							(retract ?skill)
-						)
-						(retract ?sae)
-					)
-					(modify ?plan-action (state EXECUTION-FAILED))
-				))
-			 then
-				(do-for-fact
-					((?formulated-action plan-action) (?final-action plan-action))
-					(and (eq ?formulated-action:goal-id ?g:id)
-					     (eq ?final-action:goal-id ?g:id)
-					     (eq ?formulated-action:state FORMULATED)
-					     (eq ?final-action:state FINAL))
-				 (modify ?formulated-action (state FAILED))
-				)
-			)
+	(do-for-all-facts ((?df domain-fact)) (str-index ?robot (implode$ ?df:param-values))
+		(if (eq ?df:name holding) then
+			(assert (wm-fact (key monitoring cleanup-wp args? wp (nth$ 2 ?df:param-values))))
+		)
+		(retract ?df)
 	)
 
 	(do-for-all-facts ((?wsmf wm-sync-map-fact)) (eq (wm-key-arg ?wsmf:wm-fact-key r) ?robot)
@@ -1086,8 +1171,9 @@
 (defrule execution-monitoring-bs-side-in-use
 "If a BS is part of a goal's operation, assert a fact to indicate this state."
 	(declare (salience ?*SALIENCE-HIGH*))
+  (domain-fact (name bs-side-in-use) (param-values ?bs ?bs-side))
+  (domain-fact (name mps-type) (param-values ?bs BS))
 	(not (wm-fact (key mps meta bs-side-in-use args? bs ?bs $?)))
-	(wm-fact (key domain fact mps-type args? $? ?bs $? BS $?))
 	(goal (id ?goal-id) (mode EXPANDED|COMMITTED|DISPATCHED) (sub-type SIMPLE))
 	(plan-action (action-name wp-get) (goal-id ?goal-id) (param-values $? ?bs ?bs-side $?)
                (state FORMULATED|PENDING|WAITING|RUNNING))
@@ -1120,17 +1206,15 @@
         )
 )
 
-(defrule execution-monitoring-modify-transport-goal-plans-if-bs-side-in-use
+(defrule execution-monitoring-modify-transport-goal-plans-if-bs-side-in-use-CX
 "if a bs side is in use, modify MOUNT-RING, MOUNT-CAP and INSTRUCT-BS goals to use the free side."
 	(declare (salience ?*MONITORING-SALIENCE*))
 	(wm-fact (key mps meta bs-side-in-use args? bs ?bs bs-side ?bs-side goal ?ogid))
 	(not (wm-fact (key mps meta bs-side-in-use args? $? bs ?bs bs-side ?other-side&:(neq ?bs-side ?other-side) $?)))
 	(wm-fact (key domain fact mps-type args? $? ?bs $? BS $?))
-	?g <- (goal (id ?goal-id&:(neq ?ogid ?goal-id)) (class MOUNT-RING|MOUNT-CAP) (mode FORMULATED|EXPANDED|COMMITTED))
-	(plan-action (action-name wp-get) (goal-id ?goal-id) (param-values $? ?bs ?bs-side $?)
-               (state FORMULATED|PENDING))
-	?gm <- (goal-meta (goal-id ?goal-id) (order-id ?orderid))
-	?ig <- (goal (id ?ig-id) (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED|EXPANDED|COMMITTED) (params wp ?wp target-mps ?bs target-side ?bs-side base-color ?base-color))
+	?g <- (goal (id ?goal-id&:(neq ?ogid ?goal-id)) (class MOUNT-RING) (mode FORMULATED|SELECTED))
+	?gm <- (goal-meta (goal-id ?goal-id) (order-id ?orderid) (ring-nr ONE))
+	?ig <- (goal (id ?ig-id) (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED) (params wp ?wp target-mps ?bs target-side ?bs-side base-color ?base-color))
 	?igm <- (goal-meta (goal-id ?ig-id) (order-id ?orderid))
         =>
 	(switch ?bs-side
@@ -1139,21 +1223,53 @@
 		(case OUTPUT then
 			(bind ?free-side INPUT))
 	)
-	(modify-all-plan-action-param-bs-side ?ig-id ?bs ?bs-side ?free-side)
-	(modify-all-plan-action-param-bs-side ?goal-id ?bs ?bs-side ?free-side)
+	(modify ?ig (params wp ?wp target-mps ?bs target-side ?free-side base-color ?base-color))
 )
 
+(defrule execution-monitoring-modify-transport-goal-plans-if-bs-side-in-use-C0
+"if a bs side is in use, modify MOUNT-RING, MOUNT-CAP and INSTRUCT-BS goals to use the free side."
+	(declare (salience ?*MONITORING-SALIENCE*))
+	(wm-fact (key mps meta bs-side-in-use args? bs ?bs bs-side ?bs-side goal ?ogid))
+	(not (wm-fact (key mps meta bs-side-in-use args? $? bs ?bs bs-side ?other-side&:(neq ?bs-side ?other-side) $?)))
+	(domain-fact (name mps-type) (param-values ?bs BS))
+  (domain-fact (name order-complexity) (param-values ?orderid C0))
+	?g <- (goal (id ?goal-id&:(neq ?ogid ?goal-id)) (class MOUNT-CAP) (mode FORMULATED|SELECTED))
+	?gm <- (goal-meta (goal-id ?goal-id) (order-id ?orderid))
+	?ig <- (goal (id ?ig-id) (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED) (params wp ?wp target-mps ?bs target-side ?bs-side base-color ?base-color))
+	?igm <- (goal-meta (goal-id ?ig-id) (order-id ?orderid))
+        =>
+	(switch ?bs-side
+		(case INPUT then
+			(bind ?free-side OUTPUT))
+		(case OUTPUT then
+			(bind ?free-side INPUT))
+	)
+	(modify ?ig (params wp ?wp target-mps ?bs target-side ?free-side base-color ?base-color))
+)
+(defrule execution-monitoring-modify-instruct-to-match-waiting-transport
+"if a bs side needs to be instructed and the robot is waiting at the wrong side, just adjust the instruct goal"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  ?g <- (goal (id ?goal-id) (class MOUNT-RING|MOUNT-CAP|PAY-FOR-RINGS-WITH-BASE) (mode DISPATCHED))
+  (domain-fact (name mps-type) (param-values ?bs BS))
+  (plan-action (action-name wait-for-wp) (goal-id ?goal-id) (param-values ?robot ?bs ?bs-side ?wp)
+               (state RUNNING))
+  ?gm <- (goal-meta (goal-id ?goal-id) (order-id ?orderid))
+  ?ig <- (goal (id ?ig-id) (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED) (params wp ?wp target-mps ?bs target-side ?o-side&:(neq ?o-side ?bs-side) base-color ?base-color))
+  ?igm <- (goal-meta (goal-id ?ig-id) (order-id ?orderid))
+        =>
+  (printout error "We suck at managing the BS" crlf)
+  (modify ?ig (params wp ?wp target-mps ?bs target-side ?bs-side base-color ?base-color))
+)
 
 (defrule execution-monitoring-modify-pay-for-rings-with-base-goals-plans-if-bs-side-in-use
 "if a bs side is in use, modify payment goals to use the free side."
 	(declare (salience ?*MONITORING-SALIENCE*))
 	(wm-fact (key mps meta bs-side-in-use args? bs ?bs bs-side ?bs-side goal ?ogid))
 	(not (wm-fact (key mps meta bs-side-in-use args? $? bs ?bs bs-side ?other-side&:(neq ?bs-side ?other-side) $?)))
-	(wm-fact (key domain fact mps-type args? $? ?bs $? BS $?))
-	?g <- (goal (id ?g-id&:(neq ?ogid ?g-id)) (class PAY-FOR-RINGS-WITH-BASE) (mode FORMULATED|EXPANDED|COMMITTED) (params wp ?wp $?))
-	(plan-action (action-name wp-get) (goal-id ?g-id) (param-values $? ?bs ?bs-side $?)
-               (state FORMULATED|PENDING))
-	?ig <- (goal (id ?ig-id&:(neq ?ogid ?ig-id)) (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED|EXPANDED|COMMITTED) (params wp ?wp target-mps ?bs target-side ?bs-side base-color ?base-color))
+	(domain-fact (name mps-type) (param-values ?bs BS))
+	?g <- (goal (id ?g-id&:(neq ?g-id ?ogid)) (class PAY-FOR-RINGS-WITH-BASE) (mode FORMULATED|SELECTED)  (params wp ?wp $?))
+	(not (goal (id ?o-ogid&:(and (neq ?g-id ?o-ogid) (neq ?o-ogid ?ogid))) (class PAY-FOR-RINGS-WITH-BASE) (mode EXPANDED|COMMITTED|DISPATCHED)  (params wp ?wp $?)))
+	?ig <- (goal (id ?ig-id) (class INSTRUCT-BS-DISPENSE-BASE) (mode FORMULATED) (params wp ?wp target-mps ?bs target-side ?bs-side base-color ?base-color))
 	=>
 	(switch ?bs-side
 		(case INPUT then
@@ -1161,8 +1277,6 @@
 		(case OUTPUT then
 			(bind ?free-side INPUT))
 	)
-	(modify-all-plan-action-param-bs-side ?ig-id ?bs ?bs-side ?free-side)
-	(modify-all-plan-action-param-bs-side ?g-id ?bs ?bs-side ?free-side)
 	(modify ?ig (params wp ?wp target-mps ?bs target-side ?free-side base-color ?base-color))
 )
 
@@ -1185,6 +1299,7 @@
 	        (param-values ?mps))
 	)
 )
+
 
 (defrule execution-monitoring-reformulate-instruct-fails-bs-ds
 "When an INSTRUCT fails on a BS|DS, reformulate the instruct goal."
@@ -1289,7 +1404,7 @@
 
 (defrule execution-monitoring-remove-restriction-robot-occupied
   (domain-object (type robot) (name ?robot))
-  (goal (id ?gid) (mode DISPATCHED))
+  (goal (id ?gid) (class ~ENTER-FIELD) (mode DISPATCHED))
   (goal-meta (goal-id ?gid) (assigned-to ?robot))
   ?g <- (goal (id ?ogid) (mode FORMULATED))
   ?gm <- (goal-meta (goal-id ?ogid) (restricted-to ?robot))
@@ -1318,4 +1433,27 @@
   (modify ?at (param-values ?robot ?zone WAIT))
   (assert (domain-fact (name mps-side-approachable) (param-values ?mps ?side)))
   (modify ?pa (param-values ?robot ?zone WAIT $?to))
+)
+
+
+; ----------------------- Orphaned WPS -----------------------------------
+(defrule execution-monitoring-reset-machine-with-orphaned-wp
+"When an INSTRUCT fails on an MPS (except BS|DS), break the machine."
+	(declare (salience ?*MONITORING-SALIENCE*))
+	?wm <- (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+  	(domain-object (name ?orphaned-wp) (type workpiece))
+  	(wm-fact (key domain fact wp-at args? wp ?orphaned-wp m ?mps side ?side))
+  	(not (goal (mode ~RETRACTED) (params $? ?orphaned-wp $?)))
+  	(not (goal (class RESET-MPS) (params mps ?mps) (mode ~RETRACTED)))
+	=>
+	(bind ?goal-id (sym-cat RESET-MPS - (gensym*)))
+	(assert (goal (id ?goal-id) (class RESET-MPS) (params mps ?mps) (mode EXPANDED) (sub-type SIMPLE) (type ACHIEVE)))
+	(assert (goal-meta (goal-id ?goal-id) (assigned-to central)))
+	(assert
+	    (plan (id (sym-cat ?goal-id -PLAN)) (goal-id ?goal-id))
+	    (plan-action (id 1) (plan-id (sym-cat ?goal-id -PLAN)) (goal-id ?goal-id)
+	        (action-name reset-mps)
+	        (param-names m)
+	        (param-values ?mps))
+	)
 )

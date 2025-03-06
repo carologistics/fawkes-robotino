@@ -54,7 +54,7 @@ Parameters:
 
 local LASER_BASE_OFFSET = 0.5 -- distance between robotino middle point and laser-line
 -- used for DRIVE_TO_LASER_LINE
-local GRIPPER_TOLERANCE = {x = 0.005, y = 0.001, z = 0.001} -- accuracy
+local GRIPPER_TOLERANCE = {x = 0.0075, y = 0.0015, z = 0.002} -- accuracy
 local MISSING_MAX = 5 -- limit for missing object detections in a row while fine-tuning gripper
 local MIN_VIS_HIST_LINE = 5 -- minimum visibility history for laser-line before considering it
 local MIN_ACTUAL_DIST = 1.8 -- minimum distance b/w bot and laser center
@@ -181,13 +181,34 @@ function gripper_aligned()
         z = object_tracking_if:gripper_frame(2),
         ori = fawkes.tf.create_quaternion_from_yaw(0)
     }, "base_link", "end_effector_home")
-
-    return within_tolerance(arduino:x_position(), 0, 0.0001) and
-               within_tolerance(arduino:y_position() - y_max / 2, y_max / 2,
-                                0.0001) and
-               within_tolerance(
-                   math.max(0.01, math.min(gripper_target.z, z_max)),
-                   arduino:z_position(), GRIPPER_TOLERANCE.z)
+    print_debug("fine-tune gripper pose aligned:")
+    print_debug(
+        "within_tolerance(arduino:x_position(), 0, GRIPPER_TOLERANCE.x): " ..
+            tostring(
+                within_tolerance(arduino:x_position(), 0, GRIPPER_TOLERANCE.x)))
+    print_debug(
+        "within_tolerance(arduino:y_position() - y_max / 2, y_max / 2, GRIPPER_TOLERANCE.y, y): " ..
+            tostring(
+                within_tolerance(arduino:y_position() - y_max / 2, y_max / 2,
+                                 GRIPPER_TOLERANCE.y, y)))
+    print_debug(
+        "math.max(0.01, math.min(gripper_target.z, z_max)), arduino:z_position(), GRIPPER_TOLERANCE.z: " ..
+            tostring(
+                within_tolerance(
+                    math.max(0.01, math.min(gripper_target.z, z_max)),
+                    arduino:z_position(), GRIPPER_TOLERANCE.z * 1.3)))
+    local result = within_tolerance(math.max(0.01,
+                                             math.min(gripper_target.z, z_max)),
+                                    arduino:z_position(),
+                                    GRIPPER_TOLERANCE.z * 1.3)
+    if result == true then
+        if fsm.vars.img_wait > 10 then return result end
+        fsm.vars.img_wait = fsm.vars.img_wait + 1
+        return false
+    else
+        fsm.vars.img_wait = 0
+        return result
+    end
 end
 
 function set_gripper(x, y, z)
@@ -218,20 +239,15 @@ function set_gripper(x, y, z)
     end
 
     if (not arduino:is_final() and
-        (math.abs(fsm.vars.gripper_target_pos_y - y_clipped) >
-            GRIPPER_TOLERANCE.y * 1 or
-            math.abs(fsm.vars.gripper_target_pos_z - z_clipped) >
+        (math.abs(fsm.vars.gripper_target_pos_z - z_clipped) >
             GRIPPER_TOLERANCE.z * 1.5)) or
         (arduino:is_final() and fsm.vars.target == "SLIDE" and
-            (math.abs(fsm.vars.gripper_target_pos_y - y_clipped) >
-                GRIPPER_TOLERANCE.y * 1.3 or
-                math.abs(fsm.vars.gripper_target_pos_z - z_clipped) >
+            (math.abs(fsm.vars.gripper_target_pos_z - z_clipped) >
                 GRIPPER_TOLERANCE.z * 1.3)) or (arduino:is_final() and
-        (math.abs(fsm.vars.gripper_target_pos_y - y_clipped) >
-            GRIPPER_TOLERANCE.y or
-            math.abs(fsm.vars.gripper_target_pos_z - z_clipped) >
+        (math.abs(fsm.vars.gripper_target_pos_z - z_clipped) >
             GRIPPER_TOLERANCE.z)) then
         fsm.vars.gripper_wait = 0
+        fsm.vars.img_wait = 0
         fsm.vars.gripper_target_pos_x = x_clipped
         fsm.vars.gripper_target_pos_y = y_clipped
         fsm.vars.gripper_target_pos_z = z_clipped
@@ -256,6 +272,12 @@ function move_gripper_default_pose()
 end
 
 function move_gripper_default_pose_exit()
+    if fsm.vars.target ~= "WORKPIECE" then
+        local close_msg = arduino.CloseGripperMessage:new()
+        arduino:msgq_enqueue_copy(close_msg)
+        local calib_msg = arduino.CalibrateMessage:new()
+        arduino:msgq_enqueue_copy(calib_msg)
+    end
     local abs_message = arduino.MoveXYZAbsMessage:new()
     abs_message:set_x(default_x_exit)
     abs_message:set_y(default_y_exit)
@@ -327,14 +349,33 @@ function object_tracker_active()
 end
 
 function within_tolerance(value, target, margin)
-    return math.abs(value - target) < margin
+    return math.abs(value - target) <= margin
 end
 
 function ready_for_gripper_movement()
-    return within_tolerance(arduino:x_position(), default_x, 0.0001) and
-               within_tolerance(arduino:y_position() - y_max / 2, default_y,
-                                0.0001) and
-               within_tolerance(arduino:z_position(), default_z, 0.0001)
+
+    print_debug("default gripper ready for movement:")
+    print_debug(
+        "within_tolerance(arduino:x_position(), default_x, GRIPPER_TOLERANCE.x): " ..
+            tostring(
+                within_tolerance(arduino:x_position(), default_x,
+                                 GRIPPER_TOLERANCE.x)))
+    print_debug(
+        "within_tolerance(arduino:y_position() - y_max / 2, default_y, GRIPPER_TOLERANCE.y): " ..
+            tostring(
+                within_tolerance(arduino:y_position() - y_max / 2, default_y,
+                                 GRIPPER_TOLERANCE.y)))
+    print_debug(
+        "within_tolerance(arduino:z_position(), default_z, GRIPPER_TOLERANCE.z) :" ..
+            tostring(
+                within_tolerance(arduino:z_position(), default_z,
+                                 GRIPPER_TOLERANCE.z)))
+    return
+        within_tolerance(arduino:x_position(), default_x, GRIPPER_TOLERANCE.x) and
+            within_tolerance(arduino:y_position() - y_max / 2, default_y,
+                             GRIPPER_TOLERANCE.y) and
+            within_tolerance(arduino:z_position(), default_z,
+                             GRIPPER_TOLERANCE.z)
 end
 
 function dry_expected_object_found()
@@ -527,12 +568,6 @@ function START_TRACKING:init()
                                                                 .expected_side)
     object_tracking_if:msgq_enqueue_copy(msg)
 
-    -- open gripper
-    if fsm.vars.target == "WORKPIECE" and not fsm.vars.dry_run then
-        local open_msg = arduino.OpenGripperMessage:new()
-        arduino:msgq_enqueue(open_msg)
-    end
-
     -- move to default pose
     move_gripper_default_pose()
 end
@@ -549,6 +584,11 @@ function SEARCH_LASER_LINE:loop()
 end
 
 function SEARCH_LASER_LINE:exit() fsm.vars.error = "laser-line not found" end
+
+function WAIT_FOR_GRIPPER:init()
+    -- move to default pose
+    move_gripper_default_pose()
+end
 
 function DRIVE_TO_LASER_LINE:init()
     fsm.vars.consecutive_detections = 0
@@ -638,6 +678,7 @@ function MOVE_BASE_AND_GRIPPER:init()
         x = object_tracking_if:base_frame(0),
         y = object_tracking_if:base_frame(1),
         ori = -object_tracking_if:base_frame(5),
+        timeout_fail = 10,
         frame = "base_link",
         visual_servoing = true
     }

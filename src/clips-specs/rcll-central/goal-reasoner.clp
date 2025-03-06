@@ -222,14 +222,18 @@
 (deffunction goal-tree-assert-central-run-all-incremental-prio (?class ?prio ?prio-increase $?fact-addresses)
   (bind ?id (sym-cat CENTRAL-RUN-ALL- ?class - (gensym*)))
   (bind ?goal
-    (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)))
+    (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS) (meta sequence-mode)))
   )
   (assert (goal-meta (goal-id ?id)))
   (bind ?prio-step 0.0)
   (foreach ?f ?fact-addresses
-    ;(goal-tree-update-meta-run-all-order ?f (+ 1 (- (length$ ?fact-addresses) ?f-index)))
-    (goal-tree-update-child ?f ?id (+ ?prio-step ?prio))
-	(bind ?prio-step (+ ?prio-step ?prio-increase))
+    (goal-tree-update-meta-run-all-order ?f (+ 1 (- (length$ ?fact-addresses) ?f-index)))
+    (bind ?class (fact-slot-value ?f class))
+        (if (eq ?class DELIVER)
+	    then (goal-tree-update-child ?f ?id (+ ?prio-step ?prio ?*DELIVER-PRIORITY-INCREASE*))
+            else (goal-tree-update-child ?f ?id (+ ?prio-step ?prio))
+	)
+    (bind ?prio-step (+ ?prio-step ?prio-increase))
   )
   (return ?goal)
 )
@@ -237,11 +241,11 @@
 (deffunction goal-tree-assert-central-run-all-prio (?class ?prio $?fact-addresses)
   (bind ?id (sym-cat CENTRAL-RUN-ALL- ?class - (gensym*)))
   (bind ?goal
-    (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS)))
+    (assert (goal (id ?id) (class ?class) (sub-type CENTRAL-RUN-ALL-OF-SUBGOALS) (meta sequence-mode)))
   )
   (assert (goal-meta (goal-id ?id)))
   (foreach ?f ?fact-addresses
-    ;(goal-tree-update-meta-run-all-order ?f (+ 1 (- (length$ ?fact-addresses) ?f-index)))
+    (goal-tree-update-meta-run-all-order ?f (+ 1 (- (length$ ?fact-addresses) ?f-index)))
     (goal-tree-update-child ?f ?id ?prio)
   )
   (return ?goal)
@@ -551,6 +555,13 @@
   (modify ?gm (root-for-order nil))
 )
 
+; (defrule force-fail-goal
+;   (declare (salience (+ 2 ?*SALIENCE-GOAL-FORMULATE*)))
+;   ?g <- (goal (class MOUNT-RING) (mode FINISHED) (outcome ~FAILED))
+;   =>
+;  (modify ?g (outcome FAILED))
+; )
+
 (defrule goal-reasoner-evaluate-production-and-maintenance-wp-still-usable
   "If a production or maintenance goal failed but the WP is still usable "
   (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
@@ -564,6 +575,17 @@
              (category ?category&PRODUCTION|MAINTENANCE|PRODUCTION-INSTRUCT|MAINTENANCE-INSTRUCT) (retries ?retries))
   =>
   (modify ?gm (retries (+ 1 ?retries)))
+  (bind ?exceed-max-retry FALSE)
+  (do-for-fact ((?counter wm-fact))
+	(and (wm-key-prefix ?counter:key (create$ monitoring goal retry robot counter))
+	     (eq (wm-key-arg ?counter:key r) ?robot)
+	     (eq (wm-key-arg ?counter:key goal) ?goal-id))
+	(modify ?counter (value (+ 1 ?counter:value)))
+	(if (> ?retries ?*GOAL-RETRY-MAX*)
+	 then
+	   (assert (wm-fact (key monitoring move-out-of-way high-prio long-wait args? r ?robot)))
+	)
+  )
   (if (not
         (or
           (eq ?category PRODUCTION-INSTRUCT)
@@ -571,8 +593,8 @@
         )
       )
       then
-        (set-robot-to-waiting ?robot)
         (remove-robot-assignment-from-goal-meta ?g)
+		(set-robot-to-waiting ?robot)
   )
   (printout (log-debug ?v) "Goal " ?goal-id " EVALUATED, reformulate as workpiece is still usable after fail" crlf)
   (modify ?g (mode FORMULATED) (outcome UNKNOWN))
@@ -828,6 +850,11 @@
   =>
   (printout (log-debug ?v) "Evaluate " ?class " goal " ?goal-id crlf)
   (set-robot-to-waiting ?robot)
+  ;if a move-out-of-the-way has urgent high priority, reset it on goal completion
+  (do-for-fact ((?f wm-fact))
+	(wm-key-prefix ?f:key (create$ monitoring move-out-of-way high-prio long-wait args? r ?robot))
+       	(retract ?f)
+  )
   (modify ?gm (retries (+ 1 ?retries)))
   (remove-robot-assignment-from-goal-meta ?g)
 
@@ -868,6 +895,16 @@
   (printout (log-debug ?v) "Goal " ?goal-id " FORMULATED" crlf)
   (retract ?wp-on-shelf-fact)
   (printout (log-debug ?v) "Removed WP from shelf on " ?cs " slot " ?spot crlf)
+)
+
+(defrule goal-reasoner-reforlumate-failed-instruct
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED)
+              (class ?c&:(str-index INSTRUCT ?c))
+              (verbosity ?v))
+  =>
+  (printout t "retry instruct goal when it failed" crlf)
+  (goal-reasoner-retract-plan-action ?goal-id)
+  (modify ?g (mode FORMULATED) (outcome FAILED))
 )
 
 ; ----------------------- EVALUATE COMMON ------------------------------------

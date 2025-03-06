@@ -1,7 +1,7 @@
 # *****************************************************************************
 # CMake Build System for Fawkes
 # -------------------
-# Copyright (C) 2023 by Tarik Viehmann and Daniel Swoboda
+# Copyright (C) 2024 by Tarik Viehmann
 #
 # *****************************************************************************
 #
@@ -20,27 +20,28 @@
 #
 # *****************************************************************************
 
-set(PLUGIN_clips-motor-switch
+set(PLUGIN_agent-task-skiller-bridge
     ON
-    CACHE BOOL "Build clips-motor-switch")
+    CACHE BOOL "Build agent-task-skiller-bridge")
 
-if(PLUGIN_clips-motor-switch)
-  add_library(clips-motor-switch MODULE clips-motor-switch-plugin.cpp
-                                        clips-motor-switch-thread.cpp)
-  depend_on_clipsmm(clips-motor-switch)
+if(PLUGIN_agent-task-skiller-bridge)
+  add_library(agent-task-skiller-bridge MODULE bridge-plugin.cpp
+                                               bridge-thread.cpp)
+  depend_on_protobuf(agent-task-skiller-bridge)
+  depend_on_boost_libs(agent-task-skiller-bridge system)
   target_link_libraries(
-    clips-motor-switch
+    agent-task-skiller-bridge
     fawkescore
     fawkesutils
-    fawkesconfig
     fawkesaspects
-    fawkesclipsaspect
-    fawkesinterface)
-  depend_on_ros2(clips-motor-switch)
-  depend_on_ros2_libs(
-    clips-motor-switch
-    "rto_msgs"
-  )
+    fawkesinterface
+    fawkesblackboard
+    fawkesconfig
+    SkillerInterface
+    Position3DInterface
+    rcll-protobuf-msgs
+    protobuf_comm
+    protobuf::libprotobuf )
 else()
-  plugin_disabled_message("clips-motor-switch")
+  plugin_disabled_message("agent-task-skiller-bridge")
 endif()

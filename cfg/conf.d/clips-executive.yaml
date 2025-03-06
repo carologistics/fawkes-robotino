@@ -147,7 +147,7 @@ clips-executive:
       action-mapping:
         enter-field: >
           drive_into_field{place="?(place)Y",
-                           wait=?(r|/robot1/0.0/|/robot2/2.0/|/robot3/4.0/)f}
+                           wait=?(r|/robot1/0.0/|/robot2/1.5/|/robot3/3.0/)f}
         explore-zone: explore_zone{zone=?(z)s}
         move-node: moveto{place=?(z)s}
         move: moveto{place="?(to)Y-?(to-side|/OUTPUT/OUTPUT/|/INPUT/INPUT/)Y"}
@@ -186,7 +186,6 @@ clips-executive:
           challenge-flip-insertion: true
           use-static-navgraph: false
 
-          start-with-waiting-robots: true
           exploration:
             # Reduce navigator velocity while traveling the field so we can
             # find laser-lines more reliably

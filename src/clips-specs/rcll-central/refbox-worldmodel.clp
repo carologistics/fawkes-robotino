@@ -303,24 +303,28 @@
   (foreach ?p (pb-field-list ?r "robots")
     (bind ?state (sym-cat (pb-field-value ?p "state")))
     (bind ?robot (sym-cat (pb-field-value ?p "name")))
-    (bind ?old-state nil)
-    (do-for-fact ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ monitoring state args? r ?robot))
-      (bind ?old-state ?wm:value)
-      (retract ?wm)
-    )
-    (assert (wm-fact (key monitoring state args? r ?robot) (is-list FALSE) (type SYMBOL) (value ?state)))
-    (if (and (eq ?old-state MAINTENANCE)
-             (eq ?state ACTIVE))
-     then
-      (assert (wm-fact (key central agent robot-waiting args? r ?robot)))
-    )
-    (if (and (eq ?old-state ACTIVE)
-             (neq ?state ACTIVE))
-     then
-      (assert (reset-robot-in-wm ?robot))
+    (bind ?team (sym-cat (pb-field-value ?p "team")))
+    (if  (eq (sym-cat ?team) Carologistics) then
+      (bind ?old-state nil)
+      (do-for-fact ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ monitoring state args? r ?robot))
+        (bind ?old-state ?wm:value)
+        (retract ?wm)
+      )
+      (assert (wm-fact (key monitoring state args? r ?robot) (is-list FALSE) (type SYMBOL) (value ?state)))
+      (if (and (eq ?old-state MAINTENANCE)
+               (eq ?state ACTIVE))
+       then
+        (assert (wm-fact (key monitoring robot-out-of-maintenance args? r ?robot)))
+      )
+      (if (and (eq ?old-state ACTIVE)
+               (neq ?state ACTIVE))
+       then
+        (assert (wm-fact (key monitoring robot-in-maintenance args? r ?robot)))
+      )
     )
   )
 )
+
 
 (defrule refbox-recv-NavigationRoutes-initialize
   "When there are no waypoints,reached and remaining facts, initialize them based on

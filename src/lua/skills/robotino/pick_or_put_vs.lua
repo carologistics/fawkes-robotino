@@ -44,7 +44,7 @@ Parameters:
 skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
 
-local drive_back_x = -0.1
+local drive_back_x = -0.2
 
 -- read gripper config
 local x_max = config:get_float("/arduino/x_max") -- gripper max value in x direction
@@ -157,6 +157,13 @@ fsm:define_states{
         fail_to = "FAILED"
     },
     {
+        "OPEN_FOR_WP",
+        SkillJumpState,
+        skills = {{gripper_commands}},
+        final_to = "MOVE_GRIPPER_RIGHT",
+        fail_to = "FAILED"
+    },
+    {
         "MOVE_GRIPPER_UP",
         SkillJumpState,
         skills = {{gripper_commands}},
@@ -182,7 +189,7 @@ fsm:define_states{
 
 fsm:add_transitions{
     {"INIT", "FAILED", cond = input_invalid, desc = "Invalid Input"},
-    {"INIT", "MOVE_GRIPPER_RIGHT", true, desc = "Start Routine"}, {
+    {"INIT", "OPEN_FOR_WP", true, desc = "Start Routine"}, {
         "CHOOSE_ACTION",
         "CLOSE_GRIPPER",
         cond = is_pick_action,
@@ -208,6 +215,15 @@ function INIT:init()
         z = object_tracking_if:gripper_frame(2),
         ori = fawkes.tf.create_quaternion_from_yaw(0)
     }, "base_link", "end_effector_home")
+end
+
+function OPEN_FOR_WP:init()
+    -- open gripper
+    if fsm.vars.target == "WORKPIECE" and not fsm.vars.dry_run then
+        self.args["gripper_commands"].command = "OPEN"
+    else
+        self.args["gripper_commands"].command = "CLOSE"
+    end
 end
 
 function MOVE_GRIPPER_RIGHT:init()
@@ -360,8 +376,10 @@ function MOVE_GRIPPER_UP:init()
 end
 
 function DRIVE_BACK:init()
-    local calib_x_msg = arduino.CalibrateXMessage:new()
-    arduino:msgq_enqueue_copy(calib_x_msg)
+    if fsm.vars.target == "WORKPIECE" then
+        local calib_x_msg = arduino.CalibrateXMessage:new()
+        arduino:msgq_enqueue_copy(calib_x_msg)
+    end
     self.args["motor_move"].x = drive_back_x
 end
 

@@ -51,6 +51,7 @@ documentation = [==[Move on a (kind of) straight line to the given coordinates.
 @param x (Optional) The target X coordinate, relative to base_link or to the frame argument (if specified)
 @param y (Optional) Dito
 @param ori (Optional) Rotation. -math.pi <= ori <= math.pi
+@param timeout_fail (Optional) will fail after that time
 @param frame (Optional) Reference frame for input coordinates. Defaults to base_link.
 @param vel_trans (Optional) Translational top-speed. Upper limit: hardcoded tunable in skill module.
 @param vel_rot (Optional) Rotational top-speed. Upper limit: dito.
@@ -65,7 +66,7 @@ local V_MAX = {x = 0.35, y = 0.35, ori = 1.4} -- ultimate limit
 local V_MAX_CAM = {x = 0.06, y = 0.06, ori = 0.3}
 local V_MIN = {x = 0.006, y = 0.006, ori = 0.02} -- below the motor won't even start
 local TOLERANCE = {x = 0.02, y = 0.02, ori = 0.01} -- accuracy
-local TOLERANCE_VS = {x = 0.02, y = 0.01, ori = 0.01}
+local TOLERANCE_VS = {x = 0.03, y = 0.02, ori = 0.02}
 local TOL_ORI_START = 0.1
 local TOLERANCE_EE = {x = 0.15, y = 0.04, ori = 0.01} -- tolerance for end_early condition
 local TOLERANCE_CAM = {x = 0.005, y = 0.0015, ori = 0.01}
@@ -97,7 +98,22 @@ function invalid_params(self)
             self.fsm.vars.frame == "/base_link"
 end
 
+function is_timedout()
+    if fsm.vars.timeout_fail > 0 then
+        local now = fawkes.Time:new():in_msec()
+        if now - fsm.vars.start_time > fsm.vars.timeout_fail * 1000 then
+            return true
+        end
+    end
+
+    return false
+end
+
 function send_transrot(vx, vy, omega)
+    if fsm.vars.only_rotate then
+        vx = 0
+        vy = 0
+    end
     local oc = motor:controller()
     local ocn = motor:controller_thread_name()
     motor:msgq_enqueue(motor.AcquireControlMessage:new())
@@ -334,7 +350,8 @@ fsm:add_transitions{
         "FAILED",
         cond = "vars.stop_attempts > 5",
         desc = "Navigator won't stop"
-    }, {
+    }, {"DRIVE", "FAILED", cond = is_timedout},
+    {"DRIVE_VS", "FAILED", cond = is_timedout}, {
         "INIT",
         "STOP_NAVIGATOR",
         cond = "navigator:has_writer() and not navigator:is_final()"
@@ -416,6 +433,12 @@ fsm:add_transitions{
 }
 
 function INIT:init()
+    self.fsm.vars.timeout_fail = self.fsm.vars.timeout_fail or 0
+    self.fsm.vars.start_time = fawkes.Time:new():in_msec()
+    self.fsm.vars.only_rotate = false
+    if self.fsm.vars.x == 0 and self.fsm.vars.y == 0 then
+        self.fsm.vars.only_rotate = true
+    end
     self.fsm.vars.msgid = 0
     self.fsm.vars.consecutive_detections = 0
     self.fsm.vars.missing_detections = 0

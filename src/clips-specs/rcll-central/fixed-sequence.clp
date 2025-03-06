@@ -285,6 +285,7 @@
 			)
 			(plan-assert-action wp-put ?robot ?cc ?mps INPUT (get-wp-complexity ?cc))
 			(plan-assert-action wp-check ?robot ?cc ?mps INPUT THERE)
+			(plan-assert-action wait-for-mps ?robot ?cc ?mps INPUT)
 		)
 	)
 	(modify ?g (mode EXPANDED))
@@ -313,17 +314,34 @@
 	(domain-fact (name at) (param-values ?robot ?curr-location ?curr-side))
 	(domain-fact (name wp-at) (param-values ?wp ?wp-loc ?wp-side))
 	=>
-	(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
-		(create$ ; only last statement of if is returned
-				(plan-assert-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side ?wp
-					(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side (get-wp-complexity ?wp))
-					(plan-assert-action wp-check ?robot ?wp ?wp-loc ?wp-side ABSENT)
-				)
-				(plan-assert-move ?robot ?wp-loc ?wp-side ?target-mps INPUT
-					(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT (get-wp-complexity ?wp))
-					(plan-assert-action wp-check ?robot ?wp ?target-mps INPUT THERE)
-				)
+	(if (neq ?class DELIVER) then
+		(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
+			(create$ ; only last statement of if is returned
+					(plan-assert-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side ?wp
+						(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side (get-wp-complexity ?wp))
+						(plan-assert-action wp-check ?robot ?wp ?wp-loc ?wp-side ABSENT)
+					)
+					(plan-assert-move ?robot ?wp-loc ?wp-side ?target-mps INPUT
+						(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT (get-wp-complexity ?wp))
+						(plan-assert-action wp-check ?robot ?wp ?target-mps INPUT THERE)
+						(plan-assert-action wait-for-mps ?robot ?wp ?target-mps INPUT)
+					)
+			)
 		)
+	else
+		(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
+			(create$ ; only last statement of if is returned
+					(plan-assert-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side ?wp
+						(plan-assert-action wp-get ?robot ?wp ?wp-loc ?wp-side (get-wp-complexity ?wp))
+						(plan-assert-action wp-check ?robot ?wp ?wp-loc ?wp-side ABSENT)
+					)
+					(plan-assert-move ?robot ?wp-loc ?wp-side ?target-mps INPUT
+						(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT (get-wp-complexity ?wp))
+						(plan-assert-action wait-for-mps ?robot ?wp ?target-mps INPUT)
+					)
+			)
+		)
+
 	)
 	(modify ?g (mode EXPANDED))
 )
@@ -343,6 +361,7 @@
 		(plan-assert-move ?robot ?curr-location ?curr-side ?target-mps INPUT
 			(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT (get-wp-complexity ?wp))
 			(plan-assert-action wp-check ?robot ?wp ?target-mps INPUT THERE)
+			(plan-assert-action wait-for-mps ?robot ?wp ?target-mps INPUT)
 		)
 	)
 	(modify ?g (mode EXPANDED))
@@ -385,6 +404,9 @@
 	=>
 	(bind ?wp-loc ?bs)
 	(bind ?wp-side INPUT)
+  (do-for-fact ((?g goal)) (and (eq ?g:class INSTRUCT-BS-DISPENSE-BASE) (eq ?g:mode FORMULATED) (member$ ?wp ?g:params))
+    (bind  ?wp-side (get-param-by-arg ?g:params target-side))
+  )
 	(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
 		(create$ ; only last statement of if is returned
 				(plan-assert-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side ?wp
@@ -394,6 +416,7 @@
 				(plan-assert-move ?robot ?wp-loc ?wp-side ?target-mps INPUT
 					(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT (get-wp-complexity ?wp))
 					(plan-assert-action wp-check ?robot ?wp ?target-mps INPUT THERE)
+					(plan-assert-action wait-for-mps ?robot ?wp ?target-mps INPUT)
 				)
 		)
 	)
@@ -419,6 +442,12 @@
 	=>
 	(bind ?wp-loc ?bs)
 	(bind ?wp-side INPUT)
+  (do-for-fact ((?g goal)) (and (eq ?g:class INSTRUCT-BS-DISPENSE-BASE) (eq ?g:mode FORMULATED) (member$ ?wp ?g:params))
+    (bind  ?wp-side (get-param-by-arg ?g:params target-side))
+  )
+  (do-for-fact ((?g goal)) (and (eq ?g:class INSTRUCT-BS-DISPANSE-BASE) (eq ?g:mode FORMULATED) (member$ ?wp ?g:params))
+    (bind  ?wp-side (get-param-by-arg ?g:params target-mps))
+  )
 	(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
 		(create$ ; only last statement of if is returned
 			(plan-assert-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side ?wp
@@ -429,6 +458,7 @@
 				(plan-assert-action wp-put-slide-cc ?robot
 				 ?wp ?target-mps ?rs-before ?rs-after)
 			)
+			(plan-assert-action wait-for-mps ?robot ?wp ?target-mps INPUT)
 		)
 	)
 	(modify ?g (mode EXPANDED))
@@ -460,6 +490,7 @@
 				(plan-assert-action wp-put-slide-cc ?robot
 				 ?wp ?target-mps ?rs-before ?rs-after)
 			)
+			(plan-assert-action wait-for-mps ?robot ?wp ?target-mps INPUT)
 		)
 	)
 	(modify ?g (mode EXPANDED))

@@ -22,11 +22,14 @@
 ;
 
 (defglobal
-  ?*PRODUCE-C0-AHEAD-TIME* = 150
-  ?*PRODUCE-C1-AHEAD-TIME* = 250
-  ?*PRODUCE-C2-AHEAD-TIME* = 350
-  ?*PRODUCE-C3-AHEAD-TIME* = 450
+  ?*PRODUCE-C0-AHEAD-TIME* = 100
+  ?*PRODUCE-C1-AHEAD-TIME* = 150
+  ?*PRODUCE-C2-AHEAD-TIME* = 200
+  ?*PRODUCE-C3-AHEAD-TIME* = 250
   ?*DELIVER-AHEAD-TIME* = 60
+  ?*ORDER-ACCEPT-TIME* = 60
+  ?*HALF-GAME-TIME* = 600
+  ?*FULL-GAME-TIME* = 1200
 )
 
 
@@ -89,7 +92,7 @@
 (defrule goal-executability-retract-grounding-for-goal-if-precondition-mismatch
   " Remove the grounding as soon as a goal changes it params or assigned robot..
   "
-  (declare (salience ?*SALIENCE-GOAL-EXECUTABLE-CHECK*))
+  (declare (salience ?*SALIENCE-DOMAIN-CHECK*))
   ?pg <- (pddl-grounding (param-values $?param-values) (id ?grounding))
   ?g <- (goal (id ?id) (class ?class) (params $?goal-params) (sub-type SIMPLE) (is-executable ?is-executable))
   ?gm <- (goal-meta (goal-id ?id) (assigned-to ?robot) (precondition ?grounding))

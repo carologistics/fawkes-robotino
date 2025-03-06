@@ -80,8 +80,33 @@
 
   ?*REINSERTION-NAVGRAPH-TIMEOUT* = 5
 
-  ?*GOAL-RETRY-MAX* = 5
+  ?*GOAL-RETRY-MAX* = 3
   ?*GOAL-RETRY-TIMEOUT* = 10
+
+  ; defines the spacing between complexity-based prios
+  ?*PRODUCTION-PRIO-BASE-STEP* = 10
+  ; complexity-based starting prios according to spacing above
+  ?*PRODUCTION-C0-PRIORITY* = 30
+  ?*PRODUCTION-C1-PRIORITY* = 40
+  ?*PRODUCTION-C2-PRIORITY* = 50
+  ?*PRODUCTION-C3-PRIORITY* = 60
+  ?*PRODUCTION-STANDING-ORDER-PRIORITY* = 20
+  ; increas complexity by this for each solved step
+  ?*PRODUCTION-PRIORITY-INCREASE* = 100
+  ; further bump any delivery goal to most urgent level
+  ?*DELIVER-PRIORITY-INCREASE* = 1000
+  ; Support priorities
+  ; these values should be selected, such that the respective base priorities
+  ; are in a range from 1 to ?*PRODUCTION-PRIO-BASE-STEP*.
+  ?*PRODUCTION-PAY-PRIORITY* = 1
+  ?*PRODUCTION-PAY-CC-PRIORITY-INCREASE* = 2
+  ?*PRODUCTION-BUFFER-PRIORITY* = 2
+
+  ?*PRODUCTION-NOTHING-EXECUTABLE-TIMEOUT* = 30
+  ?*ROBOT-WAITING-TIMEOUT* = 2
+
+  ;priorities
+  ?*MOVE-OUT-OF-WAY-HIGH-PRIORITY* = 2000.0
 )
 
 ;A timeout for waiting for points
@@ -885,6 +910,22 @@
   (blackboard-send-msg ?msg)
 )
 
+
+(deffunction motors-disable (?robot)
+  "Use the SwitchInterface to turn off the motors"
+  (bind ?interface (remote-if "SwitchInterface" ?robot "switch/motor-switch"))
+  (bind ?msg (blackboard-create-msg ?interface "DisableSwitchMessage"))
+  (blackboard-send-msg ?msg)
+)
+
+(deffunction motors-enable (?robot)
+  "Use the SwitchInterface to turn off the motors"
+  (bind ?interface (remote-if "SwitchInterface" ?robot "switch/motor-switch"))
+  (bind ?msg (blackboard-create-msg ?interface "EnableSwitchMessage"))
+  (blackboard-send-msg ?msg)
+)
+
+
 (deffunction navigator-set-speed (?robot ?max-velocity ?max-rotation)
   "Uses the NavigatorInterface to set the max velocity and speed"
   (bind ?msg (blackboard-create-msg (remote-if "NavigatorInterface" ?robot "Navigator") "SetMaxVelocityMessage"))
@@ -1446,4 +1487,22 @@
     (bind ?rs-interactions (+ ?rs-interactions 1))
   )
   (return ?rs-interactions)
+)
+
+(deffunction goal-meta-assign-robot-to-goal (?goal ?robot)
+"Changes an existing goal-meta fact and assign it to the given robot"
+  (if (eq (fact-slot-value ?goal id) FALSE) then
+    (printout t "Goal has no id! " ?goal crlf)
+    (return)
+  )
+  (if (eq ?robot nil) then (return ))
+  (if (not (do-for-fact ((?f goal-meta))
+      (and (eq ?f:goal-id (fact-slot-value ?goal id))
+           (or (eq ?f:restricted-to ?robot)
+               (eq ?f:restricted-to nil)))
+      (modify ?f (assigned-to ?robot))))
+   then
+    (printout t "FAILED assign robot " ?robot " to goal "
+      (fact-slot-value ?goal id) crlf)
+  )
 )
