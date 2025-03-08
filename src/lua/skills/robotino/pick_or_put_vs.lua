@@ -166,13 +166,6 @@ fsm:define_states{
         "MOVE_GRIPPER_UP",
         SkillJumpState,
         skills = {{gripper_commands}},
-        final_to = "MOVE_GRIPPER_BACK",
-        fail_to = "FAILED"
-    },
-    {
-        "MOVE_GRIPPER_BACK",
-        SkillJumpState,
-        skills = {{gripper_commands}},
         final_to = "DRIVE_BACK",
         fail_to = "FAILED"
     },
@@ -385,17 +378,6 @@ function MOVE_GRIPPER_UP:init()
     self.args["gripper_commands"].command = "MOVEABS"
 end
 
-function MOVE_GRIPPER_BACK:init()
-    self.args["gripper_commands"].x = 0.0
-    if fsm.vars.new_arm then
-        self.args["gripper_commands"].y = -0.07
-    else
-        self.args["gripper_commands"].y = y_max / 2
-    end
-    self.args["gripper_commands"].z = arduino:z_position()
-    self.args["gripper_commands"].command = "MOVEABS"
-end
-
 function DRIVE_BACK:init()
     self.args["motor_move"].x = drive_back_x
     -- close gripper if needed
@@ -403,4 +385,16 @@ function DRIVE_BACK:init()
         local close_msg = arduino.CloseGripperMessage:new()
         arduino:msgq_enqueue_copy(close_msg)
     end
+
+    -- move gripper back
+    move_abs_message = arduino.MoveXYZAbsMessage:new()
+    move_abs_message:set_x(0.0)
+    if fsm.vars.new_arm then
+        move_abs_message:set_y(-0.07)
+    else
+        move_abs_message:set_y(y_max / 2)
+    end
+    move_abs_message:set_z(arduino:z_position())
+    move_abs_message:set_target_frame("end_effector_home")
+    arduino:msgq_enqueue_copy(move_abs_message)
 end
