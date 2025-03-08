@@ -174,56 +174,14 @@ function laser_line_found()
     return fsm.vars.matched_line ~= nil
 end
 
-function gripper_aligned()
-    if fsm.vars.gripper_wait < 1 then return false end
-
-    local gripper_target = tfm.transform6D({
-        x = object_tracking_if:gripper_frame(0),
-        y = object_tracking_if:gripper_frame(1),
-        z = object_tracking_if:gripper_frame(2),
-        ori = fawkes.tf.create_quaternion_from_yaw(0)
-    }, "base_link", "end_effector_home")
-    print_debug("fine-tune gripper pose aligned:")
-    print_debug(
-        "within_tolerance(arduino:x_position(), 0, GRIPPER_TOLERANCE.x): " ..
-            tostring(
-                within_tolerance(arduino:x_position(), 0, GRIPPER_TOLERANCE.x)))
-    print_debug(
-        "within_tolerance(arduino:y_position() - y_max / 2, y_max / 2, GRIPPER_TOLERANCE.y, y): " ..
-            tostring(
-                within_tolerance(arduino:y_position() - y_max / 2, y_max / 2,
-                                 GRIPPER_TOLERANCE.y, y)))
-    print_debug(
-        "math.max(0.01, math.min(gripper_target.z, z_max)), arduino:z_position(), GRIPPER_TOLERANCE.z: " ..
-            tostring(
-                within_tolerance(
-                    math.max(0.01, math.min(gripper_target.z, z_max)),
-                    arduino:z_position(), GRIPPER_TOLERANCE.z * 1.3)))
-    local result = within_tolerance(math.max(0.01,
-                                             math.min(gripper_target.z, z_max)),
-                                    arduino:z_position(),
-                                    GRIPPER_TOLERANCE.z * 1.3)
-    if result == true then
-        if fsm.vars.img_wait > 10 then return result end
-        fsm.vars.img_wait = fsm.vars.img_wait + 1
-        return false
-    else
-        fsm.vars.img_wait = 0
-        return result
-    end
-end
-
-function set_gripper(x, y, z)
-    if not arduino:is_final() then
-        fsm.vars.gripper_wait = 0
-    elseif fsm.vars.gripper_wait < 10 then
-        fsm.vars.gripper_wait = fsm.vars.gripper_wait + 1
-    end
-
+function gripper_out_of_reach()
     -- Clip to axis limits
-    x_clipped = math.max(0, math.min(x, x_max))
-    y_clipped = math.max(-y_max / 2, math.min(y, y_max / 2))
-    z_clipped = math.max(0.01, math.min(z, z_max))
+    x_clipped = math.max(0, math.min(fsm.vars.gripper_target.x, x_max))
+    y_clipped = math.max(-y_max / 2,
+                         math.min(fsm.vars.gripper_target.y, y_max / 2))
+    z_clipped = math.max(0.01, math.min(fsm.vars.gripper_target.z, z_max))
+
+    fsm.vars.out_of_reach = false
 
     if x_clipped ~= x then
         print("Gripper cannot reache x-value: " .. x .. " ! Clipped to " ..
@@ -233,35 +191,13 @@ function set_gripper(x, y, z)
         fsm.vars.out_of_reach = true
         print("Gripper cannot reache y-value: " .. y .. " ! Clipped to " ..
                   y_clipped)
-        return
     end
     if z_clipped ~= z then
         print("Gripper cannot reache z-value: " .. z .. " ! Clipped to " ..
                   z_clipped)
     end
 
-    if (not arduino:is_final() and
-        (math.abs(fsm.vars.gripper_target_pos_z - z_clipped) >
-            GRIPPER_TOLERANCE.z * 1.5)) or
-        (arduino:is_final() and fsm.vars.target == "SLIDE" and
-            (math.abs(fsm.vars.gripper_target_pos_z - z_clipped) >
-                GRIPPER_TOLERANCE.z * 1.3)) or (arduino:is_final() and
-        (math.abs(fsm.vars.gripper_target_pos_z - z_clipped) >
-            GRIPPER_TOLERANCE.z)) then
-        fsm.vars.gripper_wait = 0
-        fsm.vars.img_wait = 0
-        fsm.vars.gripper_target_pos_x = x_clipped
-        fsm.vars.gripper_target_pos_y = y_clipped
-        fsm.vars.gripper_target_pos_z = z_clipped
-    else
-        return
-    end
-
-    move_abs_message:set_x(fsm.vars.gripper_target_pos_x)
-    move_abs_message:set_y(fsm.vars.gripper_target_pos_y)
-    move_abs_message:set_z(fsm.vars.gripper_target_pos_z)
-    move_abs_message:set_target_frame("end_effector_home")
-    arduino:msgq_enqueue_copy(move_abs_message)
+    return fsm.vars.out_of_reach
 end
 
 function move_gripper_default_pose()
@@ -358,36 +294,6 @@ function object_tracker_active()
     return object_tracking_if:has_writer() and object_tracking_if:msgid() > 0
 end
 
-function within_tolerance(value, target, margin)
-    return math.abs(value - target) <= margin
-end
-
-function ready_for_gripper_movement()
-
-    print_debug("default gripper ready for movement:")
-    print_debug(
-        "within_tolerance(arduino:x_position(), default_x, GRIPPER_TOLERANCE.x): " ..
-            tostring(
-                within_tolerance(arduino:x_position(), default_x,
-                                 GRIPPER_TOLERANCE.x)))
-    print_debug(
-        "within_tolerance(arduino:y_position() - y_max / 2, default_y, GRIPPER_TOLERANCE.y): " ..
-            tostring(
-                within_tolerance(arduino:y_position() - y_max / 2, default_y,
-                                 GRIPPER_TOLERANCE.y)))
-    print_debug(
-        "within_tolerance(arduino:z_position(), default_z, GRIPPER_TOLERANCE.z) :" ..
-            tostring(
-                within_tolerance(arduino:z_position(), default_z,
-                                 GRIPPER_TOLERANCE.z)))
-    return
-        within_tolerance(arduino:x_position(), default_x, GRIPPER_TOLERANCE.x) and
-            within_tolerance(arduino:y_position() - y_max / 2, default_y,
-                             GRIPPER_TOLERANCE.y) and
-            within_tolerance(arduino:z_position(), default_z,
-                             GRIPPER_TOLERANCE.z)
-end
-
 function dry_expected_object_found()
     return fsm.vars.consecutive_detections > 2 and fsm.vars.dry_run and
                not fsm.vars.reverse_output
@@ -404,6 +310,13 @@ function sensed_wp() return arduino:is_wp_sensed() end
 
 function slide_put() return fsm.vars.target == "SLIDE" end
 
+function gripper_out_of_reach()
+    return fsm.vars.out_of_reaches > 2 and
+               (fsm.vars.locked_target.x == nil or fsm.vars.locked_target.x == 0) and
+               (fsm.vars.locked_target.y == nil or fsm.vars.locked_target.y == 0) and
+               (fsm.vars.locked_target.z == nil or fsm.vars.locked_target.z == 0)
+end
+
 fsm:define_states{
     export_to = _M,
     closure = {MISSING_MAX = MISSING_MAX, MAX_TRIES = MAX_TRIES},
@@ -418,17 +331,24 @@ fsm:define_states{
         fail_to = "FAILED"
     },
     {"SEARCH_LASER_LINE", JumpState},
-    {"WAIT_FOR_GRIPPER", JumpState},
+    {
+        "WAIT_FOR_GRIPPER",
+        SkillJumpState,
+        skills = {{gripper_commands}},
+        final_to = "AT_LASER_LINE",
+        fail_to = "FAILED"
+    },
     {"AT_LASER_LINE", JumpState},
     {"DRY_RUN_ABSENT", JumpState},
     {
         "MOVE_BASE_AND_GRIPPER",
         SkillJumpState,
         skills = {{motor_move}},
-        final_to = "FINE_TUNE_GRIPPER",
+        final_to = "WAIT_SHAKING",
         fail_to = "RETRY"
     },
-    {"FINE_TUNE_GRIPPER", JumpState},
+    {"WAIT_SHAKING", JumpState},
+    {"LOCK_TARGET", JumpState},
     {
         "GRIPPER_ROUTINE",
         SkillJumpState,
@@ -483,16 +403,6 @@ fsm:add_transitions{
         cond = "vars.search_attemps > 10",
         desc = "Tried 10 times, could not find laser-line"
     }, {"SEARCH_LASER_LINE", "DRIVE_TO_LASER_LINE", cond = laser_line_found}, {
-        "WAIT_FOR_GRIPPER",
-        "AT_LASER_LINE",
-        cond = ready_for_gripper_movement,
-        desc = "Found Object"
-    }, {
-        "WAIT_FOR_GRIPPER",
-        "RETRY",
-        timeout = 5,
-        desc = "Something went wrong with axis movement"
-    }, {
         "AT_LASER_LINE",
         "FINAL",
         cond = dry_expected_object_found,
@@ -512,22 +422,26 @@ fsm:add_transitions{
         "FAILED",
         cond = dry_unexpected_object_found,
         desc = "Found Object"
-    }, {"DRY_RUN_ABSENT", "FINAL", timeout = 2, desc = "Object not found"},
-    {"FINE_TUNE_GRIPPER", "RETRY", timeout = 10, desc = "Oscillating"}, {
-        "FINE_TUNE_GRIPPER",
-        "GRIPPER_ROUTINE",
-        cond = gripper_aligned,
-        desc = "Gripper aligned"
+    }, {"DRY_RUN_ABSENT", "FINAL", timeout = 2, desc = "Object not found"}, {
+        "WAIT_SHAKING",
+        "LOCK_TARGET",
+        timeout = 0.5,
+        desc = "Waited to stop shaking, ready to grip"
     }, {
-        "FINE_TUNE_GRIPPER",
-        "MOVE_BASE_AND_GRIPPER",
-        cond = "vars.out_of_reach",
-        desc = "Gripper out of reach"
+        "LOCK_TARGET",
+        "RETRY",
+        cond = gripper_out_of_reach,
+        desc = "Gripper out of reach, retry"
     }, {
-        "FINE_TUNE_GRIPPER",
+        "LOCK_TARGET",
         "RETRY",
         cond = "vars.missing_detections > MISSING_MAX",
         desc = "Tracking lost target"
+    }, {
+        "LOCK_TARGET",
+        "GRIPPER_ROUTINE",
+        cond = true,
+        desc = "Target locked, routine can be executed"
     }, {
         "DRY_END",
         "FINAL",
@@ -711,8 +625,13 @@ function SEARCH_LASER_LINE:exit() fsm.vars.error = "laser-line not found" end
 
 function WAIT_FOR_GRIPPER:init()
     -- move to default pose
-    move_gripper_default_pose()
+    self.args["gripper_commands"].x = default_x
+    self.args["gripper_commands"].y = default_y
+    self.args["gripper_commands"].z = default_z
+    self.args["gripper_commands"].command = "MOVEABS"
 end
+
+function WAIT_FOR_GRIPPER:exit() fsm.vars.error = "gripper out of reach" end
 
 function DRIVE_TO_LASER_LINE:init()
     fsm.vars.consecutive_detections = 0
@@ -808,36 +727,15 @@ function MOVE_BASE_AND_GRIPPER:init()
         frame = "base_link",
         visual_servoing = true
     }
-
-    -- and move gripper to relative target gripper pose
-    local base_x = object_tracking_if:base_frame(0)
-    local base_y = object_tracking_if:base_frame(1)
-    local gripper_x = object_tracking_if:gripper_frame(0)
-    local gripper_y = object_tracking_if:gripper_frame(1)
-    local gripper_z = object_tracking_if:gripper_frame(2)
-
-    local diff_x = (gripper_x - base_x) * (gripper_x - base_x)
-    local diff_y = (gripper_y - base_y) * (gripper_y - base_y)
-    local forward_distance = math.sqrt(diff_x + diff_y)
-
-    local gripper_target = tfm.transform6D({
-        x = forward_distance,
-        y = 0,
-        z = gripper_z,
-        ori = fawkes.tf.create_quaternion_from_yaw(0)
-    }, "base_link", "end_effector_home")
-
-    fsm.vars.gripper_wait = 10
-    set_gripper(0, y_max / 2, gripper_target.z)
 end
 
-function FINE_TUNE_GRIPPER:init()
+function WAIT_SHAKING:init()
     fsm.vars.missing_detections = 0
-    fsm.vars.out_of_reach = false
-    fsm.vars.gripper_wait = 10
+    fsm.vars.out_of_reaches = 0
+    fsm.vars.locked_target = {x = 0.0, y = 0.0, z = 0.0}
 end
 
-function FINE_TUNE_GRIPPER:loop()
+function WAIT_SHAKING:loop()
     -- count missing detections
     if fsm.vars.msgid ~= object_tracking_if:msgid() then
         fsm.vars.msgid = object_tracking_if:msgid()
@@ -849,14 +747,37 @@ function FINE_TUNE_GRIPPER:loop()
     end
 
     -- align gripper with target using visual servoing
-    local gripper_target = tfm.transform6D({
+    fsm.vars.gripper_target = tfm.transform6D({
         x = object_tracking_if:gripper_frame(0),
         y = object_tracking_if:gripper_frame(1),
         z = object_tracking_if:gripper_frame(2),
         ori = fawkes.tf.create_quaternion_from_yaw(0)
     }, "base_link", "end_effector_home")
 
-    set_gripper(0, y_max / 2, gripper_target.z)
+    -- Clip to axis limits
+    x_clipped = math.max(0, math.min(fsm.vars.gripper_target.x, x_max))
+    y_clipped = math.max(-y_max / 2,
+                         math.min(fsm.vars.gripper_target.y, y_max / 2))
+    z_clipped = math.max(0.01, math.min(fsm.vars.gripper_target.z, z_max))
+
+    if x_clipped ~= fsm.vars.gripper_target.x then
+        print("Gripper cannot reache x-value: " .. fsm.vars.gripper_target.x ..
+                  " ! Clipped to " .. x_clipped)
+    end
+    if z_clipped ~= fsm.vars.gripper_target.z then
+        print("Gripper cannot reache z-value: " .. fsm.vars.gripper_target.z ..
+                  " ! Clipped to " .. z_clipped)
+    end
+    if y_clipped ~= fsm.vars.gripper_target.y then
+        fsm.vars.out_of_reaches = fsm.vars.out_of_reaches + 1
+        print("Gripper cannot reache y-value: " .. fsm.vars.gripper_target.y ..
+                  " ! Clipped to " .. y_clipped)
+    else
+        fsm.vars.out_of_reaches = 0
+        fsm.vars.locked_target.x = x_clipped
+        fsm.vars.locked_target.y = y_clipped
+        fsm.vars.locked_target.z = z_clipped
+    end
 end
 
 function GRIPPER_ROUTINE:init()
@@ -865,6 +786,9 @@ function GRIPPER_ROUTINE:init()
 
     -- perform pick or put routine
     self.args["pick_or_put_vs"].target = fsm.vars.target
+    self.args["pick_or_put_vs"].x = fsm.vars.locked_target.x
+    self.args["pick_or_put_vs"].y = fsm.vars.locked_target.y
+    self.args["pick_or_put_vs"].z = fsm.vars.locked_target.z
 
     if fsm.vars.side == "SHELF-LEFT" or fsm.vars.side == "SHELF-MIDDLE" or
         fsm.vars.side == "SHELF-RIGHT" then

@@ -37,7 +37,10 @@ It is independent of the workpiece location or its target location.
 
 Parameters:
       @param target             target object (WORKPIECE | CONVEYOR | SLIDE)
-      @param shelf             bool (default: false)
+      @param shelf              bool (default: false)
+      @param x                  set x directly and ingnore object tracking in x (optional, float)
+      @param y                  set y directly and ingnore object tracking in y (optional, float)
+      @param z                  set z directly and ingnore object tracking in z (optional, float)
 ]==]
 
 -- Initialize as skill module
@@ -216,12 +219,29 @@ fsm:add_transitions{
 }
 
 function INIT:init()
-    fsm.vars.gripper_target = tfm.transform6D({
+    fsm.vars.object_tracking_target = tfm.transform6D({
         x = object_tracking_if:gripper_frame(0),
         y = object_tracking_if:gripper_frame(1),
         z = object_tracking_if:gripper_frame(2),
         ori = fawkes.tf.create_quaternion_from_yaw(0)
     }, "base_link", "end_effector_home")
+
+    fsm.vars.gripper_target = {x = 0.0, y = 0.0, z = 0.0}
+    if fsm.vars.x ~= nil and fsm.vars.x > 0.0 then
+        fsm.vars.gripper_target.x = fsm.vars.x
+    else
+        fsm.vars.gripper_target.x = fsm.vars.object_tracking_target.x
+    end
+    if fsm.vars.y ~= nil then
+        fsm.vars.gripper_target.y = fsm.vars.y
+    else
+        fsm.vars.gripper_target.y = fsm.vars.object_tracking_target.y
+    end
+    if fsm.vars.z ~= nil and fsm.vars.z > 0.0 then
+        fsm.vars.gripper_target.z = fsm.vars.z
+    else
+        fsm.vars.gripper_target.z = fsm.vars.object_tracking_target.z
+    end
 end
 
 function OPEN_FOR_WP:init()
