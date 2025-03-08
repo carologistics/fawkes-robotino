@@ -77,4 +77,7 @@
   <message name="StatusUpdate">
     <comment>Request a status of the arduino</comment>
   </message>
+  <message name="ResetUSB">
+    <comment>Reset the usb device if arduino does not respond</comment>
+  </message>
 </interface>
