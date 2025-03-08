@@ -55,7 +55,7 @@ local y_max = config:get_float("/arduino/y_max") -- gripper max value in y direc
 local z_max = config:get_float("/arduino/z_max") -- gripper max value in z direction
 
 -- read vs configs
-fsm.vars.new_arm = config:get_float("/plugins/vs_offsets/new_gripper")
+fsm.vars.new_arm = config:get_bool("/plugins/vs_offsets/new_gripper")
 if fsm.vars.new_arm ~= true then fsm.vars.new_arm = false end
 local offset_x_workpiece_target_frame = config:get_float(
                                             "plugins/vs_offsets/workpiece/target/x")
@@ -125,13 +125,6 @@ fsm:define_states{
     export_to = _M,
     closure = {},
     {"INIT", JumpState},
-    {
-        "OPEN_FOR_WP",
-        SkillJumpState,
-        skills = {{gripper_commands}},
-        final_to = "CHOOSE_FORWARD_ROUTINE",
-        fail_to = "FAILED"
-    },
     {"CHOOSE_FORWARD_ROUTINE", JumpState},
     {
         "MOVE_GRIPPER_RIGHT",
@@ -187,14 +180,6 @@ fsm:define_states{
         "DRIVE_BACK",
         SkillJumpState,
         skills = {{motor_move}},
-        final_to = "DECIDE_CLOSE",
-        fail_to = "FAILED"
-    },
-    {"DECIDE_CLOSE", JumpState},
-    {
-        "CLOSE_DEFAULT",
-        SkillJumpState,
-        skills = {{gripper_commands}},
         final_to = "FINAL",
         fail_to = "FAILED"
     }
@@ -202,7 +187,7 @@ fsm:define_states{
 
 fsm:add_transitions{
     {"INIT", "FAILED", cond = input_invalid, desc = "Invalid Input"},
-    {"INIT", "OPEN_FOR_WP", true, desc = "Start Routine"}, {
+    {"INIT", "CHOOSE_FORWARD_ROUTINE", true, desc = "Start Routine"}, {
         "CHOOSE_FORWARD_ROUTINE",
         "MOVE_GRIPPER_FORWARD",
         cond = "vars.new_arm",
@@ -222,13 +207,7 @@ fsm:add_transitions{
         "OPEN_GRIPPER",
         cond = is_put_action,
         desc = "Putting Down Workpiece"
-    }, {"CHOOSE_ACTION", "FAILED", true, desc = "Instructions Unclear"},
-    {
-        "DECIDE_CLOSE",
-        "CLOSE_DEFAULT",
-        cond = is_put_action,
-        desc = "Close Gripper"
-    }, {"DECIDE_CLOSE", "FINAL", true}
+    }, {"CHOOSE_ACTION", "FAILED", true, desc = "Instructions Unclear"}
 }
 
 function INIT:init()
@@ -254,15 +233,6 @@ function INIT:init()
         fsm.vars.gripper_target.z = fsm.vars.z
     else
         fsm.vars.gripper_target.z = fsm.vars.object_tracking_target.z
-    end
-end
-
-function OPEN_FOR_WP:init()
-    -- open gripper
-    if fsm.vars.target == "WORKPIECE" and not fsm.vars.dry_run then
-        self.args["gripper_commands"].command = "OPEN"
-    else
-        self.args["gripper_commands"].command = "CLOSE"
     end
 end
 
@@ -426,6 +396,11 @@ function MOVE_GRIPPER_BACK:init()
     self.args["gripper_commands"].command = "MOVEABS"
 end
 
-function DRIVE_BACK:init() self.args["motor_move"].x = drive_back_x end
-
-function CLOSE_DEFAULT:init() self.args["gripper_commands"].command = "CLOSE" end
+function DRIVE_BACK:init()
+    self.args["motor_move"].x = drive_back_x
+    -- close gripper if needed
+    if fsm.vars.target != "WORKPIECE" then
+        local close_msg = arduino.CloseGripperMessage:new()
+        arduino:msgq_enqueue_copy(close_msg)
+    end
+end

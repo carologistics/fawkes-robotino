@@ -87,7 +87,7 @@ local default_x = 0
 local default_y = y_max / 2
 local default_z = 0.03
 
-local new_arm = config:get_float("/plugins/vs_offsets/new_gripper")
+local new_arm = config:get_bool("/plugins/vs_offsets/new_gripper")
 if new_arm ~= true then new_arm = false end
 
 if new_arm then
@@ -98,7 +98,7 @@ end
 
 local default_x_exit = 0.06
 local default_y_exit = -0.03
-local default_z_exit = 0.03
+local default_z_exit = 0.0
 
 if new_arm then
     default_x_exit = 0.0
@@ -749,6 +749,15 @@ function WAIT_SHAKING:init()
     fsm.vars.missing_detections = 0
     fsm.vars.out_of_reaches = 0
     fsm.vars.locked_target = {x = 0.0, y = 0.0, z = 0.0}
+
+    -- open gripper
+    if fsm.vars.target == "WORKPIECE" then
+        local open_msg = arduino.OpenGripperMessage:new()
+        arduino:msgq_enqueue_copy(open_msg)
+    else
+        local close_msg = arduino.CloseGripperMessage:new()
+        arduino:msgq_enqueue_copy(close_msg)
+    end
 end
 
 function WAIT_SHAKING:loop()
