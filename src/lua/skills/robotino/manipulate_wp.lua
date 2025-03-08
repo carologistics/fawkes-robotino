@@ -177,7 +177,8 @@ end
 function gripper_out_of_reach()
     -- Clip to axis limits
     x_clipped = math.max(0, math.min(fsm.vars.gripper_target.x, x_max))
-    y_clipped = math.max(-y_max / 2, math.min(fsm.vars.gripper_target.y, y_max / 2))
+    y_clipped = math.max(-y_max / 2,
+                         math.min(fsm.vars.gripper_target.y, y_max / 2))
     z_clipped = math.max(0.01, math.min(fsm.vars.gripper_target.z, z_max))
 
     fsm.vars.out_of_reach = false
@@ -311,11 +312,10 @@ function slide_put() return fsm.vars.target == "SLIDE" end
 
 function gripper_out_of_reach()
     return fsm.vars.out_of_reaches > 2 and
-           (fsm.vars.locked_target.x == nil or fsm.vars.locked_target.x == 0) and
-           (fsm.vars.locked_target.y == nil or fsm.vars.locked_target.y == 0) and
-           (fsm.vars.locked_target.z == nil or fsm.vars.locked_target.z == 0)
+               (fsm.vars.locked_target.x == nil or fsm.vars.locked_target.x == 0) and
+               (fsm.vars.locked_target.y == nil or fsm.vars.locked_target.y == 0) and
+               (fsm.vars.locked_target.z == nil or fsm.vars.locked_target.z == 0)
 end
-
 
 fsm:define_states{
     export_to = _M,
@@ -422,8 +422,7 @@ fsm:add_transitions{
         "FAILED",
         cond = dry_unexpected_object_found,
         desc = "Found Object"
-    }, {"DRY_RUN_ABSENT", "FINAL", timeout = 2, desc = "Object not found"},
-    {
+    }, {"DRY_RUN_ABSENT", "FINAL", timeout = 2, desc = "Object not found"}, {
         "WAIT_SHAKING",
         "LOCK_TARGET",
         timeout = 0.5,
@@ -755,24 +754,24 @@ function WAIT_SHAKING:loop()
         ori = fawkes.tf.create_quaternion_from_yaw(0)
     }, "base_link", "end_effector_home")
 
-
     -- Clip to axis limits
     x_clipped = math.max(0, math.min(fsm.vars.gripper_target.x, x_max))
-    y_clipped = math.max(-y_max / 2, math.min(fsm.vars.gripper_target.y, y_max / 2))
+    y_clipped = math.max(-y_max / 2,
+                         math.min(fsm.vars.gripper_target.y, y_max / 2))
     z_clipped = math.max(0.01, math.min(fsm.vars.gripper_target.z, z_max))
 
     if x_clipped ~= fsm.vars.gripper_target.x then
-        print("Gripper cannot reache x-value: " .. fsm.vars.gripper_target.x .. " ! Clipped to " ..
-                  x_clipped)
+        print("Gripper cannot reache x-value: " .. fsm.vars.gripper_target.x ..
+                  " ! Clipped to " .. x_clipped)
     end
     if z_clipped ~= fsm.vars.gripper_target.z then
-        print("Gripper cannot reache z-value: " .. fsm.vars.gripper_target.z .. " ! Clipped to " ..
-                  z_clipped)
+        print("Gripper cannot reache z-value: " .. fsm.vars.gripper_target.z ..
+                  " ! Clipped to " .. z_clipped)
     end
     if y_clipped ~= fsm.vars.gripper_target.y then
         fsm.vars.out_of_reaches = fsm.vars.out_of_reaches + 1
-        print("Gripper cannot reache y-value: " .. fsm.vars.gripper_target.y .. " ! Clipped to " ..
-                  y_clipped)
+        print("Gripper cannot reache y-value: " .. fsm.vars.gripper_target.y ..
+                  " ! Clipped to " .. y_clipped)
     else
         fsm.vars.out_of_reaches = 0
         fsm.vars.locked_target.x = x_clipped
