@@ -310,6 +310,10 @@ function object_tracker_active()
     return object_tracking_if:has_writer() and object_tracking_if:msgid() > 0
 end
 
+function gripper_pose_reached()
+    return arduino:is_final()
+end
+
 function dry_expected_object_found()
     return fsm.vars.consecutive_detections > 2 and fsm.vars.dry_run and
                not fsm.vars.reverse_output
@@ -347,13 +351,7 @@ fsm:define_states{
         fail_to = "FAILED"
     },
     {"SEARCH_LASER_LINE", JumpState},
-    {
-        "WAIT_FOR_GRIPPER",
-        SkillJumpState,
-        skills = {{gripper_commands}},
-        final_to = "AT_LASER_LINE",
-        fail_to = "FAILED"
-    },
+    {"WAIT_FOR_GRIPPER", JumpState},
     {"AT_LASER_LINE", JumpState},
     {"DRY_RUN_ABSENT", JumpState},
     {
@@ -438,7 +436,18 @@ fsm:add_transitions{
         "FAILED",
         cond = dry_unexpected_object_found,
         desc = "Found Object"
-    }, {"DRY_RUN_ABSENT", "FINAL", timeout = 2, desc = "Object not found"}, {
+    }, {
+        "WAIT_FOR_GRIPPER",
+        "AT_LASER_LINE",
+        cond = gripper_pose_reached,
+        desc = "Default gripper pose reached"
+    }, {
+        "WAIT_FOR_GRIPPER",
+        "FAILED",
+        timeout = 4,
+        desc = "Gripper is not moving"
+    }, {"DRY_RUN_ABSENT", "FINAL", timeout = 2, desc = "Object not found"},
+    {
         "WAIT_SHAKING",
         "LOCK_TARGET",
         timeout = 0.5,
@@ -641,13 +650,10 @@ function SEARCH_LASER_LINE:exit() fsm.vars.error = "laser-line not found" end
 
 function WAIT_FOR_GRIPPER:init()
     -- move to default pose
-    self.args["gripper_commands"].x = default_x
-    self.args["gripper_commands"].y = default_y
-    self.args["gripper_commands"].z = default_z
-    self.args["gripper_commands"].command = "MOVEABS"
+    move_gripper_default_pose()
 end
 
-function WAIT_FOR_GRIPPER:exit() fsm.vars.error = "gripper out of reach" end
+function WAIT_FOR_GRIPPER:exit() fsm.vars.error = "gripper is not moving" end
 
 function DRIVE_TO_LASER_LINE:init()
     fsm.vars.consecutive_detections = 0

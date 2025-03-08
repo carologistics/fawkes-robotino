@@ -399,7 +399,7 @@ end
 function DRIVE_BACK:init()
     self.args["motor_move"].x = drive_back_x
     -- close gripper if needed
-    if fsm.vars.target != "WORKPIECE" then
+    if fsm.vars.target ~= "WORKPIECE" then
         local close_msg = arduino.CloseGripperMessage:new()
         arduino:msgq_enqueue_copy(close_msg)
     end
