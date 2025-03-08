@@ -310,9 +310,7 @@ function object_tracker_active()
     return object_tracking_if:has_writer() and object_tracking_if:msgid() > 0
 end
 
-function gripper_pose_reached()
-    return arduino:is_final()
-end
+function gripper_pose_reached() return arduino:is_final() end
 
 function dry_expected_object_found()
     return fsm.vars.consecutive_detections > 2 and fsm.vars.dry_run and
@@ -441,13 +439,9 @@ fsm:add_transitions{
         "WAIT_SHAKING",
         cond = gripper_pose_reached,
         desc = "Default gripper pose reached"
-    }, {
-        "WAIT_FOR_GRIPPER",
-        "FAILED",
-        timeout = 10,
-        desc = "Gripper is not moving"
-    }, {"DRY_RUN_ABSENT", "FINAL", timeout = 2, desc = "Object not found"},
-    {
+    },
+    {"WAIT_FOR_GRIPPER", "FAILED", timeout = 10, desc = "Gripper is not moving"},
+    {"DRY_RUN_ABSENT", "FINAL", timeout = 2, desc = "Object not found"}, {
         "WAIT_SHAKING",
         "LOCK_TARGET",
         timeout = 0.5,
