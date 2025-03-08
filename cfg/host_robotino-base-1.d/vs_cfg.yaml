@@ -6,7 +6,8 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/webview
 plugins/vs_offsets:
   # distance between object and target base pose
   base_offset_x: 0.27
-  base_offset_y: 0.04
+  base_offset_y: 0.0625
+  new_gripper: false
 
   # offsets between object pose from the object tracking plugin and the target
   #  frame before starting the routine (target in both x and z), above the

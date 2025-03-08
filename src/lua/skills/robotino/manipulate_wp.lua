@@ -87,9 +87,25 @@ local default_x = 0
 local default_y = y_max / 2
 local default_z = 0.03
 
+local new_arm = config:get_bool("/plugins/vs_offsets/new_gripper")
+if new_arm ~= true then new_arm = false end
+
+if new_arm then
+    default_x = 0.0
+    default_y = -0.07
+    default_z = 0.025
+end
+
 local default_x_exit = 0.06
 local default_y_exit = -0.03
-local default_z_exit = 0
+local default_z_exit = 0.0
+
+if new_arm then
+    default_x_exit = 0.0
+    default_y_exit = 0.0
+    default_z_exit = 0.0
+end
+
 -- read config values for computing expected target position
 -- conveyor
 if config:exists("plugins/object_tracking/belt_values/belt_offset_side") then
@@ -294,6 +310,8 @@ function object_tracker_active()
     return object_tracking_if:has_writer() and object_tracking_if:msgid() > 0
 end
 
+function gripper_pose_reached() return arduino:is_final() end
+
 function dry_expected_object_found()
     return fsm.vars.consecutive_detections > 2 and fsm.vars.dry_run and
                not fsm.vars.reverse_output
@@ -327,24 +345,18 @@ fsm:define_states{
         "DRIVE_TO_LASER_LINE",
         SkillJumpState,
         skills = {{motor_move}},
-        final_to = "WAIT_FOR_GRIPPER",
-        fail_to = "FAILED"
-    },
-    {"SEARCH_LASER_LINE", JumpState},
-    {
-        "WAIT_FOR_GRIPPER",
-        SkillJumpState,
-        skills = {{gripper_commands}},
         final_to = "AT_LASER_LINE",
         fail_to = "FAILED"
     },
+    {"SEARCH_LASER_LINE", JumpState},
+    {"WAIT_FOR_GRIPPER", JumpState},
     {"AT_LASER_LINE", JumpState},
     {"DRY_RUN_ABSENT", JumpState},
     {
         "MOVE_BASE_AND_GRIPPER",
         SkillJumpState,
         skills = {{motor_move}},
-        final_to = "WAIT_SHAKING",
+        final_to = "WAIT_FOR_GRIPPER",
         fail_to = "RETRY"
     },
     {"WAIT_SHAKING", JumpState},
@@ -422,7 +434,14 @@ fsm:add_transitions{
         "FAILED",
         cond = dry_unexpected_object_found,
         desc = "Found Object"
-    }, {"DRY_RUN_ABSENT", "FINAL", timeout = 2, desc = "Object not found"}, {
+    }, {
+        "WAIT_FOR_GRIPPER",
+        "WAIT_SHAKING",
+        cond = gripper_pose_reached,
+        desc = "Default gripper pose reached"
+    },
+    {"WAIT_FOR_GRIPPER", "FAILED", timeout = 10, desc = "Gripper is not moving"},
+    {"DRY_RUN_ABSENT", "FINAL", timeout = 2, desc = "Object not found"}, {
         "WAIT_SHAKING",
         "LOCK_TARGET",
         timeout = 0.5,
@@ -478,7 +497,7 @@ fsm:add_transitions{
     }, {
         "CHECK_FOR_NO_WP",
         "PICK_SUCCESSFUL",
-        timeout = 1,
+        timeout = 0.5,
         desc = "Workpiece not found, as expected"
     }, {
         "PUT_SUCCESSFUL",
@@ -625,13 +644,10 @@ function SEARCH_LASER_LINE:exit() fsm.vars.error = "laser-line not found" end
 
 function WAIT_FOR_GRIPPER:init()
     -- move to default pose
-    self.args["gripper_commands"].x = default_x
-    self.args["gripper_commands"].y = default_y
-    self.args["gripper_commands"].z = default_z
-    self.args["gripper_commands"].command = "MOVEABS"
+    move_gripper_default_pose()
 end
 
-function WAIT_FOR_GRIPPER:exit() fsm.vars.error = "gripper out of reach" end
+function WAIT_FOR_GRIPPER:exit() fsm.vars.error = "gripper is not moving" end
 
 function DRIVE_TO_LASER_LINE:init()
     fsm.vars.consecutive_detections = 0
@@ -733,6 +749,15 @@ function WAIT_SHAKING:init()
     fsm.vars.missing_detections = 0
     fsm.vars.out_of_reaches = 0
     fsm.vars.locked_target = {x = 0.0, y = 0.0, z = 0.0}
+
+    -- open gripper
+    if fsm.vars.target == "WORKPIECE" then
+        local open_msg = arduino.OpenGripperMessage:new()
+        arduino:msgq_enqueue_copy(open_msg)
+    else
+        local close_msg = arduino.CloseGripperMessage:new()
+        arduino:msgq_enqueue_copy(close_msg)
+    end
 end
 
 function WAIT_SHAKING:loop()
