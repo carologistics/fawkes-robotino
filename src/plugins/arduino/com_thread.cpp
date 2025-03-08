@@ -29,6 +29,8 @@
 
 #include <interfaces/ArduinoInterface.h>
 
+#include <stdlib.h>
+
 using namespace fawkes;
 
 /** @class ArduinoComThread "com_thread.h"
@@ -562,6 +564,8 @@ ArduinoComThread::bb_interface_message_received(Interface *interface, Message *m
 		goal_gripper_pose[Z] = gripper_pose_[Z];
 		append_message_to_queue(CMD_STOP);
 		status = true;
+	} else if (message->is_of_type<ArduinoInterface::ResetUSBMessage>()) {
+		system("usb_modeswitch -R -v 2341 -p 0243");
 	}
 
 	wakeup();
