@@ -389,8 +389,6 @@ function MOVE_GRIPPER_BACK:init()
     self.args["gripper_commands"].command = "MOVEABS"
 end
 
-function DRIVE_BACK:init()
-    self.args["motor_move"].x = drive_back_x
-end
+function DRIVE_BACK:init() self.args["motor_move"].x = drive_back_x end
 
 function CLOSE_DEFAULT:init() self.args["gripper_commands"].command = "CLOSE" end

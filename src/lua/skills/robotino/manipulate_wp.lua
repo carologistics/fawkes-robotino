@@ -297,7 +297,9 @@ end
 function input_invalid()
     -- handle optional dry run
     if fsm.vars.dry_run == nil then fsm.vars.dry_run = false end
-    if fsm.vars.dry_end == nil or fsm.vars.dry_run then fsm.vars.dry_end = false end
+    if fsm.vars.dry_end == nil or fsm.vars.dry_run then
+        fsm.vars.dry_end = false
+    end
     if fsm.vars.sense == nil then fsm.vars.sense = false end
 
     if fsm.vars.query == "ABSENT" then
@@ -396,14 +398,11 @@ function dry_unexpected_object_found()
                fsm.vars.reverse_output
 end
 
-function workpiece_found()
-    return fsm.vars.consecutive_detections > 2
-end
+function workpiece_found() return fsm.vars.consecutive_detections > 2 end
 
 function sensed_wp() return arduino:is_wp_sensed() end
 
 function slide_put() return fsm.vars.target == "SLIDE" end
-
 
 fsm:define_states{
     export_to = _M,
@@ -450,7 +449,8 @@ fsm:define_states{
         skills = {{gripper_commands}},
         final_to = "WAIT_GRIPPER",
         fail_to = "FAILED"
-    }, {
+    },
+    {
         "WAIT_GRIPPER",
         SkillJumpState,
         skills = {{gripper_commands}},
@@ -513,8 +513,7 @@ fsm:add_transitions{
         cond = dry_unexpected_object_found,
         desc = "Found Object"
     }, {"DRY_RUN_ABSENT", "FINAL", timeout = 2, desc = "Object not found"},
-    {"FINE_TUNE_GRIPPER", "RETRY", timeout = 10, desc = "Oscillating"},
-    {
+    {"FINE_TUNE_GRIPPER", "RETRY", timeout = 10, desc = "Oscillating"}, {
         "FINE_TUNE_GRIPPER",
         "GRIPPER_ROUTINE",
         cond = gripper_aligned,
@@ -534,7 +533,8 @@ fsm:add_transitions{
         "FINAL",
         cond = "not vars.dry_end",
         desc = "Action successful, but no checking"
-    }, {
+    },
+    {
         "DRY_END",
         "FINAL",
         cond = slide_put,
@@ -554,12 +554,9 @@ fsm:add_transitions{
         "PUT_SUCCESSFUL",
         cond = workpiece_found,
         desc = "Workpiece found as expected"
-    }, {
-        "CHECK_FOR_WP",
-        "PUT_FAILED",
-        timeout = 2,
-        desc = "Workpiece not found"
-    }, {
+    },
+    {"CHECK_FOR_WP", "PUT_FAILED", timeout = 2, desc = "Workpiece not found"},
+    {
         "CHECK_FOR_NO_WP",
         "PICK_FAILED",
         cond = workpiece_found,
@@ -579,12 +576,7 @@ fsm:add_transitions{
         "FINAL",
         cond = sensed_wp,
         desc = "Put successful, but workpiece still in gripper"
-    }, {
-        "PUT_SUCCESSFUL",
-        "FINAL",
-        cond = true,
-        desc = "Put successful"
-    }, {
+    }, {"PUT_SUCCESSFUL", "FINAL", cond = true, desc = "Put successful"}, {
         "PUT_FAILED",
         "RETRY",
         cond = "not vars.sense",
@@ -594,22 +586,15 @@ fsm:add_transitions{
         "RETRY",
         cond = sensed_wp,
         desc = "Put failed, but workpiece still in gripper, so try again"
-    }, {
-        "PUT_FAILED",
-        "FAILED",
-        cond = true,
-        desc = "Put failed, workpiece lost"
-    }, {
+    },
+    {"PUT_FAILED", "FAILED", cond = true, desc = "Put failed, workpiece lost"},
+    {
         "PICK_SUCCESSFUL",
         "FINAL",
         cond = "not vars.sense",
         desc = "Pick successful, but no sensing"
-    }, {
-        "PICK_SUCCESSFUL",
-        "FINAL",
-        cond = sensed_wp,
-        desc = "Pick successful"
-    }, {
+    }, {"PICK_SUCCESSFUL", "FINAL", cond = sensed_wp, desc = "Pick successful"},
+    {
         "PICK_SUCCESSFUL",
         "FAILED",
         cond = true,
@@ -624,12 +609,7 @@ fsm:add_transitions{
         "FINAL",
         cond = sensed_wp,
         desc = "Pick successful, but a workpiece still at output"
-    }, {
-        "PICK_FAILED",
-        "RETRY",
-        cond = true,
-        desc = "Pick failed, so try again"
-    }
+    }, {"PICK_FAILED", "RETRY", cond = true, desc = "Pick failed, so try again"}
 }
 
 function INIT:init()
@@ -897,9 +877,9 @@ end
 function DRY_END:init()
     if fsm.vars.dry_end then
         -- start tracking the workpiece in question
-        local msg = object_tracking_if.StartTrackingMessage:new(object_tracking_if.WORKPIECE,
-                                                                fsm.vars.expected_mps,
-                                                                fsm.vars.expected_side)
+        local msg = object_tracking_if.StartTrackingMessage:new(
+                        object_tracking_if.WORKPIECE, fsm.vars.expected_mps,
+                        fsm.vars.expected_side)
         object_tracking_if:msgq_enqueue_copy(msg)
 
         fsm.vars.consecutive_detections = 0
@@ -938,7 +918,6 @@ function CHECK_FOR_WP:loop()
     end
 end
 
-
 function PUT_FAILED:exit() fsm.vars.error = "put failed, workpiece lost" end
 
 function PICK_SUCCESSFUL:exit() fsm.vars.error = "pick failed, workpiece lost" end
@@ -973,9 +952,7 @@ function FINAL:init()
 end
 
 function FAILED:init()
-    if fsm.vars.nr_tries <= MAX_TRIES then
-        calibrateXYZ()
-    end
+    if fsm.vars.nr_tries <= MAX_TRIES then calibrateXYZ() end
     move_gripper_default_pose_exit()
     object_tracking_if:msgq_enqueue(object_tracking_if.StopTrackingMessage:new())
 
