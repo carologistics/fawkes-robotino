@@ -55,6 +55,8 @@ local y_max = config:get_float("/arduino/y_max") -- gripper max value in y direc
 local z_max = config:get_float("/arduino/z_max") -- gripper max value in z direction
 
 -- read vs configs
+fsm.vars.new_arm = config:get_float("/plugins/vs_offsets/new_gripper")
+if fsm.vars.new_arm ~= true then fsm.vars.new_arm = false end
 local offset_x_workpiece_target_frame = config:get_float(
                                             "plugins/vs_offsets/workpiece/target/x")
 local offset_x_shelf_target_frame = config:get_float(
@@ -124,6 +126,14 @@ fsm:define_states{
     closure = {},
     {"INIT", JumpState},
     {
+        "OPEN_FOR_WP",
+        SkillJumpState,
+        skills = {{gripper_commands}},
+        final_to = "CHOOSE_FORWARD_ROUTINE",
+        fail_to = "FAILED"
+    },
+    {"CHOOSE_FORWARD_ROUTINE", JumpState},
+    {
         "MOVE_GRIPPER_RIGHT",
         SkillJumpState,
         skills = {{gripper_commands}},
@@ -160,13 +170,6 @@ fsm:define_states{
         fail_to = "FAILED"
     },
     {
-        "OPEN_FOR_WP",
-        SkillJumpState,
-        skills = {{gripper_commands}},
-        final_to = "MOVE_GRIPPER_RIGHT",
-        fail_to = "FAILED"
-    },
-    {
         "MOVE_GRIPPER_UP",
         SkillJumpState,
         skills = {{gripper_commands}},
@@ -200,6 +203,16 @@ fsm:define_states{
 fsm:add_transitions{
     {"INIT", "FAILED", cond = input_invalid, desc = "Invalid Input"},
     {"INIT", "OPEN_FOR_WP", true, desc = "Start Routine"}, {
+        "CHOOSE_FORWARD_ROUTINE",
+        "MOVE_GRIPPER_FORWARD",
+        cond = "vars.new_arm",
+        desc = "Move directly to workpiece with new arm"
+    }, {
+        "CHOOSE_FORWARD_ROUTINE",
+        "MOVE_GRIPPER_RIGHT",
+        cond = "not vars.new_arm",
+        desc = "Move right with old arm"
+    }, {
         "CHOOSE_ACTION",
         "CLOSE_GRIPPER",
         cond = is_pick_action,
@@ -404,7 +417,11 @@ end
 
 function MOVE_GRIPPER_BACK:init()
     self.args["gripper_commands"].x = 0.0
-    self.args["gripper_commands"].y = y_max / 2
+    if fsm.vars.new_arm then
+        self.args["gripper_commands"].y = -0.07
+    else
+        self.args["gripper_commands"].y = y_max / 2
+    end
     self.args["gripper_commands"].z = arduino:z_position()
     self.args["gripper_commands"].command = "MOVEABS"
 end

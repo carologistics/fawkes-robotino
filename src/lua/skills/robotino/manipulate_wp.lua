@@ -87,9 +87,25 @@ local default_x = 0
 local default_y = y_max / 2
 local default_z = 0.03
 
+local new_arm = config:get_float("/plugins/vs_offsets/new_gripper")
+if new_arm ~= true then new_arm = false end
+
+if new_arm then
+    default_x = 0.0
+    default_y = -0.07
+    default_z = 0.025
+end
+
 local default_x_exit = 0.06
 local default_y_exit = -0.03
-local default_z_exit = 0
+local default_z_exit = 0.03
+
+if new_arm then
+    default_x_exit = 0.0
+    default_y_exit = 0.0
+    default_z_exit = 0.0
+end
+
 -- read config values for computing expected target position
 -- conveyor
 if config:exists("plugins/object_tracking/belt_values/belt_offset_side") then
