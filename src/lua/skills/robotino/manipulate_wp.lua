@@ -21,7 +21,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name = "manipulate_wp"
 fsm = SkillHSM:new{name = name, start = "INIT", debug = true}
-depends_skills = {"moveto", "motor_move", "pick_or_put_vs"}
+depends_skills = {"moveto", "motor_move", "pick_or_put_vs", "gripper_commands"}
 depends_interfaces = {
     {v = "line1", type = "LaserLineInterface", id = "/laser-lines/1"},
     {v = "line2", type = "LaserLineInterface", id = "/laser-lines/2"},
@@ -49,6 +49,9 @@ Parameters:
                      the workpiece is there (optional, bool)
       @param query   defines if dry_run expects a workpiece to be at the location or wet (optional, THERE | ABSENT)
                      THERE by default
+      @param dry_end true, if the dry_run check should be done within the skill after manipulation, requires the
+                     dry_run parameter to be false (optional, bool)
+      @sense         true, if workpiece sensor should be used in dry_end to evaluate if it was succesful
       @param map_pos true, if MPS Pos is compared to Map Pos(optional,bool) True by default
 ]==]
 
@@ -58,6 +61,7 @@ local GRIPPER_TOLERANCE = {x = 0.0075, y = 0.0015, z = 0.002} -- accuracy
 local MISSING_MAX = 5 -- limit for missing object detections in a row while fine-tuning gripper
 local MIN_VIS_HIST_LINE = 5 -- minimum visibility history for laser-line before considering it
 local MIN_ACTUAL_DIST = 1.8 -- minimum distance b/w bot and laser center
+local MAX_TRIES = 2 -- maximum number of action attempts before failing
 
 -- Initialize as skill module
 
@@ -72,8 +76,6 @@ local middle_shelf_offset_side = -0.175
 local right_shelf_offset_side = -0.275
 
 local ring_height = 0.01
-
-local drive_back_x = -0.4
 
 -- read gripper config
 local x_max = config:get_float("/arduino/x_max")
@@ -272,12 +274,6 @@ function move_gripper_default_pose()
 end
 
 function move_gripper_default_pose_exit()
-    if fsm.vars.target ~= "WORKPIECE" then
-        local close_msg = arduino.CloseGripperMessage:new()
-        arduino:msgq_enqueue_copy(close_msg)
-        local calib_msg = arduino.CalibrateMessage:new()
-        arduino:msgq_enqueue_copy(calib_msg)
-    end
     local abs_message = arduino.MoveXYZAbsMessage:new()
     abs_message:set_x(default_x_exit)
     abs_message:set_y(default_y_exit)
@@ -288,9 +284,23 @@ function move_gripper_default_pose_exit()
     arduino:msgq_enqueue_copy(close_msg)
 end
 
+function calibrateX()
+    local calib_x_msg = arduino.CalibrateXMessage:new()
+    arduino:msgq_enqueue_copy(calib_x_msg)
+end
+
+function calibrateXYZ()
+    local calib_msg = arduino.CalibrateMessage:new()
+    arduino:msgq_enqueue_copy(calib_msg)
+end
+
 function input_invalid()
     -- handle optional dry run
     if fsm.vars.dry_run == nil then fsm.vars.dry_run = false end
+    if fsm.vars.dry_end == nil or fsm.vars.dry_run then
+        fsm.vars.dry_end = false
+    end
+    if fsm.vars.sense == nil then fsm.vars.sense = false end
 
     if fsm.vars.query == "ABSENT" then
         fsm.vars.reverse_output = true
@@ -388,9 +398,15 @@ function dry_unexpected_object_found()
                fsm.vars.reverse_output
 end
 
+function workpiece_found() return fsm.vars.consecutive_detections > 2 end
+
+function sensed_wp() return arduino:is_wp_sensed() end
+
+function slide_put() return fsm.vars.target == "SLIDE" end
+
 fsm:define_states{
     export_to = _M,
-    closure = {MISSING_MAX = MISSING_MAX},
+    closure = {MISSING_MAX = MISSING_MAX, MAX_TRIES = MAX_TRIES},
     {"INIT", JumpState},
     {"START_TRACKING", JumpState},
     {"FIND_LASER_LINE", JumpState},
@@ -410,21 +426,47 @@ fsm:define_states{
         SkillJumpState,
         skills = {{motor_move}},
         final_to = "FINE_TUNE_GRIPPER",
-        fail_to = "FIND_LASER_LINE"
+        fail_to = "RETRY"
     },
     {"FINE_TUNE_GRIPPER", JumpState},
     {
         "GRIPPER_ROUTINE",
         SkillJumpState,
         skills = {{pick_or_put_vs}},
-        final_to = "FINAL",
-        fail_to = "FINE_TUNE_GRIPPER"
+        final_to = "DRY_END",
+        fail_to = "RETRY"
+    },
+    {"DRY_END", JumpState},
+    {"CHECK_FOR_WP", JumpState},
+    {"CHECK_FOR_NO_WP", JumpState},
+    {"PUT_FAILED", JumpState},
+    {"PUT_SUCCESSFUL", JumpState},
+    {"PICK_FAILED", JumpState},
+    {"PICK_SUCCESSFUL", JumpState},
+    {
+        "RETRY",
+        SkillJumpState,
+        skills = {{gripper_commands}},
+        final_to = "WAIT_GRIPPER",
+        fail_to = "FAILED"
+    },
+    {
+        "WAIT_GRIPPER",
+        SkillJumpState,
+        skills = {{gripper_commands}},
+        final_to = "START_TRACKING",
+        fail_to = "FAILED"
     }
 }
 
 fsm:add_transitions{
     {"INIT", "FAILED", cond = input_invalid, desc = "Invalid Input"},
     {"INIT", "START_TRACKING", cond = true, desc = "Valid Input"}, {
+        "START_TRACKING",
+        "FAILED",
+        cond = "vars.nr_tries > MAX_TRIES",
+        desc = "Failed, too many tries"
+    }, {
         "START_TRACKING",
         "FAILED",
         timeout = 2,
@@ -447,7 +489,7 @@ fsm:add_transitions{
         desc = "Found Object"
     }, {
         "WAIT_FOR_GRIPPER",
-        "START_TRACKING",
+        "RETRY",
         timeout = 5,
         desc = "Something went wrong with axis movement"
     }, {
@@ -471,8 +513,7 @@ fsm:add_transitions{
         cond = dry_unexpected_object_found,
         desc = "Found Object"
     }, {"DRY_RUN_ABSENT", "FINAL", timeout = 2, desc = "Object not found"},
-    {"FINE_TUNE_GRIPPER", "START_TRACKING", timeout = 10, desc = "Oscillating"},
-    {
+    {"FINE_TUNE_GRIPPER", "RETRY", timeout = 10, desc = "Oscillating"}, {
         "FINE_TUNE_GRIPPER",
         "GRIPPER_ROUTINE",
         cond = gripper_aligned,
@@ -484,19 +525,96 @@ fsm:add_transitions{
         desc = "Gripper out of reach"
     }, {
         "FINE_TUNE_GRIPPER",
-        "FIND_LASER_LINE",
+        "RETRY",
         cond = "vars.missing_detections > MISSING_MAX",
         desc = "Tracking lost target"
-    }
+    }, {
+        "DRY_END",
+        "FINAL",
+        cond = "not vars.dry_end",
+        desc = "Action successful, but no checking"
+    },
+    {
+        "DRY_END",
+        "FINAL",
+        cond = slide_put,
+        desc = "Action successful, no checking"
+    }, {
+        "DRY_END",
+        "CHECK_FOR_WP",
+        cond = "vars.check_workpiece",
+        desc = "Check if there is a workpiece"
+    }, {
+        "DRY_END",
+        "CHECK_FOR_NO_WP",
+        cond = "not vars.check_workpiece",
+        desc = "Check if there is no workpiece"
+    }, {
+        "CHECK_FOR_WP",
+        "PUT_SUCCESSFUL",
+        cond = workpiece_found,
+        desc = "Workpiece found as expected"
+    },
+    {"CHECK_FOR_WP", "PUT_FAILED", timeout = 2, desc = "Workpiece not found"},
+    {
+        "CHECK_FOR_NO_WP",
+        "PICK_FAILED",
+        cond = workpiece_found,
+        desc = "Found unexpected workpiece"
+    }, {
+        "CHECK_FOR_NO_WP",
+        "PICK_SUCCESSFUL",
+        timeout = 1,
+        desc = "Workpiece not found, as expected"
+    }, {
+        "PUT_SUCCESSFUL",
+        "FINAL",
+        cond = "not vars.sense",
+        desc = "Put successful, but no sensing"
+    }, {
+        "PUT_SUCCESSFUL",
+        "FINAL",
+        cond = sensed_wp,
+        desc = "Put successful, but workpiece still in gripper"
+    }, {"PUT_SUCCESSFUL", "FINAL", cond = true, desc = "Put successful"}, {
+        "PUT_FAILED",
+        "RETRY",
+        cond = "not vars.sense",
+        desc = "Put failed, but no sensing, so try again"
+    }, {
+        "PUT_FAILED",
+        "RETRY",
+        cond = sensed_wp,
+        desc = "Put failed, but workpiece still in gripper, so try again"
+    },
+    {"PUT_FAILED", "FAILED", cond = true, desc = "Put failed, workpiece lost"},
+    {
+        "PICK_SUCCESSFUL",
+        "FINAL",
+        cond = "not vars.sense",
+        desc = "Pick successful, but no sensing"
+    }, {"PICK_SUCCESSFUL", "FINAL", cond = sensed_wp, desc = "Pick successful"},
+    {
+        "PICK_SUCCESSFUL",
+        "FAILED",
+        cond = true,
+        desc = "Pick failed, workpiece lost"
+    }, {
+        "PICK_FAILED",
+        "RETRY",
+        cond = "not vars.sense",
+        desc = "Pick failed, so try again"
+    }, {
+        "PICK_FAILED",
+        "FINAL",
+        cond = sensed_wp,
+        desc = "Pick successful, but a workpiece still at output"
+    }, {"PICK_FAILED", "RETRY", cond = true, desc = "Pick failed, so try again"}
 }
 
 function INIT:init()
-    if fsm.vars.target ~= "WORKPIECE" then
-        local close_msg = arduino.CloseGripperMessage:new()
-        arduino:msgq_enqueue_copy(close_msg)
-        local calib_msg = arduino.CalibrateMessage:new()
-        arduino:msgq_enqueue_copy(calib_msg)
-    end
+    fsm.vars.nr_tries = 1
+
     laserline_switch:msgq_enqueue(laserline_switch.EnableSwitchMessage:new())
 
     fsm.vars.lines = {}
@@ -572,7 +690,13 @@ function START_TRACKING:init()
     move_gripper_default_pose()
 end
 
-function START_TRACKING:exit() fsm.vars.error = "OT interface closed" end
+function START_TRACKING:exit()
+    if fsm.vars.nr_tries > MAX_TRIES then
+        fsm.vars.error = "too many retries"
+    else
+        fsm.vars.error = "OT interface closed"
+    end
+end
 
 function FIND_LASER_LINE:init()
     -- start searching for laser line
@@ -632,18 +756,6 @@ function DRIVE_TO_LASER_LINE:init()
     end
 end
 
-function DRY_RUN_ABSENT:loop()
-    if fsm.vars.tracking_msgid ~= object_tracking_if:msgid() then
-        fsm.vars.tracking_msgid = object_tracking_if:msgid()
-        if object_tracking_if:is_detected() then
-            fsm.vars.consecutive_detections =
-                fsm.vars.consecutive_detections + 1
-        else
-            fsm.vars.consecutive_detections = 0
-        end
-    end
-end
-
 function DRIVE_TO_LASER_LINE:loop()
     if fsm.vars.tracking_msgid ~= object_tracking_if:msgid() then
         fsm.vars.tracking_msgid = object_tracking_if:msgid()
@@ -671,6 +783,20 @@ function AT_LASER_LINE:loop()
 end
 
 function AT_LASER_LINE:exit() fsm.vars.error = "object not found" end
+
+function DRY_RUN_ABSENT:loop()
+    if fsm.vars.tracking_msgid ~= object_tracking_if:msgid() then
+        fsm.vars.tracking_msgid = object_tracking_if:msgid()
+        if object_tracking_if:is_detected() then
+            fsm.vars.consecutive_detections =
+                fsm.vars.consecutive_detections + 1
+        else
+            fsm.vars.consecutive_detections = 0
+        end
+    end
+end
+
+function DRY_RUN_ABSENT:exit() fsm.vars.error = "found unexpected object" end
 
 function MOVE_BASE_AND_GRIPPER:init()
     -- move base to target pose using visual servoing
@@ -748,14 +874,85 @@ function GRIPPER_ROUTINE:init()
     end
 end
 
+function DRY_END:init()
+    if fsm.vars.dry_end then
+        -- start tracking the workpiece in question
+        local msg = object_tracking_if.StartTrackingMessage:new(
+                        object_tracking_if.WORKPIECE, fsm.vars.expected_mps,
+                        fsm.vars.expected_side)
+        object_tracking_if:msgq_enqueue_copy(msg)
+
+        fsm.vars.consecutive_detections = 0
+
+        -- move to default pose
+        move_gripper_default_pose()
+        if fsm.vars.target == "WORKPIECE" then
+            fsm.vars.check_workpiece = false -- check if there is no workpiece
+        else
+            fsm.vars.check_workpiece = true -- check if there is a workpiece
+        end
+    end
+end
+
+function CHECK_FOR_NO_WP:loop()
+    if fsm.vars.tracking_msgid ~= object_tracking_if:msgid() then
+        fsm.vars.tracking_msgid = object_tracking_if:msgid()
+        if object_tracking_if:is_detected() then
+            fsm.vars.consecutive_detections =
+                fsm.vars.consecutive_detections + 1
+        else
+            fsm.vars.consecutive_detections = 0
+        end
+    end
+end
+
+function CHECK_FOR_WP:loop()
+    if fsm.vars.tracking_msgid ~= object_tracking_if:msgid() then
+        fsm.vars.tracking_msgid = object_tracking_if:msgid()
+        if object_tracking_if:is_detected() then
+            fsm.vars.consecutive_detections =
+                fsm.vars.consecutive_detections + 1
+        else
+            fsm.vars.consecutive_detections = 0
+        end
+    end
+end
+
+function PUT_FAILED:exit() fsm.vars.error = "put failed, workpiece lost" end
+
+function PICK_SUCCESSFUL:exit() fsm.vars.error = "pick failed, workpiece lost" end
+
 -- end tracking afterwards
 
+function CHECK_FOR_NO_WP:exit()
+    object_tracking_if:msgq_enqueue(object_tracking_if.StopTrackingMessage:new())
+end
+
+function CHECK_FOR_WP:exit()
+    object_tracking_if:msgq_enqueue(object_tracking_if.StopTrackingMessage:new())
+end
+
+function RETRY:init()
+    fsm.vars.nr_tries = fsm.vars.nr_tries + 1
+    self.args["gripper_commands"].command = "CALIBRATE"
+    object_tracking_if:msgq_enqueue(object_tracking_if.StopTrackingMessage:new())
+end
+
+function WAIT_GRIPPER:init()
+    self.args["gripper_commands"].x = default_x
+    self.args["gripper_commands"].y = default_y
+    self.args["gripper_commands"].z = default_z
+    self.args["gripper_commands"].command = "MOVEABS"
+end
+
 function FINAL:init()
+    calibrateX()
     move_gripper_default_pose_exit()
     object_tracking_if:msgq_enqueue(object_tracking_if.StopTrackingMessage:new())
 end
 
 function FAILED:init()
+    if fsm.vars.nr_tries <= MAX_TRIES then calibrateXYZ() end
     move_gripper_default_pose_exit()
     object_tracking_if:msgq_enqueue(object_tracking_if.StopTrackingMessage:new())
 
