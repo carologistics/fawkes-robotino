@@ -503,7 +503,7 @@ fsm:add_transitions{
     }, {
         "CHECK_FOR_NO_WP",
         "PICK_SUCCESSFUL",
-        timeout = 1,
+        timeout = 0.5,
         desc = "Workpiece not found, as expected"
     }, {
         "PUT_SUCCESSFUL",
