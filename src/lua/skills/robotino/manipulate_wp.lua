@@ -347,7 +347,7 @@ fsm:define_states{
         "DRIVE_TO_LASER_LINE",
         SkillJumpState,
         skills = {{motor_move}},
-        final_to = "WAIT_FOR_GRIPPER",
+        final_to = "AT_LASER_LINE",
         fail_to = "FAILED"
     },
     {"SEARCH_LASER_LINE", JumpState},
@@ -358,7 +358,7 @@ fsm:define_states{
         "MOVE_BASE_AND_GRIPPER",
         SkillJumpState,
         skills = {{motor_move}},
-        final_to = "WAIT_SHAKING",
+        final_to = "WAIT_FOR_GRIPPER",
         fail_to = "RETRY"
     },
     {"WAIT_SHAKING", JumpState},
@@ -438,7 +438,7 @@ fsm:add_transitions{
         desc = "Found Object"
     }, {
         "WAIT_FOR_GRIPPER",
-        "AT_LASER_LINE",
+        "WAIT_SHAKING",
         cond = gripper_pose_reached,
         desc = "Default gripper pose reached"
     }, {
