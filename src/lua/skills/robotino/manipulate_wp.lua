@@ -444,7 +444,7 @@ fsm:add_transitions{
     }, {
         "WAIT_FOR_GRIPPER",
         "FAILED",
-        timeout = 4,
+        timeout = 10,
         desc = "Gripper is not moving"
     }, {"DRY_RUN_ABSENT", "FINAL", timeout = 2, desc = "Object not found"},
     {
