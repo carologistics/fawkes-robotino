@@ -29,7 +29,7 @@ depends_interfaces = {
 }
 
 documentation = [==[
-    @param command    can be : ( OPEN | CLOSE | STOP | MOVEABS | MOVEREL | CALIBRATE )
+    @param command    can be : ( OPEN | CLOSE | STOP | MOVEABS | MOVEREL | CALIBRATE | RESETUSB )
     @param x   x position for gripper move
     @param y   y position for gripper move
     @param z   z position for gripper move
@@ -44,7 +44,9 @@ skillenv.skill_module(_M)
 
 function input_ok()
     if fsm.vars.command == "OPEN" or fsm.vars.command == "STOP" or
-        fsm.vars.command == "CLOSE" then return true end
+        fsm.vars.command == "CLOSE" or fsm.vars.command == "RESETUSB" then
+        return true
+    end
     if fsm.vars.command == "MOVEABS" or fsm.vars.command == "MOVEREL" then
         if not fsm.vars.x or not fsm.vars.y or not fsm.vars.z then
             print("Missing coordinates " .. fsm.vars.x .. " " .. fsm.vars.y ..
@@ -139,6 +141,9 @@ function COMMAND:init()
     elseif self.fsm.vars.command == "STOP" then
         theStopMessage = arduino.StopMessage:new()
         arduino:msgq_enqueue(theStopMessage)
+    elseif self.fsm.vars.command == "RESETUSB" then
+        theResetMessage = arduino.ResetUSBMessage:new()
+        arduino:msgq_enqueue(theResetMessage)
 
     elseif self.fsm.vars.command == "MOVEABS" then
 
