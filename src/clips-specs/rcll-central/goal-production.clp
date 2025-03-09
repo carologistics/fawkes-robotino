@@ -274,7 +274,7 @@
         (verbosity NOISY) (is-executable FALSE)
         (params target-mps ?mps
                 cap-color ?cap-color)
-        (priority (float ?*PRODUCTION-BUFFER-PRIORITY*))
+        (priority (float 1000.0))
   )))
   (goal-meta-assert ?goal nil ?order-id nil)
   (return ?goal)
@@ -416,7 +416,7 @@
         (params  wp ?wp
                  target-mps ?target-mps
                  )
-        (priority (float ?*PRODUCTION-PAY-PRIORITY*))
+        (priority (float -2.0))
   )))
   (goal-meta-assert ?goal nil ?order-id nil)
   (return ?goal)
@@ -704,7 +704,7 @@
   (wm-fact (key refbox team-color) (value ?color))
   =>
   (bind ?g (goal-tree-assert-central-run-parallel SUPPORT-ROOT))
-  (modify ?g (meta do-not-finish) (priority ?*PRODUCTION-C3-PRIORITY*))
+  (modify ?g (meta do-not-finish) (priority 1000.0))
 )
 
 (defrule goal-production-create-wait-root
@@ -719,7 +719,7 @@
   (wm-fact (key refbox team-color) (value ?color))
   =>
   (bind ?g (goal-tree-assert-central-run-parallel WAIT-ROOT))
-  (modify ?g (meta do-not-finish) (priority 10000.0))
+  (modify ?g (meta do-not-finish) (priority 100.0))
 )
 
 (defrule goal-production-assert-wait-nothing-executable
@@ -759,7 +759,7 @@
   (not (wm-fact (key monitoring move-out-of-way high-prio long-wait args? r ?robot)))
   =>
   (printout t "reduce priority of " ?goal-id crlf)
-  (modify ?g (priority -1.0))
+  (modify ?g (priority -10.0))
 )
 
 (defrule goal-production-re-create-move-out-of-way-simple
@@ -780,7 +780,7 @@
   (foreach ?w (create$ WAIT1 WAIT2 WAIT3 WAIT4)
 	(if (not (member$ ?w ?wait-pos))
 	    then (bind ?f (goal-production-assert-move-out-of-way ?w))
-		  (goal-tree-update-child ?f ?parent-id -1.0)
+		  (goal-tree-update-child ?f ?parent-id -10.0)
 	)
   )
 )
