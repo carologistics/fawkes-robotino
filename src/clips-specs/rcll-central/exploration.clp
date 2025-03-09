@@ -38,7 +38,7 @@
 	(wm-fact (key refbox version-info config args? name field_height) (value ?field-height))
 	(wm-fact (key refbox version-info config args? name field_width) (value ?field-width))
 	(wm-fact (key refbox version-info config args? name field_mirrored) (value ?mirrored))
-	(test (or (eq ?team-color CYAN) (eq ?team-clor MAGENTA)))
+	(test (or (eq ?team-color CYAN) (eq ?team-color MAGENTA)))
 	=>
 	(bind ?x_min 0)
 	(if (eq ?mirrored TRUE) then
