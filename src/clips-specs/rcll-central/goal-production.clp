@@ -1026,6 +1026,7 @@
   "Create 2 pay-with-base goals for each ring station"
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
   (wm-fact (key domain fact mps-type args? m ?rs t RS))
+  (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring-color rn ~ZERO)) 
   (goal (class SUPPORT-ROOT) (id ?root-id))
   (goal (class INSTRUCTION-ROOT) (id ?instruct-root-id))
   (not (and (goal (id ?some-id) (class PAY-FOR-RINGS-WITH-BASE) (params $? target-mps ?rs $?) (mode ~RETRACTED))
@@ -1050,7 +1051,8 @@
   (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side OUTPUT))
   (not (wm-fact (key order meta wp-for-order args? wp ?wp $?)))
   (wm-fact (key domain fact mps-type args? m ?ds t DS))
-
+  (wm-fact (key domain fact mps-type args? m ?rs1 t RS))
+  (wm-fact (key domain fact mps-type args? m ?rs2&:(neq ?rs1 ?rs2) t RS))
   (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
 
   (goal (class SUPPORT-ROOT) (id ?root-id))
@@ -1059,9 +1061,12 @@
   =>
   (bind ?discard-goal (goal-production-assert-discard ?wp ?ds nil))
   (bind ?instruct-goal (goal-production-assert-instruct-ds-discard ?wp ?ds))
-  (do-for-all-facts ((?mtype domain-fact)) (and (eq ?mtype:name mps-type) (member$ RS ?mtype:param-values))
-    (bind ?pay-goal-fact (goal-production-assert-pay-for-rings-with-base ?wp (nth$ 1 ?mtype:param-values) nil))
-    (modify ?pay-goal-fact (parent ?root-id) (priority (float (+ ?*PRODUCTION-PAY-PRIORITY* ?*PRODUCTION-PAY-CC-PRIORITY-INCREASE*))))
+  (foreach ?m (create$ ?rs1 ?rs2)
+    (do-for-fact ((?ring-spec domain-fact))
+      (and (eq ?ring-spec:name rs-ring-spec) (eq ?m (nth$ 1 ?ring-spec:param-values)) (neq ZERO (nth$ 3 ?ring-spec:param-values)))
+      (bind ?pay-goal-fact (goal-production-assert-pay-for-rings-with-base ?wp ?m nil))
+      (modify ?pay-goal-fact (parent ?root-id) (priority (float (+ ?*PRODUCTION-PAY-PRIORITY* ?*PRODUCTION-PAY-CC-PRIORITY-INCREASE*))))
+    )
   )
   (modify ?discard-goal (parent ?root-id))
   (modify ?instruct-goal (parent ?instruct-root-id))
