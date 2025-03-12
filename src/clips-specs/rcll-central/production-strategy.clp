@@ -28,8 +28,8 @@
   ?*RS-WORKLOAD-THRESHOLD* = 600
   ?*C0-PRODUCTION-THRESHOLD* = 10
   ?*C1-PRODUCTION-THRESHOLD* = 10
-  ?*C2-PRODUCTION-THRESHOLD* = 10
-  ?*C3-PRODUCTION-THRESHOLD* = 10
+  ?*C2-PRODUCTION-THRESHOLD* = 1
+  ?*C3-PRODUCTION-THRESHOLD* = 1
   ?*C0-CUTOFF* = 20
   ?*C1-CUTOFF* = 19
   ?*C2-CUTOFF* = 16
@@ -1168,7 +1168,7 @@
   "Add an order to this filter if there is less than the threshold of active total orders"
   (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?))
-  (wm-fact (key strategy meta active-orders))
+  (wm-fact (key strategy meta active-orders) (values $?active-orders))
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter total-limit)
                         (values $?values&:(not (member$ ?order-id ?values))))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
@@ -1176,7 +1176,7 @@
 
   (wm-fact (key strategy meta production-order-limit args? com TOTAL) (value ?threshold))
   ;filter condition
-  (test (> ?threshold (production-strategy-count-active-orders)))
+  (test (> ?threshold (+ (length$ ?active-orders) (length$ ?values))))
   =>
   (modify ?filtered (values $?values ?order-id))
 )
@@ -1199,7 +1199,7 @@
                         (values $?values&:(member$ ?order-id ?values)))
   (wm-fact (key strategy meta production-order-limit args? com TOTAL) (value ?threshold))
  (time $?)
-  (test (<= ?threshold (production-strategy-count-active-orders)))
+  (test (<= ?threshold (length$ ?values)))
   =>
   (modify ?filtered (values ))
 )
