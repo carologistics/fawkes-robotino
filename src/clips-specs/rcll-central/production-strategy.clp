@@ -1163,7 +1163,7 @@
 
   (wm-fact (key strategy meta production-order-limit args? com TOTAL) (value ?threshold))
   ;filter condition
-  (test (> ?threshold (+ (length$ ?active-orders) (length$ ?values))))
+  (test (> ?threshold (length$ ?active-orders)))
   =>
   (modify ?filtered (values $?values ?order-id))
 )
@@ -1174,8 +1174,9 @@
   ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter total-limit)
                         (values $?values&:(member$ ?order-id ?values)))
   (wm-fact (key strategy meta production-order-limit args? com TOTAL) (value ?threshold))
+  (wm-fact (key strategy meta active-orders) (values $?active-orders))
  (time $?)
-  (test (< ?threshold (length$ ?values)))
+  (test (<= ?threshold (length$ ?active-orders)))
   =>
   (modify ?filtered (values ))
 )
