@@ -28,7 +28,7 @@ fawkes:
     desired_loop_time: 66333
 
     # Maximum time a thread may run per loop, 0 to disable; microseconds
-    max_thread_time: 133333
+    max_thread_time: 160000
 
     loggers: console;file/debug:debug_$time.log
 
