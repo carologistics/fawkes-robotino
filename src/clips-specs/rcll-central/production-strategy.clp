@@ -1181,17 +1181,6 @@
   (modify ?filtered (values $?values ?order-id))
 )
 
-(defrule production-strategy-filter-orders-total-limit-remove-impossible-orders
-  "Remove an order from this filter if there is more than the threshold of active total orders"
-  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
-  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
-  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter total-limit)
-                        (values $?values&:(member$ ?order-id ?values)))
-  (not (wm-fact (key strategy meta possible-orders) (values $? ?order-id $?)))
-  =>
-  (modify ?filtered (values (delete-member$ ?values ?order-id)))
-)
-
 (defrule production-strategy-filter-order-total-limit-remove-limit-reached
   (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
