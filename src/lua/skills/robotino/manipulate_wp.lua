@@ -427,7 +427,7 @@ fsm:add_transitions{
         desc = "dry run with no object expected"
     }, {
         "AT_LASER_LINE",
-        "MOVE_BASE_AND_GRIPPER",
+        "WAIT_FOR_GRIPPER",
         cond = "vars.consecutive_detections > 2",
         desc = "Found Object"
     }, {"AT_LASER_LINE", "FAILED", timeout = 2, desc = "Object not found"}, {
@@ -437,7 +437,7 @@ fsm:add_transitions{
         desc = "Found Object"
     }, {
         "WAIT_FOR_GRIPPER",
-        "WAIT_SHAKING",
+        "MOVE_BASE_AND_GRIPPER",
         cond = gripper_pose_reached,
         desc = "Default gripper pose reached"
     }, {
