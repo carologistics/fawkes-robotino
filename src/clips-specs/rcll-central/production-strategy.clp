@@ -1137,6 +1137,19 @@
   (modify ?filtered (values (delete-member$ ?values ?order-id)))
 )
 
+(defrule production-strategy-filter-order-by-complexity-limits-remove-not-possible
+  "Remove a non-possible order from the filter"
+  (declare (salience ?*SALIENCE-ORDER-SELECTION*))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?comp))
+  ?filtered <- (wm-fact (key strategy meta filtered-orders args? filter complexity-limit)
+                        (values $?values&:(member$ ?order-id ?values)))
+
+  (wm-fact (key strategy meta possible-orders)
+                        (values $?values&:(not (member$ ?order-id ?values))))
+  =>
+  (modify ?filtered (values (delete-member$ ?values ?order-id)))
+)
+
 ;filter total limit
 (defrule production-strategy-filter-orders-total-limit-add
   "Add an order to this filter if there is less than the threshold of active total orders"
