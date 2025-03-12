@@ -1115,7 +1115,13 @@
 			(modify ?formulated-action (state FAILED))
 		)
 	)
-	(modify ?g (mode FINISHED) (outcome FAILED))
+        (bind ?error ROBOT-LOST)
+	(do-for-fact ((?df domain-fact)) (and (eq ?df:name holding) (str-index ?robot (implode$ ?df:param-values)))
+		(assert (wm-fact (key monitoring cleanup-wp args? wp (nth$ 2 ?df:param-values))))
+		(retract ?df)
+                (bind ?error WP-LOST)
+	)
+	(modify ?g (mode FINISHED) (outcome FAILED) (error ?error))
 )
 
 (defrule execution-monitoring-stop-goals-for-robot-done
