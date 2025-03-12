@@ -5,7 +5,7 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/webview
 ---
 plugins/vs_offsets:
   # distance between object and target base pose
-  base_offset_x: 0.27
+  base_offset_x: 0.28
   base_offset_y: 0.055
   new_gripper: false
 
