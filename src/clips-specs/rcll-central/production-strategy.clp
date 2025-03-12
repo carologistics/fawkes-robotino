@@ -1199,7 +1199,7 @@
                         (values $?values&:(member$ ?order-id ?values)))
   (wm-fact (key strategy meta production-order-limit args? com TOTAL) (value ?threshold))
  (time $?)
-  (test (<= ?threshold (length$ ?values)))
+  (test (< ?threshold (length$ ?values)))
   =>
   (modify ?filtered (values ))
 )
