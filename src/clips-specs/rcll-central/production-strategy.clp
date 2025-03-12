@@ -815,8 +815,16 @@
 (defrule production-strategy-remove-from-active-orders
   (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   ;there is a retracted root goal
-  (goal (id ?root) (mode RETRACTED))
-  (goal-meta (goal-id ?root) (root-for-order ?order-id))
+  (wm-fact (key refbox order ?order-id quantity-requested))
+  (or
+    (and
+      (goal (id ?root) (mode RETRACTED))
+      (goal-meta (goal-id ?root) (root-for-order ?order-id))
+    )
+    (not
+      (goal-meta (root-for-order ?order-id))
+    )
+  )
   ;the order is in the active list
   ?active <- (wm-fact (key strategy meta active-orders) (values $?values&:(member$ ?order-id ?values)))
   =>
@@ -1573,36 +1581,36 @@
   )
 )
 
-(defrule production-strategy-revert-priority-to-pay-for-wp
-  ?wf <- (wm-fact (key strategy meta priority increase pay-for-wp args? wp ?wp mps ?mps ring-col ?ring-color) (value ?priority))
-  (or
-    (not (wm-fact (key wp meta next-machine args? wp ?wp) (value ?mps)))
-    (domain-fact (name rs-input-ready-to-mount-ring) (param-values ?mps ?ring-color))
-    (and
-      (domain-fact (name rs-ring-spec) (param-values ?mps ?ring-color ?ring-spec))
-      (domain-fact (name rs-filled-width) (param-values ?mps ?filled-with&:(> (sym-to-int ?filled-with) (sym-to-int ?ring-spec))))
-    )
-  )
-  =>
-  (delayed-do-for-all-facts ((?goal goal))
-    (and
-      (eq ?goal:mode FORMULATED)
-      (eq ?goal:class PAY-FOR-RINGS-WITH-BASE)
-      (member$ ?mps ?goal:params)
-    )
-    (modify ?goal (priority (- ?goal:priority ?priority)))
-  )
-  (retract ?wf)
-)
+;(defrule production-strategy-revert-priority-to-pay-for-wp
+;  ?wf <- (wm-fact (key strategy meta priority increase pay-for-wp args? wp ?wp mps ?mps ring-col ?ring-color) (value ?priority))
+;  (or
+;    (not (wm-fact (key wp meta next-machine args? wp ?wp) (value ?mps)))
+;    (domain-fact (name rs-input-ready-to-mount-ring) (param-values ?mps ?ring-color))
+;    (and
+;      (domain-fact (name rs-ring-spec) (param-values ?mps ?ring-color ?ring-spec))
+;      (domain-fact (name rs-filled-width) (param-values ?mps ?filled-with&:(> (sym-to-int ?filled-with) (sym-to-int ?ring-spec))))
+;    )
+;  )
+;  =>
+;  (delayed-do-for-all-facts ((?goal goal))
+;    (and
+;      (eq ?goal:mode FORMULATED)
+;      (eq ?goal:class PAY-FOR-RINGS-WITH-BASE)
+;      (member$ ?mps ?goal:params)
+;    )
+;    (modify ?goal (priority (- ?goal:priority ?priority)))
+;  )
+;  (retract ?wf)
+;)
 
-(defrule production-strategy-apply-priority-to-pay-for-wp
-  ?g <- (goal (class PAY-FOR-RINGS-WITH-BASE)
-    (mode FORMULATED) (priority ?prio) (params $? target-mps ?mps))
-  (wm-fact (key strategy meta priority increase pay-for-wp args? wp ? ?mps $?) (value ?prio-increase))
-  (test (< ?prio ?prio-increase))
-  =>
-  (modify ?g (priority (+ ?prio ?prio-increase)))
-)
+;(defrule production-strategy-apply-priority-to-pay-for-wp
+;  ?g <- (goal (class PAY-FOR-RINGS-WITH-BASE)
+;    (mode FORMULATED) (priority ?prio) (params $? target-mps ?mps))
+;  (wm-fact (key strategy meta priority increase pay-for-wp args? wp ? mps ?mps $?) (value ?prio-increase))
+;  (test (< ?prio ?prio-increase))
+;  =>
+;  (modify ?g (priority (+ ?prio ?prio-increase)))
+;)
 
 ; -- decrease priority for standing orders until game-time 10
 
