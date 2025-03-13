@@ -1457,3 +1457,14 @@
 	        (param-values ?mps))
 	)
 )
+
+(defrule execution-monitoring-bump-goal-for-forgotten-wp
+	(declare (salience ?*MONITORING-SALIENCE*))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps $?))
+	(not (goal (mode DISPATCHED) (params $? ?wp $?)))
+	?g <- (goal (mode FORMULATED) (class PAY-FOR-RINGS-WITH-BASE|PAY-FOR-RINGS-WITH-CAP-CARRIER) (params $? ?wp $?) (priority ?prio))
+	(plan-action (goal-id ?g-id) (action-name wait-for-wp) (param-values ? ?mps ? ?wp2) (state RUNNING))
+	(test (and (neq ?wp ?wp2) (< ?prio 1000.0)))
+	=>
+	(modify ?g (priority 1000.0))
+)

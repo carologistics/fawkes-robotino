@@ -350,6 +350,7 @@ fsm:define_states{
     },
     {"SEARCH_LASER_LINE", JumpState},
     {"WAIT_FOR_GRIPPER", JumpState},
+    {"REBOOT_GRIPPER", JumpState},
     {"AT_LASER_LINE", JumpState},
     {"DRY_RUN_ABSENT", JumpState},
     {
@@ -439,8 +440,12 @@ fsm:add_transitions{
         "WAIT_SHAKING",
         cond = gripper_pose_reached,
         desc = "Default gripper pose reached"
-    },
-    {"WAIT_FOR_GRIPPER", "FAILED", timeout = 10, desc = "Gripper is not moving"},
+    }, {
+        "WAIT_FOR_GRIPPER",
+        "REBOOT_GRIPPER",
+        timeout = 10,
+        desc = "Gripper is not moving"
+    }, {"REBOOT_GRIPPER", "RETRY", timeout = 1, desc = "REBOOTED USB, retry"},
     {"DRY_RUN_ABSENT", "FINAL", timeout = 2, desc = "Object not found"}, {
         "WAIT_SHAKING",
         "LOCK_TARGET",
@@ -743,6 +748,11 @@ function MOVE_BASE_AND_GRIPPER:init()
         frame = "base_link",
         visual_servoing = true
     }
+end
+
+function REBOOT_GRIPPER:init()
+    local reset_usb_msg = arduino.ResetUSBMessage:new()
+    arduino:msgq_enqueue_copy(reset_usb_msg)
 end
 
 function WAIT_SHAKING:init()

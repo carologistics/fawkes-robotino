@@ -155,11 +155,11 @@ clips-executive:
         wp-get-shelf: manipulate_wp{mps=?(m)S,safe_put=false, map_pos=true,
                               side="SHELF-?(spot)Y",target="WORKPIECE"}
         wp-put: manipulate_wp{mps=?(m)S, map_pos=true,
-                             side=?(side)S,target="CONVEYOR",c=?(com)S}
+                             side=?(side)S,target="CONVEYOR",c=?(com)S, dry_end=true}
         wp-put-slide-cc: manipulate_wp{mps=?(m)S, map_pos=true,
                          side="SLIDE", target="SLIDE"}
         wp-get: manipulate_wp{mps=?(m)S,safe_put=false, map_pos=true,
-                              side=?(side)S,target="WORKPIECE",c=?(com)S}
+                              side=?(side)S,target="WORKPIECE",c=?(com)S, dry_end=true}
         wp-discard: discard{}
         explore-and-turn: moveto_corner_turn{place=?(place)S,
                                            min_x=-5, max_x=0, min_y=0, max_y=6}

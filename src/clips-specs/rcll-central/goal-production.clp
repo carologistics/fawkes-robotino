@@ -274,7 +274,7 @@
         (verbosity NOISY) (is-executable FALSE)
         (params target-mps ?mps
                 cap-color ?cap-color)
-        (priority (float ?*PRODUCTION-BUFFER-PRIORITY*))
+        (priority (float 1000.0))
   )))
   (goal-meta-assert ?goal nil ?order-id nil)
   (return ?goal)
@@ -416,7 +416,7 @@
         (params  wp ?wp
                  target-mps ?target-mps
                  )
-        (priority (float ?*PRODUCTION-PAY-PRIORITY*))
+        (priority (float -2.0))
   )))
   (goal-meta-assert ?goal nil ?order-id nil)
   (return ?goal)
@@ -704,7 +704,7 @@
   (wm-fact (key refbox team-color) (value ?color))
   =>
   (bind ?g (goal-tree-assert-central-run-parallel SUPPORT-ROOT))
-  (modify ?g (meta do-not-finish) (priority ?*PRODUCTION-C3-PRIORITY*))
+  (modify ?g (meta do-not-finish) (priority 1000.0))
 )
 
 (defrule goal-production-create-wait-root
@@ -719,7 +719,7 @@
   (wm-fact (key refbox team-color) (value ?color))
   =>
   (bind ?g (goal-tree-assert-central-run-parallel WAIT-ROOT))
-  (modify ?g (meta do-not-finish) (priority 10000.0))
+  (modify ?g (meta do-not-finish) (priority 100.0))
 )
 
 (defrule goal-production-assert-wait-nothing-executable
@@ -759,7 +759,7 @@
   (not (wm-fact (key monitoring move-out-of-way high-prio long-wait args? r ?robot)))
   =>
   (printout t "reduce priority of " ?goal-id crlf)
-  (modify ?g (priority -1.0))
+  (modify ?g (priority -10.0))
 )
 
 (defrule goal-production-re-create-move-out-of-way-simple
@@ -780,7 +780,7 @@
   (foreach ?w (create$ WAIT1 WAIT2 WAIT3 WAIT4)
 	(if (not (member$ ?w ?wait-pos))
 	    then (bind ?f (goal-production-assert-move-out-of-way ?w))
-		  (goal-tree-update-child ?f ?parent-id -1.0)
+		  (goal-tree-update-child ?f ?parent-id -10.0)
 	)
   )
 )
@@ -1026,6 +1026,7 @@
   "Create 2 pay-with-base goals for each ring station"
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
   (wm-fact (key domain fact mps-type args? m ?rs t RS))
+  (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring-color rn ~ZERO)) 
   (goal (class SUPPORT-ROOT) (id ?root-id))
   (goal (class INSTRUCTION-ROOT) (id ?instruct-root-id))
   (not (and (goal (id ?some-id) (class PAY-FOR-RINGS-WITH-BASE) (params $? target-mps ?rs $?) (mode ~RETRACTED))
@@ -1050,7 +1051,8 @@
   (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side OUTPUT))
   (not (wm-fact (key order meta wp-for-order args? wp ?wp $?)))
   (wm-fact (key domain fact mps-type args? m ?ds t DS))
-
+  (wm-fact (key domain fact mps-type args? m ?rs1 t RS))
+  (wm-fact (key domain fact mps-type args? m ?rs2&:(neq ?rs1 ?rs2) t RS))
   (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
 
   (goal (class SUPPORT-ROOT) (id ?root-id))
@@ -1059,9 +1061,12 @@
   =>
   (bind ?discard-goal (goal-production-assert-discard ?wp ?ds nil))
   (bind ?instruct-goal (goal-production-assert-instruct-ds-discard ?wp ?ds))
-  (do-for-all-facts ((?mtype domain-fact)) (and (eq ?mtype:name mps-type) (member$ RS ?mtype:param-values))
-    (bind ?pay-goal-fact (goal-production-assert-pay-for-rings-with-base ?wp (nth$ 1 ?mtype:param-values) nil))
-    (modify ?pay-goal-fact (parent ?root-id) (priority (float (+ ?*PRODUCTION-PAY-PRIORITY* ?*PRODUCTION-PAY-CC-PRIORITY-INCREASE*))))
+  (foreach ?m (create$ ?rs1 ?rs2)
+    (do-for-fact ((?ring-spec domain-fact))
+      (and (eq ?ring-spec:name rs-ring-spec) (eq ?m (nth$ 1 ?ring-spec:param-values)) (neq ZERO (nth$ 3 ?ring-spec:param-values)))
+      (bind ?pay-goal-fact (goal-production-assert-pay-for-rings-with-base ?wp ?m nil))
+      (modify ?pay-goal-fact (parent ?root-id) (priority (float (+ ?*PRODUCTION-PAY-PRIORITY* ?*PRODUCTION-PAY-CC-PRIORITY-INCREASE*))))
+    )
   )
   (modify ?discard-goal (parent ?root-id))
   (modify ?instruct-goal (parent ?instruct-root-id))

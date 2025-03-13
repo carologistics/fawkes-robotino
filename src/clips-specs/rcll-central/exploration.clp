@@ -38,7 +38,7 @@
 	(wm-fact (key refbox version-info config args? name field_height) (value ?field-height))
 	(wm-fact (key refbox version-info config args? name field_width) (value ?field-width))
 	(wm-fact (key refbox version-info config args? name field_mirrored) (value ?mirrored))
-	(test (or (eq ?team-color CYAN) (eq ?team-clor MAGENTA)))
+	(test (or (eq ?team-color CYAN) (eq ?team-color MAGENTA)))
 	=>
 	(bind ?x_min 0)
 	(if (eq ?mirrored TRUE) then
@@ -172,10 +172,14 @@
 	?targets <- (wm-fact (key exploration targets args?) (values ))
 	?iteration <- (wm-fact (key exploration iteration args?) (value ?n))
 	(not (goal (class EXPLORATION-MOVE)))
+	(wm-fact (key refbox team-color) (value ?team))
 
 	(wm-fact (key exploration active) (value TRUE))
 	=>
-	(bind ?zones (create$ M-Z48 C-Z48 M-Z44 C-Z44 C-Z58 M-Z62 C-Z62 M-Z58 M-Z54 C-Z54 C-Z68 M-Z68 M-Z64 C-Z64))
+	(bind ?zones (create$ C-Z73 C-Z53 C-Z33 C-Z31))
+	(if (eq ?team MAGENTA) then
+		(bind ?zones (create$ M-Z73 M-Z53 M-Z33 M-Z31))
+	)
 	(modify ?targets (values ?zones))
 	(if (< ?n 100) then
 		(modify ?iteration (value (+ ?n 1)))
