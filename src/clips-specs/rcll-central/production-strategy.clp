@@ -746,6 +746,7 @@
     (wm-fact (key central agent robot args? r ?any-robot1))
     (wm-fact (key central agent robot-lost args? r ?any-robot2))
   )
+  (time $?now)
   ?strategy-fact <- (wm-fact (key strategy meta robot-active-count args?) (value ?value) (type INT))
   =>
   (bind ?count-robots 0)
