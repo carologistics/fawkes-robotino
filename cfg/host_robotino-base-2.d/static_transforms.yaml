@@ -21,4 +21,4 @@ plugins:
         child_frame: !frame end_effector_home
         trans_x: 0.139028
         trans_y: 0.058
-        trans_z: 0.105
+        trans_z: 0.085
