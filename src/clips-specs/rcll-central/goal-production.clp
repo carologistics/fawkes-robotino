@@ -1026,7 +1026,7 @@
   "Create 2 pay-with-base goals for each ring station"
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
   (wm-fact (key domain fact mps-type args? m ?rs t RS))
-  (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring-color rn ~ZERO)) 
+  (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring-color rn ~ZERO))
   (goal (class SUPPORT-ROOT) (id ?root-id))
   (goal (class INSTRUCTION-ROOT) (id ?instruct-root-id))
   (not (and (goal (id ?some-id) (class PAY-FOR-RINGS-WITH-BASE) (params $? target-mps ?rs $?) (mode ~RETRACTED))
@@ -1057,7 +1057,7 @@
 
   (goal (class SUPPORT-ROOT) (id ?root-id))
   (goal (class INSTRUCTION-ROOT) (id ?instruct-root-id))
-  (not (goal (class DISCARD) (params $? ?cs $?) (mode ~RETRACTED)))
+  (not (goal (class DISCARD) (params $? wp ?wp $?) (mode ~RETRACTED)))
   =>
   (bind ?discard-goal (goal-production-assert-discard ?wp ?ds nil))
   (bind ?instruct-goal (goal-production-assert-instruct-ds-discard ?wp ?ds))
@@ -1068,6 +1068,24 @@
       (modify ?pay-goal-fact (parent ?root-id) (priority (float (+ ?*PRODUCTION-PAY-PRIORITY* ?*PRODUCTION-PAY-CC-PRIORITY-INCREASE*))))
     )
   )
+  (modify ?discard-goal (parent ?root-id))
+  (modify ?instruct-goal (parent ?instruct-root-id))
+)
+
+(defrule goal-production-assert-discard-no-rs
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact cs-color args? m ?cs col ?cap-col))
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side OUTPUT))
+  (not (wm-fact (key order meta wp-for-order args? wp ?wp $?)))
+  (wm-fact (key domain fact mps-type args? m ?ds t DS))
+  (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
+  (not (wm-fact (key domain fact mps-type args? m ? t RS)))
+  (goal (class SUPPORT-ROOT) (id ?root-id))
+  (goal (class INSTRUCTION-ROOT) (id ?instruct-root-id))
+  (not (goal (class DISCARD) (params $? ?cs $?) (mode ~RETRACTED)))
+  =>
+  (bind ?discard-goal (goal-production-assert-discard ?wp ?ds nil))
+  (bind ?instruct-goal (goal-production-assert-instruct-ds-discard ?wp ?ds))
   (modify ?discard-goal (parent ?root-id))
   (modify ?instruct-goal (parent ?instruct-root-id))
 )
