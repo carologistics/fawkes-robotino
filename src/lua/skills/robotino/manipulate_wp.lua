@@ -357,7 +357,7 @@ fsm:define_states{
         "MOVE_BASE_AND_GRIPPER",
         SkillJumpState,
         skills = {{motor_move}},
-        final_to = "WAIT_FOR_GRIPPER",
+        final_to = "WAIT_SHAKING",
         fail_to = "RETRY"
     },
     {"WAIT_SHAKING", JumpState},
