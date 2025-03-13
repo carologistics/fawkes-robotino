@@ -468,7 +468,12 @@ ObjectTrackingThread::loop()
 	fawkes::tf::Stamped<fawkes::tf::Point> expected_pos;
 	laserline_get_expected_position(ll_, expected_pos);
 	expected_pos.stamp = Time(0, 0);
-	tf_listener->transform_point(cam_frame_, expected_pos, expected_pos_cam);
+	try {
+		tf_listener->transform_point(cam_frame_, expected_pos, expected_pos_cam);
+	} catch (tf::ExtrapolationException &e) {
+		logger->log_error(name(), "Extrapolation error: %s for Time 0, 0!", e.what());
+		return;
+	}
 
 	//get 3d position of closest bounding box to expected position in cam_gripper frame
 	float cur_object_pos[3];
@@ -550,7 +555,13 @@ ObjectTrackingThread::loop()
 		if (past_responses_.size() == 0) {
 			//use expected position as initialisation
 			//transform from map to target
-			tf_listener->transform_point(target_frame_, expected_pos, cur_object_pos_target);
+			try {
+				tf_listener->transform_point(target_frame_, expected_pos, cur_object_pos_target);
+			} catch (tf::ExtrapolationException &e) {
+				logger->log_info(name(), "Extrapolation error: %s", e.what());
+				expected_pos.stamp = fawkes::Time(0, 0);
+				tf_listener->transform_point(target_frame_, expected_pos, cur_object_pos_target);
+			}
 			detected = true;
 		}
 	}
@@ -623,7 +634,13 @@ ObjectTrackingThread::loop()
 	weighted_object_pos_target.setX(weighted_object_pos[0]);
 	weighted_object_pos_target.setY(weighted_object_pos[1]);
 	weighted_object_pos_target.setZ(weighted_object_pos[2]);
-	tf_listener->transform_point("base_link", weighted_object_pos_target, weighted_object_pos_base);
+	try {
+		tf_listener->transform_point("base_link", weighted_object_pos_target, weighted_object_pos_base);
+	} catch (tf::ExtrapolationException &e) {
+		logger->log_info(name(), "Extrapolation error: %s", e.what());
+		weighted_object_pos_target.stamp = fawkes::Time(0.0);
+		tf_listener->transform_point("base_link", weighted_object_pos_target, weighted_object_pos_base);
+	}
 	//-------------------------------------------------------------------------
 
 	//compute target frames
