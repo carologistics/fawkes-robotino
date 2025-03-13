@@ -139,7 +139,7 @@ plugins/object_tracking:
   buffer:
     shm_image_id: "picam"
     shm_image_id_res: "object_tracking"
-    frame: "cam_gripper"
+    frame: "gripper_cam"
 
   laser_line_fit:
     max_dist: 3

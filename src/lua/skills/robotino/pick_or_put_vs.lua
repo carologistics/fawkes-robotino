@@ -261,7 +261,7 @@ function MOVE_GRIPPER_RIGHT:init()
 
     self.args["gripper_commands"].x = 0
     self.args["gripper_commands"].y = y_clipped
-    self.args["gripper_commands"].z = z_clipped
+    self.args["gripper_commands"].z = 0.1
     self.args["gripper_commands"].command = "MOVEABS"
 end
 
@@ -301,7 +301,7 @@ function MOVE_GRIPPER_FORWARD:init()
 
     self.args["gripper_commands"].x = x_clipped
     self.args["gripper_commands"].y = y_clipped
-    self.args["gripper_commands"].z = z_clipped
+    self.args["gripper_commands"].z = 0.1
     self.args["gripper_commands"].sense = sense_wp
     self.args["gripper_commands"].command = "MOVEABS"
 end
@@ -340,13 +340,13 @@ function MOVE_GRIPPER_DOWN:init()
 
     fsm.vars.target_x = x_clipped
     fsm.vars.target_y = y_clipped
-    fsm.vars.target_z = z_given
+    fsm.vars.target_z = 0.08
 
     local z_clipped = math.max(0.01, math.min(z_given, z_max))
 
     self.args["gripper_commands"].x = x_clipped
     self.args["gripper_commands"].y = y_clipped
-    self.args["gripper_commands"].z = z_clipped
+    self.args["gripper_commands"].z = 0.08
     self.args["gripper_commands"].sense = sense_wp
     self.args["gripper_commands"].command = "MOVEABS"
 
@@ -372,9 +372,9 @@ function MOVE_GRIPPER_UP:init()
                       offset_z_slide_end
     end
 
-    self.args["gripper_commands"].x = arduino:x_position()
-    self.args["gripper_commands"].y = arduino:y_position() - y_max / 2
-    self.args["gripper_commands"].z = math.max(0.01, math.min(z_given, z_max))
+    self.args["gripper_commands"].x = fsm.vars.target_x
+    self.args["gripper_commands"].y = fsm.vars.target_y
+    self.args["gripper_commands"].z = 0.1
     self.args["gripper_commands"].command = "MOVEABS"
 end
 
@@ -389,7 +389,7 @@ function DRIVE_BACK:init()
     else
         move_abs_message:set_y(y_max / 2)
     end
-    move_abs_message:set_z(arduino:z_position())
+    move_abs_message:set_z(0.08)
     move_abs_message:set_target_frame("end_effector_home")
     arduino:msgq_enqueue_copy(move_abs_message)
 end
