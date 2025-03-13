@@ -1647,7 +1647,12 @@
     )
     (if (str-index INSTRUCT ?goal:class)
         then (bind ?priority (prio-from-complexity ?com))
-        else (bind ?priority (dynamic-prio-from-complexity-for-production-orders ?com ?step))
+        else 
+          (bind ?priority (dynamic-prio-from-complexity-for-production-orders ?com ?step))
+          (if (eq ?step DELIVER)
+           then
+            (bind ?priority (+ ?priority ?*DELIVER-PRIORITY-INCREASE*))
+          )
     )
     (modify ?goal (priority ?priority))
   )
