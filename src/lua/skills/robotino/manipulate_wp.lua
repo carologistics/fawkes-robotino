@@ -449,7 +449,7 @@ fsm:add_transitions{
     {"DRY_RUN_ABSENT", "FINAL", timeout = 2, desc = "Object not found"}, {
         "WAIT_SHAKING",
         "LOCK_TARGET",
-        timeout = 0.5,
+        timeout = 2,
         desc = "Waited to stop shaking, ready to grip"
     }, {
         "LOCK_TARGET",
