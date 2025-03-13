@@ -176,12 +176,20 @@
 
 	(wm-fact (key exploration active) (value TRUE))
 	=>
-	(bind ?zones (create$ C-Z73 C-Z53 C-Z33 C-Z31))
-	(if (eq ?team MAGENTA) then
-		(bind ?zones (create$ M-Z73 M-Z53 M-Z33 M-Z31))
+	(if (< ?n 2) then
+		(bind ?zones (create$ C-Z73 C-Z53 C-Z33 C-Z31 ))
+		(if (eq ?team MAGENTA) then
+			(bind ?zones (create$ M-Z73 M-Z53 M-Z33 M-Z31))
+		)
+		(modify ?targets (values ?zones))
+	else
+		(bind ?zones (create$ C-Z66 C-Z46 C-Z16 C-Z58))
+		(if (eq ?team MAGENTA) then
+			(bind ?zones (create$ M-Z66 M-Z46 M-Z16 M-Z58))
+		)
+		(modify ?targets (values ?zones))
 	)
-	(modify ?targets (values ?zones))
-	(if (< ?n 100) then
+	(if (< ?n 1) then
 		(modify ?iteration (value (+ ?n 1)))
 	)
 )
