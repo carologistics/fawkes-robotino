@@ -855,7 +855,7 @@ end
 function PICK_FAILED:exit() fsm.vars.error = "workpiece still there" end
 
 function PUT_FAILED:exit()
-    if vars.sense and not sensed_wp() then
+    if fsm.vars.sense and not sensed_wp() then
         fsm.vars.error = "workpiece lost"
     else
         fsm.vars.error = "workpiece not found"
