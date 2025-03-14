@@ -631,7 +631,7 @@
 	(goal (id ?goal-id) (mode DISPATCHED))
 	(plan (id ?plan-id) (goal-id ?goal-id))
 
-	(plan-action (id ?id-put&:(eq (- ?id-check 1) ?id-put)) (goal-id ?goal-id) (plan-id ?plan-id)
+	(plan-action (id ?id-put) (goal-id ?goal-id) (plan-id ?plan-id)
 				 (action-name wp-put)
 				 (param-values ?robot ?wp ?mps ?side ?complexity)
 				 (state FAILED)
@@ -654,7 +654,7 @@
 				 (action-name wp-get)
 				 (param-values ?robot ?wp ?mps ?side $?)
 				 (state FAILED)
-				 (error-msg ?msg:(str-index "workpiece still there" ?msg)))
+				 (error-msg ?msg&:(str-index "workpiece still there" ?msg)))
 	=>
 	(printout error "No WP was expected to be at " ?mps " (" ?side") but there was one detected, fail the goal.")
 	(assert (wm-fact (key monitoring fail-goal args? g ?goal-id r WP-NOT-PICKED)))
