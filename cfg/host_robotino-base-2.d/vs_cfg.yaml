@@ -34,8 +34,8 @@ plugins/vs_offsets:
       z: 0.02
 
     top:
-      x: 0.035
-      z: 0.03
+      x: 0.05
+      z: 0.017
 
     end:
       z: 0.045
