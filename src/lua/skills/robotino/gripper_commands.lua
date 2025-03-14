@@ -72,12 +72,11 @@ function tf_ready()
     if not arduino:is_final() then return false end
 
     local bb_stamp = arduino:timestamp()
-    if not tf:can_transform("gripper", "end_effector_home", bb_stamp) then
-        return false
-    end
+    if not tf:can_transform("gripper_end_effector", "end_effector_home",
+                            bb_stamp) then return false end
 
     local transform = fawkes.tf.StampedTransform:new()
-    tf:lookup_transform("gripper", "end_effector_home", transform)
+    tf:lookup_transform("gripper_end_effector", "end_effector_home", transform)
     if transform.stamp:in_usec() < bb_stamp:in_usec() then return false end
     return true
 end

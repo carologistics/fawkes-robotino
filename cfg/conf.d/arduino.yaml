@@ -32,8 +32,8 @@ arduino:
 
   # maximum space in x, y and z in meters
   x_max: 0.24
-  y_max: 0.075
-  z_max: 0.057
+  y_max: 0.24
+  z_max: 0.15
 
   # minmum space in x, y and z in meters
   x_min: 0
