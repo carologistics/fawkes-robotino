@@ -55,8 +55,8 @@ local y_max = config:get_float("/arduino/y_max") -- gripper max value in y direc
 local z_max = config:get_float("/arduino/z_max") -- gripper max value in z direction
 
 -- read vs configs
-fsm.vars.new_arm = config:get_bool("/plugins/vs_offsets/new_gripper")
-if fsm.vars.new_arm ~= true then fsm.vars.new_arm = false end
+local new_arm = config:get_int("/plugins/vs_offsets/new_gripper")
+-- if fsm.vars.new_arm ~= true then fsm.vars.new_arm = false end
 local offset_x_workpiece_target_frame = config:get_float(
                                             "plugins/vs_offsets/workpiece/target/x")
 local offset_x_shelf_target_frame = config:get_float(
@@ -183,12 +183,12 @@ fsm:add_transitions{
     {"INIT", "CHOOSE_FORWARD_ROUTINE", true, desc = "Start Routine"}, {
         "CHOOSE_FORWARD_ROUTINE",
         "MOVE_GRIPPER_FORWARD",
-        cond = "vars.new_arm",
+        cond = "vars.new_arm == 1",
         desc = "Move directly to workpiece with new arm"
     }, {
         "CHOOSE_FORWARD_ROUTINE",
         "MOVE_GRIPPER_RIGHT",
-        cond = "not vars.new_arm",
+        cond = "vars.new_arm ~= 1",
         desc = "Move right with old arm"
     }, {
         "CHOOSE_ACTION",
@@ -210,7 +210,7 @@ function INIT:init()
         z = object_tracking_if:gripper_frame(2),
         ori = fawkes.tf.create_quaternion_from_yaw(0)
     }, "base_link", "end_effector_home")
-
+    fsm.vars.new_arm = new_arm
     fsm.vars.gripper_target = {x = 0.0, y = 0.0, z = 0.0}
     if fsm.vars.x ~= nil and fsm.vars.x > 0.0 then
         fsm.vars.gripper_target.x = fsm.vars.x
@@ -384,7 +384,7 @@ function DRIVE_BACK:init()
     -- move gripper back
     move_abs_message = arduino.MoveXYZAbsMessage:new()
     move_abs_message:set_x(0.0)
-    if fsm.vars.new_arm then
+    if fsm.vars.new_arm == 1 then
         move_abs_message:set_y(-0.07)
     else
         move_abs_message:set_y(y_max / 2)
