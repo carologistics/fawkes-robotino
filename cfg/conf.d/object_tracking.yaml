@@ -120,7 +120,7 @@ plugins/object_tracking:
 
   # maximal distance between yolo response and last weighted average to accept
   #  as target object
-  max_acceptable_dist: 0.15
+  max_acceptable_dist: 0.1
 
   yolo:
     weights_path: "../cfg/yolo/best.onnx"
