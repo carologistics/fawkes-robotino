@@ -59,7 +59,6 @@ fawkes/meta_plugins:
     - laser_front_dist
     - pos3d-publisher
   m-ros2-base:
-    - bbsync
     - ros2
     - ros2-tf2-oneway
     - ros2-rto-data-in
