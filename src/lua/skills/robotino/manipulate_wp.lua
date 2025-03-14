@@ -519,20 +519,13 @@ fsm:add_transitions{
         "RETRY",
         cond = sensed_wp,
         desc = "Put failed, but workpiece still in gripper, so try again"
-    },
-    {"PUT_FAILED", "FAILED", cond = true, desc = "Put failed, workpiece lost"},
-    {
+    }, {"PUT_FAILED", "FAILED", cond = true, desc = "workpiece lost"}, {
         "PICK_SUCCESSFUL",
         "FINAL",
         cond = "not vars.sense",
         desc = "Pick successful, but no sensing"
     }, {"PICK_SUCCESSFUL", "FINAL", cond = sensed_wp, desc = "Pick successful"},
-    {
-        "PICK_SUCCESSFUL",
-        "FAILED",
-        cond = true,
-        desc = "Pick failed, workpiece lost"
-    }, {
+    {"PICK_SUCCESSFUL", "FAILED", cond = true, desc = "workpiece lost"}, {
         "PICK_FAILED",
         "RETRY",
         cond = "not vars.sense",
@@ -621,14 +614,6 @@ function START_TRACKING:init()
 
     -- move to default pose
     move_gripper_default_pose()
-end
-
-function START_TRACKING:exit()
-    if fsm.vars.nr_tries > MAX_TRIES then
-        fsm.vars.error = "too many retries"
-    else
-        fsm.vars.error = "OT interface closed"
-    end
 end
 
 function FIND_LASER_LINE:init()
@@ -867,9 +852,9 @@ function CHECK_FOR_WP:loop()
     end
 end
 
-function PUT_FAILED:exit() fsm.vars.error = "put failed, workpiece lost" end
+function PUT_FAILED:exit() fsm.vars.error = "workpiece lost" end
 
-function PICK_SUCCESSFUL:exit() fsm.vars.error = "pick failed, workpiece lost" end
+function PICK_SUCCESSFUL:exit() fsm.vars.error = "workpiece lost" end
 
 -- end tracking afterwards
 
