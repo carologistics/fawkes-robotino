@@ -53,7 +53,7 @@ fawkes/bbsync:
       port: !tcp-port 1910
       reading:
         skiller: SkillerInterface::Skiller=/robot1/Skiller
-        pose: Position3DInterface::Pose=/robot1/Pose
+        pose: Position3DInterface::PoseAgent=/robot1/Pose
         navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/robot1/navgraph-generator-mps
         navgraph-generator: NavGraphGeneratorInterface::/navgraph-generator=/robot1/navgraph-generator
         navigator: NavigatorInterface::Navigator=/robot1/Navigator
@@ -68,7 +68,7 @@ fawkes/bbsync:
       port: !tcp-port 1910
       reading:
         skiller: SkillerInterface::Skiller=/robot2/Skiller
-        pose: Position3DInterface::Pose=/robot2/Pose
+        pose: Position3DInterface::PoseAgent=/robot2/Pose
         navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/robot2/navgraph-generator-mps
         navgraph-generator: NavGraphGeneratorInterface::/navgraph-generator=/robot2/navgraph-generator
         navigator: NavigatorInterface::Navigator=/robot2/Navigator
@@ -83,7 +83,7 @@ fawkes/bbsync:
       port: !tcp-port 1910
       reading:
         skiller: SkillerInterface::Skiller=/robot3/Skiller
-        pose: Position3DInterface::Pose=/robot3/Pose
+        pose: Position3DInterface::PoseAgent=/robot3/Pose
         navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/robot3/navgraph-generator-mps
         navgraph-generator: NavGraphGeneratorInterface::/navgraph-generator=/robot3/navgraph-generator
         navigator: NavigatorInterface::Navigator=/robot3/Navigator
