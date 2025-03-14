@@ -1027,6 +1027,7 @@
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
   (wm-fact (key domain fact mps-type args? m ?rs t RS))
   (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring-color rn ~ZERO))
+  (wm-fact (key domain fact rs-filled-with args? m ?rs n ZERO))
   (goal (class SUPPORT-ROOT) (id ?root-id))
   (goal (class INSTRUCTION-ROOT) (id ?instruct-root-id))
   (not (and (goal (id ?some-id) (class PAY-FOR-RINGS-WITH-BASE) (params $? target-mps ?rs $?) (mode ~RETRACTED))
