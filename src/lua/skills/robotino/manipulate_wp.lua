@@ -87,12 +87,11 @@ local default_x = 0
 local default_y = y_max / 2
 local default_z = 0.03
 
-local new_arm = config:get_bool("/plugins/vs_offsets/new_gripper")
-if new_arm ~= true then new_arm = false end
-
-if new_arm then
-    default_x = 0.0
-    default_y = -0.07
+local new_arm = config:get_int("/plugins/vs_offsets/new_gripper")
+-- if new_arm ~= true then new_arm = false end
+if new_arm == 1 then
+    default_x = 0.01
+    default_y = 0.01
     default_z = 0.025
 end
 
@@ -100,7 +99,7 @@ local default_x_exit = 0.06
 local default_y_exit = -0.03
 local default_z_exit = 0.0
 
-if new_arm then
+if new_arm == 1 then
     default_x_exit = 0.0
     default_y_exit = 0.0
     default_z_exit = 0.0
@@ -426,7 +425,7 @@ fsm:add_transitions{
         desc = "dry run with no object expected"
     }, {
         "AT_LASER_LINE",
-        "MOVE_BASE_AND_GRIPPER",
+        "WAIT_FOR_GRIPPER",
         cond = "vars.consecutive_detections > 2",
         desc = "Found Object"
     }, {"AT_LASER_LINE", "FAILED", timeout = 2, desc = "Object not found"}, {
@@ -436,7 +435,7 @@ fsm:add_transitions{
         desc = "Found Object"
     }, {
         "WAIT_FOR_GRIPPER",
-        "WAIT_SHAKING",
+        "MOVE_BASE_AND_GRIPPER",
         cond = gripper_pose_reached,
         desc = "Default gripper pose reached"
     },

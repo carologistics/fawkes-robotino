@@ -70,7 +70,7 @@ fawkes/meta_plugins:
     - pos3d-publisher
     - navgraph
     - laser-lines
-    - arduino
+    - gigatino
     - static-transforms
     - webview
     - fvbase
@@ -80,4 +80,4 @@ fawkes/meta_plugins:
     - skiller-rest-api
     - skiller_motor_state
     - object-tracking
-    - tag_vision
+    #- tag_vision

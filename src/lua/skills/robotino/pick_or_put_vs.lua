@@ -55,8 +55,8 @@ local y_max = config:get_float("/arduino/y_max") -- gripper max value in y direc
 local z_max = config:get_float("/arduino/z_max") -- gripper max value in z direction
 
 -- read vs configs
-fsm.vars.new_arm = config:get_bool("/plugins/vs_offsets/new_gripper")
-if fsm.vars.new_arm ~= true then fsm.vars.new_arm = false end
+local new_arm = config:get_int("/plugins/vs_offsets/new_gripper")
+-- if fsm.vars.new_arm ~= true then fsm.vars.new_arm = false end
 local offset_x_workpiece_target_frame = config:get_float(
                                             "plugins/vs_offsets/workpiece/target/x")
 local offset_x_shelf_target_frame = config:get_float(
@@ -183,12 +183,12 @@ fsm:add_transitions{
     {"INIT", "CHOOSE_FORWARD_ROUTINE", true, desc = "Start Routine"}, {
         "CHOOSE_FORWARD_ROUTINE",
         "MOVE_GRIPPER_FORWARD",
-        cond = "vars.new_arm",
+        cond = "vars.new_arm == 1",
         desc = "Move directly to workpiece with new arm"
     }, {
         "CHOOSE_FORWARD_ROUTINE",
         "MOVE_GRIPPER_RIGHT",
-        cond = "not vars.new_arm",
+        cond = "vars.new_arm ~= 1",
         desc = "Move right with old arm"
     }, {
         "CHOOSE_ACTION",
@@ -210,7 +210,7 @@ function INIT:init()
         z = object_tracking_if:gripper_frame(2),
         ori = fawkes.tf.create_quaternion_from_yaw(0)
     }, "base_link", "end_effector_home")
-
+    fsm.vars.new_arm = new_arm
     fsm.vars.gripper_target = {x = 0.0, y = 0.0, z = 0.0}
     if fsm.vars.x ~= nil and fsm.vars.x > 0.0 then
         fsm.vars.gripper_target.x = fsm.vars.x
@@ -261,7 +261,7 @@ function MOVE_GRIPPER_RIGHT:init()
 
     self.args["gripper_commands"].x = 0
     self.args["gripper_commands"].y = y_clipped
-    self.args["gripper_commands"].z = z_clipped
+    self.args["gripper_commands"].z = 0.1
     self.args["gripper_commands"].command = "MOVEABS"
 end
 
@@ -301,7 +301,7 @@ function MOVE_GRIPPER_FORWARD:init()
 
     self.args["gripper_commands"].x = x_clipped
     self.args["gripper_commands"].y = y_clipped
-    self.args["gripper_commands"].z = z_clipped
+    self.args["gripper_commands"].z = 0.1
     self.args["gripper_commands"].sense = sense_wp
     self.args["gripper_commands"].command = "MOVEABS"
 end
@@ -340,13 +340,13 @@ function MOVE_GRIPPER_DOWN:init()
 
     fsm.vars.target_x = x_clipped
     fsm.vars.target_y = y_clipped
-    fsm.vars.target_z = z_given
+    fsm.vars.target_z = 0.08
 
     local z_clipped = math.max(0.01, math.min(z_given, z_max))
 
     self.args["gripper_commands"].x = x_clipped
     self.args["gripper_commands"].y = y_clipped
-    self.args["gripper_commands"].z = z_clipped
+    self.args["gripper_commands"].z = 0.08
     self.args["gripper_commands"].sense = sense_wp
     self.args["gripper_commands"].command = "MOVEABS"
 
@@ -372,9 +372,9 @@ function MOVE_GRIPPER_UP:init()
                       offset_z_slide_end
     end
 
-    self.args["gripper_commands"].x = arduino:x_position()
-    self.args["gripper_commands"].y = arduino:y_position() - y_max / 2
-    self.args["gripper_commands"].z = math.max(0.01, math.min(z_given, z_max))
+    self.args["gripper_commands"].x = fsm.vars.target_x
+    self.args["gripper_commands"].y = fsm.vars.target_y
+    self.args["gripper_commands"].z = 0.1
     self.args["gripper_commands"].command = "MOVEABS"
 end
 
@@ -384,12 +384,12 @@ function DRIVE_BACK:init()
     -- move gripper back
     move_abs_message = arduino.MoveXYZAbsMessage:new()
     move_abs_message:set_x(0.0)
-    if fsm.vars.new_arm then
+    if fsm.vars.new_arm == 1 then
         move_abs_message:set_y(-0.07)
     else
         move_abs_message:set_y(y_max / 2)
     end
-    move_abs_message:set_z(arduino:z_position())
+    move_abs_message:set_z(0.08)
     move_abs_message:set_target_frame("end_effector_home")
     arduino:msgq_enqueue_copy(move_abs_message)
 end

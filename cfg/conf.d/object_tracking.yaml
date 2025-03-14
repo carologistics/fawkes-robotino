@@ -23,7 +23,7 @@ plugins/picam_client:
       slide: false
 
   camera_matrix:
-    rotation: 90
+    rotation: 270
     old_ppx: 247.16991942710536
     old_ppy: 311.0215589376087
     old_f_y: 761.4091782824479
@@ -112,7 +112,7 @@ plugins/object_tracking:
 
   # frame to use for the weighted average and the target frames
   target_frame: "/odom"
-  camera_frame: "cam_gripper"
+  camera_frame: "gripper_cam"
 
   tf:
     object_pos_frame: "object_pos"
@@ -139,7 +139,7 @@ plugins/object_tracking:
   buffer:
     shm_image_id: "picam"
     shm_image_id_res: "object_tracking"
-    frame: "cam_gripper"
+    frame: "gripper_cam"
 
   laser_line_fit:
     max_dist: 3
