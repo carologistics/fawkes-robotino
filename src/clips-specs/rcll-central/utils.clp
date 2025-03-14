@@ -94,7 +94,7 @@
   ; increas complexity by this for each solved step
   ?*PRODUCTION-PRIORITY-INCREASE* = 100
   ; further bump any delivery goal to most urgent level
-  ?*DELIVER-PRIORITY-INCREASE* = 1000
+  ?*DELIVER-PRIORITY-INCREASE* = 2000
   ; Support priorities
   ; these values should be selected, such that the respective base priorities
   ; are in a range from 1 to ?*PRODUCTION-PRIO-BASE-STEP*.
