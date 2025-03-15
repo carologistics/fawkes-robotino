@@ -640,6 +640,7 @@
 	(printout error "WP " ?wp " was expected to be at " ?mps " (" ?side") but could not be detected. Assume WP was lost.")
 	(assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))
 	(assert (wm-fact (key monitoring fail-goal args? g ?goal-id r WP-LOST)))
+	(assert (domain-fact (name can-hold) (param-values ?robot)))
 )
 
 (defrule execution-monitoring-wp-get-failed-workpiece-detected
