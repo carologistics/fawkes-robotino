@@ -66,7 +66,7 @@ local V_MAX = {x = 0.35, y = 0.35, ori = 1.4} -- ultimate limit
 local V_MAX_CAM = {x = 0.06, y = 0.06, ori = 0.3}
 local V_MIN = {x = 0.006, y = 0.006, ori = 0.02} -- below the motor won't even start
 local TOLERANCE = {x = 0.04, y = 0.04, ori = 0.1} -- accuracy
-local TOLERANCE_VS = {x = 0.03, y = 0.02, ori = 0.02}
+local TOLERANCE_VS = {x = 0.03, y = 0.02, ori = 0.01}
 local TOL_ORI_START = 0.2
 local TOLERANCE_EE = {x = 0.15, y = 0.04, ori = 0.01} -- tolerance for end_early condition
 local TOLERANCE_CAM = {x = 0.005, y = 0.0015, ori = 0.01}
@@ -179,6 +179,14 @@ function set_speed(self)
                 self.fsm.vars.tolerance_arg["y"]) then
                 fsm.vars.rotating = true
             end
+            if fsm.vars.rotating == true and
+                (math.abs(scalar(dist_target.ori)) <
+                    fsm.vars.tolerance_arg["ori"]) then
+                fsm.vars.rotation_done = true
+            else
+                fsm.vars.rotation_done = false
+            end
+
             if ((k == "x" or k == "y") and not fsm.vars.rotating) or
                 (k == "ori" and fsm.vars.rotating) then
                 local delta_dist = math.abs(
@@ -271,7 +279,8 @@ end
 
 function drive_done(self)
     return self.fsm.vars.speed.x == 0 and self.fsm.vars.speed.y == 0 and
-               self.fsm.vars.speed.ori == 0
+               self.fsm.vars.speed.ori == 0 and fsm.vars.rotation_done
+
 end
 
 function close_enough(self)
@@ -434,6 +443,8 @@ function INIT:init()
     self.fsm.vars.start_time = fawkes.Time:new():in_msec()
     self.fsm.vars.only_rotate = false
     self.fsm.vars.rotating = true
+    self.fsm.vars.rotation_done = false
+
     if self.fsm.vars.x == 0 and self.fsm.vars.y == 0 then
         self.fsm.vars.only_rotate = true
     end
