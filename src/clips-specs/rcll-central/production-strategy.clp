@@ -1592,78 +1592,78 @@
 
 ; -- decrease priority for standing orders until game-time 10
 
-(defrule production-strategy-decrease-priority-for-standing-orders
-  "If there is an active standing order, decrease the goal priority until half time"
-  (wm-fact (key refbox game-time) (values ?curr-time $?))
-  (wm-fact (key refbox order ?order-id delivery-end) (type UINT) (value ?deadline))
-  (wm-fact (key refbox order ?order-id delivery-begin) (value ?begin))
-  (test (and (eq ?deadline ?*FULL-GAME-TIME*) (eq ?begin 0) (< ?curr-time ?*HALF-GAME-TIME*)))
-  (wm-fact (key strategy meta active-orders) (values $?values&:(member$ ?order-id ?values)))
-  (not (wm-fact (key strategy meta priority decrease standing-order args? order-id ?order-id) (value ?val&:(eq ?val ?*PRODUCTION-STANDING-ORDER-PRIORITY*))))
-  =>
-  (bind ?priority ?*PRODUCTION-STANDING-ORDER-PRIORITY*)
-  (assert (wm-fact (key strategy meta priority decrease standing-order args? order-id ?order-id) (value ?priority)))
-  (delayed-do-for-all-facts ((?goal goal) (?goal-meta goal-meta))
-    (and
-      (eq ?goal:mode FORMULATED)
-      (eq ?goal-meta:goal-id ?goal:id)
-      (eq ?goal-meta:order-id ?order-id)
-      (>= ?goal:priority ?*PRODUCTION-C0-PRIORITY*)
-    )
-    (modify ?goal (priority ?priority))
-  )
-)
-
-(defrule production-strategy-revert-priority-for-standing-orders
-  ?wf <- (wm-fact (key strategy meta priority decrease standing-order args? order-id ?order-id))
-  (wm-fact (key strategy meta active-orders) (values $? ?order-id $?))
-  (wm-fact (key refbox game-time) (values ?curr-time $?))
-  (wm-fact (key refbox order ?order-id delivery-begin) (value ?begin))
-  (wm-fact (key refbox order ?order delivery-end) (type UINT) (value ?deadline))
-  (test (and (eq ?deadline ?*FULL-GAME-TIME*) (eq ?begin 0) (>= ?curr-time ?*HALF-GAME-TIME*)))
-  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
-  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?com))
-  =>
-  (delayed-do-for-all-facts ((?goal goal) (?goal-meta goal-meta))
-    (and
-      (eq ?goal:mode FORMULATED)
-      (eq ?goal-meta:goal-id ?goal:id)
-      (eq ?goal-meta:order-id ?order-id)
-      (eq ?goal:priority ?*PRODUCTION-STANDING-ORDER-PRIORITY*)
-    )
-    ;figure out the correct "next-step" from the goal and bind it to ?step
-    (if (str-index CAP ?goal:class)
-        then (bind ?step CAP)
-	else (if (str-index DELIVER ?goal:class)
-                 then (bind ?step DELIVER)
-                 else (if (str-index RING ?goal:class)
-                          then (bind ?step (switch ?goal-meta:ring-nr
-                                           (case ONE then RING1)
-                                           (case TWO then RING2)
-                                           (case THREE then RING3)
-                          ))
-                 )
-        )
-    )
-    (if (str-index INSTRUCT ?goal:class)
-        then (bind ?priority (prio-from-complexity ?com))
-        else 
-          (bind ?priority (dynamic-prio-from-complexity-for-production-orders ?com ?step))
-          (if (eq ?step DELIVER)
-           then
-            (bind ?priority (+ ?priority ?*DELIVER-PRIORITY-INCREASE*))
-          )
-    )
-    (modify ?goal (priority ?priority))
-  )
-  (retract ?wf)
-)
-
-(defrule production-strategy-apply-priority-for-standing-orders
-  ?g <- (goal (id ?goal-id) (mode FORMULATED) (priority ?prio))
-  (goal-meta (goal-id ?goal-id) (order-id ?order-id))
-  (wm-fact (key strategy meta priority decrease standing-order args? order-id ?order-id) (value ?lower-priority))
-  (test (>= ?prio ?*PRODUCTION-C0-PRIORITY*))
-  =>
-  (modify ?g (priority ?lower-priority))
-)
+;(defrule production-strategy-decrease-priority-for-standing-orders
+;  "If there is an active standing order, decrease the goal priority until half time"
+;  (wm-fact (key refbox game-time) (values ?curr-time $?))
+;  (wm-fact (key refbox order ?order-id delivery-end) (type UINT) (value ?deadline))
+;  (wm-fact (key refbox order ?order-id delivery-begin) (value ?begin))
+;  (test (and (eq ?deadline ?*FULL-GAME-TIME*) (eq ?begin 0) (< ?curr-time ?*HALF-GAME-TIME*)))
+;  (wm-fact (key strategy meta active-orders) (values $?values&:(member$ ?order-id ?values)))
+;  (not (wm-fact (key strategy meta priority decrease standing-order args? order-id ?order-id) (value ?val&:(eq ?val ?*PRODUCTION-STANDING-ORDER-PRIORITY*))))
+;  =>
+;  (bind ?priority ?*PRODUCTION-STANDING-ORDER-PRIORITY*)
+;  (assert (wm-fact (key strategy meta priority decrease standing-order args? order-id ?order-id) (value ?priority)))
+;  (delayed-do-for-all-facts ((?goal goal) (?goal-meta goal-meta))
+;    (and
+;      (eq ?goal:mode FORMULATED)
+;      (eq ?goal-meta:goal-id ?goal:id)
+;      (eq ?goal-meta:order-id ?order-id)
+;      (>= ?goal:priority ?*PRODUCTION-C0-PRIORITY*)
+;    )
+;    (modify ?goal (priority ?priority))
+;  )
+;)
+;
+;(defrule production-strategy-revert-priority-for-standing-orders
+;  ?wf <- (wm-fact (key strategy meta priority decrease standing-order args? order-id ?order-id))
+;  (wm-fact (key strategy meta active-orders) (values $? ?order-id $?))
+;  (wm-fact (key refbox game-time) (values ?curr-time $?))
+;  (wm-fact (key refbox order ?order-id delivery-begin) (value ?begin))
+;  (wm-fact (key refbox order ?order delivery-end) (type UINT) (value ?deadline))
+;  (test (and (eq ?deadline ?*FULL-GAME-TIME*) (eq ?begin 0) (>= ?curr-time ?*HALF-GAME-TIME*)))
+;  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order-id))
+;  (wm-fact (key domain fact order-complexity args? ord ?order-id com ?com))
+;  =>
+;  (delayed-do-for-all-facts ((?goal goal) (?goal-meta goal-meta))
+;    (and
+;      (eq ?goal:mode FORMULATED)
+;      (eq ?goal-meta:goal-id ?goal:id)
+;      (eq ?goal-meta:order-id ?order-id)
+;      (eq ?goal:priority ?*PRODUCTION-STANDING-ORDER-PRIORITY*)
+;    )
+;    ;figure out the correct "next-step" from the goal and bind it to ?step
+;    (if (str-index CAP ?goal:class)
+;        then (bind ?step CAP)
+;	else (if (str-index DELIVER ?goal:class)
+;                 then (bind ?step DELIVER)
+;                 else (if (str-index RING ?goal:class)
+;                          then (bind ?step (switch ?goal-meta:ring-nr
+;                                           (case ONE then RING1)
+;                                           (case TWO then RING2)
+;                                           (case THREE then RING3)
+;                          ))
+;                 )
+;        )
+;    )
+;    (if (str-index INSTRUCT ?goal:class)
+;        then (bind ?priority (prio-from-complexity ?com))
+;        else 
+;          (bind ?priority (dynamic-prio-from-complexity-for-production-orders ?com ?step))
+;          (if (eq ?step DELIVER)
+;           then
+;            (bind ?priority (+ ?priority ?*DELIVER-PRIORITY-INCREASE*))
+;          )
+;    )
+;    (modify ?goal (priority ?priority))
+;  )
+;  (retract ?wf)
+;)
+;
+;(defrule production-strategy-apply-priority-for-standing-orders
+;  ?g <- (goal (id ?goal-id) (mode FORMULATED) (priority ?prio))
+;  (goal-meta (goal-id ?goal-id) (order-id ?order-id))
+;  (wm-fact (key strategy meta priority decrease standing-order args? order-id ?order-id) (value ?lower-priority))
+;  (test (>= ?prio ?*PRODUCTION-C0-PRIORITY*))
+;  =>
+;  (modify ?g (priority ?lower-priority))
+;)
