@@ -380,6 +380,7 @@ end
 
 function DRIVE_BACK:init()
     self.args["motor_move"].x = drive_back_x
+    self.args["motor_move"].timeout_fail = 10,
 
     -- move gripper back
     move_abs_message = arduino.MoveXYZAbsMessage:new()
