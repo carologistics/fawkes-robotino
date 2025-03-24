@@ -839,7 +839,7 @@
   ;there is a root goal for an existing order
   (goal (id ?root) (mode ~RETRACTED))
   (goal-meta (goal-id ?root) (root-for-order ?order-id))
-  (wm-fact (key domain fact order-complexity args? ord ?order-id comp C0))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com C0))
   ;it is not in the active list yet
   (test (not (member$ ?order-id ?values)))
   =>
@@ -849,7 +849,7 @@
 (defrule production-strategy-remove-from-active-orders-C0
   (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   ;there is a retracted root goal
-  (wm-fact (key domain fact order-complexity args? ord ?order-id comp C0))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com C0))
   (or
     (and
       (goal (id ?root) (mode RETRACTED))
@@ -871,7 +871,7 @@
   ;there is a root goal for an existing order
   (goal (id ?root) (mode ~RETRACTED))
   (goal-meta (goal-id ?root) (root-for-order ?order-id))
-  (wm-fact (key domain fact order-complexity args? ord ?order-id comp C1))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com C1))
   ;it is not in the active list yet
   (test (not (member$ ?order-id ?values)))
   =>
@@ -881,7 +881,7 @@
 (defrule production-strategy-remove-from-active-orders-C1
   (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   ;there is a retracted root goal
-  (wm-fact (key domain fact order-complexity args? ord ?order-id comp C1))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com C1))
   (or
     (and
       (goal (id ?root) (mode RETRACTED))
@@ -903,7 +903,7 @@
   ;there is a root goal for an existing order
   (goal (id ?root) (mode ~RETRACTED))
   (goal-meta (goal-id ?root) (root-for-order ?order-id))
-  (wm-fact (key domain fact order-complexity args? ord ?order-id comp C2))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com C2))
   ;it is not in the active list yet
   (test (not (member$ ?order-id ?values)))
   =>
@@ -913,7 +913,7 @@
 (defrule production-strategy-remove-from-active-orders-C2
   (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   ;there is a retracted root goal
-  (wm-fact (key domain fact order-complexity args? ord ?order-id comp C2))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com C2))
   (or
     (and
       (goal (id ?root) (mode RETRACTED))
@@ -935,7 +935,7 @@
   ;there is a root goal for an existing order
   (goal (id ?root) (mode ~RETRACTED))
   (goal-meta (goal-id ?root) (root-for-order ?order-id))
-  (wm-fact (key domain fact order-complexity args? ord ?order-id comp C3))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com C3))
   ;it is not in the active list yet
   (test (not (member$ ?order-id ?values)))
   =>
@@ -945,7 +945,7 @@
 (defrule production-strategy-remove-from-active-orders-C3
   (declare (salience ?*SALIENCE-ORDER-SELECTION*))
   ;there is a retracted root goal
-  (wm-fact (key domain fact order-complexity args? ord ?order-id comp C3))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com C3))
   (or
     (and
       (goal (id ?root) (mode RETRACTED))
