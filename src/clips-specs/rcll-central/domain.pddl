@@ -227,9 +227,6 @@
 	:parameters (?m - mps ?side - mps-side ?wp - workpiece
 	             ?basecol - base-color)
 	:precondition (and (mps-type ?m BS)
-	                   (or (mps-state ?m PROCESSING)
-	                       (mps-state ?m READY-AT-OUTPUT)
-	                   )
 	                   (bs-prepared-color ?m ?basecol)
 	                   (bs-prepared-side ?m ?side)
 	                   (wp-base-color ?wp BASE_NONE)
@@ -247,9 +244,6 @@
 (:action cs-mount-cap
 	:parameters (?m - mps ?wp - workpiece ?capcol - cap-color)
 	:precondition (and (mps-type ?m CS)
-	                   (or (mps-state ?m PROCESSING)
-	                       (mps-state ?m READY-AT-OUTPUT)
-	                   )
 	                   (cs-buffered ?m ?capcol)
 	                   (cs-prepared-for ?m MOUNT_CAP)
 	                   (wp-usable ?wp)
@@ -274,9 +268,6 @@
 (:action cs-retrieve-cap
 	:parameters (?m - mps ?cc - cap-carrier ?capcol - cap-color)
 	:precondition (and (mps-type ?m CS)
-	                   (or (mps-state ?m PROCESSING)
-	                       (mps-state ?m READY-AT-OUTPUT)
-	                   )
 	                   (cs-prepared-for ?m RETRIEVE_CAP)
 	                   (wp-at ?cc ?m INPUT)
 	                   (not (mps-side-free ?m INPUT))
@@ -315,9 +306,6 @@
 	:parameters (?m - mps ?wp - workpiece ?col - ring-color
 	             ?rs-before - ring-num ?rs-after - ring-num ?r-req - ring-num)
 	:precondition (and (mps-type ?m RS)
-	                   (or (mps-state ?m PROCESSING)
-	                       (mps-state ?m READY-AT-OUTPUT)
-	                   )
 	                   (wp-at ?wp ?m INPUT)
 	                   (not (mps-side-free ?m INPUT))
 	                   (mps-side-free ?m OUTPUT)
@@ -345,9 +333,6 @@
 	:parameters (?m - mps ?wp - workpiece ?col - ring-color ?col1 - ring-color
 	             ?rs-before - ring-num ?rs-after - ring-num ?r-req - ring-num)
 	:precondition (and (mps-type ?m RS)
-	                   (or (mps-state ?m PROCESSING)
-	                       (mps-state ?m READY-AT-OUTPUT)
-	                   )
 	                   (wp-at ?wp ?m INPUT)
 	                   (not (mps-side-free ?m INPUT))
 	                   (wp-usable ?wp)
@@ -377,9 +362,6 @@
 	             ?col2 - ring-color ?rs-before - ring-num ?rs-after - ring-num
 				 ?r-req - ring-num)
 	:precondition (and (mps-type ?m RS)
-	                   (or (mps-state ?m PROCESSING)
-	                       (mps-state ?m READY-AT-OUTPUT)
-	                   )
 	                   (wp-at ?wp ?m INPUT)
 	                   (not (mps-side-free ?m INPUT))
 	                   (wp-usable ?wp)
