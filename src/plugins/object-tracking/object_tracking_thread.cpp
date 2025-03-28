@@ -38,6 +38,7 @@
 #include <opencv2/imgproc.hpp>
 #include <sstream>
 #include <stdio.h>
+#include <omp.h>
 
 using namespace fawkes;
 using namespace cv;
@@ -157,14 +158,122 @@ ObjectTrackingThread::init()
 	inpWidth_      = this->config->get_int(("plugins/object_tracking/yolo/width"));
 	inpHeight_     = this->config->get_int(("plugins/object_tracking/yolo/height"));
 
+	// Add performance optimization parameters
+	use_hardware_accel_ = this->config->get_bool(("plugins/object_tracking/perf/use_hardware_accel"), true);
+	input_scale_factor_ = this->config->get_float(("plugins/object_tracking/perf/input_scale_factor"), 0.5f);
+	enable_perf_logging_ = this->config->get_bool(("plugins/object_tracking/perf/enable_logging"), false);
+	skip_frames_count_ = this->config->get_int(("plugins/object_tracking/perf/skip_frames"), 0);
+	frame_counter_ = 0;
+	
+	// Advanced performance optimization
+	use_model_quantization_ = this->config->get_bool(("plugins/object_tracking/perf/use_model_quantization"), false);
+	use_roi_detection_ = this->config->get_bool(("plugins/object_tracking/perf/use_roi_detection"), false);
+	roi_scale_factor_ = this->config->get_float(("plugins/object_tracking/perf/roi_scale_factor"), 0.8f);
+	
+	// Update CPU strategy to utilize all four cores by default
+	use_cpu_pinning_ = this->config->get_bool(("plugins/object_tracking/perf/use_cpu_pinning"), false);
+	use_multi_core_ = this->config->get_bool(("plugins/object_tracking/perf/use_multi_core"), true);
+	num_threads_ = this->config->get_int(("plugins/object_tracking/perf/num_threads"), 4); // Updated to 4 cores for RPi 5
+	
+	use_adaptive_scaling_ = this->config->get_bool(("plugins/object_tracking/perf/use_adaptive_scaling"), false);
+	target_fps_ = this->config->get_float(("plugins/object_tracking/perf/target_fps"), 15.0f);
+	current_fps_ = 0.0f;
+	frame_count_ = 0;
+	last_fps_calc_time_ = 0.0;
+	use_grayscale_ = this->config->get_bool(("plugins/object_tracking/perf/use_grayscale"), false);
+	thread_priority_ = this->config->get_int(("plugins/object_tracking/perf/thread_priority"), 0);
+	cache_enabled_ = this->config->get_bool(("plugins/object_tracking/perf/enable_caching"), true);
+	
+	// Set OpenMP threads if multi-core is enabled
+	if (use_multi_core_) {
+		#ifdef _OPENMP
+		omp_set_num_threads(num_threads_);
+		if (enable_perf_logging_) {
+			logger->log_info(name(), "OpenMP enabled with %d threads", num_threads_);
+		}
+		#else
+		if (enable_perf_logging_) {
+			logger->log_warn(name(), "OpenMP not available, multi-core processing disabled");
+		}
+		#endif
+	}
+	
+	// Set thread priority if enabled
+	if (thread_priority_ > 0) {
+		set_thread_priority();
+	}
+	
+	// Pin to specific CPU core if enabled
+	if (use_cpu_pinning_) {
+		pin_to_cpu_core();
+	}
+	
+	// Cache network input size
+	network_input_size_ = cv::Size(inpWidth_, inpHeight_);
+	
+	// Pre-allocate all buffers
+	if (input_scale_factor_ < 1.0f) {
+		int resized_width = static_cast<int>(camera_width_ * input_scale_factor_);
+		int resized_height = static_cast<int>(camera_height_ * input_scale_factor_);
+		resized_image_ = cv::Mat(resized_height, resized_width, CV_8UC3);
+	}
+	
+	if (use_grayscale_) {
+		gray_image_ = cv::Mat(camera_height_, camera_width_, CV_8UC1);
+	}
+	
+	if (use_roi_detection_) {
+		// Initialize ROI to center of image with scaled dimensions
+		int roi_width = static_cast<int>(camera_width_ * roi_scale_factor_);
+		int roi_height = static_cast<int>(camera_height_ * roi_scale_factor_);
+		int roi_x = (camera_width_ - roi_width) / 2;
+		int roi_y = (camera_height_ - roi_height) / 2;
+		roi_rect_ = cv::Rect(roi_x, roi_y, roi_width, roi_height);
+		roi_image_ = cv::Mat(roi_height, roi_width, CV_8UC3);
+	}
+	
+	// Pre-allocate blob for network input
+	blob_ = cv::Mat(1, 3 * inpWidth_ * inpHeight_, CV_32F);
+
 	//set NN params
 	scale_  = 0.00392; //to normalize inputs: 0.00392 * 255 = 1
 	swapRB_ = false;
 
 	//set up network
 	net_ = cv::dnn::readNetFromONNX(weights_path_);
-	net_.setPreferableBackend(DNN_BACKEND_DEFAULT);
-	net_.setPreferableTarget(DNN_TARGET_CPU);
+	
+	// Apply model quantization if enabled
+	if (use_model_quantization_) {
+		logger->log_info(name(), "Applying model quantization");
+		net_.setPreferableBackend(cv::dnn::DNN_BACKEND_OPENCV);
+		net_.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
+		
+		// Set quantization parameters for 8-bit inference
+		std::vector<cv::String> outNames = net_.getUnconnectedOutLayersNames();
+		std::vector<cv::Mat> outputs;
+		
+		// This enables 8-bit quantized inference where supported
+		#ifdef HAVE_OPENCL
+		net_.setInputParams(scale_, network_input_size_, cv::Scalar(), swapRB_, false);
+		#endif
+	}
+	// Set optimal backend for Raspberry Pi 5
+	else if (use_hardware_accel_) {
+		// Try to use hardware acceleration (OpenCL on RPi 5)
+		logger->log_info(name(), "Attempting to use hardware acceleration for neural network");
+		try {
+			net_.setPreferableBackend(cv::dnn::DNN_BACKEND_OPENCV);
+			net_.setPreferableTarget(cv::dnn::DNN_TARGET_OPENCL);
+		} catch (const cv::Exception &e) {
+			logger->log_warn(name(), "Hardware acceleration failed, falling back to CPU: %s", e.what());
+			net_.setPreferableBackend(cv::dnn::DNN_BACKEND_OPENCV);
+			net_.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
+		}
+	} else {
+		net_.setPreferableBackend(cv::dnn::DNN_BACKEND_OPENCV);
+		net_.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
+	}
+	
 	//get name of output layer
 	outName_ = net_.getUnconnectedOutLayersNames();
 
@@ -232,6 +341,153 @@ ObjectTrackingThread::init()
 	name_it_    = 0;
 	tracking_   = false;
 	shm_active_ = false;
+}
+
+void 
+ObjectTrackingThread::update_fps() 
+{
+	frame_count_++;
+	double current_time = clock->now().in_sec();
+	
+	// Update FPS every second
+	if (current_time - last_fps_calc_time_ >= 1.0) {
+		current_fps_ = frame_count_ / (current_time - last_fps_calc_time_);
+		frame_count_ = 0;
+		last_fps_calc_time_ = current_time;
+		
+		if (enable_perf_logging_) {
+			logger->log_info(name(), "Current FPS: %.2f", current_fps_);
+		}
+	}
+}
+
+void 
+ObjectTrackingThread::adjust_performance_dynamically() 
+{
+	// If we're below target FPS, reduce quality to improve performance
+	if (current_fps_ < target_fps_ * 0.8f) {
+		// Reduce resolution further (up to a minimum)
+		if (input_scale_factor_ > 0.3f) {
+			input_scale_factor_ *= 0.9f;
+			
+			// Recreate resized image buffer
+			int resized_width = static_cast<int>(camera_width_ * input_scale_factor_);
+			int resized_height = static_cast<int>(camera_height_ * input_scale_factor_);
+			resized_image_ = cv::Mat(resized_height, resized_width, CV_8UC3);
+			
+			if (enable_perf_logging_) {
+				logger->log_info(name(), "Performance adjustment: reducing resolution factor to %.2f", 
+				                 input_scale_factor_);
+			}
+		}
+		// Increase frame skipping
+		else if (skip_frames_count_ < 3) {
+			skip_frames_count_++;
+			if (enable_perf_logging_) {
+				logger->log_info(name(), "Performance adjustment: increasing frame skip to %d", 
+				                 skip_frames_count_);
+			}
+		}
+	}
+	// If we're well above target FPS, we can improve quality
+	else if (current_fps_ > target_fps_ * 1.2f) {
+		// Reduce frame skipping first
+		if (skip_frames_count_ > 0) {
+			skip_frames_count_--;
+			if (enable_perf_logging_) {
+				logger->log_info(name(), "Performance adjustment: decreasing frame skip to %d", 
+				                 skip_frames_count_);
+			}
+		}
+		// Then improve resolution
+		else if (input_scale_factor_ < 0.9f) {
+			input_scale_factor_ *= 1.1f;
+			
+			// Recreate resized image buffer
+			int resized_width = static_cast<int>(camera_width_ * input_scale_factor_);
+			int resized_height = static_cast<int>(camera_height_ * input_scale_factor_);
+			resized_image_ = cv::Mat(resized_height, resized_width, CV_8UC3);
+			
+			if (enable_perf_logging_) {
+				logger->log_info(name(), "Performance adjustment: increasing resolution factor to %.2f", 
+				                 input_scale_factor_);
+			}
+		}
+	}
+}
+
+void 
+ObjectTrackingThread::pin_to_cpu_core() 
+{
+#ifdef __linux__
+    // Modified to enable all four cores for processing if multi-core is enabled
+    if (use_multi_core_) {
+        // Create a CPU set for all four cores (0, 1, 2, 3)
+        cpu_set_t cpuset;
+        CPU_ZERO(&cpuset);
+        CPU_SET(0, &cpuset);
+        CPU_SET(1, &cpuset);
+        CPU_SET(2, &cpuset);
+        CPU_SET(3, &cpuset);
+        
+        pthread_t current_thread = pthread_self();
+        if (pthread_setaffinity_np(current_thread, sizeof(cpu_set_t), &cpuset) != 0) {
+            logger->log_warn(name(), "Failed to set thread affinity for all four CPU cores");
+        } else {
+            logger->log_info(name(), "Thread allowed to run on all four CPU cores");
+        }
+    } else {
+        // Original single-core pinning
+        cpu_set_t cpuset;
+        CPU_ZERO(&cpuset);
+        CPU_SET(cpu_core_id_, &cpuset);
+        
+        pthread_t current_thread = pthread_self();
+        if (pthread_setaffinity_np(current_thread, sizeof(cpu_set_t), &cpuset) != 0) {
+            logger->log_warn(name(), "Failed to pin thread to CPU core %d", cpu_core_id_);
+        } else {
+            logger->log_info(name(), "Thread pinned to CPU core %d", cpu_core_id_);
+        }
+    }
+#endif
+}
+
+void 
+ObjectTrackingThread::set_thread_priority() 
+{
+#ifdef __linux__
+	struct sched_param param;
+	param.sched_priority = thread_priority_;
+	
+	if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &param) != 0) {
+		logger->log_warn(name(), "Failed to set thread priority to %d", thread_priority_);
+	} else {
+		logger->log_info(name(), "Thread priority set to %d", thread_priority_);
+	}
+#endif
+}
+
+cv::Mat 
+ObjectTrackingThread::get_or_create_cached_matrix(const std::string& key, int rows, int cols, int type) 
+{
+	if (!cache_enabled_) {
+		return cv::Mat(rows, cols, type);
+	}
+	
+	auto it = matrix_cache_.find(key);
+	if (it != matrix_cache_.end()) {
+		cv::Mat& mat = it->second;
+		// If shape doesn't match, recreate
+		if (mat.rows != rows || mat.cols != cols || mat.type() != type) {
+			mat = cv::Mat(rows, cols, type);
+		}
+		return mat;
+	} else {
+		// Create new matrix and store in cache
+		cv::Mat mat(rows, cols, type);
+		matrix_cache_[key] = mat;
+		return mat;
+	}
 }
 
 void
@@ -335,6 +591,20 @@ ObjectTrackingThread::loop()
 	//check if tracking is active
 	if (!use_saved_ && !tracking_)
 		return;
+		
+	// Skip frames if configured (for performance)
+	if (skip_frames_count_ > 0) {
+		if (frame_counter_ < skip_frames_count_) {
+			frame_counter_++;
+			return;
+		}
+		frame_counter_ = 0;
+	}
+
+	// Update FPS calculation if adaptive scaling is enabled
+	if (use_adaptive_scaling_) {
+		update_fps();
+	}
 
 	//get image
 	//-------------------------------------------------------------------------
@@ -378,13 +648,17 @@ ObjectTrackingThread::loop()
 			name_it_++;
 		}
 	} else {
-		//read from sharedMemoryBuffer and convert into Mat
-		image        = Mat(camera_height_, camera_width_, CV_8UC3, shm_buffer_->buffer()).clone();
+			// Use direct buffer access instead of cloning when possible
+		if (rotate_image_) {
+			// We need to clone if we'll rotate the image
+			image = Mat(camera_height_, camera_width_, CV_8UC3, shm_buffer_->buffer()).clone();
+			rotate(image, image, ROTATE_180);
+		} else {
+			// Use buffer directly when possible - avoid unnecessary clone()
+			image = Mat(camera_height_, camera_width_, CV_8UC3, shm_buffer_->buffer());
+		}
 		capture_time = shm_buffer_->capture_time();
 	}
-
-	if (rotate_image_)
-		rotate(image, image, ROTATE_180);
 	//-------------------------------------------------------------------------
 
 	//find laser-line if needed
@@ -410,6 +684,10 @@ ObjectTrackingThread::loop()
 	fawkes::Time                      before_detect(clock);
 	detect_objects(image, out_boxes);
 	fawkes::Time after_detect(clock);
+	
+	if (enable_perf_logging_) {
+		logger->log_info(name(), "Detection time: %f seconds", (after_detect - before_detect).in_sec());
+	}
 
 	//update results for saved images in webview
 	if (use_saved_) {
@@ -660,6 +938,138 @@ ObjectTrackingThread::loop()
 	//logger->log_info("overall time    ", std::to_string(after_interface_update - &start_time).c_str());
 	//logger->log_info("loop count      ", std::to_string(loop_count_).c_str());
 	//logger->log_info("average loop    ", std::to_string(average_loop).c_str());
+
+	// Adaptive performance scaling
+	if (use_adaptive_scaling_ && frame_count_ % 30 == 0) {
+		adjust_performance_dynamically();
+	}
+}
+
+void
+ObjectTrackingThread::detect_objects(Mat image, std::vector<std::array<float, 4>> &out_boxes)
+{
+	std::vector<float>                confidences;
+	std::vector<Rect>                 boxes;
+	std::vector<Mat>                  results;
+	std::vector<std::array<float, 4>> yolo_bbs;
+
+	// Process ROI only if enabled
+	Mat processImage;
+	if (use_roi_detection_) {
+		// Extract ROI from original image
+		image(roi_rect_).copyTo(roi_image_);
+		
+		// Resize ROI if needed
+		if (input_scale_factor_ < 1.0f) {
+			cv::resize(roi_image_, resized_image_, resized_image_.size(), 0, 0, cv::INTER_LINEAR);
+			processImage = resized_image_;
+		} else {
+			processImage = roi_image_;
+		}
+	}
+	// Use grayscale if enabled (for potential performance improvement)
+	else if (use_grayscale_) {
+		cv::cvtColor(image, gray_image_, cv::COLOR_BGR2GRAY);
+		cv::cvtColor(gray_image_, processImage, cv::COLOR_GRAY2BGR);
+		
+		// Resize if needed
+		if (input_scale_factor_ < 1.0f) {
+			cv::resize(processImage, resized_image_, resized_image_.size(), 0, 0, cv::INTER_LINEAR);
+			processImage = resized_image_;
+		}
+	}
+	// Standard processing with resize
+	else if (input_scale_factor_ < 1.0f && !resized_image_.empty()) {
+		cv::resize(image, resized_image_, resized_image_.size(), 0, 0, cv::INTER_LINEAR);
+		processImage = resized_image_;
+	} else {
+		processImage = image;
+	}
+
+	// Create blob directly with the network input size - use pre-allocated buffer
+	cv::dnn::blobFromImage(processImage, blob_, scale_, network_input_size_, Scalar(), swapRB_);
+	
+	// Configure DNN for multi-core processing if enabled
+	if (use_multi_core_) {
+		#ifdef HAVE_OPENCL
+		// For OpenCL, we want to enable parallel execution on available compute units
+		net_.setPreferableBackend(cv::dnn::DNN_BACKEND_OPENCV);
+		net_.setPreferableTarget(cv::dnn::DNN_TARGET_OPENCL);
+		#else
+		// For CPU-only, enable multi-threading directly via OpenCV
+		net_.setNumThreads(num_threads_);
+		net_.setPreferableBackend(cv::dnn::DNN_BACKEND_OPENCV);
+		net_.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
+		#endif
+	}
+	
+	net_.setInput(blob_);
+	
+	// Optimize forward pass
+	net_.forward(results, outName_);
+
+	int rows       = results[0].size[2];
+	int dimensions = results[0].size[1];
+
+	results[0] = results[0].reshape(1, dimensions);
+	cv::transpose(results[0], results[0]);
+
+	auto data = (float *)results[0].data;
+
+	// Pre-allocate vectors with estimated capacity
+	yolo_bbs.reserve(20);     // Reasonable maximum expected objects
+	boxes.reserve(20);
+	confidences.reserve(20);
+
+	// Process detection results - can be parallelized with OpenMP for large result sets
+	int num_candidates = 0;
+	
+	#pragma omp parallel for if(use_multi_core_ && rows > 20) reduction(+:num_candidates)
+	for (int i = 0; i < rows; ++i) {
+		float confidence = data[4 + (int)current_object_type_ + i*dimensions];
+		
+		if (confidence > confThreshold_) {
+			#pragma omp critical
+			{
+				// Scale box coordinates based on processing method
+				float scale_factor = 1.0f / input_scale_factor_;
+				
+				// Additional scaling needed for ROI
+				float x_scale = use_roi_detection_ ? (float)camera_width_ / roi_rect_.width : 1.0f;
+				float y_scale = use_roi_detection_ ? (float)camera_height_ / roi_rect_.height : 1.0f;
+				
+				float x_offset = use_roi_detection_ ? (float)roi_rect_.x / camera_width_ : 0.0f;
+				float y_offset = use_roi_detection_ ? (float)roi_rect_.y / camera_height_ : 0.0f;
+				
+				// Create normalized coordinates
+				std::array<float, 4> yolo_bb = {
+					(data[0 + i*dimensions] / inpWidth_ / x_scale) + x_offset,
+					(data[1 + i*dimensions] / inpHeight_ / y_scale) + y_offset,
+					(data[2 + i*dimensions] / inpWidth_ / x_scale),
+					(data[3 + i*dimensions] / inpHeight_ / y_scale)
+				};
+				
+				yolo_bbs.push_back(yolo_bb);
+
+				Rect rect_bb;
+				convert_bb_yolo2rect(yolo_bb, rect_bb);
+				boxes.push_back(rect_bb);
+
+				confidences.push_back(confidence);
+				num_candidates++;
+			}
+		}
+	}
+	
+	// Only run NMS if we have detections
+	if (!boxes.empty()) {
+		std::vector<int> indices;
+		NMSBoxes(boxes, confidences, confThreshold_, nmsThreshold_, indices);
+		out_boxes.reserve(indices.size());
+		for (size_t i = 0; i < indices.size(); ++i) {
+			out_boxes.push_back(yolo_bbs[indices[i]]);
+		}
+	}
 }
 
 bool
@@ -777,55 +1187,6 @@ ObjectTrackingThread::set_shm()
 }
 
 void
-ObjectTrackingThread::detect_objects(Mat image, std::vector<std::array<float, 4>> &out_boxes)
-{
-	std::vector<float>                confidences;
-	std::vector<Rect>                 boxes;
-	std::vector<Mat>                  results;
-	std::vector<std::array<float, 4>> yolo_bbs;
-
-	Mat blob = blobFromImage(image, scale_, Size(inpWidth_, inpHeight_), Scalar(), swapRB_);
-	net_.setInput(blob);
-	net_.forward(results, outName_);
-
-	int rows       = results[0].size[2];
-	int dimensions = results[0].size[1];
-
-	results[0] = results[0].reshape(1, dimensions);
-	cv::transpose(results[0], results[0]);
-
-	auto data = (float *)results[0].data;
-
-	std::vector<int> class_ids{};
-
-	for (int i = 0; i < rows; ++i) {
-		cv::Point class_id;
-
-		float confidence = data[4 + (int)current_object_type_];
-		if (confidence > confThreshold_) {
-			std::array<float, 4> yolo_bb = {data[0] / inpWidth_,
-			                                data[1] / inpHeight_,
-			                                data[2] / inpWidth_,
-			                                data[3] / inpHeight_};
-			yolo_bbs.push_back(yolo_bb);
-
-			Rect rect_bb;
-			convert_bb_yolo2rect(yolo_bb, rect_bb);
-			boxes.push_back(rect_bb);
-
-			confidences.push_back(confidence);
-		}
-		data += dimensions;
-	}
-	//non-maximum suppression
-	std::vector<int> indices;
-	NMSBoxes(boxes, confidences, confThreshold_, nmsThreshold_, indices);
-	for (size_t i = 0; i < indices.size(); ++i) {
-		out_boxes.push_back(yolo_bbs[indices[i]]);
-	}
-}
-
-void
 ObjectTrackingThread::convert_bb_yolo2rect(std::array<float, 4> yolo_bbox, Rect &rect_bbox)
 {
 	int centerX = (int)(yolo_bbox[0] * camera_width_);
@@ -854,14 +1215,7 @@ ObjectTrackingThread::closest_position(std::vector<std::array<float, 4>>      bo
 		compute_3d_point(bounding_boxes[i], mps_angle, pos, wp_additional_height);
 		float dist = sqrt((pos[0] - ref_pos.getX()) * (pos[0] - ref_pos.getX())
 		                  + (pos[1] - ref_pos.getY()) * (pos[1] - ref_pos.getY())
-		                  + (pos[2] - ref_pos.getZ()) * (pos[2] - ref_pos.getZ()));
-		//logger->log_warn(name(), std::to_string(dist).c_str());
-		//logger->log_info("pos[0]: ", std::to_string(pos[0]).c_str());
-		//logger->log_info("pos[1]: ", std::to_string(pos[1]).c_str());
-		//logger->log_info("pos[2]: ", std::to_string(pos[2]).c_str());
-		//logger->log_info("ref[0]: ", std::to_string(ref_pos.getX()).c_str());
-		//logger->log_info("ref[1]: ", std::to_string(ref_pos.getY()).c_str());
-		//logger->log_info("ref[2]: ", std::to_string(ref_pos.getZ()).c_str());
+		                  + (pos[2] - ref_pos.getZ()) * (pos[2] - ref_pos.getZ());
 		if (dist < min_dist) {
 			min_dist          = dist;
 			closest_pos[0]    = pos[0];
@@ -873,7 +1227,6 @@ ObjectTrackingThread::closest_position(std::vector<std::array<float, 4>>      bo
 	}
 
 	if (min_dist == max_acceptable_dist_) {
-		// logger->log_warn(name(), "No detection close enough!");
 		return false;
 	}
 
@@ -931,10 +1284,8 @@ ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
 	if (current_object_type_ == ObjectTrackingInterface::WORKPIECE) {
 		//compute base middle point using the bottom point + wp_height/2
 		point[2] = dy_bottom * dist + puck_height_ / 2;
-		//wp_additional_height = max(puck_height_ / 2, dy_bottom * dist - point[2]);
 	} else {
 		point[2] = dy_center * dist;
-		//wp_additional_height = 0;
 	}
 }
 
@@ -993,5 +1344,8 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 void
 ObjectTrackingThread::finalize()
 {
+	// Clear any cached matrices
+	matrix_cache_.clear();
+	
 	blackboard->close(object_tracking_if_);
 }

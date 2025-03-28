@@ -47,6 +47,11 @@
 #include <fvutils/color/conversions.h>
 #include <fvutils/ipc/shm_image.h>
 
+// Include OpenMP header if available
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 namespace fawkes {
 class ObjectTrackingInterface;
 } // namespace fawkes
@@ -204,6 +209,48 @@ private:
 	//timing
 	fawkes::Time starting_time_;
 	long         loop_count_;
+
+	// Performance optimization parameters
+	bool   use_hardware_accel_;
+	float  input_scale_factor_;
+	bool   enable_perf_logging_;
+	int    skip_frames_count_;
+	int    frame_counter_;
+	cv::Size network_input_size_;
+	cv::Mat resized_image_;
+	
+	// Advanced performance optimization
+	bool   use_model_quantization_;
+	bool   use_roi_detection_;
+	cv::Rect roi_rect_;
+	float  roi_scale_factor_;
+	bool   use_cpu_pinning_;
+	int    cpu_core_id_;
+	bool   use_multi_core_;    // NEW: Enable multi-core processing
+	int    num_threads_;       // NEW: Number of threads to use
+	bool   use_adaptive_scaling_;
+	float  target_fps_;
+	float  current_fps_;
+	int    frame_count_;
+	double last_fps_calc_time_;
+	bool   use_grayscale_;
+	int    thread_priority_;
+	
+	// Pre-allocated buffers for detection
+	cv::Mat blob_;
+	cv::Mat gray_image_;
+	cv::Mat roi_image_;
+	
+	// Cache for frequent operations
+	bool   cache_enabled_;
+	std::map<std::string, cv::Mat> matrix_cache_;
+	
+	// Helper methods for performance optimization
+	void update_fps();
+	void adjust_performance_dynamically();
+	void pin_to_cpu_core();
+	void set_thread_priority();
+	cv::Mat get_or_create_cached_matrix(const std::string& key, int rows, int cols, int type);
 
 	//compute expected position from laser line
 	void laserline_get_expected_position(fawkes::LaserLineInterface             *ll,
