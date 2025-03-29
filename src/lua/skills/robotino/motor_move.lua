@@ -168,27 +168,33 @@ function set_speed(self)
             y = 0,
             ori = 0
         }
+        print("dist_target.x = ", math.abs(scalar(dist_target.x)))
+        print("tolerance.x = ", self.fsm.vars.tolerance_arg["x"])
+        print("dist_target.y = ", math.abs(scalar(dist_target.y)))
+        print("tolerance.y = ", self.fsm.vars.tolerance_arg["y"])
 
         for k, _ in pairs(dist_target) do
             -- Ignore z axis: no way to move up & down in /base_link!
             if (math.abs(scalar(dist_target.ori)) < TOL_ORI_START) then
                 fsm.vars.rotating = false
-            elseif (math.abs(scalar(dist_target.x)) <
-                self.fsm.vars.tolerance_arg["x"] and
-                math.abs(scalar(dist_target.y)) <
-                self.fsm.vars.tolerance_arg["y"]) then
-                fsm.vars.rotating = true
             end
-            if fsm.vars.rotating == true and
-                (math.abs(scalar(dist_target.ori)) <
-                    fsm.vars.tolerance_arg["ori"]) then
+            if not fsm.vars.rotating and
+                (math.abs(scalar(dist_target.x)) <=
+                    self.fsm.vars.tolerance_arg["x"] and
+                    math.abs(scalar(dist_target.y)) <=
+                    self.fsm.vars.tolerance_arg["y"]) then
+                fsm.vars.positioning = false
+            end
+            if math.abs(scalar(dist_target.ori)) <=
+                fsm.vars.tolerance_arg["ori"] then
                 fsm.vars.rotation_done = true
             else
                 fsm.vars.rotation_done = false
             end
 
-            if ((k == "x" or k == "y") and not fsm.vars.rotating) or
-                (k == "ori" and fsm.vars.rotating) then
+            if ((k == "x" or k == "y") and not fsm.vars.rotating and
+                fsm.vars.positioning) or
+                (k == "ori" and (fsm.vars.rotating or not fsm.vars.positioning)) then
                 local delta_dist = math.abs(
                                        self.fsm.vars.last_dist_target[k] -
                                            scalar(dist_target[k]))
@@ -278,9 +284,27 @@ function set_speed(self)
 end
 
 function drive_done(self)
+    print("speed.x = ", self.fsm.vars.speed.x)
+    print("speed.y = ", self.fsm.vars.speed.y)
+    print("speed.ori = ", self.fsm.vars.speed.ori)
+    if fsm.vars.rotation_done then
+        print("rotation done = true")
+    else
+        print("rotation done = false")
+    end
+    if fsm.vars.rotating == true then
+        print("rotating = true")
+    else
+        print("rotating = false")
+    end
+    if fsm.vars.positioning then
+        print("positioning = true")
+    else
+        print("positioning = false")
+    end
     return self.fsm.vars.speed.x == 0 and self.fsm.vars.speed.y == 0 and
-               self.fsm.vars.speed.ori == 0 and fsm.vars.rotation_done
-
+               self.fsm.vars.speed.ori == 0 and fsm.vars.rotation_done and
+               not fsm.vars.rotating and not fsm.vars.positioning
 end
 
 function close_enough(self)
@@ -443,6 +467,7 @@ function INIT:init()
     self.fsm.vars.start_time = fawkes.Time:new():in_msec()
     self.fsm.vars.only_rotate = false
     self.fsm.vars.rotating = true
+    self.fsm.vars.positioning = true
     self.fsm.vars.rotation_done = false
 
     if self.fsm.vars.x == 0 and self.fsm.vars.y == 0 then
