@@ -168,10 +168,6 @@ function set_speed(self)
             y = 0,
             ori = 0
         }
-        print("dist_target.x = ", math.abs(scalar(dist_target.x)))
-        print("tolerance.x = ", self.fsm.vars.tolerance_arg["x"])
-        print("dist_target.y = ", math.abs(scalar(dist_target.y)))
-        print("tolerance.y = ", self.fsm.vars.tolerance_arg["y"])
 
         for k, _ in pairs(dist_target) do
             -- Ignore z axis: no way to move up & down in /base_link!
@@ -284,24 +280,6 @@ function set_speed(self)
 end
 
 function drive_done(self)
-    print("speed.x = ", self.fsm.vars.speed.x)
-    print("speed.y = ", self.fsm.vars.speed.y)
-    print("speed.ori = ", self.fsm.vars.speed.ori)
-    if fsm.vars.rotation_done then
-        print("rotation done = true")
-    else
-        print("rotation done = false")
-    end
-    if fsm.vars.rotating == true then
-        print("rotating = true")
-    else
-        print("rotating = false")
-    end
-    if fsm.vars.positioning then
-        print("positioning = true")
-    else
-        print("positioning = false")
-    end
     return self.fsm.vars.speed.x == 0 and self.fsm.vars.speed.y == 0 and
                self.fsm.vars.speed.ori == 0 and fsm.vars.rotation_done and
                not fsm.vars.rotating and not fsm.vars.positioning
