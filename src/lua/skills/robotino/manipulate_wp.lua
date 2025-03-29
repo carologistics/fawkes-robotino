@@ -672,7 +672,8 @@ function DRIVE_TO_LASER_LINE:init()
             y = laser_target.y,
             frame = "/odom",
             ori = fawkes.tf.get_yaw(laser_target.ori),
-            end_early = true,
+            timeout_fail = 10,
+            end_early = false,
             dry_run = fsm.vars.dry_run
         }
     else
@@ -861,7 +862,15 @@ function CHECK_FOR_WP:loop()
     end
 end
 
-function PUT_FAILED:exit() fsm.vars.error = "workpiece lost" end
+function PICK_FAILED:exit() fsm.vars.error = "workpiece still there" end
+
+function PUT_FAILED:exit()
+    if fsm.vars.sense and not sensed_wp() then
+        fsm.vars.error = "workpiece lost"
+    else
+        fsm.vars.error = "workpiece not found"
+    end
+end
 
 function PICK_SUCCESSFUL:exit() fsm.vars.error = "workpiece lost" end
 

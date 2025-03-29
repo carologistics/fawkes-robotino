@@ -174,7 +174,7 @@ fsm:define_states{
         SkillJumpState,
         skills = {{motor_move}},
         final_to = "FINAL",
-        fail_to = "FAILED"
+        fail_to = "FINAL"
     }
 }
 
@@ -380,6 +380,7 @@ end
 
 function DRIVE_BACK:init()
     self.args["motor_move"].x = drive_back_x
+    self.args["motor_move"].timeout_fail = 10
 
     -- move gripper back
     move_abs_message = arduino.MoveXYZAbsMessage:new()
