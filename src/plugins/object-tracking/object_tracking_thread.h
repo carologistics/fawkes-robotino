@@ -204,6 +204,7 @@ private:
 	//timing
 	fawkes::Time starting_time_;
 	long         loop_count_;
+	fawkes::Time capture_time_;
 
 	//compute expected position from laser line
 	void laserline_get_expected_position(fawkes::LaserLineInterface             *ll,
@@ -226,7 +227,7 @@ private:
 	                      float                                  closest_pos[3],
 	                      cv::Rect                              &closest_box,
 	                      float                                 &additional_height);
-	void compute_3d_point(std::array<float, 4> bounding_box,
+	bool compute_3d_point(std::array<float, 4> bounding_box,
 	                      float                angle,
 	                      float                point[3],
 	                      float               &wp_additional_height);

@@ -346,7 +346,6 @@ ObjectTrackingThread::loop()
 	fawkes::Time start_time(clock);
 
 	Mat          image;
-	fawkes::Time capture_time;
 
 	if (use_saved_) {
 		current_object_type_ = saved_object_type_;
@@ -380,7 +379,7 @@ ObjectTrackingThread::loop()
 	} else {
 		//read from sharedMemoryBuffer and convert into Mat
 		image        = Mat(camera_height_, camera_width_, CV_8UC3, shm_buffer_->buffer()).clone();
-		capture_time = shm_buffer_->capture_time();
+		capture_time_ = shm_buffer_->capture_time();
 	}
 
 	if (rotate_image_)
@@ -495,7 +494,7 @@ ObjectTrackingThread::loop()
 
 		//transform current response into target frame
 		fawkes::tf::Stamped<fawkes::tf::Point> cur_object_pos_cam;
-		cur_object_pos_cam.stamp    = capture_time;
+		cur_object_pos_cam.stamp    = capture_time_;
 		cur_object_pos_cam.frame_id = cam_frame_;
 		cur_object_pos_cam.setX(cur_object_pos[0]);
 		cur_object_pos_cam.setY(cur_object_pos[1]);
@@ -504,17 +503,15 @@ ObjectTrackingThread::loop()
 		try {
 			tf_listener->transform_point(target_frame_, cur_object_pos_cam, cur_object_pos_target);
 		} catch (tf::ExtrapolationException &e) {
-			logger->log_info(name(), "Extrapolation error: %s", e.what());
-			capture_time             = fawkes::Time(0.0);
-			cur_object_pos_cam.stamp = capture_time;
-			tf_listener->transform_point(target_frame_, cur_object_pos_cam, cur_object_pos_target);
+			logger->log_error(name(), "Extrapolation error: %s", e.what(), " while transforming object pose. Skip loop");
+			return;
 		}
 
 		//update object pos transform
 		tf::Quaternion       q(0.0, 0.0, 0.0);
 		tf::Vector3          v(cur_object_pos[0], cur_object_pos[1], cur_object_pos[2]);
 		tf::Transform        tf_object_pos(q, v);
-		tf::StampedTransform stf_object_pos(tf_object_pos, capture_time, cam_frame_, object_pos_frame_);
+		tf::StampedTransform stf_object_pos(tf_object_pos, capture_time_, cam_frame_, object_pos_frame_);
 		object_pos_pub->send_transform(stf_object_pos);
 	} else {
 		logger->log_info(name(), "Object NOT Detected!!!!!!!!!!!!!!!!!!!!!");
@@ -610,7 +607,7 @@ ObjectTrackingThread::loop()
 	tf::Vector3          v(weighted_object_pos[0], weighted_object_pos[1], weighted_object_pos[2]);
 	tf::Transform        tf_weighted_object_pos(q, v);
 	tf::StampedTransform stf_weighted_object_pos(tf_weighted_object_pos,
-	                                             capture_time,
+	                                             capture_time_,
 	                                             target_frame_,
 	                                             weighted_object_pos_frame_);
 	weighted_object_pos_pub->send_transform(stf_weighted_object_pos);
@@ -618,7 +615,7 @@ ObjectTrackingThread::loop()
 	//transform weighted average into base_link
 	fawkes::tf::Stamped<fawkes::tf::Point> weighted_object_pos_base;
 	fawkes::tf::Stamped<fawkes::tf::Point> weighted_object_pos_target;
-	weighted_object_pos_target.stamp    = capture_time;
+	weighted_object_pos_target.stamp    = capture_time_;
 	weighted_object_pos_target.frame_id = target_frame_;
 	weighted_object_pos_target.setX(weighted_object_pos[0]);
 	weighted_object_pos_target.setY(weighted_object_pos[1]);
@@ -851,7 +848,7 @@ ObjectTrackingThread::closest_position(std::vector<std::array<float, 4>>      bo
 	for (size_t i = 0; i < bounding_boxes.size(); ++i) {
 		float pos[3];
 		float wp_additional_height = 0;
-		compute_3d_point(bounding_boxes[i], mps_angle, pos, wp_additional_height);
+		if !compute_3d_point(bounding_boxes[i], mps_angle, pos, wp_additional_height) return false;
 		float dist = sqrt((pos[0] - ref_pos.getX()) * (pos[0] - ref_pos.getX())
 		                  + (pos[1] - ref_pos.getY()) * (pos[1] - ref_pos.getY())
 		                  + (pos[2] - ref_pos.getZ()) * (pos[2] - ref_pos.getZ()));
@@ -883,7 +880,7 @@ ObjectTrackingThread::closest_position(std::vector<std::array<float, 4>>      bo
 	return true;
 }
 
-void
+bool
 ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
                                        float                mps_angle,
                                        float                point[3],
@@ -920,7 +917,18 @@ ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
 		float object_width = object_widths_[(int)current_object_type_];
 		dist = (object_width / 2) / sin(view_angle);
 	} else {
-		float object_width = cos(mps_angle) * object_widths_[(int)current_object_type_];
+		//compute angle between cam and base
+		tf::StampedTransform cam_transform;
+		try {
+			tf_listener->lookup_transform(cam_frame_, "base_link", capture_time_, cam_transform);
+		} catch (Exception &e) {
+			logger->log_warn(name(), "Failed to acquire transform for cam frame, skipping loop");
+			return false;
+		}
+		float cam_angle = tf::get_yaw(tf_transform.getRotation());
+
+		//angle between cam and mps determines observed width of slide and conveyor
+		float object_width = cos(mps_angle - cam_angle) * object_widths_[(int)current_object_type_];
 		dist = (object_width / 2) / tan(view_angle);
 	}
 
@@ -933,6 +941,7 @@ ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
 	} else {
 		point[2] = dy_center * dist;
 	}
+	return true;
 }
 
 void
