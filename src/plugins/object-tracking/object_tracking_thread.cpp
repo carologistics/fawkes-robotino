@@ -848,7 +848,7 @@ ObjectTrackingThread::closest_position(std::vector<std::array<float, 4>>      bo
 	for (size_t i = 0; i < bounding_boxes.size(); ++i) {
 		float pos[3];
 		float wp_additional_height = 0;
-		if !compute_3d_point(bounding_boxes[i], mps_angle, pos, wp_additional_height) return false;
+		if (!compute_3d_point(bounding_boxes[i], mps_angle, pos, wp_additional_height)) return false;
 		float dist = sqrt((pos[0] - ref_pos.getX()) * (pos[0] - ref_pos.getX())
 		                  + (pos[1] - ref_pos.getY()) * (pos[1] - ref_pos.getY())
 		                  + (pos[2] - ref_pos.getZ()) * (pos[2] - ref_pos.getZ()));
@@ -902,10 +902,7 @@ ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
 
 	if (dx_left == dx_right) {
 		logger->log_error(name(), "Width of 0: Cannot project into 3D space!");
-		point[0] = 0;
-		point[1] = 0;
-		point[2] = 0;
-		return;
+		return false;
 	}
 
 	// angle between left and right raycast
@@ -921,15 +918,22 @@ ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
 		tf::StampedTransform cam_transform;
 		try {
 			tf_listener->lookup_transform(cam_frame_, "base_link", capture_time_, cam_transform);
-		} catch (Exception &e) {
+		} catch (tf::ExtrapolationException &) {
 			logger->log_warn(name(), "Failed to acquire transform for cam frame, skipping loop");
 			return false;
 		}
-		float cam_angle = tf::get_yaw(tf_transform.getRotation());
+		float cam_angle = tf::get_yaw(cam_transform.getRotation());
+    float total_angle = mps_angle + cam_angle;
+    //depth between close edge and distant edge
+    float depth_dist = sin(total_angle) * object_widths_[(int)current_object_type_];
+    //difference in width between using a 90° angle and actual angle
+    float observed_error = depth_dist / tan(M_PI/2 - view_angle);
+    logger->log_info(name(), "observed_error: ", std::to_string(observed_error));
+    logger->log_info(name(), "depth_dist: ", std::to_string(depth_dist/2));
 
 		//angle between cam and mps determines observed width of slide and conveyor
-		float object_width = cos(mps_angle - cam_angle) * object_widths_[(int)current_object_type_];
-		dist = (object_width / 2) / tan(view_angle);
+		float object_width = cos(total_angle) * object_widths_[(int)current_object_type_] - observed_error;
+		dist = (object_width / 2) / tan(view_angle) + depth_dist / 2;
 	}
 
 	//compute middle point with deltas and distance
@@ -991,9 +995,9 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 	base_target[1] = object_pos.getY() - base_offset_y_;
 	base_target[2] = mps_angle;
 
-	logger->log_info("base_target[0]: ", std::to_string(base_target[0]).c_str());
-	logger->log_info("base_target[1]: ", std::to_string(base_target[1]).c_str());
-	logger->log_info("base_target[2]: ", std::to_string(base_target[2]).c_str());
+	// logger->log_info("base_target[0]: ", std::to_string(base_target[0]).c_str());
+	// logger->log_info("base_target[1]: ", std::to_string(base_target[1]).c_str());
+	// logger->log_info("base_target[2]: ", std::to_string(base_target[2]).c_str());
 }
 
 void
