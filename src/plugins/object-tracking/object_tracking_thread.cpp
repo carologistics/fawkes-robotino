@@ -102,10 +102,6 @@ ObjectTrackingThread::init()
 	offset_x_slide_target_ = config->get_float("plugins/vs_offsets/slide/target/x");
 	offset_z_slide_target_ = config->get_float("plugins/vs_offsets/slide/target/z");
 
-	offset_x_workpiece_top_ = config->get_float("plugins/vs_offsets/workpiece/top/x");
-	offset_x_conveyor_top_  = config->get_float("plugins/vs_offsets/conveyor/top/x");
-	offset_x_slide_top_     = config->get_float("plugins/vs_offsets/slide/top/x");
-
 	//get camera params
 	camera_width_     = config->get_int("plugins/object_tracking/camera_intrinsics/width");
 	camera_height_    = config->get_int("plugins/object_tracking/camera_intrinsics/height");
