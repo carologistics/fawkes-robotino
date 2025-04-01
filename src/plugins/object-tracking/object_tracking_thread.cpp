@@ -102,10 +102,6 @@ ObjectTrackingThread::init()
 	offset_x_slide_target_ = config->get_float("plugins/vs_offsets/slide/target/x");
 	offset_z_slide_target_ = config->get_float("plugins/vs_offsets/slide/target/z");
 
-	offset_x_workpiece_top_ = config->get_float("plugins/vs_offsets/workpiece/top/x");
-	offset_x_conveyor_top_  = config->get_float("plugins/vs_offsets/conveyor/top/x");
-	offset_x_slide_top_     = config->get_float("plugins/vs_offsets/slide/top/x");
-
 	//get camera params
 	camera_width_     = config->get_int("plugins/object_tracking/camera_intrinsics/width");
 	camera_height_    = config->get_int("plugins/object_tracking/camera_intrinsics/height");
@@ -945,8 +941,6 @@ ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
     float depth_dist = abs(sin(total_angle) * object_widths_[(int)current_object_type_]);
     //difference in width between using a 90° angle and actual angle
     float observed_error = depth_dist / tan(M_PI/2 - view_angle);
-    logger->log_info(name(), "observed_error: %f", observed_error);
-    logger->log_info(name(), "depth_dist: %f", depth_dist/2);
 
 		//angle between cam and mps determines observed width of slide and conveyor
 		float object_width = cos(total_angle) * object_widths_[(int)current_object_type_] - observed_error;
