@@ -301,7 +301,8 @@ function MOVE_GRIPPER_FORWARD:init()
 
     self.args["gripper_commands"].x = x_clipped
     self.args["gripper_commands"].y = y_clipped
-    self.args["gripper_commands"].z = 0.1
+    -- self.args["gripper_commands"].z = 0.1 --z_clipped
+    self.args["gripper_commands"].z = z_clipped
     self.args["gripper_commands"].sense = sense_wp
     self.args["gripper_commands"].command = "MOVEABS"
 end
@@ -337,16 +338,16 @@ function MOVE_GRIPPER_DOWN:init()
     local x_clipped = math.max(0, math.min(x_given, x_max))
     local y_clipped = math.max(-y_max / 2,
                                math.min(fsm.vars.gripper_target.y, y_max / 2))
+    local z_clipped = math.max(0.01, math.min(z_given, z_max))
 
     fsm.vars.target_x = x_clipped
     fsm.vars.target_y = y_clipped
-    fsm.vars.target_z = 0.08
-
-    local z_clipped = math.max(0.01, math.min(z_given, z_max))
+    fsm.vars.target_z = z_clipped
 
     self.args["gripper_commands"].x = x_clipped
     self.args["gripper_commands"].y = y_clipped
-    self.args["gripper_commands"].z = 0.08
+    -- self.args["gripper_commands"].z = 0.1 --z_clipped
+    self.args["gripper_commands"].z = z_clipped
     self.args["gripper_commands"].sense = sense_wp
     self.args["gripper_commands"].command = "MOVEABS"
 
@@ -374,7 +375,8 @@ function MOVE_GRIPPER_UP:init()
 
     self.args["gripper_commands"].x = fsm.vars.target_x
     self.args["gripper_commands"].y = fsm.vars.target_y
-    self.args["gripper_commands"].z = 0.1
+    -- self.args["gripper_commands"].z = 0.1 --z_given
+    self.args["gripper_commands"].z = z_given
     self.args["gripper_commands"].command = "MOVEABS"
 end
 
@@ -384,13 +386,15 @@ function DRIVE_BACK:init()
 
     -- move gripper back
     move_abs_message = arduino.MoveXYZAbsMessage:new()
-    move_abs_message:set_x(0.0)
     if fsm.vars.new_arm == 1 then
-        move_abs_message:set_y(-0.07)
+        move_abs_message:set_x(0.01)
+        move_abs_message:set_y(0.025)
+        move_abs_message:set_z(0.025)
     else
+        move_abs_message:set_x(0.0)
         move_abs_message:set_y(y_max / 2)
+        move_abs_message:set_z(0.08)
     end
-    move_abs_message:set_z(0.08)
     move_abs_message:set_target_frame("end_effector_home")
     arduino:msgq_enqueue_copy(move_abs_message)
 end

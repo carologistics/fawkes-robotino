@@ -43,7 +43,7 @@ documentation = [==[
 skillenv.skill_module(_M)
 
 function input_ok()
-    if fsm.vars.command == "OPEN" or fsm.vars.command == "STOP" or
+    if fsm.vars.command == "OPEN" or fsm.vars.command == "STOP" or fsm.vars.command == "HOME" or
         fsm.vars.command == "CLOSE" or fsm.vars.command == "RESETUSB" then
         return true
     end
@@ -123,7 +123,7 @@ fsm:add_transitions{
     {"COMMAND", "WAIT", timeout = 0.2}, {"WAIT", "FAILED", cond = "is_error()"},
     {"WAIT", "FINAL", cond = sensed_wp},
     {"WAIT", "FINAL", cond = "vars.wait ~= nil and not vars.wait"},
-    {"WAIT", "FINAL", cond = "arduino:is_final() and tf_ready()"},
+    {"WAIT", "FINAL", cond = "arduino:is_final()"},
     {"WAIT", "FAILED", timeout = 15}
 }
 
@@ -140,6 +140,9 @@ function COMMAND:init()
     elseif self.fsm.vars.command == "STOP" then
         theStopMessage = arduino.StopMessage:new()
         arduino:msgq_enqueue(theStopMessage)
+    elseif self.fsm.vars.command == "Home" then
+        theToHomeMessage = arduino.ToHomeMessage:new()
+        arduino:msgq_enqueue(theToHomeMessage)
     elseif self.fsm.vars.command == "RESETUSB" then
         theResetMessage = arduino.ResetUSBMessage:new()
         arduino:msgq_enqueue(theResetMessage)

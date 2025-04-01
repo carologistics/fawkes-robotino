@@ -91,7 +91,7 @@ local new_arm = config:get_int("/plugins/vs_offsets/new_gripper")
 -- if new_arm ~= true then new_arm = false end
 if new_arm == 1 then
     default_x = 0.01
-    default_y = 0.01
+    default_y = 0.025
     default_z = 0.025
 end
 
