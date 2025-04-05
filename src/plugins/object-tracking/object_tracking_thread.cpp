@@ -233,7 +233,8 @@ ObjectTrackingThread::init()
 	tracking_   = false;
 	shm_active_ = false;
 	gamma_      = 0.4;
-
+	Mat lookUpTable(1, 256, CV_8U);
+	lookUpTable_ = lookUpTable;
 	uchar* p = lookUpTable_.ptr();
 	for( int i = 0; i < 256; ++i)
 		p[i] = saturate_cast<uchar>(pow(i / 255.0, gamma_) * 255.0);

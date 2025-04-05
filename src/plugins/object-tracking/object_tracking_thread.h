@@ -166,8 +166,8 @@ private:
 	rs2_intrinsics intrinsics_;
 
 	//for gamma correction
-	float gamma_ = 0.4;
-	Mat lookUpTable_(1, 256, CV_8U);
+	double gamma_;
+	cv::Mat lookUpTable_;
 
 	std::vector<float> object_widths_;
 	bool               rotate_image_;
