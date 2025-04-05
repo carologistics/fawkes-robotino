@@ -232,6 +232,11 @@ ObjectTrackingThread::init()
 	name_it_    = 0;
 	tracking_   = false;
 	shm_active_ = false;
+	gamma_      = 0.4;
+
+	uchar* p = lookUpTable_.ptr();
+	for( int i = 0; i < 256; ++i)
+		p[i] = saturate_cast<uchar>(pow(i / 255.0, gamma_) * 255.0);
 }
 
 void
@@ -381,6 +386,7 @@ ObjectTrackingThread::loop()
 		//read from sharedMemoryBuffer and convert into Mat
 		image        = Mat(camera_height_, camera_width_, CV_8UC3, shm_buffer_->buffer()).clone();
 		capture_time = shm_buffer_->capture_time();
+		LUT(image, lookUpTable_, image);
 	}
 
 	if (rotate_image_)

@@ -165,6 +165,10 @@ private:
 	//camera params
 	rs2_intrinsics intrinsics_;
 
+	//for gamma correction
+	float gamma_ = 0.4;
+	Mat lookUpTable_(1, 256, CV_8U);
+
 	std::vector<float> object_widths_;
 	bool               rotate_image_;
 	std::string        target_frame_;
