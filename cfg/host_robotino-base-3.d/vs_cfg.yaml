@@ -17,19 +17,11 @@ plugins/vs_offsets:
   #  y direction through host_specific static frame
   workpiece:
     target:
-      x: 0.06
-      z: 0.04
+      x: -0.0025
+      z: 0.075
 
     up:
-      z: 0.04
-
-  shelf:
-    target:
-      x: 0.035
-      z: 0.03
-
-    up:
-      z: 0.03
+      z: 0.025
 
   conveyor:
     target:

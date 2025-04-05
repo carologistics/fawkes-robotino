@@ -919,11 +919,11 @@ ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
 			return false;
 		}
 		float cam_angle = tf::get_yaw(cam_transform.getRotation());
-    float total_angle = mps_angle - cam_angle;
-    //depth between close edge and distant edge
-    float depth_dist = abs(sin(total_angle) * object_widths_[(int)current_object_type_]);
-    //difference in width between using a 90° angle and actual angle
-    float observed_error = depth_dist / tan(M_PI/2 - view_angle);
+		float total_angle = mps_angle - cam_angle;
+		//depth between close edge and distant edge
+		float depth_dist = abs(sin(total_angle) * object_widths_[(int)current_object_type_]);
+		//difference in width between using a 90° angle and actual angle
+		float observed_error = depth_dist / tan(M_PI/2 - view_angle);
 
 		//angle between cam and mps determines observed width of slide and conveyor
 		float object_width = cos(total_angle) * object_widths_[(int)current_object_type_] - observed_error;
@@ -935,9 +935,9 @@ ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
 	point[1] = -(dx_left + dx_right) * dist / 2;
 
 	if (current_object_type_ == ObjectTrackingInterface::WORKPIECE) {
-		point[2] = dy_bottom * dist + puck_height_ / 2;
+		point[2] = -dy_top * dist + puck_height_ / 2;
 	} else {
-		point[2] = dy_center * dist;
+		point[2] = -dy_center * dist;
 	}
 	return true;
 }

@@ -37,7 +37,6 @@ It is independent of the workpiece location or its target location.
 
 Parameters:
       @param target             target object (WORKPIECE | CONVEYOR | SLIDE)
-      @param shelf              bool (default: false)
       @param x                  set x directly and ingnore object tracking in x (optional, float)
       @param y                  set y directly and ingnore object tracking in y (optional, float)
       @param z                  set z directly and ingnore object tracking in z (optional, float)
@@ -57,8 +56,6 @@ local z_max = config:get_float("/arduino/z_max") -- gripper max value in z direc
 -- read vs configs
 local offset_x_workpiece_target_frame = config:get_float(
                                             "plugins/vs_offsets/workpiece/target/x")
-local offset_x_shelf_target_frame = config:get_float(
-                                        "plugins/vs_offsets/shelf/target/x")
 local offset_x_conveyor_target_frame = config:get_float(
                                            "plugins/vs_offsets/conveyor/target/x")
 local offset_x_slide_target_frame = config:get_float(
@@ -66,8 +63,6 @@ local offset_x_slide_target_frame = config:get_float(
 
 local offset_z_workpiece_target_frame = config:get_float(
                                             "plugins/vs_offsets/workpiece/target/z")
-local offset_z_shelf_target_frame = config:get_float(
-                                        "plugins/vs_offsets/shelf/target/z")
 local offset_z_conveyor_target_frame = config:get_float(
                                            "plugins/vs_offsets/conveyor/target/z")
 local offset_z_slide_target_frame = config:get_float(
@@ -79,18 +74,16 @@ local offset_z_slide_down = config:get_float("plugins/vs_offsets/slide/down/z")
 
 local offset_z_workpiece_up = config:get_float(
                                   "plugins/vs_offsets/workpiece/up/z")
-local offset_z_shelf_up = config:get_float("plugins/vs_offsets/shelf/up/z")
 local offset_z_conveyor_up =
     config:get_float("plugins/vs_offsets/conveyor/up/z")
 local offset_z_slide_up = config:get_float("plugins/vs_offsets/slide/up/z")
 
 -- default gripper pose
-local default_x = 0.0
-local default_y = -0.07
+local default_x = 0.01
+local default_y = 0.03
 local default_z = 0.025
 
 function input_invalid()
-    if fsm.vars.shelf ~= true then fsm.vars.shelf = false end
     if fsm.vars.target == "WORKPIECE" or fsm.vars.target == "CONVEYOR" or
         fsm.vars.target == "SLIDE" then
         return false
@@ -221,10 +214,8 @@ end
 
 function MOVE_GRIPPER_DOWN:init()
     local z_given = 0
-    if fsm.vars.target == "WORKPIECE" and fsm.vars.shelf then
-        z_given = fsm.vars.gripper_target.z + offset_z_shelf_down
-    elseif fsm.vars.target == "WORKPIECE" then
-        z_given = fsm.vars.gripper_target.z + offset_z_workpiece_down
+    if fsm.vars.target == "WORKPIECE" then
+        z_given = fsm.vars.gripper_target.z
     elseif fsm.vars.target == "CONVEYOR" then
         z_given = fsm.vars.gripper_target.z + offset_z_conveyor_down
     else -- SLIDE
@@ -234,6 +225,11 @@ function MOVE_GRIPPER_DOWN:init()
     local x_clipped = math.max(0, math.min(fsm.vars.gripper_target.x, x_max))
     local y_clipped = math.max(-y_max / 2,
                                math.min(fsm.vars.gripper_target.y, y_max / 2))
+
+    fsm.vars.target_x = x_clipped
+    fsm.vars.target_y = y_clipped
+    fsm.vars.target_z = z_given
+
     local z_clipped = math.max(0.01, math.min(z_given, z_max))
 
     self.args["gripper_commands"].x = x_clipped
@@ -249,24 +245,18 @@ function OPEN_GRIPPER:init() self.args["gripper_commands"].command = "OPEN" end
 
 function MOVE_GRIPPER_UP:init()
     local z_given = 0
-    if fsm.vars.target == "WORKPIECE" and fsm.vars.shelf then
-        z_given = fsm.vars.gripper_target.z - offset_z_shelf_target_frame +
-                      offset_z_shelf_up
-    elseif fsm.vars.target == "WORKPIECE" then
-        z_given = fsm.vars.gripper_target.z - offset_z_workpiece_target_frame +
-                      offset_z_workpiece_up
+    if fsm.vars.target == "WORKPIECE" then
+        z_given = fsm.vars.gripper_target.z + offset_z_workpiece_up
     elseif fsm.vars.target == "CONVEYOR" then
-        z_given = fsm.vars.gripper_target.z - offset_z_conveyor_target_frame +
-                      offset_z_conveyor_up
+        z_given = fsm.vars.gripper_target.z + offset_z_conveyor_up
     else -- SLIDE
-        z_given = fsm.vars.gripper_target.z - offset_z_slide_target_frame +
-                      offset_z_slide_up
+        z_given = fsm.vars.gripper_target.z + offset_z_slide_up
     end
 
     local z_clipped = math.max(0.01, math.min(z_given, z_max))
 
-    self.args["gripper_commands"].x = arduino:x_position()
-    self.args["gripper_commands"].y = arduino:y_position() - y_max / 2
+    self.args["gripper_commands"].x = fsm.vars.target_x
+    self.args["gripper_commands"].y = fsm.vars.target_y
     self.args["gripper_commands"].z = math.max(0.01, math.min(z_clipped, z_max))
     self.args["gripper_commands"].command = "MOVEABS"
 end

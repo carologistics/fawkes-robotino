@@ -83,8 +83,8 @@ local y_max = config:get_float("/arduino/y_max")
 local z_max = config:get_float("/arduino/z_max")
 
 -- default gripper pose
-local default_x = 0.0
-local default_y = -0.07
+local default_x = 0.01
+local default_y = 0.03
 local default_z = 0.025
 
 local default_x_exit = 0.0
@@ -809,13 +809,6 @@ function GRIPPER_ROUTINE:init()
     self.args["pick_or_put_vs"].x = fsm.vars.locked_target.x
     self.args["pick_or_put_vs"].y = fsm.vars.locked_target.y
     self.args["pick_or_put_vs"].z = fsm.vars.locked_target.z
-
-    if fsm.vars.side == "SHELF-LEFT" or fsm.vars.side == "SHELF-MIDDLE" or
-        fsm.vars.side == "SHELF-RIGHT" then
-        self.args["pick_or_put_vs"].shelf = true
-    else
-        self.args["pick_or_put_vs"].shelf = false
-    end
 end
 
 function DRY_END:init()
