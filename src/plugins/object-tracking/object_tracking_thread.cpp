@@ -898,33 +898,42 @@ ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
 		return false;
 	}
 
-	// angle between left and right raycast
-	float view_angle = (asin(dx_right) - asin(dx_left)) / 2;
 	//distance towards object center point
 	float dist;
 	if (current_object_type_ == ObjectTrackingInterface::WORKPIECE) {
+		// angle between left and right raycast
+		float view_angle = (asin(dx_right) - asin(dx_left)) / 2;
 		//the visible workpiece width depends on the view distance, therefore:
 		float object_width = object_widths_[(int)current_object_type_];
 		dist = (object_width / 2) / sin(view_angle);
 	} else {
-		//compute angle between cam and base
-		tf::StampedTransform cam_transform;
-		try {
-			tf_listener->lookup_transform(cam_frame_, "base_link", capture_time_, cam_transform);
-		} catch (tf::ExtrapolationException &) {
-			logger->log_warn(name(), "Failed to acquire transform for cam frame, skipping loop");
-			return false;
-		}
-		float cam_angle = tf::get_yaw(cam_transform.getRotation());
-		float total_angle = mps_angle - cam_angle;
-		//depth between close edge and distant edge
-		float depth_dist = abs(sin(total_angle) * object_widths_[(int)current_object_type_]);
-		//difference in width between using a 90° angle and actual angle
-		float observed_error = depth_dist / tan(M_PI/2 - view_angle);
+		// //compute angle between cam and base
+		// tf::StampedTransform cam_transform;
+		// try {
+		// 	tf_listener->lookup_transform(cam_frame_, "base_link", capture_time_, cam_transform);
+		// } catch (tf::ExtrapolationException &) {
+		// 	logger->log_warn(name(), "Failed to acquire transform for cam frame, skipping loop");
+		// 	return false;
+		// }
+		// float cam_angle = tf::get_yaw(cam_transform.getRotation());
+		// float total_angle = mps_angle - cam_angle;
 
-		//angle between cam and mps determines observed width of slide and conveyor
-		float object_width = cos(total_angle) * object_widths_[(int)current_object_type_] - observed_error;
-		dist = (object_width / 2) / tan(view_angle) + depth_dist / 2;
+		// //depth between close edge and distant edge
+		// float depth_dist = abs(sin(total_angle) * object_widths_[(int)current_object_type_]);
+		// //difference in width between using a 90° angle and actual angle
+		// float observed_error = depth_dist / tan(M_PI/2 - view_angle);
+		// //angle between cam and mps determines observed width of slide and conveyor
+		// float object_width = cos(total_angle) * object_widths_[(int)current_object_type_] - observed_error;
+		// //distance towards object center point
+		// dist = (sin(total_angle) * dx_left) * object_width) / (dx_right - dx_left)
+		// 			+ sin(total_angle) * object_width / 2 + depth_dist / 2;
+		
+		float total_angle = mps_angle;
+		float object_width = object_widths_[(int)current_object_type_];
+
+		//distance towards object center point
+		dist = ((cos(total_angle) + sin(total_angle) * dx_left) * object_width) / (dx_right - dx_left)
+					+ sin(total_angle) * object_width / 2;
 	}
 
 	//compute middle point with deltas and distance
