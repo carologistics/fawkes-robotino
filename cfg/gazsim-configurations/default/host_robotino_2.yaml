@@ -10,7 +10,6 @@ fawkes:
   agent:
     name: Upsilan
     number: 2
-    team: Carologistics
 
 network:
   fawkes:
