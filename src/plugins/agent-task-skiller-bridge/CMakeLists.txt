@@ -28,6 +28,7 @@ if(PLUGIN_agent-task-skiller-bridge)
   add_library(agent-task-skiller-bridge MODULE bridge-plugin.cpp
                                                bridge-thread.cpp)
   depend_on_protobuf(agent-task-skiller-bridge)
+  depend_on_protobuf_comm(agent-task-skiller-bridge)
   depend_on_boost_libs(agent-task-skiller-bridge system)
   target_link_libraries(
     agent-task-skiller-bridge
@@ -39,9 +40,7 @@ if(PLUGIN_agent-task-skiller-bridge)
     fawkesconfig
     SkillerInterface
     Position3DInterface
-    rcll-protobuf-msgs
-    protobuf_comm
-    protobuf::libprotobuf )
+    rcll-protobuf-msgs)
 else()
   plugin_disabled_message("agent-task-skiller-bridge")
 endif()
