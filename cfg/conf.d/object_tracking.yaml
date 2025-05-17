@@ -9,8 +9,8 @@ plugins/picam_client:
   port: 6465
 
   camera_intrinsics:
-    width: 480
-    height: 640
+    width: 640
+    height: 480
 
   stream: true
 
@@ -24,18 +24,20 @@ plugins/picam_client:
 
   camera_matrix:
     rotation: 90
-    old_ppx: 247.16991942710536
-    old_ppy: 311.0215589376087
-    old_f_y: 761.4091782824479
-    old_f_x: 762.6983388147113
-    new_ppx: 251.00801023972
-    new_ppy: 301.32794812152997
-    new_f_y: 634.6348457656962
-    new_f_x: 642.6147379302428
+
+    # for rotation = 0; changes computed through rotation
+    old_ppx: 311.0215589376087
+    old_ppy: 232.83008057289464
+    old_f_x: 761.4091782824479
+    old_f_y: 762.6983388147113
+    new_ppx: 301.32794812152997
+    new_ppy: 228.99198976028
+    new_f_x: 634.6348457656962
+    new_f_y: 642.6147379302428
     k1: -0.50304233
     k2: 0.5782515
-    k3: -0.00701836
-    k4: 0.00308524
+    k3: 0.00308524
+    k4: 0.00701836
     k5: -0.71367181
 
   buffer:
@@ -84,32 +86,6 @@ plugins/object_tracking:
     shelf_offset_front: 0.01
     shelf_height: 0.89
 
-  camera_intrinsics:
-    # image size
-    width: 480
-    height: 640
-    # principal point offset
-    ppx: 251.00801023972
-    ppy: 301.32794812152997
-    # focal length
-    fx: 634.6348457656962
-    fy: 642.6147379302428
-    # distortion coefficients
-    model: 0
-    # 0 - no distortion, rectilinear images
-    # 1 - Brown-Conrady distortion with tangential applied to
-    #      radially distorted points
-    # 2 - inverse Brown-Conrady distortion
-    # 3 - F-Theta fish-eye distortion model
-    # 4 - Brown-Conrady distortion
-    k1: 0
-    k2: 0
-    p1: 0
-    p2: 0
-    k3: 0
-
-  rotate_image: false
-
   # frame to use for the weighted average and the target frames
   target_frame: "/odom"
   camera_frame: "cam_gripper"
@@ -125,16 +101,9 @@ plugins/object_tracking:
   yolo:
     weights_path: "../cfg/yolo/best.onnx"
     config_path: "../cfg/yolo/yolov4-tiny.cfg"
-    confThreshold: 0.5
-    nmsThreshold: 0.3
     # input size
     width: 640
     height: 640
-
-  saved:
-    use_saved: false
-    saved_object_type: 1
-    image_path: "../cfg/yolo/realsense2.jpg"
 
   buffer:
     shm_image_id: "picam"
