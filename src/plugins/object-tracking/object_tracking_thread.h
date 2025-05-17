@@ -71,32 +71,32 @@ public:
 	virtual void finalize();
 
 private:
-	//MPS values used to compute expected object position on MPS
-	//puck values:
+	// MPS values used to compute expected object position on MPS
+	// puck values:
 	float puck_size_;
 	float puck_height_;
 
-	//belt values:
+	// belt values:
 	float belt_size_;
 	float belt_height_;
 	float belt_length_;
 	float belt_offset_side_;
 	float belt_offset_front_;
 
-	//slide values:
+	// slide values:
 	float slide_size_;
 	float slide_offset_side_;
 	float slide_offset_front_;
 	float slide_height_;
 
-	//shelf values:
+	// shelf values:
 	float left_shelf_offset_side_;
 	float middle_shelf_offset_side_;
 	float right_shelf_offset_side_;
 	float shelf_offset_front_;
 	float shelf_height_;
 
-	//target frame offsets:
+	// target frame offsets:
 	float base_offset_x_;
 	float base_offset_y_;
 	float offset_x_workpiece_target_;
@@ -116,36 +116,28 @@ private:
 	float offset_x_conveyor_top_;
 	float offset_x_slide_top_;
 
-	//expected pose offsets:
+	// expected pose offsets:
 	float x_offset_;
 	float y_offset_;
 	float z_offset_;
 
-	//camera params
+	// camera params
 	int   camera_width_;
 	int   camera_height_;
 	float camera_ppx_;
 	float camera_ppy_;
 	float camera_fx_;
 	float camera_fy_;
-	int   camera_model_;
-	float camera_coeffs_[5];
+	int   camera_rot_;
 
-	//transform variables
+	// transform variables
 	std::string object_pos_frame_;
 	std::string weighted_object_pos_frame_;
 
 	fawkes::tf::TransformPublisher *object_pos_pub;
 	fawkes::tf::TransformPublisher *weighted_object_pos_pub;
 
-	//use saved images
-	bool                                                use_saved_;
-	fawkes::ObjectTrackingInterface::TARGET_OBJECT_TYPE saved_object_type_;
-	std::string                                         image_path_;
-	std::vector<cv::String>                             filenames_;
-	size_t                                              name_it_;
-
-	//NN params
+	// NN params
 	std::string              weights_path_;
 	std::string              config_path_;
 	float                    confThreshold_;
@@ -157,25 +149,21 @@ private:
 	cv::dnn::Net             net_;
 	std::vector<std::string> outName_;
 
-	//weighted average filter
+	// weighted average filter
 	double                                             filter_weights_[5];
 	size_t                                             filter_size_;
 	std::deque<fawkes::tf::Stamped<fawkes::tf::Point>> past_responses_;
 
-	//camera params
-	rs2_intrinsics intrinsics_;
-
 	std::vector<float> object_widths_;
-	bool               rotate_image_;
 	std::string        target_frame_;
 	std::string        cam_frame_;
 	float              max_acceptable_dist_;
 
-	//ObjectTrackingInterface to receive messages and update target frames
+	// ObjectTrackingInterface to receive messages and update target frames
 	std::string                      object_tracking_if_name_;
 	fawkes::ObjectTrackingInterface *object_tracking_if_;
 
-	//shared memory buffer
+	// shared memory buffer
 	std::string                          shm_id_;
 	firevision::SharedMemoryImageBuffer *shm_buffer_;
 	bool                                 shm_active_;
@@ -183,44 +171,44 @@ private:
 	std::string                          shm_id_res_;
 	firevision::SharedMemoryImageBuffer *shm_buffer_results_;
 
-	//laser-line fitting:
+	// laser-line fitting:
 	std::vector<std::string>                  laserlines_names_;
 	std::vector<fawkes::LaserLineInterface *> laserlines_;
 	float                                     ll_max_dist_;
 	int                                       ll_vs_hist_;
 	float                                     ll_max_angle_;
 
-	//laser-line:
+	// laser-line:
 	fawkes::LaserLineInterface *ll_;
 	bool                        ll_found_;
 
-	//tracking values
+	// tracking values
 	fawkes::ObjectTrackingInterface::TARGET_OBJECT_TYPE current_object_type_;
 	fawkes::ObjectTrackingInterface::EXPECTED_MPS       current_expected_mps_;
 	fawkes::ObjectTrackingInterface::EXPECTED_SIDE      current_expected_side_;
 	bool                                                tracking_;
 	int                                                 msgid_;
 
-	//timing
+	// timing
 	fawkes::Time starting_time_;
 	long         loop_count_;
 	fawkes::Time capture_time_;
 
-	//compute expected position from laser line
+	// compute expected position from laser line
 	void laserline_get_expected_position(fawkes::LaserLineInterface             *ll,
 	                                     fawkes::tf::Stamped<fawkes::tf::Point> &expected_pos_ll);
 	bool laserline_get_best_fit(fawkes::LaserLineInterface *&best_fit);
 	void
 	laserline_get_center_transformed(fawkes::LaserLineInterface *ll, float &x, float &y, float &z);
 
-	//set shared memory buffer to read only
+	// set shared memory buffer to read only
 	void set_shm();
 
-	//use yolo to detect objects
+	// use yolo to detect objects
 	void detect_objects(cv::Mat image, std::vector<std::array<float, 4>> &yolo_boxes);
 	void convert_bb_yolo2rect(std::array<float, 4> yolo_bbox, cv::Rect &rect_bbox);
 
-	//project bounding boxes into 3d points and take closest to expectation
+	// project bounding boxes into 3d points and take closest to expectation
 	bool closest_position(std::vector<std::array<float, 4>>      bounding_boxes,
 	                      fawkes::tf::Stamped<fawkes::tf::Point> exp_pos,
 	                      float                                  mps_angle,
@@ -232,7 +220,7 @@ private:
 	                      float                point[3],
 	                      float               &wp_additional_height);
 
-	//compute base and gripper target frame
+	// compute base and gripper target frame
 	void compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Point> object_pos,
 	                           fawkes::LaserLineInterface            *ll,
 	                           double                                 gripper_target[3],
