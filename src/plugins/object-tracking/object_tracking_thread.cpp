@@ -814,9 +814,9 @@ ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
 
 	// distance towards object center point
 	float dist;
+	// angle between left and right raycast
+	float view_angle = (asin(dx_right) - asin(dx_left)) / 2;
 	if (current_object_type_ == ObjectTrackingInterface::WORKPIECE) {
-		// angle between left and right raycast
-		float view_angle = (asin(dx_right) - asin(dx_left)) / 2;
 		// the visible workpiece width depends on the view distance, therefore:
 		float object_width = object_widths_[(int)current_object_type_];
 		dist               = (object_width / 2) / sin(view_angle);
