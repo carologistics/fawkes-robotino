@@ -44,17 +44,10 @@ fawkes/meta_plugins:
     - mps-laser-gen
     - object-tracking
   m-skiller2:
-    - m-fv-vision
+    - webview
     - navgraph
-    - navgraph-generator
-    - navgraph-generator-mps
     - skiller
-    - m-realsense
     - skiller-rest-api
-    - skiller_motor_state
-    - box_detect
-    - mps-laser-gen-ros2
-    - object-tracking
   m-robot-memory:
     - mongodb
     - robot-memory

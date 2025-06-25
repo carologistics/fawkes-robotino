@@ -281,7 +281,7 @@ calibrate()
 				y_done = true;
 				reach_end_handle(motor_Y, 100);
 			}
-			if (!z_done && digitalRead(MOTOR_Z_LIMIT_PIN) == LOW) {
+			if (!z_done && digitalRead(MOTOR_Z_LIMIT_PIN) == HIGH) {
 				z_done = true;
 				reach_end_handle(motor_Z, 200);
 			}
