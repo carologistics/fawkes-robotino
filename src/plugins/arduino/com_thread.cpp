@@ -90,19 +90,20 @@ ArduinoComThread::receive(const std::string &buf)
 		arduino_if_->set_final(true);
 		arduino_if_->set_status(ArduinoInterface::IDLE);
 		if (!is_homed) {
-			if (gripper_pose_[X] != home_gripper_pose[X] || gripper_pose_[Y] != home_gripper_pose[Y]
-			    || gripper_pose_[Z] != home_gripper_pose[Z]) {
-				ArduinoComMessage *arduino_msg = new ArduinoComMessage();
-				add_command_to_message(arduino_msg, CMD_X_NEW_POS, home_gripper_pose[X]);
-				add_command_to_message(arduino_msg, CMD_Y_NEW_POS, home_gripper_pose[Y]);
-				add_command_to_message(arduino_msg, CMD_Z_NEW_POS, home_gripper_pose[Z]);
-				append_message_to_queue(arduino_msg);
+			is_homed = true;
+			// if (gripper_pose_[X] != home_gripper_pose[X] || gripper_pose_[Y] != home_gripper_pose[Y]
+			//     || gripper_pose_[Z] != home_gripper_pose[Z]) {
+			// 	ArduinoComMessage *arduino_msg = new ArduinoComMessage();
+			// 	add_command_to_message(arduino_msg, CMD_X_NEW_POS, home_gripper_pose[X]);
+			// 	add_command_to_message(arduino_msg, CMD_Y_NEW_POS, home_gripper_pose[Y]);
+			// 	add_command_to_message(arduino_msg, CMD_Z_NEW_POS, home_gripper_pose[Z]);
+			// 	append_message_to_queue(arduino_msg);
 
-				arduino_if_->set_status(ArduinoInterface::MOVING);
-				arduino_if_->set_final(false);
-			} else {
-				is_homed = true;
-			}
+			// 	arduino_if_->set_status(ArduinoInterface::MOVING);
+			// 	arduino_if_->set_final(false);
+			// } else {
+			// 	is_homed = true;
+			// }
 		}
 		if (is_homed
 		    && (gripper_pose_[X] != goal_gripper_pose[X] || gripper_pose_[Y] != goal_gripper_pose[Y]
@@ -185,6 +186,7 @@ ArduinoComThread::initInterface()
 	arduino_if_->set_x_max(cfg_x_max_);
 	arduino_if_->set_y_max(cfg_y_max_);
 	arduino_if_->set_z_max(cfg_z_max_);
+	arduino_if_->set_status(ArduinoInterface::MOVING);
 	arduino_if_->write();
 }
 
@@ -294,7 +296,7 @@ ArduinoComThread::send_message(ArduinoComMessage &msg)
 		logger->log_error(name(), "Error while trying to send data to Arduino!");
 		return false;
 	}
-	usleep(100);
+	usleep(5000);
 	return true;
 }
 
@@ -370,7 +372,7 @@ ArduinoComThread::load_config()
 
 		// the factor the microstepping mode needs to be multiplied with
 		// depends on the individual thread diameter and slope.
-		cfg_steps_per_mm_[X] = 200.0 * cfg_x_microstep / 44;
+		cfg_steps_per_mm_[X] = 200.0 * cfg_x_microstep / 3.0;
 		cfg_steps_per_mm_[Y] = 200.0 * cfg_y_microstep / 2.0;
 		cfg_steps_per_mm_[Z] = 200.0 * cfg_z_microstep / 1.5;
 
@@ -390,6 +392,9 @@ bool
 ArduinoComThread::handle_xyz_message(ArduinoInterface::MoveXYZAbsMessage *msg)
 {
 	ArduinoComMessage *arduino_msg = new ArduinoComMessage();
+
+	add_command_to_message(arduino_msg, CMD_X_NEW_SPEED, cfg_speeds_[X]);
+	add_command_to_message(arduino_msg, CMD_Y_NEW_SPEED, cfg_speeds_[Y]);
 
 	fawkes::tf::StampedTransform tf_pose_target;
 
@@ -470,6 +475,29 @@ ArduinoComThread::handle_rel_xyz_messag(ArduinoInterface::MoveXYZRelMessage *msg
 	ArduinoComMessage *arduino_msg = new ArduinoComMessage();
 
 	bool msg_has_data = false;
+	float dx = msg->x();
+	float dy = msg->y();
+
+	float Vx = static_cast<float>(cfg_speeds_[X]) / 5.0;
+	float Vy = static_cast<float>(cfg_speeds_[Y]) / 5.0;
+	if(dx > dy) {
+		Vy = (dy / dx) * Vy;
+	} else {
+		Vx = (dx / dy) * Vx;
+	}
+	// float L  = std::hypot(msg->x(), msg->y());
+	// float T  = L / 0.01;   // time in seconds
+	// float Vx = (msg->x() * cfg_steps_per_mm_[X]) / T;
+	// float Vy = (msg->y() * cfg_steps_per_mm_[Y]) / T;
+	// printf("Vx: %f, Vy: %f\n", Vx, Vy);
+	// printf("T: %f, L: %f\n", T, L);
+	// printf("X: %f, Y: %f\n", msg->x(), msg->y());
+	// printf("\n");
+
+	ArduinoComMessage *speed_msg = new ArduinoComMessage();
+	add_command_to_message(speed_msg, CMD_X_NEW_SPEED, static_cast<int32_t>(std::round(Vx)));
+	add_command_to_message(speed_msg, CMD_Y_NEW_SPEED, static_cast<int32_t>(std::round(Vy)));
+	append_message_to_queue(speed_msg);
 
 	float cur_x = gripper_pose_[X] / cfg_steps_per_mm_[X] / 1000.;
 	float cur_y = gripper_pose_[Y] / cfg_steps_per_mm_[Y] / 1000.;

@@ -2,8 +2,8 @@
 <!DOCTYPE interface SYSTEM "interface.dtd">
 <interface name="ArduinoInterface" author="Tim Niemueller, Nicolas Limpert" year="2016">
   <constants>
-    <constant type="uint32" value="0" name="IDLE">No error.</constant>
-    <constant type="uint32" value="1" name="MOVING">The gripper is currently moving.</constant>
+    <constant type="uint32" value="1" name="IDLE">No error.</constant>
+    <constant type="uint32" value="0" name="MOVING">The gripper is currently moving.</constant>
 
     <constant type="uint32" value="2" name="ERROR_OUT_OF_RANGE_X">Desired motion in X would lead to exceeding limits.</constant>
     <constant type="uint32" value="3" name="ERROR_OUT_OF_RANGE_Y">Desired motion in Y would lead to exceeding limits.</constant>
