@@ -83,8 +83,8 @@ local y_max = config:get_float("/arduino/y_max")
 local z_max = config:get_float("/arduino/z_max")
 
 -- default gripper pose
-local default_x = 0.01
-local default_y = 0.03
+local default_x = 0.00
+local default_y = 0.035
 local default_z = 0.025
 
 local default_x_exit = 0.0
@@ -121,6 +121,12 @@ if config:exists("plugins/object_tracking/puck_values/ring_height") then
     ring_height = config:get_float(
                       "plugins/object_tracking/puck_values/ring_height")
 end
+
+if config:exists("plugins/vs_offsets/base_offset_y") then
+    base_offset_y = config:get_float(
+                                  "plugins/vs_offsets/base_offset_y")
+end
+
 
 -- Match laser line to tf-mps point
 
@@ -434,7 +440,7 @@ fsm:add_transitions{
     {"DRY_RUN_ABSENT", "FINAL", timeout = 2, desc = "Object not found"}, {
         "WAIT_SHAKING",
         "LOCK_TARGET",
-        timeout = 2,
+        timeout = 0.5,
         desc = "Waited to stop shaking, ready to grip"
     }, {
         "LOCK_TARGET",
@@ -646,7 +652,7 @@ function DRIVE_TO_LASER_LINE:init()
     local p = llutils.point_in_front(center, LASER_BASE_OFFSET)
     local laser_target = tfm.transform6D({
         x = p.x,
-        y = p.y - offset_y,
+        y = p.y - offset_y + base_offset_y,
         z = 0,
         ori = fawkes.tf.create_quaternion_from_yaw(
             fsm.vars.matched_line:bearing())

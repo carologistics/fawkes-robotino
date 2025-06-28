@@ -79,8 +79,8 @@ local offset_z_conveyor_up =
 local offset_z_slide_up = config:get_float("plugins/vs_offsets/slide/up/z")
 
 -- default gripper pose
-local default_x = 0.01
-local default_y = 0.03
+local default_x = 0.0
+local default_y = 0.025
 local default_z = 0.025
 
 function input_invalid()
@@ -126,16 +126,17 @@ fsm:define_states{
         "CLOSE_GRIPPER",
         SkillJumpState,
         skills = {{gripper_commands}},
-        final_to = "MOVE_GRIPPER_UP",
+        final_to = "WAIT_GRIPPER",
         fail_to = "FAILED"
     },
     {
         "OPEN_GRIPPER",
         SkillJumpState,
         skills = {{gripper_commands}},
-        final_to = "MOVE_GRIPPER_UP",
+        final_to = "WAIT_GRIPPER",
         fail_to = "FAILED"
     },
+    {"WAIT_GRIPPER", JumpState},
     {
         "MOVE_GRIPPER_UP",
         SkillJumpState,
@@ -164,7 +165,8 @@ fsm:add_transitions{
         "OPEN_GRIPPER",
         cond = is_put_action,
         desc = "Putting Down Workpiece"
-    }, {"CHOOSE_ACTION", "FAILED", true, desc = "Instructions Unclear"}
+    }, {"CHOOSE_ACTION", "FAILED", true, desc = "Instructions Unclear"},
+    {"WAIT_GRIPPER", "MOVE_GRIPPER_UP", timeout = 0.6, desc = "Wait to close/open"}
 }
 
 function INIT:init()
