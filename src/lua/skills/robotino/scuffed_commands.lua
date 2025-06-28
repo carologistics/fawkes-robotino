@@ -42,17 +42,11 @@ documentation = [==[
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-function input_ok()
-    return true
-end
+function input_ok() return true end
 
-function tf_ready()
-	return true
-end
+function tf_ready() return true end
 
-function is_error()
-    return false
-end
+function is_error() return false end
 
 function sensed_wp() return fsm.vars.sense and arduino:is_wp_sensed() end
 

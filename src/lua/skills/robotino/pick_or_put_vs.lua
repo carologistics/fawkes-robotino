@@ -166,7 +166,12 @@ fsm:add_transitions{
         cond = is_put_action,
         desc = "Putting Down Workpiece"
     }, {"CHOOSE_ACTION", "FAILED", true, desc = "Instructions Unclear"},
-    {"WAIT_GRIPPER", "MOVE_GRIPPER_UP", timeout = 0.6, desc = "Wait to close/open"}
+    {
+        "WAIT_GRIPPER",
+        "MOVE_GRIPPER_UP",
+        timeout = 0.6,
+        desc = "Wait to close/open"
+    }
 }
 
 function INIT:init()

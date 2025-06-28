@@ -43,10 +43,9 @@ documentation = [==[
 skillenv.skill_module(_M)
 
 function input_ok()
-    if fsm.vars.command == "OPEN" or fsm.vars.command == "STOP" or fsm.vars.command == "HOME" or
-        fsm.vars.command == "CLOSE" or fsm.vars.command == "RESETUSB" then
-        return true
-    end
+    if fsm.vars.command == "OPEN" or fsm.vars.command == "STOP" or
+        fsm.vars.command == "HOME" or fsm.vars.command == "CLOSE" or
+        fsm.vars.command == "RESETUSB" then return true end
     if fsm.vars.command == "MOVEABS" or fsm.vars.command == "MOVEREL" then
         if not fsm.vars.x or not fsm.vars.y or not fsm.vars.z then
             print("Missing coordinates " .. fsm.vars.x .. " " .. fsm.vars.y ..

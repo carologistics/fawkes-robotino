@@ -123,10 +123,8 @@ if config:exists("plugins/object_tracking/puck_values/ring_height") then
 end
 
 if config:exists("plugins/vs_offsets/base_offset_y") then
-    base_offset_y = config:get_float(
-                                  "plugins/vs_offsets/base_offset_y")
+    base_offset_y = config:get_float("plugins/vs_offsets/base_offset_y")
 end
-
 
 -- Match laser line to tf-mps point
 

@@ -81,7 +81,7 @@ ObjectTrackingThread::init()
 	  config->get_float("plugins/object_tracking/shelf_values/left_shelf_offset_side");
 	middle_shelf_offset_side_ =
 	  config->get_float("plugins/object_tracking/shelf_values/middle_shelf_offset_side");
-right_shelf_offset_side_ =
+	right_shelf_offset_side_ =
 	  config->get_float("plugins/object_tracking/shelf_values/right_shelf_offset_side");
 	shelf_offset_front_ =
 	  config->get_float("plugins/object_tracking/shelf_values/shelf_offset_front");
@@ -831,8 +831,8 @@ ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
 
 	// distance towards object center point
 	float dist;
-  // angle between left and right raycast
-  float view_angle = (asin(dx_right) - asin(dx_left)) / 2;
+	// angle between left and right raycast
+	float view_angle = (asin(dx_right) - asin(dx_left)) / 2;
 	if (current_object_type_ == ObjectTrackingInterface::WORKPIECE) {
 		// the visible workpiece width depends on the view distance, therefore:
 		float object_width = object_widths_[(int)current_object_type_];
@@ -846,12 +846,12 @@ ObjectTrackingThread::compute_3d_point(std::array<float, 4> bounding_box,
 			logger->log_warn(name(), "Failed to acquire transform for cam frame, skipping loop");
 			return false;
 		}
-		float cam_angle   = tf::get_yaw(cam_transform.getRotation());
-		float total_angle = mps_angle - cam_angle;
-    float object_width = object_widths_[(int)current_object_type_];
-    // distance towards object center point
-    dist = ((cos(total_angle) + sin(total_angle) * dx_left) * object_width) / (dx_right - dx_left)
-           + sin(total_angle) * object_width / 2;
+		float cam_angle    = tf::get_yaw(cam_transform.getRotation());
+		float total_angle  = mps_angle - cam_angle;
+		float object_width = object_widths_[(int)current_object_type_];
+		// distance towards object center point
+		dist = ((cos(total_angle) + sin(total_angle) * dx_left) * object_width) / (dx_right - dx_left)
+		       + sin(total_angle) * object_width / 2;
 	}
 
 	// compute middle point with deltas and distance
