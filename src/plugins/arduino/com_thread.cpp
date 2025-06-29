@@ -109,6 +109,9 @@ ArduinoComThread::receive(const std::string &buf)
 		    && (gripper_pose_[X] != goal_gripper_pose[X] || gripper_pose_[Y] != goal_gripper_pose[Y]
 		        || gripper_pose_[Z] != goal_gripper_pose[Z] || is_open != goal_gripper_is_open)) {
 			arduino_if_->set_final(false);
+			logger->log_error(name(), "goal poses are: %d %d %d, current poses are: %d %d %d",
+			                  goal_gripper_pose[X], goal_gripper_pose[Y], goal_gripper_pose[Z],
+			                  gripper_pose_[X], gripper_pose_[Y], gripper_pose_[Z]);
 			ArduinoComMessage *arduino_msg = new ArduinoComMessage();
 			add_command_to_message(arduino_msg, CMD_X_NEW_POS, goal_gripper_pose[X]);
 			add_command_to_message(arduino_msg, CMD_Y_NEW_POS, goal_gripper_pose[Y]);
@@ -475,24 +478,30 @@ ArduinoComThread::handle_rel_xyz_messag(ArduinoInterface::MoveXYZRelMessage *msg
 	ArduinoComMessage *arduino_msg = new ArduinoComMessage();
 
 	bool msg_has_data = false;
-	float dx = msg->x();
-	float dy = msg->y();
 
-	float Vx = static_cast<float>(cfg_speeds_[X]) / 5.0;
-	float Vy = static_cast<float>(cfg_speeds_[Y]) / 5.0;
+	float dx = std::abs(msg->x());
+	float dy = std::abs(msg->y());
+
+	float hypot = std::hypot(dx, dy);
+
+	float Vx = 100.0;
+	float Vy = 150.0;
+
 	if(dx > dy) {
 		Vy = (dy / dx) * Vy;
 	} else {
 		Vx = (dx / dy) * Vx;
 	}
-	// float L  = std::hypot(msg->x(), msg->y());
-	// float T  = L / 0.01;   // time in seconds
-	// float Vx = (msg->x() * cfg_steps_per_mm_[X]) / T;
-	// float Vy = (msg->y() * cfg_steps_per_mm_[Y]) / T;
-	// printf("Vx: %f, Vy: %f\n", Vx, Vy);
-	// printf("T: %f, L: %f\n", T, L);
-	// printf("X: %f, Y: %f\n", msg->x(), msg->y());
-	// printf("\n");
+	// Vx = (dx / hypot) * Vx;
+	// Vy = (dy / hypot) * Vy;
+
+	logger->log_error(name(),
+	                  "Rel move: %f %f %f, Vx: %f, Vy: %f",
+	                  msg->x(),
+	                  msg->y(),
+	                  msg->z(),
+	                  Vx,
+	                  Vy);
 
 	ArduinoComMessage *speed_msg = new ArduinoComMessage();
 	add_command_to_message(speed_msg, CMD_X_NEW_SPEED, static_cast<int32_t>(std::round(Vx)));

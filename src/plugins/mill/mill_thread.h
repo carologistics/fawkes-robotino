@@ -25,6 +25,7 @@
 #define __PLUGINS_MILL_THREAD_H_
 
 #include <interfaces/ArduinoInterface.h>
+#include "interfaces/GcodeInterface.h"
 
 #include <aspect/blackboard.h>
 #include <aspect/blocked_timing.h>
@@ -47,7 +48,14 @@ class TimeWait;
 
 class BatteryInterface;
 class ArduinoInterface;
+class GcodeInterface;
 } // namespace fawkes
+
+struct MoveCommand {
+    double x;
+    double y;
+    bool absolute;  // true = absolute (G90), false = relative (G91)
+};
 
 class MillThread : public fawkes::Thread,
                          public fawkes::LoggingAspect,
@@ -74,6 +82,8 @@ public:
 	virtual void finalize();
 
 	virtual void bb_interface_data_refreshed(fawkes::Interface *interface) noexcept;
+	virtual bool bb_interface_message_received(fawkes::Interface *interface,
+	                                           fawkes::Message   *message) throw();
 
 	virtual void config_value_erased(const char *path) override;
 	virtual void config_tag_changed(const char *new_tag) override;
@@ -81,7 +91,13 @@ public:
 	virtual void config_value_changed(const fawkes::Configuration::ValueIterator *v) override;
 
 private:
+	std::string cfg_name_;
+
 	fawkes::ArduinoInterface  *arduino_if_;
+	fawkes::GcodeInterface    *gcode_if_;
+
+	std::queue<MoveCommand> move_commands_;
+	bool is_absolute_ = true;
 
 	bool has_send = false;
 	void load_config();

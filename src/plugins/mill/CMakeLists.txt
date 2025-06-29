@@ -24,6 +24,8 @@ set(PLUGIN_mill
     ON
     CACHE BOOL "Build mill plugin")
 
+add_subdirectory(interfaces)
+
 if(PLUGIN_mill)
   add_library(mill MODULE mill_plugin.cpp mill_thread.cpp)
   depend_on_pkgconfig_libs(mill libudev)

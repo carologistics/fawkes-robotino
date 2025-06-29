@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="GcodeInterface" author="Tim Wendt" year="2025">
+
+  <data>
+    <comment>
+      Interface to access Arduino functionalities
+    </comment>
+    <field type="bool" name="dummy">The Interface needs a filed to generate</field>
+  </data>
+  <message name="Gcode">
+    <comment>Move gripper to absolute end position.</comment>
+    <field type="string" length="16384" name="command">The gcode</field>
+  </message>
+</interface>

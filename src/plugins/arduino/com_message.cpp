@@ -171,10 +171,16 @@ ArduinoComMessage::parse_message_from_arduino(int (&gripperr_position)[3],
 			}
 			if (i == 1) {
 				int x                = std::stoi(s);
+				if (x < 0) {
+					x = 32768 + (32768 + x);
+				}
 				gripperr_position[X] = x;
 			}
 			if (i == 2) {
 				int y                = std::stoi(s);
+				if (y < 0) {
+					y = 32768 + (32768 + y);
+				}
 				gripperr_position[Y] = y;
 			}
 			if (i == 3) {
