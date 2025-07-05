@@ -101,6 +101,7 @@ private:
 	float                     cfg_y_max_;
 	float                     cfg_z_max_;
 	fawkes::ArduinoInterface *arduino_if_;
+	std::string               tf_prefix_;
 
 	std::mutex feedback_mtx_;
 	bool       final_;

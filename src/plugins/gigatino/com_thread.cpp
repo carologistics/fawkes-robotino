@@ -136,6 +136,7 @@ GigatinoROSThread::load_config()
 	cfg_feedback_topic_name_   = "gigatino/feedback";
 	cfg_stop_server_name_      = "gigatino/stop";
 	cfg_gripper_server_name_   = "gigatino/gripper";
+	tf_prefix_                 = config->get_string("ros2/tf/tf_prefix");
 }
 
 bool
@@ -173,7 +174,7 @@ GigatinoROSThread::handle_xyz_message(ArduinoInterface::MoveXYZAbsMessage *msg)
 	g.x            = msg->x();
 	g.y            = msg->y();
 	g.z            = msg->z();
-	g.target_frame = (std::string("robotinobase3/") + msg->target_frame()).c_str();
+	g.target_frame = (tf_prefix_ + msg->target_frame()).c_str();
 	g.use_gripper  = false;
 	handle_action_call<Move, Move::Goal, rclcpp_action::Client<Move>::SendGoalOptions>(
 	  move_action_client_, g);
