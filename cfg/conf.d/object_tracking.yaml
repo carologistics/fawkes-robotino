@@ -23,9 +23,9 @@ plugins/picam_client:
       slide: false
 
   camera_matrix:
-    rotation: 0
+    rotation: 180
 
-    # for rotation = 0; changes computed through rotation
+    # for rotation = 180; changes computed through rotation
     old_ppx: 318.11536462152407
     old_ppy: 228.6351132325681
     old_f_x: 792.1682407848058

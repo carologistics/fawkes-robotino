@@ -104,10 +104,10 @@ ObjectTrackingThread::init()
 	if (camera_rot_ == 0) {
 		camera_width_  = config->get_int("plugins/picam_client/camera_intrinsics/width");
 		camera_height_ = config->get_int("plugins/picam_client/camera_intrinsics/height");
-		camera_ppx_    = config->get_float("plugins/picam_client/camera_matrix/new_ppx");
-		camera_ppy_    = config->get_float("plugins/picam_client/camera_matrix/new_ppy");
-		camera_fx_     = config->get_float("plugins/picam_client/camera_matrix/new_f_x");
-		camera_fy_     = config->get_float("plugins/picam_client/camera_matrix/new_f_y");
+		camera_ppx_ = camera_width_ - config->get_float("plugins/picam_client/camera_matrix/new_ppx");
+		camera_ppy_ = camera_height_ - config->get_float("plugins/picam_client/camera_matrix/new_ppy");
+		camera_fx_  = config->get_float("plugins/picam_client/camera_matrix/new_f_x");
+		camera_fy_  = config->get_float("plugins/picam_client/camera_matrix/new_f_y");
 	} else if (camera_rot_ == 90) {
 		camera_width_  = config->get_int("plugins/picam_client/camera_intrinsics/height");
 		camera_height_ = config->get_int("plugins/picam_client/camera_intrinsics/width");
@@ -118,10 +118,10 @@ ObjectTrackingThread::init()
 	} else if (camera_rot_ == 180) {
 		camera_width_  = config->get_int("plugins/picam_client/camera_intrinsics/width");
 		camera_height_ = config->get_int("plugins/picam_client/camera_intrinsics/height");
-		camera_ppx_ = camera_width_ - config->get_float("plugins/picam_client/camera_matrix/new_ppx");
-		camera_ppy_ = camera_height_ - config->get_float("plugins/picam_client/camera_matrix/new_ppy");
-		camera_fx_  = config->get_float("plugins/picam_client/camera_matrix/new_f_x");
-		camera_fy_  = config->get_float("plugins/picam_client/camera_matrix/new_f_y");
+		camera_ppx_    = config->get_float("plugins/picam_client/camera_matrix/new_ppx");
+		camera_ppy_    = config->get_float("plugins/picam_client/camera_matrix/new_ppy");
+		camera_fx_     = config->get_float("plugins/picam_client/camera_matrix/new_f_x");
+		camera_fy_     = config->get_float("plugins/picam_client/camera_matrix/new_f_y");
 	} else if (camera_rot_ == 270) {
 		camera_width_  = config->get_int("plugins/picam_client/camera_intrinsics/height");
 		camera_height_ = config->get_int("plugins/picam_client/camera_intrinsics/width");
@@ -149,7 +149,7 @@ ObjectTrackingThread::init()
 
 	// set NN params
 	scale_  = 0.00392; // to normalize inputs: 0.00392 * 255 = 1
-	swapRB_ = true;
+	swapRB_ = false;
 
 	// set up network
 	net_ = cv::dnn::readNetFromONNX(weights_path_);
@@ -201,7 +201,7 @@ ObjectTrackingThread::init()
 
 	shm_id_res_          = config->get_string("plugins/object_tracking/buffer/shm_image_id_res");
 	shm_buffer_results_  = new firevision::SharedMemoryImageBuffer(shm_id_res_.c_str(),
-                                                                firevision::BGR,
+                                                                firevision::RGB,
                                                                 camera_width_,
                                                                 camera_height_);
 	std::string frame_id = this->config->get_string("plugins/object_tracking/buffer/frame");
@@ -479,8 +479,8 @@ ObjectTrackingThread::loop()
 	            true);
 
 	// set resulting image in shared memory buffer
-	firevision::convert(firevision::BGR,
-	                    firevision::BGR,
+	firevision::convert(firevision::RGB,
+	                    firevision::RGB,
 	                    image.data,
 	                    shm_buffer_results_->buffer(),
 	                    camera_width_,

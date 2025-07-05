@@ -81,12 +81,12 @@ PicamClientThread::init()
 	//shared memory buffer, initialise dynamically once the first image is received
 	shm_id_         = config->get_string("plugins/picam_client/buffer/shm_image_id");
 	shm_buffer_     = new firevision::SharedMemoryImageBuffer(shm_id_.c_str(),
-                                                        firevision::BGR,
+                                                        firevision::RGB,
                                                         camera_width_,
                                                         camera_height_);
 	shm_id_res_     = config->get_string("plugins/picam_client/buffer/shm_image_id_res");
 	shm_buffer_res_ = new firevision::SharedMemoryImageBuffer(shm_id_res_.c_str(),
-	                                                          firevision::BGR,
+	                                                          firevision::RGB,
 	                                                          camera_width_,
 	                                                          camera_height_);
 
