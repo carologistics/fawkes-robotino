@@ -81,6 +81,7 @@ GigatinoROSThread::init()
     arduino_if_->set_x_position(msg->stepper_positions[0]);
     arduino_if_->set_y_position(msg->stepper_positions[1]);
     arduino_if_->set_z_position(msg->stepper_positions[2]);
+    arduino_if_->set_calibrated(msg->referenced);
     arduino_if_->set_gripper_closed(msg->servo_positions[0] < 40.0);
     arduino_if_->set_wp_sensed(msg->wp_sensor);
     if (!final_) {
