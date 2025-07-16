@@ -91,12 +91,15 @@ ObjectTrackingThread::init()
 	base_offset_y_ = config->get_float("plugins/vs_offsets/base_offset_y");
 
 	offset_x_workpiece_target_ = config->get_float("plugins/vs_offsets/workpiece/target/x");
+	offset_y_workpiece_target_ = config->get_float("plugins/vs_offsets/workpiece/target/y");
 	offset_z_workpiece_target_ = config->get_float("plugins/vs_offsets/workpiece/target/z");
 
 	offset_x_conveyor_target_ = config->get_float("plugins/vs_offsets/conveyor/target/x");
+	offset_y_conveyor_target_ = config->get_float("plugins/vs_offsets/conveyor/target/y");
 	offset_z_conveyor_target_ = config->get_float("plugins/vs_offsets/conveyor/target/z");
 
 	offset_x_slide_target_ = config->get_float("plugins/vs_offsets/slide/target/x");
+	offset_y_slide_target_ = config->get_float("plugins/vs_offsets/slide/target/y");
 	offset_z_slide_target_ = config->get_float("plugins/vs_offsets/slide/target/z");
 
 	// get camera params
@@ -879,19 +882,23 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 
 	// compute target gripper frame first
 	float gripper_offset_x = 0;
+	float gripper_offset_y = 0;
 	float gripper_offset_z = 0;
 
 	switch (current_object_type_) {
 	case ObjectTrackingInterface::WORKPIECE:
 		gripper_offset_x = offset_x_workpiece_target_;
+		gripper_offset_y = offset_y_workpiece_target_;
 		gripper_offset_z = offset_z_workpiece_target_;
 		break;
 	case ObjectTrackingInterface::CONVEYOR_BELT_FRONT:
 		gripper_offset_x = offset_x_conveyor_target_;
+		gripper_offset_y = offset_y_conveyor_target_;
 		gripper_offset_z = offset_z_conveyor_target_;
 		break;
 	case ObjectTrackingInterface::SLIDE_FRONT:
 		gripper_offset_x = offset_x_slide_target_;
+		gripper_offset_y = offset_y_slide_target_;
 		gripper_offset_z = offset_z_slide_target_;
 		break;
 	default:
@@ -901,8 +908,10 @@ ObjectTrackingThread::compute_target_frames(fawkes::tf::Stamped<fawkes::tf::Poin
 		return;
 	}
 
-	gripper_target[0] = object_pos.getX() + cos(mps_angle) * gripper_offset_x;
-	gripper_target[1] = object_pos.getY() - sin(mps_angle) * gripper_offset_x;
+	gripper_target[0] =
+	  object_pos.getX() + cos(mps_angle) * gripper_offset_x + sin(mps_angle) * gripper_offset_y;
+	gripper_target[1] =
+	  object_pos.getY() - sin(mps_angle) * gripper_offset_x + cos(mps_angle) * gripper_offset_y;
 	gripper_target[2] = object_pos.getZ() + gripper_offset_z;
 
 	base_target[0] = object_pos.getX() - base_offset_x_;

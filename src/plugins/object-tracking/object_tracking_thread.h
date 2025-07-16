@@ -100,21 +100,20 @@ private:
 	float base_offset_x_;
 	float base_offset_y_;
 	float offset_x_workpiece_target_;
+	float offset_y_workpiece_target_;
 	float offset_z_workpiece_target_;
 
 	float offset_x_shelf_target_;
+	float offset_y_shelf_target_;
 	float offset_z_shelf_target_;
 
 	float offset_x_conveyor_target_;
+	float offset_y_conveyor_target_;
 	float offset_z_conveyor_target_;
 
 	float offset_x_slide_target_;
+	float offset_y_slide_target_;
 	float offset_z_slide_target_;
-
-	float offset_x_workpiece_top_;
-	float offset_x_shelf_top_;
-	float offset_x_conveyor_top_;
-	float offset_x_slide_top_;
 
 	// expected pose offsets:
 	float x_offset_;

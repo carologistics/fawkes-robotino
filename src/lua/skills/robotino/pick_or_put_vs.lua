@@ -54,19 +54,6 @@ local y_max = config:get_float("/arduino/y_max") -- gripper max value in y direc
 local z_max = config:get_float("/arduino/z_max") -- gripper max value in z direction
 
 -- read vs configs
-local offset_x_workpiece_target_frame = config:get_float(
-                                            "plugins/vs_offsets/workpiece/target/x")
-local offset_x_conveyor_target_frame = config:get_float(
-                                           "plugins/vs_offsets/conveyor/target/x")
-local offset_x_slide_target_frame = config:get_float(
-                                        "plugins/vs_offsets/slide/target/x")
-
-local offset_z_workpiece_target_frame = config:get_float(
-                                            "plugins/vs_offsets/workpiece/target/z")
-local offset_z_conveyor_target_frame = config:get_float(
-                                           "plugins/vs_offsets/conveyor/target/z")
-local offset_z_slide_target_frame = config:get_float(
-                                        "plugins/vs_offsets/slide/target/z")
 
 local offset_z_conveyor_down = config:get_float(
                                    "plugins/vs_offsets/conveyor/down/z")
@@ -214,7 +201,6 @@ function MOVE_GRIPPER_FORWARD:init()
 
     self.args["gripper_commands"].x = x_clipped
     self.args["gripper_commands"].y = y_clipped
-    -- self.args["gripper_commands"].z = 0.1 --z_clipped
     self.args["gripper_commands"].z = z_clipped
     self.args["gripper_commands"].sense = sense_wp
     self.args["gripper_commands"].command = "MOVEABS"
@@ -242,7 +228,6 @@ function MOVE_GRIPPER_DOWN:init()
 
     self.args["gripper_commands"].x = x_clipped
     self.args["gripper_commands"].y = y_clipped
-    -- self.args["gripper_commands"].z = 0.1 --z_clipped
     self.args["gripper_commands"].z = z_clipped
     self.args["gripper_commands"].command = "MOVEABS"
 
