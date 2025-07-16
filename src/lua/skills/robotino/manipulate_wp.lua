@@ -324,7 +324,7 @@ function gripper_out_of_reach()
                (fsm.vars.locked_target.z == nil or fsm.vars.locked_target.z == 0)
 end
 
-function calibrated() return arduino:calibrated() end
+function calibrated() return arduino:is_calibrated() end
 
 fsm:define_states{
     export_to = _M,
