@@ -128,7 +128,7 @@ private:
 			  if (!goal_handle) {
 				  // should not happen, all goals are accepted!
 				  RCLCPP_ERROR(node_handle->get_logger(), "Goal was rejected by server");
-				  update_final(true, gigatino_msgs::msg::REJECTED);
+				  update_final(true, gigatino_msgs::msg::StatusCode::REJECTED);
 			  }
 			  // ignore happy case, we set to busy before confirmation
 		  };
@@ -149,7 +149,7 @@ private:
 				  return;
 			  default: RCLCPP_ERROR(node_handle->get_logger(), "Unknown result code"); return;
 			  }
-			  update_final(true, result.status_code);
+			  update_final(true, result.resut->status_code);
 		  };
 		update_final(false, 0);
 		client_t->async_send_goal(g, send_goal_options);
