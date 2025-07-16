@@ -83,28 +83,13 @@ local y_max = config:get_float("/arduino/y_max")
 local z_max = config:get_float("/arduino/z_max")
 
 -- default gripper pose
-local default_x = 0
-local default_y = y_max / 2
-local default_z = 0.03
+local default_x = 0.00
+local default_y = 0.035
+local default_z = 0.025
 
-local new_arm = config:get_bool("/plugins/vs_offsets/new_gripper")
-if new_arm ~= true then new_arm = false end
-
-if new_arm then
-    default_x = 0.0
-    default_y = -0.07
-    default_z = 0.025
-end
-
-local default_x_exit = 0.06
-local default_y_exit = -0.03
+local default_x_exit = 0.0
+local default_y_exit = 0.0
 local default_z_exit = 0.0
-
-if new_arm then
-    default_x_exit = 0.0
-    default_y_exit = 0.0
-    default_z_exit = 0.0
-end
 
 -- read config values for computing expected target position
 -- conveyor
@@ -135,6 +120,10 @@ end
 if config:exists("plugins/object_tracking/puck_values/ring_height") then
     ring_height = config:get_float(
                       "plugins/object_tracking/puck_values/ring_height")
+end
+
+if config:exists("plugins/vs_offsets/base_offset_y") then
+    base_offset_y = config:get_float("plugins/vs_offsets/base_offset_y")
 end
 
 -- Match laser line to tf-mps point
@@ -350,13 +339,14 @@ fsm:define_states{
     },
     {"SEARCH_LASER_LINE", JumpState},
     {"WAIT_FOR_GRIPPER", JumpState},
+    {"REBOOT_GRIPPER", JumpState},
     {"AT_LASER_LINE", JumpState},
     {"DRY_RUN_ABSENT", JumpState},
     {
         "MOVE_BASE_AND_GRIPPER",
         SkillJumpState,
         skills = {{motor_move}},
-        final_to = "WAIT_FOR_GRIPPER",
+        final_to = "WAIT_SHAKING",
         fail_to = "RETRY"
     },
     {"WAIT_SHAKING", JumpState},
@@ -426,7 +416,7 @@ fsm:add_transitions{
         desc = "dry run with no object expected"
     }, {
         "AT_LASER_LINE",
-        "MOVE_BASE_AND_GRIPPER",
+        "WAIT_FOR_GRIPPER",
         cond = "vars.consecutive_detections > 2",
         desc = "Found Object"
     }, {"AT_LASER_LINE", "FAILED", timeout = 2, desc = "Object not found"}, {
@@ -436,11 +426,15 @@ fsm:add_transitions{
         desc = "Found Object"
     }, {
         "WAIT_FOR_GRIPPER",
-        "WAIT_SHAKING",
+        "MOVE_BASE_AND_GRIPPER",
         cond = gripper_pose_reached,
         desc = "Default gripper pose reached"
-    },
-    {"WAIT_FOR_GRIPPER", "FAILED", timeout = 10, desc = "Gripper is not moving"},
+    }, {
+        "WAIT_FOR_GRIPPER",
+        "REBOOT_GRIPPER",
+        timeout = 10,
+        desc = "Gripper is not moving"
+    }, {"REBOOT_GRIPPER", "RETRY", timeout = 1, desc = "REBOOTED USB, retry"},
     {"DRY_RUN_ABSENT", "FINAL", timeout = 2, desc = "Object not found"}, {
         "WAIT_SHAKING",
         "LOCK_TARGET",
@@ -519,20 +513,13 @@ fsm:add_transitions{
         "RETRY",
         cond = sensed_wp,
         desc = "Put failed, but workpiece still in gripper, so try again"
-    },
-    {"PUT_FAILED", "FAILED", cond = true, desc = "Put failed, workpiece lost"},
-    {
+    }, {"PUT_FAILED", "FAILED", cond = true, desc = "workpiece lost"}, {
         "PICK_SUCCESSFUL",
         "FINAL",
         cond = "not vars.sense",
         desc = "Pick successful, but no sensing"
     }, {"PICK_SUCCESSFUL", "FINAL", cond = sensed_wp, desc = "Pick successful"},
-    {
-        "PICK_SUCCESSFUL",
-        "FAILED",
-        cond = true,
-        desc = "Pick failed, workpiece lost"
-    }, {
+    {"PICK_SUCCESSFUL", "FAILED", cond = true, desc = "workpiece lost"}, {
         "PICK_FAILED",
         "RETRY",
         cond = "not vars.sense",
@@ -623,14 +610,6 @@ function START_TRACKING:init()
     move_gripper_default_pose()
 end
 
-function START_TRACKING:exit()
-    if fsm.vars.nr_tries > MAX_TRIES then
-        fsm.vars.error = "too many retries"
-    else
-        fsm.vars.error = "OT interface closed"
-    end
-end
-
 function FIND_LASER_LINE:init()
     -- start searching for laser line
     fsm.vars.search_attemps = 0
@@ -671,7 +650,7 @@ function DRIVE_TO_LASER_LINE:init()
     local p = llutils.point_in_front(center, LASER_BASE_OFFSET)
     local laser_target = tfm.transform6D({
         x = p.x,
-        y = p.y - offset_y,
+        y = p.y - offset_y + base_offset_y,
         z = 0,
         ori = fawkes.tf.create_quaternion_from_yaw(
             fsm.vars.matched_line:bearing())
@@ -683,6 +662,7 @@ function DRIVE_TO_LASER_LINE:init()
             y = laser_target.y,
             frame = "/odom",
             ori = fawkes.tf.get_yaw(laser_target.ori),
+            timeout_fail = 10,
             end_early = false,
             dry_run = fsm.vars.dry_run
         }
@@ -743,6 +723,11 @@ function MOVE_BASE_AND_GRIPPER:init()
         frame = "base_link",
         visual_servoing = true
     }
+end
+
+function REBOOT_GRIPPER:init()
+    local reset_usb_msg = arduino.ResetUSBMessage:new()
+    arduino:msgq_enqueue_copy(reset_usb_msg)
 end
 
 function WAIT_SHAKING:init()
@@ -814,13 +799,6 @@ function GRIPPER_ROUTINE:init()
     self.args["pick_or_put_vs"].x = fsm.vars.locked_target.x
     self.args["pick_or_put_vs"].y = fsm.vars.locked_target.y
     self.args["pick_or_put_vs"].z = fsm.vars.locked_target.z
-
-    if fsm.vars.side == "SHELF-LEFT" or fsm.vars.side == "SHELF-MIDDLE" or
-        fsm.vars.side == "SHELF-RIGHT" then
-        self.args["pick_or_put_vs"].shelf = true
-    else
-        self.args["pick_or_put_vs"].shelf = false
-    end
 end
 
 function DRY_END:init()
@@ -867,9 +845,17 @@ function CHECK_FOR_WP:loop()
     end
 end
 
-function PUT_FAILED:exit() fsm.vars.error = "put failed, workpiece lost" end
+function PICK_FAILED:exit() fsm.vars.error = "workpiece still there" end
 
-function PICK_SUCCESSFUL:exit() fsm.vars.error = "pick failed, workpiece lost" end
+function PUT_FAILED:exit()
+    if fsm.vars.sense and not sensed_wp() then
+        fsm.vars.error = "workpiece lost"
+    else
+        fsm.vars.error = "workpiece not found"
+    end
+end
+
+function PICK_SUCCESSFUL:exit() fsm.vars.error = "workpiece lost" end
 
 -- end tracking afterwards
 

@@ -623,40 +623,7 @@
 
 ; ----------------------- HANDLE WP CHECK FAIL  --------------------------------
 
-(defrule execution-monitoring-wp-check-there-after-wp-put-retry
-" If a wp-check action with query THERE fails after a wp-put,
-  retry the wp-put as we might have had a gripper issue.
-"
-	(declare (salience ?*MONITORING-SALIENCE*))
-	(goal (id ?goal-id) (mode DISPATCHED))
-	(plan (id ?plan-id) (goal-id ?goal-id))
-
-	?pa-check <- (plan-action (id ?id-check) (goal-id ?goal-id) (plan-id ?plan-id)
-				 (action-name wp-check)
-				 (param-values ?robot ?wp ?mps ?side THERE)
-				 (state FAILED))
-	?pa-put <- (plan-action (id ?id-put&:(eq (- ?id-check 1) ?id-put)) (goal-id ?goal-id) (plan-id ?plan-id)
-				 (action-name wp-put)
-				 (param-values ?robot ?wp ?mps ?side ?complexity))
-	?wp-atf <- (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side))
-
-	(not (wm-fact (key monitoring retry-after-sensing args? r ?robot a wp-put id ?id-put-sym&:(eq ?id-put-sym (sym-cat ?id-put)) m ?mps g ?goal-id)))
-	?can-hold <- (domain-fact (name can-hold) (param-values ?robot))
-	=>
-	(printout error "WP " ?wp " was expected to be at " ?mps " (" ?side") but could not be detected. Restarting wp-put!")
-	(modify ?pa-check (state FORMULATED) (error-msg ""))
-	(modify ?pa-put (state FORMULATED) (error-msg ""))
-
-	(assert
-	  (wm-fact (key monitoring retry-after-sensing args? r ?robot a wp-put id (sym-cat ?id-put) m ?mps g ?goal-id))
-	)
-	(retract ?wp-atf)
-	(retract ?can-hold)
-	(assert (domain-fact (name holding) (param-values ?robot ?wp)))
-	(assert (wm-fact (key domain fact mps-side-free args? m ?mps side ?side) (type BOOL) (value TRUE)))
-)
-
-(defrule execution-monitoring-wp-check-there-add-fail-goal-flag-after-retry
+(defrule execution-monitoring-wp-put-failed-workpiece-absent
 " If a wp-check action with query THERE fails, assume that
   the WP was lost and clean up accordingly.
 "
@@ -664,23 +631,18 @@
 	(goal (id ?goal-id) (mode DISPATCHED))
 	(plan (id ?plan-id) (goal-id ?goal-id))
 
-	(plan-action (id ?id-check) (goal-id ?goal-id) (plan-id ?plan-id)
-				 (action-name wp-check)
-				 (param-values ?robot ?wp ?mps ?side THERE)
-				 (state FAILED))
 	(plan-action (id ?id-put&:(eq (- ?id-check 1) ?id-put)) (goal-id ?goal-id) (plan-id ?plan-id)
 				 (action-name wp-put)
-				 (param-values ?robot ?wp ?mps ?side ?complexity))
-
-	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side))
-	(wm-fact (key monitoring retry-after-sensing args? r ?robot a wp-put id ?id-put-sym&:(eq ?id-put-sym (sym-cat ?id-put)) m ?mps g ?goal-id))
+				 (param-values ?robot ?wp ?mps ?side ?complexity)
+				 (state FAILED)
+				 (error-msg ?msg&:(str-index "workpiece not there" ?msg)))
 	=>
 	(printout error "WP " ?wp " was expected to be at " ?mps " (" ?side") but could not be detected. Assume WP was lost.")
 	(assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))
 	(assert (wm-fact (key monitoring fail-goal args? g ?goal-id r WP-LOST)))
 )
 
-(defrule execution-monitoring-wp-check-absent-add-fail-goal-flag
+(defrule execution-monitoring-wp-get-failed-workpiece-detected
 " If a wp-check action with query ABSENT fails, assume that
   the WP wasn't gripped successfully. Restart the action.
 "
@@ -688,23 +650,14 @@
 	(goal (id ?goal-id) (mode DISPATCHED))
 	(plan (id ?plan-id) (goal-id ?goal-id))
 
-	(plan-action (id ?id) (goal-id ?goal-id) (plan-id ?plan-id)
-				 (action-name wp-check)
-				 (param-values ?robot ?mps ?side ABSENT)
-				 (state FAILED))
 	(plan-action (id ?) (goal-id ?goal-id) (plan-id ?plan-id)
 				 (action-name wp-get)
 				 (param-values ?robot ?wp ?mps ?side $?)
-				 (state FAILED))
-
-	(not (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side)))
-	?holding <- (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+				 (state FAILED)
+				 (error-msg ?msg:(str-index "workpiece still there" ?msg)))
 	=>
 	(printout error "No WP was expected to be at " ?mps " (" ?side") but there was one detected, fail the goal.")
 	(assert (wm-fact (key monitoring fail-goal args? g ?goal-id r WP-NOT-PICKED)))
-	;fix the WM
-	(retract ?holding)
-	(assert (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side)))
 )
 
 
@@ -1115,7 +1068,13 @@
 			(modify ?formulated-action (state FAILED))
 		)
 	)
-	(modify ?g (mode FINISHED) (outcome FAILED))
+        (bind ?error ROBOT-LOST)
+	(do-for-fact ((?df domain-fact)) (and (eq ?df:name holding) (str-index ?robot (implode$ ?df:param-values)))
+		(assert (wm-fact (key monitoring cleanup-wp args? wp (nth$ 2 ?df:param-values))))
+		(retract ?df)
+                (bind ?error WP-LOST)
+	)
+	(modify ?g (mode FINISHED) (outcome FAILED) (error ?error))
 )
 
 (defrule execution-monitoring-stop-goals-for-robot-done
@@ -1456,4 +1415,15 @@
 	        (param-names m)
 	        (param-values ?mps))
 	)
+)
+
+(defrule execution-monitoring-bump-goal-for-forgotten-wp
+	(declare (salience ?*MONITORING-SALIENCE*))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps $?))
+	(not (goal (mode DISPATCHED) (params $? ?wp $?)))
+	?g <- (goal (mode FORMULATED) (class PAY-FOR-RINGS-WITH-BASE|PAY-FOR-RINGS-WITH-CAP-CARRIER) (params $? ?wp $?) (priority ?prio))
+	(plan-action (goal-id ?g-id) (action-name wait-for-wp) (param-values ? ?mps ? ?wp2) (state RUNNING))
+	(test (and (neq ?wp ?wp2) (< ?prio 1000.0)))
+	=>
+	(modify ?g (priority 1000.0))
 )
