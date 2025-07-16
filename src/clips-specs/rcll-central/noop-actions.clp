@@ -162,7 +162,7 @@
 (defrule action-finish-execute-wait-for-mps-early-processing
 	?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (state PENDING)
 	                    (action-name wait-for-mps) (param-values ?robot ?wp ?mps INPUT))
-  (domain-fact (name mps-state) (param-values ?mps READY-AT-OUTPUT))
+  (domain-fact (name mps-state) (param-values ?mps PROCESSING))
   =>
 	(printout info "Not waiting for " ?wp " for robot " ?robot ", MPS already processing" crlf)
 	(modify ?pa (state EXECUTION-SUCCEEDED))

@@ -310,7 +310,7 @@
 	(domain-fact (name at) (param-values ?robot ?curr-location ?curr-side))
 	(domain-fact (name wp-at) (param-values ?wp ?wp-loc ?wp-side))
 	=>
-	(if (and (neq ?class DISCARD) (neq ?class DELIVER)) then
+	(if (neq ?class DELIVER) then
 		(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
 			(create$ ; only last statement of if is returned
 					(plan-assert-move-wait-for-wp ?robot ?curr-location ?curr-side ?wp-loc ?wp-side ?wp
@@ -350,20 +350,12 @@
 	(domain-fact (name at) (param-values ?robot ?curr-location ?curr-side))
 	(domain-fact (name holding) (param-values ?robot ?wp))
 	=>
-	(if (and (neq ?class DISCARD) (neq ?class DELIVER)) then
-	  (plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
+	(plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
 		(plan-assert-move ?robot ?curr-location ?curr-side ?target-mps INPUT
 			(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT (get-wp-complexity ?wp))
 			(plan-assert-action wait-for-mps ?robot ?wp ?target-mps INPUT)
 		)
-	  )
-         else
-	  (plan-assert-sequential (sym-cat ?class -PLAN- (gensym*)) ?goal-id ?robot
-		(plan-assert-move ?robot ?curr-location ?curr-side ?target-mps INPUT
-			(plan-assert-action wp-put ?robot ?wp ?target-mps INPUT (get-wp-complexity ?wp))
-		)
-	  )
-        )
+	)
 	(modify ?g (mode EXPANDED))
 )
 
@@ -389,7 +381,7 @@
 
 (defrule goal-expander-transport-goals-base-station
 	?g <- (goal (id ?goal-id) (class ?class&MOUNT-CAP|
-	                                       MOUNT-RING)
+	                                       MOUNT-RING|DELIVER|DISCARD)
 	                          (mode SELECTED) (parent ?parent)
 	                          (params  wp ?wp
 	                                   target-mps ?target-mps
@@ -455,7 +447,7 @@
 				(plan-assert-action wp-put-slide-cc ?robot
 				 ?wp ?target-mps ?rs-before ?rs-after)
 			)
-			;(plan-assert-action wait-for-mps ?robot ?wp ?target-mps INPUT)
+			(plan-assert-action wait-for-mps ?robot ?wp ?target-mps INPUT)
 		)
 	)
 	(modify ?g (mode EXPANDED))
@@ -486,7 +478,7 @@
 				(plan-assert-action wp-put-slide-cc ?robot
 				 ?wp ?target-mps ?rs-before ?rs-after)
 			)
-			;(plan-assert-action wait-for-mps ?robot ?wp ?target-mps INPUT)
+			(plan-assert-action wait-for-mps ?robot ?wp ?target-mps INPUT)
 		)
 	)
 	(modify ?g (mode EXPANDED))
