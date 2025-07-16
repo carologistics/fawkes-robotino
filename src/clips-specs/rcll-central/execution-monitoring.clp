@@ -635,7 +635,7 @@
 				 (action-name wp-put)
 				 (param-values ?robot ?wp ?mps ?side ?complexity)
 				 (state FAILED)
-				 (error-msg ?msg&:(str-index "workpiece not there" ?msg)))
+				 (error-msg ?msg&:(str-index "workpiece not found" ?msg)))
 	=>
 	(printout error "WP " ?wp " was expected to be at " ?mps " (" ?side") but could not be detected. Assume WP was lost.")
 	(assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))
