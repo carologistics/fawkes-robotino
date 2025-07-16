@@ -324,10 +324,19 @@ function gripper_out_of_reach()
                (fsm.vars.locked_target.z == nil or fsm.vars.locked_target.z == 0)
 end
 
+function calibrated() return arduino:calibrated() end
+
 fsm:define_states{
     export_to = _M,
     closure = {MISSING_MAX = MISSING_MAX, MAX_TRIES = MAX_TRIES},
     {"INIT", JumpState},
+    {
+        "CALIBRATE",
+        SkillJumpState,
+        skills = {{gripper_commands}},
+        final_to = "START_TRACKING",
+        fail_to = "FAILED"
+    },
     {"START_TRACKING", JumpState},
     {"FIND_LASER_LINE", JumpState},
     {
@@ -382,8 +391,17 @@ fsm:define_states{
 }
 
 fsm:add_transitions{
-    {"INIT", "FAILED", cond = input_invalid, desc = "Invalid Input"},
-    {"INIT", "START_TRACKING", cond = true, desc = "Valid Input"}, {
+    {"INIT", "FAILED", cond = input_invalid, desc = "Invalid Input"}, {
+        "INIT",
+        "START_TRACKING",
+        cond = calibrated,
+        desc = "Valid Input and calibrated"
+    }, {
+        "INIT",
+        "CALIBRATE",
+        cond = true,
+        desc = "Valid Input but needs to be calibrated"
+    }, {
         "START_TRACKING",
         "FAILED",
         cond = "vars.nr_tries > MAX_TRIES",
@@ -595,6 +613,8 @@ function INIT:init()
 end
 
 function INIT:exit() fsm.vars.error = "invalid input" end
+
+function CALIBRATE:init() self.args["gripper_commands"].command = "CALIBRATE" end
 
 function START_TRACKING:init()
     -- start object tracking
