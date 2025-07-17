@@ -72,11 +72,6 @@ local TOLERANCE_EE = {x = 0.15, y = 0.04, ori = 0.01} -- tolerance for end_early
 local TOLERANCE_CAM = {x = 0.005, y = 0.0015, ori = 0.01}
 local D_DECEL = {x = 0.035, y = 0.035, ori = 0.15} -- deceleration distance
 local ACCEL = {x = 0.06, y = 0.06, ori = 0.21} -- accelerate by this factor every loop
-local MONITOR_LEN = 15 -- STUCK monitor: Watch distance moved over this many loops
-local STUCK_MAX = 30 -- STUCK timeout: Fail after being stuck for this many loops
-local STUCK_THRESHOLD = 0.6 -- STUCK threshold: Consider ourselves stuck if we moved less than
---                  this factor times V_MIN speed during the
---                  last MONITOR_LEN loops
 local MISSING_MAX = 5 -- limit for missing object detections in a row
 local SAFE_DIST = 0.17 -- minimum distance between front laser and mps while manipulating
 local DESIRED_HZ = 8 -- desired HZ when using motor_move, will move in usual speed
@@ -161,14 +156,6 @@ function set_speed(self)
 
         local a = {x = 0, y = 0, ori = 0}
 
-        self.fsm.vars.monitor_idx = (self.fsm.vars.monitor_idx % MONITOR_LEN) +
-                                        1
-        self.fsm.vars.moved_dist[self.fsm.vars.monitor_idx] = {
-            x = 0,
-            y = 0,
-            ori = 0
-        }
-
         for k, _ in pairs(dist_target) do
             -- Ignore z axis: no way to move up & down in /base_link!
             if (math.abs(scalar(dist_target.ori)) < TOL_ORI_START) then
@@ -194,8 +181,6 @@ function set_speed(self)
                 local delta_dist = math.abs(
                                        self.fsm.vars.last_dist_target[k] -
                                            scalar(dist_target[k]))
-                self.fsm.vars.moved_dist[self.fsm.vars.monitor_idx][k] =
-                    delta_dist
                 self.fsm.vars.last_dist_target[k] = scalar(dist_target[k])
 
                 if math.abs(scalar(dist_target[k])) >
@@ -226,24 +211,6 @@ function set_speed(self)
                                         V_MIN[k],
                                         math.min(V_MAX[k], v_acc, v_dec)))
 
-                    if #self.fsm.vars.moved_dist == MONITOR_LEN then
-                        local dist_sum = 0
-                        for i = 1, MONITOR_LEN do
-                            dist_sum = dist_sum + self.fsm.vars.moved_dist[i][k]
-                        end
-                        if dist_sum < STUCK_THRESHOLD *
-                            (V_MIN[k] + self.fsm.vars.tolerance_arg[k]) then
-                            self.fsm.vars.stuck_count = self.fsm.vars
-                                                            .stuck_count + 1
-                            v[k] = v[k] + self.fsm.vars.stuck_count * 0.5 *
-                                       V_MIN[k]
-                            printf(
-                                "motor_move: STUCK #%d: increasing speed by %f.",
-                                self.fsm.vars.stuck_count,
-                                self.fsm.vars.stuck_count * V_MIN[k])
-                        end
-                    end
-
                     -- finally reverse if the target is behind us
                     -- hopefully the deceleration function(dist_target[k])
                     -- slowed us down a bit before doing this ;-)
@@ -270,11 +237,6 @@ function set_speed(self)
 
     self.fsm.vars.cycle = self.fsm.vars.cycle + 1
 
-    if self.fsm.vars.stuck_count > 0 then
-        print_debug("motor_move: dist_target=(%f, %f, %f) V=(%f, %f, %f)", v.x,
-                    v.y, v.ori, dist_target.x, dist_target.y,
-                    scalar(dist_target.ori))
-    end
     send_transrot(v.x, v.y, v.ori)
     self.fsm.vars.speed = v
 end
@@ -323,7 +285,6 @@ fsm:define_states{
         navigator = navigator,
         pos3d_iface = pos3d_iface,
         cam_frame_visible = cam_frame_visible,
-        STUCK_MAX = STUCK_MAX,
         MISSING_MAX = MISSING_MAX,
         object_tracker_active = object_tracker_active,
         early_endable = early_endable,
@@ -378,7 +339,6 @@ fsm:add_transitions{
         cond = "not motor:has_writer()",
         desc = "No writer for motor"
     }, {"DRIVE", "FAILED", cond = "vars.tf_failed", desc = "dist TF failed"},
-    {"DRIVE", "FAILED", cond = "vars.stuck_count > STUCK_MAX", desc = "STUCK"},
     {"DRIVE", "FINAL", cond = "vars.end_early and early_endable(self)"}, {
         "DRIVE",
         "WAIT_TRACKING",
@@ -395,11 +355,6 @@ fsm:add_transitions{
         desc = "No writer for motor"
     }, {"DRIVE_VS", "FAILED", cond = "vars.tf_failed", desc = "dist TF failed"},
     {
-        "DRIVE_VS",
-        "FAILED",
-        cond = "vars.stuck_count > STUCK_MAX",
-        desc = "STUCK"
-    }, {
         "DRIVE_VS",
         "FAILED",
         cond = "vars.missing_detections > MISSING_MAX",
@@ -419,12 +374,6 @@ fsm:add_transitions{
         "FAILED",
         cond = "not motor:has_writer()",
         desc = "No writer for motor"
-    },
-    {
-        "DRIVE_CAM",
-        "FAILED",
-        cond = "vars.stuck_count > STUCK_MAX",
-        desc = "STUCK"
     }, {"DRIVE_CAM", "FINAL", cond = drive_done},
 
     {"FALLBACK_TO_ODOM", "DRIVE", cond = true}, {
@@ -557,8 +506,6 @@ function INIT:init()
            self.fsm.vars.target.z, fawkes.tf.get_yaw(self.fsm.vars.target.ori))
 
     self.fsm.vars.speed = {x = 0, y = 0, ori = 0}
-    self.fsm.vars.moved_dist = {}
-    self.fsm.vars.stuck_count = 0
 end
 
 function DRIVE:init()
