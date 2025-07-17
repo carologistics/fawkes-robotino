@@ -12,6 +12,7 @@ plugins/vs_offsets:
   #  the target frame before starting the routine (target in x, y, and z)
   # "up" and "down" are relative to the target pose and only change the z
   #  position of the gripper
+  # "down" z distance is afterwards also used to move "up"
 
   workpiece:
     target:
@@ -31,9 +32,6 @@ plugins/vs_offsets:
     down:
       z: -0.015
 
-    up:
-      z: 0.02
-
   slide:
     target:
       x: 0.045
@@ -42,6 +40,3 @@ plugins/vs_offsets:
 
     down:
       z: -0.015
-
-    up:
-      z: 0.02

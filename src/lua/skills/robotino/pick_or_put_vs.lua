@@ -61,8 +61,6 @@ local offset_z_slide_down = config:get_float("plugins/vs_offsets/slide/down/z")
 
 local offset_z_workpiece_up = config:get_float(
                                   "plugins/vs_offsets/workpiece/up/z")
-local offset_z_conveyor_up =
-    config:get_float("plugins/vs_offsets/conveyor/up/z")
 local offset_z_slide_up = config:get_float("plugins/vs_offsets/slide/up/z")
 
 -- default gripper pose
@@ -242,9 +240,9 @@ function MOVE_GRIPPER_UP:init()
     if fsm.vars.target == "WORKPIECE" then
         z_given = fsm.vars.gripper_target.z + offset_z_workpiece_up
     elseif fsm.vars.target == "CONVEYOR" then
-        z_given = fsm.vars.gripper_target.z + offset_z_conveyor_up
+        z_given = fsm.vars.gripper_target.z - offset_z_conveyor_down
     else -- SLIDE
-        z_given = fsm.vars.gripper_target.z + offset_z_slide_up
+        z_given = fsm.vars.gripper_target.z - offset_z_slide_down
     end
 
     local z_clipped = math.max(0.01, math.min(z_given, z_max))
