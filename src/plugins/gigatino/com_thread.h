@@ -149,7 +149,7 @@ private:
 				  return;
 			  default: RCLCPP_ERROR(node_handle->get_logger(), "Unknown result code"); return;
 			  }
-			  update_final(true, result.resut->status_code);
+			  update_final(true, result.result->status_code);
 		  };
 		update_final(false, 0);
 		client_t->async_send_goal(g, send_goal_options);
