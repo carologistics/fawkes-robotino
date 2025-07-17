@@ -84,10 +84,6 @@ GigatinoROSThread::init()
     arduino_if_->set_calibrated(msg->referenced);
     arduino_if_->set_gripper_closed(msg->servo_positions[0] < 40.0);
     arduino_if_->set_wp_sensed(msg->wp_sensor);
-    if (!final_) {
-      final_ = !msg->busy;
-      arduino_if_->set_final(final_);
-    }
     arduino_if_->write();
 	};
 	feedback_sub_ = node_handle->create_subscription<Feedback>(cfg_feedback_topic_name_,
@@ -150,10 +146,11 @@ GigatinoROSThread::handle_home_message()
 }
 
 void
-GigatinoROSThread::update_final(bool final)
+GigatinoROSThread::update_final(bool final, uint8_t status_code)
 {
 	std::scoped_lock lk(feedback_mtx_);
 	arduino_if_->set_final(final);
+	arduino_if_->set_status(status_code);
 	arduino_if_->write();
 }
 

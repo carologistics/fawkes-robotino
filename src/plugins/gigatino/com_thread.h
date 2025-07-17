@@ -31,6 +31,7 @@
 #include "gigatino_msgs/action/move.hpp"
 #include "gigatino_msgs/action/stop.hpp"
 #include "gigatino_msgs/msg/feedback.hpp"
+#include "gigatino_msgs/msg/status_code.hpp"
 #include "interfaces/ArduinoInterface.h"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
@@ -127,7 +128,7 @@ private:
 			  if (!goal_handle) {
 				  // should not happen, all goals are accepted!
 				  RCLCPP_ERROR(node_handle->get_logger(), "Goal was rejected by server");
-				  update_final(true);
+				  update_final(true, gigatino_msgs::msg::StatusCode::REJECTED);
 			  }
 			  // ignore happy case, we set to busy before confirmation
 		  };
@@ -148,13 +149,13 @@ private:
 				  return;
 			  default: RCLCPP_ERROR(node_handle->get_logger(), "Unknown result code"); return;
 			  }
-			  update_final(true);
+			  update_final(true, result.resut->status_code);
 		  };
-		update_final(false);
+		update_final(false, 0);
 		client_t->async_send_goal(g, send_goal_options);
 	}
 
-	void update_final(bool final);
+	void update_final(bool final, uint8_t status_code);
 
 	bool handle_home_message();
 	bool handle_calibrate_message();
