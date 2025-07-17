@@ -127,14 +127,21 @@ fsm:define_states{
         SkillJumpState,
         skills = {{gripper_commands}},
         final_to = "DRIVE_BACK",
-        fail_to = "FAILED"
+        fail_to = "CALIBRATE"
+    },
+    {
+        "CALIBRATE",
+        SkillJumpState,
+        skills = {{gripper_commands}},
+        final_to = "DRIVE_BACK",
+        fail_to = "CALIBRATE"
     },
     {
         "DRIVE_BACK",
         SkillJumpState,
         skills = {{motor_move}},
         final_to = "FINAL",
-        fail_to = "FINAL"
+        fail_to = "CALIBRATE"
     }
 }
 
@@ -252,6 +259,8 @@ function MOVE_GRIPPER_UP:init()
     self.args["gripper_commands"].z = math.max(0.01, math.min(z_clipped, z_max))
     self.args["gripper_commands"].command = "MOVEABS"
 end
+
+function CALIBRATE:init() self.args["gripper_commands"].command = "CALIBRATE" end
 
 function DRIVE_BACK:init()
     self.args["motor_move"].x = drive_back_x

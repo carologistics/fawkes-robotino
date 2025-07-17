@@ -85,7 +85,8 @@ function is_error()
     if msgid == nil then return false end
     if msgid ~= fsm.vars.msgid then return false end
     status = arduino:status()
-    if status == 2 or status == 3 or status == 4 then return true end
+    if status == 2 or status == 3 or status == 4 or status == 5 or status == 6 or
+        status == 7 or status == 8 then return true end
     return false
 end
 
