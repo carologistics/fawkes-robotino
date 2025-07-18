@@ -286,16 +286,6 @@ AgentTaskSkillerBridgeThread::bb_interface_data_refreshed(fawkes::Interface *int
 	SkillerInterface                        *skiller_if = dynamic_cast<SkillerInterface *>(interface);
 	if (skiller_if) {
 		skiller_if->read();
-<<<<<<< HEAD
-		if (skiller_if->serial().get_string() != std::string(skiller_if->exclusive_controller())) {
-			successful_ = false;
-			terminated_ = true;
-			error_code_ = 1; // Skiller control lost
-			logger->log_info(name(), "Skill control lost, wakeup");
-			wakeup();
-			return;
-		}
-=======
 		// if (skiller_if->serial().get_string() != std::string(skiller_if->exclusive_controller())) {
 		// 	successful_ = false;
 		// 	terminated_ = true;
@@ -304,7 +294,6 @@ AgentTaskSkillerBridgeThread::bb_interface_data_refreshed(fawkes::Interface *int
 		// 	wakeup();
 		// 	return;
 		// }
->>>>>>> origin/common/better-skiller-bridge
 		switch (skiller_if->status()) {
 		case fawkes::SkillerInterface::SkillStatusEnum::S_INACTIVE: running_ = false; break;
 		case fawkes::SkillerInterface::SkillStatusEnum::S_FINAL:
