@@ -503,7 +503,7 @@
 	)
 	(if (or (eq ?error "Unsatisfied precondition")
 	        (eq ?error "Invalid parameters")
-	        (eq ?error "Object not found") ; this one needs to be added to the respective skill
+	        (eq ?error "object not found")
 	    )
 	 then
 	  (return FALSE)
@@ -531,6 +531,7 @@
 "
 	(declare (salience ?*MONITORING-SALIENCE*))
 	(goal (id ?goal-id) (mode DISPATCHED) (class ~MOVE-OUT-OF-WAY))
+	?gm <- (goal-meta (goal-id ?goal-id) (assigned-to ?r&~nil))
 	(plan (id ?plan-id) (goal-id ?goal-id))
 	?pa <- (plan-action
 	            (id ?id)
@@ -540,7 +541,12 @@
 	            (state FAILED)
 	            (error-msg ?error)
 	            (param-values $?param-values))
-	(test (eq TRUE (should-retry ?an ?error)))
+	(test (or
+        (eq TRUE (should-retry ?an ?error))
+        (and (eq ?an wp-get)
+             (eq ?error "object not found")
+        )
+  ))
 	(wm-fact (key central agent robot args? r ?r))
 	(not (wm-fact (key central agent robot-lost args? r ?r)))
 	(not (wm-fact (key monitoring robot-in-maintenance args? r ?r)))
@@ -576,7 +582,7 @@
 	(not (wm-fact (key monitoring robot-in-maintenance args? r ?r)))
 	(test (eq TRUE (should-retry ?an ?error)))
 	?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an id ?id2&:(eq ?id2 (sym-cat ?id)) m ? g ?goal-id)
-	        (value ?tries&:(< ?tries 1)));?*MAX-RETRIES-PICK*
+	        (value ?tries&:(< ?tries 2)));?*MAX-RETRIES-PICK*
 	=>
 	(bind ?tries (+ 1 ?tries))
 	(modify ?pa (state FORMULATED) (error-msg ""))
@@ -641,6 +647,9 @@
 	(assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))
 	(assert (wm-fact (key monitoring fail-goal args? g ?goal-id r WP-LOST)))
 	(assert (domain-fact (name can-hold) (param-values ?robot)))
+  (delayed-do-for-all-facts ((?holding domain-fact)) (and (eq ?holding:name holding) (member$ ?robot ?holding:param-values))
+    (retract ?holding)
+  )
 )
 
 (defrule execution-monitoring-wp-get-failed-workpiece-detected
@@ -659,6 +668,21 @@
 	=>
 	(printout error "No WP was expected to be at " ?mps " (" ?side") but there was one detected, fail the goal.")
 	(assert (wm-fact (key monitoring fail-goal args? g ?goal-id r WP-NOT-PICKED)))
+)
+
+(defrule execution-monitoring-wp-get-failed-object-not-found
+	(declare (salience ?*MONITORING-SALIENCE*))
+	(goal (id ?goal-id) (mode DISPATCHED))
+	(plan (id ?plan-id) (goal-id ?goal-id))
+	(plan-action (id ?id) (goal-id ?goal-id) (plan-id ?plan-id)
+				 (action-name wp-get)
+				 (param-values ?robot ?wp ?mps ?side $?)
+				 (state FAILED)
+				 (error-msg ?msg&:(str-index "object not found" ?msg)))
+	(wm-fact (key monitoring action-retried args? r ?r a wp-get id ?id2&:(eq ?id2 (sym-cat ?id)) m ? g ?goal-id)
+	        (value ?tries&:(> ?tries 2)))
+	=>
+	(assert (wm-fact (key monitoring fail-goal args? g ?goal-id r WP-LOST)))
 )
 
 
