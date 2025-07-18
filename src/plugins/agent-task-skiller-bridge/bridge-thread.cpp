@@ -50,13 +50,13 @@ AgentTaskSkillerBridgeThread::~AgentTaskSkillerBridgeThread()
 void
 AgentTaskSkillerBridgeThread::init()
 {
-	robot_             = config->get_string("/agent-task-skiller-bridge/robot");
-	team_name_         = config->get_string("/agent-task-skiller-bridge/team_name");
-	crypto_key_        = config->get_string("/agent-task-skiller-bridge/crypto_key");
-	send_port_		   = config->get_int("/agent-task-skiller-bridge/"+robot_+"/send_port");
-	recv_port_		   = config->get_int("/agent-task-skiller-bridge/"+robot_+"/recv_port");
-	peer_address_	   = config->get_string("/agent-task-skiller-bridge/"+robot_+"/peer_address");
-	robot_id_		   = config->get_int("/agent-task-skiller-bridge/"+robot_+"/id");
+	robot_        = config->get_string("/agent-task-skiller-bridge/robot");
+	team_name_    = config->get_string("/agent-task-skiller-bridge/team_name");
+	crypto_key_   = config->get_string("/agent-task-skiller-bridge/crypto_key");
+	send_port_    = config->get_int("/agent-task-skiller-bridge/" + robot_ + "/send_port");
+	recv_port_    = config->get_int("/agent-task-skiller-bridge/" + robot_ + "/recv_port");
+	peer_address_ = config->get_string("/agent-task-skiller-bridge/" + robot_ + "/peer_address");
+	robot_id_     = config->get_int("/agent-task-skiller-bridge/" + robot_ + "/id");
 
 	std::vector<std::string> proto_dirs;
 	try {
@@ -185,25 +185,25 @@ AgentTaskSkillerBridgeThread::handle_peer_msg(boost::asio::ip::udp::endpoint &,
 				                 team_name_.c_str());
 			}
 		}
-	} else
-	if (desc->name() == "AgentTask") {
+	} else if (desc->name() == "AgentTask") {
 		std::scoped_lock            lock(task_mtx);
 		const llsf_msgs::AgentTask *agent_task_msg =
 		  dynamic_cast<const llsf_msgs::AgentTask *>(msg_ptr.get());
 		if (agent_task_msg->robot_id() == robot_id_) {
-			logger->log_info(name(), "Acquire exclusive Skiller Control");
-			SkillerInterface::AcquireControlMessage *aqm = new SkillerInterface::AcquireControlMessage();
-			skiller_if_->msgq_enqueue(aqm);
-
-			next_skill_          = construct_task_string(*agent_task_msg);
-			if(next_skill_ == "") {
-				logger->log_info(name(), "Cancelling unsupported task sent with id %i",
+			next_skill_ = construct_task_string(*agent_task_msg);
+			if (next_skill_ == "") {
+				logger->log_info(name(),
+				                 "Cancelling unsupported task sent with id %i",
 				                 agent_task_msg->task_id());
 				return;
 			}
 			next_agent_task_msg_ = *agent_task_msg;
 			if (next_agent_task_msg_.task_id() != curr_agent_task_msg_.task_id()) {
 				logger->log_info(name(), "Got new task id %i", next_agent_task_msg_.task_id());
+				logger->log_info(name(), "Acquire exclusive Skiller Control");
+				SkillerInterface::AcquireControlMessage *aqm =
+				  new SkillerInterface::AcquireControlMessage();
+				skiller_if_->msgq_enqueue(aqm);
 				// If a previous thread is running, stop it
 				if (response_thread_.joinable()) {
 					stop_thread_ = true;
@@ -283,19 +283,17 @@ void
 AgentTaskSkillerBridgeThread::bb_interface_data_refreshed(fawkes::Interface *interface) throw()
 {
 	SkillerInterface::ReleaseControlMessage *rcm = new SkillerInterface::ReleaseControlMessage();
-	SkillerInterface *skiller_if = dynamic_cast<SkillerInterface *>(interface);
+	SkillerInterface                        *skiller_if = dynamic_cast<SkillerInterface *>(interface);
 	if (skiller_if) {
 		skiller_if->read();
-		if (skiller_if->serial().get_string() != std::string(skiller_if->exclusive_controller())) {
-			logger->log_info(name(), "Release exclusive Skiller Control");
-			skiller_if_->msgq_enqueue(rcm);
-			successful_ = false;
-			terminated_ = true;
-			error_code_ = 1; // Skiller control lost
-			logger->log_info(name(), "Skill control lost, wakeup");
-			wakeup();
-			return;
-		}
+		// if (skiller_if->serial().get_string() != std::string(skiller_if->exclusive_controller())) {
+		// 	successful_ = false;
+		// 	terminated_ = true;
+		// 	error_code_ = 1; // Skiller control lost
+		// 	logger->log_info(name(), "Skill control lost, wakeup");
+		// 	wakeup();
+		// 	return;
+		// }
 		switch (skiller_if->status()) {
 		case fawkes::SkillerInterface::SkillStatusEnum::S_INACTIVE: running_ = false; break;
 		case fawkes::SkillerInterface::SkillStatusEnum::S_FINAL:
@@ -304,10 +302,10 @@ AgentTaskSkillerBridgeThread::bb_interface_data_refreshed(fawkes::Interface *int
 			error_code_ = 0; // Skill finished successfully
 			running_    = false;
 
+			logger->log_info(name(), "Final, wakeup");
+
 			logger->log_info(name(), "Release exclusive Skiller Control");
 			skiller_if_->msgq_enqueue(rcm);
-
-			logger->log_info(name(), "Final, wakeup");
 			wakeup();
 			break;
 		case fawkes::SkillerInterface::SkillStatusEnum::S_RUNNING: running_ = true; break;
@@ -327,32 +325,26 @@ AgentTaskSkillerBridgeThread::bb_interface_data_refreshed(fawkes::Interface *int
 			} else if (error_msgs.find("workpiece lost") != std::string::npos) {
 				error_code_ = 208;
 			} else if (error_msgs.find("UNKNOWN") != std::string::npos
-				       || error_msgs.find("INVALID_PLANNER") != std::string::npos
-				       || error_msgs.find("TF_ERROR") != std::string::npos
-				       || error_msgs.find("START_OUTSIDE_MAP") != std::string::npos
-				       || error_msgs.find("GOAL_OUTSIDE_MAP") != std::string::npos
-				       || error_msgs.find("TIMEOUT") != std::string::npos
-				       || error_msgs.find("NO_VALID_PATH") != std::string::npos
-					) {
+			           || error_msgs.find("INVALID_PLANNER") != std::string::npos
+			           || error_msgs.find("TF_ERROR") != std::string::npos
+			           || error_msgs.find("START_OUTSIDE_MAP") != std::string::npos
+			           || error_msgs.find("GOAL_OUTSIDE_MAP") != std::string::npos
+			           || error_msgs.find("TIMEOUT") != std::string::npos
+			           || error_msgs.find("NO_VALID_PATH") != std::string::npos) {
 				error_code_ = 300;
 			} else if (error_msgs.find("START_OCCUPIED") != std::string::npos
-				       || error_msgs.find("GOAL_OCCUPIED") != std::string::npos
-					) {
+			           || error_msgs.find("GOAL_OCCUPIED") != std::string::npos) {
 				error_code_ = 209;
 			} else if (error_msgs.find("INVALID_CONTROLLER") != std::string::npos
-				       || error_msgs.find("TF_ERROR") != std::string::npos
-				       || error_msgs.find("INVALID_PATH") != std::string::npos
-				       || error_msgs.find("PATIENCE_EXCEEDED") != std::string::npos
-				       || error_msgs.find("FAILED_TO_MAKE_PROGRESS") != std::string::npos
-				       || error_msgs.find("NO_VALID_CONTROL") != std::string::npos
-					) {
+			           || error_msgs.find("TF_ERROR") != std::string::npos
+			           || error_msgs.find("INVALID_PATH") != std::string::npos
+			           || error_msgs.find("PATIENCE_EXCEEDED") != std::string::npos
+			           || error_msgs.find("FAILED_TO_MAKE_PROGRESS") != std::string::npos
+			           || error_msgs.find("NO_VALID_CONTROL") != std::string::npos) {
 				error_code_ = 201;
 			} else {
 				error_code_ = 5; // Skill failed with unknown error
 			}
-
-			logger->log_info(name(), "Release exclusive Skiller Control");
-			skiller_if_->msgq_enqueue(rcm);
 
 			successful_ = false;
 			terminated_ = true;
