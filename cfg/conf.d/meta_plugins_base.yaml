@@ -80,7 +80,6 @@ fawkes/meta_plugins:
     - skiller_motor_state
     - object-tracking
     # - tag_vision
-
   m-skiller-bridge:
     - ros2
     - ros2-tf2-oneway

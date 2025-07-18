@@ -59,7 +59,7 @@ end
 function check_tf(self)
     if self.fsm.vars.place ~= nil then
         if string.match(self.fsm.vars.place, "WAIT") then return false end
-        if string.match(self.fsm.vars.place, "^[MC][-]Z[1-7][1-8]$") then
+        if string.match(self.fsm.vars.place, "^[MC][_-]Z[1-7][1-8]$") then
             return false
         end
         if fsm.vars.place ~= "" then

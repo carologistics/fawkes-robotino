@@ -10,15 +10,15 @@ agent-task-skiller-bridge:
   robot_1:
     id: 1
     peer_address: 172.26.255.255
-    send_port: 2126
-    recv_port: 2116
+    send_port: 2116
+    recv_port: 2126
   robot_2:
     id: 2
     peer_address: 172.26.255.255
-    send_port: 2127
-    recv_port: 2117
+    send_port: 2117
+    recv_port: 2127
   robot_3:
     id: 3
     peer_address: 172.26.255.255
-    send_port: 2128
-    recv_port: 2118
+    send_port: 2118
+    recv_port: 2128
