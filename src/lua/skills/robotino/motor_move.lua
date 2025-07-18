@@ -66,9 +66,9 @@ local V_MAX = {x = 0.35, y = 0.35, ori = 1.4} -- ultimate limit
 local V_MAX_CAM = {x = 0.06, y = 0.06, ori = 0.3}
 local V_MIN = {x = 0.006, y = 0.006, ori = 0.02} -- below the motor won't even start
 local TOLERANCE = {x = 0.04, y = 0.04, ori = 0.1} -- accuracy
-local TOLERANCE_VS = {x = 0.03, y = 0.02, ori = 0.01}
+local TOLERANCE_VS = {x = 0.03, y = 0.02, ori = 0.03}
 local TOL_ORI_START = 0.2
-local TOLERANCE_EE = {x = 0.15, y = 0.04, ori = 0.01} -- tolerance for end_early condition
+local TOLERANCE_EE = {x = 0.15, y = 0.04, ori = 0.03} -- tolerance for end_early condition
 local TOLERANCE_CAM = {x = 0.005, y = 0.0015, ori = 0.01}
 local D_DECEL = {x = 0.035, y = 0.035, ori = 0.15} -- deceleration distance
 local ACCEL = {x = 0.06, y = 0.06, ori = 0.21} -- accelerate by this factor every loop
