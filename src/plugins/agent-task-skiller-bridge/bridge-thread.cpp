@@ -190,10 +190,6 @@ AgentTaskSkillerBridgeThread::handle_peer_msg(boost::asio::ip::udp::endpoint &,
 		const llsf_msgs::AgentTask *agent_task_msg =
 		  dynamic_cast<const llsf_msgs::AgentTask *>(msg_ptr.get());
 		if (agent_task_msg->robot_id() == robot_id_) {
-			logger->log_info(name(), "Acquire exclusive Skiller Control");
-			SkillerInterface::AcquireControlMessage *aqm = new SkillerInterface::AcquireControlMessage();
-			skiller_if_->msgq_enqueue(aqm);
-
 			next_skill_ = construct_task_string(*agent_task_msg);
 			if (next_skill_ == "") {
 				logger->log_info(name(),
@@ -204,6 +200,10 @@ AgentTaskSkillerBridgeThread::handle_peer_msg(boost::asio::ip::udp::endpoint &,
 			next_agent_task_msg_ = *agent_task_msg;
 			if (next_agent_task_msg_.task_id() != curr_agent_task_msg_.task_id()) {
 				logger->log_info(name(), "Got new task id %i", next_agent_task_msg_.task_id());
+				logger->log_info(name(), "Acquire exclusive Skiller Control");
+				SkillerInterface::AcquireControlMessage *aqm =
+				  new SkillerInterface::AcquireControlMessage();
+				skiller_if_->msgq_enqueue(aqm);
 				// If a previous thread is running, stop it
 				if (response_thread_.joinable()) {
 					stop_thread_ = true;
@@ -286,6 +286,7 @@ AgentTaskSkillerBridgeThread::bb_interface_data_refreshed(fawkes::Interface *int
 	SkillerInterface                        *skiller_if = dynamic_cast<SkillerInterface *>(interface);
 	if (skiller_if) {
 		skiller_if->read();
+<<<<<<< HEAD
 		if (skiller_if->serial().get_string() != std::string(skiller_if->exclusive_controller())) {
 			successful_ = false;
 			terminated_ = true;
@@ -294,6 +295,16 @@ AgentTaskSkillerBridgeThread::bb_interface_data_refreshed(fawkes::Interface *int
 			wakeup();
 			return;
 		}
+=======
+		// if (skiller_if->serial().get_string() != std::string(skiller_if->exclusive_controller())) {
+		// 	successful_ = false;
+		// 	terminated_ = true;
+		// 	error_code_ = 1; // Skiller control lost
+		// 	logger->log_info(name(), "Skill control lost, wakeup");
+		// 	wakeup();
+		// 	return;
+		// }
+>>>>>>> origin/common/better-skiller-bridge
 		switch (skiller_if->status()) {
 		case fawkes::SkillerInterface::SkillStatusEnum::S_INACTIVE: running_ = false; break;
 		case fawkes::SkillerInterface::SkillStatusEnum::S_FINAL:
