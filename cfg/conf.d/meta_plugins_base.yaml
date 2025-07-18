@@ -79,4 +79,27 @@ fawkes/meta_plugins:
     - skiller-rest-api
     - skiller_motor_state
     - object-tracking
-    #- tag_vision
+    # - tag_vision
+
+  m-skiller-bridge:
+    - ros2
+    - ros2-tf2-oneway
+    - ros2-rto-data-in
+    - ros2-laserbridge
+    - ros2-motorinterface
+    - ros2-navigator
+    - ros2-motor-switch
+    - pos3d-publisher
+    - navgraph
+    - laser-lines
+    - gigatino
+    - static-transforms
+    - webview
+    - fvbase
+    - fvfountain
+    - skiller
+    - picam-client
+    - skiller-rest-api
+    - skiller_motor_state
+    - object-tracking
+    - agent-task-skiller-bridge
