@@ -157,8 +157,7 @@ fsm:define_states{
     {"CHECK_INPUT", JumpState},
     {"WAIT_TF", JumpState},
     {"INIT", JumpState},
-    {"MOVING", JumpState},
-    {"TIMEOUT", JumpState}
+    {"MOVING", JumpState}
 }
 
 fsm:add_transitions{
@@ -172,14 +171,9 @@ fsm:add_transitions{
     {"WAIT_TF", "INIT", cond = can_navigate},
     {"INIT", "FAILED", precond = check_tf, desc = "no tf"},
     {"INIT", "FAILED", cond = "not vars.target_valid", desc = "target invalid"},
-    {"INIT", "MOVING", cond = true}, {"MOVING", "TIMEOUT", timeout = 2}, -- Give the interface some time to update
-    {"TIMEOUT", "FINAL", cond = target_reached, desc = "Target reached"},
-    {
-        "TIMEOUT",
-        "FAILED",
-        cond = target_unreachable,
-        desc = "Target unreachable"
-    }
+    {"INIT", "MOVING", cond = true},
+    {"MOVING", "FINAL", cond = target_reached, desc = "Target reached"},
+    {"MOVING", "FAILED", cond = target_unreachable, desc = "Target unreachable"}
 }
 
 function INIT:init()
@@ -287,7 +281,7 @@ function MOVING:init()
     fsm.vars.moveto_msgid = navigator:msgq_enqueue(msg)
 end
 
-function TIMEOUT:loop()
+function MOVING:loop()
     if fsm.vars.waiting_pos == true then
         local got_cur_pose = false
 
