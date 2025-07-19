@@ -117,6 +117,10 @@ AgentTaskSkillerBridgeThread::init()
 	              this,
 	              boost::placeholders::_1,
 	              boost::placeholders::_2));
+
+	logger->log_info(name(), "Acquire exclusive Skiller Control");
+	SkillerInterface::AcquireControlMessage *aqm = new SkillerInterface::AcquireControlMessage();
+	skiller_if_->msgq_enqueue(aqm);
 }
 
 void
@@ -200,10 +204,6 @@ AgentTaskSkillerBridgeThread::handle_peer_msg(boost::asio::ip::udp::endpoint &,
 			next_agent_task_msg_ = *agent_task_msg;
 			if (next_agent_task_msg_.task_id() != curr_agent_task_msg_.task_id()) {
 				logger->log_info(name(), "Got new task id %i", next_agent_task_msg_.task_id());
-				logger->log_info(name(), "Acquire exclusive Skiller Control");
-				SkillerInterface::AcquireControlMessage *aqm =
-				  new SkillerInterface::AcquireControlMessage();
-				skiller_if_->msgq_enqueue(aqm);
 				// If a previous thread is running, stop it
 				if (response_thread_.joinable()) {
 					stop_thread_ = true;
@@ -282,8 +282,7 @@ AgentTaskSkillerBridgeThread::handle_peer_recv_error(boost::asio::ip::udp::endpo
 void
 AgentTaskSkillerBridgeThread::bb_interface_data_refreshed(fawkes::Interface *interface) throw()
 {
-	SkillerInterface::ReleaseControlMessage *rcm = new SkillerInterface::ReleaseControlMessage();
-	SkillerInterface                        *skiller_if = dynamic_cast<SkillerInterface *>(interface);
+	SkillerInterface *skiller_if = dynamic_cast<SkillerInterface *>(interface);
 	if (skiller_if) {
 		skiller_if->read();
 		// if (skiller_if->serial().get_string() != std::string(skiller_if->exclusive_controller())) {
@@ -304,8 +303,6 @@ AgentTaskSkillerBridgeThread::bb_interface_data_refreshed(fawkes::Interface *int
 
 			logger->log_info(name(), "Final, wakeup");
 
-			logger->log_info(name(), "Release exclusive Skiller Control");
-			skiller_if_->msgq_enqueue(rcm);
 			wakeup();
 			break;
 		case fawkes::SkillerInterface::SkillStatusEnum::S_RUNNING: running_ = true; break;
