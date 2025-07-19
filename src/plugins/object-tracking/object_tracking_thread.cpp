@@ -784,13 +784,13 @@ ObjectTrackingThread::closest_position(std::vector<std::array<float, 4>>      bo
 		float dist = sqrt((pos[0] - ref_pos.getX()) * (pos[0] - ref_pos.getX())
 		                  + (pos[1] - ref_pos.getY()) * (pos[1] - ref_pos.getY())
 		                  + (pos[2] - ref_pos.getZ()) * (pos[2] - ref_pos.getZ()));
-		logger->log_warn(name(), std::to_string(dist).c_str());
-		logger->log_info("pos[0]: ", std::to_string(pos[0]).c_str());
-		logger->log_info("pos[1]: ", std::to_string(pos[1]).c_str());
-		logger->log_info("pos[2]: ", std::to_string(pos[2]).c_str());
-		logger->log_info("ref[0]: ", std::to_string(ref_pos.getX()).c_str());
-		logger->log_info("ref[1]: ", std::to_string(ref_pos.getY()).c_str());
-		logger->log_info("ref[2]: ", std::to_string(ref_pos.getZ()).c_str());
+		// logger->log_warn(name(), std::to_string(dist).c_str());
+		// logger->log_info("pos[0]: ", std::to_string(pos[0]).c_str());
+		// logger->log_info("pos[1]: ", std::to_string(pos[1]).c_str());
+		// logger->log_info("pos[2]: ", std::to_string(pos[2]).c_str());
+		// logger->log_info("ref[0]: ", std::to_string(ref_pos.getX()).c_str());
+		// logger->log_info("ref[1]: ", std::to_string(ref_pos.getY()).c_str());
+		// logger->log_info("ref[2]: ", std::to_string(ref_pos.getZ()).c_str());
 		if (dist < min_dist) {
 			min_dist          = dist;
 			closest_pos[0]    = pos[0];
