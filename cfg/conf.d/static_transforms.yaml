@@ -34,3 +34,10 @@ plugins/static-transforms:
       rot_roll: 0.0
       rot_pitch: 2.94
       rot_yaw: 0.0
+
+    cam_tag:
+      frame: !frame base_link
+      child_frame: !frame cam_tag
+      trans_x: 0.06
+      trans_y: 0.0
+      trans_z: 0.54
