@@ -81,7 +81,7 @@ private:
 	                            std::shared_ptr<google::protobuf::Message> msg);
 	void        handle_peer_recv_error(boost::asio::ip::udp::endpoint &endpoint, std::string msg);
 	void        send_response();
-	void        send_pose();
+	//void        send_pose();
 	std::string construct_task_string(const llsf_msgs::AgentTask &agent_task_msg);
 
 	std::string team_name_;
@@ -102,10 +102,10 @@ private:
 	llsf_msgs::AgentTask next_agent_task_msg_;
 	llsf_msgs::AgentTask curr_agent_task_msg_;
 
-	unsigned short recv_port_magenta_;
-	unsigned short recv_port_cyan_;
-	unsigned short recv_port_public_;
+	unsigned short send_port_;
+	unsigned short recv_port_;
 	std::string    peer_address_;
+	std::string	   robot_;
 
 	std::array<std::string, 3> shelf_slots = {"-LEFT", "-MIDDLE", "-RIGHT"};
 	size_t                     shelf_index = 0;

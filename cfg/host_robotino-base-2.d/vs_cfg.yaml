@@ -5,67 +5,38 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/webview
 ---
 plugins/vs_offsets:
   # distance between object and target base pose
-  base_offset_x: 0.27
-  base_offset_y: 0.055
-  new_gripper: false
+  base_offset_x: 0.36 #higher = further away from the mps
+  base_offset_y: -0.015 #higher = more towards the right
 
-  # offsets between object pose from the object tracking plugin and the target
-  #  frame before starting the routine (target in both x and z), above the
-  #  workpiece (top, only x is changed), at the pick/put position in the
-  #  routine (routine, only z is changed), and at the end of the gripper (end,
-  #  only z is changed) routine (end)
-  # z positions assume the wp is a C3 and reduce the height if its lower change
-  #  y direction through host_specific static frame
+  # "target" offsets between object pose from the object tracking plugin and
+  #  the target frame before starting the routine (target in x, y, and z)
+  # "up" and "down" are relative to the target pose and only change the z
+  #  position of the gripper
+  # "down" z distance is afterwards also used to move "up"
+
   workpiece:
     target:
-      x: -0.05
-      z: 0.04
+      x: -0.015
+      y: 0.00
+      z: 0.003
 
-    top:
-      x: 0.06
-      z: 0.04
-
-    end:
-      z: 0.04
-
-  shelf:
-    target:
-      x: -0.05
-      z: 0.02
-
-    top:
-      x: 0.035
-      z: 0.03
-
-    end:
-      z: 0.03
+    up:
+      z: 0.01
 
   conveyor:
     target:
-      x: -0.05
-      z: 0.0
+      x: 0.045
+      y: 0.003
+      z: 0.05
 
-    top:
-      x: 0.04
-      z: 0.01
-
-    routine:
-      z: 0.00
-
-    end:
-      z: 0.01
+    down:
+      z: -0.015
 
   slide:
     target:
-      x: -0.05
-      z: 0.02
+      x: 0.03
+      y: -0.0055
+      z: 0.035
 
-    top:
-      x: 0.06
-      z: 0.045
-
-    routine:
-      z: 0.04
-
-    end:
-      z: 0.045
+    down:
+      z: -0.015

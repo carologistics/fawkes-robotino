@@ -20,11 +20,11 @@
 
     <field type="bool"  name="gripper_closed">True if gripper is closed</field>
     <field type="bool"  name="wp_sensed">True if the wp is sensed in the gripper</field>
-    <field type="bool"  name="calibrated">True if the axis system is calibrated</field>
 
     <field type="float" name="x_max">Max len in x</field>
     <field type="float" name="y_max">Max len in y</field>
     <field type="float" name="z_max">Max len in z</field>
+    <field type="bool" name="calibrated">True, if the axis system is calibrated</field>
 
     <field type="bool" name="final">True, if the last move command has been finished</field>
 
@@ -77,8 +77,5 @@
   </message>
   <message name="StatusUpdate">
     <comment>Request a status of the arduino</comment>
-  </message>
-  <message name="ResetUSB">
-    <comment>Reset the usb device if arduino does not respond</comment>
   </message>
 </interface>

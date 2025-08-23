@@ -65,18 +65,13 @@ documentation = [==[Move on a (kind of) straight line to the given coordinates.
 local V_MAX = {x = 0.35, y = 0.35, ori = 1.4} -- ultimate limit
 local V_MAX_CAM = {x = 0.06, y = 0.06, ori = 0.3}
 local V_MIN = {x = 0.006, y = 0.006, ori = 0.02} -- below the motor won't even start
-local TOLERANCE = {x = 0.02, y = 0.02, ori = 0.01} -- accuracy
-local TOLERANCE_VS = {x = 0.03, y = 0.02, ori = 0.02}
-local TOL_ORI_START = 0.1
-local TOLERANCE_EE = {x = 0.15, y = 0.04, ori = 0.01} -- tolerance for end_early condition
+local TOLERANCE = {x = 0.04, y = 0.04, ori = 0.1} -- accuracy
+local TOLERANCE_VS = {x = 0.03, y = 0.02, ori = 0.03}
+local TOL_ORI_START = 0.2
+local TOLERANCE_EE = {x = 0.15, y = 0.04, ori = 0.03} -- tolerance for end_early condition
 local TOLERANCE_CAM = {x = 0.005, y = 0.0015, ori = 0.01}
 local D_DECEL = {x = 0.035, y = 0.035, ori = 0.15} -- deceleration distance
 local ACCEL = {x = 0.06, y = 0.06, ori = 0.21} -- accelerate by this factor every loop
-local MONITOR_LEN = 15 -- STUCK monitor: Watch distance moved over this many loops
-local STUCK_MAX = 120 -- STUCK timeout: Fail after being stuck for this many loops
-local STUCK_THRESHOLD = 0.6 -- STUCK threshold: Consider ourselves stuck if we moved less than
---                  this factor times V_MIN speed during the
---                  last MONITOR_LEN loops
 local MISSING_MAX = 5 -- limit for missing object detections in a row
 local SAFE_DIST = 0.17 -- minimum distance between front laser and mps while manipulating
 local DESIRED_HZ = 8 -- desired HZ when using motor_move, will move in usual speed
@@ -161,34 +156,31 @@ function set_speed(self)
 
         local a = {x = 0, y = 0, ori = 0}
 
-        self.fsm.vars.monitor_idx = (self.fsm.vars.monitor_idx % MONITOR_LEN) +
-                                        1
-        self.fsm.vars.moved_dist[self.fsm.vars.monitor_idx] = {
-            x = 0,
-            y = 0,
-            ori = 0
-        }
-
         for k, _ in pairs(dist_target) do
             -- Ignore z axis: no way to move up & down in /base_link!
-            if (math.abs(scalar(dist_target.ori)) >= TOL_ORI_START) then
-                fsm.vars.rotating = true
-            elseif (math.abs(scalar(dist_target.ori)) <
-                self.fsm.vars.tolerance_arg["ori"]) then
+            if (math.abs(scalar(dist_target.ori)) < TOL_ORI_START) then
                 fsm.vars.rotating = false
-            elseif (math.abs(scalar(dist_target.x)) <
-                self.fsm.vars.tolerance_arg["x"] and
-                math.abs(scalar(dist_target.y)) <
-                self.fsm.vars.tolerance_arg["y"]) then
-                fsm.vars.rotating = true
             end
-            if ((k == "x" or k == "y") and not fsm.vars.rotating) or
-                (k == "ori" and fsm.vars.rotating) then
+            if not fsm.vars.rotating and
+                (math.abs(scalar(dist_target.x)) <=
+                    self.fsm.vars.tolerance_arg["x"] and
+                    math.abs(scalar(dist_target.y)) <=
+                    self.fsm.vars.tolerance_arg["y"]) then
+                fsm.vars.positioning = false
+            end
+            if math.abs(scalar(dist_target.ori)) <=
+                fsm.vars.tolerance_arg["ori"] then
+                fsm.vars.rotation_done = true
+            else
+                fsm.vars.rotation_done = false
+            end
+
+            if ((k == "x" or k == "y") and not fsm.vars.rotating and
+                fsm.vars.positioning) or
+                (k == "ori" and (fsm.vars.rotating or not fsm.vars.positioning)) then
                 local delta_dist = math.abs(
                                        self.fsm.vars.last_dist_target[k] -
                                            scalar(dist_target[k]))
-                self.fsm.vars.moved_dist[self.fsm.vars.monitor_idx][k] =
-                    delta_dist
                 self.fsm.vars.last_dist_target[k] = scalar(dist_target[k])
 
                 if math.abs(scalar(dist_target[k])) >
@@ -219,24 +211,6 @@ function set_speed(self)
                                         V_MIN[k],
                                         math.min(V_MAX[k], v_acc, v_dec)))
 
-                    if #self.fsm.vars.moved_dist == MONITOR_LEN then
-                        local dist_sum = 0
-                        for i = 1, MONITOR_LEN do
-                            dist_sum = dist_sum + self.fsm.vars.moved_dist[i][k]
-                        end
-                        if dist_sum < STUCK_THRESHOLD *
-                            (V_MIN[k] + self.fsm.vars.tolerance_arg[k]) then
-                            self.fsm.vars.stuck_count = self.fsm.vars
-                                                            .stuck_count + 1
-                            v[k] = v[k] + self.fsm.vars.stuck_count * 0.5 *
-                                       V_MIN[k]
-                            printf(
-                                "motor_move: STUCK #%d: increasing speed by %f.",
-                                self.fsm.vars.stuck_count,
-                                self.fsm.vars.stuck_count * V_MIN[k])
-                        end
-                    end
-
                     -- finally reverse if the target is behind us
                     -- hopefully the deceleration function(dist_target[k])
                     -- slowed us down a bit before doing this ;-)
@@ -263,18 +237,14 @@ function set_speed(self)
 
     self.fsm.vars.cycle = self.fsm.vars.cycle + 1
 
-    if self.fsm.vars.stuck_count > 0 then
-        print_debug("motor_move: dist_target=(%f, %f, %f) V=(%f, %f, %f)", v.x,
-                    v.y, v.ori, dist_target.x, dist_target.y,
-                    scalar(dist_target.ori))
-    end
     send_transrot(v.x, v.y, v.ori)
     self.fsm.vars.speed = v
 end
 
 function drive_done(self)
     return self.fsm.vars.speed.x == 0 and self.fsm.vars.speed.y == 0 and
-               self.fsm.vars.speed.ori == 0
+               self.fsm.vars.speed.ori == 0 and fsm.vars.rotation_done and
+               not fsm.vars.rotating and not fsm.vars.positioning
 end
 
 function close_enough(self)
@@ -315,7 +285,6 @@ fsm:define_states{
         navigator = navigator,
         pos3d_iface = pos3d_iface,
         cam_frame_visible = cam_frame_visible,
-        STUCK_MAX = STUCK_MAX,
         MISSING_MAX = MISSING_MAX,
         object_tracker_active = object_tracker_active,
         early_endable = early_endable,
@@ -370,7 +339,6 @@ fsm:add_transitions{
         cond = "not motor:has_writer()",
         desc = "No writer for motor"
     }, {"DRIVE", "FAILED", cond = "vars.tf_failed", desc = "dist TF failed"},
-    {"DRIVE", "FAILED", cond = "vars.stuck_count > STUCK_MAX", desc = "STUCK"},
     {"DRIVE", "FINAL", cond = "vars.end_early and early_endable(self)"}, {
         "DRIVE",
         "WAIT_TRACKING",
@@ -387,11 +355,6 @@ fsm:add_transitions{
         desc = "No writer for motor"
     }, {"DRIVE_VS", "FAILED", cond = "vars.tf_failed", desc = "dist TF failed"},
     {
-        "DRIVE_VS",
-        "FAILED",
-        cond = "vars.stuck_count > STUCK_MAX",
-        desc = "STUCK"
-    }, {
         "DRIVE_VS",
         "FAILED",
         cond = "vars.missing_detections > MISSING_MAX",
@@ -411,12 +374,6 @@ fsm:add_transitions{
         "FAILED",
         cond = "not motor:has_writer()",
         desc = "No writer for motor"
-    },
-    {
-        "DRIVE_CAM",
-        "FAILED",
-        cond = "vars.stuck_count > STUCK_MAX",
-        desc = "STUCK"
     }, {"DRIVE_CAM", "FINAL", cond = drive_done},
 
     {"FALLBACK_TO_ODOM", "DRIVE", cond = true}, {
@@ -436,6 +393,10 @@ function INIT:init()
     self.fsm.vars.timeout_fail = self.fsm.vars.timeout_fail or 0
     self.fsm.vars.start_time = fawkes.Time:new():in_msec()
     self.fsm.vars.only_rotate = false
+    self.fsm.vars.rotating = true
+    self.fsm.vars.positioning = true
+    self.fsm.vars.rotation_done = false
+
     if self.fsm.vars.x == 0 and self.fsm.vars.y == 0 then
         self.fsm.vars.only_rotate = true
     end
@@ -545,8 +506,6 @@ function INIT:init()
            self.fsm.vars.target.z, fawkes.tf.get_yaw(self.fsm.vars.target.ori))
 
     self.fsm.vars.speed = {x = 0, y = 0, ori = 0}
-    self.fsm.vars.moved_dist = {}
-    self.fsm.vars.stuck_count = 0
 end
 
 function DRIVE:init()
