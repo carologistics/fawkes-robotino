@@ -38,7 +38,7 @@
   ?pm <- (wm-fact (id "/refbox/points/magenta"))
   ?pc <- (wm-fact (id "/refbox/points/cyan"))
   ?tc <- (wm-fact (id "/refbox/team-color")  (value ?team-color) )
-  (wm-fact (key config agent team)  (value ?team-name) )
+  (wm-fact (key config rcll team-name)  (value ?team-name) )
   =>
   (retract ?pf ?gt ?pm ?pc)
   (bind ?new-state (pb-field-value ?p "state"))

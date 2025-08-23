@@ -21,7 +21,7 @@
                       (action-name send-beacon) (executable TRUE)
                       (param-names $?param-names)
                       (param-values $?param-values))
-  (wm-fact (key config agent team)  (value ?team-name) )
+  (wm-fact (key config rcll team-name)  (value ?team-name) )
   (wm-fact (key config agent name)  (value ?robot-name) )
   (wm-fact (key config agent number)  (value ?robot-number) )
   (wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))

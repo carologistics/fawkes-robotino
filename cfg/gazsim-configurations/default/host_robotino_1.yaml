@@ -10,7 +10,6 @@ fawkes:
   agent:
     name: Icks
     number: 1
-    team: Carologistics
 
 network:
   fawkes:
